@@ -1,1 +1,1 @@
-# Hedge-v3
+# Hedge v3
