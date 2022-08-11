@@ -8,7 +8,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 data class ImportForm(val filepath: String,
-                      val removeOriginFile: Boolean = false)
+                      val mobileImport: Boolean = false)
 
 data class UploadForm(val content: InputStream,
                       val filename: String,

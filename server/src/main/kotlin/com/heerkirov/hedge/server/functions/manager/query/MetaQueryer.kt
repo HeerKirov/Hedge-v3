@@ -10,8 +10,6 @@ import com.heerkirov.hedge.server.library.compiler.translator.*
 import com.heerkirov.hedge.server.library.compiler.translator.visual.*
 import com.heerkirov.hedge.server.library.compiler.utils.ErrorCollector
 import com.heerkirov.hedge.server.library.compiler.utils.TranslatorError
-import com.heerkirov.hedge.server.model.Tag
-import com.heerkirov.hedge.server.model.Topic
 import com.heerkirov.hedge.server.model.Annotation
 import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.runIf

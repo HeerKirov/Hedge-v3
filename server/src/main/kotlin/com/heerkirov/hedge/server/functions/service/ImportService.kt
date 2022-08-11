@@ -1,6 +1,5 @@
 package com.heerkirov.hedge.server.functions.service
 
-import com.heerkirov.hedge.server.components.backend.FileGenerator
 import com.heerkirov.hedge.server.components.backend.similar.SimilarFinder
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.ImportOption
@@ -19,10 +18,7 @@ import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
 import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
-import com.heerkirov.hedge.server.utils.Fs
 import com.heerkirov.hedge.server.utils.business.takeAllFilepathOrNull
-import com.heerkirov.hedge.server.utils.tools.defer
-import com.heerkirov.hedge.server.utils.deleteIfExists
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.escapeLike
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
@@ -32,9 +28,6 @@ import com.heerkirov.hedge.server.utils.types.Opt
 import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 
 class ImportService(private val data: DataRepository,
                     private val fileManager: FileManager,
@@ -42,8 +35,7 @@ class ImportService(private val data: DataRepository,
                     private val illustManager: IllustManager,
                     private val sourceManager: SourceDataManager,
                     private val importMetaManager: ImportMetaManager,
-                    private val similarFinder: SimilarFinder,
-                    private val fileGenerator: FileGenerator) {
+                    private val similarFinder: SimilarFinder) {
     private val orderTranslator = OrderTranslator {
         "id" to ImportImages.id
         "fileCreateTime" to ImportImages.fileCreateTime nulls last
@@ -81,42 +73,15 @@ class ImportService(private val data: DataRepository,
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      * @throws FileNotFoundError 此文件不存在
      */
-    fun import(form: ImportForm): Pair<Int, List<BaseException<*>>> = defer {
-        val file = File(form.filepath).applyReturns {
-            if(form.removeOriginFile) deleteIfExists()
-        }
-        if(!file.exists() || !file.canRead()) throw be(FileNotFoundError())
-
-        val fileId = data.db.transaction { fileManager.newFile(file) }.alsoExcept { fileId ->
-            fileManager.deleteFile(fileId)
-        }.alsoReturns {
-            fileGenerator.appendTask(it)
-        }
-
-        data.db.transaction {
-            importManager.newImportRecord(fileId, sourceFile = file)
-        }
+    fun import(form: ImportForm): Pair<Int, List<BaseException<*>>> {
+        return importManager.import(form.filepath, form.mobileImport)
     }
 
     /**
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      */
-    fun upload(form: UploadForm): Pair<Int, List<BaseException<*>>> = defer {
-        val file = Fs.temp(form.extension).applyDefer {
-            deleteIfExists()
-        }.also { file ->
-            Files.copy(form.content, file.toPath(), StandardCopyOption.REPLACE_EXISTING)
-        }
-
-        val fileId = data.db.transaction { fileManager.newFile(file) }.alsoExcept { fileId ->
-            fileManager.deleteFile(fileId)
-        }.alsoReturns {
-            fileGenerator.appendTask(it)
-        }
-
-        data.db.transaction {
-            importManager.newImportRecord(fileId, sourceFilename = form.filename)
-        }
+    fun upload(form: UploadForm): Pair<Int, List<BaseException<*>>> {
+        return importManager.upload(form.content, form.filename, form.extension)
     }
 
     /**

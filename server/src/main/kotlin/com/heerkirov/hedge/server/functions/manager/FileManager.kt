@@ -8,7 +8,6 @@ import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
 import com.heerkirov.hedge.server.exceptions.StorageNotAccessibleError
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.model.FileRecord
-import com.heerkirov.hedge.server.utils.tools.*
 import com.heerkirov.hedge.server.utils.*
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
 import com.heerkirov.hedge.server.utils.DateTime.toDateString
@@ -20,6 +19,7 @@ import org.ktorm.dsl.insertAndGenerateKey
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import java.io.File
+import java.lang.Exception
 
 class FileManager(private val appdata: AppDataManager, private val data: DataRepository) {
     /**
@@ -27,11 +27,12 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
      * - folder指定为文件的更改日期(UTC)。对于上传的文件，这就相当于取了导入日期。
      * - extension指定为此file的扩展名。
      * - thumbnail和大小等信息留白，处于NOT READY状态，需要调用FileGenerator生成这些信息。
+     * @param moveFile 使用移动的方式导入文件。
      * @return file id。使用此id来索引物理文件记录。
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      */
-    fun newFile(file: File): Int = defer {
+    fun newFile(file: File, moveFile: Boolean = false): Int {
         if(!appdata.storagePathAccessor.accessible) throw be(StorageNotAccessibleError(appdata.storagePathAccessor.storageDir))
 
         val now = DateTime.now()
@@ -50,13 +51,47 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
             set(it.updateTime, now)
         } as Int
 
-        generateFilepath(folder, id, extension).also { path ->
-            file.copyTo(File("${appdata.storagePathAccessor.storageDir}/$path").applyExcept {
-                deleteIfExists()
-            }, overwrite = true)
+        val fileOriginalPath = "${appdata.storagePathAccessor.storageDir}/${generateFilepath(folder, id, extension)}"
+        val originalFile = File(fileOriginalPath)
+
+        if(moveFile) {
+            file.renameTo(originalFile)
+        }else{
+            try {
+                file.copyTo(originalFile, overwrite = true)
+            }catch (e: Exception) {
+                file.deleteIfExists()
+                throw e
+            }
         }
 
         return id
+    }
+
+    /**
+     * 撤销文件的新建操作。
+     * - 删除文件记录。
+     * - 如果文件被移动，那么移动回去；如果文件被复制，那么删除文件。
+     * - 如果缩略图已完成，那么删除缩略图。
+     */
+    fun undoFile(importFile: File, fileId: Int, moveFile: Boolean = false) {
+        if(!appdata.storagePathAccessor.accessible) throw be(StorageNotAccessibleError(appdata.storagePathAccessor.storageDir))
+
+        val fileRecord = getFile(fileId) ?: return
+        val fileOriginalPath = "${appdata.storagePathAccessor.storageDir}/${generateFilepath(fileRecord.folder, fileId, fileRecord.extension)}"
+        val originalFile = File(fileOriginalPath)
+        if(moveFile) {
+            originalFile.renameTo(importFile)
+        }else{
+            originalFile.deleteIfExists()
+        }
+
+        val thumbnailFilepath = if(fileRecord.status == FileStatus.READY) { generateThumbnailFilepath(fileRecord.folder, fileRecord.id) }else null
+        if(thumbnailFilepath != null) File("${appdata.storagePathAccessor.storageDir}/${thumbnailFilepath}").deleteIfExists()
+
+        data.db.delete(FileRecords) {
+            it.id eq fileId
+        }
     }
 
     /**
@@ -69,7 +104,6 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
         val fileRecord = getFile(fileId) ?: return
         val filepath = generateFilepath(fileRecord.folder, fileRecord.id, fileRecord.extension)
         val thumbnailFilepath = if(fileRecord.status == FileStatus.READY) { generateThumbnailFilepath(fileRecord.folder, fileRecord.id) }else null
-
 
         data.db.delete(FileRecords) {
             it.id eq fileId
