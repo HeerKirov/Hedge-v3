@@ -47,9 +47,9 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
                             get(::getImage)
                             patch(::updateImage)
                             delete(::deleteImage)
-                            path("origin-data") {
-                                get(::getImageOriginData)
-                                patch(::updateImageOriginData)
+                            path("source-data") {
+                                get(::getImageSourceData)
+                                patch(::updateImageSourceData)
                             }
                             path("related-items") {
                                 get(::getImageRelatedItems)
@@ -159,15 +159,15 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
         ctx.status(204)
     }
 
-    private fun getImageOriginData(ctx: Context) {
+    private fun getImageSourceData(ctx: Context) {
         val id = ctx.pathParamAsClass<Int>("id").get()
         ctx.json(illustService.getImageSourceData(id))
     }
 
-    private fun updateImageOriginData(ctx: Context) {
+    private fun updateImageSourceData(ctx: Context) {
         val id = ctx.pathParamAsClass<Int>("id").get()
         val form = ctx.bodyAsForm<IllustImageSourceDataUpdateForm>()
-        illustService.updateImageOriginData(id, form)
+        illustService.updateImageSourceData(id, form)
     }
 
     private fun getImageRelatedItems(ctx: Context) {

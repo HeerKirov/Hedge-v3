@@ -1,16 +1,13 @@
 package com.heerkirov.hedge.server.dto.form
 
-import com.heerkirov.hedge.server.enums.TagAddressType
-import com.heerkirov.hedge.server.enums.TagAuthorType
-import com.heerkirov.hedge.server.enums.TagGroupType
-import com.heerkirov.hedge.server.enums.TagTopicType
+import com.heerkirov.hedge.server.enums.*
 import com.heerkirov.hedge.server.library.form.Length
 import com.heerkirov.hedge.server.library.form.Min
 import com.heerkirov.hedge.server.library.form.NotBlank
 import com.heerkirov.hedge.server.model.Annotation
 import com.heerkirov.hedge.server.utils.types.Opt
 
-data class AnnotationCreateForm(@NotBlank val name: String, val canBeExported: Boolean, val target: Annotation.AnnotationTarget = Annotation.AnnotationTarget.EMPTY)
+data class AnnotationCreateForm(@NotBlank val name: String, val canBeExported: Boolean, val type: MetaType, val target: Annotation.AnnotationTarget = Annotation.AnnotationTarget.EMPTY)
 
 data class AnnotationUpdateForm(@NotBlank val name: Opt<String>, val canBeExported: Opt<Boolean>, val target: Opt<Annotation.AnnotationTarget>)
 

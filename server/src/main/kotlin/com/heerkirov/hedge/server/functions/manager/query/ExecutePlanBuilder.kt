@@ -12,7 +12,7 @@ import com.heerkirov.hedge.server.library.compiler.semantic.plan.FilterValue
 import com.heerkirov.hedge.server.library.compiler.translator.ExecuteBuilder
 import com.heerkirov.hedge.server.library.compiler.translator.visual.*
 import com.heerkirov.hedge.server.model.Illust
-import com.heerkirov.hedge.server.utils.composition.union
+import com.heerkirov.hedge.server.utils.composition.unionComposition
 import com.heerkirov.hedge.server.utils.ktorm.compositionAny
 import com.heerkirov.hedge.server.utils.ktorm.escapeLike
 import org.ktorm.database.Database
@@ -192,14 +192,14 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, O
     override fun mapCompositionFilterSpecial(field: FilterFieldDefinition<*>, column: ColumnDeclaring<*>, values: Collection<Any>): ColumnDeclaring<Boolean> {
         return when (field) {
             IllustDialect.tagme -> {
-                val tagme = if(values.isEmpty()) Illust.Tagme.baseElements.union() else values.map {
+                val tagme = if(values.isEmpty()) Illust.Tagme.baseElements.unionComposition() else values.map {
                     when (it as IllustDialect.Tagme) {
                         IllustDialect.Tagme.AUTHOR -> Illust.Tagme.AUTHOR
                         IllustDialect.Tagme.TOPIC -> Illust.Tagme.TOPIC
                         IllustDialect.Tagme.TAG -> Illust.Tagme.TAG
                         IllustDialect.Tagme.SOURCE -> Illust.Tagme.SOURCE
                     }
-                }.union()
+                }.unionComposition()
                 @Suppress("UNCHECKED_CAST")
                 (column as ColumnDeclaring<Illust.Tagme>) compositionAny tagme
             }
@@ -259,7 +259,7 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, O
         }
     }
 
-    override fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean, exportedFromAuthor: Boolean, exportedFromTopic: Boolean, exportedFromTag: Boolean) {
+    override fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean) {
         when {
             exclude -> excludeAnnotations.addAll(unionItems.map { it.id })
             unionItems.isEmpty() -> alwaysFalseFlag = true
@@ -271,7 +271,6 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, O
                     needDistinct = true
                     j.annotationId inList unionItems.map { it.id }
                 }
-                //TODO [#xxx]的exportedFrom系统已移除：从HQL中移除这部分支持
 
                 joins.add(ExecutePlan.Join(j, j.illustId eq Illusts.id and condition))
             }
@@ -445,7 +444,7 @@ class BookExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, Ord
         }
     }
 
-    override fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean, exportedFromAuthor: Boolean, exportedFromTopic: Boolean, exportedFromTag: Boolean) {
+    override fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean) {
         when {
             exclude -> excludeAnnotations.addAll(unionItems.map { it.id })
             unionItems.isEmpty() -> alwaysFalseFlag = true
@@ -457,7 +456,6 @@ class BookExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, Ord
                     needDistinct = true
                     j.annotationId inList unionItems.map { it.id }
                 }
-                //TODO [#xxx]的exportedFrom系统已移除：从HQL中移除这部分支持
 
                 joins.add(ExecutePlan.Join(j, j.bookId eq Books.id and condition))
             }
@@ -520,7 +518,7 @@ class AuthorExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder {
         })
     }
 
-    override fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean, exportedFromAuthor: Boolean, exportedFromTopic: Boolean, exportedFromTag: Boolean) {
+    override fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean) {
         when {
             exclude -> excludeAnnotations.addAll(unionItems.map { it.id })
             unionItems.isEmpty() -> alwaysFalseFlag = true
@@ -579,7 +577,7 @@ class TopicExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder {
         })
     }
 
-    override fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean, exportedFromAuthor: Boolean, exportedFromTopic: Boolean, exportedFromTag: Boolean) {
+    override fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean) {
         when {
             exclude -> excludeAnnotations.addAll(unionItems.map { it.id })
             unionItems.isEmpty() -> alwaysFalseFlag = true

@@ -41,10 +41,10 @@ data class Element(val prefix: Symbol?, val items: List<SFP>, override val begin
 
 /**
  * 注解。
- * @param prefixes 注解的前缀符号，包括(@ # $)。
+ * @param prefix 注解的前缀符号，包括(@ # $)。
  * @param items 注解的内容项，彼此之间通过或(|)连接。
  */
-data class Annotation(val prefixes: List<Symbol>, val items: List<Str>, override val beginIndex: Int, override val endIndex: Int) : SequenceBody
+data class Annotation(val prefix: Symbol?, val items: List<Str>, override val beginIndex: Int, override val endIndex: Int) : SequenceBody
 
 /**
  * 主系表结构。

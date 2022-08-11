@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.library.compiler.translator.visual
 
+import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAddressType
 
 data class VisualQueryPlan(
@@ -46,24 +47,6 @@ open class ElementItem<V : ElementValue>(val exclude: Boolean, val unionItems: L
     }
 }
 
-class ElementItemForAnnotation(exclude: Boolean, unionItems: List<ElementAnnotation>, val exportedFromAuthor: Boolean, val exportedFromTopic: Boolean, val exportedFromTag: Boolean) : ElementItem<ElementAnnotation>(exclude, unionItems) {
-    override fun equals(other: Any?): Boolean {
-        return other === this || (other is ElementItemForAnnotation && other.exclude == exclude && other.unionItems == unionItems && other.exportedFromAuthor == exportedFromAuthor && other.exportedFromTag == exportedFromTag && other.exportedFromTopic == exportedFromTopic)
-    }
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + exportedFromAuthor.hashCode()
-        result = 31 * result + exportedFromTopic.hashCode()
-        result = 31 * result + exportedFromTag.hashCode()
-        return result
-    }
-
-    override fun toString(): String {
-        return "ElementItem(exclude=$exclude, unionItems=$unionItems, exportedFrom[author=$exportedFromAuthor, topic=$exportedFromTopic, tag=$exportedFromTag])"
-    }
-}
-
 interface ElementValue
 
 data class ElementString(val value: String, val precise: Boolean) : ElementValue
@@ -78,7 +61,7 @@ data class ElementSourceTag(override val id: Int, override val name: String) : E
     override val type: String get() = "source-tag"
 }
 
-data class ElementAnnotation(override val id: Int, override val name: String) : ElementMeta {
+data class ElementAnnotation(override val id: Int, override val name: String, val annotationType: MetaType) : ElementMeta {
     override val type: String get() = "annotation"
 }
 

@@ -15,7 +15,7 @@ interface Queryer {
 
     fun findAuthor(metaValue: SingleMetaValue, collector: ErrorCollector<TranslatorError<*>>): List<ElementAuthor>
 
-    fun findAnnotation(metaString: MetaString, metaType: Set<MetaType>, isForMeta: Boolean, collector: ErrorCollector<TranslatorError<*>>): List<ElementAnnotation>
+    fun findAnnotation(metaString: MetaString, metaType: MetaType?, isForMeta: Boolean, collector: ErrorCollector<TranslatorError<*>>): List<ElementAnnotation>
 
     fun findSourceTag(metaString: MetaString, collector: ErrorCollector<TranslatorError<*>>): List<ElementSourceTag>
 

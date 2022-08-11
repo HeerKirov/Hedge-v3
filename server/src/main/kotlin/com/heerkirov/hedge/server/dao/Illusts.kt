@@ -69,7 +69,7 @@ object Partitions : BaseTable<Partition>("partition") {
 
 object AssociateRelations : BaseTable<AssociateRelation>("associate_relation") {
     val illustId = int("illust_id")
-    val relatedIllustId = int("illust_id")
+    val relatedIllustId = int("related_illust_id")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = AssociateRelation(
         illustId = row[illustId]!!,

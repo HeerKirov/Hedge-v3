@@ -20,7 +20,7 @@ import javax.imageio.plugins.jpeg.JPEGImageWriteParam
 import kotlin.math.sqrt
 
 object Graphics {
-    private const val RESIZE_AREA = 1 shl 20
+    private const val RESIZE_AREA = 1 shl 18
 
     init {
         //在mac上，调用Graphics组件时，会生成一个愚蠢的dock栏进程。为了隐藏掉这个进程，需要设置此属性
@@ -37,7 +37,7 @@ object Graphics {
         val snapshot = when (src.extension.lowercase()) {
             "jpeg", "jpg" -> null
             "png", "gif" -> translateImageToJpg(src)
-            "mp4", "webm" -> translateVideoToJpg(src, timePercent = 0.05F) //取5%进度位置的帧作为截图
+            "mp4", "webm" -> translateVideoToJpg(src, timePercent = 0.1F) //取10%进度位置的帧作为截图
             else -> throw be(IllegalFileExtensionError(src.extension))
         }
         val resolution: Pair<Int, Int>
@@ -46,7 +46,7 @@ object Graphics {
             val source = ImageIO.read(file)
             resolution = Pair(source.width, source.height)
             whetherResize(source, file.extension) { w, h ->
-                //当原始图像的面积超过1024*1024时，对其缩放，保持比例收缩至小于此面积。
+                //当原始图像的面积超过512*512时，对其缩放，保持比例收缩至小于此面积。
                 if(w * h > RESIZE_AREA) {
                     /* nw * nh = RA
                      * w * h = area

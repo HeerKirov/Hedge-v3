@@ -10,7 +10,10 @@ import com.heerkirov.hedge.server.utils.ktorm.type.unionList
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.schema.*
 
-object Annotations : BaseTable<Annotation>("annotation", schema = "meta_db") {
+open class Annotations(alias: String? = null) : BaseTable<Annotation>("annotation", schema = "meta_db", alias = alias) {
+    companion object : Annotations(null)
+    override fun aliased(alias: String) = Annotations(alias)
+
     val id = int("id").primaryKey()
     val name = varchar("name")
     val canBeExported = boolean("can_be_exported")

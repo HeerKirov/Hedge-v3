@@ -45,7 +45,7 @@ class BookService(private val data: DataRepository,
 
     fun list(filter: BookQueryFilter): ListResult<BookRes> {
         val schema = if(filter.query.isNullOrBlank()) null else {
-            queryManager.querySchema(filter.query, QueryManager.Dialect.ALBUM).executePlan ?: return ListResult(0, emptyList())
+            queryManager.querySchema(filter.query, QueryManager.Dialect.BOOK).executePlan ?: return ListResult(0, emptyList())
         }
         return data.db.from(Books)
             .leftJoin(FileRecords, Books.fileId eq FileRecords.id)

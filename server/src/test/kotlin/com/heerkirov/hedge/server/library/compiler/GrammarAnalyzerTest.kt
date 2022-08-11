@@ -1,6 +1,5 @@
 package com.heerkirov.hedge.server.library.compiler
 
-import com.heerkirov.hedge.server.library.compiler.grammar.DuplicatedAnnotationPrefix
 import com.heerkirov.hedge.server.library.compiler.grammar.GrammarAnalyzer
 import com.heerkirov.hedge.server.library.compiler.grammar.UnexpectedToken
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.*
@@ -368,7 +367,7 @@ class GrammarAnalyzerTest {
         //测试注解
         assertEquals(AnalysisResult(semanticRootOf(0, 3,
             sequenceItemOf(0, 3, minus = false, source = false,
-                annotationOf(0, 3, emptyList(),
+                annotationOf(0, 3, null,
                     strOf("a", Str.Type.RESTRICTED, 1,2)
                 )
             )
@@ -376,7 +375,7 @@ class GrammarAnalyzerTest {
         //测试注解或
         assertEquals(AnalysisResult(semanticRootOf(0, 5,
             sequenceItemOf(0, 5, minus = false, source = false,
-                annotationOf(0, 5, emptyList(),
+                annotationOf(0, 5, null,
                     strOf("a", Str.Type.RESTRICTED, 1,2),
                     strOf("b", Str.Type.RESTRICTED, 3,4)
                 )
@@ -389,27 +388,16 @@ class GrammarAnalyzerTest {
         //测试注解前缀
         assertEquals(AnalysisResult(semanticRootOf(0, 4,
             sequenceItemOf(0, 4, minus = false, source = false,
-                annotationOf(0, 4, listOf(symbolOf("@", 1, 2)),
+                annotationOf(0, 4, symbolOf("@", 1, 2),
                     strOf("a", Str.Type.RESTRICTED, 2, 3)
                 )
             )
         )), parse("[@a]"))
-        assertEquals(AnalysisResult(semanticRootOf(0, 7,
-            sequenceItemOf(0, 7, minus = false, source = false,
-                annotationOf(0, 7, listOf(symbolOf("$", 1, 2), symbolOf("#", 2, 3)),
-                    strOf("b", Str.Type.RESTRICTED, 3, 4),
-                    strOf("c", Str.Type.RESTRICTED, 5, 6)
-                )
-            )
-        )), parse("[${'$'}#b|c]"))
-        //重复前缀会引发警告
-        assertEquals(AnalysisResult(semanticRootOf(0, 6,
-            sequenceItemOf(0, 6, minus = false, source = false,
-                annotationOf(0, 6, listOf(symbolOf("@", 1, 2), symbolOf("#", 2, 3)),
-                    strOf("a", Str.Type.RESTRICTED, 4, 5)
-                )
-            )
-        ), warnings = listOf<GrammarError<*>>(DuplicatedAnnotationPrefix("@", 3))), parse("[@#@a]"))
+        //多前缀会引发错误
+        assertEquals(AnalysisResult<SemanticRoot, GrammarError<*>>(null, errors = listOf(
+            UnexpectedToken("@", expected = listOf(), 2),
+            UnexpectedToken("]", expected = listOf(), 4)
+        )), parse("[@@a]"))
         //注解项不能带有前缀
         assertEquals(AnalysisResult<SemanticRoot, GrammarError<*>>(null, errors = listOf(
             UnexpectedToken("#", expected = listOf(), 4),
@@ -440,7 +428,7 @@ class GrammarAnalyzerTest {
         )), parse("^a"))
         assertEquals(AnalysisResult(semanticRootOf(0, 5,
             sequenceItemOf(0, 5, minus = true, source = true,
-                annotationOf(2, 5, emptyList(),
+                annotationOf(2, 5, null,
                     strOf("x", Str.Type.RESTRICTED, 3, 4)
                 )
             )
@@ -515,13 +503,13 @@ class GrammarAnalyzerTest {
         //测试几个混合的复杂例子
         assertEquals(AnalysisResult(semanticRootOf(0, 125,
             sequenceItemOf(0, 12, minus = false, source = false,
-                annotationOf(0, 12, listOf(symbolOf("@", 1, 2), symbolOf("#", 2, 3)),
+                annotationOf(0, 12, symbolOf("@", 1, 2),
                     strOf("fav", Str.Type.RESTRICTED, 3, 6),
                     strOf("like", Str.Type.RESTRICTED, 7, 11),
                 )
             ),
             sequenceItemOf(12, 22, minus = false, source = false,
-                annotationOf(12, 22, emptyList(),
+                annotationOf(12, 22, null,
                     strOf("updating", Str.Type.RESTRICTED, 13, 21)
                 )
             ),
@@ -588,7 +576,7 @@ class GrammarAnalyzerTest {
                     )
                 )
             ),
-        )), parse("""[@#fav|like][updating] -$'rather'.`than`.x rating:[A, C)|D~E|G~+|rating>=G ext:{jpg, jpeg} ^id:4396???? order:+partition,-^id"""))
+        )), parse("""[@ fav|like][updating] -$'rather'.`than`.x rating:[A, C)|D~E|G~+|rating>=G ext:{jpg, jpeg} ^id:4396???? order:+partition,-^id"""))
     }
 
     private fun parse(text: String): AnalysisResult<SemanticRoot, GrammarError<*>> {
@@ -602,7 +590,7 @@ class GrammarAnalyzerTest {
 
     private fun elementOf(beginIndex: Int, endIndex: Int, prefix: Symbol? = null, vararg items: SFP) = Element(prefix, items.toList(), beginIndex, endIndex)
 
-    private fun annotationOf(beginIndex: Int, endIndex: Int, prefixes: List<Symbol> = emptyList(), vararg items: Str) = Annotation(prefixes, items.toList(), beginIndex, endIndex)
+    private fun annotationOf(beginIndex: Int, endIndex: Int, prefix: Symbol? = null, vararg items: Str) = Annotation(prefix, items.toList(), beginIndex, endIndex)
 
     private fun sfpOf(beginIndex: Int, endIndex: Int, subject: Subject, family: Family? = null, predicative: Predicative? = null) = SFP(subject, family, predicative, beginIndex, endIndex)
 

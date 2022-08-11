@@ -257,7 +257,7 @@ class SemanticAnalyzerTest {
             orders = emptyList(),
             filters = emptyList(),
             elements = listOf(
-                annotationElementOf(MetaString("a"), metaType = emptySet())
+                annotationElementOf(MetaString("a"), metaType = null)
             )
         )), parse("[a]", IllustDialect::class))
         //测试注解前缀
@@ -265,29 +265,29 @@ class SemanticAnalyzerTest {
             orders = emptyList(),
             filters = emptyList(),
             elements = listOf(
-                annotationElementOf(MetaString("a"), metaType = setOf(MetaType.AUTHOR))
+                annotationElementOf(MetaString("a"), metaType = MetaType.AUTHOR)
             )
         )), parse("[@a]", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             orders = emptyList(),
             filters = emptyList(),
             elements = listOf(
-                annotationElementOf(MetaString("a"), metaType = setOf(MetaType.TOPIC, MetaType.TAG))
+                annotationElementOf(MetaString("a"), metaType = MetaType.TOPIC)
             )
-        )), parse("[#${'$'}a]", IllustDialect::class))
+        )), parse("[#a]", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             orders = emptyList(),
             filters = emptyList(),
             elements = listOf(
-                annotationElementOf(MetaString("a"), metaType = setOf(MetaType.AUTHOR, MetaType.TOPIC, MetaType.TAG))
+                annotationElementOf(MetaString("a"), metaType = MetaType.TAG)
             )
-        )), parse("[@#${'$'}a]", IllustDialect::class))
+        )), parse("[${'$'}a]", IllustDialect::class))
         //测试排除和错误的source
         assertEquals(AnalysisResult(QueryPlan(
             orders = emptyList(),
             filters = emptyList(),
             elements = listOf(
-                annotationElementOf(MetaString("a"), metaType = emptySet(), exclude = true)
+                annotationElementOf(MetaString("a"), metaType = null, exclude = true)
             )
         )), parse("-[a]", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
@@ -298,15 +298,15 @@ class SemanticAnalyzerTest {
             orders = emptyList(),
             filters = emptyList(),
             elements = listOf(
-                annotationElementOf(MetaString("a"), MetaString("b", precise = true), metaType = emptySet())
+                annotationElementOf(MetaString("a"), MetaString("b", precise = true), metaType = null)
             )
         )), parse("[a|`b`]", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             orders = emptyList(),
             filters = emptyList(),
             elements = listOf(
-                annotationElementOf(MetaString("a", precise = true), MetaString("b"), metaType = emptySet()),
-                annotationElementOf(MetaString("updating"), metaType = setOf(MetaType.TOPIC))
+                annotationElementOf(MetaString("a", precise = true), MetaString("b"), metaType = null),
+                annotationElementOf(MetaString("updating"), metaType = MetaType.TOPIC)
             )
         )), parse("[`a`|b][#updating]", IllustDialect::class))
         //测试其他方言的注解
@@ -389,7 +389,7 @@ class SemanticAnalyzerTest {
             OrderValueMustBeSortList(0, 7)
         )), parse("order>1", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            InvalidOrderItem("x", listOf("id", "score", "s", "ordinal", "ord", "partition", "pt", "create-time", "create", "ct", "update-time", "update", "ut", "^id", "source-id", "^from", "source-from"), 6, 7)
+            InvalidOrderItem("x", listOf("id", "score", "s", "ordinal", "ord", "partition", "pt", "create-time", "create", "ct", "update-time", "update", "ut", "^id", "source-id", "^site", "source-site"), 6, 7)
         )), parse("order:x", IllustDialect::class))
     }
 
@@ -557,19 +557,19 @@ class SemanticAnalyzerTest {
     fun testFilterRelation() {
         //错误的关系或值类型
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            UnsupportedFilterValueType("id", ValueType.SORT_LIST, 4, 7)
+            UnsupportedFilterValueType("ID", ValueType.SORT_LIST, 4, 7)
         )), parse("id: 1,2", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            FilterValueRequired("id", 0, 2)
+            FilterValueRequired("ID", 0, 2)
         )), parse("id", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            FilterValueNotRequired("favorite", 0, 10)
+            FilterValueNotRequired("FAVORITE", 0, 10)
         )), parse("favorite:1", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            UnsupportedFilterValueTypeOfRelation("id", ValueType.RANGE, ">", 3, 8)
+            UnsupportedFilterValueTypeOfRelation("ID", ValueType.RANGE, ">", 3, 8)
         )), parse("id>[1,2]", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            UnsupportedFilterRelationSymbol("id", "~", 2, 3)
+            UnsupportedFilterRelationSymbol("ID", "~", 2, 3)
         )), parse("id~1", IllustDialect::class))
         //集合类型
         assertEquals(AnalysisResult(QueryPlan(
@@ -631,9 +631,9 @@ class SemanticAnalyzerTest {
         //预热
         parseAndTestPerformance("""hello""", IllustDialect::class)
         //高复杂度
-        parseAndTestPerformance("""[@#fav|like][updating] -$'rather'.`than`.x rating:[A, C)|D~E|G~+|rating>=G ext:{jpg, jpeg} ^id:4396???? order:+partition,-^id""", IllustDialect::class)
+        parseAndTestPerformance("""[@fav|like][updating] -$'rather'.`than`.x rating:[A, C)|D~E|G~+|rating>=G ext:{jpg, jpeg} ^id:4396???? order:+partition,-^id""", IllustDialect::class)
         //中复杂度
-        parseAndTestPerformance("""[@#fav|like][updating] -$'rather'.`than`.x ^id:4396???? order:+partition,-^id""", IllustDialect::class)
+        parseAndTestPerformance("""[@fav|like][updating] -$'rather'.`than`.x ^id:4396???? order:+partition,-^id""", IllustDialect::class)
         //低复杂度
         parseAndTestPerformance("""[updating] $'rather' order:+partition""", IllustDialect::class)
     }
@@ -679,7 +679,7 @@ class SemanticAnalyzerTest {
 
     private fun tagElementOf(vararg items: MetaValue, metaType: MetaType? = null, exclude: Boolean = false) = TagElementImpl(items.toList(), metaType, exclude)
 
-    private fun annotationElementOf(vararg items: MetaString, metaType: Set<MetaType>, exclude: Boolean = false) = AnnotationElement(items.toList(), metaType, exclude)
+    private fun annotationElementOf(vararg items: MetaString, metaType: MetaType?, exclude: Boolean = false) = AnnotationElement(items.toList(), metaType, exclude)
 
     private fun metaAnnotationElementOf(vararg items: MetaString, exclude: Boolean = false) = AnnotationElementForMeta(items.toList(), exclude)
 

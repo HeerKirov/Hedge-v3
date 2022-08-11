@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.library.compiler.translator
 
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.Filter
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.FilterValue
+import com.heerkirov.hedge.server.library.compiler.semantic.plan.MetaType
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.Order
 import com.heerkirov.hedge.server.library.compiler.translator.visual.*
 
@@ -25,7 +26,7 @@ interface ExecuteBuilder {
         throw UnsupportedOperationException("Unsupported element type 'source-tag'.")
     }
 
-    fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean, exportedFromAuthor: Boolean, exportedFromTopic: Boolean, exportedFromTag: Boolean) {
+    fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean) {
         throw UnsupportedOperationException("Unsupported element type 'annotation'.")
     }
 

@@ -15,7 +15,6 @@ dependencies {
     val sqliteVersion = "3.36.0.3"
     val jacksonVersion = "2.11.4" //fk, how to upgrade it?
     val javeVersion = "3.3.1"
-    val plistVersion = "1.23"
     val slf4jVersion = "1.7.36"
     val junitVersion = "4.13.2"
     val javePlatform = when(System.getProperty("os.name").toLowerCase()) {
@@ -36,7 +35,6 @@ dependencies {
     implementation(group = "io.javalin", name = "javalin", version = javalinVersion)
     implementation(group = "ws.schild", name = "jave-core", version = javeVersion)
     implementation(group = "ws.schild", name = "jave-$javePlatform", version = javeVersion)
-    implementation(group = "com.googlecode.plist", name = "dd-plist", version = plistVersion)
     implementation(group = "org.slf4j", name = "slf4j-simple", version = slf4jVersion)
     implementation(group = "org.slf4j", name = "slf4j-api", version = slf4jVersion)
     testImplementation(group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version = kotlinVersion)

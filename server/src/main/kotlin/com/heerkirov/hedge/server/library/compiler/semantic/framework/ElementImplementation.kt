@@ -163,7 +163,7 @@ object AnnotationElementField : ElementFieldByAnnotation() {
     override val itemName = "annotation"
 
     override fun generate(annotation: Annotation, minus: Boolean): AnnotationElement {
-        val metaType = annotation.prefixes.asSequence().map(::mapPrefixToMetaType).toSet()
+        val metaType = annotation.prefix?.let(::mapPrefixToMetaType)
         val items = annotation.items.map(::mapStrToMetaString)
         return AnnotationElement(items, metaType, minus)
     }
@@ -233,13 +233,13 @@ object NameFilterElementField : ElementFieldByElement() {
 }
 
 /**
- * 从annotation生成annotation的生成器。被使用在author&topic中。
+ * 从annotation生成annotation的生成器。被使用在author&topic dialect中。
  */
 object MetaAnnotationElementField : ElementFieldByAnnotation() {
     override val itemName = "annotation"
 
     override fun generate(annotation: Annotation, minus: Boolean): AnnotationElementForMeta {
-        if(annotation.prefixes.isNotEmpty()) semanticError(ElementPrefixNotRequired(itemName, annotation.beginIndex, annotation.endIndex))
+        if(annotation.prefix != null) semanticError(ElementPrefixNotRequired(itemName, annotation.beginIndex, annotation.endIndex))
         val items = annotation.items.map(::mapStrToMetaString)
         return AnnotationElementForMeta(items, minus)
     }

@@ -27,7 +27,6 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 
-//TODO 将范围修改为仅限一个大类限定，而不是能横跨多个大类；查询API也强制按照大类区分
 class AnnotationService(private val data: DataRepository, private val kit: AnnotationKit, private val queryManager: QueryManager) {
     private val orderTranslator = OrderTranslator {
         "id" to Annotations.id
@@ -43,6 +42,7 @@ class AnnotationService(private val data: DataRepository, private val kit: Annot
             .let { schema?.joinConditions?.fold(it) { acc, join -> if(join.left) acc.leftJoin(join.table, join.condition) else acc.innerJoin(join.table, join.condition) } ?: it }
             .select()
             .whereWithConditions {
+                it += Annotations.type eq filter.type
                 if(filter.name != null) { it += Annotations.name eq filter.name }
                 if(filter.canBeExported != null) { it += Annotations.canBeExported eq filter.canBeExported }
                 if(filter.target != null) { it += (Annotations.target compositionContains filter.target) or Annotations.target.compositionEmpty() }
@@ -62,11 +62,13 @@ class AnnotationService(private val data: DataRepository, private val kit: Annot
     fun create(form: AnnotationCreateForm): Int {
         data.db.transaction {
             val createTime = DateTime.now()
-            val name = kit.validateName(form.name)
+            val name = kit.validateName(form.name, form.type)
+            val target = kit.validateTarget(form.target, form.type)
             return data.db.insertAndGenerateKey(Annotations) {
                 set(it.name, name)
                 set(it.canBeExported, form.canBeExported)
-                set(it.target, form.target)
+                set(it.type, form.type)
+                set(it.target, target)
                 set(it.createTime, createTime)
             } as Int
         }
@@ -87,16 +89,17 @@ class AnnotationService(private val data: DataRepository, private val kit: Annot
      */
     fun update(id: Int, form: AnnotationUpdateForm) {
         data.db.transaction {
-            data.db.sequenceOf(Annotations).firstOrNull { it.id eq id } ?: throw be(NotFound())
+            val a = data.db.sequenceOf(Annotations).firstOrNull { it.id eq id } ?: throw be(NotFound())
 
-            val newName = form.name.letOpt { kit.validateName(it, id) }
+            val newName = form.name.letOpt { kit.validateName(it, a.type, id) }
+            val newTarget = form.target.letOpt { kit.validateTarget(it, a.type) }
             if(anyOpt(newName, form.canBeExported, form.target)) {
                 data.db.update(Annotations) {
                     where { it.id eq id }
 
                     newName.applyOpt { set(it.name, this) }
+                    newTarget.applyOpt { set(it.target, this) }
                     form.canBeExported.applyOpt { set(it.canBeExported, this) }
-                    form.target.applyOpt { set(it.target, this) }
                 }
 
                 queryManager.flushCacheOf(QueryManager.CacheType.ANNOTATION)

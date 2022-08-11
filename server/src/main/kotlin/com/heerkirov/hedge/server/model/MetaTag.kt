@@ -41,14 +41,14 @@ data class Annotation(val id: Int,
         object COPYRIGHT : AnnotationTarget(AnnotationTargetValues.COPYRIGHT)
         object IP : AnnotationTarget(AnnotationTargetValues.IP)
         object CHARACTER : AnnotationTarget(AnnotationTargetValues.CHARACTER)
-        object AUTHOR : AnnotationTarget(AnnotationTargetValues.ARTIST or AnnotationTargetValues.STUDIO or AnnotationTargetValues.PUBLISH)
-        object TOPIC : AnnotationTarget(AnnotationTargetValues.COPYRIGHT or AnnotationTargetValues.IP or AnnotationTargetValues.CHARACTER)
         object EMPTY : AnnotationTarget(0b0)
 
         companion object {
             val baseElements by lazy { listOf(TAG, ARTIST, STUDIO, PUBLISH, COPYRIGHT, IP, CHARACTER) }
-            val exportedElements by lazy { listOf(AUTHOR, TOPIC) }
             val empty by lazy { EMPTY }
+            val tagElements by lazy { listOf(TAG) }
+            val authorElements by lazy { listOf(ARTIST, STUDIO, PUBLISH) }
+            val topicElements by lazy { listOf(COPYRIGHT, IP, CHARACTER) }
         }
     }
 

@@ -61,9 +61,9 @@ class CompositionTest {
         assertTrue { Com.AB.any(Com.A) }
         assertFalse { Com.AB.any(Com.CD) }
         assertTrue { (Com.AB + Com.C).any(Com.CD) }
-        assertEquals(Com.AB + Com.CD, listOf(Com.A, Com.B, Com.C, Com.D).union())
+        assertEquals(Com.AB + Com.CD, listOf(Com.A, Com.B, Com.C, Com.D).unionComposition())
         assertEquals(listOf(Com.A, Com.B, Com.C, Com.D), (Com.AB + Com.CD).toBaseElements())
-        assertEquals(listOf(Com.AB, Com.C), listOf(Com.A, Com.B, Com.C).union().toExportedElements())
+        assertEquals(listOf(Com.AB, Com.C), listOf(Com.A, Com.B, Com.C).unionComposition().toExportedElements())
     }
 
     @Test

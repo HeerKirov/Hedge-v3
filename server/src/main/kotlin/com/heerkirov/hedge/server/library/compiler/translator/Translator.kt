@@ -56,15 +56,15 @@ object Translator {
             Element(type, elements.map { element ->
                 if(element is AnnotationElement) {
                     val items = mapAnnotationElement(element, queryer, collector, options).also { joinDepth += 1 }
-                    val exportedFromAuthor = MetaType.AUTHOR in element.metaType
-                    val exportedFromTopic = MetaType.TOPIC in element.metaType
-                    val exportedFromTag = MetaType.TAG in element.metaType
-                    executeBuilder.mapAnnotationElement(items, element.exclude, exportedFromAuthor = exportedFromAuthor, exportedFromTopic = exportedFromTopic, exportedFromTag = exportedFromTag)
-                    ElementItemForAnnotation(element.exclude, items, exportedFromAuthor = exportedFromAuthor, exportedFromTopic = exportedFromTopic, exportedFromTag = exportedFromTag)
+                    executeBuilder.mapAnnotationElement(items, element.exclude)
+                    ElementItem(element.exclude, items)
                 }else{
                     ElementItem(element.exclude, when (element) {
                         is NameElementForMeta -> element.items.map { ElementString(it.value, it.precise) }.also { executeBuilder.mapNameElement(it, element.exclude) }
-                        is AnnotationElementForMeta -> mapAnnotationElementForMeta(element, queryer, collector, options).also { joinDepth += 1 }.also { executeBuilder.mapAnnotationElement(it, element.exclude, exportedFromAuthor = false, exportedFromTopic = false, exportedFromTag = false) }
+                        is AnnotationElementForMeta -> mapAnnotationElementForMeta(element, queryer, collector, options).also { joinDepth += 1 }.also { executeBuilder.mapAnnotationElement(
+                            it,
+                            element.exclude
+                        ) }
                         is SourceTagElement -> mapSourceTagElement(element, queryer, collector, options).also { joinDepth += 1 }.also { executeBuilder.mapSourceTagElement(it, element.exclude) }
                         is TagElement -> {
                             val (r, t) = mapTagElement(element, queryer, collector, options)
@@ -105,7 +105,7 @@ object Translator {
      * 处理一个AnnotationElementForMeta的翻译。
      */
     private fun mapAnnotationElementForMeta(element: AnnotationElementForMeta, queryer: Queryer, collector: ErrorCollector<TranslatorError<*>>, options: TranslatorOptions?): List<ElementAnnotation> {
-        return element.items.flatMap { queryer.findAnnotation(it, emptySet(), true, collector) }.also { result ->
+        return element.items.flatMap { queryer.findAnnotation(it, null, true, collector) }.also { result ->
             if(result.isEmpty()) collector.warning(WholeElementMatchesNone(element.items.map { it.revertToQueryString() }))
             else if(options!= null && result.size >= options.warningLimitOfUnionItems) collector.warning(NumberOfUnionItemExceed(element.items.map { it.revertToQueryString() }, options.warningLimitOfUnionItems))
         }

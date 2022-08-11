@@ -9,6 +9,7 @@ import com.heerkirov.hedge.server.functions.manager.AnnotationManager
 import com.heerkirov.hedge.server.model.Author
 import com.heerkirov.hedge.server.model.Annotation
 import com.heerkirov.hedge.server.utils.business.checkTagName
+import com.heerkirov.hedge.server.utils.composition.unionComposition
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.runIf
 import org.ktorm.dsl.*
@@ -56,7 +57,7 @@ class AuthorKit(private val data: DataRepository, private val annotationManager:
      */
     fun validateAnnotations(newAnnotations: List<Any>?, type: TagAuthorType): List<Author.CachedAnnotation> {
         return if(newAnnotations != null) annotationManager.analyseAnnotationParam(newAnnotations, target = when(type) {
-            TagAuthorType.UNKNOWN -> Annotation.AnnotationTarget.AUTHOR
+            TagAuthorType.UNKNOWN -> Annotation.AnnotationTarget.authorElements.unionComposition()
             TagAuthorType.ARTIST -> Annotation.AnnotationTarget.ARTIST
             TagAuthorType.STUDIO -> Annotation.AnnotationTarget.STUDIO
             TagAuthorType.PUBLISH -> Annotation.AnnotationTarget.PUBLISH

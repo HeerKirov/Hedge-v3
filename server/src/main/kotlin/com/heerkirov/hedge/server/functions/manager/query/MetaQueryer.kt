@@ -350,7 +350,7 @@ class MetaQueryer(private val data: DataRepository) : Queryer {
         }
     }
 
-    override fun findAnnotation(metaString: MetaString, metaType: Set<MetaType>, isForMeta: Boolean, collector: ErrorCollector<TranslatorError<*>>): List<ElementAnnotation> {
+    override fun findAnnotation(metaString: MetaString, metaType: MetaType?, isForMeta: Boolean, collector: ErrorCollector<TranslatorError<*>>): List<ElementAnnotation> {
         if(metaString.value.isBlank()) {
             //元素内容为空时抛出空警告并直接返回
             collector.warning(BlankElement())
@@ -364,7 +364,9 @@ class MetaQueryer(private val data: DataRepository) : Queryer {
                     } else {
                         Annotations.name like parser.mapMatchToSqlLike(metaString.value)
                     }
-                    //移除了在注解查询阶段对注解前缀类型的过滤。一是这个步骤在实现阶段有实现保证，这里顶多优化；二是提前过滤会引起疑惑，显得有注解莫名其妙没查询到
+                    if(metaType != null) {
+                        it += Annotations.type eq MetaParserUtil.translateMetaType(metaType)
+                    }
                 }
                 .limit(0, queryLimit)
                 .map { Annotations.createEntity(it) }
@@ -374,7 +376,7 @@ class MetaQueryer(private val data: DataRepository) : Queryer {
                 collector.warning(ElementMatchesNone(metaString.revertToQueryString()))
                 emptyList()
             }else if(!isForMeta) {
-                val result = annotations.filter { it.canBeExported }.map { ElementAnnotation(it.id, it.name) }
+                val result = annotations.filter { it.canBeExported }.map { ElementAnnotation(it.id, it.name, it.type) }
                 result.ifEmpty {
                     //如果canBeExported的结果为空，那么提出警告
                     collector.warning(ElementCannotBeExported(metaString.revertToQueryString()))
@@ -382,7 +384,7 @@ class MetaQueryer(private val data: DataRepository) : Queryer {
                 }
             }else{
                 //区分forMeta时的情况。当forMeta时，不需要canBeExported检查，可以直接输出
-                annotations.map { ElementAnnotation(it.id, it.name) }
+                annotations.map { ElementAnnotation(it.id, it.name, it.type) }
             }
         }
     }
@@ -511,9 +513,9 @@ class MetaQueryer(private val data: DataRepository) : Queryer {
 
     private data class TagItem(override val id: Int, override val name: String, override val otherNames: List<String>, override val parentId: Int?, val type: TagAddressType, val isGroup: TagGroupType, val color: String?) : ItemInterfaceWithParent
 
-    private data class AnnotationCacheKey(val precise: Boolean, val value: String, val exportedFromAuthor: Boolean, val exportedFromTopic: Boolean, val exportedFromTag: Boolean)
+    private data class AnnotationCacheKey(val precise: Boolean, val value: String, val metaType: MetaType?)
 
-    private fun annotationKeyOf(metaString: MetaString, metaType: Set<MetaType>): AnnotationCacheKey {
-        return AnnotationCacheKey(metaString.precise, metaString.value, exportedFromAuthor = MetaType.AUTHOR in metaType, exportedFromTopic = MetaType.TOPIC in metaType, exportedFromTag = MetaType.TAG in metaType)
+    private fun annotationKeyOf(metaString: MetaString, metaType: MetaType?): AnnotationCacheKey {
+        return AnnotationCacheKey(metaString.precise, metaString.value, metaType)
     }
 }

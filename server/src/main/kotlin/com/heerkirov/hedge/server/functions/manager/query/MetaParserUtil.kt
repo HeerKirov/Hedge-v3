@@ -4,8 +4,8 @@ import com.heerkirov.hedge.server.dao.MetaTagTable
 import com.heerkirov.hedge.server.dao.SourceTags
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.MetaString
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.MetaType
-import com.heerkirov.hedge.server.model.Annotation
 import com.heerkirov.hedge.server.utils.ktorm.escapeLike
+import com.heerkirov.hedge.server.enums.MetaType as CommonMetaType
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.or
 import org.ktorm.expression.BinaryExpression
@@ -46,21 +46,6 @@ internal object MetaParserUtil {
             val regex = mapMatchToRegexPattern(metaString.value)
             regex.containsMatchIn(item.name) || item.otherNames.any { regex.containsMatchIn(it) }
         }
-    }
-
-    /**
-     * 将语义中的metaType转换至annotation模型层中的target定义。
-     */
-    fun mapMetaTypeToTarget(metaTypes: Set<MetaType>): Annotation.AnnotationTarget {
-        var target: Annotation.AnnotationTarget = Annotation.AnnotationTarget.empty
-        for (metaType in metaTypes) {
-            when (metaType) {
-                MetaType.TAG -> target += Annotation.AnnotationTarget.TAG
-                MetaType.TOPIC -> target += Annotation.AnnotationTarget.TOPIC
-                MetaType.AUTHOR -> target += Annotation.AnnotationTarget.AUTHOR
-            }
-        }
-        return target
     }
 
     /**
@@ -109,6 +94,17 @@ internal object MetaParserUtil {
             result.addAll(i)
         }
         return result
+    }
+
+    /**
+     * 将compiler内部使用的metaType转译至公共metaType。
+     */
+    fun translateMetaType(metaType: MetaType): CommonMetaType {
+        return when(metaType) {
+            MetaType.TOPIC -> CommonMetaType.TOPIC
+            MetaType.AUTHOR -> CommonMetaType.AUTHOR
+            MetaType.TAG -> CommonMetaType.TAG
+        }
     }
 
     private val sqlLikeMap = ConcurrentHashMap<String, String>()

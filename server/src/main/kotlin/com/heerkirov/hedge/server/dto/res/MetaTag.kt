@@ -1,16 +1,13 @@
 package com.heerkirov.hedge.server.dto.res
 
-import com.heerkirov.hedge.server.enums.TagAddressType
-import com.heerkirov.hedge.server.enums.TagAuthorType
-import com.heerkirov.hedge.server.enums.TagGroupType
-import com.heerkirov.hedge.server.enums.TagTopicType
+import com.heerkirov.hedge.server.enums.*
 import com.heerkirov.hedge.server.model.Author
 import com.heerkirov.hedge.server.model.Topic
 import com.heerkirov.hedge.server.model.Annotation
 import com.heerkirov.hedge.server.model.Tag
 import com.heerkirov.hedge.server.utils.tuples.Tuple3
 
-data class AnnotationRes(val id: Int, val name: String, val canBeExported: Boolean, val target: Annotation.AnnotationTarget)
+data class AnnotationRes(val id: Int, val name: String, val canBeExported: Boolean, val type: MetaType, val target: Annotation.AnnotationTarget)
 
 data class TagRes(val id: Int, val ordinal: Int, val parentId: Int?,
                   val name: String, val otherNames: List<String>,
@@ -70,7 +67,7 @@ data class AuthorDetailRes(val id: Int, val name: String, val otherNames: List<S
                            val mappingSourceTags: List<SourceMappingMetaItem>)
 
 
-fun newAnnotationRes(it: Annotation) = AnnotationRes(it.id, it.name, it.canBeExported, it.target)
+fun newAnnotationRes(it: Annotation) = AnnotationRes(it.id, it.name, it.canBeExported, it.type, it.target)
 
 fun newTagRes(tag: Tag) = TagRes(tag.id, tag.ordinal, tag.parentId, tag.name, tag.otherNames, tag.type, tag.isGroup, tag.color)
 

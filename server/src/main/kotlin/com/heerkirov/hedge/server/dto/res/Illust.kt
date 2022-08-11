@@ -1,8 +1,13 @@
 package com.heerkirov.hedge.server.dto.res
 
+import com.heerkirov.hedge.server.dao.Illusts
+import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.model.Illust
+import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
+import com.heerkirov.hedge.server.utils.business.takeAllFilepath
+import org.ktorm.dsl.QueryRowSet
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -43,3 +48,18 @@ data class IllustParent(val id: Int, val thumbnailFile: String, val childrenCoun
 data class PartitionRes(val date: LocalDate, val count: Int)
 
 data class PartitionMonthRes(val year: Int, val month: Int, val dayCount: Int, val count: Int)
+
+fun newIllustRes(it: QueryRowSet): IllustRes {
+    val id = it[Illusts.id]!!
+    val type = if(it[Illusts.type]!! == IllustModelType.COLLECTION) IllustType.COLLECTION else IllustType.IMAGE
+    val score = it[Illusts.exportedScore]
+    val favorite = it[Illusts.favorite]!!
+    val tagme = it[Illusts.tagme]!!
+    val orderTime = it[Illusts.orderTime]!!.parseDateTime()
+    val (file, thumbnailFile) = takeAllFilepath(it)
+    val childrenCount = it[Illusts.cachedChildrenCount]?.takeIf { type == IllustType.COLLECTION }
+    val source = it[Illusts.sourceSite]
+    val sourceId = it[Illusts.sourceId]
+    val sourcePart = it[Illusts.sourcePart]
+    return IllustRes(id, type, childrenCount, file, thumbnailFile, score, favorite, tagme, source, sourceId, sourcePart, orderTime)
+}

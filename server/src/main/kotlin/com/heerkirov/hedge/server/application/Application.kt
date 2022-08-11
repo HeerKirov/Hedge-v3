@@ -51,7 +51,7 @@ fun runApplication(options: ApplicationOptions) {
             val thumbnailGenerator = define { FileGeneratorImpl(appStatus, appdata, repo) }
             val fileManager = FileManager(appdata, repo)
             val importMetaManager = ImportMetaManager(repo)
-            val importManager = ImportManager(repo, importMetaManager)
+            val importManager = ImportManager(repo, importMetaManager, fileManager, thumbnailGenerator)
 
             val annotationKit = AnnotationKit(repo)
             val annotationManager = AnnotationManager(repo)
@@ -86,7 +86,7 @@ fun runApplication(options: ApplicationOptions) {
             val tagService = TagService(repo, tagKit, queryManager, sourceMappingManager, backendExporter)
             val authorService = AuthorService(repo, authorKit, queryManager, sourceMappingManager, backendExporter)
             val topicService = TopicService(repo, topicKit, queryManager, sourceMappingManager, backendExporter)
-            val importService = ImportService(repo, fileManager, importManager, illustManager, sourceManager, importMetaManager, similarFinder, thumbnailGenerator)
+            val importService = ImportService(repo, fileManager, importManager, illustManager, sourceManager, importMetaManager, similarFinder)
             val findSimilarService = FindSimilarService(repo, illustExtendManager, similarFinder)
 
             val illustUtilService = IllustUtilService(repo)

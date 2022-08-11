@@ -16,7 +16,7 @@ object IllustDialect : QueryDialect<IllustDialect.IllustOrderItem> {
     override val elements: Array<out ElementFieldDefinition> = arrayOf(MetaTagElementField, AnnotationElementField, SourceTagElementField(true))
 
     val favorite = flagField("FAVORITE", "favorite", "f")
-    val bookMember = flagField("ALBUM_MEMBER", "book-member", "a")
+    val bookMember = flagField("BOOK_MEMBER", "book-member", "bm")
     val id = patternNumberField("ID", "id")
     val score = numberField("SCORE", "score")
     val partition = dateField("PARTITION", "partition", "pt")

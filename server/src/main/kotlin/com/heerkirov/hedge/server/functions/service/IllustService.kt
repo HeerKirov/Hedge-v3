@@ -82,20 +82,7 @@ class IllustService(private val data: DataRepository,
             .runIf(schema?.distinct == true) { groupBy(Illusts.id) }
             .limit(filter.offset, filter.limit)
             .orderBy(orderTranslator, filter.order, schema?.orderConditions, default = descendingOrderItem("orderTime"))
-            .toListResult {
-                val id = it[Illusts.id]!!
-                val type = if(it[Illusts.type]!! == IllustModelType.COLLECTION) IllustType.COLLECTION else IllustType.IMAGE
-                val score = it[Illusts.exportedScore]
-                val favorite = it[Illusts.favorite]!!
-                val tagme = it[Illusts.tagme]!!
-                val orderTime = it[Illusts.orderTime]!!.parseDateTime()
-                val (file, thumbnailFile) = takeAllFilepath(it)
-                val childrenCount = it[Illusts.cachedChildrenCount]!!.takeIf { type == IllustType.COLLECTION }
-                val source = it[Illusts.sourceSite]
-                val sourceId = it[Illusts.sourceId]
-                val sourcePart = it[Illusts.sourcePart]
-                IllustRes(id, type, childrenCount, file, thumbnailFile, score, favorite, tagme, source, sourceId, sourcePart, orderTime)
-            }
+            .toListResult(::newIllustRes)
     }
 
     fun findByIds(imageIds: List<Int>): List<IllustRes> {
@@ -105,20 +92,7 @@ class IllustService(private val data: DataRepository,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart,
                 FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList imageIds }
-            .map {
-                val id = it[Illusts.id]!!
-                val type = if(it[Illusts.type]!! == IllustModelType.COLLECTION) IllustType.COLLECTION else IllustType.IMAGE
-                val score = it[Illusts.exportedScore]
-                val favorite = it[Illusts.favorite]!!
-                val tagme = it[Illusts.tagme]!!
-                val orderTime = it[Illusts.orderTime]!!.parseDateTime()
-                val source = it[Illusts.sourceSite]
-                val sourceId = it[Illusts.sourceId]
-                val sourcePart = it[Illusts.sourcePart]
-                val (file, thumbnailFile) = takeAllFilepath(it)
-                val childrenCount = it[Illusts.cachedChildrenCount]!!.takeIf { type == IllustType.COLLECTION }
-                id to IllustRes(id, type, childrenCount, file, thumbnailFile, score, favorite, tagme, source, sourceId, sourcePart, orderTime)
-            }
+            .map { it[Illusts.id]!! to newIllustRes(it) }
             .toMap()
             .let { r -> imageIds.mapNotNull { r[it] } }
     }
@@ -243,19 +217,7 @@ class IllustService(private val data: DataRepository,
             .where { (Illusts.parentId eq id) and (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) }
             .limit(filter.offset, filter.limit)
             .orderBy(Illusts.orderTime.asc())
-            .toListResult {
-                val itemId = it[Illusts.id]!!
-                val type = if(it[Illusts.type]!! == IllustModelType.COLLECTION) IllustType.COLLECTION else IllustType.IMAGE
-                val score = it[Illusts.exportedScore]
-                val favorite = it[Illusts.favorite]!!
-                val tagme = it[Illusts.tagme]!!
-                val orderTime = it[Illusts.orderTime]!!.parseDateTime()
-                val (file, thumbnailFile) = takeAllFilepath(it)
-                val source = it[Illusts.sourceSite]
-                val sourceId = it[Illusts.sourceId]
-                val sourcePart = it[Illusts.sourcePart]
-                IllustRes(itemId, type, null, file, thumbnailFile, score, favorite, tagme, source, sourceId, sourcePart, orderTime)
-            }
+            .toListResult(::newIllustRes)
     }
 
     /**
@@ -583,7 +545,7 @@ class IllustService(private val data: DataRepository,
      * @throws NotFound 请求对象不存在
      * @throws ResourceNotExist ("site", string) 给出的site不存在
      */
-    fun updateImageOriginData(id: Int, form: IllustImageSourceDataUpdateForm) {
+    fun updateImageSourceData(id: Int, form: IllustImageSourceDataUpdateForm) {
         data.db.transaction {
             val row = data.db.from(Illusts).select(Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.tagme)
                 .where { retrieveCondition(id, IllustType.IMAGE) }

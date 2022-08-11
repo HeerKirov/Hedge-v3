@@ -1,9 +1,6 @@
 package com.heerkirov.hedge.server.dto.filter
 
-import com.heerkirov.hedge.server.enums.IllustType
-import com.heerkirov.hedge.server.enums.TagAddressType
-import com.heerkirov.hedge.server.enums.TagAuthorType
-import com.heerkirov.hedge.server.enums.TagTopicType
+import com.heerkirov.hedge.server.enums.*
 import com.heerkirov.hedge.server.library.form.Limit
 import com.heerkirov.hedge.server.library.form.Offset
 import com.heerkirov.hedge.server.library.form.Order
@@ -53,6 +50,7 @@ data class AnnotationFilter(@Limit val limit: Int,
                             @Search val query: String?,
                             @Order(options = ["id", "name", "createTime"])
                             val order: List<OrderItem>? = null,
+                            val type: MetaType,
                             val name: String? = null,
                             val canBeExported: Boolean? = null,
                             val target: Annotation.AnnotationTarget? = null)

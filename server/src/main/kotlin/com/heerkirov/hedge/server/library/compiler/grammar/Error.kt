@@ -13,10 +13,6 @@ class UnexpectedToken(token: String, expected: List<String>, pos: Int) : Grammar
  */
 class UnexpectedEOF(expected: List<String>, pos: Int) : GrammarError<ExpectedAndActual>(2002, "Unexpected EOF.", range(pos), info = ExpectedAndActual("∑", expected))
 
-/**
- * 在注解中存在重复出现的前缀符号。
- */
-class DuplicatedAnnotationPrefix(symbol: String, pos: Int) : GrammarError<String>(2003, "Duplicated annotation prefix '$symbol'", range(pos), info = symbol)
 
 data class ExpectedAndActual(
     /**

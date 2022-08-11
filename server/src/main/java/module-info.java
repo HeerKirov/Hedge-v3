@@ -14,7 +14,6 @@ module com.heerkirov.hedge.server {
     requires jackson.module.kotlin;
     requires jave.core;
     requires org.slf4j;
-    requires dd.plist;
 
     opens com.heerkirov.hedge.server.components.health;
     opens com.heerkirov.hedge.server.components.appdata;
@@ -22,6 +21,7 @@ module com.heerkirov.hedge.server {
     opens com.heerkirov.hedge.server.components.http;
     opens com.heerkirov.hedge.server.components.http.modules;
     opens com.heerkirov.hedge.server.components.http.routes;
+    opens com.heerkirov.hedge.server.components.backend.exporter;
     opens com.heerkirov.hedge.server.model;
     opens com.heerkirov.hedge.server.dto.res;
     opens com.heerkirov.hedge.server.dto.form;

@@ -10,6 +10,7 @@ import com.heerkirov.hedge.server.functions.manager.AnnotationManager
 import com.heerkirov.hedge.server.model.Topic
 import com.heerkirov.hedge.server.model.Annotation
 import com.heerkirov.hedge.server.utils.business.checkTagName
+import com.heerkirov.hedge.server.utils.composition.unionComposition
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tuples.Tuple2
@@ -197,7 +198,7 @@ class TopicKit(private val data: DataRepository, private val annotationManager: 
      */
     fun validateAnnotations(newAnnotations: List<Any>?, type: TagTopicType): List<Topic.CachedAnnotation> {
         return if(newAnnotations != null) annotationManager.analyseAnnotationParam(newAnnotations, target = when(type) {
-            TagTopicType.UNKNOWN -> Annotation.AnnotationTarget.TOPIC
+            TagTopicType.UNKNOWN -> Annotation.AnnotationTarget.topicElements.unionComposition()
             TagTopicType.CHARACTER -> Annotation.AnnotationTarget.CHARACTER
             TagTopicType.IP -> Annotation.AnnotationTarget.IP
             TagTopicType.COPYRIGHT -> Annotation.AnnotationTarget.COPYRIGHT

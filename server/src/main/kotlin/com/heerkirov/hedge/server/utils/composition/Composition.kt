@@ -39,7 +39,7 @@ fun <T : Composition<T>> T.filterAs(elements: Iterable<T>): List<T> {
  * 将给定的全部元素组合成一个元素，相当于连加。
  * @throws NullPointerException 如果没有元素，会抛出一个NPE。
  */
-inline fun <reified T : Composition<T>> Iterable<T>.union() : T = CompositionGenerator.getGenerator(T::class).union(this)
+inline fun <reified T : Composition<T>> Iterable<T>.unionComposition() : T = CompositionGenerator.getGenerator(T::class).union(this)
 
 /**
  * 将一个字符串转换为给定组合类型中的基本或导出元素。
