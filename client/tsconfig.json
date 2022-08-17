@@ -12,6 +12,7 @@
     "allowSyntheticDefaultImports": true,
     "rootDir": "src",
     "outDir": "target",
+    "baseUrl": ".",
     "typeRoots": [
       "node_modules/@types"
     ]

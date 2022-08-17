@@ -1,0 +1,479 @@
+import path from "path"
+import Buffer from "buffer"
+import { openSync } from "fs"
+import { spawn } from "child_process"
+import { DATA_FILE, RESOURCE_FILE } from "../../constants/file"
+import { sleep } from "../../utils/process"
+import { createEmitter, Emitter } from "../../utils/emitter"
+import { readFile } from "../../utils/fs"
+import { request, Ws } from "../../utils/request"
+import {
+    AppInitializeForm,
+    ConnectionStatus,
+    AppLoadStatus,
+    ServerPIDFile,
+    ServerConnectionInfo,
+    ServerConnectionError,
+    WsToastResult
+} from "./model"
+
+/**
+ * 对接后台服务部分的管理器。负责监视本频道对应的后台服务的运行状态，获取其运行参数，提供后台服务的管理功能，提供部分后台服务的功能接口。
+ * 管理器分为期望状态和实际状态两部分。
+ *  - 实际状态是和实际的server运行状态几乎同步的。它会反映server的CLOSE、READY、OPEN、ERROR状态，以及server的连接信息，并通过事件告知变化。
+ *  - 期望状态则指是否期望server在运行的状态。
+ * 管理器的工作逻辑通过ws连接实现。
+ *  - 在连接期望为true时，管理器会尝试建立同server的连接。如果建立不能成功，则开始尝试修复连接。
+ *  - 如果server未启动/无法检测到server的运行，则尝试启动server。
+ *  - 如果server已启动，但始终无法成功连接，则认为存在某种连接问题需要报告。
+ * 在实际状态为已连接的情况下，与server的交互可以展开。
+ *  - 可以获知server的健康检查状态(初始化状态)，以及调用API对server进行初始化。
+ *  - 可以通过事件侦听器访问server的ws事件。
+ */
+export interface ServerManager {
+    connection: ConnectionManager
+    service: ServiceManager
+}
+
+interface ConnectionManager {
+    /**
+     * 获得或设定管理器的期望状态。
+     * @param value
+     */
+    desired(value?: boolean): boolean
+
+    /**
+     * 获得当前连接的实际状态。
+     */
+    status(): ConnectionStatus
+
+    /**
+     * 获得当前连接的连接信息。
+     */
+    connectionInfo(): ServerConnectionInfo | null
+
+    /**
+     * 连接状态发生改变的事件。
+     */
+    statusChangedEvent: Emitter<{ status: ConnectionStatus, info: ServerConnectionInfo | null, error: ServerConnectionError | null, appLoadStatus?: AppLoadStatus }>
+
+    /**
+     * server ws接口所发送的事件。
+     */
+    wsToastEvent: Emitter<WsToastResult>
+}
+
+interface ServiceManager {
+    /**
+     * 获得当前server的加载状态。
+     */
+    status(): AppLoadStatus
+
+    /**
+     * 对server进行初始化。
+     * @param form
+     */
+    appInitialize(form: AppInitializeForm): Promise<void>
+
+    /**
+     * 加载状态发生改变的事件。
+     */
+    statusChangedEvent: Emitter<{ status: AppLoadStatus }>
+}
+
+/**
+ * 启动参数。
+ */
+interface ServerManagerOptions {
+    /**
+     * app数据目录。
+     */
+    userDataPath: string
+    /**
+     * app频道。
+     */
+    channel: string
+    /**
+     * 在调试模式运行。
+     */
+    debug?: {
+        /**
+         * 使用此Host提供的后台服务，用于后台业务开发。此时后台服务启动管理的功能大部分被禁用。
+         */
+        serverFromHost?: string
+        /**
+         * 使用此文件夹下的后台服务，用于管理器的调试。此时不从userData目录下寻找后台服务程序。
+         */
+        serverFromFolder?: string
+    }
+}
+
+export function createServerManager(options: ServerManagerOptions): ServerManager {
+    const connectionManager = createConnectionManager(options)
+    const serviceManager = createServiceManager(connectionManager)
+
+    return {
+        connection: connectionManager,
+        service: serviceManager
+    }
+}
+
+function createConnectionManager(options: ServerManagerOptions) {
+    const debugMode = !!options.debug
+    const serverBinPath = options.debug?.serverFromFolder
+        ? path.join(options.debug?.serverFromFolder, RESOURCE_FILE.SERVER.BIN)
+        : path.join(options.userDataPath, DATA_FILE.RESOURCE.SERVER_FOLDER, RESOURCE_FILE.SERVER.BIN)
+    const channelPath = path.join(options.userDataPath, DATA_FILE.APPDATA.CHANNEL_FOLDER, options.channel)
+    const serverPIDPath = path.join(channelPath, DATA_FILE.APPDATA.CHANNEL.SERVER_PID)
+    const serverLogPath = path.join(channelPath, DATA_FILE.APPDATA.CHANNEL.SERVER_LOG)
+
+    const statusChangedEvent = createEmitter<{ status: ConnectionStatus, info: ServerConnectionInfo | null, error: ServerConnectionError | null, appLoadStatus?: AppLoadStatus }>()
+    const wsToastEvent = createEmitter<WsToastResult>()
+
+    let _desired: boolean = false
+    let _status: ConnectionStatus = "CLOSE"
+    let _connectionInfo: ServerConnectionInfo | null = null
+    let _error: ServerConnectionError | null = null
+    let _ws: Ws | null = null
+
+    async function startConnectionListener() {
+        if(!_desired) {
+            setStatus({status: "CLOSE", info: null})
+            return
+        }
+
+        setStatus({status: "CONNECTING", info: null, error: null})
+
+        console.log("[ServerManager] Trying connect to server.")
+
+        let serverStarted = false
+        let pid: ServerConnectionInfo | null
+        let health: AppLoadStatus | null
+        while(true) {
+            if(!serverStarted) {
+                //在不具备serverStarted标记的情况下，首先检查PID文件。如果不存在此文件，则尝试启动server
+                pid = await checkForPIDFile(serverPIDPath)
+                if(pid == null) {
+                    startServerProcess(channelPath, debugMode, serverLogPath, serverBinPath)
+                    serverStarted = true
+                }
+            }
+            if(serverStarted) {
+                //已有serverStarted标记时，则直接检查PID文件，开始等待PID文件准备完毕
+                //此处逻辑不与上一个if组合，因为上一个逻辑流程有可能在检查PID文件时直接将serverStarted置为true，从而复用这个流程
+                pid = await waitingForPIDFile(serverPIDPath, 10000)
+                if(pid == null) {
+                    setStatus({status: "FAILED", info: null, error: {code: "PID_WAITING_TIMEOUT"}})
+                    return
+                }
+            }
+
+            if(!_desired) {
+                setStatus({status: "CLOSE", info: null})
+                return
+            }
+
+            //根据PID地址，尝试请求连接server的/app/health地址，以做连接检查
+            try {
+                health = await waitingForHealth(pid!.host, pid!.token, serverStarted ? 10000 : 5000)
+            }catch (e) {
+                setStatus({status: "FAILED", info: null, error: {code: "SERVER_REQUEST_ERROR", message: e instanceof Error ? e.message : `${e}`}})
+                return
+            }
+            if(health == null) {
+                if(serverStarted) {
+                    //如果无法连接，且server是确定已经启动过的，那么报告错误
+                    setStatus({ status: "FAILED", info: null, error: {code: "SERVER_WAITING_TIMEOUT"} })
+                    return
+                }else{
+                    //如果无法连接，但还没尝试过启动server，那么先尝试启动server，然后从第1步重新开始
+                    startServerProcess(channelPath, debugMode, serverLogPath, serverBinPath)
+                    serverStarted = true
+                }
+            }else{
+                //已成功验证连接，则主动退出loop，进入下一步
+                console.log(`[ServerManager] Successfully verified connection to server ${pid!.pid} (${pid!.host}). Server status is ${health}.`)
+                break
+            }
+        }
+
+        if(!_desired) {
+            setStatus({status: "CLOSE", info: null})
+            return
+        }
+
+        //通过之后，尝试建立ws连接。如果无法连接，则报告错误
+        if(_ws != null) {
+            _ws.terminate()
+            _ws = null
+        }
+        try {
+            _ws = await waitingForWsClient(pid!.host, pid!.token, { onMessage: onWsMessage, onClose: onWsClose })
+            setStatus({status: "OPEN", info: pid!, error: null, appLoadStatus: health})
+            console.log(`[ServerManager] Ws connection established.`)
+        }catch (e) {
+            setStatus({status: "FAILED", info: null, error: {code: "SERVER_CONNECT_ERROR", message: e instanceof Error ? e.message : `${e}`}})
+        }
+    }
+
+    async function startConnectionListenerInDebug() {
+        if(!_desired) {
+            setStatus({status: "CLOSE", info: null})
+            return
+        }
+
+        setStatus({status: "CONNECTING", info: null, error: null})
+
+        console.log("[ServerManager] Trying connect to server. Module is working in debug mode.")
+
+        //根据提供的debug地址，尝试请求连接server的/app/health地址，以做连接检查
+        let health: AppLoadStatus | null
+        try {
+            health = await waitingForHealth(options.debug!.serverFromHost!, "dev", 1000)
+        }catch (e) {
+            setStatus({status: "FAILED", info: null, error: {code: "SERVER_REQUEST_ERROR", message: e instanceof Error ? e.message : `${e}`}})
+            return
+        }
+        if(health == null) {
+            setStatus({ status: "FAILED", info: null, error: {code: "SERVER_WAITING_TIMEOUT"} })
+            return
+        }
+        console.log(`[ServerManager] Successfully verified connection to server (${options.debug!.serverFromHost}). Server status is ${health}.`)
+
+        //通过之后，尝试建立ws连接。如果无法连接，则报告错误
+        if(_ws != null) {
+            _ws.terminate()
+            _ws = null
+        }
+        try {
+            _ws = await waitingForWsClient(options.debug!.serverFromHost!, "dev", { onMessage: onWsMessage, onClose: startConnectionListenerInDebug })
+            const info: ServerConnectionInfo = {pid: 0, host: options.debug!.serverFromHost!, token: "dev", startTime: Date.now()}
+            setStatus({status: "OPEN", info, error: null, appLoadStatus: health})
+            console.log(`[ServerManager] Ws connection established.`)
+        }catch (e) {
+            setStatus({status: "FAILED", info: null, error: {code: "SERVER_CONNECT_ERROR", message: e instanceof Error ? e.message : `${e}`}})
+        }
+    }
+
+    function stopConnectionListener() {
+        if(_ws != null) {
+            _ws.terminate()
+            _ws = null
+        }
+        setStatus({status: "CLOSE", info: null})
+    }
+
+    function onWsMessage(data: string) {
+        wsToastEvent.emit(JSON.parse(data))
+    }
+
+    function onWsClose() {
+        //监听到关闭消息时，尝试重连
+        if(!_desired) {
+            setStatus({status: "CLOSE", info: null})
+            return
+        }
+        console.log("[ServerManager] Ws connection disconnected.")
+        startConnectionListener().finally()
+    }
+
+    function setStatus(s: {status?: ConnectionStatus, info?: ServerConnectionInfo | null, error?: ServerConnectionError | null, appLoadStatus?: AppLoadStatus}) {
+        const oldStatus = {status: _status, info: _connectionInfo, error: _error}
+        const newStatus = {
+            status: s.status !== undefined ? s.status : _status,
+            info: s.info !== undefined ? s.info : _connectionInfo,
+            error: s.error !== undefined ? s.error : _error,
+            appLoadStatus: s.appLoadStatus
+        }
+        _status = newStatus.status
+        _connectionInfo = newStatus.info
+        _error = newStatus.error
+        if(newStatus.status !== oldStatus.status || newStatus.info !== oldStatus.info || newStatus.error !== oldStatus.error) {
+            statusChangedEvent.emit(newStatus)
+        }
+    }
+
+    function status(): ConnectionStatus {
+        return _status
+    }
+
+    function desired(value?: boolean): boolean {
+        if(value !== undefined && value !== _desired) {
+            _desired = value
+            if(_desired) {
+                if(options.debug?.serverFromHost) {
+                    startConnectionListenerInDebug().finally()
+                }else{
+                    startConnectionListener().finally()
+                }
+            }else{
+                stopConnectionListener()
+            }
+        }
+        return _desired
+    }
+
+    function connectionInfo(): ServerConnectionInfo | null {
+        return _connectionInfo
+    }
+
+    return {
+        desired,
+        status,
+        connectionInfo,
+        statusChangedEvent,
+        wsToastEvent
+    }
+}
+
+function createServiceManager(connectionManager: ConnectionManager): ServiceManager {
+    let _status: AppLoadStatus = "NOT_CONNECTED"
+
+    const statusChangedEvent = createEmitter<{ status: AppLoadStatus }>()
+
+    function setStatus(status: AppLoadStatus) {
+        if(status !== _status) {
+            _status = status
+            statusChangedEvent.emit({ status })
+        }
+    }
+
+    function status(): AppLoadStatus {
+        return _status
+    }
+
+    async function appInitialize(data: AppInitializeForm): Promise<void> {
+        console.log(_status, connectionManager.status(), connectionManager.connectionInfo())
+        if(_status === "NOT_INITIALIZED" && connectionManager.status() === "OPEN" && connectionManager.connectionInfo() !== null) {
+            const info = connectionManager.connectionInfo()!
+            const res = await request({url: `http://${info.host}/app/initialize`, method: 'POST', headers: {'Authorization': `Bearer ${info.token}`}, data})
+            if(!res.ok) {
+                throw new Error(`App initialize failed. ${res.message}`)
+            }
+        }else{
+            throw new Error("App cannot be initialized.")
+        }
+    }
+
+    connectionManager.statusChangedEvent.addEventListener(({ status, info, appLoadStatus  }) => {
+        if(status === "OPEN" && info !== null) {
+            //connection可用时，主动请求一次状态
+            if(appLoadStatus !== undefined) {
+                setStatus(appLoadStatus)
+            }else{
+                console.warn("[ServerManager] Connection is opened but appLoadStatus is undefined.")
+            }
+        }else{
+            //connection不可用时，总是将状态重置为NOT_CONNECTED
+            setStatus("NOT_CONNECTED")
+        }
+    })
+    connectionManager.wsToastEvent.addEventListener(e => {
+        //接收来自ws通知的appStatus变更事件。仅在connection状态可用时响应
+        if(e.type === "EVENT" && connectionManager.status() === "OPEN") {
+            if(e.data.event.eventType === "APP.APP_STATUS.CHANGED") {
+                setStatus((<{status: AppLoadStatus}>e.data.event).status)
+            }
+        }
+    })
+
+    return {
+        status,
+        statusChangedEvent,
+        appInitialize
+    }
+}
+
+/**
+ * 检查并收集pid文件内容。
+ */
+async function checkForPIDFile(filepath: string): Promise<ServerConnectionInfo | null> {
+    const serverPID = await readFile<ServerPIDFile>(filepath)
+    return serverPID != null && serverPID.port != null && serverPID.token != null ? {pid: serverPID!.pid, host: `127.0.0.1:${serverPID!.port}`, token: serverPID!.token, startTime: serverPID!.startTime} : null
+}
+
+/**
+ * 轮询等待，直到pid文件可用，或者超出最大等待时间。
+ */
+async function waitingForPIDFile(filepath: string, timeout: number = 10000): Promise<ServerConnectionInfo | null> {
+    let interval = 0
+    for(let i = 0; i < timeout; i += interval) {
+        await sleep(interval)
+        const result = await checkForPIDFile(filepath)
+        if(result != null) return result
+        if(interval < 200) interval += 50
+    }
+    return null
+}
+
+/**
+ * 检查server服务是否可用，并报告server的健康检查状态。
+ * @throws Error 如果接口返回API错误，则构造一个Error异常并抛出。
+ */
+async function checkForHealth(host: string, token: string): Promise<AppLoadStatus | null> {
+    const res = await request({url: `http://${host}/app/health`, method: 'GET', headers: {'Authorization': `Bearer ${token}`}})
+    if(res.ok) {
+        return (<{status: AppLoadStatus}>res.data).status
+    }else if(res.status) {
+        throw new Error(`[${res.status}] ${res.code}: ${res.message}`)
+    }else{
+        return null
+    }
+}
+
+/**
+ * 轮询等待，直到server服务可用，或超出最大等待时间。
+ * @throws Error 如果接口返回API错误，则构造一个Error异常并抛出。
+ */
+async function waitingForHealth(host: string, token: string, timeout: number = 10000): Promise<AppLoadStatus | null> {
+    let interval = 0
+    for(let i = 0; i < timeout; i += interval) {
+        await sleep(interval)
+        const result = await checkForHealth(host, token)
+        if(result != null) return result
+        if(interval < 200) interval += 50
+    }
+    return null
+}
+
+/**
+ * 与Ws建立连接，并直到open事件发生之后，返回客户端。
+ */
+function waitingForWsClient(host: string, token: string, events?: WsClientEvent): Promise<Ws | null> {
+    return new Promise((resolve, reject) => {
+        let ws: Ws
+        try {
+            ws = new Ws(`ws://${host}/websocket?access_token=${token}`)
+        }catch (e) {
+            reject(e)
+            return
+        }
+        if(events?.onMessage) ws.on("message", (data) => events.onMessage!((<Buffer>data).toString()))
+        if(events?.onClose) ws.on("close", events.onClose)
+        if(events?.onError) ws.on("error", events.onError)
+        ws.on("open", () => resolve(ws))
+    })
+}
+
+/**
+ * 启动server进程。
+ */
+function startServerProcess(channelPath: string, debugMode: boolean, serverLogPath: string, serverBinPath: string) {
+    const baseArgs = ['--channel-path', channelPath]
+    const debugModeArgs = debugMode ? ['--force-token', 'dev'] : []
+    const args = [...baseArgs, ...debugModeArgs]
+    const out = openSync(serverLogPath, "w")
+    const s = spawn(serverBinPath, args, {
+        detached: true,
+        stdio: ["ignore", out, out]
+    })
+    s.unref()
+
+    console.log(`[ServerManager] Start server process: ${serverBinPath} ${args.join(" ")}`)
+}
+
+interface WsClientEvent {
+    onMessage?(data: string): void
+    onError?(e: Error): void
+    onClose?(code: number): void
+}
