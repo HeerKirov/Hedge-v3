@@ -28,10 +28,10 @@ fun runApplication(options: ApplicationOptions) {
     val serverOptions = HttpServerOptions(options.forceToken, options.forcePort)
 
     framework {
-        val eventBus = define { EventBusImpl(context) }
+        val bus = define { EventBusImpl(context) }
         val health = define { HealthImpl(options.channelPath) }
         val lifetime = define { LifetimeImpl(context, lifetimeOptions) }
-        val appStatus = define { AppStatusDriverImpl(context, options.channelPath) }
+        val appStatus = define { AppStatusDriverImpl(context, bus, options.channelPath) }
         val appdata = define { AppDataManagerImpl(options.channelPath) }
         val repo = define { DataRepositoryImpl(options.channelPath) }
 
@@ -125,6 +125,6 @@ fun runApplication(options: ApplicationOptions) {
             )
         }
 
-        define { HttpServerImpl(health, lifetime, appStatus, appdata, services, serverOptions) }
+        define { HttpServerImpl(health, lifetime, appStatus, appdata, bus, services, serverOptions) }
     }
 }

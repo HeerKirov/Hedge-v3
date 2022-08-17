@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.components.http
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.health.Health
 import com.heerkirov.hedge.server.components.http.modules.*
@@ -8,6 +9,7 @@ import com.heerkirov.hedge.server.components.http.routes.*
 import com.heerkirov.hedge.server.components.lifetime.Lifetime
 import com.heerkirov.hedge.server.components.service.AllServices
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
+import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.library.framework.Component
 import com.heerkirov.hedge.server.utils.Json
 import com.heerkirov.hedge.server.utils.Net
@@ -42,6 +44,7 @@ class HttpServerImpl(private val health: Health,
                      private val lifetime: Lifetime,
                      private val appStatus: AppStatusDriver,
                      private val appdata: AppDataManager,
+                     private val eventBus: EventBus,
                      private val allServices: AllServices,
                      private val options: HttpServerOptions) : HttpServer {
     private val token: String = options.forceToken ?: Token.token()
@@ -62,7 +65,7 @@ class HttpServerImpl(private val health: Health,
                 it.jsonMapper(JavalinJackson(Json.objectMapper()))
             }
             .handle(aspect, authentication, errorHandler)
-            .handle(WsRoutes(lifetime))
+            .handle(WsRoutes(lifetime, eventBus))
             .handle(AppRoutes(lifetime, appStatus, appdata))
             .handle(EnvRoutes(appdata))
             .handle(SettingRoutes(
@@ -100,11 +103,7 @@ class HttpServerImpl(private val health: Health,
      * @throws BindException 如果所有的端口绑定都失败，那么抛出异常，告知framework发生了致命错误。
      */
     private fun Javalin.bind(): Javalin {
-        val ports = options.forcePort?.let { listOf(it) }
-            ?: appdata.appdata.service.port?.let { Net.analyzePort(it) }
-            ?: Net.generatePort(options.defaultPort)
-
-        val port = ports.firstOrNull { Net.isPortAvailable(it) } ?: throw BindException("Server starting failed because no port is available.")
+        val port = getPorts().firstOrNull { Net.isPortAvailable(it) } ?: throw BindException("Server starting failed because no port is available.")
         try {
             this.start(port)
             this@HttpServerImpl.port = port
@@ -112,6 +111,16 @@ class HttpServerImpl(private val health: Health,
             return this
         }catch (e: BindException) {
             throw BindException("Binding port $port failed: ${e.message}")
+        }
+    }
+
+    private fun getPorts(): List<Int> {
+        return if(options.forcePort != null) {
+            listOf(options.forcePort)
+        }else if(appStatus.status == AppLoadStatus.READY && appdata.appdata.service.port != null) {
+            Net.analyzePort(appdata.appdata.service.port!!)
+        }else{
+            Net.generatePort(options.defaultPort)
         }
     }
 }

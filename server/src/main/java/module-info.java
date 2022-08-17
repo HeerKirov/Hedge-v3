@@ -27,6 +27,7 @@ module com.heerkirov.hedge.server {
     opens com.heerkirov.hedge.server.dto.form;
     opens com.heerkirov.hedge.server.dto.filter;
     opens com.heerkirov.hedge.server.exceptions;
+    opens com.heerkirov.hedge.server.events;
     opens com.heerkirov.hedge.server.utils.types;
     exports com.heerkirov.hedge.server.library.compiler.translator.visual to com.fasterxml.jackson.databind;
     exports com.heerkirov.hedge.server.library.compiler.lexical to com.fasterxml.jackson.databind;

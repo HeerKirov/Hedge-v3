@@ -1,7 +1,9 @@
 package com.heerkirov.hedge.server.components.http
 
 import com.heerkirov.hedge.server.utils.Json.toJSONString
+import com.heerkirov.hedge.server.utils.tools.controlledThread
 import io.javalin.websocket.*
+import org.slf4j.LoggerFactory
 import java.util.function.Consumer
 
 /**
@@ -10,14 +12,15 @@ import java.util.function.Consumer
  * 2. 提供authentication功能，并拦截未认证的消息。
  */
 class WsConsumer(ctx: (WsConsumer.() -> Unit)? = null) : Consumer<WsConfig> {
+    private val log = LoggerFactory.getLogger(WsConsumer::class.java)
+
     private val connections: MutableSet<WsContext> = mutableSetOf()
     private val whenConnectConsumers: MutableSet<(String) -> Unit> = mutableSetOf()
     private val whenCloseConsumers: MutableSet<(String) -> Unit> = mutableSetOf()
     private val whenReceiveMessageConsumers: MutableSet<(String, String) -> Unit> = mutableSetOf()
+    private val pingThread = controlledThread(false) { pingThread() }
 
-    init {
-        ctx?.invoke(this)
-    }
+    init { ctx?.invoke(this) }
 
     override fun accept(ws: WsConfig) {
         ws.onConnect(::onConnectEvent)
@@ -26,27 +29,38 @@ class WsConsumer(ctx: (WsConsumer.() -> Unit)? = null) : Consumer<WsConfig> {
         ws.onMessage(::onMessageEvent)
     }
 
+    private fun pingThread() {
+        Thread.sleep(1000L * 120)
+        connections.forEach { it.sendPing() }
+    }
+
     private fun onConnectEvent(ctx: WsConnectContext) {
         connections.add(ctx)
         whenConnectConsumers.forEach { it(ctx.sessionId) }
-        println("connection ${ctx.sessionId} established.")
+        log.info("connection ${ctx.sessionId} established.")
+
+        pingThread.start()
     }
 
     private fun onCloseEvent(ctx: WsCloseContext) {
         connections.remove(ctx)
         whenCloseConsumers.forEach { it(ctx.sessionId) }
-        println("connection ${ctx.sessionId} closed.")
+        log.info("connection ${ctx.sessionId} closed.")
+
+        if(connections.isEmpty()) pingThread.stop()
     }
 
     private fun onErrorEvent(ctx: WsErrorContext) {
         connections.remove(ctx)
         whenCloseConsumers.forEach { it(ctx.sessionId) }
-        println("connection ${ctx.sessionId} error: ${ctx.error()}")
+        log.info("connection ${ctx.sessionId} error: ${ctx.error()}")
+
+        if(connections.isEmpty()) pingThread.stop()
     }
 
     private fun onMessageEvent(ctx: WsMessageContext) {
         whenReceiveMessageConsumers.forEach { it(ctx.sessionId, ctx.message()) }
-        println("connection ${ctx.sessionId} message: ${ctx.message()}")
+        log.info("connection ${ctx.sessionId} message: ${ctx.message()}")
     }
 
     /**

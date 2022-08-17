@@ -1,7 +1,9 @@
 package com.heerkirov.hedge.server.components.status
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.constants.Filename
 import com.heerkirov.hedge.server.enums.AppLoadStatus
+import com.heerkirov.hedge.server.events.AppStatusChanged
 import com.heerkirov.hedge.server.library.framework.Component
 import com.heerkirov.hedge.server.library.framework.FrameworkContext
 import com.heerkirov.hedge.server.utils.Fs
@@ -33,7 +35,7 @@ interface ControlledAppStatusDevice {
     fun load(migrator: VersionFileMigrator)
 }
 
-class AppStatusDriverImpl(private val context: FrameworkContext, channelPath: String) : AppStatusDriver {
+class AppStatusDriverImpl(private val context: FrameworkContext, private val bus: EventBus, channelPath: String) : AppStatusDriver {
     private val serverDirPath = "$channelPath/${Filename.SERVER_DIR}"
     private val versionLockPath = "$serverDirPath/${Filename.VERSION_LOCK}"
 
@@ -47,21 +49,25 @@ class AppStatusDriverImpl(private val context: FrameworkContext, channelPath: St
             _status = AppLoadStatus.NOT_INITIALIZED
         }else{
             _status = AppLoadStatus.LOADING
+            bus.emit(AppStatusChanged(AppLoadStatus.LOADING))
 
             executeMigrate()
 
             _status = AppLoadStatus.READY
+            bus.emit(AppStatusChanged(AppLoadStatus.READY))
         }
     }
 
     override fun initialize() {
         if(_status == AppLoadStatus.NOT_INITIALIZED) {
             _status = AppLoadStatus.INITIALIZING
+            bus.emit(AppStatusChanged(AppLoadStatus.INITIALIZING))
 
             Fs.mkdir(serverDirPath)
             executeMigrate()
 
             _status = AppLoadStatus.READY
+            bus.emit(AppStatusChanged(AppLoadStatus.READY))
         }
     }
 
