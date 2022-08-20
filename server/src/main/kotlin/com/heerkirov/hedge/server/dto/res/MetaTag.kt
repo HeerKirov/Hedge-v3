@@ -25,7 +25,7 @@ data class TagDetailRes(val id: Int, val ordinal: Int, val parentId: Int?, val p
                         val description: String, val color: String?,
                         val examples: List<IllustSimpleRes>, val annotations: List<Annotation>,
                         val score: Int?, val count: Int,
-                        val mappingSourceTags: List<SourceMappingMetaItem>) {
+                        val mappingSourceTags: List<MappingSourceTagDto>) {
     data class Annotation(val id: Int, val name: String, val canBeExported: Boolean)
 
     data class Link(val id: Int, val name: String, val type: TagAddressType, val group: TagGroupType, val color: String?)
@@ -47,7 +47,7 @@ data class TopicDetailRes(val id: Int, val name: String, val parentRoot: TopicPa
                           val type: TagTopicType, val favorite: Boolean,
                           val annotations: List<Topic.CachedAnnotation>,
                           val score: Int?, val count: Int, val color: String?,
-                          val mappingSourceTags: List<SourceMappingMetaItem>)
+                          val mappingSourceTags: List<MappingSourceTagDto>)
 
 data class TopicParent(val id: Int, val name: String, val type: TagTopicType, val color: String?)
 
@@ -64,7 +64,7 @@ data class AuthorDetailRes(val id: Int, val name: String, val otherNames: List<S
                            val type: TagAuthorType, val favorite: Boolean,
                            val annotations: List<Author.CachedAnnotation>,
                            val score: Int?, val count: Int, val color: String?,
-                           val mappingSourceTags: List<SourceMappingMetaItem>)
+                           val mappingSourceTags: List<MappingSourceTagDto>)
 
 
 fun newAnnotationRes(it: Annotation) = AnnotationRes(it.id, it.name, it.canBeExported, it.type, it.target)
@@ -77,7 +77,7 @@ fun newTagDetailRes(tag: Tag, parents: List<TagDetailRes.Parent>,
                     links: List<TagDetailRes.Link>,
                     annotations: List<TagDetailRes.Annotation>,
                     examples: List<IllustSimpleRes>,
-                    mappingSourceTags: List<SourceMappingMetaItem>) = TagDetailRes(
+                    mappingSourceTags: List<MappingSourceTagDto>) = TagDetailRes(
     tag.id, tag.ordinal, tag.parentId, parents,
     tag.name, tag.otherNames, tag.type, tag.isGroup,
     links, tag.description, tag.color,
@@ -89,7 +89,7 @@ fun newTopicRes(topic: Topic, rootTopic: Tuple3<Int, String, TagTopicType>?, col
     topic.cachedAnnotations ?: emptyList(),
     topic.score, topic.cachedCount, colors[topic.type])
 
-fun newTopicDetailRes(topic: Topic, parents: List<Topic>, children: List<TopicChildrenNode>?, colors: Map<TagTopicType, String>, mappingSourceTags: List<SourceMappingMetaItem>) = TopicDetailRes(
+fun newTopicDetailRes(topic: Topic, parents: List<Topic>, children: List<TopicChildrenNode>?, colors: Map<TagTopicType, String>, mappingSourceTags: List<MappingSourceTagDto>) = TopicDetailRes(
     topic.id, topic.name,
     parents.firstOrNull { it.id == topic.parentRootId }?.let { TopicParent(it.id, it.name, it.type, colors[it.type]) }, topic.parentId,
     parents.map { TopicParent(it.id, it.name, it.type, colors[it.type]) }, children,
@@ -101,7 +101,7 @@ fun newAuthorRes(author: Author, colors: Map<TagAuthorType, String>) = AuthorRes
     author.otherNames, author.keywords, author.type, author.favorite,
     author.cachedAnnotations ?: emptyList(), author.score, author.cachedCount, colors[author.type])
 
-fun newAuthorDetailRes(author: Author, colors: Map<TagAuthorType, String>, mappingSourceTags: List<SourceMappingMetaItem>) = AuthorDetailRes(
+fun newAuthorDetailRes(author: Author, colors: Map<TagAuthorType, String>, mappingSourceTags: List<MappingSourceTagDto>) = AuthorDetailRes(
     author.id, author.name, author.otherNames, author.keywords, author.description, author.type, author.favorite,
     author.cachedAnnotations ?: emptyList(),
     author.score, author.cachedCount, colors[author.type], mappingSourceTags)

@@ -35,7 +35,7 @@ class QueryManager(private val data: DataRepository) {
                 Dialect.BOOK -> BookDialect::class
                 Dialect.AUTHOR, Dialect.TOPIC -> AuthorAndTopicDialect::class
                 Dialect.ANNOTATION -> AnnotationDialect::class
-                Dialect.SOURCE_IMAGE -> SourceDataDialect::class
+                Dialect.SOURCE_DATA -> SourceDataDialect::class
             })
             if(semanticResult.result == null) {
                 return@computeIfAbsent QuerySchema(null, null, warnings = MetaParserUtil.unionList(lexicalResult.warnings, grammarResult.warnings, semanticResult.warnings), errors = semanticResult.errors)
@@ -46,7 +46,7 @@ class QueryManager(private val data: DataRepository) {
                 Dialect.AUTHOR -> AuthorExecutePlanBuilder(data.db)
                 Dialect.TOPIC -> TopicExecutePlanBuilder(data.db)
                 Dialect.ANNOTATION -> AnnotationExecutePlanBuilder()
-                Dialect.SOURCE_IMAGE -> SourceImageExecutePlanBuilder(data.db)
+                Dialect.SOURCE_DATA -> SourceImageExecutePlanBuilder(data.db)
             }
             val translatorResult = Translator.parse(semanticResult.result, queryer, builder, options)
 
@@ -68,7 +68,7 @@ class QueryManager(private val data: DataRepository) {
         queryer.flushCacheOf(cacheType)
     }
 
-    enum class Dialect { ILLUST, BOOK, TOPIC, AUTHOR, ANNOTATION, SOURCE_IMAGE }
+    enum class Dialect { ILLUST, BOOK, TOPIC, AUTHOR, ANNOTATION, SOURCE_DATA }
 
     enum class CacheType { TAG, TOPIC, AUTHOR, ANNOTATION, SOURCE_TAG }
 

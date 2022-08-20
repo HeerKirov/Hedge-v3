@@ -22,7 +22,7 @@ data class TagCreateForm(@NotBlank @Length(32) val name: String,
                          val description: String = "",
                          val color: String? = null,
                          val examples: List<Int>? = null,
-                         val mappingSourceTags: List<SourceMappingMetaItemForm>? = null)
+                         val mappingSourceTags: List<MappingSourceTagForm>? = null)
 
 data class TagUpdateForm(@NotBlank @Length(32) val name: Opt<String>,
                          val otherNames: Opt<List<String>?>,
@@ -35,7 +35,7 @@ data class TagUpdateForm(@NotBlank @Length(32) val name: Opt<String>,
                          val description: Opt<String>,
                          val color: Opt<String>,
                          val examples: Opt<List<Int>?>,
-                         val mappingSourceTags: Opt<List<SourceMappingMetaItemForm>?>)
+                         val mappingSourceTags: Opt<List<MappingSourceTagForm>?>)
 
 data class TopicCreateForm(@NotBlank val name: String,
                            val otherNames: List<String>? = null,
@@ -46,7 +46,7 @@ data class TopicCreateForm(@NotBlank val name: String,
                            val annotations: List<Any>? = null,
                            val favorite: Boolean = false,
                            val score: Int? = null,
-                           val mappingSourceTags: List<SourceMappingMetaItemForm>? = null)
+                           val mappingSourceTags: List<MappingSourceTagForm>? = null)
 
 data class TopicUpdateForm(@NotBlank val name: Opt<String>,
                            val otherNames: Opt<List<String>?>,
@@ -57,7 +57,7 @@ data class TopicUpdateForm(@NotBlank val name: Opt<String>,
                            val annotations: Opt<List<Any>?>,
                            val favorite: Opt<Boolean>,
                            val score: Opt<Int?>,
-                           val mappingSourceTags: Opt<List<SourceMappingMetaItemForm>?>)
+                           val mappingSourceTags: Opt<List<MappingSourceTagForm>?>)
 
 data class AuthorCreateForm(@NotBlank val name: String,
                             val otherNames: List<String>? = null,
@@ -67,7 +67,7 @@ data class AuthorCreateForm(@NotBlank val name: String,
                             val annotations: List<Any>? = null,
                             val favorite: Boolean = false,
                             val score: Int? = null,
-                            val mappingSourceTags: List<SourceMappingMetaItemForm>? = null)
+                            val mappingSourceTags: List<MappingSourceTagForm>? = null)
 
 data class AuthorUpdateForm(@NotBlank val name: Opt<String>,
                             val otherNames: Opt<List<String>?>,
@@ -77,4 +77,4 @@ data class AuthorUpdateForm(@NotBlank val name: Opt<String>,
                             val annotations: Opt<List<Any>?>,
                             val favorite: Opt<Boolean>,
                             val score: Opt<Int?>,
-                            val mappingSourceTags: Opt<List<SourceMappingMetaItemForm>?>)
+                            val mappingSourceTags: Opt<List<MappingSourceTagForm>?>)

@@ -229,7 +229,7 @@ class ImportService(private val data: DataRepository,
 
     /**
      * 保存。
-     * @throws NotReadyFileError 还存在文件没有准备好，因此保险期间阻止了所有的导入。
+     * @throws NotReadyFileError 还存在文件没有准备好，因此保险起见阻止了所有的导入。
      */
     fun save(): ImportSaveRes {
         data.db.transaction {

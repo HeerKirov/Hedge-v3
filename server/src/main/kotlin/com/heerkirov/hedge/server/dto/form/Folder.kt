@@ -10,11 +10,9 @@ data class FolderCreateForm(@NotBlank val title: String,
                             val type: FolderType,
                             val parentId: Int? = null,
                             @Min(0) val ordinal: Int? = null,
-                            val images: List<Int>? = null,
-                            @NotBlank val query: String? = null)
+                            val images: List<Int>? = null)
 
 data class FolderUpdateForm(@NotBlank val title: Opt<String>,
-                            @NotBlank val query: Opt<String>,
                             val parentId: Opt<Int?>,
                             @Min(0) val ordinal: Opt<Int>
 )

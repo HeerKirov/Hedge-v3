@@ -29,7 +29,7 @@ class SourceDataService(private val data: DataRepository, private val sourceMana
 
     fun list(filter: SourceDataQueryFilter): ListResult<SourceDataRes> {
         val schema = if(filter.query.isNullOrBlank()) null else {
-            queryManager.querySchema(filter.query, QueryManager.Dialect.SOURCE_IMAGE).executePlan ?: return ListResult(0, emptyList())
+            queryManager.querySchema(filter.query, QueryManager.Dialect.SOURCE_DATA).executePlan ?: return ListResult(0, emptyList())
         }
         val titles = data.setting.source.sites.associate { it.name to it.title }
         return data.db.from(SourceDatas)

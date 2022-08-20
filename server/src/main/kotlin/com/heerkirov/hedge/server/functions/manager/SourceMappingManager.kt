@@ -3,7 +3,7 @@ package com.heerkirov.hedge.server.functions.manager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.form.SourceMappingBatchQueryForm
-import com.heerkirov.hedge.server.dto.form.SourceMappingMetaItemForm
+import com.heerkirov.hedge.server.dto.form.MappingSourceTagForm
 import com.heerkirov.hedge.server.dto.form.SourceTagForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.MetaType
@@ -20,7 +20,7 @@ class SourceMappingManager(private val data: DataRepository, private val sourceT
         val groups = data.db.from(SourceTagMappings)
             .innerJoin(SourceTags, (SourceTags.site eq SourceTagMappings.sourceSite) and (SourceTags.id eq SourceTagMappings.sourceTagId))
             .select(SourceTags.site, SourceTags.name, SourceTagMappings.targetMetaType, SourceTagMappings.targetMetaId)
-            .where { (SourceTags.site eq form.site) and (SourceTags.name inList form.tagNames) }
+            .where { (SourceTags.site eq form.site) and (SourceTags.name inList form.tags) }
             .map { row ->
                 Pair(
                     row[SourceTags.name]!!,
@@ -32,7 +32,7 @@ class SourceMappingManager(private val data: DataRepository, private val sourceT
 
         val allMappings = groups.flatMap { (_, mappings) -> mappings }.let(::mapTargetItemToDetail)
 
-        return form.tagNames.map { tagName ->
+        return form.tags.map { tagName ->
             val mappingDetails = groups[tagName]?.mapNotNull { allMappings[it] } ?: emptyList()
             SourceMappingBatchQueryResult(tagName, mappingDetails)
         }
@@ -47,12 +47,12 @@ class SourceMappingManager(private val data: DataRepository, private val sourceT
             .let { mapTargetItemToDetail(it).values.toList() }
     }
 
-    fun query(metaType: MetaType, metaId: Int): List<SourceMappingMetaItem> {
+    fun query(metaType: MetaType, metaId: Int): List<MappingSourceTagDto> {
         return data.db.from(SourceTagMappings)
             .innerJoin(SourceTags, (SourceTags.site eq SourceTagMappings.sourceSite) and (SourceTags.id eq SourceTagMappings.sourceTagId))
             .select(SourceTags.code, SourceTags.name, SourceTags.otherName, SourceTags.type, SourceTags.site)
             .where { SourceTagMappings.targetMetaType eq metaType and (SourceTagMappings.targetMetaId eq metaId) }
-            .map { SourceMappingMetaItem(it[SourceTags.site]!!, it[SourceTags.code]!!, it[SourceTags.name]!!, it[SourceTags.otherName], it[SourceTags.type]) }
+            .map { MappingSourceTagDto(it[SourceTags.site]!!, it[SourceTags.code]!!, it[SourceTags.name]!!, it[SourceTags.otherName], it[SourceTags.type]) }
     }
 
     /**
@@ -98,7 +98,7 @@ class SourceMappingManager(private val data: DataRepository, private val sourceT
      * @throws NotFound 请求对象不存在
      * @throws ResourceNotExist ("site", string) 给出的site不存在
      */
-    fun update(metaType: MetaType, metaId: Int, mappings: List<SourceMappingMetaItemForm>) {
+    fun update(metaType: MetaType, metaId: Int, mappings: List<MappingSourceTagForm>) {
         //查询meta tag确定存在
         if(!when (metaType) {
             MetaType.TAG -> data.db.sequenceOf(Tags).any { it.id eq metaId }
@@ -110,7 +110,7 @@ class SourceMappingManager(private val data: DataRepository, private val sourceT
         val mappingGroups = mappings.groupBy { it.site }
         mappingGroups.forEach { (site, _) -> sourceTagManager.checkSourceSite(site) }
         val current = mappingGroups.flatMap { (source, row) ->
-            val sourceTags = row.map { SourceTagForm(it.code, it.name, it.displayName, it.type) }
+            val sourceTags = row.map { SourceTagForm(it.code, it.name, it.otherName, it.type) }
             sourceTagManager.getAndUpsertSourceTags(source, sourceTags).map { source to it }
         }.toSet()
 

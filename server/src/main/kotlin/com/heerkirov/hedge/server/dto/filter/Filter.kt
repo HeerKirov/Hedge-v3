@@ -11,8 +11,6 @@ import java.time.LocalDate
 
 data class LimitAndOffsetFilter(@Limit val limit: Int, @Offset val offset: Int)
 
-data class LimitFilter(@Limit val limit: Int)
-
 data class IllustQueryFilter(@Limit val limit: Int,
                              @Offset val offset: Int,
                              @Search val query: String?,

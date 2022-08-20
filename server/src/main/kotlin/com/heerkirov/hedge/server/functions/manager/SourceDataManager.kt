@@ -168,7 +168,7 @@ class SourceDataManager(private val data: DataRepository,
 
             return Triple(id, sourceSite, sourceId)
         }else{
-            if(!allowUpdate) throw be(AlreadyExists("SourceImage", "sourceId", sourceId))
+            if(!allowUpdate) throw be(AlreadyExists("SourceData", "sourceId", sourceId))
             //更新
             val sourceCount = if(anyOpt(tags, books, relations)) {
                 Opt(SourceData.SourceCount(
