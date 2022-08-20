@@ -9,8 +9,8 @@ import { readFile } from "../../utils/fs"
 import { request, Ws } from "../../utils/request"
 import {
     AppInitializeForm,
-    ConnectionStatus,
-    AppLoadStatus,
+    ServerConnectionStatus,
+    ServerServiceStatus,
     ServerPIDFile,
     ServerConnectionInfo,
     ServerConnectionError,
@@ -45,7 +45,7 @@ interface ConnectionManager {
     /**
      * 获得当前连接的实际状态。
      */
-    status(): ConnectionStatus
+    status(): ServerConnectionStatus
 
     /**
      * 获得当前连接的连接信息。
@@ -55,7 +55,7 @@ interface ConnectionManager {
     /**
      * 连接状态发生改变的事件。
      */
-    statusChangedEvent: Emitter<{ status: ConnectionStatus, info: ServerConnectionInfo | null, error: ServerConnectionError | null, appLoadStatus?: AppLoadStatus }>
+    statusChangedEvent: Emitter<{ status: ServerConnectionStatus, info: ServerConnectionInfo | null, error: ServerConnectionError | null, appLoadStatus?: ServerServiceStatus }>
 
     /**
      * server ws接口所发送的事件。
@@ -67,7 +67,7 @@ interface ServiceManager {
     /**
      * 获得当前server的加载状态。
      */
-    status(): AppLoadStatus
+    status(): ServerServiceStatus
 
     /**
      * 对server进行初始化。
@@ -78,7 +78,7 @@ interface ServiceManager {
     /**
      * 加载状态发生改变的事件。
      */
-    statusChangedEvent: Emitter<{ status: AppLoadStatus }>
+    statusChangedEvent: Emitter<{ status: ServerServiceStatus }>
 }
 
 /**
@@ -127,11 +127,11 @@ function createConnectionManager(options: ServerManagerOptions) {
     const serverPIDPath = path.join(channelPath, DATA_FILE.APPDATA.CHANNEL.SERVER_PID)
     const serverLogPath = path.join(channelPath, DATA_FILE.APPDATA.CHANNEL.SERVER_LOG)
 
-    const statusChangedEvent = createEmitter<{ status: ConnectionStatus, info: ServerConnectionInfo | null, error: ServerConnectionError | null, appLoadStatus?: AppLoadStatus }>()
+    const statusChangedEvent = createEmitter<{ status: ServerConnectionStatus, info: ServerConnectionInfo | null, error: ServerConnectionError | null, appLoadStatus?: ServerServiceStatus }>()
     const wsToastEvent = createEmitter<WsToastResult>()
 
     let _desired: boolean = false
-    let _status: ConnectionStatus = "CLOSE"
+    let _status: ServerConnectionStatus = "CLOSE"
     let _connectionInfo: ServerConnectionInfo | null = null
     let _error: ServerConnectionError | null = null
     let _ws: Ws | null = null
@@ -148,7 +148,7 @@ function createConnectionManager(options: ServerManagerOptions) {
 
         let serverStarted = false
         let pid: ServerConnectionInfo | null
-        let health: AppLoadStatus | null
+        let health: ServerServiceStatus | null
         while(true) {
             if(!serverStarted) {
                 //在不具备serverStarted标记的情况下，首先检查PID文件。如果不存在此文件，则尝试启动server
@@ -227,7 +227,7 @@ function createConnectionManager(options: ServerManagerOptions) {
         console.log("[ServerManager] Trying connect to server. Module is working in debug mode.")
 
         //根据提供的debug地址，尝试请求连接server的/app/health地址，以做连接检查
-        let health: AppLoadStatus | null
+        let health: ServerServiceStatus | null
         try {
             health = await waitingForHealth(options.debug!.serverFromHost!, "dev", 1000)
         }catch (e) {
@@ -277,7 +277,7 @@ function createConnectionManager(options: ServerManagerOptions) {
         startConnectionListener().finally()
     }
 
-    function setStatus(s: {status?: ConnectionStatus, info?: ServerConnectionInfo | null, error?: ServerConnectionError | null, appLoadStatus?: AppLoadStatus}) {
+    function setStatus(s: {status?: ServerConnectionStatus, info?: ServerConnectionInfo | null, error?: ServerConnectionError | null, appLoadStatus?: ServerServiceStatus}) {
         const oldStatus = {status: _status, info: _connectionInfo, error: _error}
         const newStatus = {
             status: s.status !== undefined ? s.status : _status,
@@ -293,7 +293,7 @@ function createConnectionManager(options: ServerManagerOptions) {
         }
     }
 
-    function status(): ConnectionStatus {
+    function status(): ServerConnectionStatus {
         return _status
     }
 
@@ -327,18 +327,18 @@ function createConnectionManager(options: ServerManagerOptions) {
 }
 
 function createServiceManager(connectionManager: ConnectionManager): ServiceManager {
-    let _status: AppLoadStatus = "NOT_CONNECTED"
+    let _status: ServerServiceStatus = "NOT_CONNECTED"
 
-    const statusChangedEvent = createEmitter<{ status: AppLoadStatus }>()
+    const statusChangedEvent = createEmitter<{ status: ServerServiceStatus }>()
 
-    function setStatus(status: AppLoadStatus) {
+    function setStatus(status: ServerServiceStatus) {
         if(status !== _status) {
             _status = status
             statusChangedEvent.emit({ status })
         }
     }
 
-    function status(): AppLoadStatus {
+    function status(): ServerServiceStatus {
         return _status
     }
 
@@ -372,7 +372,7 @@ function createServiceManager(connectionManager: ConnectionManager): ServiceMana
         //接收来自ws通知的appStatus变更事件。仅在connection状态可用时响应
         if(e.type === "EVENT" && connectionManager.status() === "OPEN") {
             if(e.data.event.eventType === "APP.APP_STATUS.CHANGED") {
-                setStatus((<{status: AppLoadStatus}>e.data.event).status)
+                setStatus((<{status: ServerServiceStatus}>e.data.event).status)
             }
         }
     })
@@ -410,10 +410,10 @@ async function waitingForPIDFile(filepath: string, timeout: number = 10000): Pro
  * 检查server服务是否可用，并报告server的健康检查状态。
  * @throws Error 如果接口返回API错误，则构造一个Error异常并抛出。
  */
-async function checkForHealth(host: string, token: string): Promise<AppLoadStatus | null> {
+async function checkForHealth(host: string, token: string): Promise<ServerServiceStatus | null> {
     const res = await request({url: `http://${host}/app/health`, method: 'GET', headers: {'Authorization': `Bearer ${token}`}})
     if(res.ok) {
-        return (<{status: AppLoadStatus}>res.data).status
+        return (<{status: ServerServiceStatus}>res.data).status
     }else if(res.status) {
         throw new Error(`[${res.status}] ${res.code}: ${res.message}`)
     }else{
@@ -425,7 +425,7 @@ async function checkForHealth(host: string, token: string): Promise<AppLoadStatu
  * 轮询等待，直到server服务可用，或超出最大等待时间。
  * @throws Error 如果接口返回API错误，则构造一个Error异常并抛出。
  */
-async function waitingForHealth(host: string, token: string, timeout: number = 10000): Promise<AppLoadStatus | null> {
+async function waitingForHealth(host: string, token: string, timeout: number = 10000): Promise<ServerServiceStatus | null> {
     let interval = 0
     for(let i = 0; i < timeout; i += interval) {
         await sleep(interval)

@@ -1,3 +1,4 @@
+import { NativeTheme } from "../appdata/model"
 
 
 export type AppState
@@ -20,6 +21,7 @@ export type InitializeState
 export interface AppInitializeForm {
     password: string | null
     storagePath: string | null
+    theme: NativeTheme | null
 }
 
 export interface LoginForm {

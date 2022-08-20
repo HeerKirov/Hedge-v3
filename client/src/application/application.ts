@@ -5,7 +5,12 @@ import { createResourceManager } from "../components/resource"
 import { createServerManager } from "../components/server"
 import { createStateManager } from "../components/state"
 import { panic } from "../exceptions"
-import { getNodePlatform, promiseAll, sleep } from "../utils/process"
+import { getNodePlatform, promiseAll } from "../utils/process"
+import { registerGlobalIpcRemoteEvents } from "./ipc"
+import { registerAppMenu, registerDockMenu } from "./menu"
+import { registerAppEvents } from "./event"
+import { createThemeManager } from "./theme"
+import { createWindowManager } from "./window"
 
 
 /**
@@ -71,34 +76,45 @@ export async function createApplication(options?: AppOptions) {
 
         const serverManager = createServerManager({userDataPath, channel: channelManager.currentChannel(), debug: options?.debug && {serverFromHost: options.debug.serverFromHost, serverFromFolder: options.debug.serverFromFolder}})
 
-        const stateManager = createStateManager(appDataDriver, resourceManager, serverManager)
+        const themeManager = createThemeManager(appDataDriver)
 
-        serverManager.connection.statusChangedEvent.addEventListener(({ status, info, error }) => {
-            console.log(`(server connection)> status = ${status}, ${JSON.stringify(info)}, ${JSON.stringify(error)}`)
-        })
-        serverManager.service.statusChangedEvent.addEventListener(({ status }) => {
-            console.log(`(server service)> status = ${status}`)
-        })
-        stateManager.stateChangedEvent.addEventListener(({ state }) => {
-            console.log(`(stateManager)> state = ${state}`)
+        const stateManager = createStateManager(appDataDriver, themeManager, resourceManager, serverManager)
 
-            if(state === "NOT_LOGIN") {
-                stateManager.login({password: "hello"})
-            }
-        })
+        const windowManager = createWindowManager(stateManager, themeManager, {platform, debug: options?.debug && {frontendFromFolder: options.debug.frontendFromFolder, frontendFromURL: options.debug.frontendFromURL}})
+
+        registerAppEvents(windowManager, serverManager, platform)
+        registerGlobalIpcRemoteEvents(appDataDriver, channelManager, serverManager, stateManager, themeManager, windowManager, {debugMode, userDataPath, platform, channel: channelManager.currentChannel()})
+
+        // serverManager.connection.statusChangedEvent.addEventListener(({ status, info, error }) => {
+        //     console.log(`(server connection)> status = ${status}, ${JSON.stringify(info)}, ${JSON.stringify(error)}`)
+        // })
+        // serverManager.service.statusChangedEvent.addEventListener(({ status }) => {
+        //     console.log(`(server service)> status = ${status}`)
+        // })
+        // stateManager.stateChangedEvent.addEventListener(({ state }) => {
+        //     console.log(`(stateManager)> state = ${state}`)
+        //
+        //     if(state === "NOT_LOGIN") {
+        //         stateManager.login({password: "hello"})
+        //     }
+        // })
 
         await promiseAll(appDataDriver.load(), resourceManager.load(), app.whenReady())
 
-        stateManager.load()
+        registerAppMenu(windowManager, platform)
+        registerDockMenu(windowManager, platform)
 
-        if(stateManager.state() === "NOT_INITIALIZED") {
-            console.log("> initialize.")
-            await sleep(1000)
-            stateManager.appInitialize({
-                password: "hello",
-                storagePath: null
-            })
-        }
+        stateManager.load()
+        windowManager.load()
+
+        // if(stateManager.state() === "NOT_INITIALIZED") {
+        //     console.log("> initialize.")
+        //     await sleep(1000)
+        //     stateManager.appInitialize({
+        //         password: "hello",
+        //         storagePath: null
+        //     })
+        // }
     }catch (e) {
         panic(e)
     }

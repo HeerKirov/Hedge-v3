@@ -5,6 +5,7 @@ import { ServerManager } from "../server"
 import { panic } from "../../exceptions"
 import { createEmitter, Emitter } from "../../utils/emitter"
 import { AppState, AppInitializeForm, LoginForm, InitializeState } from "./model"
+import { ThemeManager } from "../../application/theme";
 
 /**
  * 对客户端app的状态进行管理。处理从加载到登录的一系列状态和伴生操作。
@@ -45,7 +46,7 @@ export interface StateManager {
     initializeEvent: Emitter<{ state: InitializeState }>
 }
 
-export function createStateManager(appdata: AppDataDriver, resource: ResourceManager, server: ServerManager): StateManager {
+export function createStateManager(appdata: AppDataDriver, theme: ThemeManager, resource: ResourceManager, server: ServerManager): StateManager {
     const stateChangedEvent = createEmitter<{ state: AppState }>()
     const initializeEvent = createEmitter<{ state: InitializeState }>()
     const awaiter = createServerAwaiter(server)
@@ -94,6 +95,7 @@ export function createStateManager(appdata: AppDataDriver, resource: ResourceMan
             initializeEvent.emit({state: "INITIALIZING_APPDATA"})
             await appdata.init()
             await appdata.saveAppData(d => d.loginOption.password = form.password)
+            if(form.theme !== null) await theme.setTheme(form.theme)
 
             //初始化资源
             initializeEvent.emit({state: "INITIALIZING_RESOURCE"})

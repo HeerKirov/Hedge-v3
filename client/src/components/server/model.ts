@@ -17,13 +17,13 @@ export interface ServerConnectionError {
     message?: string
 }
 
-export type ConnectionStatus
+export type ServerConnectionStatus
     = "CLOSE"                   //server仍处于关闭状态
     | "CONNECTING"              //正在尝试连接server
     | "FAILED"                  //因各种原因，始终无法与server建立连接
     | "OPEN"                    //server正在正常连接
 
-export type AppLoadStatus
+export type ServerServiceStatus
     = "NOT_CONNECTED"           //尚未建立同server的连接
     | "NOT_INITIALIZED"         //已建立连接，正处于未初始化的状态
     | "INITIALIZING"            //已建立连接，正处于初始化中的状态
