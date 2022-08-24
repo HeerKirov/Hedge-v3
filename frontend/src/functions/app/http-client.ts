@@ -2,17 +2,15 @@ import { installation } from "@/utils/reactivity"
 import { createHttpClient, HttpClientConfig, ResponseConnectionError, ResponseError } from "@/functions/http-client"
 import { AllException } from "@/functions/http-client/exceptions"
 
-export const [installHttpClient, useHttpClient] = installation(function (httpClientConfig: HttpClientConfig) {
-    return createHttpClient(httpClientConfig)
-})
+export const [installHttpClient, useHttpClient] = installation(createHttpClient)
 
 export function createHttpClientConfig(throwError: (title: string, message: string) => void): HttpClientConfig {
-    const baseUrl = process.env.NODE_ENV === 'development' ? <string>process.env.VUE_APP_BASE_URL : undefined
+    const host = process.env.NODE_ENV === 'development' ? <string>process.env.VUE_APP_HOST : undefined
 
     const handleError = useErrorHandler(throwError)
 
     return {
-        baseUrl,
+        host,
         token: undefined,
         handleError
     }

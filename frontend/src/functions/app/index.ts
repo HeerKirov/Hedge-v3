@@ -1,8 +1,9 @@
-import { createHttpClientConfig, installHttpClient, useHttpClient } from "@/functions/app/http-client"
-import { installFullscreen, useFullscreen } from "@/functions/app/fullscreen"
-import { installAppBase } from "@/functions/app/app-base"
-import { useAppInitializer } from "@/functions/app/app-initialize"
-import { useLocalStorage } from "@/functions/app/storage"
+import { createHttpClientConfig, installHttpClient, useHttpClient } from "./http-client"
+import { installWsClient, useWsClient, useWsListeningEvent } from "./ws-client"
+import { installFullscreen, useFullscreen } from "./fullscreen"
+import { installAppBase } from "./app-base"
+import { useAppInitializer } from "./app-initialize"
+import { useLocalStorage } from "./storage"
 
 interface AppServiceOptions {
     handleError(title: string, message: string): void
@@ -11,21 +12,25 @@ interface AppServiceOptions {
 export function installAppService(options: AppServiceOptions) {
     const httpClientConfig = createHttpClientConfig(options.handleError)
     const httpClient = installHttpClient(httpClientConfig)
+    const wsClient = installWsClient()
     const fullscreen = installFullscreen()
-    const { env, state, server} = installAppBase(httpClientConfig)
+    const {env, state, server} = installAppBase(httpClientConfig)
 
     return {
         env,
         state,
         server,
         httpClient,
+        wsClient,
         fullscreen
     }
 }
 
 export {
-    useHttpClient,
     useFullscreen,
+    useHttpClient,
+    useWsClient,
+    useWsListeningEvent,
     useLocalStorage,
     useAppInitializer
 }

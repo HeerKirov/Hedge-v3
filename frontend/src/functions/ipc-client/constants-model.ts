@@ -20,6 +20,14 @@ export interface ServerConnectionInfo {
     startTime: number
 }
 
+export type WsToastResult = {
+    type: "ERROR"
+    data: { code: string, message: string | null, info: any }
+} | {
+    type: "EVENT"
+    data: { timestamp: number, event: any & { eventType: string } }
+}
+
 export type AppState
     = "NOT_INITIALIZED"     //(稳定态)app未初始化
     | "LOADING"             //(瞬间态)加载中，还不知道要做什么

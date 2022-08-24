@@ -1,5 +1,5 @@
 import { Platform, NativeTheme } from "./constants-model"
-import { ServerServiceStatus, ServerConnectionStatus, ServerConnectionInfo } from "./constants-model"
+import { ServerServiceStatus, ServerConnectionStatus, ServerConnectionInfo, WsToastResult } from "./constants-model"
 import { AppInitializeForm, AppState, InitializeState, LoginForm } from "./constants-model"
 import { Emitter } from "@/utils/emitter"
 
@@ -13,6 +13,7 @@ export interface IpcClient {
         login(form: LoginForm): Promise<boolean>
         envChangedEvent: Emitter<AppEnvironmentChangedEvent>
         initializeUpdatedEvent: Emitter<AppInitializeUpdatedEvent>
+        wsToastEvent: Emitter<WsToastResult>
     }
     window: {
         newWindow(url?: string): void
