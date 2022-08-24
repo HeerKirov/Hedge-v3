@@ -10,4 +10,4 @@ interface AppEvent : BaseBusEvent
 /**
  * AppStatus发生变化。
  */
-class AppStatusChanged(val status: AppLoadStatus) : BaseBusEventImpl("APP.APP_STATUS.CHANGED"), AppEvent
+class AppStatusChanged(val status: AppLoadStatus) : BaseBusEventImpl("app/app-status/changed"), AppEvent

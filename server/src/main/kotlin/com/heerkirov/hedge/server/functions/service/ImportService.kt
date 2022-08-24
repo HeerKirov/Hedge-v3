@@ -7,9 +7,10 @@ import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.FileRecords
 import com.heerkirov.hedge.server.dao.ImportImages
 import com.heerkirov.hedge.server.dto.filter.ImportFilter
-import com.heerkirov.hedge.server.dto.form.ImportImageDetailRes
-import com.heerkirov.hedge.server.dto.form.ImportImageRes
-import com.heerkirov.hedge.server.dto.form.ImportSaveRes
+import com.heerkirov.hedge.server.dto.form.ImportBatchUpdateForm
+import com.heerkirov.hedge.server.dto.form.ImportForm
+import com.heerkirov.hedge.server.dto.form.ImportUpdateForm
+import com.heerkirov.hedge.server.dto.form.UploadForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.exceptions.*
