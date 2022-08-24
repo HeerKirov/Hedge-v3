@@ -371,7 +371,7 @@ function createServiceManager(connectionManager: ConnectionManager): ServiceMana
     connectionManager.wsToastEvent.addEventListener(e => {
         //接收来自ws通知的appStatus变更事件。仅在connection状态可用时响应
         if(e.type === "EVENT" && connectionManager.status() === "OPEN") {
-            if(e.data.event.eventType === "APP.APP_STATUS.CHANGED") {
+            if(e.data.event.eventType === "app/app-status/changed") {
                 setStatus((<{status: ServerServiceStatus}>e.data.event).status)
             }
         }

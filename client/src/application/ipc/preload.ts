@@ -1,7 +1,7 @@
 import { ipcRenderer, contextBridge } from "electron"
 import { getNodePlatform } from "../../utils/process"
-import { createEmitter, createProxyEmitter } from "../../utils/emitter"
-import { AppEnvironmentChangedEvent, AppInitializeUpdatedEvent, IpcClient } from "./constants"
+import { createProxyEmitter } from "../../utils/emitter"
+import { IpcClient } from "./constants"
 
 /**
  * IPC API Client在前端的实现。这部分代码通过electron preload注入到前端。
@@ -25,6 +25,9 @@ function createRemoteIpcClient(): IpcClient {
             }),
             initializeUpdatedEvent: createProxyEmitter(emit => {
                 ipcRenderer.on("/app/initialize/on-updated", (_, arg) => emit(arg))
+            }),
+            wsToastEvent: createProxyEmitter(emit => {
+                ipcRenderer.on("/app/ws-toast", (_, arg) => emit(arg))
             })
         },
         window: {

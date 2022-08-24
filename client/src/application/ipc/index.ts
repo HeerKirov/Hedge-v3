@@ -1,5 +1,6 @@
 import { BrowserWindow, dialog, ipcMain, Menu, MessageBoxOptions, OpenDialogOptions, shell } from "electron"
 import { sleep } from "../../utils/process"
+import { Emitter } from "../../utils/emitter"
 import { MenuTemplateInIpc } from "./constants"
 import { AppDataDriver } from "../../components/appdata"
 import { Channel } from "../../components/channel"
@@ -29,10 +30,10 @@ function ipcHandleSync<T, R>(channel: string, invoke: (f: T) => R) {
 /**
  * 从客户端主动发送的ipc通信。
  */
-function ipcEvent<T>(channel: string, on: (event: (f: T) => void) => void) {
-    on(args => {
-        for (let window of BrowserWindow.getAllWindows()) {
-            window.webContents.send(channel, args)
+function ipcEvent<T>(channel: string, emitter: Emitter<T>) {
+    emitter.addEventListener(e => {
+        for (const window of BrowserWindow.getAllWindows()) {
+            window.webContents.send(channel, e)
         }
     })
 }
@@ -46,8 +47,9 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
     ipcHandleSync("/app/env", impl.app.env)
     ipcHandleSync("/app/initialize", impl.app.initialize)
     ipcHandle("/app/login", impl.app.login)
-    ipcEvent("/app/env/on-changed", impl.app.onEnvChanged)
-    ipcEvent("/app/initialize/on-updated", impl.app.onInitializeUpdated)
+    ipcEvent("/app/env/on-changed", impl.app.envChangedEvent)
+    ipcEvent("/app/initialize/on-updated", impl.app.initializeUpdatedEvent)
+    ipcEvent("/app/ws-toast", impl.app.wsToastEvent)
     ipcHandleSync("/window/new-window", impl.window.newWindow)
     ipcHandleSync("/window/open-setting", impl.window.openSetting)
     ipcHandleSync("/window/open-guide", impl.window.openGuide)

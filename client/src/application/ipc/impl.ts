@@ -70,7 +70,8 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
                     }
                 }
             }),
-            initializeUpdatedEvent: state.initializeEvent
+            initializeUpdatedEvent: state.initializeEvent,
+            wsToastEvent: server.connection.wsToastEvent
         },
         window: {
             newWindow(url?: string) {
