@@ -246,10 +246,10 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
 
     /**
      * 应用images列表。对列表进行整体替换。
-     * @return removedImageIds
+     * @return oldImageIds
      */
     fun updateSubImages(thisId: Int, imageIds: List<Int>): List<Int> {
-        val removedImageIds = data.db.from(BookImageRelations)
+        val oldImageIds = data.db.from(BookImageRelations)
             .select(BookImageRelations.imageId)
             .where { BookImageRelations.bookId eq thisId }
             .map { it[BookImageRelations.imageId]!! }
@@ -266,7 +266,7 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
             }
         }
 
-        return removedImageIds
+        return oldImageIds
     }
 
     /**

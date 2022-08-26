@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.components.backend.exporter
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
@@ -98,6 +99,7 @@ private val EXPORTER_TYPE_INDEX = listOf(
 private val EXPORTER_TYPES = EXPORTER_TYPE_INDEX.mapIndexed { index, kClass -> kClass to index }.toMap()
 
 class BackendExporterImpl(private val appStatus: AppStatusDriver,
+                          private val bus: EventBus,
                           private val data: DataRepository,
                           private val illustKit: IllustKit,
                           private val bookKit: BookKit) : BackendExporter {
@@ -136,8 +138,8 @@ class BackendExporterImpl(private val appStatus: AppStatusDriver,
     private fun <T : ExporterTask> newWorker(type: KClass<T>): ExporterWorker<T> {
         @Suppress("UNCHECKED_CAST")
         return when(type) {
-            IllustMetadataExporterTask::class -> IllustMetadataExporter(data, illustKit)
-            BookMetadataExporterTask::class -> BookMetadataExporter(data, bookKit)
+            IllustMetadataExporterTask::class -> IllustMetadataExporter(data, bus, illustKit)
+            BookMetadataExporterTask::class -> BookMetadataExporter(data, bus, bookKit)
             TagGlobalSortExporterTask::class -> TagGlobalSortExporter(data)
             IllustBookMemberExporterTask::class -> IllustBookMemberExporter(data, illustKit)
             else -> throw IllegalArgumentException("Unsupported task type ${type.simpleName}.")

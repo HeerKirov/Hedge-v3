@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.FileRecords
@@ -12,9 +13,11 @@ import com.heerkirov.hedge.server.dto.filter.FolderTreeFilter
 import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.FolderType
+import com.heerkirov.hedge.server.events.*
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.FolderKit
 import com.heerkirov.hedge.server.functions.manager.IllustManager
+import com.heerkirov.hedge.server.model.Folder
 import com.heerkirov.hedge.server.utils.business.takeAllFilepath
 import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
@@ -29,6 +32,7 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.*
 
 class FolderService(private val data: DataRepository,
+                    private val bus: EventBus,
                     private val kit: FolderKit,
                     private val illustManager: IllustManager) {
     private val orderTranslator = OrderTranslator {
@@ -142,6 +146,8 @@ class FolderService(private val data: DataRepository,
             } as Int
 
             if(images != null) kit.updateSubImages(id, images.map { it.id })
+
+            bus.emit(FolderCreated(id, form.type))
 
             return id
         }
@@ -303,6 +309,8 @@ class FolderService(private val data: DataRepository,
                     newParentAddress.applyOpt { set(it.parentAddress, this) }
                     newOrdinal.applyOpt { set(it.ordinal, this) }
                 }
+
+                bus.emit(FolderUpdated(id, folder.type))
             }
         }
     }
@@ -311,10 +319,13 @@ class FolderService(private val data: DataRepository,
      * @throws NotFound 请求对象不存在
      */
     fun delete(id: Int) {
-        fun recursiveDelete(id: Int) {
-            data.db.delete(Folders) { it.id eq id }
-            data.db.delete(FolderImageRelations) { it.folderId eq id }
-            val children = data.db.from(Folders).select(Folders.id).where { Folders.parentId eq id }.map { it[Folders.id]!! }
+        fun recursiveDelete(folder: Folder) {
+            data.db.delete(Folders) { it.id eq folder.id }
+            data.db.delete(FolderImageRelations) { it.folderId eq folder.id }
+
+            bus.emit(FolderDeleted(folder.id, folder.type))
+
+            val children = data.db.sequenceOf(Folders).filter { it.parentId eq folder.id }
             for (child in children) {
                 recursiveDelete(child)
             }
@@ -327,7 +338,7 @@ class FolderService(private val data: DataRepository,
                 where { if(folder.parentId != null) { it.parentId eq folder.parentId }else{ it.parentId.isNull() } and (it.ordinal greater folder.ordinal) }
                 set(it.ordinal, it.ordinal - 1)
             }
-            recursiveDelete(id)
+            recursiveDelete(folder)
         }
     }
 
@@ -355,6 +366,7 @@ class FolderService(private val data: DataRepository,
             if(folder.type !== FolderType.FOLDER) throw be(Reject("Can only update images for FOLDER."))
 
             val images = if(items.isNotEmpty()) illustManager.unfoldImages(items) else emptyList()
+            val imageIds = images.map { it.id }
 
             data.db.update(Folders) {
                 where { it.id eq id }
@@ -362,7 +374,10 @@ class FolderService(private val data: DataRepository,
                 set(it.updateTime, DateTime.now())
             }
 
-            kit.updateSubImages(id, images.map { it.id })
+            val oldIdSet = kit.updateSubImages(id, imageIds).toSet()
+            val imageIdSet = imageIds.toSet()
+
+            bus.emit(FolderImagesChanged(id, (imageIdSet - oldIdSet).toList(), emptyList(), (oldIdSet - imageIdSet).toList()))
         }
     }
 
@@ -383,12 +398,15 @@ class FolderService(private val data: DataRepository,
                     val formImages = form.images ?: throw be(ParamRequired("images"))
                     val images = illustManager.unfoldImages(formImages)
                     if(images.isNotEmpty()) {
-                        val imageCount = kit.upsertSubImages(id, images.map { it.id }, form.ordinal)
+                        val imageIds = images.map { it.id }
+                        val imageCount = kit.upsertSubImages(id, imageIds, form.ordinal)
                         data.db.update(Folders) {
                             where { it.id eq id }
                             set(it.cachedCount, imageCount)
                             set(it.updateTime, DateTime.now())
                         }
+
+                        bus.emit(FolderImagesChanged(id, imageIds, emptyList(), emptyList()))
                     }
                 }
                 BatchAction.MOVE -> {
@@ -401,6 +419,8 @@ class FolderService(private val data: DataRepository,
                             where { it.id eq id }
                             set(it.updateTime, DateTime.now())
                         }
+
+                        bus.emit(FolderImagesChanged(id, emptyList(), formImages, emptyList()))
                     }
                 }
                 BatchAction.DELETE -> {
@@ -412,6 +432,8 @@ class FolderService(private val data: DataRepository,
                             if(imageCount != null) set(it.cachedCount, imageCount)
                             set(it.updateTime, DateTime.now())
                         }
+
+                        bus.emit(FolderImagesChanged(id, emptyList(), emptyList(), formImages))
                     }
                 }
             }
@@ -448,6 +470,8 @@ class FolderService(private val data: DataRepository,
                     where { it.id eq id }
                     set(it.pin, ordinal)
                 }
+
+                bus.emit(FolderPinChanged(id, true, ordinal))
             }else{
                 //update
                 val ordinal = if(form.ordinal!! < count) form.ordinal else count
@@ -470,6 +494,8 @@ class FolderService(private val data: DataRepository,
                     where { it.id eq id }
                     set(it.pin, finalOrdinal)
                 }
+
+                bus.emit(FolderPinChanged(id, true, finalOrdinal))
             }
         }
     }
@@ -488,6 +514,8 @@ class FolderService(private val data: DataRepository,
                 where { it.id eq id }
                 set(it.pin, null)
             }
+
+            bus.emit(FolderPinChanged(id, false, null))
         }
     }
 

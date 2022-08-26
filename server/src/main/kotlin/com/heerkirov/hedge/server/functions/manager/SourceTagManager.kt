@@ -1,9 +1,11 @@
 package com.heerkirov.hedge.server.functions.manager
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.SourceTags
 import com.heerkirov.hedge.server.dto.form.SourceTagForm
 import com.heerkirov.hedge.server.dto.res.SourceTagDto
+import com.heerkirov.hedge.server.events.SourceTagUpdated
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.model.SourceTag
@@ -13,7 +15,7 @@ import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
 
-class SourceTagManager(private val data: DataRepository) {
+class SourceTagManager(private val data: DataRepository, private val bus: EventBus) {
     /**
      * 校验source的合法性。
      * @throws ResourceNotExist ("site", string) 给出的source不存在
@@ -37,6 +39,9 @@ class SourceTagManager(private val data: DataRepository) {
                     set(it.otherName, null)
                     set(it.type, null)
                 } as Int
+
+                bus.emit(SourceTagUpdated(sourceSite, sourceTagCode))
+
                 SourceTag(id, sourceSite, sourceTagCode, sourceTagCode, null, null)
             }
     }
@@ -97,6 +102,9 @@ class SourceTagManager(private val data: DataRepository) {
                 }
             }
         }
+
+        minus.forEach { bus.emit(SourceTagUpdated(sourceSite, it)) }
+        common.forEach { bus.emit(SourceTagUpdated(sourceSite, it)) }
 
         return data.db.from(SourceTags).select(SourceTags.id)
             .where { (SourceTags.site eq sourceSite) and (SourceTags.code inList tagMap.keys) }

@@ -19,9 +19,16 @@ class FolderKit(private val data: DataRepository) {
 
     /**
      * 应用images列表。对列表进行整体替换。
+     * @return oldImageIds
      */
-    fun updateSubImages(thisId: Int, imageIds: List<Int>) {
+    fun updateSubImages(thisId: Int, imageIds: List<Int>): List<Int> {
+        val oldImageIds = data.db.from(FolderImageRelations)
+            .select(FolderImageRelations.imageId)
+            .where { FolderImageRelations.folderId eq thisId }
+            .map { it[FolderImageRelations.imageId]!! }
+
         data.db.delete(FolderImageRelations) { it.folderId eq thisId }
+
         data.db.batchInsert(FolderImageRelations) {
             imageIds.forEachIndexed { index, imageId ->
                 item {
@@ -31,6 +38,8 @@ class FolderKit(private val data: DataRepository) {
                 }
             }
         }
+
+        return oldImageIds
     }
     
     /**

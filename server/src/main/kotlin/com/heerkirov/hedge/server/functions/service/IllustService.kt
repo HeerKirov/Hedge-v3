@@ -4,6 +4,7 @@ import com.heerkirov.hedge.server.components.backend.exporter.BookMetadataExport
 import com.heerkirov.hedge.server.components.backend.exporter.BackendExporter
 import com.heerkirov.hedge.server.components.backend.exporter.ExporterTask
 import com.heerkirov.hedge.server.components.backend.exporter.IllustMetadataExporterTask
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
@@ -15,6 +16,9 @@ import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.enums.TagAddressType
+import com.heerkirov.hedge.server.events.CollectionImagesChanged
+import com.heerkirov.hedge.server.events.IllustUpdated
+import com.heerkirov.hedge.server.events.SourceDataUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.functions.manager.*
@@ -36,6 +40,7 @@ import org.ktorm.expression.BinaryExpression
 import kotlin.math.roundToInt
 
 class IllustService(private val data: DataRepository,
+                    private val bus: EventBus,
                     private val kit: IllustKit,
                     private val illustManager: IllustManager,
                     private val illustExtendManager: IllustExtendManager,
@@ -366,6 +371,10 @@ class IllustService(private val data: DataRepository,
                     exportDescription = form.description.isPresent,
                     exportMetaTag = anyOpt(form.tags, form.topics, form.authors)) })
             }
+
+            val generalUpdated = anyOpt(newTagme, newDescription, form.score, form.favorite)
+            val metaTagUpdated = anyOpt(form.tags, form.authors, form.topics)
+            bus.emit(IllustUpdated(id, IllustType.COLLECTION, generalUpdated, metaTagUpdated, sourceDataUpdated = false, relatedItemsUpdated = false))
         }
     }
 
@@ -379,6 +388,13 @@ class IllustService(private val data: DataRepository,
 
             form.associates.alsoOpt { newAssociates ->
                 associateManager.setAssociatesOfIllust(id, newAssociates ?: emptyList())
+
+                bus.emit(IllustUpdated(id, IllustType.COLLECTION,
+                    generalUpdated = false,
+                    metaTagUpdated = false,
+                    sourceDataUpdated = false,
+                    relatedItemsUpdated = true
+                ))
             }
         }
     }
@@ -407,6 +423,8 @@ class IllustService(private val data: DataRepository,
             illustManager.updateSubImages(id, images)
 
             kit.refreshAllMeta(id, copyFromChildren = true)
+
+            bus.emit(CollectionImagesChanged(id))
         }
     }
 
@@ -489,6 +507,10 @@ class IllustService(private val data: DataRepository,
                     }
                 }
             }
+
+            val generalUpdated = anyOpt(newTagme, newDescription, form.score, form.favorite, form.partitionTime, form.orderTime)
+            val metaTagUpdated = anyOpt(form.tags, form.authors, form.topics)
+            bus.emit(IllustUpdated(id, IllustType.IMAGE, generalUpdated, metaTagUpdated, sourceDataUpdated = false, relatedItemsUpdated = false))
         }
     }
 
@@ -538,6 +560,15 @@ class IllustService(private val data: DataRepository,
                     }
                 }
             }
+
+            if(form.associates.isPresent || form.collectionId.isPresent) {
+                bus.emit(IllustUpdated(id, IllustType.IMAGE,
+                    generalUpdated = false,
+                    metaTagUpdated = false,
+                    sourceDataUpdated = false,
+                    relatedItemsUpdated = true
+                ))
+            }
         }
     }
 
@@ -573,6 +604,13 @@ class IllustService(private val data: DataRepository,
                     sourceManager.createOrUpdateSourceData(source, sourceId, form.status, form.title, form.description, form.tags, form.books, form.relations)
                 }
             }
+
+            bus.emit(IllustUpdated(id, IllustType.IMAGE,
+                generalUpdated = false,
+                metaTagUpdated = false,
+                sourceDataUpdated = true,
+                relatedItemsUpdated = false
+            ))
         }
     }
 
@@ -848,6 +886,15 @@ class IllustService(private val data: DataRepository,
                             }
                         }
                     }
+                }
+            }
+
+            val generalUpdated = anyOpt(form.favorite, form.score, form.description, form.tagme, form.partitionTime, form.orderTimeBegin, form.orderTimeEnd)
+            val metaTagUpdated = anyOpt(form.tags, form.topics, form.authors)
+            if(generalUpdated || metaTagUpdated) {
+                for (record in records) {
+                    //tips: 此处使用了偷懒的手法。并没有对受partition/orderTime变更影响的children进行处理
+                    bus.emit(IllustUpdated(record.id, record.type.toIllustType(), generalUpdated, metaTagUpdated, sourceDataUpdated = false, relatedItemsUpdated = false))
                 }
             }
         }

@@ -1,9 +1,12 @@
 package com.heerkirov.hedge.server.components.backend.exporter
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.Illusts
 import com.heerkirov.hedge.server.enums.IllustModelType
+import com.heerkirov.hedge.server.enums.IllustType
+import com.heerkirov.hedge.server.events.IllustUpdated
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.types.Opt
@@ -25,6 +28,7 @@ data class IllustMetadataExporterTask(val id: Int,
                                       val exportFirstCover: Boolean = false) : ExporterTask
 
 class IllustMetadataExporter(private val data: DataRepository,
+                             private val bus: EventBus,
                              private val illustKit: IllustKit) : ExporterWorker<IllustMetadataExporterTask>, MergedProcessWorker<IllustMetadataExporterTask> {
     override val clazz: KClass<IllustMetadataExporterTask> = IllustMetadataExporterTask::class
 
@@ -115,6 +119,12 @@ class IllustMetadataExporter(private val data: DataRepository,
                     }
                     cachedChildrenCount.applyOpt { set(it.cachedChildrenCount, this) }
                 }
+            }
+
+            val generalUpdated = task.exportDescription || task.exportFirstCover || task.exportScore
+            val metaTagUpdated = task.exportMetaTag
+            if(generalUpdated || metaTagUpdated) {
+                bus.emit(IllustUpdated(illust.id, illust.type.toIllustType(), generalUpdated, metaTagUpdated, sourceDataUpdated = false, relatedItemsUpdated = false))
             }
         }
     }

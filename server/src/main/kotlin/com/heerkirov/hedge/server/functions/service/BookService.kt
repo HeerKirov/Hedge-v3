@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.backend.exporter.BackendExporter
 import com.heerkirov.hedge.server.components.backend.exporter.IllustBookMemberExporterTask
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
@@ -13,6 +14,9 @@ import com.heerkirov.hedge.server.dto.form.BookImagesPartialUpdateForm
 import com.heerkirov.hedge.server.dto.form.BookUpdateForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.TagAddressType
+import com.heerkirov.hedge.server.events.BookDeleted
+import com.heerkirov.hedge.server.events.BookImagesChanged
+import com.heerkirov.hedge.server.events.BookUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.BookKit
 import com.heerkirov.hedge.server.functions.manager.BookManager
@@ -31,6 +35,7 @@ import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 
 class BookService(private val data: DataRepository,
+                  private val bus: EventBus,
                   private val kit: BookKit,
                   private val bookManager: BookManager,
                   private val illustManager: IllustManager,
@@ -174,6 +179,12 @@ class BookService(private val data: DataRepository,
                     newDescription.applyOpt { set(it.description, this) }
                 }
             }
+
+            val generalUpdated = anyOpt(form.score, form.favorite, newTitle, newDescription)
+            val metaTagUpdated = anyOpt(form.tags, form.authors, form.topics)
+            if(generalUpdated || metaTagUpdated) {
+                bus.emit(BookUpdated(id, generalUpdated, metaTagUpdated))
+            }
         }
     }
 
@@ -189,6 +200,9 @@ class BookService(private val data: DataRepository,
             data.db.delete(BookTopicRelations) { it.bookId eq id }
             data.db.delete(BookAuthorRelations) { it.bookId eq id }
             data.db.delete(BookAnnotationRelations) { it.bookId eq id }
+            data.db.delete(BookImageRelations) { it.bookId eq id }
+
+            bus.emit(BookDeleted(id))
         }
     }
 
@@ -227,6 +241,7 @@ class BookService(private val data: DataRepository,
             data.db.sequenceOf(Books).firstOrNull { Books.id eq id } ?: throw be(NotFound())
 
             val images = if(items.isNotEmpty()) illustManager.unfoldImages(items) else emptyList()
+            val imageIds = images.map { it.id }
             val fileId = images.firstOrNull()?.fileId
 
             data.db.update(Books) {
@@ -236,12 +251,14 @@ class BookService(private val data: DataRepository,
                 set(it.updateTime, DateTime.now())
             }
 
-            val imageIds = images.map { it.id }
-            val removed = kit.updateSubImages(id, imageIds)
+            val oldIdSet = kit.updateSubImages(id, imageIds).toSet()
+            val imageIdSet = imageIds.toSet()
 
             kit.refreshAllMeta(id)
 
-            backendExporter.add(IllustBookMemberExporterTask(imageIds + removed))
+            backendExporter.add(IllustBookMemberExporterTask((imageIdSet + oldIdSet).toList()))
+
+            bus.emit(BookImagesChanged(id, (imageIdSet - oldIdSet).toList(), emptyList(), (oldIdSet - imageIdSet).toList()))
         }
     }
 
@@ -265,6 +282,8 @@ class BookService(private val data: DataRepository,
                         kit.upsertSubImages(id, imageIds, form.ordinal)
                         kit.refreshAllMeta(id)
                         backendExporter.add(IllustBookMemberExporterTask(imageIds))
+
+                        bus.emit(BookImagesChanged(id, imageIds, emptyList(), emptyList()))
                     }
                 }
                 BatchAction.MOVE -> {
@@ -275,6 +294,8 @@ class BookService(private val data: DataRepository,
                         kit.moveSubImages(id, formImages, form.ordinal)
                         //tips: move操作不需要重置meta
                         backendExporter.add(IllustBookMemberExporterTask(formImages))
+
+                        bus.emit(BookImagesChanged(id, emptyList(), formImages, emptyList()))
                     }
                 }
                 BatchAction.DELETE -> {
@@ -283,6 +304,8 @@ class BookService(private val data: DataRepository,
                         kit.deleteSubImages(id, formImages)
                         kit.refreshAllMeta(id)
                         backendExporter.add(IllustBookMemberExporterTask(formImages))
+
+                        bus.emit(BookImagesChanged(id, emptyList(), emptyList(), formImages))
                     }
                 }
             }

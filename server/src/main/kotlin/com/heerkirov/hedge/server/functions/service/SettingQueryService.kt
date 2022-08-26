@@ -1,9 +1,11 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.*
 import com.heerkirov.hedge.server.dto.form.QueryOptionUpdateForm
+import com.heerkirov.hedge.server.events.SettingQueryChanged
 
-class SettingQueryService(private val data: DataRepository) {
+class SettingQueryService(private val data: DataRepository, private val bus: EventBus) {
     fun get(): QueryOption {
         return data.setting.query
     }
@@ -18,5 +20,7 @@ class SettingQueryService(private val data: DataRepository) {
                 form.warningLimitOfIntersectItems.alsoOpt { query.warningLimitOfIntersectItems = it }
             }
         }
+
+        bus.emit(SettingQueryChanged(form))
     }
 }

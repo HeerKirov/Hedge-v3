@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.*
 import com.heerkirov.hedge.server.dao.Illusts
 import com.heerkirov.hedge.server.dao.ImportImages
@@ -8,12 +9,13 @@ import com.heerkirov.hedge.server.exceptions.CascadeResourceExists
 import com.heerkirov.hedge.server.exceptions.NotFound
 import com.heerkirov.hedge.server.dto.form.SiteCreateForm
 import com.heerkirov.hedge.server.dto.form.SiteUpdateForm
+import com.heerkirov.hedge.server.events.SettingSourceSiteChanged
 import com.heerkirov.hedge.server.exceptions.be
 import org.ktorm.dsl.eq
 import org.ktorm.entity.any
 import org.ktorm.entity.sequenceOf
 
-class SettingSourceService(private val data: DataRepository) {
+class SettingSourceService(private val data: DataRepository, private val bus: EventBus) {
     fun list(): List<SourceOption.Site> {
         return data.setting.source.sites
     }
@@ -44,6 +46,8 @@ class SettingSourceService(private val data: DataRepository) {
                 }
             }
         }
+
+        bus.emit(SettingSourceSiteChanged(data.setting.source.sites))
     }
 
     /**
@@ -82,6 +86,8 @@ class SettingSourceService(private val data: DataRepository) {
                 }
             }
         }
+
+        bus.emit(SettingSourceSiteChanged(data.setting.source.sites))
     }
 
     /**
@@ -107,5 +113,7 @@ class SettingSourceService(private val data: DataRepository) {
                 }
             }
         }
+
+        bus.emit(SettingSourceSiteChanged(data.setting.source.sites))
     }
 }

@@ -8,77 +8,104 @@ import com.heerkirov.hedge.server.enums.MetaType
  * 实体事件，指实体变更等。
  * 实体变更是指server中的entity发生新增、删除、属性变化、从属关系变化。当这些事情发生时，有通知前端以及部分响应组件的必要。
  */
-interface EntityEvent
+interface EntityEvent : BaseBusEvent
 
-//TODO 在合适的位置发送这些事件
+interface AnnotationEntityEvent : EntityEvent { val annotationId: Int; val type: MetaType }
 
-class AnnotationCreated(val annotationId: Int, val type: MetaType) : BaseBusEventImpl("entity/annotation/created"), EntityEvent
+data class AnnotationCreated(override val annotationId: Int, override val type: MetaType) : BaseBusEventImpl("entity/annotation/created"), AnnotationEntityEvent
 
-class AnnotationUpdated(val annotationId: Int, val type: MetaType) : BaseBusEventImpl("entity/annotation/updated"), EntityEvent
+data class AnnotationUpdated(override val annotationId: Int, override val type: MetaType) : BaseBusEventImpl("entity/annotation/updated"), AnnotationEntityEvent
 
-class AnnotationDeleted(val annotationId: Int, val type: MetaType) : BaseBusEventImpl("entity/annotation/deleted"), EntityEvent
+data class AnnotationDeleted(override val annotationId: Int, override val type: MetaType) : BaseBusEventImpl("entity/annotation/deleted"), AnnotationEntityEvent
 
-class MetaTagCreated(val metaId: Int, val metaType: MetaType) : BaseBusEventImpl("entity/meta-tag/created"), EntityEvent
+interface MetaTagEntityEvent : EntityEvent { val metaId: Int; val metaType: MetaType }
 
-class MetaTagUpdated(val metaId: Int, val metaType: MetaType,
-                     val generalUpdated: Boolean,
-                     val ordinalUpdated: Boolean,
-                     val sourceTagMappingUpdated: Boolean) : BaseBusEventImpl("entity/meta-tag/updated"), EntityEvent
+data class MetaTagCreated(override val metaId: Int, override val metaType: MetaType) : BaseBusEventImpl("entity/meta-tag/created"), MetaTagEntityEvent
 
-class MetaTagDeleted(val metaId: Int, val metaType: MetaType) : BaseBusEventImpl("entity/meta-tag/deleted"), EntityEvent
+/**
+ * @param generalUpdated 普通属性的变更。
+ * @param annotationUpdated 注解变更。
+ * @param ordinalUpdated topic的parent变更、tag的parent/ordinal变更。
+ * @param sourceTagMappingUpdated 与之相关的映射变更。
+ */
+data class MetaTagUpdated(override val metaId: Int, override val metaType: MetaType,
+                          val generalUpdated: Boolean,
+                          val annotationUpdated: Boolean,
+                          val ordinalUpdated: Boolean,
+                          val sourceTagMappingUpdated: Boolean) : BaseBusEventImpl("entity/meta-tag/updated"), MetaTagEntityEvent
 
-class IllustCreated(val illustId: Int, val illustType: IllustType) : BaseBusEventImpl("entity/illust/created"), EntityEvent
+data class MetaTagDeleted(override val metaId: Int, override val metaType: MetaType) : BaseBusEventImpl("entity/meta-tag/deleted"), MetaTagEntityEvent
 
-class IllustUpdated(val illustId: Int, val illustType: IllustType,
-                    val generalUpdated: Boolean,
-                    val metaTagUpdated: Boolean,
-                    val sourceDataUpdated: Boolean,
-                    val relatedItemsUpdated: Boolean) : BaseBusEventImpl("entity/illust/updated"), EntityEvent
+interface IllustEntityEvent : EntityEvent { val illustId: Int; val illustType: IllustType }
 
-class IllustDeleted(val illustId: Int, val illustType: IllustType) : BaseBusEventImpl("entity/illust/deleted"), EntityEvent
+data class IllustCreated(override val illustId: Int, override val illustType: IllustType) : BaseBusEventImpl("entity/illust/created"), IllustEntityEvent
 
-class CollectionImagesChanged(val illustId: Int, val added: List<Int>, val deleted: List<Int>) : BaseBusEventImpl("entity/collection-images/changed"), EntityEvent
+/**
+ * @param generalUpdated 普通属性变更，对于collection，这也包括file cover的变更等。
+ * @param metaTagUpdated 标签变更。
+ * @param sourceDataUpdated 来源数据变更。
+ * @param relatedItemsUpdated 相关项目变更。
+ */
+data class IllustUpdated(override val illustId: Int, override val illustType: IllustType,
+                         val generalUpdated: Boolean,
+                         val metaTagUpdated: Boolean,
+                         val sourceDataUpdated: Boolean,
+                         val relatedItemsUpdated: Boolean) : BaseBusEventImpl("entity/illust/updated"), IllustEntityEvent
 
-class BookCreated(val bookId: Int) : BaseBusEventImpl("entity/book/created"), EntityEvent
+data class IllustDeleted(override val illustId: Int, override val illustType: IllustType) : BaseBusEventImpl("entity/illust/deleted"), IllustEntityEvent
 
-class BookUpdated(val bookId: Int,
-                  val generalUpdated: Boolean,
-                  val metaTagUpdated: Boolean) : BaseBusEventImpl("entity/book/updated"), EntityEvent
+data class CollectionImagesChanged(override val illustId: Int, override val illustType: IllustType = IllustType.COLLECTION) : BaseBusEventImpl("entity/collection-images/changed"), IllustEntityEvent
 
-class BookDeleted(val bookId: Int) : BaseBusEventImpl("entity/book/deleted"), EntityEvent
+interface BookEntityEvent : EntityEvent { val bookId: Int }
 
-class BookImagesChanged(val bookId: Int, val added: List<Int>, val moved: List<Int>, val deleted: List<Int>) : BaseBusEventImpl("entity/book-images/changed"), EntityEvent
+data class BookCreated(override val bookId: Int) : BaseBusEventImpl("entity/book/created"), BookEntityEvent
 
-class FolderCreated(val folderId: Int, val folderType: FolderType) : BaseBusEventImpl("entity/folder/created"), EntityEvent
+/**
+ * @param generalUpdated 普通属性变更，也包括封面变更等。
+ * @param metaTagUpdated 标签变更。
+ */
+data class BookUpdated(override val bookId: Int,
+                       val generalUpdated: Boolean,
+                       val metaTagUpdated: Boolean) : BaseBusEventImpl("entity/book/updated"), BookEntityEvent
 
-class FolderUpdated(val folderId: Int, val folderType: FolderType) : BaseBusEventImpl("entity/folder/updated"), EntityEvent
+data class BookDeleted(override val bookId: Int) : BaseBusEventImpl("entity/book/deleted"), BookEntityEvent
 
-class FolderDeleted(val folderId: Int, val folderType: FolderType) : BaseBusEventImpl("entity/folder/deleted"), EntityEvent
+data class BookImagesChanged(val bookId: Int, val added: List<Int>, val moved: List<Int>, val deleted: List<Int>) : BaseBusEventImpl("entity/book-images/changed"), EntityEvent
 
-class FolderPinChanged(val folderId: Int, val folderType: FolderType, val pin: Boolean, val pinOrdinal: Int?) : BaseBusEventImpl("entity/folder-pin/changed"), EntityEvent
+interface FolderEntityEvent : EntityEvent { val folderId: Int }
 
-class FolderImagesChanged(val folderId: Int, val added: List<Int>, val moved: List<Int>, val deleted: List<Int>) : BaseBusEventImpl("entity/folder-images/changed"), EntityEvent
+data class FolderCreated(override val folderId: Int, val folderType: FolderType) : BaseBusEventImpl("entity/folder/created"), FolderEntityEvent
 
-class ImportCreated(val importId: Int) : BaseBusEventImpl("entity/import/created"), EntityEvent
+data class FolderUpdated(override val folderId: Int, val folderType: FolderType) : BaseBusEventImpl("entity/folder/updated"), FolderEntityEvent
 
-class ImportUpdated(val importId: Int,
-                    val generalUpdated: Boolean,
-                    val thumbnailFileReady: Boolean) : BaseBusEventImpl("entity/import/updated"), EntityEvent
+data class FolderDeleted(override val folderId: Int, val folderType: FolderType) : BaseBusEventImpl("entity/folder/deleted"), FolderEntityEvent
 
-class ImportDeleted(val importId: Int) : BaseBusEventImpl("entity/import/deleted"), EntityEvent
+data class FolderPinChanged(override val folderId: Int, val pin: Boolean, val pinOrdinal: Int?) : BaseBusEventImpl("entity/folder-pin/changed"), FolderEntityEvent
 
-class ImportCountChanged : BaseBusEventImpl("entity/import/count-changed"), EntityEvent
+data class FolderImagesChanged(override val folderId: Int, val added: List<Int>, val moved: List<Int>, val deleted: List<Int>) : BaseBusEventImpl("entity/folder-images/changed"), FolderEntityEvent
+
+interface ImportEntityEvent : EntityEvent { val importId: Int }
+
+data class ImportCreated(override val importId: Int) : BaseBusEventImpl("entity/import/created"), ImportEntityEvent
+
+data class ImportUpdated(override val importId: Int,
+                         val generalUpdated: Boolean,
+                         val thumbnailFileReady: Boolean) : BaseBusEventImpl("entity/import/updated"), ImportEntityEvent
+
+data class ImportDeleted(override val importId: Int) : BaseBusEventImpl("entity/import/deleted"), ImportEntityEvent
 
 class ImportSaved : BaseBusEventImpl("entity/import/saved"), EntityEvent
 
-class SourceDataCreated(val site: String, val sourceId: Int) : BaseBusEventImpl("entity/source-data/created"), EntityEvent
+interface SourceDataEntityEvent : EntityEvent { val site: String; val sourceId: Long }
 
-class SourceDataUpdated(val site: String, val sourceId: Int) : BaseBusEventImpl("entity/source-data/updated"), EntityEvent
+data class SourceDataCreated(override val site: String, override val sourceId: Long) : BaseBusEventImpl("entity/source-data/created"), SourceDataEntityEvent
 
-class SourceDataDeleted(val site: String, val sourceId: Int) : BaseBusEventImpl("entity/source-data/deleted"), EntityEvent
+data class SourceDataUpdated(override val site: String, override val sourceId: Long) : BaseBusEventImpl("entity/source-data/updated"), SourceDataEntityEvent
 
-class SourceBookUpdated(val site: String, val sourceBookCode: String) : BaseBusEventImpl("entity/source-book/updated"), EntityEvent
+data class SourceDataDeleted(override val site: String, override val sourceId: Long) : BaseBusEventImpl("entity/source-data/deleted"), SourceDataEntityEvent
 
-class SourceTagUpdated(val site: String, val sourceTagCode: String) : BaseBusEventImpl("entity/source-tag/updated"), EntityEvent
+data class SourceBookUpdated(val site: String, val sourceBookCode: String) : BaseBusEventImpl("entity/source-book/updated"), EntityEvent
 
-class SourceTagMappingUpdated(val site: String, val sourceTagCode: String) : BaseBusEventImpl("entity/source-tag-mapping/updated"), EntityEvent
+data class SourceTagUpdated(val site: String, val sourceTagCode: String) : BaseBusEventImpl("entity/source-tag/updated"), EntityEvent
+
+data class SourceTagMappingUpdated(val site: String, val sourceTagCode: String) : BaseBusEventImpl("entity/source-tag-mapping/updated"), EntityEvent

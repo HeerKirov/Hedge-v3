@@ -41,5 +41,3 @@ data class FindSimilarOptionUpdateForm(val autoFindSimilar: Opt<Boolean>,
                                        val defaultTaskConf: Opt<FindSimilarTask.TaskConfig>)
 
 data class ServiceOptionUpdateForm(val port: Opt<String?>, val storagePath: Opt<String?>)
-
-data class ProxyOptionUpdateForm(val socks5Proxy: Opt<String?>, val httpProxy: Opt<String?>)

@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.manager
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.form.SourceMappingBatchQueryForm
@@ -8,6 +9,7 @@ import com.heerkirov.hedge.server.dto.form.SourceTagForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAddressType
+import com.heerkirov.hedge.server.events.SourceTagMappingUpdated
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.exceptions.NotFound
 import com.heerkirov.hedge.server.exceptions.be
@@ -15,7 +17,7 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.ktorm.schema.Column
 
-class SourceMappingManager(private val data: DataRepository, private val sourceTagManager: SourceTagManager) {
+class SourceMappingManager(private val data: DataRepository, private val bus: EventBus, private val sourceTagManager: SourceTagManager) {
     fun batchQuery(form: SourceMappingBatchQueryForm): List<SourceMappingBatchQueryResult> {
         val groups = data.db.from(SourceTagMappings)
             .innerJoin(SourceTags, (SourceTags.site eq SourceTagMappings.sourceSite) and (SourceTags.id eq SourceTagMappings.sourceTagId))
@@ -56,6 +58,7 @@ class SourceMappingManager(private val data: DataRepository, private val sourceT
     }
 
     /**
+     * 更新某个source tag的mapping。
      * @throws ResourceNotExist ("site", string) 给出的site不存在
      * @throws ResourceNotExist ("authors" | "topics" | "tags", number[]) 给出的meta tag不存在
      */
@@ -92,9 +95,14 @@ class SourceMappingManager(private val data: DataRepository, private val sourceT
         //筛选出delete项，将这些项删除
         val deleted = (old.keys - current).map { old[it]!! }
         if(deleted.isNotEmpty()) data.db.delete(SourceTagMappings) { it.id inList deleted }
+
+        if(added.isNotEmpty() || deleted.isNotEmpty()) {
+            bus.emit(SourceTagMappingUpdated(sourceSite, tagName))
+        }
     }
 
     /**
+     * 更新某个meta tag的source mapping。
      * @throws NotFound 请求对象不存在
      * @throws ResourceNotExist ("site", string) 给出的site不存在
      */
@@ -109,6 +117,7 @@ class SourceMappingManager(private val data: DataRepository, private val sourceT
         //处理所有给出项的更新，并获得这些source tag的id
         val mappingGroups = mappings.groupBy { it.site }
         mappingGroups.forEach { (site, _) -> sourceTagManager.checkSourceSite(site) }
+
         val current = mappingGroups.flatMap { (source, row) ->
             val sourceTags = row.map { SourceTagForm(it.code, it.name, it.otherName, it.type) }
             sourceTagManager.getAndUpsertSourceTags(source, sourceTags).map { source to it }
@@ -133,8 +142,16 @@ class SourceMappingManager(private val data: DataRepository, private val sourceT
         }
 
         //筛选出delete项，将这些项删除
-        val deleted = (old.keys - current).map { old[it]!! }
-        if(deleted.isNotEmpty()) data.db.delete(SourceTagMappings) { it.id inList deleted }
+        val deleted = old.keys - current
+        if(deleted.isNotEmpty()) data.db.delete(SourceTagMappings) { it.id inList deleted.map { i -> old[i]!! } }
+
+        if(added.isNotEmpty() || deleted.isNotEmpty()) {
+            val effectedSourceTagIds = added.map { (_, sourceTagId) -> sourceTagId } + deleted.map { (_, sourceTagId) -> sourceTagId }
+            val effectedSourceTags = data.db.sequenceOf(SourceTags).filter { it.id inList effectedSourceTagIds }
+            for (effectedSourceTag in effectedSourceTags) {
+                bus.emit(SourceTagMappingUpdated(effectedSourceTag.site, effectedSourceTag.code))
+            }
+        }
     }
 
     private inline fun <T : Any> List<Int>?.validateMetaTagExist(propName: String, dto: MetaTagTable<T>, getId: (MetaTagTable<T>) -> Column<Int>) {

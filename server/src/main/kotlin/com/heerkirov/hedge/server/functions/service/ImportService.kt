@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.backend.similar.SimilarFinder
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.ImportOption
 import com.heerkirov.hedge.server.components.database.transaction
@@ -13,6 +14,9 @@ import com.heerkirov.hedge.server.dto.form.ImportUpdateForm
 import com.heerkirov.hedge.server.dto.form.UploadForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.FileStatus
+import com.heerkirov.hedge.server.events.ImportDeleted
+import com.heerkirov.hedge.server.events.ImportSaved
+import com.heerkirov.hedge.server.events.ImportUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.manager.*
 import com.heerkirov.hedge.server.model.FindSimilarTask
@@ -31,6 +35,7 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.*
 
 class ImportService(private val data: DataRepository,
+                    private val bus: EventBus,
                     private val fileManager: FileManager,
                     private val importManager: ImportManager,
                     private val illustManager: IllustManager,
@@ -73,6 +78,7 @@ class ImportService(private val data: DataRepository,
     /**
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      * @throws FileNotFoundError 此文件不存在
+     * @throws StorageNotAccessibleError 存储路径不可访问
      */
     fun import(form: ImportForm): Pair<Int, List<BaseException<*>>> {
         return importManager.import(form.filepath, form.mobileImport)
@@ -80,6 +86,7 @@ class ImportService(private val data: DataRepository,
 
     /**
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
+     * @throws StorageNotAccessibleError 存储路径不可访问
      */
     fun upload(form: UploadForm): Pair<Int, List<BaseException<*>>> {
         return importManager.upload(form.content, form.filename, form.extension)
@@ -145,6 +152,8 @@ class ImportService(private val data: DataRepository,
                     form.orderTime.applyOpt { set(it.orderTime, this.toMillisecond()) }
                     form.createTime.applyOpt { set(it.createTime, this) }
                 }
+
+                bus.emit(ImportUpdated(id, generalUpdated = true, thumbnailFileReady = false))
             }
         }
     }
@@ -157,6 +166,8 @@ class ImportService(private val data: DataRepository,
             val row = data.db.from(ImportImages).select(ImportImages.fileId).where { ImportImages.id eq id }.firstOrNull() ?: throw be(NotFound())
             data.db.delete(ImportImages) { it.id eq id }
             fileManager.deleteFile(row[ImportImages.fileId]!!)
+
+            bus.emit(ImportDeleted(id))
         }
     }
 
@@ -261,6 +272,8 @@ class ImportService(private val data: DataRepository,
             if(data.setting.findSimilar.autoFindSimilar) {
                 similarFinder.add(FindSimilarTask.TaskSelectorOfImage(imageIds), data.setting.findSimilar.autoTaskConf ?: data.setting.findSimilar.defaultTaskConf)
             }
+
+            bus.emit(ImportSaved())
 
             return ImportSaveRes(records.size)
         }

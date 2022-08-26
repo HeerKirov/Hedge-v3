@@ -1,8 +1,10 @@
 package com.heerkirov.hedge.server.components.backend.exporter
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.Books
+import com.heerkirov.hedge.server.events.BookUpdated
 import com.heerkirov.hedge.server.functions.kit.BookKit
 import org.ktorm.dsl.eq
 import org.ktorm.entity.firstOrNull
@@ -12,6 +14,7 @@ import kotlin.reflect.KClass
 data class BookMetadataExporterTask(val id: Int, val exportMetaTag: Boolean = false) : ExporterTask
 
 class BookMetadataExporter(private val data: DataRepository,
+                           private val bus: EventBus,
                            private val bookKit: BookKit) : ExporterWorker<BookMetadataExporterTask>, MergedProcessWorker<BookMetadataExporterTask> {
     override val clazz: KClass<BookMetadataExporterTask> = BookMetadataExporterTask::class
 
@@ -27,6 +30,8 @@ class BookMetadataExporter(private val data: DataRepository,
                 data.db.sequenceOf(Books).firstOrNull { it.id eq task.id } ?: return
 
                 bookKit.refreshAllMeta(task.id)
+
+                bus.emit(BookUpdated(task.id, generalUpdated = false, metaTagUpdated = true))
             }
         }
     }

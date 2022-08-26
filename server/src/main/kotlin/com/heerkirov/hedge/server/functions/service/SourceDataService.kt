@@ -143,11 +143,13 @@ class SourceDataService(private val data: DataRepository, private val sourceMana
      * @throws ResourceNotExist ("site", string) 给出的site不存在
      */
     fun update(sourceSite: String, sourceId: Long, form: SourceDataUpdateForm) {
-        sourceManager.checkSourceSite(sourceSite, sourceId)
-        sourceManager.createOrUpdateSourceData(sourceSite, sourceId,
-            title = form.title, description = form.description, tags = form.tags,
-            books = form.books, relations = form.relations,
-            status = form.status, allowCreate = false)
+        data.db.transaction {
+            sourceManager.checkSourceSite(sourceSite, sourceId)
+            sourceManager.createOrUpdateSourceData(sourceSite, sourceId,
+                title = form.title, description = form.description, tags = form.tags,
+                books = form.books, relations = form.relations,
+                status = form.status, allowCreate = false)
+        }
     }
 
     /**
@@ -155,21 +157,7 @@ class SourceDataService(private val data: DataRepository, private val sourceMana
      */
     fun delete(sourceSite: String, sourceId: Long) {
         data.db.transaction {
-            val row = data.db.from(SourceDatas).select()
-                .where { (SourceDatas.sourceSite eq sourceSite) and (SourceDatas.sourceId eq sourceId) }
-                .firstOrNull()
-                ?: throw be(NotFound())
-
-            val sourceRowId = row[SourceDatas.id]!!
-            data.db.update(Illusts) {
-                where { it.sourceDataId eq sourceRowId }
-                set(it.sourceDataId, null)
-                set(it.sourceSite, null)
-                set(it.sourceId, null)
-                set(it.sourcePart, null)
-            }
-
-            data.db.delete(SourceDatas) { it.id eq sourceRowId }
+            sourceManager.deleteSourceData(sourceSite, sourceId)
         }
     }
 }

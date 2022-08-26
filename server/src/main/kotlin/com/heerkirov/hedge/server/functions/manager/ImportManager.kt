@@ -1,10 +1,12 @@
 package com.heerkirov.hedge.server.functions.manager
 
 import com.heerkirov.hedge.server.components.backend.FileGenerator
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.ImportOption
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.ImportImages
+import com.heerkirov.hedge.server.events.ImportCreated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.DateTime
@@ -24,10 +26,11 @@ import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.LocalDateTime
 
-class ImportManager(private val data: DataRepository, private val importMetaManager: ImportMetaManager, private val fileManager: FileManager, private val fileGenerator: FileGenerator) {
+class ImportManager(private val data: DataRepository, private val bus: EventBus, private val importMetaManager: ImportMetaManager, private val fileManager: FileManager, private val fileGenerator: FileGenerator) {
     /**
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      * @throws FileNotFoundError 此文件不存在
+     * @throws StorageNotAccessibleError 存储路径不可访问
      */
     fun import(filepath: String, mobileImport: Boolean): Pair<Int, List<BaseException<*>>> = defer {
         val file = File(filepath)
@@ -57,6 +60,7 @@ class ImportManager(private val data: DataRepository, private val importMetaMana
 
     /**
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
+     * @throws StorageNotAccessibleError 存储路径不可访问
      */
     fun upload(content: InputStream, filename: String, extension: String): Pair<Int, List<BaseException<*>>> = defer {
         val file = Fs.temp(extension).applyDefer {
@@ -132,6 +136,8 @@ class ImportManager(private val data: DataRepository, private val importMetaMana
             set(it.orderTime, orderTime.toMillisecond())
             set(it.createTime, fileImportTime)
         } as Int
+
+        bus.emit(ImportCreated(id))
 
         return Pair(id, warnings)
     }

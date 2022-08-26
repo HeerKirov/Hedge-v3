@@ -3,6 +3,7 @@ package com.heerkirov.hedge.server.functions.service
 import com.heerkirov.hedge.server.components.backend.exporter.BookMetadataExporterTask
 import com.heerkirov.hedge.server.components.backend.exporter.BackendExporter
 import com.heerkirov.hedge.server.components.backend.exporter.IllustMetadataExporterTask
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.AuthorAnnotationRelations
@@ -14,6 +15,9 @@ import com.heerkirov.hedge.server.dto.form.AuthorCreateForm
 import com.heerkirov.hedge.server.dto.form.AuthorUpdateForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.MetaType
+import com.heerkirov.hedge.server.events.MetaTagCreated
+import com.heerkirov.hedge.server.events.MetaTagDeleted
+import com.heerkirov.hedge.server.events.MetaTagUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.AuthorKit
 import com.heerkirov.hedge.server.functions.manager.SourceMappingManager
@@ -28,6 +32,7 @@ import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 
 class AuthorService(private val data: DataRepository,
+                    private val bus: EventBus,
                     private val kit: AuthorKit,
                     private val queryManager: QueryManager,
                     private val sourceMappingManager: SourceMappingManager,
@@ -105,6 +110,8 @@ class AuthorService(private val data: DataRepository,
 
             kit.processAnnotations(id, annotations.asSequence().map { it.id }.toSet(), creating = true)
 
+            bus.emit(MetaTagCreated(id, MetaType.AUTHOR))
+
             return id
         }
     }
@@ -168,8 +175,13 @@ class AuthorService(private val data: DataRepository,
                     .where { BookAuthorRelations.authorId eq id }
                     .map { BookMetadataExporterTask(it[BookAuthorRelations.bookId]!!, exportMetaTag = true) }
                     .let { backendExporter.add(it) }
+            }
 
-                queryManager.flushCacheOf(QueryManager.CacheType.AUTHOR)
+            val generalUpdated = anyOpt(newName, newOtherNames, newKeywords, form.type, form.description, form.favorite, form.score)
+            val annotationUpdated = newAnnotations.isPresent
+            val sourceTagMappingUpdated = form.mappingSourceTags.isPresent
+            if(generalUpdated || annotationUpdated || sourceTagMappingUpdated) {
+                bus.emit(MetaTagUpdated(id, MetaType.AUTHOR, generalUpdated, annotationUpdated, false, sourceTagMappingUpdated))
             }
         }
     }
@@ -186,7 +198,7 @@ class AuthorService(private val data: DataRepository,
             data.db.delete(BookAuthorRelations) { it.authorId eq id }
             data.db.delete(AuthorAnnotationRelations) { it.authorId eq id }
 
-            queryManager.flushCacheOf(QueryManager.CacheType.AUTHOR)
+            bus.emit(MetaTagDeleted(id, MetaType.AUTHOR))
         }
     }
 }

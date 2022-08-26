@@ -1,12 +1,14 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.*
 import com.heerkirov.hedge.server.exceptions.InvalidRuleIndexError
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.dto.form.ImportOptionUpdateForm
+import com.heerkirov.hedge.server.events.SettingImportChanged
 import com.heerkirov.hedge.server.exceptions.be
 
-class SettingImportService(private val data: DataRepository) {
+class SettingImportService(private val data: DataRepository, private val bus: EventBus) {
     fun get(): ImportOption {
         return data.setting.import
     }
@@ -35,6 +37,8 @@ class SettingImportService(private val data: DataRepository) {
                 form.sourceAnalyseRules.alsoOpt { import.sourceAnalyseRules = it }
             }
         }
+
+        bus.emit(SettingImportChanged(form))
     }
 
     /**

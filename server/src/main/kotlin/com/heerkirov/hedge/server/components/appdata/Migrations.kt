@@ -7,8 +7,7 @@ import com.heerkirov.hedge.server.utils.migrations.MigrationRegister
 object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
     override fun defaultData(): AppData {
         return AppData(
-            service = ServiceOption(port = null, storagePath = null),
-            proxy = ProxyOption(socks5Proxy = null, httpProxy = null)
+            service = ServiceOption(port = null, storagePath = null)
         )
     }
 

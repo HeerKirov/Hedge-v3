@@ -15,5 +15,16 @@ enum class IllustModelType {
     /**
      * collection类型的illust。
      */
-    COLLECTION
+    COLLECTION;
+
+    /**
+     * 将此类型直接转换为illustType。
+     */
+    fun toIllustType(): IllustType {
+        return if(this == IMAGE || this == IMAGE_WITH_PARENT) {
+            IllustType.IMAGE
+        }else{
+            IllustType.COLLECTION
+        }
+    }
 }

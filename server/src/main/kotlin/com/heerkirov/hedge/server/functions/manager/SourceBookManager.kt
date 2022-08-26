@@ -1,13 +1,15 @@
 package com.heerkirov.hedge.server.functions.manager
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.SourceBooks
 import com.heerkirov.hedge.server.dto.form.SourceBookForm
+import com.heerkirov.hedge.server.events.SourceBookUpdated
 import com.heerkirov.hedge.server.model.SourceBook
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 
-class SourceBookManager(private val data: DataRepository) {
+class SourceBookManager(private val data: DataRepository, private val bus: EventBus) {
     fun getOrCreateSourceBook(sourceSite: String, code: String, title: String?): SourceBook {
         return data.db.sequenceOf(SourceBooks)
             .firstOrNull { it.site eq sourceSite and (it.code eq code) }
@@ -17,6 +19,9 @@ class SourceBookManager(private val data: DataRepository) {
                     set(it.code, code)
                     set(it.title, title ?: "")
                 } as Int
+
+                bus.emit(SourceBookUpdated(sourceSite, code))
+
                 SourceBook(id, sourceSite, code, title ?: "")
             }
     }
@@ -62,6 +67,9 @@ class SourceBookManager(private val data: DataRepository) {
                 }
             }
         }
+
+        minus.forEach { bus.emit(SourceBookUpdated(sourceSite, it)) }
+        common.forEach { bus.emit(SourceBookUpdated(sourceSite, it)) }
 
         return data.db.from(SourceBooks).select(SourceBooks.id)
             .where { SourceBooks.site eq sourceSite and (SourceBooks.code inList bookMap.keys) }

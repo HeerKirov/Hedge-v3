@@ -4,12 +4,12 @@ import com.heerkirov.hedge.server.components.backend.exporter.BookMetadataExport
 import com.heerkirov.hedge.server.components.backend.exporter.BackendExporter
 import com.heerkirov.hedge.server.components.backend.exporter.IllustMetadataExporterTask
 import com.heerkirov.hedge.server.components.backend.exporter.TagGlobalSortExporterTask
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.TagKit
 import com.heerkirov.hedge.server.functions.manager.SourceMappingManager
-import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.dao.BookTagRelations
 import com.heerkirov.hedge.server.dao.IllustTagRelations
 import com.heerkirov.hedge.server.dao.Illusts
@@ -25,6 +25,9 @@ import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAddressType
 import com.heerkirov.hedge.server.enums.TagGroupType
+import com.heerkirov.hedge.server.events.MetaTagCreated
+import com.heerkirov.hedge.server.events.MetaTagDeleted
+import com.heerkirov.hedge.server.events.MetaTagUpdated
 import com.heerkirov.hedge.server.utils.business.takeThumbnailFilepath
 import com.heerkirov.hedge.server.utils.*
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
@@ -34,8 +37,8 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.*
 
 class TagService(private val data: DataRepository,
+                 private val bus: EventBus,
                  private val kit: TagKit,
-                 private val queryManager: QueryManager,
                  private val sourceMappingManager: SourceMappingManager,
                  private val backendExporter: BackendExporter) {
     private val orderTranslator = OrderTranslator {
@@ -153,6 +156,8 @@ class TagService(private val data: DataRepository,
             form.mappingSourceTags?.also { sourceMappingManager.update(MetaType.TAG, id, it) }
 
             kit.processAnnotations(id, form.annotations, creating = true)
+
+            bus.emit(MetaTagCreated(id, MetaType.TAG))
 
             backendExporter.add(TagGlobalSortExporterTask)
 
@@ -367,12 +372,18 @@ class TagService(private val data: DataRepository,
                         .where { BookTagRelations.tagId eq id }
                         .map { BookMetadataExporterTask(it[BookTagRelations.bookId]!!, exportMetaTag = true) }
                         .let { backendExporter.add(it) }
-
-                    queryManager.flushCacheOf(QueryManager.CacheType.TAG)
             }
 
             if(newParentId.isPresent || newOrdinal.isPresent) {
                 backendExporter.add(TagGlobalSortExporterTask)
+            }
+
+            val generalUpdated = anyOpt(newName, newOtherNames, form.type, form.description, form.group, newLinks, newExamples)
+            val ordinalUpdated = anyOpt(newParentId, newOrdinal)
+            val annotationUpdated = form.annotations.isPresent
+            val sourceTagMappingUpdated = form.mappingSourceTags.isPresent
+            if(generalUpdated || ordinalUpdated || annotationUpdated || sourceTagMappingUpdated) {
+                bus.emit(MetaTagUpdated(id, MetaType.TAG, generalUpdated, annotationUpdated, ordinalUpdated, sourceTagMappingUpdated))
             }
         }
     }
@@ -411,7 +422,7 @@ class TagService(private val data: DataRepository,
                 .let { backendExporter.add(it) }
             recursionDelete(id)
 
-            queryManager.flushCacheOf(QueryManager.CacheType.TAG)
+            bus.emit(MetaTagDeleted(id, MetaType.TAG))
         }
     }
 }

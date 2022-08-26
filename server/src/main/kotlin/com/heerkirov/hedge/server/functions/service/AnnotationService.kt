@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
@@ -11,6 +12,9 @@ import com.heerkirov.hedge.server.dto.res.AnnotationRes
 import com.heerkirov.hedge.server.dto.res.ListResult
 import com.heerkirov.hedge.server.dto.res.newAnnotationRes
 import com.heerkirov.hedge.server.dto.res.toListResult
+import com.heerkirov.hedge.server.events.AnnotationCreated
+import com.heerkirov.hedge.server.events.AnnotationDeleted
+import com.heerkirov.hedge.server.events.AnnotationUpdated
 import com.heerkirov.hedge.server.exceptions.AlreadyExists
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.kit.AnnotationKit
@@ -27,7 +31,7 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 
-class AnnotationService(private val data: DataRepository, private val kit: AnnotationKit, private val queryManager: QueryManager) {
+class AnnotationService(private val data: DataRepository, private val bus: EventBus, private val kit: AnnotationKit, private val queryManager: QueryManager) {
     private val orderTranslator = OrderTranslator {
         "id" to Annotations.id
         "name" to Annotations.name
@@ -64,13 +68,17 @@ class AnnotationService(private val data: DataRepository, private val kit: Annot
             val createTime = DateTime.now()
             val name = kit.validateName(form.name, form.type)
             val target = kit.validateTarget(form.target, form.type)
-            return data.db.insertAndGenerateKey(Annotations) {
+            val id = data.db.insertAndGenerateKey(Annotations) {
                 set(it.name, name)
                 set(it.canBeExported, form.canBeExported)
                 set(it.type, form.type)
                 set(it.target, target)
                 set(it.createTime, createTime)
             } as Int
+
+            bus.emit(AnnotationCreated(id, form.type))
+
+            return id
         }
     }
 
@@ -102,7 +110,7 @@ class AnnotationService(private val data: DataRepository, private val kit: Annot
                     form.canBeExported.applyOpt { set(it.canBeExported, this) }
                 }
 
-                queryManager.flushCacheOf(QueryManager.CacheType.ANNOTATION)
+                bus.emit(AnnotationUpdated(id, a.type))
             }
         }
     }
@@ -112,9 +120,8 @@ class AnnotationService(private val data: DataRepository, private val kit: Annot
      */
     fun delete(id: Int) {
         data.db.transaction {
-            data.db.delete(Annotations) { it.id eq id }.let {
-                if(it <= 0) throw be(NotFound())
-            }
+            val a = data.db.sequenceOf(Annotations).firstOrNull { it.id eq id } ?: throw be(NotFound())
+            data.db.delete(Annotations) { it.id eq id }
             data.db.delete(IllustAnnotationRelations) { it.annotationId eq id }
             data.db.delete(BookAnnotationRelations) { it.annotationId eq id }
             data.db.delete(TagAnnotationRelations) { it.annotationId eq id }
@@ -123,7 +130,7 @@ class AnnotationService(private val data: DataRepository, private val kit: Annot
             data.db.delete(AuthorAnnotationRelations) { it.annotationId eq id }
             data.db.delete(TopicAnnotationRelations) { it.annotationId eq id }
 
-            queryManager.flushCacheOf(QueryManager.CacheType.ANNOTATION)
+            bus.emit(AnnotationDeleted(id, a.type))
         }
     }
 }

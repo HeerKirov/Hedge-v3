@@ -1,8 +1,10 @@
 package com.heerkirov.hedge.server.functions.manager
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.FolderImageRelations
 import com.heerkirov.hedge.server.dao.Folders
+import com.heerkirov.hedge.server.events.FolderImagesChanged
 import com.heerkirov.hedge.server.functions.kit.FolderKit
 import com.heerkirov.hedge.server.utils.DateTime
 import org.ktorm.dsl.*
@@ -10,7 +12,7 @@ import org.ktorm.entity.filter
 import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
 
-class FolderManager(private val data: DataRepository, private val kit: FolderKit, private val illustManager: IllustManager) {
+class FolderManager(private val data: DataRepository, private val bus: EventBus, private val kit: FolderKit) {
     /**
      * 从所有的folders中平滑移除一个image项。
      */
@@ -28,6 +30,10 @@ class FolderManager(private val data: DataRepository, private val kit: FolderKit
         data.db.update(Folders) {
             where { it.id inList folderIds }
             set(it.cachedCount, it.cachedCount minus 1)
+        }
+
+        for ((folderId, _, _) in relations) {
+            bus.emit(FolderImagesChanged(folderId, emptyList(), emptyList(), listOf(imageId)))
         }
     }
 
@@ -51,6 +57,9 @@ class FolderManager(private val data: DataRepository, private val kit: FolderKit
                         set(it.updateTime, now)
                     }
                 }
+            }
+            for ((folderId, _) in imageCounts) {
+                bus.emit(FolderImagesChanged(folderId, imageIds, emptyList(), emptyList()))
             }
         }
     }

@@ -29,6 +29,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
      * - thumbnail和大小等信息留白，处于NOT READY状态，需要调用FileGenerator生成这些信息。
      * @param moveFile 使用移动的方式导入文件。
      * @return file id。使用此id来索引物理文件记录。
+     * @throws StorageNotAccessibleError 存储路径不可访问
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      */

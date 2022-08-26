@@ -2,9 +2,12 @@ package com.heerkirov.hedge.server.functions.manager
 
 import com.heerkirov.hedge.server.components.backend.exporter.BackendExporter
 import com.heerkirov.hedge.server.components.backend.exporter.IllustMetadataExporterTask
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.IllustModelType
+import com.heerkirov.hedge.server.enums.IllustType
+import com.heerkirov.hedge.server.events.IllustCreated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.model.Illust
@@ -19,6 +22,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 class IllustManager(private val data: DataRepository,
+                    private val bus: EventBus,
                     private val kit: IllustKit,
                     private val sourceManager: SourceDataManager,
                     private val partitionManager: PartitionManager,
@@ -98,6 +102,8 @@ class IllustManager(private val data: DataRepository,
             backendExporter.add(IllustMetadataExporterTask(collection.id, exportFirstCover = true, exportMetaTag = true))
         }
 
+        bus.emit(IllustCreated(id, IllustType.IMAGE))
+
         return id
     }
 
@@ -136,6 +142,8 @@ class IllustManager(private val data: DataRepository,
         updateSubImages(id, images)
 
         kit.refreshAllMeta(id, copyFromChildren = true)
+
+        bus.emit(IllustCreated(id, IllustType.COLLECTION))
 
         return id
     }

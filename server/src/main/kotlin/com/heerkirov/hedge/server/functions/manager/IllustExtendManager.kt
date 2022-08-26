@@ -2,10 +2,14 @@ package com.heerkirov.hedge.server.functions.manager
 
 import com.heerkirov.hedge.server.components.backend.exporter.BackendExporter
 import com.heerkirov.hedge.server.components.backend.exporter.IllustMetadataExporterTask
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.form.ImagePropsCloneForm
 import com.heerkirov.hedge.server.enums.IllustModelType
+import com.heerkirov.hedge.server.enums.IllustType
+import com.heerkirov.hedge.server.events.IllustDeleted
+import com.heerkirov.hedge.server.events.IllustUpdated
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.DateTime
@@ -15,6 +19,7 @@ import org.ktorm.entity.first
 import org.ktorm.entity.sequenceOf
 
 class IllustExtendManager(private val data: DataRepository,
+                          private val bus: EventBus,
                           private val kit: IllustKit,
                           private val illustManager: IllustManager,
                           private val associateManager: AssociateManager,
@@ -51,6 +56,8 @@ class IllustExtendManager(private val data: DataRepository,
 
             //删除关联的file
             fileManager.deleteFile(illust.fileId)
+
+            bus.emit(IllustDeleted(illust.id, IllustType.IMAGE))
         }else{
             val children = data.db.from(Illusts).select(Illusts.id)
                 .where { Illusts.parentId eq illust.id }
@@ -65,6 +72,8 @@ class IllustExtendManager(private val data: DataRepository,
                 exportDescription = illust.description.isNotEmpty(),
                 exportScore = illust.score != null,
                 exportMetaTag = anyNotExportedMetaExists) })
+
+            bus.emit(IllustDeleted(illust.id, IllustType.COLLECTION))
         }
     }
 
@@ -186,10 +195,10 @@ class IllustExtendManager(private val data: DataRepository,
                     .toSet()
 
                 val newBooks = books.filter { (id, _) -> id !in existsBooks }
-                if(newBooks.isNotEmpty()) bookManager.addItemInFolders(toIllust.id, newBooks, exportMetaTags = true)
+                if(newBooks.isNotEmpty()) bookManager.addItemInBooks(toIllust.id, newBooks, exportMetaTags = true)
             }else{
                 bookManager.removeItemInAllBooks(toIllust.id, exportMetaTags = true)
-                bookManager.addItemInFolders(toIllust.id, books, exportMetaTags = true)
+                bookManager.addItemInBooks(toIllust.id, books, exportMetaTags = true)
             }
 
         }
@@ -214,5 +223,12 @@ class IllustExtendManager(private val data: DataRepository,
                 folderManager.addItemInFolders(toIllust.id, folders)
             }
         }
+
+        bus.emit(IllustUpdated(toIllust.id, toIllust.type.toIllustType(),
+            generalUpdated = true,
+            metaTagUpdated = true,
+            sourceDataUpdated = true,
+            relatedItemsUpdated = true
+        ))
     }
 }

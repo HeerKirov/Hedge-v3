@@ -3,6 +3,7 @@ package com.heerkirov.hedge.server.functions.service
 import com.heerkirov.hedge.server.components.backend.exporter.BookMetadataExporterTask
 import com.heerkirov.hedge.server.components.backend.exporter.BackendExporter
 import com.heerkirov.hedge.server.components.backend.exporter.IllustMetadataExporterTask
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.functions.kit.TopicKit
@@ -17,6 +18,9 @@ import com.heerkirov.hedge.server.dto.form.TopicCreateForm
 import com.heerkirov.hedge.server.dto.form.TopicUpdateForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.MetaType
+import com.heerkirov.hedge.server.events.MetaTagCreated
+import com.heerkirov.hedge.server.events.MetaTagDeleted
+import com.heerkirov.hedge.server.events.MetaTagUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
@@ -30,6 +34,7 @@ import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 
 class TopicService(private val data: DataRepository,
+                   private val bus: EventBus,
                    private val kit: TopicKit,
                    private val queryManager: QueryManager,
                    private val sourceMappingManager: SourceMappingManager,
@@ -118,6 +123,8 @@ class TopicService(private val data: DataRepository,
             form.mappingSourceTags?.also { sourceMappingManager.update(MetaType.TOPIC, id, it) }
 
             kit.processAnnotations(id, annotations.asSequence().map { it.id }.toSet(), creating = true)
+
+            bus.emit(MetaTagCreated(id, MetaType.TOPIC))
 
             return id
         }
@@ -209,8 +216,14 @@ class TopicService(private val data: DataRepository,
                     .where { BookTopicRelations.topicId eq id }
                     .map { BookMetadataExporterTask(it[BookTopicRelations.bookId]!!, exportMetaTag = true) }
                     .let { backendExporter.add(it) }
+            }
 
-                queryManager.flushCacheOf(QueryManager.CacheType.TOPIC)
+            val generalUpdated = anyOpt(newName, newOtherNames, newKeywords, form.type, form.description, form.favorite, form.score)
+            val annotationUpdated = newAnnotations.isPresent
+            val ordinalUpdated = newParentId.isPresent && newParentId.value.f1 != record.parentId
+            val sourceTagMappingUpdated = form.mappingSourceTags.isPresent
+            if(generalUpdated || annotationUpdated || ordinalUpdated || sourceTagMappingUpdated) {
+                bus.emit(MetaTagUpdated(id, MetaType.TOPIC, generalUpdated, annotationUpdated, ordinalUpdated, sourceTagMappingUpdated))
             }
         }
     }
@@ -232,7 +245,7 @@ class TopicService(private val data: DataRepository,
                 set(it.parentId, null)
             }
 
-            queryManager.flushCacheOf(QueryManager.CacheType.TOPIC)
+            bus.emit(MetaTagDeleted(id, MetaType.TOPIC))
         }
     }
 }

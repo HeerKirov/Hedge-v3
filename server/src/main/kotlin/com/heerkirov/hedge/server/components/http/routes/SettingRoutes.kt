@@ -21,10 +21,6 @@ class SettingRoutes(settingMetaService: SettingMetaService,
                     get(service::get)
                     patch(service::update)
                 }
-                path("proxy") {
-                    get(proxy::get)
-                    patch(proxy::update)
-                }
                 path("meta") {
                     get(meta::get)
                     patch(meta::update)
@@ -62,7 +58,6 @@ class SettingRoutes(settingMetaService: SettingMetaService,
     private val findSimilar = FindSimilar(settingFindSimilarService)
     private val site = Site(settingSourceService)
     private val service = Service(settingAppdataService)
-    private val proxy = Proxy(settingAppdataService)
 
     private class Service(private val service: SettingAppdataService) {
         fun get(ctx: Context) {
@@ -72,17 +67,6 @@ class SettingRoutes(settingMetaService: SettingMetaService,
         fun update(ctx: Context) {
             val form = ctx.bodyAsForm<ServiceOptionUpdateForm>()
             service.updateService(form)
-        }
-    }
-
-    private class Proxy(private val service: SettingAppdataService) {
-        fun get(ctx: Context) {
-            ctx.json(service.getProxy())
-        }
-
-        fun update(ctx: Context) {
-            val form = ctx.bodyAsForm<ProxyOptionUpdateForm>()
-            service.updateProxy(form)
         }
     }
 

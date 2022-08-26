@@ -1,16 +1,21 @@
 package com.heerkirov.hedge.server.functions.manager
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
+import com.heerkirov.hedge.server.dao.Illusts
 import com.heerkirov.hedge.server.dao.SourceDatas
 import com.heerkirov.hedge.server.dao.SourceBookRelations
 import com.heerkirov.hedge.server.dao.SourceTagRelations
 import com.heerkirov.hedge.server.dto.form.SourceBookForm
 import com.heerkirov.hedge.server.dto.form.SourceTagForm
 import com.heerkirov.hedge.server.enums.SourceEditStatus
+import com.heerkirov.hedge.server.events.SourceDataCreated
+import com.heerkirov.hedge.server.events.SourceDataDeleted
+import com.heerkirov.hedge.server.events.SourceDataUpdated
 import com.heerkirov.hedge.server.exceptions.*
-import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.model.SourceData
 import com.heerkirov.hedge.server.utils.DateTime
+import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.types.Opt
 import com.heerkirov.hedge.server.utils.types.anyOpt
 import com.heerkirov.hedge.server.utils.types.optOf
@@ -19,7 +24,7 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.*
 
 class SourceDataManager(private val data: DataRepository,
-                        private val queryManager: QueryManager,
+                        private val bus: EventBus,
                         private val sourceTagManager: SourceTagManager,
                         private val sourceBookManager: SourceBookManager) {
     /**
@@ -87,6 +92,8 @@ class SourceDataManager(private val data: DataRepository,
                 set(it.updateTime, now)
             } as Int
 
+            bus.emit(SourceDataCreated(sourceSite, sourceId))
+
             Triple(id, sourceSite, sourceId)
         }
     }
@@ -148,7 +155,6 @@ class SourceDataManager(private val data: DataRepository,
                             }
                         }
                     }
-                    queryManager.flushCacheOf(QueryManager.CacheType.SOURCE_TAG)
                 }
             }
 
@@ -165,6 +171,8 @@ class SourceDataManager(private val data: DataRepository,
                     }
                 }
             }
+
+            bus.emit(SourceDataCreated(sourceSite, sourceId))
 
             return Triple(id, sourceSite, sourceId)
         }else{
@@ -211,7 +219,6 @@ class SourceDataManager(private val data: DataRepository,
                         }
                     }
                 }
-                queryManager.flushCacheOf(QueryManager.CacheType.SOURCE_TAG)
             }
 
             books.applyOpt {
@@ -229,7 +236,36 @@ class SourceDataManager(private val data: DataRepository,
                 }
             }
 
+            bus.emit(SourceDataUpdated(sourceSite, sourceId))
+
             return Triple(sourceData.id, sourceSite, sourceId)
         }
+    }
+
+    /**
+     * 删除source data。清除在illust的缓存。
+     * @throws NotFound 请求对象不存在。
+     */
+    fun deleteSourceData(sourceSite: String, sourceId: Long) {
+        val row = data.db.from(SourceDatas).select()
+            .where { (SourceDatas.sourceSite eq sourceSite) and (SourceDatas.sourceId eq sourceId) }
+            .firstOrNull()
+            ?: throw be(NotFound())
+
+        val sourceDataId = row[SourceDatas.id]!!
+
+        data.db.update(Illusts) {
+            where { it.sourceDataId eq sourceDataId }
+            set(it.sourceDataId, null)
+            set(it.sourceSite, null)
+            set(it.sourceId, null)
+            set(it.sourcePart, null)
+        }
+
+        data.db.delete(SourceDatas) { it.id eq sourceDataId }
+        data.db.delete(SourceTagRelations) { it.sourceDataId eq sourceDataId }
+        data.db.delete(SourceBookRelations) { it.sourceDataId eq sourceDataId }
+
+        bus.emit(SourceDataDeleted(sourceSite, sourceId))
     }
 }
