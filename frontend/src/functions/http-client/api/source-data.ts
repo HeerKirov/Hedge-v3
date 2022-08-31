@@ -50,13 +50,13 @@ export interface SourceDataEndpoint {
     list(filter: SourceDataFilter): Promise<Response<ListResult<SourceData>>>
     create(form: SourceDataCreateForm): Promise<Response<null, SourceDataExceptions["create"]>>
     bulk(items: SourceDataCreateForm[]): Promise<Response<null, SourceDataExceptions["bulk"]>>
-    get(key: SourceKey): Promise<Response<DetailSourceData, NotFound>>
-    getRelatedImages(key: SourceKey): Promise<Response<SimpleIllust[]>>
-    update(key: SourceKey, form: SourceDataUpdateForm): Promise<Response<null, NotFound>>
-    delete(key: SourceKey): Promise<Response<null, NotFound>>
+    get(key: SourceDataIdentity): Promise<Response<DetailSourceData, NotFound>>
+    getRelatedImages(key: SourceDataIdentity): Promise<Response<SimpleIllust[]>>
+    update(key: SourceDataIdentity, form: SourceDataUpdateForm): Promise<Response<null, NotFound>>
+    delete(key: SourceDataIdentity): Promise<Response<null, NotFound>>
 }
 
-interface SourceKey { sourceSite: string, sourceId: number }
+interface SourceDataIdentity { sourceSite: string, sourceId: number }
 
 export interface SourceDataExceptions {
     "create": ResourceNotExist<"site", string> | AlreadyExists<"SourceData", "sourceId", number>

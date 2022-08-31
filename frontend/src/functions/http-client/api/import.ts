@@ -1,7 +1,7 @@
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 import {
     FileNotFoundError, FileNotReadyError, IllegalFileExtensionError,
-    NotFound, ResourceNotExist, ParamError, ParamNotRequired, ParamRequired
+    NotFound, ResourceNotExist, ParamError, ParamNotRequired, ParamRequired, StorageNotAccessibleError
 } from "../exceptions"
 import { HttpInstance, Response } from "../instance"
 import { IdResponseWithWarnings, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
@@ -85,15 +85,17 @@ export interface ImportEndpoint {
      * 从本地文件系统导入新项目。
      * @exception FILE_NOT_FOUND 指定的文件无法找到。
      * @exception ILLEGAL_FILE_EXTENSION 不受支持的文件扩展名。
+     * @exception STORAGE_NOT_ACCESSIBLE 存储目录无法访问。
      * @exception:warning INVALID_REGEX (regex) 解析错误，解析规则的正则表达式有误。
      */
-    import(form: ImportForm): Promise<Response<IdResponseWithWarnings, FileNotFoundError | IllegalFileExtensionError>>
+    import(form: ImportForm): Promise<Response<IdResponseWithWarnings, FileNotFoundError | IllegalFileExtensionError | StorageNotAccessibleError>>
     /**
      * 通过file upload远程上传新项目。
      * @exception ILLEGAL_FILE_EXTENSION 不受支持的文件扩展名。
+     * @exception STORAGE_NOT_ACCESSIBLE 存储目录无法访问。
      * @exception:warning INVALID_REGEX (regex) 解析错误，解析规则的正则表达式有误。
      */
-    upload(file: File): Promise<Response<IdResponseWithWarnings, IllegalFileExtensionError>>
+    upload(file: File): Promise<Response<IdResponseWithWarnings, IllegalFileExtensionError | StorageNotAccessibleError>>
     /**
      * 查看导入项目。
      * @exception NOT_FOUND

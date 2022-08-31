@@ -19,7 +19,7 @@ export interface SettingServiceEndpoint {
     /**
      * 更改。
      */
-    update(form: ServiceOption): Promise<Response<unknown>>
+    update(form: ServiceOptionUpdateForm): Promise<Response<unknown>>
 }
 
 export interface ServiceOption {
@@ -35,4 +35,9 @@ export interface ServiceOption {
      * null表示使用基于userData的默认存储路径，并自行管理；其他值表示使用自定义路径，并需要自行确保路径可用。
      */
     storagePath: string | null
+}
+
+export interface ServiceOptionUpdateForm {
+    port?: string | null
+    storagePath?: string | null
 }

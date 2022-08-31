@@ -60,6 +60,7 @@ type CheckedException =
     FileNotFoundError |
     FileNotReadyError |
     IllegalFileExtensionError |
+    StorageNotAccessibleError |
     ContentParseError |
     RecursiveParentError |
     CannotGiveColorError |
@@ -98,6 +99,7 @@ export type CascadeResourceExists<P extends string> = BadRequestException<"CASCA
 export type FileNotFoundError = BadRequestException<"FILE_NOT_FOUND", null>
 export type FileNotReadyError = BadRequestException<"FILE_NOT_READY", null>
 export type IllegalFileExtensionError = BadRequestException<"ILLEGAL_FILE_EXTENSION", string>
+export type StorageNotAccessibleError = BadRequestException<"STORAGE_NOT_ACCESSIBLE", null>
 export type ContentParseError = BadRequestException<"CONTENT_PARSE_ERROR", string>
 export type RecursiveParentError = BadRequestException<"RECURSIVE_PARENT", null>
 export type CannotGiveColorError = BadRequestException<"CANNOT_GIVE_COLOR", null>
