@@ -1,4 +1,4 @@
-import { IpcClient, AppEnvironment, AppEnvironmentChangedEvent, AppInitializeUpdatedEvent, MenuTemplate } from "./constants"
+import { IpcClient, AppEnvironment, AppEnvironmentChangedEvent, AppInitializeUpdatedEvent, MenuTemplate, OpenDialogOptions, MessageOptions } from "./constants"
 import { Platform, NativeTheme, ServerConnectionStatus, ServerServiceStatus, ServerConnectionInfo, AppState, InitializeState, LoginForm, AppInitializeForm  } from "./constants-model"
 import { platform, remoteIpcClient } from "./impl"
 
@@ -21,5 +21,7 @@ export type {
     AppEnvironment,
     AppEnvironmentChangedEvent,
     AppInitializeUpdatedEvent,
-    MenuTemplate
+    MenuTemplate,
+    OpenDialogOptions,
+    MessageOptions
 }

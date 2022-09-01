@@ -440,6 +440,11 @@ export interface IllustParent extends SimpleIllust {
     childrenCount: number
 }
 
+export interface CoverIllust extends SimpleIllust {
+    type: IllustType
+    childrenCount: number | null
+}
+
 export interface CollectionRelatedItems {
     /**
      * 关联组。

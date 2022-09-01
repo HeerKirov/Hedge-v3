@@ -4,11 +4,11 @@ import { SimpleAuthor } from "./author"
 
 export type { SimpleTopic, SimpleTag, SimpleAuthor }
 
-export type MetaTagTypeValues = {type: "tag", value: SimpleTag} | {type: "topic", value: SimpleTopic} | {type: "author", value: SimpleAuthor}
+export type MetaTagTypeValue = {type: "tag", value: SimpleTag} | {type: "topic", value: SimpleTopic} | {type: "author", value: SimpleAuthor}
 
-export type MetaTagTypes = MetaTagTypeValues["type"]
+export type MetaTagTypes = MetaTagTypeValue["type"]
 
-export type MetaTagValues = MetaTagTypeValues["value"]
+export type MetaTagValues = MetaTagTypeValue["value"]
 
 export type MetaType = "TOPIC" | "AUTHOR" | "TAG"
 

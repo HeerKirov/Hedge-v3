@@ -167,3 +167,9 @@ export const objects = {
     }
 }
 
+export function createObjectFunction<F extends Function, O extends object>(func: F, obj: O): F & O {
+    for(const [k ,v] of Object.entries(obj)) {
+        (func as any)[k] = v
+    }
+    return func as any
+}
