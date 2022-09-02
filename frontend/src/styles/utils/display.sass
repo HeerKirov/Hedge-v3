@@ -1,0 +1,30 @@
+@import "../base/size"
+
+//==== 元素显示效果相关原子类 ====
+
+//隐藏元素
+.is-hidden
+  visibility: hidden
+
+//overflow模式
+.is-overflow-hidden
+  overflow: hidden
+.is-overflow-auto
+  overflow: auto
+.is-overflow-default
+  overflow: visible
+.is-overflow-y-auto
+  overflow-y: auto
+
+//光标模式
+.is-cursor-pointer
+  cursor: pointer
+.is-cursor-default
+  cursor: default
+.is-cursor-text
+  cursor: text
+
+//自订圆角
+@each $name, $size in $radius-size-map
+  .has-radius-#{$name}
+    border-radius: $size

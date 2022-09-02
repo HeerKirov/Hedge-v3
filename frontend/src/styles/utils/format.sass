@@ -1,0 +1,69 @@
+@import "../base/size"
+@import "../base/font"
+@import "../base/color"
+
+//==== 元素(文本)格式相关原子类 ====
+
+//文本尺寸
+@each $name, $size in $font-size-map
+  .is-size-#{$name}
+    font-size: $size
+@each $name, $size in $font-size-name
+  .is-size-#{$name}
+    font-size: $size
+
+//文本行高(用于跟表单元素对齐)
+@each $name, $size in $element-height-map
+  .is-line-height-#{$name}
+    line-height: $size
+  .is-line-height-default
+    line-height: normal
+
+//元素文本宽度(用于固定文本大小)
+@for $i from 1 through 100
+  .is-text-width-#{$i}
+    width: 1em * $i
+  .is-min-text-width-#{$i}
+    min-width: 1em * $i
+
+//自由指定文本颜色和背景色
+@media (prefers-color-scheme: light)
+  @each $name, $color in $light-mode-colors
+    .has-text-#{$name}
+      color: $color !important
+    .has-bg-#{$name}
+      background-color: $color !important
+@media (prefers-color-scheme: dark)
+  @each $name, $color in $dark-mode-colors
+    .has-text-#{$name}
+      color: $color
+    .has-bg-#{$name}
+      background-color: $color !important
+
+//文本字体
+.is-monospace
+  font-family: $family-monospace
+.is-monaco
+  font-family: $family-monaco
+
+//文本对齐位置
+.has-text-centered
+  text-align: center !important
+.has-text-left
+  text-align: left !important
+.has-text-right
+  text-align: right !important
+
+//文本下划线
+.has-text-underline
+  text-decoration: underline
+
+//文本不换行功能
+.no-wrap
+  white-space: nowrap
+  &.overflow-hidden //不换行且隐藏溢出
+    overflow: hidden
+  &.overflow-ellipsis //不换行且用省略号显示溢出
+    overflow: hidden
+    text-overflow: ellipsis
+

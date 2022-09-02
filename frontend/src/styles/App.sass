@@ -1,0 +1,68 @@
+@import 'base/size'
+@import 'base/font'
+@import 'base/color'
+
+//body基本样式
+body
+  -webkit-font-smoothing: antialiased
+  -moz-osx-font-smoothing: grayscale
+  -webkit-user-select: none
+  text-rendering: optimizeLegibility
+  font-family: $family-std
+  font-size: $font-size-std
+  @media (prefers-color-scheme: light)
+    color: $light-mode-text-color
+    background-color: $light-mode-background-color
+  @media (prefers-color-scheme: dark)
+    color: $dark-mode-text-color
+    background-color: $dark-mode-background-color
+
+//可选择的样式
+.selectable
+  -webkit-user-select: text
+
+//HTML文档本身的滚动条被禁用
+html::-webkit-scrollbar
+  display: none
+
+//链接默认样式
+a
+  text-decoration: none
+  cursor: pointer
+  @media (prefers-color-scheme: light)
+    color: $light-mode-link
+    &:hover
+      color: rgba($light-mode-link, 0.8)
+  @media (prefers-color-scheme: dark)
+    color: $dark-mode-link
+    &:hover
+      color: rgba($dark-mode-link, 0.8)
+
+//按钮默认样式
+button
+  appearance: auto
+  -webkit-writing-mode: horizontal-tb !important
+  border-style: outset
+  border-image: initial
+  border-color: transparent
+  border-width: 0
+  word-spacing: normal
+  letter-spacing: normal
+  text-rendering: auto
+  text-transform: none
+  text-indent: 0
+  text-shadow: none
+  text-align: center
+  justify-content: center
+  white-space: nowrap
+  align-items: flex-start
+  display: inline-block
+  box-sizing: border-box
+  outline: none
+
+//字体定义
+@font-face
+  font-family: "Fira Code"
+  src: url("../assets/FiraCode-Regular.ttf")
+  font-weight: normal
+  font-style: normal

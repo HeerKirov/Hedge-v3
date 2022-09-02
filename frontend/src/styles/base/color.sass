@@ -1,0 +1,87 @@
+
+//== 基本颜色定义 ==
+
+$green: #18a058
+$blue: #1468cc
+$skyblue: #00bfff
+$teal: #008080
+$cyan: #00d1b2
+$yellow: #fcb040
+$red: #d03050
+$orange: #ff7f50
+$pink: #fa7c91
+$deeppink: #ff1493
+$tea: #757763
+$brown: #8b4513
+
+//== 反相基本颜色定义 ==
+
+$green-inverted: #63e2b7
+$blue-inverted: #449fce
+$skyblue-inverted: #6ed5f8
+$teal-inverted: #568c8c
+$cyan-inverted: #88d9cd
+$yellow-inverted: #f2c97d
+$red-inverted: #e88080
+$orange-inverted: #fda584
+$pink-inverted: #fca5b3
+$deeppink-inverted: #fc7fc3
+$tea-inverted: #aaad91
+$brown-inverted: #8b603f
+
+//== 基本黑白色调定义 ==
+
+$white: #ffffff //常用于：(light)背景，(light)块背景色，(light)纯色按钮文本色
+$white2: #f5f5f5 //常用于：(dark)文本
+$black: #000000 //常用于：(dark)纯色按钮文本色
+$black2: rgb(17, 20, 23) //常用于：(dark)背景色
+$black3: rgb(25, 28, 31) //常用于：(dark)块背景色
+$black4: rgb(31, 34, 37) //常用于：(light)文本
+$grey: #7a7a7a  //常用于：非重要文本
+
+$lightgrey: rgb(239, 239, 245) //常用于：(light)线框
+$lightgrey2: rgb(139, 139, 143) //常用于：(dark)线框
+
+//== 实际颜色选取 ==
+
+$light-mode-background-color: $white  //背景色
+$light-mode-block-color: $white       //块背景色
+$light-mode-text-color: $black4           //文本色
+$light-mode-text-inverted-color: $white   //反转文本色，常用于纯色按钮
+$light-mode-secondary-text-color: $grey   //次要文本色，常用于注释文本
+$light-mode-border-color: $lightgrey      //边框颜色
+
+$dark-mode-background-color: $black2
+$dark-mode-block-color: $black3
+$dark-mode-text-color: $white2
+$dark-mode-text-inverted-color: $black
+$dark-mode-secondary-text-color: $grey
+$dark-mode-border-color: $lightgrey2
+
+$light-mode-primary: $blue
+$light-mode-info: $skyblue
+$light-mode-success: $green
+$light-mode-warning: $yellow
+$light-mode-danger: $red
+$light-mode-link: $blue
+
+$dark-mode-primary: $blue-inverted
+$dark-mode-info: $skyblue-inverted
+$dark-mode-success: $green-inverted
+$dark-mode-warning: $yellow-inverted
+$dark-mode-danger: $red-inverted
+$dark-mode-link: $blue-inverted
+
+//== 颜色组 ==
+
+$light-mode-useful-colors: ("green": $green, "blue": $blue, "skyblue": $skyblue, "teal": $teal, "cyan": $cyan, "yellow": $yellow, "red": $red, "orange": $orange, "pink": $pink, "deeppink": $deeppink, "tea": $tea, "brown": $brown)
+
+$dark-mode-useful-colors: ("green": $green-inverted, "blue": $blue-inverted, "skyblue": $skyblue-inverted, "teal": $teal-inverted, "cyan": $cyan-inverted, "yellow": $yellow-inverted, "red": $red-inverted, "orange": $orange-inverted, "pink": $pink-inverted, "deeppink": $deeppink-inverted, "tea": $tea-inverted, "brown": $brown-inverted)
+
+$light-mode-theme-colors: ("primary": $light-mode-primary, "info": $light-mode-info, "success": $light-mode-success, "warning": $light-mode-warning, "danger": $light-mode-danger, "link": $light-mode-link)
+
+$dark-mode-theme-colors: ("primary": $dark-mode-primary, "info": $dark-mode-info, "success": $dark-mode-success, "warning": $dark-mode-warning, "danger": $dark-mode-danger, "link": $dark-mode-link)
+
+$light-mode-colors: map-merge($light-mode-useful-colors, $light-mode-theme-colors)
+
+$dark-mode-colors: map-merge($dark-mode-useful-colors, $dark-mode-theme-colors)

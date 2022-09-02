@@ -1,0 +1,146 @@
+@import "../base/size"
+
+//==== 元素布局相关原子类 ====
+
+//启用position布局
+.fixed
+    position: fixed !important
+.absolute
+    position: absolute !important
+.relative
+    position: relative !important
+.fixed, .absolute
+    &.center
+        left: 50%
+        top: 50%
+        transform: translate(-50%, -50%)
+    &.top
+        top: 0
+        left: 50%
+        transform: translateX(-50%)
+    &.bottom
+        bottom: 0
+        left: 50%
+        transform: translateX(-50%)
+    &.left
+        left: 0
+        top: 50%
+        transform: translateY(-50%)
+    &.right
+        right: 0
+        top: 50%
+        transform: translateY(-50%)
+    &.top-left
+        left: 0
+        top: 0
+    &.top-right
+        right: 0
+        top: 0
+    &.bottom-left
+        left: 0
+        bottom: 0
+    &.bottom-right
+        right: 0
+        bottom: 0
+
+//display模式
+.is-inline-block
+    display: inline-block
+
+//浮动元素
+.float-right
+    float: right
+.float-left
+    float: left
+
+//尺寸控制
+.w-25
+    width: 25%
+.w-50
+    width: 50%
+.w-75
+    width: 75%
+.w-100
+    width: 100%
+.h-25
+    height: 25%
+.h-50
+    height: 50%
+.h-75
+    height: 75%
+.h-100
+    height: 100%
+
+//间隔调整工具，包括margin, padding, margin-minus, gap-margin这几类
+@each $name, $size in $spacing-map
+    .m-#{$name}
+        margin: $size
+    .mt-#{$name}
+        margin-top: $size
+    .mb-#{$name}
+        margin-bottom: $size
+    .ml-#{$name}
+        margin-left: $size
+    .mr-#{$name}
+        margin-right: $size
+    .mx-#{$name}
+        margin-left: $size
+        margin-right: $size
+    .my-#{$name}
+        margin-top: $size
+        margin-bottom: $size
+    .p-#{$name}
+        padding: $size
+    .pt-#{$name}
+        padding-top: $size
+    .pb-#{$name}
+        padding-bottom: $size
+    .pl-#{$name}
+        padding-left: $size
+    .pr-#{$name}
+        padding-right: $size
+    .px-#{$name}
+        padding-left: $size
+        padding-right: $size
+    .py-#{$name}
+        padding-top: $size
+        padding-bottom: $size
+    .m-m#{$name}
+        margin: #{-$size}
+    .mt-m#{$name}
+        margin-top: #{-$size}
+    .mb-m#{$name}
+        margin-bottom: #{-$size}
+    .ml-m#{$name}
+        margin-left: #{-$size}
+    .mr-m#{$name}
+        margin-right: #{-$size}
+    .mx-m#{$name}
+        margin-left: #{-$size}
+        margin-right: #{-$size}
+    .my-m#{$name}
+        margin-top: #{-$size}
+        margin-bottom: #{-$size}
+    .gap-mr-#{$name}
+        > *:not(:last-child)
+            margin-right: $size
+    .gap-ml-#{$name}
+        > *:not(:last-child)
+            margin-left: $size
+    .gap-mt-#{$name}
+        > *:not(:last-child)
+            margin-top: $size
+    .gap-mb-#{$name}
+        > *:not(:last-child)
+            margin-bottom: $size
+    .gap-mx-#{$name}
+        > *:not(:last-child)
+            margin-left: $size
+            margin-right: $size
+    .gap-my-#{$name}
+        > *:not(:last-child)
+            margin-top: $size
+            margin-bottom: $size
+    .gap-m-#{$name}
+        > *:not(:last-child)
+            margin: $size
