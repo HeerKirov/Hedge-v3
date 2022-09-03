@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Icon } from "@/components/elements"
+import { Icon } from "@/components/elements/index"
 
 const props = defineProps<{
     icon?: string
@@ -8,21 +8,24 @@ const props = defineProps<{
     type?: "primary" | "info" | "success" | "warning" | "danger"
     size?: "std" | "small" | "large"
     square?: boolean
-    circle?: boolean
+    round?: boolean
     disabled?: boolean
 }>()
 
 const buttonClass = computed(() => [
     "button",
+    `is-size-${props.size ?? "std"}`,
     `color-mode-${props.type && props.mode ? props.mode : "transparent"}`,
-    props.type ? `is-color-${props.type}` : null
+    props.type ? `is-color-${props.type}` : null,
+    props.square ? "square" : null,
+    props.round ? "round" : null
 ])
 
 </script>
 
 <template>
     <button :class="buttonClass" :disabled="disabled">
-        <Icon v-if="icon" :icon="icon"/>
+        <Icon v-if="icon" class="icon" :icon="icon"/>
         <slot/>
     </button>
 </template>
@@ -33,12 +36,31 @@ const buttonClass = computed(() => [
 
 .button
     box-sizing: border-box
-    vertical-align: top
+    vertical-align: baseline
     border-radius: $radius-size-std
+    padding: 0 1em
+    &.square
+        padding: 0 0
+    &:not(.square) > .icon
+        margin-right: $spacing-1
+    &.round
+        border-radius: $radius-size-round
 
+.is-size-small
+    font-size: $font-size-small
+    height: $element-height-small
+    &.square
+        width: $element-height-small
+.is-size-std
     font-size: $font-size-std
     height: $element-height-std
-    padding: 0 1em
+    &.square
+        width: $element-height-std
+.is-size-large
+    font-size: $font-size-large
+    height: $element-height-large
+    &.square
+        width: $element-height-large
 
 @media (prefers-color-scheme: light)
     .color-mode-transparent

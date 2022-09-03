@@ -67,14 +67,14 @@ const icon = computed(() => {
 import { library } from '@fortawesome/fontawesome-svg-core'
 
 import {
-    faStar, faStarHalf
+    faStar, faStarHalf, faStarHalfStroke
 } from '@fortawesome/free-solid-svg-icons'
 
 import {
     faStar as farStar
 } from '@fortawesome/free-regular-svg-icons'
 
-library.add(faStar, faStarHalf)
+library.add(faStar, faStarHalf, faStarHalfStroke)
 library.add(farStar)
 
 </script>

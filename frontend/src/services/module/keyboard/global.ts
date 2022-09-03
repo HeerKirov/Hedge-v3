@@ -2,7 +2,7 @@ import { onBeforeMount, onMounted, onUnmounted } from "vue"
 import { installation } from "@/utils/reactivity"
 import { platform } from "@/functions/ipc-client"
 import { AnalysedKeyPress, KeyCode, KeyPress } from "./definition"
-import { createKeyEventValidator, KeyEvent } from "./event"
+import { createKeyEventValidator, createPrimitiveKeyEventValidator, KeyEvent } from "./event"
 
 /*
  * 提供全局的global keyboard服务。为了给所有的快捷键分清楚功能层次，所有的快捷键都使用global keyboard服务来定义。
@@ -107,12 +107,16 @@ export function useInterception() {
 export const [installKeyDeclaration, useKeyDeclaration] = installation(function (provideKeys: KeyPress | KeyPress[], intercepted: boolean = false) {
     const currentKeys = typeof provideKeys === "object" ? provideKeys : [provideKeys]
     if(intercepted) {
-        return { declaredKeys: currentKeys }
+        return { declaredKeys: currentKeys, validator: createKeyEventValidator(currentKeys), primitiveValidator: createPrimitiveKeyEventValidator(currentKeys) }
     }else{
         const parent = useKeyDeclaration()
         const keys: KeyPress[] = [...parent.declaredKeys, ...currentKeys]
-        return { declaredKeys: keys }
+        return { declaredKeys: keys, validator: createKeyEventValidator(keys), primitiveValidator: createPrimitiveKeyEventValidator(keys) }
     }
-}, () => ({keys: []}))
+}, () => ({
+    keys: [],
+    validator: () => false,
+    primitiveValidator: () => false
+}))
 
 export { installGlobalKey }
