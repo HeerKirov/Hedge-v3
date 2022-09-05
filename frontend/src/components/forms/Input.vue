@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ComponentPublicInstance, computed, nextTick, ref, watch } from "vue"
+import { ComponentPublicInstance, computed, nextTick, ref, useCssModule, watch } from "vue"
 import { KeyEvent, KeyPress, toKeyEvent, useInterceptedKey, useKeyDeclaration } from "@/services/module/keyboard"
 
 const props = defineProps<{
@@ -64,10 +64,12 @@ const mountedCallback = (props.focusOnKeypress || props.autoFocus || undefined) 
 
 const events = {[props.updateOnInput ? "onInput" : "onChange"]: onUpdate, onKeydown, onCompositionstart, onCompositionend}
 
+const $style = useCssModule()
+
 const inputClass = computed(() => [
-    "input",
-    `is-size-${props.size ?? "std"}`,
-    `is-width-${props.width ?? "std"}`
+    $style.input,
+    $style[`is-size-${props.size ?? "std"}`],
+    $style[`is-width-${props.width ?? "std"}`]
 ])
 
 </script>
@@ -81,7 +83,7 @@ const inputClass = computed(() => [
     />
 </template>
 
-<style scoped lang="sass">
+<style module lang="sass">
 @import "../../styles/base/size"
 @import "../../styles/base/color"
 

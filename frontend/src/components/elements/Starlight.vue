@@ -16,13 +16,13 @@ const hasHalf = computed(() => stdValue.value > cnt.value)
 
 <template>
     <div>
-        <b v-if="showText" class="text">{{stdValue}}</b>
+        <b v-if="showText" :class="$style.text">{{stdValue}}</b>
         <Icon v-for="_ in cnt" icon="star"/>
         <Icon v-if="hasHalf" icon="star-half-stroke"/>
     </div>
 </template>
 
-<style scoped lang="sass">
+<style module lang="sass">
 @import "../../styles/base/size"
 
 .text

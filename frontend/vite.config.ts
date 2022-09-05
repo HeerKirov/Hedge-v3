@@ -6,6 +6,11 @@ import path from 'path'
 export default defineConfig({
   base: "./",
   plugins: [vue()],
+  css: {
+    modules: {
+      localsConvention: "camelCase"
+    }
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src')

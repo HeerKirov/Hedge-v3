@@ -40,14 +40,14 @@ function watchProps() {
 </script>
 
 <template>
-    <div :class="['select', `is-size-${size ?? 'std'}`]">
+    <div :class="[$style.select, $style[`is-size-${size ?? 'std'}`]]">
         <select ref="selectDom" @change="changed">
             <option v-for="item in items" :value="item.value">{{item.label}}</option>
         </select>
     </div>
 </template>
 
-<style scoped lang="sass">
+<style module lang="sass">
 @import "../../styles/base/size"
 @import "../../styles/base/color"
 

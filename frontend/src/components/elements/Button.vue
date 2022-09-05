@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, useCssModule } from "vue"
 import { Icon } from "@/components/elements/index"
 
 const props = defineProps<{
@@ -12,25 +12,27 @@ const props = defineProps<{
     disabled?: boolean
 }>()
 
+const $style = useCssModule()
+
 const buttonClass = computed(() => [
-    "button",
-    `is-size-${props.size ?? "std"}`,
-    `color-mode-${props.type && props.mode ? props.mode : "transparent"}`,
-    props.type ? `is-color-${props.type}` : null,
-    props.square ? "square" : null,
-    props.round ? "round" : null
+    $style.button,
+    $style[`is-size-${props.size ?? "std"}`],
+    $style[`color-mode-${props.type && props.mode ? props.mode : "transparent"}`],
+    props.type ? $style[`is-color-${props.type}`] : null,
+    props.square ? $style.square : null,
+    props.round ? $style.round : null
 ])
 
 </script>
 
 <template>
     <button :class="buttonClass" :disabled="disabled">
-        <Icon v-if="icon" class="icon" :icon="icon"/>
+        <Icon v-if="icon" :class="$style.icon" :icon="icon"/>
         <slot/>
     </button>
 </template>
 
-<style scoped lang="sass">
+<style module lang="sass">
 @import "../../styles/base/size"
 @import "../../styles/base/color"
 

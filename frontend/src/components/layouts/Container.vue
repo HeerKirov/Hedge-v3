@@ -1,10 +1,10 @@
 <template>
-    <div class="container">
+    <div :class="$style.container">
         <slot/>
     </div>
 </template>
 
-<style scoped lang="sass">
+<style module lang="sass">
 .container
     margin: 0 auto
     width: auto

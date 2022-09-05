@@ -2,6 +2,7 @@
 import { ref } from "vue"
 import { Starlight, Button, Separator } from "@/components/elements"
 import { Input, NumberInput, RangeInput, CheckBox, Select } from "@/components/forms"
+import { Group } from "@/components/layouts"
 import { installAppService } from "@/functions/app"
 import { installGlobalKey } from "@/services/module/keyboard"
 
@@ -108,9 +109,17 @@ const selectItems = [
         <Button class="mx-1" mode="light" type="primary" icon="star">测试按钮</Button>
         <span class="ml-1">{{selectValue}}</span>
     </div>
+    <div>
+        <Group>
+            <Button mode="light" type="primary" icon="star">测试按钮</Button>
+            <Button mode="light" type="success" icon="star-half">测试按钮</Button>
+            <Button mode="light" type="danger" icon="star-half">测试按钮</Button>
+            <Button mode="light" type="primary" disabled icon="star-half">测试按钮</Button>
+        </Group>
+    </div>
 </template>
 
-<style scoped lang="sass">
+<style lang="sass">
 div.gap-button > button
     margin-right: 0.25rem
     margin-top: 0.25rem

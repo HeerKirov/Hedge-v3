@@ -42,10 +42,10 @@ const events = {[props.updateOnInput ? "onInput" : "onChange"]: onUpdate, onKeyd
 </script>
 
 <template>
-    <input type="range" class="range" :max="max" :min="min" :step="step" :disabled="disabled" :value="value" v-bind="events"/>
+    <input type="range" :class="$style.range" :max="max" :min="min" :step="step" :disabled="disabled" :value="value" v-bind="events"/>
 </template>
 
-<style scoped lang="sass">
+<style module lang="sass">
 @import "../../styles/base/size"
 @import "../../styles/base/color"
 

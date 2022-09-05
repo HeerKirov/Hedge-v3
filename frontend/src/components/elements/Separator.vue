@@ -7,10 +7,10 @@ defineProps<{
 </script>
 
 <template>
-    <div :class="['separator', `is-size-${size ?? 'std'}`]"/>
+    <div :class="[$style.separator, $style[`is-size-${size ?? 'std'}`]]"/>
 </template>
 
-<style scoped lang="sass">
+<style module lang="sass">
 @import "../../styles/base/size"
 @import "../../styles/base/color"
 

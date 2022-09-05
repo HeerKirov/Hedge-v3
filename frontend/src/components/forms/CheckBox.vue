@@ -22,13 +22,13 @@ const onUpdate = (e: Event) => {
 </script>
 
 <template>
-    <label :class="{'checkbox': true, 'disabled': disabled}">
+    <label :class="{[$style.checkbox]: true, [$style.disabled]: disabled}">
         <input type="checkbox" :checked="value" :disabled="disabled" @change="onUpdate"/>
         <slot/>
     </label>
 </template>
 
-<style scoped lang="sass">
+<style module lang="sass">
 .checkbox
     cursor: pointer
     display: inline-block
