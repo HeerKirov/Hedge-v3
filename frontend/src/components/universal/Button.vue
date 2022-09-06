@@ -1,26 +1,27 @@
 <script setup lang="ts">
 import { computed, useCssModule } from "vue"
-import { Icon } from "@/components/elements/index"
+import { ThemeColors } from "@/constants/ui"
+import { Icon } from "@/components/universal/index"
 
 const props = defineProps<{
     icon?: string
     mode?: "transparent" | "light" | "filled"
-    type?: "primary" | "info" | "success" | "warning" | "danger"
+    type?: ThemeColors
     size?: "std" | "small" | "large"
     square?: boolean
     round?: boolean
     disabled?: boolean
 }>()
 
-const $style = useCssModule()
+const style = useCssModule()
 
 const buttonClass = computed(() => [
-    $style.button,
-    $style[`is-size-${props.size ?? "std"}`],
-    $style[`color-mode-${props.type && props.mode ? props.mode : "transparent"}`],
-    props.type ? $style[`is-color-${props.type}`] : null,
-    props.square ? $style.square : null,
-    props.round ? $style.round : null
+    style.button,
+    style[`is-size-${props.size ?? "std"}`],
+    style[`color-mode-${props.type && props.mode ? props.mode : "transparent"}`],
+    props.type ? style[`is-color-${props.type}`] : null,
+    props.square ? style.square : null,
+    props.round ? style.round : null
 ])
 
 </script>

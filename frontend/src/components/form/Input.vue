@@ -64,12 +64,12 @@ const mountedCallback = (props.focusOnKeypress || props.autoFocus || undefined) 
 
 const events = {[props.updateOnInput ? "onInput" : "onChange"]: onUpdate, onKeydown, onCompositionstart, onCompositionend}
 
-const $style = useCssModule()
+const style = useCssModule()
 
 const inputClass = computed(() => [
-    $style.input,
-    $style[`is-size-${props.size ?? "std"}`],
-    $style[`is-width-${props.width ?? "std"}`]
+    style.input,
+    style[`is-size-${props.size ?? "std"}`],
+    props.width ? style[`is-width-${props.width}`] : null
 ])
 
 </script>

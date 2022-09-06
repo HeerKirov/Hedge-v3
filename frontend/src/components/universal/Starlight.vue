@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Icon } from "@/components/elements"
+import { Icon } from "@/components/universal"
 import { numbers } from "@/utils/primitives"
 
 const props = defineProps<{
