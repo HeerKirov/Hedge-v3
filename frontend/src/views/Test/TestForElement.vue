@@ -23,11 +23,27 @@ import { Input } from "@/components/form"
             <Block color="success">B</Block>
             <Block color="pink">C</Block>
         </Flex>
+        <Flex :class="$style['block-test']" :spacing="1" :width="100">
+            <Block mode="light" color="primary">A</Block>
+            <Block mode="light" color="success">B</Block>
+            <Block mode="light" color="pink">C</Block>
+        </Flex>
+        <Flex :class="$style['block-test']" :spacing="1" :width="100">
+            <Block mode="filled" color="primary">A</Block>
+            <Block mode="filled" color="success">B</Block>
+            <Block mode="filled" color="pink">C</Block>
+        </Flex>
+        <Flex :class="$style['block-test']" :spacing="1" :width="100">
+            <Block mode="shadow">A</Block>
+            <Block mode="shadow" color="primary">B</Block>
+            <Block mode="shadow" color="pink">C</Block>
+        </Flex>
     </div>
 </template>
 
 <style module lang="sass">
 .block-test
-    height: 50px
+    height: 40px
     width: 800px
+    margin-bottom: 0.25rem
 </style>

@@ -58,6 +58,7 @@ components文件夹按用途分类管理这些轻型组件。组件需要被导�
     * `form`: 简单的表单类组件，如输入框、按钮、选择器等。
     * `universal`: 简单的显示元素组件，如进度条、星星、换行文本、标签。
     * `logical`: 逻辑型组件，只负责逻辑功能且通常没有DOM实体，如虚拟滚动、懒加载、编辑控制器等。
+    * `interaction`: 有复杂交互逻辑的交互组件。 
     * `data`: 有复杂交互逻辑的数据组件。 
     * `layout`: 各类布局框架组件，如侧边栏架构、顶栏架构等。
     * `elements`: 业务相关的封装元素，如MetaTag展示组件等。
@@ -65,8 +66,9 @@ components文件夹按用途分类管理这些轻型组件。组件需要被导�
     * `editors`: 业务相关的编辑器类组件，提供高度集成的、直接面向业务实体的编辑器。
 * `layouts`
     * `data`: 重型且复杂的数据组件，提供某个场景下的复杂数据交互。比如实现后的图库滚动列表、TagTree等。
-    * `modules`: 全局安装的服务模块，如messageBox、Toast、GlobalDialog、GlobalCallOut等。
+    * `module`: 全局安装的服务模块，如messageBox、Toast、GlobalDialog、GlobalCallOut等。
     * `drawers`: 已经完成装配的抽屉组件，如MetaTag编辑器抽屉等。
+    * `dialogs`: 已经完成装配的对话框组件，如ImportDialog导入对话框等。
     * `topbar`: 顶栏上使用的各类功能组件，用于配合顶栏架构装配一个完整功能的顶栏。
     * `view-stack`: 提供各类详情页面的视图栈的重型组件。各类详情页面也包括于此。
 

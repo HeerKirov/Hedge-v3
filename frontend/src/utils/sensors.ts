@@ -59,5 +59,5 @@ export function useMouseHover() {
 
     const onMouseleave = () => hover.value = false
 
-    return {hover, hoverEvents: {onMouseover, onMouseleave}}
+    return {hover, onMouseover, onMouseleave}
 }

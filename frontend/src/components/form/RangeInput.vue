@@ -50,7 +50,7 @@ const events = {[props.updateOnInput ? "onInput" : "onChange"]: onUpdate, onKeyd
 @import "../../styles/base/color"
 
 input[type="range"].range
-    $height: 8px
+    $height: 0.5rem
     $margin: ($element-height-std - $height) / 2
     -webkit-appearance: none
     margin: $margin 0.25rem
@@ -75,9 +75,9 @@ input[type="range"].range
             transform: scale(#{1 + $hover-scale})
         background-color: $light-mode-primary
         &:active
-            background-color: mix($light-mode-primary, #000000, 10)
+            background-color: mix($light-mode-primary, #000000, 75)
         @media (prefers-color-scheme: dark)
             background-color: $dark-mode-primary
             &:active
-                background-color: mix($dark-mode-primary, #000000, 10)
+                background-color: mix($dark-mode-primary, #ffffff, 75)
 </style>

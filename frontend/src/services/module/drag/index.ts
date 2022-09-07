@@ -35,7 +35,7 @@ export function useDraggable<T extends keyof TypeDefinition>(type: T | Ref<T>, d
 }
 
 interface Droppable {
-    isDragover: Readonly<Ref<boolean>>
+    dragover: Readonly<Ref<boolean>>
     onDragenter(): void
     onDragleave(): void
     onDrop(e: DragEvent): void
@@ -62,9 +62,9 @@ export function useDroppable<T extends keyof TypeDefinition>(byType: T | T[], ev
 }
 
 function useDroppableInternal<T extends keyof TypeDefinition>(event: (data: TypeDefinition[T], type: T) => void, options?: DroppableOptions): Droppable {
-    const isDragover: Ref<boolean> = ref(false)
-    const onDragenter = () => isDragover.value = true
-    const onDragleave = () => isDragover.value = false
+    const dragover: Ref<boolean> = ref(false)
+    const onDragenter = () => dragover.value = true
+    const onDragleave = () => dragover.value = false
 
     const onDrop = (e: DragEvent) => {
         if(e.dataTransfer) {
@@ -90,12 +90,12 @@ function useDroppableInternal<T extends keyof TypeDefinition>(event: (data: Type
 
             event(data, type)
         }
-        isDragover.value = false
+        dragover.value = false
     }
 
     const onDragover = (e: DragEvent) => {
         e.preventDefault()
     }
 
-    return {isDragover: readonly(isDragover), onDragenter, onDragleave, onDrop, onDragover}
+    return {dragover: readonly(dragover), onDragenter, onDragleave, onDrop, onDragover}
 }

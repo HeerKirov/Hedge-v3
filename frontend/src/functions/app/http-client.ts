@@ -5,7 +5,7 @@ import { AllException } from "@/functions/http-client/exceptions"
 export const [installHttpClient, useHttpClient] = installation(createHttpClient)
 
 export function createHttpClientConfig(throwError: (title: string, message: string) => void): HttpClientConfig {
-    const host = process.env.NODE_ENV === 'development' ? <string>process.env.VUE_APP_HOST : undefined
+    const host: string | undefined = undefined
 
     const handleError = useErrorHandler(throwError)
 

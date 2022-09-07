@@ -2,7 +2,7 @@ export { analyseKeyPress } from "./definition"
 export type { KeyPress, KeyCode } from "./definition"
 export type { KeyEvent } from "./event"
 export { onKey, onKeyEnter, checkKeyEvent, checkPrimitiveKeyEvent, createKeyEventValidator, createPrimitiveKeyEventValidator, toKeyEvent } from "./event"
-export { installGlobalKey, useGlobalKey, useInterceptedKey, useInterception, useKeyDeclaration, installKeyDeclaration } from "./global"
+export { installGlobalKeyManager, useGlobalKey, useInterceptedKey, useInterception, useKeyDeclaration, installKeyDeclaration } from "./global"
 
 /*
  * == Keyboard Event模块 ==

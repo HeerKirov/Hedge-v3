@@ -5,15 +5,16 @@ import { Colors } from "@/constants/ui"
 const props = defineProps<{
     color?: Colors
     mode?: "transparent" | "light" | "filled" | "shadow"
+    overflow?: "hidden" | "auto"
 }>()
-
-//TODO 完成不同的mode
 
 const style = useCssModule()
 
 const divClass = computed(() => ([
     style.block,
-    props.color ? style[`is-color-${props.color}`] : null
+    props.color ? style[`is-color-${props.color}`] : null,
+    style[`is-overflow-${props.overflow ?? "hidden"}`],
+    style[`color-mode-${props.mode ?? "transparent"}`]
 ]))
 
 </script>
@@ -32,20 +33,62 @@ const divClass = computed(() => ([
     border-radius: $radius-size-std
     position: relative
     box-sizing: border-box
-    border: solid 1px $light-mode-border-color
-    background-color: $light-mode-block-color
-    color: $light-mode-text-color
-    @media (prefers-color-scheme: dark)
-        border-color: $dark-mode-border-color
+
+.is-overflow-hidden
+    overflow: hidden
+.is-overflow-auto
+    overflow: auto
+    
+@media (prefers-color-scheme: light)
+    .color-mode-transparent
+        border: solid 1px $light-mode-border-color
+        background-color: $light-mode-block-color
+        color: $light-mode-text-color
+        @each $name, $color in $light-mode-colors
+            &.is-color-#{$name}
+                border-color: $color
+    .color-mode-light
+        @each $name, $color in $light-mode-colors
+            &.is-color-#{$name}
+                border: solid 1px $color
+                color: $color
+                background-color: rgba($color, 0.15)
+    .color-mode-filled
+        @each $name, $color in $light-mode-colors
+            &.is-color-#{$name}
+                color: $light-mode-text-inverted-color
+                background-color: $color
+    .color-mode-shadow
+        color: $light-mode-text-color
+        box-shadow: 0 0.25rem 0.5rem 0 rgba(59,63,73,.15)
+        @each $name, $color in $light-mode-colors
+            &.is-color-#{$name}
+                color: $light-mode-text-inverted-color
+                background: linear-gradient(to right, mix($color, #ffffff, 80), $color)
+@media (prefers-color-scheme: dark)
+    .color-mode-transparent
+        border: solid 1px $dark-mode-border-color
         background-color: $dark-mode-block-color
         color: $dark-mode-text-color
-
-@media (prefers-color-scheme: light)
-    @each $name, $color in $light-mode-colors
-        .is-color-#{$name}
-            border-color: $color
-@media (prefers-color-scheme: dark)
-    @each $name, $color in $dark-mode-colors
-        .is-color-#{$name}
-            border-color: $color
+        @each $name, $color in $dark-mode-colors
+            &.is-color-#{$name}
+                border-color: $color
+    .color-mode-light
+        @each $name, $color in $dark-mode-colors
+            &.is-color-#{$name}
+                border: solid 1px $color
+                color: $color
+                background-color: rgba($color, 0.15)
+    .color-mode-filled
+        @each $name, $color in $dark-mode-colors
+            &.is-color-#{$name}
+                color: $dark-mode-text-inverted-color
+                background-color: $color
+    .color-mode-shadow
+        color: $dark-mode-text-color
+        box-shadow: 0 0.25rem 0.5rem 0 rgba(59,63,73,.45)
+        @each $name, $color in $dark-mode-colors
+            &.is-color-#{$name}
+                color: $dark-mode-text-inverted-color
+                background: linear-gradient(to right, $color, mix($color, #000000, 75))
 </style>

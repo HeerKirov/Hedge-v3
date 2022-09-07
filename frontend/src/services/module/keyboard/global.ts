@@ -9,7 +9,7 @@ import { createKeyEventValidator, createPrimitiveKeyEventValidator, KeyEvent } f
  * 使用此服务的情况下，快捷键也依赖vue组件加载顺序进行挂载，这就留出了根据不同组件进行先后分层的空间。总是新的的事件首先响应并可以切断传播。
  */
 
-const [installGlobalKey, useGlobalKeyService] = installation(function() {
+const [installGlobalKeyManager, useGlobalKeyManager] = installation(function() {
     onMounted(() => document.addEventListener("keydown", keydown))
     onUnmounted(() => document.removeEventListener("keydown", keydown))
 
@@ -54,7 +54,7 @@ const [installGlobalKey, useGlobalKeyService] = installation(function() {
  * 提供全局统一处理全局按键响应的方式，用来处理除焦点元素外的按键响应，并确保它们按期望的顺序执行。
  */
 export function useGlobalKey(event: (e: KeyEvent) => void) {
-    const { add, remove } = useGlobalKeyService()
+    const { add, remove } = useGlobalKeyManager()
 
     onBeforeMount(() => add(event))
     onUnmounted(() => remove(event))
@@ -119,4 +119,4 @@ export const [installKeyDeclaration, useKeyDeclaration] = installation(function 
     primitiveValidator: () => false
 }))
 
-export { installGlobalKey }
+export { installGlobalKeyManager }
