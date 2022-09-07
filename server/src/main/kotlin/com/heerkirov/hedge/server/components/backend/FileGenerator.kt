@@ -1,12 +1,15 @@
 package com.heerkirov.hedge.server.components.backend
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.dao.FileRecords
+import com.heerkirov.hedge.server.dao.ImportImages
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.enums.FileStatus
+import com.heerkirov.hedge.server.events.ImportUpdated
 import com.heerkirov.hedge.server.library.framework.StatefulComponent
 import com.heerkirov.hedge.server.utils.Graphics
 import com.heerkirov.hedge.server.utils.business.generateFilepath
@@ -31,7 +34,7 @@ interface FileGenerator : StatefulComponent {
 
 const val GENERATE_INTERVAL: Long = 200
 
-class FileGeneratorImpl(private val appStatus: AppStatusDriver, private val appdata: AppDataManager, private val data: DataRepository) : FileGenerator {
+class FileGeneratorImpl(private val appStatus: AppStatusDriver, private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus) : FileGenerator {
     private val log = LoggerFactory.getLogger(FileGenerator::class.java)
 
     private val queue: MutableList<Int> = LinkedList()
@@ -126,6 +129,13 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver, private val appd
                     }
                 }
 
+                val importImageIds = data.db.from(ImportImages)
+                    .select(ImportImages.id)
+                    .where { ImportImages.fileId eq fileRecord.id }
+                    .map { it[ImportImages.id]!! }
+                for (importImageId in importImageIds) {
+                    bus.emit(ImportUpdated(importImageId, generalUpdated = false, thumbnailFileReady = true))
+                }
             }
             queue.remove(fileId)
         }catch (e: Exception) {

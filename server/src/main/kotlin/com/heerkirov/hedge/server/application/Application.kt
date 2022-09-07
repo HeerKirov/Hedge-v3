@@ -48,7 +48,7 @@ fun runApplication(options: ApplicationOptions) {
 
             val similarFinder = define { SimilarFinderImpl(appStatus, repo) }
 
-            val thumbnailGenerator = define { FileGeneratorImpl(appStatus, appdata, repo) }
+            val thumbnailGenerator = define { FileGeneratorImpl(appStatus, appdata, repo, bus) }
             val fileManager = FileManager(appdata, repo)
             val importMetaManager = ImportMetaManager(repo)
             val importManager = ImportManager(repo, bus, importMetaManager, fileManager, thumbnailGenerator)
