@@ -64,10 +64,19 @@ export interface HttpInstanceConfig {
 
 export function createHttpInstance(config: Readonly<HttpInstanceConfig>): HttpInstance {
     const instance = axios.create()
-    const baseUrl = `http://${config.host}`
 
+    let _baseUrl: string | undefined = undefined
     let _headers: AxiosRequestHeaders | undefined = undefined
     let _token: string | undefined = undefined
+    let _host: string | undefined = undefined
+
+    function getBaseUrl() {
+        if(_host === undefined || config.host !== _host) {
+            _baseUrl = config.host !== undefined ? `http://${config.host}` : undefined
+            _host = config.host
+        }
+        return _baseUrl
+    }
 
     function getHeaders() {
         if(config.token !== _token || _token === undefined) {
@@ -80,7 +89,7 @@ export function createHttpInstance(config: Readonly<HttpInstanceConfig>): HttpIn
     function request<R, E extends BasicException>(requestConfig: RequestConfig<R>): Promise<Response<R, E>> {
         return new Promise((resolve, reject) => {
             instance.request({
-                baseURL: requestConfig.baseUrl,
+                baseURL: getBaseUrl(),
                 url: requestConfig.url,
                 method: requestConfig.method,
                 params: requestConfig.query,
@@ -139,17 +148,17 @@ export function createHttpInstance(config: Readonly<HttpInstanceConfig>): HttpIn
     return {
         request,
         createPathQueryRequest: <P, Q, R, E extends BasicException>(url: URLParser<P>, method?: Method, parser?: QueryParser<Q> & ResponseParser<R>) => (path: P, query: Q) =>
-            request<R, E>({baseUrl, url: url(path), method, query: parser?.parseQuery ? parser.parseQuery(query) : query, parseResponse: parser?.parseResponse}),
+            request<R, E>({url: url(path), method, query: parser?.parseQuery ? parser.parseQuery(query) : query, parseResponse: parser?.parseResponse}),
         createPathDataRequest: <P, T, R, E extends BasicException>(url: URLParser<P>, method?: Method, parser?: DataParser<T> & ResponseParser<R>) => (path: P, data: T) =>
-            request<R, E>({baseUrl, url: url(path), method, data: parser?.parseData ? parser.parseData(data) : data, parseResponse: parser?.parseResponse}),
+            request<R, E>({url: url(path), method, data: parser?.parseData ? parser.parseData(data) : data, parseResponse: parser?.parseResponse}),
         createPathRequest: <P, R, E extends BasicException>(url: URLParser<P>, method?: Method, parser?: ResponseParser<R>) => (path: P) =>
-            request<R, E>({baseUrl, url: url(path), method, parseResponse: parser?.parseResponse}),
+            request<R, E>({url: url(path), method, parseResponse: parser?.parseResponse}),
         createQueryRequest: <Q, R, E extends BasicException>(url: string, method?: Method, parser?: QueryParser<Q> & ResponseParser<R>) => (query: Q) =>
-            request<R, E>({baseUrl, url, method, query: parser?.parseQuery ? parser.parseQuery(query) : query, parseResponse: parser?.parseResponse}),
+            request<R, E>({url, method, query: parser?.parseQuery ? parser.parseQuery(query) : query, parseResponse: parser?.parseResponse}),
         createDataRequest: <T, R, E extends BasicException>(url: string, method?: Method, parser?: DataParser<T> & ResponseParser<R>) => (data: T) =>
-            request<R, E>({baseUrl, url, method, data: parser?.parseData ? parser.parseData(data) : data, parseResponse: parser?.parseResponse}),
+            request<R, E>({url, method, data: parser?.parseData ? parser.parseData(data) : data, parseResponse: parser?.parseResponse}),
         createRequest: <R, E extends BasicException>(url: string, method?: Method, parser?: ResponseParser<R>) => () =>
-            request<R, E>({baseUrl, url, method, parseResponse: parser?.parseResponse})
+            request<R, E>({url, method, parseResponse: parser?.parseResponse})
     }
 }
 

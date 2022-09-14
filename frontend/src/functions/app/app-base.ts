@@ -47,6 +47,9 @@ const [installAppBase, useAppBase] = installation(function (httpClientConfig: Ht
         connectionInfo: appEnvironment.server.connectionInfo
     })
 
+    httpClientConfig.host = appEnvironment.server.connectionInfo?.host
+    httpClientConfig.token = appEnvironment.server.connectionInfo?.token
+
     return { env, state, server }
 })
 

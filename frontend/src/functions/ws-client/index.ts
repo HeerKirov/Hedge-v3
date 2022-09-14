@@ -4,8 +4,10 @@ import { Emitter } from "@/utils/emitter"
 import { AllEvents, AllEventTypes } from "./constants"
 export { wsEventFilters } from "./filters"
 
+export type { AllEvents, AllEventTypes }
+
 export interface WsClient {
-    on(conditions?: WsEventFilter | AllEventTypes | (AllEventTypes | WsEventFilter)[]): Emitter<WsEventResult>
+    on(conditions?: WsEventConditions): Emitter<WsEventResult>
 }
 
 export interface WsEventResult {
@@ -18,7 +20,9 @@ interface WsClientActivityEmitter {
     emit(e: WsEventResult): void
 }
 
-export type WsEventFilter = (e: AllEvents) => boolean
+type WsEventFilter = (e: AllEvents) => boolean
+
+export type WsEventConditions = WsEventFilter | AllEventTypes | (AllEventTypes | WsEventFilter)[]
 
 export function createWsClient(): WsClient {
     const activityEmitters: Set<WsClientActivityEmitter> = new Set<WsClientActivityEmitter>()
@@ -51,7 +55,7 @@ export function createWsClient(): WsClient {
     }
 
     return {
-        on(conditions?: AllEventTypes | WsEventFilter | (AllEventTypes | WsEventFilter)[]): Emitter<WsEventResult> {
+        on(conditions?: WsEventConditions): Emitter<WsEventResult> {
             let events: ((arg: WsEventResult) => void)[] = []
 
             const emitter: WsClientActivityEmitter = {
@@ -87,7 +91,7 @@ export function createWsClient(): WsClient {
     }
 }
 
-function createCondition(conditions?: AllEventTypes | WsEventFilter | (AllEventTypes | WsEventFilter)[]): (e: AllEvents) => boolean {
+function createCondition(conditions?: WsEventConditions): (e: AllEvents) => boolean {
     if(conditions === undefined) {
         return () => true
     }else if(typeof conditions === "function") {

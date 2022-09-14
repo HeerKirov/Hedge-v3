@@ -164,6 +164,17 @@ export const objects = {
         }else{
             return any
         }
+    },
+    clear(a: any): any {
+        for(const key of Object.keys(a)) {
+            delete a[key]
+        }
+        return a
+    },
+    copyTo(from: any, to: any) {
+        for(const [key, value] of Object.entries(from)) {
+            to[key] = value
+        }
     }
 }
 

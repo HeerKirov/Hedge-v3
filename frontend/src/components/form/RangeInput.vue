@@ -50,7 +50,7 @@ const events = {[props.updateOnInput ? "onInput" : "onChange"]: onUpdate, onKeyd
 @import "../../styles/base/color"
 
 input[type="range"].range
-    $height: 0.5rem
+    $height: 8px
     $margin: ($element-height-std - $height) / 2
     -webkit-appearance: none
     margin: $margin 0.25rem

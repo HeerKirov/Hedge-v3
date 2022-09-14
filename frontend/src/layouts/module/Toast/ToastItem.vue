@@ -31,7 +31,7 @@ const transitionFlag = ref(false)
 onMounted(async () => {
     timeout = setTimeout(close, 3000)
     transitionFlag.value = true
-    await sleep(0)
+    await sleep(50)
     timeoutFlag.value = true
 })
 
