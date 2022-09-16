@@ -16,4 +16,4 @@ export function checkTagName(name: string): boolean {
     return true
 }
 
-const DISABLE_CHARACTER = ['\'', '"', '`', '.', '|']
+const DISABLE_CHARACTER = ["'", "\"", "`", ".", "|"]

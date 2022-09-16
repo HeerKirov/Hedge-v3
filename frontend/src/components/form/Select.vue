@@ -8,7 +8,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-    (e: 'update:value', value: string, index: number): void
+    (e: "update:value", value: string, index: number): void
 }>()
 
 const selectDom = ref<HTMLSelectElement>()

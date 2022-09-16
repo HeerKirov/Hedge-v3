@@ -1,0 +1,58 @@
+<script setup lang="ts">
+import { onMounted, ref } from "vue"
+import { useRouter } from "vue-router"
+import { Button, Icon } from "@/components/universal"
+import { Input } from "@/components/form"
+import { useAppEnv, useAppState } from "@/functions/app"
+import { useMessageBox } from "@/services/module/message-box"
+import { onKeyEnter } from "@/services/module/keyboard"
+
+const router = useRouter()
+const appEnv = useAppEnv()
+const appState = useAppState()
+const message = useMessageBox()
+
+const useTouchId = ref(appEnv.canPromptTouchID)
+const password = ref("")
+const disabled = ref(false)
+
+onMounted(async () => {
+    if(appState.state.value !== "NOT_LOGIN") {
+        await router.push({name: "Index"})
+        return
+    }
+    if(useTouchId.value) {
+        if(await appState.login({touchId: true})) {
+            await router.push({name: "Index"})
+        }else{
+            useTouchId.value = false
+        }
+    }
+})
+
+const doLogin = async () => {
+    disabled.value = true
+    if(await appState.login({password: password.value})) {
+        await router.push({name: "Index"})
+    }else{
+        disabled.value = false
+        message.showOkMessage("prompt", "口令错误。")
+    }
+}
+
+const doLoginByKeyEnter = onKeyEnter(doLogin)
+
+</script>
+
+<template>
+    <div class="fixed center has-text-centered">
+        <template v-if="useTouchId">
+            <Icon icon="fingerprint" size="3x" fade/>
+            <p class="mt-6">正在通过Touch ID认证</p>
+        </template>
+        <template v-else>
+            <Input class="has-text-centered" type="password" size="small" width="three-quarter" auto-focus update-on-input v-model:value="password" @keypress="doLoginByKeyEnter"/>
+            <Button class="ml-1" mode="filled" type="success" size="small" square icon="arrow-right" :disabled="disabled" @click="doLogin"/>
+        </template>
+    </div>
+</template>

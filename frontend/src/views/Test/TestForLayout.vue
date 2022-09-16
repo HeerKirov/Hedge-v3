@@ -48,7 +48,7 @@ import { Input } from "@/components/form"
     width: 400px
     border: #1f2225 dashed 1px
     margin-bottom: 0.25rem
-.middle-layout
+.bottom-layout
     width: 800px
     border: #1f2225 dashed 1px
     margin-bottom: 0.25rem

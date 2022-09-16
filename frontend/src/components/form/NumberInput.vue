@@ -15,19 +15,19 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-    (e: 'update:value', value: number): void
-    (e: 'keypress', event: KeyEvent): void
+    (e: "update:value", value: number): void
+    (e: "keypress", event: KeyEvent): void
 }>()
 
 const onUpdate = (value: string) => {
     const newValue = parseInt(value)
     if(!isNaN(newValue)) {
         if(props.max !== undefined && newValue > props.max) {
-            emit('update:value', props.max)
+            emit("update:value", props.max)
         }else if(props.min !== undefined && newValue < props.min) {
-            emit('update:value', props.min)
+            emit("update:value", props.min)
         }else{
-            emit('update:value', newValue)
+            emit("update:value", newValue)
         }
     }
 }

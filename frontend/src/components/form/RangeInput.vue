@@ -12,7 +12,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-    (e: 'update:value', value: number): void
+    (e: "update:value", value: number): void
 }>()
 
 watch(() => props.value, () => { value.value = props.value ?? undefined })
@@ -23,7 +23,7 @@ const onUpdate = (e: InputEvent) => {
     const newValue = parseInt((e.target as HTMLInputElement).value)
     if(!isNaN(newValue)) {
         value.value = newValue
-        emit('update:value', value.value)
+        emit("update:value", value.value)
     }
 }
 
@@ -51,7 +51,7 @@ const events = {[props.updateOnInput ? "onInput" : "onChange"]: onUpdate, onKeyd
 
 input[type="range"].range
     $height: 8px
-    $margin: ($element-height-std - $height) / 2
+    $margin: calc(($element-height-std - $height) / 2)
     -webkit-appearance: none
     margin: $margin 0.25rem
     height: $height

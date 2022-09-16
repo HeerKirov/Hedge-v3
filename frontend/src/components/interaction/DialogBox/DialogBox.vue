@@ -10,7 +10,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-    (e: 'close'): void
+    (e: "close"): void
 }>()
 
 const close = () => emit('close')
@@ -31,7 +31,7 @@ export default {
 
 <template>
     <transition :enter-active-class="$style['transition-active']" :leave-active-class="$style['transition-active']" :enter-from-class="$style['transition-goal']" :leave-to-class="$style['transition-goal']">
-        <div v-if="visible" :class="{[$style.background]: true, [$style.absolute]: position === 'absolute'}" @click="closeByOutside"/>
+        <div v-if="visible" :class="{[$style.background]: true, [$style['absolute']]: position === 'absolute'}" @click="closeByOutside"/>
     </transition>
     <transition :enter-active-class="$style['transition-enter-active']" :leave-active-class="$style['transition-leave-active']" :enter-from-class="$style['transition-enter-from']" :leave-to-class="$style['transition-leave-to']">
         <DialogBoxFramework v-if="visible" v-bind="$attrs" :position="position" :overflow="overflow" :close-on-escape="closeOnEscape" @close="close">

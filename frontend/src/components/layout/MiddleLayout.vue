@@ -21,6 +21,8 @@ import { Flex } from "@/components/layout"
     display: flex
     flex-wrap: nowrap
     justify-content: space-between
+    width: 100%
+    height: 100%
 
     > .layout-container
         align-items: center

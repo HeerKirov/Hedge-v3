@@ -1,7 +1,7 @@
 import { ref } from "vue"
 import { installation } from "@/utils/reactivity"
 import { HttpClientConfig } from "@/functions/http-client"
-import { remoteIpcClient } from "@/functions/ipc-client"
+import { LoginForm, remoteIpcClient } from "@/functions/ipc-client"
 
 const [installAppBase, useAppBase] = installation(function (httpClientConfig: HttpClientConfig) {
     const appEnvironment = remoteIpcClient.app.env()
@@ -30,6 +30,13 @@ const [installAppBase, useAppBase] = installation(function (httpClientConfig: Ht
         }
     })
 
+    const login = async (form: LoginForm) => {
+        if(await remoteIpcClient.app.login(form)) {
+            state.value = "READY"
+            return true
+        }
+        return false
+    }
 
     const env = {
         platform: appEnvironment.platform,
@@ -50,7 +57,7 @@ const [installAppBase, useAppBase] = installation(function (httpClientConfig: Ht
     httpClientConfig.host = appEnvironment.server.connectionInfo?.host
     httpClientConfig.token = appEnvironment.server.connectionInfo?.token
 
-    return { env, state, server }
+    return { env, state, server, login }
 })
 
 function useAppEnv() {
@@ -58,8 +65,7 @@ function useAppEnv() {
 }
 
 function useAppState() {
-    const { state } = useAppBase()
-    const login = remoteIpcClient.app.login
+    const { state, login } = useAppBase()
     return { state, login }
 }
 

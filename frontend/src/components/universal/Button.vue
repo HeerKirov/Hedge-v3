@@ -45,7 +45,7 @@ const buttonClass = computed(() => [
     &.square
         padding: 0 0
     &:not(.square) > .icon
-        margin-right: $spacing-1
+        transform: translateX(#{-$spacing-1})
     &.round
         border-radius: $radius-size-round
 

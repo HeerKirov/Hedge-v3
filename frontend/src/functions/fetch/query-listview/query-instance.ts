@@ -33,7 +33,7 @@ export interface QueryInstance<T> {
      * 优先从缓存取数据，如果没有缓存，则会立刻加载segment。
      * @return 返回此记录。如果没有找到此记录，返回undefined
      */
-    queryOne(index: number): Promise<T | undefined>
+    queryOne(index: number): Promise<T | null>
     /**
      * 取得指定范围的数据。
      * 优先从缓存取数据，如果没有缓存，则会立刻加载segment。
@@ -103,9 +103,9 @@ export function createQueryInstance<T, E extends BasicException>(options: QueryI
     const modifiedEvent = createEmitter<ModifiedEvent<T>>()
 
     return {
-        async queryOne(index: number): Promise<T | undefined> {
+        async queryOne(index: number): Promise<T | null> {
             const ok = await segments.loadData(index, 1)
-            return ok ? datasource.data.buffer[index] : undefined
+            return ok ? datasource.data.buffer[index] : null
         },
         async queryRange(offset: number, limit: number): Promise<T[]> {
             const ok = await segments.loadData(offset, limit)

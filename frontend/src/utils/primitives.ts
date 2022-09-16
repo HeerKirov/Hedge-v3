@@ -53,12 +53,20 @@ export const arrays = {
         }
         return result
     },
-    toMap<T extends string, R>(arr: T[], generator: (value: T) => R): {[key in T]: R} {
+    toMap<T extends string, R>(arr: T[], generator: (value: T, index: number) => R): {[key in T]: R} {
         const ret: {[key: string]: R} = {}
-        for (const t of arr) {
-            ret[t] = generator(t)
-        }
+        arr.forEach((t, i) => {
+            ret[t] = generator(t, i)
+        })
         return <{[key in T]: R}>ret
+    },
+    toTupleMap<T, K extends string, R>(arr: T[], generator: (value: T, index: number) => [K, R]): {[key in K]: R} {
+        const ret: {[key: string]: R} = {}
+        arr.forEach((t, i) => {
+            const [k, v] = generator(t, i)
+            ret[k] = v
+        })
+        return <{[key in K]: R}>ret
     },
     equals<T>(a: T[], b: T[], equalsBy: (a: T, b: T) => boolean = (a, b) => a === b): boolean {
         if (a.length !== b.length) {
@@ -128,6 +136,16 @@ export const numbers = {
         }else{
             return `${numbers.roundNDecimal(byteSize, 3)} B`
         }
+    }
+}
+
+export const strings = {
+    repeat(char: string, times: number): string {
+        let s = ""
+        for (let i = 0; i < times; i++) {
+            s += char
+        }
+        return s
     }
 }
 

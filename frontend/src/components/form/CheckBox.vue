@@ -7,7 +7,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-    (e: 'update:value', value: boolean): void
+    (e: "update:value", value: boolean): void
 }>()
 
 const value = ref(props.value)
@@ -16,7 +16,7 @@ watch(() => props.value, v => value.value = v)
 
 const onUpdate = (e: Event) => {
     value.value = (e.target as HTMLInputElement).checked
-    emit('update:value', value.value)
+    emit("update:value", value.value)
 }
 
 </script>

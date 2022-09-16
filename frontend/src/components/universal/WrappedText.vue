@@ -5,7 +5,7 @@ const props = defineProps<{
     value?: string
 }>()
 
-const lines = computed(() => props.value ? props.value.split('\n') : [])
+const lines = computed(() => props.value ? props.value.split("\n") : [])
 
 </script>
 

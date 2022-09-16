@@ -36,7 +36,7 @@ export default {
 </script>
 
 <template>
-    <div :class="{[$style['box-framework']]: true, [$style.absolute]: position === 'absolute'}">
+    <div :class="{[$style['box-framework']]: true, [$style['absolute']]: position === 'absolute'}">
         <Block :overflow="overflow" v-bind="$attrs">
             <slot/>
         </Block>

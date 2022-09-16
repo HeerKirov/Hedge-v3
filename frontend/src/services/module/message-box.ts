@@ -7,8 +7,6 @@ export interface MessageBoxManager {
     showYesNoMessage(type: MessageBoxType, message: string, detailMessage?: string): Promise<boolean>
 }
 
-type MessageBoxType = "info" | "prompt" | "error" | "confirm" | "warn"
-
 export interface MessageBoxOptions {
     title: string
     message: string
@@ -74,10 +72,13 @@ const YesButton: MessageBoxButton = {name: "是", action: "yes", type: "primary"
 const DangerYesButton: MessageBoxButton = {name: "是", action: "yes", type: "danger"}
 const NoButton: MessageBoxButton = {name: "否", action: "no"}
 
+
+type MessageBoxType = "info" | "prompt" | "error" | "confirm" | "warn"
+
 const STD_TITLES: {[key in MessageBoxType]: string} = {
-    "info": "消息",
-    "prompt": "提示",
-    "error": "错误",
-    "confirm": "确认",
-    "warn": "警告",
+    "info": "消息",       //有信息需要告知
+    "prompt": "提示",     //有问题需要提示给用户，例如表单验证不通过、有非法值，适用于正常业务流程
+    "error": "错误",      //发生内部错误或严重错误，一般只适用于业务流程出现异常时
+    "confirm": "确认",    //有操作需要用户确认
+    "warn": "警告",       //有不可逆操作需要警告用户并确认
 } as const

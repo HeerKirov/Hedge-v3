@@ -53,6 +53,7 @@ if(props.enter) useInterceptedKey("Enter", () => {
     > .detail-message
         margin: 0 #{$spacing-3}
         color: $light-mode-secondary-text-color
+        font-size: $font-size-small
         @media (prefers-color-scheme: dark)
             color: $dark-mode-secondary-text-color
     > .buttons

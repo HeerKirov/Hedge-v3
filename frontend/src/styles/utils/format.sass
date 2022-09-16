@@ -67,3 +67,17 @@
     overflow: hidden
     text-overflow: ellipsis
 
+//黑色加粗标签
+.label
+  font-weight: 700
+  display: block
+  color: $light-mode-text-color
+  @media (prefers-color-scheme: dark)
+    color: $dark-mode-text-color
+
+//灰色提示文本
+.secondary-text
+  font-size: $font-size-small
+  color: $light-mode-secondary-text-color
+  @media (prefers-color-scheme: dark)
+    color: $dark-mode-secondary-text-color

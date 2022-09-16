@@ -28,10 +28,10 @@ export default function (props: FlexProps, { slots }: SetupContext) {
         for(const node of vNode) {
             const style: Record<string, any> = node.props?.style ?? {}
 
-            if(width !== undefined) style['width'] = width
-            if(basis !== undefined) style['flex-basis'] = basis
-            if(props.grow !== undefined) style['flex-grow'] = props.grow
-            if(props.shrink !== undefined) style['flex-shrink'] = props.shrink
+            if(width !== undefined) style["width"] = width
+            if(basis !== undefined) style["flex-basis"] = basis
+            if(props.grow !== undefined) style["flex-grow"] = props.grow
+            if(props.shrink !== undefined) style["flex-shrink"] = props.shrink
 
             if(node.props) {
                 node.props.style = style
@@ -41,7 +41,7 @@ export default function (props: FlexProps, { slots }: SetupContext) {
         }
     }
 
-    return h('div', {style: divStyle}, vNode)
+    return h("div", {style: divStyle}, vNode)
 }
 
 const justifyContentReflections = {

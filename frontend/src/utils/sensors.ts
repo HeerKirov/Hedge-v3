@@ -61,3 +61,47 @@ export function useMouseHover() {
 
     return {hover, onMouseover, onMouseleave}
 }
+
+/**
+ * 提供一个通过鼠标拖曳改变区域宽度的机制。该机制依赖于一块独立的HTML元素，通过托放这块元素来改变大小。
+ */
+export function useResizeBar(options: {areaRef: Ref<HTMLElement | undefined>, location: "left" | "right", width: Ref<number>, defaultWidth: number, maxWidth: number, minWidth: number, attachRange: number}) {
+    const { defaultWidth, maxWidth, minWidth, attachRange, areaRef, location, width } = options
+
+    const resizeAreaMouseDown = () => {
+        document.addEventListener('mousemove', mouseMove)
+        document.addEventListener('mouseup', mouseUp)
+    }
+
+    const mouseMove = location === "left" ? (e: MouseEvent) => {
+        if(areaRef.value) {
+            const newWidth = areaRef.value.getBoundingClientRect().left + areaRef.value.clientWidth - e.pageX
+            width.value
+                = newWidth > maxWidth ? maxWidth
+                : newWidth < minWidth ? minWidth
+                : Math.abs(newWidth - defaultWidth) <= attachRange ? defaultWidth
+                : newWidth
+        }
+    } : (e: MouseEvent) => {
+        if(areaRef.value) {
+            const newWidth = e.pageX - areaRef.value.getBoundingClientRect().left
+            width.value
+                = newWidth > maxWidth ? maxWidth
+                : newWidth < minWidth ? minWidth
+                : Math.abs(newWidth - defaultWidth) <= attachRange ? defaultWidth
+                : newWidth
+        }
+    }
+
+    const mouseUp = () => {
+        document.removeEventListener('mousemove', mouseMove)
+        document.removeEventListener('mouseup', mouseUp)
+    }
+
+    onUnmounted(() => {
+        document.removeEventListener('mousemove', mouseMove)
+        document.removeEventListener('mouseup', mouseUp)
+    })
+
+    return {resizeAreaMouseDown}
+}

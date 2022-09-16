@@ -64,20 +64,26 @@ const icon = computed(() => {
 </template>
 
 <script lang="ts">
-import { library } from '@fortawesome/fontawesome-svg-core'
+import { library } from "@fortawesome/fontawesome-svg-core"
 
 import {
     faClose,
-    faStar, faStarHalf, faStarHalfStroke
-} from '@fortawesome/free-solid-svg-icons'
+    faStar, faStarHalf, faStarHalfStroke,
+    faArrowLeft, faArrowRight, faArrowUp, faArrowDown,
+    faCircleNotch, faCheck, faFile, faCodeBranch, faFingerprint, faBars,
+    faGear, faCircleQuestion, faClipboard
+} from "@fortawesome/free-solid-svg-icons"
 
 import {
     faStar as farStar
-} from '@fortawesome/free-regular-svg-icons'
+} from "@fortawesome/free-regular-svg-icons"
 
 library.add(
     faClose,
-    faStar, faStarHalf, faStarHalfStroke
+    faStar, faStarHalf, faStarHalfStroke,
+    faArrowLeft, faArrowRight, faArrowUp, faArrowDown,
+    faCircleNotch, faCheck, faFile, faCodeBranch, faFingerprint, faBars,
+    faGear, faCircleQuestion, faClipboard
 )
 library.add(farStar)
 

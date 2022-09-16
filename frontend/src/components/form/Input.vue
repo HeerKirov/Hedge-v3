@@ -15,8 +15,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-    (e: 'update:value', value: string): void
-    (e: 'keypress', event: KeyEvent): void
+    (e: "update:value", value: string): void
+    (e: "keypress", event: KeyEvent): void
 }>()
 
 watch(() => props.value, () => { value.value = props.value ?? "" })
@@ -25,7 +25,7 @@ const value = ref(props.value ?? "")
 
 const onUpdate = (e: InputEvent) => {
     value.value = (e.target as HTMLInputElement).value
-    emit('update:value', value.value)
+    emit("update:value", value.value)
 }
 
 //按键事件处理
@@ -37,7 +37,7 @@ const onKeydown = (e: KeyboardEvent) => {
             e.stopPropagation()
             e.stopImmediatePropagation()
         }
-        emit?.('keypress', toKeyEvent(e))
+        emit?.("keypress", toKeyEvent(e))
     }
 }
 

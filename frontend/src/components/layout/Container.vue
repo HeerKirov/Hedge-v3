@@ -8,6 +8,7 @@
 .container
     margin: 0 auto
     width: auto
+    height: 100%
     @media screen and (min-width: 850px)
         max-width: 640px
     @media screen and (min-width: 1024px)

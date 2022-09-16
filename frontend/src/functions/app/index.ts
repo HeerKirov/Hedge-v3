@@ -1,7 +1,7 @@
 import { createHttpClientConfig, installHttpClient, useHttpClient } from "./http-client"
 import { installWsClient, useWsClient, useWsListeningEvent } from "./ws-client"
-import { installFullscreen, useFullscreen } from "./fullscreen"
-import { installAppBase } from "./app-base"
+import { installFullscreen, useFullscreen, useAppearance } from "./app-runtime"
+import { installAppBase, useAppState, useAppEnv, useServerStatus } from "./app-base"
 import { useAppInitializer } from "./app-initialize"
 import { useLocalStorage } from "./storage"
 
@@ -28,9 +28,13 @@ export function installAppService(options: AppServiceOptions) {
 
 export {
     useFullscreen,
+    useAppearance,
     useHttpClient,
     useWsClient,
     useWsListeningEvent,
     useLocalStorage,
-    useAppInitializer
+    useAppInitializer,
+    useAppState,
+    useAppEnv,
+    useServerStatus
 }
