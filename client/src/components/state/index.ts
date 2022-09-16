@@ -5,7 +5,7 @@ import { ServerManager } from "../server"
 import { panic } from "../../exceptions"
 import { createEmitter, Emitter } from "../../utils/emitter"
 import { AppState, AppInitializeForm, LoginForm, InitializeState } from "./model"
-import { ThemeManager } from "../../application/theme";
+import { ThemeManager } from "../../application/theme"
 
 /**
  * 对客户端app的状态进行管理。处理从加载到登录的一系列状态和伴生操作。
@@ -33,7 +33,7 @@ export interface StateManager {
      * 登录。
      * 只能在NOT_LOGIN状态下调用，否则总是返回false。
      */
-    login(form: LoginForm): Promise<{ ok: boolean }>
+    login(form: LoginForm): Promise<boolean>
 
     /**
      * app state状态变化的事件。
@@ -149,25 +149,25 @@ export function createStateManager(appdata: AppDataDriver, theme: ThemeManager, 
         }
     }
 
-    async function login(form: LoginForm): Promise<{ ok: boolean }> {
+    async function login(form: LoginForm): Promise<boolean> {
         if(_state === "NOT_LOGIN") {
             if(form.password !== undefined) {
                 const truePassword = appdata.getAppData().loginOption.password
                 if(truePassword == null || form.password === truePassword) {
                     afterLogin().finally()
-                    return { ok: true }
+                    return true
                 }
             }else if(form.touchId && systemPreferences.canPromptTouchID()) {
                 try {
                     await systemPreferences.promptTouchID("进行登录认证")
                 }catch (e) {
-                    return { ok: false }
+                    return false
                 }
                 afterLogin().finally()
-                return { ok: true }
+                return true
             }
         }
-        return { ok: false }
+        return false
     }
 
     return {load, state, appInitialize, login, stateChangedEvent, initializeEvent}
@@ -220,7 +220,7 @@ function createServerAwaiter(server: ServerManager) {
             if(server.service.status() === "READY") {
                 resolve()
             }else{
-                connectionCache.push(resolve)
+                serviceCache.push(resolve)
             }
         })
     }

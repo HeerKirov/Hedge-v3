@@ -40,7 +40,7 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
             },
             initialize: state.appInitialize,
             async login(form) {
-                return (await state.login(form)).ok
+                return await state.login(form)
             },
             envChangedEvent: createProxyEmitter(func => {
                 //此处的实现使用了一个简单的缓冲池结构，将三种不同的组件状态尽可能收纳在同一个事件中发出。

@@ -343,7 +343,6 @@ function createServiceManager(connectionManager: ConnectionManager): ServiceMana
     }
 
     async function appInitialize(data: AppInitializeForm): Promise<void> {
-        console.log(_status, connectionManager.status(), connectionManager.connectionInfo())
         if(_status === "NOT_INITIALIZED" && connectionManager.status() === "OPEN" && connectionManager.connectionInfo() !== null) {
             const info = connectionManager.connectionInfo()!
             const res = await request({url: `http://${info.host}/app/initialize`, method: 'POST', headers: {'Authorization': `Bearer ${info.token}`}, data})

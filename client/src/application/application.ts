@@ -104,6 +104,7 @@ export async function createApplication(options?: AppOptions) {
         registerAppMenu(windowManager, platform)
         registerDockMenu(windowManager, platform)
 
+        themeManager.load()
         stateManager.load()
         windowManager.load()
 

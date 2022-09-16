@@ -9,7 +9,7 @@ export interface ThemeManager {
     /**
      * 初始化加载。
      */
-    load(): Promise<void>
+    load(): void
 
     /**
      * 查看当前主题。
@@ -30,16 +30,22 @@ export interface ThemeManager {
 
 export function createThemeManager(appdata: AppDataDriver): ThemeManager {
     return {
-        async load() {
-            if(appdata.status() != AppDataStatus.NOT_INIT) {
+        load() {
+            if(appdata.status() === AppDataStatus.LOADED) {
                 nativeTheme.themeSource = appdata.getAppData().appearanceOption.theme
             }
         },
         getTheme(): NativeTheme {
-            return appdata.getAppData().appearanceOption.theme
+            if(appdata.status() === AppDataStatus.LOADED) {
+                return appdata.getAppData().appearanceOption.theme
+            }else{
+                return nativeTheme.themeSource
+            }
         },
         async setTheme(value: NativeTheme) {
-            await appdata.saveAppData(d => d.appearanceOption.theme = value)
+            if(appdata.status() === AppDataStatus.LOADED) {
+                await appdata.saveAppData(d => d.appearanceOption.theme = value)
+            }
             nativeTheme.themeSource = value
         },
         getRuntimeTheme(): "light" | "dark" {
