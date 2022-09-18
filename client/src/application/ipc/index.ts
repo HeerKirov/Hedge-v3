@@ -57,11 +57,11 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
     ipcHandle("/setting/appearance/set", impl.setting.appearance.set)
     ipcHandle("/setting/auth", impl.setting.auth.get)
     ipcHandle("/setting/auth/set", impl.setting.auth.set)
-    ipcHandle("/setting/auth/channel/list", impl.setting.channel.list)
-    ipcHandle("/setting/auth/channel/default", impl.setting.channel.getDefault)
-    ipcHandle("/setting/auth/channel/default/set", impl.setting.channel.setDefault)
-    ipcHandleSync("/setting/auth/channel/current", impl.setting.channel.getCurrent)
-    ipcHandleSync("/setting/auth/channel/toggle", impl.setting.channel.toggle)
+    ipcHandle("/setting/channel/list", impl.setting.channel.list)
+    ipcHandle("/setting/channel/default", impl.setting.channel.getDefault)
+    ipcHandle("/setting/channel/default/set", impl.setting.channel.setDefault)
+    ipcHandleSync("/setting/channel/current", impl.setting.channel.getCurrent)
+    ipcHandleSync("/setting/channel/toggle", impl.setting.channel.toggle)
 
     ipcMain.on("/remote/fullscreen", (e) => {
         e.returnValue = BrowserWindow.fromWebContents(e.sender)!.isFullScreen()

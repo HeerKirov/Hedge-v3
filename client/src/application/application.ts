@@ -85,20 +85,6 @@ export async function createApplication(options?: AppOptions) {
         registerAppEvents(windowManager, serverManager, platform)
         registerGlobalIpcRemoteEvents(appDataDriver, channelManager, serverManager, stateManager, themeManager, windowManager, {debugMode, userDataPath, platform, channel: channelManager.currentChannel()})
 
-        // serverManager.connection.statusChangedEvent.addEventListener(({ status, info, error }) => {
-        //     console.log(`(server connection)> status = ${status}, ${JSON.stringify(info)}, ${JSON.stringify(error)}`)
-        // })
-        // serverManager.service.statusChangedEvent.addEventListener(({ status }) => {
-        //     console.log(`(server service)> status = ${status}`)
-        // })
-        // stateManager.stateChangedEvent.addEventListener(({ state }) => {
-        //     console.log(`(stateManager)> state = ${state}`)
-        //
-        //     if(state === "NOT_LOGIN") {
-        //         stateManager.login({password: "hello"})
-        //     }
-        // })
-
         await promiseAll(appDataDriver.load(), resourceManager.load(), app.whenReady())
 
         registerAppMenu(windowManager, platform)
@@ -108,14 +94,6 @@ export async function createApplication(options?: AppOptions) {
         stateManager.load()
         windowManager.load()
 
-        // if(stateManager.state() === "NOT_INITIALIZED") {
-        //     console.log("> initialize.")
-        //     await sleep(1000)
-        //     stateManager.appInitialize({
-        //         password: "hello",
-        //         storagePath: null
-        //     })
-        // }
     }catch (e) {
         panic(e)
     }

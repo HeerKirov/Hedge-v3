@@ -53,16 +53,21 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, op
             icon,
             title: "Hedge",
             height: 720,
-            width: 1080,
+            width: options.debug ? 1440 : 1080,
             minHeight: 480,
             minWidth: 640,
             webPreferences: {
                 devTools: true,
-                preload: path.join(__dirname, 'ipc/preload.js')
+                preload: path.join(__dirname, 'ipc/preload.js'),
             },
+            autoHideMenuBar: true,
             backgroundColor: theme.getRuntimeTheme() === "dark" ? "#212121" : "#FFFFFF",
             ...configure
         })
+
+        if(options.debug) {
+            win.webContents.openDevTools()
+        }
 
         registerWindowIpcRemoteEvent(win)
 
@@ -101,7 +106,7 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, op
             return null
         }
         if(settingWindow == null) {
-            settingWindow = newBrowserWindow('/setting', {width: 820, height: 640})
+            settingWindow = newBrowserWindow('/setting')
             settingWindow.on("closed", () => {
                 settingWindow = null
             })
@@ -116,7 +121,7 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, op
             return null
         }
         if(guideWindow == null) {
-            guideWindow = newBrowserWindow('/guide', {width: 875})
+            guideWindow = newBrowserWindow('/guide')
             guideWindow.on("closed", () => {
                 guideWindow = null
             })
