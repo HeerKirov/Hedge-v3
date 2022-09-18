@@ -67,11 +67,11 @@ const icon = computed(() => {
 import { library } from "@fortawesome/fontawesome-svg-core"
 
 import {
-    faClose,
-    faStar, faStarHalf, faStarHalfStroke,
-    faArrowLeft, faArrowRight, faArrowUp, faArrowDown,
+    faClose, faStar, faStarHalf, faStarHalfStroke,
+    faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faCaretDown, faCaretRight,
     faCircleNotch, faCheck, faFile, faCodeBranch, faFingerprint, faBars,
-    faGear, faCircleQuestion, faClipboard
+    faGear, faCircleQuestion, faClipboard,
+    faHouse
 } from "@fortawesome/free-solid-svg-icons"
 
 import {
@@ -79,11 +79,11 @@ import {
 } from "@fortawesome/free-regular-svg-icons"
 
 library.add(
-    faClose,
-    faStar, faStarHalf, faStarHalfStroke,
-    faArrowLeft, faArrowRight, faArrowUp, faArrowDown,
+    faClose, faStar, faStarHalf, faStarHalfStroke,
+    faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faCaretDown, faCaretRight,
     faCircleNotch, faCheck, faFile, faCodeBranch, faFingerprint, faBars,
-    faGear, faCircleQuestion, faClipboard
+    faGear, faCircleQuestion, faClipboard,
+    faHouse
 )
 library.add(farStar)
 

@@ -42,7 +42,7 @@ function watchProps() {
 <template>
     <div :class="[$style.select, $style[`is-size-${size ?? 'std'}`]]">
         <select ref="selectDom" @change="changed">
-            <option v-for="item in items" :value="item.value">{{item.label}}</option>
+            <option v-for="item in items" :key="item.value" :value="item.value">{{item.label}}</option>
         </select>
     </div>
 </template>

@@ -32,7 +32,7 @@ const [installAppBase, useAppBase] = installation(function (httpClientConfig: Ht
 
     const login = async (form: LoginForm) => {
         if(await remoteIpcClient.app.login(form)) {
-            state.value = "READY"
+            state.value = "LOADING"
             return true
         }
         return false

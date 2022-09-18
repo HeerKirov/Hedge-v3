@@ -17,7 +17,7 @@ interface FetchReactive<T> {
 interface FetchReactiveOptions<T> {
     get(httpClient: HttpClient): () => Promise<Response<T, BasicException>>
     update?(httpClient: HttpClient): (form: T) => Promise<Response<unknown, BasicException>>
-    eventFilter?(): WsEventConditions
+    eventFilter?: WsEventConditions
 }
 
 export function useFetchReactive<T>(options: FetchReactiveOptions<T>): FetchReactive<T> {
@@ -38,12 +38,10 @@ export function useFetchReactive<T>(options: FetchReactiveOptions<T>): FetchReac
         loading.value = false
     })
 
-    watch(data, async (_, o) => {
-        if(!options.update) throw new Error("options.update is not satisfied.")
-
+    if(options.update !== undefined) watch(data, async (_, o) => {
         if(o !== undefined && data.value !== undefined) {
             updating.value = true
-            const res = await options.update(httpClient)(toRaw(data.value))
+            const res = await options.update!(httpClient)(toRaw(data.value))
             if(!res.ok && res.exception) handleException(res.exception)
             updating.value = false
             lastUpdated = Date.now()
@@ -51,7 +49,7 @@ export function useFetchReactive<T>(options: FetchReactiveOptions<T>): FetchReac
     }, {deep: true})
 
     if(options.eventFilter) {
-        const emitter = wsClient.on(options.eventFilter())
+        const emitter = wsClient.on(options.eventFilter)
 
         onMounted(() => emitter.addEventListener(receiveEvent))
         onUnmounted(() => emitter.removeEventListener(receiveEvent))

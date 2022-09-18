@@ -23,7 +23,7 @@ const { isOpen } = useSideLayoutState()
 @import "../../../styles/base/color"
 
 $transaction-time: 0.4s
-$content-margin-size: ($title-bar-height - $element-height-std) / 2
+$content-margin-size: calc(($title-bar-height - $element-height-std) / 2)
 
 .top-bar
     position: relative

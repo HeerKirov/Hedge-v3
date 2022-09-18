@@ -8,4 +8,8 @@ installSideLayoutState()
 
 <template>
     <MainRootView/>
+    <!-- ViewStack -->
+    <!-- GlobalDialog -->
+    <!-- ImportDialog -->
+    <!-- GlobalCallout -->
 </template>

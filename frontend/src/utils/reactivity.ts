@@ -1,4 +1,4 @@
-import { computed, inject, InjectionKey, isRef, provide, Ref, ref, watchEffect, toRef as originToRef } from "vue"
+import { computed, inject, InjectionKey, isRef, provide, Ref, ref, reactive, watch, watchEffect, toRef as originToRef } from "vue"
 
 /**
  * 执行computed计算，产生一个ref，它的值会随watch源的变动而重新计算，但它也能被修改。
@@ -36,6 +36,19 @@ export function toRef<T extends object, K extends keyof T>(ref: Ref<T> | T, key:
     }else{
         return originToRef(ref, key)
     }
+}
+
+/**
+ * 将Ref反过来生成成为reactive的变换。
+ * 变换要求Ref的类型必须是array。同时，这种变换是单向的，对reactive的修改不会影响到ref。
+ * 实质上是创建了一个watch代理。
+ */
+export function toReactiveArray<T>(ref: Ref<T[]>): T[] {
+    const ret = reactive(ref.value) as any as T[]
+
+    watch(ref, value => ret.splice(0, ret.length, ...value))
+
+    return ret
 }
 
 /**
