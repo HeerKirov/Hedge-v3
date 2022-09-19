@@ -2,7 +2,6 @@ package com.heerkirov.hedge.server.components.http
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
-import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.health.Health
 import com.heerkirov.hedge.server.components.http.modules.*
 import com.heerkirov.hedge.server.components.http.routes.*
@@ -67,7 +66,7 @@ class HttpServerImpl(private val health: Health,
             .handle(aspect, authentication, errorHandler)
             .handle(WsRoutes(lifetime, eventBus))
             .handle(AppRoutes(lifetime, appStatus, appdata))
-            .handle(EnvRoutes(appdata))
+            .handle(AppServiceRoutes(appdata))
             .handle(SettingRoutes(
                 allServices.settingMeta,
                 allServices.settingQuery,

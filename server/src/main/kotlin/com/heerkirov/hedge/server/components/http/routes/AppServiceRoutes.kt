@@ -7,22 +7,16 @@ import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
 
 
-class EnvRoutes(private val appdata: AppDataManager) : Routes {
+class AppServiceRoutes(private val appdata: AppDataManager) : Routes {
     override fun handle(javalin: Javalin) {
         javalin.routes {
-            get("api/env", ::getEnvironment)
+            get("api/service/storage", ::getRuntimeStorage)
         }
     }
 
-    private fun getEnvironment(ctx: Context) {
-        ctx.json(
-            EnvironmentResponse(
-                Storage(appdata.storagePathAccessor.accessible, appdata.storagePathAccessor.storageDir)
-            )
-        )
+    private fun getRuntimeStorage(ctx: Context) {
+        ctx.json(Storage(appdata.storagePathAccessor.accessible, appdata.storagePathAccessor.storageDir))
     }
-
-    data class EnvironmentResponse(val storage: Storage)
 
     data class Storage(val accessible: Boolean, val storageDir: String)
 }

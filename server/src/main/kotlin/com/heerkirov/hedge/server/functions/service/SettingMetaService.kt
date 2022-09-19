@@ -20,6 +20,6 @@ class SettingMetaService(private val data: DataRepository, private val bus: Even
             }
         }
 
-        bus.emit(SettingMetaChanged(form))
+        bus.emit(SettingMetaChanged())
     }
 }

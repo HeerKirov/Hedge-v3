@@ -47,7 +47,7 @@ class SettingSourceService(private val data: DataRepository, private val bus: Ev
             }
         }
 
-        bus.emit(SettingSourceSiteChanged(data.setting.source.sites))
+        bus.emit(SettingSourceSiteChanged())
     }
 
     /**
@@ -87,7 +87,7 @@ class SettingSourceService(private val data: DataRepository, private val bus: Ev
             }
         }
 
-        bus.emit(SettingSourceSiteChanged(data.setting.source.sites))
+        bus.emit(SettingSourceSiteChanged())
     }
 
     /**
@@ -114,6 +114,6 @@ class SettingSourceService(private val data: DataRepository, private val bus: Ev
             }
         }
 
-        bus.emit(SettingSourceSiteChanged(data.setting.source.sites))
+        bus.emit(SettingSourceSiteChanged())
     }
 }

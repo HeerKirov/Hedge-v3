@@ -24,7 +24,7 @@ class QueryManager(private val data: DataRepository, bus: EventBus) {
         //监听meta tag、annotation、source tag的变化，刷新缓存
         bus.on(MetaTagEntityEvent::class, AnnotationEntityEvent::class, SourceTagUpdated::class) { flushCacheByEvent(it) }
         //监听query option的变化，刷新查询选项
-        bus.on(SettingQueryChanged::class) { options.flushOptionsByEvent(it) }
+        bus.on(SettingQueryChanged::class) { options.flushOptionsByEvent() }
     }
 
     /**
@@ -131,31 +131,23 @@ class QueryManager(private val data: DataRepository, bus: EventBus) {
             return _warningLimitOfIntersectItems!!
         }
 
-        fun flushOptionsByEvent(e: PackagedBusEvent<*>) {
-            val option = (e.event as SettingQueryChanged).queryOption
-            option.chineseSymbolReflect.alsoOpt {
-                if(it != _chineseSymbolReflect) {
-                    _chineseSymbolReflect = it
-                    executePlanCache.clear()
-                }
+        fun flushOptionsByEvent() {
+            val option = data.setting.query
+            if(option.chineseSymbolReflect != _chineseSymbolReflect) {
+                _chineseSymbolReflect = option.chineseSymbolReflect
+                executePlanCache.clear()
             }
-            option.warningLimitOfUnionItems.alsoOpt {
-                if(it != _warningLimitOfUnionItems) {
-                    _warningLimitOfUnionItems = it
-                    executePlanCache.clear()
-                }
+            if(option.warningLimitOfUnionItems != _warningLimitOfUnionItems) {
+                _warningLimitOfUnionItems = option.warningLimitOfUnionItems
+                executePlanCache.clear()
             }
-            option.warningLimitOfIntersectItems.alsoOpt {
-                if(it != _warningLimitOfIntersectItems) {
-                    _warningLimitOfIntersectItems = it
-                    executePlanCache.clear()
-                }
+            if(option.warningLimitOfIntersectItems != _warningLimitOfIntersectItems) {
+                _warningLimitOfIntersectItems = option.warningLimitOfIntersectItems
+                executePlanCache.clear()
             }
-            option.translateUnderscoreToSpace.alsoOpt {
-                if(it != _translateUnderscoreToSpace) {
-                    _translateUnderscoreToSpace = it
-                    executePlanCache.clear()
-                }
+            if(option.translateUnderscoreToSpace != _translateUnderscoreToSpace) {
+                _translateUnderscoreToSpace = option.translateUnderscoreToSpace
+                executePlanCache.clear()
             }
         }
     }

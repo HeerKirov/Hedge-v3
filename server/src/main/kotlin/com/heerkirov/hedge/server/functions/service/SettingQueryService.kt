@@ -21,6 +21,6 @@ class SettingQueryService(private val data: DataRepository, private val bus: Eve
             }
         }
 
-        bus.emit(SettingQueryChanged(form))
+        bus.emit(SettingQueryChanged())
     }
 }

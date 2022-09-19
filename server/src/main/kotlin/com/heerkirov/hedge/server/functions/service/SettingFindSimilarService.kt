@@ -19,6 +19,6 @@ class SettingFindSimilarService(private val data: DataRepository, private val bu
             }
         }
 
-        bus.emit(SettingFindSimilarChanged(form))
+        bus.emit(SettingFindSimilarChanged())
     }
 }

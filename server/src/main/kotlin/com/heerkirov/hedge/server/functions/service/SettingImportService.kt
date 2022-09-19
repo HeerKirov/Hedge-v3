@@ -38,7 +38,7 @@ class SettingImportService(private val data: DataRepository, private val bus: Ev
             }
         }
 
-        bus.emit(SettingImportChanged(form))
+        bus.emit(SettingImportChanged())
     }
 
     /**

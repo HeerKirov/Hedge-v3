@@ -16,6 +16,6 @@ class SettingAppdataService(private val appdata: AppDataManager, private val bus
             form.storagePath.alsoOpt { service.storagePath = it }
         }
 
-        bus.emit(SettingServiceChanged(form))
+        bus.emit(SettingServiceChanged())
     }
 }
