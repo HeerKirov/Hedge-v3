@@ -18,6 +18,10 @@ import { Input } from "@/components/form"
                 <b class="ml-1">]</b>
             </Tag>
         </Group>
+        <Group>
+            <Input/>
+            <Button mode="light" type="primary" icon="star">测试按钮</Button>
+        </Group>
         <Flex :class="$style['block-test']" :spacing="1" :width="100">
             <Block>A</Block>
             <Block color="success">B</Block>

@@ -1,4 +1,5 @@
 import { createHttpInstance, HttpInstance, HttpInstanceConfig, Response, ResponseOk, ResponseError, ResponseConnectionError } from "./instance"
+import { createServiceEndpoint, ServiceEndpoint } from "./api/service"
 import { createSettingServiceEndpoint, SettingServiceEndpoint } from "./api/setting-service"
 import { createSettingImportEndpoint, SettingImportEndpoint } from "./api/setting-import"
 import { createSettingSourceEndpoint, SettingSourceEndpoint } from "./api/setting-source"
@@ -25,6 +26,7 @@ import { createSettingFindSimilarEndpoint, SettingFindSimilarEndpoint } from "./
 export type { HttpInstance, HttpInstanceConfig as HttpClientConfig, Response, ResponseOk, ResponseError, ResponseConnectionError }
 
 export interface HttpClient {
+    serviceRuntime: ServiceEndpoint
     settingService: SettingServiceEndpoint
     settingMeta: SettingMetaEndpoint
     settingQuery: SettingQueryEndpoint
@@ -53,6 +55,7 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
     const http = createHttpInstance(config)
 
     return {
+        serviceRuntime: createServiceEndpoint(http),
         settingService: createSettingServiceEndpoint(http),
         settingMeta: createSettingMetaEndpoint(http),
         settingQuery: createSettingQueryEndpoint(http),

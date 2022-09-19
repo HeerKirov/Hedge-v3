@@ -67,11 +67,13 @@ const icon = computed(() => {
 import { library } from "@fortawesome/fontawesome-svg-core"
 
 import {
-    faClose, faStar, faStarHalf, faStarHalfStroke,
+    faClose, faStar, faStarHalf, faStarHalfStroke, faSave, faFolderOpen,
     faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faCaretDown, faCaretRight,
     faCircleNotch, faCheck, faFile, faCodeBranch, faFingerprint, faBars,
     faGear, faCircleQuestion, faClipboard,
-    faHouse
+    faHouse, faCalendarAlt, faClone, faUserTag, faHashtag, faTag, faCode, faSpinner, faFolder, faArchive, faThumbtack,
+    faCloudSun, faCoffee, faSearch, faPlusSquare, faFileInvoice, faGrinSquint, faServer, faCoins,
+    faLock, faLockOpen, faEthernet, faBullseye, faBusinessTime, faCircle, faReply
 } from "@fortawesome/free-solid-svg-icons"
 
 import {
@@ -79,11 +81,13 @@ import {
 } from "@fortawesome/free-regular-svg-icons"
 
 library.add(
-    faClose, faStar, faStarHalf, faStarHalfStroke,
+    faClose, faStar, faStarHalf, faStarHalfStroke, faSave, faFolderOpen,
     faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faCaretDown, faCaretRight,
     faCircleNotch, faCheck, faFile, faCodeBranch, faFingerprint, faBars,
     faGear, faCircleQuestion, faClipboard,
-    faHouse
+    faHouse, faCalendarAlt, faClone, faUserTag, faHashtag, faTag, faCode, faSpinner, faFolder, faArchive, faThumbtack,
+    faCloudSun, faCoffee, faSearch, faPlusSquare, faFileInvoice, faGrinSquint, faServer, faCoins,
+    faLock, faLockOpen, faEthernet, faBullseye, faBusinessTime, faCircle, faReply
 )
 library.add(farStar)
 

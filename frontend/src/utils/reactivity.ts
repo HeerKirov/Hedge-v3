@@ -21,6 +21,24 @@ export function computedAsync<T>(initValue: T, call: () => Promise<T>): Readonly
 }
 
 /**
+ * 扩展toRef，允许作为原型的Ref的value为null或undefined，并在此时返回undefined/使设置值操作无效。
+ */
+export function toRefNullable<T extends object, K extends keyof T>(ref: Ref<T | null | undefined>, key: K): Ref<T[K] | undefined>
+export function toRefNullable<T extends object, K extends keyof T>(ref: Ref<T | null | undefined>, key: K, defaultValue: T[K]): Ref<T[K]>
+export function toRefNullable<T extends object, K extends keyof T>(ref: Ref<T | null | undefined>, key: K, defaultValue?: T[K]): Ref<T[K] | undefined> {
+    return computed({
+        get: () => ref.value?.[key] ?? defaultValue,
+        set(value) {
+            const v = ref.value
+            if(value !== undefined && v !== null && v !== undefined) {
+                v[key] = value
+                ref.value = v
+            }
+        }
+    })
+}
+
+/**
  * 扩展toRef，允许从Ref类型toRef。
  */
 export function toRef<T extends object, K extends keyof T>(ref: Ref<T> | T, key: K): Ref<T[K]> {

@@ -4,13 +4,13 @@ import { Flex } from "@/components/layout"
 
 <template>
     <div :class="$style['middle-layout']">
-        <Flex :class="$style['layout-container']" horizontal="left" :shrink="0">
+        <Flex v-if="!!$slots.left" :class="$style['layout-container']" horizontal="left" :shrink="0">
             <slot name="left"/>
         </Flex>
-        <Flex :class="$style['layout-container']" horizontal="center" :shrink="0">
+        <Flex v-if="!!$slots.default" :class="$style['layout-container']" horizontal="center" :shrink="0">
             <slot/>
         </Flex>
-        <Flex :class="$style['layout-container']" horizontal="right" :shrink="0">
+        <Flex v-if="!!$slots.right" :class="$style['layout-container']" horizontal="right" :shrink="0">
             <slot name="right"/>
         </Flex>
     </div>

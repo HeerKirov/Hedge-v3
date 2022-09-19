@@ -2,6 +2,7 @@ import { h, SetupContext } from "vue"
 
 interface FlexProps {
     multiLine?: boolean
+    direction?: "row" | "column"
     horizontal?: "left" | "right" | "center" | "stretch" | "around"
     align?: "top" | "bottom" | "center" | "baseline" |"stretch"
     width?: number
@@ -14,6 +15,7 @@ interface FlexProps {
 export default function (props: FlexProps, { slots }: SetupContext) {
     const divStyle = {
         "display": "flex",
+        "flex-direction": props.direction,
         "flex-wrap": (props.multiLine ? "wrap" : "nowrap") as "wrap" | "nowrap",
         "justify-content": props.horizontal ? justifyContentReflections[props.horizontal] : undefined,
         "align-items": props.align ? alignItemsReflections[props.align] : undefined,

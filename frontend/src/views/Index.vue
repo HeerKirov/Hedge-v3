@@ -28,7 +28,7 @@ watch(state, async () => {
     }
 }, {immediate: true})
 
-const loadingMessage = {
+const loadingMessage: Record<string, string> = {
     "LOADING_RESOURCE": "正在更新…",
     "LOADING_SERVER": "正在启动服务…"
 }

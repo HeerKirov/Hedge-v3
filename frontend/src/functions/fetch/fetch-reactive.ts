@@ -12,6 +12,7 @@ interface FetchReactive<T> {
     loading: Readonly<Ref<boolean>>
     updating: Readonly<Ref<boolean>>
     data: Ref<T | undefined>
+    refresh(): void
 }
 
 interface FetchReactiveOptions<T> {
@@ -67,5 +68,16 @@ export function useFetchReactive<T>(options: FetchReactiveOptions<T>): FetchReac
         }
     }
 
-    return {loading, updating, data}
+    const refresh = async () => {
+        loading.value = true
+        const res = await options.get(httpClient)()
+        if(res.ok) {
+            data.value = res.data
+        }else if(res.exception) {
+            handleException(res.exception)
+        }
+        loading.value = false
+    }
+
+    return {loading, updating, data, refresh}
 }

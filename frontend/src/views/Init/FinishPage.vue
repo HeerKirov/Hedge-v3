@@ -39,7 +39,7 @@ const execute = () => {
 
 const finish = () => router.push({name: "MainHome"})
 
-const initializingMessage = {
+const initializingMessage: Record<string, string> = {
     "INITIALIZING_APPDATA": "正在构建数据文档……",
     "INITIALIZING_RESOURCE": "正在部署资源……",
     "INITIALIZING_SERVER": "正在启动服务……",

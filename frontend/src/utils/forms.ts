@@ -17,10 +17,20 @@ export function usePropertySot<T>(value: Ref<T>): [Ref<T>, Ref<boolean>, () => v
         }
     }
 
+    let syncSotFlag = true
+
     watch(value, n => {
-        value.value = n
+        syncSotFlag = false
+        proxyValue.value = n
         sot.value = false
+        syncSotFlag = true
     }, {deep: true})
+
+    watch(proxyValue, () => {
+        if(syncSotFlag && !sot.value) {
+            sot.value = true
+        }
+    }, {deep: true, flush: "sync"})
 
     return [proxyValue, sot, save]
 }

@@ -52,7 +52,7 @@ const selectCustomLocation = async () => {
         <CheckBox v-model:value="data.customLocation">使用自定义位置</CheckBox>
         <template v-if="data.customLocation">
             <label class="label mt-2">自定义位置</label>
-            <Input v-model:value="data.storagePath" placeholder="输入口令"/>
+            <Input v-model:value="data.storagePath"/>
             <Button class="ml-1" mode="filled" type="primary" square icon="file" @click="selectCustomLocation"/>
             <p class="mt-1 secondary-text">自定义存储位置不在Hedge的托管范围内，需要确保该位置可用且可访问，否则存储相关功能是无效的。</p>
         </template>
