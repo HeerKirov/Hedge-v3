@@ -18,7 +18,7 @@ defineProps<{
 .group
     > *
         display: inline-block
-        vertical-align: super
+        vertical-align: middle
         &:not(:last-child)
             margin-right: $spacing-1
     &:not(.single-line)

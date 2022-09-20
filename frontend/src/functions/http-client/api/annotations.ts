@@ -52,7 +52,7 @@ export interface AnnotationEndpoint {
     delete(id: number): Promise<Response<null, NotFound>>
 }
 
-export type AnnotationTarget = "TAG" | "AUTHOR" | "TOPIC" | "ARTIST" | "STUDIO" | "PUBLISH" | "COPYRIGHT" | "WORK" | "CHARACTER"
+export type AnnotationTarget = "TAG" | "ARTIST" | "STUDIO" | "PUBLISH" | "COPYRIGHT" | "IP" | "CHARACTER"
 
 export interface Annotation {
     /**

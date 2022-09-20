@@ -47,6 +47,31 @@ export default <RouteRecordRaw[]>[
                 component: () => import("@/views/Setting/AppGeneral/AppGeneral.vue")
             },
             {
+                name: "SettingDBMeta",
+                path: "db/meta",
+                component: () => import("@/views/Setting/DBMeta/DBMeta.vue")
+            },
+            {
+                name: "SettingDBQuery",
+                path: "db/query",
+                component: () => import("@/views/Setting/DBQuery/DBQuery.vue")
+            },
+            {
+                name: "SettingDBImport",
+                path: "db/import",
+                component: () => import("@/views/Setting/DBImport/DBImport.vue")
+            },
+            {
+                name: "SettingDBSource",
+                path: "db/source",
+                component: () => import("@/views/Setting/DBSource/DBSource.vue")
+            },
+            {
+                name: "SettingDBFindSimilar",
+                path: "db/find-similar",
+                component: () => import("@/views/Setting/DBFindSimilar/DBFindSimilar.vue")
+            },
+            {
                 name: "SettingAdvancedServer",
                 path: "advanced/server",
                 component: () => import("@/views/Setting/AdvancedServer/AdvancedServer.vue")

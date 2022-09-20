@@ -3,9 +3,14 @@ import { computed, inject, InjectionKey, isRef, provide, Ref, ref, reactive, wat
 /**
  * 执行computed计算，产生一个ref，它的值会随watch源的变动而重新计算，但它也能被修改。
  */
-export function computedMutable<T>(call: () => T): Ref<T> {
-    const data = <Ref<T>>ref(call())
-    watchEffect(() => data.value = call())
+export function computedMutable<T>(call: (oldValue: T | undefined) => T): Ref<T> {
+    //使用一个非相应式的变量来记录并传入旧值，防止data自身改变时也触发computed过程
+    let oldValue: T = call(undefined)
+    const data = <Ref<T>>ref(oldValue)
+    watchEffect(() => {
+        oldValue = call(oldValue)
+        data.value = oldValue
+    })
     return data
 }
 

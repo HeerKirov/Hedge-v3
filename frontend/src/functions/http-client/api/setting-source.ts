@@ -44,9 +44,9 @@ export interface SettingSourceEndpoint {
         /**
          * 删除项。
          * @exception NOT_FOUND 此项不存在。
-         * @exception CASCADE_RESOURCE_EXISTS("Illust"|"ImportImage"|"SourceAnalyseRule"|"SpiderRule") 存在级联资源，无法删除。
+         * @exception CASCADE_RESOURCE_EXISTS("Illust"|"ImportImage"|"SourceAnalyseRule") 存在级联资源，无法删除。
          */
-        delete(name: string): Promise<Response<unknown, CascadeResourceExists<"Illust" | "ImportImage" | "SourceAnalyseRule" | "SpiderRule">>>
+        delete(name: string): Promise<Response<unknown, CascadeResourceExists<"Illust" | "ImportImage" | "SourceAnalyseRule">>>
     }
 }
 

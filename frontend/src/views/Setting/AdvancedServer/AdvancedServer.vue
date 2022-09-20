@@ -4,18 +4,18 @@ import { Block, Button, Icon } from "@/components/universal"
 import { Input } from "@/components/form"
 import { Group } from "@/components/layout"
 import { useServerStatus } from "@/functions/app"
-import { useSettingConnectionInfo, useSettingServerData } from "@/services/api/setting"
+import { useSettingConnectionInfo, useSettingServiceData } from "@/services/api/setting"
 import { usePropertySot } from "@/utils/forms"
 import { toRefNullable } from "@/utils/reactivity"
 import { PortType, validatePort } from "@/utils/validation"
 import { sleep } from "@/utils/process"
 
 const server = useServerStatus()
-const serverSetting = useSettingServerData()
+const serviceSetting = useSettingServiceData()
 
 const { connectionInfo, connectionStatus } = useSettingConnectionInfo()
 
-const [port, portSotFlag, savePort] = usePropertySot(toRefNullable(serverSetting.data, "port"))
+const [port, portSotFlag, savePort] = usePropertySot(toRefNullable(serviceSetting.data, "port"))
 
 const portType = ref<PortType>("AUTO")
 watch(port, async (v, _, onInvalidate) => {
