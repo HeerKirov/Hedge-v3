@@ -176,7 +176,7 @@ export interface ElementPopupMenuOptions {
  * 创建提供元素定位的popup menu。其打开位置根据ref element的位置决定。
  */
 export function useElementPopupMenu(items: MenuItem<undefined>[] | Ref<MenuItem<undefined>[]> | (() => MenuItem<undefined>[]), options?: ElementPopupMenuOptions): {
-    element: Ref<HTMLElement>
+    element: Ref<HTMLElement | undefined>
     popup(): void
 }
 
@@ -184,7 +184,7 @@ export function useElementPopupMenu(items: MenuItem<undefined>[] | Ref<MenuItem<
  * 创建提供元素定位的popup menu。其打开位置根据ref element的位置决定。
  */
 export function useElementPopupMenu<P>(items: MenuItem<P>[] | Ref<MenuItem<P>[]> | (() => MenuItem<P>[]), options?: ElementPopupMenuOptions): {
-    element: Ref<HTMLElement>
+    element: Ref<HTMLElement | undefined>
     popup(args: P): void
 }
 
@@ -194,7 +194,7 @@ export function useElementPopupMenu<P = undefined>(items: MenuItem<P>[] | Ref<Me
     const menu = usePopupMenu(items)
 
     const popup = function popup(args?: P) {
-        const rect = element.value?.getBoundingClientRect()
+        const rect = element.value?.getBoundingClientRect?.()
         if(rect) {
             const x = Math.floor(rect.left) + (options?.align === "center" ? Math.floor(rect.width / 2) : options?.align === "right" ? rect.width : 0) + (options?.offsetX ?? 0)
             const y = Math.floor(rect.top) + (options?.position === "bottom" ? Math.floor(rect.height) : 0) + (options?.offsetY ?? 0)

@@ -9,7 +9,10 @@ import SideBar from "./SideBarLayout/SideBar.vue"
 import TopBar from "./SideBarLayout/TopBar.vue"
 import { installSideLayoutState, useSideLayoutState } from "./SideBarLayout/context"
 import TopBarLayout from "./TopBarLayout/TopBarLayout.vue"
+import PaneLayout from "./PaneLayout/PaneLayout.vue"
+import BasePane from "./PaneLayout/BasePane.vue"
 
 export { Container, Group, Flex, FlexItem, MiddleLayout, BottomLayout }
 export { SideLayout, SideBar, TopBar, installSideLayoutState, useSideLayoutState }
 export { TopBarLayout }
+export { PaneLayout, BasePane }

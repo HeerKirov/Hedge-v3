@@ -25,6 +25,11 @@ export default <RouteRecordRaw[]>[
                 name: "MainHome",
                 path: "",
                 component: () => import("@/views/Main/Home/Home.vue")
+            },
+            {
+                name: "MainAnnotation",
+                path: "annotation",
+                component: () => import("@/views/Main/Annotation/Annotation.vue")
             }
         ]
     },

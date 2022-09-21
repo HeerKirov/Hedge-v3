@@ -4,13 +4,13 @@ import { Flex } from "@/components/layout"
 
 <template>
     <div :class="$style['middle-layout']">
-        <Flex v-if="!!$slots.left" :class="$style['layout-container']" horizontal="left" :shrink="0">
+        <Flex :class="$style['layout-container']" horizontal="left" :shrink="0">
             <slot name="left"/>
         </Flex>
         <Flex v-if="!!$slots.default" :class="$style['layout-container']" horizontal="center" :shrink="0">
             <slot/>
         </Flex>
-        <Flex v-if="!!$slots.right" :class="$style['layout-container']" horizontal="right" :shrink="0">
+        <Flex :class="$style['layout-container']" horizontal="right" :shrink="0">
             <slot name="right"/>
         </Flex>
     </div>
@@ -27,7 +27,7 @@ import { Flex } from "@/components/layout"
     > .layout-container
         align-items: center
 
-        min-width: 2rem
+        min-width: 1rem
         &:not(:empty)
             min-width: 8rem
 

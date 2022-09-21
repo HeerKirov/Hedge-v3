@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, useCssModule } from "vue"
+import { computed, Ref, ref, useCssModule } from "vue"
+import { Icon } from "@/components/universal"
 import { ThemeColors } from "@/constants/ui"
-import { Icon } from "@/components/universal/index"
 
 const props = defineProps<{
     icon?: string
@@ -11,6 +11,7 @@ const props = defineProps<{
     square?: boolean
     round?: boolean
     disabled?: boolean
+    exposeEl?: boolean
 }>()
 
 const style = useCssModule()
@@ -24,10 +25,21 @@ const buttonClass = computed(() => [
     props.round ? style.round : null
 ])
 
+let el: Ref<HTMLElement | undefined> | undefined = undefined
+let setEl: ((element: HTMLElement | undefined) => void) | undefined = undefined
+if(props.exposeEl) {
+    el = ref<HTMLElement>()
+    setEl = element => el!.value = element
+}
+
+defineExpose({
+    el
+})
+
 </script>
 
 <template>
-    <button :class="buttonClass" :disabled="disabled">
+    <button :ref="exposeEl ? setEl : undefined" :class="buttonClass" :disabled="disabled">
         <Icon v-if="icon" :class="$style.icon" :icon="icon"/>
         <slot/>
     </button>
