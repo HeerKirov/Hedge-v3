@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, Ref, ref, useCssModule } from "vue"
 import { Icon } from "@/components/universal"
-import { ThemeColors } from "@/constants/ui"
+import { Colors } from "@/constants/ui"
 
 const props = defineProps<{
     icon?: string
     mode?: "transparent" | "light" | "filled"
-    type?: ThemeColors
+    type?: Colors
     size?: "std" | "small" | "large"
     square?: boolean
     round?: boolean

@@ -67,5 +67,7 @@ installOptionCacheStorage(props.templates ?? [])
     display: flex
     flex-wrap: nowrap
     align-items: center
-    border-bottom: solid 1px $dark-mode-border-color
+    border-bottom: solid 1px $light-mode-border-color
+    @media (prefers-color-scheme: dark)
+        border-bottom-color: $dark-mode-border-color
 </style>

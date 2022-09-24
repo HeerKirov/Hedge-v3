@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from "vue"
 import { Button } from "@/components/universal"
-import { SearchInput, AttachFilter, AttachTemplate } from "@/layouts/top-bar"
 import { TopBarLayout, PaneLayout, BasePane, MiddleLayout } from "@/components/layout"
-import { ANNOTATION_TARGET_TYPE_ICONS, ANNOTATION_TARGET_TYPE_NAMES, ANNOTATION_TARGET_TYPES } from "@/constants/entity"
+import { SearchInput, AttachFilter, SelectButton, AttachTemplate } from "@/layouts/top-bar"
 import { Annotation } from "@/functions/http-client/api/annotations"
+import {
+    ANNOTATION_TARGET_TYPE_ICONS, ANNOTATION_TARGET_TYPE_NAMES, ANNOTATION_TARGET_TYPES,
+    META_TYPE_ICONS, META_TYPE_NAMES, META_TYPES
+} from "@/constants/entity"
 
 const d = ref(false)
 
@@ -53,13 +56,17 @@ const attachFilterTemplates: AttachTemplate[] = [
         defaultDirection: "descending"
     }
 ]
+
+const filterMetaTypeOptions = META_TYPES.map(type => ({value: type, label: META_TYPE_NAMES[type], icon: META_TYPE_ICONS[type]}))
+
 </script>
 
 <template>
     <TopBarLayout>
         <template #top-bar>
             <MiddleLayout>
-                <SearchInput placeholder="在此处搜索" enable-drop-button v-model:active-drop-button="d"/>
+                <SelectButton :items="filterMetaTypeOptions"/>
+                <SearchInput class="ml-1" placeholder="在此处搜索" enable-drop-button v-model:active-drop-button="d"/>
                 <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="filter"/>
 
                 <template #right>

@@ -55,7 +55,7 @@ const activeSearchPicker = ref<{template: SearchTemplate}>()
             <Button :ref="setEl" :class="$style.button" :type="anyActive ? 'primary' : undefined" @click="popup" @contextmenu="popup" icon="filter" square expose-el/>
         </PopupMenu>
         <template #popup>
-            <AttachSearchPicker :template="activeSearchPicker.template" :value="value[activeSearchPicker.template.field]" @update:value="setValue(activeSearchPicker.template.field, $event)"/>
+            <AttachSearchPicker :template="activeSearchPicker!.template" :value="value?.[activeSearchPicker!.template.field]" @update:value="setValue(activeSearchPicker.template.field, $event)"/>
         </template>
     </PopupCallout>
     <template v-else>
