@@ -3,7 +3,7 @@ import { SimpleFolder } from "./folder"
 import { SimpleTopic } from "./topic"
 import { Annotation } from "./annotations"
 
-export function createUtilPickerEndpoint(http: HttpInstance): UtilPickerEndpoint {
+export function createUtilSearchEndpoint(http: HttpInstance): UtilSearchEndpoint {
     return {
         history: {
             folders: http.createRequest("/api/utils/picker/history/folders"),
@@ -17,7 +17,7 @@ export function createUtilPickerEndpoint(http: HttpInstance): UtilPickerEndpoint
 /**
  * 工具API：资源提取、查询和引用相关。
  */
-export interface UtilPickerEndpoint {
+export interface UtilSearchEndpoint {
     /**
      * 引用记录。
      */

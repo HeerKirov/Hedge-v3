@@ -4,7 +4,7 @@ import { Colors } from "@/constants/ui"
 
 const props = defineProps<{
     color?: Colors
-    mode?: "transparent" | "light" | "filled" | "shadow"
+    mode?: "std" | "transparent" | "light" | "filled" | "shadow"
     overflow?: "hidden" | "auto"
 }>()
 
@@ -14,7 +14,7 @@ const divClass = computed(() => ([
     style.block,
     props.color ? style[`is-color-${props.color}`] : null,
     style[`is-overflow-${props.overflow ?? "hidden"}`],
-    style[`color-mode-${props.mode ?? "transparent"}`]
+    style[`color-mode-${props.mode ?? "std"}`]
 ]))
 
 </script>
@@ -40,9 +40,11 @@ const divClass = computed(() => ([
     overflow: auto
     
 @media (prefers-color-scheme: light)
+    .color-mode-std
+        background-color: $light-mode-block-color
+    .color-mode-std,
     .color-mode-transparent
         border: solid 1px $light-mode-border-color
-        background-color: $light-mode-block-color
         color: $light-mode-text-color
         @each $name, $color in $light-mode-colors
             &.is-color-#{$name}
@@ -66,9 +68,11 @@ const divClass = computed(() => ([
                 color: $light-mode-text-inverted-color
                 background: linear-gradient(to right, mix($color, #ffffff, 80), $color)
 @media (prefers-color-scheme: dark)
+    .color-mode-std
+        background-color: $dark-mode-block-color
+    .color-mode-std,
     .color-mode-transparent
         border: solid 1px $dark-mode-border-color
-        background-color: $dark-mode-block-color
         color: $dark-mode-text-color
         @each $name, $color in $dark-mode-colors
             &.is-color-#{$name}

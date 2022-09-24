@@ -192,3 +192,18 @@ export interface ResponseConnectionError {
     exception: undefined
     message: string
 }
+
+/**
+ * 将Response做类型映射。只对ResponseOk有映射效果。
+ */
+export function mapResponse<T, R, E extends BasicException = never>(r: Response<T, E>, mapper: (d: T) => R): Response<R, E> {
+    if(r.ok) {
+        return {
+            ok: true,
+            status: r.status,
+            data: mapper(r.data)
+        }
+    }else{
+        return r
+    }
+}

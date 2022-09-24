@@ -5,9 +5,11 @@ import { Icon } from "@/components/universal"
 
 const props = defineProps<{
     color?: Colors
-    lineStyle?: "solid" | "double" | "dashed" | "dotted"
+    lineStyle?: "solid" | "double" | "dashed" | "dotted" | "none"
     clickable?: boolean
     icon?: string
+    tailIcon?: string
+    brackets?: "()" | "{}" | "[]" | string
 }>()
 
 const style = useCssModule()
@@ -22,8 +24,11 @@ const spanClass = computed(() => [
 
 <template>
     <component :is="clickable ? 'a' : 'span'" :class="spanClass">
+        <b v-if="brackets" class="mr-1">{{brackets.slice(0, 1)}}</b>
         <Icon v-if="icon" :icon="icon"/>
         <slot/>
+        <b v-if="brackets" class="ml-1">{{brackets.slice(1)}}</b>
+        <Icon v-if="tailIcon" :icon="tailIcon"/>
     </component>
 </template>
 
@@ -34,14 +39,26 @@ const spanClass = computed(() => [
 .tag
     border-bottom: solid 2px
     cursor: default
+    white-space: nowrap
+
 .is-double
     border-bottom-style: double
 .is-dashed
     border-bottom-style: dashed
 .is-dotted
     border-bottom-style: dotted
+.is-none
+    border-bottom-style: none
 
 @media (prefers-color-scheme: light)
+    .tag
+        color: $light-mode-text-color
+    a.tag
+        &:hover
+            color: rgba($light-mode-text-color, 0.75)
+        &:active
+            color: rgba($light-mode-text-color, 0.75)
+
     @each $name, $color in $light-mode-colors
         .is-color-#{$name}
             border-bottom-color: $color
@@ -52,6 +69,14 @@ const spanClass = computed(() => [
             &:active
                 color: rgba($color, 0.6)
 @media (prefers-color-scheme: dark)
+    .tag
+        color: $dark-mode-text-color
+    a.tag
+        &:hover
+            color: rgba($dark-mode-text-color, 0.75)
+        &:active
+            color: rgba($dark-mode-text-color, 0.75)
+
     @each $name, $color in $dark-mode-colors
         .is-color-#{$name}
             border-bottom-color: $color

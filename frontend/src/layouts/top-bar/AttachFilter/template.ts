@@ -1,6 +1,6 @@
 import { WsEventConditions } from "@/functions/ws-client"
-import { HttpClient, Response } from "@/functions/http-client"
-import { ListResult } from "@/functions/http-client/api/all"
+import { HttpClient, Response, ListResult } from "@/functions/http-client"
+import { NotFound } from "@/functions/http-client/exceptions"
 
 /**
  * AttachFilter中的过滤器项的配置模板。所有的过滤器选项都会在总菜单中依次排列。
@@ -15,7 +15,10 @@ export interface Separator {
 }
 
 /**
- * 排序项。排序项要求必须指定默认值和默认方向，且总是要给出一个排序项，不能不选。
+ * 排序项。提供包含value和direction的排序功能。
+ * menu: 生成一组排序值和两个排序方向，可供选择。如果filter没有值，那么使用默认值。默认值是必须被指定的。
+ * buttons: 排序项不会出现在按钮组中。
+ * filter: 排序项会被组合成order字段，填充到结果中。排序项总是会生成值，即使选定的是默认值。
  */
 export interface OrderTemplate {
     type: "order"
@@ -34,7 +37,10 @@ export interface OrderTemplate {
 }
 
 /**
- * 复选项。它是单独的一项，且只会给field一个true的布尔值。
+ * 复选项。提供只包含布尔值的复选功能。
+ * menu: 它是单独的一项，可以被勾选。
+ * buttons: 单独的一项，点击弹出的菜单也只有取消勾选一种选择。
+ * filter: 被选定时其值为true，不选定则没有值(undefined)。
  */
 export interface CheckBoxTemplate {
     type: "checkbox"
@@ -54,10 +60,21 @@ export interface CheckBoxTemplate {
      * 在按钮组中显示时的颜色。
      */
     color?: string
+    /**
+     * 在按钮组中时，是否显示标签。默认值是只显示icon。
+     */
+    modeInButtons?: ModeInButtons
+    /**
+     * 在按钮组中，显示的样式风格。
+     */
+    displayStyle?: DisplayStyle
 }
 
 /**
  * 单选选项组。它可以在一组选项中选出一个并赋值给field。
+ * menu: 提供一组选项，可以勾选其中的一个。
+ * buttons: 单独的一项，点击弹出的菜单也可以重新选择勾选项。重复选择已勾选项则取消勾选。
+ * filter: 任意类型，依据option提供的value而定。
  */
 export interface RadioTemplate {
     type: "radio"
@@ -70,13 +87,20 @@ export interface RadioTemplate {
      */
     options: TemplateOption[]
     /**
-     * 在按钮组中时，是否显示标签。
+     * 在按钮组中时，是否显示标签。默认值是icon和label都显示。
      */
-    showLabel?: boolean
+    modeInButtons?: ModeInButtons
+    /**
+     * 在按钮组中，显示的样式风格。
+     */
+    displayStyle?: DisplayStyle
 }
 
 /**
  * 搜索选择器项。此项的内容需要通过搜索得到，因此会打开搜索面板以供查询。
+ * menu: 普通点击项，点击打开搜索面板。
+ * buttons: 展示一或多个已选择的项。点击打开搜索面板，可以继续添加搜索项或清除已选择项。
+ * filter: 任意类型，依据搜索函数生成的option的value而定。如果开启{multiSelection}，则是任意类型的数组any[]。
  */
 export interface SearchTemplate {
     type: "search"
@@ -95,11 +119,18 @@ export interface SearchTemplate {
     /**
      * 查询所用的请求调用。
      */
-    request(httpClient: HttpClient): (offset: number, limit: number, search: string) => Promise<Response<ListResult<unknown>>>
+    query(httpClient: HttpClient): (offset: number, limit: number, search: string) => Promise<Response<ListResult<unknown>>>
+    /**
+     * 辅助查询函数，查询单个项。
+     * 因为filter的值只包含value不包含整个TemplateOption，因此当缓存清空/value来自外部时，可能不包含value对应项的值。
+     * 此时，需要利用此函数，从外部查询获得TemplateOption。
+     * 而如果未指定此函数，当遇到未缓存的项时，会直接将value作为label展示。
+     */
+    queryOne?(httpClient: HttpClient): (value: any) => Promise<Response<TemplateOption, NotFound>>
     /**
      * 可选方法：用一个map函数，将request的结果转换为选择项模板。若未指定此方法，则认为request的结果就是可用的选择项模板。
      */
-    map?(item: unknown): TemplateOption
+    mapQuery?(item: unknown): TemplateOption
     /**
      * 传入此参数，使搜索面板支持历史记录。
      */
@@ -107,7 +138,7 @@ export interface SearchTemplate {
         /**
          * 通过此请求获得历史记录。
          */
-        request(httpClient: HttpClient): (limit: number) => Promise<Response<ListResult<unknown>>>
+        list(httpClient: HttpClient): (limit: number) => Promise<Response<unknown[]>>
         /**
          * 通过此请求发送历史记录。历史记录将在选定一个选择项时发送。
          */
@@ -115,12 +146,16 @@ export interface SearchTemplate {
         /**
          * 可选方法：用一个map函数，将request的结果转换为选择项模板。若未指定此方法，则认为request的结果就是可用的选择项模板。
          */
-        map?(item: unknown): TemplateOption
-        /**
-         * 此事件通知历史记录的更新。
-         */
-        eventFilter?: WsEventConditions
+        mapList?(item: unknown): TemplateOption
     }
+    /**
+     * 在按钮组中时，是否显示标签。默认值是icon和label都显示。
+     */
+    modeInButtons?: ModeInButtons
+    /**
+     * 在按钮组中，显示的样式风格。
+     */
+    displayStyle?: DisplayStyle
 }
 
 /**
@@ -134,7 +169,7 @@ export interface TemplateOption {
     /**
      * 值。
      */
-    value: string
+    value: any
     /**
      * 在按钮组中显示时的图标。
      */
@@ -144,3 +179,6 @@ export interface TemplateOption {
      */
     color?: string
 }
+
+export type ModeInButtons = "icon-only" | "label-only" | "icon-and-label"
+export type DisplayStyle = "normal" | "tag" | "annotation"

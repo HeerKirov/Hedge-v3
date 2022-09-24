@@ -31,7 +31,7 @@ const { data: settingMeta } = useSettingMetaData()
         <label class="label mt-2">杂项</label>
         <div class="mt-2">
             <CheckBox v-model:value="settingMeta.autoCleanTagme">自动清理Tagme</CheckBox>
-            <p class="is-font-size-small secondary-text">更改图库项目时，如果Tagme标记的部分发生变更，则自动去除这部分的Tagme标记。</p>
+            <p class="secondary-text">更改图库项目时，如果Tagme标记的部分发生变更，则自动去除这部分的Tagme标记。</p>
         </div>
     </template>
 </template>

@@ -33,12 +33,14 @@ export function onOutsideClick(ref: Ref<HTMLElement | undefined>, event: (e: Mou
     onMounted(async() => {
         //tips: 一个magic用法：如果某个click事件造成了此VCA挂载，但click target又不属于ref，那这次click事件仍会传递至本次click事件中
         //      因此，制造一个微小的延迟，造成事实上的异步，使挂载click事件晚于可能的触发事件
+        // tips: 第二个特殊用法：如果某个click事件造成了点击元素被卸载，但点击元素又属于此ref，那这次click事件会被判定为outside
+        //      因此，此click事件需要插入到自顶向下的监听顺序中，抢在一般click事件发生前侦测此事件
         await sleep(1)
-        document.addEventListener("click", clickDocument)
+        document.addEventListener("click", clickDocument, true)
     })
 
     onUnmounted(() => {
-        document.removeEventListener("click", clickDocument)
+        document.removeEventListener("click", clickDocument, true)
     })
 
     const clickDocument = (e: MouseEvent) => {

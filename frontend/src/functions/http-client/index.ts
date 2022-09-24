@@ -1,4 +1,4 @@
-import { createHttpInstance, HttpInstance, HttpInstanceConfig, Response, ResponseOk, ResponseError, ResponseConnectionError } from "./instance"
+import { createHttpInstance, mapResponse, HttpInstance, HttpInstanceConfig, Response, ResponseOk, ResponseError, ResponseConnectionError } from "./instance"
 import { createServiceEndpoint, ServiceEndpoint } from "./api/service"
 import { createSettingServiceEndpoint, SettingServiceEndpoint } from "./api/setting-service"
 import { createSettingImportEndpoint, SettingImportEndpoint } from "./api/setting-import"
@@ -20,10 +20,12 @@ import { createFindSimilarEndpoint, FindSimilarEndpoint } from "./api/find-simil
 import { createUtilMetaEndpoint, UtilMetaEndpoint } from "./api/util-meta"
 import { createUtilIllustEndpoint, UtilIllustEndpoint } from "./api/util-illust"
 import { createUtilQueryEndpoint, UtilQueryEndpoint } from "./api/util-query"
-import { createUtilPickerEndpoint, UtilPickerEndpoint } from "./api/util-picker"
+import { createUtilSearchEndpoint, UtilSearchEndpoint } from "./api/util-picker"
 import { createSettingFindSimilarEndpoint, SettingFindSimilarEndpoint } from "./api/setting-find-similar"
+import { mapListResult, ListResult } from "./api/all"
 
-export type { HttpInstance, HttpInstanceConfig as HttpClientConfig, Response, ResponseOk, ResponseError, ResponseConnectionError }
+export { mapListResult, mapResponse }
+export type { HttpInstance, HttpInstanceConfig as HttpClientConfig, Response, ResponseOk, ResponseError, ResponseConnectionError, ListResult }
 
 export interface HttpClient {
     serviceRuntime: ServiceEndpoint
@@ -48,7 +50,7 @@ export interface HttpClient {
     metaUtil: UtilMetaEndpoint
     illustUtil: UtilIllustEndpoint
     queryUtil: UtilQueryEndpoint
-    pickerUtil: UtilPickerEndpoint
+    searchUtil: UtilSearchEndpoint
 }
 
 export function createHttpClient(config: HttpInstanceConfig): HttpClient {
@@ -77,6 +79,6 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
         metaUtil: createUtilMetaEndpoint(http),
         illustUtil: createUtilIllustEndpoint(http),
         queryUtil: createUtilQueryEndpoint(http),
-        pickerUtil: createUtilPickerEndpoint(http)
+        searchUtil: createUtilSearchEndpoint(http)
     }
 }

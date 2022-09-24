@@ -4,15 +4,20 @@ import {  } from "vue"
 const props = defineProps<{
     items?: {label: string, value: string}[]
     value?: string
+    index?: number
     allowCancel?: boolean
 }>()
 
 const emit = defineEmits<{
     (e: "update:value", v: string | undefined): void
+    (e: "update:index", index: number | undefined): void
+    (e: "click", v: string, index: number): void
 }>()
 
-const select = (e: MouseEvent, v: string) => {
+const select = (e: MouseEvent, v: string, idx: number) => {
     emit("update:value", v)
+    emit("update:index", idx)
+    emit("click", v, idx)
     if(props.allowCancel) {
         e.stopPropagation()
     }
@@ -21,6 +26,7 @@ const select = (e: MouseEvent, v: string) => {
 const clear = () => {
     if(props.allowCancel) {
         emit("update:value", undefined)
+        emit("update:index", undefined)
     }
 }
 
@@ -28,9 +34,25 @@ const clear = () => {
 
 <template>
     <div :class="$style.select" @click="clear">
-        <div v-for="item in items" :key="item.value" :class="{[$style.item]: true, [$style.selected]: item.value === value}" @click="select($event, item.value)">
-            {{item.label}}
-        </div>
+        <template v-if="!!$slots.default">
+            <slot v-for="(item, idx) in items"
+                :key="item.value"
+                :index="idx"
+                :value="item.value"
+                :label="item.label"
+                :selected="index !== undefined ? (idx === index) : value !== undefined ? (item.value === value) : false"
+                :click="(e: MouseEvent) => select(e, item.value, idx)"
+            />
+        </template>
+        <template v-else>
+            <div v-for="(item, idx) in items" 
+                :key="item.value" 
+                :index="idx"
+                :class="{[$style.item]: true, [$style.selected]: index !== undefined ? (idx === index) : value !== undefined ? (item.value === value) : false}" 
+                @click="select($event, item.value, idx)">
+                {{item.label}}
+            </div>
+        </template>
     </div>
 </template>
 
