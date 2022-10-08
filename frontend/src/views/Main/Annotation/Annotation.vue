@@ -1,19 +1,21 @@
 <script setup lang="ts">
-import { ref, watch } from "vue"
 import { Button } from "@/components/universal"
+import { VirtualRowView } from "@/components/data"
 import { TopBarLayout, PaneLayout, BasePane, MiddleLayout } from "@/components/layout"
-import { SearchInput, AttachFilter, SelectButton, AttachTemplate } from "@/layouts/top-bar"
-import { Annotation } from "@/functions/http-client/api/annotations"
+import { SearchInput, AttachFilter, SelectButton, DataRouter, AttachTemplate } from "@/layouts/top-bar"
 import {
     ANNOTATION_TARGET_TYPE_ICONS, ANNOTATION_TARGET_TYPE_NAMES, ANNOTATION_TARGET_TYPES,
     META_TYPE_ICONS, META_TYPE_NAMES, META_TYPES
 } from "@/constants/entity"
+import { Annotation } from "@/functions/http-client/api/annotations"
+import { installAnnotationContext } from "@/services/main/annotation"
+import AnnotationListItem from "./AnnotationListItem.vue"
 
-const d = ref(false)
+const context = installAnnotationContext()
 
-const filter = ref({})
+const filter = context.list.queryFilter
 
-watch(filter, f => console.log("filter", f))
+const filterMetaTypeOptions = META_TYPES.map(type => ({value: type, label: META_TYPE_NAMES[type], icon: META_TYPE_ICONS[type]}))
 
 const attachFilterTemplates: AttachTemplate[] = [
     {
@@ -57,19 +59,18 @@ const attachFilterTemplates: AttachTemplate[] = [
     }
 ]
 
-const filterMetaTypeOptions = META_TYPES.map(type => ({value: type, label: META_TYPE_NAMES[type], icon: META_TYPE_ICONS[type]}))
-
 </script>
 
 <template>
     <TopBarLayout>
         <template #top-bar>
             <MiddleLayout>
-                <SelectButton :items="filterMetaTypeOptions"/>
-                <SearchInput class="ml-1" placeholder="在此处搜索" enable-drop-button v-model:active-drop-button="d"/>
+                <SelectButton :items="filterMetaTypeOptions" v-model:value="filter.type"/>
+                <SearchInput class="ml-1" placeholder="在此处搜索"/>
                 <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="filter"/>
 
                 <template #right>
+                    <DataRouter/>
                     <Button icon="plus" square/>
                 </template>
             </MiddleLayout>
@@ -81,11 +82,9 @@ const filterMetaTypeOptions = META_TYPES.map(type => ({value: type, label: META_
 
                 </BasePane>
             </template>
-            hello?
+            <VirtualRowView :row-height="40" :padding="6" :buffer-size="10" v-bind="context.list.paginationData.data.metrics" @update="context.list.paginationData.dataUpdate">
+                <AnnotationListItem v-for="item in context.list.paginationData.data.result" :key="item.id" :item="item"/>
+            </VirtualRowView>
         </PaneLayout>
     </TopBarLayout>
 </template>
-
-<style module lang="sass">
-
-</style>

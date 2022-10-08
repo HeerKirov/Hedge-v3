@@ -1,4 +1,4 @@
-import { Ref, shallowRef } from "vue"
+import { shallowReactive } from "vue"
 import { useListeningEvent } from "@/utils/emitter"
 import { QueryListview } from "./query-listview"
 import { LoadedStatus, QueryInstance } from "./query-instance"
@@ -19,7 +19,7 @@ export interface PaginationDataView<T> {
     /**
      * 响应式返回的数据结果。
      */
-    data: Readonly<Ref<PaginationData<T>>>
+    data: Readonly<PaginationData<T>>
     /**
      * 提出数据更新。
      */
@@ -43,7 +43,7 @@ export interface PaginationData<T> {
 export function usePaginationDataView<T>(queryListview: QueryListview<T>, options?: PaginationOptions): PaginationDataView<T> {
     const queryDelay = options?.queryDelay ?? 250
 
-    const data: Ref<PaginationData<T>> = shallowRef({
+    const data: PaginationData<T> = shallowReactive({
         metrics: {total: undefined, offset: 0, limit: 0},
         result: []
     })
@@ -65,8 +65,8 @@ export function usePaginationDataView<T>(queryListview: QueryListview<T>, option
             //如果数据已完全加载，则直接更新到data
             const result = await queryListview.proxy.queryRange(offset, limit)
             if(queryId >= currentQueryId) {
-                const metrics = { total: queryListview.proxy.syncOperations.count()!, offset, limit: result.length }
-                data.value = { result, metrics }
+                data.metrics = { total: queryListview.proxy.syncOperations.count()!, offset, limit: result.length }
+                data.result = result
             }
         }else{
             //如果未完全加载，那么将本次请求放到缓冲区，并重置倒计时
@@ -75,8 +75,8 @@ export function usePaginationDataView<T>(queryListview: QueryListview<T>, option
                 if(queryId < currentQueryId) return
                 const result = await queryListview.proxy.queryRange(currentCache.offset, currentCache.limit)
                 if(queryId >= currentQueryId) {
-                    const metrics = { total: queryListview.proxy.syncOperations.count()!, offset: currentCache.offset, limit: result.length }
-                    data.value = { result, metrics }
+                    data.metrics = { total: queryListview.proxy.syncOperations.count()!, offset: currentCache.offset, limit: result.length }
+                    data.result = result
                 }
                 cacheTimer = null
             }, queryListview.proxy.syncOperations.count() === null ? 0 : queryDelay)
@@ -84,10 +84,8 @@ export function usePaginationDataView<T>(queryListview: QueryListview<T>, option
     }
 
     const reset = () => {
-        data.value = {
-            metrics: {total: undefined, offset: 0, limit: 0},
-            result: []
-        }
+        data.result = []
+        data.metrics = {total: undefined, offset: 0, limit: 0}
         lastDataUpdateParams = null
     }
 

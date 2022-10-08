@@ -2,7 +2,7 @@
 import { CheckBox } from "@/components/form"
 import { ThemeSelector } from "@/components/displays"
 import { useAppearance, useAppEnv } from "@/functions/app"
-import { useSettingAuthData, useSettingServiceData } from "@/services/api/setting"
+import { useSettingAuthData, useSettingServiceData } from "@/services/setting"
 import AppGeneralPasswordBox from "./AppGeneralPasswordBox.vue"
 import AppGeneralStorageBox from "./AppGeneralStorageBox.vue"
 

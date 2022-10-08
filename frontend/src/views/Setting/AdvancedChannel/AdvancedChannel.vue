@@ -3,7 +3,7 @@ import { computed, ref } from "vue"
 import { Block, Button, Icon } from "@/components/universal"
 import { Input, SelectList } from "@/components/form"
 import { Flex, FlexItem } from "@/components/layout"
-import { useSettingChannel } from "@/services/api/setting"
+import { useSettingChannel } from "@/services/setting"
 
 const { channels, currentChannel, defaultChannel, toggle } = useSettingChannel()
 

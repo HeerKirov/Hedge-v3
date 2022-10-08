@@ -4,7 +4,7 @@ import { Block, Icon, Button } from "@/components/universal"
 import { Input, CheckBox } from "@/components/form"
 import { MiddleLayout } from "@/components/layout"
 import { dialogManager } from "@/services/module/dialog"
-import { useServiceStorageInfo } from "@/services/api/setting"
+import { useServiceStorageInfo } from "@/services/setting"
 import { computedMutable } from "@/utils/reactivity"
 import { sleep } from "@/utils/process"
 

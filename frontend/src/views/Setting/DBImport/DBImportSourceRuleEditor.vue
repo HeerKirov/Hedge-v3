@@ -4,7 +4,7 @@ import { Block, Button } from "@/components/universal"
 import { Select, Input, NumberInput } from "@/components/form"
 import { Flex, Group } from "@/components/layout"
 import { SourceAnalyseRule } from "@/functions/http-client/api/setting-import"
-import { useSettingSite } from "@/services/api/setting"
+import { useSettingSite } from "@/services/setting"
 import { useMessageBox } from "@/services/module/message-box"
 import { computedMutable } from "@/utils/reactivity"
 

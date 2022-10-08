@@ -39,5 +39,5 @@ const current = computed(() => index.value !== undefined ? props.items![index.va
 </script>
 
 <template>
-    <FilterButton :ref="setEl" expose-el :square="square" :icon="current?.icon" :type="current?.color" @click="click">{{!square && current ? current.label : undefined}}</FilterButton>
+    <FilterButton :square="square" :icon="current?.icon" :type="current?.color" @click="click">{{!square && current ? current.label : undefined}}</FilterButton>
 </template>

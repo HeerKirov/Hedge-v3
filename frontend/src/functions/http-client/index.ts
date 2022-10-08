@@ -1,4 +1,4 @@
-import { createHttpInstance, mapResponse, HttpInstance, HttpInstanceConfig, Response, ResponseOk, ResponseError, ResponseConnectionError } from "./instance"
+import { createHttpInstance, mapResponse, flatResponse, HttpInstance, HttpInstanceConfig, Response, ResponseOk, ResponseError, ResponseConnectionError } from "./instance"
 import { createServiceEndpoint, ServiceEndpoint } from "./api/service"
 import { createSettingServiceEndpoint, SettingServiceEndpoint } from "./api/setting-service"
 import { createSettingImportEndpoint, SettingImportEndpoint } from "./api/setting-import"
@@ -24,7 +24,7 @@ import { createUtilSearchEndpoint, UtilSearchEndpoint } from "./api/util-picker"
 import { createSettingFindSimilarEndpoint, SettingFindSimilarEndpoint } from "./api/setting-find-similar"
 import { mapListResult, ListResult } from "./api/all"
 
-export { mapListResult, mapResponse }
+export { mapListResult, mapResponse, flatResponse }
 export type { HttpInstance, HttpInstanceConfig as HttpClientConfig, Response, ResponseOk, ResponseError, ResponseConnectionError, ListResult }
 
 export interface HttpClient {

@@ -57,7 +57,7 @@ interface EventFilter<T, E extends BasicException> {
     /**
      * 相关操作中，对每个items进行更新请求时，使用的函数。
      */
-    request?(httpClient: HttpClient): (items: T[]) => Promise<Response<T[], E>>
+    request?(httpClient: HttpClient): (items: T[]) => Promise<Response<(T | undefined)[], E>>
     /**
      * 展开对事件的解析和执行相关操作。
      */
@@ -195,7 +195,7 @@ function useWsEventProcessor<T, E extends BasicException>(options: EventFilter<T
                     const item = proxyInstance.syncOperations.retrieve(idx)!
                     updateMethod([item]).then(res => {
                         if(res.ok) {
-                            if(res.data.length > 0) {
+                            if(res.data.length > 0 && res.data[0] !== undefined) {
                                 objects.clear(item)
                                 objects.copyTo(res.data[0], item)
                             }

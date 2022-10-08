@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { CheckBox } from "@/components/form"
-import { useSettingFindSimilarData } from "@/services/api/setting"
+import { useSettingFindSimilarData } from "@/services/setting"
 import DBFindSimilarEditor from "./DBFindSimilarEditor.vue"
 
 const { data: settingFindSimilar } = useSettingFindSimilarData()

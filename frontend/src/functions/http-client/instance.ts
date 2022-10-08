@@ -207,3 +207,18 @@ export function mapResponse<T, R, E extends BasicException = never>(r: Response<
         return r
     }
 }
+
+/**
+ * 将Response做数组整合。只对ResponseOk有整合效果。其中，not ok的项会被填为undefined。
+ * tips: 这是一个工具函数，旨在帮助那些没有批量查询API但是有批量查询需求的请求，临时使用detail API来完成整合。
+ * @param r
+ */
+export function flatResponse<T, E extends BasicException = never>(r: Response<T, E>[]): Response<(T | undefined)[], E> {
+    return {
+        ok: true,
+        status: 200,
+        data: r.map(item => {
+            return item.ok ? item.data : undefined
+        })
+    }
+}

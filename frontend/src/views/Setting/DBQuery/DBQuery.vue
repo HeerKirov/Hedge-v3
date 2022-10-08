@@ -2,7 +2,7 @@
 import { Button } from "@/components/universal"
 import { CheckBox, NumberInput } from "@/components/form"
 import { Group } from "@/components/layout"
-import { useSettingQueryData } from "@/services/api/setting"
+import { useSettingQueryData } from "@/services/setting"
 import { usePropertySot } from "@/utils/forms"
 import { toRefNullable } from "@/utils/reactivity"
 
