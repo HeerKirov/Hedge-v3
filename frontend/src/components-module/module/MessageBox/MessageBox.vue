@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue"
 import { DialogBox } from "@/components/interaction"
-import { MessageTask, useMessageBoxManager } from "@/services/module/message-box"
+import { MessageTask, useMessageBoxManager } from "@/modules/message-box"
 import MessageBoxContent from "./MessageBoxContent.vue"
 
 const { messageTasks } = useMessageBoxManager()

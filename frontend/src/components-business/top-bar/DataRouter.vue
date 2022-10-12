@@ -28,11 +28,20 @@ const close = () => {
 </script>
 
 <template>
-    <div class="mx-2">
+    <div :class="$style.root">
         <NumberInput v-if="editMode" size="small" width="half" :min="1" :value="editValue" auto-focus @update:value="updateValue" @blur="close"/>
-        <Tag v-else-if="navigation.state.itemTotal" @click="edit">{{navigation.state.itemOffset + 1}}-{{navigation.state.itemOffset + navigation.state.itemLimit}}</Tag>
+        <Tag v-else-if="navigation.state.itemTotal" class="is-cursor-text" @click="edit">{{navigation.state.itemOffset + 1}}-{{navigation.state.itemOffset + navigation.state.itemLimit}}</Tag>
         <Tag v-else>0-0</Tag>
         <span class="mx-1">/</span>
         <Tag>{{navigation.state.itemTotal ?? 0}}</Tag>
     </div>
 </template>
+
+<style module lang="sass">
+@import "../../styles/base/size"
+
+.root
+    margin: 0 $spacing-2
+    display: flex
+    align-items: center
+</style>

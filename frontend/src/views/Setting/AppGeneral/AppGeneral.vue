@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { CheckBox } from "@/components/form"
-import { ThemeSelector } from "@/components/displays"
+import { ThemeSelector } from "@/components-business/form-editor"
 import { useAppearance, useAppEnv } from "@/functions/app"
 import { useSettingAuthData, useSettingServiceData } from "@/services/setting"
 import AppGeneralPasswordBox from "./AppGeneralPasswordBox.vue"
@@ -12,7 +12,7 @@ const appearance = useAppearance()
 
 const auth = useSettingAuthData()
 
-const { data: setviceSetting } = useSettingServiceData()
+const { data: serviceSetting } = useSettingServiceData()
 
 </script>
 
@@ -33,8 +33,8 @@ const { data: setviceSetting } = useSettingServiceData()
             <span class="ml-1 secondary-text">在登录通过之前就启动核心服务，以加快启动速度。</span>
         </p>
     </template>
-    <template v-if="!!setviceSetting">
+    <template v-if="!!serviceSetting">
         <label class="label mt-4">存储选项</label>
-        <AppGeneralStorageBox class="mt-1" v-model:storage-path="setviceSetting.storagePath"/>
+        <AppGeneralStorageBox class="mt-1" v-model:storage-path="serviceSetting.storagePath"/>
     </template>
 </template>

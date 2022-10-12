@@ -1,5 +1,5 @@
 import { ComponentPublicInstance, defineComponent, PropType, Ref } from "vue"
-import { MenuItem, useElementPopupMenu } from "@/services/module/popup-menu"
+import { MenuItem, useElementPopupMenu } from "@/modules/popup-menu"
 import { toRef } from "@/utils/reactivity"
 
 /**

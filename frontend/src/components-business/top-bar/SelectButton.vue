@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import { PopupMenu } from "@/components/interaction"
-import { MenuItem } from "@/services/module/popup-menu"
+import { MenuItem } from "@/modules/popup-menu"
 import { Colors } from "@/constants/ui"
 import { computedMutable } from "@/utils/reactivity"
 import FilterButton from "./FilterButton.vue"

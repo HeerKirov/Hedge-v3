@@ -75,6 +75,7 @@ export interface FetchEndpointOptions<PATH, MODEL, FORM, GE extends BasicExcepti
     /**
      * 在get成功之后调用的事件。
      * 需要注意的是，在任何情况下data的变更都会触发此事件，类似于一个内置的watch方法，不过它只触发于结果数据，loading状态的null不会引起触发。
+     * 包括event触发的变更，甚至包括对象已删除，同样会调用此事件。
      */
     afterRetrieve?(path: PATH | null, data: MODEL | null, type: "UPDATE" | "DELETE" | "PATH_CHANGED" | "EVENT" | "MANUAL"): void
     /**

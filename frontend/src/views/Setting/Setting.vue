@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Menu } from "@/components/interaction"
 import { Container, SideLayout, SideBar, TopBarLayout, installSideLayoutState } from "@/components/layout"
-import { installNavMenu } from "@/services/feature/side-nav-menu"
+import { installNavMenu } from "@/services/base/side-nav-menu"
 
 installSideLayoutState()
 

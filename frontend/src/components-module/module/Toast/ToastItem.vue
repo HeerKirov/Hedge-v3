@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from "vue"
 import { Icon, Block } from "@/components/universal"
-import { ToastType } from "@/services/module/toast"
+import { ToastType } from "@/modules/toast"
 import { useMouseHover } from "@/utils/sensors"
 import { sleep } from "@/utils/process";
 

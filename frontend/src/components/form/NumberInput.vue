@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Input } from "@/components/form"
-import { KeyEvent, KeyPress } from "@/services/module/keyboard"
+import { KeyEvent, KeyPress } from "@/modules/keyboard"
 
 const props = defineProps<{
     value?: number | null | undefined

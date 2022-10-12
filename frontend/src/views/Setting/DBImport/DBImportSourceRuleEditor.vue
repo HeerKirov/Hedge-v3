@@ -5,7 +5,7 @@ import { Select, Input, NumberInput } from "@/components/form"
 import { Flex, Group } from "@/components/layout"
 import { SourceAnalyseRule } from "@/functions/http-client/api/setting-import"
 import { useSettingSite } from "@/services/setting"
-import { useMessageBox } from "@/services/module/message-box"
+import { useMessageBox } from "@/modules/message-box"
 import { computedMutable } from "@/utils/reactivity"
 
 const props = defineProps<{

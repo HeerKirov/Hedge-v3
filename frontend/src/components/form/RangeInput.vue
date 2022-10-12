@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from "vue"
-import { useKeyDeclaration } from "@/services/module/keyboard"
+import { useKeyDeclaration } from "@/modules/keyboard"
 
 const props = defineProps<{
     value?: number | null | undefined

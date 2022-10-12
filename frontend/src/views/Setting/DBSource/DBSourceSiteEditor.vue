@@ -2,7 +2,7 @@
 import { Block, Button, Icon } from "@/components/universal"
 import { Input, CheckBox } from "@/components/form"
 import { SiteUpdateForm } from "@/functions/http-client/api/setting-source"
-import { useMessageBox } from "@/services/module/message-box"
+import { useMessageBox } from "@/modules/message-box"
 import { computedMutable } from "@/utils/reactivity"
 
 const props = defineProps<{

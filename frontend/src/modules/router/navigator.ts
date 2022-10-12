@@ -1,6 +1,6 @@
 import { useRoute, useRouter } from "vue-router"
 import { date } from "@/utils/datetime"
-import { windowManager } from "@/services/module/window"
+import { windowManager } from "@/modules/window"
 import { RouteName, RouteParameter } from "./definitions"
 import { useRouterParamEmitter } from "./param"
 

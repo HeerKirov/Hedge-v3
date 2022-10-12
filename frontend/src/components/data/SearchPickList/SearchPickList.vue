@@ -3,7 +3,7 @@ import { ref } from "vue"
 import { Input } from "@/components/form"
 import { HttpClient, Response, ListResult } from "@/functions/http-client"
 import { usePostFetchHelper } from "@/functions/fetch/fetch-helper"
-import { createKeyEventValidator, KeyEvent } from "@/services/module/keyboard"
+import { KeyEvent, USUAL_KEY_VALIDATORS } from "@/modules/keyboard"
 import SearchPickQuery from "./SearchPickQuery.vue"
 import SearchPickRecent from "./SearchPickRecent.vue"
 
@@ -37,14 +37,8 @@ const searchKeyword = ref<string>()
 
 const inputText = ref<string>("")
 
-const inputKeyValidator = {
-    arrowDown: createKeyEventValidator("ArrowDown"),
-    arrowUp: createKeyEventValidator("ArrowUp"),
-    enter: createKeyEventValidator("Enter")
-}
-
 const inputKeypress = (e: KeyEvent) => {
-    if(inputKeyValidator.enter(e)) {
+    if(USUAL_KEY_VALIDATORS["Enter"](e)) {
         const inputTextValue = inputText.value.trim() || undefined
         if(inputTextValue !== searchKeyword.value) {
             //关键词改变，则根据内容更新
@@ -60,14 +54,14 @@ const inputKeypress = (e: KeyEvent) => {
         }
         e.stopPropagation()
         e.preventDefault()
-    }else if(inputKeyValidator.arrowUp(e)) {
+    }else if(USUAL_KEY_VALIDATORS["ArrowUp"](e)) {
         if(contentType.value === "query") {
             queryCompRef.value?.prev()
         }else{
             recentCompRef.value?.prev()
         }
         e.preventDefault()
-    }else if(inputKeyValidator.arrowDown(e)) {
+    }else if(USUAL_KEY_VALIDATORS["ArrowDown"](e)) {
         if(contentType.value === "query") {
             queryCompRef.value?.next()
         }else{

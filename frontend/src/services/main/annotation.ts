@@ -1,31 +1,118 @@
 import { installation } from "@/utils/reactivity"
 import { installVirtualViewNavigation } from "@/components/data"
 import { flatResponse } from "@/functions/http-client"
-import { Annotation, AnnotationQueryFilter } from "@/functions/http-client/api/annotations"
-import { useListViewContext } from "@/services/feature/list-context"
-import { useDetailViewState } from "@/services/feature/navigation"
+import { Annotation, AnnotationQueryFilter, AnnotationTarget } from "@/functions/http-client/api/annotations"
+import { useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
+import { usePopupMenu } from "@/modules/popup-menu"
+import { useMessageBox } from "@/modules/message-box"
+import { useListViewContext } from "@/services/base/list-context"
+import { DetailViewState, useDetailViewState } from "@/services/base/navigation"
+import { checkTagName } from "@/utils/validation"
+import { objects } from "@/utils/primitives"
 
 export const [installAnnotationContext, useAnnotationContext] = installation(function () {
+    const paneState = useDetailViewState<number, Partial<Annotation>>()
+
+    installVirtualViewNavigation()
+
+    return {paneState}
+})
+
+export function useAnnotationListView(paneState: DetailViewState<number, Partial<Annotation>>) {
+    const message = useMessageBox()
+
     const list = useListViewContext({
         defaultFilter: <AnnotationQueryFilter>{type: "TOPIC", order: "-createTime"},
         request: client => (offset, limit, filter) => client.annotation.list({offset, limit, ...filter}),
         eventFilter: {
             filter: ["entity/annotation/created", "entity/annotation/updated", "entity/annotation/deleted"],
             operation({ event, refresh, update, remove }) {
-                if(event.eventType === "entity/annotation/created" && event.metaType === list.queryFilter.value.type) {
+                if(event.eventType === "entity/annotation/created" && event.type === list.queryFilter.value.type) {
                     refresh()
-                }else if(event.eventType === "entity/annotation/updated" && event.metaType === list.queryFilter.value.type) {
+                }else if(event.eventType === "entity/annotation/updated" && event.type === list.queryFilter.value.type) {
                     update(i => i.id === event.annotationId)
-                }else if(event.eventType === "entity/annotation/deleted" && event.metaType === list.queryFilter.value.type) {
+                }else if(event.eventType === "entity/annotation/deleted" && event.type === list.queryFilter.value.type) {
                     remove(i => i.id === event.annotationId)
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.annotation.get(a.id))))
         }
     })
-    const paneState = useDetailViewState<number, Partial<Annotation>>()
 
-    installVirtualViewNavigation()
+    const retrieveHelper = useRetrieveHelper({
+        delete: client => client.annotation.delete
+    })
 
-    return {list, paneState}
-})
+    const createByTemplate = (id: number) => {
+        const idx = list.listview.proxy.syncOperations.find(a => a.id === id)
+        if(idx != undefined) {
+            const annotation = list.listview.proxy.syncOperations.retrieve(idx)
+            paneState.createView(annotation)
+        }
+    }
+
+    const deleteItem = async (id: number) => {
+        if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
+            if(await retrieveHelper.deleteData(id)) {
+                if(paneState.isDetailView(id)) paneState.closeView()
+            }
+        }
+    }
+
+    const popupMenu = usePopupMenu<number>([
+        {type: "normal", label: "查看详情", click: paneState.detailView},
+        {type: "separator"},
+        {type: "normal", label: "以此为模板新建", click: createByTemplate},
+        {type: "separator"},
+        {type: "normal", label: "删除此注解", click: deleteItem},
+    ])
+
+    return {...list, popupMenu}
+}
+
+export function useAnnotationCreatePane() {
+
+}
+
+export function useAnnotationDetailPane() {
+    const message = useMessageBox()
+    const { paneState } = useAnnotationContext()
+
+    const { data, setData } = useFetchEndpoint({
+        path: paneState.detailPath,
+        get: client => client.annotation.get,
+        update: client => client.annotation.update,
+        delete: client => client.annotation.delete,
+        eventFilter: ({ path }) => event => (event.eventType === "entity/annotation/updated" || event.eventType === "entity/annotation/deleted") && event.annotationId === path,
+        afterRetrieve(path, data) {
+            if(path !== null && data === null) {
+                paneState.closeView()
+            }
+        }
+    })
+
+    const setName = async (name: string) => {
+        if(!checkTagName(name)) {
+            message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` \" ' . | 字符。")
+            return false
+        }
+        return name === data.value?.name || await setData({ name }, e => {
+            if (e.code === "ALREADY_EXISTS") {
+                message.showOkMessage("prompt", "该名称已存在。")
+            } else {
+                return e
+            }
+        })
+    }
+
+    const setCanBeExported = async (canBeExported: "true" | "false") => {
+        const v = canBeExported === "true"
+        return v === data.value?.canBeExported || await setData({ canBeExported: v })
+    }
+
+    const setAnnotationTarget = async (target: AnnotationTarget[]) => {
+        return objects.deepEquals(target, data.value?.target) || await setData({ target })
+    }
+
+    return {data, setName, setCanBeExported, setAnnotationTarget}
+}

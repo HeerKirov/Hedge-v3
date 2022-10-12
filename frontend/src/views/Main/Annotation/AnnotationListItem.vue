@@ -6,12 +6,13 @@ import { ANNOTATION_TARGET_TYPE_ICONS, ANNOTATION_TARGET_TYPE_NAMES } from "@/co
 
 defineProps<{
     item: Annotation
+    selected?: boolean
 }>()
 
 </script>
 
 <template>
-    <Block :class="$style.item">
+    <Block :class="$style.item" :color="selected ? 'primary' : undefined">
         <Flex>
             <FlexItem :width="50">
                 <div>
@@ -20,7 +21,7 @@ defineProps<{
             </FlexItem>
             <FlexItem :shrink="0" :grow="0">
                 <div>
-                    <Icon icon="share-square"/>
+                    <Icon v-if="item.canBeExported" icon="share-square"/>
                 </div>
             </FlexItem>
             <FlexItem :width="45">

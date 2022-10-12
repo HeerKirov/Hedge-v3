@@ -2,7 +2,7 @@
 import { reactive, watch } from "vue"
 import { Button } from "@/components/universal"
 import { BottomLayout } from "@/components/layout"
-import { ThemeSelector } from "@/components/displays"
+import { ThemeSelector } from "@/components-business/form-editor"
 import { NativeTheme } from "@/functions/ipc-client"
 import { useAppearance } from "@/functions/app"
 

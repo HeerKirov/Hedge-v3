@@ -8,7 +8,7 @@ import { ImportOption } from "@/functions/http-client/api/setting-import"
 import { FindSimilarOption } from "@/functions/http-client/api/setting-find-similar"
 import { useFetchReactive, useRetrieveHelper } from "@/functions/fetch"
 import { useAppEnv, useServerStatus } from "@/functions/app"
-import { useMessageBox } from "@/services/module/message-box"
+import { useMessageBox } from "@/modules/message-box"
 import { computedMutable, optionalInstallation, toRef } from "@/utils/reactivity"
 
 export function useServiceStorageInfo() {

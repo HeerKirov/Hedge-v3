@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue"
 import { Block } from "@/components/universal"
-import { useInterceptedKey } from "@/services/module/keyboard"
+import { useInterceptedKey } from "@/modules/keyboard"
 
 const props = defineProps<{
     position?: "absolute" | "fixed"

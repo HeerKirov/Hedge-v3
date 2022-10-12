@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Input } from "@/components/form"
 import { Button } from "@/components/universal"
-import { KeyEvent } from "@/services/module/keyboard"
+import { KeyEvent, USUAL_KEY_VALIDATORS } from "@/modules/keyboard"
+import { computedMutable } from "@/utils/reactivity"
 
 const props = defineProps<{
     value?: string | null | undefined
@@ -13,19 +14,29 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: "update:value", value: string): void
     (e: "update:activeDropButton", value: boolean): void
-    (e: "keypress", event: KeyEvent): void
 }>()
 
+const textValue = computedMutable(() => props.value)
+
 const toggleDropButton = () => emit("update:activeDropButton", !props.activeDropButton)
+
+const keypress = (e: KeyEvent) => {
+    if(USUAL_KEY_VALIDATORS["Enter"](e)) {
+        emit("update:value", textValue.value ?? "")
+    }
+}
 
 </script>
 
 <template>
     <div :class="$style.root">
         <Input
-            :class="{[$style.input]: true, [$style.active]: activeDropButton}" update-on-input :placeholder="placeholder"
-            :value="value" @update:value="$emit('update:value', $event)"
-            @keypress="$emit('keypress', $event)" focus-on-keypress="Meta+KeyF"
+            :class="{[$style.input]: true, [$style.active]: activeDropButton}"
+            :placeholder="placeholder"
+            v-model:value="textValue"
+            focus-on-keypress="Meta+KeyF"
+            @keypress="keypress"
+            update-on-input
         />
         <Button 
             v-if="enableDropButton" 

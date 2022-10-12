@@ -1,6 +1,7 @@
 export { analyseKeyPress } from "./definition"
 export type { KeyPress, KeyCode } from "./definition"
 export type { KeyEvent } from "./event"
+export { USUAL_KEY_VALIDATORS } from "./usual"
 export { onKey, onKeyEnter, checkKeyEvent, checkPrimitiveKeyEvent, createKeyEventValidator, createPrimitiveKeyEventValidator, toKeyEvent } from "./event"
 export { installGlobalKeyManager, useGlobalKey, useInterceptedKey, useInterception, useKeyDeclaration, installKeyDeclaration } from "./global"
 

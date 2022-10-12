@@ -4,8 +4,8 @@ import { useRouter } from "vue-router"
 import { Button, Icon } from "@/components/universal"
 import { Input } from "@/components/form"
 import { useAppEnv, useAppState } from "@/functions/app"
-import { useMessageBox } from "@/services/module/message-box"
-import { onKeyEnter } from "@/services/module/keyboard"
+import { useMessageBox } from "@/modules/message-box"
+import { onKeyEnter } from "@/modules/keyboard"
 
 const router = useRouter()
 const appEnv = useAppEnv()

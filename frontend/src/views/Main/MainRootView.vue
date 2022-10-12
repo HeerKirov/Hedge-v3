@@ -4,8 +4,8 @@ import { SideLayout, SideBar, TopBar } from "@/components/layout"
 import { Button } from "@/components/universal"
 import { Menu } from "@/components/interaction"
 import { useFetchReactive } from "@/functions/fetch"
-import { installNavMenu, installNavHistory, setupItemByNavHistory, setupItemByRef, setupSubItemByNavHistory } from "@/services/feature/side-nav-menu"
-import { windowManager } from "@/services/module/window"
+import { installNavMenu, installNavHistory, setupItemByNavHistory, setupItemByRef, setupSubItemByNavHistory } from "@/services/base/side-nav-menu"
+import { windowManager } from "@/modules/window"
 
 const stackExists = ref(false)
 

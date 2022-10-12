@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { useToastManager } from "@/services/module/toast"
+import { useToastManager } from "@/modules/toast"
 import ToastItem from "./ToastItem.vue"
 
 const { toasts } = useToastManager()

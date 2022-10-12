@@ -3,8 +3,8 @@ import { reactive } from "vue"
 import { Button } from "@/components/universal"
 import { Input, CheckBox } from "@/components/form"
 import { BottomLayout } from "@/components/layout"
-import { useMessageBox } from "@/services/module/message-box"
-import { dialogManager } from "@/services/module/dialog"
+import { useMessageBox } from "@/modules/message-box"
+import { dialogManager } from "@/modules/dialog"
 
 const props = defineProps<{
     customLocation: boolean

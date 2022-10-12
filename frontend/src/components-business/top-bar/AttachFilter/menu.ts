@@ -1,4 +1,4 @@
-import { MenuItem } from "@/services/module/popup-menu"
+import { MenuItem } from "@/modules/popup-menu"
 import { AttachTemplate, RadioTemplate, CheckBoxTemplate, OrderTemplate, SearchTemplate } from "./template"
 import { generateOrder, parseOrder } from "./utils"
 

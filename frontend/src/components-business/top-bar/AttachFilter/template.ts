@@ -126,11 +126,15 @@ export interface SearchTemplate {
      * 此时，需要利用此函数，从外部查询获得TemplateOption。
      * 而如果未指定此函数，当遇到未缓存的项时，会直接将value作为label展示。
      */
-    queryOne?(httpClient: HttpClient): (value: any) => Promise<Response<TemplateOption, NotFound>>
+    queryOne?(httpClient: HttpClient): (value: any) => Promise<Response<unknown, NotFound>>
     /**
      * 可选方法：用一个map函数，将request的结果转换为选择项模板。若未指定此方法，则认为request的结果就是可用的选择项模板。
      */
     mapQuery?(item: unknown): TemplateOption
+    /**
+     * 可选方法：用一个map函数，将query one的结果转换为选择项模板。若未指定此方法，则认为query one的结果就是可用的选择项模板。
+     */
+    mapQueryOne?(item: unknown): TemplateOption
     /**
      * 传入此参数，使搜索面板支持历史记录。
      */

@@ -194,10 +194,13 @@ function useWsEventProcessor<T, E extends BasicException>(options: EventFilter<T
                 if(idx !== undefined) {
                     const item = proxyInstance.syncOperations.retrieve(idx)!
                     updateMethod([item]).then(res => {
+                        //tips: 实例不是响应式的，按照规则，仍然需要通过sync operations操作，并散布更新事件。
                         if(res.ok) {
                             if(res.data.length > 0 && res.data[0] !== undefined) {
-                                objects.clear(item)
-                                objects.copyTo(res.data[0], item)
+                                const idx = proxyInstance.syncOperations.find(where)
+                                if(idx !== undefined) {
+                                    proxyInstance.syncOperations.modify(idx, res.data[0])
+                                }
                             }
                         }else if(res.exception) {
                             handleException(res.exception)

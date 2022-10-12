@@ -5,7 +5,7 @@ import { Input, NumberInput, Select } from "@/components/form"
 import { Flex } from "@/components/layout"
 import { SourceAnalyseRule } from "@/functions/http-client/api/setting-import"
 import { useSettingSite } from "@/services/setting"
-import { useMessageBox } from "@/services/module/message-box"
+import { useMessageBox } from "@/modules/message-box"
 
 const emit = defineEmits<{
     (e: "create", v: SourceAnalyseRule): void

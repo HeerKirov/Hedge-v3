@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Button } from "@/components/universal"
 import { Group } from "@/components/layout"
-import { MessageBoxButton } from "@/services/module/message-box"
-import { useInterceptedKey } from "@/services/module/keyboard"
+import { MessageBoxButton } from "@/modules/message-box"
+import { useInterceptedKey } from "@/modules/keyboard"
 
 const props = defineProps<{
     title?: string

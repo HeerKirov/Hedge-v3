@@ -2,6 +2,7 @@ import { AttachTemplate, TemplateOption } from "./template"
 import { useFetchHelper } from "@/functions/fetch"
 import { markRaw } from "vue";
 import { installation } from "@/utils/reactivity";
+import { HttpClient, mapResponse } from "@/functions/http-client";
 
 export function parseOrder(order: string): [string, "ascending" | "descending"] {
     if(order.startsWith("+")) {
@@ -34,7 +35,10 @@ export const [installOptionCacheStorage, useOptionCacheStorage] = installation(f
                 const cache = new Map<any, TemplateOption>()
 
                 const queryOne = template.queryOne && useFetchHelper({
-                    request: template.queryOne,
+                    request: template.mapQueryOne ? (client: HttpClient) => {
+                        const method = template.queryOne!(client)
+                        return async (value: any) => mapResponse(await method(value), template.mapQueryOne!)
+                    } : template.queryOne,
                     handleErrorInRequest(e) {
                         if(e.code !== "NOT_FOUND") {
                             //忽略NOT FOUND错误，使其仅返回空值
@@ -49,7 +53,7 @@ export const [installOptionCacheStorage, useOptionCacheStorage] = installation(f
                         if(option !== undefined) {
                             return option
                         }else if(queryOne) {
-                            const res = await queryOne(value)
+                            const res = await queryOne(value) as TemplateOption | undefined
                             if(res !== undefined) {
                                 cache.set(res.value, res)
                                 return res

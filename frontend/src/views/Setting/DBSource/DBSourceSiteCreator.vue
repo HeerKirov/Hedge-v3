@@ -3,7 +3,7 @@ import { reactive } from "vue"
 import { Block, Button } from "@/components/universal"
 import { Input, CheckBox } from "@/components/form"
 import { SiteCreateForm } from "@/functions/http-client/api/setting-source"
-import { useMessageBox } from "@/services/module/message-box"
+import { useMessageBox } from "@/modules/message-box"
 
 const emit = defineEmits<{
     (e: "create", form: SiteCreateForm): void

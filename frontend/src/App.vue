@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { installAppService } from "@/functions/app"
 import { installFetchManager } from "@/functions/fetch"
-import { installDocumentManager } from "@/services/module/document"
-import { installGlobalKeyManager } from "@/services/module/keyboard"
-import { installRouterParamManager } from "@/services/module/router"
-import { installMessageBoxManager } from "@/services/module/message-box"
-import { installToastManager } from "@/services/module/toast"
-import { MessageBoxModule, ToastModule } from "@/layouts/module"
+import { installDocumentManager } from "@/modules/document"
+import { installGlobalKeyManager } from "@/modules/keyboard"
+import { installRouterParamManager } from "@/modules/router"
+import { installMessageBoxManager } from "@/modules/message-box"
+import { installToastManager } from "@/modules/toast"
+import { MessageBoxModule, ToastModule } from "@/components-module/module"
 
 installDocumentManager()
 installRouterParamManager()

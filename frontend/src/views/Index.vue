@@ -3,7 +3,7 @@ import { computed, watch } from "vue"
 import { useRouter } from "vue-router"
 import { Icon } from "@/components/universal"
 import { useAppState } from "@/functions/app"
-import { useNewWindowRouteReceiver } from "@/services/module/router"
+import { useNewWindowRouteReceiver } from "@/modules/router"
 
 const router = useRouter()
 const { state } = useAppState()

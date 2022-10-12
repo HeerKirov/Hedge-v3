@@ -3,7 +3,7 @@ import { reactive } from "vue"
 import { Button } from "@/components/universal"
 import { CheckBox, Input } from "@/components/form"
 import { BottomLayout } from "@/components/layout"
-import { useMessageBox } from "@/services/module/message-box"
+import { useMessageBox } from "@/modules/message-box"
 
 const props = defineProps<{
     hasPassword: boolean

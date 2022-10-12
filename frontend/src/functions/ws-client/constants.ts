@@ -37,11 +37,11 @@ export interface AppStatusChanged extends BaseWsEvent<"app/app-status/changed"> 
 
 //== 实体类相关的变更通知 ==
 
-export interface AnnotationCreated extends BaseWsEvent<"entity/annotation/created"> { annotationId: number, metaType: MetaType }
+export interface AnnotationCreated extends BaseWsEvent<"entity/annotation/created"> { annotationId: number, type: MetaType }
 
-export interface AnnotationUpdated extends BaseWsEvent<"entity/annotation/updated"> { annotationId: number, metaType: MetaType }
+export interface AnnotationUpdated extends BaseWsEvent<"entity/annotation/updated"> { annotationId: number, type: MetaType }
 
-export interface AnnotationDeleted extends BaseWsEvent<"entity/annotation/deleted"> { annotationId: number, metaType: MetaType }
+export interface AnnotationDeleted extends BaseWsEvent<"entity/annotation/deleted"> { annotationId: number, type: MetaType }
 
 export interface MetaTagCreated extends BaseWsEvent<"entity/meta-tag/created"> { metaId: number, metaType: MetaType }
 
