@@ -3,6 +3,11 @@ import { Button } from "@/components/universal"
 import { BottomLayout } from "@/components/layout"
 import { useSideLayoutState } from "./context"
 
+// == Side Bar 侧边栏内容布局 ==
+// 适配SideLayout的侧边栏内容布局。它的最上一行是collapse按钮，中间是边距适中、可滚动的主要内容区域，最底部有一个按钮区。
+// 主要内容放入slot#default，按钮区内容放入slot#bottom。
+// collapse按钮直接使用useSideLayoutState与布局状态连接。
+
 const { isOpen } = useSideLayoutState()
 
 const switchSideBar = () => isOpen.value = !isOpen.value

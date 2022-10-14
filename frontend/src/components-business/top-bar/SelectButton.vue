@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { PopupMenu } from "@/components/interaction"
+import { ElementPopupMenu } from "@/components/interaction"
 import { MenuItem } from "@/modules/popup-menu"
 import { Colors } from "@/constants/ui"
 import { computedMutable } from "@/utils/reactivity"
@@ -39,7 +39,7 @@ const current = computed(() => {
 </script>
 
 <template>
-    <PopupMenu :items="menuItems" v-slot="{ popup, setEl }" position="bottom" align="left">
+    <ElementPopupMenu :items="menuItems" v-slot="{ popup, setEl }" position="bottom" align="left">
         <FilterButton :ref="setEl" expose-el :square="square" :icon="current?.icon" :type="current?.color" @click="popup">{{!square && current ? current.label : undefined}}</FilterButton>
-    </PopupMenu>
+    </ElementPopupMenu>
 </template>

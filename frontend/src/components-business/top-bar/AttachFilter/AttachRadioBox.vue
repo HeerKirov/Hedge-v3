@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PopupMenu } from "@/components/interaction"
+import { ElementPopupMenu } from "@/components/interaction"
 import { DisplayStyle, ModeInButtons, TemplateOption } from "./template"
 import AttachBaseButton from "./AttachBaseButton.vue"
 import { computed } from "vue";
@@ -33,7 +33,7 @@ export default {
 </script>
 
 <template>
-    <PopupMenu :items="popupMenuItems" position="bottom" align="left" v-slot="{ setEl, popup }">
+    <ElementPopupMenu :items="popupMenuItems" position="bottom" align="left" v-slot="{ setEl, popup }">
         <AttachBaseButton
             v-bind="$attrs"
             :ref="setEl"
@@ -42,5 +42,5 @@ export default {
             :display-style="displayStyle"
             @click="popup" @contextmenu="popup"
         />
-    </PopupMenu>
+    </ElementPopupMenu>
 </template>

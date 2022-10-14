@@ -31,19 +31,42 @@ export function onElementResize(ref: Ref<HTMLElement | undefined>, event: (rect:
  */
 export function onOutsideClick(ref: Ref<HTMLElement | undefined>, event: (e: MouseEvent) => void) {
     onMounted(async() => {
-        //tips: 一个magic用法：如果某个click事件造成了此VCA挂载，但click target又不属于ref，那这次click事件仍会传递至本次click事件中
+        //tips: 一个magic用法：如果某个click事件造成了此VCA挂载，但click target又不属于ref，那这次click事件仍会传递至本次click事件中。
         //      因此，制造一个微小的延迟，造成事实上的异步，使挂载click事件晚于可能的触发事件
-        // tips: 第二个特殊用法：如果某个click事件造成了点击元素被卸载，但点击元素又属于此ref，那这次click事件会被判定为outside
-        //      因此，此click事件需要插入到自顶向下的监听顺序中，抢在一般click事件发生前侦测此事件
         await sleep(1)
-        document.addEventListener("click", clickDocument, true)
+        document.addEventListener("click", clickDocument)
     })
 
     onUnmounted(() => {
-        document.removeEventListener("click", clickDocument, true)
+        document.removeEventListener("click", clickDocument)
     })
 
+    watch(ref, (div, o) => {
+        if(o) {
+            o.removeEventListener("click", clickRef)
+        }
+        if(div) {
+            div.addEventListener("click", clickRef)
+        }
+    }, {immediate: true})
+
+    let clickEventBuffer: MouseEvent | null = null
+
+    const clickRef = async (e: MouseEvent) => {
+        // tips: 如果某个click事件造成了点击元素被卸载，但点击元素又属于此ref，那这次click事件会被判定为outside，造成意外。
+        //      对此，需要一个办法，排除从点击元素发生的click事件引发的此类情况。
+        //      这里采用的方案是再直接监听ref DOM的click事件。只要此事件接收了Event，就将其记录下来，并在之后的document click事件中忽略此Event。
+        //      为此还要避免Event经过ref DOM但中途被拦截没有传到document的情况，因此需要在短暂的异步后，自行清除此值。
+        clickEventBuffer = e
+        await sleep(1)
+        clickEventBuffer = null
+    }
+
     const clickDocument = (e: MouseEvent) => {
+        if(clickEventBuffer === e) {
+            clickEventBuffer = null
+            return
+        }
         const target = e.target
         if(ref.value && !(ref.value === target || ref.value.contains(target as Node))) {
             event(e)

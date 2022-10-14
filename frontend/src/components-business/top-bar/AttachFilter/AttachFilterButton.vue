@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue"
 import { Button } from "@/components/universal"
-import { PopupMenu, PopupCallout } from "@/components/interaction"
+import { ElementPopupMenu, ElementPopupCallout } from "@/components/interaction"
 import { AttachTemplate, SearchTemplate } from "./template"
 import { createMenuTemplate } from "./menu"
 import { parseOrder } from "./utils"
@@ -50,18 +50,18 @@ const activeSearchPicker = ref<{template: SearchTemplate}>()
 </script>
 
 <template>
-    <PopupCallout v-if="anySearchFilter" :class="$style.root" :visible="activeSearchPicker !== undefined" @close="activeSearchPicker = undefined">
-        <PopupMenu :items="popupMenuItems" position="bottom" align="left" v-slot="{ setEl, popup }">
+    <ElementPopupCallout v-if="anySearchFilter" :class="$style.root" :visible="activeSearchPicker !== undefined" @close="activeSearchPicker = undefined">
+        <ElementPopupMenu :items="popupMenuItems" position="bottom" align="left" v-slot="{ setEl, popup }">
             <Button :ref="setEl" :class="$style.button" :type="anyActive ? 'primary' : undefined" @click="popup" @contextmenu="popup" icon="filter" square expose-el/>
-        </PopupMenu>
+        </ElementPopupMenu>
         <template #popup>
             <AttachSearchPicker :template="activeSearchPicker!.template" :value="value?.[activeSearchPicker!.template.field]" @update:value="setValue(activeSearchPicker.template.field, $event)"/>
         </template>
-    </PopupCallout>
+    </ElementPopupCallout>
     <template v-else>
-        <PopupMenu :items="popupMenuItems" position="bottom" align="left" v-slot="{ setEl, popup }">
+        <ElementPopupMenu :items="popupMenuItems" position="bottom" align="left" v-slot="{ setEl, popup }">
             <Button :ref="setEl" :class="$style.button" :type="anyActive ? 'primary' : undefined" @click="popup" @contextmenu="popup" icon="filter" square expose-el/>
-        </PopupMenu>
+        </ElementPopupMenu>
     </template>
 </template>
 

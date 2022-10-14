@@ -2,6 +2,11 @@
 import { watch } from "vue"
 import { Padding, ProposeData, useVirtualViewContext } from "./context"
 
+// == Virtual Row View 虚拟滚动网格组件 ==
+// 虚拟滚动组件，且按照Row行的排布模式计算滚动。虚拟滚动要求每个行的高度固定，剩下的会自动计算。
+// 此组件遵循通用的虚拟滚动组件数据格式，即通过@update事件发出所需数据的范围，之后给出实际数据的limit/offset/total并将单元填入slot即可。
+// 组件的单元会自动应用flex排布、宽度100%以填充横线区域，但要求手动为单元设置与参数一致的高度。
+
 const props = withDefaults(defineProps<{
     /**
      * 位于滚动区域和内容中夹着的padding。这部分padding会被自动算入容器高度。

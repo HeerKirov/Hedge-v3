@@ -1,4 +1,4 @@
-import { createKeyEventValidator, KeyEvent } from "@/modules/keyboard/event"
+import { createKeyEventValidator, createPrimitiveKeyEventValidator, KeyEvent } from "@/modules/keyboard/event"
 
 export const USUAL_KEY_VALIDATORS = {
     "Enter": createKeyEventValidator("Enter"),
@@ -6,4 +6,12 @@ export const USUAL_KEY_VALIDATORS = {
     "ArrowDown": createKeyEventValidator("ArrowDown"),
     "ArrowLeft": createKeyEventValidator("ArrowLeft"),
     "ArrowRight": createKeyEventValidator("ArrowRight"),
+}
+
+export const USUAL_PRIMITIVE_KEY_VALIDATORS = {
+    "Enter": createPrimitiveKeyEventValidator("Enter"),
+    "ArrowUp": createPrimitiveKeyEventValidator("ArrowUp"),
+    "ArrowDown": createPrimitiveKeyEventValidator("ArrowDown"),
+    "ArrowLeft": createPrimitiveKeyEventValidator("ArrowLeft"),
+    "ArrowRight": createPrimitiveKeyEventValidator("ArrowRight"),
 }

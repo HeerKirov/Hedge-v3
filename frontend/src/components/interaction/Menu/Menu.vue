@@ -4,6 +4,10 @@ import { MenuDefinition, MenuItemDefinition } from "./definition"
 import { installMenuContext } from "./context"
 import ScopeGroup from "./ScopeGroup.vue"
 
+// == Menu 侧边栏主菜单 ==
+// 侧边栏的、拥有二级菜单和折叠区块的纵向菜单。通过items参数即可传入菜单项或区块配置。每个区块配置都管辖它下面的菜单项。
+// 通过selected参数即可管理选中项。选中相关参数分为id和subId，分别代表选中的一级菜单项和二级菜单项，选中二级菜单项时，所属的一级项也会有标示。
+
 const props = defineProps<{
     items?: MenuDefinition[]
     selected?: {id: string, subId: string | null}

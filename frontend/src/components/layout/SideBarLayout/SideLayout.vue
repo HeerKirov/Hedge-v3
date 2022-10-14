@@ -3,6 +3,11 @@ import { computed, CSSProperties, ref } from "vue"
 import { useSideLayoutState, DEFAULT_WIDTH, ATTACH_RANGE, MAX_WIDTH, MIN_WIDTH } from "./context"
 import { useResizeBar } from "@/utils/sensors"
 
+// == Side Layout 侧边栏布局 ==
+// 作为程序主题框架的侧边栏布局。左侧显示侧边栏，右侧显示主要内容。
+// 侧边栏内容放入slot#side，主要内容放入slot#default。
+// 此布局通过installSideLayoutState/useSideLayoutState注入的控制器来控制侧边栏宽度以及是否开启，因此可以通过此注入在多个视图中共享状态。
+
 const { width, isOpen } = useSideLayoutState()
 
 const areaRef = ref<HTMLElement>()

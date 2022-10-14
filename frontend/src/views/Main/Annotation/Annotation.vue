@@ -11,6 +11,7 @@ import { installAnnotationContext, useAnnotationListView } from "@/services/main
 import AnnotationListItem from "./AnnotationListItem.vue"
 import AnnotationDetailPane from "./AnnotationDetailPane.vue"
 import AnnotationCreatePane from "./AnnotationCreatePane.vue"
+import { Annotation } from "@/functions/http-client/api/annotations";
 
 const { paneState } = installAnnotationContext()
 const { queryFilter, paginationData, popupMenu } = useAnnotationListView(paneState)
@@ -32,23 +33,23 @@ const attachFilterTemplates: AttachTemplate[] = [
             {label: "不可导出", value: false, icon: "share-alt-square"}
         ]
     },
-    // {type: "separator"},
-    // {
-    //     type: "search",
-    //     field: "annotation",
-    //     label: "选择注解…",
-    //     multiSelection: false,
-    //     query: client => (offset, limit, search) => client.annotation.list({type: "TOPIC", offset, limit, query: search}),
-    //     queryOne: client => id => client.annotation.get(id),
-    //     mapQuery: (item: Annotation) => ({label: item.name, value: item.id}),
-    //     mapQueryOne: (item: Annotation) => ({label: item.name, value: item.id}),
-    //     history: {
-    //         list: client => client.searchUtil.history.annotations,
-    //         push: client => item => client.searchUtil.history.push({type: "ANNOTATION", id: item.value as number}),
-    //         mapList: (item: Annotation) => ({label: item.name, value: item.id})
-    //     },
-    //     displayStyle: "annotation"
-    // },
+    {type: "separator"},
+    {
+        type: "search",
+        field: "annotation",
+        label: "选择注解…",
+        multiSelection: false,
+        query: client => (offset, limit, search) => client.annotation.list({type: "TOPIC", offset, limit, query: search}),
+        queryOne: client => id => client.annotation.get(id),
+        mapQuery: (item: Annotation) => ({label: item.name, value: item.id}),
+        mapQueryOne: (item: Annotation) => ({label: item.name, value: item.id}),
+        history: {
+            list: client => client.searchUtil.history.annotations,
+            push: client => item => client.searchUtil.history.push({type: "ANNOTATION", id: item.value as number}),
+            mapList: (item: Annotation) => ({label: item.name, value: item.id})
+        },
+        displayStyle: "annotation"
+    },
     {type: "separator"},
     {
         type: "order",

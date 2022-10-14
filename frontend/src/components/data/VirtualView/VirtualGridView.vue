@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue"
 import { Padding, ProposeData, useVirtualViewContext } from "./context"
-import { numbers } from "@/utils/primitives";
+import { numbers } from "@/utils/primitives"
+
+// == Virtual Grid View 虚拟滚动网格组件 ==
+// 虚拟滚动组件，且按照Grid网格的排布模式计算滚动。虚拟滚动要求每个网格单元的长宽比固定、网格列数确定，剩下的会自动计算。
+// 此组件遵循通用的虚拟滚动组件数据格式，即通过@update事件发出所需数据的范围，之后给出实际数据的limit/offset/total并将单元填入slot即可。
+// 组件的单元会自动应用flex排布、自动换行，但要求手动为单元设置固定的长宽比。
 
 const props = withDefaults(defineProps<{
     /**

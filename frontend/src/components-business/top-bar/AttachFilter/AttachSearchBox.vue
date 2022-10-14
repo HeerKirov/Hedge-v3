@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PopupCallout } from "@/components/interaction"
+import { ElementPopupCallout } from "@/components/interaction"
 import { computedAsync } from "@/utils/reactivity"
 import { useOptionCacheStorage } from "./utils"
 import { SearchTemplate } from "./template"
@@ -35,7 +35,7 @@ export default {
 </script>
 
 <template>
-    <PopupCallout :class="$style.root">
+    <ElementPopupCallout :class="$style.root">
         <template v-slot="{ click }">
             <AttachBaseButton
                 v-bind="$attrs"
@@ -50,7 +50,7 @@ export default {
         <template #popup>
             <AttachSearchPicker :template="template" :value="value" @update:value="$emit('update:value', $event)"/>
         </template>
-    </PopupCallout>
+    </ElementPopupCallout>
 </template>
 
 <style module lang="sass">

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { TopBar } from "@/components/layout"
 
+// == Top Bar Layout 顶栏结构布局 ==
+// 用于SideLayout的主要区域的布局，将内容区分割为上面的顶栏和下面的主要内容区两部分。
+// 顶栏内容放入slot#top-bar，主要内容放入slot#default。
+
 </script>
 
 <template>

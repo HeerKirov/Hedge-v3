@@ -63,8 +63,8 @@ const trash = async () => {
             </div>
         </Flex>
         <Group class="mt-3">
-            <Button mode="light" type="primary" icon="save" @click="submit">保存规则</Button>
-            <Button mode="light" type="danger" icon="trash" square @click="trash"/>
+            <Button type="primary" icon="save" @click="submit">保存规则</Button>
+            <Button type="danger" icon="trash" square @click="trash"/>
         </Group>
     </Block>
 </template>

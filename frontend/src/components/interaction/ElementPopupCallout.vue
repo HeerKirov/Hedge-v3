@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from "vue"
 import { Block } from "@/components/universal"
-import { onOutsideClick } from "@/utils/sensors";
+import { onOutsideClick } from "@/utils/sensors"
+
+// == Element Popup Callout 弹出浮动块组件 ==
+// 为元素添加一个弹出的浮动块。
+// 将触发元素放入slot#default中，并为其使用visible和click参数以添加事件、添加相关显示判定。
+// 将弹出浮动块元素放入slot#popup中，元素将在弹出的浮动块中显示。
+// 目前，浮动块将固定显示在当前元素的正下方，且居中显示。
 
 const props = defineProps<{
     visible?: boolean
@@ -25,9 +31,11 @@ watch(() => props.visible, v => visible.value = v ?? false)
 const divRef = ref<HTMLElement>()
 
 onOutsideClick(divRef, () => {
-    visible.value = false
-    emit("update:visible", false)
-    emit("close")
+    if(visible.value) {
+        visible.value = false
+        emit("update:visible", false)
+        emit("close")
+    }
 })
 
 </script>

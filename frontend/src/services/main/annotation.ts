@@ -1,8 +1,8 @@
-import { installation } from "@/utils/reactivity"
+import { computedMutable, installation } from "@/utils/reactivity"
 import { installVirtualViewNavigation } from "@/components/data"
 import { flatResponse } from "@/functions/http-client"
-import { Annotation, AnnotationQueryFilter, AnnotationTarget } from "@/functions/http-client/api/annotations"
-import { useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
+import { Annotation, AnnotationCreateForm, AnnotationQueryFilter, AnnotationTarget } from "@/functions/http-client/api/annotations"
+import { useCreatingHelper, useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
 import { usePopupMenu } from "@/modules/popup-menu"
 import { useMessageBox } from "@/modules/message-box"
 import { useListViewContext } from "@/services/base/list-context"
@@ -71,7 +71,43 @@ export function useAnnotationListView(paneState: DetailViewState<number, Partial
 }
 
 export function useAnnotationCreatePane() {
+    const message = useMessageBox()
+    const { paneState } = useAnnotationContext()
 
+    function mapTemplateToForm(template: Partial<Annotation> | null): AnnotationCreateForm {
+        return {
+            name: template?.name ?? "",
+            type: template?.type ?? "TOPIC",
+            canBeExported: template?.canBeExported ?? false,
+            target: template?.target ?? []
+        }
+    }
+
+    const form = computedMutable<AnnotationCreateForm>(() => mapTemplateToForm(paneState.createTemplate.value))
+
+    const { submit } = useCreatingHelper({
+        form,
+        mapForm: f => f,
+        create: client => client.annotation.create,
+        beforeCreate(form): boolean | void {
+            if(!checkTagName(form.name)) {
+                message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` \" ' . | 字符。")
+                return false
+            }
+        },
+        handleError(e) {
+            if(e.code === "ALREADY_EXISTS") {
+                message.showOkMessage("prompt", "该名称已存在。")
+            }else{
+                return e
+            }
+        },
+        afterCreate(result) {
+            paneState.detailView(result.id)
+        }
+    })
+
+    return {form, submit}
 }
 
 export function useAnnotationDetailPane() {
@@ -105,9 +141,8 @@ export function useAnnotationDetailPane() {
         })
     }
 
-    const setCanBeExported = async (canBeExported: "true" | "false") => {
-        const v = canBeExported === "true"
-        return v === data.value?.canBeExported || await setData({ canBeExported: v })
+    const setCanBeExported = async (canBeExported: boolean) => {
+        return canBeExported === data.value?.canBeExported || await setData({ canBeExported })
     }
 
     const setAnnotationTarget = async (target: AnnotationTarget[]) => {

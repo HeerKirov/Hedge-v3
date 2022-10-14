@@ -2,8 +2,12 @@
 import { Button } from "@/components/universal"
 import { useSideLayoutState } from "./context"
 
-const { isOpen } = useSideLayoutState()
+// == Top Bar 通用顶栏内容布局 ==
+// 适配SideLayout的顶栏内容布局，在主要内容区域中隔出顶栏区域。
+// 此区域最左侧有一个collapse按钮，且只会在侧边栏关闭时显示。其余区域则是自动适应大小和边距的内容区。
+// 主要内容放入slot#default。
 
+const { isOpen } = useSideLayoutState()
 
 </script>
 

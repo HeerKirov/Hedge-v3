@@ -13,7 +13,14 @@ const emit = defineEmits<{
     (e: "close"): void
 }>()
 
+const click = (e: MouseEvent) => {
+    //拦截click事件，不让其进一步向上传播。
+    //这是为了使dialog的行为基本隔绝于其他DOM响应，例如clickOutside函数等。
+    e.stopPropagation()
+}
+
 useInterceptedKey("Escape", () => {
+    //拦截所有按键，并响应ESC按键
     if(props.closeOnEscape) {
         emit("close")
     }
@@ -36,7 +43,7 @@ export default {
 </script>
 
 <template>
-    <div :class="{[$style['box-framework']]: true, [$style['absolute']]: position === 'absolute'}">
+    <div :class="{[$style['box-framework']]: true, [$style['absolute']]: position === 'absolute'}" @click="click">
         <Block :overflow="overflow" v-bind="$attrs">
             <slot/>
         </Block>

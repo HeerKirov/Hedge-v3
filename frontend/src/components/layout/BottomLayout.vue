@@ -1,5 +1,9 @@
 <script setup lang="ts">
 
+// == Bottom Layout 底栏布局 ==
+// 将区域分割为下方固定的底栏和其余区域可滚动的内容区域两块。
+// 底栏放入slot#bottom，滚动内容放入slot#default。
+
 </script>
 
 <template>

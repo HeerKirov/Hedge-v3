@@ -2,6 +2,11 @@
 import { computed, CSSProperties, ref } from "vue"
 import { useResizeBar } from "@/utils/sensors"
 
+// == Pane Layout 侧边面板布局 ==
+// 将布局分为右侧的侧边面板和左侧的主要区域。slot#default为主要区域，slot#pane为侧边面板。
+// 通过showPane参数控制侧边面板是否显示。
+// 侧边面板可以被拖放改变大小。
+
 const props = defineProps<{
     showPane?: boolean
 }>()

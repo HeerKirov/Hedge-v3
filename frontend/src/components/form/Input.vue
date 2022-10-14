@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ComponentPublicInstance, computed, nextTick, ref, useCssModule, watch } from "vue"
-import { KeyEvent, KeyPress, toKeyEvent, useInterceptedKey, useKeyDeclaration } from "@/modules/keyboard"
+import { KeyEvent, KeyPress, toKeyEvent, useInterceptedKey, useKeyDeclaration, USUAL_PRIMITIVE_KEY_VALIDATORS } from "@/modules/keyboard"
 
 const props = defineProps<{
     value?: string | null | undefined
@@ -17,6 +17,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: "update:value", value: string): void
     (e: "keypress", event: KeyEvent): void
+    (e: "enter", event: KeyEvent): void
 }>()
 
 watch(() => props.value, () => { value.value = props.value ?? "" })
@@ -31,13 +32,19 @@ const onUpdate = (e: InputEvent) => {
 //按键事件处理
 const keyDeclaration = useKeyDeclaration()
 
+//对于Enter按键，有一个快捷事件作响应
+
 const onKeydown = (e: KeyboardEvent) => {
     if(!composition) {
         if(!keyDeclaration.primitiveValidator(e)) {
             e.stopPropagation()
             e.stopImmediatePropagation()
         }
-        emit?.("keypress", toKeyEvent(e))
+        const keyEvent = toKeyEvent(e)
+        emit("keypress", keyEvent)
+        if(USUAL_PRIMITIVE_KEY_VALIDATORS.Enter(e)) {
+            emit("enter", keyEvent)
+        }
     }
 }
 

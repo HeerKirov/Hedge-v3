@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { Button } from "@/components/universal"
 
+// == Base Pane 侧边面板基础布局 ==
+// 适用于PaneLayout的侧边面板的基础布局。它提供了一个右上角的关闭按钮，和一个可滚动的、边距适中的内容区域。
+// 将主要内容放入slot#default；有些标题内容可以放入slot#title，它们将处在和关闭按钮的同一行上。
+// 如果没有slot#title，也不显示关闭按钮，那么主要区域会顶到最顶上。
+
 const props = withDefaults(defineProps<{
     showCloseButton?: boolean
     overflow?: boolean
