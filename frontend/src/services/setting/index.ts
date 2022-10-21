@@ -147,7 +147,7 @@ export function useSettingFindSimilarData() {
 }
 
 export const [installSettingSite, useSettingSite] = optionalInstallation(function() {
-    const messageBox = useMessageBox()
+    const message = useMessageBox()
 
     const { data, refresh } = useFetchReactive({
         get: client => client.settingSource.site.list,
@@ -161,7 +161,7 @@ export const [installSettingSite, useSettingSite] = optionalInstallation(functio
         delete: client => client.settingSource.site.delete,
         handleErrorInCreate(e) {
             if(e.code === "ALREADY_EXISTS") {
-                messageBox.showOkMessage("prompt", "已经存在同名的站点。")
+                message.showOkMessage("prompt", "已经存在同名的站点。")
             }else{
                 return e
             }
@@ -173,7 +173,7 @@ export const [installSettingSite, useSettingSite] = optionalInstallation(functio
                     "ImportImage": "导入项目",
                     "SourceAnalyseRule": "来源解析规则"
                 }[e.info]
-                messageBox.showOkMessage("prompt", "无法删除此来源站点。", `此来源站点仍存在关联的${resourceName}，请先清理关联项，确保没有意外的级联删除。`)
+                message.showOkMessage("prompt", "无法删除此来源站点。", `此来源站点仍存在关联的${resourceName}，请先清理关联项，确保没有意外的级联删除。`)
             }else{
                 return e
             }

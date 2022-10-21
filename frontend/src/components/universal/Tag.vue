@@ -40,6 +40,7 @@ const spanClass = computed(() => [
     border-bottom: solid 2px
     cursor: default
     white-space: nowrap
+    line-height: 1em
 
 .is-double
     border-bottom-style: double
