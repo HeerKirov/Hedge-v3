@@ -10,12 +10,19 @@ const props = defineProps<{
     node: TagTreeNode
 }>()
 
-const { expandedState, menu } = useTagTreeContext()
+const { expandedState, indexedData, emit, menu } = useTagTreeContext()
 
 const expanded = computed({
     get: () => expandedState.get(props.node.id),
     set: value => expandedState.set(props.node.id, value)
 })
+
+const click = () => {
+    const indexed = indexedData.indexedData.value[props.node.id]
+    if(indexed) {
+        emit.click(props.node, indexed.parentId, indexed.ordinal)
+    }
+}
 
 const contextmenu = () => menu(props.node)
 
@@ -23,7 +30,7 @@ const contextmenu = () => menu(props.node)
 
 <template>
     <Block :class="{[`has-text-${node.color}`]: !!node.color, 'px-4': true, 'py-3': true}">
-        <p class="is-font-size-large" @contextmenu="contextmenu">
+        <p class="is-font-size-large" @contextmenu="contextmenu" @click="click">
             {{node.name}}
             <ExpandedButton v-model:expanded="expanded"/>
         </p>

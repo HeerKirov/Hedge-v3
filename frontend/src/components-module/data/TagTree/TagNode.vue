@@ -10,12 +10,19 @@ const props = defineProps<{
     node: TagTreeNode
 }>()
 
-const { expandedState, menu } = useTagTreeContext()
+const { expandedState, indexedData, menu, emit } = useTagTreeContext()
 
 const expanded = computed({
     get: () => expandedState.get(props.node.id),
     set: value => expandedState.set(props.node.id, value)
 })
+
+const click = () => {
+    const indexed = indexedData.indexedData.value[props.node.id]
+    if(indexed) {
+        emit.click(props.node, indexed.parentId, indexed.ordinal)
+    }
+}
 
 const contextmenu = () => menu(props.node)
 
@@ -24,7 +31,7 @@ const contextmenu = () => menu(props.node)
 <template>
     <template v-if="!!node.children?.length">
         <p>
-            <TagNodeElement :node="node" @contextmenu="contextmenu"/>
+            <TagNodeElement :node="node" @contextmenu="contextmenu" @click="click"/>
             <ExpandedButton class="ml-2" v-model:expanded="expanded" @contextmenu="contextmenu"/>
         </p>
         <TagNodeList v-if="expanded" class="ml-4 mt-1" :parent-id="node.id" :nodes="node.children ?? []"/>

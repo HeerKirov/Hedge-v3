@@ -7,14 +7,13 @@ import {
     ANNOTATION_TARGET_TYPE_ICONS, ANNOTATION_TARGET_TYPE_NAMES, ANNOTATION_TARGET_TYPES,
     META_TYPE_ICONS, META_TYPE_NAMES, META_TYPES
 } from "@/constants/entity"
-import { installAnnotationContext, useAnnotationListView } from "@/services/main/annotation"
+import { Annotation } from "@/functions/http-client/api/annotations"
+import { installAnnotationContext } from "@/services/main/annotation"
 import AnnotationListItem from "./AnnotationListItem.vue"
 import AnnotationDetailPane from "./AnnotationDetailPane.vue"
 import AnnotationCreatePane from "./AnnotationCreatePane.vue"
-import { Annotation } from "@/functions/http-client/api/annotations";
 
-const { paneState } = installAnnotationContext()
-const { queryFilter, paginationData, popupMenu } = useAnnotationListView(paneState)
+const { paneState, listview: { queryFilter, paginationData, popupMenu } } = installAnnotationContext()
 
 const filterMetaTypeOptions = META_TYPES.map(type => ({value: type, label: META_TYPE_NAMES[type], icon: META_TYPE_ICONS[type]}))
 

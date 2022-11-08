@@ -46,13 +46,14 @@ export interface IndexedTag {
 type IsGroupMember = "YES" | "SEQUENCE" | "NO"
 
 export const [installTagTreeContext, useTagTreeContext] = installation(function (options: TagTreeContextOptions) {
+    const { emit, editable, draggable, createPosition } = options
     const { data, ...indexedData } = useIndexedData(options.data)
 
     const expandedState = useExpandedState(indexedData.indexedData)
 
     const menu = useMenu(options, indexedData.indexedData, expandedState)
 
-    return {expandedState, menu, indexedData}
+    return {expandedState, menu, indexedData, emit, editable, draggable, createPosition}
 })
 
 function useIndexedData(requestedData: Ref<TagTreeNode[] | undefined>) {

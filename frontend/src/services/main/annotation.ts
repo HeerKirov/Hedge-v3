@@ -13,12 +13,14 @@ import { objects } from "@/utils/primitives"
 export const [installAnnotationContext, useAnnotationContext] = installation(function () {
     const paneState = useDetailViewState<number, Partial<Annotation>>()
 
+    const listview = useAnnotationListView(paneState)
+
     installVirtualViewNavigation()
 
-    return {paneState}
+    return {paneState, listview}
 })
 
-export function useAnnotationListView(paneState: DetailViewState<number, Partial<Annotation>>) {
+function useAnnotationListView(paneState: DetailViewState<number, Partial<Annotation>>) {
     const message = useMessageBox()
 
     const list = useListViewContext({
