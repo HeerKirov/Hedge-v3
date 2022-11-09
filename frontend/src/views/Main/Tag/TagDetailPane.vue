@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { FormEditKit } from "@/components/interaction"
-import { TagNameAndOtherDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay, DescriptionDisplay } from "@/components-business/form-display"
-import { TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, DescriptionEditor } from "@/components-business/form-editor"
+import { TagNameAndOtherDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay, DescriptionDisplay, RelatedAnnotationDisplay } from "@/components-business/form-display"
+import { TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, DescriptionEditor, RelatedAnnotationEditor } from "@/components-business/form-editor"
 import { useTagDetailPane } from "@/services/main/tag"
 
-const { data, addressInfo, isRootNode, setName, setType, setGroup, setDescription } = useTagDetailPane()
+const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotations, setDescription } = useTagDetailPane()
 
 </script>
 
@@ -40,9 +40,7 @@ const { data, addressInfo, isRootNode, setName, setType, setGroup, setDescriptio
             </template>
         </FormEditKit>
 
-        <div class="mt-3"/>
-
-        <FormEditKit :value="data.description" :set-value="setDescription">
+        <FormEditKit class="mt-4" :value="data.description" :set-value="setDescription">
             <template #default="{ value }">
                 <DescriptionDisplay :value="value"/>
             </template>
@@ -50,9 +48,14 @@ const { data, addressInfo, isRootNode, setName, setType, setGroup, setDescriptio
                 <DescriptionEditor :value="value" @update:value="setValue" @save="save"/>
             </template>
         </FormEditKit>
+
+        <FormEditKit class="mt-1" :value="data.annotations" :set-value="setAnnotations">
+            <template #default="{ value }">
+                <RelatedAnnotationDisplay :value="value"/>
+            </template>
+            <template #edit="{ value, setValue, save }">
+                <RelatedAnnotationEditor mode="embedded" :value="value" meta-type="TAG" @update:value="setValue"/>
+            </template>
+        </FormEditKit>
     </template>
 </template>
-
-<style module lang="sass">
-
-</style>
