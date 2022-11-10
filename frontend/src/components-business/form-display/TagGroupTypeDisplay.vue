@@ -11,7 +11,7 @@ defineProps<{
 </script>
 
 <template>
-    <p class="is-cursor-text">
+    <p>
         <template v-if="value === 'NO'">
             <Icon class="mr-1 has-text-secondary" icon="object-group"/><span class="secondary-text">非组</span>
         </template>

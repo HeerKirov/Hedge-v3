@@ -38,7 +38,6 @@ const spanClass = computed(() => [
 
 .tag
     border-bottom: solid 2px
-    cursor: default
     white-space: nowrap
     line-height: 1em
 

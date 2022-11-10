@@ -9,14 +9,14 @@ export function patchMappingSourceTagForm(items: MappingSourceTag[], oldItems: M
         const oldItem = oldItems.find(i => i.site === item.site && i.code === item.code)
         if(oldItem === undefined) {
             //这是一个新项
-            return {site: item.site, code: item.code, name: item.name, displayName: item.displayName || undefined, type: item.type || undefined}
+            return {site: item.site, code: item.code, name: item.name, otherName: item.otherName || undefined, type: item.type || undefined}
         }else{
             //这是一个修改项
             return {
                 site: item.site,
                 code: item.code,
                 name: item.name,
-                displayName: (item.displayName || null) !== (oldItem.displayName || null) ? (item.displayName || "") : undefined,
+                otherName: (item.otherName || null) !== (oldItem.otherName || null) ? (item.otherName || "") : undefined,
                 type: (item.type || null) !== (oldItem.type || null) ? (item.type || "") : undefined
             }
         }
@@ -31,13 +31,13 @@ export function patchSourceTagForm(items: SourceTag[], oldItems: SourceTag[]): S
         const oldItem = oldItems.find(i => i.code === item.code)
         if(oldItem === undefined) {
             //这是一个新项
-            return {code: item.code, name: item.name, displayName: item.displayName || undefined, type: item.type || undefined}
+            return {code: item.code, name: item.name, otherName: item.otherName || undefined, type: item.type || undefined}
         }else{
             //这是一个修改项
             return {
                 code: item.code,
                 name: item.name,
-                displayName: (item.displayName || null) !== (oldItem.displayName || null) ? (item.displayName || "") : undefined,
+                otherName: (item.otherName || null) !== (oldItem.otherName || null) ? (item.otherName || "") : undefined,
                 type: (item.type || null) !== (oldItem.type || null) ? (item.type || "") : undefined
             }
         }

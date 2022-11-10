@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { FormEditKit } from "@/components/interaction"
-import { TagNameAndOtherDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay, DescriptionDisplay, RelatedAnnotationDisplay } from "@/components-business/form-display"
-import { TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, DescriptionEditor, RelatedAnnotationEditor } from "@/components-business/form-editor"
+import {
+    TagNameAndOtherDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay, TagLinkDisplay,
+    DescriptionDisplay, RelatedAnnotationDisplay, ScoreDisplay, SourceTagMappingDisplay
+} from "@/components-business/form-display"
+import {
+    TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, TagLinkEditor,
+    DescriptionEditor, RelatedAnnotationEditor, SourceTagMappingEditor
+} from "@/components-business/form-editor"
 import { useTagDetailPane } from "@/services/main/tag"
 
-const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotations, setDescription } = useTagDetailPane()
+const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotations, setDescription, setLinks, setMappingSourceTags, setExamples } = useTagDetailPane()
 
 </script>
 
@@ -57,5 +63,28 @@ const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotation
                 <RelatedAnnotationEditor mode="embedded" :value="value" meta-type="TAG" @update:value="setValue"/>
             </template>
         </FormEditKit>
+
+        <FormEditKit class="mt-5" :value="data.links" :set-value="setLinks">
+            <template #default="{ value }">
+                <TagLinkDisplay :value="value"/>
+            </template>
+            <template #edit="{ value, setValue, save }">
+                <TagLinkEditor :value="value" @update:value="setValue"/>
+            </template>
+        </FormEditKit>
+
+        <ScoreDisplay v-if="data.score !== null" class="mt-4" :value="data.score"/>
+
+        <label class="mt-4 label is-font-size-small">来源标签映射</label>
+        <FormEditKit :value="data.links" :set-value="setLinks">
+            <template #default="{ value }">
+                <SourceTagMappingDisplay :value="value"/>
+            </template>
+            <template #edit="{ value, setValue, save }">
+                <SourceTagMappingEditor :value="value" @update:value="setValue"/>
+            </template>
+        </FormEditKit>
+
+        <label class="mt-4 label is-font-size-small">示例</label>
     </template>
 </template>

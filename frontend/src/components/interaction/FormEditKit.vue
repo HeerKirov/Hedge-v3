@@ -47,8 +47,10 @@ const editMode = ref(false)
 const editValue = ref<any>()
 
 const edit = () => {
-    editMode.value = true
-    editValue.value = objects.deepCopy(props.useEditValue ? props.editValue : props.value)
+    if(!editMode.value) {
+        editMode.value = true
+        editValue.value = objects.deepCopy(props.useEditValue ? props.editValue : props.value)
+    }
 }
 
 const setEditValue = (v: any) => {
@@ -56,10 +58,12 @@ const setEditValue = (v: any) => {
 }
 
 const save = async () => {
-    emit("update:value", editValue.value)
-    if(props.setValue) {
-        if(await props.setValue(editValue.value)) {
-            editMode.value = false
+    if(editMode.value) {
+        emit("update:value", editValue.value)
+        if(props.setValue) {
+            if(await props.setValue(editValue.value)) {
+                editMode.value = false
+            }
         }
     }
 }
@@ -83,7 +87,7 @@ if(props.allowClickOutside) {
 </script>
 
 <template>
-    <div ref="divRef" @dblclick="doubleClick">
+    <div ref="divRef" :class="{'is-cursor-text': !editMode}" @dblclick="doubleClick">
         <slot v-if="editMode" name="edit" :value="editValue" :setValue="setEditValue" :save="save"/>
         <slot v-else :value="value" :edit="edit"/>
     </div>

@@ -137,7 +137,7 @@ export interface DetailSourceData extends BasicSourceData {
 export interface SourceTag {
     code: string
     name: string
-    displayName: string | null
+    otherName: string | null
     type: string | null
 }
 

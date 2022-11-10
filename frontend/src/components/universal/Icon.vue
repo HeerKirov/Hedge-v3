@@ -67,7 +67,7 @@ const icon = computed(() => {
 import { library } from "@fortawesome/fontawesome-svg-core"
 
 import {
-    faClose, faStar, faStarHalf, faStarHalfStroke, faSave, faTrash, faFolderOpen, faPlus,
+    faClose, faStar, faStarHalf, faStarHalfStroke, faSave, faTrash, faFolderOpen, faPlus, faMinus,
     faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faCaretDown, faCaretRight, faCaretUp, faCaretLeft, faSortAlphaDown,
     faCircleNotch, faCheck, faFile, faCodeBranch, faFingerprint, faBars,
     faGear, faCircleQuestion, faClipboard, faFilter, faShareSquare, faShareAltSquare,
@@ -75,7 +75,7 @@ import {
     faCloudSun, faCoffee, faSearch, faPlusSquare, faFileInvoice, faGrinSquint, faServer, faCoins,
     faLock, faLockOpen, faEthernet, faBullseye, faBusinessTime, faCircle, faReply,
     faQuestion, faCopyright, faBookmark, faUserNinja, faPaintBrush, faSwatchbook, faStamp,
-    faObjectGroup, faObjectUngroup, faBorderStyle, faBuilding
+    faObjectGroup, faObjectUngroup, faBorderStyle, faBuilding, faLink
 } from "@fortawesome/free-solid-svg-icons"
 
 import {
@@ -83,7 +83,7 @@ import {
 } from "@fortawesome/free-regular-svg-icons"
 
 library.add(
-    faClose, faStar, faStarHalf, faStarHalfStroke, faSave, faTrash, faFolderOpen, faPlus,
+    faClose, faStar, faStarHalf, faStarHalfStroke, faSave, faTrash, faFolderOpen, faPlus, faMinus,
     faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faCaretDown, faCaretRight, faCaretUp, faCaretLeft, faSortAlphaDown,
     faCircleNotch, faCheck, faFile, faCodeBranch, faFingerprint, faBars,
     faGear, faCircleQuestion, faClipboard, faFilter, faShareSquare, faShareAltSquare,
@@ -91,7 +91,7 @@ library.add(
     faCloudSun, faCoffee, faSearch, faPlusSquare, faFileInvoice, faGrinSquint, faServer, faCoins,
     faLock, faLockOpen, faEthernet, faBullseye, faBusinessTime, faCircle, faReply,
     faQuestion, faCopyright, faBookmark, faUserNinja, faPaintBrush, faSwatchbook, faStamp,
-    faObjectGroup, faObjectUngroup, faBorderStyle, faBuilding
+    faObjectGroup, faObjectUngroup, faBorderStyle, faBuilding, faLink
 )
 library.add(farStar)
 
