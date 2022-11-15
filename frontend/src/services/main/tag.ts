@@ -1,15 +1,16 @@
-import { useFetchEndpoint, useFetchReactive, useRetrieveHelper } from "@/functions/fetch"
+import { computed, watch } from "vue"
+import { useCreatingHelper, useFetchEndpoint, useFetchHelper, useFetchReactive, useRetrieveHelper } from "@/functions/fetch"
 import { useMessageBox } from "@/modules/message-box"
 import { DetailViewState, useDetailViewState } from "@/services/base/navigation"
-import { TagAddressType, TagGroupType, TagLink, TagTreeNode } from "@/functions/http-client/api/tag"
+import { TagAddressType, TagCreateForm, TagGroupType, TagLink, TagTreeNode } from "@/functions/http-client/api/tag"
 import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { SimpleIllust } from "@/functions/http-client/api/illust"
 import { patchMappingSourceTagForm } from "@/utils/translation"
+import { computedAsync, computedMutable, installation } from "@/utils/reactivity"
 import { checkTagName } from "@/utils/validation"
-import { installation } from "@/utils/reactivity"
 import { objects } from "@/utils/primitives"
-import { computed } from "vue";
+import { useLocalStorage } from "@/functions/app";
 
 
 export const [installTagContext, useTagContext] = installation(function () {
@@ -54,6 +55,145 @@ function useTagListView(paneState: DetailViewState<number, TagCreateTemplate>) {
     }
 
     return {loading, data, refresh, tagTreeEvents}
+}
+
+export function useTagCreatePane() {
+    const message = useMessageBox()
+    const { paneState } = useTagContext()
+    const cacheStorage = useLocalStorage<{cacheAddressType: TagAddressType}>("tag/create-pane", {cacheAddressType: "TAG"})
+
+    interface FormData {
+        parentId: number | null,
+        ordinal: number | null,
+        name: string
+        otherNames: string[],
+        color: string | null,
+        type: TagAddressType
+        group: TagGroupType,
+        description: string,
+        annotations: SimpleAnnotation[],
+        links: TagLink[],
+        mappingSourceTags: MappingSourceTag[],
+        examples: SimpleIllust[]
+    }
+
+    function mapCreateForm(template: TagCreateTemplate | null): FormData {
+        return {
+            name: "",
+            parentId: template?.parentId ?? null,
+            ordinal: template?.ordinal ?? null,
+            type: cacheStorage.value.cacheAddressType,
+            otherNames: [],
+            group: "NO",
+            links: [],
+            annotations: [],
+            description: "",
+            color: null,
+            mappingSourceTags: [],
+            examples: []
+        }
+    }
+
+    function mapFormToHelper(form: FormData): TagCreateForm {
+        return {
+            name: form.name,
+            parentId: form.parentId,
+            ordinal: form.ordinal,
+            type: form.type,
+            otherNames: form.otherNames,
+            group: form.group,
+            links: form.links.map(i => i.id),
+            annotations: form.annotations.map(a => a.id),
+            description: form.description,
+            color: form.color,
+            mappingSourceTags: patchMappingSourceTagForm(form.mappingSourceTags.filter(t => t.site && t.name && t.code), []),
+            examples: form.examples.map(e => e.id)
+        }
+    }
+
+    const form = computedMutable<FormData>(() => mapCreateForm(paneState.createTemplate.value))
+
+    const { submit } = useCreatingHelper({
+        form,
+        create: client => client.tag.create,
+        mapForm: mapFormToHelper,
+        beforeCreate(form): boolean | void {
+            if(!checkTagName(form.name)) {
+                message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` \" ' . | 字符。")
+                return false
+            }
+            for(const otherName of form.otherNames) {
+                if(!checkTagName(otherName)) {
+                    message.showOkMessage("prompt", "不合法的别名。", "别名不能包含 ` \" ' . | 字符。")
+                    return false
+                }
+            }
+        },
+        handleError(e) {
+            if(e.code === "ALREADY_EXISTS") {
+                message.showOkMessage("prompt", "该名称已存在。")
+            }else if(e.code === "NOT_EXIST") {
+                const [type, ids] = e.info
+                if(type === "parentId") {
+                    message.showOkMessage("error", "选择的作为父标签的标签不存在。", `错误项: ${ids}`)
+                }else if(type === "links") {
+                    message.showOkMessage("error", "选择的作为链接的标签不存在。", `错误项: ${ids}`)
+                }else if(type === "examples") {
+                    message.showOkMessage("error", "选择的示例项不存在。", `错误项: ${ids}`)
+                }else if(type === "annotations") {
+                    message.showOkMessage("error", "选择的注解不存在。", `错误项: ${ids}`)
+                }else{
+                    message.showOkMessage("error", `选择的资源${type}不存在。`, `错误项: ${ids}`)
+                }
+            }else if(e.code === "CANNOT_GIVE_COLOR") {
+                message.showOkMessage("prompt", "不能设置非根节点的颜色。它们的颜色始终跟随根节点。")
+            }else if(e.code === "NOT_SUITABLE") {
+                const [type, ids] = e.info
+                if(type === "examples") {
+                    message.showOkMessage("error", "选择的示例不可用。", `只能选择图像而非集合类型的项目作为示例。`)
+                }else if(type === "annotations") {
+                    const content = ids.map(id => form.value.annotations?.find(i => i.id === id)?.name ?? "unknown").join(", ")
+                    message.showOkMessage("error", "选择的注解不可用。", `选择的注解的导出目标设置使其无法导出至标签。错误项: ${content}`)
+                }else if(type === "links") {
+                    const content = ids.map(id => form.value.links?.find(i => i.id === id)?.name ?? "unknown").join(", ")
+                    message.showOkMessage("error", "选择的作为链接的标签不可用。", `虚拟地址段不能用作链接。错误项: ${content}`)
+                }else{
+                    message.showOkMessage("prompt", `指定的资源${type}不适用。`)
+                }
+            }else{
+                return e
+            }
+        },
+        afterCreate(result) {
+            paneState.detailView(result.id)
+        }
+    })
+
+    const fetch = useFetchHelper(client => client.tag.get)
+
+    //TODO bug: 每次选择type都会触发fetch,还会清空一些数据
+    const addressInfo = computedAsync<{address: string | null, member: boolean, memberIndex: number | null}>({address: null, member: false, memberIndex: null}, async () => {
+        if(form.value !== null && form.value.parentId !== null) {
+            const parent = await fetch(form.value.parentId)
+            if(parent !== undefined) {
+                const address = parent.parents.map(t => t.name).concat(parent.name).join(".")
+                const member = parent.group !== "NO"
+                const memberIndex = parent.group === "SEQUENCE" ? (form.value.ordinal ?? 0) + 1 : null
+                return {address, member, memberIndex}
+            }
+        }
+        return {address: null, member: false, memberIndex: null}
+    })
+
+    const isRootNode = computed(() => form.value?.parentId == null)
+
+    watch(() => form.value.type, addressType => {
+        if(addressType !== cacheStorage.value.cacheAddressType) {
+            cacheStorage.value.cacheAddressType = addressType
+        }
+    })
+
+    return {form, submit, addressInfo, isRootNode}
 }
 
 export function useTagDetailPane() {
@@ -166,7 +306,10 @@ export function useTagDetailPane() {
     }
 
     const setMappingSourceTags = async (mappingSourceTags: MappingSourceTag[]) => {
-        return objects.deepEquals(mappingSourceTags, data.value?.mappingSourceTags) || await setData({
+        //由于mapping source tags的编辑模式，需要在提交之前做一次过滤
+        const final: MappingSourceTag[] = mappingSourceTags.filter(t => t.site && t.name && t.code)
+
+        return objects.deepEquals(final, data.value?.mappingSourceTags) || await setData({
             mappingSourceTags: patchMappingSourceTagForm(mappingSourceTags, data.value?.mappingSourceTags ?? [])
         }, e => {
             if(e.code === "NOT_EXIST") {

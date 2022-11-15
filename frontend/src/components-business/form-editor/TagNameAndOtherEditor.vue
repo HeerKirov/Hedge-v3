@@ -6,18 +6,30 @@ import { OtherNameEditor } from "@/components-business/form-editor"
 const props = defineProps<{
     name: string
     otherNames: string[]
-    color: string
+    color: string | null
     colorEnabled?: boolean
 }>()
 
 const emit = defineEmits<{
-    (e: "update", values: [string, string[], string]): void
+    (e: "update", values: [string, string[], string | null]): void
+    (e: "update:name", name: string): void
+    (e: "update:otherNames", otherNames: string[]): void
+    (e: "update:color", color: string | null): void
     (e: "save"): void
 }>()
 
-const setName = (v: string) => emit("update", [v, props.otherNames, props.color])
-const setOtherNames = (v: string[]) => emit("update", [props.name, v, props.color])
-const setColor = (v: string) => emit("update", [props.name, props.otherNames, v])
+const setName = (v: string) => {
+    emit("update:name", v)
+    emit("update", [v, props.otherNames, props.color])
+}
+const setOtherNames = (v: string[]) => {
+    emit("update:otherNames", v)
+    emit("update", [props.name, v, props.color])
+}
+const setColor = (v: string | null) => {
+    emit("update:color", v)
+    emit("update", [props.name, props.otherNames, v])
+}
 
 </script>
 

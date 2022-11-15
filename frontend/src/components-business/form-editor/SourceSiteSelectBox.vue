@@ -18,7 +18,7 @@ const NOT_SELECT_ITEM = {label: "未选择", value: "__UNDEFINED"}
 const items = computed(() => [NOT_SELECT_ITEM, ...sites.value?.map(s => ({label: s.title, value: s.name})) ?? []])
 
 const updateValue = (value: string | undefined) => {
-    if(value === "__UNDEFINED" || value === undefined) {
+    if(value === "__UNDEFINED" || !value) {
         emit("update:value", null)
     }else{
         emit("update:value", value)
@@ -28,5 +28,5 @@ const updateValue = (value: string | undefined) => {
 </script>
 
 <template>
-    <Select :items="items" :value="value ?? '__UNDEFINED'" @update:value="updateValue"/>
+    <Select :items="items" :value="value || '__UNDEFINED'" @update:value="updateValue"/>
 </template>

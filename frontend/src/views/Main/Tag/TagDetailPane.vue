@@ -60,11 +60,14 @@ const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotation
                 <RelatedAnnotationDisplay :value="value"/>
             </template>
             <template #edit="{ value, setValue, save }">
-                <RelatedAnnotationEditor mode="embedded" :value="value" meta-type="TAG" @update:value="setValue"/>
+                <RelatedAnnotationEditor mode="embedded" meta-type="TAG" :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
 
-        <FormEditKit class="mt-5" :value="data.links" :set-value="setLinks">
+        <ScoreDisplay v-if="data.score !== null" class="mt-4" :value="data.score"/>
+
+        <label class="mt-5 label is-font-size-small">标签链接</label>
+        <FormEditKit :value="data.links" :set-value="setLinks">
             <template #default="{ value }">
                 <TagLinkDisplay :value="value"/>
             </template>
@@ -73,18 +76,17 @@ const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotation
             </template>
         </FormEditKit>
 
-        <ScoreDisplay v-if="data.score !== null" class="mt-4" :value="data.score"/>
-
         <label class="mt-4 label is-font-size-small">来源标签映射</label>
-        <FormEditKit :value="data.links" :set-value="setLinks">
+        <FormEditKit :value="data.mappingSourceTags" :set-value="setMappingSourceTags">
             <template #default="{ value }">
-                <SourceTagMappingDisplay :value="value"/>
+                <SourceTagMappingDisplay :value="value" direction="vertical"/>
             </template>
             <template #edit="{ value, setValue, save }">
-                <SourceTagMappingEditor :value="value" @update:value="setValue"/>
+                <SourceTagMappingEditor :value="value" @update:value="setValue" direction="vertical"/>
             </template>
         </FormEditKit>
 
         <label class="mt-4 label is-font-size-small">示例</label>
+        <!-- TODO tag examples -->
     </template>
 </template>
