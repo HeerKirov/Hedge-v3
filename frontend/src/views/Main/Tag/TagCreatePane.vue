@@ -39,7 +39,7 @@ const { form, submit, addressInfo, isRootNode } = useTagCreatePane()
     </p>
     <label class="mt-4 label is-font-size-small">示例</label>
     <!-- TODO tag examples -->
-    <Button class="mt-4 w-100" type="success" icon="save" @click="submit">保存</Button>
+    <Button class="mt-4 w-100" mode="light" type="success" icon="save" @click="submit">保存</Button>
 </template>
 
 <style module lang="sass">

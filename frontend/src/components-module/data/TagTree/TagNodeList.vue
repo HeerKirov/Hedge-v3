@@ -19,7 +19,8 @@ defineProps<{
                 <TagNode :node="node"/>
             </div>
         </template>
-        <Gap :parent-id="parentId" :ordinal="nodes.length"/>
+        <Gap :class="$style.gap" :parent-id="parentId" :ordinal="nodes.length"/>
+        <!-- TODO 多个层级嵌套时gap会多层，观感不太好。最好有个方案，能合理地只保留一层 -->
     </div>
     <div v-else :class="[$style.root, $style.inline]">
         <template v-for="(node, index) in nodes" :key="node.id">
@@ -32,14 +33,17 @@ defineProps<{
 
 <style module lang="sass">
 .root
+    margin-left: 1.25rem
+
     &.inline
         display: flex
         flex-wrap: wrap
         align-items: center
+        margin-top: 0.25rem
 
         > .gap
             width: 0.3rem
-            height: 2em
+            height: 1.5em
             &:first-child
                 margin-left: -0.25rem
 
@@ -51,6 +55,5 @@ defineProps<{
 
         > .gap
             height: 0.4rem
-        > .child > p
-            display: inline-flex
+
 </style>

@@ -19,6 +19,10 @@ const props = defineProps<{
      */
     editable?: boolean
     /**
+     * 是否允许拖放标签操作。这将允许拖放标签到空隙以重新排序标签。
+     */
+    droppable?: boolean
+    /**
      * 是否可拖曳标签。传入一个函数时，使用函数结果决定每一个标签是否可托曳。
      */
     draggable?: boolean | ((tag: TagTreeNode) => boolean)
@@ -37,17 +41,23 @@ const emit = defineEmits<{
      * 选择右键菜单的创建选项。参数是插入位置的参数。
      */
     (e: "create", parentId: number | null, ordinal: number): void
+    /**
+     * 进行拖放的操作。
+     */
+    (e: "move", tag: TagTreeNode, moveToParentId: number | null | undefined, moveToOrdinal: number): void
 }>()
 
 installTagTreeContext({
     data: toRef(props, "tags"),
     createPosition: toRef(props, "createPosition"),
     editable: toRef(props, "editable"),
+    droppable: toRef(props, "droppable"),
     draggable: toRef(props, "draggable"),
     emit: {
         click: (tag, parentId, ordinal) => emit("click", tag, parentId, ordinal),
         delete: (tag, parentId, ordinal) => emit("delete", tag, parentId, ordinal),
-        create: (parentId, ordinal) => emit("create", parentId, ordinal)
+        create: (parentId, ordinal) => emit("create", parentId, ordinal),
+        move: (tag, p, o) => emit("move", tag, p, o)
     }
 })
 

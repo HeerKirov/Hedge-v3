@@ -22,7 +22,7 @@ const metaTypeSelectItems = META_TYPES.map(t => ({label: META_TYPE_NAMES[t], val
         <CheckBox v-model:value="form.canBeExported">可导出至图库项目</CheckBox>
     </p>
     <AnnotationTargetEditor class="mt-2" v-model:value="form.target" :meta-type="form.type"/>
-    <Button class="mt-4 w-100" type="success" icon="save" @click="submit">保存</Button>
+    <Button class="mt-4 w-100" mode="light" type="success" icon="save" @click="submit">保存</Button>
 </template>
 
 <style module lang="sass">

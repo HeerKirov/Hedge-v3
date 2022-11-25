@@ -7,7 +7,7 @@ import { installTagContext } from "@/services/main/tag"
 import TagCreatePane from "./TagCreatePane.vue"
 import TagDetailPane from "./TagDetailPane.vue"
 
-const { paneState, listview: { loading, data, tagTreeEvents } } = installTagContext()
+const { paneState, listview: { loading, data, tagTreeEvents }, editableLockOn } = installTagContext()
 
 </script>
 
@@ -18,7 +18,8 @@ const { paneState, listview: { loading, data, tagTreeEvents } } = installTagCont
             <SearchInput placeholder="在此处搜索"/>
 
             <template #right>
-                <Button icon="lock" square/>
+                <Button v-if="editableLockOn" mode="filled" type="danger" icon="lock-open" square @click="editableLockOn = false"/>
+                <Button v-else icon="lock" square @click="editableLockOn = true"/>
                 <Button icon="plus" square @click="paneState.createView()"/>
             </template>
         </MiddleLayout>
@@ -33,7 +34,7 @@ const { paneState, listview: { loading, data, tagTreeEvents } } = installTagCont
          </template>
 
          <div :class="$style.content">
-             <TagTree v-if="data?.length || loading" :tags="data" editable draggable v-bind="tagTreeEvents"/>
+             <TagTree v-if="data?.length || loading" :tags="data" editable draggable :droppable="editableLockOn" v-bind="tagTreeEvents"/>
              <Block v-else class="mt-2 p-2 has-text-centered">
                  <Button type="success" size="small" icon="plus" @click="paneState.createView()">创建第一个标签</Button>
              </Block>

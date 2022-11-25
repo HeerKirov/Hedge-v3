@@ -18,6 +18,6 @@ const props = defineProps<{
         </component>
     </div>
     <div v-else class="has-text-secondary">
-        <i>没有来源标签</i>
+        <b class="mr-1">·</b><i>没有来源标签</i>
     </div>
 </template>

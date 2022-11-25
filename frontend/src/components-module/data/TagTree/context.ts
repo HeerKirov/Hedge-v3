@@ -1,19 +1,22 @@
-import { ref, Ref, toRaw, watch } from "vue"
+import { computed, ref, Ref, toRaw, watch } from "vue"
 import { installation } from "@/utils/reactivity"
 import { TagTreeNode } from "@/functions/http-client/api/tag"
 import { usePopupMenu } from "@/modules/popup-menu"
 import { useMessageBox } from "@/modules/message-box"
+import { useDroppable } from "@/modules/drag"
 import { objects } from "@/utils/primitives"
 
 interface TagTreeContextOptions {
     data: Ref<TagTreeNode[] | undefined>
     createPosition: Ref<{parentId: number | null, ordinal: number} | undefined>
     editable: Ref<boolean | undefined>
+    droppable: Ref<boolean | undefined>
     draggable: Ref<boolean | ((tag: TagTreeNode) => boolean) | undefined>
     emit: {
         click(tag: TagTreeNode, parentId: number | null, ordinal: number): void
         delete(tag: TagTreeNode, parentId: number | null, ordinal: number): void
         create(parentId: number | null, ordinal: number): void
+        move(tag: TagTreeNode, moveToParentId: number | null | undefined, moveToOrdinal: number): void
     }
 }
 
@@ -46,14 +49,24 @@ export interface IndexedTag {
 type IsGroupMember = "YES" | "SEQUENCE" | "NO"
 
 export const [installTagTreeContext, useTagTreeContext] = installation(function (options: TagTreeContextOptions) {
-    const { emit, editable, draggable, createPosition } = options
-    const { data, ...indexedData } = useIndexedData(options.data)
+    const { emit, editable, droppable, draggable, createPosition } = options
+    const indexedData = useIndexedData(options.data)
 
     const expandedState = useExpandedState(indexedData.indexedData)
 
     const menu = useMenu(options, indexedData.indexedData, expandedState)
 
-    return {expandedState, menu, indexedData, emit, editable, draggable, createPosition}
+    const isDraggable = (t: TagTreeNode): boolean => {
+        if(draggable.value === undefined) {
+            return false
+        }else if(typeof draggable.value === "boolean") {
+            return draggable.value
+        }else{
+            return draggable.value(t)
+        }
+    }
+
+    return {expandedState, menu, indexedData, emit, editable, droppable, isDraggable, createPosition}
 })
 
 function useIndexedData(requestedData: Ref<TagTreeNode[] | undefined>) {
@@ -367,4 +380,57 @@ function useMenu(options: TagTreeContextOptions, indexedData: Ref<{[key: number]
     ])
 
     return menu.popup
+}
+
+export function useTagDroppable(parentId: Ref<number | null>, ordinal: Ref<number | null> | null) {
+    const { indexedData, droppable, emit } = useTagTreeContext()
+
+    function getTarget(currentParentId: number | null, currentOrdinal: number, insertParentId: number | null, insertOrdinal: number | null): {parentId: number | null, ordinal: number} {
+        if(insertOrdinal === null) {
+            //省略insert ordinal表示默认操作
+            if(currentParentId === insertParentId) {
+                //parent不变时的默认操作是不移动
+                return {parentId: insertParentId, ordinal: currentOrdinal}
+            }else{
+                //parent变化时的默认操作是移动到列表末尾，此时需要得到列表长度
+                const count = insertParentId !== null ? (indexedData.indexedData.value[insertParentId]!.tag.children?.length ?? 0) : indexedData.data.value.length
+                return {parentId: insertParentId, ordinal: count}
+            }
+        }else{
+            return {parentId: insertParentId, ordinal: insertOrdinal}
+        }
+    }
+
+    /**
+     * 将指定的节点移动到标定的插入位置。
+     * @param sourceId 指定节点的tag id。
+     * @param insertParentId 插入目标节点的id。null表示插入到根列表。
+     * @param insertOrdinal 插入目标节点后的排序顺位。null表示默认操作(追加到节点末尾，或者对于相同parent不执行移动)
+     */
+    const move = (sourceId: number, insertParentId: number | null, insertOrdinal: number | null) => {
+        //FIXED: 前后端API含义不同问题已修复
+
+        const info = indexedData.indexedData.value[sourceId]
+        if(!info) {
+            console.error(`Error occurred while moving tag ${sourceId}: cannot find indexed info.`)
+            return
+        }
+        const target = getTarget(info.parentId, info.ordinal, insertParentId, insertOrdinal)
+
+        if(target.parentId === info.parentId && target.ordinal === info.ordinal || sourceId === target.parentId) {
+            //没有变化，或插入目标是其自身时，跳过操作
+            return
+        }
+
+        emit.move(info.tag, target.parentId === info.parentId ? undefined : target.parentId, target.ordinal)
+    }
+
+    const { dragover: originIsDragover, ...dropEvents } = useDroppable("tag", tag => {
+        if(droppable.value) {
+            move(tag.id, parentId.value, ordinal?.value ?? null)
+        }
+    })
+    const dragover: Ref<boolean> = computed(() => (droppable.value ?? false) && originIsDragover.value)
+
+    return {dragover, ...dropEvents}
 }

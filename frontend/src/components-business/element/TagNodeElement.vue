@@ -40,11 +40,10 @@ defineExpose({
 <template>
     <span :ref="setEl">
         <Tag :color="node.color" :line-style="properties.isAddr ? 'dashed' : 'solid'" :clickable="clickable" :draggable="draggable" v-bind="dragEvents">
-            <b v-if="properties.isGroup">{{'<'}}</b>
+            <Icon v-if="properties.isGroup && !properties.isSequenced" icon="object-group"/>
+            <Icon v-else-if="properties.isGroup && properties.isSequenced" icon="sort-alpha-down"/>
+            <b v-if="properties.isForced">!</b>
             {{node.name}}
-            <b v-if="properties.isGroup">{{'>'}}</b>
-            <Icon v-if="properties.isSequenced" icon="sort-alpha-down"/>
-            <b v-if="properties.isForced" class="ml-half">!</b>
         </Tag>
     </span>
 </template>

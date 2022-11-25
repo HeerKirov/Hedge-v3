@@ -6,11 +6,11 @@ import { TagAddressType, TagCreateForm, TagGroupType, TagLink, TagTreeNode } fro
 import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { SimpleIllust } from "@/functions/http-client/api/illust"
+import { useLocalStorage } from "@/functions/app"
+import { computedAsync, computedWatchMutable, installation } from "@/utils/reactivity"
 import { patchMappingSourceTagForm } from "@/utils/translation"
-import { computedAsync, computedMutable, installation } from "@/utils/reactivity"
 import { checkTagName } from "@/utils/validation"
 import { objects } from "@/utils/primitives"
-import { useLocalStorage } from "@/functions/app";
 
 
 export const [installTagContext, useTagContext] = installation(function () {
@@ -18,7 +18,9 @@ export const [installTagContext, useTagContext] = installation(function () {
 
     const listview = useTagListView(paneState)
 
-    return {paneState, listview}
+    const editableLockOn = useLocalStorage("tag/list/editable", false)
+
+    return {paneState, listview, editableLockOn}
 })
 
 interface TagCreateTemplate {
@@ -35,7 +37,15 @@ function useTagListView(paneState: DetailViewState<number, TagCreateTemplate>) {
     })
 
     const helper = useRetrieveHelper({
-        delete: client => client.tag.delete
+        update: client => client.tag.update,
+        delete: client => client.tag.delete,
+        handleErrorInUpdate(e) {
+            if(e.code === "RECURSIVE_PARENT") {
+                message.showOkMessage("prompt", "无法移动到此位置。", "无法将标签移动到其子标签下。")
+            }else{
+                return e
+            }
+        }
     })
 
     const tagTreeEvents = {
@@ -51,6 +61,9 @@ function useTagListView(paneState: DetailViewState<number, TagCreateTemplate>) {
         },
         onCreate(parentId: number | null, ordinal: number) {
             paneState.createView({parentId, ordinal})
+        },
+        async onMove(tag: TagTreeNode, targetParentId: number | null | undefined, targetOrdinal: number) {
+            await helper.setData(tag.id, {parentId: targetParentId, ordinal: targetOrdinal})
         }
     }
 
@@ -111,7 +124,7 @@ export function useTagCreatePane() {
         }
     }
 
-    const form = computedMutable<FormData>(() => mapCreateForm(paneState.createTemplate.value))
+    const form = computedWatchMutable(paneState.createTemplate, () => mapCreateForm(paneState.createTemplate.value))
 
     const { submit } = useCreatingHelper({
         form,
@@ -171,7 +184,6 @@ export function useTagCreatePane() {
 
     const fetch = useFetchHelper(client => client.tag.get)
 
-    //TODO bug: 每次选择type都会触发fetch,还会清空一些数据
     const addressInfo = computedAsync<{address: string | null, member: boolean, memberIndex: number | null}>({address: null, member: false, memberIndex: null}, async () => {
         if(form.value !== null && form.value.parentId !== null) {
             const parent = await fetch(form.value.parentId)
@@ -218,7 +230,7 @@ export function useTagDetailPane() {
             const address = data.value.parents.map(i => i.name).join(".")
             const parent = data.value.parents[data.value.parents.length - 1]
             const member = parent.group !== "NO"
-            const memberIndex = parent.group === "SEQUENCE" ? data.value.ordinal + 1 : null
+            const memberIndex = parent.group === "SEQUENCE" || parent.group === "FORCE_AND_SEQUENCE" ? data.value.ordinal + 1 : null
 
             return {address, member, memberIndex}
         }else{
