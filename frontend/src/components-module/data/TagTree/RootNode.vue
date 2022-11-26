@@ -11,7 +11,7 @@ const props = defineProps<{
     node: TagTreeNode
 }>()
 
-const { expandedState, indexedData, isDraggable, emit, menu } = useTagTreeContext()
+const { expandedState, elementRefs, indexedData, isDraggable, emit, menu } = useTagTreeContext()
 
 const expanded = computed({
     get: () => expandedState.get(props.node.id),
@@ -19,6 +19,8 @@ const expanded = computed({
 })
 
 const draggable = computed(() => isDraggable(props.node))
+
+const isJumpTarget = computed(() => elementRefs.jumpTarget.value === props.node.id)
 
 const { dragover: _, ...dropEvents } = useTagDroppable(computed(() => props.node.id), null)
 
@@ -29,21 +31,29 @@ const dragEvents = useDraggable("tag",() => ({
 }))
 
 const click = () => {
+    if(elementRefs.jumpTarget.value === props.node.id) {
+        elementRefs.jumpTarget.value = null
+    }
     const indexed = indexedData.indexedData.value[props.node.id]
     if(indexed) {
         emit.click(props.node, indexed.parentId, indexed.ordinal)
     }
 }
 
-const contextmenu = () => menu(props.node)
+const contextmenu = () => {
+    if(elementRefs.jumpTarget.value === props.node.id) {
+        elementRefs.jumpTarget.value = null
+    }
+    menu(props.node)
+}
 
 </script>
 
 <template>
     <Block :class="{[`has-text-${node.color}`]: !!node.color, [$style.root]: true}">
-        <p class="is-font-size-large" v-bind="dropEvents" @contextmenu="contextmenu" @click="click">
+        <p :class="{'is-font-size-large': true, [$style['jump-target']]: isJumpTarget}" v-bind="dropEvents" @contextmenu="contextmenu" @click="click">
             <ExpandedButton v-model:expanded="expanded"/>
-            <span :draggable="draggable" v-bind="dragEvents">{{node.name}}</span>
+            <span :ref="el => elementRefs.setElement(node.id, el)" :draggable="draggable" v-bind="dragEvents">{{node.name}}</span>
         </p>
         <div v-if="expanded" :class="$style['root-node-list']">
             <TagNodeList multi-line :parent-id="node.id" :nodes="node.children ?? []"/>
@@ -64,4 +74,11 @@ const contextmenu = () => menu(props.node)
     border-top: solid 1px $light-mode-border-color
     @media (prefers-color-scheme: dark)
         border-top-color: $dark-mode-border-color
+
+.jump-target
+    border-radius: $radius-size-std
+    @media (prefers-color-scheme: light)
+        border: solid 2px $light-mode-warning
+    @media (prefers-color-scheme: dark)
+        border: solid 2px $dark-mode-warning
 </style>

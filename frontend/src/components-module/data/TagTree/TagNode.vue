@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue"
+import { computed } from "vue"
 import { TagNodeElement } from "@/components-business/element"
 import { TagTreeNode } from "@/functions/http-client/api/tag"
 import { useTagDroppable, useTagTreeContext } from "./context"
@@ -10,7 +10,7 @@ const props = defineProps<{
     node: TagTreeNode
 }>()
 
-const { expandedState, indexedData, isDraggable, menu, emit } = useTagTreeContext()
+const { expandedState, elementRefs, indexedData, isDraggable, menu, emit } = useTagTreeContext()
 
 const expanded = computed({
     get: () => expandedState.get(props.node.id),
@@ -19,16 +19,26 @@ const expanded = computed({
 
 const draggable = computed(() => isDraggable(props.node))
 
+const isJumpTarget = computed(() => elementRefs.jumpTarget.value === props.node.id)
+
 const { dragover: _, ...dropEvents } = useTagDroppable(computed(() => props.node.id), null)
 
 const click = () => {
+    if(elementRefs.jumpTarget.value === props.node.id) {
+        elementRefs.jumpTarget.value = null
+    }
     const indexed = indexedData.indexedData.value[props.node.id]
     if(indexed) {
         emit.click(props.node, indexed.parentId, indexed.ordinal)
     }
 }
 
-const contextmenu = () => menu(props.node)
+const contextmenu = () => {
+    if(elementRefs.jumpTarget.value === props.node.id) {
+        elementRefs.jumpTarget.value = null
+    }
+    menu(props.node)
+}
 
 </script>
 
@@ -36,18 +46,33 @@ const contextmenu = () => menu(props.node)
     <template v-if="!!node.children?.length">
         <p :class="$style['expanded-button-element']" v-bind="dropEvents">
             <ExpandedButton :class="$style['expanded-button']" v-model:expanded="expanded" @contextmenu="contextmenu"/>
-            <TagNodeElement :node="node" :draggable="draggable" @contextmenu="contextmenu" @click="click"/>
+            <span :ref="el => elementRefs.setElement(node.id, el)" :class="{[$style['jump-target']]: isJumpTarget}">
+                <TagNodeElement :node="node" :draggable="draggable" @contextmenu="contextmenu" @click="click"/>
+            </span>
         </p>
         <TagNodeList v-if="expanded" :parent-id="node.id" :nodes="node.children ?? []"/>
     </template>
-    <TagNodeElement v-else :node="node" :draggable="draggable" v-bind="dropEvents" @contextmenu="contextmenu" @click="click"/>
+    <span v-else :ref="el => elementRefs.setElement(node.id, el)" :class="{[$style['jump-target']]: isJumpTarget}">
+        <TagNodeElement :node="node" :draggable="draggable" v-bind="dropEvents" @contextmenu="contextmenu" @click="click"/>
+    </span>
 </template>
 
 <style module lang="sass">
+@import "../../../styles/base/color"
+@import "../../../styles/base/size"
+
 .expanded-button-element
     position: relative
     > .expanded-button
         position: absolute
         left: 0
         transform: translateX(-100%)
+
+.jump-target
+    border-radius: $radius-size-std
+    padding: $spacing-half $spacing-1
+    @media (prefers-color-scheme: light)
+        border: solid 2px $light-mode-warning
+    @media (prefers-color-scheme: dark)
+        border: solid 2px $dark-mode-warning
 </style>

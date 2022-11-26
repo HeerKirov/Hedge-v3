@@ -14,6 +14,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: "update:value", value: string): void
     (e: "update:activeDropButton", value: boolean): void
+    (e: "enter", newValue: boolean): void
 }>()
 
 const textValue = computedMutable(() => props.value)
@@ -22,7 +23,9 @@ const toggleDropButton = () => emit("update:activeDropButton", !props.activeDrop
 
 const keypress = (e: KeyEvent) => {
     if(USUAL_KEY_VALIDATORS["Enter"](e)) {
-        emit("update:value", textValue.value ?? "")
+        const newValue = textValue.value ?? ""
+        emit("update:value", newValue)
+        emit("enter", newValue !== props.value)
     }
 }
 

@@ -16,7 +16,7 @@ defineEmits<{
 
 <template>
     <template v-if="value.length > 0">
-        <Flex v-for="item in value">
+        <Flex v-for="item in value" class="mb-1">
             <Icon class="mr-1" icon="link"/>
             <TagNodeElement :node="item"/>
         </Flex>

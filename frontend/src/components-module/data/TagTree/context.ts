@@ -1,10 +1,11 @@
-import { computed, ref, Ref, toRaw, watch } from "vue"
+import { ComponentPublicInstance, computed, nextTick, ref, Ref, toRaw, watch } from "vue"
 import { installation } from "@/utils/reactivity"
 import { TagTreeNode } from "@/functions/http-client/api/tag"
 import { usePopupMenu } from "@/modules/popup-menu"
 import { useMessageBox } from "@/modules/message-box"
 import { useDroppable } from "@/modules/drag"
 import { objects } from "@/utils/primitives"
+import { sleep } from "@/utils/process"
 
 interface TagTreeContextOptions {
     data: Ref<TagTreeNode[] | undefined>
@@ -54,6 +55,8 @@ export const [installTagTreeContext, useTagTreeContext] = installation(function 
 
     const expandedState = useExpandedState(indexedData.indexedData)
 
+    const elementRefs = useElementRefs(expandedState)
+
     const menu = useMenu(options, indexedData.indexedData, expandedState)
 
     const isDraggable = (t: TagTreeNode): boolean => {
@@ -66,7 +69,7 @@ export const [installTagTreeContext, useTagTreeContext] = installation(function 
         }
     }
 
-    return {expandedState, menu, indexedData, emit, editable, droppable, isDraggable, createPosition}
+    return {expandedState, elementRefs, menu, indexedData, emit, editable, droppable, isDraggable, createPosition}
 })
 
 function useIndexedData(requestedData: Ref<TagTreeNode[] | undefined>) {
@@ -336,6 +339,52 @@ function useExpandedState(indexedData: Ref<{[key: number]: IndexedTag}>) {
     }
 
     return {get, set, setAllForParent, setAllForChildren}
+}
+
+function useElementRefs(expandedState: ReturnType<typeof useExpandedState>) {
+    const elements: Record<number, Element | ComponentPublicInstance | null> = {}
+
+    const jumpTarget = ref<number | null>(null)
+
+    let targetKey: number | null = null
+
+    function scrollIntoView(el: Element | ComponentPublicInstance | null) {
+        if(typeof (el as any).scrollIntoView === "function") {
+            (el as any).scrollIntoView({block: "nearest"})
+        }
+    }
+
+    return {
+        jumpTarget,
+        async jumpTo(tagId: number) {
+            const el = elements[tagId]
+            if(el) {
+                //目前已经存在目标的ref，则直接采取操作
+                await nextTick()
+                scrollIntoView(el)
+            }else{
+                //不存在目标的ref，则尝试展开目标的折叠，同时把target存起来，等待异步完成
+                targetKey = tagId
+                expandedState.setAllForParent(tagId, true)
+            }
+            jumpTarget.value = tagId
+        },
+        async setElement(key: number, el: Element | ComponentPublicInstance | null | undefined) {
+            if(el) {
+                elements[key] = el
+                if(targetKey === key) {
+                    //目前存在操作目标，那么采取操作
+                    await nextTick()
+                    targetKey = null
+                    //sleep是等待是为了等待目标展开的动画结束。这是一个magic行为
+                    await sleep(150)
+                    scrollIntoView(el)
+                }
+            }else{
+                delete elements[key]
+            }
+        }
+    }
 }
 
 function useMenu(options: TagTreeContextOptions, indexedData: Ref<{[key: number]: IndexedTag}>, expandedState: ReturnType<typeof useExpandedState>) {

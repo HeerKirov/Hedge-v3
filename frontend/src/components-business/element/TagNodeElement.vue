@@ -8,7 +8,6 @@ const props = defineProps<{
     node: {id: number, name: string, color: string | null, type: TagAddressType, group: TagGroupType}
     draggable?: boolean
     clickable?: boolean
-    exposeEl?: boolean
 }>()
 
 const properties = computed(() => ({
@@ -24,26 +23,13 @@ const dragEvents = useDraggable("tag", () => ({
     color: props.node.color
 }))
 
-let el: Ref<HTMLElement | undefined> | undefined = undefined
-let setEl: ((element: HTMLElement | undefined) => void) | undefined = undefined
-if(props.exposeEl) {
-    el = ref<HTMLElement>()
-    setEl = element => el!.value = element
-}
-
-defineExpose({
-    el
-})
-
 </script>
 
 <template>
-    <span :ref="setEl">
-        <Tag :color="node.color" :line-style="properties.isAddr ? 'dashed' : 'solid'" :clickable="clickable" :draggable="draggable" v-bind="dragEvents">
-            <Icon v-if="properties.isGroup && !properties.isSequenced" icon="object-group"/>
-            <Icon v-else-if="properties.isGroup && properties.isSequenced" icon="sort-alpha-down"/>
-            <b v-if="properties.isForced">!</b>
-            {{node.name}}
-        </Tag>
-    </span>
+    <Tag :color="node.color" :line-style="properties.isAddr ? 'dashed' : 'solid'" :clickable="clickable" :draggable="draggable" v-bind="dragEvents">
+        <Icon v-if="properties.isGroup && !properties.isSequenced" icon="object-group"/>
+        <Icon v-else-if="properties.isGroup && properties.isSequenced" icon="sort-alpha-down"/>
+        <b v-if="properties.isForced">!</b>
+        {{node.name}}
+    </Tag>
 </template>

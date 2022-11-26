@@ -47,7 +47,7 @@ const emit = defineEmits<{
     (e: "move", tag: TagTreeNode, moveToParentId: number | null | undefined, moveToOrdinal: number): void
 }>()
 
-installTagTreeContext({
+const { elementRefs } = installTagTreeContext({
     data: toRef(props, "tags"),
     createPosition: toRef(props, "createPosition"),
     editable: toRef(props, "editable"),
@@ -62,7 +62,7 @@ installTagTreeContext({
 })
 
 defineExpose({
-    //TODO jump操作
+    jumpTo: elementRefs.jumpTo
 })
 
 </script>

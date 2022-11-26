@@ -5,8 +5,9 @@ import FilterButton from "./FilterButton.vue"
 import SelectButton from "./SelectButton.vue"
 import ToggleButton from "./ToggleButton.vue"
 import DataRouter from "./DataRouter.vue"
+import SearchResultInfo from "./SearchResultInfo.vue"
 
-export { SearchInput }
+export { SearchInput, SearchResultInfo }
 export { AttachFilter }
 export { FilterButton, SelectButton, ToggleButton }
 export { DataRouter }

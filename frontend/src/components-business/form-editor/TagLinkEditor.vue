@@ -37,13 +37,13 @@ const { dragover: _, ...dropEvents } = useDroppable("tag", add)
 </script>
 
 <template>
-    <Flex v-for="(item, idx) in value">
+    <Flex v-for="(item, idx) in value" class="mb-1">
         <Icon class="mr-1" icon="link"/>
         <TagNodeElement :node="item"/>
         <Icon class="mr-1" icon="close" @click="remove(idx)"/>
     </Flex>
     <Flex v-bind="dropEvents">
         <Icon class="mr-1 has-text-success" icon="plus"/>
-        <Tag color="success">托曳标签到此处以添加链接</Tag>
+        <Tag color="success">拖曳标签到此处以添加链接</Tag>
     </Flex>
 </template>
