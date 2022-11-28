@@ -5,7 +5,7 @@ import { Colors } from "@/constants/ui"
 const props = defineProps<{
     color?: Colors
     mode?: "std" | "transparent" | "light" | "filled" | "shadow"
-    overflow?: "hidden" | "auto"
+    overflow?: "hidden" | "auto" | "default"
 }>()
 
 const style = useCssModule()
@@ -13,7 +13,7 @@ const style = useCssModule()
 const divClass = computed(() => ([
     style.block,
     props.color ? style[`is-color-${props.color}`] : null,
-    style[`is-overflow-${props.overflow ?? "hidden"}`],
+    props.overflow && props.overflow !== "default" ? style[`is-overflow-${props.overflow}`] : null,
     style[`color-mode-${props.mode ?? "std"}`]
 ]))
 

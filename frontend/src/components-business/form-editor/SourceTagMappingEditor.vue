@@ -123,7 +123,7 @@ watch(form, form => {
 .root.horizontal
     width: 100%
     min-height: 2rem
-    max-height: 6rem
+    max-height: 12rem
     display: flex
     flex-wrap: nowrap
     overflow-y: auto
@@ -142,6 +142,6 @@ watch(form, form => {
         flex-direction: column
 
 .editor
-    padding: $spacing-1
+    padding: $spacing-2 $spacing-1
     margin-top: $spacing-1
 </style>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Button } from "@/components/universal"
 import { VirtualRowView } from "@/components/data"
-import { TopBarLayout, PaneLayout, BasePane, MiddleLayout } from "@/components/layout"
+import { TopBarLayout, MiddleLayout } from "@/components/layout"
 import { SearchInput, DataRouter, AttachFilter, AttachTemplate } from "@/components-business/top-bar"
 import { Annotation } from "@/functions/http-client/api/annotations"
 import { DetailTopic, Topic } from "@/functions/http-client/api/topic"
@@ -31,7 +31,7 @@ const attachFilterTemplates: AttachTemplate[] = [
         field: "parentId",
         label: "选择父主题…",
         multiSelection: false,
-        query: client => (offset, limit, search) => client.topic.list({offset, limit, query: search}),
+        query: client => (offset, limit, search) => client.topic.list({offset, limit, query: search, order: "-updateTime"}),
         queryOne: client => id => client.topic.get(id),
         mapQuery: (item: Topic) => ({label: item.name, value: item.id}),
         mapQueryOne: (item: DetailTopic) => ({label: item.name, value: item.id}),
@@ -93,6 +93,7 @@ const attachFilterTemplates: AttachTemplate[] = [
             <TopicListPanelItem v-for="item in paginationData.data.result" :key="item.id"
                                 :item="item"
                                 @update:favorite="toggleFavorite(item.id, $event)"
+                                @click="paneState.detailView(item.id)"
                                 @contextmenu="popupMenu.popup(item.id)"/>
         </VirtualRowView>
     </TopBarLayout>

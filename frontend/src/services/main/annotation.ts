@@ -1,4 +1,4 @@
-import { computedMutable, installation } from "@/utils/reactivity"
+import { computedMutable, computedWatchMutable, installation } from "@/utils/reactivity"
 import { installVirtualViewNavigation } from "@/components/data"
 import { flatResponse } from "@/functions/http-client"
 import { Annotation, AnnotationCreateForm, AnnotationQueryFilter, AnnotationTarget } from "@/functions/http-client/api/annotations"
@@ -85,7 +85,7 @@ export function useAnnotationCreatePane() {
         }
     }
 
-    const form = computedMutable<AnnotationCreateForm>(() => mapTemplateToForm(paneState.createTemplate.value))
+    const form = computedWatchMutable(paneState.createTemplate, () => mapTemplateToForm(paneState.createTemplate.value))
 
     const { submit } = useCreatingHelper({
         form,

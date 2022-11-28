@@ -68,7 +68,8 @@ import { library } from "@fortawesome/fontawesome-svg-core"
 
 import {
     faClose, faStar, faStarHalf, faStarHalfStroke, faSave, faTrash, faFolderOpen, faPlus, faMinus,
-    faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faCaretDown, faCaretRight, faCaretUp, faCaretLeft, faSortAlphaDown,
+    faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faAngleLeft, faAngleRight,
+    faCaretDown, faCaretRight, faCaretUp, faCaretLeft, faSortAlphaDown,
     faCircleNotch, faCheck, faFile, faCodeBranch, faFingerprint, faBars,
     faGear, faCircleQuestion, faClipboard, faFilter, faShareSquare, faShareAltSquare,
     faHouse, faCalendarAlt, faClone, faUserTag, faHashtag, faTag, faCode, faSpinner, faFolder, faArchive, faThumbtack,
@@ -84,7 +85,8 @@ import {
 
 library.add(
     faClose, faStar, faStarHalf, faStarHalfStroke, faSave, faTrash, faFolderOpen, faPlus, faMinus,
-    faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faCaretDown, faCaretRight, faCaretUp, faCaretLeft, faSortAlphaDown,
+    faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faAngleLeft, faAngleRight,
+    faCaretDown, faCaretRight, faCaretUp, faCaretLeft, faSortAlphaDown,
     faCircleNotch, faCheck, faFile, faCodeBranch, faFingerprint, faBars,
     faGear, faCircleQuestion, faClipboard, faFilter, faShareSquare, faShareAltSquare,
     faHouse, faCalendarAlt, faClone, faUserTag, faHashtag, faTag, faCode, faSpinner, faFolder, faArchive, faThumbtack,

@@ -36,11 +36,18 @@ const searchProps = {
     }
 }
 
+const removeItem = (idx: number) => {
+    emit("update:value", [...props.value.slice(0, idx), ...props.value.slice(idx + 1)])
+}
+
 </script>
 
 <template>
     <div>
-        <AnnotationElement v-for="(item, idx) in value" class="mr-1 mb-1" :value="item"/>
+        <span v-for="(item, idx) in value" class="mr-1 mb-1">
+            <AnnotationElement :value="item"/>
+            <Tag icon="close" line-style="none" clickable @click="removeItem(idx)"/>
+        </span>
         <Tag v-if="mode === 'embedded'" color="success" icon="plus" clickable @click="embeddedSwitch = !embeddedSwitch">添加注解</Tag>
         <ElementPopupCallout v-else>
             <template #default="{ click }">

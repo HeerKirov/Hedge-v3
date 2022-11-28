@@ -8,11 +8,12 @@ import OtherNameEditor from "./OtherNameEditor.vue"
 import ScoreEditor from "./ScoreEditor.vue"
 import DescriptionEditor from "./DescriptionEditor.vue"
 import RelatedAnnotationEditor from "./RelatedAnnotationEditor.vue"
+import ParentTopicEditor from "./ParentTopicEditor.vue"
 import SourceTagMappingEditor from "./SourceTagMappingEditor.vue"
 import SourceSiteSelectBox from "./SourceSiteSelectBox.vue"
 
 export { ThemeSelector }
 export { AnnotationTargetEditor }
 export { TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, TagLinkEditor }
-export { OtherNameEditor, ScoreEditor, DescriptionEditor, RelatedAnnotationEditor }
+export { OtherNameEditor, ScoreEditor, DescriptionEditor, RelatedAnnotationEditor, ParentTopicEditor }
 export { SourceTagMappingEditor, SourceSiteSelectBox }

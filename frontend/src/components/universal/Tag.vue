@@ -53,6 +53,7 @@ const spanClass = computed(() => [
 @media (prefers-color-scheme: light)
     .tag
         color: $light-mode-text-color
+        border-bottom-color: $light-mode-text-color
     a.tag
         &:hover
             color: rgba($light-mode-text-color, 0.75)
@@ -71,6 +72,7 @@ const spanClass = computed(() => [
 @media (prefers-color-scheme: dark)
     .tag
         color: $dark-mode-text-color
+        border-bottom-color: $dark-mode-text-color
     a.tag
         &:hover
             color: rgba($dark-mode-text-color, 0.75)

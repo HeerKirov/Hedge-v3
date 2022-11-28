@@ -44,7 +44,7 @@ export default {
 
 <template>
     <div :class="{[$style['box-framework']]: true, [$style['absolute']]: position === 'absolute'}" @click="click">
-        <Block :overflow="overflow" v-bind="$attrs">
+        <Block :overflow="overflow ?? 'hidden'" v-bind="$attrs">
             <slot/>
         </Block>
     </div>
