@@ -1,0 +1,123 @@
+<script setup lang="ts">
+import { computed } from "vue"
+import { Block, Icon, Tag } from "@/components/universal"
+import { Flex, FlexItem } from "@/components/layout"
+import { AnnotationElement } from "@/components-business/element"
+import { TOPIC_TYPE_ICONS } from "@/constants/entity"
+import { Topic } from "@/functions/http-client/api/topic"
+import { useDraggable } from "@/modules/drag"
+import { useMouseHover } from "@/utils/sensors"
+
+const props = defineProps<{
+    item: Topic
+    selected?: boolean
+}>()
+
+const emit = defineEmits<{
+    (e: "update:favorite", favorite: boolean): void
+}>()
+
+const otherNameText = computed(() => {
+    if(props.item.otherNames.length > 0) {
+        const origin = props.item.otherNames.join(" / ")
+        if(origin.length >= 64) {
+            return origin.substring(0, 64) + "..."
+        }
+        return `(${origin})`
+    }
+    return ""
+})
+
+const actualKeywordsAndAnnotations = computed(() => {
+    const max = 6
+    const keywordsSize = props.item.keywords.length, annotationsSize = props.item.annotations.length
+    if(keywordsSize + annotationsSize <= max) {
+        return {
+            keywords: props.item.keywords,
+            annotations: props.item.annotations,
+            more: false
+        }
+    }else if(annotationsSize < max) {
+        return {
+            keywords: props.item.keywords,
+            annotations: props.item.keywords.slice(0, max - annotationsSize),
+            more: true
+        }
+    }else{
+        return {
+            keywords: props.item.annotations.slice(0, max),
+            annotations: [],
+            more: true
+        }
+    }
+})
+
+const dragEvents = useDraggable("topic", () => ({
+    id: props.item.id,
+    name: props.item.name,
+    type: props.item.type,
+    color: props.item.color
+}))
+
+const { hover, ...hoverEvents } = useMouseHover()
+
+</script>
+
+<template>
+    <Block :class="$style.item" v-bind="hoverEvents">
+        <Flex horizontal="stretch" align="center">
+            <FlexItem :width="65">
+                <div>
+                    <Icon :class="{[`has-text-${item.color}`]: !!item.color, 'mr-1': true}" :icon="TOPIC_TYPE_ICONS[item.type]"/>
+                    <span :class="{[`has-text-${item.color}`]: !!item.color}" draggable="true" v-bind="dragEvents">{{item.name}}</span>
+                    <span class="secondary-text ml-1">{{otherNameText}}</span>
+                    <div v-if="item.parentRoot !== null" class="float-right is-font-size-small">
+                        <Icon class="mr-1" :icon="TOPIC_TYPE_ICONS[item.parentRoot.type]"/>
+                        <span>{{item.parentRoot.name}}</span>
+                    </div>
+                </div>
+            </FlexItem>
+            <FlexItem :shrink="0" :grow="0">
+                <div :class="$style.favorite">
+                    <Icon v-if="item.favorite" class="has-text-danger" icon="heart" @click="$emit('update:favorite', false)"/>
+                    <Icon v-else-if="hover" class="has-text-secondary" icon="heart" @click="$emit('update:favorite', true)"/>
+                </div>
+            </FlexItem>
+            <FlexItem :width="35">
+                <div>
+                    <AnnotationElement v-for="a in actualKeywordsAndAnnotations.annotations" :key="a.id" :value="a" class="mr-1"/>
+                    <Tag v-for="k in actualKeywordsAndAnnotations.keywords" class="mr-1" color="secondary">{{k}}</Tag>
+                    <Tag v-if="actualKeywordsAndAnnotations.more" color="secondary">...</Tag>
+                </div>
+            </FlexItem>
+            <FlexItem :shrink="0" :grow="0">
+                <div :class="$style.score">{{item.score ?? 0}}<Icon class="ml-1" icon="star"/></div>
+            </FlexItem>
+            <FlexItem :shrink="0" :grow="0">
+                <div :class="$style.count">{{item.count ? `${item.count}项` : '0项'}}</div>
+            </FlexItem>
+        </Flex>
+    </Block>
+</template>
+
+<style module lang="sass">
+@import "../../../styles/base/size"
+
+.item
+    height: 40px
+    padding: 0 $spacing-2
+    margin-bottom: 4px
+
+    > div
+        height: 100%
+
+        > .favorite
+            width: 48px
+            text-align: center
+        > .score
+            width: 40px
+            text-align: right
+        > .count
+            width: 32px
+            text-align: right
+</style>

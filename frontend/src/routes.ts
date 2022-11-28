@@ -27,6 +27,11 @@ export default <RouteRecordRaw[]>[
                 component: () => import("@/views/Main/Home/Home.vue")
             },
             {
+                name: "MainTopic",
+                path: "topic",
+                component: () => import("@/views/Main/Topic/Topic.vue")
+            },
+            {
                 name: "MainTag",
                 path: "tag",
                 component: () => import("@/views/Main/Tag/Tag.vue")

@@ -18,6 +18,6 @@ export default defineComponent({
             }
         })
 
-        return () => props.visible ? slots.default?.(true) : loaded ? slots.default?.(false) : null
+        return () => props.visible ? slots.default?.({ visible: true }) : loaded ? slots.default?.({ visible: false }) : null
     }
 })

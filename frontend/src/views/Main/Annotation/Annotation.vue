@@ -7,7 +7,6 @@ import {
     ANNOTATION_TARGET_TYPE_ICONS, ANNOTATION_TARGET_TYPE_NAMES, ANNOTATION_TARGET_TYPES,
     META_TYPE_ICONS, META_TYPE_NAMES, META_TYPES
 } from "@/constants/entity"
-import { Annotation } from "@/functions/http-client/api/annotations"
 import { installAnnotationContext } from "@/services/main/annotation"
 import AnnotationListItem from "./AnnotationListItem.vue"
 import AnnotationDetailPane from "./AnnotationDetailPane.vue"
@@ -31,23 +30,6 @@ const attachFilterTemplates: AttachTemplate[] = [
             {label: "可导出", value: true, icon: "share-square"},
             {label: "不可导出", value: false, icon: "share-alt-square"}
         ]
-    },
-    {type: "separator"},
-    {
-        type: "search",
-        field: "annotation",
-        label: "选择注解…",
-        multiSelection: false,
-        query: client => (offset, limit, search) => client.annotation.list({type: "TOPIC", offset, limit, query: search}),
-        queryOne: client => id => client.annotation.get(id),
-        mapQuery: (item: Annotation) => ({label: item.name, value: item.id}),
-        mapQueryOne: (item: Annotation) => ({label: item.name, value: item.id}),
-        history: {
-            list: client => client.searchUtil.history.annotations,
-            push: client => item => client.searchUtil.history.push({type: "ANNOTATION", id: item.value as number}),
-            mapList: (item: Annotation) => ({label: item.name, value: item.id})
-        },
-        displayStyle: "annotation"
     },
     {type: "separator"},
     {
