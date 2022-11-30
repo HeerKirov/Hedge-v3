@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import { Block, Icon, Tag } from "@/components/universal"
-import { Flex, FlexItem } from "@/components/layout"
+import { Flex, FlexItem, Group } from "@/components/layout"
 import { AnnotationElement } from "@/components-business/element"
-import { TOPIC_TYPE_ICONS } from "@/constants/entity"
-import { Topic } from "@/functions/http-client/api/topic"
+import { Author } from "@/functions/http-client/api/author"
+import { AUTHOR_TYPE_ICONS } from "@/constants/entity"
 import { useDraggable } from "@/modules/drag"
 import { useMouseHover } from "@/utils/sensors"
 
 const props = defineProps<{
-    item: Topic
+    item: Author
 }>()
 
 const emit = defineEmits<{
@@ -29,7 +29,7 @@ const otherNameText = computed(() => {
 })
 
 const actualKeywordsAndAnnotations = computed(() => {
-    const max = 6
+    const max = 12
     const keywordsSize = props.item.keywords.length, annotationsSize = props.item.annotations.length
     if(keywordsSize + annotationsSize <= max) {
         return {
@@ -52,8 +52,7 @@ const actualKeywordsAndAnnotations = computed(() => {
     }
 })
 
-
-const dragEvents = useDraggable("topic", () => ({
+const dragEvents = useDraggable("author", () => ({
     id: props.item.id,
     name: props.item.name,
     type: props.item.type,
@@ -66,16 +65,16 @@ const { hover, ...hoverEvents } = useMouseHover()
 
 <template>
     <Block :class="$style.item" v-bind="hoverEvents">
-        <Flex horizontal="stretch" align="center">
-            <FlexItem :width="65">
-                <div @click="$emit('click')">
-                    <Icon :class="{[`has-text-${item.color}`]: !!item.color, 'mr-1': true}" :icon="TOPIC_TYPE_ICONS[item.type]"/>
-                    <span :class="{[`has-text-${item.color}`]: !!item.color}" draggable="true" v-bind="dragEvents">{{item.name}}</span>
-                    <span class="secondary-text ml-1">{{otherNameText}}</span>
-                    <div v-if="item.parentRoot !== null" class="float-right is-font-size-small">
-                        <Icon class="mr-1" :icon="TOPIC_TYPE_ICONS[item.parentRoot.type]"/>
-                        <span>{{item.parentRoot.name}}</span>
-                    </div>
+        <Flex horizontal="stretch">
+            <FlexItem :width="60">
+                <div class="pt-1" @click="$emit('click')">
+                    <p :class="{[`has-text-${item.color}`]: !!item.color, 'is-font-size-large': true}">
+                        <Icon class="mr-1" :icon="AUTHOR_TYPE_ICONS[item.type]"/>
+                        <span draggable="true" v-bind="dragEvents">{{item.name}}</span>
+                    </p>
+                    <p class="secondary-text mt-2">
+                        {{otherNameText}}
+                    </p>
                 </div>
             </FlexItem>
             <FlexItem :shrink="0" :grow="0">
@@ -84,23 +83,29 @@ const { hover, ...hoverEvents } = useMouseHover()
                     <Icon v-else-if="hover" class="has-text-secondary" icon="heart" @click="$emit('update:favorite', true)"/>
                 </div>
             </FlexItem>
-            <FlexItem :width="35">
-                <div>
-                    <AnnotationElement v-for="a in actualKeywordsAndAnnotations.annotations" :key="a.id" :value="a" class="mr-1"/>
-                    <Tag v-for="k in actualKeywordsAndAnnotations.keywords" class="mr-1" color="secondary">{{k}}</Tag>
+            <FlexItem :width="40">
+                <Group class="pt-2 is-overflow-y-auto">
+                    <AnnotationElement v-for="a in actualKeywordsAndAnnotations.annotations" :key="a.id" :value="a"/>
+                    <Tag v-for="k in actualKeywordsAndAnnotations.keywords" color="secondary">{{k}}</Tag>
                     <Tag v-if="actualKeywordsAndAnnotations.more" color="secondary">...</Tag>
-                </div>
+                </Group>
             </FlexItem>
             <FlexItem :shrink="0" :grow="0">
-                <div :class="$style.score">
-                    <template v-if="item.score !== null">
+                <div :class="$style['score-and-count']">
+                    <div v-if="item.score !== null">
                         {{item.score ?? 0}}<Icon class="ml-1" icon="star"/>
-                    </template>
+                    </div>
+                    <div v-if="item.count > 0" class="absolute bottom-right pr-1">
+                        {{item.count}}项
+                    </div>
                 </div>
             </FlexItem>
             <FlexItem :shrink="0" :grow="0">
-                <div :class="$style.count">
-                    {{item.count ? `${item.count}项` : ''}}
+                <div :class="$style.examples">
+                    <!-- TODO 完成author列表的examples -->
+                    <div/>
+                    <div/>
+                    <div/>
                 </div>
             </FlexItem>
         </Flex>
@@ -111,9 +116,12 @@ const { hover, ...hoverEvents } = useMouseHover()
 @import "../../../styles/base/size"
 
 .item
-    height: 40px
-    padding: 0 $spacing-2
+    $height: 76px
+    $padding: 8px
+    $content-height: $height - $padding * 2 - 1px * 2
+    height: $height
     margin-bottom: 4px
+    padding: $padding
 
     > div
         height: 100%
@@ -121,10 +129,23 @@ const { hover, ...hoverEvents } = useMouseHover()
         > .favorite
             width: 48px
             text-align: center
-        > .score
+            padding-top: $spacing-2
+
+        > .score-and-count
             width: 40px
+            padding-right: $spacing-1
+            padding-top: $spacing-1
             text-align: right
-        > .count
-            width: 32px
-            text-align: right
+            position: relative
+
+        > .examples
+            display: flex
+            gap: 4px
+            width: #{4px * 2 + $content-height * 3}
+            > div
+                width: $content-height
+                height: $content-height
+                border: dashed 1px darkgrey
+                border-radius: 2px
+                box-sizing: border-box
 </style>
