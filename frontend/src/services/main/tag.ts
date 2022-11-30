@@ -51,26 +51,23 @@ function useTagListView(paneState: DetailViewState<number, TagCreateTemplate>) {
         }
     })
 
-    const tagTreeEvents = {
-        onClick(tag: TagTreeNode, _: number | null, __: number) {
-            paneState.detailView(tag.id)
-        },
-        async onDelete(tag: TagTreeNode, _: number | null, __: number) {
-            if(await helper.deleteData(tag.id)) {
-                if(paneState.isDetailView(tag.id)) {
-                    paneState.closeView()
-                }
+    const createByOrdinal = (parentId: number | null, ordinal: number) => {
+        paneState.createView({parentId, ordinal})
+    }
+
+    const moveItem = async (tagId: number, targetParentId: number | null | undefined, targetOrdinal: number) => {
+        await helper.setData(tagId, {parentId: targetParentId, ordinal: targetOrdinal})
+    }
+
+    const deleteItem = async (tagId: number) => {
+        if(await helper.deleteData(tagId)) {
+            if(paneState.isDetailView(tagId)) {
+                paneState.closeView()
             }
-        },
-        onCreate(parentId: number | null, ordinal: number) {
-            paneState.createView({parentId, ordinal})
-        },
-        async onMove(tag: TagTreeNode, targetParentId: number | null | undefined, targetOrdinal: number) {
-            await helper.setData(tag.id, {parentId: targetParentId, ordinal: targetOrdinal})
         }
     }
 
-    return {loading, data, refresh, tagTreeEvents}
+    return {loading, data, refresh, operators: {createByOrdinal, moveItem, deleteItem}}
 }
 
 function useTagSearch(data: Ref<TagTreeNode[] | undefined>) {
@@ -144,61 +141,12 @@ export function useTagCreatePane() {
     const { paneState } = useTagContext()
     const cacheStorage = useLocalStorage<{cacheAddressType: TagAddressType}>("tag/create-pane", {cacheAddressType: "TAG"})
 
-    interface FormData {
-        parentId: number | null,
-        ordinal: number | null,
-        name: string
-        otherNames: string[],
-        color: string | null,
-        type: TagAddressType
-        group: TagGroupType,
-        description: string,
-        annotations: SimpleAnnotation[],
-        links: TagLink[],
-        mappingSourceTags: MappingSourceTag[],
-        examples: SimpleIllust[]
-    }
-
-    function mapCreateForm(template: TagCreateTemplate | null): FormData {
-        return {
-            name: "",
-            parentId: template?.parentId ?? null,
-            ordinal: template?.ordinal ?? null,
-            type: cacheStorage.value.cacheAddressType,
-            otherNames: [],
-            group: "NO",
-            links: [],
-            annotations: [],
-            description: "",
-            color: null,
-            mappingSourceTags: [],
-            examples: []
-        }
-    }
-
-    function mapFormToHelper(form: FormData): TagCreateForm {
-        return {
-            name: form.name,
-            parentId: form.parentId,
-            ordinal: form.ordinal,
-            type: form.type,
-            otherNames: form.otherNames,
-            group: form.group,
-            links: form.links.map(i => i.id),
-            annotations: form.annotations.map(a => a.id),
-            description: form.description,
-            color: form.color,
-            mappingSourceTags: patchMappingSourceTagForm(form.mappingSourceTags.filter(t => t.site && t.name && t.code), []),
-            examples: form.examples.map(e => e.id)
-        }
-    }
-
-    const form = computedWatchMutable(paneState.createTemplate, () => mapCreateForm(paneState.createTemplate.value))
+    const form = computedWatchMutable(paneState.createTemplate, () => mapTemplateToCreateForm(paneState.createTemplate.value, cacheStorage.value.cacheAddressType))
 
     const { submit } = useCreatingHelper({
         form,
         create: client => client.tag.create,
-        mapForm: mapFormToHelper,
+        mapForm: mapCreateFormToHelper,
         beforeCreate(form): boolean | void {
             if(!checkTagName(form.name)) {
                 message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` \" ' . | 字符。")
@@ -424,4 +372,53 @@ export function useTagDetailPane() {
     }
 
     return {data, addressInfo, isRootNode, setName, setAnnotations, setDescription, setType, setGroup, setLinks, setMappingSourceTags, setExamples}
+}
+
+interface TagCreateFormData {
+    parentId: number | null,
+    ordinal: number | null,
+    name: string
+    otherNames: string[],
+    color: string | null,
+    type: TagAddressType
+    group: TagGroupType,
+    description: string,
+    annotations: SimpleAnnotation[],
+    links: TagLink[],
+    mappingSourceTags: MappingSourceTag[],
+    examples: SimpleIllust[]
+}
+
+function mapTemplateToCreateForm(template: TagCreateTemplate | null, defaultAddressType: TagAddressType): TagCreateFormData {
+    return {
+        name: "",
+        parentId: template?.parentId ?? null,
+        ordinal: template?.ordinal ?? null,
+        type: defaultAddressType,
+        otherNames: [],
+        group: "NO",
+        links: [],
+        annotations: [],
+        description: "",
+        color: null,
+        mappingSourceTags: [],
+        examples: []
+    }
+}
+
+function mapCreateFormToHelper(form: TagCreateFormData): TagCreateForm {
+    return {
+        name: form.name,
+        parentId: form.parentId,
+        ordinal: form.ordinal,
+        type: form.type,
+        otherNames: form.otherNames,
+        group: form.group,
+        links: form.links.map(i => i.id),
+        annotations: form.annotations.map(a => a.id),
+        description: form.description,
+        color: form.color,
+        mappingSourceTags: patchMappingSourceTagForm(form.mappingSourceTags.filter(t => t.site && t.name && t.code), []),
+        examples: form.examples.map(e => e.id)
+    }
 }

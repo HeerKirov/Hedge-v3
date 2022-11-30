@@ -3,6 +3,7 @@ import { Button, Block } from "@/components/universal"
 import { TopBarLayout, PaneLayout, BasePane, MiddleLayout, Group } from "@/components/layout"
 import { SearchInput, SearchResultInfo } from "@/components-business/top-bar"
 import { TagTree } from "@/components-module/data"
+import { TagTreeNode } from "@/functions/http-client/api/tag"
 import { installTagContext } from "@/services/main/tag"
 import TagCreatePane from "./TagCreatePane.vue"
 import TagDetailPane from "./TagDetailPane.vue"
@@ -10,9 +11,17 @@ import TagDetailPane from "./TagDetailPane.vue"
 const {
     paneState,
     editableLockOn,
-    listview: { loading, data, tagTreeEvents },
+    listview: { loading, data, operators },
     search: { searchText, searchInfo, tagTreeRef, next, prev }
 } = installTagContext()
+
+const onClick = (tag: TagTreeNode) => paneState.detailView(tag.id)
+
+const onMove = (tag: TagTreeNode, parent: number | null | undefined, ordinal: number) => operators.moveItem(tag.id, parent, ordinal)
+
+const onCreate = (parent: number | null, ordinal: number) => operators.createByOrdinal(parent, ordinal)
+
+const onDelete = (tag: TagTreeNode) => operators.deleteItem(tag.id)
 
 </script>
 
@@ -42,7 +51,7 @@ const {
          </template>
 
          <div :class="$style.content">
-             <TagTree v-if="data?.length || loading" ref="tagTreeRef" :tags="data" editable draggable :droppable="editableLockOn" v-bind="tagTreeEvents"/>
+             <TagTree v-if="data?.length || loading" ref="tagTreeRef" :tags="data" editable draggable :droppable="editableLockOn" @click="onClick" @move="onMove" @create="onCreate" @delete="onDelete"/>
              <Block v-else class="mt-2 p-2 has-text-centered">
                  <Button type="success" size="small" icon="plus" @click="paneState.createView()">创建第一个标签</Button>
              </Block>

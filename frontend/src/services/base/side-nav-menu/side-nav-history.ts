@@ -1,4 +1,4 @@
-import { reactive, toRaw } from "vue"
+import { reactive, Ref, toRaw, watch } from "vue"
 import { useRoute } from "vue-router"
 import { installation } from "@/utils/reactivity"
 
@@ -54,3 +54,26 @@ export const [installNavHistory, useNavHistory] = installation(function (maxHist
 
     return {histories, pushHistory, clearHistory}
 })
+
+export function useNavHistoryPush<T extends {id: number, name: string}>(watcher: Ref<T | null>): void
+export function useNavHistoryPush<T extends object>(watcher: Ref<T | null>, generator: (d: T) => {id: number | string, name: string}): void
+export function useNavHistoryPush<T extends object>(watcher: Ref<T | null>, generator?: (d: T) => {id: number | string, name: string}) {
+    const { pushHistory } = useNavHistory()
+
+    if(generator !== undefined) {
+        watch(watcher, d => {
+            if(d !== null) {
+                const { id, name } = generator(d)
+                const finalId = typeof id === "number" ? id.toString() : id
+                pushHistory(finalId, name)
+            }
+        })
+    }else{
+        watch(watcher, d => {
+            if(d !== null) {
+                const { id, name } = d as {id: number, name: string}
+                pushHistory(id.toString(), name)
+            }
+        })
+    }
+}

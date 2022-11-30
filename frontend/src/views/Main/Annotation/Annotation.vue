@@ -11,8 +11,9 @@ import { installAnnotationContext } from "@/services/main/annotation"
 import AnnotationListItem from "./AnnotationListItem.vue"
 import AnnotationDetailPane from "./AnnotationDetailPane.vue"
 import AnnotationCreatePane from "./AnnotationCreatePane.vue"
+import { usePopupMenu } from "@/modules/popup-menu";
 
-const { paneState, listview: { queryFilter, paginationData, popupMenu } } = installAnnotationContext()
+const { paneState, listview: { queryFilter, paginationData, operators } } = installAnnotationContext()
 
 const filterMetaTypeOptions = META_TYPES.map(type => ({value: type, label: META_TYPE_NAMES[type], icon: META_TYPE_ICONS[type]}))
 
@@ -42,6 +43,14 @@ const attachFilterTemplates: AttachTemplate[] = [
         defaultDirection: "descending"
     }
 ]
+
+const popupMenu = usePopupMenu([
+    {type: "normal", label: "查看详情", click: paneState.detailView},
+    {type: "separator"},
+    {type: "normal", label: "以此为模板新建", click: operators.createByTemplate},
+    {type: "separator"},
+    {type: "normal", label: "删除此注解", click: operators.deleteItem},
+])
 
 </script>
 

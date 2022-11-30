@@ -29,7 +29,7 @@ export const arrays = {
 
         return result
     },
-    filterInfo<T>(arr: T[], condition: (value: T) => boolean): [T[], T[]] {
+    filterInto<T>(arr: T[], condition: (value: T) => boolean): [T[], T[]] {
         const r1: T[] = []
         const r2: T[] = []
         for (const item of arr) {

@@ -2,7 +2,7 @@
 import { Button, Separator } from "@/components/universal"
 import { TopBarLayout, MiddleLayout, Container } from "@/components/layout"
 import { useTopicContext, useTopicCreatePanel } from "@/services/main/topic"
-import TopicDetailPanelForm from "./TopicDetailPanelForm.vue"
+import TopicDetailPanelForm from "./TopicDetailPanel/TopicDetailPanelForm.vue"
 
 const { paneState } = useTopicContext()
 const { form, setProperty, submit } = useTopicCreatePanel()
@@ -25,7 +25,12 @@ const { form, setProperty, submit } = useTopicCreatePanel()
         </template>
 
         <Container class="py-2">
-            <TopicDetailPanelForm :data="form" @set-property="setProperty"/>
+            <TopicDetailPanelForm :name="form.name" :other-names="form.otherNames"
+                                  :type="form.type" :parent="form.parent"
+                                  :annotations="form.annotations" :keywords="form.keywords"
+                                  :description="form.description" :score="form.score"
+                                  :mapping-source-tags="form.mappingSourceTags"
+                                  @set-property="setProperty"/>
         </Container>
     </TopBarLayout>
 </template>

@@ -16,6 +16,8 @@
 @each $name, $size in $element-height-map
   .is-line-height-#{$name}
     line-height: $size
+    > *
+      line-height: normal
   .is-line-height-default
     line-height: normal
 

@@ -1,9 +1,8 @@
-import { computedMutable, computedWatchMutable, installation } from "@/utils/reactivity"
+import { computedWatchMutable, installation } from "@/utils/reactivity"
 import { installVirtualViewNavigation } from "@/components/data"
 import { flatResponse } from "@/functions/http-client"
 import { Annotation, AnnotationCreateForm, AnnotationQueryFilter, AnnotationTarget } from "@/functions/http-client/api/annotations"
 import { useCreatingHelper, useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
-import { usePopupMenu } from "@/modules/popup-menu"
 import { useMessageBox } from "@/modules/message-box"
 import { useListViewContext } from "@/services/base/list-context"
 import { DetailViewState, useDetailViewState } from "@/services/base/navigation"
@@ -61,31 +60,14 @@ function useListView(paneState: DetailViewState<number, Partial<Annotation>>) {
         }
     }
 
-    const popupMenu = usePopupMenu<number>([
-        {type: "normal", label: "查看详情", click: paneState.detailView},
-        {type: "separator"},
-        {type: "normal", label: "以此为模板新建", click: createByTemplate},
-        {type: "separator"},
-        {type: "normal", label: "删除此注解", click: deleteItem},
-    ])
-
-    return {...list, popupMenu}
+    return {...list, operators: {createByTemplate, deleteItem}}
 }
 
 export function useAnnotationCreatePane() {
     const message = useMessageBox()
     const { paneState } = useAnnotationContext()
 
-    function mapTemplateToForm(template: Partial<Annotation> | null): AnnotationCreateForm {
-        return {
-            name: template?.name ?? "",
-            type: template?.type ?? "TOPIC",
-            canBeExported: template?.canBeExported ?? false,
-            target: template?.target ?? []
-        }
-    }
-
-    const form = computedWatchMutable(paneState.createTemplate, () => mapTemplateToForm(paneState.createTemplate.value))
+    const form = computedWatchMutable(paneState.createTemplate, () => mapTemplateToCreateForm(paneState.createTemplate.value))
 
     const { submit } = useCreatingHelper({
         form,
@@ -152,4 +134,13 @@ export function useAnnotationDetailPane() {
     }
 
     return {data, setName, setCanBeExported, setAnnotationTarget}
+}
+
+function mapTemplateToCreateForm(template: Partial<Annotation> | null): AnnotationCreateForm {
+    return {
+        name: template?.name ?? "",
+        type: template?.type ?? "TOPIC",
+        canBeExported: template?.canBeExported ?? false,
+        target: template?.target ?? []
+    }
 }

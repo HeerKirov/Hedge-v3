@@ -1,4 +1,4 @@
-import { installFetchManager } from "./install"
+import { installFetchManager, ErrorHandler } from "./install"
 import { useFetchEndpoint, FetchEndpointOptions, FetchEndpoint } from "./fetch-endpoint"
 import { createLazyFetchEndpoint } from "./fetch-lazy-endpoint"
 import { useFetchReactive } from "./fetch-reactive"
@@ -17,6 +17,6 @@ export { useRetrieveHelper, useCreatingHelper, useFetchHelper, usePostFetchHelpe
 export { useQueryContinuousListView }
 export { useQueryListview, usePaginationDataView }
 export { useSliceDataView, useSingletonDataView, createMappedQueryInstance }
-export type { FetchEndpointOptions, FetchEndpoint }
+export type { FetchEndpointOptions, FetchEndpoint, ErrorHandler }
 export type { QueryInstance, QueryListview, PaginationDataView, PaginationData }
 export type { Slice, AllSlice, ListIndexSlice, SingletonSlice, SingletonDataView, SliceDataView }

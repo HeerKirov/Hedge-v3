@@ -10,10 +10,10 @@ import { useMouseHover } from "@/utils/sensors"
 
 const props = defineProps<{
     item: Topic
-    selected?: boolean
 }>()
 
 const emit = defineEmits<{
+    (e: "click"): void
     (e: "update:favorite", favorite: boolean): void
 }>()
 
@@ -67,7 +67,7 @@ const { hover, ...hoverEvents } = useMouseHover()
     <Block :class="$style.item" v-bind="hoverEvents">
         <Flex horizontal="stretch" align="center">
             <FlexItem :width="65">
-                <div>
+                <div @click="$emit('click')">
                     <Icon :class="{[`has-text-${item.color}`]: !!item.color, 'mr-1': true}" :icon="TOPIC_TYPE_ICONS[item.type]"/>
                     <span :class="{[`has-text-${item.color}`]: !!item.color}" draggable="true" v-bind="dragEvents">{{item.name}}</span>
                     <span class="secondary-text ml-1">{{otherNameText}}</span>
@@ -91,10 +91,16 @@ const { hover, ...hoverEvents } = useMouseHover()
                 </div>
             </FlexItem>
             <FlexItem :shrink="0" :grow="0">
-                <div :class="$style.score">{{item.score ?? 0}}<Icon class="ml-1" icon="star"/></div>
+                <div :class="$style.score">
+                    <template v-if="item.score !== null">
+                        {{item.score ?? 0}}<Icon class="ml-1" icon="star"/>
+                    </template>
+                </div>
             </FlexItem>
             <FlexItem :shrink="0" :grow="0">
-                <div :class="$style.count">{{item.count ? `${item.count}项` : '0项'}}</div>
+                <div :class="$style.count">
+                    {{item.count ? `${item.count}项` : ''}}
+                </div>
             </FlexItem>
         </Flex>
     </Block>
