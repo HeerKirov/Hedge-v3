@@ -57,6 +57,7 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, op
             minHeight: 480,
             minWidth: 640,
             webPreferences: {
+                sandbox: false,
                 devTools: true,
                 preload: path.join(__dirname, 'ipc/preload.js'),
             },

@@ -13,15 +13,15 @@
   },
   "dependencies": {
     "axios": "^0.27.2",
-    "ws": "^8.8.1",
+    "tslib": "^2.4.1",
     "unzipper": "^0.10.11",
-    "tslib": "^2.4.0"
+    "ws": "^8.11.0"
   },
   "devDependencies": {
-    "electron": "19.0.10",
-    "@types/node": "^16.11.7",
+    "@types/node": "^18.11.10",
     "@types/unzipper": "^0.10.5",
     "@types/ws": "^8.5.3",
-    "typescript": "^4.7.4"
+    "electron": "22.0.0",
+    "typescript": "^4.9.3"
   }
 }

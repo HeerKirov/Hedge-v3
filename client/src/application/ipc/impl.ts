@@ -13,7 +13,6 @@ export interface IpcRemoteOptions {
     platform: Platform
     userDataPath: string
     debugMode: boolean
-    channel: string
 }
 
 type IpcClientWithoutRemote = Exclude<IpcClient, "remote">
@@ -26,7 +25,7 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
                     platform: options.platform,
                     debugMode: options.debugMode,
                     userDataPath: options.userDataPath,
-                    channel: options.channel,
+                    channel: channel.currentChannel(),
                     canPromptTouchID: appdata.status() === "LOADED" && appdata.getAppData().loginOption.touchID && systemPreferences.canPromptTouchID(),
                     app: {
                         state: state.state()

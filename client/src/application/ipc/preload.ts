@@ -106,7 +106,7 @@ function createRemoteIpcClient(): IpcClient {
                     const requestId = ++popupRequestId
                     ipcRenderer.send("/remote/menu/popup", {requestId, items: refItems, options: refOptions})
                     ipcRenderer.once(`/remote/menu/popup/response/${requestId}`, (_, eventId: number | undefined) => {
-                        if(eventId != undefined) {
+                        if(eventId !== undefined) {
                             callbacks[eventId]?.()
                         }
                     })

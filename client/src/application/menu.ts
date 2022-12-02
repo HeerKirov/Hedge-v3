@@ -61,7 +61,7 @@ export function registerAppMenu(windowManager: WindowManager, platform: Platform
                 label: '帮助',
                 role: "help",
                 submenu: [
-                    {label: '帮助向导', click() { windowManager.openGuideWindow() }},
+                    {label: '帮助向导', accelerator: 'Command+?', click() { windowManager.openGuideWindow() }},
                     {type: 'separator'},
                     {label: 'Github', async click() { await shell.openExternal('https://github.com/HeerKirov/Hedge-v3') }}
                 ]
@@ -119,7 +119,7 @@ export function registerAppMenu(windowManager: WindowManager, platform: Platform
                 label: '帮助',
                 role: "help",
                 submenu: [
-                    {label: '帮助向导', click() { windowManager.openGuideWindow() }},
+                    {label: '帮助向导', accelerator: 'Ctrl+?', click() { windowManager.openGuideWindow() }},
                     {type: 'separator'},
                     {label: 'Github', async click() { await shell.openExternal('https://github.com/HeerKirov/Hedge-v3') }}
                 ]

@@ -83,7 +83,7 @@ export async function createApplication(options?: AppOptions) {
         const windowManager = createWindowManager(stateManager, themeManager, {platform, debug: options?.debug && {frontendFromFolder: options.debug.frontendFromFolder, frontendFromURL: options.debug.frontendFromURL}})
 
         registerAppEvents(windowManager, serverManager, platform)
-        registerGlobalIpcRemoteEvents(appDataDriver, channelManager, serverManager, stateManager, themeManager, windowManager, {debugMode, userDataPath, platform, channel: channelManager.currentChannel()})
+        registerGlobalIpcRemoteEvents(appDataDriver, channelManager, serverManager, stateManager, themeManager, windowManager, {debugMode, userDataPath, platform})
 
         await promiseAll(appDataDriver.load(), resourceManager.load(), app.whenReady())
 
