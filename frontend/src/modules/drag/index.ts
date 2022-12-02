@@ -1,6 +1,8 @@
 import { readonly, ref, Ref, unref } from "vue"
 import { TypeDefinition } from "./definition"
 
+export type { TypeDefinition }
+
 /*
  * == 拖放模块 ==
  * 此模块做了以下工作：

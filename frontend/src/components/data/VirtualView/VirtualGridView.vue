@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue"
-import { Padding, ProposeData, useVirtualViewContext } from "./context"
+import { ProposeData, useVirtualViewContext } from "./context"
 import { numbers } from "@/utils/primitives"
 
 // == Virtual Grid View 虚拟滚动网格组件 ==
@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<{
     /**
      * 位于滚动区域和内容中夹着的padding。这部分padding会被自动算入容器高度。
      */
-    padding?: Padding | number
+    padding?: {top?: number, bottom?: number, left?: number, right?: number} | number
     /**
      * 位于可视范围外的缓冲区行数。
      */

@@ -22,6 +22,7 @@ import { createUtilIllustEndpoint, UtilIllustEndpoint } from "./api/util-illust"
 import { createUtilQueryEndpoint, UtilQueryEndpoint } from "./api/util-query"
 import { createUtilSearchEndpoint, UtilSearchEndpoint } from "./api/util-picker"
 import { createSettingFindSimilarEndpoint, SettingFindSimilarEndpoint } from "./api/setting-find-similar"
+import { createAssets, Assets } from "./api/assets"
 import { mapListResult, ListResult } from "./api/all"
 
 export { mapListResult, mapResponse, flatResponse }
@@ -51,6 +52,7 @@ export interface HttpClient {
     illustUtil: UtilIllustEndpoint
     queryUtil: UtilQueryEndpoint
     searchUtil: UtilSearchEndpoint
+    assets: Assets
 }
 
 export function createHttpClient(config: HttpInstanceConfig): HttpClient {
@@ -79,6 +81,7 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
         metaUtil: createUtilMetaEndpoint(http),
         illustUtil: createUtilIllustEndpoint(http),
         queryUtil: createUtilQueryEndpoint(http),
-        searchUtil: createUtilSearchEndpoint(http)
+        searchUtil: createUtilSearchEndpoint(http),
+        assets: createAssets(http)
     }
 }

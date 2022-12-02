@@ -1,7 +1,7 @@
 import { computed, Ref, ref, shallowRef, watch } from "vue"
 import { TagTree } from "@/components-module/data"
 import { useCreatingHelper, useFetchEndpoint, useFetchHelper, useFetchReactive, useRetrieveHelper } from "@/functions/fetch"
-import { DetailViewState, useDetailViewState } from "@/services/base/navigation"
+import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
 import { TagAddressType, TagCreateForm, TagGroupType, TagLink, TagTreeNode } from "@/functions/http-client/api/tag"
 import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"

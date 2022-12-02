@@ -1,4 +1,4 @@
-import { createHttpClientConfig, installHttpClient, useHttpClient } from "./http-client"
+import { createHttpClientConfig, installHttpClient, useHttpClient, useAssets } from "./http-client"
 import { installWsClient, useWsClient, useWsListeningEvent } from "./ws-client"
 import { installFullscreen, useFullscreen, useAppearance } from "./app-runtime"
 import { installAppBase, useAppState, useAppEnv, useServerStatus } from "./app-base"
@@ -36,5 +36,6 @@ export {
     useAppInitializer,
     useAppState,
     useAppEnv,
-    useServerStatus
+    useServerStatus,
+    useAssets
 }

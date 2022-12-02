@@ -30,6 +30,10 @@ export interface HttpInstance {
      * 创建不带任何参数的柯里化请求。
      */
     createRequest<R, E extends BasicException>(url: string, method?: Method, parser?: ResponseParser<R>): () => Promise<Response<R, E>>
+    /**
+     * 取得baseUrl。
+     */
+    baseUrl(): string | undefined
 }
 
 interface RequestConfig<R> {
@@ -158,7 +162,8 @@ export function createHttpInstance(config: Readonly<HttpInstanceConfig>): HttpIn
         createDataRequest: <T, R, E extends BasicException>(url: string, method?: Method, parser?: DataParser<T> & ResponseParser<R>) => (data: T) =>
             request<R, E>({url, method, data: parser?.parseData ? parser.parseData(data) : data, parseResponse: parser?.parseResponse}),
         createRequest: <R, E extends BasicException>(url: string, method?: Method, parser?: ResponseParser<R>) => () =>
-            request<R, E>({url, method, parseResponse: parser?.parseResponse})
+            request<R, E>({url, method, parseResponse: parser?.parseResponse}),
+        baseUrl: getBaseUrl
     }
 }
 

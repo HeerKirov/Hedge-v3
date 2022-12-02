@@ -44,3 +44,9 @@ function useErrorHandler(throwError: (title: string, message: string) => void) {
 
     return processHttpClientError
 }
+
+export function useAssets() {
+    const httpClient = useHttpClient()
+
+    return {assetsUrl: httpClient.assets.assetsUrl}
+}

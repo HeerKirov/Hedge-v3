@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import MainRootView from "./MainRootView.vue"
 import { installSideLayoutState } from "@/components/layout"
+import MainRootView from "./MainRootView.vue"
 
 installSideLayoutState()
 
@@ -10,6 +10,5 @@ installSideLayoutState()
     <MainRootView/>
     <!-- ViewStack -->
     <!-- GlobalDialog -->
-    <!-- ImportDialog -->
     <!-- GlobalCallout -->
 </template>

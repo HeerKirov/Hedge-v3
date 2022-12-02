@@ -41,7 +41,7 @@ const close = () => {
 @import "../../styles/base/size"
 
 .root
-    margin: 0 $spacing-2
+    margin: 0 $spacing-3
     display: flex
     align-items: center
 </style>
