@@ -13,7 +13,6 @@ import io.javalin.websocket.WsConfig
  * 使用before handler拦截所有需要认证的API，验证其token，检验token是否能访问目标API，然后放通。
  */
 class Authentication(private val baseToken: String) : Routes {
-    private val localhost = setOf("localhost", "127.0.0.1", "::1", "0:0:0:0:0:0:0:1", "[::1]", "[0:0:0:0:0:0:0:1]")
     private val prefixBearer = "bearer "
 
     override fun handle(javalin: Javalin) {
@@ -30,9 +29,6 @@ class Authentication(private val baseToken: String) : Routes {
 
         if(baseToken == userToken) {
             //通过baseToken的验证
-            if(ctx.req.remoteHost !in localhost) {
-                throw be(RemoteDisabled())
-            }
             return
         }else{
             throw be(TokenWrong())

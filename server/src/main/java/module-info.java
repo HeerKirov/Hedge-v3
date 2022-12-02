@@ -14,6 +14,8 @@ module com.heerkirov.hedge.server {
     requires jackson.module.kotlin;
     requires jave.core;
     requires org.slf4j;
+    requires org.eclipse.jetty.server;
+    requires org.eclipse.jetty.util;
 
     opens com.heerkirov.hedge.server.components.health;
     opens com.heerkirov.hedge.server.components.appdata;

@@ -54,6 +54,7 @@ class HttpServerImpl(private val health: Health,
     override fun load() {
         val aspect = Aspect(appStatus)
         val authentication = Authentication(token)
+        val staticFileHandler = StaticFileHandler(appdata)
         val errorHandler = ErrorHandler()
 
         server = Javalin
@@ -63,7 +64,7 @@ class HttpServerImpl(private val health: Health,
                 it.enableCorsForAllOrigins()
                 it.jsonMapper(JavalinJackson(Json.objectMapper()))
             }
-            .handle(aspect, authentication, errorHandler)
+            .handle(aspect, authentication, staticFileHandler, errorHandler)
             .handle(WsRoutes(lifetime, eventBus))
             .handle(AppRoutes(lifetime, appStatus, appdata))
             .handle(AppServiceRoutes(appdata))

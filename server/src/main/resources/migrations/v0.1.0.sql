@@ -289,7 +289,7 @@ CREATE UNIQUE INDEX source_db.source_book__index ON source_book_relation(source_
 
 -- 来源信息中的标签
 CREATE TABLE source_db.source_tag(
-    id              PRIMARY KEY,
+    id              INTEGER PRIMARY KEY,
     site            VARCHAR(16) NOT NULL,           -- 来源网站的代号
     code            TEXT COLLATE NOCASE NOT NULL,   -- 标签编码
     name            TEXT COLLATE NOCASE NOT NULL,   -- 标签名称

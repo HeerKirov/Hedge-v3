@@ -112,6 +112,8 @@ class TagService(private val data: DataRepository,
             //存在example时，检查example的目标是否存在，以及限制illust不能是collection
             val examples = kit.validateExamples(form.examples)
 
+            val tagCountInGlobal = data.db.sequenceOf(Tags).count()
+
             val tagCountInParent by lazy {
                 data.db.sequenceOf(Tags)
                     .filter { if(form.parentId != null) { Tags.parentId eq form.parentId }else{ Tags.parentId.isNull() } }
@@ -139,6 +141,7 @@ class TagService(private val data: DataRepository,
             val id = data.db.insertAndGenerateKey(Tags) {
                 set(it.name, name)
                 set(it.otherNames, otherNames)
+                set(it.globalOrdinal, tagCountInGlobal)
                 set(it.ordinal, ordinal)
                 set(it.parentId, form.parentId)
                 set(it.type, form.type)
@@ -378,7 +381,7 @@ class TagService(private val data: DataRepository,
                 backendExporter.add(TagGlobalSortExporterTask)
             }
 
-            val generalUpdated = anyOpt(newName, newOtherNames, form.type, form.description, form.group, newLinks, newExamples)
+            val generalUpdated = anyOpt(newName, newOtherNames, newColor, form.type, form.description, form.group, newLinks, newExamples)
             val ordinalUpdated = anyOpt(newParentId, newOrdinal)
             val annotationUpdated = form.annotations.isPresent
             val sourceTagMappingUpdated = form.mappingSourceTags.isPresent
