@@ -146,6 +146,14 @@ export const strings = {
             s += char
         }
         return s
+    },
+    lastPathOf(path: string): string {
+        const idx = path.lastIndexOf("/")
+        if(idx >= 0) {
+            return path.substring(idx + 1)
+        }else{
+            return path
+        }
     }
 }
 

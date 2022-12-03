@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { computed } from "vue"
+import { Flex, FlexItem } from "@/components/layout"
+import { SourceInfo } from "@/components-business/form-display"
 import { useAssets } from "@/functions/app"
 import { PaginationData, QueryInstance } from "@/functions/fetch"
 import { ImportImage } from "@/functions/http-client/api/import"
 import { TypeDefinition } from "@/modules/drag"
+import { date, datetime } from "@/utils/datetime"
 import { toRef } from "@/utils/reactivity"
 import { installDatasetContext } from "./context"
 import SelectedCountBadge from "./SelectedCountBadge.vue"
 import DatasetGridFramework from "./DatasetGridFramework.vue"
+import DatasetRowFramework from "./DatasetRowFramework.vue"
 
 const props = defineProps<{
     /**
@@ -111,16 +115,43 @@ installDatasetContext({
 <template>
     <div class="w-100 h-100 relative" :style="style">
         <DatasetGridFramework v-if="viewMode === 'grid'" :column-num="columnNum" v-slot="{ item, index }">
-            <img :class="$style.img" :src="assetsUrl(item.thumbnailFile)" :alt="`import-image-${item.id}`"/>
+            <img :class="$style['grid-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`import-image-${item.id}`"/>
         </DatasetGridFramework>
+        <DatasetRowFramework v-else :row-height="32" v-slot="{ item, index }">
+            <Flex horizontal="stretch" align="center">
+                <FlexItem :shrink="0" :grow="0">
+                    <img :class="$style['row-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`import-image-${item.id}`"/>
+                </FlexItem>
+                <FlexItem :width="40">
+                    <div class="ml-1">{{item.fileName}}</div>
+                </FlexItem>
+                <FlexItem :width="30" :shrink="0">
+                    <SourceInfo :site="item.sourceSite" :source-id="item.sourceId" :source-part="item.sourcePart"/>
+                </FlexItem>
+                <FlexItem :width="30" :shrink="0">
+                    <div class="mr-1 has-text-right">
+                        <span class="secondary-text">({{date.toISOString(item.partitionTime)}})</span>
+                        {{datetime.toSimpleFormat(item.orderTime)}}
+                    </div>
+                </FlexItem>
+            </Flex>
+        </DatasetRowFramework>
         <SelectedCountBadge v-if="selectedCountBadge" :count="selected?.length"/>
     </div>
 </template>
 
 <style module lang="sass">
-.img
+.grid-img
     height: 100%
     width: 100%
     object-position: center
     object-fit: var(--var-fit-type, cover)
+
+.row-img
+    margin-top: 1px
+    margin-left: 4px
+    height: 30px
+    width: 30px
+    object-position: center
+    object-fit: cover
 </style>

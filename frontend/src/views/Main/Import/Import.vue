@@ -2,9 +2,9 @@
 import { computed } from "vue"
 import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
-import { TopBarLayout, MiddleLayout, PaneLayout, BasePane } from "@/components/layout"
+import { TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
-import { ImportImageDataset } from "@/components-module/data"
+import { ImportImageDataset, ImportDetailPane } from "@/components-module/data"
 import { ImportImage } from "@/functions/http-client/api/import"
 import { MenuItem, usePopupMenu } from "@/modules/popup-menu"
 import { installImportContext } from "@/services/main/import"
@@ -57,17 +57,23 @@ const menu = usePopupMenu<ImportImage>(() => [
             </MiddleLayout>
         </template>
 
-        <div v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" class="h-100 has-text-centered relative">
-            <p class="secondary-text"><i>没有任何暂存的导入项目</i></p>
-            <div class="absolute center">
-                <Button mode="light" type="success" icon="file" @click="openDialog">添加文件</Button>
-                <p class="mt-2 has-text-secondary">或拖曳文件到此处</p>
+        <PaneLayout :show-pane="paneState.visible.value">
+            <div v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" class="h-100 has-text-centered relative">
+                <p class="secondary-text"><i>没有任何暂存的导入项目</i></p>
+                <div class="absolute center">
+                    <Button mode="light" type="success" icon="file" @click="openDialog">添加文件</Button>
+                    <p class="mt-2 has-text-secondary">或拖曳文件到此处</p>
+                </div>
             </div>
-        </div>
-        <ImportImageDataset v-else :data="paginationData.data" :query-instance="paginationData.proxy"
-                            :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
-                            :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                            @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"/>
+            <ImportImageDataset v-else :data="paginationData.data" :query-instance="paginationData.proxy"
+                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
+                                :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
+                                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"/>
+
+            <template #pane>
+                <ImportDetailPane :state="paneState.state" @close="paneState.visible.value = false"/>
+            </template>
+        </PaneLayout>
     </TopBarLayout>
     <ImportDialog :progress="progress" :progressing="progressing"/>
 </template>

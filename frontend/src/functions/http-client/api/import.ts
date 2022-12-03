@@ -133,7 +133,7 @@ export interface ImportImage {
     file: string
     thumbnailFile: string | null
     fileName: string | null
-    source: string | null
+    sourceSite: string | null
     sourceId: number | null
     sourcePart: number | null
     tagme: Tagme[]

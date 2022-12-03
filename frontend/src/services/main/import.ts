@@ -11,6 +11,7 @@ import { useMessageBox } from "@/modules/message-box"
 import { dialogManager } from "@/modules/dialog"
 import { installVirtualViewNavigation } from "@/components/data"
 import { installation, toRef } from "@/utils/reactivity"
+import { strings } from "@/utils/primitives"
 
 export const [installImportContext, useImportContext] = installation(function () {
     const importService = useImportService()
@@ -31,7 +32,7 @@ function useImportService() {
 
     const progress = ref({value: 0, max: 0})
     const progressing = computed(() => progress.value.max > 0)
-    const warningList: {id: number, filepath: string}[] = []
+    const warningList: {id: number, filepath: string, warningMessage: string[]}[] = []
 
     const addFiles = async (files: string[]) => {
         progress.value.max += files.length
@@ -49,7 +50,7 @@ function useImportService() {
             if(res !== undefined) {
                 const { id, warnings } = res
                 if(warnings.length) {
-                    warningList.push({id, filepath})
+                    warningList.push({id, filepath, warningMessage: warnings.flatMap(i => i.message ? [i.message] : [])})
                 }
             }
             progress.value.value += 1
@@ -60,11 +61,10 @@ function useImportService() {
             progress.value.value = 0
 
             if(warningList.length) {
-                if(warningList.length > 1) {
-                    toast.toast("来源信息分析失败", "warning", `${warningList.length}个文件的来源信息分析失败，可能是因为正则表达式内容错误。`)
-                }else{
-                    toast.toast("来源信息分析失败", "warning", "存在文件的来源信息分析失败，可能是因为正则表达式内容错误。")
-                }
+                const message = warningList.length > 3
+                    ? `超过${warningList.length}个文件来源信息分析失败。可能是因为正则表达式内容错误。`
+                    : `文件${warningList.map(({ filepath }) => strings.lastPathOf(filepath)).join(", ")}的来源信息分析失败：\n${warningList.flatMap(({ warningMessage }) => warningMessage).join("\n")}`
+                toast.toast("来源信息分析失败", "warning", message)
                 warningList.splice(0, warningList.length)
             }
         }
@@ -120,6 +120,7 @@ function useOperators(anyData: Ref<boolean>, addFiles: (f: string[]) => void) {
     })
 
     const deleteItem = async (id: number) => {
+        //TODO import列表的删除只针对了选中项。需要像illust列表那样扩展至所有选择项。
         if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
             await retrieveHelper.deleteData(id)
         }

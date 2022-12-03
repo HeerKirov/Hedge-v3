@@ -54,7 +54,7 @@ watch(hover, async hover => {
 </script>
 
 <template>
-    <Block :class="{[$style['item']]: true, [$style[`is-color-${type}`]]: type && type !== 'plain'}" mode="shadow" v-bind="hoverEvents">
+    <Block :class="{[$style['item']]: true, [$style[`is-color-${type}`]]: type && type !== 'plain'}" v-bind="hoverEvents">
         <div :class="$style['title-div']">
             <b :class="$style['title']">{{title}}</b>
             <a :class="{[$style['close-button']]: true, [$style['show']]: hover}" @click="$emit('close')">
