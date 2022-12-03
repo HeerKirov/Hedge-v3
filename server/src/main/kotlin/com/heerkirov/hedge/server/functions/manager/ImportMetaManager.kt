@@ -6,6 +6,7 @@ import com.heerkirov.hedge.server.exceptions.InvalidRegexError
 import com.heerkirov.hedge.server.exceptions.be
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
+import java.util.regex.PatternSyntaxException
 
 class ImportMetaManager(private val data: DataRepository) {
     /**
@@ -27,12 +28,13 @@ class ImportMetaManager(private val data: DataRepository) {
      */
     private fun analyseOneRule(rule: ImportOption.SourceAnalyseRule, filename: String?): Pair<Long, Int?>? {
         if(filename == null) return null
-        val text = getFilenameWithoutExtension(filename)
-        val pattern = patterns.computeIfAbsent(rule.regex) { Pattern.compile(it) }
-
-        val matcher = pattern.matcher(text)
-        if(!matcher.find()) return null
         try {
+            val text = getFilenameWithoutExtension(filename)
+            val pattern = patterns.computeIfAbsent(rule.regex) { Pattern.compile(it) }
+
+            val matcher = pattern.matcher(text)
+            if(!matcher.find()) return null
+
             val id = rule.idIndex.let { matcher.group(it) }.toLong()
             val secondaryId = rule.secondaryIdIndex?.let { matcher.group(it) }?.toInt()
             return Pair(id, secondaryId)
@@ -40,6 +42,8 @@ class ImportMetaManager(private val data: DataRepository) {
             throw be(InvalidRegexError(rule.regex, "Specified index of id/secondaryId is out of bounds of matches."))
         }catch(e: NumberFormatException) {
             throw be(InvalidRegexError(rule.regex, "Value of id/secondaryId cannot be convert to number."))
+        }catch(e: PatternSyntaxException) {
+            throw be(InvalidRegexError(rule.regex, "Pattern syntax error: ${e.message}"))
         }catch(e: Exception) {
             throw be(InvalidRegexError(rule.regex, e.message ?: e::class.simpleName ?: "Unnamed exception."))
         }
