@@ -123,14 +123,14 @@ class ImportService(private val data: DataRepository,
             val record = data.db.sequenceOf(ImportImages).firstOrNull { it.id eq id } ?: throw be(NotFound())
 
             //source更新检查
-            val (newSource, newSourceId, newSourcePart) = if(form.source.isPresent) {
-                val source = form.source.value
+            val (newSource, newSourceId, newSourcePart) = if(form.sourceSite.isPresent) {
+                val source = form.sourceSite.value
                 if(source == null) {
                     if(form.sourceId.unwrapOr { null } != null || form.sourcePart.unwrapOr { null } != null) throw be(ParamNotRequired("sourceId/sourcePart"))
                     else Triple(Opt(null), Opt(null), Opt(null))
                 }else{
                     sourceManager.checkSourceSite(source, form.sourceId.unwrapOr { record.sourceId }, form.sourcePart.unwrapOr { record.sourcePart })
-                    Triple(form.source, form.sourceId, form.sourcePart)
+                    Triple(form.sourceSite, form.sourceId, form.sourcePart)
                 }
             }else if(form.sourceId.unwrapOr { null } != null || form.sourcePart.unwrapOr { null } != null) {
                 if(record.sourceSite == null) throw be(ParamNotRequired("sourceId/sourcePart"))
@@ -140,7 +140,7 @@ class ImportService(private val data: DataRepository,
                 }
             }else Triple(undefined(), undefined(), undefined())
 
-            if (form.tagme.isPresent || form.source.isPresent || form.sourceId.isPresent || form.sourcePart.isPresent ||
+            if (form.tagme.isPresent || form.sourceSite.isPresent || form.sourceId.isPresent || form.sourcePart.isPresent ||
                 form.partitionTime.isPresent || form.orderTime.isPresent || form.createTime.isPresent) {
                 data.db.update(ImportImages) {
                     where { it.id eq id }

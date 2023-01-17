@@ -15,7 +15,7 @@ data class UploadForm(val content: InputStream,
                       val extension: String)
 
 class ImportUpdateForm(val tagme: Opt<Illust.Tagme>,
-                       val source: Opt<String?>,
+                       val sourceSite: Opt<String?>,
                        val sourceId: Opt<Long?>,
                        val sourcePart: Opt<Int?>,
                        val partitionTime: Opt<LocalDate>,
