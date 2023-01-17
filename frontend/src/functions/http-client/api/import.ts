@@ -161,7 +161,7 @@ export interface ImportForm {
 
 export interface ImportUpdateForm {
     tagme?: Tagme[]
-    source?: string | null
+    sourceSite?: string | null
     sourceId?: number | null
     sourcePart?: number | null
     partitionTime?: LocalDate

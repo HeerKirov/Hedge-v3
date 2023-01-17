@@ -86,7 +86,7 @@ const emit = defineEmits<{
 const keyOf = (item: ImportImage) => item.id
 
 const data = toRef(props, "data")
-const columnNum = computed(() => props.columnNum ?? 3)
+const columnNum = props.viewMode === "grid" ? computed(() => props.columnNum ?? 3) : undefined
 const selected = computed(() => props.selected ?? [])
 const lastSelected = computed(() => props.lastSelected ?? null)
 const draggable = computed(() => props.draggable ?? false)

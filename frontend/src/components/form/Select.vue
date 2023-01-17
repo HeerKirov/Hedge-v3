@@ -24,6 +24,7 @@ const changed = (e: Event) => {
 }
 
 onMounted(watchProps)
+
 watch(() => [props.items, props.value], watchProps)
 
 function watchProps() {
@@ -42,7 +43,7 @@ function watchProps() {
 <template>
     <div :class="[$style.select, $style[`is-size-${size ?? 'std'}`]]">
         <select ref="selectDom" @change="changed">
-            <option v-for="item in items" :key="item.value" :value="item.value">{{item.label}}</option>
+            <option v-for="item in items" :key="item.value" :value="item.value" :selected="item.value === value">{{item.label}}</option>
         </select>
     </div>
 </template>

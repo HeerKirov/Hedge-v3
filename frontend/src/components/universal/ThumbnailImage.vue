@@ -22,7 +22,7 @@ const style = computed(() => ({
 
 <template>
     <div :class="$style['thumbnail-image']">
-        <img :src="assetsUrl(props.value ?? null)" :alt="alt" :style="style"/>
+        <img :src="assetsUrl(props.file ?? null)" :alt="alt" :style="style"/>
         <div v-if="numTagValue !== undefined" :class="$style['num-tag']">
             <Icon icon="images"/>
             {{numTagValue}}

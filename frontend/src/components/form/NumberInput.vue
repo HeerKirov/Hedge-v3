@@ -8,6 +8,7 @@ const props = defineProps<{
     min?: number
     placeholder?: string
     size?: "small" | "std" | "large"
+    width?: "one-third" | "half" | "three-quarter" | "std" | "medium" | "large" | "2x" | "3x" | "25" | "50" | "75" | "fullwidth"
     disabled?: boolean
     autoFocus?: boolean
     updateOnInput?: boolean
@@ -17,6 +18,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: "update:value", value: number): void
     (e: "keypress", event: KeyEvent): void
+    (e: "enter", event: KeyEvent): void
 }>()
 
 const onUpdate = (value: string) => {
@@ -36,8 +38,8 @@ const onUpdate = (value: string) => {
 
 <template>
     <Input
-        type="number" :value="`${value}`" @update:value="onUpdate" @keypress="$emit('keypress', $event)"
-        :max="max" :min="min" :placeholder="placeholder" :size="size" :disabled="disabled"
+        type="number" :value="`${value}`" @update:value="onUpdate" @keypress="$emit('keypress', $event)" @enter="$emit('enter', $event)"
+        :max="max" :min="min" :placeholder="placeholder" :size="size" :width="width" :disabled="disabled"
         :auto-focus="autoFocus" :update-on-input="updateOnInput" :focus-on-keypress="focusOnKeypress"
     />
 </template>

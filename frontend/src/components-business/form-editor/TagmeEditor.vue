@@ -1,0 +1,36 @@
+<script setup lang="ts">
+import { Block, Icon } from "@/components/universal"
+import { CheckBox } from "@/components/form"
+import { Tagme } from "@/functions/http-client/api/illust"
+import { TAGME_TYPES, TAGME_TYPE_ICONS, TAGME_TYPE_NAMES } from "@/constants/entity"
+
+const props = defineProps<{
+    value: Tagme[]
+}>()
+
+const emit = defineEmits<{
+    (e: "update:value", value: Tagme[]): void
+}>()
+
+const updateValue = (tagme: Tagme, v: boolean) => {
+    if(v) {
+        emit("update:value", [...(props.value ?? []), tagme])
+    }else{
+        const i = props.value.indexOf(tagme)
+        emit("update:value", [...props.value.slice(0, i), ...props.value.slice(i + 1)])
+    }
+}
+
+</script>
+
+<template>
+    <Block class="p-1">
+        <b>Tagme</b>
+        <p v-for="tagme in TAGME_TYPES" :key="tagme">
+            <CheckBox :value="value.includes(tagme)" @update:value="updateValue(tagme, $event)">
+                <Icon :icon="TAGME_TYPE_ICONS[tagme]"/>
+                {{TAGME_TYPE_NAMES[tagme]}}
+            </CheckBox>
+        </p>
+    </Block>
+</template>

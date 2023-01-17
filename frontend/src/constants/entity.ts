@@ -2,6 +2,7 @@ import { TopicType } from "@/functions/http-client/api/topic"
 import { AuthorType } from "@/functions/http-client/api/author"
 import { AnnotationTarget } from "@/functions/http-client/api/annotations"
 import { MetaType } from "@/functions/http-client/api/all"
+import { Tagme } from "@/functions/http-client/api/illust"
 
 export const META_TYPES: MetaType[] = ["AUTHOR", "TOPIC", "TAG"]
 
@@ -73,4 +74,20 @@ export const ANNOTATION_TARGET_TYPE_NAMES: {[key in AnnotationTarget]: string} =
     "COPYRIGHT": TOPIC_TYPE_NAMES.COPYRIGHT,
     "IP": TOPIC_TYPE_NAMES.IP,
     "CHARACTER": TOPIC_TYPE_NAMES.CHARACTER
+}
+
+export const TAGME_TYPES: Tagme[] = ["TAG", "AUTHOR", "TOPIC", "SOURCE"]
+
+export const TAGME_TYPE_ICONS: {[key in Tagme]: string} = {
+    "TAG": META_TYPE_ICONS.TAG,
+    "AUTHOR": META_TYPE_ICONS.AUTHOR,
+    "TOPIC": META_TYPE_ICONS.TOPIC,
+    "SOURCE": "pager"
+}
+
+export const TAGME_TYPE_NAMES: {[key in Tagme]: string} = {
+    "TAG": META_TYPE_NAMES.TAG,
+    "AUTHOR": META_TYPE_NAMES.AUTHOR,
+    "TOPIC": META_TYPE_NAMES.TOPIC,
+    "SOURCE": "来源信息"
 }

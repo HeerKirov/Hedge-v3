@@ -74,11 +74,12 @@ components文件夹按用途分类管理这些轻型组件。组件需要被导�
     * `form-editor`: 表单相关的编辑器类组件，提供高度集成的、直接面向业务实体的编辑器。
     * `form-kit`: 表单相关的组合套件，一般为display和editor的整合一体式编辑器。
     * `top-bar`: 顶栏上使用的各类功能组件，用于配合顶栏架构装配一个完整功能的顶栏。
-* `components-module`
-    * `data`: 重型且复杂的数据组件，提供某个场景下的复杂数据交互。比如实现后的图库滚动列表、TagTree等。
-    * `module`: 全局安装的服务模块，如messageBox、Toast、GlobalDialog、GlobalCallOut等。
+* `components-module` 
+    * `data`: 重型且复杂的数据组件，提供某个场景下的复杂数据交互。比如ImageDataset、TagTree等。
+    * `common`: 在多处公用的集成区块，已经实现了所需功能和API的接入。
+    * `module`: 全局安装的服务模块，如messageBox、Toast、GlobalCallOut等。
     * `drawer`: 已经完成装配的抽屉组件，如MetaTag编辑器抽屉等。
-    * `dialog`: 已经完成装配的对话框组件，如ImportDialog导入对话框等。
+    * `dialog`: 全局安装的对话框服务模块，所有的重型对话框实现都在此处统一实现并装配。
     * `view-stack`: 提供各类详情页面的视图栈的重型组件。各类详情页面也包括于此。
 
 #### 所有组件名称用词规范
