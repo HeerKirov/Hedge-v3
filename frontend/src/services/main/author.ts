@@ -1,19 +1,17 @@
 import { readonly, Ref, ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useLocalStorage } from "@/functions/app"
-import { useCreatingHelper, useFetchEndpoint, useRetrieveHelper, ErrorHandler } from "@/functions/fetch"
+import { ErrorHandler, QueryListview, useCreatingHelper, useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse } from "@/functions/http-client"
 import {
-    DetailAuthor,
-    AuthorCreateForm, AuthorUpdateForm, AuthorExceptions,
-    AuthorQueryFilter, AuthorType
+    Author, DetailAuthor, AuthorCreateForm, AuthorUpdateForm,
+    AuthorExceptions, AuthorQueryFilter, AuthorType,
 } from "@/functions/http-client/api/author"
 import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
 import { useNavHistoryPush } from "@/services/base/side-nav-menu"
 import { useListViewContext } from "@/services/base/list-view-context"
-import { usePopupMenu } from "@/modules/popup-menu"
 import { useMessageBox } from "@/modules/message-box"
 import { checkTagName } from "@/utils/validation"
 import { patchMappingSourceTagForm } from "@/utils/translation"
@@ -23,17 +21,17 @@ import { objects } from "@/utils/primitives"
 export const [installAuthorContext, useAuthorContext] = installation(function () {
     const paneState = useDetailViewState<number, Partial<DetailAuthor>>()
 
-    const listview = useListView(paneState)
+    const listview = useListView()
+
+    const operators = useOperators(paneState, listview.listview)
 
     installVirtualViewNavigation()
 
-    return {paneState, listview}
+    return {paneState, listview, operators}
 })
 
-function useListView(paneState: DetailViewState<number, Partial<DetailAuthor>>) {
-    const message = useMessageBox()
-
-    const list = useListViewContext({
+function useListView() {
+    return useListViewContext({
         defaultFilter: <AuthorQueryFilter>{order: "-updateTime"},
         request: client => (offset, limit, filter) => client.author.list({offset, limit, ...filter}),
         eventFilter: {
@@ -50,6 +48,10 @@ function useListView(paneState: DetailViewState<number, Partial<DetailAuthor>>) 
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.author.get(a.id))))
         }
     })
+}
+
+function useOperators(paneState: DetailViewState<number, Partial<DetailAuthor>>, listview: QueryListview<Author>) {
+    const message = useMessageBox()
 
     const retrieveHelper = useRetrieveHelper({
         update: client => client.author.update,
@@ -57,9 +59,9 @@ function useListView(paneState: DetailViewState<number, Partial<DetailAuthor>>) 
     })
 
     const createByTemplate = (id: number) => {
-        const idx = list.listview.proxy.syncOperations.find(a => a.id === id)
+        const idx = listview.proxy.syncOperations.find(a => a.id === id)
         if(idx != undefined) {
-            const author = list.listview.proxy.syncOperations.retrieve(idx)
+            const author = listview.proxy.syncOperations.retrieve(idx)
             paneState.createView(author)
         }
     }
@@ -76,15 +78,7 @@ function useListView(paneState: DetailViewState<number, Partial<DetailAuthor>>) 
         await retrieveHelper.setData(authorId, {favorite})
     }
 
-    const popupMenu = usePopupMenu<number>([
-        {type: "normal", label: "查看详情", click: paneState.detailView},
-        {type: "separator"},
-        {type: "normal", label: "以此为模板新建", click: createByTemplate},
-        {type: "separator"},
-        {type: "normal", label: "删除此作者", click: deleteItem},
-    ])
-
-    return {...list, popupMenu, toggleFavorite}
+    return {createByTemplate, deleteItem, toggleFavorite}
 }
 
 export function useAuthorCreatePanel() {

@@ -13,7 +13,7 @@ import AnnotationDetailPane from "./AnnotationDetailPane.vue"
 import AnnotationCreatePane from "./AnnotationCreatePane.vue"
 import { usePopupMenu } from "@/modules/popup-menu";
 
-const { paneState, listview: { queryFilter, paginationData, operators } } = installAnnotationContext()
+const { paneState, listview: { queryFilter, paginationData }, operators } = installAnnotationContext()
 
 const filterMetaTypeOptions = META_TYPES.map(type => ({value: type, label: META_TYPE_NAMES[type], icon: META_TYPE_ICONS[type]}))
 

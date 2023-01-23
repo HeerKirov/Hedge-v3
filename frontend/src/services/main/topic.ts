@@ -1,10 +1,10 @@
 import { readonly, Ref, ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useLocalStorage } from "@/functions/app"
-import { useCreatingHelper, useFetchEndpoint, useRetrieveHelper, ErrorHandler } from "@/functions/fetch"
+import {useCreatingHelper, useFetchEndpoint, useRetrieveHelper, ErrorHandler, QueryListview} from "@/functions/fetch"
 import { flatResponse } from "@/functions/http-client"
 import {
-    DetailTopic, ParentTopic,
+    DetailTopic, ParentTopic, Topic,
     TopicCreateForm, TopicUpdateForm, TopicExceptions,
     TopicQueryFilter, TopicType
 } from "@/functions/http-client/api/topic"
@@ -13,7 +13,6 @@ import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping
 import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
 import { useNavHistoryPush } from "@/services/base/side-nav-menu"
 import { useListViewContext } from "@/services/base/list-view-context"
-import { usePopupMenu } from "@/modules/popup-menu"
 import { useMessageBox } from "@/modules/message-box"
 import { checkTagName } from "@/utils/validation"
 import { patchMappingSourceTagForm } from "@/utils/translation"
@@ -23,17 +22,17 @@ import { objects } from "@/utils/primitives"
 export const [installTopicContext, useTopicContext] = installation(function () {
     const paneState = useDetailViewState<number, Partial<DetailTopic>>()
 
-    const listview = useListView(paneState)
+    const listview = useListView()
+
+    const operators = useOperators(paneState, listview.listview)
 
     installVirtualViewNavigation()
 
-    return {paneState, listview}
+    return {paneState, listview, operators}
 })
 
-function useListView(paneState: DetailViewState<number, Partial<DetailTopic>>) {
-    const message = useMessageBox()
-
-    const list = useListViewContext({
+function useListView() {
+    return useListViewContext({
         defaultFilter: <TopicQueryFilter>{order: "-updateTime"},
         request: client => (offset, limit, filter) => client.topic.list({offset, limit, ...filter}),
         eventFilter: {
@@ -50,6 +49,10 @@ function useListView(paneState: DetailViewState<number, Partial<DetailTopic>>) {
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.topic.get(a.id))))
         }
     })
+}
+
+function useOperators(paneState: DetailViewState<number, Partial<DetailTopic>>, listview: QueryListview<Topic>) {
+    const message = useMessageBox()
 
     const retrieveHelper = useRetrieveHelper({
         update: client => client.topic.update,
@@ -57,17 +60,17 @@ function useListView(paneState: DetailViewState<number, Partial<DetailTopic>>) {
     })
 
     const createByTemplate = (id: number) => {
-        const idx = list.listview.proxy.syncOperations.find(a => a.id === id)
+        const idx = listview.proxy.syncOperations.find(a => a.id === id)
         if(idx != undefined) {
-            const topic = list.listview.proxy.syncOperations.retrieve(idx)
+            const topic = listview.proxy.syncOperations.retrieve(idx)
             paneState.createView(topic)
         }
     }
 
     const createChildOfTemplate = (id: number) => {
-        const idx = list.listview.proxy.syncOperations.find(a => a.id === id)
+        const idx = listview.proxy.syncOperations.find(a => a.id === id)
         if(idx != undefined) {
-            const topic = list.listview.proxy.syncOperations.retrieve(idx)
+            const topic = listview.proxy.syncOperations.retrieve(idx)
             if(topic !== undefined) {
                 paneState.createView({
                     parents: [{
@@ -93,16 +96,7 @@ function useListView(paneState: DetailViewState<number, Partial<DetailTopic>>) {
         await retrieveHelper.setData(topicId, {favorite})
     }
 
-    const popupMenu = usePopupMenu<number>([
-        {type: "normal", label: "查看详情", click: paneState.detailView},
-        {type: "separator"},
-        {type: "normal", label: "新建子主题", click: createChildOfTemplate},
-        {type: "normal", label: "以此为模板新建", click: createByTemplate},
-        {type: "separator"},
-        {type: "normal", label: "删除此主题", click: deleteItem},
-    ])
-
-    return {...list, popupMenu, toggleFavorite}
+    return {createByTemplate, createChildOfTemplate, deleteItem, toggleFavorite}
 }
 
 export function useTopicCreatePanel() {

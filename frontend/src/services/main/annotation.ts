@@ -2,7 +2,7 @@ import { computedWatchMutable, installation } from "@/utils/reactivity"
 import { installVirtualViewNavigation } from "@/components/data"
 import { flatResponse } from "@/functions/http-client"
 import { Annotation, AnnotationCreateForm, AnnotationQueryFilter, AnnotationTarget } from "@/functions/http-client/api/annotations"
-import { useCreatingHelper, useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
+import { QueryListview, useCreatingHelper, useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
 import { useMessageBox } from "@/modules/message-box"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
@@ -12,16 +12,16 @@ import { objects } from "@/utils/primitives"
 export const [installAnnotationContext, useAnnotationContext] = installation(function () {
     const paneState = useDetailViewState<number, Partial<Annotation>>()
 
-    const listview = useListView(paneState)
+    const listview = useListView()
+
+    const operators = useOperators(paneState, listview.listview)
 
     installVirtualViewNavigation()
 
-    return {paneState, listview}
+    return {paneState, listview, operators}
 })
 
-function useListView(paneState: DetailViewState<number, Partial<Annotation>>) {
-    const message = useMessageBox()
-
+function useListView() {
     const list = useListViewContext({
         defaultFilter: <AnnotationQueryFilter>{type: "TOPIC", order: "-createTime"},
         request: client => (offset, limit, filter) => client.annotation.list({offset, limit, ...filter}),
@@ -40,14 +40,20 @@ function useListView(paneState: DetailViewState<number, Partial<Annotation>>) {
         }
     })
 
+    return list
+}
+
+function useOperators(paneState: DetailViewState<number, Partial<Annotation>>, listview: QueryListview<Annotation>) {
+    const message = useMessageBox()
+
     const retrieveHelper = useRetrieveHelper({
         delete: client => client.annotation.delete
     })
 
     const createByTemplate = (id: number) => {
-        const idx = list.listview.proxy.syncOperations.find(a => a.id === id)
+        const idx = listview.proxy.syncOperations.find(a => a.id === id)
         if(idx != undefined) {
-            const annotation = list.listview.proxy.syncOperations.retrieve(idx)
+            const annotation = listview.proxy.syncOperations.retrieve(idx)
             paneState.createView(annotation)
         }
     }
@@ -60,7 +66,7 @@ function useListView(paneState: DetailViewState<number, Partial<Annotation>>) {
         }
     }
 
-    return {...list, operators: {createByTemplate, deleteItem}}
+    return {createByTemplate, deleteItem}
 }
 
 export function useAnnotationCreatePane() {

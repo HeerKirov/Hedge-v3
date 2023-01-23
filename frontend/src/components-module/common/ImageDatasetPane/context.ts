@@ -1,8 +1,10 @@
-import { Ref } from "vue"
-import { useFetchEndpoint } from "@/functions/fetch"
+import { computed, reactive, Ref } from "vue"
+import { useFetchEndpoint, useFetchHelper } from "@/functions/fetch"
 import { Tagme } from "@/functions/http-client/api/illust"
+import { OrderTimeType } from "@/functions/http-client/api/setting-import"
+import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
-import { LocalDateTime } from "@/utils/datetime"
+import { date, LocalDate, LocalDateTime } from "@/utils/datetime"
 import { objects } from "@/utils/primitives"
 
 export function useImportDetailPaneSingle(path: Ref<number | null>) {
@@ -59,10 +61,67 @@ export function useImportDetailPaneSingle(path: Ref<number | null>) {
 }
 
 export function useImportDetailPaneMultiple(selected: Ref<number[]>, latest: Ref<number | null>) {
+    const toast = useToast()
+
+    const batchFetch = useFetchHelper(httpClient => httpClient.import.batchUpdate)
+
     const { data } = useFetchEndpoint({
         path: latest,
         get: client => client.import.get
     })
 
-    return {data}
+    const actives = reactive({
+        tagme: false,
+        setCreatedTimeBy: false,
+        setOrderTimeBy: false,
+        partitionTime: false
+    })
+
+    const anyActive = computed(() => actives.tagme || actives.setOrderTimeBy || actives.setOrderTimeBy || actives.partitionTime || form.analyseSource)
+
+    const form = reactive<{
+        tagme: Tagme[]
+        setCreatedTimeBy: OrderTimeType
+        setOrderTimeBy: OrderTimeType
+        partitionTime: LocalDate
+        analyseSource: boolean
+    }>({
+        tagme: [],
+        setCreatedTimeBy: "UPDATE_TIME",
+        setOrderTimeBy: "UPDATE_TIME",
+        partitionTime: date.now(),
+        analyseSource: false
+    })
+
+    const submit = async () => {
+        if(anyActive.value) {
+            const res = await batchFetch({
+                target: selected.value,
+                tagme: actives.tagme ? form.tagme : undefined,
+                setCreateTimeBy: actives.setCreatedTimeBy ? form.setCreatedTimeBy : undefined,
+                setOrderTimeBy: actives.setOrderTimeBy ? form.setOrderTimeBy : undefined,
+                partitionTime: actives.partitionTime ? form.partitionTime : undefined,
+                analyseSource: form.analyseSource
+            })
+            if(res?.length) {
+                if(res.length > 3) {
+                    toast.toast("来源信息分析失败", "warning", `超过${res.length}个文件的来源信息分析失败，可能是因为正则表达式内容错误。`)
+                }else{
+                    toast.toast("来源信息分析失败", "warning", "存在文件的来源信息分析失败，可能是因为正则表达式内容错误。")
+                }
+            }else{
+                toast.toast("批量编辑完成", "info", "已完成所选项目的信息批量编辑。")
+            }
+            clear()
+        }
+    }
+
+    const clear = () => {
+        actives.tagme = false
+        actives.setCreatedTimeBy = false
+        actives.setOrderTimeBy = false
+        actives.partitionTime = false
+    }
+
+    return {data, actives, anyActive, form, submit, clear}
 }

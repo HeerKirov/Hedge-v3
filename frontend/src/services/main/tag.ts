@@ -17,13 +17,15 @@ import { objects } from "@/utils/primitives"
 export const [installTagContext, useTagContext] = installation(function () {
     const paneState = useDetailViewState<number, TagCreateTemplate>()
 
-    const listview = useTagListView(paneState)
+    const listview = useTagListView()
+
+    const operators = useOperators(paneState)
 
     const editableLockOn = useLocalStorage("tag/list/editable", false)
 
     const search = useTagSearch(listview.data)
 
-    return {paneState, listview, editableLockOn, search}
+    return {paneState, listview, operators, editableLockOn, search}
 })
 
 interface TagCreateTemplate {
@@ -31,13 +33,17 @@ interface TagCreateTemplate {
     ordinal: number
 }
 
-function useTagListView(paneState: DetailViewState<number, TagCreateTemplate>) {
-    const message = useMessageBox()
-
+function useTagListView() {
     const { loading, data, refresh } = useFetchReactive({
         get: client => () => client.tag.tree({}),
         eventFilter: e => (e.eventType === "entity/meta-tag/created" || e.eventType === "entity/meta-tag/updated" || e.eventType === "entity/meta-tag/deleted") && e.metaType === "TAG"
     })
+
+    return {loading, data, refresh}
+}
+
+function useOperators(paneState: DetailViewState<number, TagCreateTemplate>) {
+    const message = useMessageBox()
 
     const helper = useRetrieveHelper({
         update: client => client.tag.update,
@@ -67,7 +73,7 @@ function useTagListView(paneState: DetailViewState<number, TagCreateTemplate>) {
         }
     }
 
-    return {loading, data, refresh, operators: {createByOrdinal, moveItem, deleteItem}}
+    return {createByOrdinal, moveItem, deleteItem}
 }
 
 function useTagSearch(data: Ref<TagTreeNode[] | undefined>) {

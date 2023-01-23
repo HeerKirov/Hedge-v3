@@ -6,9 +6,14 @@ import { SearchInput, DataRouter, AttachFilter, AttachTemplate } from "@/compone
 import { Annotation } from "@/functions/http-client/api/annotations"
 import { AUTHOR_TYPE_ICONS, AUTHOR_TYPE_NAMES, AUTHOR_TYPES_WITHOUT_UNKNOWN } from "@/constants/entity"
 import { useAuthorContext } from "@/services/main/author"
+import { usePopupMenu } from "@/modules/popup-menu"
 import AuthorListPanelItem from "./AuthorListPanelItem.vue"
 
-const { paneState, listview: { queryFilter, paginationData, popupMenu, toggleFavorite } } = useAuthorContext()
+const {
+    paneState,
+    listview: { queryFilter, paginationData },
+    operators: { toggleFavorite, createByTemplate, deleteItem }
+} = useAuthorContext()
 
 const attachFilterTemplates: AttachTemplate[] = [
     {
@@ -55,6 +60,14 @@ const attachFilterTemplates: AttachTemplate[] = [
         defaultDirection: "descending"
     }
 ]
+
+const popupMenu = usePopupMenu<number>([
+    {type: "normal", label: "查看详情", click: paneState.detailView},
+    {type: "separator"},
+    {type: "normal", label: "以此为模板新建", click: createByTemplate},
+    {type: "separator"},
+    {type: "normal", label: "删除此作者", click: deleteItem},
+])
 
 </script>
 

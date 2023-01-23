@@ -11,7 +11,8 @@ import TagDetailPane from "./TagDetailPane.vue"
 const {
     paneState,
     editableLockOn,
-    listview: { loading, data, operators },
+    operators,
+    listview: { loading, data },
     search: { searchText, searchInfo, tagTreeRef, next, prev }
 } = installTagContext()
 

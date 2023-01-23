@@ -45,7 +45,7 @@ export interface HttpClient {
     topic: TopicEndpoint
     annotation: AnnotationEndpoint
     import: ImportEndpoint
-    sourceImage: SourceDataEndpoint
+    sourceData: SourceDataEndpoint
     sourceTagMapping: SourceTagMappingEndpoint
     findSimilar: FindSimilarEndpoint
     metaUtil: UtilMetaEndpoint
@@ -75,7 +75,7 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
         topic: createTopicEndpoint(http),
         annotation: createAnnotationEndpoint(http),
         import: createImportEndpoint(http),
-        sourceImage: createSourceDataEndpoint(http),
+        sourceData: createSourceDataEndpoint(http),
         sourceTagMapping: createSourceTagMappingEndpoint(http),
         findSimilar: createFindSimilarEndpoint(http),
         metaUtil: createUtilMetaEndpoint(http),

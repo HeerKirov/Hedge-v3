@@ -56,7 +56,7 @@ export interface SourceDataEndpoint {
     delete(key: SourceDataIdentity): Promise<Response<null, NotFound>>
 }
 
-interface SourceDataIdentity { sourceSite: string, sourceId: number }
+export interface SourceDataIdentity { sourceSite: string, sourceId: number }
 
 export interface SourceDataExceptions {
     "create": ResourceNotExist<"site", string> | AlreadyExists<"SourceData", "sourceId", number>

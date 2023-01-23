@@ -7,9 +7,14 @@ import { Annotation } from "@/functions/http-client/api/annotations"
 import { DetailTopic, Topic } from "@/functions/http-client/api/topic"
 import { TOPIC_TYPE_ICONS, TOPIC_TYPE_NAMES, TOPIC_TYPES_WITHOUT_UNKNOWN } from "@/constants/entity"
 import { useTopicContext } from "@/services/main/topic"
+import { usePopupMenu } from "@/modules/popup-menu"
 import TopicListPanelItem from "./TopicListPanelItem.vue"
 
-const { paneState, listview: { queryFilter, paginationData, popupMenu, toggleFavorite } } = useTopicContext()
+const {
+    paneState,
+    listview: { queryFilter, paginationData },
+    operators: { toggleFavorite, deleteItem, createByTemplate, createChildOfTemplate }
+} = useTopicContext()
 
 const attachFilterTemplates: AttachTemplate[] = [
     {
@@ -72,6 +77,15 @@ const attachFilterTemplates: AttachTemplate[] = [
         defaultDirection: "descending"
     }
 ]
+
+const popupMenu = usePopupMenu<number>([
+    {type: "normal", label: "查看详情", click: paneState.detailView},
+    {type: "separator"},
+    {type: "normal", label: "新建子主题", click: createChildOfTemplate},
+    {type: "normal", label: "以此为模板新建", click: createByTemplate},
+    {type: "separator"},
+    {type: "normal", label: "删除此主题", click: deleteItem},
+])
 
 </script>
 
