@@ -226,19 +226,24 @@ function createConnectionManager(options: ServerManagerOptions) {
 
         console.log("[ServerManager] Trying connect to server. Module is working in debug mode.")
 
-        //根据提供的debug地址，尝试请求连接server的/app/health地址，以做连接检查
         let health: ServerServiceStatus | null
-        try {
-            health = await waitingForHealth(options.debug!.serverFromHost!, "dev", 1000)
-        }catch (e) {
-            setStatus({status: "FAILED", info: null, error: {code: "SERVER_REQUEST_ERROR", message: e instanceof Error ? e.message : `${e}`}})
-            return
+        while(true) {
+            //根据提供的debug地址，尝试请求连接server的/app/health地址，以做连接检查
+            try {
+                health = await waitingForHealth(options.debug!.serverFromHost!, "dev", 1000)
+            }catch (e) {
+                setStatus({status: "FAILED", info: null, error: {code: "SERVER_REQUEST_ERROR", message: e instanceof Error ? e.message : `${e}`}})
+                console.log("[ServerManager] Trying connect to server failed. SERVER_REQUEST_ERROR.")
+                return
+            }
+            if(health == null) {
+                setStatus({ status: "FAILED", info: null, error: {code: "SERVER_WAITING_TIMEOUT"} })
+                console.log("[ServerManager] Trying connect to server failed. SERVER_WAITING_TIMEOUT. try again.")
+            }else{
+                console.log(`[ServerManager] Successfully verified connection to server (${options.debug!.serverFromHost}). Server status is ${health}.`)
+                break
+            }
         }
-        if(health == null) {
-            setStatus({ status: "FAILED", info: null, error: {code: "SERVER_WAITING_TIMEOUT"} })
-            return
-        }
-        console.log(`[ServerManager] Successfully verified connection to server (${options.debug!.serverFromHost}). Server status is ${health}.`)
 
         //通过之后，尝试建立ws连接。如果无法连接，则报告错误
         if(_ws != null) {
@@ -248,7 +253,7 @@ function createConnectionManager(options: ServerManagerOptions) {
         try {
             _ws = await waitingForWsClient(options.debug!.serverFromHost!, "dev", { onMessage: onWsMessage, onClose: startConnectionListenerInDebug })
             const info: ServerConnectionInfo = {pid: 0, host: options.debug!.serverFromHost!, token: "dev", startTime: Date.now()}
-            setStatus({status: "OPEN", info, error: null, appLoadStatus: health})
+            setStatus({status: "OPEN", info, error: null, appLoadStatus: health!})
             console.log(`[ServerManager] Ws connection established.`)
         }catch (e) {
             setStatus({status: "FAILED", info: null, error: {code: "SERVER_CONNECT_ERROR", message: e instanceof Error ? e.message : `${e}`}})
