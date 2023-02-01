@@ -207,11 +207,14 @@ class ImportService(private val data: DataRepository,
                     }
                 }
 
-                data.db.batchUpdate(ImportImages) {
-                    for (record in records) {
-                        item {
+                records.asSequence()
+                    .map { Tuple2(it, sourceResultMap[it.id]) }
+                    .filter { (_, src) -> form.tagme != null || form.partitionTime != null || form.setCreateTimeBy != null || form.setOrderTimeBy != null || src != null }
+                    .forEach { (record, src) ->
+                        data.db.update(ImportImages) {
                             where { it.id eq record.id }
-                            sourceResultMap[record.id]?.let { (sourceSite, sourceId, sourcePart, tagme) ->
+                            if(src != null) {
+                                val (sourceSite, sourceId, sourcePart, tagme) = src
                                 set(it.sourceSite, sourceSite)
                                 set(it.sourceId, sourceId)
                                 set(it.sourcePart, sourcePart)
@@ -230,13 +233,15 @@ class ImportService(private val data: DataRepository,
                                 ImportOption.TimeType.IMPORT_TIME -> record.fileImportTime
                             }.toMillisecond())
                         }
+
+                        bus.emit(ImportUpdated(record.id, generalUpdated = true, thumbnailFileReady = false))
                     }
-                }
+
                 return errors
+            }else{
+                return emptyMap()
             }
         }
-
-        return emptyMap()
     }
 
     /**
