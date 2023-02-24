@@ -9,7 +9,7 @@ import {
 } from "../exceptions"
 import { IdResponse, LimitAndOffsetFilter, LimitFilter, ListResult, OrderList } from "./all"
 import { SimpleBook } from "./book"
-import { DepsTopic } from "./topic"
+import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
 import { RelatedSimpleTag } from "./tag"
 import { SimpleFolder } from "./folder"
@@ -99,7 +99,7 @@ function mapToDetailIllust(data: any): DetailIllust {
         size: <number>data["size"],
         resolutionWidth: <number>data["resolutionWidth"],
         resolutionHeight: <number>data["resolutionHeight"],
-        topics: <DepsTopic[]>data["topics"],
+        topics: <RelatedSimpleTopic[]>data["topics"],
         authors: <RelatedSimpleAuthor[]>data["authors"],
         tags: <RelatedSimpleTag[]>data["tags"],
         description: <string>data["description"],
@@ -396,7 +396,7 @@ export interface DetailIllust extends Illust {
     /**
      * 主题。
      */
-    topics: DepsTopic[]
+    topics: RelatedSimpleTopic[]
     /**
      * 作者。
      */

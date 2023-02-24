@@ -117,7 +117,7 @@ const inputClass = computed(() => [
 
 textarea.input
     $textarea-max-height: 40em !default
-    $textarea-min-height: 8em !default
+    $textarea-min-height: 6em !default
     padding: calc(0.6em - 1px) calc(0.85em - 1px)
     resize: vertical
     &:not([rows])

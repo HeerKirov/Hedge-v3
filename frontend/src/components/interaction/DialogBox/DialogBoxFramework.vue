@@ -5,7 +5,7 @@ import { useInterceptedKey } from "@/modules/keyboard"
 
 const props = defineProps<{
     position?: "absolute" | "fixed"
-    overflow?: "hidden" | "auto"
+    overflow?: "hidden" | "auto" | "default"
     closeOnEscape?: boolean
 }>()
 
@@ -44,7 +44,7 @@ export default {
 
 <template>
     <div :class="{[$style['box-framework']]: true, [$style['absolute']]: position === 'absolute'}" @click="click">
-        <Block :overflow="overflow ?? 'hidden'" v-bind="$attrs">
+        <Block :overflow="overflow ?? 'default'" v-bind="$attrs">
             <slot/>
         </Block>
     </div>

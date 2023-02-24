@@ -1,7 +1,7 @@
 import { HttpInstance, Response } from ".."
 import { ConflictingGroupMembersError, NotFound, ResourceNotExist, ResourceNotSuitable } from "../exceptions"
 import { IdResponse, LimitAndOffsetFilter, ListResult, OrderList } from "./all"
-import { DepsTopic } from "./topic"
+import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
 import { RelatedSimpleTag } from "./tag"
 import { Tagme } from "./illust"
@@ -45,7 +45,7 @@ function mapToBook(data: any): Book {
 function mapToDetailBook(data: any): DetailBook {
     return {
         ...mapToBook(data),
-        topics: <DepsTopic[]>data["topics"],
+        topics: <RelatedSimpleTopic[]>data["topics"],
         authors: <RelatedSimpleAuthor[]>data["authors"],
         tags: <RelatedSimpleTag[]>data["tags"],
         description: <string>data["description"]
@@ -161,7 +161,7 @@ export interface DetailBook extends Book {
     /**
      * topic元数据。
      */
-    topics: DepsTopic[]
+    topics: RelatedSimpleTopic[]
     /**
      * author元数据。
      */

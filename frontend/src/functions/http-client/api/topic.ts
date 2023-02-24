@@ -160,7 +160,7 @@ export interface ParentTopic extends SimpleTopic {
 
 }
 
-export interface DepsTopic extends SimpleTopic {
+export interface RelatedSimpleTopic extends SimpleTopic {
     isExported: boolean
 }
 

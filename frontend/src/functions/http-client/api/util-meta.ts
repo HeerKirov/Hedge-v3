@@ -2,7 +2,7 @@ import { HttpInstance, Response } from ".."
 import { ConflictingGroupMembersError, NotFound, ResourceNotExist } from "../exceptions"
 import { IdentityType, MetaType } from "./all"
 import { RelatedSimpleTag } from "./tag"
-import { DepsTopic } from "./topic"
+import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
 import { SimpleBook } from "./book"
 
@@ -89,7 +89,7 @@ export interface UtilMetaEndpoint {
 }
 
 export interface MetaUtilValidation {
-    topics: DepsTopic[]
+    topics: RelatedSimpleTopic[]
     authors: RelatedSimpleAuthor[]
     tags: RelatedSimpleTag[]
     notSuitable: RelatedSimpleTag[]
@@ -104,7 +104,7 @@ interface ConflictingMembers {
 }
 
 export interface MetaUtilResult {
-    topics: DepsTopic[]
+    topics: RelatedSimpleTopic[]
     authors: RelatedSimpleAuthor[]
     tags: RelatedSimpleTag[]
 }

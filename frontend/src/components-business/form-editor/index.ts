@@ -9,9 +9,11 @@ import ScoreEditor from "./ScoreEditor.vue"
 import DescriptionEditor from "./DescriptionEditor.vue"
 import RelatedAnnotationEditor from "./RelatedAnnotationEditor.vue"
 import ParentTopicEditor from "./ParentTopicEditor.vue"
+import SourceDataSummaryEditor from "./SourceDataSummaryEditor.vue"
 import SourceTagMappingEditor from "./SourceTagMappingEditor.vue"
 import SourceSiteSelectBox from "./SourceSiteSelectBox.vue"
 import SourceIdentityEditor from "./SourceIdentityEditor.vue"
+import SourceIdentityNoPartEditor from "./SourceIdentityNoPartEditor.vue"
 import TagmeEditor from "./TagmeEditor.vue"
 import DateEditor from "./DateEditor.vue"
 import DateTimeEditor from "./DateTimeEditor.vue"
@@ -20,6 +22,6 @@ export { ThemeSelector }
 export { AnnotationTargetEditor }
 export { TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, TagLinkEditor }
 export { OtherNameEditor, ScoreEditor, DescriptionEditor, RelatedAnnotationEditor, ParentTopicEditor }
-export { SourceTagMappingEditor, SourceSiteSelectBox, SourceIdentityEditor }
+export { SourceDataSummaryEditor, SourceTagMappingEditor, SourceSiteSelectBox, SourceIdentityEditor, SourceIdentityNoPartEditor }
 export { TagmeEditor }
 export { DateEditor, DateTimeEditor }

@@ -14,10 +14,11 @@
     box-sizing: border-box
     > div
         margin: 0 auto
-        @media screen and (min-width: 850px)
+        max-width: 95vw
+        @media screen and (min-width: 720px)
             max-width: 640px
         @media screen and (min-width: 1024px)
-            max-width: 720px
+            max-width: 850px
         @media screen and (min-width: 1400px)
-            max-width: 960px
+            max-width: 1080px
 </style>
