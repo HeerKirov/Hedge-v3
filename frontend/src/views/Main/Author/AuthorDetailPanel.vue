@@ -43,7 +43,7 @@ const ellipsisMenuItems = <MenuItem<undefined>[]>[
         </template>
 
         <Container class="py-2">
-            <AuthorDetailPanelDisplay v-if="!editMode && data !== null" :data="data" @click:author="paneState.detailView($event)"/>
+            <AuthorDetailPanelDisplay v-if="!editMode && data !== null" :data="data" @click:author="paneState.openDetailView($event)"/>
             <AuthorDetailPanelForm v-else-if="editMode && form !== null"
                                    :name="form.name" :other-names="form.otherNames" :type="form.type"
                                    :annotations="form.annotations" :keywords="form.keywords"

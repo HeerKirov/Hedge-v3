@@ -26,5 +26,5 @@ const submit = (value: TagAddressType) => {
 </script>
 
 <template>
-    <Select :items="TAG_TYPE_SELECT_ITEMS" :value="value" @update:value="submit"/>
+    <Select :items="TAG_TYPE_SELECT_ITEMS" :value="value" @update:value="submit as any"/>
 </template>

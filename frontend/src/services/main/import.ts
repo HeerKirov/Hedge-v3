@@ -6,6 +6,7 @@ import { useLocalStorage } from "@/functions/app"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
+import { useSettingSite } from "@/services/setting"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { dialogManager } from "@/modules/dialog"
@@ -22,6 +23,7 @@ export const [installImportContext, useImportContext] = installation(function ()
     const operators = useOperators(listview.anyData, importService.addFiles)
 
     installVirtualViewNavigation()
+    useSettingSite()
 
     return {paneState, importService, listview, selector, listviewController, operators}
 })

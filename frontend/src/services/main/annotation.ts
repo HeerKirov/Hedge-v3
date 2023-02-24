@@ -54,14 +54,14 @@ function useOperators(paneState: DetailViewState<number, Partial<Annotation>>, l
         const idx = listview.proxy.syncOperations.find(a => a.id === id)
         if(idx != undefined) {
             const annotation = listview.proxy.syncOperations.retrieve(idx)
-            paneState.createView(annotation)
+            paneState.openCreateView(annotation)
         }
     }
 
     const deleteItem = async (id: number) => {
         if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
             if(await retrieveHelper.deleteData(id)) {
-                if(paneState.isDetailView(id)) paneState.closeView()
+                if(paneState.detailPath.value === id) paneState.closeView()
             }
         }
     }
@@ -93,7 +93,7 @@ export function useAnnotationCreatePane() {
             }
         },
         afterCreate(result) {
-            paneState.detailView(result.id)
+            paneState.openDetailView(result.id)
         }
     })
 

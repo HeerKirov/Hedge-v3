@@ -44,7 +44,7 @@ const ellipsisMenuItems = <MenuItem<undefined>[]>[
         </template>
 
         <Container class="py-2">
-            <TopicDetailPanelDisplay v-if="!editMode && data !== null" :data="data" v-model:children-mode="childrenMode" @click:topic="paneState.detailView($event)"/>
+            <TopicDetailPanelDisplay v-if="!editMode && data !== null" :data="data" v-model:children-mode="childrenMode" @click:topic="paneState.openDetailView($event)"/>
             <TopicDetailPanelForm v-else-if="editMode && form !== null" :name="form.name" :other-names="form.otherNames"
                                   :type="form.type" :parent="form.parent"
                                   :annotations="form.annotations" :keywords="form.keywords"

@@ -62,7 +62,7 @@ const attachFilterTemplates: AttachTemplate[] = [
 ]
 
 const popupMenu = usePopupMenu<number>([
-    {type: "normal", label: "查看详情", click: paneState.detailView},
+    {type: "normal", label: "查看详情", click: paneState.openDetailView},
     {type: "separator"},
     {type: "normal", label: "以此为模板新建", click: createByTemplate},
     {type: "separator"},
@@ -80,7 +80,7 @@ const popupMenu = usePopupMenu<number>([
 
                 <template #right>
                     <DataRouter/>
-                    <Button icon="plus" square @click="paneState.createView()"/>
+                    <Button icon="plus" square @click="paneState.openCreateView()"/>
                 </template>
             </MiddleLayout>
         </template>
@@ -89,7 +89,7 @@ const popupMenu = usePopupMenu<number>([
             <AuthorListPanelItem v-for="item in paginationData.data.result" :key="item.id"
                                 :item="item"
                                 @update:favorite="toggleFavorite(item.id, $event)"
-                                @click="paneState.detailView(item.id)"
+                                @click="paneState.openDetailView(item.id)"
                                 @contextmenu="popupMenu.popup(item.id)"/>
         </VirtualRowView>
     </TopBarLayout>

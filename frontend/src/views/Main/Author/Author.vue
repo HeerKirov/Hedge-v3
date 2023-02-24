@@ -10,9 +10,9 @@ const { paneState } = installAuthorContext()
 </script>
 
 <template>
-    <LazyLoad :visible="!paneState.isOpen()" v-slot="{ visible }">
+    <LazyLoad :visible="!paneState.opened.value" v-slot="{ visible }">
         <AuthorListPanel v-show="visible"/>
     </LazyLoad>
-    <AuthorDetailPanel v-if="paneState.isDetailView()"/>
-    <AuthorCreatePanel v-else-if="paneState.isCreateView()"/>
+    <AuthorDetailPanel v-if="paneState.mode.value === 'detail'"/>
+    <AuthorCreatePanel v-else-if="paneState.mode.value === 'create'"/>
 </template>

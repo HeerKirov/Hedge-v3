@@ -63,7 +63,7 @@ function useOperators(paneState: DetailViewState<number, Partial<DetailTopic>>, 
         const idx = listview.proxy.syncOperations.find(a => a.id === id)
         if(idx != undefined) {
             const topic = listview.proxy.syncOperations.retrieve(idx)
-            paneState.createView(topic)
+            paneState.openCreateView(topic)
         }
     }
 
@@ -72,7 +72,7 @@ function useOperators(paneState: DetailViewState<number, Partial<DetailTopic>>, 
         if(idx != undefined) {
             const topic = listview.proxy.syncOperations.retrieve(idx)
             if(topic !== undefined) {
-                paneState.createView({
+                paneState.openCreateView({
                     parents: [{
                         id: topic.id,
                         name: topic.name,
@@ -87,7 +87,7 @@ function useOperators(paneState: DetailViewState<number, Partial<DetailTopic>>, 
     const deleteItem = async (id: number) => {
         if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
             if(await retrieveHelper.deleteData(id)) {
-                if(paneState.isDetailView(id)) paneState.closeView()
+                if(paneState.detailPath.value === id) paneState.closeView()
             }
         }
     }
@@ -151,7 +151,7 @@ export function useTopicCreatePanel() {
             }
         },
         afterCreate(result) {
-            paneState.detailView(result.id)
+            paneState.openDetailView(result.id)
         }
     })
 
@@ -193,13 +193,13 @@ export function useTopicDetailPanel() {
 
     const createByTemplate = () => {
         if(data.value !== null) {
-            paneState.createView(data.value)
+            paneState.openCreateView(data.value)
         }
     }
 
     const createChildOfTemplate = () => {
         if(data.value !== null) {
-            paneState.createView({
+            paneState.openCreateView({
                 parents: [{
                     id: data.value.id,
                     name: data.value.name,

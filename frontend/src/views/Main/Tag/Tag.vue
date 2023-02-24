@@ -16,7 +16,7 @@ const {
     search: { searchText, searchInfo, tagTreeRef, next, prev }
 } = installTagContext()
 
-const onClick = (tag: TagTreeNode) => paneState.detailView(tag.id)
+const onClick = (tag: TagTreeNode) => paneState.openDetailView(tag.id)
 
 const onMove = (tag: TagTreeNode, parent: number | null | undefined, ordinal: number) => operators.moveItem(tag.id, parent, ordinal)
 
@@ -37,24 +37,24 @@ const onDelete = (tag: TagTreeNode) => operators.deleteItem(tag.id)
                 <Group single-line>
                     <Button v-if="editableLockOn" mode="filled" type="danger" icon="lock-open" square @click="editableLockOn = false"/>
                     <Button v-else icon="lock" square @click="editableLockOn = true"/>
-                    <Button icon="plus" square @click="paneState.createView()"/>
+                    <Button icon="plus" square @click="paneState.openCreateView()"/>
                 </Group>
             </template>
         </MiddleLayout>
      </template>
 
-     <PaneLayout :show-pane="paneState.isOpen()">
+     <PaneLayout :show-pane="paneState.opened.value">
          <template #pane>
             <BasePane @close="paneState.closeView()">
-                <TagCreatePane v-if="paneState.isCreateView()"/>
-                <TagDetailPane v-else-if="paneState.isDetailView()"/>
+                <TagCreatePane v-if="paneState.mode.value === 'create'"/>
+                <TagDetailPane v-else-if="paneState.mode.value === 'detail'"/>
             </BasePane>
          </template>
 
          <div :class="$style.content">
              <TagTree v-if="data?.length || loading" ref="tagTreeRef" :tags="data" editable draggable :droppable="editableLockOn" @click="onClick" @move="onMove" @create="onCreate" @delete="onDelete"/>
              <Block v-else class="mt-2 p-2 has-text-centered">
-                 <Button type="success" size="small" icon="plus" @click="paneState.createView()">创建第一个标签</Button>
+                 <Button type="success" size="small" icon="plus" @click="paneState.openCreateView()">创建第一个标签</Button>
              </Block>
          </div>
      </PaneLayout>

@@ -10,9 +10,9 @@ const { paneState } = installTopicContext()
 </script>
 
 <template>
-    <LazyLoad :visible="!paneState.isOpen()" v-slot="{ visible }">
+    <LazyLoad :visible="!paneState.opened.value" v-slot="{ visible }">
         <TopicListPanel v-show="visible"/>
     </LazyLoad>
-    <TopicDetailPanel v-if="paneState.isDetailView()"/>
-    <TopicCreatePanel v-else-if="paneState.isCreateView()"/>
+    <TopicDetailPanel v-if="paneState.mode.value === 'detail'"/>
+    <TopicCreatePanel v-else-if="paneState.mode.value === 'create'"/>
 </template>

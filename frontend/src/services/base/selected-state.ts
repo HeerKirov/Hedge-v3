@@ -2,6 +2,9 @@ import { ref, Ref } from "vue"
 import { QueryListview } from "@/functions/fetch"
 import { useListeningEvent } from "@/utils/emitter"
 
+/**
+ * 为列表提供选择器相关上下文，包括一组选择项与最后选择项。
+ */
 export interface SelectedState<T> {
     selected: Readonly<Ref<T[]>>
     lastSelected: Readonly<Ref<T | null>>

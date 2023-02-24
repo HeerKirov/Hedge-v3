@@ -2,12 +2,13 @@ import { installVirtualViewNavigation } from "@/components/data"
 import { useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import { SourceDataIdentity, SourceDataQueryFilter } from "@/functions/http-client/api/source-data"
-import {DetailViewState, useDetailViewState} from "@/services/base/detail-view-state"
+import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
 import { useListViewContext } from "@/services/base/list-view-context"
+import { useSettingSite } from "@/services/setting"
 import { useMessageBox } from "@/modules/message-box"
 import { installation } from "@/utils/reactivity"
 
-const [installSourceDataContext, useSourceDataContext] = installation(function () {
+export const [installSourceDataContext, useSourceDataContext] = installation(function () {
     const paneState = useDetailViewState<SourceDataIdentity>()
 
     const listview = useListView()
@@ -15,8 +16,9 @@ const [installSourceDataContext, useSourceDataContext] = installation(function (
     const operators = useOperators(paneState)
 
     installVirtualViewNavigation()
+    useSettingSite()
 
-    return {listview, operators}
+    return {listview, operators, paneState}
 })
 
 function useListView() {
@@ -59,7 +61,7 @@ function useOperators(paneState: DetailViewState<SourceDataIdentity>) {
     const deleteItem = async (id: SourceDataIdentity) => {
         if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
             if(await retrieveHelper.deleteData(id)) {
-                if(paneState.isDetailView(id)) paneState.closeView()
+                if(paneState.detailPath.value === id) paneState.closeView()
             }
         }
     }

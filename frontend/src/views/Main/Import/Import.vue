@@ -72,7 +72,7 @@ const menu = usePopupMenu<ImportImage>(() => [
                                 @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"/>
 
             <template #pane>
-                <ImportDetailPane :state="paneState.state" @close="paneState.visible.value = false"/>
+                <ImportDetailPane :state="paneState.state.value" @close="paneState.visible.value = false"/>
             </template>
         </PaneLayout>
     </TopBarLayout>

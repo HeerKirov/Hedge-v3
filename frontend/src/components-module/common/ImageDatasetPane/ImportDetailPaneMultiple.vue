@@ -36,5 +36,5 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
     <p class="mt-1"><CheckBox v-model:value="actives.partitionTime">设置时间分区</CheckBox></p>
     <DateEditor v-if="actives.partitionTime" class="mt-1 mb-2" v-model:value="form.partitionTime"/>
     <p class="mt-1"><CheckBox v-model:value="form.analyseSource">重新分析来源</CheckBox></p>
-    <Button class="w-100 mt-3" icon="check" :type="anyActive ? 'primary' : undefined" :mode="anyActive ? 'filled' : undefined" :disabled="!anyActive">批量更改</Button>
+    <Button class="w-100 mt-3" icon="check" :type="anyActive ? 'primary' : undefined" :mode="anyActive ? 'filled' : undefined" :disabled="!anyActive" @click="submit">批量更改</Button>
 </template>

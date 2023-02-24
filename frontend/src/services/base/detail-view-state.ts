@@ -6,9 +6,13 @@ import { computed, ref, Ref } from "vue"
  */
 export interface DetailViewState<PATH, CT = undefined> {
     /**
-     * 显示当前视图模式，以及视图模式的附加信息。
+     * 显示当前视图模式。
      */
-    mode: Readonly<Ref<DetailViewMode<PATH, CT>>>
+    mode: Readonly<Ref<DetailViewMode<PATH, CT>["type"]>>
+    /**
+     * 视图是否处于开启状态。
+     */
+    opened: Readonly<Ref<boolean>>
     /**
      * 在detail视图模式下，显示path。不处于detail模式时值为null。
      */
@@ -18,32 +22,17 @@ export interface DetailViewState<PATH, CT = undefined> {
      */
     createTemplate: Readonly<Ref<CT | null>>
     /**
-     * 切换至create视图。
-     * @param template
+     * 切换create视图。
      */
-    createView(template?: CT): void
+    openCreateView(template?: CT): void
     /**
-     * 切换至detail视图。
-     * @param path
+     * 切换detail视图。
      */
-    detailView(path: PATH): void
+    openDetailView(path: PATH): void
     /**
      * 关闭视图。
      */
     closeView(): void
-    /**
-     * 判断视图是否是开启状态。内含响应式调用。
-     */
-    isOpen(): boolean
-    /**
-     * 判断视图是否是detail状态。内含响应式调用。
-     * @param path 判断path是否是指定path
-     */
-    isDetailView(path?: PATH): boolean
-    /**
-     * 判断视图是否是create状态。内含响应式调用。
-     */
-    isCreateView(): boolean
 }
 
 type DetailViewMode<PATH, CT> = {
@@ -57,33 +46,29 @@ type DetailViewMode<PATH, CT> = {
 }
 
 export function useDetailViewState<PATH, CT = undefined>(): DetailViewState<PATH, CT> {
-    const mode: Ref<DetailViewMode<PATH, CT>> = ref(CLOSE_VALUE)
+    const state: Ref<DetailViewMode<PATH, CT>> = ref(CLOSE_VALUE)
 
-    const detailPath = computed<PATH | null>(() => mode.value.type === "detail" ? mode.value.path : null)
+    const mode = computed(() => state.value.type)
 
-    const createTemplate = computed<CT | null>(() => mode.value.type === "create" ? mode.value.template : null)
+    const opened = computed(() => state.value.type !== "close")
+
+    const detailPath = computed<PATH | null>(() => state.value.type === "detail" ? state.value.path : null)
+
+    const createTemplate = computed<CT | null>(() => state.value.type === "create" ? state.value.template : null)
 
     return {
         mode,
+        opened,
         detailPath,
         createTemplate,
-        createView(template?: CT) {
-            mode.value = {type: "create", template: template ?? null}
+        openCreateView(template?: CT) {
+            state.value = {type: "create", template: template ?? null}
         },
-        detailView(path: PATH) {
-            mode.value = {type: "detail", path}
+        openDetailView(path: PATH) {
+            state.value = {type: "detail", path}
         },
         closeView() {
-            mode.value = CLOSE_VALUE
-        },
-        isOpen(): boolean {
-            return mode.value.type !== "close"
-        },
-        isCreateView(): boolean {
-            return mode.value.type === "create"
-        },
-        isDetailView(path?: PATH): boolean {
-            return mode.value.type === "detail" && (path === undefined || mode.value.path === path)
+            state.value = CLOSE_VALUE
         }
     }
 }

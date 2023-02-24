@@ -7,11 +7,11 @@ import {
     ANNOTATION_TARGET_TYPE_ICONS, ANNOTATION_TARGET_TYPE_NAMES, ANNOTATION_TARGET_TYPES,
     META_TYPE_ICONS, META_TYPE_NAMES, META_TYPES
 } from "@/constants/entity"
+import { usePopupMenu } from "@/modules/popup-menu"
 import { installAnnotationContext } from "@/services/main/annotation"
 import AnnotationListItem from "./AnnotationListItem.vue"
 import AnnotationDetailPane from "./AnnotationDetailPane.vue"
 import AnnotationCreatePane from "./AnnotationCreatePane.vue"
-import { usePopupMenu } from "@/modules/popup-menu";
 
 const { paneState, listview: { queryFilter, paginationData }, operators } = installAnnotationContext()
 
@@ -45,7 +45,7 @@ const attachFilterTemplates: AttachTemplate[] = [
 ]
 
 const popupMenu = usePopupMenu([
-    {type: "normal", label: "查看详情", click: paneState.detailView},
+    {type: "normal", label: "查看详情", click: paneState.openDetailView},
     {type: "separator"},
     {type: "normal", label: "以此为模板新建", click: operators.createByTemplate},
     {type: "separator"},
@@ -64,22 +64,22 @@ const popupMenu = usePopupMenu([
 
                 <template #right>
                     <DataRouter/>
-                    <Button icon="plus" square @click="paneState.createView()"/>
+                    <Button icon="plus" square @click="paneState.openCreateView()"/>
                 </template>
             </MiddleLayout>
         </template>
 
-        <PaneLayout :show-pane="paneState.isOpen()">
+        <PaneLayout :show-pane="paneState.opened.value">
             <template #pane>
                 <BasePane @close="paneState.closeView()">
-                    <AnnotationDetailPane v-if="paneState.isDetailView()"/>
-                    <AnnotationCreatePane v-else-if="paneState.isCreateView()"/>
+                    <AnnotationDetailPane v-if="paneState.mode.value === 'detail'"/>
+                    <AnnotationCreatePane v-else-if="paneState.mode.value === 'create'"/>
                 </BasePane>
             </template>
             <VirtualRowView :row-height="40" :padding="6" :buffer-size="10" v-bind="paginationData.data.metrics" @update="paginationData.dataUpdate">
                 <AnnotationListItem v-for="item in paginationData.data.result" :key="item.id"
-                                    :item="item" :selected="paneState.isDetailView(item.id)"
-                                    @click="paneState.detailView(item.id)"
+                                    :item="item" :selected="paneState.detailPath.value === item.id"
+                                    @click="paneState.openDetailView(item.id)"
                                     @contextmenu="popupMenu.popup(item.id)"/>
             </VirtualRowView>
         </PaneLayout>

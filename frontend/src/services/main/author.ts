@@ -62,14 +62,14 @@ function useOperators(paneState: DetailViewState<number, Partial<DetailAuthor>>,
         const idx = listview.proxy.syncOperations.find(a => a.id === id)
         if(idx != undefined) {
             const author = listview.proxy.syncOperations.retrieve(idx)
-            paneState.createView(author)
+            paneState.openCreateView(author)
         }
     }
 
     const deleteItem = async (id: number) => {
         if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
             if(await retrieveHelper.deleteData(id)) {
-                if(paneState.isDetailView(id)) paneState.closeView()
+                if(paneState.detailPath.value === id) paneState.closeView()
             }
         }
     }
@@ -127,7 +127,7 @@ export function useAuthorCreatePanel() {
             }
         },
         afterCreate(result) {
-            paneState.detailView(result.id)
+            paneState.openDetailView(result.id)
         }
     })
 
@@ -167,7 +167,7 @@ export function useAuthorDetailPanel() {
 
     const createByTemplate = () => {
         if(data.value !== null) {
-            paneState.createView(data.value)
+            paneState.openCreateView(data.value)
         }
     }
 

@@ -14,7 +14,7 @@ defineEmits<{
 </script>
 
 <template>
-    <template v-if="child.type !== 'CHARACTER' && !!child.children.length">
+    <template v-if="child.type !== 'CHARACTER' && !!child.children?.length">
         <p>
             <SimpleMetaTagElement type="topic" :value="child" clickable @click="$emit('click', child.id)"/>
             <ChildrenTreeMode class="mt-2 ml-6" :children="child.children" @click="$emit('click', $event)"/>

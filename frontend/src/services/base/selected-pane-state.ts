@@ -3,6 +3,9 @@ import { useLocalStorage } from "@/functions/app"
 import { SelectedState } from "@/services/base/selected-state"
 import { toRef } from "@/utils/reactivity"
 
+/**
+ * 提供一组selected view视图控制器。此控制器基于selectedState的状态来控制无/单项/多项的不同状态显示，并不能手动控制状态类型。
+ */
 export type SelectedPaneState<T> = {
     type: "none"
 } | {

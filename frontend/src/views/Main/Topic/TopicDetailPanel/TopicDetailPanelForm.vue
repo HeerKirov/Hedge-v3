@@ -63,7 +63,7 @@ const TOPIC_TYPE_SELECT_ITEMS = TOPIC_TYPES.map(t => ({label: TOPIC_TYPE_NAMES[t
             <div>
                 <label class="label">类型</label>
                 <span class="is-line-height-std mx-1"><Icon :icon="TOPIC_TYPE_ICONS[type]"/></span>
-                <Select :items="TOPIC_TYPE_SELECT_ITEMS" :value="type" @update:value="setType"/>
+                <Select :items="TOPIC_TYPE_SELECT_ITEMS" :value="type" @update:value="setType as any"/>
             </div>
             <div>
                 <label class="label">父主题</label>

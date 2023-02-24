@@ -58,7 +58,7 @@ function useOperators(paneState: DetailViewState<number, TagCreateTemplate>) {
     })
 
     const createByOrdinal = (parentId: number | null, ordinal: number) => {
-        paneState.createView({parentId, ordinal})
+        paneState.openCreateView({parentId, ordinal})
     }
 
     const moveItem = async (tagId: number, targetParentId: number | null | undefined, targetOrdinal: number) => {
@@ -67,7 +67,7 @@ function useOperators(paneState: DetailViewState<number, TagCreateTemplate>) {
 
     const deleteItem = async (tagId: number) => {
         if(await helper.deleteData(tagId)) {
-            if(paneState.isDetailView(tagId)) {
+            if(paneState.detailPath.value === tagId) {
                 paneState.closeView()
             }
         }
@@ -201,7 +201,7 @@ export function useTagCreatePane() {
             }
         },
         afterCreate(result) {
-            paneState.detailView(result.id)
+            paneState.openDetailView(result.id)
         }
     })
 
@@ -248,16 +248,16 @@ export function useTagDetailPane() {
         }
     })
 
-    const addressInfo = computed<{address: string | null, member: boolean, memberIndex: number | null}>(() => {
+    const addressInfo = computed<{address: string | null, member: boolean, memberIndex: number | undefined}>(() => {
         if(data.value !== null && data.value.parents.length) {
             const address = data.value.parents.map(i => i.name).join(".")
             const parent = data.value.parents[data.value.parents.length - 1]
             const member = parent.group !== "NO"
-            const memberIndex = parent.group === "SEQUENCE" || parent.group === "FORCE_AND_SEQUENCE" ? data.value.ordinal + 1 : null
+            const memberIndex = parent.group === "SEQUENCE" || parent.group === "FORCE_AND_SEQUENCE" ? data.value.ordinal + 1 : undefined
 
             return {address, member, memberIndex}
         }else{
-            return {address: null, member: false, memberIndex: null}
+            return {address: null, member: false, memberIndex: undefined}
         }
     })
 
