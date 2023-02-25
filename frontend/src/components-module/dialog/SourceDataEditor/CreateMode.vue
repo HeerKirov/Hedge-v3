@@ -15,7 +15,7 @@ const { identity, data, submit } = useCreateData(() => emit("completed"))
 <template>
     <BottomLayout>
         <label class="label">新建来源数据</label>
-        <SourceIdentityNoPartEditor :source-id="identity.sourceId" :source-site="identity.sourceSite" @update="identity = $event"/>
+        <SourceIdentityNoPartEditor class="my-2" :source-id="identity.sourceId" :source-site="identity.sourceSite" @update="identity = $event"/>
         <SourceDataSummaryEditor v-model:data="data"/>
 
         <template #bottom>
@@ -23,7 +23,3 @@ const { identity, data, submit } = useCreateData(() => emit("completed"))
         </template>
     </BottomLayout>
 </template>
-
-<style module lang="sass">
-
-</style>

@@ -1,11 +1,12 @@
 import { installVirtualViewNavigation } from "@/components/data"
-import { useRetrieveHelper } from "@/functions/fetch"
+import { useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
-import { SourceDataIdentity, SourceDataQueryFilter } from "@/functions/http-client/api/source-data"
+import { SourceDataIdentity, SourceDataQueryFilter, SourceEditStatus } from "@/functions/http-client/api/source-data"
 import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSettingSite } from "@/services/setting"
 import { useMessageBox } from "@/modules/message-box"
+import { useRouterNavigator } from "@/modules/router"
 import { installation } from "@/utils/reactivity"
 
 export const [installSourceDataContext, useSourceDataContext] = installation(function () {
@@ -67,4 +68,40 @@ function useOperators(paneState: DetailViewState<SourceDataIdentity>) {
     }
 
     return {deleteItem}
+}
+
+export function useSourceDataDetailPane() {
+    const navigator = useRouterNavigator()
+    const { paneState } = useSourceDataContext()
+
+    const { data, setData } = useFetchEndpoint({
+        path: paneState.detailPath,
+        get: client => client.sourceData.get,
+        update: client => client.sourceData.update,
+        delete: client => client.sourceData.delete,
+        eventFilter: c => event => (event.eventType === "entity/source-data/updated" || event.eventType === "entity/source-data/deleted") && c.path !== null && event.site === c.path.sourceSite && event.sourceId === c.path.sourceId,
+        afterRetrieve(path, data) {
+            if(path !== null && data === null) {
+                paneState.closeView()
+            }
+        }
+    })
+
+    const { data: relatedImages } = useFetchEndpoint({
+        path: paneState.detailPath,
+        get: client => client.sourceData.getRelatedImages,
+        eventFilter: c => event => (event.eventType === "entity/source-data/updated" || event.eventType === "entity/source-data/deleted") && c.path !== null && event.site === c.path.sourceSite && event.sourceId === c.path.sourceId,
+    })
+
+    const gotoIllust = () => {
+        if(data.value !== null) {
+            navigator.goto({routeName: "MainIllusts", params: {source: {site: data.value.sourceSite, id: data.value.sourceId}}})
+        }
+    }
+
+    const setSourceEditStatus = async (status: SourceEditStatus) => {
+        return (status === data.value?.status) || await setData({status})
+    }
+
+    return {data, relatedImages, setSourceEditStatus, gotoIllust}
 }

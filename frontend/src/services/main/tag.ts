@@ -240,7 +240,7 @@ export function useTagDetailPane() {
         get: client => client.tag.get,
         update: client => client.tag.update,
         delete: client => client.tag.delete,
-        eventFilter: ({ path }) => event => (event.eventType === "entity/meta-tag/updated" || event.eventType === "entity/meta-tag/deleted") && event.metaType === "TAG" && event.metaId === path,
+        eventFilter: c => event => (event.eventType === "entity/meta-tag/updated" || event.eventType === "entity/meta-tag/deleted") && event.metaType === "TAG" && event.metaId === c.path,
         afterRetrieve(path, data) {
             if(path !== null && data === null) {
                 paneState.closeView()

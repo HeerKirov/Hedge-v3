@@ -1,9 +1,13 @@
-import { computed, ref, Ref } from "vue"
-import { SourceBook, SourceDataCreateForm, SourceDataIdentity, SourceTag } from "@/functions/http-client/api/source-data"
+import { ref, Ref, watch } from "vue"
+import {
+    SourceBook, SourceTag, SourceDataIdentity,
+    SourceDataCreateForm, SourceDataUpdateForm, DetailSourceData
+} from "@/functions/http-client/api/source-data"
 import { useCreatingHelper, useFetchEndpoint } from "@/functions/fetch"
 import { useMessageBox } from "@/modules/message-box"
 import { patchSourceBookForm, patchSourceTagForm } from "@/utils/translation"
 import { toRef } from "@/utils/reactivity"
+import { objects } from "@/utils/primitives"
 import { Push } from "../context"
 
 export interface SourceDataEditor {
@@ -47,16 +51,7 @@ export function useSourceDataEditor(push: Push): SourceDataEditor {
 export function useCreateData(completed: () => void) {
     const message = useMessageBox()
 
-    const form = ref<{
-        identity: {sourceSite: string | null, sourceId: number | null}
-        data: {
-            title: string,
-            description: string,
-            tags: SourceTag[],
-            books: SourceBook[],
-            relations: number[]
-        }
-    }>({
+    const form = ref<SourceDataCreateFormData>({
         identity: {sourceSite: null, sourceId: null},
         data: {
             title: "",
@@ -81,6 +76,12 @@ export function useCreateData(completed: () => void) {
             }
         },
         create: client => client.sourceData.create,
+        beforeCreate(form): boolean | void {
+            if(form.identity.sourceSite === null || form.identity.sourceId === null) {
+                message.showOkMessage("prompt", "站点与来源ID不能为空。")
+                return false
+            }
+        },
         afterCreate: completed,
         handleError(e) {
             if(e.code === "ALREADY_EXISTS") {
@@ -97,14 +98,57 @@ export function useCreateData(completed: () => void) {
     return {identity, data, submit}
 }
 
-export function useEditorData(identity: Ref<SourceDataIdentity>) {
+export function useEditorData(identity: Ref<SourceDataIdentity>, completed: () => void) {
     const { data, setData } = useFetchEndpoint({
         path: identity,
         get: client => client.sourceData.get,
         update: client => client.sourceData.update
     })
 
-    const info = computed(() => data.value && ({sourceSiteName: data.value.sourceSiteName, sourceId: data.value.sourceId}))
+    const form = ref<SourceDataUpdateFormData | null>(null)
 
-    return {data, setData, info}
+    watch(data, data => {
+        if(data !== null) {
+            form.value = mapDataToUpdateForm(data)
+        }
+    })
+
+    const save = async () => {
+        if(form.value && data.value) {
+            const updateForm: SourceDataUpdateForm = {
+                title: form.value.title !== data.value.title ? form.value.title : undefined,
+                description: form.value.description !== data.value.description ? form.value.description : undefined,
+                tags: !objects.deepEquals(form.value.tags, data.value.tags) ? patchSourceTagForm(form.value.tags, data.value.tags) : undefined,
+                books: !objects.deepEquals(form.value.books, data.value.books) ? patchSourceBookForm(form.value.books, data.value.books) : undefined,
+                relations: !objects.deepEquals(form.value.relations, data.value.relations) ? form.value.relations : undefined
+            }
+            const r = !Object.values(form).filter(i => i !== undefined).length || await setData(updateForm)
+            if(r && completed) completed()
+        }
+    }
+
+    return {data, form, save}
+}
+
+interface SourceDataUpdateFormData {
+    title: string,
+    description: string,
+    tags: SourceTag[],
+    books: SourceBook[],
+    relations: number[]
+}
+
+interface SourceDataCreateFormData {
+    identity: {sourceSite: string | null, sourceId: number | null}
+    data: SourceDataUpdateFormData
+}
+
+function mapDataToUpdateForm(data: DetailSourceData): SourceDataUpdateFormData {
+    return {
+        title: data.title,
+        description: data.description,
+        tags: data.tags,
+        books: data.books,
+        relations: data.relations
+    }
 }

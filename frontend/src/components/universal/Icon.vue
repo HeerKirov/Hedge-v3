@@ -77,7 +77,8 @@ import {
     faLock, faLockOpen, faEthernet, faBullseye, faBusinessTime, faCircle, faReply,
     faQuestion, faCopyright, faBookmark, faUserNinja, faPaintBrush, faSwatchbook, faStamp,
     faObjectGroup, faObjectUngroup, faBorderStyle, faBuilding, faLink, faHeart, faPager,
-    faEdit, faEllipsisV, faChessQueen, faChess, faList, faTree, faCompress, faCompressArrowsAlt, faColumns
+    faEdit, faEllipsisV, faChessQueen, faChess, faList, faTree, faCompress, faCompressArrowsAlt, faColumns,
+    faPenNib, faExclamationTriangle, faCommentDots, faImages
 } from "@fortawesome/free-solid-svg-icons"
 
 import {
@@ -95,7 +96,8 @@ library.add(
     faLock, faLockOpen, faEthernet, faBullseye, faBusinessTime, faCircle, faReply,
     faQuestion, faCopyright, faBookmark, faUserNinja, faPaintBrush, faSwatchbook, faStamp,
     faObjectGroup, faObjectUngroup, faBorderStyle, faBuilding, faLink, faHeart, faPager,
-    faEdit, faEllipsisV, faChessQueen, faChess, faList, faTree, faCompress, faCompressArrowsAlt, faColumns
+    faEdit, faEllipsisV, faChessQueen, faChess, faList, faTree, faCompress, faCompressArrowsAlt, faColumns,
+    faPenNib, faExclamationTriangle, faCommentDots, faImages
 )
 library.add(farStar)
 

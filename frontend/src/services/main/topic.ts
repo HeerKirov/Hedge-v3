@@ -173,7 +173,7 @@ export function useTopicDetailPanel() {
         get: client => client.topic.get,
         update: client => client.topic.update,
         delete: client => client.topic.delete,
-        eventFilter: ({ path }) => event => (event.eventType === "entity/meta-tag/updated" || event.eventType === "entity/meta-tag/deleted") && event.metaType === "TOPIC" && event.metaId === path,
+        eventFilter: c => event => (event.eventType === "entity/meta-tag/updated" || event.eventType === "entity/meta-tag/deleted") && event.metaType === "TOPIC" && event.metaId === c.path,
         afterRetrieve(path, data) {
             if(path !== null && data === null) {
                 paneState.closeView()

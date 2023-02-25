@@ -109,7 +109,7 @@ export function useAnnotationDetailPane() {
         get: client => client.annotation.get,
         update: client => client.annotation.update,
         delete: client => client.annotation.delete,
-        eventFilter: ({ path }) => event => (event.eventType === "entity/annotation/updated" || event.eventType === "entity/annotation/deleted") && event.annotationId === path,
+        eventFilter: c => event => (event.eventType === "entity/annotation/updated" || event.eventType === "entity/annotation/deleted") && event.annotationId === c.path,
         afterRetrieve(path, data) {
             if(path !== null && data === null) {
                 paneState.closeView()

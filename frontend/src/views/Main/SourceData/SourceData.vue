@@ -8,6 +8,7 @@ import { useDialogService } from "@/components-module/dialog"
 import { usePopupMenu } from "@/modules/popup-menu"
 import { installSourceDataContext } from "@/services/main/source-data"
 import SourceDataListItem from "./SourceDataListItem.vue"
+import SourceDataDetailPane from "./SourceDataDetailPane.vue"
 
 const { paneState, listview: { queryFilter, paginationData }, operators } = installSourceDataContext()
 
@@ -16,7 +17,11 @@ const resultWithKey = computed(() => paginationData.data.result.map(item => ({it
 const { sourceDataEditor } = useDialogService()
 
 const popupMenu = usePopupMenu([
-
+    {type: "normal", label: "查看详情", click: paneState.openDetailView},
+    {type: "separator"},
+    {type: "normal", label: "编辑", click: sourceDataEditor.edit},
+    {type: "separator"},
+    {type: "normal", label: "删除此项", click: operators.deleteItem},
 ])
 
 </script>
@@ -25,6 +30,7 @@ const popupMenu = usePopupMenu([
     <TopBarLayout>
         <template #top-bar>
             <MiddleLayout>
+                <!-- TODO HQL搜索器 -->
                 <SearchInput class="ml-1" placeholder="在此处搜索" v-model:value="queryFilter.query"/>
 
                 <template #right>
@@ -37,7 +43,7 @@ const popupMenu = usePopupMenu([
         <PaneLayout :show-pane="paneState.opened.value">
             <template #pane>
                 <BasePane @close="paneState.closeView()">
-
+                    <SourceDataDetailPane v-if="paneState.mode.value === 'detail'"/>
                 </BasePane>
             </template>
 

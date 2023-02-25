@@ -62,6 +62,7 @@ export interface FetchEndpointOptions<PATH, MODEL, FORM, GE extends BasicExcepti
     delete?(httpClient: HttpClient): (path: PATH) => Promise<Response<unknown, DE>>
     /**
      * 事件过滤器。提供一个过滤器，以从wsEvents中过滤当前对象的变更通知。获得变更通知后，自动刷新对象。
+     * tips: 不要直接解包context。解包会使path的内容被固定，失去响应性。应该直接取用path，或在返回函数内解包context。
      */
     eventFilter?(context: EventFilterContext<PATH>): WsEventConditions
     /**
