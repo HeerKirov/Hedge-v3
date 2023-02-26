@@ -4,22 +4,25 @@ import { flatResponse, mapResponse } from "@/functions/http-client"
 import { SourceDataIdentity, SourceDataQueryFilter, SourceEditStatus } from "@/functions/http-client/api/source-data"
 import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
 import { useListViewContext } from "@/services/base/list-view-context"
+import { useQuerySchema } from "@/services/base/query-schema"
 import { useSettingSite } from "@/services/setting"
 import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator } from "@/modules/router"
-import { installation } from "@/utils/reactivity"
+import { installation, toRef } from "@/utils/reactivity"
 
 export const [installSourceDataContext, useSourceDataContext] = installation(function () {
     const paneState = useDetailViewState<SourceDataIdentity>()
 
     const listview = useListView()
 
+    const querySchema = useQuerySchema("SOURCE_DATA", toRef(listview.queryFilter, "query"))
+
     const operators = useOperators(paneState)
 
     installVirtualViewNavigation()
     useSettingSite()
 
-    return {listview, operators, paneState}
+    return {listview, operators, paneState, querySchema}
 })
 
 function useListView() {

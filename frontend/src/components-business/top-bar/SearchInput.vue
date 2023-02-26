@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Input } from "@/components/form"
 import { Button } from "@/components/universal"
-import { KeyEvent, USUAL_KEY_VALIDATORS } from "@/modules/keyboard"
+import { createKeyEventValidator, KeyEvent, USUAL_KEY_VALIDATORS } from "@/modules/keyboard"
 import { computedMutable } from "@/utils/reactivity"
 
 const props = defineProps<{
@@ -21,11 +21,15 @@ const textValue = computedMutable(() => props.value)
 
 const toggleDropButton = () => emit("update:activeDropButton", !props.activeDropButton)
 
+const META_E_VALIDATOR = createKeyEventValidator("Meta+KeyE")
+
 const keypress = (e: KeyEvent) => {
     if(USUAL_KEY_VALIDATORS["Enter"](e)) {
         const newValue = textValue.value ?? ""
         emit("update:value", newValue)
         emit("enter", newValue !== props.value)
+    }else if(props.enableDropButton && META_E_VALIDATOR(e)) {
+        emit("update:activeDropButton", !props.activeDropButton)
     }
 }
 

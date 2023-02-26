@@ -3,14 +3,14 @@ import { computed } from "vue"
 import { Button } from "@/components/universal"
 import { VirtualRowView } from "@/components/data"
 import { TopBarLayout, PaneLayout, BasePane, MiddleLayout } from "@/components/layout"
-import { SearchInput, DataRouter } from "@/components-business/top-bar"
+import { SearchInput, DataRouter, QueryNotificationBadge, QueryResult } from "@/components-business/top-bar"
 import { useDialogService } from "@/components-module/dialog"
 import { usePopupMenu } from "@/modules/popup-menu"
 import { installSourceDataContext } from "@/services/main/source-data"
 import SourceDataListItem from "./SourceDataListItem.vue"
 import SourceDataDetailPane from "./SourceDataDetailPane.vue"
 
-const { paneState, listview: { queryFilter, paginationData }, operators } = installSourceDataContext()
+const { paneState, listview: { paginationData }, querySchema, operators } = installSourceDataContext()
 
 const resultWithKey = computed(() => paginationData.data.result.map(item => ({item, key: {sourceSite: item.sourceSite, sourceId: item.sourceId}})))
 
@@ -27,17 +27,21 @@ const popupMenu = usePopupMenu([
 </script>
 
 <template>
-    <TopBarLayout>
+    <TopBarLayout v-model:expanded="querySchema.expanded.value">
         <template #top-bar>
             <MiddleLayout>
-                <!-- TODO HQL搜索器 -->
-                <SearchInput class="ml-1" placeholder="在此处搜索" v-model:value="queryFilter.query"/>
+                <SearchInput placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value"/>
+                <QueryNotificationBadge class="ml-1" :schema="querySchema.schema.value" @click="querySchema.expanded.value = true"/>
 
                 <template #right>
                     <DataRouter/>
                     <Button icon="plus" square @click="sourceDataEditor.create()"/>
                 </template>
             </MiddleLayout>
+        </template>
+
+        <template #expand>
+            <QueryResult :schema="querySchema.schema.value"/>
         </template>
 
         <PaneLayout :show-pane="paneState.opened.value">
