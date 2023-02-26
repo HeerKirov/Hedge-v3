@@ -128,7 +128,7 @@ class SourceDataManager(private val data: DataRepository,
                     && tags.letOpt { it.isEmpty() }.unwrapOr { true }
                     && books.letOpt { it.isEmpty() }.unwrapOr { true }
                     && relations.letOpt { it.isEmpty() }.unwrapOr { true }
-            val finalStatus = status.unwrapOr { if(anyOpt(title, description, tags, books, relations)) SourceEditStatus.EDITED else SourceEditStatus.NOT_EDITED }
+            val finalStatus = status.unwrapOr { if(empty) SourceEditStatus.NOT_EDITED else SourceEditStatus.EDITED }
 
             val now = DateTime.now()
             val id = data.db.insertAndGenerateKey(SourceDatas) {

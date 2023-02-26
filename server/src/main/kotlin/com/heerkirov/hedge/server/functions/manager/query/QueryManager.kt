@@ -56,7 +56,7 @@ class QueryManager(private val data: DataRepository, bus: EventBus) {
                 Dialect.AUTHOR -> AuthorExecutePlanBuilder(data.db)
                 Dialect.TOPIC -> TopicExecutePlanBuilder(data.db)
                 Dialect.ANNOTATION -> AnnotationExecutePlanBuilder()
-                Dialect.SOURCE_DATA -> SourceImageExecutePlanBuilder(data.db)
+                Dialect.SOURCE_DATA -> SourceDataExecutePlanBuilder(data.db)
             }
             val translatorResult = Translator.parse(semanticResult.result, queryer, builder, options)
 

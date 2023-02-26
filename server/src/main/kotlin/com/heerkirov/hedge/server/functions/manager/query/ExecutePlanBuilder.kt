@@ -628,7 +628,7 @@ class AnnotationExecutePlanBuilder : ExecutePlanBuilder {
     }
 }
 
-class SourceImageExecutePlanBuilder(private val db: Database): ExecutePlanBuilder, OrderByColumn<SourceDataDialect.OrderItem>, FilterByColumn {
+class SourceDataExecutePlanBuilder(private val db: Database): ExecutePlanBuilder, OrderByColumn<SourceDataDialect.OrderItem>, FilterByColumn {
     private val orders: MutableList<OrderByExpression> = ArrayList()
     private val wheres: MutableList<ColumnDeclaring<Boolean>> = ArrayList()
     private val joins: MutableList<ExecutePlan.Join> = ArrayList()
@@ -699,9 +699,9 @@ class SourceImageExecutePlanBuilder(private val db: Database): ExecutePlanBuilde
             return ExecutePlan(listOf(ArgumentExpression(false, BooleanSqlType)), emptyList(), emptyList(), false)
         }
         if(excludeSourceTags.isNotEmpty()) {
-            wheres.add(Illusts.id notInList db.from(Illusts)
-                .innerJoin(SourceTagRelations, SourceTagRelations.sourceDataId eq Illusts.sourceDataId)
-                .select(Illusts.id))
+            wheres.add(SourceDatas.id notInList db.from(SourceTagRelations).select(SourceTagRelations.sourceDataId).where {
+                if(excludeSourceTags.size == 1) SourceTagRelations.sourceTagId eq excludeSourceTags.first() else SourceTagRelations.sourceTagId inList excludeSourceTags
+            })
         }
         return ExecutePlan(wheres, joins, orders, needDistinct)
     }
