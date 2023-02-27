@@ -1,4 +1,4 @@
-import { computed, h, ref, VNode, watch } from "vue"
+import { computed, ref, watch } from "vue"
 import { useListeningEvent } from "@/utils/emitter"
 import { onElementResize } from "@/utils/sensors"
 import { useVirtualViewNavigationConsumer } from "./state"

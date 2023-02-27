@@ -27,7 +27,9 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
         get: http.createPathRequest(id => `/api/illusts/${id}`, "GET", {
             parseResponse: mapToDetailIllust
         }),
-        update: http.createPathDataRequest(id => `/api/illusts/${id}`, "PATCH"),
+        update: http.createPathDataRequest(id => `/api/illusts/${id}`, "PATCH", {
+            parseData: mapFromImageUpdateForm
+        }),
         delete: http.createPathRequest(id => `/api/illusts/${id}`, "DELETE"),
         collection: {
             create: http.createDataRequest("/api/illusts/collection", "POST"),

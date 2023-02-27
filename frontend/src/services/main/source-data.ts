@@ -98,7 +98,7 @@ export function useSourceDataDetailPane() {
 
     const gotoIllust = () => {
         if(data.value !== null) {
-            navigator.goto({routeName: "MainIllusts", params: {source: {site: data.value.sourceSite, id: data.value.sourceId}}})
+            navigator.goto({routeName: "MainIllust", params: {source: {site: data.value.sourceSite, id: data.value.sourceId}}})
         }
     }
 

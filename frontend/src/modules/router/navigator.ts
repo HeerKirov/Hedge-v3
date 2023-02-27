@@ -78,9 +78,9 @@ export function useNewWindowRouteReceiver() {
  * @param query
  */
 function encodeRouteQuery<N extends RouteName>(routeName: N, query: Partial<RouteParameter[N]["query"]>): Record<string, string> | undefined {
-    if(routeName === "MainTopics" || routeName === "MainAuthors" || routeName === "MainTags" || routeName === "MainAnnotations") {
+    if(routeName === "MainTopic" || routeName === "MainAuthor" || routeName === "MainTag" || routeName === "MainAnnotation") {
         return (query as Record<string, any>)["query"] && { detail: (query as Record<string, any>)["detail"] }
-    }else if(routeName === "MainPartitions") {
+    }else if(routeName === "MainPartition") {
         return (query as Record<string, any>)["query"] && { detail: date.toISOString((query as Record<string, any>)["query"]) }
     }
     return undefined

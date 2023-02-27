@@ -1,12 +1,29 @@
 import { computed, ref, Ref } from "vue"
+import { IllustType, Tagme } from "@/functions/http-client/api/illust"
 import { PaginationData, QueryInstance } from "@/functions/fetch"
 import { useVirtualViewNavigation } from "@/components/data"
 import { useToast } from "@/modules/toast"
 import { useInterceptedKey } from "@/modules/keyboard"
 import { TypeDefinition, useDraggable, useDroppable } from "@/modules/drag"
 import { installation } from "@/utils/reactivity"
+import { LocalDateTime } from "@/utils/datetime"
 
 const SELECTED_MAX = 200
+
+export interface SuitableIllust {
+    id: number
+    file: string
+    thumbnailFile: string
+    favorite: boolean
+    orderTime: LocalDateTime
+    type?: IllustType
+    childrenCount?: number | null
+    tagme: Tagme[]
+    score: number | null
+    sourceSite: string | null
+    sourceId: number | null
+    sourcePart: number | null
+}
 
 interface DatasetContextOptions {
     queryInstance: QueryInstance<unknown> | undefined
@@ -14,7 +31,7 @@ interface DatasetContextOptions {
     keyOf(item: unknown): number
     selected: Ref<number[]>
     lastSelected: Ref<number | null>
-    columnNum?: Ref<number>
+    columnNum: Ref<number | undefined>
     draggable: Ref<boolean>
     droppable: Ref<boolean>
     dragAndDropType: keyof TypeDefinition
@@ -40,7 +57,7 @@ interface SelectorOptions<T> {
     data: Ref<PaginationData<T>>
     selected: Ref<number[]>
     lastSelected: Ref<number | null>
-    columnNum?: Ref<number>
+    columnNum: Ref<number | undefined>
     keyOf: (item: T) => number
     select(selected: number[], lastSelected: number | null): void
 }
@@ -161,9 +178,13 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
         }
     }
 
-    const getMoveOffset: (arrow: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight") => number
-        = columnNum === undefined ? (arrow => arrow === "ArrowLeft" || arrow === "ArrowUp" ? -1 : 1)
-        : (arrow => arrow === "ArrowLeft" ? -1 : arrow === "ArrowRight" ? 1 : arrow === "ArrowUp" ? -columnNum.value : columnNum.value)
+    const getMoveOffset = (arrow: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight") => {
+        if(columnNum.value === undefined) {
+            return arrow === "ArrowLeft" || arrow === "ArrowUp" ? -1 : 1
+        }else{
+            return arrow === "ArrowLeft" ? -1 : arrow === "ArrowRight" ? 1 : arrow === "ArrowUp" ? -columnNum.value : columnNum.value
+        }
+    }
 
     async function getShiftSelectItems(queryEndpoint: QueryInstance<T>, selectId: number, lastSelectId: number) {
         const priorityRange: [number, number] = [data.value.metrics.offset, data.value.metrics.offset + data.value.metrics.limit]

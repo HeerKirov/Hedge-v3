@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { toRefs } from "vue"
-import { ThumbnailImage, Icon, Button } from "@/components/universal"
+import { ThumbnailImage, Icon, Button, Separator } from "@/components/universal"
 import { CheckBox, Select } from "@/components/form"
 import { TagmeEditor, DateEditor } from "@/components-business/form-editor"
 import { OrderTimeType } from "@/functions/http-client/api/setting-import"
@@ -25,8 +25,9 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
 
 <template>
     <ThumbnailImage minHeight="12rem" maxHeight="40rem" :file="data?.thumbnailFile"/>
-    <p v-if="data?.fileName" class="selectable word-wrap-anywhere mb-1">{{data.fileName}}</p>
-    <p><Icon icon="edit"/>批量编辑</p>
+    <p v-if="data?.fileName" class="selectable word-wrap-anywhere my-1">{{data.fileName}}</p>
+    <Separator direction="horizontal"/>
+    <p class="mt-2"><Icon icon="edit"/>批量编辑</p>
     <p class="mt-2"><CheckBox v-model:value="actives.tagme">设置Tagme</CheckBox></p>
     <TagmeEditor v-if="actives.tagme" class="mt-1 mb-2" v-model:value="form.tagme"/>
     <p class="mt-1"><CheckBox v-model:value="actives.setCreatedTimeBy">设置创建时间</CheckBox></p>

@@ -7,7 +7,7 @@ defineProps<{
 </script>
 
 <template>
-    <div v-if="count" :class="$style.root">
+    <div v-if="count && count > 1" :class="$style.root">
         已选择<b>{{count}}</b>项
     </div>
 </template>

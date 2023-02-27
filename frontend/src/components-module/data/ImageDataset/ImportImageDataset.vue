@@ -86,7 +86,7 @@ const emit = defineEmits<{
 const keyOf = (item: ImportImage) => item.id
 
 const data = toRef(props, "data")
-const columnNum = props.viewMode === "grid" ? computed(() => props.columnNum ?? 3) : undefined
+const columnNum = computed(() => props.viewMode === "grid" ? (props.columnNum ?? 3) : undefined)
 const selected = computed(() => props.selected ?? [])
 const lastSelected = computed(() => props.lastSelected ?? null)
 const draggable = computed(() => props.draggable ?? false)
@@ -114,7 +114,7 @@ installDatasetContext({
 
 <template>
     <div class="w-100 h-100 relative" :style="style">
-        <DatasetGridFramework v-if="viewMode === 'grid'" :column-num="columnNum" v-slot="{ item, index }">
+        <DatasetGridFramework v-if="viewMode === 'grid'" :column-num="columnNum!" v-slot="{ item, index }">
             <img :class="$style['grid-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`import-image-${item.id}`"/>
         </DatasetGridFramework>
         <DatasetRowFramework v-else :row-height="32" v-slot="{ item, index }">
@@ -123,7 +123,7 @@ installDatasetContext({
                     <img :class="$style['row-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`import-image-${item.id}`"/>
                 </FlexItem>
                 <FlexItem :width="40">
-                    <div class="ml-1">{{item.fileName}}</div>
+                    <div class="ml-1 no-wrap overflow-ellipsis">{{item.fileName}}</div>
                 </FlexItem>
                 <FlexItem :width="30" :shrink="0">
                     <SourceInfo :site="item.sourceSite" :source-id="item.sourceId" :source-part="item.sourcePart"/>
