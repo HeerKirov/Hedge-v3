@@ -73,7 +73,21 @@ export function usePaginationDataView<T>(queryListview: QueryListview<T>, option
             const currentCache = {queryId, offset, limit}
             cacheTimer = setTimeout(async () => {
                 if(queryId < currentQueryId) return
+                const instanceCache = queryListview.instance.value
                 const result = await queryListview.proxy.queryRange(currentCache.offset, currentCache.limit)
+                if(instanceCache !== queryListview.instance.value) {
+                    //出现一个罕见但确实能见到的情况，在查询期间实例发生了变更。
+                    //当此次查询是初次加载时，这次变更会导致total的返回值变成null，从而最终导致VirtualView的响应机制卡死。
+                    //(因为请求是组件发出的，total由null变null导致这次和以后都无法触发重刷机制)
+                    //为了摆脱这种情况，一旦发现无效请求，就应当由分页器主动发起一次重新查询。
+                    //但例外情况则是，如果此次查询不是初次加载，即total原本有有效值，那么只需要丢弃本次查询。
+                    //(因为total not null时，reset能够有效触发重刷，新查询会被正常发出)
+                    if(data.metrics.total == undefined) {
+                        dataUpdate(offset, limit).finally()
+                        cacheTimer = null
+                        return
+                    }
+                }
                 if(queryId >= currentQueryId) {
                     data.metrics = { total: queryListview.proxy.syncOperations.count()!, offset: currentCache.offset, limit: result.length }
                     data.result = result
