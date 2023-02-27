@@ -19,13 +19,13 @@ defineEmits<{
     <BasePane @close="$emit('close')">
         <template #title>
             <p class="mt-2 ml-2">
-                <i v-if="state.value.type === 'multiple'">已选择{{state.value.values.length}}项</i>
-                <i v-else-if="state.value.type === 'none'" class="has-text-secondary">未选择任何项</i>
+                <i v-if="state.type === 'multiple'">已选择{{state.values.length}}项</i>
+                <i v-else-if="state.type === 'none'" class="has-text-secondary">未选择任何项</i>
             </p>
         </template>
 
-        <ImportDetailPaneSingle v-if="state.value.type === 'single'" :detail-id="state.value.value"/>
-        <ImportDetailPaneMultiple v-else-if="state.value.type === 'multiple'" :selected="state.value.values" :latest="state.value.latest"/>
+        <ImportDetailPaneSingle v-if="state.type === 'single'" :detail-id="state.value"/>
+        <ImportDetailPaneMultiple v-else-if="state.type === 'multiple'" :selected="state.values" :latest="state.latest"/>
         <ThumbnailImage v-else minHeight="12rem" maxHeight="40rem"/>
     </BasePane>
 </template>

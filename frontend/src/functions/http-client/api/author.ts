@@ -1,3 +1,4 @@
+import { UsefulColors } from "@/constants/ui"
 import { HttpInstance, Response } from "../instance"
 import { IdResponse, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
 import { SimpleAnnotation } from "./annotations"
@@ -106,7 +107,7 @@ export interface Author {
     /**
      * 此author的颜色。
      */
-    color: string | null
+    color: UsefulColors | null
 }
 
 export interface DetailAuthor extends Author {
@@ -124,7 +125,7 @@ export interface SimpleAuthor {
     id: number
     name: string
     type: AuthorType
-    color: string | null
+    color: UsefulColors | null
 }
 
 export interface RelatedSimpleAuthor extends SimpleAuthor {

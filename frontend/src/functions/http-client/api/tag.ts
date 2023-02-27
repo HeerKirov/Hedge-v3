@@ -1,3 +1,4 @@
+import { UsefulColors } from "@/constants/ui"
 import { HttpInstance, Response } from "../instance"
 import { IdResponse, LimitAndOffsetFilter, ListResult, OrderList } from "./all"
 import { RelatedSimpleAnnotation } from "./annotations"
@@ -105,7 +106,7 @@ export interface Tag {
     /**
      * 标签的颜色。颜色有与父标签同步的特性，因此只有根标签可以设置color，非根标签设置会抛出异常。
      */
-    color: string | null
+    color: UsefulColors | null
 }
 
 export interface DetailTag extends Tag {
@@ -149,14 +150,14 @@ export interface TagTreeNode {
     otherNames: string[]
     type: TagAddressType
     group: TagGroupType
-    color: string | null
+    color: UsefulColors | null
     children: TagTreeNode[] | null
 }
 
 export interface SimpleTag {
     id: number
     name: string
-    color: string | null
+    color: UsefulColors | null
 }
 
 export interface RelatedSimpleTag extends SimpleTag {
@@ -168,7 +169,7 @@ export interface TagLink {
     name: string
     type: TagAddressType
     group: TagGroupType
-    color: string | null
+    color: UsefulColors | null
 }
 
 export interface TagParent {
@@ -188,7 +189,7 @@ export interface TagCreateForm {
     links?: number[]
     annotations?: (number | string)[] | null
     description?: string
-    color?: string | null
+    color?: UsefulColors | null
     examples?: number[] | null
     mappingSourceTags?: MappingSourceTagForm[] | null
 }
@@ -203,7 +204,7 @@ export interface TagUpdateForm {
     links?: number[] | null
     annotations?: (number | string)[] | null
     description?: string
-    color?: string
+    color?: UsefulColors
     examples?: number[] | null
     mappingSourceTags?: MappingSourceTagForm[] | null
 }

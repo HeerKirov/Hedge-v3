@@ -4,6 +4,7 @@ import { TagTreeNode } from "@/functions/http-client/api/tag"
 import { usePopupMenu } from "@/modules/popup-menu"
 import { useMessageBox } from "@/modules/message-box"
 import { useDroppable } from "@/modules/drag"
+import { UsefulColors } from "@/constants/ui"
 import { objects } from "@/utils/primitives"
 import { sleep } from "@/utils/process"
 
@@ -198,7 +199,7 @@ function useIndexedData(requestedData: Ref<TagTreeNode[] | undefined>) {
      * 移动一个节点，同步更新其indexed data。
      */
     const move = (id: number, parentId: number | null, ordinal: number) => {
-        function processInfo(info: IndexedTag, address: {id: number, name: string}[] | undefined, color: string | null | undefined) {
+        function processInfo(info: IndexedTag, address: {id: number, name: string}[] | undefined, color: UsefulColors | null | undefined) {
             if(address !== undefined) {
                 info.address = address
             }

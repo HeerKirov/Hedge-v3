@@ -8,6 +8,7 @@ import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping
 import { SimpleIllust } from "@/functions/http-client/api/illust"
 import { useLocalStorage } from "@/functions/app"
 import { useMessageBox } from "@/modules/message-box"
+import { UsefulColors } from "@/constants/ui"
 import { computedAsync, computedWatchMutable, installation } from "@/utils/reactivity"
 import { patchMappingSourceTagForm } from "@/utils/translation"
 import { checkTagName } from "@/utils/validation"
@@ -263,7 +264,7 @@ export function useTagDetailPane() {
 
     const isRootNode = computed(() => data.value?.parentId == null)
 
-    const setName = async ([name, otherNames, color]: [string, string[], string | null]) => {
+    const setName = async ([name, otherNames, color]: [string, string[], UsefulColors | null]) => {
         if(!checkTagName(name)) {
             message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` \" ' . | 字符。")
             return false
@@ -385,7 +386,7 @@ interface TagCreateFormData {
     ordinal: number | null,
     name: string
     otherNames: string[],
-    color: string | null,
+    color: UsefulColors | null,
     type: TagAddressType
     group: TagGroupType,
     description: string,

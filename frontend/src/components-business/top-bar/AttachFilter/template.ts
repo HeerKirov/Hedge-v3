@@ -1,6 +1,6 @@
-import { WsEventConditions } from "@/functions/ws-client"
 import { HttpClient, Response, ListResult } from "@/functions/http-client"
 import { NotFound } from "@/functions/http-client/exceptions"
+import { Colors } from "@/constants/ui"
 
 /**
  * AttachFilter中的过滤器项的配置模板。所有的过滤器选项都会在总菜单中依次排列。
@@ -59,7 +59,7 @@ export interface CheckBoxTemplate {
     /**
      * 在按钮组中显示时的颜色。
      */
-    color?: string
+    color?: Colors
     /**
      * 在按钮组中时，是否显示标签。默认值是只显示icon。
      */
@@ -181,7 +181,7 @@ export interface TemplateOption {
     /**
      * 在按钮组中显示时的颜色。
      */
-    color?: string
+    color?: Colors
 }
 
 export type ModeInButtons = "icon-only" | "label-only" | "icon-and-label"

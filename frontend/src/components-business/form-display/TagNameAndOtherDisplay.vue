@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { Colors } from "@/constants/ui"
 
 defineProps<{
     name: string
     otherNames: string[]
-    color: string
+    color: Colors
 }>()
 
 </script>

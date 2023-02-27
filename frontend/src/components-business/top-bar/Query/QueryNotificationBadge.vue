@@ -3,7 +3,7 @@ import { Button, Icon } from "@/components/universal"
 import { QueryRes } from "@/functions/http-client/api/util-query"
 
 defineProps<{
-    schema?: QueryRes
+    schema?: QueryRes | null
 }>()
 
 </script>

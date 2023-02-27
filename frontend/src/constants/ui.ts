@@ -1,4 +1,4 @@
-import { NativeTheme } from "@/functions/ipc-client";
+import { NativeTheme } from "@/functions/ipc-client"
 
 export const USEFUL_COLORS = ["green", "blue", "skyblue", "teal", "cyan", "yellow", "red", "orange", "pink", "deeppink", "tea", "brown"] as const
 

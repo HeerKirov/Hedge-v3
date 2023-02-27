@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, Ref } from "vue"
+import { ComponentPublicInstance, ref, Ref } from "vue"
 import { Icon } from "@/components/universal"
 import { Colors } from "@/constants/ui"
 
@@ -11,10 +11,10 @@ const props = defineProps<{
 }>()
 
 let el: Ref<HTMLElement | undefined> | undefined = undefined
-let setEl: ((element: HTMLElement | undefined) => void) | undefined = undefined
+let setEl: ((ref: Element | ComponentPublicInstance | null, refs: Record<string, any>) => void) | undefined = undefined
 if(props.exposeEl) {
     el = ref<HTMLElement>()
-    setEl = element => el!.value = element
+    setEl = element => el!.value = (element as HTMLElement | null) ?? undefined
 }
 
 defineExpose({

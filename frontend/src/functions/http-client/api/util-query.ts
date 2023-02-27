@@ -1,3 +1,4 @@
+import { UsefulColors } from "@/constants/ui"
 import { HttpInstance, Response } from ".."
 import { TagAddressType } from "./tag"
 import { MetaType } from "./all"
@@ -41,9 +42,9 @@ export type ElementValue = ElementString | ElementSourceTag | ElementAnnotation 
 interface ElementString { type: undefined, value: string, precise: boolean }
 export interface ElementSourceTag { type: "source-tag", id: number, name: string }
 export interface ElementAnnotation { type: "annotation", id: number, name: string, annotationType: MetaType }
-export interface ElementTopic { type: "topic", id: number, name: string, color: string | null }
-export interface ElementAuthor { type: "author", id: number, name: string, color: string | null }
-export interface ElementTag { type: "tag", id: number, name: string, tagType: TagAddressType, color: string | null, realTags: { id: number, name: string, tagType: TagAddressType }[] }
+export interface ElementTopic { type: "topic", id: number, name: string, color: UsefulColors | null }
+export interface ElementAuthor { type: "author", id: number, name: string, color: UsefulColors | null }
+export interface ElementTag { type: "tag", id: number, name: string, tagType: TagAddressType, color: UsefulColors | null, realTags: { id: number, name: string, tagType: TagAddressType }[] }
 
 export interface FilterGroup { exclude: boolean, fields: FilterOfOneField[] }
 export interface FilterOfOneField { name: string, values: FilterValue[] }

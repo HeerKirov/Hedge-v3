@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, Ref, ref, useCssModule } from "vue"
+import { ComponentPublicInstance, computed, Ref, ref, useCssModule } from "vue"
 import { Icon } from "@/components/universal"
 import { Colors } from "@/constants/ui"
 
@@ -26,10 +26,10 @@ const buttonClass = computed(() => [
 ])
 
 let el: Ref<HTMLElement | undefined> | undefined = undefined
-let setEl: ((element: HTMLElement | undefined) => void) | undefined = undefined
+let setEl: ((ref: Element | ComponentPublicInstance | null, refs: Record<string, any>) => void) | undefined = undefined
 if(props.exposeEl) {
     el = ref<HTMLElement>()
-    setEl = element => el!.value = element
+    setEl = element => el!.value = element as HTMLElement | undefined
 }
 
 defineExpose({

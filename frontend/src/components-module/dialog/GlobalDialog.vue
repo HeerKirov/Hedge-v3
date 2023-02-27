@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { DialogBox } from "@/components/interaction"
-import { useInternalService } from "./context"
+import { useInternalService, SourceDataEditorProps } from "./context"
 import SourceDataEditor from "./SourceDataEditor/SourceDataEditor.vue"
 
 const { context, close } = useInternalService()
@@ -9,7 +9,7 @@ const { context, close } = useInternalService()
 
 <template>
     <DialogBox :class="$style['container-box']" :visible="context !== null" @close="close" :close-on-click-outside="true" :close-on-escape="true">
-        <SourceDataEditor v-if="context.type === 'sourceDataEditor'" :p="context.props" @close="close"/>
+        <SourceDataEditor v-if="context!.type === 'sourceDataEditor'" :p="context!.props as SourceDataEditorProps" @close="close"/>
     </DialogBox>
 </template>
 

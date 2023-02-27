@@ -78,7 +78,7 @@ const tagBrackets = computed(() => props.template.displayStyle === "annotation" 
             <Tag v-for="(item, index) in templateOptions"
                  :line-style="tagLineStyle"
                  :brackets="tagBrackets"
-                 :color="(item.color as Colors)"
+                 :color="item.color"
                  :icon="template.modeInButtons !== 'label-only' ? item.icon : undefined"
                  tail-icon="close"
                  clickable @click="removeItem(index)">
@@ -88,7 +88,7 @@ const tagBrackets = computed(() => props.template.displayStyle === "annotation" 
         <SearchPickList v-bind="pickProps" auto-focus v-slot="{ item }">
             <Tag :line-style="tagLineStyle"
                  :brackets="tagBrackets"
-                 :color="(item.color as Colors)"
+                 :color="item.color"
                  :icon="template.modeInButtons !== 'label-only' ? item.icon : undefined">
                 {{template.modeInButtons !== 'icon-only' ? item.label : undefined}}
             </Tag>

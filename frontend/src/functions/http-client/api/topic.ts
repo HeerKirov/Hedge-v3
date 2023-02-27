@@ -1,3 +1,4 @@
+import { UsefulColors } from "@/constants/ui"
 import { HttpInstance, Response } from "../instance"
 import { IdResponse, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
 import { SimpleAnnotation } from "./annotations"
@@ -123,7 +124,7 @@ export interface Topic {
     /**
      * 此topic的颜色。
      */
-    color: string | null
+    color: UsefulColors | null
 }
 
 export interface DetailTopic extends Topic {
@@ -149,7 +150,7 @@ export interface SimpleTopic {
     id: number
     name: string
     type: TopicType
-    color: string | null
+    color: UsefulColors | null
 }
 
 export interface TopicChildrenNode extends SimpleTopic {

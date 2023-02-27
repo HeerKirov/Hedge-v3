@@ -5,7 +5,7 @@ import { Colors } from "@/constants/ui"
 import { ModeInButtons } from "./template"
 
 const props = withDefaults(defineProps<{
-    items: {label?: string, color?: string, icon?: string}[]
+    items: {label?: string, color?: Colors, icon?: string}[]
     modeInButtons?: ModeInButtons
     displayStyle?: "normal" | "tag" | "annotation"
     disableAnyRadius?: boolean
@@ -30,10 +30,10 @@ defineExpose({
             <Icon v-if="item.icon && (modeInButtons === 'icon-only' || modeInButtons === 'icon-and-label')" class="mr-1" :icon="item.icon"/>
             {{modeInButtons === 'label-only' || modeInButtons === 'icon-and-label' ? item.label : ''}}
         </span>
-        <Tag v-else-if="displayStyle === 'tag'" v-for="item in items" :class="$style.item" :color="(item.color as Colors)" :icon="item.icon && (modeInButtons === 'icon-only' || modeInButtons === 'icon-and-label') ? item.icon : undefined">
+        <Tag v-else-if="displayStyle === 'tag'" v-for="item in items" :class="$style.item" :color="item.color" :icon="item.icon && (modeInButtons === 'icon-only' || modeInButtons === 'icon-and-label') ? item.icon : undefined">
             {{modeInButtons === 'label-only' || modeInButtons === 'icon-and-label' ? item.label : ''}}
         </Tag>
-        <Tag v-else-if="displayStyle === 'annotation'" v-for="item in items" :class="$style.item" :color="(item.color as Colors)" :icon="item.icon && (modeInButtons === 'icon-only' || modeInButtons === 'icon-and-label') ? item.icon : undefined" brackets="[]">
+        <Tag v-else-if="displayStyle === 'annotation'" v-for="item in items" :class="$style.item" :color="item.color" :icon="item.icon && (modeInButtons === 'icon-only' || modeInButtons === 'icon-and-label') ? item.icon : undefined" brackets="[]">
             {{modeInButtons === 'label-only' || modeInButtons === 'icon-and-label' ? item.label : ''}}
         </Tag>
     </div>

@@ -14,7 +14,7 @@ import { installVirtualViewNavigation } from "@/components/data"
 import { installation, toRef } from "@/utils/reactivity"
 import { strings } from "@/utils/primitives"
 
-export const [installImportContext, useImportContext] = installation(function () {
+export const [installImportContext] = installation(function () {
     const importService = useImportService()
     const listview = useListView()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})

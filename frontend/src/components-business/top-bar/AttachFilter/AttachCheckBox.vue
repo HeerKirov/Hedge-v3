@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ElementPopupMenu } from "@/components/interaction"
+import { Colors } from "@/constants/ui"
 import { DisplayStyle, ModeInButtons } from "./template"
 import AttachBaseButton from "./AttachBaseButton.vue"
 
 const props = defineProps<{
     label: string
     icon?: string
-    color?: string
+    color?: Colors
     modeInButtons?: ModeInButtons
     displayStyle?: DisplayStyle
 }>()

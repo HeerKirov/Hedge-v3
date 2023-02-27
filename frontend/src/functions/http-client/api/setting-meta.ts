@@ -1,3 +1,4 @@
+import { UsefulColors } from "@/constants/ui"
 import { HttpInstance, Response } from "../instance"
 import { AuthorType } from "./author"
 import { TopicType } from "./topic"
@@ -36,11 +37,11 @@ export interface MetaOption {
     /**
      * topic根据type区分的颜色。
      */
-    topicColors: {[key in TopicType]: string}
+    topicColors: {[key in TopicType]: UsefulColors}
     /**
      * author根据type区分的颜色。
      */
-    authorColors: {[key in AuthorType]: string}
+    authorColors: {[key in AuthorType]: UsefulColors}
 }
 
 export interface MetaOptionUpdateForm {

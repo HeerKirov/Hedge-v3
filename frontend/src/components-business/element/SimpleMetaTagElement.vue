@@ -52,13 +52,13 @@ const icon = computed(() => {
 
 <template>
     <div v-if="wrappedByDiv">
-        <Tag :color="value.color" :icon="icon" :clickable="clickable" :draggable="draggable" v-bind="dragEvents">
+        <Tag :color="value.color ?? undefined" :icon="icon" :clickable="clickable" :draggable="draggable" v-bind="dragEvents">
             <span v-if="selectable" class="selectable">{{value.name}}</span>
             <template v-else>{{value.name}}</template>
         </Tag>
     </div>
     <template v-else>
-        <Tag :color="value.color" :icon="icon" :clickable="clickable" :draggable="draggable" v-bind="dragEvents">
+        <Tag :color="value.color ?? undefined" :icon="icon" :clickable="clickable" :draggable="draggable" v-bind="dragEvents">
             <span v-if="selectable" class="selectable">{{value.name}}</span>
             <template v-else>{{value.name}}</template>
         </Tag>

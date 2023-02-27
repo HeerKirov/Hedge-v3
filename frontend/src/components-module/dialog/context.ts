@@ -3,6 +3,10 @@ import { installation } from "@/utils/reactivity"
 import { MetaTagEditor, MetaTagEditorProps, useMetaTagEditor } from "./MetaTagEditor/context"
 import { SourceDataEditor, SourceDataEditorProps, useSourceDataEditor } from "./SourceDataEditor/context"
 
+export type {
+    SourceDataEditorProps
+}
+
 export interface DialogService {
     sourceDataEditor: SourceDataEditor
     metaTagEditor: MetaTagEditor
