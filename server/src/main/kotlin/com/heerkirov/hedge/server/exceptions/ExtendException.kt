@@ -105,3 +105,13 @@ class InvalidRegexError(regex: String, msg: String): BadRequestException<String>
  * info: (string, string): site名称, regex内容
  */
 class InvalidRuleIndexError(site: String, regex: String) : BadRequestException<Tuple2<String, String>>("INVALID_RULE_INDEX", "Rule [$site] $regex has secondaryId config which not suit to site config.", t2(site, regex))
+
+/**
+ * 当给出的颜色值不符合要求时，抛出此异常。
+ * 抛出位置：
+ * - 设置meta setting时
+ * - 设置tag的color属性时
+ *
+ * info: string: 错误的颜色名称
+ */
+class InvalidColorError(color: String) : BadRequestException<String>("INVALID_COLOR", "'$color' is not a valid color.", color)

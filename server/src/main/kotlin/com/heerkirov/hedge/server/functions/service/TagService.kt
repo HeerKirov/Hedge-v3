@@ -7,6 +7,7 @@ import com.heerkirov.hedge.server.components.backend.exporter.TagGlobalSortExpor
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
+import com.heerkirov.hedge.server.constants.Ui
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.TagKit
 import com.heerkirov.hedge.server.functions.manager.SourceMappingManager
@@ -77,6 +78,7 @@ class TagService(private val data: DataRepository,
     /**
      * @throws AlreadyExists ("Tag", "name", string) 在相同的影响范围内，此名称的标签已存在
      * @throws CannotGiveColorError 不是根节点，不能修改颜色
+     * @throws InvalidColorError 错误的颜色
      * @throws ResourceNotExist ("parentId", number) 给出的parent id不存在
      * @throws ResourceNotExist ("links", number[]) links中给出的tag不存在。给出不存在的link id列表
      * @throws ResourceNotExist ("examples", number[]) examples中给出的image不存在。给出不存在的image id列表
@@ -96,6 +98,7 @@ class TagService(private val data: DataRepository,
 
             //检查颜色，只有顶层tag允许指定颜色
             if(form.color != null && parent != null) throw be(CannotGiveColorError())
+            if(form.color != null && !Ui.USEFUL_COLORS.contains(form.color)) throw be(InvalidColorError(form.color))
 
             //检查标签重名
             //addr类型的标签在相同的parent下重名
@@ -199,6 +202,7 @@ class TagService(private val data: DataRepository,
      * @throws NotFound 请求对象不存在
      * @throws RecursiveParentError parentId出现闭环
      * @throws CannotGiveColorError 不是根节点，不能修改颜色
+     * @throws InvalidColorError 错误的颜色
      * @throws ResourceNotExist ("parentId", number) 给出的parent id不存在
      * @throws ResourceNotExist ("links", number[]) links中给出的tag不存在。给出不存在的link id列表
      * @throws ResourceNotExist ("examples", number[]) examples中给出的image不存在。给出不存在的image id列表
@@ -295,6 +299,7 @@ class TagService(private val data: DataRepository,
 
             val newColor = if(form.color.isPresent) {
                 //指定新color。此时如果parent为null，新color为指定的color，否则抛异常
+                if(!Ui.USEFUL_COLORS.contains(form.color.value)) throw be(InvalidColorError(form.color.value))
                 newParentId.unwrapOr { record.parentId }?.let { throw be(CannotGiveColorError()) } ?: optOf(form.color.value)
             }else{
                 //没有指定新color
