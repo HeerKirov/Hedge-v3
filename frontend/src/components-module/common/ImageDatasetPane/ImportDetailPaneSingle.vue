@@ -5,7 +5,7 @@ import { FormEditKit } from "@/components/interaction"
 import { SourceInfo, TagmeInfo } from "@/components-business/form-display"
 import { SourceIdentityEditor, TagmeEditor, DateEditor, DateTimeEditor } from "@/components-business/form-editor"
 import { date, datetime } from "@/utils/datetime"
-import { useImportDetailPaneSingle } from "./context"
+import { useImportDetailPaneSingle } from "@/services/main/import"
 
 const props = defineProps<{
     detailId: number

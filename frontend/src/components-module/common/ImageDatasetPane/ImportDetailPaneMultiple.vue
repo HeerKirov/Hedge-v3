@@ -4,7 +4,7 @@ import { ThumbnailImage, Icon, Button, Separator } from "@/components/universal"
 import { CheckBox, Select } from "@/components/form"
 import { TagmeEditor, DateEditor } from "@/components-business/form-editor"
 import { OrderTimeType } from "@/functions/http-client/api/setting-import"
-import { useImportDetailPaneMultiple } from "./context"
+import { useImportDetailPaneMultiple } from "@/services/main/import"
 
 const props = defineProps<{
     selected: number[]

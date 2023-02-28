@@ -3,7 +3,7 @@ import { toRefs } from "vue"
 import { ThumbnailImage, Icon, Button, Separator } from "@/components/universal"
 import { CheckBox } from "@/components/form"
 import { TagmeEditor, DateEditor, DescriptionEditor, DateTimeEditor, ScoreEditor } from "@/components-business/form-editor"
-import { useIllustDetailPaneMultiple } from "./context"
+import { useIllustDetailPaneMultiple } from "@/services/main/illust"
 
 const props = defineProps<{
     selected: number[]

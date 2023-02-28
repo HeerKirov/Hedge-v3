@@ -24,7 +24,7 @@ const { form, setProperty, submit } = useTopicCreatePanel()
             </MiddleLayout>
         </template>
 
-        <Container class="py-2">
+        <Container>
             <TopicDetailPanelForm :name="form.name" :other-names="form.otherNames"
                                   :type="form.type" :parent="form.parent"
                                   :annotations="form.annotations" :keywords="form.keywords"

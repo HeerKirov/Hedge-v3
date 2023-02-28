@@ -24,7 +24,7 @@ const { form, setProperty, submit } = useAuthorCreatePanel()
             </MiddleLayout>
         </template>
 
-        <Container class="py-2">
+        <Container>
             <AuthorDetailPanelForm :name="form.name" :other-names="form.otherNames" :type="form.type"
                                    :annotations="form.annotations" :keywords="form.keywords"
                                    :description="form.description" :score="form.score"

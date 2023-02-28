@@ -2,10 +2,10 @@
 import { toRef } from "vue"
 import { ThumbnailImage, Separator, Icon } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
-import { TagmeInfo, DescriptionDisplay, PartitionTimeDisplay, TimeGroupDisplay, ScoreDisplay } from "@/components-business/form-display"
-import { TagmeEditor, DateEditor, DateTimeEditor } from "@/components-business/form-editor"
+import { TagmeInfo, DescriptionDisplay, PartitionTimeDisplay, TimeGroupDisplay, ScoreDisplay, MetaTagListDisplay } from "@/components-business/form-display"
+import { DateEditor, DateTimeEditor } from "@/components-business/form-editor"
 import { DescriptionEditor, ScoreEditor } from "@/components-business/form-editor"
-import { useIllustDetailPaneSingle } from "./context"
+import { useIllustDetailPaneSingle } from "@/services/main/illust"
 
 const props = defineProps<{
     detailId: number
@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const path = toRef(props, "detailId")
 
-const { data, setTagme, setDescription, setScore, setOrderTime, setPartitionTime, openMetaTagEditor } = useIllustDetailPaneSingle(path)
+const { data, setDescription, setScore, setOrderTime, setPartitionTime, openMetaTagEditor } = useIllustDetailPaneSingle(path)
 
 </script>
 
@@ -24,14 +24,6 @@ const { data, setTagme, setDescription, setScore, setOrderTime, setPartitionTime
             <Icon icon="id-card"/><span class="ml-1 selectable">{{path}}</span>
         </p>
         <Separator direction="horizontal"/>
-        <FormEditKit class="mt-2" :value="data.description" :set-value="setDescription">
-            <template #default="{ value }">
-                <DescriptionDisplay :value="value"/>
-            </template>
-            <template #edit="{ value, setValue }">
-                <DescriptionEditor :value="value" @update:value="setValue"/>
-            </template>
-        </FormEditKit>
         <FormEditKit class="mt-1" :value="data.score" :set-value="setScore">
             <template #default="{ value }">
                 <ScoreDisplay :value="value"/>
@@ -40,15 +32,16 @@ const { data, setTagme, setDescription, setScore, setOrderTime, setPartitionTime
                 <ScoreEditor :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
-        <!-- meta tag display -->
-        <FormEditKit class="mt-1" :value="data.tagme" :set-value="setTagme">
+        <FormEditKit class="mt-1" :value="data.description" :set-value="setDescription">
             <template #default="{ value }">
-                <TagmeInfo :value="value"/>
+                <DescriptionDisplay :value="value"/>
             </template>
             <template #edit="{ value, setValue }">
-                <TagmeEditor :value="value" @update:value="setValue"/>
+                <DescriptionEditor :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
+        <MetaTagListDisplay class="mt-1" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
+        <TagmeInfo v-if="data.tagme.length > 0" class="mt-1" :value="data.tagme"/>
         <FormEditKit class="mt-2" :value="data.partitionTime" :set-value="setPartitionTime">
             <template #default="{ value }">
                 <PartitionTimeDisplay :partition-time="value"/>

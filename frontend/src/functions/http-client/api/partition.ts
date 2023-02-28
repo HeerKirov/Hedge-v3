@@ -63,4 +63,5 @@ export interface PartitionMonth {
 export interface PartitionFilter {
     gte?: LocalDate
     lt?: LocalDate
+    query?: string
 }

@@ -4,7 +4,8 @@ import { MetaTagEditor, MetaTagEditorProps, useMetaTagEditor } from "./MetaTagEd
 import { SourceDataEditor, SourceDataEditorProps, useSourceDataEditor } from "./SourceDataEditor/context"
 
 export type {
-    SourceDataEditorProps
+    SourceDataEditorProps,
+    MetaTagEditorProps
 }
 
 export interface DialogService {

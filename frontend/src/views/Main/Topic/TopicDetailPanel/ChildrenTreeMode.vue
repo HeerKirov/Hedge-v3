@@ -23,23 +23,17 @@ const anyChildren = computed(() => splits.value.others.some(child => child.child
 
 <template>
     <div v-if="anyChildren">
-        <div :class="$style.children">
-            <Group v-for="child in splits.others" :key="child.id" :class="$style.child">
+        <div>
+            <Group v-for="child in splits.others" :key="child.id">
                 <ChildrenTreeModeItem :child="child" @click="$emit('click', $event)"/>
             </Group>
         </div>
-        <Group v-if="splits.characters.length > 0" :class="[$style.children, $style.inline]">
-            <ChildrenTreeModeItem v-for="child in splits.characters" :key="child.id" :class="$style.child" :child="child" @click="$emit('click', $event)"/>
+        <Group v-if="splits.characters.length > 0">
+            <ChildrenTreeModeItem v-for="child in splits.characters" :key="child.id" :child="child" @click="$emit('click', $event)"/>
         </Group>
     </div>
-    <Group v-else :class="[$style.children, $style.inline]">
-        <ChildrenTreeModeItem v-for="child in [...splits.others, ...splits.characters]" :key="child.id" :class="$style.child" :child="child" @click="$emit('click', $event)"/>
+    <Group v-else>
+        <ChildrenTreeModeItem v-for="child in [...splits.others, ...splits.characters]" :key="child.id" :child="child" @click="$emit('click', $event)"/>
     </Group>
 </template>
 
-<style module lang="sass">
-.children
-    &.inline
-
-    .child
-</style>
