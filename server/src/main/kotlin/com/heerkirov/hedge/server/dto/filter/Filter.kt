@@ -90,7 +90,8 @@ data class ImportFilter(@Limit val limit: Int,
                         val order: List<OrderItem> = listOf(OrderItem("id", desc = false)))
 
 data class PartitionFilter(val gte: LocalDate? = null,
-                           val lt: LocalDate? = null)
+                           val lt: LocalDate? = null,
+                           @Search val query: String?)
 
 data class SourceDataQueryFilter(@Limit val limit: Int,
                                  @Offset val offset: Int,

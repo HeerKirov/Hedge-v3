@@ -1,12 +1,14 @@
 package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.database.DataRepository
-import com.heerkirov.hedge.server.dao.Partitions
+import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.exceptions.NotFound
 import com.heerkirov.hedge.server.dto.filter.PartitionFilter
 import com.heerkirov.hedge.server.dto.res.PartitionMonthRes
 import com.heerkirov.hedge.server.dto.res.PartitionRes
+import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.exceptions.be
+import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import org.ktorm.dsl.*
 import org.ktorm.entity.filter
@@ -14,16 +16,36 @@ import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.sortedBy
 import java.time.LocalDate
 
-class PartitionService(private val data: DataRepository) {
+class PartitionService(private val data: DataRepository, private val queryManager: QueryManager) {
     fun list(filter: PartitionFilter): List<PartitionRes> {
-        return data.db.from(Partitions).select()
-            .whereWithConditions {
-                if(filter.gte != null) it += Partitions.date greaterEq filter.gte
-                if(filter.lt != null) it += Partitions.date less filter.lt
-                it += Partitions.cachedCount greater 0
-            }
-            .orderBy(Partitions.date.asc())
-            .map { PartitionRes(it[Partitions.date]!!, it[Partitions.cachedCount]!!) }
+        if(filter.query.isNullOrBlank()) {
+            return data.db.from(Partitions).select()
+                .whereWithConditions {
+                    if(filter.gte != null) it += Partitions.date greaterEq filter.gte
+                    if(filter.lt != null) it += Partitions.date less filter.lt
+                    it += Partitions.cachedCount greater 0
+                }
+                .orderBy(Partitions.date.asc())
+                .map { PartitionRes(it[Partitions.date]!!, it[Partitions.cachedCount]!!) }
+        }else{
+            val schema = queryManager.querySchema(filter.query, QueryManager.Dialect.ILLUST).executePlan ?: return emptyList()
+
+            return data.db.from(Illusts)
+                .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
+                .let { schema.joinConditions.fold(it) { acc, join -> if(join.left) acc.leftJoin(join.table, join.condition) else acc.innerJoin(join.table, join.condition) } }
+                .select(Illusts.partitionTime, countDistinct(Illusts.id).aliased("count"))
+                .whereWithConditions {
+                    it += (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)
+                    if(filter.gte != null) it += Illusts.partitionTime greaterEq filter.gte
+                    if(filter.lt != null) it += Illusts.partitionTime less filter.lt
+                    if(schema.whereConditions.isNotEmpty()) {
+                        it.addAll(schema.whereConditions)
+                    }
+                }
+                .groupBy(Illusts.partitionTime)
+                .orderBy(Illusts.partitionTime.asc())
+                .map { PartitionRes(it[Illusts.partitionTime]!!, it.getInt("count")) }
+        }
     }
 
     /**

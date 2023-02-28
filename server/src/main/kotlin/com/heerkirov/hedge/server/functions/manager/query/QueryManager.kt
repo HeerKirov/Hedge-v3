@@ -33,7 +33,7 @@ class QueryManager(private val data: DataRepository, bus: EventBus) {
     fun querySchema(text: String, dialect: Dialect): QuerySchema {
         return executePlanCache.computeIfAbsent(DialectAndText(dialect, text)) { key ->
             val lexicalResult = LexicalAnalyzer.parse(key.text, options)
-            if(lexicalResult.result == null) {
+            if(lexicalResult.result.isNullOrEmpty()) {
                 return@computeIfAbsent QuerySchema(null, null, warnings = lexicalResult.warnings, errors = lexicalResult.errors)
             }
             val grammarResult = GrammarAnalyzer.parse(lexicalResult.result)

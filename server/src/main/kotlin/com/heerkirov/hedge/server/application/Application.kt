@@ -81,7 +81,7 @@ fun runApplication(options: ApplicationOptions) {
             val illustService = IllustService(repo, bus, illustKit, illustManager, illustExtendManager, associateManager, sourceManager, partitionManager, queryManager, backendExporter)
             val bookService = BookService(repo, bus, bookKit, bookManager, illustManager, queryManager, backendExporter)
             val folderService = FolderService(repo, bus, folderKit, illustManager)
-            val partitionService = PartitionService(repo)
+            val partitionService = PartitionService(repo, queryManager)
             val annotationService = AnnotationService(repo, bus, annotationKit, queryManager)
             val tagService = TagService(repo, bus, tagKit, sourceMappingManager, backendExporter)
             val authorService = AuthorService(repo, bus, authorKit, queryManager, sourceMappingManager, backendExporter)
