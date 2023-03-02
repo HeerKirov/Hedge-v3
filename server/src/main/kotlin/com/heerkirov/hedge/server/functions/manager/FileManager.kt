@@ -20,8 +20,12 @@ import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import java.io.File
 import java.lang.Exception
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 class FileManager(private val appdata: AppDataManager, private val data: DataRepository) {
+    private val extensions = arrayOf("jpeg", "jpg", "png", "gif", "mp4", "webm")
+
     /**
      * 将指定的File载入到数据库中，同时创建一条新记录。
      * - folder指定为文件的更改日期(UTC)。对于上传的文件，这就相当于取了导入日期。
@@ -30,7 +34,6 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
      * @param moveFile 使用移动的方式导入文件。
      * @return file id。使用此id来索引物理文件记录。
      * @throws StorageNotAccessibleError 存储路径不可访问
-     * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      */
     fun newFile(file: File, moveFile: Boolean = false): Int {
@@ -55,8 +58,11 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
         val fileOriginalPath = "${appdata.storagePathAccessor.storageDir}/${generateFilepath(folder, id, extension)}"
         val originalFile = File(fileOriginalPath)
 
+        val dir = originalFile.parentFile
+        if(!dir.exists()) dir.mkdirs()
+
         if(moveFile) {
-            file.renameTo(originalFile)
+            Files.move(file.toPath(), originalFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }else{
             try {
                 file.copyTo(originalFile, overwrite = true)
@@ -131,6 +137,4 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
             if(this !in extensions) throw be(IllegalFileExtensionError(extension))
         }
     }
-
-    private val extensions = arrayOf("jpeg", "jpg", "png", "gif", "mp4", "webm")
 }

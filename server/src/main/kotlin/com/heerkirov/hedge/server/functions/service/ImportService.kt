@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.backend.similar.SimilarFinder
+import com.heerkirov.hedge.server.components.backend.watcher.PathWatcher
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.ImportOption
@@ -8,10 +9,7 @@ import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.FileRecords
 import com.heerkirov.hedge.server.dao.ImportImages
 import com.heerkirov.hedge.server.dto.filter.ImportFilter
-import com.heerkirov.hedge.server.dto.form.ImportBatchUpdateForm
-import com.heerkirov.hedge.server.dto.form.ImportForm
-import com.heerkirov.hedge.server.dto.form.ImportUpdateForm
-import com.heerkirov.hedge.server.dto.form.UploadForm
+import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.events.ImportDeleted
@@ -41,7 +39,8 @@ class ImportService(private val data: DataRepository,
                     private val illustManager: IllustManager,
                     private val sourceManager: SourceDataManager,
                     private val importMetaManager: ImportMetaManager,
-                    private val similarFinder: SimilarFinder) {
+                    private val similarFinder: SimilarFinder,
+                    private val pathWatcher: PathWatcher) {
     private val orderTranslator = OrderTranslator {
         "id" to ImportImages.id
         "fileCreateTime" to ImportImages.fileCreateTime nulls last
@@ -282,5 +281,13 @@ class ImportService(private val data: DataRepository,
 
             return ImportSaveRes(records.size)
         }
+    }
+
+    fun getWatcherStatus(): ImportWatcherRes {
+        return ImportWatcherRes(pathWatcher.isOpen, pathWatcher.statisticCount, pathWatcher.errors)
+    }
+
+    fun updateWatcherStatus(form: ImportWatcherForm) {
+        pathWatcher.isOpen = form.isOpen
     }
 }

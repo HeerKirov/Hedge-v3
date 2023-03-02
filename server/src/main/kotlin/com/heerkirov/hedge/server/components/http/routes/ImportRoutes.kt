@@ -5,10 +5,7 @@ import com.heerkirov.hedge.server.exceptions.ParamRequired
 import com.heerkirov.hedge.server.library.form.bodyAsForm
 import com.heerkirov.hedge.server.library.form.queryAsFilter
 import com.heerkirov.hedge.server.dto.filter.ImportFilter
-import com.heerkirov.hedge.server.dto.form.ImportBatchUpdateForm
-import com.heerkirov.hedge.server.dto.form.ImportForm
-import com.heerkirov.hedge.server.dto.form.ImportUpdateForm
-import com.heerkirov.hedge.server.dto.form.UploadForm
+import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.service.ImportService
@@ -25,6 +22,10 @@ class ImportRoutes(private val importService: ImportService) : Routes {
                 post("upload", ::upload)
                 post("batch-update", ::batchUpdate)
                 post("save", ::save)
+                path("watcher") {
+                    get(::getWatcher)
+                    post(::updateWatcher)
+                }
                 path("{id}") {
                     get(::get)
                     patch(::update)
@@ -76,5 +77,14 @@ class ImportRoutes(private val importService: ImportService) : Routes {
 
     private fun save(ctx: Context) {
         ctx.json(importService.save())
+    }
+
+    private fun getWatcher(ctx: Context) {
+        ctx.json(importService.getWatcherStatus())
+    }
+
+    private fun updateWatcher(ctx: Context) {
+        val form = ctx.bodyAsForm<ImportWatcherForm>()
+        importService.updateWatcherStatus(form)
     }
 }

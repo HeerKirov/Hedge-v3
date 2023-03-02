@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.dto.res
 
+import com.heerkirov.hedge.server.components.backend.watcher.PathWatcherError
 import com.heerkirov.hedge.server.model.Illust
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -17,3 +18,5 @@ data class ImportImageDetailRes(val id: Int,
                                 val tagme: Illust.Tagme,
                                 val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?,
                                 val partitionTime: LocalDate, val orderTime: LocalDateTime, val createTime: LocalDateTime)
+
+data class ImportWatcherRes(val isOpen: Boolean, val statisticCount: Int, val errors: List<PathWatcherError>)

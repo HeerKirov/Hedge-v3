@@ -23,7 +23,11 @@ data class ImportOptionUpdateForm(val autoAnalyseSourceData: Opt<Boolean>,
                                   val setTagmeOfSource: Opt<Boolean>,
                                   val setOrderTimeBy: Opt<ImportOption.TimeType>,
                                   @Range(min = 0 - 86400000, max = 86400000) val setPartitionTimeDelay: Opt<Long?>,
-                                  val sourceAnalyseRules: Opt<List<ImportOption.SourceAnalyseRule>>)
+                                  val sourceAnalyseRules: Opt<List<ImportOption.SourceAnalyseRule>>,
+                                  val watchPaths: Opt<List<String>>,
+                                  val autoWatchPath: Opt<Boolean>,
+                                  val watchPathMoveFile: Opt<Boolean>,
+                                  val watchPathInitialize: Opt<Boolean>)
 
 data class MetaOptionUpdateForm(val scoreDescriptions: Opt<List<MetaOption.ScoreDescription>>,
                                 val autoCleanTagme: Opt<Boolean>,

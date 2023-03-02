@@ -4,6 +4,7 @@ import com.heerkirov.hedge.server.components.appdata.AppDataManagerImpl
 import com.heerkirov.hedge.server.components.backend.FileGeneratorImpl
 import com.heerkirov.hedge.server.components.backend.exporter.BackendExporterImpl
 import com.heerkirov.hedge.server.components.backend.similar.SimilarFinderImpl
+import com.heerkirov.hedge.server.components.backend.watcher.PathWatcherImpl
 import com.heerkirov.hedge.server.components.bus.EventBusImpl
 import com.heerkirov.hedge.server.components.database.DataRepositoryImpl
 import com.heerkirov.hedge.server.components.health.HealthImpl
@@ -52,6 +53,7 @@ fun runApplication(options: ApplicationOptions) {
             val fileManager = FileManager(appdata, repo)
             val importMetaManager = ImportMetaManager(repo)
             val importManager = ImportManager(repo, bus, importMetaManager, fileManager, thumbnailGenerator)
+            val pathWatcher = define { PathWatcherImpl(appStatus, repo, bus, importManager) }
 
             val annotationKit = AnnotationKit(repo)
             val annotationManager = AnnotationManager(repo)
@@ -86,7 +88,7 @@ fun runApplication(options: ApplicationOptions) {
             val tagService = TagService(repo, bus, tagKit, sourceMappingManager, backendExporter)
             val authorService = AuthorService(repo, bus, authorKit, queryManager, sourceMappingManager, backendExporter)
             val topicService = TopicService(repo, bus, topicKit, queryManager, sourceMappingManager, backendExporter)
-            val importService = ImportService(repo, bus, fileManager, importManager, illustManager, sourceManager, importMetaManager, similarFinder)
+            val importService = ImportService(repo, bus, fileManager, importManager, illustManager, sourceManager, importMetaManager, similarFinder, pathWatcher)
             val findSimilarService = FindSimilarService(repo, illustExtendManager, similarFinder)
 
             val illustUtilService = IllustUtilService(repo)

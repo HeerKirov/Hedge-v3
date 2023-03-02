@@ -24,6 +24,7 @@ module com.heerkirov.hedge.server {
     opens com.heerkirov.hedge.server.components.http.modules;
     opens com.heerkirov.hedge.server.components.http.routes;
     opens com.heerkirov.hedge.server.components.backend.exporter;
+    opens com.heerkirov.hedge.server.components.backend.watcher;
     opens com.heerkirov.hedge.server.model;
     opens com.heerkirov.hedge.server.dto.res;
     opens com.heerkirov.hedge.server.dto.form;

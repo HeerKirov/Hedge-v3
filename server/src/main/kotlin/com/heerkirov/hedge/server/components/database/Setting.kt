@@ -96,7 +96,24 @@ data class ImportOption(
     /**
      * 解析来源时，使用的规则列表。
      */
-    var sourceAnalyseRules: List<SourceAnalyseRule>
+    var sourceAnalyseRules: List<SourceAnalyseRule>,
+    /**
+     * 监听目录导入功能所存储的默认目录列表。
+     */
+    var watchPaths: List<String>,
+    /**
+     * 程序启动时，自动开启监听目录功能。
+     */
+    var autoWatchPath: Boolean,
+    /**
+     * 监听目录功能将移动所监听到的文件。
+     */
+    var watchPathMoveFile: Boolean,
+    /**
+     * 监听目录功能会在开启时首先扫描一遍目录内已有的文件。
+     * 一般来说建议开启此功能时也开启移动文件功能。
+     */
+    var watchPathInitialize: Boolean
 ) {
     enum class TimeType {
         IMPORT_TIME,

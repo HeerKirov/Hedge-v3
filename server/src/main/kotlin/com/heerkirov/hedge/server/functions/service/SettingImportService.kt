@@ -35,6 +35,10 @@ class SettingImportService(private val data: DataRepository, private val bus: Ev
                 form.setOrderTimeBy.alsoOpt { import.setOrderTimeBy = it }
                 form.setPartitionTimeDelay.alsoOpt { import.setPartitionTimeDelay = it }
                 form.sourceAnalyseRules.alsoOpt { import.sourceAnalyseRules = it }
+                form.watchPaths.alsoOpt { import.watchPaths = it }
+                form.autoWatchPath.alsoOpt { import.autoWatchPath = it }
+                form.watchPathMoveFile.alsoOpt { import.watchPathMoveFile = it }
+                form.watchPathInitialize.alsoOpt { import.watchPathInitialize = it }
             }
         }
 

@@ -32,7 +32,11 @@ object MetadataMigrationStrategy : JsonObjectStrategy<Setting>(Setting::class) {
                 setTagmeOfSource = true,
                 setOrderTimeBy = ImportOption.TimeType.UPDATE_TIME,
                 setPartitionTimeDelay = null,
-                sourceAnalyseRules = emptyList()
+                sourceAnalyseRules = emptyList(),
+                watchPaths = emptyList(),
+                autoWatchPath = false,
+                watchPathMoveFile = true,
+                watchPathInitialize = true
             ),
             findSimilar = FindSimilarOption(
                 autoFindSimilar = false,

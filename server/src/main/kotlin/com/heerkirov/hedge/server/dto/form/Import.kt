@@ -29,3 +29,5 @@ class ImportBatchUpdateForm(val target: List<Int>? = null,
                             val setOrderTimeBy: ImportOption.TimeType? = null,
                             val partitionTime: LocalDate? = null,
                             val analyseSource: Boolean = false)
+
+class ImportWatcherForm(val isOpen: Boolean)
