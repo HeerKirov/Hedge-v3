@@ -51,6 +51,23 @@ export interface ImportOption {
      * source分析的规则列表。
      */
     sourceAnalyseRules: SourceAnalyseRule[]
+    /**
+     * 监听目录导入功能所存储的默认目录列表。
+     */
+    watchPaths: string[]
+    /**
+     * 程序启动时，自动开启监听目录功能。
+     */
+    autoWatchPath: boolean
+    /**
+     * 监听目录功能将移动所监听到的文件。
+     */
+    watchPathMoveFile: boolean
+    /**
+     * 监听目录功能会在开启时首先扫描一遍目录内已有的文件。
+     * 一般来说建议开启此功能时也开启移动文件功能。
+     */
+    watchPathInitialize: boolean
 }
 
 export interface ImportOptionUpdateForm {
@@ -60,6 +77,10 @@ export interface ImportOptionUpdateForm {
     setTimeBy?: OrderTimeType
     setPartitionTimeDelay?: number | null
     sourceAnalyseRules?: SourceAnalyseRule[]
+    watchPaths?: string[]
+    autoWatchPath?: boolean
+    watchPathMoveFile?: boolean
+    watchPathInitialize?: boolean
 }
 
 /**

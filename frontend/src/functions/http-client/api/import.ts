@@ -20,7 +20,11 @@ export function createImportEndpoint(http: HttpInstance): ImportEndpoint {
         import: http.createDataRequest("/api/imports/import", "POST"),
         upload: http.createDataRequest("/api/imports/upload", "POST", { parseData: mapFromUploadFile }),
         batchUpdate: http.createDataRequest("/api/imports/batch-update", "POST", { parseData: mapFromBatchUpdateForm }),
-        save: http.createRequest("/api/imports/save", "POST")
+        save: http.createRequest("/api/imports/save", "POST"),
+        watcher: {
+            get: http.createRequest("/api/imports/watcher", "GET"),
+            update: http.createDataRequest("/api/imports/watcher", "POST")
+        }
     }
 }
 
@@ -126,6 +130,26 @@ export interface ImportEndpoint {
      * @exception FILE_NOT_READY
      */
     save(): Promise<Response<ImportSaveResponse, FileNotReadyError>>
+    /**
+     * 目录监听器。
+     */
+    watcher: {
+        /**
+         * 查看监听器状态。
+         */
+        get(): Promise<Response<ImportWatcherResponse>>
+        /**
+         * 修改监听器状态。
+         */
+        update(form: ImportWatcherForm): Promise<Response<null>>
+    }
+}
+
+export type PathWatcherErrorReason = "NO_USEFUL_PATH" | "PATH_NOT_EXIST" | "PATH_IS_NOT_DIRECTORY" | "PATH_WATCH_FAILED" | "PATH_NO_LONGER_AVAILABLE"
+
+export interface PathWatcherError {
+    path: string
+    reason: PathWatcherErrorReason
 }
 
 export interface ImportImage {
@@ -152,6 +176,16 @@ export interface DetailImportImage extends ImportImage {
 
 export interface ImportSaveResponse {
     total: number
+}
+
+export interface ImportWatcherResponse {
+    isOpen: boolean
+    statisticCount: number
+    errors: PathWatcherError[]
+}
+
+export interface ImportWatcherForm {
+    isOpen: boolean
 }
 
 export interface ImportForm {

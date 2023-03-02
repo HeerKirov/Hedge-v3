@@ -1,13 +1,14 @@
 import { ServerServiceStatus } from "@/functions/ipc-client"
 import { MetaType } from "@/functions/http-client/api/all"
 import { IllustType } from "@/functions/http-client/api/illust"
-import { FolderType } from "@/functions/http-client/api/folder";
-import { ServiceOptionUpdateForm } from "@/functions/http-client/api/setting-service";
-import { MetaOptionUpdateForm } from "@/functions/http-client/api/setting-meta";
-import { QueryOptionUpdateForm } from "@/functions/http-client/api/setting-query";
-import { ImportOptionUpdateForm } from "@/functions/http-client/api/setting-import";
-import { FindSimilarOptionUpdateForm } from "@/functions/http-client/api/setting-find-similar";
-import { Site } from "@/functions/http-client/api/setting-source";
+import { FolderType } from "@/functions/http-client/api/folder"
+import { PathWatcherError } from "@/functions/http-client/api/import"
+import { ServiceOptionUpdateForm } from "@/functions/http-client/api/setting-service"
+import { MetaOptionUpdateForm } from "@/functions/http-client/api/setting-meta"
+import { QueryOptionUpdateForm } from "@/functions/http-client/api/setting-query"
+import { ImportOptionUpdateForm } from "@/functions/http-client/api/setting-import"
+import { FindSimilarOptionUpdateForm } from "@/functions/http-client/api/setting-find-similar"
+import { Site } from "@/functions/http-client/api/setting-source"
 
 export interface BaseWsEvent<ET extends string> {
     eventType: ET
@@ -15,7 +16,7 @@ export interface BaseWsEvent<ET extends string> {
 
 export type AllEventTypes = AllEvents["eventType"]
 
-export type AllEvents = AppEvents | EntityEvents | SettingEvents
+export type AllEvents = AppEvents | EntityEvents | BackendEvents | SettingEvents
 
 type AppEvents = AppStatusChanged
 
@@ -28,6 +29,8 @@ type EntityEvents
     | ImportCreated | ImportUpdated | ImportDeleted | ImportSaved
     | SourceDataCreated | SourceDataUpdated | SourceDataDeleted
     | SourceBookUpdated | SourceTagUpdated | SourceTagMappingUpdated
+
+type BackendEvents = PathWatcherStatusChanged
 
 type SettingEvents = SettingServiceChanged | SettingMetaChanged | SettingQueryChanged | SettingImportChanged | SettingFindSimilarChanged | SettingSourceSiteChanged
 
@@ -94,6 +97,10 @@ export interface SourceBookUpdated extends BaseWsEvent<"entity/source-book/updat
 export interface SourceTagUpdated extends BaseWsEvent<"entity/source-tag/updated"> { site: string, sourceTagCode: string }
 
 export interface SourceTagMappingUpdated extends BaseWsEvent<"entity/source-tag-mapping/updated"> { site: string, sourceTagCode: string }
+
+//== backend后台相关变更通知 ==
+
+export interface PathWatcherStatusChanged extends BaseWsEvent<"backend/path-watcher/status-changed"> { isOpen: boolean, statisticCount: number, errors: PathWatcherError[] }
 
 //== setting相关变更通知 ==
 
