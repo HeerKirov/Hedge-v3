@@ -173,7 +173,8 @@ export function useImportDetailPaneSingle(path: Ref<number | null>) {
     const { data, setData } = useFetchEndpoint({
         path,
         get: client => client.import.get,
-        update: client => client.import.update
+        update: client => client.import.update,
+        eventFilter: c => event => (event.eventType === "entity/import/updated" || event.eventType === "entity/import/deleted") && event.importId === c.path
     })
 
     const setTagme = async (tagme: Tagme[]) => {
@@ -226,7 +227,8 @@ export function useImportDetailPaneMultiple(selected: Ref<number[]>, latest: Ref
 
     const { data } = useFetchEndpoint({
         path: latest,
-        get: client => client.import.get
+        get: client => client.import.get,
+        eventFilter: c => event => (event.eventType === "entity/import/updated" || event.eventType === "entity/import/deleted") && event.importId === c.path
     })
 
     const actives = reactive({

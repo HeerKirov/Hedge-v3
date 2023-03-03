@@ -6,6 +6,7 @@ import { TAGME_TYPES, TAGME_TYPE_ICONS, TAGME_TYPE_NAMES } from "@/constants/ent
 
 const props = defineProps<{
     value: Tagme[]
+    direction?: "horizontal" | "vertical"
 }>()
 
 const emit = defineEmits<{
@@ -24,7 +25,16 @@ const updateValue = (tagme: Tagme, v: boolean) => {
 </script>
 
 <template>
-    <Block class="p-1">
+    <Block v-if="direction === 'horizontal'" :class="$style.horizontal">
+        <b>Tagme</b>
+        <span v-for="tagme in TAGME_TYPES" :key="tagme" class="ml-2">
+            <CheckBox :value="value.includes(tagme)" @update:value="updateValue(tagme, $event)">
+                <Icon :icon="TAGME_TYPE_ICONS[tagme]"/>
+                {{TAGME_TYPE_NAMES[tagme]}}
+            </CheckBox>
+        </span>
+    </Block>
+    <Block v-else class="p-1">
         <b>Tagme</b>
         <p v-for="tagme in TAGME_TYPES" :key="tagme">
             <CheckBox :value="value.includes(tagme)" @update:value="updateValue(tagme, $event)">
@@ -34,3 +44,11 @@ const updateValue = (tagme: Tagme, v: boolean) => {
         </p>
     </Block>
 </template>
+
+<style module lang="sass">
+@import "../../styles/base/size"
+
+.horizontal
+    line-height: $element-height-std
+    padding: 0 0.25rem
+</style>

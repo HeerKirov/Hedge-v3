@@ -87,7 +87,8 @@ export function useIllustDetailPaneSingle(path: Ref<number | null>) {
     const { data, setData } = useFetchEndpoint({
         path,
         get: client => client.illust.get,
-        update: client => client.illust.update
+        update: client => client.illust.update,
+        eventFilter: c => event => (event.eventType === "entity/illust/updated" || event.eventType === "entity/illust/deleted") && event.illustId === c.path
     })
 
     const setDescription = async (description: string) => {
@@ -122,7 +123,8 @@ export function useIllustDetailPaneMultiple(selected: Ref<number[]>, latest: Ref
 
     const { data } = useFetchEndpoint({
         path: latest,
-        get: client => client.illust.get
+        get: client => client.illust.get,
+        eventFilter: c => event => (event.eventType === "entity/illust/updated" || event.eventType === "entity/illust/deleted") && event.illustId === c.path
     })
 
     const actives = reactive({

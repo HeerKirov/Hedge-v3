@@ -78,11 +78,12 @@ import {
     faQuestion, faCopyright, faBookmark, faUserNinja, faPaintBrush, faSwatchbook, faStamp,
     faObjectGroup, faObjectUngroup, faBorderStyle, faBuilding, faLink, faHeart, faPager,
     faEdit, faEllipsisV, faChessQueen, faChess, faList, faTree, faCompress, faCompressArrowsAlt, faColumns,
-    faPenNib, faExclamationTriangle, faExclamation, faCommentDots, faImages, faIdCard
+    faPenNib, faExclamationTriangle, faExclamation, faCommentDots, faImages, faIdCard, faUndo, faRedo,
+    faHistory, faAdjust, faDatabase, faCheckSquare, faCheckCircle, faSyncAlt
 } from "@fortawesome/free-solid-svg-icons"
 
 import {
-    faStar as farStar
+    faStar as farStar, faCheckSquare as farCheckSquare
 } from "@fortawesome/free-regular-svg-icons"
 
 library.add(
@@ -97,8 +98,9 @@ library.add(
     faQuestion, faCopyright, faBookmark, faUserNinja, faPaintBrush, faSwatchbook, faStamp,
     faObjectGroup, faObjectUngroup, faBorderStyle, faBuilding, faLink, faHeart, faPager,
     faEdit, faEllipsisV, faChessQueen, faChess, faList, faTree, faCompress, faCompressArrowsAlt, faColumns,
-    faPenNib, faExclamationTriangle, faExclamation, faCommentDots, faImages, faIdCard
+    faPenNib, faExclamationTriangle, faExclamation, faCommentDots, faImages, faIdCard, faUndo, faRedo,
+    faHistory, faAdjust, faDatabase, faCheckSquare, faCheckCircle, faSyncAlt
 )
-library.add(farStar)
+library.add(farStar, farCheckSquare)
 
 </script>

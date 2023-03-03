@@ -2,7 +2,7 @@
 import { computed } from "vue"
 import { Tag } from "@/components/universal"
 import { MetaTagTypes, MetaTagValues, SimpleAuthor, SimpleTopic } from "@/functions/http-client/api/all"
-import { AUTHOR_TYPE_ICONS, TOPIC_TYPE_ICONS } from "@/constants/entity"
+import { AUTHOR_TYPE_ICONS, META_TYPE_ICONS, TOPIC_TYPE_ICONS } from "@/constants/entity"
 import { useDraggable } from "@/modules/drag"
 import { toRef } from "@/utils/reactivity"
 
@@ -44,7 +44,7 @@ const icon = computed(() => {
     }else if(props.type === "topic") {
         return TOPIC_TYPE_ICONS[(props.value as SimpleTopic).type]
     }else{
-        return undefined
+        return META_TYPE_ICONS["TAG"]
     }
 })
 
@@ -56,6 +56,7 @@ const icon = computed(() => {
             <span v-if="selectable" class="selectable">{{value.name}}</span>
             <template v-else>{{value.name}}</template>
         </Tag>
+        <slot name="behind"/>
     </div>
     <template v-else>
         <Tag :color="value.color ?? undefined" :icon="icon" :clickable="clickable" :draggable="draggable" v-bind="dragEvents">
