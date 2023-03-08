@@ -21,30 +21,32 @@ class SourceMappingManager(private val data: DataRepository, private val bus: Ev
     fun batchQuery(form: SourceMappingBatchQueryForm): List<SourceMappingBatchQueryResult> {
         val groups = data.db.from(SourceTagMappings)
             .innerJoin(SourceTags, (SourceTags.site eq SourceTagMappings.sourceSite) and (SourceTags.id eq SourceTagMappings.sourceTagId))
-            .select(SourceTags.site, SourceTags.name, SourceTagMappings.targetMetaType, SourceTagMappings.targetMetaId)
-            .where { (SourceTags.site eq form.site) and (SourceTags.name inList form.tags) }
+            .select(SourceTags.site, SourceTags.code, SourceTagMappings.targetMetaType, SourceTagMappings.targetMetaId)
+            .where { (SourceTags.site eq form.site) and (SourceTags.code inList form.tags) }
             .map { row ->
                 Pair(
-                    row[SourceTags.name]!!,
+                    row[SourceTags.code]!!,
                     SourceMappingTargetItem(row[SourceTagMappings.targetMetaType]!!, row[SourceTagMappings.targetMetaId]!!)
                 )
             }
-            .groupBy { (tagName, _) -> tagName }
+            .groupBy { (tagCode, _) -> tagCode }
             .mapValues { it.value.map { (_, v) -> v } }
 
         val allMappings = groups.flatMap { (_, mappings) -> mappings }.let(::mapTargetItemToDetail)
 
-        return form.tags.map { tagName ->
-            val mappingDetails = groups[tagName]?.mapNotNull { allMappings[it] } ?: emptyList()
-            SourceMappingBatchQueryResult(tagName, mappingDetails)
+        //TODO 调整API：添加完整source tag的内容，而不仅只是tag code
+
+        return form.tags.map { tagCode ->
+            val mappingDetails = groups[tagCode]?.mapNotNull { allMappings[it] } ?: emptyList()
+            SourceMappingBatchQueryResult(tagCode, mappingDetails)
         }
     }
 
-    fun query(sourceSite: String, tagName: String): List<SourceMappingTargetItemDetail> {
+    fun query(sourceSite: String, tagCode: String): List<SourceMappingTargetItemDetail> {
         return data.db.from(SourceTagMappings)
             .innerJoin(SourceTags, (SourceTags.site eq SourceTagMappings.sourceSite) and (SourceTags.id eq SourceTagMappings.sourceTagId))
             .select(SourceTagMappings.targetMetaType, SourceTagMappings.targetMetaId)
-            .where { (SourceTags.site eq sourceSite) and (SourceTags.name eq tagName) }
+            .where { (SourceTags.site eq sourceSite) and (SourceTags.code eq tagCode) }
             .map { row -> SourceMappingTargetItem(row[SourceTagMappings.targetMetaType]!!, row[SourceTagMappings.targetMetaId]!!) }
             .let { mapTargetItemToDetail(it).values.toList() }
     }
@@ -62,10 +64,10 @@ class SourceMappingManager(private val data: DataRepository, private val bus: Ev
      * @throws ResourceNotExist ("site", string) 给出的site不存在
      * @throws ResourceNotExist ("authors" | "topics" | "tags", number[]) 给出的meta tag不存在
      */
-    fun update(sourceSite: String, tagName: String, mappings: List<SourceMappingTargetItem>) {
+    fun update(sourceSite: String, tagCode: String, mappings: List<SourceMappingTargetItem>) {
         sourceTagManager.checkSourceSite(sourceSite)
         //查出source tag
-        val sourceTag = sourceTagManager.getOrCreateSourceTag(sourceSite, tagName)
+        val sourceTag = sourceTagManager.getOrCreateSourceTag(sourceSite, tagCode)
 
         //首先查出所有已存在的mapping
         val old = data.db.sequenceOf(SourceTagMappings)
@@ -97,7 +99,7 @@ class SourceMappingManager(private val data: DataRepository, private val bus: Ev
         if(deleted.isNotEmpty()) data.db.delete(SourceTagMappings) { it.id inList deleted }
 
         if(added.isNotEmpty() || deleted.isNotEmpty()) {
-            bus.emit(SourceTagMappingUpdated(sourceSite, tagName))
+            bus.emit(SourceTagMappingUpdated(sourceSite, tagCode))
         }
     }
 

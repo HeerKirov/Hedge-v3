@@ -31,7 +31,7 @@ class SourceRoutes(private val sourceDataService: SourceDataService,
                 }
                 path("source-tag-mappings") {
                     post("batch-query", sourceTagMappings::batchQuery)
-                    path("{source_site}/{source_tag_name}") {
+                    path("{source_site}/{source_tag_code}") {
                         get(sourceTagMappings::get)
                         put(sourceTagMappings::update)
                         delete(sourceTagMappings::delete)
@@ -94,21 +94,21 @@ class SourceRoutes(private val sourceDataService: SourceDataService,
 
         fun get(ctx: Context) {
             val sourceSite = ctx.pathParamAsClass<String>("source_site").get()
-            val sourceTagName = ctx.pathParamAsClass<String>("source_tag_name").get()
-            ctx.json(sourceMappingService.query(sourceSite, sourceTagName))
+            val sourceTagCode = ctx.pathParamAsClass<String>("source_tag_code").get()
+            ctx.json(sourceMappingService.query(sourceSite, sourceTagCode))
         }
 
         fun update(ctx: Context) {
             val sourceSite = ctx.pathParamAsClass<String>("source_site").get()
-            val sourceTagName = ctx.pathParamAsClass<String>("source_tag_name").get()
+            val sourceTagCode = ctx.pathParamAsClass<String>("source_tag_code").get()
             val form = ctx.bodyAsListForm<SourceMappingTargetItem>()
-            sourceMappingService.update(sourceSite, sourceTagName, form)
+            sourceMappingService.update(sourceSite, sourceTagCode, form)
         }
 
         fun delete(ctx: Context) {
             val sourceSite = ctx.pathParamAsClass<String>("source_site").get()
-            val sourceTagName = ctx.pathParamAsClass<String>("source_tag_name").get()
-            sourceMappingService.delete(sourceSite, sourceTagName)
+            val sourceTagCode = ctx.pathParamAsClass<String>("source_tag_code").get()
+            sourceMappingService.delete(sourceSite, sourceTagCode)
             ctx.status(204)
         }
     }

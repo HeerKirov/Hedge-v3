@@ -19,6 +19,10 @@ import org.ktorm.entity.associate
 import org.ktorm.entity.filter
 import org.ktorm.entity.sequenceOf
 
+/**
+ * TODO 此服务可能需要一次改版，从而允许在list方法上添加filter参数。
+ *      picker相关的部分，有些需要根据类型过滤最近使用。毕竟把不能用的内容推给recent怪怪的。
+ */
 class PickerUtilService(private val data: DataRepository, private val historyRecordManager: HistoryRecordManager) {
     private val limitCount = 20
 

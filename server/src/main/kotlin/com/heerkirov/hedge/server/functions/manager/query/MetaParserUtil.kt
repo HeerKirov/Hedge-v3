@@ -29,7 +29,7 @@ internal object MetaParserUtil {
      */
     fun compileNameString(metaString: MetaString, metaTag: SourceTags): BinaryExpression<Boolean> {
         return if(metaString.precise) {
-            metaTag.name eq metaString.value
+            metaTag.code eq metaString.value
         }else{
             val value = mapMatchToSqlLike(metaString.value)
             (metaTag.code escapeLike value) or (metaTag.name escapeLike value) or (metaTag.otherName escapeLike value)

@@ -123,18 +123,26 @@ class MetaUtilService(private val data: DataRepository,
                 val ret = mutableListOf<MetaUtilSuggestionRes>()
                 if(parentId != null) ret.add(kit.suggestMetaOfCollection(parentId))
                 ret.addAll(kit.suggestMetaOfBook(form.id))
-                ret.add(kit.suggestMetaOfAllAssociate(form.id))
+                kit.suggestMetaOfAllAssociate(form.id).also {
+                    if(it.tags.isNotEmpty() || it.topics.isNotEmpty() || it.authors.isNotEmpty()) {
+                        ret.add(it)
+                    }
+                }
                 ret
             }
             IdentityType.COLLECTION -> {
                 //对于collection，获得：所有children的元数据; associate的元数据
-                val row = data.db.sequenceOf(Illusts)
+                data.db.sequenceOf(Illusts)
                     .firstOrNull { (Illusts.id eq form.id) and (Illusts.type eq IllustModelType.COLLECTION) }
                     ?: throw be(ResourceNotExist("collectionId", form.id))
 
                 val ret = mutableListOf<MetaUtilSuggestionRes>()
                 ret.add(kit.suggestMetaOfCollectionChildren(form.id))
-                ret.add(kit.suggestMetaOfAllAssociate(form.id))
+                kit.suggestMetaOfAllAssociate(form.id).also {
+                    if(it.tags.isNotEmpty() || it.topics.isNotEmpty() || it.authors.isNotEmpty()) {
+                        ret.add(it)
+                    }
+                }
                 ret
             }
             IdentityType.BOOK -> {
