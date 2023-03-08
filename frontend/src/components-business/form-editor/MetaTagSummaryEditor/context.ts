@@ -1,17 +1,20 @@
 import { computed, onBeforeMount, onMounted, reactive, ref, Ref, watch } from "vue"
 import { Tagme } from "@/functions/http-client/api/illust"
 import { RelatedSimpleTopic, SimpleTopic } from "@/functions/http-client/api/topic"
-import { RelatedSimpleAuthor, SimpleAuthor } from "@/functions/http-client/api/author"
+import { Author, RelatedSimpleAuthor, SimpleAuthor } from "@/functions/http-client/api/author"
 import { RelatedSimpleTag, SimpleTag } from "@/functions/http-client/api/tag"
 import { IdentityType, MetaTagTypeValue, MetaType } from "@/functions/http-client/api/all"
 import { MetaUtilIdentity, MetaUtilResult, MetaUtilValidation } from "@/functions/http-client/api/util-meta"
-import { useFetchHelper, usePostFetchHelper } from "@/functions/fetch"
+import { useFetchHelper, useFetchReactive, usePostFetchHelper, useQueryContinuousListView } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
 import { useToast } from "@/modules/toast"
 import { useInterceptedKey } from "@/modules/keyboard"
 import { installation, toRef } from "@/utils/reactivity"
 import { sleep } from "@/utils/process"
 import { objects } from "@/utils/primitives"
+import { flatResponse } from "@/functions/http-client";
+import { BasicException } from "@/functions/http-client/exceptions";
+import { useTagTreeSearch } from "@/services/common/tag";
 
 export type SetValue = (form: SetDataForm) => Promise<boolean>
 
@@ -496,4 +499,79 @@ export function useSuggestionData() {
     }, {immediate: true})
 
     return {selectList, suggestions}
+}
+
+export function useDatabaseData() {
+    const { tabDBType } = useEditorContext()
+
+    const authorSearchText = ref("")
+
+    const topicSearchText = ref("")
+
+    const { data: authorData, reset: authorReset, next: authorNext, loading: authorLoading } = useQueryContinuousListView({
+        request: client => (offset, limit) => client.author.list({offset, limit, query: authorSearchText.value, order: "-updateTime"}),
+        eventFilter: {
+            filter: ["entity/meta-tag/created", "entity/meta-tag/updated", "entity/meta-tag/deleted"],
+            operation({ event, reload, update, remove }) {
+                if(event.eventType === "entity/meta-tag/created" && event.metaType === "AUTHOR") {
+                    reload()
+                }else if(event.eventType === "entity/meta-tag/updated" && event.metaType === "AUTHOR") {
+                    update(i => i.id === event.metaId)
+                }else if(event.eventType === "entity/meta-tag/deleted" && event.metaType === "AUTHOR") {
+                    remove(i => i.id === event.metaId)
+                }
+            },
+            request: client => async items => flatResponse(await Promise.all(items.map(a => client.author.get(a.id))))
+        },
+        initSize: 40,
+        continueSize: 20,
+        autoInitialize: true
+    })
+
+    const { data: topicData, reset: topicReset, next: topicNext, loading: topicLoading } = useQueryContinuousListView({
+        request: client => (offset, limit) => client.topic.list({offset, limit, query: topicSearchText.value, order: "-updateTime"}),
+        eventFilter: {
+            filter: ["entity/meta-tag/created", "entity/meta-tag/updated", "entity/meta-tag/deleted"],
+            operation({ event, reload, update, remove }) {
+                if(event.eventType === "entity/meta-tag/created" && event.metaType === "TOPIC") {
+                    reload()
+                }else if(event.eventType === "entity/meta-tag/updated" && event.metaType === "TOPIC") {
+                    update(i => i.id === event.metaId)
+                }else if(event.eventType === "entity/meta-tag/deleted" && event.metaType === "TOPIC") {
+                    remove(i => i.id === event.metaId)
+                }
+            },
+            request: client => async items => flatResponse(await Promise.all(items.map(a => client.topic.get(a.id))))
+        },
+        initSize: 40,
+        continueSize: 20,
+        autoInitialize: true
+    })
+
+    const { data: tagData, refresh: tagRefresh } = useFetchReactive({
+        get: client => () => client.tag.tree({}),
+        eventFilter: e => (e.eventType === "entity/meta-tag/created" || e.eventType === "entity/meta-tag/updated" || e.eventType === "entity/meta-tag/deleted") && e.metaType === "TAG"
+    })
+
+    const tagSearch = useTagTreeSearch(tagData)
+
+    const authorShowMore = computed(() => !authorLoading.value && authorData.value.total > authorData.value.result.length)
+
+    const topicShowMore = computed(() => !topicLoading.value && topicData.value.total > topicData.value.result.length)
+
+    watch(authorSearchText, authorReset)
+
+    watch(topicSearchText, topicReset)
+
+    const refresh = () => {
+        if(tabDBType.value === "author") {
+            authorReset()
+        }else if(tabDBType.value === "topic") {
+            topicReset()
+        }else{
+            tagRefresh()
+        }
+    }
+
+    return {tabDBType, authorData, topicData, tagData, authorShowMore, topicShowMore, authorNext, topicNext, authorSearchText, topicSearchText, tagSearch, refresh}
 }

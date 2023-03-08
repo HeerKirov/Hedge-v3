@@ -44,9 +44,9 @@ const {
             </template>
             <template v-if="exportedResults.tags.length > 0 || exportedResults.topics.length > 0 || exportedResults.authors.length > 0">
                 <i class="label mt-3">已导出</i>
-                <SimpleMetaTagElement v-for="author in exportedResults.authors" :key="author.id" class="mt-half" type="author" :value="author" wrapped-by-div/>
-                <SimpleMetaTagElement v-for="topic in exportedResults.topics" :key="topic.id" class="mt-half" type="topic" :value="topic" wrapped-by-div/>
-                <SimpleMetaTagElement v-for="tag in exportedResults.tags" :key="tag.id" class="mt-half" type="tag" :value="tag" wrapped-by-div/>
+                <SimpleMetaTagElement v-for="author in exportedResults.authors" :key="author.id" class="mt-1" type="author" :value="author" wrapped-by-div/>
+                <SimpleMetaTagElement v-for="topic in exportedResults.topics" :key="topic.id" class="mt-1" type="topic" :value="topic" wrapped-by-div/>
+                <SimpleMetaTagElement v-for="tag in exportedResults.tags" :key="tag.id" class="mt-1" type="tag" :value="tag" wrapped-by-div/>
             </template>
         </div>
 

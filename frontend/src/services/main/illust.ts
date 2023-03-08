@@ -118,6 +118,7 @@ export function useIllustDetailPaneSingle(path: Ref<number | null>) {
 
 export function useIllustDetailPaneMultiple(selected: Ref<number[]>, latest: Ref<number | null>) {
     const toast = useToast()
+    const { metaTagEditor } = useDialogService()
 
     const batchFetch = usePostFetchHelper(httpClient => httpClient.illust.batchUpdate)
 
@@ -165,7 +166,18 @@ export function useIllustDetailPaneMultiple(selected: Ref<number[]>, latest: Ref
     })
 
     const editMetaTag = async () => {
-        //TODO edit meta tag
+        const res = await metaTagEditor.edit({
+            topics: form.topics.map(i => ({ ...i, isExported: false })),
+            authors: form.authors.map(i => ({ ...i, isExported: false })),
+            tags: form.tags.map(i => ({ ...i, isExported: false }))
+        }, {
+            allowTagme: false
+        })
+        if(res !== undefined) {
+            form.topics = res.topics
+            form.authors = res.authors
+            form.tags = res.tags
+        }
     }
 
     const submit = async () => {

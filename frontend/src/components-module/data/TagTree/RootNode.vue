@@ -2,10 +2,10 @@
 import { computed } from "vue"
 import { Block } from "@/components/universal"
 import { TagTreeNode } from "@/functions/http-client/api/tag"
+import { useDraggable } from "@/modules/drag"
 import { useTagDroppable, useTagTreeContext } from "./context"
 import ExpandedButton from "./ExpandedButton.vue"
 import TagNodeList from "./TagNodeList.vue"
-import { useDraggable } from "@/modules/drag";
 
 const props = defineProps<{
     node: TagTreeNode

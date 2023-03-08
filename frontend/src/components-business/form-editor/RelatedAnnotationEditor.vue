@@ -21,8 +21,6 @@ const emit = defineEmits<{
 
 const embeddedSwitch = ref(false)
 
-//TODO 需要调整history API：添加type和target筛选功能
-
 const searchProps = {
     autoFocus: true,
     query: (client: HttpClient) => (offset: number, limit: number, search: string) => client.annotation.list({offset, limit, query: search, type: props.metaType, target: props.target}),

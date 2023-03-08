@@ -79,7 +79,7 @@ interface EventFilter<T, E extends BasicException> {
     /**
      * 相关操作中，对每个items进行更新请求时，使用的函数。
      */
-    request?(httpClient: HttpClient): (items: T[]) => Promise<Response<T[], E>>
+    request?(httpClient: HttpClient): (items: T[]) => Promise<Response<(T | undefined)[], E>>
     /**
      * 展开对事件的解析和执行相关操作。
      */

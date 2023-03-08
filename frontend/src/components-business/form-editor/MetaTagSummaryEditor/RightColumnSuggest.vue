@@ -18,8 +18,6 @@ const updateSelectedValue = (_: string, index: number) => {
     selectedIndex.value = index
 }
 
-//TODO 后端：关联组的推荐似乎有问题
-
 </script>
 
 <template>

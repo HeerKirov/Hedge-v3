@@ -40,7 +40,7 @@ const { data, setDescription, setScore, setOrderTime, setPartitionTime, openMeta
                 <DescriptionEditor :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
-        <MetaTagListDisplay class="mt-1" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
+        <MetaTagListDisplay class="my-2" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
         <TagmeInfo v-if="data.tagme.length > 0" class="mt-1" :value="data.tagme"/>
         <FormEditKit class="mt-2" :value="data.partitionTime" :set-value="setPartitionTime">
             <template #default="{ value }">

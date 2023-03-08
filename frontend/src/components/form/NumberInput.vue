@@ -12,6 +12,7 @@ const props = defineProps<{
     disabled?: boolean
     autoFocus?: boolean
     updateOnInput?: boolean
+    updateOnEnter?: boolean
     focusOnKeypress?: KeyPress
 }>()
 
@@ -40,6 +41,6 @@ const onUpdate = (value: string) => {
     <Input
         type="number" :value="`${value}`" @update:value="onUpdate" @keypress="$emit('keypress', $event)" @enter="$emit('enter', $event)"
         :max="max" :min="min" :placeholder="placeholder" :size="size" :width="width" :disabled="disabled"
-        :auto-focus="autoFocus" :update-on-input="updateOnInput" :focus-on-keypress="focusOnKeypress"
+        :auto-focus="autoFocus" :update-on-input="updateOnInput" :update-on-enter="updateOnEnter" :focus-on-keypress="focusOnKeypress"
     />
 </template>

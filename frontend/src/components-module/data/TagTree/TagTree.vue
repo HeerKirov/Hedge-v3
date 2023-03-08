@@ -4,6 +4,7 @@ import { TagTreeNode } from "@/functions/http-client/api/tag"
 import { installTagTreeContext } from "./context"
 import Gap from "./Gap.vue"
 import RootNode from "./RootNode.vue"
+import TagNodeList from "./TagNodeList.vue"
 
 const props = defineProps<{
     /**
@@ -26,6 +27,10 @@ const props = defineProps<{
      * 是否可拖曳标签。传入一个函数时，使用函数结果决定每一个标签是否可托曳。
      */
     draggable?: boolean | ((tag: TagTreeNode) => boolean)
+    /**
+     * 是否禁用rootNode层。禁用后，最外层节点也使用标准结构展示。
+     */
+    disableRootNode?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -68,11 +73,14 @@ defineExpose({
 </script>
 
 <template>
-    <template v-for="(node, index) in tags ?? []" :key="node.id">
-        <Gap :class="$style.gap" :parent-id="null" :ordinal="index"/>
-        <RootNode :node="node"/>
+    <template v-if="!disableRootNode">
+        <template v-for="(node, index) in tags ?? []" :key="node.id">
+            <Gap :class="$style.gap" :parent-id="null" :ordinal="index"/>
+            <RootNode :node="node"/>
+        </template>
+        <Gap :class="$style.gap" :parent-id="null" :ordinal="tags?.length ?? 0"/>
     </template>
-    <Gap :class="$style.gap" :parent-id="null" :ordinal="tags?.length ?? 0"/>
+    <TagNodeList v-else multi-line :parent-id="null" :nodes="tags ?? []"/>
 </template>
 
 <style module lang="sass">

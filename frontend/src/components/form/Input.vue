@@ -3,14 +3,41 @@ import { ComponentPublicInstance, computed, nextTick, ref, useCssModule, watch }
 import { KeyEvent, KeyPress, toKeyEvent, useInterceptedKey, useKeyDeclaration, USUAL_PRIMITIVE_KEY_VALIDATORS } from "@/modules/keyboard"
 
 const props = defineProps<{
+    /**
+     * 文本值。
+     */
     value?: string | null | undefined
+    /**
+     * 内容提示符。
+     */
     placeholder?: string
+    /**
+     * 文本类型。
+     */
     type?: "text" | "password" | "number" | "textarea"
+    /**
+     * 尺寸大小。
+     */
     size?: "small" | "std" | "large"
+    /**
+     * 宽度。可设为固定宽度或百分比宽度。
+     */
     width?: "one-third" | "half" | "three-quarter" | "std" | "medium" | "large" | "2x" | "3x" | "25" | "50" | "75" | "fullwidth"
+    /**
+     * 禁用文本框。
+     */
     disabled?: boolean
+    /**
+     * 当此文本框挂载时，自动聚焦。
+     */
     autoFocus?: boolean
+    /**
+     * 触发onInput事件时，就发送update:value。表现为每一次输入都会触发更新。
+     */
     updateOnInput?: boolean
+    /**
+     * 按下此快捷键时，聚焦到此文本框。
+     */
     focusOnKeypress?: KeyPress
 }>()
 
@@ -43,6 +70,8 @@ const onKeydown = (e: KeyboardEvent) => {
         const keyEvent = toKeyEvent(e)
         emit("keypress", keyEvent)
         if(USUAL_PRIMITIVE_KEY_VALIDATORS.Enter(e)) {
+            value.value = (e.target as HTMLInputElement).value
+            emit("update:value", value.value)
             emit("enter", keyEvent)
         }
     }

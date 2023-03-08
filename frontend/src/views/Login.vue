@@ -5,7 +5,6 @@ import { Button, Icon } from "@/components/universal"
 import { Input } from "@/components/form"
 import { useAppEnv, useAppState } from "@/functions/app"
 import { useMessageBox } from "@/modules/message-box"
-import { onKeyEnter } from "@/modules/keyboard"
 
 const router = useRouter()
 const appEnv = useAppEnv()
@@ -40,8 +39,6 @@ const doLogin = async () => {
     }
 }
 
-const doLoginByKeyEnter = onKeyEnter(doLogin)
-
 </script>
 
 <template>
@@ -51,7 +48,7 @@ const doLoginByKeyEnter = onKeyEnter(doLogin)
             <p class="mt-6">正在通过Touch ID认证</p>
         </template>
         <template v-else>
-            <Input class="has-text-centered" type="password" size="small" width="three-quarter" auto-focus update-on-input v-model:value="password" @keypress="doLoginByKeyEnter"/>
+            <Input class="has-text-centered" type="password" size="small" width="three-quarter" auto-focus v-model:value="password" @enter="doLogin"/>
             <Button class="ml-1" mode="filled" type="success" size="small" square icon="arrow-right" :disabled="disabled" @click="doLogin"/>
         </template>
     </div>
