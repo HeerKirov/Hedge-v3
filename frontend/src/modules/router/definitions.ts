@@ -6,14 +6,14 @@ import { LocalDate } from "@/utils/datetime"
  */
 export interface RouteParameter {
     "MainIllust": RouteTemplate<{}, { topicName?: string, authorName?: string, tagName?: string, source?: {site: string, id: number} }>
-    "MainAlbum": RouteTemplate<{}, { topicName?: string, authorName?: string, tagName?: string }>
+    "MainBook": RouteTemplate<{}, { topicName?: string, authorName?: string, tagName?: string }>
     "MainTopic": RouteTemplate<{ detail: number }, undefined>
     "MainAuthor": RouteTemplate<{ detail: number }, undefined>
     "MainTag": RouteTemplate<{ detail: number }, undefined>
     "MainAnnotation": RouteTemplate<{ detail: number }, undefined>
     "MainPartition": RouteTemplate<{ detail: LocalDate }, undefined>
     "MainFolder": RouteTemplate<{ detail: number }, undefined>
-    "Preview": RouteTemplate<{}, { type: "image", imageIds: number[], currentIndex?: number } | { type: "collection", collectionId: number} | { type: "album", albumId: number }>
+    "Preview": RouteTemplate<{}, { type: "image", imageIds: number[], currentIndex?: number } | { type: "collection", collectionId: number} | { type: "book", bookId: number }>
 }
 
 export type RouteName = keyof RouteParameter

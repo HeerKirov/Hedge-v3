@@ -4,7 +4,8 @@ import { CheckBox } from "@/components/form"
 import { Button } from "@/components/universal"
 import { BottomLayout } from "@/components/layout"
 import { SimpleMetaTagElement } from "@/components-business/element"
-import { SimpleTag, SimpleTopic, SimpleAuthor, MetaTagTypeValue } from "@/functions/http-client/api/all"
+import { SimpleTag, SimpleTopic, SimpleAuthor, MetaTagTypeValue, MetaTagTypes, MetaTagValues } from "@/functions/http-client/api/all"
+import { useCalloutService } from "@/components-module/callout"
 
 const props = defineProps<{
     tags: SimpleTag[]
@@ -18,6 +19,8 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: "add", value: MetaTagTypeValue[]): void
 }>()
+
+const callout = useCalloutService()
 
 const selectedAuthors = ref<Record<number, boolean>>({})
 const selectedTopics = ref<Record<number, boolean>>({})
@@ -82,7 +85,9 @@ const addAll = () => {
     }
 }
 
-//TODO 添加左键点击打开callout
+const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues) => {
+    callout.show({base: (e.target as Element).getBoundingClientRect(), callout: "metaTag", metaType: type, metaId: value.id})
+}
 
 </script>
 
@@ -92,19 +97,19 @@ const addAll = () => {
             <template v-if="authorFilter">
                 <div v-for="author in authors" :key="author.id" class="mb-1">
                     <CheckBox :value="selectedAuthors[author.id] ?? true" @update:value="selectedAuthors[author.id] = $event"/>
-                    <SimpleMetaTagElement type="author" :value="author" draggable @dblclick="$emit('add', [{type: 'author', value: author}])"/>
+                    <SimpleMetaTagElement type="author" :value="author" draggable @click="click($event, 'author', author)" @dblclick="$emit('add', [{type: 'author', value: author}])"/>
                 </div>
             </template>
             <template v-if="topicFilter">
                 <div v-for="topic in topics" :key="topic.id" class="mb-1">
                     <CheckBox :value="selectedTopics[topic.id] ?? true" @update:value="selectedTopics[topic.id] = $event"/>
-                    <SimpleMetaTagElement type="topic" :value="topic" draggable @dblclick="$emit('add', [{type: 'topic', value: topic}])"/>
+                    <SimpleMetaTagElement type="topic" :value="topic" draggable @click="click($event, 'topic', topic)" @dblclick="$emit('add', [{type: 'topic', value: topic}])"/>
                 </div>
             </template>
             <template v-if="tagFilter">
                 <div v-for="tag in tags" :key="tag.id" class="mb-1">
                     <CheckBox :value="selectedTags[tag.id] ?? true" @update:value="selectedTags[tag.id] = $event"/>
-                    <SimpleMetaTagElement type="tag" :value="tag" draggable @dblclick="$emit('add', [{type: 'tag', value: tag}])"/>
+                    <SimpleMetaTagElement type="tag" :value="tag" draggable @click="click($event, 'tag', tag)" @dblclick="$emit('add', [{type: 'tag', value: tag}])"/>
                 </div>
             </template>
         </div>

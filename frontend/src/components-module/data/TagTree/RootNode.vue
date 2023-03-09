@@ -30,20 +30,20 @@ const dragEvents = useDraggable("tag",() => ({
     color: props.node.color
 }))
 
-const click = () => {
+const click = (e: MouseEvent) => {
     if(elementRefs.jumpTarget.value === props.node.id) {
         elementRefs.jumpTarget.value = null
     }
     const indexed = indexedData.indexedData.value[props.node.id]
     if(indexed) {
-        emit.click(props.node, indexed.parentId, indexed.ordinal)
+        emit.click(props.node, indexed.parentId, indexed.ordinal, e)
     }
 }
 
-const dblclick = () => {
+const dblclick = (e: MouseEvent) => {
     const indexed = indexedData.indexedData.value[props.node.id]
     if(indexed) {
-        emit.dblclick(props.node, indexed.parentId, indexed.ordinal)
+        emit.dblclick(props.node, indexed.parentId, indexed.ordinal, e)
     }
 }
 

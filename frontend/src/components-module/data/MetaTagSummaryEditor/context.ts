@@ -483,7 +483,7 @@ export function useSuggestionData() {
                         if(r.type === "children") return {label: "关联的子项目", value: "children"}
                         else if(r.type === "associate") return {label: "关联组的相关项目", value: "associate"}
                         else if(r.type === "collection") return {label: `所属的图库集合 ${r.collectionId}`, value: "collection"}
-                        else if(r.type === "book") return {label: `所属画集《${r.book.title}》`, value: `album-${r.book.id}`}
+                        else if(r.type === "book") return {label: `所属画集《${r.book.title}》`, value: `book-${r.book.id}`}
                         else throw Error(`Unsupported suggestion ${r}.`)
                     })
                     suggestions.value = res.map(r => ({topics: r.topics, tags: r.tags, authors: r.authors}))

@@ -38,6 +38,12 @@ const props = defineProps<{
     wrappedByDiv?: boolean
 }>()
 
+defineEmits<{
+    (e: "click", event: MouseEvent): void
+    (e: "dblclick", event: MouseEvent): void
+    (e: "contextmenu", event: MouseEvent): void
+}>()
+
 const type = toRef(props, "type")
 const data = toRef(props, "value")
 
@@ -57,14 +63,14 @@ const icon = computed(() => {
 
 <template>
     <div v-if="wrappedByDiv">
-        <Tag :color="color ?? value.color ?? undefined" :icon="icon" :clickable="clickable" :draggable="draggable" v-bind="dragEvents">
+        <Tag :color="color ?? value.color ?? undefined" :icon="icon" :clickable="clickable" :draggable="draggable" v-bind="dragEvents" @click="$emit('click', $event)" @dblclick="$emit('dblclick', $event)" @contextmenu="$emit('contextmenu', $event)">
             <span v-if="selectable" class="selectable">{{value.name}}</span>
             <template v-else>{{value.name}}</template>
         </Tag>
         <slot name="behind"/>
     </div>
     <template v-else>
-        <Tag :color="color ?? value.color ?? undefined" :icon="icon" :clickable="clickable" :draggable="draggable" v-bind="dragEvents">
+        <Tag :color="color ?? value.color ?? undefined" :icon="icon" :clickable="clickable" :draggable="draggable" v-bind="dragEvents" @click="$emit('click', $event)" @dblclick="$emit('dblclick', $event)" @contextmenu="$emit('contextmenu', $event)">
             <span v-if="selectable" class="selectable">{{value.name}}</span>
             <template v-else>{{value.name}}</template>
         </Tag>

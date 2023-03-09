@@ -15,9 +15,9 @@ const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotation
 </script>
 
 <template>
-    <p class="selectable">
+    <i class="selectable">
         {{addressInfo.address}}
-    </p>
+    </i>
     <template v-if="data !== null">
         <FormEditKit class="mt-1" :value="[data.name, data.otherNames, data.color]" :set-value="setName">
             <template #default="{ value: [name, otherNames, color] }">

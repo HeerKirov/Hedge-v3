@@ -37,11 +37,11 @@ const emit = defineEmits<{
     /**
      * 单击某个标签。
      */
-    (e: "click", tag: TagTreeNode, parentId: number | null, ordinal: number): void
+    (e: "click", tag: TagTreeNode, parentId: number | null, ordinal: number, event: MouseEvent): void
     /**
      * 双击某个标签。
      */
-    (e: "dblclick", tag: TagTreeNode, parentId: number | null, ordinal: number): void
+    (e: "dblclick", tag: TagTreeNode, parentId: number | null, ordinal: number, event: MouseEvent): void
     /**
      * 选择右键菜单的删除选项。
      */
@@ -63,8 +63,8 @@ const { elementRefs } = installTagTreeContext({
     droppable: toRef(props, "droppable"),
     draggable: toRef(props, "draggable"),
     emit: {
-        click: (tag, parentId, ordinal) => emit("click", tag, parentId, ordinal),
-        dblclick: (tag, parentId, ordinal) => emit("dblclick", tag, parentId, ordinal),
+        click: (tag, parentId, ordinal, e) => emit("click", tag, parentId, ordinal, e),
+        dblclick: (tag, parentId, ordinal, e) => emit("dblclick", tag, parentId, ordinal, e),
         delete: (tag, parentId, ordinal) => emit("delete", tag, parentId, ordinal),
         create: (parentId, ordinal) => emit("create", parentId, ordinal),
         move: (tag, p, o) => emit("move", tag, p, o)

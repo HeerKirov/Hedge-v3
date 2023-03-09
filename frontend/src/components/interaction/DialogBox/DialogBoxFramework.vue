@@ -7,6 +7,7 @@ const props = defineProps<{
     position?: "absolute" | "fixed"
     overflow?: "hidden" | "auto" | "default"
     closeOnEscape?: boolean
+    interceptEvent?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -14,9 +15,12 @@ const emit = defineEmits<{
 }>()
 
 const click = (e: MouseEvent) => {
-    //拦截click事件，不让其进一步向上传播。
-    //这是为了使dialog的行为基本隔绝于其他DOM响应，例如clickOutside函数等。
-    e.stopPropagation()
+    if(props.interceptEvent) {
+        //拦截click事件，不让其进一步向上传播。
+        //这是为了使dialog的行为基本隔绝于其他DOM响应，例如clickOutside函数等。
+        //若允许响应，FormKit会与MessageBox形成一个死锁。
+        e.stopPropagation()
+    }
 }
 
 useInterceptedKey("Escape", () => {

@@ -5,9 +5,13 @@ import { Flex, FlexItem } from "@/components/layout"
 import { SimpleMetaTagElement } from "@/components-business/element"
 import { SearchResultInfo } from "@/components-business/top-bar"
 import { TagTree } from "@/components-module/data"
+import { MetaTagTypes, MetaTagValues } from "@/functions/http-client/api/all"
 import { TagTreeNode } from "@/functions/http-client/api/tag"
 import { META_TYPE_ICONS } from "@/constants/entity"
+import { useCalloutService } from "@/components-module/callout"
 import { useDatabaseData, useEditorContext } from "./context"
+
+const callout = useCalloutService()
 
 const { form: { add } } = useEditorContext()
 const {
@@ -25,6 +29,14 @@ const updateTagSearchText = (v: string) => {
     }else{
         tagSearchText.value = s
     }
+}
+
+const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues) => {
+    callout.show({base: (e.target as Element).getBoundingClientRect(), callout: "metaTag", metaType: type, metaId: value.id})
+}
+
+const clickTag = (tag: TagTreeNode, _: unknown, __: unknown, e: MouseEvent) => {
+    callout.show({base: (e.target as Element).getBoundingClientRect(), callout: "metaTag", metaType: "tag", metaId: tag.id})
 }
 
 const addTag = (tag: TagTreeNode) => {
@@ -53,15 +65,15 @@ const addTag = (tag: TagTreeNode) => {
         </FlexItem>
     </Flex>
     <div v-if="tabDBType === 'author'" :class="$style.content">
-        <SimpleMetaTagElement v-for="author in authorData.result" class="mb-1" type="author" :value="author" wrapped-by-div draggable @dblclick="add('author', author)"/>
+        <SimpleMetaTagElement v-for="author in authorData.result" class="mb-1" type="author" :value="author" wrapped-by-div draggable @click="click($event, 'author', author)" @dblclick="add('author', author)"/>
         <a v-if="authorShowMore" @click="authorNext">加载更多…</a>
     </div>
     <div v-else-if="tabDBType === 'topic'"  :class="$style.content">
-        <SimpleMetaTagElement v-for="topic in topicData.result" class="mb-1" type="topic" :value="topic" wrapped-by-div draggable @dblclick="add('topic', topic)"/>
+        <SimpleMetaTagElement v-for="topic in topicData.result" class="mb-1" type="topic" :value="topic" wrapped-by-div draggable @click="click($event, 'topic', topic)" @dblclick="add('topic', topic)"/>
         <a v-if="topicShowMore" @click="topicNext">加载更多…</a>
     </div>
     <div v-else :class="$style.content">
-        <TagTree v-if="tagData?.length" ref="tagTreeRef" :tags="tagData" draggable disable-root-node @dblclick="addTag"/>
+        <TagTree v-if="tagData?.length" ref="tagTreeRef" :tags="tagData" draggable disable-root-node @click="clickTag" @dblclick="addTag"/>
     </div>
 </template>
 

@@ -10,7 +10,7 @@ export const QUERY_ELEMENT_TYPES: {[key in ElementGroup["type"]]: string} = {
 export const QUERY_FIELD_NAMES: {[key: string]: string} = {
     "ID": "ID",
     "FAVORITE": "收藏",
-    "ALBUM_MEMBER": "画集成员",
+    "BOOK_MEMBER": "画集成员",
     "SCORE": "评分",
     "IMAGE_COUNT": "项目数量",
     "CREATE_TIME": "创建时间",

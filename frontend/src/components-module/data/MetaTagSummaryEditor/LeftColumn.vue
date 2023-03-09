@@ -2,6 +2,8 @@
 import { Icon, Tag, Button } from "@/components/universal"
 import { BottomLayout } from "@/components/layout"
 import { SimpleMetaTagElement } from "@/components-business/element"
+import { useCalloutService } from "@/components-module/callout"
+import { MetaTagTypes, MetaTagValues } from "@/functions/http-client/api/all"
 import { useEditorContext } from "./context"
 
 const {
@@ -14,7 +16,11 @@ const {
     }
 } = useEditorContext()
 
-//TODO 左键打开callout
+const callout = useCalloutService()
+
+const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues) => {
+    callout.show({base: (e.target as Element).getBoundingClientRect(), callout: "metaTag", metaType: type, metaId: value.id})
+}
 
 </script>
 
@@ -22,21 +28,21 @@ const {
     <BottomLayout>
         <div class="p-4">
             <template v-if="typeFilter.author">
-                <SimpleMetaTagElement v-for="(author, idx) in authors" :key="author.id" class="mb-1" type="author" :value="author" wrapped-by-div>
+                <SimpleMetaTagElement v-for="(author, idx) in authors" :key="author.id" class="mb-1" type="author" :value="author" wrapped-by-div @click="click($event, 'author', author)">
                     <template #behind>
                         <Tag class="ml-half" line-style="none" :color="author.color" icon="close" clickable @click="removeAt('author', idx)"/>
                     </template>
                 </SimpleMetaTagElement>
             </template>
             <template v-if="typeFilter.topic">
-                <SimpleMetaTagElement v-for="(topic, idx) in topics" :key="topic.id" class="mb-1" type="topic" :value="topic" wrapped-by-div>
+                <SimpleMetaTagElement v-for="(topic, idx) in topics" :key="topic.id" class="mb-1" type="topic" :value="topic" wrapped-by-div @click="click($event, 'topic', topic)">
                     <template #behind>
                         <Tag class="ml-half" line-style="none" :color="topic.color" icon="close" clickable @click="removeAt('topic', idx)"/>
                     </template>
                 </SimpleMetaTagElement>
             </template>
             <template v-if="typeFilter.tag">
-                <SimpleMetaTagElement v-for="(tag, idx) in tags" :key="tag.id" class="mb-1" type="tag" :value="tag" wrapped-by-div>
+                <SimpleMetaTagElement v-for="(tag, idx) in tags" :key="tag.id" class="mb-1" type="tag" :value="tag" wrapped-by-div @click="click($event, 'tag', tag)">
                     <template #behind>
                         <Tag class="ml-half" line-style="none" :color="tag.color" icon="close" clickable @click="removeAt('tag', idx)"/>
                     </template>
@@ -44,9 +50,9 @@ const {
             </template>
             <template v-if="exportedResults.tags.length > 0 || exportedResults.topics.length > 0 || exportedResults.authors.length > 0">
                 <i class="label mt-3">已导出</i>
-                <SimpleMetaTagElement v-for="author in exportedResults.authors" :key="author.id" class="mt-1" type="author" :value="author" wrapped-by-div/>
-                <SimpleMetaTagElement v-for="topic in exportedResults.topics" :key="topic.id" class="mt-1" type="topic" :value="topic" wrapped-by-div/>
-                <SimpleMetaTagElement v-for="tag in exportedResults.tags" :key="tag.id" class="mt-1" type="tag" :value="tag" wrapped-by-div/>
+                <SimpleMetaTagElement v-for="author in exportedResults.authors" :key="author.id" class="mt-1" type="author" :value="author" wrapped-by-div @click="click($event, 'author', author)"/>
+                <SimpleMetaTagElement v-for="topic in exportedResults.topics" :key="topic.id" class="mt-1" type="topic" :value="topic" wrapped-by-div @click="click($event, 'topic', topic)"/>
+                <SimpleMetaTagElement v-for="tag in exportedResults.tags" :key="tag.id" class="mt-1" type="tag" :value="tag" wrapped-by-div @click="click($event, 'tag', tag)"/>
             </template>
         </div>
 

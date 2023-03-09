@@ -33,7 +33,7 @@ const close = () => {
 </script>
 
 <template>
-    <DialogBox :visible="!!task" :close-on-escape="!!task?.options?.esc" :close-on-click-outside="!!task?.options?.esc" @close="close">
+    <DialogBox :visible="!!task" :close-on-escape="!!task?.options?.esc" :close-on-click-outside="!!task?.options?.esc" intercept-event @close="close">
         <MessageBoxContent
             :title="task!.options.title"
             :message="task!.options.message"

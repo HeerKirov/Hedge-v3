@@ -23,20 +23,20 @@ const isJumpTarget = computed(() => elementRefs.jumpTarget.value === props.node.
 
 const { dragover: _, ...dropEvents } = useTagDroppable(computed(() => props.node.id), null)
 
-const click = () => {
+const click = (e: MouseEvent) => {
     if(elementRefs.jumpTarget.value === props.node.id) {
         elementRefs.jumpTarget.value = null
     }
     const indexed = indexedData.indexedData.value[props.node.id]
     if(indexed) {
-        emit.click(props.node, indexed.parentId, indexed.ordinal)
+        emit.click(props.node, indexed.parentId, indexed.ordinal, e)
     }
 }
 
-const dblclick = () => {
+const dblclick = (e: MouseEvent) => {
     const indexed = indexedData.indexedData.value[props.node.id]
     if(indexed) {
-        emit.dblclick(props.node, indexed.parentId, indexed.ordinal)
+        emit.dblclick(props.node, indexed.parentId, indexed.ordinal, e)
     }
 }
 

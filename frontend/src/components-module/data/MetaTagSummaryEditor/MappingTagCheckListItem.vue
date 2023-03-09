@@ -7,6 +7,7 @@ import { SourceTagElement, SimpleMetaTagElement } from "@/components-business/el
 import { SourceMappingTargetDetail } from "@/functions/http-client/api/source-tag-mapping"
 import { SourceTag } from "@/functions/http-client/api/source-data"
 import { MetaTagTypes, MetaTagValues, MetaType } from "@/functions/http-client/api/all"
+import { useCalloutService } from "@/components-module/callout"
 import { useDroppable } from "@/modules/drag"
 import { usePopupMenu } from "@/modules/popup-menu"
 import { writeClipboard } from "@/modules/others"
@@ -25,6 +26,8 @@ const emit = defineEmits<{
     (e: "update:mappings", v: SourceMappingTargetDetail[]): void
     (e: "dblclick:one", type: MetaTagTypes, value: MetaTagValues): void
 }>()
+
+const callout = useCalloutService()
 
 const items = computed(() => props.mappings.map(item => ({
     key: `${item.metaType}-${item.metaTag.id}`,
@@ -90,7 +93,11 @@ const { dragover: _, ...dropEvents } = useDroppable(["author", "topic", "tag"], 
     }
 })
 
-//TODO 添加左键点击打开callout
+const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues, enabled: boolean) => {
+    if(enabled) {
+        callout.show({base: (e.target as Element).getBoundingClientRect(), callout: "metaTag", metaType: type, metaId: value.id})
+    }
+}
 
 </script>
 
@@ -123,6 +130,7 @@ const { dragover: _, ...dropEvents } = useDroppable(["author", "topic", "tag"], 
                 <SimpleMetaTagElement v-for="item in items" :key="item.key"
                                       :type="item.type" :value="item.value"
                                       :draggable="item.enabled" :color="!item.enabled ? 'secondary' : undefined"
+                                      @click="click($event, item.type, item.value, item.enabled)"
                                       @dblclick="addOne(item.type, item.value, item.enabled)"
                                       @contextmenu="mappingMenu.popup()"/>
             </Group>

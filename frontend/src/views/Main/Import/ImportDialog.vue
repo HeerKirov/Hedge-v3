@@ -15,7 +15,7 @@ const progressingStyle = computed(() => ({
 </script>
 
 <template>
-    <DialogBox :visible="progressing" position="fixed" :close-on-click-outside="false" :close-on-escape="false">
+    <DialogBox :visible="progressing" position="fixed" :close-on-click-outside="false" :close-on-escape="false" intercept-event>
         <div :class="$style.content">
             <label class="label">正在导入</label>
             <p>{{progress.value}} / {{progress.max}}</p>
