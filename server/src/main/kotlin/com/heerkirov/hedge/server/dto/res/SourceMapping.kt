@@ -2,7 +2,7 @@ package com.heerkirov.hedge.server.dto.res
 
 import com.heerkirov.hedge.server.enums.MetaType
 
-data class SourceMappingBatchQueryResult(val tag: String, val mappings: List<SourceMappingTargetItemDetail>)
+data class SourceMappingBatchQueryResult(val code: String, val sourceTag: SourceTagDto, val mappings: List<SourceMappingTargetItemDetail>)
 
 data class SourceMappingTargetItemDetail(val metaType: MetaType, val metaTag: Any /* simple meta tag*/)
 

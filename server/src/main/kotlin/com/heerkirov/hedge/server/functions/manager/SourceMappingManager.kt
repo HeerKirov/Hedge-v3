@@ -21,7 +21,7 @@ class SourceMappingManager(private val data: DataRepository, private val bus: Ev
     fun batchQuery(form: SourceMappingBatchQueryForm): List<SourceMappingBatchQueryResult> {
         val groups = data.db.from(SourceTagMappings)
             .innerJoin(SourceTags, (SourceTags.site eq SourceTagMappings.sourceSite) and (SourceTags.id eq SourceTagMappings.sourceTagId))
-            .select(SourceTags.site, SourceTags.code, SourceTagMappings.targetMetaType, SourceTagMappings.targetMetaId)
+            .select(SourceTags.code, SourceTagMappings.targetMetaType, SourceTagMappings.targetMetaId)
             .where { (SourceTags.site eq form.site) and (SourceTags.code inList form.tags) }
             .map { row ->
                 Pair(
@@ -34,11 +34,13 @@ class SourceMappingManager(private val data: DataRepository, private val bus: Ev
 
         val allMappings = groups.flatMap { (_, mappings) -> mappings }.let(::mapTargetItemToDetail)
 
-        //TODO 调整API：添加完整source tag的内容，而不仅只是tag code
+        val sourceTags = data.db.sequenceOf(SourceTags).filter { (it.site eq form.site) and (it.code inList form.tags) }.associate { it.code to it }
 
         return form.tags.map { tagCode ->
             val mappingDetails = groups[tagCode]?.mapNotNull { allMappings[it] } ?: emptyList()
-            SourceMappingBatchQueryResult(tagCode, mappingDetails)
+            val sourceTag = sourceTags[tagCode]!!
+            val sourceTagDto = SourceTagDto(sourceTag.code, sourceTag.name, sourceTag.otherName, sourceTag.type)
+            SourceMappingBatchQueryResult(tagCode, sourceTagDto, mappingDetails)
         }
     }
 

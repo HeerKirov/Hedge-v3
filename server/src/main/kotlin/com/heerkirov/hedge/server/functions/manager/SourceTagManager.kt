@@ -68,7 +68,7 @@ class SourceTagManager(private val data: DataRepository, private val bus: EventB
                     item {
                         set(it.site, sourceSite)
                         set(it.code, code)
-                        set(it.name, tag.name.unwrapOrNull())
+                        set(it.name, tag.name.unwrapOr { code })
                         set(it.otherName, tag.otherName.unwrapOrNull())
                         set(it.type, tag.type.unwrapOrNull())
                     }
