@@ -240,6 +240,11 @@ function useTopicDetailPanelEditor(data: Readonly<Ref<DetailTopic | null>>, setD
             editMode.value = true
         }
     }
+
+    const cancel = () => {
+        editMode.value = false
+        form.value = null
+    }
     
     const save = async () => {
         if(form.value && data.value) {
@@ -301,7 +306,7 @@ function useTopicDetailPanelEditor(data: Readonly<Ref<DetailTopic | null>>, setD
         }
     }
 
-    return {editMode: readonly(editMode), form, setProperty, edit, save}
+    return {editMode: readonly(editMode), form, setProperty, edit, cancel, save}
 }
 
 interface TopicCreateFormData extends TopicUpdateFormData {

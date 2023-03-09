@@ -3,7 +3,7 @@ import { computed } from "vue"
 import { Block, Icon, Tag } from "@/components/universal"
 import { Flex, Group } from "@/components/layout"
 import { SimpleMetaTagElement } from "@/components-business/element"
-import { DescriptionDisplay, RelatedAnnotationDisplay, ScoreDisplay } from "@/components-business/form-display"
+import { DescriptionDisplay, RelatedAnnotationDisplay, ScoreDisplay, SourceTagMappingDisplay } from "@/components-business/form-display"
 import { TOPIC_TYPE_ICONS, TOPIC_TYPE_NAMES } from "@/constants/entity"
 import { DetailTopic } from "@/functions/http-client/api/topic"
 import ChildrenTreeMode from "./ChildrenTreeMode.vue"
@@ -65,7 +65,10 @@ const otherNameText = computed(() => props.data.otherNames.length > 0 ? props.da
             <ChildrenTreeMode v-else :children="data.children" @click="$emit('click:topic', $event)"/>
         </template>
     </Block>
-
+    <Block v-if="data.mappingSourceTags?.length" class="p-3 mt-2">
+        <label class="label mb-2"><Icon class="mr-1" icon="file-invoice"/>来源映射</label>
+        <SourceTagMappingDisplay :value="data.mappingSourceTags"/>
+    </Block>
 </template>
 
 <style module lang="sass">

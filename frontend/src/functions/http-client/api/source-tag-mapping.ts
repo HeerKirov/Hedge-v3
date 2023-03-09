@@ -45,7 +45,8 @@ interface SourceTagKey {
 }
 
 export interface BatchQueryResult {
-    tag: string
+    code: string
+    sourceTag: SourceTag
     mappings: SourceMappingTargetDetail[]
 }
 

@@ -1,9 +1,9 @@
-import { reactive, Ref, ref, watch } from "vue"
+import { reactive, Ref, watch } from "vue"
 import { installation } from "@/utils/reactivity"
 import { useLocalStorage } from "@/functions/app"
 
 export const [installMenuContext, useMenuContext] = installation(function (selected: Ref<{ id: string, subId: string | null } | undefined>) {
-    const scopeStorage = useLocalStorage<{[scopeKey: string]: boolean}>("side-bar/menu/scope", () => ({}))
+    const scopeStorage = useLocalStorage<{[scopeKey: string]: boolean}>("side-bar/menu/scope", () => ({}), true)
 
     const scopeStatus = reactive(scopeStorage.value ?? {})
 

@@ -4,7 +4,7 @@ import { Colors } from "@/constants/ui"
 import { Icon } from "@/components/universal"
 
 const props = defineProps<{
-    color?: Colors
+    color?: Colors | null
     lineStyle?: "solid" | "double" | "dashed" | "dotted" | "none"
     clickable?: boolean
     icon?: string

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MetaTagSummaryEditor } from "@/components-business/form-editor"
+import { MetaTagSummaryEditor } from "@/components-module/data"
 import { CommonData, } from "./context"
 
 const props = defineProps<{

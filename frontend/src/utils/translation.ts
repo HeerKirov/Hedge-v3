@@ -9,13 +9,13 @@ export function patchMappingSourceTagForm(items: MappingSourceTag[], oldItems: M
         const oldItem = oldItems.find(i => i.site === item.site && i.code === item.code)
         if(oldItem === undefined) {
             //这是一个新项
-            return {site: item.site, code: item.code, name: item.name, otherName: item.otherName || undefined, type: item.type || undefined}
+            return {site: item.site, code: item.code, name: item.name || undefined, otherName: item.otherName || undefined, type: item.type || undefined}
         }else{
             //这是一个修改项
             return {
                 site: item.site,
                 code: item.code,
-                name: item.name,
+                name: (item.name || null) !== (oldItem.name || null) ? (item.name || "") : undefined,
                 otherName: (item.otherName || null) !== (oldItem.otherName || null) ? (item.otherName || "") : undefined,
                 type: (item.type || null) !== (oldItem.type || null) ? (item.type || "") : undefined
             }
@@ -31,12 +31,12 @@ export function patchSourceTagForm(items: SourceTag[], oldItems: SourceTag[]): S
         const oldItem = oldItems.find(i => i.code === item.code)
         if(oldItem === undefined) {
             //这是一个新项
-            return {code: item.code, name: item.name, otherName: item.otherName || undefined, type: item.type || undefined}
+            return {code: item.code, name: item.name || undefined, otherName: item.otherName || undefined, type: item.type || undefined}
         }else{
             //这是一个修改项
             return {
                 code: item.code,
-                name: item.name,
+                name: (item.name || null) !== (oldItem.name || null) ? (item.name || "") : undefined,
                 otherName: (item.otherName || null) !== (oldItem.otherName || null) ? (item.otherName || "") : undefined,
                 type: (item.type || null) !== (oldItem.type || null) ? (item.type || "") : undefined
             }
@@ -52,7 +52,7 @@ export function patchSourceBookForm(items: SourceBook[], oldItems: SourceBook[])
         const oldItem = oldItems.find(i => i.code === item.code)
         if(oldItem === undefined) {
             //这是一个新项
-            return {code: item.code, title: item.title}
+            return {code: item.code, title: item.title || undefined}
         }else{
             //这是一个修改项
             return {

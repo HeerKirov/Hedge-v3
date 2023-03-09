@@ -163,8 +163,8 @@ export interface SourceDataUpdateForm {
 export interface SourceTagForm {
     code: string
     name?: string
-    otherName?: string
-    type?: string
+    otherName?: string | null
+    type?: string | null
 }
 
 export interface SourceBookForm {

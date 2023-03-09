@@ -3,6 +3,7 @@ import { nextTick, ref, watch, watchEffect } from "vue"
 import { Block, Button, Tag } from "@/components/universal"
 import { Input } from "@/components/form"
 import { Flex } from "@/components/layout"
+import { SourceTagElement } from "@/components-business/element"
 import { SourceSiteSelectBox } from "@/components-business/form-editor"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { useMessageBox } from "@/modules/message-box"
@@ -90,12 +91,9 @@ watch(form, form => {
 <template>
     <div :class="[$style.root, direction === 'vertical' ? $style.vertical : $style.horizontal]">
         <div :class="$style.list">
-            <component v-for="(item, idx) in value" :is="direction === 'vertical' ? 'p' : 'span'" :class="{'mb-1': true, 'mr-1': direction !== 'vertical'}">
-                <b class="mr-1">·</b>
-                <a @click="selectedIndex = idx">
-                    <span class="has-text-secondary">[{{item.site}}]</span>
-                    <Tag clickable>{{ item.name }}{{ item.otherName !== null ? `(${item.otherName})` : null }}</Tag>
-                </a>
+            <component v-for="(item, idx) in value" :is="direction === 'vertical' ? 'p' : 'span'" :class="{'mb-1': true, 'mr-1': direction !== 'vertical'}" @click="selectedIndex = idx">
+                <span class="has-text-secondary">[{{item.site}}]</span>
+                <SourceTagElement :value="item"/>
             </component>
             <component :is="direction === 'vertical' ? 'p' : 'span'" :class="{'mb-1': true, 'mr-1': direction !== 'vertical'}">
                 <b v-if="direction === 'vertical'" class="mr-1">·</b>

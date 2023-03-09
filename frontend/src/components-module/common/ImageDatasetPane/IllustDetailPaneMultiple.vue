@@ -37,7 +37,7 @@ const { data, actives, anyActive, form, submit, clear } = useIllustDetailPaneMul
     <ScoreEditor v-if="actives.score" class="mt-1 mb-2" v-model:value="form.score"/>
     <p class="mt-1"><CheckBox v-model:value="actives.partitionTime">设置时间分区</CheckBox></p>
     <DateEditor v-if="actives.partitionTime" class="mt-1 mb-2" v-model:value="form.partitionTime"/>
-    <p class="mt-1"><CheckBox v-model:value="actives.setOrderTimeBy">设置排序时间范围</CheckBox></p>
+    <p class="mt-1"><CheckBox v-model:value="actives.orderTime">设置排序时间范围</CheckBox></p>
     <template v-if="actives.orderTime">
         <label class="label mt-1">起始时间点</label>
         <DateTimeEditor class="mt-1" v-model:value="form.orderTime.begin"/>

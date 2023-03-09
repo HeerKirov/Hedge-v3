@@ -1,20 +1,21 @@
 import { computed, onBeforeMount, onMounted, reactive, ref, Ref, watch } from "vue"
+import { flatResponse } from "@/functions/http-client"
 import { Tagme } from "@/functions/http-client/api/illust"
 import { RelatedSimpleTopic, SimpleTopic } from "@/functions/http-client/api/topic"
-import { Author, RelatedSimpleAuthor, SimpleAuthor } from "@/functions/http-client/api/author"
+import { RelatedSimpleAuthor, SimpleAuthor } from "@/functions/http-client/api/author"
 import { RelatedSimpleTag, SimpleTag } from "@/functions/http-client/api/tag"
 import { IdentityType, MetaTagTypeValue, MetaType } from "@/functions/http-client/api/all"
 import { MetaUtilIdentity, MetaUtilResult, MetaUtilValidation } from "@/functions/http-client/api/util-meta"
-import { useFetchHelper, useFetchReactive, usePostFetchHelper, useQueryContinuousListView } from "@/functions/fetch"
+import { BatchQueryResult, SourceMappingTargetDetail } from "@/functions/http-client/api/source-tag-mapping"
+import { useFetchHelper, useFetchReactive, usePostFetchHelper, usePostPathFetchHelper, useQueryContinuousListView } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
 import { useToast } from "@/modules/toast"
 import { useInterceptedKey } from "@/modules/keyboard"
+import { useTagTreeSearch } from "@/services/common/tag"
 import { installation, toRef } from "@/utils/reactivity"
 import { sleep } from "@/utils/process"
 import { objects } from "@/utils/primitives"
-import { flatResponse } from "@/functions/http-client";
-import { BasicException } from "@/functions/http-client/exceptions";
-import { useTagTreeSearch } from "@/services/common/tag";
+import { useMessageBox } from "@/modules/message-box";
 
 export type SetValue = (form: SetDataForm) => Promise<boolean>
 
@@ -574,4 +575,128 @@ export function useDatabaseData() {
     }
 
     return {tabDBType, authorData, topicData, tagData, authorShowMore, topicShowMore, authorNext, topicNext, authorSearchText, topicSearchText, tagSearch, refresh}
+}
+
+export function useSourceDeriveData() {
+    const toast = useToast()
+    const message = useMessageBox()
+    const { identity } = useEditorContext()
+
+    const fetchSourceData = useFetchHelper({
+        request: client => client.illust.image.sourceData.get,
+        handleErrorInRequest: toast.handleException
+    })
+
+    const fetchSourceTagMappingQuery = useFetchHelper({
+        request: client => client.sourceTagMapping.batchQuery,
+        handleErrorInRequest: toast.handleException
+    })
+
+    const fetchSourceTagMappingUpdate = usePostPathFetchHelper({
+        request: client => client.sourceTagMapping.update,
+        handleErrorInRequest(e) {
+            if(e.code === "NOT_EXIST") {
+                if(e.info[0] === "site") {
+                    message.showOkMessage("error", "选择的来源类型不存在。")
+                }else{
+                    message.showOkMessage("error", "选择的某项资源不存在。")
+                }
+            }else{
+                toast.handleException(e)
+            }
+        },
+        afterRequest() {
+            if(identity.value !== null && identity.value.type === "IMAGE") {
+                loadDerives().finally()
+            }else{
+                derives.value = []
+            }
+        }
+    })
+
+    const sourceSite = ref<string | null>(null)
+
+    const derives = ref<BatchQueryResult[]>([])
+
+    const loadDerives = async () => {
+        const sourceDataRes = await fetchSourceData(identity.value!.id)
+        if(sourceDataRes === undefined) {
+            sourceSite.value = null
+            derives.value = []
+            return
+        }
+        if(sourceDataRes.sourceSite === null || !sourceDataRes.tags?.length) {
+            sourceSite.value = null
+            derives.value = []
+            return
+        }
+        const res = await fetchSourceTagMappingQuery({site: sourceDataRes.sourceSite, tags: sourceDataRes.tags.map(i => i.code)})
+        if(res === undefined) {
+            derives.value = []
+            return
+        }
+        sourceSite.value = sourceDataRes.sourceSite
+        derives.value = sortDerives(res)
+    }
+
+    watch(identity, async (identity, old) => {
+        if(identity !== null && identity.type === "IMAGE") {
+            //确认首次执行，或identity实质未变
+            if(old === undefined || !objects.deepEquals(identity, old)) {
+                await loadDerives()
+            }
+        }else{
+            derives.value = []
+        }
+    }, {immediate: true})
+
+    const updateSourceTagMapping = (tagCode: string, items: SourceMappingTargetDetail[]) => {
+        if(sourceSite.value !== null) {
+            const itemIds = items.map(item => ({metaType: item.metaType, metaId: item.metaTag.id}))
+            fetchSourceTagMappingUpdate({sourceSite: sourceSite.value, sourceTag: tagCode}, itemIds).finally()
+        }
+    }
+
+    function sortDerives(sourceTags: BatchQueryResult[]): BatchQueryResult[] {
+        //结果不采用默认的source tags顺序，而是按照mapping得到的meta tag类型和权重做排序。
+        //对于每个sourceTag，使用它的映射结果中权重最高的项作为它的权重。
+        //权重依据：type(author > topic > tag), id。
+        return sourceTags
+            .map(st => [st, getMaxTarget(st.mappings)] as const)
+            .sort(([, a], [, b]) => compareMappingTarget(a, b))
+            .map(([st,]) => st)
+    }
+
+    function getMaxTarget(targets: SourceMappingTargetDetail[]): SourceMappingTargetDetail | null {
+        let max: SourceMappingTargetDetail | null = null
+        for(const target of targets) {
+            if(max === null || compareMappingTarget(target, max) < 0) {
+                max = target
+            }
+        }
+        return max
+    }
+
+    function compareMappingTarget(a: SourceMappingTargetDetail | null, b: SourceMappingTargetDetail | null): number {
+        if(a !== null && b === null) return -1
+        else if(a === null && b !== null) return 1
+        else if(a === null && b === null) return 0
+        else return a!.metaType !== b!.metaType ? compareMetaType(a!.metaType, b!.metaType) : compareNumber(a!.metaTag.id, b!.metaTag.id)
+    }
+
+    function compareMetaType(a: MetaType, b: MetaType): number {
+        return compareNumber(META_TYPE_ORDINAL[a], META_TYPE_ORDINAL[b])
+    }
+
+    function compareNumber(a: number, b: number): number {
+        return a < b ? -1 : a > b ? 1 : 0;
+    }
+
+    const META_TYPE_ORDINAL = {
+        "AUTHOR": 1,
+        "TOPIC": 2,
+        "TAG": 3
+    }
+
+    return {sourceSite, derives, updateSourceTagMapping}
 }

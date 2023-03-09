@@ -14,6 +14,14 @@ export interface PostFetchHelper<PARAM, E extends BasicException> {
     (param: PARAM, handleError?: ErrorHandler<E>): Promise<boolean>
 }
 
+export interface PathFetchHelper<PATH, PARAM, MODEL, E extends BasicException> {
+    (path: PATH, param: PARAM, handleError?: ErrorHandler<E>): Promise<MODEL | undefined>
+}
+
+export interface PostPathFetchHelper<PATH, PARAM, E extends BasicException> {
+    (path: PATH, param: PARAM, handleError?: ErrorHandler<E>): Promise<boolean>
+}
+
 interface FetchHelperOptions<PARAM, MODEL, E extends BasicException> {
     request(httpClient: HttpClient): (param: PARAM) => Promise<Response<MODEL, E>>
     handleErrorInRequest?(e: E): E | void
@@ -24,6 +32,18 @@ interface PostFetchHelperOptions<PARAM, MODEL, E extends BasicException> {
     request(httpClient: HttpClient): (param: PARAM) => Promise<Response<MODEL, E>>
     handleErrorInRequest?(e: E): E | void
     afterRequest?(res: MODEL, param: PARAM): void
+}
+
+interface PathFetchHelperOptions<PATH, PARAM, MODEL, E extends BasicException> {
+    request(httpClient: HttpClient): (path: PATH, param: PARAM) => Promise<Response<MODEL, E>>
+    handleErrorInRequest?(e: E): E | void
+    afterRequest?(res: MODEL, path: PATH, param: PARAM): void
+}
+
+interface PostPathFetchHelperOptions<PATH, PARAM, MODEL, E extends BasicException> {
+    request(httpClient: HttpClient): (path: PATH, param: PARAM) => Promise<Response<MODEL, E>>
+    handleErrorInRequest?(e: E): E | void
+    afterRequest?(res: MODEL, path: PATH, param: PARAM): void
 }
 
 export function useFetchHelper<PARAM, MODEL, E extends BasicException>(options: FetchHelperOptions<PARAM, MODEL, E> | FetchHelperOptions<PARAM, MODEL, E>["request"]): FetchHelper<PARAM, MODEL, E> {
@@ -57,6 +77,46 @@ export function usePostFetchHelper<PARAM, MODEL, E extends BasicException>(optio
         const res = await method(param)
         if(res.ok) {
             afterRequest?.(res.data, param)
+            return true
+        }else if(res.exception) {
+            const e = handleError ? handleError(res.exception) : handleErrorInRequest ? handleErrorInRequest(res.exception) : res.exception
+            if(e !== undefined) handleException(res.exception)
+        }
+        return false
+    }
+}
+
+export function usePathFetchHelper<PATH, PARAM, MODEL, E extends BasicException>(options: PathFetchHelperOptions<PATH, PARAM, MODEL, E> | PathFetchHelperOptions<PATH, PARAM, MODEL, E>["request"]): PathFetchHelper<PATH, PARAM, MODEL, E> {
+    const { httpClient, handleException } = useFetchManager()
+
+    const method = typeof options === "object" ? options.request(httpClient) : options(httpClient)
+    const afterRequest = typeof options === "object" ? options.afterRequest : undefined
+    const handleErrorInRequest = typeof options === "object" ? options.handleErrorInRequest : undefined
+
+    return async (path: PATH, param: PARAM, handleError?: ErrorHandler<E>): Promise<MODEL | undefined> => {
+        const res = await method(path, param)
+        if (res.ok) {
+            afterRequest?.(res.data, path, param)
+            return res.data
+        } else if (res.exception) {
+            const e = handleError ? handleError(res.exception) : handleErrorInRequest ? handleErrorInRequest(res.exception) : res.exception
+            if (e !== undefined) handleException(res.exception)
+        }
+        return undefined
+    }
+}
+
+export function usePostPathFetchHelper<PATH, PARAM, MODEL, E extends BasicException>(options: PostPathFetchHelperOptions<PATH, PARAM, MODEL, E> | PostPathFetchHelperOptions<PATH, PARAM, MODEL, E>["request"]): PostPathFetchHelper<PATH, PARAM, E> {
+    const { httpClient, handleException } = useFetchManager()
+
+    const method = typeof options === "object" ? options.request(httpClient) : options(httpClient)
+    const afterRequest = typeof options === "object" ? options.afterRequest : undefined
+    const handleErrorInRequest = typeof options === "object" ? options.handleErrorInRequest : undefined
+
+    return async (path: PATH, param: PARAM, handleError?: ErrorHandler<E>): Promise<boolean> => {
+        const res = await method(path, param)
+        if(res.ok) {
+            afterRequest?.(res.data, path, param)
             return true
         }else if(res.exception) {
             const e = handleError ? handleError(res.exception) : handleErrorInRequest ? handleErrorInRequest(res.exception) : res.exception

@@ -4,6 +4,7 @@ import { Tag } from "@/components/universal"
 import { MetaTagTypes, MetaTagValues, SimpleAuthor, SimpleTopic } from "@/functions/http-client/api/all"
 import { AUTHOR_TYPE_ICONS, META_TYPE_ICONS, TOPIC_TYPE_ICONS } from "@/constants/entity"
 import { useDraggable } from "@/modules/drag"
+import { Colors } from "@/constants/ui"
 import { toRef } from "@/utils/reactivity"
 
 const props = defineProps<{
@@ -15,6 +16,10 @@ const props = defineProps<{
      * meta tag值。
      */
     value: MetaTagValues
+    /**
+     * 使用额外的颜色覆盖。
+     */
+    color?: Colors
     /**
      * 是否可拖曳。开启后，注解可以被拖曳，完成拖曳响应。
      */
@@ -52,14 +57,14 @@ const icon = computed(() => {
 
 <template>
     <div v-if="wrappedByDiv">
-        <Tag :color="value.color ?? undefined" :icon="icon" :clickable="clickable" :draggable="draggable" v-bind="dragEvents">
+        <Tag :color="color ?? value.color ?? undefined" :icon="icon" :clickable="clickable" :draggable="draggable" v-bind="dragEvents">
             <span v-if="selectable" class="selectable">{{value.name}}</span>
             <template v-else>{{value.name}}</template>
         </Tag>
         <slot name="behind"/>
     </div>
     <template v-else>
-        <Tag :color="value.color ?? undefined" :icon="icon" :clickable="clickable" :draggable="draggable" v-bind="dragEvents">
+        <Tag :color="color ?? value.color ?? undefined" :icon="icon" :clickable="clickable" :draggable="draggable" v-bind="dragEvents">
             <span v-if="selectable" class="selectable">{{value.name}}</span>
             <template v-else>{{value.name}}</template>
         </Tag>

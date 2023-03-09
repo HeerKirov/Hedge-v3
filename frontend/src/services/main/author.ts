@@ -202,6 +202,11 @@ function useAuthorDetailPanelEditor(data: Readonly<Ref<DetailAuthor | null>>, se
         }
     }
 
+    const cancel = () => {
+        editMode.value = false
+        form.value = null
+    }
+
     const save = async () => {
         if(form.value && data.value) {
             const updateForm: AuthorUpdateForm = {
@@ -255,7 +260,7 @@ function useAuthorDetailPanelEditor(data: Readonly<Ref<DetailAuthor | null>>, se
         }
     }
 
-    return {editMode: readonly(editMode), form, setProperty, edit, save}
+    return {editMode: readonly(editMode), form, setProperty, edit, cancel, save}
 }
 
 interface AuthorCreateFormData extends AuthorUpdateFormData {

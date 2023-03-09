@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { toRef } from "vue"
 import { MetaUtilIdentity } from "@/functions/http-client/api/util-meta"
-import { MetaTagSummaryEditor } from "@/components-business/form-editor"
+import { MetaTagSummaryEditor } from "@/components-module/data"
 import { useIdentityModeData } from "./context"
 
 const props = defineProps<{

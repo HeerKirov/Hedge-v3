@@ -18,7 +18,7 @@ export type SelectedPaneState<T> = {
 }
 
 export function useSelectedPaneState<T>(sidePaneName: string, selectedState: SelectedState<T>) {
-    const storage = useLocalStorage<{visible: boolean}>(`side-pane/${sidePaneName}`, () =>({visible: false}))
+    const storage = useLocalStorage<{visible: boolean}>(`side-pane/${sidePaneName}`, () =>({visible: false}), true)
 
     const visible = toRef(storage, "visible")
 

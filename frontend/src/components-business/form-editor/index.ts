@@ -18,7 +18,6 @@ import SourceTagEditor from "./SourceTagEditor.vue"
 import SourceBookEditor from "./SourceBookEditor.vue"
 import SourceRelationEditor from "./SourceRelationEditor.vue"
 import SourceEditStatusEditor from "./SourceEditStatusEditor.vue"
-import MetaTagSummaryEditor from "./MetaTagSummaryEditor/MetaTagSummaryEditor.vue"
 import TagmeEditor from "./TagmeEditor.vue"
 import DateEditor from "./DateEditor.vue"
 import DateTimeEditor from "./DateTimeEditor.vue"
@@ -29,4 +28,4 @@ export { TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, TagLin
 export { OtherNameEditor, ScoreEditor, DescriptionEditor, RelatedAnnotationEditor, ParentTopicEditor }
 export { SourceIdentityEditor, SourceIdentityNoPartEditor, SourceDataSummaryEditor, SourceEditStatusEditor, SourceSiteSelectBox }
 export { SourceTagMappingEditor, SourceTagEditor, SourceBookEditor, SourceRelationEditor }
-export { TagmeEditor, DateEditor, DateTimeEditor, MetaTagSummaryEditor }
+export { TagmeEditor, DateEditor, DateTimeEditor }

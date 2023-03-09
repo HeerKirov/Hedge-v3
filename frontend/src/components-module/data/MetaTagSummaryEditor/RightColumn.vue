@@ -4,7 +4,7 @@ import { Group } from "@/components/layout"
 import { useEditorContext } from "./context"
 import RightColumnDatabase from "./RightColumnDatabase.vue"
 import RightColumnRecent from "./RightColumnRecent.vue"
-import RightColumnSourceDrive from "./RightColumnSourceDrive.vue"
+import RightColumnSourceDrive from "./RightColumnSourceDerive.vue"
 import RightColumnSuggest from "./RightColumnSuggest.vue"
 
 const { identity, tab } = useEditorContext()

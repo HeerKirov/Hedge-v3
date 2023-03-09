@@ -92,19 +92,19 @@ const addAll = () => {
             <template v-if="authorFilter">
                 <div v-for="author in authors" :key="author.id" class="mb-1">
                     <CheckBox :value="selectedAuthors[author.id] ?? true" @update:value="selectedAuthors[author.id] = $event"/>
-                    <SimpleMetaTagElement type="author" :value="author" draggable/>
+                    <SimpleMetaTagElement type="author" :value="author" draggable @dblclick="$emit('add', [{type: 'author', value: author}])"/>
                 </div>
             </template>
             <template v-if="topicFilter">
                 <div v-for="topic in topics" :key="topic.id" class="mb-1">
                     <CheckBox :value="selectedTopics[topic.id] ?? true" @update:value="selectedTopics[topic.id] = $event"/>
-                    <SimpleMetaTagElement type="topic" :value="topic" draggable/>
+                    <SimpleMetaTagElement type="topic" :value="topic" draggable @dblclick="$emit('add', [{type: 'topic', value: topic}])"/>
                 </div>
             </template>
             <template v-if="tagFilter">
                 <div v-for="tag in tags" :key="tag.id" class="mb-1">
                     <CheckBox :value="selectedTags[tag.id] ?? true" @update:value="selectedTags[tag.id] = $event"/>
-                    <SimpleMetaTagElement type="tag" :value="tag" draggable/>
+                    <SimpleMetaTagElement type="tag" :value="tag" draggable @dblclick="$emit('add', [{type: 'tag', value: tag}])"/>
                 </div>
             </template>
         </div>

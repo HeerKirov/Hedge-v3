@@ -33,6 +33,13 @@ const click = () => {
     }
 }
 
+const dblclick = () => {
+    const indexed = indexedData.indexedData.value[props.node.id]
+    if(indexed) {
+        emit.dblclick(props.node, indexed.parentId, indexed.ordinal)
+    }
+}
+
 const contextmenu = () => {
     if(elementRefs.jumpTarget.value === props.node.id) {
         elementRefs.jumpTarget.value = null
@@ -47,13 +54,13 @@ const contextmenu = () => {
         <p :class="$style['expanded-button-element']" v-bind="dropEvents">
             <ExpandedButton :class="$style['expanded-button']" v-model:expanded="expanded" @contextmenu="contextmenu"/>
             <span :ref="el => elementRefs.setElement(node.id, el)" :class="{[$style['jump-target']]: isJumpTarget}">
-                <TagNodeElement :node="node" :draggable="draggable" @contextmenu="contextmenu" @click="click"/>
+                <TagNodeElement :node="node" :draggable="draggable" @contextmenu="contextmenu" @click="click" @dblclick="dblclick"/>
             </span>
         </p>
         <TagNodeList v-if="expanded" :parent-id="node.id" :nodes="node.children ?? []"/>
     </template>
     <span v-else :ref="el => elementRefs.setElement(node.id, el)" :class="{[$style['jump-target']]: isJumpTarget}">
-        <TagNodeElement :node="node" :draggable="draggable" v-bind="dropEvents" @contextmenu="contextmenu" @click="click"/>
+        <TagNodeElement :node="node" :draggable="draggable" v-bind="dropEvents" @contextmenu="contextmenu" @click="click" @dblclick="dblclick"/>
     </span>
 </template>
 

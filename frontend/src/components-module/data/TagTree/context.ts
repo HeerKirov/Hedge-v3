@@ -16,6 +16,7 @@ interface TagTreeContextOptions {
     draggable: Ref<boolean | ((tag: TagTreeNode) => boolean) | undefined>
     emit: {
         click(tag: TagTreeNode, parentId: number | null, ordinal: number): void
+        dblclick(tag: TagTreeNode, parentId: number | null, ordinal: number): void
         delete(tag: TagTreeNode, parentId: number | null, ordinal: number): void
         create(parentId: number | null, ordinal: number): void
         move(tag: TagTreeNode, moveToParentId: number | null | undefined, moveToOrdinal: number): void

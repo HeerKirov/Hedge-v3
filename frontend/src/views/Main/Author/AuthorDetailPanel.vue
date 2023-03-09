@@ -10,7 +10,7 @@ import AuthorDetailPanelForm from "./AuthorDetailPanel/AuthorDetailPanelForm.vue
 const { paneState } = useAuthorContext()
 const {
     data,
-    editor: { editMode, edit, save, form, setProperty },
+    editor: { editMode, edit, cancel, save, form, setProperty },
     operators: { toggleFavorite, createByTemplate, deleteItem }
 } = useAuthorDetailPanel()
 
@@ -27,7 +27,7 @@ const ellipsisMenuItems = <MenuItem<undefined>[]>[
         <template #top-bar>
             <MiddleLayout>
                 <template #left>
-                    <Button v-if="editMode" square icon="close" @click=""/>
+                    <Button v-if="editMode" square icon="close" @click="cancel"/>
                     <Button v-else square icon="angle-left" @click="paneState.closeView()"/>
                 </template>
                 <template #right>

@@ -40,6 +40,13 @@ const click = () => {
     }
 }
 
+const dblclick = () => {
+    const indexed = indexedData.indexedData.value[props.node.id]
+    if(indexed) {
+        emit.dblclick(props.node, indexed.parentId, indexed.ordinal)
+    }
+}
+
 const contextmenu = () => {
     if(elementRefs.jumpTarget.value === props.node.id) {
         elementRefs.jumpTarget.value = null
@@ -51,7 +58,7 @@ const contextmenu = () => {
 
 <template>
     <Block :class="{[`has-text-${node.color}`]: !!node.color, [$style.root]: true}">
-        <p :class="{'is-font-size-large': true, [$style['jump-target']]: isJumpTarget}" v-bind="dropEvents" @contextmenu="contextmenu" @click="click">
+        <p :class="{'is-font-size-large': true, [$style['jump-target']]: isJumpTarget}" v-bind="dropEvents" @contextmenu="contextmenu" @click="click" @dblclick="dblclick">
             <ExpandedButton v-model:expanded="expanded"/>
             <span :ref="el => elementRefs.setElement(node.id, el)" :draggable="draggable" v-bind="dragEvents">{{node.name}}</span>
         </p>
