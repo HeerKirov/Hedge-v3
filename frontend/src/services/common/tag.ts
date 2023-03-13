@@ -2,6 +2,11 @@ import { ref, Ref, shallowRef, watch } from "vue"
 import { TagTreeNode } from "@/functions/http-client/api/tag"
 import { TagTree } from "@/components-module/data"
 
+/**
+ * 提供一个可复用的、面向TagTree的搜索服务。
+ * 它依据{searchText}的内容，在{data}中展开搜索。搜索结果的展示方式是在TagTree中高亮显示，类似任意IDE的文本搜索那样。
+ * {searchInfo}可告知搜索结果(数量和当前位置)，{next}和{prev}则可调整导航位置。
+ */
 export function useTagTreeSearch(data: Ref<TagTreeNode[] | undefined>) {
     const searchText = ref("")
 

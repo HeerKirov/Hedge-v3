@@ -1,12 +1,13 @@
 import { computed, watch } from "vue"
 import { useCreatingHelper, useFetchEndpoint, useFetchHelper, useFetchReactive, useRetrieveHelper } from "@/functions/fetch"
-import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
-import { TagAddressType, TagCreateForm, TagGroupType, TagLink, TagTreeNode } from "@/functions/http-client/api/tag"
+import { DetailViewState, useRouterViewState } from "@/services/base/detail-view-state"
+import { TagAddressType, TagCreateForm, TagGroupType, TagLink } from "@/functions/http-client/api/tag"
 import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { SimpleIllust } from "@/functions/http-client/api/illust"
 import { useLocalStorage } from "@/functions/app"
 import { useMessageBox } from "@/modules/message-box"
+import { useRouterQueryNumber } from "@/modules/router"
 import { UsefulColors } from "@/constants/ui"
 import { useTagTreeSearch } from "@/services/common/tag"
 import { computedAsync, computedWatchMutable, installation } from "@/utils/reactivity"
@@ -14,9 +15,8 @@ import { patchMappingSourceTagForm } from "@/utils/translation"
 import { checkTagName } from "@/utils/validation"
 import { objects } from "@/utils/primitives"
 
-
 export const [installTagContext, useTagContext] = installation(function () {
-    const paneState = useDetailViewState<number, TagCreateTemplate>()
+    const paneState = useRouterViewState<number, TagCreateTemplate>(useRouterQueryNumber("MainTag", "detail"))
 
     const listview = useTagListView()
 

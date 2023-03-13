@@ -84,7 +84,7 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues) => {
             <div class="mt-1 mr-4 mb-4 ml-1">
                 <Button :type="canUndo ? 'primary' : undefined" :disabled="!canUndo" icon="undo" @click="undo">撤销</Button>
                 <Button :type="canRedo ? 'primary' : undefined" :disabled="!canRedo" icon="redo" @click="redo">重做</Button>
-                <Button class="float-right" type="primary" :disabled="!submittable" icon="save" @click="submit">保存</Button>
+                <Button class="float-right" mode="filled" type="primary" :disabled="!submittable" icon="save" @click="submit">保存</Button>
             </div>
         </template>
     </BottomLayout>

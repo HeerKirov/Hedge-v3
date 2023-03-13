@@ -9,17 +9,18 @@ import {
 } from "@/functions/http-client/api/author"
 import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
-import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
+import { DetailViewState, useRouterViewState } from "@/services/base/detail-view-state"
 import { useNavHistoryPush } from "@/services/base/side-nav-menu"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useMessageBox } from "@/modules/message-box"
+import { useRouterQueryNumber } from "@/modules/router"
 import { checkTagName } from "@/utils/validation"
 import { patchMappingSourceTagForm } from "@/utils/translation"
 import { computedWatchMutable, installation } from "@/utils/reactivity"
 import { objects } from "@/utils/primitives"
 
 export const [installAuthorContext, useAuthorContext] = installation(function () {
-    const paneState = useDetailViewState<number, Partial<DetailAuthor>>()
+    const paneState = useRouterViewState<number, Partial<DetailAuthor>>(useRouterQueryNumber("MainAuthor", "detail"))
 
     const listview = useListView()
 

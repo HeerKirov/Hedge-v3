@@ -54,7 +54,7 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
 
     const menuItems = generateRefFromReactiveGroup(groups)
 
-    const menuSelected = ref<{id: string, subId: string | null}>()
+    const innerMenuSelected = ref<{id: string, subId: string | null}>()
 
     watch(router.currentRoute, route => {
         //route变化时，根据route，查找当前应该选中的项。
@@ -69,7 +69,7 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
                        for(const submenuItem of menuItem.submenu) {
                            const param = analyseRouteParamFromSelected({id: menuItem.id, subId: submenuItem.id})
                            if(matchSelectedWithRoute(param, routeName, routeQuery)) {
-                               menuSelected.value = {id: menuItem.id, subId: submenuItem.id}
+                               innerMenuSelected.value = {id: menuItem.id, subId: submenuItem.id}
                                return
                            }
                        }
@@ -77,14 +77,14 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
 
                    const param = analyseRouteParamFromSelected({id: menuItem.id, subId: null})
                    if(matchSelectedWithRoute(param, routeName, routeQuery)) {
-                       menuSelected.value = {id: menuItem.id, subId: null}
+                       innerMenuSelected.value = {id: menuItem.id, subId: null}
                        return
                    }
                }else{
                    //如果非hasQuery，则只与本体匹配，不尝试submenu，因为submenu必有query参数
                    const param = analyseRouteParamFromSelected({id: menuItem.id, subId: null})
                    if(matchSelectedWithRoute(param, routeName, routeQuery)) {
-                       menuSelected.value = {id: menuItem.id, subId: null}
+                       innerMenuSelected.value = {id: menuItem.id, subId: null}
                        return
                    }
                }
@@ -93,13 +93,16 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
         }
     }, {immediate: true})
 
-    watch(menuSelected, selected => {
-        if(selected !== undefined) {
-            const param = analyseRouteParamFromSelected(selected)
-            if(param.routeQueryName !== null) {
-                router.push({name: param.routeName, query: {[param.routeQueryName]: param.routeQueryValue}}).finally()
-            }else{
-                router.push({name: param.routeName}).finally()
+    const menuSelected = computed({
+        get: () => innerMenuSelected.value,
+        set(selected) {
+            if(selected !== undefined) {
+                const param = analyseRouteParamFromSelected(selected)
+                if(param.routeQueryName !== null) {
+                    router.push({name: param.routeName, query: {[param.routeQueryName]: param.routeQueryValue}}).finally()
+                }else{
+                    router.push({name: param.routeName}).finally()
+                }
             }
         }
     })

@@ -6,27 +6,30 @@ import { IllustQueryFilter, IllustType, Tagme } from "@/functions/http-client/ap
 import { SimpleTag, SimpleTopic, SimpleAuthor } from "@/functions/http-client/api/all"
 import { useFetchEndpoint, usePostFetchHelper } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
+import { useToast } from "@/modules/toast"
 import { useRouterParamEvent } from "@/modules/router"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useQuerySchema } from "@/services/base/query-schema"
+import { useImageDatasetOperators } from "@/services/common/illust"
 import { useSettingSite } from "@/services/setting"
 import { installation, toRef } from "@/utils/reactivity"
-import { useToast } from "@/modules/toast"
-import { objects } from "@/utils/primitives"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 
 export const [installIllustContext, useIllustContext] = installation(function () {
     const listview = useListView()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust", selector)
-    const query = toRef(listview.queryFilter, "query")
-    const querySchema = useQuerySchema("ILLUST", query)
+    const querySchema = useQuerySchema("ILLUST", toRef(listview.queryFilter, "query"))
     const listviewController = useListViewController(toRef(listview.queryFilter, "type"))
-    const operators = {}
+    const navigation = installVirtualViewNavigation()
+    const operators = useImageDatasetOperators({
+        paginationData: listview.paginationData,
+        listview: listview.listview,
+        selector, navigation
+    })
 
-    installVirtualViewNavigation()
     useSettingSite()
 
     useRouterParamEvent("MainIllust", params => {
@@ -45,23 +48,34 @@ export const [installIllustContext, useIllustContext] = installation(function ()
 })
 
 function useListView() {
-    return useListViewContext({
+    const listview = useListViewContext({
         defaultFilter: <IllustQueryFilter>{order: "-orderTime", type: "IMAGE"},
         request: client => (offset, limit, filter) => client.illust.list({offset, limit, ...filter}),
         eventFilter: {
-            filter: ["entity/illust/created", "entity/illust/updated", "entity/illust/deleted"],
+            filter: ["entity/illust/created", "entity/illust/updated", "entity/illust/deleted", "entity/collection-images/changed"],
             operation({ event, refresh, update, remove }) {
                 if(event.eventType === "entity/illust/created") {
                     refresh()
                 }else if(event.eventType === "entity/illust/updated") {
                     update(i => i.id === event.illustId)
                 }else if(event.eventType === "entity/illust/deleted") {
-                    remove(i => i.id === event.illustId)
+                    if(event.illustType === "COLLECTION") {
+                        if(listview.queryFilter.value.type === "COLLECTION") {
+                            refresh()
+                        }
+                    }else{
+                        remove(i => i.id === event.illustId)
+                    }
+                }else if(event.eventType === "entity/collection-images/changed") {
+                    if(listview.queryFilter.value.type === "COLLECTION") {
+                        refresh()
+                    }
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.illust.get(a.id))))
         }
     })
+    return listview
 }
 
 function useListViewController(queryFilterIllustType: Ref<IllustType>) {
@@ -137,7 +151,7 @@ export function useIllustDetailPaneMultiple(selected: Ref<number[]>, latest: Ref
         orderTime: false
     })
 
-    const anyActive = computed(() => actives.tagme || actives.partitionTime || actives.orderTime)
+    const anyActive = computed(() => actives.description || actives.score || actives.metaTag || actives.tagme || actives.partitionTime || actives.orderTime)
 
     const form = reactive<{
         description: string

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { DialogBox } from "@/components/interaction"
-import { useInternalService, SourceDataEditorProps, MetaTagEditorProps } from "./context"
+import { useInternalService, SourceDataEditorProps, MetaTagEditorProps, CreatingCollectionProps } from "./context"
 import SourceDataEditor from "./SourceDataEditor/SourceDataEditor.vue"
 import MetaTagEditor from "./MetaTagEditor/MetaTagEditor.vue"
+import CreatingCollection from "./CreatingCollection/CreatingCollection.vue"
 
 const { context, close } = useInternalService()
 
@@ -12,6 +13,7 @@ const { context, close } = useInternalService()
     <DialogBox :class="$style['container-box']" :visible="context !== null" @close="close" :close-on-click-outside="true" :close-on-escape="true">
         <SourceDataEditor v-if="context!.type === 'sourceDataEditor'" :p="context!.props as SourceDataEditorProps" @close="close"/>
         <MetaTagEditor v-else-if="context!.type === 'metaTagEditor'" :p="context!.props as MetaTagEditorProps" @close="close"/>
+        <CreatingCollection v-else-if="context!.type === 'creatingCollection'" :p="context!.props as CreatingCollectionProps" @close="close"/>
     </DialogBox>
 </template>
 

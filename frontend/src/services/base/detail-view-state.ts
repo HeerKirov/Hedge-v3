@@ -73,4 +73,45 @@ export function useDetailViewState<PATH, CT = undefined>(): DetailViewState<PATH
     }
 }
 
+export function useRouterViewState<PATH, CT = undefined>(query: Ref<PATH | null>): DetailViewState<PATH, CT> {
+    const createMode = ref(false)
+    const createTemplate: Ref<CT | null> = ref(null) as Ref<CT | null>
+
+    const state: Ref<DetailViewMode<PATH, CT>> = computed(() => {
+        if(query.value !== null) {
+            return {type: "detail", path: query.value}
+        }else if(createMode.value) {
+            return {type: "create", template: createTemplate.value}
+        }else{
+            return CLOSE_VALUE
+        }
+    })
+
+    const mode = computed(() => state.value.type)
+
+    const opened = computed(() => state.value.type !== "close")
+
+    return {
+        mode,
+        opened,
+        detailPath: query,
+        createTemplate,
+        openCreateView(template?: CT) {
+            createTemplate.value = template ?? null
+            createMode.value = true
+            query.value = null
+        },
+        openDetailView(path: PATH) {
+            query.value = path
+            createMode.value = false
+            createTemplate.value = null
+        },
+        closeView() {
+            query.value = null
+            createMode.value = false
+            createTemplate.value = null
+        }
+    }
+}
+
 const CLOSE_VALUE = {type: "close"} as const

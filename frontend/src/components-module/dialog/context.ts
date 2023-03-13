@@ -2,20 +2,24 @@ import { nextTick, Ref, ref } from "vue"
 import { installation } from "@/utils/reactivity"
 import { MetaTagEditor, MetaTagEditorProps, useMetaTagEditor } from "./MetaTagEditor/context"
 import { SourceDataEditor, SourceDataEditorProps, useSourceDataEditor } from "./SourceDataEditor/context"
+import { CreatingCollection, CreatingCollectionProps, useCreatingCollection } from "./CreatingCollection/context"
 
 export type {
     SourceDataEditorProps,
-    MetaTagEditorProps
+    MetaTagEditorProps,
+    CreatingCollectionProps
 }
 
 export interface DialogService {
     sourceDataEditor: SourceDataEditor
     metaTagEditor: MetaTagEditor
+    creatingCollection: CreatingCollection
 }
 
 type ServiceContext
     = { type: "sourceDataEditor", props: SourceDataEditorProps }
     | { type: "metaTagEditor", props: MetaTagEditorProps }
+    | { type: "creatingCollection", props: CreatingCollectionProps }
 
 export type Push = (nc: ServiceContext) => void
 
@@ -46,13 +50,15 @@ export const [installInternalService, useInternalService] = installation(functio
 
     const sourceDataEditor = useSourceDataEditor(push)
     const metaTagEditor = useMetaTagEditor(push)
+    const creatingCollection = useCreatingCollection(push)
 
     return {
         context,
         push,
         close,
         sourceDataEditor,
-        metaTagEditor
+        metaTagEditor,
+        creatingCollection
     }
 })
 

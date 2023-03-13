@@ -5,14 +5,15 @@ import { ElementPopupMenu } from "@/components/interaction"
 import { IllustImageDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
 import { TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
-import { DataRouter, FitTypeButton, ColumnNumButton, SearchInput, QueryNotificationBadge, QueryResult } from "@/components-business/top-bar"
+import { DataRouter, FitTypeButton, ColumnNumButton, SearchInput, QueryNotificationBadge, QueryResult, CollectionModeButton } from "@/components-business/top-bar"
+import { Illust } from "@/functions/http-client/api/illust"
 import { installIllustContext } from "@/services/main/illust"
-import { MenuItem, usePopupMenu } from "@/modules/popup-menu"
+import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 
 const {
     paneState,
     listview: { listview, paginationData },
-    listviewController: { viewMode, fitType, columnNum },
+    listviewController: { viewMode, fitType, columnNum, collectionMode },
     selector: { selected, lastSelected, update: updateSelect },
     querySchema,
     operators
@@ -25,7 +26,30 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"}
 ])
 
-const menu = usePopupMenu<unknown>([])
+// TODO 完成illust右键菜单的功能 (剪贴板，关联组，导出)
+const menu = useDynamicPopupMenu<Illust>(illust => [
+    {type: "normal", label: "查看详情", click: i => operators.openDetailByClick(i.id)},
+    (illust.type === "COLLECTION" || null) && {type: "normal", label: "查看集合详情", click: i => operators.openCollectionDetail(i.id)},
+    {type: "normal", label: illust.type === "COLLECTION" ? "在新窗口中打开集合" : "在新窗口中打开", click: operators.openInNewWindow},
+    {type: "separator"},
+    {type: "checkbox", checked: paneState.visible.value, label: "显示信息预览", click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "separator"},
+    illust.favorite
+        ? {type: "normal", label: "取消标记为收藏", click: i => operators.modifyFavorite(i, false)}
+        : {type: "normal", label: "标记为收藏", click: i => operators.modifyFavorite(i, true)},
+    {type: "separator"},
+    {type: "normal", label: "加入剪贴板"},
+    {type: "separator"},
+    {type: "normal", label: "创建图像集合", click: operators.createCollection},
+    {type: "normal", label: "创建画集…", click: operators.createBook},
+    {type: "normal", label: "创建关联组"},
+    {type: "normal", label: "添加到目录…", click: operators.addToFolder},
+    {type: "normal", label: "克隆图像属性…", click: operators.cloneImage},
+    {type: "separator"},
+    {type: "normal", label: "导出"},
+    {type: "separator"},
+    {type: "normal", label: illust.type === "COLLECTION" ? "删除集合项目" : "删除项目", click: operators.deleteItem}
+])
 
 </script>
 
@@ -33,6 +57,7 @@ const menu = usePopupMenu<unknown>([])
     <TopBarLayout v-model:expanded="querySchema.expanded.value">
         <template #top-bar>
             <MiddleLayout>
+                <CollectionModeButton class="mr-1" v-model:value="collectionMode"/>
                 <SearchInput placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value"/>
                 <QueryNotificationBadge class="ml-1" :schema="querySchema.schema.value" @click="querySchema.expanded.value = true"/>
 
@@ -55,7 +80,8 @@ const menu = usePopupMenu<unknown>([])
             <IllustImageDataset :data="paginationData.data" :query-instance="paginationData.proxy"
                                 :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
                                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"/>
+                                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
+                                @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)"/>
 
             <template #pane>
                 <IllustDetailPane :state="paneState.state.value" @close="paneState.visible.value = false"/>

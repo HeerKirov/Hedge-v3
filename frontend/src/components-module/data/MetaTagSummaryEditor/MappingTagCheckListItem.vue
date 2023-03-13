@@ -112,7 +112,7 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues, enabled:
         <td>
             <Block v-if="editMode" v-bind="dropEvents" class="p-1">
                 <Group class="mt-1">
-                    <SimpleMetaTagElement v-for="item in editorForm" :key="item.key" :type="item.type" :value="item.value">
+                    <SimpleMetaTagElement v-for="(item, idx) in editorForm" :key="item.key" :type="item.type" :value="item.value">
                         <template #behind>
                             <Tag class="ml-half" line-style="none" :color="item.value.color" icon="close" clickable @click="removeAt(idx)"/>
                         </template>
