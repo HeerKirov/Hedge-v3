@@ -9,6 +9,7 @@ import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator } from "@/modules/router"
 import { useDialogService } from "@/components-module/dialog"
+import { useViewStack } from "@/components-module/view-stack"
 
 export interface ImageDatasetOperatorsOptions<T extends BasicIllust> {
     /**
@@ -115,7 +116,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
     const messageBox = useMessageBox()
     const navigator = useRouterNavigator()
     const dialog = useDialogService()
-    // const viewStacks = useViewStack()
+    const viewStack = useViewStack()
     const { paginationData, listview, navigation, selector } = options
 
     const fetchIllustUpdate = usePostPathFetchHelper({request: client => client.illust.update, handleErrorInRequest: toast.handleException})
@@ -138,10 +139,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
         const currentIndex = paginationData.proxy.syncOperations.find(i => i.id === illustId)
         if(currentIndex !== undefined) {
             const slice: AllSlice<Illust> = {type: "ALL", focusIndex: currentIndex, instance: getSliceInstance()}
-            // TODO viewStacks.openImageView(data, currentIndex, (index: number) => {
-            //     //回调：导航到目标index的位置
-            //     navigation.navigateTo(index)
-            // })
+            viewStack.openImageView(slice, navigation.navigateTo)
         }
     }
 
@@ -150,15 +148,14 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
             .map(selectedId => paginationData.proxy.syncOperations.find(i => i.id === selectedId))
             .filter(index => index !== undefined) as number[]
         const slice: ListIndexSlice<Illust> = {type: "LIST", indexes: indexList, focusIndex: currentIndex, instance: getSliceInstance()}
-
-        // TODO viewStacks.openImageView(data, currentIndex, async (index: number) => {
-        //     //回调：给出了目标index，回查data中此index的项，并找到此项现在的位置，导航到此位置
-        //     const illust = await data.get(index)
-        //     if(illust !== undefined) {
-        //         const index = paginationData.proxy.syncOperations.find(i => i.id === illust.id)
-        //         if(index !== undefined) navigation.navigateTo(index)
-        //     }
-        // })
+        viewStack.openImageView(slice, index => {
+            //回调：给出了目标index，回查data中此index的项，并找到此项现在的位置，导航到此位置
+            const illustId = slice.indexes[index]
+            if(illustId !== undefined) {
+                const index = paginationData.proxy.syncOperations.find(i => i.id === illustId)
+                if(index !== undefined) navigation.navigateTo(index)
+            }
+        })
     }
 
     const openDetailByClick = (illustId: number, openCollection?: boolean) => {
@@ -169,7 +166,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
                 const illust = paginationData.proxy.syncOperations.retrieve(index)!
                 if(illust.type === "COLLECTION") {
                     const slice: SingletonSlice<Illust> = {type: "SINGLETON", index, instance: getSliceInstance()}
-                    // TODO viewStacks.openCollectionView(data, () => listview.refresh())
+                    viewStack.openCollectionView(slice)
                     return
                 }
             }
@@ -205,7 +202,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
             const illust = paginationData.proxy.syncOperations.retrieve(currentIndex)!
             if(illust.type === "COLLECTION") {
                 const slice: SingletonSlice<Illust> = {type: "SINGLETON", index: currentIndex, instance: getSliceInstance()}
-                // TODO viewStacks.openCollectionView(data, () => listview.refresh())
+                viewStack.openCollectionView(slice)
             }else{
                 console.error(`Illust ${illust.id} is not a collection.`)
             }
