@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { ref } from "vue"
-import { SideLayout, SideBar, TopBar } from "@/components/layout"
+import { computed } from "vue"
+import { SideLayout, SideBar } from "@/components/layout"
 import { Button } from "@/components/universal"
 import { Menu } from "@/components/interaction"
+import { useViewStack } from "@/components-module/view-stack"
 import { useFetchReactive } from "@/functions/fetch"
 import { installNavMenu, installNavHistory, setupItemByNavHistory, setupItemByRef, setupSubItemByNavHistory } from "@/services/base/side-nav-menu"
 import { windowManager } from "@/modules/window"
 
-const stackExists = ref(false)
+const viewStack = useViewStack()
+
+const stackExists = computed(() => viewStack.size() > 0)
 
 const navHistory = installNavHistory()
 
@@ -43,15 +46,13 @@ const { menuItems, menuSelected } = installNavMenu({
 </script>
 
 <template>
-    <SideLayout :class="{'is-full-view': true, 'is-hidden': stackExists}">
-        <template #default>
-            <RouterView/>
-        </template>
+    <SideLayout :class="{'is-full-view': true, [$style.hidden]: stackExists}">
+        <RouterView/>
+
         <template #side>
             <SideBar>
-                <template #default>
-                    <Menu :items="menuItems" v-model:selected="menuSelected"/>
-                </template>
+                <Menu :items="menuItems" v-model:selected="menuSelected"/>
+
                 <template #bottom>
                     <Button square icon="gear" @click="windowManager.openSetting"/>
                     <Button class="ml-1" square icon="circle-question" @click="windowManager.openGuide"/>
@@ -61,3 +62,9 @@ const { menuItems, menuSelected } = installNavMenu({
         </template>
     </SideLayout>
 </template>
+
+<style module lang="sass">
+.hidden
+    visibility: hidden
+    transition: visibility 0.15s
+</style>

@@ -7,7 +7,7 @@ import { OrderTimeType } from "@/functions/http-client/api/setting-import"
 import { useFetchEndpoint, useFetchHelper, useRetrieveHelper } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
 import { useListViewContext } from "@/services/base/list-view-context"
-import { useSelectedState } from "@/services/base/selected-state"
+import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useSettingSite } from "@/services/setting"
 import { useToast } from "@/modules/toast"
@@ -23,7 +23,7 @@ export const [installImportContext] = installation(function () {
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("import-image", selector)
     const listviewController = useListViewController()
-    const operators = useOperators(listview.anyData, importService.addFiles)
+    const operators = useOperators(selector, listview.anyData, importService.addFiles)
 
     installVirtualViewNavigation()
     useSettingSite()
@@ -116,7 +116,7 @@ function useListViewController() {
     }
 }
 
-function useOperators(anyData: Ref<boolean>, addFiles: (f: string[]) => void) {
+function useOperators(selector: SelectedState<number>, anyData: Ref<boolean>, addFiles: (f: string[]) => void) {
     const toast = useToast()
     const message = useMessageBox()
     const saveFetch = useFetchHelper(client => client.import.save)
@@ -124,10 +124,22 @@ function useOperators(anyData: Ref<boolean>, addFiles: (f: string[]) => void) {
         delete: client => client.import.delete
     })
 
+    const getEffectedItems = (id: number): number[] => {
+        return selector.selected.value.includes(id) ? selector.selected.value : [id]
+    }
+
     const deleteItem = async (id: number) => {
-        //TODO import列表的删除只针对了选中项。需要像illust列表那样扩展至所有选择项。
-        if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
-            await retrieveHelper.deleteData(id)
+        if(selector.selected.value.length === 0 || !selector.selected.value.includes(id)) {
+            if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
+                await retrieveHelper.deleteData(id)
+            }
+        }else{
+            const items = getEffectedItems(id)
+            if(await message.showYesNoMessage("warn", `确定要删除${items.length}个已选择项吗？`, "此操作不可撤回。")) {
+                for (const id of items) {
+                    retrieveHelper.deleteData(id).finally()
+                }
+            }
         }
     }
 

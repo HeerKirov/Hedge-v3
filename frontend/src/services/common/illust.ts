@@ -113,7 +113,7 @@ interface BasicIllust { id: number, type?: IllustType }
  */
 export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDatasetOperatorsOptions<T>): ImageDatasetOperators<T> {
     const toast = useToast()
-    const messageBox = useMessageBox()
+    const message = useMessageBox()
     const navigator = useRouterNavigator()
     const dialog = useDialogService()
     const viewStack = useViewStack()
@@ -139,7 +139,11 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
         const currentIndex = paginationData.proxy.syncOperations.find(i => i.id === illustId)
         if(currentIndex !== undefined) {
             const slice: AllSlice<Illust> = {type: "ALL", focusIndex: currentIndex, instance: getSliceInstance()}
-            viewStack.openImageView(slice, navigation.navigateTo)
+            viewStack.openImageView(slice, illustId => {
+                //回调：给出了目标id，回查data的此项，并找到此项现在的位置，导航到此位置
+                const index = paginationData.proxy.syncOperations.find(i => i.id === illustId)
+                if(index !== undefined) navigation.navigateTo(index)
+            })
         }
     }
 
@@ -148,13 +152,10 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
             .map(selectedId => paginationData.proxy.syncOperations.find(i => i.id === selectedId))
             .filter(index => index !== undefined) as number[]
         const slice: ListIndexSlice<Illust> = {type: "LIST", indexes: indexList, focusIndex: currentIndex, instance: getSliceInstance()}
-        viewStack.openImageView(slice, index => {
-            //回调：给出了目标index，回查data中此index的项，并找到此项现在的位置，导航到此位置
-            const illustId = slice.indexes[index]
-            if(illustId !== undefined) {
-                const index = paginationData.proxy.syncOperations.find(i => i.id === illustId)
-                if(index !== undefined) navigation.navigateTo(index)
-            }
+        viewStack.openImageView(slice, illustId => {
+            //回调：给出了目标id，回查data的此项，并找到此项现在的位置，导航到此位置
+            const index = paginationData.proxy.syncOperations.find(i => i.id === illustId)
+            if(index !== undefined) navigation.navigateTo(index)
         })
     }
 
@@ -236,7 +237,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
     }
 
     const splitToGenerateNewCollection = async (illust: T) => {
-        if(await messageBox.showYesNoMessage("confirm", "确定要拆分生成新的集合吗？", "这些项将从当前集合中移除。")) {
+        if(await message.showYesNoMessage("confirm", "确定要拆分生成新的集合吗？", "这些项将从当前集合中移除。")) {
             const images = selector.selected.value.length > 0 ? [...selector.selected.value] : [illust.id]
             const res = await fetchCollectionCreate({images})
             if(res !== undefined) {
@@ -259,17 +260,17 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
     const deleteItem = async (illust: T) => {
         if(selector.selected.value.length === 0 || !selector.selected.value.includes(illust.id)) {
             if(illust.type === "COLLECTION") {
-                if(await messageBox.showYesNoMessage("warn", "确定要删除此集合吗？集合内的图像不会被删除。", "此操作不可撤回。")) {
+                if(await message.showYesNoMessage("warn", "确定要删除此集合吗？集合内的图像不会被删除。", "此操作不可撤回。")) {
                     await fetchIllustDelete(illust.id)
                 }
             }else{
-                if(await messageBox.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
+                if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
                     await fetchIllustDelete(illust.id)
                 }
             }
         }else{
             const items = getEffectedItems(illust)
-            if(await messageBox.showYesNoMessage("warn", `确定要删除${items.length}个已选择项吗？`, "集合内的图像不会被删除。此操作不可撤回。")) {
+            if(await message.showYesNoMessage("warn", `确定要删除${items.length}个已选择项吗？`, "集合内的图像不会被删除。此操作不可撤回。")) {
                 for (const id of items) {
                     fetchIllustDelete(id).finally()
                 }

@@ -1,6 +1,6 @@
-import { onBeforeMount, onMounted, onUnmounted, ref, Ref, watch } from "vue"
-import { ModifiedEvent, QueryInstance } from "./query-instance"
+import { computed, onBeforeMount, onMounted, onUnmounted, ref, Ref, watch } from "vue"
 import { createMapProxyEmitter } from "@/utils/emitter"
+import { ModifiedEvent, QueryInstance } from "./query-instance"
 
 // == Slice 切片 ==
 // 切片指从Query Instance中切取的一部分。它是一个静态数据结构，用于传递这种“一部分”的信息。
@@ -25,6 +25,14 @@ export interface SingletonSlice<T> {
     instance: QueryInstance<T>
     type: "SINGLETON"
     index: number
+}
+
+export type SliceOrPath<T, S extends Slice<T>, P extends (number[] | number)> = {
+    type: "slice"
+    slice: S
+} | {
+    type: "path"
+    path: P
 }
 
 /**
@@ -224,7 +232,9 @@ export function useSingletonDataView<T>(slice: SingletonSlice<T>): SingletonData
     const receivedEvent = (e: ModifiedEvent<T>) => {
         if(index !== null) {
             if(e.type === "MODIFY") {
-                data.value = e.value
+                if(e.index === index) {
+                    data.value = e.value
+                }
             }else if(e.index === index) {
                 //删除的就是当前持有的，那么将当前对象永久置空
                 index = null
@@ -245,5 +255,42 @@ export function useSingletonDataView<T>(slice: SingletonSlice<T>): SingletonData
     onMounted(() => slice.instance.syncOperations.modifiedEvent.addEventListener(receivedEvent))
     onUnmounted(() => slice.instance.syncOperations.modifiedEvent.removeEventListener(receivedEvent))
 
+    return {data}
+}
+
+export function useSliceDataViewByRef<T>(dataList: Ref<(T | null)[]>, focusIndex?: number): SliceDataView<T> {
+    const data: Ref<T | null> = ref(null)
+    const count: Ref<number | null> = ref(null)
+    const innerIndex = ref(focusIndex ?? 0)
+
+    onBeforeMount(async () => {
+        data.value = dataList.value[currentIndex.value] ?? null
+        count.value = dataList.value.length
+    })
+
+    watch(() => dataList.value[innerIndex.value], newData => data.value = newData)
+    watch(() => dataList.value.length, cnt => {
+        count.value = cnt
+        if(cnt > 0 && innerIndex.value >= cnt) innerIndex.value = cnt - 1
+        else if(cnt === 0) innerIndex.value = 0
+    })
+
+    const currentIndex = computed({
+        get() { return innerIndex.value },
+        set(newIndex) {
+            if(newIndex < 0) {
+                innerIndex.value = 0
+            }else if(count.value !== null && newIndex >= count.value) {
+                innerIndex.value = count.value - 1
+            }else{
+                innerIndex.value = newIndex
+            }
+        }
+    })
+
+    return {data, count, currentIndex}
+}
+
+export function useSingletonDataViewByRef<T>(data: Ref<T | null>): SingletonDataView<T> {
     return {data}
 }

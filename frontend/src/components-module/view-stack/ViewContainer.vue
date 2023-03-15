@@ -20,19 +20,24 @@ useInterception()
 
 <template>
     <div :class="{[$style.container]: true, [$style.hidden]: hidden}">
-        <ImageDetailView v-if="stackViewInfo.type === 'image'" :data="stackViewInfo.data" :index-modified="stackViewInfo.onIndexModified"/>
+        <ImageDetailView v-if="stackViewInfo.type === 'image'" :data="stackViewInfo.data" :modified-callback="stackViewInfo.modifiedCallback"/>
         <div v-else-if="stackViewInfo.type === 'collection'">collection</div>
         <div v-else-if="stackViewInfo.type === 'book'">book</div>
     </div>
 </template>
 
 <style module lang="sass">
+@import "../../styles/base/color"
+
 .container
     position: absolute
     width: 100vw
     height: 100vh
     top: 0
     left: 0
+    background-color: $light-mode-background-color
+    @media (prefers-color-scheme: dark)
+        background-color: $dark-mode-background-color
 
     &.hidden
         visibility: hidden

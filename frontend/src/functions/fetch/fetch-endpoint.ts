@@ -12,15 +12,15 @@ export interface FetchEndpoint<MODEL, FORM, UE extends BasicException> {
     /**
      * 正在加载数据。
      */
-    loading: Readonly<Ref<Boolean>>
+    loading: Readonly<Ref<boolean>>
     /**
      * 正在提交update操作。
      */
-    updating: Readonly<Ref<Boolean>>
+    updating: Readonly<Ref<boolean>>
     /**
      * 正在提交delete操作。
      */
-    deleting: Readonly<Ref<Boolean>>
+    deleting: Readonly<Ref<boolean>>
     /**
      * 数据内容。
      */

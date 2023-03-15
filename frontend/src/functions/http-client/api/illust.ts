@@ -22,7 +22,7 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
             parseQuery: mapFromIllustFilter
         }),
         findByIds: http.createDataRequest("/api/illusts/find-by-ids", "POST", {
-            parseResponse: (result: any[]) => result.map(mapToIllust)
+            parseResponse: (result: (any | null)[]) => result.map(i => i !== null ? mapToIllust(i) : null)
         }),
         get: http.createPathRequest(id => `/api/illusts/${id}`, "GET", {
             parseResponse: mapToDetailIllust
@@ -163,7 +163,7 @@ export interface IllustEndpoint {
     /**
      * 根据条件执行高级查询。
      */
-    findByIds(imageIds: number[]): Promise<Response<Illust[]>>
+    findByIds(imageIds: number[]): Promise<Response<(Illust | null)[]>>
     /**
      * 查看元数据。不区分类型。
      * @exception NOT_FOUND
