@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { Button } from "@/components/universal"
+import { PlayBoard } from "@/components/data"
+import { ElementPopupMenu } from "@/components/interaction"
+import { Button, Separator, OptionButtons } from "@/components/universal"
 import { SideLayout, SideBar, TopBarLayout, MiddleLayout } from "@/components/layout"
+import { ZoomController } from "@/components-business/top-bar"
 import { ViewStackBackButton } from "@/components-module/view-stack"
 import { Illust } from "@/functions/http-client/api/illust"
 import { AllSlice, ListIndexSlice, SliceOrPath } from "@/functions/fetch"
+import { MenuItem, usePopupMenu } from "@/modules/popup-menu"
+import { useAssets } from "@/functions/app"
 import { installImageViewContext } from "@/services/view-stack/image"
 
 const props = defineProps<{
@@ -13,8 +18,41 @@ const props = defineProps<{
 
 const {
     navigator: { metrics, subMetrics, prev, next },
-    target: { id, data, setData }
+    target: { id, data, toggleFavorite, deleteItem, openInNewWindow },
+    sideBar: { tabType },
+    playBoard: { zoomEnabled, zoomValue }
 } = installImageViewContext(props.data, props.modifiedCallback)
+
+const { assetsUrl } = useAssets()
+
+const sideBarButtonItems = [
+    {value: "info", label: "项目信息", icon: "info"},
+    {value: "related", label: "相关项目", icon: "dice-d6"},
+    {value: "source", label: "来源信息", icon: "file-invoice"},
+]
+
+const externalMenuItems = <MenuItem<undefined>[]>[
+    {type: "normal", label: "在新窗口中打开"},
+    {type: "separator"},
+    {type: "normal", label: "在预览中打开"},
+    {type: "normal", label: "在文件夹中显示"},
+    {type: "separator"},
+    {type: "normal", label: "导出"}
+]
+
+const popupMenu = usePopupMenu([
+    {type: "normal", label: "在新窗口中打开", click: openInNewWindow},
+    {type: "separator"},
+    {type: "normal", label: "加入剪贴板"},
+    {type: "separator"},
+    {type: "normal", label: "添加到目录"},
+    {type: "normal", label: "添加到\"X\""},
+    {type: "normal", label: "添加到临时目录"},
+    {type: "separator"},
+    {type: "normal", label: "导出"},
+    {type: "separator"},
+    {type: "normal", label: "删除此项目", click: deleteItem}
+])
 
 </script>
 
@@ -24,14 +62,12 @@ const {
             <SideBar>
 
                 <template #bottom>
-                    <Button square icon="info"/>
-                    <Button square icon="dice-d6"/>
-                    <Button square icon="file-invoice"/>
+                    <OptionButtons :items="sideBarButtonItems" v-model:value="tabType"/>
                 </template>
             </SideBar>
         </template>
 
-        <TopBarLayout>
+        <TopBarLayout><!-- TODO collapse top-bar layout -->
             <template #top-bar>
                 <MiddleLayout>
                     <template #left>
@@ -46,10 +82,18 @@ const {
                     <Button square icon="angle-right" @click="next"/>
 
                     <template #right>
-                        <Button square icon="heart" :type="data?.favorite ? 'danger' : 'secondary'" @click="setData(id, {favorite: !data?.favorite})"/>
+                        <Button square icon="heart" :type="data?.favorite ? 'danger' : 'secondary'" @click="toggleFavorite"/>
+                        <Separator/>
+                        <ElementPopupMenu :items="externalMenuItems" position="bottom" align="left" v-slot="{ setEl, popup }">
+                            <Button :ref="setEl" expose-el square icon="external-link-alt" @click="popup"/>
+                        </ElementPopupMenu>
+                        <Separator/>
+                        <ZoomController :disabled="!zoomEnabled" v-model:value="zoomValue"/>
                     </template>
                 </MiddleLayout>
             </template>
+
+            <PlayBoard v-if="data !== null" :src="assetsUrl(data.file)" :zoom-value="zoomValue" v-model:zoom-enabled="zoomEnabled" @contextmenu="popupMenu.popup()"/>
         </TopBarLayout>
     </SideLayout>
 </template>

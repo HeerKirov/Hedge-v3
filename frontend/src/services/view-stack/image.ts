@@ -5,9 +5,12 @@ import {
     AllSlice, ListIndexSlice, SliceDataView, SliceOrPath,
     useFetchListEndpoint, useFetchSinglePathEndpoint, usePostFetchHelper, usePostPathFetchHelper, useSliceDataView, useSliceDataViewByRef
 } from "@/functions/fetch"
+import { useLocalStorage } from "@/functions/app"
 import { useViewStack } from "@/components-module/view-stack"
 import { useGlobalKey } from "@/modules/keyboard"
-import { installation } from "@/utils/reactivity"
+import { useMessageBox } from "@/modules/message-box"
+import { useRouterNavigator } from "@/modules/router"
+import { installation, toRef } from "@/utils/reactivity"
 
 export const [installImageViewContext, useImageViewContext] = installation(function (data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>, modifiedCallback?: (illustId: number) => void) {
     const slice = useSlice(data)
@@ -17,7 +20,10 @@ export const [installImageViewContext, useImageViewContext] = installation(funct
 
     useModifiedCallback(slice, data, modifiedCallback)
 
-    return {navigator, target}
+    const sideBar = useSideBarContext()
+    const playBoard = usePlayBoardContext()
+
+    return {navigator, target, sideBar, playBoard}
 })
 
 function useSlice(data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>): SliceDataView<Illust> {
@@ -137,6 +143,9 @@ function useNavigator(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illu
 }
 
 function useTarget(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illust>) {
+    const message = useMessageBox()
+    const navigator = useRouterNavigator()
+
     const data = computed(() => {
         if(slice.data.value !== null) {
             if(slice.data.value.type === "COLLECTION") {
@@ -153,9 +162,23 @@ function useTarget(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illust>
 
     const setData = usePostPathFetchHelper(client => client.illust.image.update)
 
-    const deleteItem = usePostFetchHelper(client => client.illust.image.delete)
+    const deleteData = usePostFetchHelper(client => client.illust.image.delete)
 
-    return {data, id, setData, deleteItem}
+    const toggleFavorite = () => {
+        if(data.value !== null) {
+            setData(data.value.id, {favorite: !data.value.favorite}).finally()
+        }
+    }
+
+    const deleteItem = async () => {
+        if(id.value !== null && await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
+            await deleteData(id.value)
+        }
+    }
+
+    const openInNewWindow = () => navigator.newWindow({routeName: "Preview", params: {type: "image", imageIds: [id.value!]}})
+
+    return {data, id, toggleFavorite, deleteItem, openInNewWindow}
 }
 
 function useModifiedCallback(slice: SliceDataView<Illust>, data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>, modifiedCallback?: (illustId: number) => void) {
@@ -174,4 +197,18 @@ function useModifiedCallback(slice: SliceDataView<Illust>, data: SliceOrPath<Ill
             modifiedCallback(slice.data.value?.id)
         }
     })
+}
+
+function usePlayBoardContext() {
+    const zoomEnabled = ref(true)
+    const zoomValue = ref(100)
+    return {zoomEnabled, zoomValue}
+}
+
+function useSideBarContext() {
+    const storage = useLocalStorage<{tabType: "info" | "source" | "related"}>("image-detail-view/side-bar", () => ({tabType: "info"}), true)
+
+    const tabType = toRef(storage, "tabType")
+
+    return {tabType}
 }

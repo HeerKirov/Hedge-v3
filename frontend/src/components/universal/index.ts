@@ -7,5 +7,6 @@ import Button from "./Button.vue"
 import Separator from "./Separator.vue"
 import Block from "./Block.vue"
 import ThumbnailImage from "./ThumbnailImage.vue"
+import OptionButtons from "./OptionButtons.vue"
 
-export { Icon, Starlight, WrappedText, Tag, Button, Separator, Block, ThumbnailImage }
+export { Icon, Starlight, WrappedText, Tag, Button, Separator, Block, ThumbnailImage, OptionButtons }
