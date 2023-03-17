@@ -18,7 +18,6 @@ import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.enums.TagAddressType
 import com.heerkirov.hedge.server.events.CollectionImagesChanged
 import com.heerkirov.hedge.server.events.IllustUpdated
-import com.heerkirov.hedge.server.events.SourceDataUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.functions.manager.*
@@ -90,7 +89,7 @@ class IllustService(private val data: DataRepository,
             .toListResult(::newIllustRes)
     }
 
-    fun findByIds(imageIds: List<Int>): List<IllustRes> {
+    fun findByIds(imageIds: List<Int>): List<IllustRes?> {
         return data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
             .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime, Illusts.cachedChildrenCount,
@@ -99,7 +98,7 @@ class IllustService(private val data: DataRepository,
             .where { Illusts.id inList imageIds }
             .map { it[Illusts.id]!! to newIllustRes(it) }
             .toMap()
-            .let { r -> imageIds.mapNotNull { r[it] } }
+            .let { r -> imageIds.map { r[it] } }
     }
 
     /**

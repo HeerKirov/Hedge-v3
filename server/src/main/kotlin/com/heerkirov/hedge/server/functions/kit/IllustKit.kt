@@ -115,7 +115,7 @@ class IllustKit(private val data: DataRepository,
             }else if(copyFromParent != null && anyNotExportedMetaExists(copyFromParent)) {
                 copyAllMetaFromParent(thisId, copyFromParent)
             }
-        }else if(tagCount > 0 || topicCount > 0 || authorCount > 0) {
+        }else{
             //至少一个列表不为0时，清空所有为0的列表的全部tag
             //在copyFromChildren为false的情况下，认为是image的更改，要求修改统计计数；否则不予修改
             deleteAllMeta(thisId, remainNotExported = true, analyseStatisticCount = analyseStatisticCount, tagCount = tagCount, topicCount = topicCount, authorCount = authorCount)
@@ -212,7 +212,9 @@ class IllustKit(private val data: DataRepository,
                 .innerJoin(IllustAnnotationRelations, IllustAnnotationRelations.illustId eq Illusts.id)
                 .select(IllustAnnotationRelations.annotationId)
                 .where { Illusts.parentId eq thisId }
+                .asSequence()
                 .map { it[IllustAnnotationRelations.annotationId]!! }
+                .toSet()
             data.db.batchInsert(IllustAnnotationRelations) {
                 for (id in items) {
                     item {
