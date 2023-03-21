@@ -51,6 +51,7 @@ const style = computed(() => ({
         position: absolute
         right: 0.35rem
         top: 0.35rem
+        padding: 0.125rem 0.25rem
         border-radius: $radius-size-std
         color: $dark-mode-text-color
         background-color: rgba(0, 0, 0, 0.65)

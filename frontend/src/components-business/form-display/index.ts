@@ -18,9 +18,11 @@ import SourceRelationsDisplay from "./SourceRelationsDisplay.vue"
 import SourceEditStatusDisplay from "./SourceEditStatusDisplay.vue"
 import MetaTagListDisplay from "./MetaTagListDisplay.vue"
 import TagmeInfo from "./TagmeInfo.vue"
+import FileInfoDisplay from "./FileInfoDisplay.vue"
 
 export { AnnotationTargetDisplay, AnnotationCanBeExportedDisplay }
 export { TagNameAndOtherDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay, PartitionTimeDisplay, TagLinkDisplay }
 export { ScoreDisplay, TitleDisplay, DescriptionDisplay, TimeGroupDisplay, RelatedAnnotationDisplay }
 export { SourceInfo, SourceTagMappingDisplay, SourceTagsDisplay, SourceBooksDisplay, SourceRelationsDisplay, SourceEditStatusDisplay }
 export { TagmeInfo, MetaTagListDisplay }
+export { FileInfoDisplay }

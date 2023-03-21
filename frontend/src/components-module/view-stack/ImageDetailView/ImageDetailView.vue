@@ -2,7 +2,7 @@
 import { PlayBoard } from "@/components/data"
 import { ElementPopupMenu } from "@/components/interaction"
 import { Button, Separator, OptionButtons } from "@/components/universal"
-import { SideLayout, SideBar, TopBarLayout, MiddleLayout } from "@/components/layout"
+import { SideLayout, SideBar, TopBarCollapseLayout, MiddleLayout } from "@/components/layout"
 import { ZoomController } from "@/components-business/top-bar"
 import { ViewStackBackButton } from "@/components-module/view-stack"
 import { Illust } from "@/functions/http-client/api/illust"
@@ -10,6 +10,9 @@ import { AllSlice, ListIndexSlice, SliceOrPath } from "@/functions/fetch"
 import { MenuItem, usePopupMenu } from "@/modules/popup-menu"
 import { useAssets } from "@/functions/app"
 import { installImageViewContext } from "@/services/view-stack/image"
+import SideBarDetailInfo from "./SideBarDetailInfo.vue"
+import SideBarRelatedItems from "./SideBarRelatedItems.vue"
+import SideBarSourceData from "./SideBarSourceData.vue"
 
 const props = defineProps<{
     data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>
@@ -60,14 +63,16 @@ const popupMenu = usePopupMenu([
     <SideLayout>
         <template #side>
             <SideBar>
-
+                <SideBarDetailInfo v-if="tabType === 'info'"/>
+                <SideBarRelatedItems v-else-if="tabType === 'related'"/>
+                <SideBarSourceData v-else-if="tabType === 'source'"/>
                 <template #bottom>
                     <OptionButtons :items="sideBarButtonItems" v-model:value="tabType"/>
                 </template>
             </SideBar>
         </template>
 
-        <TopBarLayout><!-- TODO collapse top-bar layout -->
+        <TopBarCollapseLayout>
             <template #top-bar>
                 <MiddleLayout>
                     <template #left>
@@ -94,7 +99,7 @@ const popupMenu = usePopupMenu([
             </template>
 
             <PlayBoard v-if="data !== null" :src="assetsUrl(data.file)" :zoom-value="zoomValue" v-model:zoom-enabled="zoomEnabled" @contextmenu="popupMenu.popup()"/>
-        </TopBarLayout>
+        </TopBarCollapseLayout>
     </SideLayout>
 </template>
 

@@ -63,7 +63,7 @@ const contextmenu = () => {
             <span :ref="el => elementRefs.setElement(node.id, el)" :draggable="draggable" v-bind="dragEvents">{{node.name}}</span>
         </p>
         <div v-if="expanded" :class="$style['root-node-list']">
-            <TagNodeList multi-line :parent-id="node.id" :nodes="node.children ?? []"/>
+            <TagNodeList multiline :parent-id="node.id" :nodes="node.children ?? []"/>
         </div>
     </Block>
 </template>

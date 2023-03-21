@@ -6,13 +6,13 @@ import TagNode from "./TagNode.vue"
 defineProps<{
     nodes: TagTreeNode[]
     parentId: number | null
-    multiLine?: boolean
+    multiline?: boolean
 }>()
 
 </script>
 
 <template>
-    <div v-if="multiLine || nodes.some(t => !!t.children?.length)" :class="$style.root">
+    <div v-if="multiline || nodes.some(t => !!t.children?.length)" :class="$style.root">
         <template v-for="(node, index) in nodes" :key="node.id">
             <Gap :class="$style.gap" :parent-id="parentId" :ordinal="index"/>
             <div :class="$style.child">

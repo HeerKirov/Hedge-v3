@@ -301,7 +301,7 @@ export interface IllustEndpoint {
              * @exception PARAM_REQUIRED ("sourceId"/"sourcePart") 需要这些参数
              * @exception PARAM_NOT_REQUIRED ("sourcePart"/"sourceId/sourcePart") 不需要这些参数
              */
-            update(id: number, form: ImageSourceDataUpdateForm): Promise<Response<null, IllustExceptions["image.originData.update"]>>
+            update(id: number, form: ImageSourceDataUpdateForm): Promise<Response<null, IllustExceptions["image.sourceData.update"]>>
         }
     }
     /**
@@ -320,7 +320,7 @@ export interface IllustExceptions {
     "collection.images.update": NotFound | ResourceNotExist<"images", number[]>
     "image.update": NotFound | ResourceNotExist<"topics" | "authors" | "tags", number[]> | ResourceNotSuitable<"tags", number[]> | ConflictingGroupMembersError
     "image.relatedItems.update": NotFound | ResourceNotExist<"collectionId" | "associateId", number>
-    "image.originData.update": NotFound | ResourceNotExist<"site", string> | ParamNotRequired | ParamRequired | ParamError
+    "image.sourceData.update": NotFound | ResourceNotExist<"site", string> | ParamNotRequired | ParamRequired | ParamError
 }
 
 export type IllustType = "COLLECTION" | "IMAGE"
@@ -454,7 +454,7 @@ export interface CollectionRelatedItems {
     associates: Illust[]
 }
 
-export interface ImageRelatedItems extends CollectionRelatedItems{
+export interface ImageRelatedItems extends CollectionRelatedItems {
     /**
      * image所属的collection。
      */

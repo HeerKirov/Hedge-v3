@@ -19,7 +19,7 @@ const { data, actives, anyActive, form, submit, clear } = useIllustDetailPaneMul
 <template>
     <ThumbnailImage minHeight="12rem" maxHeight="40rem" :file="data?.thumbnailFile"/>
     <p class="mt-1 mb-1">
-        <Icon icon="id-card"/><span class="ml-1 selectable">{{data?.id}}</span>
+        <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{data?.id}}</b>
     </p>
     <Separator direction="horizontal"/>
     <p class="mt-2"><Icon icon="edit"/>批量编辑</p>

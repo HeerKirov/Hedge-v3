@@ -1,16 +1,26 @@
-import { computed, onUnmounted, ref, watch } from "vue"
-import { Illust } from "@/functions/http-client/api/illust"
+import { computed, onUnmounted, Ref, ref, watch } from "vue"
+import {
+    DetailIllust, Illust, IllustExceptions,
+    ImageRelatedItems, ImageRelatedUpdateForm, ImageSourceData, ImageSourceDataUpdateForm, ImageUpdateForm
+} from "@/functions/http-client/api/illust"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import {
     AllSlice, ListIndexSlice, SliceDataView, SliceOrPath,
-    useFetchListEndpoint, useFetchSinglePathEndpoint, usePostFetchHelper, usePostPathFetchHelper, useSliceDataView, useSliceDataViewByRef
+    createLazyFetchEndpoint, useFetchListEndpoint, useFetchSinglePathEndpoint,
+    usePostFetchHelper, usePostPathFetchHelper,
+    useSliceDataView, useSliceDataViewByRef
 } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
+import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
 import { useGlobalKey } from "@/modules/keyboard"
 import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator } from "@/modules/router"
 import { installation, toRef } from "@/utils/reactivity"
+import { LocalDateTime } from "@/utils/datetime"
+import { SimpleBook } from "@/functions/http-client/api/book";
+import { SimpleFolder } from "@/functions/http-client/api/folder";
+import { SourceEditStatus } from "@/functions/http-client/api/source-data";
 
 export const [installImageViewContext, useImageViewContext] = installation(function (data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>, modifiedCallback?: (illustId: number) => void) {
     const slice = useSlice(data)
@@ -22,6 +32,8 @@ export const [installImageViewContext, useImageViewContext] = installation(funct
 
     const sideBar = useSideBarContext()
     const playBoard = usePlayBoardContext()
+
+    useSideBarLazyEndpoint(target.id)
 
     return {navigator, target, sideBar, playBoard}
 })
@@ -211,4 +223,128 @@ function useSideBarContext() {
     const tabType = toRef(storage, "tabType")
 
     return {tabType}
+}
+
+function useSideBarLazyEndpoint(path: Ref<number | null>) {
+    installDetailInfoLazyEndpoint({
+        path,
+        get: client => client.illust.image.get,
+        update: client => client.illust.image.update,
+        eventFilter: c => event => event.eventType === "entity/illust/updated" && event.illustId === c.path && (event.generalUpdated || event.metaTagUpdated)
+    })
+
+    installRelatedItemsLazyEndpoint({
+        path,
+        get: client => path => client.illust.image.relatedItems.get(path, {limit: 9}),
+        update: client => client.illust.image.relatedItems.update,
+        eventFilter: c => event => event.eventType === "entity/illust/updated" && event.illustId === c.path && event.relatedItemsUpdated
+    })
+
+    installSourceDataLazyEndpoint({
+        path,
+        get: client => client.illust.image.sourceData.get,
+        update: client => client.illust.image.sourceData.update,
+        eventFilter: c => event => event.eventType === "entity/illust/updated" && event.illustId === c.path && event.sourceDataUpdated
+    })
+}
+
+const [installDetailInfoLazyEndpoint, useDetailInfoLazyEndpoint] = createLazyFetchEndpoint<number, DetailIllust, ImageUpdateForm, never, IllustExceptions["image.update"], never>()
+const [installRelatedItemsLazyEndpoint, useRelatedItemsLazyEndpoint] = createLazyFetchEndpoint<number, ImageRelatedItems, ImageRelatedUpdateForm, never, IllustExceptions["image.relatedItems.update"], never>()
+const [installSourceDataLazyEndpoint, useSourceDataLazyEndpoint] = createLazyFetchEndpoint<number, ImageSourceData, ImageSourceDataUpdateForm, never, IllustExceptions["image.sourceData.update"], never>()
+
+export function useSideBarDetailInfo() {
+    const dialog = useDialogService()
+    const { target: { id } } = useImageViewContext()
+    const { data, setData } = useDetailInfoLazyEndpoint()
+
+    const setDescription = async (description: string) => {
+        return description === data.value?.description || await setData({ description })
+    }
+    const setScore = async (score: number | null) => {
+        return score === data.value?.score || await setData({ score })
+    }
+    const setPartitionTime = async (partitionTime: LocalDateTime) => {
+        return partitionTime.timestamp === data.value?.partitionTime?.timestamp || await setData({partitionTime})
+    }
+    const setOrderTime = async (orderTime: LocalDateTime) => {
+        return orderTime.timestamp === data.value?.orderTime?.timestamp || await setData({orderTime})
+    }
+    const openMetaTagEditor = () => {
+        if(id.value !== null) {
+            dialog.metaTagEditor.editIdentity({type: "IMAGE", id: id.value})
+        }
+    }
+
+    return {data, id, setDescription, setScore, setPartitionTime, setOrderTime, openMetaTagEditor}
+}
+
+export function useSideBarRelatedItems() {
+    const viewStack = useViewStack()
+    const navigator = useRouterNavigator()
+    const { data } = useRelatedItemsLazyEndpoint()
+
+    const openRelatedBook = (book: SimpleBook) => {
+        viewStack.openBookView(book.id)
+    }
+
+    const openRelatedCollection = () => {
+        const id = data.value?.collection?.id
+        if(id !== undefined) {
+            viewStack.openCollectionView(id)
+        }
+    }
+
+    const openAssociate = () => {
+        //TODO relatedItems: 查看关联组
+    }
+
+    const openFolderInNewWindow = (folder: SimpleFolder) => {
+        navigator.newWindow({routeName: "MainFolder", query: {detail: folder.id}})
+    }
+
+    return {data, openRelatedBook, openRelatedCollection, openAssociate, openFolderInNewWindow}
+}
+
+export function useSideBarSourceData() {
+    const message = useMessageBox()
+    const dialog = useDialogService()
+    const { data, setData } = useSourceDataLazyEndpoint()
+
+    const sourceIdentity = computed(() => data.value !== null ? {site: data.value.sourceSite, sourceId: data.value.sourceId, sourcePart: data.value.sourcePart} : null)
+
+    const setSourceIdentity = async (value: {site: string | null, sourceId: number | null, sourcePart: number | null}) => {
+        return (value.site === data.value?.sourceSite && value.sourceId === data.value?.sourceId && value.sourcePart === data.value?.sourcePart) || await setData(value, e => {
+            if(e.code === "NOT_EXIST") {
+                message.showOkMessage("error", `来源${value.site}不存在。`)
+            }else if(e.code === "PARAM_ERROR") {
+                const target = e.info === "sourceId" ? "来源ID" : e.info === "sourcePart" ? "分P" : e.info
+                message.showOkMessage("error", `${target}的值内容错误。`, "ID只能是自然数。")
+            }else if(e.code === "PARAM_REQUIRED") {
+                const target = e.info === "sourceId" ? "来源ID" : e.info === "sourcePart" ? "分P" : e.info
+                message.showOkMessage("error", `${target}属性缺失。`)
+            }else if(e.code === "PARAM_NOT_REQUIRED") {
+                if(e.info === "sourcePart") {
+                    message.showOkMessage("error", `分P属性不需要填写，因为选择的来源类型不支持分P。`)
+                }else if(e.info === "sourceId/sourcePart") {
+                    message.showOkMessage("error", `来源ID/分P属性不需要填写，因为未指定来源类型。`)
+                }else{
+                    message.showOkMessage("error", `${e.info}属性不需要填写。`)
+                }
+            }else{
+                return e
+            }
+        })
+    }
+
+    const setSourceStatus = async (status: SourceEditStatus) => {
+        return (status === data.value?.status) || await setData({status})
+    }
+
+    const openSourceDataEditor = () => {
+        if(data.value !== null && data.value.sourceSite !== null) {
+            dialog.sourceDataEditor.edit({sourceSite: data.value.sourceSite, sourceId: data.value.sourceId})
+        }
+    }
+
+    return {data, sourceIdentity, setSourceIdentity, setSourceStatus, openSourceDataEditor}
 }
