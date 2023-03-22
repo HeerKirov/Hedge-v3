@@ -78,7 +78,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
 
         <PaneLayout :show-pane="paneState.visible.value">
             <IllustImageDataset :data="paginationData.data" :query-instance="paginationData.proxy"
-                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
+                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable
                                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                                 @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
                                 @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)"/>

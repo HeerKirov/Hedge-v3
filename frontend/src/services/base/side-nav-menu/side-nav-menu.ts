@@ -56,12 +56,12 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
 
     const innerMenuSelected = ref<{id: string, subId: string | null}>()
 
-    watch(router.currentRoute, route => {
+    watch([router.currentRoute, menuItems], ([route, menuItems]) => {
         //route变化时，根据route，查找当前应该选中的项。
         const { name: routeName, query: routeQuery } = route
         const hasQuery = Object.keys(routeQuery).length > 0
 
-        for(const menuItem of menuItems.value) {
+        for(const menuItem of menuItems) {
            if(menuItem.type === "menu") {
                if(hasQuery) {
                    //如果hasQuery，则调整优先级，率先尝试与submenu匹配，其次再尝试本体

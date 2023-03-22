@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { FormEditKit } from "@/components/interaction"
 import {
-    TagNameAndOtherDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay, TagLinkDisplay,
+    TagNameAndOtherDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay, TagLinkDisplay, TagExampleDisplay,
     DescriptionDisplay, RelatedAnnotationDisplay, ScoreDisplay, SourceTagMappingDisplay
 } from "@/components-business/form-display"
 import {
-    TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, TagLinkEditor,
+    TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, TagLinkEditor, TagExampleEditor,
     DescriptionEditor, RelatedAnnotationEditor, SourceTagMappingEditor
 } from "@/components-business/form-editor"
 import { useTagDetailPane } from "@/services/main/tag"
@@ -87,6 +87,13 @@ const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotation
         </FormEditKit>
 
         <label class="mt-4 label is-font-size-small">示例</label>
-        <!-- TODO tag examples -->
+        <FormEditKit :value="data.examples" :set-value="setExamples">
+            <template #default="{ value }">
+                <TagExampleDisplay :value="value"/>
+            </template>
+            <template #edit="{ value, setValue, save }">
+                <TagExampleEditor :value="value" @update:value="setValue"/>
+            </template>
+        </FormEditKit>
     </template>
 </template>

@@ -32,12 +32,12 @@ export function createMenuTemplate(templates: AttachTemplate[],
 
 const SEPARATOR_TEMPLATE: MenuItem<undefined> = {type: "separator"}
 
-function createCheckBoxTemplate(template: CheckBoxTemplate, value: boolean, setValue: (v: boolean) => void): MenuItem<undefined>[] {
+function createCheckBoxTemplate(template: CheckBoxTemplate, value: boolean, setValue: (v: boolean | undefined) => void): MenuItem<undefined>[] {
     return [{
         type: "checkbox",
         label: template.label,
         checked: value,
-        click: () => setValue(!value)
+        click: value ? () => setValue(undefined) : () => setValue(true)
     }]
 }
 

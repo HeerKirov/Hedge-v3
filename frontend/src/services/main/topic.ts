@@ -2,7 +2,7 @@ import { readonly, Ref, ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useLocalStorage } from "@/functions/app"
 import {useCreatingHelper, useFetchEndpoint, useRetrieveHelper, ErrorHandler, QueryListview} from "@/functions/fetch"
-import { flatResponse } from "@/functions/http-client"
+import { flatResponse, mapResponse } from "@/functions/http-client"
 import {
     DetailTopic, ParentTopic, Topic,
     TopicCreateForm, TopicUpdateForm, TopicExceptions,
@@ -182,6 +182,11 @@ export function useTopicDetailPanel() {
         }
     })
 
+    const { data: exampleData } = useFetchEndpoint({
+        path: paneState.detailPath,
+        get: client => async (topic: number) => mapResponse(await client.illust.list({limit: 10, topic, type: "IMAGE", order: "-orderTime"}), r => r.result)
+    })
+
     const childrenMode = useLocalStorage<"tree" | "list">("topic/detail-panel/children-view-mode", "tree")
 
     const editor = useTopicDetailPanelEditor(data, setData)
@@ -221,7 +226,7 @@ export function useTopicDetailPanel() {
 
     useNavHistoryPush(data)
 
-    return {data, childrenMode, editor, operators: {toggleFavorite, createByTemplate, createChildOfTemplate, deleteItem}}
+    return {data, childrenMode, exampleData, editor, operators: {toggleFavorite, createByTemplate, createChildOfTemplate, deleteItem}}
 }
 
 function useTopicDetailPanelEditor(data: Readonly<Ref<DetailTopic | null>>, setData: (form: TopicUpdateForm, handle: ErrorHandler<TopicExceptions["update"]>) => Promise<boolean>) {

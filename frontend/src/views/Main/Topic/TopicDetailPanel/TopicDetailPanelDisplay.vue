@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Block, Icon, Tag } from "@/components/universal"
+import { Block, Icon, Tag, GridImages } from "@/components/universal"
 import { Flex, Group } from "@/components/layout"
 import { SimpleMetaTagElement } from "@/components-business/element"
 import { DescriptionDisplay, RelatedAnnotationDisplay, ScoreDisplay, SourceTagMappingDisplay } from "@/components-business/form-display"
-import { TOPIC_TYPE_ICONS, TOPIC_TYPE_NAMES } from "@/constants/entity"
+import { Illust } from "@/functions/http-client/api/illust"
 import { DetailTopic } from "@/functions/http-client/api/topic"
+import { TOPIC_TYPE_ICONS, TOPIC_TYPE_NAMES } from "@/constants/entity"
+import { useRouterNavigator } from "@/modules/router"
 import ChildrenTreeMode from "./ChildrenTreeMode.vue"
 import ChildrenListMode from "./ChildrenListMode.vue"
 
 const props = defineProps<{
     data: DetailTopic
     childrenMode?: "list" | "tree"
+    examples?: Illust[] | null
 }>()
 
 defineEmits<{
@@ -19,7 +22,13 @@ defineEmits<{
     (e: "click:topic", topicId: number): void
 }>()
 
+const navigator = useRouterNavigator()
+
 const otherNameText = computed(() => props.data.otherNames.length > 0 ? props.data.otherNames.join(" / ") : null)
+
+const exampleImages = computed(() => props.examples?.map(ex => ex.thumbnailFile) ?? [])
+
+const more = () => navigator.goto({routeName: "MainIllust", params: {topicName: props.data.name}})
 
 </script>
 
@@ -69,6 +78,10 @@ const otherNameText = computed(() => props.data.otherNames.length > 0 ? props.da
         <label class="label mb-2"><Icon class="mr-1" icon="file-invoice"/>来源映射</label>
         <SourceTagMappingDisplay :value="data.mappingSourceTags"/>
     </Block>
+    <template v-if="exampleImages.length > 0">
+        <GridImages class="mt-2" :column-num="5" :images="exampleImages"/>
+        <a class="float-right" @click="more">在图库搜索"{{data.name}}"的全部项目<Icon class="ml-1" icon="angle-double-right"/></a>
+    </template>
 </template>
 
 <style module lang="sass">

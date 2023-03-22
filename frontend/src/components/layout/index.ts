@@ -1,5 +1,6 @@
 import Container from "./Container.vue"
 import Group from "./Group.vue"
+import AspectGrid from "./AspectGrid.vue"
 import Flex from "./Flex"
 import FlexItem from "./FlexItem"
 import MiddleLayout from "./MiddleLayout.vue"
@@ -13,7 +14,7 @@ import TopBarCollapseLayout from "./TopBarLayout/TopBarCollapseLayout.vue"
 import PaneLayout from "./PaneLayout/PaneLayout.vue"
 import BasePane from "./PaneLayout/BasePane.vue"
 
-export { Container, Group, Flex, FlexItem, MiddleLayout, BottomLayout }
+export { Container, Group, AspectGrid, Flex, FlexItem, MiddleLayout, BottomLayout }
 export { SideLayout, SideBar, TopBar, installSideLayoutState, useSideLayoutState }
 export { TopBarLayout, TopBarCollapseLayout }
 export { PaneLayout, BasePane }

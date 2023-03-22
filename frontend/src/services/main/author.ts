@@ -1,8 +1,15 @@
 import { readonly, Ref, ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useLocalStorage } from "@/functions/app"
-import { ErrorHandler, QueryListview, useCreatingHelper, useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
-import { flatResponse } from "@/functions/http-client"
+import {
+    ErrorHandler,
+    QueryListview,
+    useCreatingHelper,
+    useFetchEndpoint,
+    useFetchHelper,
+    useRetrieveHelper
+} from "@/functions/fetch"
+import { flatResponse, mapResponse } from "@/functions/http-client"
 import {
     Author, DetailAuthor, AuthorCreateForm, AuthorUpdateForm,
     AuthorExceptions, AuthorQueryFilter, AuthorType,
@@ -26,9 +33,11 @@ export const [installAuthorContext, useAuthorContext] = installation(function ()
 
     const operators = useOperators(paneState, listview.listview)
 
+    const thumbnailLoadingCache = useListThumbnailLoadingCache()
+
     installVirtualViewNavigation()
 
-    return {paneState, listview, operators}
+    return {paneState, listview, operators, thumbnailLoadingCache}
 })
 
 function useListView() {
@@ -80,6 +89,41 @@ function useOperators(paneState: DetailViewState<number, Partial<DetailAuthor>>,
     }
 
     return {createByTemplate, deleteItem, toggleFavorite}
+}
+
+function useListThumbnailLoadingCache() {
+    const loadingCache: Record<number, string[]> = {}
+
+    const fetch = useFetchHelper(client => (id: number) => client.illust.list({type: "COLLECTION", order: "-orderTime", limit: 3, author: id}))
+
+    const fetchThumbnailFiles = async (id: number) => {
+        const res = await fetch(id)
+        return res !== undefined ? res.result.map(i => i.thumbnailFile) : []
+    }
+
+    const getThumbnailFiles = async (id: number) => {
+        const cache = loadingCache[id]
+        if(cache !== null && cache !== undefined) {
+            return cache
+        }
+        const res = await fetchThumbnailFiles(id)
+        loadingCache[id] = res
+        return res
+    }
+
+    return {getThumbnailFiles}
+}
+
+export function useListThumbnail(authorId: Ref<number>) {
+    const { thumbnailLoadingCache: { getThumbnailFiles } } = useAuthorContext()
+
+    const thumbnailFiles = ref<string[]>([])
+
+    watch(authorId, async authorId => {
+        thumbnailFiles.value = await getThumbnailFiles(authorId)
+    }, {immediate: true})
+
+    return {thumbnailFiles}
 }
 
 export function useAuthorCreatePanel() {
@@ -158,6 +202,11 @@ export function useAuthorDetailPanel() {
         }
     })
 
+    const { data: exampleData } = useFetchEndpoint({
+        path: paneState.detailPath,
+        get: client => async (author: number) => mapResponse(await client.illust.list({limit: 10, author, type: "IMAGE", order: "-orderTime"}), r => r.result)
+    })
+
     const editor = useAuthorDetailPanelEditor(data, setData)
 
     const toggleFavorite = async () => {
@@ -182,7 +231,7 @@ export function useAuthorDetailPanel() {
 
     useNavHistoryPush(data)
 
-    return {data, editor, operators: {toggleFavorite, createByTemplate, deleteItem}}
+    return {data, exampleData, editor, operators: {toggleFavorite, createByTemplate, deleteItem}}
 }
 
 function useAuthorDetailPanelEditor(data: Readonly<Ref<DetailAuthor | null>>, setData: (form: AuthorUpdateForm, handle: ErrorHandler<AuthorExceptions["update"]>) => Promise<boolean>) {

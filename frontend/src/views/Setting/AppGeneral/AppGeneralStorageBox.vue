@@ -2,8 +2,8 @@
 import { ref } from "vue"
 import { Block, Icon, Button } from "@/components/universal"
 import { Input, CheckBox } from "@/components/form"
-import { MiddleLayout } from "@/components/layout"
 import { dialogManager } from "@/modules/dialog"
+import { openLocalFile } from "@/modules/others"
 import { useServiceStorageInfo } from "@/services/setting"
 import { computedMutable } from "@/utils/reactivity"
 import { sleep } from "@/utils/process"
@@ -43,7 +43,11 @@ const submit = async () => {
     refreshStorageInfo()
 }
 
-//TODO 需要client支持“打开目录位置”的功能
+const openStorageInExplorer = () => {
+    if(storageInfo.value !== undefined) {
+        openLocalFile(storageInfo.value.storageDir)
+    }
+}
 
 </script>
 
@@ -58,10 +62,13 @@ const submit = async () => {
                 <Icon class="mx-1" icon="file"/>
                 默认位置
             </span>
-            <Button class="float-right" @click="status = 'set'">更改存储位置</Button>
         </div>
         <div class="no-wrap overflow-ellipsis is-font-size-small">
-            <code class="selectable">{{ storageInfo?.storageDir }}</code>
+            <code class="selectable">{{storageInfo?.storageDir}}</code>
+        </div>
+        <div class="has-text-right mt-2">
+            <Button class="mr-1" @click="openStorageInExplorer">打开存储位置</Button>
+            <Button @click="status = 'set'">更改存储位置</Button>
         </div>
     </Block>
     <Block v-else-if="status === 'set'" class="p-2">
@@ -76,24 +83,18 @@ const submit = async () => {
         <template v-else>
             <p class="secondary-text">您选择了默认存储位置。</p>
         </template>
-        <Button class="float-right" @click="status = 'normal'">取消</Button>
-        <Button class="float-right mr-1" mode="light" type="primary" @click="status = 'confirm'">保存</Button>
+        <div class="has-text-right mt-1">
+            <Button class="mr-1" mode="light" type="primary" @click="status = 'confirm'">保存</Button>
+            <Button @click="status = 'normal'">取消</Button>
+        </div>
     </Block>
     <Block v-else class="p-2">
-        <MiddleLayout>
-            <template #left>
-                <span class="has-text-danger">
-                    即将更改存储位置。更改存储位置不会迁移已有的数据。若有必要，必须手动迁移数据以保证数据可用。
-                </span>
-            </template>
-            <template #right>
-                <Button class="mr-1" mode="light" type="primary" @click="submit">确认</Button>
-                <Button @click="status = 'normal'">取消</Button>
-            </template>
-        </MiddleLayout>
+        <div class="has-text-danger m-1">
+            即将更改存储位置。更改存储位置不会迁移已有的数据。若有必要，必须手动迁移数据以保证数据可用。
+        </div>
+        <div class="has-text-right mt-2">
+            <Button class="mr-1" mode="light" type="danger" @click="submit">确认</Button>
+            <Button @click="status = 'normal'">取消</Button>
+        </div>
     </Block>
 </template>
-
-<style module lang="sass">
-
-</style>

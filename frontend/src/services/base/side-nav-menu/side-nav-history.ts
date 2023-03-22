@@ -4,6 +4,7 @@ import { installation } from "@/utils/reactivity"
 
 export interface NavHistory {
     histories: Readonly<{[routeName: string]: {id: string, label: string}[]}>
+    excludes: {[routeName: string]: string[]}
     pushHistory(id: string, label: string): void
     pushHistory(routeName: string, id: string, label: string): void
     clearHistory(routeName: string): void
@@ -14,6 +15,7 @@ export const [installNavHistory, useNavHistory] = installation(function (maxHist
 
     const histories = reactive<{[routeName: string]: {id: string, label: string}[]}>({})
     const historiesBySort = <{[routeName: string]: {id: string, label: string}[]}>{}
+    const excludes = reactive<{[routeName: string]: string[]}>({})
 
     const pushHistory = (a: string, b: string, c?: string) => {
         const [routeName, id, label] = c !== undefined ? [a, b, c] : [route.name as string, a, b]
@@ -52,7 +54,20 @@ export const [installNavHistory, useNavHistory] = installation(function (maxHist
         historiesBySort[routeName] = []
     }
 
-    return {histories, pushHistory, clearHistory}
+    watch(() => excludes, excludes => {
+        //当excludes发生更新时，从histories中排除exclude项
+        for(const routeName of Object.keys(excludes)) {
+            const exclude = excludes[routeName]
+            if(exclude?.length) {
+                const history = histories[routeName]
+                const historyBySort = historiesBySort[routeName]
+                if(history?.length) histories[routeName] = history.filter(i => !exclude.includes(i.id))
+                if(historyBySort?.length) historiesBySort[routeName] = historyBySort.filter(i => !exclude.includes(i.id))
+            }
+        }
+    })
+
+    return {histories, excludes, pushHistory, clearHistory}
 })
 
 export function useNavHistoryPush<T extends {id: number, name: string}>(watcher: Ref<T | null>): void

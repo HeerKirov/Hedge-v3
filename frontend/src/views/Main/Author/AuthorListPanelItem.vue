@@ -5,7 +5,9 @@ import { Flex, FlexItem, Group } from "@/components/layout"
 import { AnnotationElement } from "@/components-business/element"
 import { Author } from "@/functions/http-client/api/author"
 import { AUTHOR_TYPE_ICONS } from "@/constants/entity"
+import { useAssets } from "@/functions/app"
 import { useDraggable } from "@/modules/drag"
+import { useListThumbnail } from "@/services/main/author"
 import { useMouseHover } from "@/utils/sensors"
 
 const props = defineProps<{
@@ -16,6 +18,10 @@ const emit = defineEmits<{
     (e: "click"): void
     (e: "update:favorite", favorite: boolean): void
 }>()
+
+const { assetsUrl } = useAssets()
+
+const { thumbnailFiles } = useListThumbnail(computed(() => props.item.id))
 
 const otherNameText = computed(() => {
     if(props.item.otherNames.length > 0) {
@@ -102,10 +108,10 @@ const { hover, ...hoverEvents } = useMouseHover()
             </FlexItem>
             <FlexItem :shrink="0" :grow="0">
                 <div :class="$style.examples">
-                    <!-- TODO 完成author列表的examples -->
-                    <div/>
-                    <div/>
-                    <div/>
+                    <img v-for="file in thumbnailFiles" :key="file" :class="$style.example" :src="assetsUrl(file)" alt="example img"/>
+                    <template v-if="thumbnailFiles.length < 3">
+                        <div v-for="_ in (3 - thumbnailFiles.length)" :class="$style['empty-example']"/>
+                    </template>
                 </div>
             </FlexItem>
         </Flex>
@@ -142,7 +148,15 @@ const { hover, ...hoverEvents } = useMouseHover()
             display: flex
             gap: 4px
             width: #{4px * 2 + $content-height * 3}
-            > div
+            > .example
+                width: $content-height
+                height: $content-height
+                border-radius: 2px
+                box-sizing: border-box
+                object-fit: cover
+                object-position: center
+
+            > .empty-example
                 width: $content-height
                 height: $content-height
                 border: dashed 1px darkgrey

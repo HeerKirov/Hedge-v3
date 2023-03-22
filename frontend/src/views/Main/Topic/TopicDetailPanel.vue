@@ -9,7 +9,7 @@ import TopicDetailPanelForm from "./TopicDetailPanel/TopicDetailPanelForm.vue"
 
 const { paneState } = useTopicContext()
 const {
-    data, childrenMode,
+    data, childrenMode, exampleData,
     editor: { editMode, edit, cancel, save, form, setProperty },
     operators: { toggleFavorite, createByTemplate, createChildOfTemplate, deleteItem }
 } = useTopicDetailPanel()
@@ -44,7 +44,7 @@ const ellipsisMenuItems = <MenuItem<undefined>[]>[
         </template>
 
         <Container>
-            <TopicDetailPanelDisplay v-if="!editMode && data !== null" :data="data" v-model:children-mode="childrenMode" @click:topic="paneState.openDetailView($event)"/>
+            <TopicDetailPanelDisplay v-if="!editMode && data !== null" :data="data" v-model:children-mode="childrenMode" :examples="exampleData" @click:topic="paneState.openDetailView($event)"/>
             <TopicDetailPanelForm v-else-if="editMode && form !== null" :name="form.name" :other-names="form.otherNames"
                                   :type="form.type" :parent="form.parent"
                                   :annotations="form.annotations" :keywords="form.keywords"

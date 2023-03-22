@@ -1,20 +1,29 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Block, Icon, Tag } from "@/components/universal"
+import { Block, Icon, Tag, GridImages } from "@/components/universal"
 import { Group } from "@/components/layout"
 import { DescriptionDisplay, RelatedAnnotationDisplay, ScoreDisplay, SourceTagMappingDisplay } from "@/components-business/form-display"
-import { AUTHOR_TYPE_ICONS, AUTHOR_TYPE_NAMES } from "@/constants/entity"
 import { DetailAuthor } from "@/functions/http-client/api/author"
+import { Illust } from "@/functions/http-client/api/illust"
+import { AUTHOR_TYPE_ICONS, AUTHOR_TYPE_NAMES } from "@/constants/entity"
+import { useRouterNavigator } from "@/modules/router"
 
 const props = defineProps<{
     data: DetailAuthor
+    examples?: Illust[] | null
 }>()
 
 defineEmits<{
     (e: "click:author", authorId: number): void
 }>()
 
+const navigator = useRouterNavigator()
+
 const otherNameText = computed(() => props.data.otherNames.length > 0 ? props.data.otherNames.join(" / ") : null)
+
+const exampleImages = computed(() => props.examples?.map(ex => ex.thumbnailFile) ?? [])
+
+const more = () => navigator.goto({routeName: "MainIllust", params: {authorName: props.data.name}})
 
 </script>
 
@@ -44,5 +53,8 @@ const otherNameText = computed(() => props.data.otherNames.length > 0 ? props.da
         <label class="label mb-2"><Icon class="mr-1" icon="file-invoice"/>来源映射</label>
         <SourceTagMappingDisplay :value="data.mappingSourceTags"/>
     </Block>
-    <!-- TODO 为author详情页添加examples, 包括topic那边 -->
+    <template v-if="exampleImages.length > 0">
+        <GridImages class="mt-2" :column-num="5" :images="exampleImages"/>
+        <a class="float-right" @click="more">在图库搜索"{{data.name}}"的全部项目<Icon class="ml-1" icon="angle-double-right"/></a>
+    </template>
 </template>

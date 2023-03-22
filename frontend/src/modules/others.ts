@@ -9,6 +9,22 @@ export function openExternalLink(url: string) {
     remoteIpcClient.remote.shell.openExternal(analyseSafeURL(url))
 }
 
+/**
+ * 使用系统默认的方式打开一个本地文件。
+ * @param url
+ */
+export function openLocalFile(url: string) {
+    remoteIpcClient.remote.shell.openPath(url)
+}
+
+/**
+ * 在文件夹中显示一个本地文件。
+ * @param url
+ */
+export function openLocalFileInFolder(url: string) {
+    remoteIpcClient.remote.shell.openPathInFolder(url)
+}
+
 function analyseSafeURL(url: string): string {
     if(url.startsWith("http://") || url.startsWith("https://")) {
         return url

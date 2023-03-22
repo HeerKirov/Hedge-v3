@@ -65,8 +65,10 @@ function useSlice(data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Il
 }
 
 function useSubSlice(slice: SliceDataView<Illust>) {
-    //collection的id，作为path。只有当slice的当前项是collection时，此值不为null。
+    //collection的id，作为path。只有当slice的当前项是collection时，此值不为null
     const parentId = computed(() => slice.data.value?.type === "COLLECTION" ? slice.data.value.id : null)
+    //主slice的变更方向
+    const defaultLocation = ref<"first" | "last">("first")
 
     const { data: subItems } = useFetchSinglePathEndpoint({
         path: parentId,
@@ -84,7 +86,16 @@ function useSubSlice(slice: SliceDataView<Illust>) {
         }
     })
 
-    return useSliceDataViewByRef(subItems)
+    //根据slice currentIndex的变更调整方向
+    watch(slice.currentIndex, (sliceIndex, oldSliceIndex) => {
+        if(sliceIndex > oldSliceIndex) {
+            defaultLocation.value = "first"
+        }else if(sliceIndex < oldSliceIndex) {
+            defaultLocation.value = "last"
+        }
+    })
+
+    return useSliceDataViewByRef(subItems, undefined, defaultLocation)
 }
 
 function useNavigator(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illust>) {
@@ -106,7 +117,6 @@ function useNavigator(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illu
             }else{
                 slice.currentIndex.value = 0
             }
-            //TODO 需要一个机制，在prev到上一个collection时，使sub current index位于最后
         }
     }
 
@@ -125,7 +135,6 @@ function useNavigator(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illu
             }else{
                 slice.currentIndex.value = slice.count.value - 1
             }
-            //TODO 同理，需要使sub current index位于最前
         }
     }
 

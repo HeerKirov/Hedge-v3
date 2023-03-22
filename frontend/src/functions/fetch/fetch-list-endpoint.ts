@@ -348,7 +348,7 @@ export function useFetchSinglePathEndpoint<PATH, MODEL, GE extends BasicExceptio
                             if(res.ok) {
                                 for(let i = 0; i < updateItems.length; ++i) {
                                     //赋值时，采用的是直接修改object fields的方案。这种方案直接引用了原对象，能规避移位问题
-                                    //continuous API中的result是响应式的，因此能直接响应修改
+                                    //result是响应式的，因此能直接响应修改
                                     if(res.data[i]) {
                                         objects.clear(updateItems[i])
                                         objects.copyTo(res.data[i], updateItems[i])

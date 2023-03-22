@@ -17,7 +17,7 @@ const dragEvents = useDragEvents({
     queryInstance, keyOf,
     draggable: drag.draggable.value,
     selected: selector.selected,
-    byType: "importImages",
+    byType: drag.byType,
     dataRef: () => toRef(props, "item"),
     dataMap: images => (images as any)
 })
@@ -25,7 +25,7 @@ const dragEvents = useDragEvents({
 const { isLeftDragover, isRightDragover, leftDropEvents, rightDropEvents } = useDropEvents({
     droppable: drag.droppable,
     draggingFromLocal: drag.draggingFromLocal,
-    byType: "importImages",
+    byType: drag.byType,
     indexRef: () => toRef(props, "index"),
     onDrop: drag.dropData
 })

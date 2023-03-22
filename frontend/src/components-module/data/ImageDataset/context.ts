@@ -91,7 +91,7 @@ export const [installDatasetContext, useDatasetContext] = installation(function 
         dataUpdate: options.dataUpdate,
         summaryDropEvents,
         selector,
-        drag: {draggable: options.draggable, droppable: options.droppable, draggingFromLocal, dropData: options.dropData},
+        drag: {draggable: options.draggable, droppable: options.droppable, draggingFromLocal, dropData: options.dropData, byType: options.dragAndDropType},
         dblClick: options.dblClick,
         rightClick: options.rightClick
     }
