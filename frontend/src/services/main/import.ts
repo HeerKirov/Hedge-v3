@@ -5,15 +5,15 @@ import { Tagme } from "@/functions/http-client/api/illust"
 import { ImportQueryFilter } from "@/functions/http-client/api/import"
 import { OrderTimeType } from "@/functions/http-client/api/setting-import"
 import { useFetchEndpoint, useFetchHelper, useRetrieveHelper } from "@/functions/fetch"
-import { useLocalStorage } from "@/functions/app"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
+import { useImportImageViewController } from "@/services/base/view-controller"
 import { useSettingSite } from "@/services/setting"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { dialogManager } from "@/modules/dialog"
-import { installation, toRef } from "@/utils/reactivity"
+import { installation } from "@/utils/reactivity"
 import { objects, strings } from "@/utils/primitives"
 import { date, LocalDate, LocalDateTime } from "@/utils/datetime"
 
@@ -22,7 +22,7 @@ export const [installImportContext] = installation(function () {
     const listview = useListView()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("import-image", selector)
-    const listviewController = useListViewController()
+    const listviewController = useImportImageViewController()
     const operators = useOperators(selector, listview.anyData, importService.addFiles)
 
     installVirtualViewNavigation()
@@ -100,20 +100,6 @@ function useListView() {
     const anyData = computed(() => list.paginationData.data.metrics.total != undefined && list.paginationData.data.metrics.total > 0)
 
     return {...list, anyData}
-}
-
-function useListViewController() {
-    const storage = useLocalStorage<{
-        fitType: "cover" | "contain", columnNum: number, viewMode: "row" | "grid"
-    }>("import-image/list/view-controller", {
-        fitType: "cover", columnNum: 8, viewMode: "grid"
-    })
-
-    return {
-        fitType: toRef(storage, "fitType"),
-        columnNum: toRef(storage, "columnNum"),
-        viewMode: toRef(storage, "viewMode")
-    }
 }
 
 function useOperators(selector: SelectedState<number>, anyData: Ref<boolean>, addFiles: (f: string[]) => void) {

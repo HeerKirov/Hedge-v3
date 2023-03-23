@@ -21,13 +21,6 @@ interface StackViewBookInfo {
 export function generateOperations({ push, setRootView }: StacksOperationContext<StackViewInfo>) {
     return {
         openImageView(slice: AllSlice<Illust> | ListIndexSlice<Illust> | number[], modifiedCallback?: (illustId: number) => void, isRootView?: boolean) {
-
-            // const modifiedEvent = (e: ModifiedEvent<Illust>) => {
-            //     if(e.type === "REMOVE" && finalData.count() <= 0) {
-            //         close(info)
-            //     }
-            // }
-            // finalData.syncOperations.modified.addEventListener(modifiedEvent)
             const data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]> = slice instanceof Array ? {type: "path", path: slice} : {type: "slice", slice}
             const info: StackViewImageInfo = {type: "image", data, modifiedCallback}
             const call = (isRootView ? setRootView : push)

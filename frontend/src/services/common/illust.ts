@@ -99,6 +99,17 @@ export interface ImageDatasetOperators<T extends BasicIllust> {
      */
     deleteItem(illust: T): void
     /**
+     * 将项目从其所属的collection中移除。会先打开对话框确认。
+     * @param illust
+     */
+    removeItemFromCollection(illust: T): void
+    /**
+     * 将项目从指定的book中移除。会先打开对话框确认。
+     * @param illust
+     * @param bookId
+     */
+    removeItemFromBook(illust: T, bookId: number): void
+    /**
      * 获得当前操作中，应该受到影响的对象id列表。此方法被提供给外部实现的其他函数，用于和context内的选择行为统一。
      * 选择行为指：当存在选中项时，在选择项之外右键将仅使用右键项而不包括选择项。它需要影响那些有多项目操作的行为。
      */
@@ -119,9 +130,11 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
     const viewStack = useViewStack()
     const { paginationData, listview, navigation, selector } = options
 
-    const fetchIllustUpdate = usePostPathFetchHelper({request: client => client.illust.update, handleErrorInRequest: toast.handleException})
-    const fetchIllustDelete = usePostFetchHelper({request: client => client.illust.delete, handleErrorInRequest: toast.handleException})
-    const fetchCollectionCreate = useFetchHelper({request: client => client.illust.collection.create, handleErrorInRequest: toast.handleException})
+    const fetchIllustUpdate = usePostPathFetchHelper(client => client.illust.update)
+    const fetchIllustDelete = usePostFetchHelper(client => client.illust.delete)
+    const fetchCollectionCreate = useFetchHelper(client => client.illust.collection.create)
+    const fetchImageRelatedUpdate = usePostPathFetchHelper(client => client.illust.image.relatedItems.update)
+    const fetchBookImagesPartialUpdate = usePostPathFetchHelper(client => client.book.images.partialUpdate)
 
     const getEffectedItems = (illust: T): number[] => {
         return selector.selected.value.includes(illust.id) ? selector.selected.value : [illust.id]
@@ -297,9 +310,23 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
         // })
     }
 
+    const removeItemFromCollection = async (illust: T) => {
+        const images = getEffectedItems(illust)
+        if(await message.showYesNoMessage("warn", `确定要从集合移除${images.length > 1 ? "这些" : "此"}项吗？`)) {
+            await Promise.all(images.map(illustId => fetchImageRelatedUpdate(illustId, {collectionId: null})))
+        }
+    }
+
+    const removeItemFromBook = async (illust: T, bookId: number) => {
+        const images = getEffectedItems(illust)
+        if(await message.showYesNoMessage("warn", `确定要从画集移除${images.length > 1 ? "这些" : "此"}项吗？`)) {
+            await fetchBookImagesPartialUpdate(bookId, {action: "DELETE", images})
+        }
+    }
+
     return {
         openDetailByClick, openDetailByEnter, openCollectionDetail, openInNewWindow, modifyFavorite,
         createCollection, splitToGenerateNewCollection, createBook, addToFolder, cloneImage,
-        deleteItem, getEffectedItems
+        deleteItem, removeItemFromCollection, removeItemFromBook, getEffectedItems
     }
 }

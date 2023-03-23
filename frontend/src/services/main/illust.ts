@@ -2,27 +2,27 @@ import { computed, reactive, Ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useDialogService } from "@/components-module/dialog"
 import { flatResponse } from "@/functions/http-client"
-import { IllustQueryFilter, IllustType, Tagme } from "@/functions/http-client/api/illust"
+import { IllustQueryFilter, Tagme } from "@/functions/http-client/api/illust"
 import { SimpleTag, SimpleTopic, SimpleAuthor } from "@/functions/http-client/api/all"
 import { useFetchEndpoint, usePostFetchHelper } from "@/functions/fetch"
-import { useLocalStorage } from "@/functions/app"
 import { useToast } from "@/modules/toast"
 import { useRouterParamEvent } from "@/modules/router"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
+import { useIllustViewController } from "@/services/base/view-controller"
 import { useQuerySchema } from "@/services/base/query-schema"
 import { useImageDatasetOperators } from "@/services/common/illust"
 import { useSettingSite } from "@/services/setting"
 import { installation, toRef } from "@/utils/reactivity"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 
-export const [installIllustContext, useIllustContext] = installation(function () {
+export const [installIllustContext] = installation(function () {
     const listview = useListView()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust", selector)
     const querySchema = useQuerySchema("ILLUST", toRef(listview.queryFilter, "query"))
-    const listviewController = useListViewController(toRef(listview.queryFilter, "type"))
+    const listviewController = useIllustViewController(toRef(listview.queryFilter, "type"))
     const navigation = installVirtualViewNavigation()
     const operators = useImageDatasetOperators({
         paginationData: listview.paginationData,
@@ -76,23 +76,6 @@ function useListView() {
         }
     })
     return listview
-}
-
-function useListViewController(queryFilterIllustType: Ref<IllustType>) {
-    const storage = useLocalStorage<{
-        fitType: "cover" | "contain", columnNum: number, collectionMode: boolean, viewMode: "row" | "grid"
-    }>("illust/list/view-controller", {
-        fitType: "cover", columnNum: 8, collectionMode: false, viewMode: "grid"
-    })
-
-    watch(() => storage.value.collectionMode, collectionMode => queryFilterIllustType.value = collectionMode ? "COLLECTION" : "IMAGE", {immediate: true})
-
-    return {
-        fitType: toRef(storage, "fitType"),
-        columnNum: toRef(storage, "columnNum"),
-        collectionMode: toRef(storage, "collectionMode"),
-        viewMode: toRef(storage, "viewMode")
-    }
 }
 
 export function useIllustDetailPaneSingle(path: Ref<number | null>) {

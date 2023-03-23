@@ -2,10 +2,10 @@
 import { computed } from "vue"
 import { usePopupMenu } from "@/modules/popup-menu"
 import { useRouterNavigator } from "@/modules/router"
-import { date, LocalDateTime } from "@/utils/datetime"
+import { date, LocalDate } from "@/utils/datetime"
 
 const props = defineProps<{
-    partitionTime: LocalDateTime
+    partitionTime: LocalDate
 }>()
 
 const navigator = useRouterNavigator()

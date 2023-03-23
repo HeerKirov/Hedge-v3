@@ -51,7 +51,7 @@ useInterceptedKey(["Space", "Meta+ArrowLeft", "Meta+ArrowRight", "Meta+ArrowUp",
 
 <template>
     <div :class="$style.view">
-        <video ref="videoRef" key="video" loop :src="src"
+        <video ref="videoRef" key="video" loop autoplay :src="src"
                @dblclick="playOrPause" @pause="pausedEvent" @playing="playingEvent"
                @durationchange="durationChangeEvent" @timeupdate="timeUpdateEvent"/>
         <VideoControls :volume="state.volume" :muted="state.muted" :current-time="state.currentTime" :duration="state.duration" :playing="state.playing"

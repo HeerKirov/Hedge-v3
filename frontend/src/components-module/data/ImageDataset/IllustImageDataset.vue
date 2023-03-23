@@ -116,6 +116,8 @@ installDatasetContext({
     <div class="w-100 h-100 relative" :style="style">
         <DatasetGridFramework v-if="viewMode === 'grid'" :column-num="columnNum!" v-slot="{ item, index }">
             <img :class="$style['grid-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`illust-${item.id}`"/>
+            <Icon v-if="item.favorite" :class="[$style['grid-favorite'], 'has-text-danger']" icon="heart"/>
+            <div v-if="item.childrenCount" :class="$style['grid-num-tag']"><Icon class="mr-half" icon="images"/>{{item.childrenCount}}</div>
         </DatasetGridFramework>
         <DatasetRowFramework v-else :row-height="32" v-slot="{ item, index }">
             <Flex horizontal="stretch" align="center">
@@ -133,7 +135,7 @@ installDatasetContext({
                     </div>
                 </FlexItem>
                 <FlexItem :shrink="0">
-                    <div :class="$style.favorite"><Icon v-if="item.favorite" class="has-text-danger" icon="heart"/></div>
+                    <div :class="$style['row-favorite']"><Icon v-if="item.favorite" class="has-text-danger" icon="heart"/></div>
                 </FlexItem>
                 <FlexItem :width="10" :shrink="0">
                     <div class="has-text-warning has-text-centered">
@@ -158,11 +160,28 @@ installDatasetContext({
 </template>
 
 <style module lang="sass">
+@import "../../../styles/base/size"
+@import "../../../styles/base/color"
+
 .grid-img
     height: 100%
     width: 100%
     object-position: center
     object-fit: var(--var-fit-type, cover)
+
+.grid-favorite
+    position: absolute
+    right: 0.25rem
+    bottom: 0.25rem
+
+.grid-num-tag
+    position: absolute
+    right: 0.25rem
+    top: 0.25rem
+    padding: 0.25rem 0.35rem
+    border-radius: $radius-size-std
+    color: $dark-mode-text-color
+    background-color: rgba(0, 0, 0, 0.65)
 
 .row-img
     margin-top: 1px
@@ -175,7 +194,7 @@ installDatasetContext({
 .children
     width: 3.5rem
 
-.favorite
+.row-favorite
     width: 1.5rem
     text-align: center
 

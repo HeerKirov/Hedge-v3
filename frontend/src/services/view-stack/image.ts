@@ -3,6 +3,9 @@ import {
     DetailIllust, Illust, IllustExceptions,
     ImageRelatedItems, ImageRelatedUpdateForm, ImageSourceData, ImageSourceDataUpdateForm, ImageUpdateForm
 } from "@/functions/http-client/api/illust"
+import { SimpleBook } from "@/functions/http-client/api/book"
+import { SimpleFolder } from "@/functions/http-client/api/folder"
+import { SourceEditStatus } from "@/functions/http-client/api/source-data"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import {
     AllSlice, ListIndexSlice, SliceDataView, SliceOrPath,
@@ -18,9 +21,6 @@ import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator } from "@/modules/router"
 import { installation, toRef } from "@/utils/reactivity"
 import { LocalDateTime } from "@/utils/datetime"
-import { SimpleBook } from "@/functions/http-client/api/book";
-import { SimpleFolder } from "@/functions/http-client/api/folder";
-import { SourceEditStatus } from "@/functions/http-client/api/source-data";
 
 export const [installImageViewContext, useImageViewContext] = installation(function (data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>, modifiedCallback?: (illustId: number) => void) {
     const slice = useSlice(data)
@@ -30,10 +30,8 @@ export const [installImageViewContext, useImageViewContext] = installation(funct
 
     useModifiedCallback(slice, data, modifiedCallback)
 
-    const sideBar = useSideBarContext()
+    const sideBar = useSideBarContext(target.id)
     const playBoard = usePlayBoardContext()
-
-    useSideBarLazyEndpoint(target.id)
 
     return {navigator, target, sideBar, playBoard}
 })
@@ -226,15 +224,11 @@ function usePlayBoardContext() {
     return {zoomEnabled, zoomValue}
 }
 
-function useSideBarContext() {
+function useSideBarContext(path: Ref<number | null>) {
     const storage = useLocalStorage<{tabType: "info" | "source" | "related"}>("image-detail-view/side-bar", () => ({tabType: "info"}), true)
 
     const tabType = toRef(storage, "tabType")
 
-    return {tabType}
-}
-
-function useSideBarLazyEndpoint(path: Ref<number | null>) {
     installDetailInfoLazyEndpoint({
         path,
         get: client => client.illust.image.get,
@@ -255,6 +249,8 @@ function useSideBarLazyEndpoint(path: Ref<number | null>) {
         update: client => client.illust.image.sourceData.update,
         eventFilter: c => event => event.eventType === "entity/illust/updated" && event.illustId === c.path && event.sourceDataUpdated
     })
+
+    return {tabType}
 }
 
 const [installDetailInfoLazyEndpoint, useDetailInfoLazyEndpoint] = createLazyFetchEndpoint<number, DetailIllust, ImageUpdateForm, never, IllustExceptions["image.update"], never>()
