@@ -128,6 +128,12 @@ function createRemoteIpcClient(): IpcClient {
             shell: {
                 openExternal(url) {
                     ipcRenderer.send("/remote/shell/open-external", url)
+                },
+                openPath(url: string) {
+                    ipcRenderer.send("/remote/shell/open-path", url)
+                },
+                openPathInFolder(url: string) {
+                    ipcRenderer.send("/remote/shell/open-path-in-folder", url)
                 }
             }
         }

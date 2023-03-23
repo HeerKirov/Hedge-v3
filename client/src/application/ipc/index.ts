@@ -106,8 +106,14 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
         const window = BrowserWindow.fromWebContents(e.sender)!
         menu.popup({window, ...(options || {})})
     })
-    ipcMain.on("/remote/shell/openExternal", (e, url: string) => {
+    ipcMain.on("/remote/shell/open-external", (e, url: string) => {
         shell.openExternal(url).catch(reason => dialog.showErrorBox("打开链接时发生错误", reason))
+    })
+    ipcMain.on("/remote/shell/open-path", (e, url: string) => {
+        shell.openPath(url).catch(reason => dialog.showErrorBox("打开链接时发生错误", reason))
+    })
+    ipcMain.on("/remote/shell/open-path-in-folder", (e, url: string) => {
+        shell.showItemInFolder(url)
     })
 }
 

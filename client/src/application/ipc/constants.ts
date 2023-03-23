@@ -54,6 +54,8 @@ export interface IpcClient {
         }
         shell: {
             openExternal(url: string): void
+            openPath(url: string): void
+            openPathInFolder(url: string): void
         }
     }
 }
