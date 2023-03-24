@@ -3,7 +3,7 @@ import { Button } from "@/components/universal"
 import { useTagCreatePane } from "@/services/main/tag"
 import {
     TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, TagLinkEditor,
-    DescriptionEditor, RelatedAnnotationEditor, SourceTagMappingEditor
+    DescriptionEditor, RelatedAnnotationEditor, SourceTagMappingEditor, TagExampleEditor
 } from "@/components-business/form-editor"
 
 const { form, submit, addressInfo, isRootNode } = useTagCreatePane()
@@ -38,7 +38,7 @@ const { form, submit, addressInfo, isRootNode } = useTagCreatePane()
         <SourceTagMappingEditor v-model:value="form.mappingSourceTags" direction="vertical"/>
     </p>
     <label class="mt-4 label is-font-size-small">示例</label>
-    <!-- TODO tag examples -->
+    <TagExampleEditor v-model:value="form.examples"/>
     <Button class="mt-4 w-100" mode="light" type="success" icon="save" @click="submit">保存</Button>
 </template>
 

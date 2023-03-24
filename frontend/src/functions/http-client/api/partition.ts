@@ -1,5 +1,6 @@
 import { HttpInstance, Response } from "../instance"
 import { NotFound } from "../exceptions"
+import { IllustType } from "./illust"
 import { date, LocalDate } from "@/utils/datetime"
 
 export function createPartitionEndpoint(http: HttpInstance): PartitionEndpoint {
@@ -18,7 +19,9 @@ export function createPartitionEndpoint(http: HttpInstance): PartitionEndpoint {
 function mapFromPartitionFilter(filter: PartitionFilter) {
     return {
         gte: filter.gte && date.toISOString(filter.gte),
-        lt: filter.lt && date.toISOString(filter.lt)
+        lt: filter.lt && date.toISOString(filter.lt),
+        query: filter.query,
+        type: filter.type
     }
 }
 
@@ -64,4 +67,5 @@ export interface PartitionFilter {
     gte?: LocalDate
     lt?: LocalDate
     query?: string
+    type?: IllustType
 }

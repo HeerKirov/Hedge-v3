@@ -32,6 +32,11 @@ export default <RouteRecordRaw[]>[
                 component: () => import("@/views/Main/Illust/Illust.vue")
             },
             {
+                name: "MainPartition",
+                path: "partition",
+                component: () => import("@/views/Main/Partition/Partition.vue")
+            },
+            {
                 name: "MainAuthor",
                 path: "author",
                 component: () => import("@/views/Main/Author/Author.vue")
