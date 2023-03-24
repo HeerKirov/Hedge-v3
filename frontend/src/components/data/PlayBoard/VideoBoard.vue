@@ -70,6 +70,5 @@ useInterceptedKey(["Space", "Meta+ArrowLeft", "Meta+ArrowRight", "Meta+ArrowUp",
     > video
         width: 100%
         height: 100%
-        display: block
         //opacity: 0.1
 </style>

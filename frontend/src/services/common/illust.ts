@@ -255,7 +255,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
             const res = await fetchCollectionCreate({images})
             if(res !== undefined) {
                 //创建成功后打开新集合的详情页面
-                // TODO viewStacks.openCollectionView(res.data.id)
+                viewStack.openCollectionView(res.id)
             }
         }
     }

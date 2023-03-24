@@ -8,9 +8,8 @@ import { IllustImageDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
 import { ViewStackBackButton } from "@/components-module/view-stack"
 import { useDialogService } from "@/components-module/dialog"
-import { Illust } from "@/functions/http-client/api/illust"
+import { CoverIllust, Illust } from "@/functions/http-client/api/illust"
 import { SingletonSlice, SliceOrPath } from "@/functions/fetch"
-import { useDroppable } from "@/modules/drag"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 import { installCollectionViewContext } from "@/services/view-stack/collection"
 import SideBarDetailInfo from "./SideBarDetailInfo.vue"
@@ -32,11 +31,11 @@ const {
 
 const dialog = useDialogService()
 
-const { dragover: _, ...dropEvents } = useDroppable("illusts", illusts => {
+const dataDrop = (_: number, illusts: CoverIllust[], __: "ADD" | "MOVE") => {
     if(id.value !== null) {
-        //TODO dialog.addToCollection
+        dialog.addToCollection.addToCollection(illusts.map(i => i.id), id.value)
     }
-})
+}
 
 const sideBarButtonItems = [
     {value: "info", label: "项目信息", icon: "info"},
@@ -111,10 +110,10 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
 
             <PaneLayout :show-pane="paneState.visible.value">
                 <IllustImageDataset :data="paginationData.data" :query-instance="paginationData.proxy"
-                                    :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable v-bind="dropEvents"
+                                    :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable droppable
                                     :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                                     @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
-                                    @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)"/>
+                                    @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @drop="dataDrop"/>
 
                 <template #pane>
                     <IllustDetailPane :state="paneState.state.value" @close="paneState.visible.value = false"/>

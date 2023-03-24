@@ -49,7 +49,7 @@ function useSlice(data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Il
             eventFilter: {
                 filter: ["entity/illust/updated", "entity/illust/deleted"],
                 operation({ update, event }) {
-                    if(event.eventType === "entity/illust/updated") {
+                    if(event.eventType === "entity/illust/updated" && event.generalUpdated) {
                         update(i => i.id === event.illustId)
                     }else if(event.eventType === "entity/illust/deleted") {
                         paths.value = paths.value.filter(path => path !== event.illustId)

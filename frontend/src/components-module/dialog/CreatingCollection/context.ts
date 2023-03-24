@@ -22,9 +22,8 @@ export interface CreatingCollectionProps {
 }
 
 export function useCreatingCollection(push: Push): CreatingCollection {
-    const toast = useToast()
-    const fetchSituation = useFetchHelper({request: client => client.illustUtil.getCollectionSituation, handleErrorInRequest: toast.handleException})
-    const fetchCreate = useFetchHelper({request: client => client.illust.collection.create, handleErrorInRequest: toast.handleException})
+    const fetchSituation = useFetchHelper(client => client.illustUtil.getCollectionSituation)
+    const fetchCreate = useFetchHelper(client => client.illust.collection.create)
 
     return {
         async createCollection(images, onCreated, skipDialogIfAllow) {

@@ -89,7 +89,7 @@ function useListView(path: Ref<number | null>) {
         eventFilter: {
             filter: ["entity/illust/updated", "entity/illust/deleted", "entity/collection-images/changed"],
             operation({ event, refresh, update, remove }) {
-                if(event.eventType === "entity/illust/updated") {
+                if(event.eventType === "entity/illust/updated" && event.generalUpdated) {
                     update(i => i.id === event.illustId)
                 }else if(event.eventType === "entity/illust/deleted") {
                     remove(i => i.id === event.illustId)

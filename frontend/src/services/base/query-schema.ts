@@ -23,7 +23,7 @@ export interface QuerySchemaContext {
     schema: Ref<QueryRes | null>
 }
 
-export function useQuerySchema(dialect: Dialect, queryRef: Ref<string | undefined>): QuerySchemaContext {
+export function useQuerySchema(dialect: Dialect, queryRef?: Ref<string | undefined>): QuerySchemaContext {
     const toast = useToast()
     const fetch = useFetchHelper(client => client.queryUtil.querySchema)
 

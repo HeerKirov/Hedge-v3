@@ -3,23 +3,27 @@ import { installation } from "@/utils/reactivity"
 import { MetaTagEditor, MetaTagEditorProps, useMetaTagEditor } from "./MetaTagEditor/context"
 import { SourceDataEditor, SourceDataEditorProps, useSourceDataEditor } from "./SourceDataEditor/context"
 import { CreatingCollection, CreatingCollectionProps, useCreatingCollection } from "./CreatingCollection/context"
+import { AddToCollection, AddToCollectionProps, useAddToCollection } from "./AddToCollection/context"
 
 export type {
     SourceDataEditorProps,
     MetaTagEditorProps,
-    CreatingCollectionProps
+    CreatingCollectionProps,
+    AddToCollectionProps
 }
 
 export interface DialogService {
     sourceDataEditor: SourceDataEditor
     metaTagEditor: MetaTagEditor
     creatingCollection: CreatingCollection
+    addToCollection: AddToCollection
 }
 
 type ServiceContext
     = { type: "sourceDataEditor", props: SourceDataEditorProps }
     | { type: "metaTagEditor", props: MetaTagEditorProps }
     | { type: "creatingCollection", props: CreatingCollectionProps }
+    | { type: "addToCollection", props: AddToCollectionProps }
 
 export type Push = (nc: ServiceContext) => void
 
@@ -51,6 +55,7 @@ export const [installInternalService, useInternalService] = installation(functio
     const sourceDataEditor = useSourceDataEditor(push)
     const metaTagEditor = useMetaTagEditor(push)
     const creatingCollection = useCreatingCollection(push)
+    const addToCollection = useAddToCollection(push)
 
     return {
         context,
@@ -58,7 +63,8 @@ export const [installInternalService, useInternalService] = installation(functio
         close,
         sourceDataEditor,
         metaTagEditor,
-        creatingCollection
+        creatingCollection,
+        addToCollection
     }
 })
 

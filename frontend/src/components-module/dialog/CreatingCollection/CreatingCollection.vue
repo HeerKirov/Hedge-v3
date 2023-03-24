@@ -53,8 +53,10 @@ const { selected, submit } = useCreatingCollectionContext(computed(() => props.p
             </Block>
         </template>
         <template #bottom>
-            <span class="is-line-height-std">合并后，原先的其他集合会被删除。</span>
-            <Button class="float-right" mode="filled" type="primary" icon="check" @click="submit">确认</Button>
+            <div class="mt-2">
+                <span v-if="p.situations.length" class="is-line-height-std">合并后，原先的其他集合会被删除。</span>
+                <Button class="float-right" mode="filled" type="primary" icon="check" @click="submit">确认</Button>
+            </div>
         </template>
     </BottomLayout>
 </template>
@@ -62,7 +64,7 @@ const { selected, submit } = useCreatingCollectionContext(computed(() => props.p
 <style module lang="sass">
 @import "../../../styles/base/size"
 .item
-    margin-bottom: 0.5rem
+    margin-top: 0.5rem
     padding: 0.75rem 0.5rem 0.75rem 0.75rem
     display: flex
     flex-wrap: nowrap
