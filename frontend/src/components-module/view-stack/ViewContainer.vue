@@ -5,6 +5,7 @@ import { eachViewInjection } from "./context"
 import { StackViewInfo } from "./definition"
 import ImageDetailView from "./ImageDetailView/ImageDetailView.vue"
 import CollectionDetailView from "./CollectionDetailView/CollectionDetailView.vue"
+import BookDetailView from "@/components-module/view-stack/BookDetailView/BookDetailView.vue";
 
 const props = defineProps<{
     stackViewInfo: StackViewInfo
@@ -23,7 +24,7 @@ useInterception()
     <div :class="{[$style.container]: true, [$style.hidden]: hidden}">
         <ImageDetailView v-if="stackViewInfo.type === 'image'" :data="stackViewInfo.data" :modified-callback="stackViewInfo.modifiedCallback"/>
         <CollectionDetailView v-else-if="stackViewInfo.type === 'collection'" :data="stackViewInfo.data"/>
-        <div v-else-if="stackViewInfo.type === 'book'">book</div>
+        <BookDetailView v-else-if="stackViewInfo.type === 'book'" :data="stackViewInfo.data"/>
     </div>
 </template>
 

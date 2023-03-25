@@ -31,7 +31,8 @@ export const [installCollectionViewContext, useCollectionViewContext] = installa
     const operators = useImageDatasetOperators({
         paginationData: listview.paginationData,
         listview: listview.listview,
-        selector, navigation
+        selector, navigation,
+        dataDrop: {dropInType: "collection", path: target.id}
     })
 
     const sideBar = useSideBarContext(target.id)

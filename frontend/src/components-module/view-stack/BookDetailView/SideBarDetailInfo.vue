@@ -1,14 +1,12 @@
 <script setup lang="ts">
+import { Input } from "@/components/form"
 import { Icon, Separator } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
 import { ScoreEditor, DescriptionEditor } from "@/components-business/form-editor"
-import {
-    ScoreDisplay, DescriptionDisplay, MetaTagListDisplay,
-    TagmeInfo, PartitionTimeDisplay, TimeGroupDisplay
-} from "@/components-business/form-display"
-import { useSideBarDetailInfo } from "@/services/view-stack/collection"
+import { ScoreDisplay, DescriptionDisplay, MetaTagListDisplay, TimeGroupDisplay, TitleDisplay } from "@/components-business/form-display"
+import { useBookViewContext } from "@/services/view-stack/book"
 
-const { data, id, setScore, setDescription, openMetaTagEditor } = useSideBarDetailInfo()
+const { target: { data, id, setTitle, setScore, setDescription, openMetaTagEditor } } = useBookViewContext()
 
 </script>
 
@@ -18,7 +16,15 @@ const { data, id, setScore, setDescription, openMetaTagEditor } = useSideBarDeta
     </p>
     <template v-if="data !== null">
         <Separator direction="horizontal"/>
-        <FormEditKit class="mt-2" :value="data.score" :set-value="setScore">
+        <FormEditKit class="mt-2" :value="data.title" :set-value="setTitle">
+            <template #default="{ value }">
+                <TitleDisplay :value="value"/>
+            </template>
+            <template #edit="{ value, setValue }">
+                <Input :value="value" @update:value="setValue"/>
+            </template>
+        </FormEditKit>
+        <FormEditKit class="mt-4" :value="data.score" :set-value="setScore">
             <template #default="{ value }">
                 <ScoreDisplay :value="value"/>
             </template>
@@ -34,9 +40,7 @@ const { data, id, setScore, setDescription, openMetaTagEditor } = useSideBarDeta
                 <DescriptionEditor :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
-        <TagmeInfo v-if="data.tagme.length > 0" class="mt-1" :value="data.tagme"/>
         <MetaTagListDisplay class="mt-2" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
-        <PartitionTimeDisplay class="mt-2" :partition-time="data.partitionTime"/>
-        <TimeGroupDisplay :order-time="data.orderTime" :update-time="data.updateTime" :create-time="data.createTime"/>
+        <TimeGroupDisplay class="mt-2" :order-time="data.orderTime" :update-time="data.updateTime" :create-time="data.createTime"/>
     </template>
 </template>

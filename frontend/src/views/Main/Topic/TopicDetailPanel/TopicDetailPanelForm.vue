@@ -71,7 +71,7 @@ const TOPIC_TYPE_SELECT_ITEMS = TOPIC_TYPES.map(t => ({label: TOPIC_TYPE_NAMES[t
             </div>
         </Flex>
         <div class="mt-2">
-            <label class="label">简介</label>
+            <label class="label">描述</label>
             <DescriptionEditor :value="description" @update:value="setDescription"/>
             <Input class="mt-1" placeholder="描述关键字" width="fullwidth" :value="keywordText" @update:value="setKeywords"/>
         </div>

@@ -22,6 +22,13 @@ export interface ImportImageViewController {
     viewMode: Ref<"row" | "grid">
 }
 
+/**
+ * book使用的view controller。
+ */
+export interface BookViewController {
+    columnNum: Ref<number>
+}
+
 export function useIllustViewController(queryFilterIllustType?: Ref<IllustType>): IllustViewController {
     const storage = useLocalStorage<{
         fitType: "cover" | "contain", columnNum: number, collectionMode: boolean, viewMode: "row" | "grid"
@@ -50,5 +57,17 @@ export function useImportImageViewController(): ImportImageViewController {
         fitType: toRef(storage, "fitType"),
         columnNum: toRef(storage, "columnNum"),
         viewMode: toRef(storage, "viewMode")
+    }
+}
+
+export function useBookViewController(): BookViewController {
+    const storage = useLocalStorage<{
+        columnNum: number
+    }>("book/list/view-controller", () => ({
+        columnNum: 5
+    }), true)
+
+    return {
+        columnNum: toRef(storage, "columnNum")
     }
 }

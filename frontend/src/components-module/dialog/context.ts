@@ -3,27 +3,31 @@ import { installation } from "@/utils/reactivity"
 import { MetaTagEditor, MetaTagEditorProps, useMetaTagEditor } from "./MetaTagEditor/context"
 import { SourceDataEditor, SourceDataEditorProps, useSourceDataEditor } from "./SourceDataEditor/context"
 import { CreatingCollection, CreatingCollectionProps, useCreatingCollection } from "./CreatingCollection/context"
-import { AddToCollection, AddToCollectionProps, useAddToCollection } from "./AddToCollection/context"
+import { CreatingBook, CreatingBookProps, useCreatingBook } from "./CreatingBook/context"
+import { AddIllust, AddIllustProps, useAddIllust } from "./AddIllust/context"
 
 export type {
     SourceDataEditorProps,
     MetaTagEditorProps,
     CreatingCollectionProps,
-    AddToCollectionProps
+    CreatingBookProps,
+    AddIllustProps
 }
 
 export interface DialogService {
     sourceDataEditor: SourceDataEditor
     metaTagEditor: MetaTagEditor
     creatingCollection: CreatingCollection
-    addToCollection: AddToCollection
+    creatingBook: CreatingBook
+    addIllust: AddIllust
 }
 
 type ServiceContext
     = { type: "sourceDataEditor", props: SourceDataEditorProps }
     | { type: "metaTagEditor", props: MetaTagEditorProps }
     | { type: "creatingCollection", props: CreatingCollectionProps }
-    | { type: "addToCollection", props: AddToCollectionProps }
+    | { type: "creatingBook", props: CreatingBookProps }
+    | { type: "addIllust", props: AddIllustProps }
 
 export type Push = (nc: ServiceContext) => void
 
@@ -55,7 +59,8 @@ export const [installInternalService, useInternalService] = installation(functio
     const sourceDataEditor = useSourceDataEditor(push)
     const metaTagEditor = useMetaTagEditor(push)
     const creatingCollection = useCreatingCollection(push)
-    const addToCollection = useAddToCollection(push)
+    const creatingBook = useCreatingBook(push)
+    const addIllust = useAddIllust(push)
 
     return {
         context,
@@ -64,7 +69,8 @@ export const [installInternalService, useInternalService] = installation(functio
         sourceDataEditor,
         metaTagEditor,
         creatingCollection,
-        addToCollection
+        creatingBook,
+        addIllust
     }
 })
 

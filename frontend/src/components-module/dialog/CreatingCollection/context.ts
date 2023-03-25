@@ -6,7 +6,7 @@ import { Push } from "../context"
 
 export interface CreatingCollection {
     /**
-     * 传入一组images，创建一个集合。
+     * 传入一组images，创建一个集合。一般用于contextmenu。
      * 会列出当前images已属于的集合，选择是否要加入某个集合；或建一个新的，把所有images(以及collection的children)都塞进去。
      * @param images 要用作创建集合的image id列表。
      * @param onCreated 如果成功创建集合，则执行回调。

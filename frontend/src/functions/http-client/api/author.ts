@@ -112,7 +112,7 @@ export interface Author {
 
 export interface DetailAuthor extends Author {
     /**
-     * 简介。
+     * 描述。
      */
     description: string
     /**

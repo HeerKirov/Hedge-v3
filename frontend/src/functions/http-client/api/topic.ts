@@ -137,7 +137,7 @@ export interface DetailTopic extends Topic {
      */
     children: TopicChildrenNode[] | null
     /**
-     * 简介。
+     * 描述。
      */
     description: string
     /**

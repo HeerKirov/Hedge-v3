@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { OptionButtons, Button, Separator } from "@/components/universal"
+import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { SideLayout, SideBar, TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
@@ -8,33 +8,26 @@ import { IllustImageDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
 import { ViewStackBackButton } from "@/components-module/view-stack"
 import { useDialogService } from "@/components-module/dialog"
-import { Illust } from "@/functions/http-client/api/illust"
+import { Book, BookImage } from "@/functions/http-client/api/book"
 import { SingletonSlice, SliceOrPath } from "@/functions/fetch"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
-import { installCollectionViewContext } from "@/services/view-stack/collection"
+import { installBookViewContext } from "@/services/view-stack/book"
 import SideBarDetailInfo from "./SideBarDetailInfo.vue"
-import SideBarRelatedItems from "./SideBarRelatedItems.vue"
 
 const props = defineProps<{
-    data: SliceOrPath<Illust, SingletonSlice<Illust>, number>
+    data: SliceOrPath<Book, SingletonSlice<Book>, number>
 }>()
 
 const {
     target: { id, data, deleteItem, toggleFavorite },
-    sideBar: { tabType },
     listview: { listview, paginationData },
     listviewController: { viewMode, fitType, columnNum },
     selector: { selected, lastSelected, update: updateSelect },
     paneState,
     operators
-} = installCollectionViewContext(props.data)
+} = installBookViewContext(props.data)
 
 const dialog = useDialogService()
-
-const sideBarButtonItems = [
-    {value: "info", label: "项目信息", icon: "info"},
-    {value: "related", label: "相关项目", icon: "dice-d6"}
-]
 
 const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "显示信息预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
@@ -44,13 +37,13 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
 ])
 
 // TODO 完成illust右键菜单的功能 (剪贴板，关联组，导出)
-const menu = useDynamicPopupMenu<Illust>(illust => [
+const menu = useDynamicPopupMenu<BookImage>(bookImage => [
     {type: "normal", label: "查看详情", click: i => operators.openDetailByClick(i.id)},
-    {type: "normal", label: illust.type === "COLLECTION" ? "在新窗口中打开集合" : "在新窗口中打开", click: operators.openInNewWindow},
+    {type: "normal", label: "在新窗口中打开", click: operators.openInNewWindow},
     {type: "separator"},
     {type: "checkbox", checked: paneState.visible.value, label: "显示信息预览", click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
-    illust.favorite
+    bookImage.favorite
         ? {type: "normal", label: "取消标记为收藏", click: i => operators.modifyFavorite(i, false)}
         : {type: "normal", label: "标记为收藏", click: i => operators.modifyFavorite(i, true)},
     {type: "separator"},
@@ -74,11 +67,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
     <SideLayout>
         <template #side>
             <SideBar>
-                <SideBarDetailInfo v-if="tabType === 'info'"/>
-                <SideBarRelatedItems v-else-if="tabType === 'related'"/>
-                <template #bottom>
-                    <OptionButtons :items="sideBarButtonItems" v-model:value="tabType"/>
-                </template>
+                <SideBarDetailInfo/>
             </SideBar>
         </template>
 
@@ -106,7 +95,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
                 <IllustImageDataset :data="paginationData.data" :query-instance="paginationData.proxy"
                                     :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable droppable
                                     :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                                    @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
+                                    @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event as BookImage)"
                                     @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
 
                 <template #pane>

@@ -3,13 +3,14 @@ import {
     PaginationDataView, QueryListview, AllSlice, ListIndexSlice, SingletonSlice,
     usePostFetchHelper, usePostPathFetchHelper, useFetchHelper, QueryInstance, createMappedQueryInstance
 } from "@/functions/fetch"
-import { Illust, IllustType } from "@/functions/http-client/api/illust"
+import { CoverIllust, Illust, IllustType } from "@/functions/http-client/api/illust"
 import { SelectedState } from "@/services/base/selected-state"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator } from "@/modules/router"
 import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
+import { Ref, unref } from "vue";
 
 export interface ImageDatasetOperatorsOptions<T extends BasicIllust> {
     /**
@@ -41,6 +42,24 @@ export interface ImageDatasetOperatorsOptions<T extends BasicIllust> {
          * 如果可能，跳过对话框以确认。(即如果image无冲突，调用会直接创建集合而不会打开对话框)
          */
         skipDialogIfAllow?: boolean
+    }
+    /**
+     * 激活dataDrop操作，并提供更多参数。
+     */
+    dataDrop?: {
+        /**
+         * 拖放区域的类型为图库、分区。此时，拖放操作会将illusts的排序时间插入到目标位置。分区还会额外将分区时间设置为目标分区。
+         */
+        dropInType: "illust" | "partition"
+    } | {
+        /**
+         * 拖放区域的类型为集合、画集、文件夹。此时，拖放操作会将illusts插入目标对象。
+         */
+        dropInType: "collection" | "book" | "folder"
+        /**
+         * 集合、画集、文件夹的id。
+         */
+        path: number | Ref<number | null>
     }
 }
 
@@ -110,6 +129,11 @@ export interface ImageDatasetOperators<T extends BasicIllust> {
      */
     removeItemFromBook(illust: T, bookId: number): void
     /**
+     * 提供数据插入操作，适用于将illusts拖曳到Dataset时的添加操作。
+     * 依据options配置的不同，展开不同种类的添加操作。
+     */
+    dataDrop(insertIndex: number, illusts: CoverIllust[], mode: "ADD" | "MOVE"): void
+    /**
      * 获得当前操作中，应该受到影响的对象id列表。此方法被提供给外部实现的其他函数，用于和context内的选择行为统一。
      * 选择行为指：当存在选中项时，在选择项之外右键将仅使用右键项而不包括选择项。它需要影响那些有多项目操作的行为。
      */
@@ -128,13 +152,15 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
     const navigator = useRouterNavigator()
     const dialog = useDialogService()
     const viewStack = useViewStack()
-    const { paginationData, listview, navigation, selector } = options
+    const { paginationData, listview, navigation, selector, dataDrop: dataDropOptions, createCollection: createCollectionOptions } = options
 
     const fetchIllustUpdate = usePostPathFetchHelper(client => client.illust.update)
     const fetchIllustDelete = usePostFetchHelper(client => client.illust.delete)
     const fetchCollectionCreate = useFetchHelper(client => client.illust.collection.create)
     const fetchImageRelatedUpdate = usePostPathFetchHelper(client => client.illust.image.relatedItems.update)
+    const fetchCollectionImagesUpdate = usePostPathFetchHelper(client => client.illust.collection.images.update)
     const fetchBookImagesPartialUpdate = usePostPathFetchHelper(client => client.book.images.partialUpdate)
+    const fetchFolderImagesPartialUpdate = usePostPathFetchHelper(client => client.folder.images.partialUpdate)
 
     const getEffectedItems = (illust: T): number[] => {
         return selector.selected.value.includes(illust.id) ? selector.selected.value : [illust.id]
@@ -246,7 +272,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
             toast.toast(newCollection ? "已创建" : "已合并", "success",  newCollection ? "已创建新集合。" : "已将图像合并至指定集合。")
         }
 
-        dialog.creatingCollection.createCollection(items, onCreated, options.createCollection?.skipDialogIfAllow)
+        dialog.creatingCollection.createCollection(items, onCreated, createCollectionOptions?.skipDialogIfAllow)
     }
 
     const splitToGenerateNewCollection = async (illust: T) => {
@@ -262,7 +288,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
 
     const createBook = (illust: T) => {
         const items = getEffectedItems(illust)
-        // TODO creatingAlbumService!.createAlbum(items, () => toast.toast("已创建", "success", "已创建新画集。"))
+        dialog.creatingBook.createBook(items, () => toast.toast("已创建", "success", "已创建新画集。"))
     }
 
     const addToFolder = (illust: T) => {
@@ -324,9 +350,49 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
         }
     }
 
+    const dataDrop = dataDropOptions === undefined ? () => {} :
+    dataDropOptions.dropInType === "illust" || dataDropOptions.dropInType === "partition" ? (insertIndex: number, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
+        //FUTURE 以后再实现illust/partition区域的拖放功能
+    } : dataDropOptions.dropInType === "collection" ? async (_: number, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
+        const path = unref(dataDropOptions.path)
+        if(path !== null && mode === "ADD") {
+            //只选取ADD模式。MOVE模式意味着集合内的移动，但集合内是没有移动的，所以什么也不做
+            const images = await dialog.addIllust.checkExistsInCollection(illusts.map(i => i.id), path)
+            if(images !== undefined && images.length > 0) {
+                await fetchCollectionImagesUpdate(path, [path, ...images])
+            }
+        }
+    } : dataDropOptions.dropInType === "book" ? async (insertIndex: number, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
+        const path = unref(dataDropOptions.path)
+        if(path !== null) {
+            if(mode === "ADD") {
+                const images = await dialog.addIllust.checkExistsInBook(illusts.map(i => i.id), path)
+                if(images !== undefined && images.length > 0) {
+                    await fetchBookImagesPartialUpdate(path, {action: "ADD", images, ordinal: insertIndex})
+                }
+            }else if(illusts.length > 0) {
+                //移动操作直接调用API即可，不需要检查
+                await fetchBookImagesPartialUpdate(path, {action: "MOVE", images: illusts.map(i => i.id), ordinal: insertIndex})
+            }
+        }
+    } : dataDropOptions.dropInType === "folder" ? async (insertIndex: number, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
+        const path = unref(dataDropOptions.path)
+        if(path !== null) {
+            if(mode === "ADD") {
+                const images = await dialog.addIllust.checkExistsInFolder(illusts.map(i => i.id), path)
+                if(images !== undefined && images.length > 0) {
+                    await fetchFolderImagesPartialUpdate(path, {action: "ADD", images, ordinal: insertIndex})
+                }
+            }else if(illusts.length > 0) {
+                //移动操作直接调用API即可，不需要检查
+                await fetchFolderImagesPartialUpdate(path, {action: "MOVE", images: illusts.map(i => i.id), ordinal: insertIndex})
+            }
+        }
+    } : () => {}
+
     return {
         openDetailByClick, openDetailByEnter, openCollectionDetail, openInNewWindow, modifyFavorite,
         createCollection, splitToGenerateNewCollection, createBook, addToFolder, cloneImage,
-        deleteItem, removeItemFromCollection, removeItemFromBook, getEffectedItems
+        deleteItem, removeItemFromCollection, removeItemFromBook, getEffectedItems, dataDrop
     }
 }
