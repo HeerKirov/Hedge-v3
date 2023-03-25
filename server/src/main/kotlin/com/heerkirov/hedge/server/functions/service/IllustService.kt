@@ -568,6 +568,11 @@ class IllustService(private val data: DataRepository,
                     relatedItemsUpdated = true
                 ))
             }
+
+            if(form.collectionId.isPresent && form.collectionId.value != illust.parentId) {
+                if(illust.parentId != null) bus.emit(CollectionImagesChanged(illust.parentId))
+                if(form.collectionId.value != null) bus.emit(CollectionImagesChanged(form.collectionId.value!!))
+            }
         }
     }
 

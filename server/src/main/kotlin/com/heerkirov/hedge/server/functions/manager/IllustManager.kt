@@ -7,7 +7,9 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.IllustType
+import com.heerkirov.hedge.server.events.CollectionImagesChanged
 import com.heerkirov.hedge.server.events.IllustCreated
+import com.heerkirov.hedge.server.events.IllustUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.model.Illust
@@ -180,7 +182,15 @@ class IllustManager(private val data: DataRepository,
         images.asSequence()
             .filter { it.id in addIds && it.parentId != null && it.parentId != collectionId }
             .groupBy { it.parentId!! }
-            .forEach { (parentId, images) -> processCollectionChildrenRemoved(parentId, images, now) }
+            .forEach { (parentId, images) ->
+                processCollectionChildrenRemoved(parentId, images, now)
+                bus.emit(CollectionImagesChanged(parentId))
+            }
+        //这些image的collection发生变化，发送事件
+        images.asSequence()
+            .filter { it.parentId != collectionId }
+            .map { it.id }
+            .forEach { bus.emit(IllustUpdated(it, IllustType.IMAGE, generalUpdated = false, metaTagUpdated = false, relatedItemsUpdated = true, sourceDataUpdated = false)) }
     }
 
     /**

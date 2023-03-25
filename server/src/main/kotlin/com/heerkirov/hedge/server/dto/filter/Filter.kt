@@ -91,6 +91,7 @@ data class ImportFilter(@Limit val limit: Int,
 
 data class PartitionFilter(val gte: LocalDate? = null,
                            val lt: LocalDate? = null,
+                           val type: IllustType = IllustType.IMAGE,
                            @Search val query: String?)
 
 data class SourceDataQueryFilter(@Limit val limit: Int,
