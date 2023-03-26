@@ -13,6 +13,7 @@ const props = defineProps<{
     tags?: TagTreeNode[]
     /**
      * 创建占位符。指定此属性时，在指定位置插入创建操作占位符。
+     * FUTURE: 占位符尚未实现。未来闲着没事可以实现一下。
      */
     createPosition?: {parentId: number, ordinal: number}
     /**
@@ -90,5 +91,5 @@ defineExpose({
 
 <style module lang="sass">
 .gap
-    height: 0.75rem
+    height: 0.25rem
 </style>

@@ -27,46 +27,44 @@ const onDelete = (tag: TagTreeNode) => operators.deleteItem(tag.id)
 </script>
 
 <template>
- <TopBarLayout>
-     <template #top-bar>
-        <MiddleLayout>
-            <SearchInput placeholder="在此处搜索" v-model:value="searchText" @enter="nv => { if(!nv) next() }"/>
-            <SearchResultInfo v-if="searchInfo !== null" :current="searchInfo.current" :total="searchInfo.total" @prev="prev" @next="next"/>
+    <TopBarLayout>
+        <template #top-bar>
+            <MiddleLayout>
+                <SearchInput placeholder="在此处搜索" v-model:value="searchText" @enter="nv => { if(!nv) next() }"/>
+                <SearchResultInfo v-if="searchInfo !== null" :current="searchInfo.current" :total="searchInfo.total" @prev="prev" @next="next"/>
 
-            <template #right>
-                <Group single-line>
-                    <Button v-if="editableLockOn" mode="filled" type="danger" icon="lock-open" square @click="editableLockOn = false"/>
-                    <Button v-else icon="lock" square @click="editableLockOn = true"/>
-                    <Button icon="plus" square @click="paneState.openCreateView()"/>
-                </Group>
+                <template #right>
+                    <Group single-line>
+                        <Button v-if="editableLockOn" mode="filled" type="danger" icon="lock-open" square @click="editableLockOn = false"/>
+                        <Button v-else icon="lock" square @click="editableLockOn = true"/>
+                        <Button icon="plus" square @click="paneState.openCreateView()"/>
+                    </Group>
+                </template>
+            </MiddleLayout>
+        </template>
+
+        <PaneLayout :show-pane="paneState.opened.value">
+            <template #pane>
+                <BasePane @close="paneState.closeView()">
+                    <TagCreatePane v-if="paneState.mode.value === 'create'"/>
+                    <TagDetailPane v-else-if="paneState.mode.value === 'detail'"/>
+                </BasePane>
             </template>
-        </MiddleLayout>
-     </template>
 
-     <PaneLayout :show-pane="paneState.opened.value">
-         <template #pane>
-            <BasePane @close="paneState.closeView()">
-                <TagCreatePane v-if="paneState.mode.value === 'create'"/>
-                <TagDetailPane v-else-if="paneState.mode.value === 'detail'"/>
-            </BasePane>
-         </template>
-
-         <div :class="$style.content">
-             <TagTree v-if="data?.length || loading" ref="tagTreeRef" :tags="data" editable draggable :droppable="editableLockOn" @click="onClick" @move="onMove" @create="onCreate" @delete="onDelete"/>
-             <Block v-else class="mt-2 p-2 has-text-centered">
-                 <Button type="success" size="small" icon="plus" @click="paneState.openCreateView()">创建第一个标签</Button>
-             </Block>
-         </div>
-     </PaneLayout>
- </TopBarLayout>
+            <div :class="$style.content">
+                <TagTree v-if="data?.length || loading" ref="tagTreeRef" :tags="data" editable draggable :droppable="editableLockOn" @click="onClick" @move="onMove" @create="onCreate" @delete="onDelete"/>
+                <Block v-else class="mt-2 p-2 has-text-centered">
+                    <Button type="success" size="small" icon="plus" @click="paneState.openCreateView()">创建第一个标签</Button>
+                </Block>
+            </div>
+        </PaneLayout>
+    </TopBarLayout>
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-
 .content
     height: 100%
     overflow-y: auto
-    padding: $spacing-1 $spacing-3
+    padding: 2px 6px
     box-sizing: border-box
 </style>

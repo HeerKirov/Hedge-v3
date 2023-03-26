@@ -9,6 +9,6 @@ defineProps<{
 </script>
 
 <template>
-    <GridImages v-if="value.length > 0" :images="value.map(i => i.thumbnailFile)" :aspect="1.5"/>
+    <GridImages v-if="value.length > 0" :images="value.map(i => i.thumbnailFile)" :aspect="2"/>
     <i v-else class="has-text-secondary">没有示例</i>
 </template>

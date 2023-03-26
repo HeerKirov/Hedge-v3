@@ -70,6 +70,11 @@ export default <RouteRecordRaw[]>[
                 name: "MainSourceData",
                 path: "source",
                 component: () => import("@/views/Main/SourceData/SourceData.vue")
+            },
+            {
+                name: "MainFolder",
+                path: "folder",
+                component: () => import("@/views/Main/Folder/Folder.vue")
             }
         ]
     },

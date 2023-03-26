@@ -73,4 +73,6 @@ const contextmenu = () => emit("contextmenu", props.item)
             padding: 0.5rem
             overflow-y: auto
             box-sizing: border-box
+            &::-webkit-scrollbar
+               display: none
 </style>

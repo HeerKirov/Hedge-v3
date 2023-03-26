@@ -12,6 +12,7 @@ import { useImportImageViewController } from "@/services/base/view-controller"
 import { useSettingSite } from "@/services/setting"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
+import { useDroppingFileListener } from "@/modules/drag"
 import { dialogManager } from "@/modules/dialog"
 import { installation } from "@/utils/reactivity"
 import { objects, strings } from "@/utils/primitives"
@@ -25,6 +26,7 @@ export const [installImportContext] = installation(function () {
     const listviewController = useImportImageViewController()
     const operators = useOperators(selector, listview.anyData, importService.addFiles)
 
+    useDroppingFileListener(importService.addFiles)
     installVirtualViewNavigation()
     useSettingSite()
 

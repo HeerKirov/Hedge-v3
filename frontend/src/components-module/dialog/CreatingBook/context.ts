@@ -43,7 +43,8 @@ export function useCreatingBookContext(images: Ref<number[]>, onCreated: (bookId
         create: client => client.book.create,
         handleError(e) {
             if(e.code === "NOT_EXIST") {
-                message.showOkMessage("prompt", "选择的项目不存在。", `不存在的项目: ${e.info.join(", ")}`)
+                const [_, list] = e.info
+                message.showOkMessage("prompt", "选择的项目不存在。", `不存在的项目: ${list.join(", ")}`)
             }else{
                 return e
             }

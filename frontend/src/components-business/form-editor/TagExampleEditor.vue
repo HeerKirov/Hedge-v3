@@ -33,7 +33,7 @@ const { dragover: _, ...dropEvents } = useDroppable("illusts", illusts => {
 </script>
 
 <template>
-    <AspectGrid :items="value" v-slot="{ item }" :aspect="1.5" :spacing="1">
+    <AspectGrid :items="value" v-slot="{ item }" :aspect="2" :spacing="1">
         <img :class="$style.img" :src="assetsUrl(item.thumbnailFile)" :alt="item"/>
     </AspectGrid>
     <div :class="$style['drop-area']" v-bind="dropEvents">

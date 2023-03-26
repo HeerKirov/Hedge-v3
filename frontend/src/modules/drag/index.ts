@@ -1,13 +1,16 @@
 import { readonly, ref, Ref, unref } from "vue"
 import { TypeDefinition } from "./definition"
+import { useDroppingFileListener, useOptionalDroppingFile, useDroppableForFile } from "./file"
 
 export type { TypeDefinition }
+export { useDroppingFileListener, useDroppableForFile }
 
 /*
  * == 拖放模块 ==
  * 此模块做了以下工作：
  * - 提供了useDraggable/useDroppable两个函数，以composition API的形式提供了元素的拖曳/拖放响应事件。
  * - 结合业务，限定了拖放内容的类型定义，使得在任何位置，拖放内容都是类型明确的。
+ * - 还额外提供了文件拖放相关的能力。
  */
 
 /**
@@ -64,12 +67,25 @@ export function useDroppable<T extends keyof TypeDefinition>(byType: T | T[], ev
 }
 
 function useDroppableInternal<T extends keyof TypeDefinition>(event: (data: TypeDefinition[T], type: T) => void, options?: DroppableOptions): Droppable {
+    const fileListener = useOptionalDroppingFile()
+
     const dragover: Ref<boolean> = ref(false)
     const onDragenter = () => dragover.value = true
     const onDragleave = () => dragover.value = false
 
     const onDrop = (e: DragEvent) => {
         if(e.dataTransfer) {
+            if(fileListener && e.dataTransfer.files.length) {
+                const ret: string[] = []
+                for(let i = 0; i < e.dataTransfer.files.length; ++i) {
+                    const file = e.dataTransfer.files.item(i)
+                    //tips: 此处为Electron的额外注入参数。
+                    const filepath = (file as any)["path"]
+                    if(filepath) ret.push(filepath)
+                }
+                if(ret.length) fileListener.emit(ret)
+                return
+            }
             const type = <T>e.dataTransfer.getData("type")
             if(!type) {
                 //可能发过来的并不是droppable的东西
@@ -101,3 +117,4 @@ function useDroppableInternal<T extends keyof TypeDefinition>(event: (data: Type
 
     return {dragover: readonly(dragover), onDragenter, onDragleave, onDrop, onDragover}
 }
+

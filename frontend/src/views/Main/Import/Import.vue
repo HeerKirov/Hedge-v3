@@ -8,6 +8,7 @@ import { ImportDetailPane } from "@/components-module/common"
 import { ImportImageDataset } from "@/components-module/data"
 import { ImportImage } from "@/functions/http-client/api/import"
 import { MenuItem, usePopupMenu } from "@/modules/popup-menu"
+import { useDroppableForFile } from "@/modules/drag"
 import { installImportContext } from "@/services/main/import"
 import ImportDialog from "./ImportDialog.vue"
 
@@ -35,6 +36,8 @@ const menu = usePopupMenu<ImportImage>(() => [
     {type: "normal", label: "删除项目", click: i => deleteItem(i.id)},
 ])
 
+const dropEvents = useDroppableForFile()
+
 </script>
 
 <template>
@@ -59,7 +62,7 @@ const menu = usePopupMenu<ImportImage>(() => [
         </template>
 
         <PaneLayout :show-pane="paneState.visible.value">
-            <div v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" class="h-100 has-text-centered relative">
+            <div v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" class="h-100 has-text-centered relative" v-bind="dropEvents">
                 <p class="secondary-text"><i>没有任何暂存的导入项目</i></p>
                 <div class="absolute center">
                     <Button mode="light" type="success" icon="file" @click="openDialog">添加文件</Button>

@@ -68,7 +68,7 @@ import { library } from "@fortawesome/fontawesome-svg-core"
 
 import {
     faClose, faStar, faStarHalf, faStarHalfStroke, faSave, faTrash, faFolderOpen, faPlus, faMinus,
-    faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faAngleLeft, faAngleRight,
+    faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faAngleLeft, faAngleRight, faAngleDown,
     faCaretDown, faCaretRight, faCaretUp, faCaretLeft, faSortAlphaDown,
     faCircleNotch, faCheck, faFile, faCodeBranch, faFingerprint, faBars,
     faGear, faCircleQuestion, faClipboard, faFilter, faShareSquare, faShareAltSquare,
@@ -90,7 +90,7 @@ import {
 
 library.add(
     faClose, faStar, faStarHalf, faStarHalfStroke, faSave, faTrash, faFolderOpen, faPlus, faMinus,
-    faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faAngleLeft, faAngleRight,
+    faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faAngleLeft, faAngleRight, faAngleDown,
     faCaretDown, faCaretRight, faCaretUp, faCaretLeft, faSortAlphaDown,
     faCircleNotch, faCheck, faFile, faCodeBranch, faFingerprint, faBars,
     faGear, faCircleQuestion, faClipboard, faFilter, faShareSquare, faShareAltSquare,

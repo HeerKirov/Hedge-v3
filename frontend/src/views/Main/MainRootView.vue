@@ -41,8 +41,8 @@ const { menuItems, menuSelected } = installNavMenu({
         {type: "menu", routeName: "MainFindSimilar", label: "相似项查找", icon: "grin-squint"},
         {type: "scope", scopeName: "folder", label: "目录"},
         {type: "menu", routeName: "MainFolder", label: "所有目录", icon: "archive"},
-        setupItemByRef(pins, "MainFolders", "detail", "thumbtack", t => ({routeQueryValue: `${t.id}`, label: t.address.join("/")})),
-        setupItemByNavHistory(navHistory, "MainFolders", "detail", "folder")
+        setupItemByRef(pins, "MainFolder", "detail", "thumbtack", t => ({routeQueryValue: `${t.id}`, label: t.address.join("/")})),
+        setupItemByNavHistory(navHistory, "MainFolder", "detail", "folder")
     ]
 })
 

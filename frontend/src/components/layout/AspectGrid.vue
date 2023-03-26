@@ -38,7 +38,7 @@ const rootStyle = computed(() => ({
     position: relative
     height: 0
     width: calc((100% - (var(--var-column-num) - 1) * var(--var-gap)) / var(--var-column-num))
-    padding-bottom: calc((100% - (var(--var-column-num) - 1) * var(--var-gap)) / var(--var-column-num))
+    padding-bottom: calc((100% - (var(--var-column-num) - 1) * var(--var-gap)) / var(--var-column-num) / var(--var-aspect))
 
     > .content
         position: absolute
