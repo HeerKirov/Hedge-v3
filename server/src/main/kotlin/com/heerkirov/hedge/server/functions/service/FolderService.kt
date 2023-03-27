@@ -276,7 +276,7 @@ class FolderService(private val data: DataRepository,
                 //相同节点下禁止重名
                 if(data.db.sequenceOf(Folders).any {
                     if(parentId != null) { it.parentId eq parentId }else{ it.parentId.isNull() } and (it.title eq title) and (it.id notEq folder.id)
-                }) throw be(AlreadyExists("Folder", "title", form.title))
+                }) throw be(AlreadyExists("Folder", "title", title))
             }
 
             applyIf(form.title.isPresent || newParentAddress.isPresent) {
