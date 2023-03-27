@@ -62,7 +62,7 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, op
                 preload: path.join(__dirname, 'ipc/preload.js'),
             },
             autoHideMenuBar: true,
-            backgroundColor: theme.getRuntimeTheme() === "dark" ? "#212121" : "#FFFFFF",
+            backgroundColor: theme.getRuntimeTheme() === "dark" ? "#111417" : "#FFFFFF",
             ...configure
         })
 
