@@ -11,7 +11,7 @@ const {
     paneState,
     listview: { loading, data },
     editableLockOn,
-    operators: { createPosition, createItem, setPinned, moveItem, deleteItem, openDetail }
+    operators: { createPosition, openCreatePosition, createItem, setPinned, moveItem, deleteItem, openDetail }
 } = useFolderContext()
 
 const updateSelected = (folderId: number | null) => {
@@ -34,7 +34,7 @@ const updateSelected = (folderId: number | null) => {
                     <Group single-line>
                         <Button v-if="editableLockOn" square mode="filled" type="danger" icon="lock-open" @click="editableLockOn = false"/>
                         <Button v-else square icon="lock" @click="editableLockOn = true"/>
-                        <Button square icon="plus"/>
+                        <Button square icon="plus" @click="openCreatePosition"/>
                     </Group>
                 </template>
             </MiddleLayout>
@@ -48,10 +48,11 @@ const updateSelected = (folderId: number | null) => {
             </template>
 
             <Block :class="$style['table-block']">
-                <FolderTable :folders="data" editable :droppable="editableLockOn" v-model:create-position="createPosition"
+                <FolderTable v-if="!loading && (data?.length || createPosition)" :folders="data" editable :droppable="editableLockOn" v-model:create-position="createPosition"
                              :selected="paneState.detailPath.value ?? undefined"
                              @update:selected="updateSelected" @update:pinned="setPinned"
                              @create="createItem" @move="moveItem" @delete="deleteItem" @enter="openDetail"/>
+                <Button v-else-if="!loading" size="small" type="success" icon="plus" @click="openCreatePosition">创建第一个节点或目录</Button>
             </Block>
         </PaneLayout>
     </TopBarLayout>

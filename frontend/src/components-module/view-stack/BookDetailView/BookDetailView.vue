@@ -49,7 +49,7 @@ const menu = useDynamicPopupMenu<BookImage>(bookImage => [
     {type: "separator"},
     {type: "normal", label: "加入剪贴板"},
     {type: "separator"},
-    {type: "normal", label: "拆分至新集合", click: operators.splitToGenerateNewCollection},
+    {type: "normal", label: "创建图像集合", click: operators.createCollection},
     {type: "normal", label: "创建画集…", click: operators.createBook},
     {type: "normal", label: "创建关联组"},
     {type: "normal", label: "添加到目录…", click: operators.addToFolder},
@@ -80,6 +80,7 @@ const menu = useDynamicPopupMenu<BookImage>(bookImage => [
 
                     <template #right>
                         <Button square icon="heart" :type="data?.favorite ? 'danger' : 'secondary'" @click="toggleFavorite"/>
+                        <!-- TODO book的编辑锁 -->
                         <Separator/>
                         <DataRouter/>
                         <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>

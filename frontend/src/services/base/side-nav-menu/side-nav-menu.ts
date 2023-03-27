@@ -63,29 +63,32 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
 
         for(const menuItem of menuItems) {
            if(menuItem.type === "menu") {
+               //tips: 此处的遍历算法使用了较为浪费的写法。
+               //由于有些时候要匹配的子项实际位于总项之后，所以采用了全体遍历、后者优先的策略。
+               //若有时间，应该优化这里的遍历算法。
                if(hasQuery) {
-                   //如果hasQuery，则调整优先级，率先尝试与submenu匹配，其次再尝试本体
+                   const param = analyseRouteParamFromSelected({id: menuItem.id, subId: null})
+                   if(matchSelectedWithRoute(param, routeName, routeQuery)) {
+                       innerMenuSelected.value = {id: menuItem.id, subId: null}
+                       //return
+                   }
+
+                   //如果hasQuery，则尝试与submenu匹配
                    if(menuItem.submenu?.length) {
                        for(const submenuItem of menuItem.submenu) {
                            const param = analyseRouteParamFromSelected({id: menuItem.id, subId: submenuItem.id})
                            if(matchSelectedWithRoute(param, routeName, routeQuery)) {
                                innerMenuSelected.value = {id: menuItem.id, subId: submenuItem.id}
-                               return
+                               //return
                            }
                        }
-                   }
-
-                   const param = analyseRouteParamFromSelected({id: menuItem.id, subId: null})
-                   if(matchSelectedWithRoute(param, routeName, routeQuery)) {
-                       innerMenuSelected.value = {id: menuItem.id, subId: null}
-                       return
                    }
                }else{
                    //如果非hasQuery，则只与本体匹配，不尝试submenu，因为submenu必有query参数
                    const param = analyseRouteParamFromSelected({id: menuItem.id, subId: null})
                    if(matchSelectedWithRoute(param, routeName, routeQuery)) {
                        innerMenuSelected.value = {id: menuItem.id, subId: null}
-                       return
+                       //return
                    }
                }
 

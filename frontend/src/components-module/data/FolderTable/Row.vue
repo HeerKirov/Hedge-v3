@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, toRef } from "vue"
 import { Icon } from "@/components/universal"
 import { FolderTreeNode } from "@/functions/http-client/api/folder"
 import { datetime } from "@/utils/datetime"
-import { useFolderDroppable, useFolderTreeContext } from "./context"
+import { useFolderDraggable, useFolderDroppable, useFolderTreeContext } from "./context"
 import RowList from "./RowList.vue"
 
 const props = defineProps<{
@@ -22,7 +22,9 @@ const expanded = computed({
 const isJumpTarget = computed(() => elementRefs.jumpTarget.value === props.row.id)
 const isSelected = computed(() => createPosition.value === undefined && selected.value === props.row.id)
 
-const { dragover: _, ...dropEvents } = useFolderDroppable(computed(() => props.row.id), null)
+const { gapState, topDropEvents, bottomDropEvents } = useFolderDroppable(toRef(props, "row"), toRef(props, "indent"), expanded)
+
+const dragEvents = useFolderDraggable(toRef(props, "row"))
 
 const click = () => {
     if(elementRefs.jumpTarget.value === props.row.id) {
@@ -49,8 +51,11 @@ const contextmenu = () => {
 </script>
 
 <template>
-    <tr :class="{[$style.tr]: true, [$style.selected]: isSelected}" v-bind="dropEvents" @click="click" @dblclick="dblclick" @contextmenu="contextmenu">
-        <td class="w-50 pl-1" :draggable="true" :ref="el => elementRefs.setElement(row.id, el)">
+    <tr :class="{[$style.tr]: true, [$style.selected]: isSelected}" @click="click" @dblclick="dblclick" @contextmenu="contextmenu">
+        <td class="w-50 pl-1" :ref="el => elementRefs.setElement(row.id, el)" :draggable="true" v-bind="dragEvents">
+            <div :class="$style['top-drop-area']" :style="{'margin-left': `calc(${indent * 1.7}em + 1.5rem)`}" v-bind="topDropEvents"/>
+            <div :class="$style['bottom-drop-area']" :style="{'margin-left': `calc(${indent * 1.7}em + 1.5rem)`}" v-bind="bottomDropEvents"/>
+            <div v-if="gapState !== null" :class="$style.gap" :style="{'left': `${gapState.indent * 1.7}em`, 'top': gapState.position === 'top' ? '-2px' : null, 'bottom': gapState.position === 'bottom' ? '-2px' : null}"/>
             <span class="pr-1" :style="{'padding-left': `${indent * 1.7}em`}">
                 <Icon v-if="row.type === 'FOLDER'" icon="folder"/>
                 <Icon v-else-if="expanded" class="is-cursor-pointer" icon="angle-down" @click="expanded = false"/>
@@ -101,4 +106,28 @@ const contextmenu = () => {
         border: solid 2px $light-mode-warning
     @media (prefers-color-scheme: dark)
         border: solid 2px $dark-mode-warning
+
+.tr
+    position: relative
+
+.top-drop-area
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    height: 50%
+
+.bottom-drop-area
+    position: absolute
+    bottom: 0
+    left: 0
+    right: 0
+    height: 50%
+
+.gap
+    position: absolute
+    z-index: 1
+    height: 4px
+    right: 0
+    background-color: rgba(127, 127, 127, 0.5)
 </style>

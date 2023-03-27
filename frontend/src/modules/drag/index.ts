@@ -74,41 +74,44 @@ function useDroppableInternal<T extends keyof TypeDefinition>(event: (data: Type
     const onDragleave = () => dragover.value = false
 
     const onDrop = (e: DragEvent) => {
-        if(e.dataTransfer) {
-            if(fileListener && e.dataTransfer.files.length) {
-                const ret: string[] = []
-                for(let i = 0; i < e.dataTransfer.files.length; ++i) {
-                    const file = e.dataTransfer.files.item(i)
-                    //tips: 此处为Electron的额外注入参数。
-                    const filepath = (file as any)["path"]
-                    if(filepath) ret.push(filepath)
+        try {
+            if(e.dataTransfer) {
+                if(fileListener && e.dataTransfer.files.length) {
+                    const ret: string[] = []
+                    for(let i = 0; i < e.dataTransfer.files.length; ++i) {
+                        const file = e.dataTransfer.files.item(i)
+                        //tips: 此处为Electron的额外注入参数。
+                        const filepath = (file as any)["path"]
+                        if(filepath) ret.push(filepath)
+                    }
+                    if(ret.length) fileListener.emit(ret)
+                    return
                 }
-                if(ret.length) fileListener.emit(ret)
-                return
-            }
-            const type = <T>e.dataTransfer.getData("type")
-            if(!type) {
-                //可能发过来的并不是droppable的东西
-                return
-            }
-            let data: any
-            try {
-                data = JSON.parse(e.dataTransfer?.getData("data"))
-            }catch (e) {
-                //可能发过来的并不是droppable的东西
-                return
-            }
+                const type = <T>e.dataTransfer.getData("type")
+                if(!type) {
+                    //可能发过来的并不是droppable的东西
+                    return
+                }
+                let data: any
+                try {
+                    data = JSON.parse(e.dataTransfer?.getData("data"))
+                }catch (e) {
+                    //可能发过来的并不是droppable的东西
+                    return
+                }
 
-            e.preventDefault()
-            if(options?.stopPropagation) {
-                //阻止向上传递事件，以避免存在上下叠加的dropEvents时，误触上层的drop事件
-                e.stopImmediatePropagation()
-                e.stopPropagation()
-            }
+                e.preventDefault()
+                if(options?.stopPropagation) {
+                    //阻止向上传递事件，以避免存在上下叠加的dropEvents时，误触上层的drop事件
+                    e.stopImmediatePropagation()
+                    e.stopPropagation()
+                }
 
-            event(data, type)
+                event(data, type)
+            }
+        }finally{
+            dragover.value = false
         }
-        dragover.value = false
     }
 
     const onDragover = (e: DragEvent) => {

@@ -59,7 +59,7 @@ const { menuItems, menuSelected } = installNavMenu({
                 <template #bottom>
                     <Button square icon="gear" @click="windowManager.openSetting"/>
                     <Button class="ml-1" square icon="circle-question" @click="windowManager.openGuide"/>
-                    <Button class="ml-1 float-right" icon="clipboard">10</Button>
+                    <!--Button class="ml-1 float-right" icon="clipboard">10</Button -->
                 </template>
             </SideBar>
         </template>

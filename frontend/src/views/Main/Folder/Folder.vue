@@ -2,7 +2,7 @@
 import { LazyLoad } from "@/components/logical"
 import { installFolderContext } from "@/services/main/folder"
 import FolderListPanel from "./FolderListPanel.vue"
-import FolderDetailPanel from "./FolderIllustList.vue"
+import FolderIllustList from "./FolderIllustList.vue"
 
 const { viewState } = installFolderContext()
 
@@ -12,5 +12,5 @@ const { viewState } = installFolderContext()
     <LazyLoad :visible="!viewState.opened.value" v-slot="{ visible }">
         <FolderListPanel v-show="visible"/>
     </LazyLoad>
-    <FolderDetailPanel v-if="viewState.mode.value === 'detail'"/>
+    <FolderIllustList v-if="viewState.mode.value === 'detail'"/>
 </template>

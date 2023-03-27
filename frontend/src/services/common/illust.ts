@@ -129,6 +129,12 @@ export interface ImageDatasetOperators<T extends BasicIllust> {
      */
     removeItemFromBook(illust: T, bookId: number): void
     /**
+     * 将项目从指定的folder中移除。会先打开对话框确认。
+     * @param illust
+     * @param folderId
+     */
+    removeItemFromFolder(illust: T, folderId: number): void
+    /**
      * 提供数据插入操作，适用于将illusts拖曳到Dataset时的添加操作。
      * 依据options配置的不同，展开不同种类的添加操作。
      */
@@ -350,6 +356,13 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
         }
     }
 
+    const removeItemFromFolder = async (illust: T, folderId: number) => {
+        const images = getEffectedItems(illust)
+        if(await message.showYesNoMessage("warn", `确定要从目录移除${images.length > 1 ? "这些" : "此"}项吗？`)) {
+            await fetchFolderImagesPartialUpdate(folderId, {action: "DELETE", images})
+        }
+    }
+
     const dataDrop = dataDropOptions === undefined ? () => {} :
     dataDropOptions.dropInType === "illust" || dataDropOptions.dropInType === "partition" ? (insertIndex: number, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
         //FUTURE 以后再实现illust/partition区域的拖放功能
@@ -393,6 +406,6 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
     return {
         openDetailByClick, openDetailByEnter, openCollectionDetail, openInNewWindow, modifyFavorite,
         createCollection, splitToGenerateNewCollection, createBook, addToFolder, cloneImage,
-        deleteItem, removeItemFromCollection, removeItemFromBook, getEffectedItems, dataDrop
+        deleteItem, removeItemFromCollection, removeItemFromBook, removeItemFromFolder, getEffectedItems, dataDrop
     }
 }

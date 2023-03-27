@@ -38,7 +38,3 @@ const { data, setName, setCanBeExported, setAnnotationTarget } = useAnnotationDe
         </FormEditKit>
     </template>
 </template>
-
-<style module lang="sass">
-
-</style>

@@ -2,7 +2,7 @@ import { ComponentPublicInstance, computed, nextTick, ref, Ref, toRaw, watch } f
 import { FolderCreateForm, FolderTreeNode } from "@/functions/http-client/api/folder"
 import { useMessageBox } from "@/modules/message-box"
 import { useDynamicPopupMenu } from "@/modules/popup-menu"
-import { useDroppable } from "@/modules/drag"
+import { useDraggable, useDroppable } from "@/modules/drag"
 import { installation } from "@/utils/reactivity"
 import { objects } from "@/utils/primitives"
 import { sleep } from "@/utils/process"
@@ -429,7 +429,15 @@ function useMenu(options: FolderTreeContextOptions, indexedData: Ref<{[key: numb
     return menu.popup
 }
 
-export function useFolderDroppable(parentId: Ref<number | null>, ordinal: Ref<number | null> | null) {
+export function useFolderDraggable(row: Ref<FolderTreeNode>) {
+    const { indexedData } = useFolderTreeContext()
+    return useDraggable("folder", () => {
+        const info = indexedData.indexedData.value[row.value.id]!
+        return {id: row.value.id, type: row.value.type, address: info.address.map(a => a.title)}
+    })
+}
+
+export function useFolderDroppable(row: Ref<FolderTreeNode>, indent: Ref<number>, expanded: Ref<boolean>) {
     const { indexedData, droppable, emit } = useFolderTreeContext()
 
     function getTarget(currentParentId: number | null, currentOrdinal: number, insertParentId: number | null, insertOrdinal: number | null): {parentId: number | null, ordinal: number} {
@@ -470,12 +478,40 @@ export function useFolderDroppable(parentId: Ref<number | null>, ordinal: Ref<nu
         emit.move(info.folder, target.parentId === info.parentId ? undefined : target.parentId, target.ordinal)
     }
 
-    const { dragover: originIsDragover, ...dropEvents } = useDroppable("folder", folder => {
+    const { dragover: topDragover, ...topDropEvents } = useDroppable("folder", folder => {
         if(droppable.value) {
-            move(folder.id, parentId.value, ordinal?.value ?? null)
+            const info = indexedData.indexedData.value[row.value.id]
+            if(info) {
+                move(folder.id, info.parentId, info.ordinal)
+            }
         }
-    })
-    const dragover: Ref<boolean> = computed(() => (droppable.value ?? false) && originIsDragover.value)
+    }, {stopPropagation: true})
 
-    return {dragover, ...dropEvents}
+    const { dragover: bottomDragover, ...bottomDropEvents } = useDroppable("folder", folder => {
+        if(droppable.value) {
+            if(row.value.type === "NODE" && expanded.value) {
+                move(folder.id, row.value.id, 0)
+            }else{
+                const info = indexedData.indexedData.value[row.value.id]
+                if(info) {
+                    move(folder.id, info.parentId, info.ordinal + 1)
+                }
+            }
+        }
+    }, {stopPropagation: true})
+
+    const gapState = computed(() => {
+        if(droppable.value) {
+            if(topDragover.value) {
+                //放到上半时，插入到当前节点之前
+                return {position: "top", indent: indent.value}
+            }else if(bottomDragover.value) {
+                //放到下半时，根据折叠情况决定。展开时插入到次级，作为首个节点；折叠时插入到当前节点之后。对应的gap长度也会变化。
+                return {position: "bottom", indent: (row.value.type === "NODE" && expanded.value) ? (indent.value + 1) : indent.value}
+            }
+        }
+        return null
+    })
+
+    return {gapState, topDropEvents, bottomDropEvents}
 }

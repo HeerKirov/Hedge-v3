@@ -96,7 +96,6 @@ watch(form, form => {
                 <SourceTagElement :value="item"/>
             </component>
             <component :is="direction === 'vertical' ? 'p' : 'span'" :class="{'mb-1': true, 'mr-1': direction !== 'vertical'}">
-                <b v-if="direction === 'vertical'" class="mr-1">·</b>
                 <Tag color="success" icon="plus" clickable @click="add">添加来源标签</Tag>
             </component>
         </div>
@@ -108,8 +107,8 @@ watch(form, form => {
             </Flex>
             <Input class="mb-1" width="fullwidth" size="small" placeholder="名称" v-model:value="form.name"/>
             <Input class="mb-1" width="fullwidth" size="small" placeholder="别名" v-model:value="form.otherName"/>
-            <div>
-                <Button class="float-right" size="small" type="danger" icon="trash" @click="remove">删除</Button>
+            <div class="has-text-right">
+                <Button size="small" type="danger" icon="trash" @click="remove">删除</Button>
             </div>
         </Block>
     </div>
