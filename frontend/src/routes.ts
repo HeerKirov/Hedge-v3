@@ -72,11 +72,21 @@ export default <RouteRecordRaw[]>[
                 component: () => import("@/views/Main/SourceData/SourceData.vue")
             },
             {
+                name: "MainFindSimilar",
+                path: "find-similar",
+                component: () => import("@/views/Main/FindSimilar/FindSimilar.vue")
+            },
+            {
                 name: "MainFolder",
                 path: "folder",
                 component: () => import("@/views/Main/Folder/Folder.vue")
             }
         ]
+    },
+    {
+        name: "Preview",
+        path: "/preview",
+        component: () => import("@/views/Preview.vue")
     },
     {
         name: "Setting",

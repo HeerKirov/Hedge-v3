@@ -39,8 +39,8 @@ export function useRouterNavigator(): RouterNavigator {
         const query = typeof options === "object" ? options.query : undefined
 
         windowManager.newWindow(`/?routeName=${routeName}` +
-            `&params=${params !== undefined ? encodeURIComponent(Buffer.from(JSON.stringify(params), "utf-8").toString("base64")) : ""}` +
-            `&query=${query !== undefined ? encodeURIComponent(Buffer.from(JSON.stringify(query), "utf-8").toString("base64")) : ""}`)
+            `&params=${params !== undefined ? encodeURIComponent(btoa(JSON.stringify(params))) : ""}` +
+            `&query=${query !== undefined ? encodeURIComponent(btoa(JSON.stringify(query))) : ""}`)
     }
 
     return {goto, newWindow}
@@ -60,8 +60,8 @@ export function useNewWindowRouteReceiver() {
 
             const paramsStr = route.query["params"] as string | undefined
             const queryStr = route.query["query"] as string | undefined
-            const paramsDecoded = paramsStr && Buffer.from(paramsStr, "base64").toString("utf-8")
-            const queryDecoded = queryStr && Buffer.from(queryStr, "base64").toString("utf-8")
+            const paramsDecoded = paramsStr && atob(paramsStr)
+            const queryDecoded = queryStr && atob(queryStr)
             const params = paramsDecoded ? JSON.parse(paramsDecoded) : undefined
             const query = queryDecoded ? JSON.parse(queryDecoded) : undefined
 
