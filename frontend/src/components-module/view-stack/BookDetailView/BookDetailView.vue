@@ -21,7 +21,7 @@ const props = defineProps<{
 const {
     target: { id, data, deleteItem, toggleFavorite },
     listview: { listview, paginationData },
-    listviewController: { viewMode, fitType, columnNum },
+    listviewController: { viewMode, fitType, columnNum, editableLockOn },
     selector: { selected, lastSelected, update: updateSelect },
     paneState,
     operators
@@ -80,7 +80,7 @@ const menu = useDynamicPopupMenu<BookImage>(bookImage => [
 
                     <template #right>
                         <Button square icon="heart" :type="data?.favorite ? 'danger' : 'secondary'" @click="toggleFavorite"/>
-                        <!-- TODO book的编辑锁 -->
+                        <Button square :mode="editableLockOn ? 'filled' : undefined" :type="editableLockOn ? 'danger' : undefined" :icon="editableLockOn ? 'lock-open' : 'lock'" @click="editableLockOn = !editableLockOn"/>
                         <Separator/>
                         <DataRouter/>
                         <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
@@ -94,7 +94,7 @@ const menu = useDynamicPopupMenu<BookImage>(bookImage => [
 
             <PaneLayout :show-pane="paneState.visible.value">
                 <IllustImageDataset :data="paginationData.data" :query-instance="paginationData.proxy"
-                                    :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable droppable
+                                    :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
                                     :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                                     @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event as BookImage)"
                                     @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>

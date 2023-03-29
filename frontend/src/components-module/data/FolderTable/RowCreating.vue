@@ -40,7 +40,7 @@ const cancel = () => emit.updateCreatePosition(undefined)
 </script>
 
 <template>
-    <tr :class="$style.tr">
+    <tr class="selected">
         <td :colspan="mode === 'std' ? 5 : 3">
             <span :style="{'padding-left': `${indent * 1.7}em`}" :class="{'mr-m1': indent > 0}"/>
             <ElementPopupMenu :items="selectMenuItems" position="bottom" align="left" v-slot="{ setEl, popup }">
@@ -52,15 +52,3 @@ const cancel = () => emit.updateCreatePosition(undefined)
         </td>
     </tr>
 </template>
-
-<style module lang="sass">
-@import "../../../styles/base/color"
-
-//creating row总是被选中的底色
-.tr
-    background-color: $light-mode-primary
-    color: $light-mode-text-inverted-color
-    @media (prefers-color-scheme: dark)
-        background-color: $dark-mode-primary
-        color: $dark-mode-text-inverted-color
-</style>

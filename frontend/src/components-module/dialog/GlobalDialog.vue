@@ -2,13 +2,16 @@
 import { DialogBox } from "@/components/interaction"
 import {
     useInternalService,
-    SourceDataEditorProps, MetaTagEditorProps, CreatingCollectionProps, CreatingBookProps, AddIllustProps
+    SourceDataEditorProps, MetaTagEditorProps, CreatingCollectionProps, CreatingBookProps,
+    AddIllustProps, AddToFolderProps, CloneImageProps
 } from "./context"
 import SourceDataEditor from "./SourceDataEditor/SourceDataEditor.vue"
 import MetaTagEditor from "./MetaTagEditor/MetaTagEditor.vue"
 import CreatingCollection from "./CreatingCollection/CreatingCollection.vue"
 import AddIllust from "./AddIllust/AddIllust.vue"
 import CreatingBook from "./CreatingBook/CreatingBook.vue"
+import AddToFolder from "./AddToFolder/AddToFolder.vue"
+import CloneImage from "./CloneImage/CloneImage.vue"
 
 const { context, close } = useInternalService()
 
@@ -21,6 +24,8 @@ const { context, close } = useInternalService()
         <CreatingCollection v-else-if="context!.type === 'creatingCollection'" :p="context!.props as CreatingCollectionProps" @close="close"/>
         <CreatingBook v-else-if="context!.type === 'creatingBook'" :p="context!.props as CreatingBookProps" @close="close"/>
         <AddIllust v-else-if="context!.type === 'addIllust'" :p="context!.props as AddIllustProps" @close="close"/>
+        <AddToFolder v-else-if="context!.type === 'addToFolder'" :p="context!.props as AddToFolderProps" @close="close"/>
+        <CloneImage v-else-if="context!.type === 'cloneImage'" :p="context!.props as CloneImageProps" @close="close"/>
     </DialogBox>
 </template>
 

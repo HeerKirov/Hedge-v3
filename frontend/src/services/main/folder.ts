@@ -6,16 +6,17 @@ import {
 } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
 import { flatResponse, mapResponse } from "@/functions/http-client"
+import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator, useRouterQueryNumber } from "@/modules/router"
 import { DetailViewState, useDetailViewState, useRouterViewState } from "@/services/base/detail-view-state"
-import { useMessageBox } from "@/modules/message-box"
+import { useListViewContext } from "@/services/base/list-view-context"
+import { useSelectedState } from "@/services/base/selected-state"
+import { useSelectedPaneState } from "@/services/base/selected-pane-state"
+import { useIllustViewController } from "@/services/base/view-controller"
+import { installVirtualViewNavigation } from "@/components/data"
+import { useImageDatasetOperators } from "@/services/common/illust"
+import { useFolderTableSearch } from "@/services/common/folder"
 import { installation } from "@/utils/reactivity"
-import { useListViewContext } from "@/services/base/list-view-context";
-import { useSelectedState } from "@/services/base/selected-state";
-import { useSelectedPaneState } from "@/services/base/selected-pane-state";
-import { useIllustViewController } from "@/services/base/view-controller";
-import { installVirtualViewNavigation } from "@/components/data";
-import { useImageDatasetOperators } from "@/services/common/illust";
 
 export const [installFolderContext, useFolderContext] = installation(function () {
     const viewState = useRouterViewState<number>(useRouterQueryNumber("MainFolder", "detail"))
@@ -26,9 +27,11 @@ export const [installFolderContext, useFolderContext] = installation(function ()
 
     const operators = useOperators(listview.data, paneState, viewState)
 
+    const search = useFolderTableSearch(listview.data)
+
     const editableLockOn = useLocalStorage("folder/list/editable", false)
 
-    return {viewState, paneState, listview, operators, editableLockOn}
+    return {viewState, paneState, listview, operators, search, editableLockOn}
 })
 
 function useFolderListview() {

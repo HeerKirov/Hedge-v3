@@ -51,7 +51,7 @@ const contextmenu = () => {
 </script>
 
 <template>
-    <tr :class="{[$style.tr]: true, [$style.selected]: isSelected}" @click="click" @dblclick="dblclick" @contextmenu="contextmenu">
+    <tr :class="{'selected': isSelected}" @click="click" @dblclick="dblclick" @contextmenu="contextmenu">
         <td class="w-50 pl-1" :ref="el => elementRefs.setElement(row.id, el)" :draggable="true" v-bind="dragEvents">
             <div :class="$style['top-drop-area']" :style="{'margin-left': `calc(${indent * 1.7}em + 1.5rem)`}" v-bind="topDropEvents"/>
             <div :class="$style['bottom-drop-area']" :style="{'margin-left': `calc(${indent * 1.7}em + 1.5rem)`}" v-bind="bottomDropEvents"/>
@@ -83,22 +83,6 @@ const contextmenu = () => {
 @import "../../../styles/base/color"
 @import "../../../styles/base/size"
 
-//鼠标指上去有变化的颜色。用透明度背景色来实现
-.tr:hover
-    background-color: rgba(#000000, 0.1)
-    @media (prefers-color-scheme: dark)
-        background-color: rgba(#FFFFFF, 0.1)
-.selected
-    background-color: $light-mode-primary
-    color: $light-mode-text-inverted-color
-    @media (prefers-color-scheme: dark)
-        background-color: $dark-mode-primary
-        color: $dark-mode-text-inverted-color
-    &:hover
-        background-color: rgba($light-mode-primary, 0.8)
-        @media (prefers-color-scheme: dark)
-            background-color: rgba($dark-mode-primary, 0.8)
-
 .jump-target
     border-radius: $radius-size-std
     padding: $spacing-half $spacing-1
@@ -106,9 +90,6 @@ const contextmenu = () => {
         border: solid 2px $light-mode-warning
     @media (prefers-color-scheme: dark)
         border: solid 2px $dark-mode-warning
-
-.tr
-    position: relative
 
 .top-drop-area
     position: absolute

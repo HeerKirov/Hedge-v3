@@ -149,6 +149,28 @@ export function useFetchListEndpoint<PATH, MODEL, GE extends BasicException>(opt
         list: options.list?.(httpClient),
         get: options.get(httpClient)
     }
+
+    const fetchByPaths = async (paths: PATH[]): Promise<(MODEL | null)[] | undefined> => {
+        if(method.list) {
+            const res = await method.list(paths)
+            if(res.ok) {
+                return res.data
+            }else if(res.exception && res.exception.code !== "NOT_FOUND") {
+                //not found类错误会被包装，因此不会抛出
+                handleException(res.exception)
+            }
+        }else{
+            const res = flatResponse(await Promise.all(paths.map(path => method.get(path))))
+            if(res.ok) {
+                return res.data.map(i => i ?? null)
+            }else if(res.exception && res.exception.code !== "NOT_FOUND") {
+                //not found类错误会被包装，因此不会抛出
+                handleException(res.exception)
+            }
+        }
+        return undefined
+    }
+
     const paths = options.paths
 
     const loading: Ref<boolean> = ref(true)
@@ -253,27 +275,6 @@ export function useFetchListEndpoint<PATH, MODEL, GE extends BasicException>(opt
             }
             loading.value = false
         }
-    }
-
-    const fetchByPaths = async (paths: PATH[]): Promise<(MODEL | null)[] | undefined> => {
-        if(method.list) {
-            const res = await method.list(paths)
-            if(res.ok) {
-                return res.data
-            }else if(res.exception && res.exception.code !== "NOT_FOUND") {
-                //not found类错误会被包装，因此不会抛出
-                handleException(res.exception)
-            }
-        }else{
-            const res = flatResponse(await Promise.all(paths.map(path => method.get(path))))
-            if(res.ok) {
-                return res.data.map(i => i ?? null)
-            }else if(res.exception && res.exception.code !== "NOT_FOUND") {
-                //not found类错误会被包装，因此不会抛出
-                handleException(res.exception)
-            }
-        }
-        return undefined
     }
 
     return {data, loading, refreshData}

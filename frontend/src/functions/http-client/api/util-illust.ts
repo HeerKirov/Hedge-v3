@@ -142,7 +142,7 @@ export interface FolderSituationForm {
      */
     folderId: number
     /**
-     * 是否只返回已在画集中存在的项。
+     * 是否只返回已在目录中存在的项。
      */
     onlyExists?: boolean
 }

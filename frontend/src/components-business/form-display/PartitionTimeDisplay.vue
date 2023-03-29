@@ -22,7 +22,7 @@ const menu = usePopupMenu([
 </script>
 
 <template>
-    <div class="pt-1">
+    <div>
         <p class="secondary-text" @contextmenu="menu.popup()">时间分区 {{text}}</p>
     </div>
 </template>

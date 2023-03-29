@@ -1,4 +1,5 @@
 import "./utils/layout.sass"
 import "./utils/display.sass"
 import "./utils/format.sass"
+import "./utils/table.sass"
 import "./App.sass"

@@ -68,42 +68,9 @@ defineExpose({
 </script>
 
 <template>
-    <table :class="$style.table">
+    <table class="table round hover standard-td w-100">
         <tbody>
             <RowList :data="folders ?? []" :parent-id="null" :indent="0"/>
         </tbody>
     </table>
 </template>
-
-<style module lang="sass">
-@import "../../../styles/base/color"
-@import "../../../styles/base/size"
-
-.table
-    border-collapse: collapse
-    border-spacing: 0
-    white-space: nowrap
-    width: 100%
-
-    tr
-        line-height: 1.8
-
-    //首行和尾行，在开始和结束位置有圆角
-    tr:first-child
-        td:first-child
-            border-top-left-radius: $radius-size-std
-        td:last-child
-            border-top-right-radius: $radius-size-std
-    tr:last-child
-        td:first-child
-            border-bottom-left-radius: $radius-size-std
-        td:last-child
-            border-bottom-right-radius: $radius-size-std
-
-    //非最后一行，有底边的边框
-    tr:not(:last-child)
-        border: solid $light-mode-border-color
-        border-width: 0 0 1px
-        @media (prefers-color-scheme: dark)
-            border-color: $dark-mode-border-color
-</style>

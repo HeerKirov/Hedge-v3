@@ -5,13 +5,17 @@ import { SourceDataEditor, SourceDataEditorProps, useSourceDataEditor } from "./
 import { CreatingCollection, CreatingCollectionProps, useCreatingCollection } from "./CreatingCollection/context"
 import { CreatingBook, CreatingBookProps, useCreatingBook } from "./CreatingBook/context"
 import { AddIllust, AddIllustProps, useAddIllust } from "./AddIllust/context"
+import { AddToFolder, AddToFolderProps, useAddToFolder } from "./AddToFolder/context"
+import { CloneImage, CloneImageProps, useCloneImage } from "./CloneImage/context"
 
 export type {
     SourceDataEditorProps,
     MetaTagEditorProps,
     CreatingCollectionProps,
     CreatingBookProps,
-    AddIllustProps
+    AddIllustProps,
+    AddToFolderProps,
+    CloneImageProps
 }
 
 export interface DialogService {
@@ -20,6 +24,8 @@ export interface DialogService {
     creatingCollection: CreatingCollection
     creatingBook: CreatingBook
     addIllust: AddIllust
+    addToFolder: AddToFolder
+    cloneImage: CloneImage
 }
 
 type ServiceContext
@@ -28,6 +34,8 @@ type ServiceContext
     | { type: "creatingCollection", props: CreatingCollectionProps }
     | { type: "creatingBook", props: CreatingBookProps }
     | { type: "addIllust", props: AddIllustProps }
+    | { type: "addToFolder", props: AddToFolderProps }
+    | { type: "cloneImage", props: CloneImageProps }
 
 export type Push = (nc: ServiceContext) => void
 
@@ -61,6 +69,8 @@ export const [installInternalService, useInternalService] = installation(functio
     const creatingCollection = useCreatingCollection(push)
     const creatingBook = useCreatingBook(push)
     const addIllust = useAddIllust(push)
+    const addToFolder = useAddToFolder(push)
+    const cloneImage = useCloneImage(push)
 
     return {
         context,
@@ -70,7 +80,9 @@ export const [installInternalService, useInternalService] = installation(functio
         metaTagEditor,
         creatingCollection,
         creatingBook,
-        addIllust
+        addIllust,
+        addToFolder,
+        cloneImage
     }
 })
 

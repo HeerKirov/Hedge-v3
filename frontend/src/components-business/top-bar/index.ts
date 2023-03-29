@@ -12,10 +12,11 @@ import SearchInput from "./SearchInput.vue"
 import SearchResultInfo from "./SearchResultInfo.vue"
 import QueryNotificationBadge from "./Query/QueryNotificationBadge.vue"
 import QueryResult from "./Query/QueryResult.vue"
+import FileWatcher from "./FileWatcher.vue"
 
 export { QueryNotificationBadge, QueryResult }
 export { SearchInput, SearchResultInfo }
 export { AttachFilter }
 export { FilterButton, SelectButton, ToggleButton, FitTypeButton, ColumnNumButton, CollectionModeButton }
-export { DataRouter, ZoomController }
+export { DataRouter, ZoomController, FileWatcher }
 export type { AttachTemplate }

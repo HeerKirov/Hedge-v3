@@ -13,7 +13,7 @@ import { useFolderDetailPanel } from "@/services/main/folder"
 const {
     data, deleteItem, viewState,
     listview: { listview, paginationData },
-    listviewController: { viewMode, fitType, columnNum },
+    listviewController: { viewMode, fitType, columnNum, editableLockOn },
     selector: { selected, lastSelected, update: updateSelect },
     paneState,
     operators
@@ -63,7 +63,7 @@ const menu = useDynamicPopupMenu<FolderImage>(folderImage => [
                 </template>
 
                 <template #right>
-                    <!-- TODO folder的编辑锁 -->
+                    <Button square :mode="editableLockOn ? 'filled' : undefined" :type="editableLockOn ? 'danger' : undefined" :icon="editableLockOn ? 'lock-open' : 'lock'" @click="editableLockOn = !editableLockOn"/>
                     <DataRouter/>
                     <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
                     <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
@@ -76,7 +76,7 @@ const menu = useDynamicPopupMenu<FolderImage>(folderImage => [
 
         <PaneLayout :show-pane="paneState.visible.value">
             <IllustImageDataset :data="paginationData.data" :query-instance="paginationData.proxy"
-                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable droppable
+                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
                                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                                 @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event as FolderImage)"
                                 @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>

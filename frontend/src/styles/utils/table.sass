@@ -1,0 +1,53 @@
+@import "../base/color"
+@import "../base/size"
+
+.table
+  border-collapse: collapse
+  border-spacing: 0
+
+
+  tr
+    position: relative
+
+  tr.selected
+    background-color: $light-mode-primary
+    color: $light-mode-text-inverted-color
+    @media (prefers-color-scheme: dark)
+      background-color: $dark-mode-primary
+      color: $dark-mode-text-inverted-color
+
+  //非最后一行，有底边的边框
+  tr:not(:last-child)
+    border: solid $light-mode-border-color
+    border-width: 0 0 1px
+    @media (prefers-color-scheme: dark)
+      border-color: $dark-mode-border-color
+
+.table.standard-td
+  white-space: nowrap
+  tr
+    line-height: 1.8
+
+.table.round
+  //首行和尾行，在开始和结束位置有圆角
+  tr:first-child
+    td:first-child
+      border-top-left-radius: $radius-size-std
+    td:last-child
+      border-top-right-radius: $radius-size-std
+  tr:last-child
+    td:first-child
+      border-bottom-left-radius: $radius-size-std
+    td:last-child
+      border-bottom-right-radius: $radius-size-std
+
+.table.hover
+  //鼠标指上去有变化的颜色。用透明度背景色来实现
+  tr:not(.selected):hover
+    background-color: rgba(#000000, 0.1)
+    @media (prefers-color-scheme: dark)
+      background-color: rgba(#FFFFFF, 0.1)
+  tr.selected:hover
+    background-color: rgba($light-mode-primary, 0.8)
+    @media (prefers-color-scheme: dark)
+      background-color: rgba($dark-mode-primary, 0.8)

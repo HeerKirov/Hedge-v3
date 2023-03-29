@@ -299,7 +299,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
 
     const addToFolder = (illust: T) => {
         const items = getEffectedItems(illust)
-        // TODO addToFolderService!.addToFolder(items, () => toast.toast("已添加", "success", "已将图像添加到指定目录。"))
+        dialog.addToFolder.addToFolder(items, () => toast.toast("已添加", "success", "已将图像添加到指定目录。"))
     }
 
     const deleteItem = async (illust: T) => {
@@ -329,17 +329,13 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
             toast.toast("选择项过多", "warning", "选择项过多。属性克隆中，请使用1或2个选择项。")
             return
         }
-        // TODO cloneImageService!.clone({from: items[0], to: items.length >= 2 ? items[1] : undefined}, (from, _, deleted) => {
-        //     if(deleted) {
-        //         const index = paginationData.proxy.syncOperations.find(i => i.id === from)
-        //         if(index !== undefined) {
-        //             paginationData.proxy.syncOperations.remove(index)
-        //         }
-        //         toast.toast("完成", "success", "已完成属性克隆。源图像已删除。")
-        //     }else{
-        //         toast.toast("完成", "success", "已完成属性克隆。")
-        //     }
-        // })
+        dialog.cloneImage.clone({from: items[0], to: items.length >= 2 ? items[1] : undefined}, (from, _, deleted) => {
+            if(deleted) {
+                toast.toast("完成", "success", "已完成属性克隆。源图像已删除。")
+            }else{
+                toast.toast("完成", "success", "已完成属性克隆。")
+            }
+        })
     }
 
     const removeItemFromCollection = async (illust: T) => {
@@ -364,7 +360,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
     }
 
     const dataDrop = dataDropOptions === undefined ? () => {} :
-    dataDropOptions.dropInType === "illust" || dataDropOptions.dropInType === "partition" ? (insertIndex: number, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
+    dataDropOptions.dropInType === "illust" || dataDropOptions.dropInType === "partition" ? (_: number, __: CoverIllust[], ___: "ADD" | "MOVE") => {
         //FUTURE 以后再实现illust/partition区域的拖放功能
     } : dataDropOptions.dropInType === "collection" ? async (_: number, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
         const path = unref(dataDropOptions.path)

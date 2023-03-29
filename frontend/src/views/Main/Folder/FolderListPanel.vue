@@ -2,7 +2,7 @@
 import { Button, Block } from "@/components/universal"
 import { Group, PaneLayout, BasePane } from "@/components/layout"
 import { TopBarLayout, MiddleLayout } from "@/components/layout"
-import { SearchInput } from "@/components-business/top-bar"
+import { SearchInput, SearchResultInfo } from "@/components-business/top-bar"
 import { FolderTable } from "@/components-module/data"
 import { useFolderContext } from "@/services/main/folder"
 import FolderDetailPane from "./FolderDetailPane.vue"
@@ -11,7 +11,8 @@ const {
     paneState,
     listview: { loading, data },
     editableLockOn,
-    operators: { createPosition, openCreatePosition, createItem, setPinned, moveItem, deleteItem, openDetail }
+    operators: { createPosition, openCreatePosition, createItem, setPinned, moveItem, deleteItem, openDetail },
+    search: { searchText, searchInfo, folderTableRef, next, prev }
 } = useFolderContext()
 
 const updateSelected = (folderId: number | null) => {
@@ -28,12 +29,12 @@ const updateSelected = (folderId: number | null) => {
     <TopBarLayout>
         <template #top-bar>
             <MiddleLayout>
-                <SearchInput placeholder="在此处搜索"/>
+                <SearchInput placeholder="在此处搜索" v-model:value="searchText" @enter="nv => { if(!nv) next() }"/>
+                <SearchResultInfo v-if="searchInfo !== null" :current="searchInfo.current" :total="searchInfo.total" @prev="prev" @next="next"/>
 
                 <template #right>
                     <Group single-line>
-                        <Button v-if="editableLockOn" square mode="filled" type="danger" icon="lock-open" @click="editableLockOn = false"/>
-                        <Button v-else square icon="lock" @click="editableLockOn = true"/>
+                        <Button square :mode="editableLockOn ? 'filled' : undefined" :type="editableLockOn ? 'danger' : undefined" :icon="editableLockOn ? 'lock-open' : 'lock'" @click="editableLockOn = !editableLockOn"/>
                         <Button square icon="plus" @click="openCreatePosition"/>
                     </Group>
                 </template>
@@ -48,7 +49,7 @@ const updateSelected = (folderId: number | null) => {
             </template>
 
             <Block :class="$style['table-block']">
-                <FolderTable v-if="!loading && (data?.length || createPosition)" :folders="data" editable :droppable="editableLockOn" v-model:create-position="createPosition"
+                <FolderTable v-if="!loading && (data?.length || createPosition)" ref="folderTableRef" :folders="data" editable :droppable="editableLockOn" v-model:create-position="createPosition"
                              :selected="paneState.detailPath.value ?? undefined"
                              @update:selected="updateSelected" @update:pinned="setPinned"
                              @create="createItem" @move="moveItem" @delete="deleteItem" @enter="openDetail"/>

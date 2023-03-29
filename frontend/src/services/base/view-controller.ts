@@ -11,6 +11,7 @@ export interface IllustViewController {
     columnNum: Ref<number>
     collectionMode: Ref<boolean>
     viewMode: Ref<"row" | "grid">
+    editableLockOn: Ref<boolean>
 }
 
 /**
@@ -31,9 +32,9 @@ export interface BookViewController {
 
 export function useIllustViewController(queryFilterIllustType?: Ref<IllustType>): IllustViewController {
     const storage = useLocalStorage<{
-        fitType: "cover" | "contain", columnNum: number, collectionMode: boolean, viewMode: "row" | "grid"
+        fitType: "cover" | "contain", columnNum: number, collectionMode: boolean, viewMode: "row" | "grid", editableLockOn: boolean
     }>("illust/list/view-controller", () => ({
-        fitType: "cover", columnNum: 8, collectionMode: false, viewMode: "grid"
+        fitType: "cover", columnNum: 8, collectionMode: false, viewMode: "grid", editableLockOn: false
     }), true)
 
     if(queryFilterIllustType !== undefined) watch(() => storage.value.collectionMode, collectionMode => queryFilterIllustType.value = collectionMode ? "COLLECTION" : "IMAGE", {immediate: true})
@@ -42,7 +43,8 @@ export function useIllustViewController(queryFilterIllustType?: Ref<IllustType>)
         fitType: toRef(storage, "fitType"),
         columnNum: toRef(storage, "columnNum"),
         collectionMode: toRef(storage, "collectionMode"),
-        viewMode: toRef(storage, "viewMode")
+        viewMode: toRef(storage, "viewMode"),
+        editableLockOn: toRef(storage, "editableLockOn")
     }
 }
 
