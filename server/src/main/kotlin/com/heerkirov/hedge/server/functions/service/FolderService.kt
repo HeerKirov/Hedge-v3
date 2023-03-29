@@ -324,6 +324,8 @@ class FolderService(private val data: DataRepository,
             data.db.delete(FolderImageRelations) { it.folderId eq folder.id }
 
             bus.emit(FolderDeleted(folder.id, folder.type))
+            //删除folder时，也需要发送pinChanged事件
+            if(folder.pin != null) bus.emit(FolderPinChanged(folder.id, false, null))
 
             val children = data.db.sequenceOf(Folders).filter { it.parentId eq folder.id }
             for (child in children) {
