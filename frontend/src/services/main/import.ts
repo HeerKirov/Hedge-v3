@@ -4,12 +4,12 @@ import { flatResponse } from "@/functions/http-client"
 import { Tagme } from "@/functions/http-client/api/illust"
 import { ImportQueryFilter } from "@/functions/http-client/api/import"
 import { OrderTimeType } from "@/functions/http-client/api/setting-import"
-import { useFetchEndpoint, useFetchHelper, useRetrieveHelper } from "@/functions/fetch"
+import { useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useImportImageViewController } from "@/services/base/view-controller"
-import { useSettingSite } from "@/services/setting"
+import { useSettingImportData, useSettingSite } from "@/services/setting"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useDroppingFileListener } from "@/modules/drag"
@@ -20,6 +20,7 @@ import { date, LocalDate, LocalDateTime } from "@/utils/datetime"
 
 export const [installImportContext] = installation(function () {
     const importService = useImportService()
+    const watcher = useImportFileWatcher()
     const listview = useListView()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("import-image", selector)
@@ -30,7 +31,7 @@ export const [installImportContext] = installation(function () {
     installVirtualViewNavigation()
     useSettingSite()
 
-    return {paneState, importService, listview, selector, listviewController, operators}
+    return {paneState, watcher, importService, listview, selector, listviewController, operators}
 })
 
 function useImportService() {
@@ -78,6 +79,23 @@ function useImportService() {
     }
 
     return {progress, progressing, addFiles}
+}
+
+function useImportFileWatcher() {
+    const fetch = usePostFetchHelper(client => client.import.watcher.update)
+
+    const { data: state } = useFetchReactive({
+        get: client => client.import.watcher.get,
+        eventFilter: ["backend/path-watcher/status-changed"]
+    })
+
+    const { data: importSettingData } = useSettingImportData()
+
+    const paths = computed(() => importSettingData.value?.watchPaths ?? [])
+
+    const setState = async (opened: boolean) => await fetch({isOpen: opened})
+
+    return {state, paths, setState}
 }
 
 function useListView() {

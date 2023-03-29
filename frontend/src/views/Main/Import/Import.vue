@@ -3,7 +3,7 @@ import { computed } from "vue"
 import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
-import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
+import { DataRouter, FitTypeButton, ColumnNumButton, FileWatcher } from "@/components-business/top-bar"
 import { ImportDetailPane } from "@/components-module/common"
 import { ImportImageDataset } from "@/components-module/data"
 import { ImportImage } from "@/functions/http-client/api/import"
@@ -15,6 +15,7 @@ import ImportDialog from "./ImportDialog.vue"
 const {
     paneState,
     importService: { progress, progressing },
+    watcher: { state, setState, paths },
     listview: { listview, paginationData, anyData },
     listviewController: { viewMode, fitType, columnNum },
     selector: { selected, lastSelected, update: updateSelect },
@@ -26,6 +27,8 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "separator"},
     {type: "radio", checked: viewMode.value === "row", label: "列表模式", click: () => viewMode.value = "row"},
     {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"},
+    {type: "separator"},
+    {type: "checkbox", label: "启用自动导入", checked: !!state.value?.isOpen, click: () => setState(!state.value?.isOpen)},
     {type: "separator"},
     {type: "normal", label: "确认导入图库", enabled: anyData.value, click: save}
 ])
@@ -46,6 +49,7 @@ const dropEvents = useDroppableForFile()
             <MiddleLayout>
                 <template #left>
                     <Button type="success" icon="file" @click="openDialog">添加文件</Button>
+                    <FileWatcher v-if="state?.isOpen" class="ml-1" :paths="paths" :statistic-count="state.statisticCount" :errors="state.errors" @stop="setState(false)"/>
                 </template>
                 <template #right>
                     <Button v-if="anyData" type="primary" icon="check" @click="save">导入图库</Button>

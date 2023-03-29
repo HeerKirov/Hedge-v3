@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue"
 import { Block } from "@/components/universal"
+import { Colors } from "@/constants/ui"
 import { onOutsideClick } from "@/utils/sensors"
 
 // == Element Popup Callout 弹出浮动块组件 ==
@@ -11,6 +12,8 @@ import { onOutsideClick } from "@/utils/sensors"
 
 const props = defineProps<{
     visible?: boolean
+    popupBlockColor?: Colors
+    popupBlockMode?: "std" | "transparent" | "light" | "filled" | "shadow"
 }>()
 
 const emit = defineEmits<{
@@ -43,7 +46,7 @@ onOutsideClick(divRef, () => {
 <template>
     <div ref="divRef" :class="$style.root">
         <slot :visible="visible" :click="click"/>
-        <Block v-if="visible" :class="$style.popup">
+        <Block v-if="visible" :class="$style.popup" :mode="popupBlockMode" :color="popupBlockColor">
             <slot name="popup"/>
         </Block>
     </div>
