@@ -107,8 +107,3 @@ data class FindSimilarTaskQueryFilter(@Limit val limit: Int,
                                       @Offset val offset: Int,
                                       @Order(options = ["id", "recordTime"])
                                       val order: List<OrderItem>? = null)
-
-data class FindSimilarResultQueryFilter(@Limit val limit: Int,
-                                        @Offset val offset: Int,
-                                        @Order(options = ["id", "orderedId", "recordTime"])
-                                        val order: List<OrderItem>? = null)

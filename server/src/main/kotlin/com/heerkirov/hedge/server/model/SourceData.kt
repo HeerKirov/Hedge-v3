@@ -12,43 +12,43 @@ data class SourceData(val id: Int,
                       /**
                         * 来源网站的代号。
                         */
-                       val sourceSite: String,
+                      val sourceSite: String,
                       /**
                         * 来源网站中的图像id。
                         */
-                       val sourceId: Long,
+                      val sourceId: Long,
                       /**
                         * 原数据的标题信息，有些会有，比如pixiv。
                         */
-                       val title: String? = null,
+                      val title: String? = null,
                       /**
                         * 原数据的描述信息，有些会有，比如pixiv。
                         */
-                       val description: String? = null,
+                      val description: String? = null,
                       /**
                         * 原数据的关系信息。
                         */
-                       val relations: List<Int>? = null,
+                      val relations: List<Int>? = null,
                       /**
                         * 关系信息的数量的缓存。
                         */
-                       val cachedCount: SourceCount,
+                      val cachedCount: SourceCount,
                       /**
                         * 内容是否为空的缓存标记。
                         */
-                       val empty: Boolean,
+                      val empty: Boolean,
                       /**
                         * 此项的编辑状态。能自动转换。
                         */
-                       val status: SourceEditStatus,
+                      val status: SourceEditStatus,
                       /**
                         * 初次建立的真实时间。
                         */
-                       val createTime: LocalDateTime,
+                      val createTime: LocalDateTime,
                       /**
                         * 上次更新的真实更新时间。
                         */
-                       val updateTime: LocalDateTime) {
+                      val updateTime: LocalDateTime) {
 
     data class SourceCount(val tagCount: Int, val bookCount: Int, val relationCount: Int)
 

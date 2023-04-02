@@ -355,16 +355,26 @@ CREATE UNIQUE INDEX system_db.history_record__index ON history_record(type, sequ
 CREATE TABLE system_db.find_similar_task(
     id              INTEGER PRIMARY KEY,
     selector        TEXT NOT NULL,
-    config          TEXT,
+    config          TEXT NOT NULL,
     record_time     TIMESTAMP NOT NULL
 );
 
 -- find similar: 结果表
 CREATE TABLE system_db.find_similar_result(
     id              INTEGER PRIMARY KEY,
-    key             TEXT NOT NULL,
-    type            TINYINT NOT NULL,
-    image_ids       TEXT NOT NULL,
-    ordered         INTEGER NOT NULL,
+    summary_types   TINYINT NOT NULL,
+    images          TEXT NOT NULL,
+    relations       TEXT NOT NULL,
+    sort_priority   INTEGER NOT NULL,
     record_time     TIMESTAMP NOT NULL
 );
+
+-- find similar: 忽略关系表
+CREATE TABLE system_db.find_similar_ignored(
+    id              INTEGER PRIMARY KEY,
+    first_target    VARCHAR(16) NOT NULL,
+    second_target   VARCHAR(16) NOT NULL,
+    record_time     TIMESTAMP NOT NULL
+);
+CREATE INDEX system_db.find_similar_ignored__index ON find_similar_ignored(first_target, second_target);
+CREATE INDEX system_db.find_similar_ignored_re__index ON find_similar_ignored(second_target, first_target);
