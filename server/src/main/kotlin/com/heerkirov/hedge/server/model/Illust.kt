@@ -124,7 +124,7 @@ data class Illust(val id: Int,
 }
 
 /**
- * 关联组关联关系。
+ * 关联组关联关系。此关系是双边的，每次总是维护成对的记录。
  */
 data class AssociateRelation(val illustId: Int, val relatedIllustId: Int)
 

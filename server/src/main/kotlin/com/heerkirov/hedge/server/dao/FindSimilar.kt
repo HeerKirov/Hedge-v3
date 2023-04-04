@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.model.FindSimilarResult
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.ktorm.type.composition
 import com.heerkirov.hedge.server.utils.ktorm.type.json
+import com.heerkirov.hedge.server.utils.ktorm.type.unionList
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.schema.*
 
@@ -40,7 +41,7 @@ object FindSimilarIgnores : BaseTable<FindSimilarIgnored>("find_similar_ignored"
 object FindSimilarResults : BaseTable<FindSimilarResult>("find_similar_result", schema = "system_db") {
     val id = int("id").primaryKey()
     val summaryTypes = composition<FindSimilarResult.SummaryTypes>("summary_types")
-    val images = json("images", typeRef<List<FindSimilarResult.ImageUnit>>())
+    val images = unionList("images")
     val relations = json("images", typeRef<List<FindSimilarResult.RelationUnit>>())
     val sortPriority = int("sort_priority")
     val recordTime = datetime("record_time")

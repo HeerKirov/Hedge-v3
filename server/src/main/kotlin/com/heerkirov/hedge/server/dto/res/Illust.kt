@@ -41,7 +41,7 @@ data class IllustImageSourceDataRes(val sourceSite: String?, val sourceSiteName:
                                     val sourceId: Long?, val sourcePart: Int?,
                                     val empty: Boolean, val status: SourceEditStatus,
                                     val title: String?, val description: String?,
-                                    val tags: List<SourceTagDto>?, val books: List<SourceBookDto>?, val relations: List<Int>?)
+                                    val tags: List<SourceTagDto>?, val books: List<SourceBookDto>?, val relations: List<Long>?)
 
 data class IllustParent(val id: Int, val thumbnailFile: String, val childrenCount: Int)
 

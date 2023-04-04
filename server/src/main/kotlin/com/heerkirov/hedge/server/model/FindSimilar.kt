@@ -3,6 +3,7 @@ package com.heerkirov.hedge.server.model
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.heerkirov.hedge.server.enums.SimilarityType
+import com.heerkirov.hedge.server.enums.SourceMarkType
 import com.heerkirov.hedge.server.utils.composition.Composition
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -44,6 +45,19 @@ data class FindSimilarTask(val id: Int,
 
     data class TaskSelectorOfSourceTag(val sourceSite: String, val sourceTags: List<String>) : TaskSelector
 
+    /**
+     * @param findBySourceIdentity 根据source identity是否相等做判定。
+     * @param findBySourceRelation 根据source relation是否有关、source book是否同属一个做判定。
+     * @param findBySourceMark 根据source mark的标记做判定。
+     * @param findBySimilarity 根据相似度做判定。
+     * @param similarityThreshold 判定为高相似度的阈值。
+     * @param similarityTooHighThreshold 判定为极高相似度的阈值，
+     * @param filterByOtherImport 将所有import image加入匹配检测。
+     * @param filterByPartition 将所有相同partitionTime的项加入匹配检测。
+     * @param filterByAuthor 将所有拥有相同author的项加入匹配检测。
+     * @param filterByTopic 将所有拥有相同topic的项加入匹配检测。
+     * @param filterBySourceTagType 按照给出的sourceTagType，将所有拥有相同的这一类type的sourceTag的项加入匹配检测。
+     */
     data class TaskConfig(val findBySourceIdentity: Boolean,
                           val findBySourceRelation: Boolean,
                           val findBySourceMark: Boolean,
@@ -81,7 +95,7 @@ data class FindSimilarResult(val id: Int,
                              /**
                               * 此待处理结果包含的所有image。
                               */
-                             val images: List<ImageUnit>,
+                             val images: List<String>,
                              /**
                               * 包含的所有关系。
                               */
@@ -106,21 +120,17 @@ data class FindSimilarResult(val id: Int,
         }
     }
 
-    enum class ImageUnitType { IMAGE, IMPORT_IMAGE }
+    data class RelationUnit(val a: String, val b: String, val type: SimilarityType, val params: RelationInfo?)
 
-    data class ImageUnit(val type: ImageUnitType, val id: Int)
+    sealed interface RelationInfo
 
-    data class RelationUnit(val first: ImageUnit, val second: ImageUnit, val type: SimilarityType, val params: RelationTypeParams)
+    data class SourceIdentityRelationInfo(val site: String, val sourceId: Long, val sourcePart: Int?) : RelationInfo
 
-    sealed interface RelationTypeParams
+    data class SourceRelatedRelationInfo(val hasRelations: Boolean, val sameBooks: List<Int>) : RelationInfo
 
-    object EmptyParam : RelationTypeParams
+    data class SourceMarkRelationInfo(val markType: SourceMarkType) : RelationInfo
 
-    data class SourceIdentityParams(val site: String, val sourceId: Long, val sourcePart: Int?) : RelationTypeParams
+    data class SimilarityRelationInfo(val similarity: Double) : RelationInfo
 
-    data class SourceRelatedParams(val hasRelations: Boolean, val sameBooks: List<Int>) : RelationTypeParams
-
-    data class SimilarityParams(val similarity: Double) : RelationTypeParams
-
-    data class ExistedParams(val sameCollectionId: Int?, val sameBooks: List<Int>, val sameAssociate: Boolean) : RelationTypeParams
+    data class ExistedRelationInfo(val sameCollectionId: Int?, val sameBooks: List<Int>, val sameAssociate: Boolean) : RelationInfo
 }

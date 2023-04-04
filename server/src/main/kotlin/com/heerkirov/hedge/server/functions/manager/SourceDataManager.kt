@@ -111,7 +111,7 @@ class SourceDataManager(private val data: DataRepository,
                                  description: Opt<String?> = undefined(),
                                  tags: Opt<List<SourceTagForm>> = undefined(),
                                  books: Opt<List<SourceBookForm>> = undefined(),
-                                 relations: Opt<List<Int>> = undefined(),
+                                 relations: Opt<List<Long>> = undefined(),
                                  allowCreate: Boolean = true,
                                  allowUpdate: Boolean = true): Triple<Int?, String?, Long?> {
         val sourceData = data.db.sequenceOf(SourceDatas).firstOrNull { (it.sourceSite eq sourceSite) and (it.sourceId eq sourceId) }

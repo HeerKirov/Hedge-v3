@@ -39,6 +39,38 @@ inline fun <T> Sequence<T>.filterInto(condition: (T) -> Boolean): Pair<List<T>, 
 }
 
 /**
+ * 对列表中进行迭代，迭代对象为列表中的任意两个元素的组合。若列表元素数不足2，则不会有任何迭代。
+ */
+inline fun <T> List<T>.forEachTwo(process: (T, T) -> Unit) {
+    var i = 0
+    while (i < this.size - 1) {
+        var j = i + 1
+        while (j < this.size) {
+            process(this[i], this[j])
+            j += 1
+        }
+        i += 1
+    }
+}
+
+/**
+ * 对列表中进行迭代，迭代对象为列表中的任意两个元素的组合。若列表元素数不足2，则不会有任何迭代。
+ */
+inline fun <T, R> List<T>.mapEachTwo(map: (T, T) -> R): List<R> {
+    val ret = mutableListOf<R>()
+    var i = 0
+    while (i < this.size - 1) {
+        var j = i + 1
+        while (j < this.size) {
+            ret.add(map(this[i], this[j]))
+            j += 1
+        }
+        i += 1
+    }
+    return ret
+}
+
+/**
  * 应用给Iterator的map函数。
  */
 inline fun <T, R> Iterator<T>.map (transform: (T) -> R): List<R> {

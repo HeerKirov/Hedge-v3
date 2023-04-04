@@ -26,7 +26,7 @@ class IllustImageRelatedUpdateForm(val associates: Opt<List<Int>?>, val collecti
 
 class IllustImageSourceDataUpdateForm(val sourceSite: Opt<String?>, val sourceId: Opt<Long?>, val sourcePart: Opt<Int?>,
                                       val title: Opt<String?>, val description: Opt<String?>, val tags: Opt<List<SourceTagForm>>,
-                                      val books: Opt<List<SourceBookForm>>, val relations: Opt<List<Int>>, val status: Opt<SourceEditStatus>)
+                                      val books: Opt<List<SourceBookForm>>, val relations: Opt<List<Long>>, val status: Opt<SourceEditStatus>)
 
 class IllustBatchUpdateForm(val target: List<Int>,
                             val description: Opt<String?>,

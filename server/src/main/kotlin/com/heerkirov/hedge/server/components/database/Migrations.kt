@@ -51,11 +51,11 @@ object MetadataMigrationStrategy : JsonObjectStrategy<Setting>(Setting::class) {
     }
 
     private val DEFAULT_FIND_SIMILAR_TASK_CONF = FindSimilarTask.TaskConfig(
-        findBySourceKey = true,
+        findBySourceIdentity = true,
         findBySimilarity = true,
         findBySourceRelation = true,
         findBySourceMark = true,
-        findBySourceRelationBasis = listOf(FindSimilarTask.RelationBasis.RELATION, FindSimilarTask.RelationBasis.PART),
+        filterByOtherImport = false,
         filterByPartition = true,
         filterByAuthor = true,
         filterByTopic = true,

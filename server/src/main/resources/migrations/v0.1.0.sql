@@ -316,6 +316,16 @@ CREATE TABLE source_db.source_tag_mapping(
 CREATE INDEX source_db.source_tag_mapping__source__index ON source_tag_mapping(source_site, source_tag_id);
 CREATE INDEX source_db.source_tag_mapping__target__index ON source_tag_mapping(target_meta_type, target_meta_id);
 
+-- 来源信息手动标记
+CREATE TABLE source_db.source_mark(
+    source_data_id           INTEGER NOT NULL,       -- 此关系所属sourceData
+    related_source_data_id   INTEGER NOT NULL,       -- 此关系指向的sourceData
+    mark_type                TINYINT NOT NULL,       -- 标记类型
+    record_time              TIMESTAMP NOT NULL      -- 记录时间
+);
+CREATE INDEX source_db.source_mark__index ON source_mark(source_data_id, related_source_data_id);
+
+
 -- 文件
 CREATE TABLE file_db.file(
     id 				INTEGER PRIMARY KEY,            -- 自增ID
