@@ -9,3 +9,5 @@ import com.heerkirov.hedge.server.components.backend.watcher.PathWatcherError
 interface BackendEvent : BaseBusEvent
 
 data class PathWatcherStatusChanged(val isOpen: Boolean, val statisticCount: Int, val errors: List<PathWatcherError>) : BaseBusEventImpl("backend/path-watcher/status-changed"), BackendEvent
+
+data class SimilarFinderResultAdded(val count: Int) : BaseBusEventImpl("backend/similar-finder/result-added"), BackendEvent

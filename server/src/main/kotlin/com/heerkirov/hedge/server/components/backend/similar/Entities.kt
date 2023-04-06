@@ -3,6 +3,7 @@ package com.heerkirov.hedge.server.components.backend.similar
 import com.heerkirov.hedge.server.enums.FindSimilarEntityType
 import com.heerkirov.hedge.server.enums.SourceMarkType
 import com.heerkirov.hedge.server.model.SourceTag
+import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
 import java.time.LocalDate
 
 /**
@@ -66,14 +67,9 @@ data class ImportImageEntityInfo(override val id: Int,
                                  override val similarityVector: Any?,) : EntityInfo
 
 /**
- * 用于唯一决定一个对象的key。
- */
-data class EntityKey(val type: FindSimilarEntityType, val id: Int)
-
-/**
  * 工作单元的图节点。
  */
-data class GraphNode(val key: EntityKey, val info: EntityInfo, val relations: MutableSet<GraphRelation>)
+data class GraphNode(val key: FindSimilarEntityKey, val info: EntityInfo, val relations: MutableSet<GraphRelation>)
 
 /**
  * 工作单元的图关系。
@@ -88,7 +84,7 @@ sealed interface RelationType
 /**
  * source identity相等或近似。
  */
-data class SourceIdentityRelationType(val site: String, val sourceId: Long, val sourcePart: Int?, var equal: Boolean) : RelationType
+data class SourceIdentityRelationType(var site: String, var sourceId: Long, var sourcePart: Int?, var equal: Boolean) : RelationType
 
 /**
  * source relation/books有关联。
@@ -110,16 +106,6 @@ data class SimilarityRelationType(var similarity: Double, var level: Int) : Rela
  */
 data class ExistedRelationType(var sameCollectionId: Int? = null, var sameBooks: MutableSet<Int>? = null, var sameAssociate: Boolean = false, var ignored: Boolean = false) : RelationType
 
-fun EntityInfo.toEntityKey(): EntityKey {
-    return EntityKey(if(this is IllustEntityInfo) FindSimilarEntityType.ILLUST else FindSimilarEntityType.IMPORT_IMAGE, this.id)
-}
-
-fun EntityKey.toEntityKeyString(): String {
-    return "${type.index}${id}"
-}
-
-fun String.toEntityKey(): EntityKey {
-    val type = FindSimilarEntityType.values().first { it.index.digitToChar() == this.first() }
-    val id = this.substring(1).toInt()
-    return EntityKey(type, id)
+fun EntityInfo.toEntityKey(): FindSimilarEntityKey {
+    return FindSimilarEntityKey(if(this is IllustEntityInfo) FindSimilarEntityType.ILLUST else FindSimilarEntityType.IMPORT_IMAGE, this.id)
 }

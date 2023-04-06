@@ -26,6 +26,7 @@ import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.escapeLike
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
+import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import com.heerkirov.hedge.server.utils.types.Opt
 import com.heerkirov.hedge.server.utils.types.undefined
@@ -244,14 +245,22 @@ class ImportService(private val data: DataRepository,
     }
 
     /**
+     * 设置预设操作。
+     */
+    fun action(form: ImportActForm) {
+
+    }
+
+    /**
      * 保存。
      * @throws NotReadyFileError 还存在文件没有准备好，因此保险起见阻止了所有的导入。
      */
-    fun save(): ImportSaveRes {
+    fun save(form: ImportSaveForm): ImportSaveRes {
         data.db.transaction {
             val records = data.db.from(ImportImages)
                 .innerJoin(FileRecords, ImportImages.fileId eq FileRecords.id)
                 .select()
+                .runIf(!form.target.isNullOrEmpty()) { where { ImportImages.id inList form.target!! } }
                 .map { Pair(ImportImages.createEntity(it), FileRecords.createEntity(it)) }
 
             if(records.any { (_, file) -> file.status == FileStatus.NOT_READY }) throw be(NotReadyFileError())
@@ -271,13 +280,17 @@ class ImportService(private val data: DataRepository,
                 // 就算最后真的出了bug，抛出去当unknown error处理算了。
             }
 
-            data.db.deleteAll(ImportImages)
+            if(form.target.isNullOrEmpty()) {
+                data.db.deleteAll(ImportImages)
+            }else{
+                data.db.delete(ImportImages) { it.id inList form.target }
+            }
 
             if(data.setting.findSimilar.autoFindSimilar) {
                 similarFinder.add(FindSimilarTask.TaskSelectorOfImage(imageIds), data.setting.findSimilar.autoTaskConf ?: data.setting.findSimilar.defaultTaskConf)
             }
 
-            bus.emit(ImportSaved())
+            bus.emit(ImportSaved(records.size))
 
             return ImportSaveRes(records.size)
         }

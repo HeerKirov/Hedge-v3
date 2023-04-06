@@ -128,6 +128,7 @@ class ImportManager(private val data: DataRepository, private val bus: EventBus,
             set(it.fileCreateTime, fileCreateTime)
             set(it.fileUpdateTime, fileUpdateTime)
             set(it.fileImportTime, fileImportTime)
+            set(it.action, null)
             set(it.tagme, tagme)
             set(it.sourceSite, sourceSite)
             set(it.sourceId, sourceId)

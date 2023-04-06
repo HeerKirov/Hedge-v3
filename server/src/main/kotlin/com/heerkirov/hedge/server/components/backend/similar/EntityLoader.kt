@@ -8,6 +8,7 @@ import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.runIf
+import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
 import org.ktorm.dsl.*
 import java.time.LocalDate
 
@@ -30,11 +31,11 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
         }
     }
 
-    fun loadByEntityKeys(entityKeys: Iterable<EntityKey>): Map<EntityKey, EntityInfo> {
+    fun loadByEntityKeys(entityKeys: Iterable<FindSimilarEntityKey>): Map<FindSimilarEntityKey, EntityInfo> {
         val (illusts, importImages) = entityKeys.filterInto { it.type == FindSimilarEntityType.ILLUST }
         val illustsRes = loadByImage(illusts.map { it.id }, enableFilterBy = false).associateBy { it.id }
         val importImagesRes = loadByImportImage(importImages.map { it.id }, enableFilterBy = false).associateBy { it.id }
-        val ret = mutableMapOf<EntityKey, EntityInfo>()
+        val ret = mutableMapOf<FindSimilarEntityKey, EntityInfo>()
         illusts.forEach { entityKey ->
             if(entityKey.id in illustsRes) ret[entityKey] = illustsRes[entityKey.id]!!
         }

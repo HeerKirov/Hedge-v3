@@ -244,6 +244,8 @@ CREATE TABLE import_image(
     file_update_time    TIMESTAMP,                      -- 原文件修改时间。从web导入时可能没有，此时填null
     file_import_time    TIMESTAMP NOT NULL,             -- 一阶导入此文件的时间
 
+    action              TEXT,                           -- 导入项目时要采取的操作
+
     source_site         VARCHAR(16) DEFAULT NULL,       -- 来源网站的代号，没有填null
     source_id           BIGINT DEFAULT NULL,            -- 来源网站中的图像代号，没有填null
     source_part         INTEGER DEFAULT NULL,           -- 来源网站中的二级图像代号，没有填null

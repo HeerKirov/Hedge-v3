@@ -20,8 +20,7 @@ class ImportUpdateForm(val tagme: Opt<Illust.Tagme>,
                        val sourcePart: Opt<Int?>,
                        val partitionTime: Opt<LocalDate>,
                        val orderTime: Opt<LocalDateTime>,
-                       val createTime: Opt<LocalDateTime>
-)
+                       val createTime: Opt<LocalDateTime>)
 
 class ImportBatchUpdateForm(val target: List<Int>? = null,
                             val tagme: Illust.Tagme? = null,
@@ -30,4 +29,12 @@ class ImportBatchUpdateForm(val target: List<Int>? = null,
                             val partitionTime: LocalDate? = null,
                             val analyseSource: Boolean = false)
 
+class ImportActForm(val target: List<Int>? = null,
+                    val action: ActAction,
+                    val index: Int? = null)
+
+class ImportSaveForm(val target: List<Int>? = null)
+
 class ImportWatcherForm(val isOpen: Boolean)
+
+enum class ActAction { ADD, REMOVE, REMOVE_ALL }

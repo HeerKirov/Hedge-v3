@@ -22,9 +22,9 @@ enum class SimilarityType {
      */
     RELATION_MARK_SIMILAR,
     /**
-     * 被relation mark手动标记，且标记为「关系接近」。
+     * 被relation mark手动标记，且标记为「关系接近」或未表明关系。
      */
-    RELATION_MARK_CLOSE,
+    RELATION_MARK_RELATED,
     /**
      * 相似度指数过高，基本可以认为是同一个。
      */
@@ -34,11 +34,7 @@ enum class SimilarityType {
      */
     HIGH_SIMILARITY,
     /**
-     * 已存在的关系：位于同一个集合、画集或关联组。
+     * 已存在的关系：位于同一个集合、画集或关联组，或者已被标记为忽略。
      */
-    EXISTED,
-    /**
-     * 已被标记忽略的关系。
-     */
-    IGNORED
+    EXISTED
 }

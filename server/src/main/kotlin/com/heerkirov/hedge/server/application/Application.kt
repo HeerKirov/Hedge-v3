@@ -47,7 +47,7 @@ fun runApplication(options: ApplicationOptions) {
             val sourceDataService = SourceDataService(repo, sourceManager, queryManager)
             val sourceMappingService = SourceMappingService(repo, sourceMappingManager)
 
-            val similarFinder = define { SimilarFinderImpl(appStatus, repo) }
+            val similarFinder = define { SimilarFinderImpl(appStatus, repo, bus) }
 
             val thumbnailGenerator = define { FileGeneratorImpl(appStatus, appdata, repo, bus) }
             val fileManager = FileManager(appdata, repo)

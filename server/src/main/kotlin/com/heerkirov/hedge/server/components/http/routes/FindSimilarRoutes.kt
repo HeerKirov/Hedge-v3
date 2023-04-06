@@ -64,8 +64,8 @@ class FindSimilarRoutes(private val findSimilarService: FindSimilarService) : Ro
     }
 
     private fun getResultDetail(ctx: Context) {
-//        val id = ctx.pathParamAsClass<Int>("id").get()
-//        ctx.json(findSimilarService.getResult(id))
+        val id = ctx.pathParamAsClass<Int>("id").get()
+        ctx.json(findSimilarService.getResult(id))
     }
 
     private fun batchProcessResult(ctx: Context) {

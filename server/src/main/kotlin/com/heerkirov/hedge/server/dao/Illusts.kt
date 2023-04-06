@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.model.*
 import com.heerkirov.hedge.server.utils.ktorm.type.composition
 import com.heerkirov.hedge.server.utils.ktorm.type.enum
+import com.heerkirov.hedge.server.utils.ktorm.type.json
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.schema.*
 
@@ -158,6 +159,7 @@ object ImportImages : BaseTable<ImportImage>("import_image") {
     val fileCreateTime = datetime("file_create_time")
     val fileUpdateTime = datetime("file_update_time")
     val fileImportTime = datetime("file_import_time")
+    val action = json("action", typeRef<List<ImportImage.ImportAction>>())
     val tagme = composition<Illust.Tagme>("tagme")
     val sourceSite = varchar("source_site")
     val sourceId = long("source_id")
@@ -174,6 +176,7 @@ object ImportImages : BaseTable<ImportImage>("import_image") {
         fileCreateTime = row[fileCreateTime],
         fileUpdateTime = row[fileUpdateTime],
         fileImportTime = row[fileImportTime]!!,
+        action = row[action],
         tagme = row[tagme]!!,
         sourceSite = row[sourceSite],
         sourceId = row[sourceId],

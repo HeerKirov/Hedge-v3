@@ -12,11 +12,17 @@ object UnionListType : SqlType<List<String>>(Types.VARCHAR, typeName = "varchar"
 
     override fun doGetResult(rs: ResultSet, index: Int): List<String> {
         val value = rs.getString(index)
-        return if(value.isBlank()) emptyList() else value.split(SPLIT)
+        return if(value.isBlank()) {
+            emptyList()
+        }else{
+            val start = if(value.startsWith(SPLIT)) 1 else 0
+            val end = if(value.endsWith(SPLIT)) value.length - 1 else value.length
+            value.substring(start, end).split(SPLIT)
+        }
     }
 
     override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: List<String>) {
-        ps.setString(index, if(parameter.isEmpty()) "" else parameter.joinToString(SPLIT))
+        ps.setString(index, if(parameter.isEmpty()) "" else parameter.joinToString(SPLIT, SPLIT, SPLIT))
     }
 }
 

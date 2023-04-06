@@ -120,8 +120,19 @@ data class FindSimilarResult(val id: Int,
         }
     }
 
-    data class RelationUnit(val a: String, val b: String, val type: SimilarityType, val params: RelationInfo?)
+    data class RelationUnit(val a: String,
+                            val b: String,
+                            val type: SimilarityType,
+                            @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+                            val params: RelationInfo)
 
+    @JsonSubTypes(value = [
+        JsonSubTypes.Type(value = SourceIdentityRelationInfo::class, name = "SOURCE_IDENTITY"),
+        JsonSubTypes.Type(value = SourceRelatedRelationInfo::class, name = "SOURCE_RELATED"),
+        JsonSubTypes.Type(value = SourceMarkRelationInfo::class, name = "SOURCE_MARK"),
+        JsonSubTypes.Type(value = SimilarityRelationInfo::class, name = "SIMILARITY"),
+        JsonSubTypes.Type(value = ExistedRelationInfo::class, name = "EXISTED"),
+    ])
     sealed interface RelationInfo
 
     data class SourceIdentityRelationInfo(val site: String, val sourceId: Long, val sourcePart: Int?) : RelationInfo
@@ -132,5 +143,5 @@ data class FindSimilarResult(val id: Int,
 
     data class SimilarityRelationInfo(val similarity: Double) : RelationInfo
 
-    data class ExistedRelationInfo(val sameCollectionId: Int?, val sameBooks: List<Int>, val sameAssociate: Boolean) : RelationInfo
+    data class ExistedRelationInfo(val sameCollectionId: Int?, val sameBooks: List<Int>, val sameAssociate: Boolean, val ignored: Boolean) : RelationInfo
 }

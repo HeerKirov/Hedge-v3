@@ -42,7 +42,7 @@ object FindSimilarResults : BaseTable<FindSimilarResult>("find_similar_result", 
     val id = int("id").primaryKey()
     val summaryTypes = composition<FindSimilarResult.SummaryTypes>("summary_types")
     val images = unionList("images")
-    val relations = json("images", typeRef<List<FindSimilarResult.RelationUnit>>())
+    val relations = json("relations", typeRef<List<FindSimilarResult.RelationUnit>>())
     val sortPriority = int("sort_priority")
     val recordTime = datetime("record_time")
 

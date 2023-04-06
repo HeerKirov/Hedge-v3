@@ -1,24 +1,28 @@
 package com.heerkirov.hedge.server.components.backend.similar
 
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.FindSimilarResults
-import com.heerkirov.hedge.server.enums.SourceMarkType
+import com.heerkirov.hedge.server.events.SimilarFinderResultAdded
 import com.heerkirov.hedge.server.model.FindSimilarResult
 import com.heerkirov.hedge.server.utils.DateTime
+import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
+import com.heerkirov.hedge.server.utils.types.toEntityKey
+import com.heerkirov.hedge.server.utils.types.toEntityKeyString
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import java.util.LinkedList
 
-class RecordBuilder(private val data: DataRepository) {
-    private val components = mutableSetOf<Map<EntityKey, GraphNode>>()
+class RecordBuilder(private val data: DataRepository, private val bus: EventBus) {
+    private val components = mutableSetOf<Map<FindSimilarEntityKey, GraphNode>>()
 
     /**
      * 载入一个图，进行处理，将此图拆分为数个连通分量，随后生成记录。
      */
-    fun loadGraph(graph: Map<EntityKey, GraphNode>) {
-        val accessedNodes = mutableSetOf<EntityKey>()
+    fun loadGraph(graph: Map<FindSimilarEntityKey, GraphNode>) {
+        val accessedNodes = mutableSetOf<FindSimilarEntityKey>()
         for ((key, node) in graph) {
             if(key !in accessedNodes) {
                 traverse(node, graph, accessedNodes)
@@ -29,8 +33,8 @@ class RecordBuilder(private val data: DataRepository) {
     /**
      * 从一个节点开始遍历，以生成连通分量。
      */
-    private fun traverse(baseNode: GraphNode, graph: Map<EntityKey, GraphNode>, accessedNodes: MutableSet<EntityKey>) {
-        val accessed = mutableSetOf<EntityKey>()
+    private fun traverse(baseNode: GraphNode, graph: Map<FindSimilarEntityKey, GraphNode>, accessedNodes: MutableSet<FindSimilarEntityKey>) {
+        val accessed = mutableSetOf<FindSimilarEntityKey>()
         val queue = LinkedList<GraphNode>()
         queue.add(baseNode)
 
@@ -51,7 +55,7 @@ class RecordBuilder(private val data: DataRepository) {
         }
 
         if(accessed.size > 1) {
-            val component = mutableMapOf<EntityKey, GraphNode>()
+            val component = mutableMapOf<FindSimilarEntityKey, GraphNode>()
 
             for (entityKey in accessed) {
                 val graphNode = graph[entityKey]!!
@@ -71,8 +75,8 @@ class RecordBuilder(private val data: DataRepository) {
         data.db.transaction {
             for (component in components) {
                 //首先去数据库，检查一下是否可能存在有重合节点。若存在重合节点，就认为两个分量是连通的
-                val likeStr = component.keys.map { it.toEntityKeyString() }.sorted().joinToString("%|%", "%", "%")
-                val existResult = data.db.sequenceOf(FindSimilarResults).firstOrNull { it.images like likeStr }
+                val likeCondition = component.keys.map { "%|${it.toEntityKeyString()}|%" }.map { FindSimilarResults.images like it }.reduce { a, b -> a or b }
+                val existResult = data.db.sequenceOf(FindSimilarResults).firstOrNull { likeCondition }
 
                 if(existResult != null) {
                     generateRecordToExist(component, existResult)
@@ -81,81 +85,76 @@ class RecordBuilder(private val data: DataRepository) {
                 }
             }
         }
+        //发送db写入的变更事件
+        if(components.size > 0) {
+            bus.emit(SimilarFinderResultAdded(components.size))
+        }
     }
 
     /**
      * 将连通分量追加到已有的记录。
      */
-    private fun generateRecordToExist(component: Map<EntityKey, GraphNode>, target: FindSimilarResult) {
+    private fun generateRecordToExist(component: Map<FindSimilarEntityKey, GraphNode>, target: FindSimilarResult) {
+        val targetRelations = target.relations.map { Triple(it.a.toEntityKey(), it.b.toEntityKey(), getRelationType(it.type, it.params)) }
+        val images = (component.keys.asSequence().map { it.toEntityKeyString() }.toSet() + target.relations.asSequence().flatMap { sequenceOf(it.a, it.b) }.toSet()).toList()
+        val relations = mergeRelations(
+            component.values.asSequence()
+                .flatMap { node ->
+                    node.relations.asSequence()
+                        .filter { node.key < it.another.key }
+                        .map { Pair(node.key, it.another.key) to it.relations }
+                }
+                .toMap(),
+            targetRelations
+                .groupBy({ it.first to it.second }) { it.third }
+        ).flatMap { (k, v) ->
+            val ak = k.first.toEntityKeyString()
+            val bk = k.second.toEntityKeyString()
+            v.map {
+                FindSimilarResult.RelationUnit(ak, bk, it.toRelationType(), it.toRecordInfo())
+            }
+        }
 
-    }
-
-
-    /**
-     * 生成一条新的记录。
-     */
-    private fun generateNewRecord(component: Map<EntityKey, GraphNode>) {
-        val relationTypes = component.values.asSequence().flatMap { it.relations }.flatMap { it.relations }.toSet()
+        val relationTypes = component.values.asSequence().flatMap { it.relations }.flatMap { it.relations }.toSet() + targetRelations.asSequence().map { it.third }.toSet()
         val summaryTypes = getSummaryTypes(relationTypes)
         val sortPriority = getSortPriority(summaryTypes)
-        data.db.insert(FindSimilarResults) {
+
+        data.db.update(FindSimilarResults) {
+            where { it.id eq target.id }
             set(it.summaryTypes, summaryTypes)
-            //set(it.images, TODO())
-            //set(it.relations, TODO())
+            set(it.images, images)
+            set(it.relations, relations)
             set(it.sortPriority, sortPriority)
             set(it.recordTime, DateTime.now())
         }
     }
 
-    private fun getSummaryTypes(relationTypes: Set<RelationType>): FindSimilarResult.SummaryTypes {
-        var same = false
-        var similar = false
-        var related = false
-        for (it in relationTypes) {
-            if(!same || !similar || !related) {
-                when (it) {
-                    is SourceIdentityRelationType -> {
-                        if(it.equal) {
-                            same = true
-                        }else{
-                            related = true
-                        }
+    /**
+     * 生成一条新的记录。
+     */
+    private fun generateNewRecord(component: Map<FindSimilarEntityKey, GraphNode>) {
+        val images = component.keys.map { it.toEntityKeyString() }
+        val relations = component.values.asSequence()
+            .flatMap { node ->
+                node.relations.asSequence().flatMap { r ->
+                    r.relations.asSequence().map {
+                        Triple(node.key.toEntityKeyString(), r.another.key.toEntityKeyString(), it)
                     }
-                    is SourceRelatedRelationType -> {
-                        related = true
-                    }
-                    is SourceMarkRelationType -> {
-                        when(it.markType) {
-                            SourceMarkType.SAME -> same = true
-                            SourceMarkType.SIMILAR -> similar = true
-                            else -> related = true
-                        }
-                    }
-                    is SimilarityRelationType -> {
-                        if(it.level >= 2) {
-                            same = true
-                        }else{
-                            similar = true
-                        }
-                    }
-                    is ExistedRelationType -> {}
                 }
             }
-        }
-        var ret: FindSimilarResult.SummaryTypes = FindSimilarResult.SummaryTypes.EMPTY
-        if(same) ret += FindSimilarResult.SummaryTypes.SAME
-        if(similar) ret += FindSimilarResult.SummaryTypes.SIMILAR
-        if(related) ret += FindSimilarResult.SummaryTypes.RELATED
-        return ret
-    }
+            .filter { (a, b, _) -> a < b }
+            .map { (a, b, i) -> FindSimilarResult.RelationUnit(a, b, i.toRelationType(), i.toRecordInfo()) }
+            .toList()
+        val relationTypes = component.values.asSequence().flatMap { it.relations }.flatMap { it.relations }.toSet()
+        val summaryTypes = getSummaryTypes(relationTypes)
+        val sortPriority = getSortPriority(summaryTypes)
 
-    private fun getSortPriority(summaryTypes: FindSimilarResult.SummaryTypes): Int {
-        return if(FindSimilarResult.SummaryTypes.SAME in summaryTypes) {
-            3
-        }else if(FindSimilarResult.SummaryTypes.RELATED in summaryTypes) {
-            2
-        }else{
-            1
+        data.db.insert(FindSimilarResults) {
+            set(it.summaryTypes, summaryTypes)
+            set(it.images, images)
+            set(it.relations, relations)
+            set(it.sortPriority, sortPriority)
+            set(it.recordTime, DateTime.now())
         }
     }
 }
