@@ -28,7 +28,7 @@ export const [installImageViewContext, useImageViewContext] = installation(funct
     const navigator = useNavigator(slice, subSlice)
     const target = useTarget(slice, subSlice)
 
-    useModifiedCallback(slice, data, modifiedCallback)
+    useViewStackCallback(slice, data, modifiedCallback)
 
     const sideBar = useSideBarContext(target.id)
     const playBoard = usePlayBoardContext()
@@ -200,7 +200,7 @@ function useTarget(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illust>
     return {data, id, toggleFavorite, deleteItem, openInNewWindow}
 }
 
-function useModifiedCallback(slice: SliceDataView<Illust>, data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>, modifiedCallback?: (illustId: number) => void) {
+function useViewStackCallback(slice: SliceDataView<Illust>, data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>, modifiedCallback?: (illustId: number) => void) {
     const { isClosable, closeView } = useViewStack()
 
     //列表清空时，自动关闭视图
@@ -318,7 +318,7 @@ export function useSideBarSourceData() {
     const sourceIdentity = computed(() => data.value !== null ? {site: data.value.sourceSite, sourceId: data.value.sourceId, sourcePart: data.value.sourcePart} : null)
 
     const setSourceIdentity = async (value: {site: string | null, sourceId: number | null, sourcePart: number | null}) => {
-        return (value.site === data.value?.sourceSite && value.sourceId === data.value?.sourceId && value.sourcePart === data.value?.sourcePart) || await setData(value, e => {
+        return (value.site === data.value?.sourceSite && value.sourceId === data.value?.sourceId && value.sourcePart === data.value?.sourcePart) || await setData({sourceSite: value.site, sourceId: value.sourceId, sourcePart: value.sourcePart}, e => {
             if(e.code === "NOT_EXIST") {
                 message.showOkMessage("error", `来源${value.site}不存在。`)
             }else if(e.code === "PARAM_ERROR") {

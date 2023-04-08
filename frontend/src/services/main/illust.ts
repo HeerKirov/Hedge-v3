@@ -56,7 +56,7 @@ function useListView() {
             operation({ event, refresh, update, remove }) {
                 if(event.eventType === "entity/illust/created") {
                     refresh()
-                }else if(event.eventType === "entity/illust/updated" && event.generalUpdated) {
+                }else if(event.eventType === "entity/illust/updated" && (event.generalUpdated || event.sourceDataUpdated)) {
                     update(i => i.id === event.illustId)
                 }else if(event.eventType === "entity/illust/deleted") {
                     if(event.illustType === "COLLECTION") {

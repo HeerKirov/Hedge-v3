@@ -12,7 +12,7 @@ import { useFolderDetailPanel } from "@/services/main/folder"
 
 const {
     data, deleteItem, viewState,
-    listview: { listview, paginationData },
+    listview: { paginationData },
     listviewController: { viewMode, fitType, columnNum, editableLockOn },
     selector: { selected, lastSelected, update: updateSelect },
     paneState,
@@ -23,7 +23,9 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "显示信息预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "radio", checked: viewMode.value === "row", label: "列表模式", click: () => viewMode.value = "row"},
-    {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"}
+    {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"},
+    {type: "separator"},
+    {type: "normal", label: "删除此目录", click: deleteItem}
 ])
 
 // TODO 完成illust右键菜单的功能 (剪贴板，关联组，导出)
@@ -48,7 +50,7 @@ const menu = useDynamicPopupMenu<FolderImage>(folderImage => [
     {type: "normal", label: "导出"},
     {type: "separator"},
     {type: "normal", label: "删除项目", click: operators.deleteItem},
-    {type: "normal", label: "从目录移除此项目", click: operators.removeItemFromCollection}
+    {type: "normal", label: "从目录移除此项目", click: i => operators.removeItemFromFolder(i, data.value!.id) }
 ])
 
 </script>

@@ -9,7 +9,7 @@ defineProps<{
     resolutionHeight: number
 }>()
 
-const EXTENSIONS = {
+const EXTENSIONS: Record<string, {name: string, icon: string}> = {
     "jpg": {name: "JPEG图像", icon: "image"},
     "jpeg": {name: "JPEG图像", icon: "image"},
     "png": {name: "PNG图像", icon: "image"},

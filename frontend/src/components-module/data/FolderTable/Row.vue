@@ -55,7 +55,7 @@ const contextmenu = () => {
         <td class="w-50 pl-1" :ref="el => elementRefs.setElement(row.id, el)" :draggable="true" v-bind="dragEvents">
             <div :class="$style['top-drop-area']" :style="{'margin-left': `calc(${indent * 1.7}em + 1.5rem)`}" v-bind="topDropEvents"/>
             <div :class="$style['bottom-drop-area']" :style="{'margin-left': `calc(${indent * 1.7}em + 1.5rem)`}" v-bind="bottomDropEvents"/>
-            <div v-if="gapState !== null" :class="$style.gap" :style="{'left': `${gapState.indent * 1.7}em`, 'top': gapState.position === 'top' ? '-2px' : null, 'bottom': gapState.position === 'bottom' ? '-2px' : null}"/>
+            <div v-if="gapState !== null" :class="$style.gap" :style="{'left': `${gapState.indent * 1.7}em`, 'top': gapState.position === 'top' ? '-2px' : undefined, 'bottom': gapState.position === 'bottom' ? '-2px' : undefined}"/>
             <span class="pr-1" :style="{'padding-left': `${indent * 1.7}em`}">
                 <Icon v-if="row.type === 'FOLDER'" icon="folder"/>
                 <Icon v-else-if="expanded" class="is-cursor-pointer" icon="angle-down" @click="expanded = false"/>

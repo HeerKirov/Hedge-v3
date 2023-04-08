@@ -7,6 +7,7 @@ import { HttpInstance, Response } from "../instance"
 import { IdResponseWithWarnings, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
 import { Tagme } from "./illust"
 import { OrderTimeType } from "./setting-import"
+import { CloneImageProps } from "@/components-module/dialog/CloneImage/context";
 
 export function createImportEndpoint(http: HttpInstance): ImportEndpoint {
     return {
@@ -20,7 +21,7 @@ export function createImportEndpoint(http: HttpInstance): ImportEndpoint {
         import: http.createDataRequest("/api/imports/import", "POST"),
         upload: http.createDataRequest("/api/imports/upload", "POST", { parseData: mapFromUploadFile }),
         batchUpdate: http.createDataRequest("/api/imports/batch-update", "POST", { parseData: mapFromBatchUpdateForm }),
-        save: http.createRequest("/api/imports/save", "POST"),
+        save: http.createDataRequest("/api/imports/save", "POST"),
         watcher: {
             get: http.createRequest("/api/imports/watcher", "GET"),
             update: http.createDataRequest("/api/imports/watcher", "POST")
@@ -129,7 +130,7 @@ export interface ImportEndpoint {
      * 确认导入，将所有项目导入到图库。
      * @exception FILE_NOT_READY
      */
-    save(): Promise<Response<ImportSaveResponse, FileNotReadyError>>
+    save(form: ImportSaveForm): Promise<Response<ImportSaveResponse, FileNotReadyError>>
     /**
      * 目录监听器。
      */
@@ -146,6 +147,26 @@ export interface ImportEndpoint {
 }
 
 export type PathWatcherErrorReason = "NO_USEFUL_PATH" | "PATH_NOT_EXIST" | "PATH_IS_NOT_DIRECTORY" | "PATH_WATCH_FAILED" | "PATH_NO_LONGER_AVAILABLE"
+
+export interface SaveError {
+    importId: number
+    fileNotReady: boolean
+    notExistedCollectionId: number | null
+    notExistedCloneImageId: number | null
+    notExistedBookIds: number[] | null
+    notExistedFolderIds: number[] | null
+}
+
+export interface Preference {
+    cloneImage: PreferenceCloneImage | null
+}
+
+export interface PreferenceCloneImage {
+    fromImageId: number
+    props: CloneImageProps
+    merge: boolean
+    deleteFrom: boolean
+}
 
 export interface PathWatcherError {
     path: string
@@ -172,10 +193,15 @@ export interface DetailImportImage extends ImportImage {
     fileUpdateTime: LocalDateTime | null
     fileImportTime: LocalDateTime | null
     createTime: LocalDateTime
+    preference: Preference
+    collectionId: string | number | null
+    folderIds: number[]
+    bookIds: number[]
 }
 
 export interface ImportSaveResponse {
     total: number
+    errors: SaveError[]
 }
 
 export interface ImportWatcherResponse {
@@ -201,6 +227,10 @@ export interface ImportUpdateForm {
     partitionTime?: LocalDate
     orderTime?: LocalDateTime
     createTime?: LocalDateTime
+    preference?: Preference
+    collectionId?: string | number
+    folderIds?: number[]
+    bookIds?: number[]
 }
 
 export interface ImportBatchUpdateForm {
@@ -210,6 +240,13 @@ export interface ImportBatchUpdateForm {
     setOrderTimeBy?: OrderTimeType
     partitionTime?: LocalDate
     analyseSource?: boolean
+    collectionId?: string | number
+    appendFolderIds?: number[]
+    appendBookIds?: number[]
+}
+
+export interface ImportSaveForm {
+    target?: number[]
 }
 
 export type ImportFilter = ImportQueryFilter & LimitAndOffsetFilter

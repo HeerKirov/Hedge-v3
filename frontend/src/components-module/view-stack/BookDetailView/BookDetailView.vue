@@ -7,7 +7,6 @@ import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-busines
 import { IllustImageDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
 import { ViewStackBackButton } from "@/components-module/view-stack"
-import { useDialogService } from "@/components-module/dialog"
 import { Book, BookImage } from "@/functions/http-client/api/book"
 import { SingletonSlice, SliceOrPath } from "@/functions/fetch"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
@@ -15,25 +14,25 @@ import { installBookViewContext } from "@/services/view-stack/book"
 import SideBarDetailInfo from "./SideBarDetailInfo.vue"
 
 const props = defineProps<{
-    data: SliceOrPath<Book, SingletonSlice<Book>, number>
+    sliceOrPath: SliceOrPath<Book, SingletonSlice<Book>, number>
 }>()
 
 const {
     target: { id, data, deleteItem, toggleFavorite },
-    listview: { listview, paginationData },
+    listview: { paginationData },
     listviewController: { viewMode, fitType, columnNum, editableLockOn },
     selector: { selected, lastSelected, update: updateSelect },
     paneState,
     operators
-} = installBookViewContext(props.data)
-
-const dialog = useDialogService()
+} = installBookViewContext(props.sliceOrPath)
 
 const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "显示信息预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "radio", checked: viewMode.value === "row", label: "列表模式", click: () => viewMode.value = "row"},
-    {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"}
+    {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"},
+    {type: "separator"},
+    {type: "normal", label: "删除此画集", click: deleteItem}
 ])
 
 // TODO 完成illust右键菜单的功能 (剪贴板，关联组，导出)
@@ -58,7 +57,7 @@ const menu = useDynamicPopupMenu<BookImage>(bookImage => [
     {type: "normal", label: "导出"},
     {type: "separator"},
     {type: "normal", label: "删除项目", click: operators.deleteItem},
-    {type: "normal", label: "从集合移除此项目", click: operators.removeItemFromCollection}
+    {type: "normal", label: "从画集移除此项目", click: i => operators.removeItemFromBook(i, id.value!) }
 ])
 
 </script>

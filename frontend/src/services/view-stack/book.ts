@@ -4,6 +4,7 @@ import { flatResponse } from "@/functions/http-client"
 import { SingletonSlice, SliceOrPath, useFetchEndpoint, useSingletonDataView } from "@/functions/fetch"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useDialogService } from "@/components-module/dialog"
+import { useViewStack } from "@/components-module/view-stack"
 import { useMessageBox } from "@/modules/message-box"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
@@ -41,6 +42,7 @@ function useId(data: SliceOrPath<Book, SingletonSlice<Book>, number>): Ref<numbe
 function useTarget(slice: SliceOrPath<Book, SingletonSlice<Book>, number>) {
     const message = useMessageBox()
     const dialog = useDialogService()
+    const { isClosable, closeView } = useViewStack()
 
     const id = useId(slice)
 
@@ -49,7 +51,13 @@ function useTarget(slice: SliceOrPath<Book, SingletonSlice<Book>, number>) {
         get: client => client.book.get,
         update: client => client.book.update,
         delete: client => client.book.delete,
-        eventFilter: c => event => (event.eventType === "entity/book/updated" || event.eventType === "entity/book/deleted") && event.bookId === c.path
+        eventFilter: c => event => (event.eventType === "entity/book/updated" || event.eventType === "entity/book/deleted") && event.bookId === c.path,
+        afterDelete() {
+            //对象删除时，自动关闭视图
+            if(isClosable()) {
+                closeView()
+            }
+        }
     })
 
     const toggleFavorite = () => {

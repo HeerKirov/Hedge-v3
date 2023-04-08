@@ -6,6 +6,7 @@ import { useFetchReactive } from "./fetch-reactive"
 import { useRetrieveHelper } from "./retrieve-helper"
 import { useCreatingHelper } from "./creating-helper"
 import { useFetchHelper, usePostFetchHelper, usePostPathFetchHelper, usePathFetchHelper } from "./fetch-helper"
+import { useFetchEvent } from "./fetch-event"
 import { useQueryContinuousListView } from "./query-continuous-listview"
 import { QueryInstance } from "./query-listview/query-instance"
 import { useQueryListview, QueryListview } from "./query-listview/query-listview"
@@ -18,6 +19,7 @@ import {
 export { installFetchManager }
 export { useFetchReactive, useFetchEndpoint, useFetchListEndpoint, useFetchSinglePathEndpoint, createLazyFetchEndpoint }
 export { useRetrieveHelper, useCreatingHelper, useFetchHelper, usePostFetchHelper, usePathFetchHelper, usePostPathFetchHelper }
+export { useFetchEvent }
 export { useQueryContinuousListView }
 export { useQueryListview, usePaginationDataView }
 export { useSliceDataView, useSingletonDataView, createMappedQueryInstance, useSingletonDataViewByRef, useSliceDataViewByRef }

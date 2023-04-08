@@ -5,12 +5,20 @@ import {
 } from "@/functions/http-client/api/illust"
 import { flatResponse } from "@/functions/http-client"
 import {
-    SingletonSlice, SliceOrPath, SingletonDataView,
-    createLazyFetchEndpoint, useFetchEndpoint, useSingletonDataView, usePostPathFetchHelper, usePostFetchHelper
+    SingletonSlice,
+    SliceOrPath,
+    SingletonDataView,
+    createLazyFetchEndpoint,
+    useFetchEndpoint,
+    useSingletonDataView,
+    usePostPathFetchHelper,
+    usePostFetchHelper,
+    useFetchEvent
 } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useDialogService } from "@/components-module/dialog"
+import { useViewStack } from "@/components-module/view-stack"
 import { useMessageBox } from "@/modules/message-box"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
@@ -38,6 +46,8 @@ export const [installCollectionViewContext, useCollectionViewContext] = installa
     const sideBar = useSideBarContext(target.id)
 
     useSettingSite()
+
+    useViewStackCallback(singleton)
 
     return {target, sideBar, listview, selector, paneState, listviewController, operators}
 })
@@ -99,6 +109,19 @@ function useListView(path: Ref<number | null>) {
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.illust.get(a.id))))
+        }
+    })
+}
+
+function useViewStackCallback(singleton: SingletonDataView<Illust>) {
+    const { isClosable, closeView } = useViewStack()
+
+    useFetchEvent({
+        filter: ["entity/illust/deleted"],
+        operation(context) {
+            if(context.event.eventType === "entity/illust/deleted" && context.event.illustId === singleton.data.value?.id && isClosable()) {
+                closeView()
+            }
         }
     })
 }

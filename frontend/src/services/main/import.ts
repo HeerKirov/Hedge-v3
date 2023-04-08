@@ -151,7 +151,7 @@ function useOperators(selector: SelectedState<number>, anyData: Ref<boolean>, ad
 
     const save = async () => {
         if(anyData.value) {
-            const res = await saveFetch(undefined, e => {
+            const res = await saveFetch({}, e => {
                 if(e.code === "FILE_NOT_READY") {
                     toast.toast("未准备完毕", "warning", "仍有导入项目未准备完毕。请等待。")
                 }else{

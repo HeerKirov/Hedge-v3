@@ -22,9 +22,9 @@ useInterception()
 
 <template>
     <div :class="{[$style.container]: true, [$style.hidden]: hidden}">
-        <ImageDetailView v-if="stackViewInfo.type === 'image'" :data="stackViewInfo.data" :modified-callback="stackViewInfo.modifiedCallback"/>
-        <CollectionDetailView v-else-if="stackViewInfo.type === 'collection'" :data="stackViewInfo.data"/>
-        <BookDetailView v-else-if="stackViewInfo.type === 'book'" :data="stackViewInfo.data"/>
+        <ImageDetailView v-if="stackViewInfo.type === 'image'" :slice-or-path="stackViewInfo.sliceOrPath" :modified-callback="stackViewInfo.modifiedCallback"/>
+        <CollectionDetailView v-else-if="stackViewInfo.type === 'collection'" :slice-or-path="stackViewInfo.sliceOrPath"/>
+        <BookDetailView v-else-if="stackViewInfo.type === 'book'" :slice-or-path="stackViewInfo.sliceOrPath"/>
     </div>
 </template>
 

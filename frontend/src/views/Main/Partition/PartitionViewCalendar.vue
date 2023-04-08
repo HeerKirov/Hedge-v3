@@ -39,7 +39,7 @@ $column-num: 7
     margin: 1rem
     > .col
         box-sizing: border-box
-        width: #{percentage(1 / $column-num)}
+        width: #{percentage(calc(1 / $column-num))}
         text-align: center
         padding-top: 1.5rem
         padding-bottom: 1.5rem
@@ -50,7 +50,7 @@ $column-num: 7
     margin: 0.5rem
     > .col
         box-sizing: border-box
-        width: #{percentage(1 / $column-num)}
+        width: #{percentage(calc(1 / $column-num))}
         padding: 0.5rem
 
         > div

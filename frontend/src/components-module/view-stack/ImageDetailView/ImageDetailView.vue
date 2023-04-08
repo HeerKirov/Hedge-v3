@@ -15,16 +15,16 @@ import SideBarRelatedItems from "./SideBarRelatedItems.vue"
 import SideBarSourceData from "./SideBarSourceData.vue"
 
 const props = defineProps<{
-    data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>
+    sliceOrPath: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>
     modifiedCallback?: (illustId: number) => void
 }>()
 
 const {
     navigator: { metrics, subMetrics, prev, next },
-    target: { id, data, toggleFavorite, deleteItem, openInNewWindow },
+    target: { data, toggleFavorite, deleteItem, openInNewWindow },
     sideBar: { tabType },
     playBoard: { zoomEnabled, zoomValue }
-} = installImageViewContext(props.data, props.modifiedCallback)
+} = installImageViewContext(props.sliceOrPath, props.modifiedCallback)
 
 const { assetsUrl } = useAssets()
 

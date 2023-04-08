@@ -138,7 +138,7 @@ export interface ImageDatasetOperators<T extends BasicIllust> {
      * 提供数据插入操作，适用于将illusts拖曳到Dataset时的添加操作。
      * 依据options配置的不同，展开不同种类的添加操作。
      */
-    dataDrop(insertIndex: number, illusts: CoverIllust[], mode: "ADD" | "MOVE"): void
+    dataDrop(insertIndex: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE"): void
     /**
      * 获得当前操作中，应该受到影响的对象id列表。此方法被提供给外部实现的其他函数，用于和context内的选择行为统一。
      * 选择行为指：当存在选中项时，在选择项之外右键将仅使用右键项而不包括选择项。它需要影响那些有多项目操作的行为。
@@ -362,7 +362,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
     const dataDrop = dataDropOptions === undefined ? () => {} :
     dataDropOptions.dropInType === "illust" || dataDropOptions.dropInType === "partition" ? (_: number, __: CoverIllust[], ___: "ADD" | "MOVE") => {
         //FUTURE 以后再实现illust/partition区域的拖放功能
-    } : dataDropOptions.dropInType === "collection" ? async (_: number, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
+    } : dataDropOptions.dropInType === "collection" ? async (_: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
         const path = unref(dataDropOptions.path)
         if(path !== null && mode === "ADD") {
             //只选取ADD模式。MOVE模式意味着集合内的移动，但集合内是没有移动的，所以什么也不做
@@ -371,7 +371,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
                 await fetchCollectionImagesUpdate(path, [path, ...images])
             }
         }
-    } : dataDropOptions.dropInType === "book" ? async (insertIndex: number, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
+    } : dataDropOptions.dropInType === "book" ? async (insertIndex: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
         const path = unref(dataDropOptions.path)
         if(path !== null) {
             if(mode === "ADD") {
@@ -384,7 +384,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
                 await fetchBookImagesPartialUpdate(path, {action: "MOVE", images: illusts.map(i => i.id), ordinal: insertIndex})
             }
         }
-    } : dataDropOptions.dropInType === "folder" ? async (insertIndex: number, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
+    } : dataDropOptions.dropInType === "folder" ? async (insertIndex: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
         const path = unref(dataDropOptions.path)
         if(path !== null) {
             if(mode === "ADD") {

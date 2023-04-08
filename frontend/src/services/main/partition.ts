@@ -1,4 +1,4 @@
-import { computed, nextTick, ref, watch } from "vue"
+import { ComponentPublicInstance, computed, nextTick, ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { PartitionMonth } from "@/functions/http-client/api/partition"
 import { IllustQueryFilter } from "@/functions/http-client/api/illust"
@@ -191,7 +191,23 @@ export function useTimelineContext() {
         path.value = date.ofDate(year, month, day)
     }
 
-    return {partitionMonthData, partitionData, monthRefs, pmRefs, calendarDate, selectMonth, scrollEvent, openPartition}
+    const setPmRef = (key: `${number}-${number}`, el: Element | ComponentPublicInstance | null) => {
+        if(el !== null && el !== undefined) {
+            pmRefs[key] = el as HTMLDivElement
+        }else{
+            delete pmRefs[key]
+        }
+    }
+
+    const setMonthRef = (key: `${number}-${number}`, el: Element | ComponentPublicInstance | null) => {
+        if(el !== null && el !== undefined) {
+            monthRefs[key] = el as HTMLDivElement
+        }else{
+            delete monthRefs[key]
+        }
+    }
+
+    return {partitionMonthData, partitionData, monthRefs, pmRefs, calendarDate, selectMonth, scrollEvent, openPartition, setPmRef, setMonthRef}
 }
 
 export function useDetailIllustContext() {

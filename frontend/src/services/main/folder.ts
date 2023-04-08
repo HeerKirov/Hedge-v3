@@ -99,7 +99,7 @@ function useOperators(data: Ref<FolderTreeNode[] | undefined>, paneState: Detail
         }
     }
 
-    const openDetail = (folder: FolderTreeNode, _: number, __: number, newWindow: boolean) => {
+    const openDetail = (folder: FolderTreeNode, _: number | null, __: number, newWindow: boolean) => {
         if(newWindow) {
             navigator.newWindow({routeName: "MainFolder", query: {detail: folder.id}})
         }else{

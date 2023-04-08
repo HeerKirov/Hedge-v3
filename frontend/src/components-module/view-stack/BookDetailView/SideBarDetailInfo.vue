@@ -41,6 +41,6 @@ const { target: { data, id, setTitle, setScore, setDescription, openMetaTagEdito
             </template>
         </FormEditKit>
         <MetaTagListDisplay class="mt-2" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
-        <TimeGroupDisplay class="mt-2" :order-time="data.orderTime" :update-time="data.updateTime" :create-time="data.createTime"/>
+        <TimeGroupDisplay class="mt-2" :update-time="data.updateTime" :create-time="data.createTime"/>
     </template>
 </template>

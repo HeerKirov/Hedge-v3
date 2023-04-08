@@ -30,12 +30,14 @@ const { data, sourceIdentity, setSourceStatus, setSourceIdentity, openSourceData
                 <SourceEditStatusEditor :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
-        <Separator direction="horizontal"/>
-        <TitleDisplay :value="data.title" @dblclick="openSourceDataEditor"/>
-        <DescriptionDisplay :value="data.description" @dblclick="openSourceDataEditor"/>
-        <SourceRelationsDisplay :value="data.relations" @dblclick="openSourceDataEditor"/>
-        <SourceBooksDisplay :value="data.books" @dblclick="openSourceDataEditor"/>
-        <SourceTagsDisplay :value="data.tags" @dblclick="openSourceDataEditor"/>
+        <template v-if="data.sourceSite !== null">
+            <Separator direction="horizontal"/>
+            <TitleDisplay :value="data.title" @dblclick="openSourceDataEditor"/>
+            <DescriptionDisplay :value="data.description" @dblclick="openSourceDataEditor"/>
+            <SourceRelationsDisplay :value="data.relations" @dblclick="openSourceDataEditor"/>
+            <SourceBooksDisplay :value="data.books" @dblclick="openSourceDataEditor"/>
+            <SourceTagsDisplay :value="data.tags" @dblclick="openSourceDataEditor"/>
+        </template>
     </template>
 </template>
 

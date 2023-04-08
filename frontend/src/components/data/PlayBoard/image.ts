@@ -28,12 +28,12 @@ export function useImagePosition(zoomValue: Ref<number>) {
 
     const container = computed(() => view.value !== null && aspect.value !== null ? computeContainerProps(view.value, aspect.value, zoomValue.value) : null)
 
-    const containerStyle = computed(() => container.value && {
+    const containerStyle = computed(() => container.value ? {
         "width": `${container.value.width}px`,
         "height": `${container.value.height}px`,
         "margin-left": `${container.value.left}px`,
         "margin-top": `${container.value.top}px`
-    })
+    } : undefined)
 
     watch(zoomValue, async (zoom, oldZoom) => {
         if(view.value !== null && aspect.value !== null && container.value !== null && viewRef.value !== undefined) {

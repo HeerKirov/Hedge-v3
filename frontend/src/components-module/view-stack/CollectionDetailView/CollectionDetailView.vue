@@ -7,7 +7,6 @@ import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-busines
 import { IllustImageDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
 import { ViewStackBackButton } from "@/components-module/view-stack"
-import { useDialogService } from "@/components-module/dialog"
 import { Illust } from "@/functions/http-client/api/illust"
 import { SingletonSlice, SliceOrPath } from "@/functions/fetch"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
@@ -16,20 +15,18 @@ import SideBarDetailInfo from "./SideBarDetailInfo.vue"
 import SideBarRelatedItems from "./SideBarRelatedItems.vue"
 
 const props = defineProps<{
-    data: SliceOrPath<Illust, SingletonSlice<Illust>, number>
+    sliceOrPath: SliceOrPath<Illust, SingletonSlice<Illust>, number>
 }>()
 
 const {
-    target: { id, data, deleteItem, toggleFavorite },
+    target: { data, deleteItem, toggleFavorite },
     sideBar: { tabType },
-    listview: { listview, paginationData },
+    listview: { paginationData },
     listviewController: { viewMode, fitType, columnNum },
     selector: { selected, lastSelected, update: updateSelect },
     paneState,
     operators
-} = installCollectionViewContext(props.data)
-
-const dialog = useDialogService()
+} = installCollectionViewContext(props.sliceOrPath)
 
 const sideBarButtonItems = [
     {value: "info", label: "项目信息", icon: "info"},
@@ -40,7 +37,9 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "显示信息预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "radio", checked: viewMode.value === "row", label: "列表模式", click: () => viewMode.value = "row"},
-    {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"}
+    {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"},
+    {type: "separator"},
+    {type: "normal", label: "删除此集合", click: deleteItem}
 ])
 
 // TODO 完成illust右键菜单的功能 (剪贴板，关联组，导出)

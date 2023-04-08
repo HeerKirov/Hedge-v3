@@ -1,7 +1,6 @@
 import { HttpInstance, Response } from "../instance"
 import { NotFound, ResourceNotExist } from "../exceptions"
 import { IdResponse, LimitAndOffsetFilter, ListResult, OrderList } from "./all"
-import { SimpleIllust } from "./illust"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 
 export function createFindSimilarEndpoint(http: HttpInstance): FindSimilarEndpoint {
@@ -23,7 +22,7 @@ export function createFindSimilarEndpoint(http: HttpInstance): FindSimilarEndpoi
                 parseResponse: ({ total, result }: ListResult<any>) => ({total, result: result.map(mapToResult)})
             }),
             get: http.createPathRequest(id => `/api/find-similar/results/${id}`, "GET", {
-                parseResponse: mapToResult
+                parseResponse: mapToDetailResult
             }),
             process: http.createDataRequest("/api/find-similar/results", "POST")
         }
@@ -71,8 +70,18 @@ function mapToTask(data: any): FindSimilarTask {
 function mapToResult(data: any): FindSimilarResult {
     return {
         id: <number>data["id"],
-        type: <ResultType>data["type"],
-        images: <SimpleIllust[]>data["images"],
+        type: <SummaryTypes[]>data["type"],
+        images: <FindSimilarResultImage[]>data["images"],
+        recordTime: datetime.of(<string>data["recordTime"])
+    }
+}
+
+function mapToDetailResult(data: any): FindSimilarDetailResult {
+    return {
+        id: <number>data["id"],
+        type: <SummaryTypes[]>data["type"],
+        images: <FindSimilarResultImage[]>data["images"],
+        relations: <FindSimilarResultRelation[]>data["relations"],
         recordTime: datetime.of(<string>data["recordTime"])
     }
 }
@@ -109,11 +118,11 @@ export interface FindSimilarEndpoint {
         /**
          * 查看结果列表。
          */
-        list(filter: FindSimilarResultFilter): Promise<Response<ListResult<FindSimilarResult>>>
+        list(filter: LimitAndOffsetFilter): Promise<Response<ListResult<FindSimilarResult>>>
         /**
          * 查看指定结果的详情。
          */
-        get(id: number): Promise<Response<FindSimilarResult, NotFound>>
+        get(id: number): Promise<Response<FindSimilarDetailResult, NotFound>>
         /**
          * 处理结果。
          */
@@ -144,19 +153,39 @@ export interface TaskConfig {
     findBySimilarity: boolean
     findBySourceRelation: boolean
     findBySourceMark: boolean
-    findBySimilarityThreshold: number | null
-    findBySourceRelationBasis: RelationBasis[] | null
+    similarityThreshold: number | null
+    similarityTooHighThreshold: number | null
+    filterByOtherImport: boolean
     filterByPartition: boolean
     filterByTopic: boolean
     filterByAuthor: boolean
     filterBySourceTagType: {source: string, tagType: string}[]
 }
 
-export type RelationBasis = "RELATION" | "POOL" | "PART"
+export type FindSimilarEntityType = "ILLUST" | "IMPORT_IMAGE"
 
-export type ResultType = "DUPLICATED" | "OTHERS"
+export type SummaryTypes = "SAME" | "RELATED" | "SIMILAR"
 
-export type ProcessAction = "DELETE" | "RETAIN_OLD" | "RETAIN_OLD_AND_CLONE_PROPS" | "RETAIN_NEW" | "RETAIN_NEW_AND_CLONE_PROPS"
+export type SimilarityType = "SOURCE_IDENTITY_EQUAL" | "SOURCE_IDENTITY_SIMILAR" | "SOURCE_RELATED" | "RELATION_MARK_SAME" | "RELATION_MARK_SIMILAR" | "RELATION_MARK_RELATED" | "TOO_HIGH_SIMILARITY" | "HIGH_SIMILARITY" | "EXISTED"
+
+export type MarkType = SummaryTypes | "UNKNOWN"
+
+interface FindSimilarEntityKey {
+    type: FindSimilarEntityType
+    id: number
+}
+
+interface RelationInfo {}
+
+interface SourceIdentityRelationInfo extends RelationInfo { site: string, sourceId: number, sourcePart: number | null }
+
+interface SourceRelatedRelationInfo extends RelationInfo { hasRelations: boolean, sameBooks: number[] }
+
+interface SourceMarkRelationInfo extends RelationInfo { markType: MarkType }
+
+interface SimilarityRelationInfo extends RelationInfo { similarity: number }
+
+interface ExistedRelationInfo extends RelationInfo { sameCollectionId: number | null, sameBooks: number[], sameAssociate: boolean, ignored: boolean }
 
 export interface FindSimilarTask {
     id: number
@@ -167,10 +196,31 @@ export interface FindSimilarTask {
 
 export interface FindSimilarResult {
     id: number
-    type: ResultType
-    images: SimpleIllust[]
+    type: SummaryTypes[]
+    images: FindSimilarResultImage[]
     recordTime: LocalDateTime
 }
+
+export interface FindSimilarDetailResult extends FindSimilarResult {
+    relations: FindSimilarResultRelation[]
+}
+
+interface FindSimilarResultImage extends FindSimilarEntityKey {
+    thumbnailFile: string | null
+}
+
+interface FindSimilarResultRelationTemplate<T extends SimilarityType, I extends RelationInfo> { a: FindSimilarEntityKey, b: FindSimilarEntityKey, type: T, info: I }
+
+type FindSimilarResultRelation
+    = FindSimilarResultRelationTemplate<"SOURCE_IDENTITY_EQUAL", SourceIdentityRelationInfo>
+    | FindSimilarResultRelationTemplate<"SOURCE_IDENTITY_SIMILAR", SourceIdentityRelationInfo>
+    | FindSimilarResultRelationTemplate<"SOURCE_RELATED", SourceRelatedRelationInfo>
+    | FindSimilarResultRelationTemplate<"RELATION_MARK_SAME", SourceMarkRelationInfo>
+    | FindSimilarResultRelationTemplate<"RELATION_MARK_SIMILAR", SourceMarkRelationInfo>
+    | FindSimilarResultRelationTemplate<"RELATION_MARK_RELATED", SourceMarkRelationInfo>
+    | FindSimilarResultRelationTemplate<"HIGH_SIMILARITY", SimilarityRelationInfo>
+    | FindSimilarResultRelationTemplate<"TOO_HIGH_SIMILARITY", SimilarityRelationInfo>
+    | FindSimilarResultRelationTemplate<"EXISTED", ExistedRelationInfo>
 
 export interface FindSimilarTaskCreateForm {
     selector: TaskSelector
@@ -179,17 +229,10 @@ export interface FindSimilarTaskCreateForm {
 
 export interface FindSimilarResultProcessForm {
     target?: number[]
-    action: ProcessAction
 }
-
-export type FindSimilarTaskFilter = FindSimilarTaskQueryFilter & LimitAndOffsetFilter
-
-export type FindSimilarResultFilter = FindSimilarResultQueryFilter & LimitAndOffsetFilter
 
 export interface FindSimilarTaskQueryFilter {
     order?: OrderList<"id" | "recordTime">
 }
 
-export interface FindSimilarResultQueryFilter {
-    order?: OrderList<"id" | "orderedId" | "recordTime">
-}
+export type FindSimilarTaskFilter = FindSimilarTaskQueryFilter & LimitAndOffsetFilter
