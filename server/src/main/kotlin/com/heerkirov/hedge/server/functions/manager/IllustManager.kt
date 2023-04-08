@@ -9,6 +9,7 @@ import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.events.CollectionImagesChanged
 import com.heerkirov.hedge.server.events.IllustCreated
+import com.heerkirov.hedge.server.events.IllustDeleted
 import com.heerkirov.hedge.server.events.IllustUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.IllustKit
@@ -274,6 +275,8 @@ class IllustManager(private val data: DataRepository,
             data.db.delete(IllustAuthorRelations) { it.illustId eq collectionId }
             data.db.delete(IllustTopicRelations) { it.illustId eq collectionId }
             data.db.delete(IllustAnnotationRelations) { it.illustId eq collectionId }
+
+            bus.emit(IllustDeleted(collectionId, IllustType.COLLECTION))
         }
     }
 
