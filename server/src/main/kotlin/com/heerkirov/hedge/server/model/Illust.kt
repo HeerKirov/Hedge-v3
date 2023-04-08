@@ -1,7 +1,5 @@
 package com.heerkirov.hedge.server.model
 
-import com.fasterxml.jackson.annotation.JsonSubTypes
-import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.utils.composition.Composition
@@ -203,9 +201,21 @@ data class ImportImage(val id: Int,
                         */
                        val fileImportTime: LocalDateTime,
                        /**
-                        * 导入此项目时要采取的操作。
+                        * 预设collection id.
                         */
-                       val action: List<ImportAction>?,
+                       val collectionId: String?,
+                       /**
+                        * 预设books.
+                        */
+                       val bookIds: List<Int>?,
+                       /**
+                        * 预设folders.
+                        */
+                       val folderIds: List<Int>?,
+                       /**
+                        * 预设操作.
+                        */
+                       val preference: Preference?,
                        /**
                         * 标记为tagme。
                         * 可以通过配置决定要不要给项目加初始tagme，以及该加哪些。
@@ -240,32 +250,9 @@ data class ImportImage(val id: Int,
                         */
                        val createTime: LocalDateTime) {
 
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-    @JsonSubTypes(value = [
-        JsonSubTypes.Type(value = AddToCollection::class, name = "ADD_TO_COLLECTION"),
-        JsonSubTypes.Type(value = AddToFolder::class, name = "ADD_TO_FOLDER"),
-        JsonSubTypes.Type(value = AddToBook::class, name = "ADD_TO_BOOK"),
-        JsonSubTypes.Type(value = AddToNewCollection::class, name = "ADD_TO_NEW_COLLECTION"),
-        JsonSubTypes.Type(value = AddToNewBook::class, name = "ADD_TO_NEW_BOOK"),
-        JsonSubTypes.Type(value = CloneImageFrom::class, name = "CLONE_IMAGE_FROM"),
-    ])
-    interface ImportAction
+    data class Preference(val cloneImage: CloneImageFrom?)
 
-    data class AddToCollection(val collectionId: Int) : ImportAction
-
-    data class AddToFolder(val folderId: Int) : ImportAction
-
-    data class AddToBook(val bookId: Int) : ImportAction
-
-    data class AddToNewCollection(val token: String) : ImportAction
-
-    data class AddToNewBook(val token: String,
-                            val title: String? = null,
-                            val description: String? = null,
-                            val score: Int? = null,
-                            val favorite: Boolean = false) : ImportAction
-
-    data class CloneImageFrom(val fromImageId: Int, val props: CloneImageProps, val merge: Boolean = false, val deleteFrom: Boolean = false) : ImportAction
+    data class CloneImageFrom(val fromImageId: Int, val props: CloneImageProps, val merge: Boolean = false, val deleteFrom: Boolean = false)
 
     data class CloneImageProps(
         val score: Boolean = false,

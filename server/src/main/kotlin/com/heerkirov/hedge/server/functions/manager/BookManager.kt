@@ -54,9 +54,42 @@ class BookManager(private val data: DataRepository,
     }
 
     /**
+     * 向book追加新的images。
+     */
+    fun addImagesInBook(bookId: Int, imageIds: List<Int>, ordinal: Int?) {
+        kit.upsertSubImages(bookId, imageIds, ordinal)
+        kit.refreshAllMeta(bookId)
+        backendExporter.add(IllustBookMemberExporterTask(imageIds))
+
+        bus.emit(BookImagesChanged(bookId, imageIds, emptyList(), emptyList()))
+    }
+
+    /**
+     * 移除images.
+     */
+    fun moveImagesInBook(bookId: Int, imageIds: List<Int>, ordinal: Int?) {
+        kit.moveSubImages(bookId, imageIds, ordinal)
+        //tips: move操作不需要重置meta
+        backendExporter.add(IllustBookMemberExporterTask(imageIds))
+
+        bus.emit(BookImagesChanged(bookId, emptyList(), imageIds, emptyList()))
+    }
+
+    /**
+     * 从book移除images。
+     */
+    fun removeImagesFromBook(bookId: Int, imageIds: List<Int>) {
+        kit.deleteSubImages(bookId, imageIds)
+        kit.refreshAllMeta(bookId)
+        backendExporter.add(IllustBookMemberExporterTask(imageIds))
+
+        bus.emit(BookImagesChanged(bookId, emptyList(), emptyList(), imageIds))
+    }
+
+    /**
      * 从所有的books中平滑移除一个image项。将数量统计-1。如果删掉的image是封面，重新获得下一张封面。
      */
-    fun removeItemInAllBooks(imageId: Int, exportMetaTags: Boolean = false) {
+    fun removeItemFromAllBooks(imageId: Int, exportMetaTags: Boolean = false) {
         val relations = data.db.sequenceOf(BookImageRelations).filter { it.imageId eq imageId }.toList()
         val bookIds = relations.asSequence().map { it.bookId }.toSet()
 

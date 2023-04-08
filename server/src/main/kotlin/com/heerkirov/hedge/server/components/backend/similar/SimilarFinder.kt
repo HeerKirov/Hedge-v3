@@ -2,19 +2,26 @@ package com.heerkirov.hedge.server.components.backend.similar
 
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
+import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
+import com.heerkirov.hedge.server.dao.FindSimilarResults
 import com.heerkirov.hedge.server.dao.FindSimilarTasks
 import com.heerkirov.hedge.server.enums.AppLoadStatus
+import com.heerkirov.hedge.server.enums.FindSimilarEntityType
+import com.heerkirov.hedge.server.events.ImportSaved
+import com.heerkirov.hedge.server.events.PackagedBusEvent
 import com.heerkirov.hedge.server.exceptions.NotFound
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.library.framework.StatefulComponent
+import com.heerkirov.hedge.server.model.FindSimilarResult
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.tools.ControlledLoopThread
+import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
+import com.heerkirov.hedge.server.utils.types.toEntityKey
+import com.heerkirov.hedge.server.utils.types.toEntityKeyString
 import org.ktorm.dsl.*
-import org.ktorm.entity.firstOrNull
-import org.ktorm.entity.isNotEmpty
-import org.ktorm.entity.sequenceOf
+import org.ktorm.entity.*
 
 /**
  * 处理相似项查找的后台任务。它从task表读取任务，并将确切结果写入result表。
@@ -27,6 +34,10 @@ interface SimilarFinder : StatefulComponent {
 
 class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val data: DataRepository, bus: EventBus) : SimilarFinder {
     private val workerThread = SimilarFinderWorkThread(data, bus)
+
+    init {
+        bus.on(ImportSaved::class, ::processImportToImage)
+    }
 
     override val isIdle: Boolean get() = !workerThread.isAlive
 
@@ -55,6 +66,10 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val data
             throw be(NotFound())
         }
     }
+
+    private fun processImportToImage(e: PackagedBusEvent<ImportSaved>) {
+        workerThread.processImportToImage(e.event.importIdToImageIds)
+    }
 }
 
 class SimilarFinderWorkThread(private val data: DataRepository, private val bus: EventBus) : ControlledLoopThread() {
@@ -74,5 +89,43 @@ class SimilarFinderWorkThread(private val data: DataRepository, private val bus:
         recordBuilder.generateRecords()
 
         data.db.delete(FindSimilarTasks) { it.id eq model.id }
+    }
+
+    fun processImportToImage(importIdToImageIds: Map<Int, Int>) {
+        data.db.transaction {
+            //接收ImportSaved信息，然后更改已有的result
+            val likeCondition = importIdToImageIds.keys.map { FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it).toEntityKeyString() }.map { "%|$it|%" }.map { FindSimilarResults.images like it }.reduce { a, b -> a or b }
+            val existResults = data.db.sequenceOf(FindSimilarResults).filter { likeCondition }.toList()
+            for (result in existResults) {
+                val newImages = result.images.asSequence()
+                    .map { it.toEntityKey() }
+                    .map { if(it.type == FindSimilarEntityType.IMPORT_IMAGE && it.id in importIdToImageIds.keys) FindSimilarEntityKey(FindSimilarEntityType.ILLUST, importIdToImageIds[it.id]!!) else it }
+                    .map { it.toEntityKeyString() }
+                    .toList()
+
+                val newRelations = result.relations.asSequence()
+                    .map {
+                        val ak = it.a.toEntityKey()
+                        val bk = it.b.toEntityKey()
+                        val newA = if(ak.type == FindSimilarEntityType.IMPORT_IMAGE && ak.id in importIdToImageIds.keys) importIdToImageIds[ak.id]!! else null
+                        val newB = if(bk.type == FindSimilarEntityType.IMPORT_IMAGE && bk.id in importIdToImageIds.keys) importIdToImageIds[bk.id]!! else null
+                        if(newA != null || newB != null) {
+                            FindSimilarResult.RelationUnit(
+                                newA?.let { i -> FindSimilarEntityKey(FindSimilarEntityType.ILLUST, i).toEntityKeyString() } ?: it.a,
+                                newB?.let { i -> FindSimilarEntityKey(FindSimilarEntityType.ILLUST, i).toEntityKeyString() } ?: it.b,
+                                it.type, it.params)
+                        }else{
+                            it
+                        }
+                    }
+                    .toList()
+
+                data.db.update(FindSimilarResults) {
+                    where { it.id eq result.id }
+                    set(it.images, newImages)
+                    set(it.relations, newRelations)
+                }
+            }
+        }
     }
 }

@@ -150,11 +150,31 @@ class IllustManager(private val data: DataRepository,
         return id
     }
 
+    fun setCollectionImages(collectionId: Int, images: List<Illust>, score: Int? = null) {
+        val (fileId, scoreFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(images)
+
+        data.db.update(Illusts) {
+            where { it.id eq collectionId }
+            set(it.fileId, fileId)
+            set(it.cachedChildrenCount, images.size)
+            set(it.exportedScore, score ?: scoreFromSub)
+            set(it.partitionTime, partitionTime)
+            set(it.orderTime, orderTime)
+            set(it.updateTime, DateTime.now())
+        }
+
+        updateSubImages(collectionId, images)
+
+        kit.refreshAllMeta(collectionId, copyFromChildren = true)
+
+        bus.emit(CollectionImagesChanged(collectionId))
+    }
+
     /**
      * 应用images列表，设置images的parent为当前collection，同时处理重导出关系。
      * 对于移入/移除当前集合的项，对其属性进行重导出；对于被移出的旧parent，也对其进行处理。
      */
-    fun updateSubImages(collectionId: Int, images: List<Illust>) {
+    private fun updateSubImages(collectionId: Int, images: List<Illust>) {
         val imageIds = images.asSequence().map { it.id }.toSet()
         val oldImageIds = data.db.from(Illusts).select(Illusts.id)
             .where { Illusts.parentId eq collectionId }

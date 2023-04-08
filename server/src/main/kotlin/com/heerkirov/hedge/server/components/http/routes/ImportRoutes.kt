@@ -21,7 +21,6 @@ class ImportRoutes(private val importService: ImportService) : Routes {
                 post("import", ::import)
                 post("upload", ::upload)
                 post("batch-update", ::batchUpdate)
-                post("action", ::action)
                 post("save", ::save)
                 path("watcher") {
                     get(::getWatcher)
@@ -74,11 +73,6 @@ class ImportRoutes(private val importService: ImportService) : Routes {
         val form = ctx.bodyAsForm<ImportBatchUpdateForm>()
         val warnings = importService.batchUpdate(form)
         ctx.status(200).json(warnings.map { (id, values) -> IdResWithWarnings(id, values.map { ErrorResult(it) }) })
-    }
-
-    private fun action(ctx: Context) {
-        val form = ctx.bodyAsForm<ImportActForm>()
-        ctx.json(importService.action(form))
     }
 
     private fun save(ctx: Context) {

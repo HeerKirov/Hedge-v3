@@ -10,12 +10,16 @@ import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.events.IllustDeleted
 import com.heerkirov.hedge.server.events.IllustUpdated
+import com.heerkirov.hedge.server.exceptions.ResourceNotExist
+import com.heerkirov.hedge.server.exceptions.ResourceNotSuitable
+import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.types.optOf
 import org.ktorm.dsl.*
 import org.ktorm.entity.first
+import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 
 class IllustExtendManager(private val data: DataRepository,
@@ -46,9 +50,9 @@ class IllustExtendManager(private val data: DataRepository,
 
         if(illust.type != IllustModelType.COLLECTION) {
             //从所有book中移除并重导出
-            bookManager.removeItemInAllBooks(illust.id, exportMetaTags = anyNotExportedMetaExists)
+            bookManager.removeItemFromAllBooks(illust.id, exportMetaTags = anyNotExportedMetaExists)
             //从所有folder中移除
-            folderManager.removeItemInAllFolders(illust.id)
+            folderManager.removeItemFromAllFolders(illust.id)
             //关联的partition的计数-1
             partitionManager.deleteItemInPartition(illust.partitionTime)
             //对parent的导出处理
@@ -79,36 +83,55 @@ class IllustExtendManager(private val data: DataRepository,
 
     /**
      * 复制属性。
+     * @throws ResourceNotExist ("from" | "to", number) 源或目标不存在
+     * @throws ResourceNotSuitable ("from" | "to", number) 源或目标类型不适用，不能使用集合
      */
-    fun cloneProps(fromIllust: Illust, toIllust: Illust, props: ImagePropsCloneForm.Props, merge: Boolean) {
+    fun cloneProps(fromIllustId: Int, toIllustId: Int, props: ImagePropsCloneForm.Props, merge: Boolean, deleteFrom: Boolean) {
+        val fromIllust = data.db.sequenceOf(Illusts).firstOrNull { it.id eq fromIllustId } ?: throw be(ResourceNotExist("from", fromIllustId))
+        val toIllust = data.db.sequenceOf(Illusts).firstOrNull { it.id eq toIllustId } ?: throw be(ResourceNotExist("to", toIllustId))
+        if(fromIllust.type == IllustModelType.COLLECTION) throw be(ResourceNotSuitable("from", fromIllustId))
+        if(toIllust.type == IllustModelType.COLLECTION) throw be(ResourceNotSuitable("to", toIllustId))
+        cloneProps(fromIllust, toIllust, props, merge)
+
+        if(deleteFrom) {
+            delete(fromIllust)
+        }
+    }
+
+    /**
+     * 复制属性。
+     */
+    private fun cloneProps(fromIllust: Illust, toIllust: Illust, props: ImagePropsCloneForm.Props, merge: Boolean) {
         //根据是否更改了parent，有两种不同的处理路径
         val parentChanged = props.collection && fromIllust.parentId != toIllust.parentId
         val newParent = if(parentChanged && fromIllust.parentId != null) data.db.sequenceOf(Illusts).first { (it.id eq fromIllust.parentId) and (it.type eq IllustModelType.COLLECTION) } else null
         val parentId = if(parentChanged) toIllust.parentId else fromIllust.parentId
 
-        data.db.update(Illusts) {
-            where { it.id eq toIllust.id }
-            if(parentChanged) {
-                set(it.parentId, newParent?.id)
-                set(it.type, if(newParent != null) IllustModelType.IMAGE_WITH_PARENT else IllustModelType.IMAGE)
-                set(it.exportedScore, if(props.score) { fromIllust.score }else{ toIllust.score } ?: newParent?.score)
-                set(it.exportedDescription, if(props.description) { fromIllust.description }else{ toIllust.description }.ifEmpty { newParent?.description ?: "" })
-            }
-            if(props.favorite) set(it.favorite, fromIllust.favorite)
-            if(props.tagme) set(it.tagme, if(merge) { fromIllust.tagme + toIllust.tagme }else{ fromIllust.tagme })
-            if(props.score) set(it.score, fromIllust.score)
-            if(props.description) set(it.description, fromIllust.description)
-            if(props.orderTime) set(it.orderTime, fromIllust.orderTime)
-            if(props.partitionTime && fromIllust.partitionTime != toIllust.partitionTime) {
-                set(it.partitionTime, fromIllust.partitionTime)
-                partitionManager.addItemInPartition(fromIllust.partitionTime)
-            }
+        if(parentChanged || props.favorite || props.tagme || props.score || props.description || props.orderTime || props.partitionTime || props.source) {
+            data.db.update(Illusts) {
+                where { it.id eq toIllust.id }
+                if(parentChanged) {
+                    set(it.parentId, newParent?.id)
+                    set(it.type, if(newParent != null) IllustModelType.IMAGE_WITH_PARENT else IllustModelType.IMAGE)
+                    set(it.exportedScore, if(props.score) { fromIllust.score }else{ toIllust.score } ?: newParent?.score)
+                    set(it.exportedDescription, if(props.description) { fromIllust.description }else{ toIllust.description }.ifEmpty { newParent?.description ?: "" })
+                }
+                if(props.favorite) set(it.favorite, fromIllust.favorite)
+                if(props.tagme) set(it.tagme, if(merge) { fromIllust.tagme + toIllust.tagme }else{ fromIllust.tagme })
+                if(props.score) set(it.score, fromIllust.score)
+                if(props.description) set(it.description, fromIllust.description)
+                if(props.orderTime) set(it.orderTime, fromIllust.orderTime)
+                if(props.partitionTime && fromIllust.partitionTime != toIllust.partitionTime) {
+                    set(it.partitionTime, fromIllust.partitionTime)
+                    partitionManager.addItemInPartition(fromIllust.partitionTime)
+                }
 
-            if(props.source) {
-                set(it.sourceSite, fromIllust.sourceSite)
-                set(it.sourceId, fromIllust.sourceId)
-                set(it.sourcePart, fromIllust.sourcePart)
-                set(it.sourceDataId, fromIllust.sourceDataId)
+                if(props.source) {
+                    set(it.sourceSite, fromIllust.sourceSite)
+                    set(it.sourceId, fromIllust.sourceId)
+                    set(it.sourcePart, fromIllust.sourcePart)
+                    set(it.sourceDataId, fromIllust.sourceDataId)
+                }
             }
         }
 
@@ -197,7 +220,7 @@ class IllustExtendManager(private val data: DataRepository,
                 val newBooks = books.filter { (id, _) -> id !in existsBooks }
                 if(newBooks.isNotEmpty()) bookManager.addItemInBooks(toIllust.id, newBooks, exportMetaTags = true)
             }else{
-                bookManager.removeItemInAllBooks(toIllust.id, exportMetaTags = true)
+                bookManager.removeItemFromAllBooks(toIllust.id, exportMetaTags = true)
                 bookManager.addItemInBooks(toIllust.id, books, exportMetaTags = true)
             }
 
@@ -219,7 +242,7 @@ class IllustExtendManager(private val data: DataRepository,
                 val newFolders = folders.filter { (id, _) -> id !in existsFolders }
                 if(newFolders.isNotEmpty()) folderManager.addItemInFolders(toIllust.id, newFolders)
             }else{
-                folderManager.removeItemInAllFolders(toIllust.id)
+                folderManager.removeItemFromAllFolders(toIllust.id)
                 folderManager.addItemInFolders(toIllust.id, folders)
             }
         }

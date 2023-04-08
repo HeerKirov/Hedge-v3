@@ -279,11 +279,7 @@ class BookService(private val data: DataRepository,
                     val images = illustManager.unfoldImages(formImages)
                     if(images.isNotEmpty()) {
                         val imageIds = images.map { it.id }
-                        kit.upsertSubImages(id, imageIds, form.ordinal)
-                        kit.refreshAllMeta(id)
-                        backendExporter.add(IllustBookMemberExporterTask(imageIds))
-
-                        bus.emit(BookImagesChanged(id, imageIds, emptyList(), emptyList()))
+                        bookManager.addImagesInBook(id, imageIds, form.ordinal)
                     }
                 }
                 BatchAction.MOVE -> {
@@ -291,21 +287,13 @@ class BookService(private val data: DataRepository,
                     //不能用来添加新项目，会被忽略。
                     val formImages = form.images ?: throw be(ParamRequired("images"))
                     if(formImages.isNotEmpty()) {
-                        kit.moveSubImages(id, formImages, form.ordinal)
-                        //tips: move操作不需要重置meta
-                        backendExporter.add(IllustBookMemberExporterTask(formImages))
-
-                        bus.emit(BookImagesChanged(id, emptyList(), formImages, emptyList()))
+                        bookManager.moveImagesInBook(id, formImages, form.ordinal)
                     }
                 }
                 BatchAction.DELETE -> {
                     val formImages = form.images ?: throw be(ParamRequired("images"))
                     if(formImages.isNotEmpty()) {
-                        kit.deleteSubImages(id, formImages)
-                        kit.refreshAllMeta(id)
-                        backendExporter.add(IllustBookMemberExporterTask(formImages))
-
-                        bus.emit(BookImagesChanged(id, emptyList(), emptyList(), formImages))
+                        bookManager.removeImagesFromBook(id, formImages)
                     }
                 }
             }

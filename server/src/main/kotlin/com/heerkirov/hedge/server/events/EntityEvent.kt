@@ -94,7 +94,7 @@ data class ImportUpdated(override val importId: Int,
 
 data class ImportDeleted(override val importId: Int) : BaseBusEventImpl("entity/import/deleted"), ImportEntityEvent
 
-class ImportSaved(val count: Int) : BaseBusEventImpl("entity/import/saved"), EntityEvent
+class ImportSaved(val importIdToImageIds: Map<Int, Int>) : BaseBusEventImpl("entity/import/saved"), EntityEvent
 
 interface SourceDataEntityEvent : EntityEvent { val site: String; val sourceId: Long }
 

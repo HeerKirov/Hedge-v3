@@ -6,12 +6,13 @@ import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.ImportOption
 import com.heerkirov.hedge.server.components.database.transaction
-import com.heerkirov.hedge.server.dao.FileRecords
-import com.heerkirov.hedge.server.dao.ImportImages
+import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.filter.ImportFilter
 import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.FileStatus
+import com.heerkirov.hedge.server.enums.FolderType
+import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.events.ImportDeleted
 import com.heerkirov.hedge.server.events.ImportSaved
 import com.heerkirov.hedge.server.events.ImportUpdated
@@ -19,6 +20,7 @@ import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.manager.*
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.model.Illust
+import com.heerkirov.hedge.server.model.ImportImage
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
 import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
 import com.heerkirov.hedge.server.utils.business.takeAllFilepathOrNull
@@ -38,6 +40,9 @@ class ImportService(private val data: DataRepository,
                     private val fileManager: FileManager,
                     private val importManager: ImportManager,
                     private val illustManager: IllustManager,
+                    private val illustExtendManager: IllustExtendManager,
+                    private val bookManager: BookManager,
+                    private val folderManager: FolderManager,
                     private val sourceManager: SourceDataManager,
                     private val importMetaManager: ImportMetaManager,
                     private val similarFinder: SimilarFinder,
@@ -104,12 +109,27 @@ class ImportService(private val data: DataRepository,
 
         val (file, thumbnailFile) = takeAllFilepathOrNull(row)
 
+        val collectionId: Any? = row[ImportImages.collectionId].let {
+            if(it == null) {
+                null
+            }else if(it.startsWith('@')) {
+                it.substring(1)
+            }else if(it.startsWith('#')) {
+                it.substring(1).toInt()
+            }else{
+                it
+            }
+        }
+
         return ImportImageDetailRes(
             row[ImportImages.id]!!,
             file, thumbnailFile,
             row[ImportImages.fileName], row[ImportImages.filePath],
             row[ImportImages.fileCreateTime], row[ImportImages.fileUpdateTime], row[ImportImages.fileImportTime]!!,
-            row[ImportImages.tagme]!!, row[ImportImages.sourceSite], row[ImportImages.sourceId], row[ImportImages.sourcePart],
+            row[ImportImages.tagme]!!,
+            row[ImportImages.preference] ?: ImportImage.Preference(cloneImage = null),
+            collectionId, row[ImportImages.folderIds] ?: emptyList(), row[ImportImages.bookIds] ?: emptyList(),
+            row[ImportImages.sourceSite], row[ImportImages.sourceId], row[ImportImages.sourcePart],
             row[ImportImages.partitionTime]!!, row[ImportImages.orderTime]!!.parseDateTime(), row[ImportImages.createTime]!!
         )
     }
@@ -140,17 +160,31 @@ class ImportService(private val data: DataRepository,
                 }
             }else Triple(undefined(), undefined(), undefined())
 
+            val newCollectionId = form.collectionId.letOpt {
+                when (form.collectionId.value) {
+                    null -> null
+                    is String -> "@${(form.collectionId.value as String)}"
+                    is Int -> "#${(form.collectionId.value as Int)}"
+                    else -> throw be(ParamTypeError("collectionId", "must be number or string."))
+                }
+            }
+
             if (form.tagme.isPresent || form.sourceSite.isPresent || form.sourceId.isPresent || form.sourcePart.isPresent ||
-                form.partitionTime.isPresent || form.orderTime.isPresent || form.createTime.isPresent) {
+                form.partitionTime.isPresent || form.orderTime.isPresent || form.createTime.isPresent ||
+                form.preference.isPresent || form.collectionId.isPresent || form.bookIds.isPresent || form.folderIds.isPresent) {
                 data.db.update(ImportImages) {
                     where { it.id eq id }
-                    form.tagme.applyOpt { set(it.tagme, this) }
                     newSource.applyOpt { set(it.sourceSite, this) }
                     newSourceId.applyOpt { set(it.sourceId, this) }
                     newSourcePart.applyOpt { set(it.sourcePart, this) }
+                    form.tagme.applyOpt { set(it.tagme, this) }
                     form.partitionTime.applyOpt { set(it.partitionTime, this) }
                     form.orderTime.applyOpt { set(it.orderTime, this.toMillisecond()) }
                     form.createTime.applyOpt { set(it.createTime, this) }
+                    form.folderIds.applyOpt { set(it.folderIds, this) }
+                    form.bookIds.applyOpt { set(it.bookIds, this) }
+                    form.preference.applyOpt { set(it.preference, this) }
+                    newCollectionId.applyOpt { set(it.collectionId, this) }
                 }
 
                 bus.emit(ImportUpdated(id, generalUpdated = true, thumbnailFileReady = false))
@@ -177,7 +211,8 @@ class ImportService(private val data: DataRepository,
      */
     fun batchUpdate(form: ImportBatchUpdateForm): Map<Int, List<BaseException<*>>> {
         data.db.transaction {
-            if(form.tagme != null || form.partitionTime != null || form.setCreateTimeBy != null || form.setOrderTimeBy != null || form.analyseSource) {
+            if(form.tagme != null || form.partitionTime != null || form.setCreateTimeBy != null || form.setOrderTimeBy != null || form.analyseSource
+                || form.collectionId != null || !form.appendBookIds.isNullOrEmpty() || !form.appendFolderIds.isNullOrEmpty()) {
                 val records = if(form.target.isNullOrEmpty()) {
                     data.db.sequenceOf(ImportImages).toList()
                 }else{
@@ -206,10 +241,18 @@ class ImportService(private val data: DataRepository,
                         }
                     }
                 }
+                val newCollectionId = when (form.collectionId) {
+                    null -> null
+                    is String -> "@${form.collectionId}"
+                    is Int -> "#${form.collectionId}"
+                    else -> throw be(ParamTypeError("collectionId", "must be number or string."))
+                }
+
+                val filterCommonCondition = !form.appendFolderIds.isNullOrEmpty() || !form.appendBookIds.isNullOrEmpty() || newCollectionId != null || form.tagme != null || form.partitionTime != null || form.setCreateTimeBy != null || form.setOrderTimeBy != null
 
                 records.asSequence()
-                    .map { Tuple2(it, sourceResultMap[it.id]) }
-                    .filter { (_, src) -> form.tagme != null || form.partitionTime != null || form.setCreateTimeBy != null || form.setOrderTimeBy != null || src != null }
+                    .map { it to sourceResultMap[it.id] }
+                    .filter { (_, src) -> filterCommonCondition || src != null }
                     .forEach { (record, src) ->
                         data.db.update(ImportImages) {
                             where { it.id eq record.id }
@@ -220,6 +263,15 @@ class ImportService(private val data: DataRepository,
                                 set(it.sourcePart, sourcePart)
                                 if(tagme != null && form.tagme == null) set(it.tagme, tagme)
                             }
+                            if(!form.appendBookIds.isNullOrEmpty()) {
+                                val bookIds = ((record.bookIds ?: emptyList()) + form.appendBookIds).distinct()
+                                set(it.bookIds, bookIds)
+                            }
+                            if(!form.appendFolderIds.isNullOrEmpty()) {
+                                val folderIds = ((record.folderIds ?: emptyList()) + form.appendFolderIds).distinct()
+                                set(it.folderIds, folderIds)
+                            }
+                            if(newCollectionId != null) set(it.collectionId, newCollectionId)
                             if(form.tagme != null) set(it.tagme, form.tagme)
                             if(form.partitionTime != null) set(it.partitionTime, form.partitionTime)
                             if(form.setCreateTimeBy != null) set(it.createTime, when(form.setCreateTimeBy) {
@@ -245,14 +297,8 @@ class ImportService(private val data: DataRepository,
     }
 
     /**
-     * 设置预设操作。
-     */
-    fun action(form: ImportActForm) {
-
-    }
-
-    /**
      * 保存。
+     * @throws ResourceNotExist ("target", number[]) 要保存的对象不存在。给出不存在的source image id列表
      * @throws NotReadyFileError 还存在文件没有准备好，因此保险起见阻止了所有的导入。
      */
     fun save(form: ImportSaveForm): ImportSaveRes {
@@ -263,10 +309,71 @@ class ImportService(private val data: DataRepository,
                 .runIf(!form.target.isNullOrEmpty()) { where { ImportImages.id inList form.target!! } }
                 .map { Pair(ImportImages.createEntity(it), FileRecords.createEntity(it)) }
 
-            if(records.any { (_, file) -> file.status == FileStatus.NOT_READY }) throw be(NotReadyFileError())
+            if(!form.target.isNullOrEmpty() && records.size < form.target.size) throw be(ResourceNotExist("target", form.target.toSet() - records.map { it.first.id }.toSet()))
 
-            val imageIds = records.map { (record, _) ->
-                illustManager.newImage(
+            val existedFolderIds = records.map { (r, _) -> r.folderIds ?: emptyList() }.flatten().let { li ->
+                if(li.isEmpty()) emptyList() else data.db.from(Folders).select(Folders.id)
+                    .where { Folders.id inList li and (Folders.type eq FolderType.FOLDER) }
+                    .map { it[Folders.id]!! }
+                    .toSet()
+            }
+            val existedBookIds = records.map { (r, _) -> r.bookIds ?: emptyList() }.flatten().let { li ->
+                if(li.isEmpty()) emptyList() else data.db.from(Books).select(Books.id)
+                    .where { Books.id inList li }
+                    .map { it[Books.id]!! }
+                    .toSet()
+            }
+            val existedCollectionIds = records.mapNotNull { (r, _) -> if(r.collectionId?.startsWith('#') == true) r.collectionId.substring(1).toInt() else null }.let { li ->
+                if(li.isEmpty()) emptyList() else data.db.from(Illusts).select(Illusts.id)
+                    .where { Illusts.id inList li and (Illusts.type eq IllustModelType.COLLECTION) }
+                    .map { it[Illusts.id]!! }
+                    .toSet()
+            }
+            val existedCloneFromIds = records.mapNotNull { (r, _) -> r.preference?.cloneImage?.fromImageId }.let { li ->
+                if(li.isEmpty()) emptyList() else data.db.from(Illusts).select(Illusts.id)
+                    .where { Illusts.id inList li and ((Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) or (Illusts.type eq IllustModelType.IMAGE)) }
+                    .map { it[Illusts.id]!! }
+                    .toSet()
+            }
+
+            val warnings = mutableListOf<Tuple6<Int, Boolean, Int?, List<Int>?, List<Int>?, Int?>>()
+            val importToImageIds = mutableMapOf<Int, Int>()
+
+            for ((record, file) in records) {
+                //首先对记录所持有的collection、book、folder信息，以及file READY状态进行检查。如果不存在，则跳过此条
+                var notExistedCollectionId: Int? = null
+                var notExistedBookIds: List<Int>? = null
+                var notExistedFolderIds: List<Int>? = null
+                var notExistedCloneFrom: Int? = null
+                var fileNotReady = false
+
+                if(record.collectionId != null && record.collectionId.startsWith('#')) {
+                    val collectionId = record.collectionId.substring(1).toInt()
+                    if(collectionId !in existedCollectionIds) {
+                        notExistedCollectionId = collectionId
+                    }
+                }
+                if(!record.bookIds.isNullOrEmpty() && !existedBookIds.containsAll(record.bookIds)) {
+                    notExistedBookIds = record.bookIds - existedBookIds.toSet()
+                }
+                if(!record.folderIds.isNullOrEmpty() && !existedFolderIds.containsAll(record.folderIds)) {
+                    notExistedFolderIds = record.folderIds - existedFolderIds.toSet()
+                }
+                if(record.preference?.cloneImage != null && record.preference.cloneImage.fromImageId !in existedCloneFromIds) {
+                    notExistedCloneFrom = record.preference.cloneImage.fromImageId
+                }
+                if(file.status == FileStatus.NOT_READY) {
+                    fileNotReady = true
+                }
+                if(notExistedCollectionId != null || notExistedBookIds != null || notExistedFolderIds != null || notExistedCloneFrom != null || fileNotReady) {
+                    warnings.add(Tuple6(record.id, fileNotReady, notExistedCollectionId, notExistedBookIds, notExistedFolderIds, notExistedCloneFrom))
+                    continue
+                }
+
+                // 虽然{newImage}方法会抛出很多异常，但那都与这里无关。
+                // source虽然是唯一看似有关的，但通过业务逻辑限制，使得有实例的site不可能被删除。
+                // 就算最后真的出了bug，抛出去当unknown error处理算了。
+                val imageId = illustManager.newImage(
                     fileId = record.fileId,
                     tagme = record.tagme,
                     sourceSite = record.sourceSite,
@@ -275,24 +382,76 @@ class ImportService(private val data: DataRepository,
                     partitionTime = record.partitionTime,
                     orderTime = record.orderTime,
                     createTime = record.createTime)
-                // 虽然{newImage}方法会抛出很多异常，但那都与这里无关。
-                // source虽然是唯一看似有关的，但通过业务逻辑限制，使得不可能删除有实例的site。
-                // 就算最后真的出了bug，抛出去当unknown error处理算了。
+
+                importToImageIds[record.id] = imageId
             }
 
-            if(form.target.isNullOrEmpty()) {
+            records.asSequence()
+                .filter { (record, _) -> record.collectionId != null && record.id in importToImageIds }
+                .map { (record, _) -> record.collectionId!! to importToImageIds[record.id]!! }
+                .groupBy({ it.first }) { it.second }
+                .forEach { (cStr, imageIds) ->
+                    if(cStr.startsWith('#')) {
+                        val collectionId = cStr.substring(1).toInt()
+                        val images = illustManager.unfoldImages(listOf(collectionId) + imageIds, sorted = false)
+                        illustManager.setCollectionImages(collectionId, images)
+                    }else{
+                        illustManager.newCollection(imageIds, "", null, false, Illust.Tagme.EMPTY)
+                    }
+                }
+
+            records.asSequence()
+                .filter { (record, _) -> !record.bookIds.isNullOrEmpty() && record.id in importToImageIds }
+                .map { (record, _) -> record.bookIds!!.asSequence().map { it to importToImageIds[record.id]!! } }
+                .flatten()
+                .groupBy({ it.first }) { it.second }
+                .forEach { (bookId, imageIds) ->
+                    bookManager.addImagesInBook(bookId, imageIds, ordinal = null)
+                }
+
+            records.asSequence()
+                .filter { (record, _) -> !record.folderIds.isNullOrEmpty() && record.id in importToImageIds }
+                .map { (record, _) -> record.folderIds!!.asSequence().map { it to importToImageIds[record.id]!! } }
+                .flatten()
+                .groupBy({ it.first }) { it.second }
+                .forEach { (folderId, imageIds) ->
+                    folderManager.addImagesInFolder(folderId, imageIds, ordinal = null)
+                }
+
+            records.asSequence()
+                .filter { (record, _) -> record.preference?.cloneImage != null && record.id in importToImageIds }
+                .map { (record, _) -> importToImageIds[record.id]!! to record.preference?.cloneImage!! }
+                .forEach { (imageId, cloneImage) ->
+                    val props = ImagePropsCloneForm.Props(
+                        cloneImage.props.score,
+                        cloneImage.props.favorite,
+                        cloneImage.props.description,
+                        cloneImage.props.tagme,
+                        cloneImage.props.metaTags,
+                        cloneImage.props.partitionTime,
+                        cloneImage.props.orderTime,
+                        cloneImage.props.collection,
+                        cloneImage.props.books,
+                        cloneImage.props.folders,
+                        cloneImage.props.associate,
+                        cloneImage.props.source
+                    )
+                    illustExtendManager.cloneProps(cloneImage.fromImageId, imageId, props, cloneImage.merge, cloneImage.deleteFrom)
+                }
+
+            if(form.target.isNullOrEmpty() && importToImageIds.size >= records.size) {
                 data.db.deleteAll(ImportImages)
             }else{
-                data.db.delete(ImportImages) { it.id inList form.target }
+                data.db.delete(ImportImages) { it.id inList importToImageIds.keys }
             }
 
             if(data.setting.findSimilar.autoFindSimilar) {
-                similarFinder.add(FindSimilarTask.TaskSelectorOfImage(imageIds), data.setting.findSimilar.autoTaskConf ?: data.setting.findSimilar.defaultTaskConf)
+                similarFinder.add(FindSimilarTask.TaskSelectorOfImage(importToImageIds.values.toList()), data.setting.findSimilar.autoTaskConf ?: data.setting.findSimilar.defaultTaskConf)
             }
 
-            bus.emit(ImportSaved(records.size))
+            bus.emit(ImportSaved(importToImageIds))
 
-            return ImportSaveRes(records.size)
+            return ImportSaveRes(importToImageIds.size)
         }
     }
 

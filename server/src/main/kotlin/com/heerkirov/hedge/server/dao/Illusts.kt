@@ -6,6 +6,7 @@ import com.heerkirov.hedge.server.model.*
 import com.heerkirov.hedge.server.utils.ktorm.type.composition
 import com.heerkirov.hedge.server.utils.ktorm.type.enum
 import com.heerkirov.hedge.server.utils.ktorm.type.json
+import com.heerkirov.hedge.server.utils.ktorm.type.unionList
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.schema.*
 
@@ -159,7 +160,10 @@ object ImportImages : BaseTable<ImportImage>("import_image") {
     val fileCreateTime = datetime("file_create_time")
     val fileUpdateTime = datetime("file_update_time")
     val fileImportTime = datetime("file_import_time")
-    val action = json("action", typeRef<List<ImportImage.ImportAction>>())
+    val collectionId = varchar("collection_id")
+    val folderIds = unionList("folder_ids") { it.toInt() }
+    val bookIds = unionList("book_ids") { it.toInt() }
+    val preference = json("preference", typeRef<ImportImage.Preference>())
     val tagme = composition<Illust.Tagme>("tagme")
     val sourceSite = varchar("source_site")
     val sourceId = long("source_id")
@@ -176,7 +180,10 @@ object ImportImages : BaseTable<ImportImage>("import_image") {
         fileCreateTime = row[fileCreateTime],
         fileUpdateTime = row[fileUpdateTime],
         fileImportTime = row[fileImportTime]!!,
-        action = row[action],
+        collectionId = row[collectionId],
+        folderIds = row[folderIds],
+        bookIds = row[bookIds],
+        preference = row[preference],
         tagme = row[tagme]!!,
         sourceSite = row[sourceSite],
         sourceId = row[sourceId],

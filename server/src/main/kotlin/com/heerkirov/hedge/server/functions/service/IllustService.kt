@@ -407,23 +407,8 @@ class IllustService(private val data: DataRepository,
             val illust = data.db.sequenceOf(Illusts).filter { retrieveCondition(id, IllustType.COLLECTION) }.firstOrNull() ?: throw be(NotFound())
 
             val images = illustManager.unfoldImages(imageIds, sorted = false)
-            val (fileId, scoreFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(images)
 
-            data.db.update(Illusts) {
-                where { it.id eq id }
-                set(it.fileId, fileId)
-                set(it.cachedChildrenCount, images.size)
-                set(it.exportedScore, illust.score ?: scoreFromSub)
-                set(it.partitionTime, partitionTime)
-                set(it.orderTime, orderTime)
-                set(it.updateTime, DateTime.now())
-            }
-
-            illustManager.updateSubImages(id, images)
-
-            kit.refreshAllMeta(id, copyFromChildren = true)
-
-            bus.emit(CollectionImagesChanged(id))
+            illustManager.setCollectionImages(illust.id, images, illust.score)
         }
     }
 
@@ -911,16 +896,7 @@ class IllustService(private val data: DataRepository,
      */
     fun cloneImageProps(form: ImagePropsCloneForm) {
         data.db.transaction {
-            val fromIllust = data.db.sequenceOf(Illusts).firstOrNull { it.id eq form.from } ?: throw be(ResourceNotExist("from", form.from))
-            val toIllust = data.db.sequenceOf(Illusts).firstOrNull { it.id eq form.to } ?: throw be(ResourceNotExist("to", form.to))
-            if(fromIllust.type == IllustModelType.COLLECTION) throw be(ResourceNotSuitable("from", form.from))
-            if(toIllust.type == IllustModelType.COLLECTION) throw be(ResourceNotSuitable("to", form.to))
-
-            illustExtendManager.cloneProps(fromIllust, toIllust, form.props, form.merge)
-
-            if(form.deleteFrom) {
-                delete(fromIllust.id, IllustType.IMAGE)
-            }
+            illustExtendManager.cloneProps(form.from, form.to, form.props, form.merge, form.deleteFrom)
         }
     }
 

@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.dto.res
 
 import com.heerkirov.hedge.server.components.backend.watcher.PathWatcherError
 import com.heerkirov.hedge.server.model.Illust
+import com.heerkirov.hedge.server.model.ImportImage
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -15,7 +16,8 @@ data class ImportImageDetailRes(val id: Int,
                                 val file: String, val thumbnailFile: String?,
                                 val fileName: String?, val filePath: String?,
                                 val fileCreateTime: LocalDateTime?, val fileUpdateTime: LocalDateTime?, val fileImportTime: LocalDateTime,
-                                val tagme: Illust.Tagme,
+                                val tagme: Illust.Tagme, val preference: ImportImage.Preference,
+                                val collectionId: Any?, val folderIds: List<Int>, val bookIds: List<Int>,
                                 val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?,
                                 val partitionTime: LocalDate, val orderTime: LocalDateTime, val createTime: LocalDateTime)
 

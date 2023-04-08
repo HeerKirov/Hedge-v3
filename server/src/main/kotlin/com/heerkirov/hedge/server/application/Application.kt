@@ -82,13 +82,13 @@ fun runApplication(options: ApplicationOptions) {
 
             val illustService = IllustService(repo, bus, illustKit, illustManager, illustExtendManager, associateManager, sourceManager, partitionManager, queryManager, backendExporter)
             val bookService = BookService(repo, bus, bookKit, bookManager, illustManager, queryManager, backendExporter)
-            val folderService = FolderService(repo, bus, folderKit, illustManager)
+            val folderService = FolderService(repo, bus, folderKit, folderManager, illustManager)
             val partitionService = PartitionService(repo, queryManager)
             val annotationService = AnnotationService(repo, bus, annotationKit, queryManager)
             val tagService = TagService(repo, bus, tagKit, sourceMappingManager, backendExporter)
             val authorService = AuthorService(repo, bus, authorKit, queryManager, sourceMappingManager, backendExporter)
             val topicService = TopicService(repo, bus, topicKit, queryManager, sourceMappingManager, backendExporter)
-            val importService = ImportService(repo, bus, fileManager, importManager, illustManager, sourceManager, importMetaManager, similarFinder, pathWatcher)
+            val importService = ImportService(repo, bus, fileManager, importManager, illustManager, illustExtendManager, bookManager, folderManager, sourceManager, importMetaManager, similarFinder, pathWatcher)
             val findSimilarService = FindSimilarService(repo, illustExtendManager, similarFinder)
 
             val illustUtilService = IllustUtilService(repo)

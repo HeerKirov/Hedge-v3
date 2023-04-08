@@ -14,9 +14,49 @@ import org.ktorm.entity.toList
 
 class FolderManager(private val data: DataRepository, private val bus: EventBus, private val kit: FolderKit) {
     /**
+     * 向folder追加新的images。
+     */
+    fun addImagesInFolder(folderId: Int, imageIds: List<Int>, ordinal: Int?) {
+        val imageCount = kit.upsertSubImages(folderId, imageIds, ordinal)
+        data.db.update(Folders) {
+            where { it.id eq folderId }
+            set(it.cachedCount, imageCount)
+            set(it.updateTime, DateTime.now())
+        }
+
+        bus.emit(FolderImagesChanged(folderId, imageIds, emptyList(), emptyList()))
+    }
+
+    /**
+     * 移除images.
+     */
+    fun moveImagesInFolder(folderId: Int, imageIds: List<Int>, ordinal: Int?) {
+        kit.moveSubImages(folderId, imageIds, ordinal)
+        data.db.update(Folders) {
+            where { it.id eq folderId }
+            set(it.updateTime, DateTime.now())
+        }
+
+        bus.emit(FolderImagesChanged(folderId, emptyList(), imageIds, emptyList()))
+    }
+
+    /**
+     * 从folder移除images。
+     */
+    fun removeImagesFromFolder(folderId: Int, imageIds: List<Int>) {
+        val imageCount = kit.deleteSubImages(folderId, imageIds)
+        data.db.update(Folders) {
+            where { it.id eq folderId }
+            if(imageCount != null) set(it.cachedCount, imageCount)
+            set(it.updateTime, DateTime.now())
+        }
+
+        bus.emit(FolderImagesChanged(folderId, emptyList(), emptyList(), imageIds))
+    }
+    /**
      * 从所有的folders中平滑移除一个image项。
      */
-    fun removeItemInAllFolders(imageId: Int) {
+    fun removeItemFromAllFolders(imageId: Int) {
         val relations = data.db.sequenceOf(FolderImageRelations).filter { it.imageId eq imageId }.toList()
         val folderIds = relations.asSequence().map { it.folderId }.toSet()
 

@@ -16,6 +16,7 @@ import com.heerkirov.hedge.server.enums.FolderType
 import com.heerkirov.hedge.server.events.*
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.FolderKit
+import com.heerkirov.hedge.server.functions.manager.FolderManager
 import com.heerkirov.hedge.server.functions.manager.IllustManager
 import com.heerkirov.hedge.server.model.Folder
 import com.heerkirov.hedge.server.utils.business.takeAllFilepath
@@ -34,6 +35,7 @@ import org.ktorm.entity.*
 class FolderService(private val data: DataRepository,
                     private val bus: EventBus,
                     private val kit: FolderKit,
+                    private val folderManager: FolderManager,
                     private val illustManager: IllustManager) {
     private val orderTranslator = OrderTranslator {
         "id" to Folders.id
@@ -401,14 +403,7 @@ class FolderService(private val data: DataRepository,
                     val images = illustManager.unfoldImages(formImages)
                     if(images.isNotEmpty()) {
                         val imageIds = images.map { it.id }
-                        val imageCount = kit.upsertSubImages(id, imageIds, form.ordinal)
-                        data.db.update(Folders) {
-                            where { it.id eq id }
-                            set(it.cachedCount, imageCount)
-                            set(it.updateTime, DateTime.now())
-                        }
-
-                        bus.emit(FolderImagesChanged(id, imageIds, emptyList(), emptyList()))
+                        folderManager.addImagesInFolder(id, imageIds, form.ordinal)
                     }
                 }
                 BatchAction.MOVE -> {
@@ -416,26 +411,13 @@ class FolderService(private val data: DataRepository,
                     //不能用来添加新项目，会被忽略。
                     val formImages = form.images ?: throw be(ParamRequired("images"))
                     if(formImages.isNotEmpty()) {
-                        kit.moveSubImages(id, formImages, form.ordinal)
-                        data.db.update(Folders) {
-                            where { it.id eq id }
-                            set(it.updateTime, DateTime.now())
-                        }
-
-                        bus.emit(FolderImagesChanged(id, emptyList(), formImages, emptyList()))
+                        folderManager.moveImagesInFolder(id, formImages, form.ordinal)
                     }
                 }
                 BatchAction.DELETE -> {
                     val formImages = form.images ?: throw be(ParamRequired("images"))
                     if(formImages.isNotEmpty()) {
-                        val imageCount = kit.deleteSubImages(id, formImages)
-                        data.db.update(Folders) {
-                            where { it.id eq id }
-                            if(imageCount != null) set(it.cachedCount, imageCount)
-                            set(it.updateTime, DateTime.now())
-                        }
-
-                        bus.emit(FolderImagesChanged(id, emptyList(), emptyList(), formImages))
+                        folderManager.removeImagesFromFolder(id, formImages)
                     }
                 }
             }
