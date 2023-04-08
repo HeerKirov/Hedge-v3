@@ -6,7 +6,9 @@ import com.heerkirov.hedge.server.model.ImportImage
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-data class ImportSaveRes(val total: Int)
+data class ImportSaveRes(val total: Int, val errors: List<SaveErrorItem>) {
+    data class SaveErrorItem(val importId: Int, val fileNotReady: Boolean, val notExistedCollectionId: Int?, val notExistedCloneImageId: Int?, val notExistedBookIds: List<Int>?, val notExistedFolderIds: List<Int>?)
+}
 
 data class ImportImageRes(val id: Int, val file: String, val thumbnailFile: String?,
                           val fileName: String?, val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?,

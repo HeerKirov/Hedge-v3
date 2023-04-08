@@ -336,7 +336,7 @@ class ImportService(private val data: DataRepository,
                     .toSet()
             }
 
-            val warnings = mutableListOf<Tuple6<Int, Boolean, Int?, List<Int>?, List<Int>?, Int?>>()
+            val errorItems = mutableListOf<ImportSaveRes.SaveErrorItem>()
             val importToImageIds = mutableMapOf<Int, Int>()
 
             for ((record, file) in records) {
@@ -366,7 +366,7 @@ class ImportService(private val data: DataRepository,
                     fileNotReady = true
                 }
                 if(notExistedCollectionId != null || notExistedBookIds != null || notExistedFolderIds != null || notExistedCloneFrom != null || fileNotReady) {
-                    warnings.add(Tuple6(record.id, fileNotReady, notExistedCollectionId, notExistedBookIds, notExistedFolderIds, notExistedCloneFrom))
+                    errorItems.add(ImportSaveRes.SaveErrorItem(record.id, fileNotReady, notExistedCollectionId, notExistedCloneFrom, notExistedBookIds, notExistedFolderIds))
                     continue
                 }
 
@@ -451,7 +451,7 @@ class ImportService(private val data: DataRepository,
 
             bus.emit(ImportSaved(importToImageIds))
 
-            return ImportSaveRes(importToImageIds.size)
+            return ImportSaveRes(importToImageIds.size, errorItems)
         }
     }
 
