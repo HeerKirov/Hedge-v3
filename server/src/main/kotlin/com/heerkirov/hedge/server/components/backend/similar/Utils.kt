@@ -60,6 +60,7 @@ fun MutableList<RelationType>.addNewRelation(newRelation: RelationType) {
                 if(newRelation.ignored && !ext.ignored) ext.ignored = true
                 if(newRelation.sameAssociate && !ext.sameAssociate) ext.sameAssociate = true
                 if(newRelation.sameCollectionId != null) ext.sameCollectionId = newRelation.sameCollectionId
+                if(newRelation.samePreCollection != null) ext.samePreCollection = newRelation.samePreCollection
                 if(!newRelation.sameBooks.isNullOrEmpty()) {
                     if(ext.sameBooks == null) {
                         ext.sameBooks = newRelation.sameBooks
@@ -168,7 +169,7 @@ fun RelationType.toRecordInfo(): FindSimilarResult.RelationInfo {
         is SourceRelatedRelationType -> FindSimilarResult.SourceRelatedRelationInfo(hasRelations, sameBooks?.toList() ?: emptyList())
         is SourceMarkRelationType -> FindSimilarResult.SourceMarkRelationInfo(markType)
         is SimilarityRelationType -> FindSimilarResult.SimilarityRelationInfo(similarity)
-        is ExistedRelationType -> FindSimilarResult.ExistedRelationInfo(sameCollectionId, sameBooks?.toList() ?: emptyList(), sameAssociate, ignored)
+        is ExistedRelationType -> FindSimilarResult.ExistedRelationInfo(sameCollectionId, samePreCollection, sameBooks?.toList() ?: emptyList(), sameAssociate, ignored)
     }
 }
 
@@ -199,7 +200,7 @@ fun getRelationType(type: SimilarityType, params: FindSimilarResult.RelationInfo
         }
         SimilarityType.EXISTED -> {
             val info = params as FindSimilarResult.ExistedRelationInfo
-            ExistedRelationType(info.sameCollectionId, info.sameBooks.toMutableSet(), info.sameAssociate, info.ignored)
+            ExistedRelationType(info.sameCollectionId, info.samePreCollection, info.sameBooks.toMutableSet(), info.sameAssociate, info.ignored)
         }
     }
 }

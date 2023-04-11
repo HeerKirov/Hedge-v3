@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.FindSimilarEntityType
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.model.FindSimilarTask
+import com.heerkirov.hedge.server.model.ImportImage
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.runIf
@@ -131,13 +132,18 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
     }
 
     fun loadByImportImage(importIds: List<Int>? = null, enableFilterBy: Boolean = false): List<EntityInfo> {
-        data class ImageRow(val partitionTime: LocalDate, val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?)
+        data class ImageRow(val partitionTime: LocalDate, val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?, val collectionId: Any?, val bookIds: List<Int>, val cloneImage: ImportImage.CloneImageFrom?)
 
         val imagesMap = data.db.from(ImportImages)
             .innerJoin(FileRecords, FileRecords.id eq ImportImages.fileId)
-            .select(ImportImages.id, ImportImages.partitionTime, ImportImages.sourceSite, ImportImages.sourceId, ImportImages.sourcePart)
+            .select(ImportImages.id, ImportImages.partitionTime, ImportImages.sourceSite, ImportImages.sourceId, ImportImages.sourcePart, ImportImages.collectionId, ImportImages.bookIds, ImportImages.preference)
             .runIf(importIds != null) { where { ImportImages.id inList importIds!! } }
-            .associateBy({ it[ImportImages.id]!! }) { ImageRow(it[ImportImages.partitionTime]!!, it[ImportImages.sourceSite], it[ImportImages.sourceId], it[ImportImages.sourcePart]) }
+            .associateBy({ it[ImportImages.id]!! }) {
+                val cid: Any? = it[ImportImages.collectionId]?.run {
+                    if(startsWith('#')) substring(1).toInt() else if(startsWith('@')) substring(1) else this
+                }
+                ImageRow(it[ImportImages.partitionTime]!!, it[ImportImages.sourceSite], it[ImportImages.sourceId], it[ImportImages.sourcePart], cid, it[ImportImages.bookIds] ?: emptyList(), it[ImportImages.preference]?.cloneImage)
+            }
 
         val imagePartitionsMap = if(!enableFilterBy || !config.filterByPartition) emptyMap() else {
             data.db.from(ImportImages)
@@ -192,21 +198,37 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                 .groupBy({ it[ImportImages.id]!! }) { it[SourceMarks.relatedSourceDataId]!! to it[SourceMarks.markType]!! }
         }
 
+        val cloneImageCollectionIdMap = data.db.from(Illusts).select(Illusts.id, Illusts.parentId)
+            .where { Illusts.parentId.isNotNull() and (Illusts.id inList imagesMap.values.mapNotNull { if(it.cloneImage?.props?.collection == true) it.cloneImage.fromImageId else null }) }
+            .asSequence()
+            .map { it[Illusts.id]!! to it[Illusts.parentId]!! }
+            .toMap()
+        val cloneImageBookIdsMap = data.db.from(BookImageRelations)
+            .select(BookImageRelations.bookId, BookImageRelations.imageId)
+            .where { BookImageRelations.imageId inList imagesMap.values.mapNotNull { if(it.cloneImage?.props?.books == true) it.cloneImage.fromImageId else null } }
+            .asSequence()
+            .groupBy({ it[BookImageRelations.imageId]!! }) { it[BookImageRelations.bookId]!! }
+            .toMap()
+
         if(importIds != null) {
-            return importIds.mapNotNull {
-                val row = imagesMap[it] ?: return@mapNotNull null
+            return importIds.mapNotNull { id ->
+                val row = imagesMap[id] ?: return@mapNotNull null
                 val sourceIdentity = if(config.findBySourceIdentity && row.sourceSite != null && row.sourceId != null) Triple(row.sourceSite, row.sourceId, row.sourcePart) else null
-                val sourceRelations = if(config.findBySourceRelation) imageSourceRelationsMap[it] ?: emptyList() else null
-                val sourceBooks = if(config.findBySourceRelation) imageSourceBooksMap[it] ?: emptyList() else null
-                val sourceMarks = if(config.findBySourceMark) imageSourceMarksMap[it] ?: emptyList() else null
-                ImportImageEntityInfo(it,
-                    imagePartitionsMap[it] ?: LocalDate.MIN,
-                    imageSourceTagsMap[it] ?: emptyList(),
+                val sourceRelations = if(config.findBySourceRelation) imageSourceRelationsMap[id] ?: emptyList() else null
+                val sourceBooks = if(config.findBySourceRelation) imageSourceBooksMap[id] ?: emptyList() else null
+                val sourceMarks = if(config.findBySourceMark) imageSourceMarksMap[id] ?: emptyList() else null
+                val collectionId = if(row.cloneImage?.props?.collection == true && row.cloneImage.fromImageId in cloneImageCollectionIdMap) cloneImageCollectionIdMap[row.cloneImage.fromImageId]!! else row.collectionId
+                val bookIds = row.bookIds + (if(row.cloneImage?.props?.books == true && row.cloneImage.fromImageId in cloneImageBookIdsMap) cloneImageBookIdsMap[row.cloneImage.fromImageId]!! else emptyList())
+                ImportImageEntityInfo(id,
+                    imagePartitionsMap[id] ?: LocalDate.MIN,
+                    imageSourceTagsMap[id] ?: emptyList(),
                     sourceIdentity,
                     sourceRelations,
                     sourceBooks,
                     sourceMarks,
-                    null)
+                    null,
+                    collectionId,
+                    bookIds)
             }
         }else{
             return imagesMap.map { (it, row) ->
@@ -214,6 +236,8 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                 val sourceRelations = if(config.findBySourceRelation) imageSourceRelationsMap[it] ?: emptyList() else null
                 val sourceBooks = if(config.findBySourceRelation) imageSourceBooksMap[it] ?: emptyList() else null
                 val sourceMarks = if(config.findBySourceMark) imageSourceMarksMap[it] ?: emptyList() else null
+                val collectionId = if(row.cloneImage?.props?.collection == true && row.cloneImage.fromImageId in cloneImageCollectionIdMap) cloneImageCollectionIdMap[row.cloneImage.fromImageId]!! else row.collectionId
+                val bookIds = row.bookIds + (if(row.cloneImage?.props?.books == true && row.cloneImage.fromImageId in cloneImageBookIdsMap) cloneImageBookIdsMap[row.cloneImage.fromImageId]!! else emptyList())
                 ImportImageEntityInfo(it,
                     imagePartitionsMap[it] ?: LocalDate.MIN,
                     imageSourceTagsMap[it] ?: emptyList(),
@@ -221,7 +245,9 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                     sourceRelations,
                     sourceBooks,
                     sourceMarks,
-                    null)
+                    null,
+                    collectionId,
+                    bookIds)
             }
         }
     }

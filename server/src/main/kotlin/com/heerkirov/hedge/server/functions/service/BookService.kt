@@ -88,7 +88,8 @@ class BookService(private val data: DataRepository,
     fun create(form: BookCreateForm): Int {
         if(form.score != null) kit.validateScore(form.score)
         data.db.transaction {
-            return bookManager.newBook(form.images, form.title ?: "", form.description ?: "", form.score, form.favorite)
+            val images = illustManager.unfoldImages(form.images)
+            return bookManager.newBook(images, form.title ?: "", form.description ?: "", form.score, form.favorite)
         }
     }
 

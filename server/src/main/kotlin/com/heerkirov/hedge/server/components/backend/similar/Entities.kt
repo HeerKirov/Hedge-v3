@@ -64,7 +64,8 @@ data class ImportImageEntityInfo(override val id: Int,
                                  override val sourceRelations: List<Long>?,
                                  override val sourceBooks: List<Int>?,
                                  override val sourceMarks: List<Pair<Int, SourceMarkType>>?,
-                                 override val similarityVector: Any?,) : EntityInfo
+                                 override val similarityVector: Any?,
+                                 val collectionId: Any?, val bookIds: List<Int>) : EntityInfo
 
 /**
  * 工作单元的图节点。
@@ -104,7 +105,11 @@ data class SimilarityRelationType(var similarity: Double, var level: Int) : Rela
 /**
  * 已存在的关系类型。
  */
-data class ExistedRelationType(var sameCollectionId: Int? = null, var sameBooks: MutableSet<Int>? = null, var sameAssociate: Boolean = false, var ignored: Boolean = false) : RelationType
+data class ExistedRelationType(var sameCollectionId: Int? = null,
+                               var samePreCollection: String? = null,
+                               var sameBooks: MutableSet<Int>? = null,
+                               var sameAssociate: Boolean = false,
+                               var ignored: Boolean = false) : RelationType
 
 fun EntityInfo.toEntityKey(): FindSimilarEntityKey {
     return FindSimilarEntityKey(if(this is IllustEntityInfo) FindSimilarEntityType.ILLUST else FindSimilarEntityType.IMPORT_IMAGE, this.id)

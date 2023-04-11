@@ -42,7 +42,6 @@ class IllustService(private val data: DataRepository,
                     private val bus: EventBus,
                     private val kit: IllustKit,
                     private val illustManager: IllustManager,
-                    private val illustExtendManager: IllustExtendManager,
                     private val associateManager: AssociateManager,
                     private val sourceManager: SourceDataManager,
                     private val partitionManager: PartitionManager,
@@ -408,7 +407,7 @@ class IllustService(private val data: DataRepository,
 
             val images = illustManager.unfoldImages(imageIds, sorted = false)
 
-            illustManager.setCollectionImages(illust.id, images, illust.score)
+            illustManager.updateImagesInCollection(illust.id, images, illust.score)
         }
     }
 
@@ -614,7 +613,7 @@ class IllustService(private val data: DataRepository,
                 ?.let { Illusts.createEntity(it) }
                 ?: throw be(NotFound())
 
-            illustExtendManager.delete(illust)
+            illustManager.delete(illust)
         }
     }
 
@@ -896,7 +895,7 @@ class IllustService(private val data: DataRepository,
      */
     fun cloneImageProps(form: ImagePropsCloneForm) {
         data.db.transaction {
-            illustExtendManager.cloneProps(form.from, form.to, form.props, form.merge, form.deleteFrom)
+            illustManager.cloneProps(form.from, form.to, form.props, form.merge, form.deleteFrom)
         }
     }
 

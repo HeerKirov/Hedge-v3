@@ -226,26 +226,41 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
      * 完成全部匹配检测之后，增补已存在的关系。
      */
     private fun supplyExistRelations() {
+        //TODO 还需要增补来自preference.cloneImage的信息
+
         //增补collection关系
         val sameCollections = nodes.asSequence()
-            .filter { (_, v) -> v.info is IllustEntityInfo && v.info.collectionId != null }
-            .map { (k, v) -> (v.info as IllustEntityInfo).collectionId!! to k }
+            .mapNotNull { (k, v) ->
+                if(v.info is IllustEntityInfo && v.info.collectionId != null) {
+                    v.info.collectionId to k
+                }else if(v.info is ImportImageEntityInfo && v.info.collectionId != null) {
+                    v.info.collectionId to k
+                }else{
+                    null
+                }
+            }
             .groupBy({ (k, _) -> k }) { (_, v) -> v }
             .filterValues { it.size > 1 }
-        for ((collectionId, units) in sameCollections) {
-            addInGraph(units.mapEachTwo { a, b -> Triple(a, b, ExistedRelationType(sameCollectionId = collectionId)) })
+        for ((collectionId, keys) in sameCollections) {
+            when (collectionId) {
+                is String -> addInGraph(keys.mapEachTwo { a, b -> Triple(a, b, ExistedRelationType(samePreCollection = collectionId)) })
+                is Int -> addInGraph(keys.mapEachTwo { a, b -> Triple(a, b, ExistedRelationType(sameCollectionId = collectionId)) })
+                else -> throw RuntimeException("collectionId must be string or int.")
+            }
         }
 
         //增补book关系
         val allIllustIds = nodes.keys.asSequence().filter { it.type == FindSimilarEntityType.ILLUST }.map { it.id }.toList()
-        val sameBooks = data.db.from(Illusts)
+        val bookToIllusts = data.db.from(Illusts)
             .innerJoin(BookImageRelations, BookImageRelations.imageId eq Illusts.id)
             .select(BookImageRelations.bookId, Illusts.id)
             .where { Illusts.id inList allIllustIds }
             .asSequence()
-            .groupBy({ it[BookImageRelations.bookId]!! }) { it[Illusts.id]!! }
-        for ((bookId, illusts) in sameBooks) {
-            addInGraph(illusts.mapEachTwo { a, b -> Triple(FindSimilarEntityKey(FindSimilarEntityType.ILLUST, a), FindSimilarEntityKey(FindSimilarEntityType.ILLUST, b), ExistedRelationType(sameBooks = mutableSetOf(bookId))) })
+            .map { it[BookImageRelations.bookId]!! to FindSimilarEntityKey(FindSimilarEntityType.ILLUST, it[Illusts.id]!!) }
+        val bookToImports = nodes.values.asSequence().map { it.info }.filterIsInstance<ImportImageEntityInfo>().flatMap { it.bookIds.map { b -> b to FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it.id) } }
+        val sameBooks = (bookToIllusts + bookToImports).groupBy({ it.first }) { it.second }.filterValues { it.size > 1 }
+        for ((bookId, keys) in sameBooks) {
+            addInGraph(keys.mapEachTwo { a, b -> Triple(a, b, ExistedRelationType(sameBooks = mutableSetOf(bookId))) })
         }
 
         //增补associate关系

@@ -6,9 +6,13 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.ImportOption
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.ImportImages
+import com.heerkirov.hedge.server.dto.form.ImportUpdateForm
 import com.heerkirov.hedge.server.events.ImportCreated
+import com.heerkirov.hedge.server.events.ImportDeleted
+import com.heerkirov.hedge.server.events.ImportUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.model.Illust
+import com.heerkirov.hedge.server.model.ImportImage
 import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.DateTime.asZonedTime
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
@@ -17,7 +21,15 @@ import com.heerkirov.hedge.server.utils.Fs
 import com.heerkirov.hedge.server.utils.deleteIfExists
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tools.defer
+import com.heerkirov.hedge.server.utils.types.Opt
+import com.heerkirov.hedge.server.utils.types.optOf
+import com.heerkirov.hedge.server.utils.types.undefined
+import org.ktorm.dsl.delete
+import org.ktorm.dsl.eq
 import org.ktorm.dsl.insertAndGenerateKey
+import org.ktorm.dsl.update
+import org.ktorm.entity.firstOrNull
+import org.ktorm.entity.sequenceOf
 import java.io.File
 import java.io.InputStream
 import java.lang.Exception
@@ -26,7 +38,12 @@ import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.LocalDateTime
 
-class ImportManager(private val data: DataRepository, private val bus: EventBus, private val importMetaManager: ImportMetaManager, private val fileManager: FileManager, private val fileGenerator: FileGenerator) {
+class ImportManager(private val data: DataRepository,
+                    private val bus: EventBus,
+                    private val sourceManager: SourceDataManager,
+                    private val importMetaManager: ImportMetaManager,
+                    private val fileManager: FileManager,
+                    private val fileGenerator: FileGenerator) {
     /**
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      * @throws FileNotFoundError 此文件不存在
@@ -78,6 +95,88 @@ class ImportManager(private val data: DataRepository, private val bus: EventBus,
         data.db.transaction {
             newImportRecord(fileId, sourceFilename = filename)
         }
+    }
+
+    /**
+     * 修改内容。
+     * @throws NotFound
+     */
+    fun update(id: Int, form: ImportUpdateForm) {
+        val record = data.db.sequenceOf(ImportImages).firstOrNull { it.id eq id } ?: throw be(NotFound())
+
+        //source更新检查
+        val (newSource, newSourceId, newSourcePart) = if(form.sourceSite.isPresent) {
+            val source = form.sourceSite.value
+            if(source == null) {
+                if(form.sourceId.unwrapOr { null } != null || form.sourcePart.unwrapOr { null } != null) throw be(ParamNotRequired("sourceId/sourcePart"))
+                else Triple(Opt(null), Opt(null), Opt(null))
+            }else{
+                sourceManager.checkSourceSite(source, form.sourceId.unwrapOr { record.sourceId }, form.sourcePart.unwrapOr { record.sourcePart })
+                Triple(form.sourceSite, form.sourceId, form.sourcePart)
+            }
+        }else if(form.sourceId.unwrapOr { null } != null || form.sourcePart.unwrapOr { null } != null) {
+            if(record.sourceSite == null) throw be(ParamNotRequired("sourceId/sourcePart"))
+            else{
+                sourceManager.checkSourceSite(record.sourceSite, form.sourceId.unwrapOr { record.sourceId }, form.sourcePart.unwrapOr { record.sourcePart })
+                Triple(undefined(), form.sourceId, form.sourcePart)
+            }
+        }else Triple(undefined(), undefined(), undefined())
+
+        val newCollectionId = form.collectionId.letOpt {
+            when (form.collectionId.value) {
+                null -> null
+                is String -> "@${(form.collectionId.value as String)}"
+                is Int -> "#${(form.collectionId.value as Int)}"
+                else -> throw be(ParamTypeError("collectionId", "must be number or string."))
+            }
+        }
+
+        val newBookIds = if(form.bookIds.isPresent) {
+            form.bookIds
+        }else if(form.appendBookIds.isPresent) {
+            optOf((record.bookIds ?: emptyList()) + form.appendBookIds.value)
+        }else{
+            undefined()
+        }
+
+        val newFolderIds = if(form.folderIds.isPresent) {
+            form.folderIds
+        }else if(form.appendFolderIds.isPresent) {
+            optOf((record.folderIds ?: emptyList()) + form.appendFolderIds.value)
+        }else{
+            undefined()
+        }
+
+        if (form.tagme.isPresent || form.sourceSite.isPresent || form.sourceId.isPresent || form.sourcePart.isPresent ||
+            form.partitionTime.isPresent || form.orderTime.isPresent || form.createTime.isPresent ||
+            form.preference.isPresent || form.collectionId.isPresent || newBookIds.isPresent || newFolderIds.isPresent) {
+            data.db.update(ImportImages) {
+                where { it.id eq id }
+                newSource.applyOpt { set(it.sourceSite, this) }
+                newSourceId.applyOpt { set(it.sourceId, this) }
+                newSourcePart.applyOpt { set(it.sourcePart, this) }
+                form.tagme.applyOpt { set(it.tagme, this) }
+                form.partitionTime.applyOpt { set(it.partitionTime, this) }
+                form.orderTime.applyOpt { set(it.orderTime, this.toMillisecond()) }
+                form.createTime.applyOpt { set(it.createTime, this) }
+                form.preference.applyOpt { set(it.preference, this) }
+                newFolderIds.applyOpt { set(it.folderIds, this) }
+                newBookIds.applyOpt { set(it.bookIds, this) }
+                newCollectionId.applyOpt { set(it.collectionId, this) }
+            }
+
+            bus.emit(ImportUpdated(id, generalUpdated = true, thumbnailFileReady = false))
+        }
+    }
+
+    /**
+     * 删除一条记录。
+     */
+    fun delete(importImage: ImportImage) {
+        data.db.delete(ImportImages) { it.id eq importImage.id }
+        fileManager.deleteFile(importImage.fileId)
+
+        bus.emit(ImportDeleted(importImage.id))
     }
 
     /**

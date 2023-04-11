@@ -143,5 +143,5 @@ data class FindSimilarResult(val id: Int,
 
     data class SimilarityRelationInfo(val similarity: Double) : RelationInfo
 
-    data class ExistedRelationInfo(val sameCollectionId: Int?, val sameBooks: List<Int>, val sameAssociate: Boolean, val ignored: Boolean) : RelationInfo
+    data class ExistedRelationInfo(val sameCollectionId: Int?, val samePreCollection: String?, val sameBooks: List<Int>, val sameAssociate: Boolean, val ignored: Boolean) : RelationInfo
 }

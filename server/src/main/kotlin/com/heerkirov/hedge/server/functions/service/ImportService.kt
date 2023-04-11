@@ -13,7 +13,6 @@ import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.enums.FolderType
 import com.heerkirov.hedge.server.enums.IllustModelType
-import com.heerkirov.hedge.server.events.ImportDeleted
 import com.heerkirov.hedge.server.events.ImportSaved
 import com.heerkirov.hedge.server.events.ImportUpdated
 import com.heerkirov.hedge.server.exceptions.*
@@ -30,8 +29,6 @@ import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
-import com.heerkirov.hedge.server.utils.types.Opt
-import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 
@@ -40,7 +37,6 @@ class ImportService(private val data: DataRepository,
                     private val fileManager: FileManager,
                     private val importManager: ImportManager,
                     private val illustManager: IllustManager,
-                    private val illustExtendManager: IllustExtendManager,
                     private val bookManager: BookManager,
                     private val folderManager: FolderManager,
                     private val sourceManager: SourceDataManager,
@@ -140,55 +136,7 @@ class ImportService(private val data: DataRepository,
      */
     fun update(id: Int, form: ImportUpdateForm) {
         data.db.transaction {
-            val record = data.db.sequenceOf(ImportImages).firstOrNull { it.id eq id } ?: throw be(NotFound())
-
-            //source更新检查
-            val (newSource, newSourceId, newSourcePart) = if(form.sourceSite.isPresent) {
-                val source = form.sourceSite.value
-                if(source == null) {
-                    if(form.sourceId.unwrapOr { null } != null || form.sourcePart.unwrapOr { null } != null) throw be(ParamNotRequired("sourceId/sourcePart"))
-                    else Triple(Opt(null), Opt(null), Opt(null))
-                }else{
-                    sourceManager.checkSourceSite(source, form.sourceId.unwrapOr { record.sourceId }, form.sourcePart.unwrapOr { record.sourcePart })
-                    Triple(form.sourceSite, form.sourceId, form.sourcePart)
-                }
-            }else if(form.sourceId.unwrapOr { null } != null || form.sourcePart.unwrapOr { null } != null) {
-                if(record.sourceSite == null) throw be(ParamNotRequired("sourceId/sourcePart"))
-                else{
-                    sourceManager.checkSourceSite(record.sourceSite, form.sourceId.unwrapOr { record.sourceId }, form.sourcePart.unwrapOr { record.sourcePart })
-                    Triple(undefined(), form.sourceId, form.sourcePart)
-                }
-            }else Triple(undefined(), undefined(), undefined())
-
-            val newCollectionId = form.collectionId.letOpt {
-                when (form.collectionId.value) {
-                    null -> null
-                    is String -> "@${(form.collectionId.value as String)}"
-                    is Int -> "#${(form.collectionId.value as Int)}"
-                    else -> throw be(ParamTypeError("collectionId", "must be number or string."))
-                }
-            }
-
-            if (form.tagme.isPresent || form.sourceSite.isPresent || form.sourceId.isPresent || form.sourcePart.isPresent ||
-                form.partitionTime.isPresent || form.orderTime.isPresent || form.createTime.isPresent ||
-                form.preference.isPresent || form.collectionId.isPresent || form.bookIds.isPresent || form.folderIds.isPresent) {
-                data.db.update(ImportImages) {
-                    where { it.id eq id }
-                    newSource.applyOpt { set(it.sourceSite, this) }
-                    newSourceId.applyOpt { set(it.sourceId, this) }
-                    newSourcePart.applyOpt { set(it.sourcePart, this) }
-                    form.tagme.applyOpt { set(it.tagme, this) }
-                    form.partitionTime.applyOpt { set(it.partitionTime, this) }
-                    form.orderTime.applyOpt { set(it.orderTime, this.toMillisecond()) }
-                    form.createTime.applyOpt { set(it.createTime, this) }
-                    form.folderIds.applyOpt { set(it.folderIds, this) }
-                    form.bookIds.applyOpt { set(it.bookIds, this) }
-                    form.preference.applyOpt { set(it.preference, this) }
-                    newCollectionId.applyOpt { set(it.collectionId, this) }
-                }
-
-                bus.emit(ImportUpdated(id, generalUpdated = true, thumbnailFileReady = false))
-            }
+            importManager.update(id, form)
         }
     }
 
@@ -197,11 +145,8 @@ class ImportService(private val data: DataRepository,
      */
     fun delete(id: Int) {
         data.db.transaction {
-            val row = data.db.from(ImportImages).select(ImportImages.fileId).where { ImportImages.id eq id }.firstOrNull() ?: throw be(NotFound())
-            data.db.delete(ImportImages) { it.id eq id }
-            fileManager.deleteFile(row[ImportImages.fileId]!!)
-
-            bus.emit(ImportDeleted(id))
+            val importImage = data.db.sequenceOf(ImportImages).firstOrNull { ImportImages.id eq id } ?: throw be(NotFound())
+            importManager.delete(importImage)
         }
     }
 
@@ -394,7 +339,7 @@ class ImportService(private val data: DataRepository,
                     if(cStr.startsWith('#')) {
                         val collectionId = cStr.substring(1).toInt()
                         val images = illustManager.unfoldImages(listOf(collectionId) + imageIds, sorted = false)
-                        illustManager.setCollectionImages(collectionId, images)
+                        illustManager.updateImagesInCollection(collectionId, images)
                     }else{
                         illustManager.newCollection(imageIds, "", null, false, Illust.Tagme.EMPTY)
                     }
@@ -436,7 +381,7 @@ class ImportService(private val data: DataRepository,
                         cloneImage.props.associate,
                         cloneImage.props.source
                     )
-                    illustExtendManager.cloneProps(cloneImage.fromImageId, imageId, props, cloneImage.merge, cloneImage.deleteFrom)
+                    illustManager.cloneProps(cloneImage.fromImageId, imageId, props, cloneImage.merge, cloneImage.deleteFrom)
                 }
 
             if(form.target.isNullOrEmpty() && importToImageIds.size >= records.size) {

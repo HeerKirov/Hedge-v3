@@ -4,10 +4,13 @@ import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
+import com.heerkirov.hedge.server.dao.FindSimilarIgnores
 import com.heerkirov.hedge.server.dao.FindSimilarResults
 import com.heerkirov.hedge.server.dao.FindSimilarTasks
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.enums.FindSimilarEntityType
+import com.heerkirov.hedge.server.events.IllustDeleted
+import com.heerkirov.hedge.server.events.ImportDeleted
 import com.heerkirov.hedge.server.events.ImportSaved
 import com.heerkirov.hedge.server.events.PackagedBusEvent
 import com.heerkirov.hedge.server.exceptions.NotFound
@@ -36,7 +39,7 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val data
     private val workerThread = SimilarFinderWorkThread(data, bus)
 
     init {
-        bus.on(ImportSaved::class, ::processImportToImage)
+        bus.on(::processImportToImage)
     }
 
     override val isIdle: Boolean get() = !workerThread.isAlive
@@ -67,8 +70,12 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val data
         }
     }
 
-    private fun processImportToImage(e: PackagedBusEvent<ImportSaved>) {
-        workerThread.processImportToImage(e.event.importIdToImageIds)
+    private fun processImportToImage(e: PackagedBusEvent<*>) {
+        when (e.event) {
+            is ImportSaved -> workerThread.processImportToImageEvent(e.event.importIdToImageIds)
+            is ImportDeleted -> workerThread.processRemoveImportEvent(e.event.importId)
+            is IllustDeleted -> workerThread.processRemoveImageEvent(e.event.illustId)
+        }
     }
 }
 
@@ -91,7 +98,7 @@ class SimilarFinderWorkThread(private val data: DataRepository, private val bus:
         data.db.delete(FindSimilarTasks) { it.id eq model.id }
     }
 
-    fun processImportToImage(importIdToImageIds: Map<Int, Int>) {
+    fun processImportToImageEvent(importIdToImageIds: Map<Int, Int>) {
         data.db.transaction {
             //接收ImportSaved信息，然后更改已有的result
             val likeCondition = importIdToImageIds.keys.map { FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it).toEntityKeyString() }.map { "%|$it|%" }.map { FindSimilarResults.images like it }.reduce { a, b -> a or b }
@@ -126,6 +133,31 @@ class SimilarFinderWorkThread(private val data: DataRepository, private val bus:
                     set(it.relations, newRelations)
                 }
             }
+            //更改已有的ignored
+            val likeCondition1 = importIdToImageIds.keys.map { FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it).toEntityKeyString() }.map { FindSimilarIgnores.firstTarget eq it }.reduce { a, b -> a or b }
+            val existIgnores = data.db.sequenceOf(FindSimilarIgnores).filter { likeCondition1 }.toList()
+            for (ignored in existIgnores) {
+                val aId = ignored.firstTarget.toEntityKey().id
+                val newA = FindSimilarEntityKey(FindSimilarEntityType.ILLUST, importIdToImageIds[aId]!!).toEntityKeyString()
+                data.db.update(FindSimilarIgnores) {
+                    where { it.id eq ignored.id }
+                    set(it.firstTarget, newA)
+                }
+                data.db.update(FindSimilarIgnores) {
+                    where { (it.secondTarget eq ignored.firstTarget) and (it.firstTarget eq ignored.secondTarget) }
+                    set(it.secondTarget, newA)
+                }
+            }
         }
+    }
+
+    fun processRemoveImportEvent(importId: Int) {
+        val key = FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, importId).toEntityKeyString()
+        data.db.delete(FindSimilarIgnores) { (it.firstTarget eq key) or (it.secondTarget eq key) }
+    }
+
+    fun processRemoveImageEvent(illustId: Int) {
+        val key = FindSimilarEntityKey(FindSimilarEntityType.ILLUST, illustId).toEntityKeyString()
+        data.db.delete(FindSimilarIgnores) { (it.firstTarget eq key) or (it.secondTarget eq key) }
     }
 }

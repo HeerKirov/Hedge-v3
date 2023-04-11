@@ -1,27 +1,41 @@
 package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.backend.similar.SimilarFinder
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.filter.FindSimilarTaskQueryFilter
 import com.heerkirov.hedge.server.dto.filter.LimitAndOffsetFilter
+import com.heerkirov.hedge.server.dto.form.FindSimilarResultResolveForm
 import com.heerkirov.hedge.server.dto.form.FindSimilarTaskCreateForm
+import com.heerkirov.hedge.server.dto.form.ImportUpdateForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.FindSimilarEntityType
+import com.heerkirov.hedge.server.events.SimilarFinderResultResolved
 import com.heerkirov.hedge.server.exceptions.*
-import com.heerkirov.hedge.server.functions.manager.IllustExtendManager
+import com.heerkirov.hedge.server.functions.manager.BookManager
+import com.heerkirov.hedge.server.functions.manager.IllustManager
+import com.heerkirov.hedge.server.functions.manager.ImportManager
+import com.heerkirov.hedge.server.model.Illust
+import com.heerkirov.hedge.server.model.ImportImage
+import com.heerkirov.hedge.server.utils.DateTime
+import com.heerkirov.hedge.server.utils.Json.parseJSONObject
+import com.heerkirov.hedge.server.utils.Json.toJsonNode
 import com.heerkirov.hedge.server.utils.business.takeThumbnailFilepath
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
-import com.heerkirov.hedge.server.utils.types.descendingOrderItem
-import com.heerkirov.hedge.server.utils.types.toEntityKey
+import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
+import java.lang.Exception
 
 class FindSimilarService(private val data: DataRepository,
-                         private val illustExtendManager: IllustExtendManager,
-                         private val finder: SimilarFinder) {
+                         private val bus: EventBus,
+                         private val finder: SimilarFinder,
+                         private val illustManager: IllustManager,
+                         private val importManager: ImportManager,
+                         private val bookManager: BookManager) {
     private val taskOrderTranslator = OrderTranslator {
         "id" to FindSimilarTasks.id
         "recordTime" to FindSimilarTasks.recordTime
@@ -121,5 +135,167 @@ class FindSimilarService(private val data: DataRepository,
         val relations = result.relations.map { FindSimilarResultRelation(it.a.toEntityKey(), it.b.toEntityKey(), it.type, it.params) }
 
         return FindSimilarResultDetailRes(result.id, result.summaryTypes, images, relations, result.recordTime)
+    }
+
+    /**
+     * @throws ResourceNotExist ("config.a"|"config.b", EntityKey)
+     */
+    fun resolveResult(id: Int, form: FindSimilarResultResolveForm) {
+        data.db.transaction {
+            val result = data.db.sequenceOf(FindSimilarResults).firstOrNull { it.id eq id } ?: throw be(NotFound())
+
+            val entityKeys = result.images.map { it.toEntityKey() }.toSet()
+
+            //actions参数校验
+            val actions = form.actions.map { action ->
+                when(action.actionType) {
+                    FindSimilarResultResolveForm.ActionType.CLONE_IMAGE -> {
+                        if(action.b == null) throw be(ParamRequired("config.b")) else if(action.a.type !== FindSimilarEntityType.ILLUST) throw be(ParamError("config.a"))
+                    }
+                    FindSimilarResultResolveForm.ActionType.MARK_IGNORED -> {
+                        if(action.b == null) throw be(ParamRequired("config.b"))
+                    }
+                    FindSimilarResultResolveForm.ActionType.DELETE,
+                    FindSimilarResultResolveForm.ActionType.ADD_TO_BOOK,
+                    FindSimilarResultResolveForm.ActionType.ADD_TO_COLLECTION -> {
+                        if(action.b != null) throw be(ParamNotRequired("config.b"))
+                    }
+                }
+
+                if(action.a !in entityKeys) throw be(ResourceNotExist("config.a", action.a))
+                if(action.b != null && action.b !in entityKeys) throw be(ResourceNotExist("config.b", action.b))
+
+                val config: Any? = try {
+                    when(action.actionType) {
+                        FindSimilarResultResolveForm.ActionType.CLONE_IMAGE -> action.config?.toJsonNode()?.parseJSONObject<FindSimilarResultResolveForm.CloneImageConfig>() ?: throw be(ParamRequired("config"))
+                        FindSimilarResultResolveForm.ActionType.ADD_TO_COLLECTION -> action.config?.toJsonNode()?.parseJSONObject<FindSimilarResultResolveForm.AddToCollectionConfig>() ?: throw be(ParamRequired("config"))
+                        FindSimilarResultResolveForm.ActionType.ADD_TO_BOOK -> action.config?.toJsonNode()?.parseJSONObject<FindSimilarResultResolveForm.AddToBookConfig>() ?: throw be(ParamRequired("config"))
+                        else -> null
+                    }
+                }catch (e: Exception) {
+                    throw be(ParamError("config"))
+                }
+
+                FindSimilarResultResolveForm.Resolution(action.a, action.b, action.actionType, config)
+            }
+
+            //有关collectionId有一个特别机制。
+            //importImage的collectionId可以设置为string，表示导入后会创建一个新collection。
+            //image的collectionId也可以，将立刻创建一个新collection。
+            //当image和importImage混用同一个string时，此collection会立刻创建，且给importImage的是创建的此collectionId。
+            //此处此处提前发现任何给image使用的string hash，并立刻创建对应的collection。
+            val collectionHashToIds = actions.asSequence()
+                .filter { it.actionType == FindSimilarResultResolveForm.ActionType.ADD_TO_COLLECTION }
+                .filter { (it.config as FindSimilarResultResolveForm.AddToCollectionConfig).collectionId is String }
+                .groupBy({ ((it.config as FindSimilarResultResolveForm.AddToCollectionConfig).collectionId as String) }) { it.a }
+                .mapNotNull { (collectionId, entityKeys) ->
+                    if(entityKeys.any { it.type == FindSimilarEntityType.ILLUST }) {
+                        collectionId to illustManager.newCollection(emptyList(), "", null, false, Illust.Tagme.EMPTY)
+                    }else{
+                        null
+                    }
+                }
+                .toMap()
+
+            //actions依次执行。其中对image的collection/book更新会被收集起来批量执行
+            val collectionToImages = mutableMapOf<Int, MutableList<Int>>()
+            val bookToImages = mutableMapOf<Int, MutableList<Int>>()
+            for (action in actions) {
+                when(action.actionType) {
+                    FindSimilarResultResolveForm.ActionType.CLONE_IMAGE -> {
+                        val config = action.config as FindSimilarResultResolveForm.CloneImageConfig
+                        //已经过校验，a必为ILLUST
+                        if(action.b!!.type == FindSimilarEntityType.ILLUST) {
+                            illustManager.cloneProps(action.a.id, action.b.id, config.props, config.merge, config.deleteFrom)
+                        }else{
+                            val props = ImportImage.CloneImageProps(
+                                config.props.score, config.props.favorite, config.props.description,
+                                config.props.tagme, config.props.metaTags, config.props.partitionTime,
+                                config.props.orderTime, config.props.collection, config.props.books,
+                                config.props.folders, config.props.associate, config.props.source)
+                            importManager.update(action.b.id, ImportUpdateForm(preference = optOf(ImportImage.Preference(
+                                ImportImage.CloneImageFrom(action.a.id, props, config.merge, config.deleteFrom)))))
+                        }
+                    }
+                    FindSimilarResultResolveForm.ActionType.ADD_TO_COLLECTION -> {
+                        val config = action.config as FindSimilarResultResolveForm.AddToCollectionConfig
+                        if(action.a.type == FindSimilarEntityType.ILLUST) {
+                            val collectionId: Int = when (config.collectionId) {
+                                is Int -> config.collectionId
+                                is String -> collectionHashToIds[config.collectionId]!!
+                                else -> throw be(ParamTypeError("config.collectionId", "must be number or string."))
+                            }
+                            collectionToImages.computeIfAbsent(collectionId) { mutableListOf() }.add(action.a.id)
+                        }else{
+                            val collectionId: Any = when (config.collectionId) {
+                                is Int -> config.collectionId
+                                is String -> collectionHashToIds[config.collectionId] ?: config.collectionId
+                                else -> throw be(ParamTypeError("config.collectionId", "must be number or string."))
+                            }
+                            importManager.update(action.a.id, ImportUpdateForm(collectionId = optOf(collectionId)))
+                        }
+                    }
+                    FindSimilarResultResolveForm.ActionType.ADD_TO_BOOK -> {
+                        val config = action.config as FindSimilarResultResolveForm.AddToBookConfig
+                        if(action.a.type == FindSimilarEntityType.ILLUST) {
+                            bookToImages.computeIfAbsent(config.bookId) { mutableListOf() }.add(action.a.id)
+                        }else{
+                            importManager.update(action.a.id, ImportUpdateForm(appendBookIds = optOf(listOf(config.bookId))))
+                        }
+                    }
+                    FindSimilarResultResolveForm.ActionType.DELETE -> {
+                        if(action.a.type == FindSimilarEntityType.ILLUST) {
+                            val illust = data.db.sequenceOf(Illusts).firstOrNull { it.id eq action.a.id }
+                            if(illust != null) illustManager.delete(illust)
+                        }else{
+                            val importImage = data.db.sequenceOf(ImportImages).firstOrNull { it.id eq action.a.id }
+                            if(importImage != null) importManager.delete(importImage)
+                        }
+                    }
+                    FindSimilarResultResolveForm.ActionType.MARK_IGNORED -> {
+                        val ak = action.a.toEntityKeyString()
+                        val bk = action.b!!.toEntityKeyString()
+                        val exist = data.db.from(FindSimilarIgnores)
+                            .select(count() greater 0)
+                            .where { (FindSimilarIgnores.firstTarget eq ak) and (FindSimilarIgnores.secondTarget eq bk) }
+                            .map { it.getBoolean(0) }
+                            .first()
+
+                        if(!exist) {
+                            val now = DateTime.now()
+                            data.db.insert(FindSimilarIgnores) {
+                                set(it.firstTarget, ak)
+                                set(it.secondTarget, bk)
+                                set(it.recordTime, now)
+                            }
+                            data.db.insert(FindSimilarIgnores) {
+                                set(it.firstTarget, bk)
+                                set(it.secondTarget, ak)
+                                set(it.recordTime, now)
+                            }
+                        }
+                    }
+                }
+            }
+            for ((collectionId, imageIds) in collectionToImages) {
+                val images = illustManager.unfoldImages(imageIds)
+                illustManager.updateImagesInCollection(collectionId, images)
+            }
+            for ((bookId, imageIds) in bookToImages) {
+                bookManager.addImagesInBook(bookId, imageIds, null)
+            }
+
+            data.db.delete(FindSimilarResults) { it.id eq id }
+
+            bus.emit(SimilarFinderResultResolved(id))
+        }
+    }
+
+    fun deleteResult(id: Int) {
+        data.db.transaction {
+            data.db.sequenceOf(FindSimilarResults).firstOrNull { it.id eq id } ?: throw be(NotFound())
+
+            data.db.delete(FindSimilarResults) { it.id eq id }
+        }
     }
 }

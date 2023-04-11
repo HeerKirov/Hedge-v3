@@ -13,6 +13,7 @@ import com.heerkirov.hedge.server.events.BookImagesChanged
 import com.heerkirov.hedge.server.events.BookUpdated
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.functions.kit.BookKit
+import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.DateTime
 import org.ktorm.dsl.*
 import org.ktorm.entity.filter
@@ -22,14 +23,12 @@ import org.ktorm.entity.toList
 class BookManager(private val data: DataRepository,
                   private val bus: EventBus,
                   private val kit: BookKit,
-                  private val illustManager: IllustManager,
                   private val backendExporter: BackendExporter) {
     /**
      * 新建一个book。
      * @throws ResourceNotExist ("images", number[]) image项不存在。给出imageId列表
      */
-    fun newBook(formImages: List<Int>, formTitle: String = "", formDescription: String = "", formScore: Int? = null, formFavorite: Boolean = false): Int {
-        val images = if(formImages.isNotEmpty()) illustManager.unfoldImages(formImages) else emptyList()
+    fun newBook(images: List<Illust>, formTitle: String = "", formDescription: String = "", formScore: Int? = null, formFavorite: Boolean = false): Int {
         val fileId = images.firstOrNull()?.fileId
         val createTime = DateTime.now()
 

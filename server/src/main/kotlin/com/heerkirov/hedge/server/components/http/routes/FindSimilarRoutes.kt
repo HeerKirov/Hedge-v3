@@ -3,7 +3,7 @@ package com.heerkirov.hedge.server.components.http.routes
 import com.heerkirov.hedge.server.components.http.Routes
 import com.heerkirov.hedge.server.dto.filter.FindSimilarTaskQueryFilter
 import com.heerkirov.hedge.server.dto.filter.LimitAndOffsetFilter
-import com.heerkirov.hedge.server.dto.form.FindSimilarResultProcessForm
+import com.heerkirov.hedge.server.dto.form.FindSimilarResultResolveForm
 import com.heerkirov.hedge.server.dto.form.FindSimilarTaskCreateForm
 import com.heerkirov.hedge.server.dto.res.IdRes
 import com.heerkirov.hedge.server.functions.service.FindSimilarService
@@ -27,9 +27,10 @@ class FindSimilarRoutes(private val findSimilarService: FindSimilarService) : Ro
                 }
                 path("results") {
                     get(::getResultList)
-                    post(::batchProcessResult)
                     path("{id}") {
                         get(::getResultDetail)
+                        post("resolve", ::resolveResult)
+                        delete(::deleteResultDetail)
                     }
                 }
             }
@@ -68,8 +69,15 @@ class FindSimilarRoutes(private val findSimilarService: FindSimilarService) : Ro
         ctx.json(findSimilarService.getResult(id))
     }
 
-    private fun batchProcessResult(ctx: Context) {
-//        val form = ctx.bodyAsForm<FindSimilarResultProcessForm>()
-//        findSimilarService.batchProcessResult(form)
+    private fun resolveResult(ctx: Context) {
+        val id = ctx.pathParamAsClass<Int>("id").get()
+        val form = ctx.bodyAsForm<FindSimilarResultResolveForm>()
+        findSimilarService.resolveResult(id, form)
+    }
+
+    private fun deleteResultDetail(ctx: Context) {
+        val id = ctx.pathParamAsClass<Int>("id").get()
+        findSimilarService.deleteResult(id)
+        ctx.status(204)
     }
 }
