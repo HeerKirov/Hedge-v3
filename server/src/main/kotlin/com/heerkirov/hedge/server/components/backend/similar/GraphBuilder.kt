@@ -226,7 +226,22 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
      * 完成全部匹配检测之后，增补已存在的关系。
      */
     private fun supplyExistRelations() {
-        //TODO 还需要增补来自preference.cloneImage的信息
+        //增补来自preference.cloneImage.delete的信息，删除deleteFrom对应的节点
+        val cloneImageDeleteFromIds = nodes.values.asSequence()
+            .map { it.info }
+            .filterIsInstance<ImportImageEntityInfo>()
+            .mapNotNull { it.cloneImage }
+            .filter { it.deleteFrom }
+            .map { it.fromImageId }
+            .toSet()
+        nodes.entries.filter { (k, _) -> k.type == FindSimilarEntityType.ILLUST && k.id in cloneImageDeleteFromIds }
+            .forEach { (k, _) -> nodes.remove(k) }
+        nodes.entries.map { (_, v) -> v.relations }
+            .forEach { relations ->
+                relations.removeIf { relation ->
+                    relation.another.key.type == FindSimilarEntityType.ILLUST && relation.another.key.id in cloneImageDeleteFromIds
+                }
+            }
 
         //增补collection关系
         val sameCollections = nodes.asSequence()

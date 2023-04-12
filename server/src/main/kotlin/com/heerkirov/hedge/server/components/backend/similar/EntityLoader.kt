@@ -228,7 +228,8 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                     sourceMarks,
                     null,
                     collectionId,
-                    bookIds)
+                    bookIds,
+                    row.cloneImage)
             }
         }else{
             return imagesMap.map { (it, row) ->
@@ -247,7 +248,8 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                     sourceMarks,
                     null,
                     collectionId,
-                    bookIds)
+                    bookIds,
+                    row.cloneImage)
             }
         }
     }

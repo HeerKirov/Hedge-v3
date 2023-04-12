@@ -15,6 +15,7 @@ class AllServices(
     val topic: TopicService,
     val sourceData: SourceDataService,
     val sourceMapping: SourceMappingService,
+    val sourceMark: SourceMarkService,
     val settingAppdata: SettingAppdataService,
     val settingMeta: SettingMetaService,
     val settingQuery: SettingQueryService,

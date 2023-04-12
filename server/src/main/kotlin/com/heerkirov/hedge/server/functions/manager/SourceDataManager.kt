@@ -2,10 +2,7 @@ package com.heerkirov.hedge.server.functions.manager
 
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
-import com.heerkirov.hedge.server.dao.Illusts
-import com.heerkirov.hedge.server.dao.SourceDatas
-import com.heerkirov.hedge.server.dao.SourceBookRelations
-import com.heerkirov.hedge.server.dao.SourceTagRelations
+import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.form.SourceBookForm
 import com.heerkirov.hedge.server.dto.form.SourceTagForm
 import com.heerkirov.hedge.server.enums.SourceEditStatus
@@ -265,6 +262,8 @@ class SourceDataManager(private val data: DataRepository,
         data.db.delete(SourceDatas) { it.id eq sourceDataId }
         data.db.delete(SourceTagRelations) { it.sourceDataId eq sourceDataId }
         data.db.delete(SourceBookRelations) { it.sourceDataId eq sourceDataId }
+        data.db.delete(SourceMarks) { it.sourceDataId eq sourceDataId }
+        data.db.delete(SourceMarks) { it.relatedSourceDataId eq sourceDataId }
 
         bus.emit(SourceDataDeleted(sourceSite, sourceId))
     }

@@ -89,7 +89,7 @@ class HttpServerImpl(private val health: Health,
             .handle(TopicRoutes(allServices.topic))
             .handle(AuthorRoutes(allServices.author))
             .handle(AnnotationRoutes(allServices.annotation))
-            .handle(SourceRoutes(allServices.sourceData, allServices.sourceMapping))
+            .handle(SourceRoutes(allServices.sourceData, allServices.sourceMark, allServices.sourceMapping))
             .bind()
     }
 

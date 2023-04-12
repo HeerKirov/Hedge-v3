@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.components.backend.similar
 
 import com.heerkirov.hedge.server.enums.FindSimilarEntityType
 import com.heerkirov.hedge.server.enums.SourceMarkType
+import com.heerkirov.hedge.server.model.ImportImage
 import com.heerkirov.hedge.server.model.SourceTag
 import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
 import java.time.LocalDate
@@ -65,7 +66,9 @@ data class ImportImageEntityInfo(override val id: Int,
                                  override val sourceBooks: List<Int>?,
                                  override val sourceMarks: List<Pair<Int, SourceMarkType>>?,
                                  override val similarityVector: Any?,
-                                 val collectionId: Any?, val bookIds: List<Int>) : EntityInfo
+                                 val collectionId: Any?,
+                                 val bookIds: List<Int>,
+                                 val cloneImage: ImportImage.CloneImageFrom?) : EntityInfo
 
 /**
  * 工作单元的图节点。

@@ -44,6 +44,7 @@ fun runApplication(options: ApplicationOptions) {
             val sourceBookManager = SourceBookManager(repo, bus)
             val sourceManager = SourceDataManager(repo, bus, sourceTagManager, sourceBookManager)
             val sourceMappingManager = SourceMappingManager(repo, bus, sourceTagManager)
+            val sourceMarkService = SourceMarkService(repo)
             val sourceDataService = SourceDataService(repo, sourceManager, queryManager)
             val sourceMappingService = SourceMappingService(repo, sourceMappingManager)
 
@@ -109,6 +110,7 @@ fun runApplication(options: ApplicationOptions) {
                 topicService,
                 sourceDataService,
                 sourceMappingService,
+                sourceMarkService,
                 settingAppdataService,
                 settingMetaService,
                 settingQueryService,
