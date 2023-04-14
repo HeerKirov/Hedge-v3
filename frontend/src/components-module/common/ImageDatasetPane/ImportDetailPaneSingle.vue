@@ -2,7 +2,7 @@
 import { toRef } from "vue"
 import { ThumbnailImage, Separator } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
-import { SourceInfo, TagmeInfo } from "@/components-business/form-display"
+import { SourceInfo, TagmeInfo, SourcePreferencesDisplay } from "@/components-business/form-display"
 import { SourceIdentityEditor, TagmeEditor, DateEditor, DateTimeEditor } from "@/components-business/form-editor"
 import { date, datetime } from "@/utils/datetime"
 import { useImportDetailPaneSingle } from "@/services/main/import"
@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const path = toRef(props, "detailId")
 
-const { data, setTagme, setSourceInfo, setCreateTime, setOrderTime, setPartitionTime } = useImportDetailPaneSingle(path)
+const { data, setTagme, setSourceInfo, setCreateTime, setOrderTime, setPartitionTime, clearAllPreferences } = useImportDetailPaneSingle(path)
 
 </script>
 
@@ -41,6 +41,7 @@ const { data, setTagme, setSourceInfo, setCreateTime, setOrderTime, setPartition
                 <TagmeEditor :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
+        <SourcePreferencesDisplay class="mt-2" :book-ids="data.bookIds" :preference="data.preference" :collection-id="data.collectionId" @clear="clearAllPreferences"/>
         <FormEditKit class="mt-2" :value="data.partitionTime" :set-value="setPartitionTime">
             <template #default="{ value }">
                 <p class="secondary-text">时间分区 {{date.toISOString(value)}}</p>

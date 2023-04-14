@@ -1,6 +1,7 @@
 import { HttpInstance, Response } from "../instance"
 import { NotFound, ResourceNotExist } from "../exceptions"
 import { IdResponse, LimitAndOffsetFilter, ListResult, OrderList } from "./all"
+import { ImagePropsCloneForm } from "./illust"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 
 export function createFindSimilarEndpoint(http: HttpInstance): FindSimilarEndpoint {
@@ -24,7 +25,8 @@ export function createFindSimilarEndpoint(http: HttpInstance): FindSimilarEndpoi
             get: http.createPathRequest(id => `/api/find-similar/results/${id}`, "GET", {
                 parseResponse: mapToDetailResult
             }),
-            process: http.createDataRequest("/api/find-similar/results", "POST")
+            resolve: http.createPathDataRequest(id => `/api/find-similar/results/${id}/resolve`, "POST"),
+            delete: http.createPathRequest(id => `/api/find-similar/results/${id}`, "DELETE")
         }
     }
 }
@@ -126,13 +128,21 @@ export interface FindSimilarEndpoint {
         /**
          * 处理结果。
          */
-        process(form: FindSimilarResultProcessForm): Promise<Response<null, ResourceNotExist<string, number[]>>>
+        resolve(id: number, form: FindSimilarResultResolveForm): Promise<Response<null, NotFound | ResourceNotExist<"config.a" | "config.b", FindSimilarEntityKey>>>
+        /**
+         * 直接删除结果。
+         * @param id
+         */
+        delete(id: number): Promise<Response<NotFound>>
     }
 }
 
 export type TaskSelector = {
     type: "image"
     imageIds: number[]
+} | {
+    type: "importImage"
+    importIds: number[]
 } | {
     type: "partitionTime"
     partitionTime: LocalDate
@@ -144,7 +154,7 @@ export type TaskSelector = {
     authorIds: number[]
 } | {
     type: "sourceTag"
-    source: string
+    sourceSite: string
     sourceTags: string[]
 }
 
@@ -170,6 +180,8 @@ export type SimilarityType = "SOURCE_IDENTITY_EQUAL" | "SOURCE_IDENTITY_SIMILAR"
 
 export type MarkType = SummaryTypes | "UNKNOWN"
 
+export type ActionType = "CLONE_IMAGE" | "DELETE" | "ADD_TO_COLLECTION" | "ADD_TO_BOOK" | "MARK_IGNORED"
+
 interface FindSimilarEntityKey {
     type: FindSimilarEntityType
     id: number
@@ -185,7 +197,7 @@ interface SourceMarkRelationInfo extends RelationInfo { markType: MarkType }
 
 interface SimilarityRelationInfo extends RelationInfo { similarity: number }
 
-interface ExistedRelationInfo extends RelationInfo { sameCollectionId: number | null, sameBooks: number[], sameAssociate: boolean, ignored: boolean }
+interface ExistedRelationInfo extends RelationInfo { sameCollectionId: number | null, samePreCollection: string | null, sameBooks: number[], sameAssociate: boolean, ignored: boolean }
 
 export interface FindSimilarTask {
     id: number
@@ -227,9 +239,18 @@ export interface FindSimilarTaskCreateForm {
     config?: TaskConfig | null
 }
 
-export interface FindSimilarResultProcessForm {
-    target?: number[]
+export interface FindSimilarResultResolveForm {
+    actions: FindSimilarResultResolveAction[]
 }
+
+interface FindSimilarResultResolveActionTemplate<A extends ActionType> { a: FindSimilarEntityKey, b?: FindSimilarEntityKey | null, actionType: A }
+
+type FindSimilarResultResolveAction
+    = (FindSimilarResultResolveActionTemplate<"CLONE_IMAGE"> & { config: { props: ImagePropsCloneForm["props"], merge?: boolean, deleteFrom?: boolean } })
+    | (FindSimilarResultResolveActionTemplate<"ADD_TO_COLLECTION"> & { config: { collectionId: string | number } })
+    | (FindSimilarResultResolveActionTemplate<"ADD_TO_BOOK"> & { config: { bookId: number } })
+    | FindSimilarResultResolveActionTemplate<"DELETE">
+    | FindSimilarResultResolveActionTemplate<"MARK_IGNORED">
 
 export interface FindSimilarTaskQueryFilter {
     order?: OrderList<"id" | "recordTime">

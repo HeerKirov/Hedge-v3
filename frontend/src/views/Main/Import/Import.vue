@@ -52,8 +52,8 @@ const dropEvents = useDroppableForFile()
                     <FileWatcher v-if="state?.isOpen" class="ml-1" :paths="paths" :statistic-count="state.statisticCount" :errors="state.errors" @stop="setState(false)"/>
                 </template>
                 <template #right>
-                    <Button v-if="anyData" type="primary" icon="check" @click="save">导入图库</Button>
-                    <Button v-else disabled icon="check" @click="save">确认导入</Button>
+                    <Button v-if="anyData" type="primary" icon="check" @click="save">{{selected.length > 0 ? `${selected.length}项` : '全部'}}导入图库</Button>
+                    <Button v-else disabled icon="check">全部导入图库</Button>
                     <Separator/>
                     <DataRouter/>
                     <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>

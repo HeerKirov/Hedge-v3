@@ -5,9 +5,8 @@ import {
 } from "../exceptions"
 import { HttpInstance, Response } from "../instance"
 import { IdResponseWithWarnings, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
-import { Tagme } from "./illust"
+import { ImagePropsCloneForm, Tagme } from "./illust"
 import { OrderTimeType } from "./setting-import"
-import { CloneImageProps } from "@/components-module/dialog/CloneImage/context";
 
 export function createImportEndpoint(http: HttpInstance): ImportEndpoint {
     return {
@@ -163,7 +162,7 @@ export interface Preference {
 
 export interface PreferenceCloneImage {
     fromImageId: number
-    props: CloneImageProps
+    props: ImagePropsCloneForm["props"]
     merge: boolean
     deleteFrom: boolean
 }
@@ -228,9 +227,11 @@ export interface ImportUpdateForm {
     orderTime?: LocalDateTime
     createTime?: LocalDateTime
     preference?: Preference
-    collectionId?: string | number
+    collectionId?: string | number | null
     folderIds?: number[]
     bookIds?: number[]
+    appendFolderIds?: number[]
+    appendBookIds?: number[]
 }
 
 export interface ImportBatchUpdateForm {

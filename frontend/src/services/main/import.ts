@@ -151,7 +151,8 @@ function useOperators(selector: SelectedState<number>, anyData: Ref<boolean>, ad
 
     const save = async () => {
         if(anyData.value) {
-            const res = await saveFetch({}, e => {
+            const target = selector.selected.value.length > 0 ? selector.selected.value : undefined
+            const res = await saveFetch({target}, e => {
                 if(e.code === "FILE_NOT_READY") {
                     toast.toast("未准备完毕", "warning", "仍有导入项目未准备完毕。请等待。")
                 }else{
@@ -235,7 +236,13 @@ export function useImportDetailPaneSingle(path: Ref<number | null>) {
         return orderTime.timestamp === data.value?.orderTime?.timestamp || await setData({orderTime})
     }
 
-    return {data, setTagme, setSourceInfo, setPartitionTime, setCreateTime, setOrderTime}
+    const clearAllPreferences = async () => {
+        if(await message.showYesNoMessage("confirm", "确认要清除所有预设吗？")) {
+            await setData({preference: {cloneImage: null}, collectionId: null, bookIds: []})
+        }
+    }
+
+    return {data, setTagme, setSourceInfo, setPartitionTime, setCreateTime, setOrderTime, clearAllPreferences}
 }
 
 export function useImportDetailPaneMultiple(selected: Ref<number[]>, latest: Ref<number | null>) {

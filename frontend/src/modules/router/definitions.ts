@@ -13,6 +13,7 @@ export interface RouteParameter {
     "MainAnnotation": RouteTemplate<{ detail: number }, undefined>
     "MainPartition": RouteTemplate<{ detail: LocalDate }, undefined>
     "MainFolder": RouteTemplate<{ detail: number }, undefined>
+    "MainFindSimilar": RouteTemplate<{ detail: number }, undefined>
     "Preview": RouteTemplate<{}, { type: "image", imageIds: number[], currentIndex?: number } | { type: "collection", collectionId: number} | { type: "book", bookId: number }>
 }
 

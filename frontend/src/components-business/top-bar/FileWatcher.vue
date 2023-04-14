@@ -42,7 +42,7 @@ const REASON_TEXT = {
                 <div v-if="errors.length <= 0" class="has-text-success">
                     自动导入：监听中…
                     <div :class="$style.content">
-                        <p v-for="p in paths" class="mt-1 no-wrap is-cursor-pointer" @click="openLocalFile(p)">
+                        <p v-for="p in paths" class="mt-1 no-wrap is-cursor-pointer is-hover-underline" @click="openLocalFile(p)">
                             <Icon class="mr-1" icon="folder"/>{{p}}
                         </p>
                     </div>

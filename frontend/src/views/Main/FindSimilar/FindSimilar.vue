@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { TopBarLayout } from "@/components/layout"
+import { LazyLoad } from "@/components/logical"
+import { installFindSimilarContext } from "@/services/main/find-similar"
+import FindSimilarListPanel from "./FindSimilarListPanel.vue"
+import FindSimilarDetailPanel from "./FindSimilarDetailPanel.vue"
+
+const { paneState } = installFindSimilarContext()
+
 </script>
 
 <template>
-    <TopBarLayout>
-
-    </TopBarLayout>
+    <LazyLoad :visible="!paneState.opened.value" v-slot="{ visible }">
+        <FindSimilarListPanel v-show="visible"/>
+    </LazyLoad>
+    <FindSimilarDetailPanel v-if="paneState.mode.value === 'detail'"/>
 </template>
-
-<style module lang="sass">
-
-</style>

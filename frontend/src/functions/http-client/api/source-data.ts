@@ -19,7 +19,9 @@ export function createSourceDataEndpoint(http: HttpInstance): SourceDataEndpoint
         }),
         update: http.createPathDataRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}`, "PATCH"),
         delete: http.createPathRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}`, "DELETE"),
-        getRelatedImages: http.createPathRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}/related-images`)
+        getRelatedImages: http.createPathRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}/related-images`),
+        getSourceMarks: http.createPathRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}/source-marks`, "GET"),
+        updateSourceMarks: http.createPathDataRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}/source-marks`, "PATCH"),
     }
 }
 
@@ -54,6 +56,8 @@ export interface SourceDataEndpoint {
     getRelatedImages(key: SourceDataIdentity): Promise<Response<SimpleIllust[]>>
     update(key: SourceDataIdentity, form: SourceDataUpdateForm): Promise<Response<null, NotFound>>
     delete(key: SourceDataIdentity): Promise<Response<null, NotFound>>
+    getSourceMarks(key: SourceDataIdentity): Promise<Response<SourceMark[], NotFound>>
+    updateSourceMarks(key: SourceDataIdentity, form: SourceMarkPartialForm): Promise<Response<null, NotFound | ResourceNotExist<"related", number>>>
 }
 
 export interface SourceDataIdentity { sourceSite: string, sourceId: number }
@@ -62,6 +66,8 @@ export interface SourceDataExceptions {
     "create": ResourceNotExist<"site", string> | AlreadyExists<"SourceData", "sourceId", number>
     "bulk": ResourceNotExist<"site", string>
 }
+
+export type SourceMarkType = "SAME" | "SIMILAR" | "RELATED" | "UNKNOWN"
 
 export type SourceEditStatus = "NOT_EDITED" | "EDITED" | "ERROR" | "IGNORED"
 
@@ -146,6 +152,25 @@ export interface SourceBook {
     title: string
 }
 
+export interface SourceMark {
+    /**
+     * source name。
+     */
+    sourceSite: string
+    /**
+     * source标题。自动从setting取得并填充。
+     */
+    sourceSiteName: string
+    /**
+     * source id。
+     */
+    sourceId: number
+    /**
+     * 手动标记的关系类型。
+     */
+    markType: SourceMarkType
+}
+
 export interface SourceDataCreateForm extends SourceDataUpdateForm {
     sourceSite: string
     sourceId: number
@@ -170,6 +195,13 @@ export interface SourceTagForm {
 export interface SourceBookForm {
     code: string
     title?: string
+}
+
+export interface SourceMarkPartialForm {
+    action: "UPSERT" | "REMOVE"
+    sourceSite: string
+    sourceId: number
+    markType?: SourceMarkType
 }
 
 export type SourceDataFilter = SourceDataQueryFilter & LimitAndOffsetFilter

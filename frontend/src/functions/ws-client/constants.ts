@@ -30,7 +30,7 @@ type EntityEvents
     | SourceDataCreated | SourceDataUpdated | SourceDataDeleted
     | SourceBookUpdated | SourceTagUpdated | SourceTagMappingUpdated
 
-type BackendEvents = PathWatcherStatusChanged
+type BackendEvents = PathWatcherStatusChanged | SimilarFinderResultAdded | SimilarFinderResultResolved | SimilarFinderResultDeleted
 
 type SettingEvents = SettingServiceChanged | SettingMetaChanged | SettingQueryChanged | SettingImportChanged | SettingFindSimilarChanged | SettingSourceSiteChanged
 
@@ -84,7 +84,7 @@ export interface ImportUpdated extends BaseWsEvent<"entity/import/updated"> { im
 
 export interface ImportDeleted extends BaseWsEvent<"entity/import/deleted"> { importId: number }
 
-export interface ImportSaved extends BaseWsEvent<"entity/import/saved"> { }
+export interface ImportSaved extends BaseWsEvent<"entity/import/saved"> { importIdToImageIds: Record<number, number> }
 
 export interface SourceDataCreated extends BaseWsEvent<"entity/source-data/created"> { site: string, sourceId: number }
 
@@ -101,6 +101,11 @@ export interface SourceTagMappingUpdated extends BaseWsEvent<"entity/source-tag-
 //== backend后台相关变更通知 ==
 
 export interface PathWatcherStatusChanged extends BaseWsEvent<"backend/path-watcher/status-changed"> { isOpen: boolean, statisticCount: number, errors: PathWatcherError[] }
+
+export interface SimilarFinderResultAdded extends BaseWsEvent<"backend/similar-finder/result-added"> { count: number }
+
+export interface SimilarFinderResultResolved extends BaseWsEvent<"backend/similar-finder/result-resolved"> { resultId: number }
+export interface SimilarFinderResultDeleted extends BaseWsEvent<"backend/similar-finder/result-deleted"> { resultId: number }
 
 //== setting相关变更通知 ==
 
