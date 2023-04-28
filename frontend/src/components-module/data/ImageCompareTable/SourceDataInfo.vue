@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { SourceInfo } from "@/components-business/form-display"
-import { ImageSourceData } from "@/functions/http-client/api/illust"
+import { ImageData } from "./context"
 
 defineProps<{
-    values: (ImageSourceData | null)[]
+    values: (ImageData["sourceData"] | null)[]
 }>()
 
 </script>

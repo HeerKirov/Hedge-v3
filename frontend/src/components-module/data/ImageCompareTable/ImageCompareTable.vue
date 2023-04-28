@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toRef } from "vue"
+import { computed } from "vue"
 import { ThumbnailImage } from "@/components/universal"
 import { useImageCompareTableContext } from "./context"
 import MetadataInfo from "./MetadataInfo.vue"
@@ -10,18 +10,24 @@ const props = withDefaults(defineProps<{
     columnNum?: number
     droppable?: boolean
     titles?: string[]
-    ids?: (number | null)[]
+    ids?: ({type: "IMPORT_IMAGE" | "ILLUST", id: number} | number | null)[]
+    allowImportImage?: boolean
+    allowIllust?: boolean
 }>(), {
     columnNum: 2,
     titles: () => [],
-    ids: () => []
+    ids: () => [],
+    allowImportImage: false,
+    allowIllust: true
 })
 
 const emit = defineEmits<{
-    (e: "update:id", index: number, id: number): void
+    (e: "update:id", index: number, id: number, type: "IMPORT_IMAGE" | "ILLUST"): void
 }>()
 
-const { context } = useImageCompareTableContext(props.columnNum, toRef(props, "ids"), (idx, id) => emit("update:id", idx, id))
+const ids = computed(() => props.ids.map(i => typeof i === "number" ? {type: "ILLUST", id: i} as const : i))
+
+const { context } = useImageCompareTableContext(props.columnNum, props.allowIllust, props.allowImportImage, ids, (idx, id, type) => emit("update:id", idx, id, type))
 
 const thStyle = `width: calc((100% - 6rem) / ${props.columnNum})`
 
@@ -39,12 +45,12 @@ const thStyle = `width: calc((100% - 6rem) / ${props.columnNum})`
             <tr>
                 <td/>
                 <td v-for="index in columnNum">
-                    <ThumbnailImage :file="context[index - 1].imageData.metadata.value?.thumbnailFile" v-bind="context[index - 1].dropEvents"/>
+                    <ThumbnailImage :file="context[index - 1].imageData.data.value?.thumbnailFile" v-bind="context[index - 1].dropEvents"/>
                 </td>
             </tr>
-            <MetadataInfo :values="context.map(i => i.imageData.metadata.value)"/>
-            <SourceDataInfo :values="context.map(i => i.imageData.sourceData.value)"/>
-            <RelatedItemsInfo :values="context.map(i => i.imageData.relatedItems.value)"/>
+            <MetadataInfo :values="context.map(i => i.imageData.data.value?.metadata ?? null)"/>
+            <SourceDataInfo :values="context.map(i => i.imageData.data.value?.sourceData ?? null)"/>
+            <RelatedItemsInfo :values="context.map(i => i.imageData.data.value?.relatedItems ?? null)"/>
         </tbody>
     </table>
 </template>

@@ -217,7 +217,7 @@ export interface FindSimilarDetailResult extends FindSimilarResult {
     relations: FindSimilarResultRelation[]
 }
 
-interface FindSimilarResultImage extends FindSimilarEntityKey {
+export interface FindSimilarResultImage extends FindSimilarEntityKey {
     thumbnailFile: string | null
 }
 

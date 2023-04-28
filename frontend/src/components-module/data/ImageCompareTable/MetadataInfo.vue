@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Icon, WrappedText } from "@/components/universal"
 import { ScoreDisplay, TagmeInfo, MetaTagListDisplay, PartitionTimeDisplay, TimeGroupDisplay } from "@/components-business/form-display"
-import { DetailIllust } from "@/functions/http-client/api/illust"
+import { ImageData } from "./context"
 
 defineProps<{
-    values: (DetailIllust | null)[]
+    values: (ImageData["metadata"] | null)[]
 }>()
 
 </script>
@@ -13,8 +13,11 @@ defineProps<{
     <tr>
         <td>ID</td>
         <td v-for="value in values">
-            <template v-if="value !== null">
+            <template v-if="value !== null && value.id !== null">
                 <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{value.id}}</b>
+            </template>
+            <template v-else-if="value !== null && value.file !== null">
+                <Icon icon="plus-square"/><i class="ml-1 selectable">{{value.file}}</i>
             </template>
         </td>
     </tr>
@@ -47,7 +50,7 @@ defineProps<{
         <td>时间</td>
         <td v-for="value in values">
             <template v-if="value !== null">
-                <PartitionTimeDisplay :partition-time="value.partitionTime"/>
+                <PartitionTimeDisplay v-if="value.partitionTime !== null" :partition-time="value.partitionTime"/>
                 <TimeGroupDisplay :create-time="value.createTime" :update-time="value.updateTime" :order-time="value.orderTime"/>
             </template>
         </td>

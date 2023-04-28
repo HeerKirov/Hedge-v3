@@ -1,16 +1,20 @@
 <script setup lang="ts">
+import { computed } from "vue"
 import { Button, Block } from "@/components/universal"
 import { ImageCompareTable } from "@/components-module/data"
 import { TopBarLayout, MiddleLayout, AspectGrid } from "@/components/layout"
 import { useAssets } from "@/functions/app"
-import { useFindSimilarContext, useFindSimilarDetailPanel } from "@/services/main/find-similar"
+import { installFindSimilarDetailPanel, useFindSimilarContext } from "@/services/main/find-similar"
+import FindSimilarDetailPanelImageItem from "./FindSimilarDetailPanelImageItem.vue"
 
 const { paneState } = useFindSimilarContext()
-const { data } = useFindSimilarDetailPanel()
+const { data, selector } = installFindSimilarDetailPanel()
 
 const { assetsUrl } = useAssets()
 
 const IMAGE_COMPARE_TITLES = ["A", "B"]
+
+const ids = computed(() => [selector.singleSelected.value.a, selector.singleSelected.value.b])
 
 </script>
 
@@ -24,17 +28,14 @@ const IMAGE_COMPARE_TITLES = ["A", "B"]
             </MiddleLayout>
         </template>
         <Block :class="$style['compare-table']">
-            <ImageCompareTable :titles="IMAGE_COMPARE_TITLES">
-
-            </ImageCompareTable>
+            <ImageCompareTable :titles="IMAGE_COMPARE_TITLES" :ids="ids"/>
         </Block>
         <Block :class="$style['action-area']">
 
         </Block>
         <Block :class="$style.images">
-            <AspectGrid v-if="data !== null" class="p-2" :items="data.images" :column-num="9" :spacing="1" v-slot="{ item }">
-                <img :class="$style.img" :src="assetsUrl(item.thumbnailFile)" :alt="item"/>
-                <div :class="$style['id-badge']">{{item.id}}</div>
+            <AspectGrid v-if="data !== null" class="p-2" :items="data.images" :column-num="9" :spacing="1" v-slot="{ item, index }">
+                <FindSimilarDetailPanelImageItem :item="item" @click="selector.click(index, $event)"/>
             </AspectGrid>
         </Block>
     </TopBarLayout>
@@ -52,6 +53,7 @@ $action-width: 25%
     top: $spacing
     height: 60%
     width: calc(100% - $action-width - $spacing * 3)
+    overflow-y: auto
 
 .action-area
     position: absolute
@@ -67,16 +69,4 @@ $action-width: 25%
     right: $spacing
     height: calc(40% - $spacing * 3)
     overflow-y: auto
-
-    .img
-        width: 100%
-        height: 100%
-        border-radius: $radius-size-std
-        object-fit: cover
-        object-position: center
-
-    .id-badge
-        position: absolute
-        left: 0
-        bottom: 0
 </style>

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Icon } from "@/components/universal"
-import { ImageRelatedItems } from "@/functions/http-client/api/illust"
+import { ImageData } from "./context"
 
 defineProps<{
-    values: (ImageRelatedItems | null)[]
+    values: (ImageData["relatedItems"] | null)[]
 }>()
 
 </script>
@@ -13,7 +13,7 @@ defineProps<{
         <td>所属集合</td>
         <td v-for="value in values">
             <template v-if="value?.collection">
-                <Icon class="mr-1" icon="id-card"/>{{value.collection.id}}
+                <Icon class="mr-1" icon="id-card"/>{{value.collection}}
             </template>
         </td>
     </tr>

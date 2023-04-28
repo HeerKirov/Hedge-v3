@@ -7,6 +7,8 @@ import { HttpInstance, Response } from "../instance"
 import { IdResponseWithWarnings, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
 import { ImagePropsCloneForm, Tagme } from "./illust"
 import { OrderTimeType } from "./setting-import"
+import { SimpleFolder } from "@/functions/http-client/api/folder";
+import { SimpleBook } from "@/functions/http-client/api/book";
 
 export function createImportEndpoint(http: HttpInstance): ImportEndpoint {
     return {
@@ -194,8 +196,8 @@ export interface DetailImportImage extends ImportImage {
     createTime: LocalDateTime
     preference: Preference
     collectionId: string | number | null
-    folderIds: number[]
-    bookIds: number[]
+    folderIds: SimpleFolder[]
+    bookIds: SimpleBook[]
 }
 
 export interface ImportSaveResponse {
