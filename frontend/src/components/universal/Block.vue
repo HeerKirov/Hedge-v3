@@ -66,7 +66,7 @@ const divClass = computed(() => ([
         @each $name, $color in $light-mode-colors
             &.is-color-#{$name}
                 color: $light-mode-text-inverted-color
-                background: linear-gradient(to right, mix($color, #ffffff, 80), $color)
+                background: linear-gradient(to right, mix($color, #ffffff, 80%), $color)
 @media (prefers-color-scheme: dark)
     .color-mode-std
         background-color: $dark-mode-block-color
@@ -94,5 +94,5 @@ const divClass = computed(() => ([
         @each $name, $color in $dark-mode-colors
             &.is-color-#{$name}
                 color: $dark-mode-text-inverted-color
-                background: linear-gradient(to right, $color, mix($color, #000000, 75))
+                background: linear-gradient(to right, $color, mix($color, #000000, 75%))
 </style>

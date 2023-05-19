@@ -4,6 +4,10 @@ import { Colors } from "@/constants/ui"
 import { DisplayStyle, ModeInButtons } from "./template"
 import AttachBaseButton from "./AttachBaseButton.vue"
 
+defineOptions({
+    inheritAttrs: false
+})
+
 const props = defineProps<{
     label: string
     icon?: string
@@ -18,12 +22,6 @@ const emit = defineEmits<{
 
 const popupMenuItems = () => [{type: "checkbox", label: props.label, checked: true, click: () => emit("cancel")} as const]
 
-</script>
-
-<script lang="ts">
-export default {
-    inheritAttrs: false
-}
 </script>
 
 <template>

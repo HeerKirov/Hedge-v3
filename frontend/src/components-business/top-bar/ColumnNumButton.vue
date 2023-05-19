@@ -5,6 +5,10 @@ import { ElementPopupMenu } from "@/components/interaction"
 import { MenuItem } from "@/modules/popup-menu"
 import { arrays } from "@/utils/primitives"
 
+defineOptions({
+    inheritAttrs: false
+})
+
 const props = withDefaults(defineProps<{
     value?: number
     max?: number
@@ -28,12 +32,6 @@ const menuItems = computed(() => arrays.newArray(props.max - props.min + 1, i =>
     }
 })))
 
-</script>
-
-<script lang="ts">
-export default {
-    inheritAttrs: false
-}
 </script>
 
 <template>

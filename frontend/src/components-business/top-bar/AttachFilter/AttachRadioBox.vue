@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { computed } from "vue"
 import { ElementPopupMenu } from "@/components/interaction"
 import { DisplayStyle, ModeInButtons, TemplateOption } from "./template"
 import AttachBaseButton from "./AttachBaseButton.vue"
-import { computed } from "vue";
+
+defineOptions({
+    inheritAttrs: false
+})
 
 const props = defineProps<{
     value?: any
@@ -24,12 +28,6 @@ const popupMenuItems = () => props.options.map(item => ({
 
 const labelItems = computed(() => props.value !== undefined ? [props.options.find(i => i.value === props.value)!] : [])
 
-</script>
-
-<script lang="ts">
-export default {
-    inheritAttrs: false
-}
 </script>
 
 <template>

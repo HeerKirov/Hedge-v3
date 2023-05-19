@@ -70,9 +70,9 @@ const keypress = (e: KeyEvent) => {
     width: 100%
     &:focus,
     &.active
-        background-color: mix($light-mode-block-color, #000000, 90)
+        background-color: mix($light-mode-block-color, #000000, 90%)
         @media (prefers-color-scheme: dark)
-            background-color: mix($dark-mode-block-color, #000000, 65)
+            background-color: mix($dark-mode-block-color, #000000, 65%)
 
 .button
     $gap: #{calc(($element-height-std - $element-height-small) / 2)}

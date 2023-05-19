@@ -9,10 +9,10 @@ defineProps<{
 </script>
 
 <template>
-    <tr v-if="values.some(i => i?.sourceSite)">
+    <tr v-if="values.some(i => i?.site)">
         <td>来源</td>
         <td v-for="value in values">
-            <SourceInfo v-if="value !== null" :site="value.sourceSite" :source-id="value.sourceId" :source-part="value.sourcePart"/>
+            <SourceInfo v-if="value !== null" :site="value.site" :source-id="value.sourceId" :source-part="value.sourcePart"/>
         </td>
     </tr>
 </template>

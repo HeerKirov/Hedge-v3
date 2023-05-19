@@ -1,14 +1,14 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends string = string">
 import { onMounted, ref, watch } from "vue"
 
 const props = defineProps<{
-    value?: string
-    items?: { label: string, value: string }[]
+    value?: T
+    items?: { label: string, value: T }[]
     size?: "small" | "std" | "large"
 }>()
 
 const emit = defineEmits<{
-    (e: "update:value", value: string, index: number): void
+    (e: "update:value", value: T, index: number): void
 }>()
 
 const selectDom = ref<HTMLSelectElement>()

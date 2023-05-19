@@ -3,6 +3,10 @@ import { onBeforeMount } from "vue"
 import { Block } from "@/components/universal"
 import { useInterceptedKey } from "@/modules/keyboard"
 
+defineOptions({
+    inheritAttrs: false
+})
+
 const props = defineProps<{
     position?: "absolute" | "fixed"
     overflow?: "hidden" | "auto" | "default"
@@ -38,12 +42,6 @@ onBeforeMount(() => {
     }
 })
 
-</script>
-
-<script lang="ts">
-export default {
-    inheritAttrs: false
-}
 </script>
 
 <template>

@@ -6,6 +6,10 @@ import { SearchTemplate } from "./template"
 import AttachBaseButton from "./AttachBaseButton.vue"
 import AttachSearchPicker from "./AttachSearchPicker.vue"
 
+defineOptions({
+    inheritAttrs: false
+})
+
 const props = defineProps<{
     value?: any
     template: SearchTemplate
@@ -26,12 +30,6 @@ const templateOptions = computedAsync([], async () => {
     }
 })
 
-</script>
-
-<script lang="ts">
-export default {
-    inheritAttrs: false
-}
 </script>
 
 <template>

@@ -70,7 +70,7 @@ export function createHttpInstance(config: Readonly<HttpInstanceConfig>): HttpIn
     const instance = axios.create()
 
     let _baseUrl: string | undefined = undefined
-    let _headers: AxiosRequestHeaders | undefined = undefined
+    let _headers: {Authorization: string} | undefined = undefined
     let _token: string | undefined = undefined
     let _host: string | undefined = undefined
 

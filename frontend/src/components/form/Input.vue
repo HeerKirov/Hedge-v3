@@ -134,15 +134,15 @@ const inputClass = computed(() => [
     color: $light-mode-text-color
     background-color: $light-mode-block-color
     &[disabled]
-        color: mix($light-mode-text-color, #ffffff, 20)
-        background-color: mix($light-mode-block-color, #000000, 96)
+        color: mix($light-mode-text-color, #ffffff, 20%)
+        background-color: mix($light-mode-block-color, #000000, 96%)
     @media (prefers-color-scheme: dark)
         border-color: $dark-mode-border-color
         color: $dark-mode-text-color
         background-color: $dark-mode-block-color
         &[disabled]
-            color: mix($dark-mode-text-color, #000000, 20)
-            background-color: mix($dark-mode-block-color, #FFFFFF, 96)
+            color: mix($dark-mode-text-color, #000000, 20%)
+            background-color: mix($dark-mode-block-color, #FFFFFF, 96%)
 
 textarea.input
     $textarea-max-height: 40em !default

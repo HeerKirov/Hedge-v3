@@ -10,6 +10,8 @@ interface FlexProps {
     grow?: number
     shrink?: number
     spacing?: number
+    class?: any
+    style?: any
 }
 
 export default function (props: FlexProps, { slots }: SetupContext) {
@@ -19,7 +21,8 @@ export default function (props: FlexProps, { slots }: SetupContext) {
         "flex-wrap": (props.multiline ? "wrap" : "nowrap") as "wrap" | "nowrap",
         "justify-content": props.horizontal ? justifyContentReflections[props.horizontal] : undefined,
         "align-items": props.align ? alignItemsReflections[props.align] : undefined,
-        "gap": props.spacing ? `${props.spacing * 4}px` : undefined
+        "gap": props.spacing ? `${props.spacing * 4}px` : undefined,
+        ...(props.style ?? {})
     }
 
     const vNode = slots.default?.()
@@ -43,7 +46,7 @@ export default function (props: FlexProps, { slots }: SetupContext) {
         }
     }
 
-    return h("div", {style: divStyle}, vNode)
+    return h("div", {style: divStyle, class: props.class}, vNode)
 }
 
 const justifyContentReflections = {

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import DialogBoxFramework from "./DialogBoxFramework.vue"
 
+defineOptions({
+    inheritAttrs: false
+})
+
 const props = defineProps<{
     visible?: boolean
     position?: "absolute" | "fixed"
@@ -22,12 +26,6 @@ const closeByOutside = () => {
     }
 }
 
-</script>
-
-<script lang="ts">
-export default {
-    inheritAttrs: false
-}
 </script>
 
 <template>

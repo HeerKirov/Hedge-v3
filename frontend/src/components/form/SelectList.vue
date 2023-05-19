@@ -1,20 +1,19 @@
-<script setup lang="ts">
-import {  } from "vue"
+<script setup lang="ts" generic="T extends string = string">
 
 const props = defineProps<{
-    items?: {label: string, value: string}[]
-    value?: string
+    items?: {label: string, value: T}[]
+    value?: T
     index?: number
     allowCancel?: boolean
 }>()
 
 const emit = defineEmits<{
-    (e: "update:value", v: string | undefined): void
+    (e: "update:value", v: T | undefined): void
     (e: "update:index", index: number | undefined): void
-    (e: "click", v: string, index: number): void
+    (e: "click", v: T, index: number): void
 }>()
 
-const select = (e: MouseEvent, v: string, idx: number) => {
+const select = (e: MouseEvent, v: T, idx: number) => {
     emit("update:value", v)
     emit("update:index", idx)
     emit("click", v, idx)
