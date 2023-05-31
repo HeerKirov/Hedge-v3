@@ -20,6 +20,8 @@ data class IllustRes(val id: Int, val type: IllustType, val childrenCount: Int?,
 
 data class IllustSimpleRes(val id: Int, val thumbnailFile: String)
 
+data class IllustCollectionSimpleRes(val id: Int, val thumbnailFile: String, val childrenCount: Int)
+
 data class IllustDetailRes(val id: Int, val type: IllustType, val childrenCount: Int?,
                            val file: String, val thumbnailFile: String,
                            val extension: String, val size: Long, val resolutionWidth: Int, val resolutionHeight: Int,

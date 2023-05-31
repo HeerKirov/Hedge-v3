@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.application
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManagerImpl
 import com.heerkirov.hedge.server.components.backend.FileGeneratorImpl
+import com.heerkirov.hedge.server.components.backend.ImportProcessorImpl
 import com.heerkirov.hedge.server.components.backend.exporter.BackendExporterImpl
 import com.heerkirov.hedge.server.components.backend.similar.SimilarFinderImpl
 import com.heerkirov.hedge.server.components.backend.watcher.PathWatcherImpl
@@ -37,6 +38,8 @@ fun runApplication(options: ApplicationOptions) {
         val repo = define { DataRepositoryImpl(options.channelPath) }
 
         val services = define {
+            define { ImportProcessorImpl(repo, bus) }
+
             val queryManager = QueryManager(repo, bus)
             val queryService = QueryService(queryManager)
 
@@ -50,10 +53,10 @@ fun runApplication(options: ApplicationOptions) {
 
             val similarFinder = define { SimilarFinderImpl(appStatus, repo, bus) }
 
-            val thumbnailGenerator = define { FileGeneratorImpl(appStatus, appdata, repo, bus) }
+            val fileGenerator = define { FileGeneratorImpl(appStatus, appdata, repo, bus) }
             val fileManager = FileManager(appdata, repo)
             val importMetaManager = ImportMetaManager(repo)
-            val importManager = ImportManager(repo, bus, sourceManager, importMetaManager, fileManager, thumbnailGenerator)
+            val importManager = ImportManager(repo, bus, sourceManager, importMetaManager, fileManager, fileGenerator)
             val pathWatcher = define { PathWatcherImpl(appStatus, repo, bus, importManager) }
 
             val annotationKit = AnnotationKit(repo)

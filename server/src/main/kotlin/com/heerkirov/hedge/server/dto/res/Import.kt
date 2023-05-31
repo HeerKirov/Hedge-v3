@@ -19,7 +19,7 @@ data class ImportImageDetailRes(val id: Int,
                                 val fileName: String?, val filePath: String?,
                                 val fileCreateTime: LocalDateTime?, val fileUpdateTime: LocalDateTime?, val fileImportTime: LocalDateTime,
                                 val tagme: Illust.Tagme, val preference: ImportImage.Preference,
-                                val collectionId: Any?, val folderIds: List<Int>, val bookIds: List<Int>,
+                                val collectionId: Any?, val collection: IllustCollectionSimpleRes?, val folders: List<FolderSimpleRes>, val books: List<BookSimpleRes>,
                                 val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?,
                                 val partitionTime: LocalDate, val orderTime: LocalDateTime, val createTime: LocalDateTime)
 

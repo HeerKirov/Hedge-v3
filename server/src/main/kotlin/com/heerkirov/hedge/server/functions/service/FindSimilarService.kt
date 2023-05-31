@@ -12,6 +12,7 @@ import com.heerkirov.hedge.server.dto.form.FindSimilarTaskCreateForm
 import com.heerkirov.hedge.server.dto.form.ImportUpdateForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.FindSimilarEntityType
+import com.heerkirov.hedge.server.events.SimilarFinderResultDeleted
 import com.heerkirov.hedge.server.events.SimilarFinderResultResolved
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.manager.BookManager
@@ -296,6 +297,8 @@ class FindSimilarService(private val data: DataRepository,
             data.db.sequenceOf(FindSimilarResults).firstOrNull { it.id eq id } ?: throw be(NotFound())
 
             data.db.delete(FindSimilarResults) { it.id eq id }
+
+            bus.emit(SimilarFinderResultDeleted(id))
         }
     }
 }

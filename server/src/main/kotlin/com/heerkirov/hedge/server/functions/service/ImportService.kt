@@ -23,6 +23,7 @@ import com.heerkirov.hedge.server.model.ImportImage
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
 import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
 import com.heerkirov.hedge.server.utils.business.takeAllFilepathOrNull
+import com.heerkirov.hedge.server.utils.business.takeThumbnailFilepath
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.escapeLike
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
@@ -117,6 +118,32 @@ class ImportService(private val data: DataRepository,
             }
         }
 
+        val folderIds = row[ImportImages.folderIds] ?: emptyList()
+        val bookIds = row[ImportImages.bookIds] ?: emptyList()
+
+        val books = if(bookIds.isEmpty()) emptyList() else data.db.from(Books)
+            .select(Books.id, Books.title)
+            .where { Books.id inList bookIds }
+            .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!) }
+
+        val folders = if(folderIds.isEmpty()) emptyList() else data.db.from(Folders)
+            .select(Folders.id, Folders.title, Folders.parentAddress, Folders.type)
+            .where { Folders.id inList folderIds }
+            .map { FolderSimpleRes(it[Folders.id]!!, (it[Folders.parentAddress] ?: emptyList()) + it[Folders.title]!!, it[Folders.type]!!) }
+
+        val collection = if(collectionId !is Int) null else {
+            val collectionRow = data.db.from(Illusts)
+                .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
+                .select(Illusts.cachedChildrenCount, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                .where { (Illusts.type eq IllustModelType.COLLECTION) and (Illusts.id eq collectionId) }
+                .firstOrNull()
+            if(collectionRow == null) null else {
+                val collectionThumbnailFile = takeThumbnailFilepath(collectionRow)
+                val childrenCount = collectionRow[Illusts.cachedChildrenCount]!!
+                IllustCollectionSimpleRes(collectionId, collectionThumbnailFile, childrenCount)
+            }
+        }
+
         return ImportImageDetailRes(
             row[ImportImages.id]!!,
             file, thumbnailFile,
@@ -124,7 +151,7 @@ class ImportService(private val data: DataRepository,
             row[ImportImages.fileCreateTime], row[ImportImages.fileUpdateTime], row[ImportImages.fileImportTime]!!,
             row[ImportImages.tagme]!!,
             row[ImportImages.preference] ?: ImportImage.Preference(cloneImage = null),
-            collectionId, row[ImportImages.folderIds] ?: emptyList(), row[ImportImages.bookIds] ?: emptyList(),
+            collectionId, collection, folders, books,
             row[ImportImages.sourceSite], row[ImportImages.sourceId], row[ImportImages.sourcePart],
             row[ImportImages.partitionTime]!!, row[ImportImages.orderTime]!!.parseDateTime(), row[ImportImages.createTime]!!
         )

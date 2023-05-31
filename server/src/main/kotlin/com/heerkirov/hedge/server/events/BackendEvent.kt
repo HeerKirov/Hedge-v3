@@ -13,3 +13,5 @@ data class PathWatcherStatusChanged(val isOpen: Boolean, val statisticCount: Int
 data class SimilarFinderResultAdded(val count: Int) : BaseBusEventImpl("backend/similar-finder/result-added"), BackendEvent
 
 data class SimilarFinderResultResolved(val resultId: Int) : BaseBusEventImpl("backend/similar-finder/result-resolved"), BackendEvent
+
+data class SimilarFinderResultDeleted(val resultId: Int) : BaseBusEventImpl("backend/similar-finder/result-deleted"), BackendEvent

@@ -42,7 +42,7 @@ dependencies {
 }
 
 val javaVersion = "17"
-val projectMainModule = "com.heerkirov.hedge"
+val projectMainModule = "com.heerkirov.hedge.server"
 val projectMainClass = "com.heerkirov.hedge.server.ApplicationKt"
 val projectBinaryName = "hedge-v3-server"
 
