@@ -223,7 +223,7 @@ export interface FindSimilarResultImage extends FindSimilarEntityKey {
 
 interface FindSimilarResultRelationTemplate<T extends SimilarityType, I extends RelationInfo> { a: FindSimilarEntityKey, b: FindSimilarEntityKey, type: T, info: I }
 
-type FindSimilarResultRelation
+export type FindSimilarResultRelation
     = FindSimilarResultRelationTemplate<"SOURCE_IDENTITY_EQUAL", SourceIdentityRelationInfo>
     | FindSimilarResultRelationTemplate<"SOURCE_IDENTITY_SIMILAR", SourceIdentityRelationInfo>
     | FindSimilarResultRelationTemplate<"SOURCE_RELATED", SourceRelatedRelationInfo>
@@ -245,7 +245,7 @@ export interface FindSimilarResultResolveForm {
 
 interface FindSimilarResultResolveActionTemplate<A extends ActionType> { a: FindSimilarEntityKey, b?: FindSimilarEntityKey | null, actionType: A }
 
-type FindSimilarResultResolveAction
+export type FindSimilarResultResolveAction
     = (FindSimilarResultResolveActionTemplate<"CLONE_IMAGE"> & { config: { props: ImagePropsCloneForm["props"], merge?: boolean, deleteFrom?: boolean } })
     | (FindSimilarResultResolveActionTemplate<"ADD_TO_COLLECTION"> & { config: { collectionId: string | number } })
     | (FindSimilarResultResolveActionTemplate<"ADD_TO_BOOK"> & { config: { bookId: number } })

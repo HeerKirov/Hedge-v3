@@ -41,7 +41,7 @@ const { data, setTagme, setSourceInfo, setCreateTime, setOrderTime, setPartition
                 <TagmeEditor :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
-        <SourcePreferencesDisplay class="mt-2" :book-ids="data.bookIds.map(i => i.id)" :preference="data.preference" :collection-id="data.collectionId" @clear="clearAllPreferences"/>
+        <SourcePreferencesDisplay class="mt-2" :book-ids="data.books.map(i => i.id)" :preference="data.preference" :collection-id="data.collectionId" @clear="clearAllPreferences"/>
         <FormEditKit class="mt-2" :value="data.partitionTime" :set-value="setPartitionTime">
             <template #default="{ value }">
                 <p class="secondary-text">时间分区 {{date.toISOString(value)}}</p>

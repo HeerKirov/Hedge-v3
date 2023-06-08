@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Block, Icon } from "@/components/universal"
 import { Preference } from "@/functions/http-client/api/import"
-import { usePopupMenu } from "@/modules/popup-menu";
+import { usePopupMenu } from "@/modules/popup-menu"
 
 const props = defineProps<{
     collectionId: string | number | null

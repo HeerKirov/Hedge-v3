@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import { computed } from "vue"
 import { Flex } from "@/components/layout"
 
@@ -7,10 +7,14 @@ import { Flex } from "@/components/layout"
 // 可以为其设置间隔。
 
 const props = defineProps<{
-    items?: any[] | null
+    items?: T[] | null
     columnNum?: number
     aspect?: number
     spacing?: number
+}>()
+
+defineSlots<{
+    default(props: {item: T, index: number}): any
 }>()
 
 const rootStyle = computed(() => ({

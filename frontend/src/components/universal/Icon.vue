@@ -81,7 +81,8 @@ import {
     faPenNib, faExclamationTriangle, faExclamation, faCommentDots, faImages, faIdCard, faUndo, faRedo,
     faHistory, faAdjust, faDatabase, faCheckSquare, faCheckCircle, faSyncAlt, faFileImage, faImage, faVideo,
     faInfo, faDiceD6, faExternalLinkAlt, faEye, faPlay, faPause, faVolumeUp, faVolumeDown, faVolumeOff, faVolumeMute,
-    faAngleDoubleRight, faSortAmountDown, faCalendar, faThList, faExchangeAlt, faEarListen, faStop, faCopy, faScissors
+    faAngleDoubleRight, faSortAmountDown, faCalendar, faThList, faExchangeAlt, faEarListen, faStop, faCopy, faScissors,
+    faEquals, faHandLizard, faHandScissors, faFaceSmileBeam, faFaceLaughBeam, faMarker, faHighlighter, faJoint
 } from "@fortawesome/free-solid-svg-icons"
 
 import {
@@ -103,7 +104,8 @@ library.add(
     faPenNib, faExclamationTriangle, faExclamation, faCommentDots, faImages, faIdCard, faUndo, faRedo,
     faHistory, faAdjust, faDatabase, faCheckSquare, faCheckCircle, faSyncAlt, faFileImage, faImage, faVideo,
     faInfo, faDiceD6, faExternalLinkAlt, faEye, faPlay, faPause, faVolumeUp, faVolumeDown, faVolumeOff, faVolumeMute,
-    faAngleDoubleRight, faSortAmountDown, faCalendar, faThList, faExchangeAlt, faEarListen, faStop, faCopy, faScissors
+    faAngleDoubleRight, faSortAmountDown, faCalendar, faThList, faExchangeAlt, faEarListen, faStop, faCopy, faScissors,
+    faEquals, faHandLizard, faHandScissors, faFaceSmileBeam, faFaceLaughBeam, faMarker, faHighlighter, faJoint
 )
 library.add(farStar, farCheckSquare)
 

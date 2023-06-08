@@ -15,8 +15,7 @@ import { LocalDate, LocalDateTime } from "@/utils/datetime"
 export interface ImageData {
     thumbnailFile: string | null
     metadata: {
-        id: number | null
-        file: string | null
+        id: number
         score: number | null
         favorite: boolean
         description: string
@@ -41,11 +40,11 @@ export interface ImageData {
     }
 }
 
-export function useImageCompareTableContext(columnNum: number, allowIllust: boolean, allowImportImage: boolean, ids: Ref<({type: "IMPORT_IMAGE" | "ILLUST", id: number} | null)[]>, updateId: (idx: number, id: number, type: "ILLUST" | "IMPORT_IMAGE") => void) {
+export function useImageCompareTableContext(columnNum: number, ids: Ref<(number | null)[]>, updateId: (idx: number, id: number) => void) {
     const context = arrays.newArray(columnNum, index => {
         const idv = ids.value[index]
         const imageData = useImageData(idv)
-        const dropEvents = useDropEvents(allowIllust, allowImportImage, (type, id) => updateId(index, id, type))
+        const dropEvents = useDropEvents(id => updateId(index, id))
         return {imageData, dropEvents}
     })
 
@@ -54,22 +53,21 @@ export function useImageCompareTableContext(columnNum: number, allowIllust: bool
     return {context}
 }
 
-function useImageData(initIndex: {type: "IMPORT_IMAGE" | "ILLUST", id: number} | null) {
+function useImageData(initIndex: number | null) {
     const message = useMessageBox()
 
-    const imageId = ref<{type: "IMPORT_IMAGE" | "ILLUST", id: number} | null>(initIndex)
+    const imageId = ref<number | null>(initIndex)
 
     const { data } = useFetchEndpoint({
         path: imageId,
         get: client => async path => {
-            if(path.type === "ILLUST") {
-                const metadata = await client.illust.image.get(path.id)
+            const metadata = await client.illust.image.get(path)
                 if(!metadata.ok) return metadata
 
-                const relatedItems = await client.illust.image.relatedItems.get(path.id, {limit: 9})
+                const relatedItems = await client.illust.image.relatedItems.get(path, {limit: 9})
                 if(!relatedItems.ok) return relatedItems
 
-                const sourceData = await client.illust.image.sourceData.get(path.id)
+                const sourceData = await client.illust.image.sourceData.get(path)
                 if(!sourceData.ok) return sourceData
 
                 return {
@@ -79,7 +77,6 @@ function useImageData(initIndex: {type: "IMPORT_IMAGE" | "ILLUST", id: number} |
                         thumbnailFile: metadata.data.thumbnailFile,
                         metadata: {
                             id: metadata.data.id,
-                            file: null,
                             score: metadata.data.score,
                             favorite: metadata.data.favorite,
                             description: metadata.data.description,
@@ -104,43 +101,6 @@ function useImageData(initIndex: {type: "IMPORT_IMAGE" | "ILLUST", id: number} |
                         }
                     }
                 }
-            }else{
-                const res = await client.import.get(path.id)
-                if(!res.ok) return res
-
-                return {
-                    ok: true,
-                    status: 200,
-                    data: <ImageData>{
-                        thumbnailFile: res.data.thumbnailFile,
-                        metadata: {
-                            id: null,
-                            file: res.data.fileName,
-                            score: null,
-                            favorite: false,
-                            description: "",
-                            tagme: res.data.tagme,
-                            tags: [],
-                            topics: [],
-                            authors: [],
-                            partitionTime: null,
-                            createTime: res.data.createTime,
-                            updateTime: res.data.createTime,
-                            orderTime: res.data.orderTime,
-                        },
-                        sourceData: {
-                            site: res.data.sourceSite,
-                            sourceId: res.data.sourceId,
-                            sourcePart: res.data.sourcePart,
-                        },
-                        relatedItems: {
-                            collection: res.data.collectionId,
-                            books: res.data.bookIds,
-                            folders: res.data.folderIds
-                        }
-                    }
-                }
-            }
         },
         afterRetrieve(path, data, type) {
             if(path !== null && data === null) {
@@ -155,10 +115,10 @@ function useImageData(initIndex: {type: "IMPORT_IMAGE" | "ILLUST", id: number} |
     return {imageId, data}
 }
 
-function useDropEvents(allowIllust: boolean, allowImportImage: boolean, updateId: (type: "IMPORT_IMAGE" | "ILLUST", id: number) => void) {
+function useDropEvents(updateId: (id: number) => void) {
     const toast = useToast()
 
-    const { dragover: _, ...dropEvents } = useDroppable(allowIllust && allowImportImage ? ["illusts", "importImages"] : allowIllust ? "illusts" : "importImages", (items, type) => {
+    const { dragover: _, ...dropEvents } = useDroppable("illusts", items => {
         if(items.length > 1) {
             toast.toast("选择项过多", "warning", "选择项过多。请仅选择1个项以拖放到此位置。")
             return
@@ -166,7 +126,7 @@ function useDropEvents(allowIllust: boolean, allowImportImage: boolean, updateId
             toast.toast("没有选择项", "warning", "选择项为空。")
             return
         }
-        updateId(type === "illusts" ? "ILLUST" : "IMPORT_IMAGE", items[0].id)
+        updateId(items[0].id)
     })
 
     return dropEvents

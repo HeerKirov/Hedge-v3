@@ -438,6 +438,10 @@ export interface SimpleIllust {
     thumbnailFile: string
 }
 
+export interface SimpleCollection extends SimpleIllust {
+    childrenCount: number
+}
+
 export interface IllustParent extends SimpleIllust {
     childrenCount: number
 }

@@ -1,7 +1,8 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import { ref } from "vue"
 import { objects } from "@/utils/primitives"
 import { onOutsideClick } from "@/utils/sensors"
+import { toRef } from "@/utils/reactivity"
 
 // == Form Edit Kit 表单编辑器套件 ==
 // 一个表单交互组件。平时使用display组件显示内容，双击(默认交互方式)后切换为edit组件以提供内容编辑。
@@ -12,7 +13,7 @@ const props = withDefaults(defineProps<{
     /**
      * data value.
      */
-    value: any
+    value: T
     /**
      * 编辑模式下使用的值。需要开启useEditValue。
      */
@@ -33,18 +34,24 @@ const props = withDefaults(defineProps<{
      * 保存时执行此回调。此回调需要异步地返回一个布尔值，以告知此保存行为是否成功。
      * update:value事件则与此不同，它总是会被提交，且先于此回调提交。如果不在意保存结果，那么可以使用emit。
      */
-    setValue?(newValue: any): Promise<boolean>
+    setValue?(newValue: T): Promise<boolean>
 }>(), {
     allowDoubleClick: true,
     allowClickOutside: true
 })
 
 const emit = defineEmits<{
-    (e: "update:value", v: any): void
+    (e: "update:value", v: T): void
 }>()
 
+defineSlots<{
+    default(props: {value: T, edit: typeof edit}): any
+    edit(props: {value: T, setValue: typeof setEditValue, save: typeof save}): any
+}>()
+
+const displayValue = toRef(props, "value")
 const editMode = ref(false)
-const editValue = ref<any>()
+const editValue = ref<T>()
 
 const edit = () => {
     if(!editMode.value) {
@@ -53,12 +60,12 @@ const edit = () => {
     }
 }
 
-const setEditValue = (v: any) => {
+const setEditValue = (v: T) => {
     editValue.value = v
 }
 
 const save = async () => {
-    if(editMode.value) {
+    if(editMode.value && editValue.value !== undefined) {
         emit("update:value", editValue.value)
         if(props.setValue) {
             if(await props.setValue(editValue.value)) {
@@ -89,10 +96,6 @@ if(props.allowClickOutside) {
 <template>
     <div ref="divRef" :class="{'is-cursor-text': !editMode}" @dblclick="doubleClick">
         <slot v-if="editMode" name="edit" :value="editValue" :setValue="setEditValue" :save="save"/>
-        <slot v-else :value="value" :edit="edit"/>
+        <slot v-else :value="displayValue" :edit="edit"/>
     </div>
 </template>
-
-<style module lang="sass">
-
-</style>

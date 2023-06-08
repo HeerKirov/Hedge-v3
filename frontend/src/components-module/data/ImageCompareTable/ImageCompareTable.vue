@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from "vue"
 import { ThumbnailImage } from "@/components/universal"
+import { toRef } from "@/utils/reactivity"
 import { useImageCompareTableContext } from "./context"
 import MetadataInfo from "./MetadataInfo.vue"
 import SourceDataInfo from "./SourceDataInfo.vue"
@@ -10,24 +10,20 @@ const props = withDefaults(defineProps<{
     columnNum?: number
     droppable?: boolean
     titles?: string[]
-    ids?: ({type: "IMPORT_IMAGE" | "ILLUST", id: number} | number | null)[]
-    allowImportImage?: boolean
-    allowIllust?: boolean
+    ids?: (number | null)[]
 }>(), {
     columnNum: 2,
     titles: () => [],
-    ids: () => [],
-    allowImportImage: false,
-    allowIllust: true
+    ids: () => []
 })
 
 const emit = defineEmits<{
-    (e: "update:id", index: number, id: number, type: "IMPORT_IMAGE" | "ILLUST"): void
+    (e: "update:id", index: number, id: number): void
 }>()
 
-const ids = computed(() => props.ids.map(i => typeof i === "number" ? {type: "ILLUST", id: i} as const : i))
+const ids = toRef(props, "ids")
 
-const { context } = useImageCompareTableContext(props.columnNum, props.allowIllust, props.allowImportImage, ids, (idx, id, type) => emit("update:id", idx, id, type))
+const { context } = useImageCompareTableContext(props.columnNum, ids, (idx, id) => emit("update:id", idx, id))
 
 const thStyle = `width: calc((100% - 6rem) / ${props.columnNum})`
 

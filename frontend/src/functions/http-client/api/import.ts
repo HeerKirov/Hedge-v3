@@ -5,10 +5,10 @@ import {
 } from "../exceptions"
 import { HttpInstance, Response } from "../instance"
 import { IdResponseWithWarnings, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
-import { ImagePropsCloneForm, Tagme } from "./illust"
+import { ImagePropsCloneForm, SimpleCollection, Tagme } from "./illust"
+import { SimpleFolder } from "./folder"
+import { SimpleBook } from "./book"
 import { OrderTimeType } from "./setting-import"
-import { SimpleFolder } from "@/functions/http-client/api/folder";
-import { SimpleBook } from "@/functions/http-client/api/book";
 
 export function createImportEndpoint(http: HttpInstance): ImportEndpoint {
     return {
@@ -196,8 +196,9 @@ export interface DetailImportImage extends ImportImage {
     createTime: LocalDateTime
     preference: Preference
     collectionId: string | number | null
-    folderIds: SimpleFolder[]
-    bookIds: SimpleBook[]
+    collection: SimpleCollection | null
+    folders: SimpleFolder[]
+    books: SimpleBook[]
 }
 
 export interface ImportSaveResponse {

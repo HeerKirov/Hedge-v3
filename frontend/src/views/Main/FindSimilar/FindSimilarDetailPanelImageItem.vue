@@ -14,17 +14,17 @@ defineEmits<{
 }>()
 
 const {
-    selector: { selected, singleSelected, lastSelected, click }
+    selector: { selectMode, compare, multiple }
 } = useFindSimilarDetailPanel()
 
 const { assetsUrl } = useAssets()
 
 const selectedMode = computed(() => {
-    if(singleSelected.value.a !== null && singleSelected.value.a.type === props.item.type && singleSelected.value.a.id === props.item.id) {
+    if(selectMode.value === "COMPARE" && compare.value.a !== null && compare.value.a.type === props.item.type && compare.value.a.id === props.item.id) {
         return "A"
-    }else if(singleSelected.value.b !== null && singleSelected.value.b.type === props.item.type && singleSelected.value.b.id === props.item.id) {
+    }else if(selectMode.value === "COMPARE" && compare.value.b !== null && compare.value.b.type === props.item.type && compare.value.b.id === props.item.id) {
         return "B"
-    }else if(selected.value.some(i => i.type === props.item.type && i.id === props.item.id)) {
+    }else if(selectMode.value === "MULTIPLE" && multiple.value.selected.some(i => i.type === props.item.type && i.id === props.item.id)) {
         return "selected"
     }else{
         return "none"
@@ -35,7 +35,11 @@ const selectedMode = computed(() => {
 
 <template>
     <img :class="$style.img" :src="assetsUrl(item.thumbnailFile)" :alt="`${item.type}-${item.id}`" @click="$emit('click', $event)"/>
-    <div :class="$style['id-badge']"><Icon v-if="item.type === 'IMPORT_IMAGE'" icon="plus-square"/>{{item.id}}</div>
+    <div :class="$style['id-badge']">
+        <Icon v-if="item.type === 'IMPORT_IMAGE'" icon="plus-square"/>
+        <Icon v-else icon="id-card"/>
+        {{item.id}}
+    </div>
     <div v-if="selectedMode === 'A'" :class="[$style.selected, $style.a]">
         <div :class="$style['selected-badge']">A</div>
         <div :class="$style['internal-border']"/>

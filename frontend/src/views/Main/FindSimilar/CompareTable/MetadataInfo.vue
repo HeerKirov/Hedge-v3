@@ -1,19 +1,22 @@
 <script setup lang="ts">
 import { Icon, WrappedText } from "@/components/universal"
 import { ScoreDisplay, TagmeInfo, MetaTagListDisplay, PartitionTimeDisplay, TimeGroupDisplay } from "@/components-business/form-display"
-import { ImageData } from "./context"
+import { FindSimilarCompareData } from "@/services/main/find-similar"
 
 defineProps<{
-    values: (ImageData["metadata"] | null)[]
+    values: (FindSimilarCompareData["metadata"] | null)[]
 }>()
 
 </script>
 
 <template>
     <tr>
-        <td>ID</td>
+        <td></td>
         <td v-for="value in values">
-            <template v-if="value !== null">
+            <template v-if="value !== null && value.file !== null">
+                <Icon icon="plus-square"/><i class="ml-1 selectable">{{value.file}}</i>
+            </template>
+            <template v-else-if="value !== null && value.id !== null">
                 <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{value.id}}</b>
             </template>
         </td>
