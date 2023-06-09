@@ -20,5 +20,5 @@ const items: {value: SourceEditStatus, label: string}[] = [
 </script>
 
 <template>
-    <Select :items="items" :value="value" @update:value="$emit('update:value', $event as any)"/>
+    <Select :items="items" :value="value" @update:value="$emit('update:value', $event)"/>
 </template>

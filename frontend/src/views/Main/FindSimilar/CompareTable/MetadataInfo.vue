@@ -11,13 +11,14 @@ defineProps<{
 
 <template>
     <tr>
-        <td></td>
+        <td>ID</td>
         <td v-for="value in values">
-            <template v-if="value !== null && value.file !== null">
-                <Icon icon="plus-square"/><i class="ml-1 selectable">{{value.file}}</i>
-            </template>
-            <template v-else-if="value !== null && value.id !== null">
-                <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{value.id}}</b>
+            <template v-if="value !== null">
+                <Icon :icon="value.file !== null ? 'plus-square' : 'id-card'"/>
+                <b class="ml-1 is-font-size-large selectable">{{value.id}}</b>
+                <span v-if="value.file !== null" class="ml-1">
+                    (<i class="selectable no-wrap overflow-ellipsis">{{value.file}}</i>)
+                </span>
             </template>
         </td>
     </tr>

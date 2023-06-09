@@ -121,7 +121,7 @@ function mapToCollectionRelatedItems(data: any): CollectionRelatedItems {
 
 function mapToImageRelatedItems(data: any): ImageRelatedItems {
     return {
-        collection: <IllustParent | null>data["collection"],
+        collection: <SimpleCollection | null>data["collection"],
         books: <SimpleBook[]>data["books"],
         folders: <SimpleFolder[]>data["folders"],
         associates: (<any[]>data["associates"]).map(mapToIllust)
@@ -442,10 +442,6 @@ export interface SimpleCollection extends SimpleIllust {
     childrenCount: number
 }
 
-export interface IllustParent extends SimpleIllust {
-    childrenCount: number
-}
-
 export interface CoverIllust extends SimpleIllust {
     type: IllustType
     childrenCount: number | null
@@ -462,7 +458,7 @@ export interface ImageRelatedItems extends CollectionRelatedItems {
     /**
      * image所属的collection。
      */
-    collection: IllustParent | null
+    collection: SimpleCollection | null
     /**
      * image所属的画集列表。
      */

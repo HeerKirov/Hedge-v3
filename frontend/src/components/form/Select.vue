@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T extends string = string">
+<script setup lang="ts" generic="T = string">
 import { onMounted, ref, watch } from "vue"
 
 const props = defineProps<{
@@ -43,7 +43,7 @@ function watchProps() {
 <template>
     <div :class="[$style.select, $style[`is-size-${size ?? 'std'}`]]">
         <select ref="selectDom" @change="changed">
-            <option v-for="item in items" :key="item.value" :value="item.value" :selected="item.value === value">{{item.label}}</option>
+            <option v-for="item in items" :key="`${item.value}`" :value="item.value" :selected="item.value === value">{{item.label}}</option>
         </select>
     </div>
 </template>

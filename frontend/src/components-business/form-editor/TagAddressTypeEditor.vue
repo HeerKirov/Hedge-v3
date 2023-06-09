@@ -12,7 +12,7 @@ const emit = defineEmits<{
 }>()
 
 
-const TAG_TYPE_SELECT_ITEMS = [
+const TAG_TYPE_SELECT_ITEMS: {label: string, value: TagAddressType}[] = [
     {label: "标签", value: "TAG"},
     {label: "地址段", value: "ADDR"},
     {label: "虚拟地址段", value: "VIRTUAL_ADDR"}
@@ -26,5 +26,5 @@ const submit = (value: TagAddressType) => {
 </script>
 
 <template>
-    <Select :items="TAG_TYPE_SELECT_ITEMS" :value="value" @update:value="submit as any"/>
+    <Select :items="TAG_TYPE_SELECT_ITEMS" :value="value" @update:value="submit"/>
 </template>

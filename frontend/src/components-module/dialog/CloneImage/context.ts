@@ -1,8 +1,8 @@
 import { computed, Ref, ref } from "vue"
 import { ImagePropsCloneForm } from "@/functions/http-client/api/illust"
 import { Push } from "../context"
-import { useLocalStorage } from "@/functions/app";
-import { usePostFetchHelper } from "@/functions/fetch";
+import { useLocalStorage } from "@/functions/app"
+import { usePostFetchHelper } from "@/functions/fetch"
 
 export interface CloneImage {
     /**

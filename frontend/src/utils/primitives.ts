@@ -154,6 +154,14 @@ export const strings = {
         }else{
             return path
         }
+    },
+    randomString(len: number): string {
+        const k = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+        let ret = ""
+        for(let i = 0; i < len; ++i) {
+            ret += k[Math.floor(Math.random() * k.length)]
+        }
+        return ret
     }
 }
 

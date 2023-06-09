@@ -60,7 +60,7 @@ const AUTHOR_TYPE_SELECT_ITEMS = AUTHOR_TYPES.map(t => ({label: AUTHOR_TYPE_NAME
         <div class="mt-2">
             <label class="label">类型</label>
             <span class="is-line-height-std mx-1"><Icon :icon="AUTHOR_TYPE_ICONS[type]"/></span>
-            <Select :items="AUTHOR_TYPE_SELECT_ITEMS" :value="type" @update:value="setType as any"/>
+            <Select :items="AUTHOR_TYPE_SELECT_ITEMS" :value="type" @update:value="setType"/>
         </div>
         <div class="mt-2">
             <label class="label">描述</label>

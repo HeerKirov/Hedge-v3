@@ -1,5 +1,5 @@
 import { HttpInstance, Response } from ".."
-import { IllustParent, SimpleIllust } from "./illust"
+import { SimpleCollection, SimpleIllust } from "./illust"
 import { datetime, LocalDateTime } from "@/utils/datetime"
 
 export function createUtilIllustEndpoint(http: HttpInstance): UtilIllustEndpoint {
@@ -32,7 +32,7 @@ function mapToImageSituation(data: any): ImageSituation {
         id: <number>data["id"],
         thumbnailFile: <string>data["thumbnailFile"],
         orderTime: datetime.of(<string>data["orderTime"]),
-        belong: <IllustParent>data["belong"]
+        belong: <SimpleCollection>data["belong"]
     }
 }
 
@@ -97,7 +97,7 @@ export interface ImageSituation {
     /**
      * 它所属的parent。
      */
-    belong: IllustParent | null
+    belong: SimpleCollection | null
 }
 
 export interface BookSituation {
