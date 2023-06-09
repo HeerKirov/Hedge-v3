@@ -250,7 +250,7 @@ export type FindSimilarResultResolveAction
     | (FindSimilarResultResolveActionTemplate<"ADD_TO_COLLECTION"> & { config: { collectionId: string | number } })
     | (FindSimilarResultResolveActionTemplate<"ADD_TO_BOOK"> & { config: { bookId: number } })
     | FindSimilarResultResolveActionTemplate<"DELETE">
-    | FindSimilarResultResolveActionTemplate<"MARK_IGNORED"> & { b: FindSimilarEntityKey }
+    | (FindSimilarResultResolveActionTemplate<"MARK_IGNORED"> & { b: FindSimilarEntityKey })
 
 export interface FindSimilarTaskQueryFilter {
     order?: OrderList<"id" | "recordTime">

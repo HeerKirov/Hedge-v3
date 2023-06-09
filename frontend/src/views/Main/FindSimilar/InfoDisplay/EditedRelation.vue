@@ -9,9 +9,11 @@ defineProps<{
 </script>
 
 <template>
-    <p v-if="value.type === 'CLONE_IMAGE'" :class="value.deleteFrom ? 'has-text-primary' : 'has-text-danger'"><Icon icon="clone"/>{{ value.direction }} 属性克隆{{ value.deleteFrom ? '(删除源)' : '' }}</p>
-    <p v-else-if="value.type === 'ADD_TO_COLLECTION'" class="has-text-success"><Icon icon="images"/>{{ value.goal }} 加入集合 {{ value.collectionId }}</p>
-    <p v-else-if="value.type === 'ADD_TO_BOOK'" class="has-text-success"><Icon icon="images"/>{{ value.goal }} 加入画集 {{ value.bookId }}</p>
-    <p v-else-if="value.type === 'MARK_IGNORED'" class="has-text-warning"><Icon icon="link-slash"/>忽略</p>
-    <p v-else-if="value.type === 'DELETE'" class="has-text-danger"><Icon icon="images"/>{{ value.goal }} 删除</p>
+    <p v-if="value.type === 'CLONE_IMAGE'" :class="value.deleteFrom ? 'has-text-danger' : 'has-text-primary'">
+        <Icon class="mr-half" icon="clone"/>{{ value.direction }} 属性克隆{{ value.deleteFrom ? `(删除${value.direction === 'A to B' ? 'A' : 'B'})` : '' }}
+    </p>
+    <p v-else-if="value.type === 'ADD_TO_COLLECTION'" class="has-text-success"><Icon class="mr-half" icon="images"/>{{ value.goal }} 加入集合 {{ value.collectionId }}</p>
+    <p v-else-if="value.type === 'ADD_TO_BOOK'" class="has-text-success"><Icon class="mr-half" icon="images"/>{{ value.goal }} 加入画集 {{ value.bookId }}</p>
+    <p v-else-if="value.type === 'MARK_IGNORED'" class="has-text-warning"><Icon class="mr-half" icon="link-slash"/>忽略</p>
+    <p v-else-if="value.type === 'DELETE'" class="has-text-danger"><Icon class="mr-half" icon="images"/>{{ value.goal }} 删除</p>
 </template>

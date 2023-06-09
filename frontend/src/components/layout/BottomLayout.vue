@@ -4,11 +4,17 @@
 // 将区域分割为下方固定的底栏和其余区域可滚动的内容区域两块。
 // 底栏放入slot#bottom，滚动内容放入slot#default。
 
+withDefaults(defineProps<{
+    scrollbarVisible?: boolean
+}>(), {
+    scrollbarVisible: true
+})
+
 </script>
 
 <template>
     <div :class="$style['bottom-layout']">
-        <div :class="$style['scroll-container']">
+        <div :class="{[$style['scroll-container']]: true, 'is-scrollbar-hidden': !scrollbarVisible}">
             <slot/>
         </div>
         <slot name="gap"/>

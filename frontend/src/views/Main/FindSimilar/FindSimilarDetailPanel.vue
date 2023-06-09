@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import { Button, Block } from "@/components/universal"
-import { TopBarLayout, MiddleLayout, AspectGrid, BottomLayout } from "@/components/layout"
+import { TopBarLayout, MiddleLayout, AspectGrid } from "@/components/layout"
 import { installFindSimilarDetailPanel, useFindSimilarContext } from "@/services/main/find-similar"
 import FindSimilarDetailPanelImageItem from "./FindSimilarDetailPanelImageItem.vue"
 import InfoDisplay from "./InfoDisplay/InfoDisplay.vue"
 import CompareTable from "./CompareTable/CompareTable.vue"
 
 const { paneState } = useFindSimilarContext()
-const { 
-    data, 
-    selector: { selectMode, compare, multiple, click }
-} = installFindSimilarDetailPanel()
+const { data, selector: { selectMode, compare, multiple, click }, resolve } = installFindSimilarDetailPanel()
 
 </script>
 
@@ -21,6 +18,9 @@ const {
                 <template #left>
                     <Button square icon="angle-left" @click="paneState.closeView()"/>
                 </template>
+                <template #right>
+                    <Button type="success" icon="check" @click="resolve">完成</Button>
+                </template>
             </MiddleLayout>
         </template>
         <Block :class="$style['compare-table']">
@@ -28,12 +28,7 @@ const {
             <CompareTable v-else :item-a="multiple.lastSelected" :item-b="null"/>
         </Block>
         <Block :class="$style['action-area']">
-            <BottomLayout>
-                <InfoDisplay/>
-                <template #bottom>
-                    <Button class="w-100" mode="light" type="success" icon="check">完成处理</Button>
-                </template>
-            </BottomLayout>
+            <InfoDisplay/>
         </Block>
         <Block :class="$style.images">
             <AspectGrid v-if="data !== null" class="p-2" :items="data.images" :column-num="9" :spacing="1" v-slot="{ item, index }">
@@ -56,6 +51,8 @@ $action-width: 25%
     height: 60%
     width: calc(100% - $action-width - $spacing * 3)
     overflow-y: auto
+    &::-webkit-scrollbar
+        display: none
 
 .action-area
     position: absolute
@@ -64,6 +61,9 @@ $action-width: 25%
     height: 60%
     width: $action-width
     padding: 0.25rem
+    overflow-y: auto
+    &::-webkit-scrollbar
+        display: none
 
 .images
     position: absolute

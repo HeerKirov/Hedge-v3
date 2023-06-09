@@ -75,7 +75,15 @@ export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = instal
     
     const display = useDetailPanelRelationDisplay(data, resolves, selector)
 
-    return {data, selector, display, resolves}
+    const resolve = async () => {
+        if(resolves.actions.value.length > 0) {
+            await resolveIt({actions: resolves.actions.value})
+        }else if(await message.showYesNoMessage("prompt", "未添加任何操作", "继续操作将清除本条记录，且覆盖的关系不会有任何变化。确定要继续吗？")) {
+            await deleteIt()
+        }
+    }
+
+    return {data, selector, display, resolves, resolve}
 })
 
 function useDetailPanelSelector(data: Ref<FindSimilarDetailResult | null>) {
@@ -212,23 +220,75 @@ function useDetailPanelResolves(path: Ref<number | null>, selector: ReturnType<t
     watch(path, () => actions.value = [])
 
     const addActionClone = (props: ImagePropsCloneForm["props"], merge: boolean, deleteFrom: boolean) => {
-
+        if(selector.selectMode.value === "COMPARE") {
+            if(selector.compare.value.a !== null && selector.compare.value.b !== null) {
+                const existActionIdx = actions.value.findIndex(a => a.actionType === "MARK_IGNORED" && ((entityEquals(a.a, selector.compare.value.a) && entityEquals(a.b, selector.compare.value.b)) || (entityEquals(a.a, selector.compare.value.b) && entityEquals(a.b, selector.compare.value.a))))
+                if(existActionIdx >= 0) {
+                    actions.value.splice(existActionIdx, 1, {actionType: "CLONE_IMAGE", a: selector.compare.value.a, b: selector.compare.value.b, config: {props, merge, deleteFrom}})
+                }else{
+                    actions.value.push({actionType: "CLONE_IMAGE", a: selector.compare.value.a, b: selector.compare.value.b, config: {props, merge, deleteFrom}})
+                }
+            }
+        }
     }
 
     const addActionCollection = (collectionId: string | number) => {
-
+        if(selector.selectMode.value === "COMPARE") {
+            if(selector.compare.value.a !== null && !actions.value.some(a => a.actionType === "ADD_TO_COLLECTION" && a.config.collectionId === collectionId && entityEquals(a.a, selector.compare.value.a))) {
+                actions.value.push({actionType: "ADD_TO_COLLECTION", a: selector.compare.value.a, config: {collectionId}})
+            }
+            if(selector.compare.value.b !== null && !actions.value.some(a => a.actionType === "ADD_TO_COLLECTION" && a.config.collectionId === collectionId && entityEquals(a.a, selector.compare.value.b))) {
+                actions.value.push({actionType: "ADD_TO_COLLECTION", a: selector.compare.value.b, config: {collectionId}})
+            }
+        }else{
+            for(const item of selector.multiple.value.selected) {
+                if(!actions.value.some(a => a.actionType === "ADD_TO_COLLECTION" && a.config.collectionId === collectionId && entityEquals(a.a, item))) {
+                    actions.value.push({actionType: "ADD_TO_COLLECTION", a: item, config: {collectionId}})
+                }
+            }
+        }
     }
 
     const addActionBook = (bookId: number) => {
-
+        if(selector.selectMode.value === "COMPARE") {
+            if(selector.compare.value.a !== null && !actions.value.some(a => a.actionType === "ADD_TO_BOOK" && a.config.bookId === bookId && entityEquals(a.a, selector.compare.value.a))) {
+                actions.value.push({actionType: "ADD_TO_BOOK", a: selector.compare.value.a, config: {bookId}})
+            }
+            if(selector.compare.value.b !== null && !actions.value.some(a => a.actionType === "ADD_TO_BOOK" && a.config.bookId === bookId && entityEquals(a.a, selector.compare.value.b))) {
+                actions.value.push({actionType: "ADD_TO_BOOK", a: selector.compare.value.b, config: {bookId}})
+            }
+        }else{
+            for(const item of selector.multiple.value.selected) {
+                if(!actions.value.some(a => a.actionType === "ADD_TO_BOOK" && a.config.bookId === bookId && entityEquals(a.a, item))) {
+                    actions.value.push({actionType: "ADD_TO_BOOK", a: item, config: {bookId}})
+                }
+            }
+        }
     }    
 
-    const addActionDelete = (goal: "a" | "b" | "both") => {
-
+    const addActionDelete = (goal: "A" | "B" | "A&B") => {
+        if(selector.selectMode.value === "COMPARE") {
+            if((goal === "A" || goal === "A&B") && selector.compare.value.a !== null && !actions.value.some(a => a.actionType === "DELETE" && entityEquals(a.a, selector.compare.value.a))) {
+                actions.value.push({actionType: "DELETE", a: selector.compare.value.a})
+            }
+            if((goal === "B" || goal === "A&B") && selector.compare.value.b !== null && !actions.value.some(a => a.actionType === "DELETE" && entityEquals(a.a, selector.compare.value.b))) {
+                actions.value.push({actionType: "DELETE", a: selector.compare.value.b})
+            }
+        }else{
+            for(const item of selector.multiple.value.selected) {
+                if(!actions.value.some(a => a.actionType === "DELETE" && entityEquals(a.a, item))) {
+                    actions.value.push({actionType: "DELETE", a: item})
+                }
+            }
+        }
     }
 
     const addActionIgnore = () => {
-
+        if(selector.selectMode.value === "COMPARE") {
+            if(selector.compare.value.a !== null && selector.compare.value.b !== null && !actions.value.some(a => a.actionType === "MARK_IGNORED" && ((entityEquals(a.a, selector.compare.value.a) && entityEquals(a.b, selector.compare.value.b)) || (entityEquals(a.a, selector.compare.value.b) && entityEquals(a.b, selector.compare.value.a))))) {
+                actions.value.push({actionType: "MARK_IGNORED", a: selector.compare.value.a, b: selector.compare.value.b})
+            }
+        }
     }
 
     return {actions, addActionClone, addActionCollection, addActionBook, addActionIgnore, addActionDelete}
@@ -245,69 +305,102 @@ function useDetailPanelRelationDisplay(data: Ref<FindSimilarDetailResult | null>
     const existedRelations = ref<FindSimilarResultRelation[]>([])
     const editedRelations = ref<EditedRelation[]>([])
 
-    watch(selector.compare, ({ a, b }) => {
+    function refreshExistedRelationsByCompare() {
+        const { a, b } = selector.compare.value
+        if(a !== null && b !== null && data.value?.relations?.length) {
+            const newRelations: FindSimilarResultRelation[] = []
+            for(const r of data.value.relations) {
+                if((entityEquals(r.a, a) && entityEquals(r.b, b)) || (entityEquals(r.a, b) && entityEquals(r.b, a))) {
+                    newRelations.push(r)
+                }
+            }
+            existedRelations.value = newRelations
+        }else{
+            existedRelations.value = []
+        }
+    }
+
+    function refreshEditedRelationsByCompare() {
+        const { a, b } = selector.compare.value
+        if(a !== null && b !== null && resolves.actions.value.length) {
+            const newRelations: EditedRelation[] = []
+            for(const action of resolves.actions.value) {
+                if(action.actionType === "CLONE_IMAGE") {
+                    if(entityEquals(action.a, a) && entityEquals(action.b, b)) {
+                        newRelations.push({type: "CLONE_IMAGE", direction: "A to B", props: action.config.props, merge: action.config.merge ?? false, deleteFrom: action.config.deleteFrom ?? false})    
+                    }else if(entityEquals(action.a, b) && entityEquals(action.b, a)) {
+                        newRelations.push({type: "CLONE_IMAGE", direction: "B to A", props: action.config.props, merge: action.config.merge ?? false, deleteFrom: action.config.deleteFrom ?? false})    
+                    }
+                }else if(action.actionType === "ADD_TO_COLLECTION") {
+                    if(entityEquals(action.a, a)) {
+                        newRelations.push({type: "ADD_TO_COLLECTION", goal: "A", collectionId: action.config.collectionId})
+                    }else if(entityEquals(action.a, b)) {
+                        newRelations.push({type: "ADD_TO_COLLECTION", goal: "B", collectionId: action.config.collectionId})
+                    }
+                }else if(action.actionType === "ADD_TO_BOOK") {
+                    if(entityEquals(action.a, a)) {
+                        newRelations.push({type: "ADD_TO_BOOK", goal: "A", bookId: action.config.bookId})
+                    }else if(entityEquals(action.a, b)) {
+                        newRelations.push({type: "ADD_TO_BOOK", goal: "B", bookId: action.config.bookId})
+                    }
+                }else if(action.actionType === "MARK_IGNORED") {
+                    if((entityEquals(action.a, a) && entityEquals(action.b, b)) || (entityEquals(action.a, b) && entityEquals(action.b, a))) {
+                        newRelations.push({type: "MARK_IGNORED"})
+                    }
+                }else if(action.actionType === "DELETE") {
+                    if(entityEquals(action.a, a)) {
+                        newRelations.push({type: "DELETE", goal: "A"})
+                    }else if(entityEquals(action.a, b)) {
+                        newRelations.push({type: "DELETE", goal: "B"})
+                    }
+                }
+            }
+            editedRelations.value = newRelations
+        }else{
+            editedRelations.value = []
+        }
+    }
+
+    function refreshEditedRelationsByMultiple() {
+        const { selected } = selector.multiple.value
+        if(selected.length && resolves.actions.value.length) {
+
+        }else{
+            editedRelations.value = []
+        }
+    }
+
+    watch(selector.compare, () => {
+        //compare模式下compare变化时，重刷所有relations
         if(selector.selectMode.value === "COMPARE") {
-            if(a !== null && b !== null && data.value?.relations?.length) {
-                const newRelations: FindSimilarResultRelation[] = []
-                for(const r of data.value.relations) {
-                    if((entityEquals(r.a, a) && entityEquals(r.b, b)) || (entityEquals(r.a, b) && entityEquals(r.b, a))) {
-                        newRelations.push(r)
-                    }
-                }
-                existedRelations.value = newRelations
-            }else{
-                existedRelations.value = []
-            }
-            if(a !== null && b !== null && resolves.actions.value.length) {
-                const newRelations: EditedRelation[] = []
-                for(const action of resolves.actions.value) {
-                    if(action.actionType === "CLONE_IMAGE") {
-                        if(entityEquals(action.a, a) && entityEquals(action.b, b)) {
-                            newRelations.push({type: "CLONE_IMAGE", direction: "A to B", props: action.config.props, merge: action.config.merge ?? false, deleteFrom: action.config.deleteFrom ?? false})    
-                        }else if(entityEquals(action.a, b) && entityEquals(action.b, a)) {
-                            newRelations.push({type: "CLONE_IMAGE", direction: "B to A", props: action.config.props, merge: action.config.merge ?? false, deleteFrom: action.config.deleteFrom ?? false})    
-                        }
-                    }else if(action.actionType === "ADD_TO_COLLECTION") {
-                        if(entityEquals(action.a, a)) {
-                            newRelations.push({type: "ADD_TO_COLLECTION", goal: "A", collectionId: action.config.collectionId})
-                        }else if(entityEquals(action.a, b)) {
-                            newRelations.push({type: "ADD_TO_COLLECTION", goal: "B", collectionId: action.config.collectionId})
-                        }
-                    }else if(action.actionType === "ADD_TO_BOOK") {
-                        if(entityEquals(action.a, a)) {
-                            newRelations.push({type: "ADD_TO_BOOK", goal: "A", bookId: action.config.bookId})
-                        }else if(entityEquals(action.a, b)) {
-                            newRelations.push({type: "ADD_TO_BOOK", goal: "B", bookId: action.config.bookId})
-                        }
-                    }else if(action.actionType === "MARK_IGNORED") {
-                        if((entityEquals(action.a, a) && entityEquals(action.b, b)) || (entityEquals(action.a, b) && entityEquals(action.b, a))) {
-                            newRelations.push({type: "MARK_IGNORED"})
-                        }
-                    }else if(action.actionType === "DELETE") {
-                        if(entityEquals(action.a, a)) {
-                            newRelations.push({type: "DELETE", goal: "A"})
-                        }else if(entityEquals(action.a, b)) {
-                            newRelations.push({type: "DELETE", goal: "B"})
-                        }
-                    }
-                }
-                editedRelations.value = newRelations
-            }else{
-                editedRelations.value = []
-            }
+            refreshExistedRelationsByCompare()
+            refreshEditedRelationsByCompare()
         }
     })
 
-    watch(selector.multiple, ({ selected }) => {
+    watch(selector.multiple, () => {
+        //multiple模式下multiple变化时，重刷所有relations
         if(selector.selectMode.value === "MULTIPLE") {
-            if(selected.length && resolves.actions.value.length) {
-
-            }else{
-                editedRelations.value = []
-            }
+            refreshEditedRelationsByMultiple()
             existedRelations.value = []
         }
     })
+
+    watch(data, () => {
+        //data变化时，按照模式重刷existed relations
+        if(selector.selectMode.value === "COMPARE") {
+            refreshExistedRelationsByCompare()
+        }
+    })
+
+    watch(resolves.actions, () => {
+        //actions变化时，按照模式重刷edited relations
+        if(selector.selectMode.value === "COMPARE") {
+            refreshEditedRelationsByCompare()
+        }else{
+            refreshEditedRelationsByMultiple()
+        }
+    }, {deep: true})
 
     return {existedRelations, editedRelations}
 }
