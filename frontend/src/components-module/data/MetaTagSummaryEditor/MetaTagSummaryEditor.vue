@@ -69,7 +69,7 @@ const { dragover: _, ...dropEvents } = useDroppable(["author", "tag", "topic"], 
 .root
     position: relative
     box-sizing: border-box
-    height: 75vh
+    height: 100%
 
     $padding: 0.75rem
     $top-height: 3rem

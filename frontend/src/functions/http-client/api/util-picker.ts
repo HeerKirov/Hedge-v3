@@ -1,13 +1,14 @@
 import { HttpInstance, Response } from ".."
 import { SimpleFolder } from "./folder"
-import { SimpleTopic } from "./topic"
 import { Annotation } from "./annotations"
+import { SimpleAuthor, SimpleTopic } from "./all"
 
 export function createUtilSearchEndpoint(http: HttpInstance): UtilSearchEndpoint {
     return {
         history: {
             folders: http.createRequest("/api/utils/picker/history/folders"),
             topics: http.createRequest("/api/utils/picker/history/topics"),
+            authors: http.createRequest("/api/utils/picker/history/authors"),
             annotations: http.createRequest("/api/utils/picker/history/annotations"),
             push: http.createDataRequest("/api/utils/picker/history", "POST")
         }
@@ -31,6 +32,10 @@ export interface UtilSearchEndpoint {
          */
         topics(): Promise<Response<SimpleTopic[]>>,
         /**
+         * author的最近使用记录。
+         */
+        authors(): Promise<Response<SimpleAuthor[]>>,
+        /**
          * annotation的最近使用记录。
          */
         annotations(): Promise<Response<Annotation[]>>
@@ -42,7 +47,7 @@ export interface UtilSearchEndpoint {
 }
 
 interface HistoryPushForm {
-    type: "FOLDER" | "TOPIC" | "ANNOTATION"
+    type: "FOLDER" | "TOPIC" | "AUTHOR" | "ANNOTATION"
     id: number
 }
 

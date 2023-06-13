@@ -78,29 +78,25 @@ const updateMappings = (sourceTagCode: string, mappings: SourceMappingTargetDeta
 </script>
 
 <template>
-    <BottomLayout>
-        <div class="p-4">
-            <table>
-                <tbody>
-                    <MappingTagCheckListItem v-for="item in mappings" :key="item.code"
-                                             :author-filter="authorFilter"
-                                             :topic-filter="topicFilter"
-                                             :tag-filter="tagFilter"
-                                             :mappings="item.mappings"
-                                             :source-tag="item.sourceTag"
-                                             :selected="selected[item.code] ?? true"
-                                             @update:selected="selected[item.code] = $event"
-                                             @update:mappings="updateMappings(item.code, $event)"
-                                             @dblclick:one="addOne"/>
-                </tbody>
-            </table>
-        </div>
-        <template #bottom>
-            <div class="mt-1 mr-4 mb-4 ml-1">
-                <Button type="primary" icon="check-square" @click="selectAll">全选</Button>
-                <Button type="primary" icon="check-square-regular" @click="selectReverse">反选</Button>
-                <Button class="float-right" type="primary" icon="check-circle" @click="addAll">添加所选项</Button>
-            </div>
-        </template>
-    </BottomLayout>
+    <div class="p-4 is-overflow-y-auto h-100">
+        <table>
+            <tbody>
+                <MappingTagCheckListItem v-for="item in mappings" :key="item.code"
+                                         :author-filter="authorFilter"
+                                         :topic-filter="topicFilter"
+                                         :tag-filter="tagFilter"
+                                         :mappings="item.mappings"
+                                         :source-tag="item.sourceTag"
+                                         :selected="selected[item.code] ?? true"
+                                         @update:selected="selected[item.code] = $event"
+                                         @update:mappings="updateMappings(item.code, $event)"
+                                         @dblclick:one="addOne"/>
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-1 mr-4 mb-4 ml-1">
+        <Button type="primary" icon="check-square" @click="selectAll">全选</Button>
+        <Button type="primary" icon="check-square-regular" @click="selectReverse">反选</Button>
+        <Button class="float-right" type="primary" icon="check-circle" @click="addAll">添加所选项</Button>
+    </div>
 </template>

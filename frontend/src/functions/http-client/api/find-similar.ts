@@ -11,7 +11,7 @@ export function createFindSimilarEndpoint(http: HttpInstance): FindSimilarEndpoi
                 parseResponse: ({ total, result }: ListResult<any>) => ({total, result: result.map(mapToTask)})
             }),
             create: http.createDataRequest("/api/find-similar/tasks", "POST", {
-                parseResponse: mapFromForm
+                parseData: mapFromForm
             }),
             get: http.createPathRequest(id => `/api/find-similar/tasks/${id}`, "GET", {
                 parseResponse: mapToTask
@@ -169,7 +169,7 @@ export interface TaskConfig {
     filterByPartition: boolean
     filterByTopic: boolean
     filterByAuthor: boolean
-    filterBySourceTagType: {source: string, tagType: string}[]
+    filterBySourceTagType: {sourceSite: string, tagType: string}[]
 }
 
 export type FindSimilarEntityType = "ILLUST" | "IMPORT_IMAGE"

@@ -12,7 +12,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-    (e: "update", values: [string, string[], string | null]): void
+    (e: "update", values: [string, string[], UsefulColors | null]): void
     (e: "update:name", name: string): void
     (e: "update:otherNames", otherNames: string[]): void
     (e: "update:color", color: UsefulColors | null): void

@@ -19,7 +19,7 @@ const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotation
         {{addressInfo.address}}
     </i>
     <template v-if="data !== null">
-        <FormEditKit class="mt-1" :value="[data.name, data.otherNames, data.color]" :set-value="setName">
+        <FormEditKit class="mt-1" :value="([data.name, data.otherNames, data.color] as const)" :set-value="setName">
             <template #default="{ value: [name, otherNames, color] }">
                 <TagNameAndOtherDisplay :name="name" :other-names="otherNames" :color="color"/>
             </template>

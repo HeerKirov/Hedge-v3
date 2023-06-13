@@ -79,7 +79,7 @@ defineExpose({
 @import "../../../styles/base/color"
 
 .select-list-item
-    padding: 0.4em 0.35em
+    padding: 0.3em 0.35em
     white-space: nowrap
     overflow: hidden
     border: solid 2px rgba(0, 0, 0, 0)

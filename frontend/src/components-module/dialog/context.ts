@@ -7,6 +7,7 @@ import { CreatingBook, CreatingBookProps, useCreatingBook } from "./CreatingBook
 import { AddIllust, AddIllustProps, useAddIllust } from "./AddIllust/context"
 import { AddToFolder, AddToFolderProps, useAddToFolder } from "./AddToFolder/context"
 import { CloneImage, CloneImageProps, useCloneImage } from "./CloneImage/context"
+import { FindSimilarTaskExplorer, FindSimilarTaskExplorerProps, useFindSimilarTaskExplorer } from "./FindSimilarTaskExplorer/context"
 
 export type {
     SourceDataEditorProps,
@@ -15,7 +16,8 @@ export type {
     CreatingBookProps,
     AddIllustProps,
     AddToFolderProps,
-    CloneImageProps
+    CloneImageProps,
+    FindSimilarTaskExplorerProps
 }
 
 export interface DialogService {
@@ -26,6 +28,7 @@ export interface DialogService {
     addIllust: AddIllust
     addToFolder: AddToFolder
     cloneImage: CloneImage
+    findSimilarTaskExplorer: FindSimilarTaskExplorer
 }
 
 type ServiceContext
@@ -36,6 +39,7 @@ type ServiceContext
     | { type: "addIllust", props: AddIllustProps }
     | { type: "addToFolder", props: AddToFolderProps }
     | { type: "cloneImage", props: CloneImageProps }
+    | { type: "findSimilarTaskExplorer", props: FindSimilarTaskExplorerProps }
 
 export type Push = (nc: ServiceContext) => void
 
@@ -71,6 +75,7 @@ export const [installInternalService, useInternalService] = installation(functio
     const addIllust = useAddIllust(push)
     const addToFolder = useAddToFolder(push)
     const cloneImage = useCloneImage(push)
+    const findSimilarTaskExplorer = useFindSimilarTaskExplorer(push)
 
     return {
         context,
@@ -82,7 +87,8 @@ export const [installInternalService, useInternalService] = installation(functio
         creatingBook,
         addIllust,
         addToFolder,
-        cloneImage
+        cloneImage,
+        findSimilarTaskExplorer
     }
 })
 

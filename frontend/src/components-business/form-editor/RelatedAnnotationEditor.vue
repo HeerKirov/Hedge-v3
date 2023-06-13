@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue"
 import { Tag, Block } from "@/components/universal"
+import { Group } from "@/components/layout"
 import { SearchPickList } from "@/components/data"
 import { ElementPopupCallout } from "@/components/interaction"
 import { AnnotationElement } from "@/components-business/element"
@@ -41,7 +42,7 @@ const removeItem = (idx: number) => {
 </script>
 
 <template>
-    <div>
+    <Group>
         <span v-for="(item, idx) in value" class="mr-1 mb-1">
             <AnnotationElement :value="item"/>
             <Tag icon="close" line-style="none" clickable @click="removeItem(idx)"/>
@@ -57,7 +58,7 @@ const removeItem = (idx: number) => {
                 </SearchPickList>
             </template>
         </ElementPopupCallout>
-    </div>
+    </Group>
     <Block v-if="mode === 'embedded' && embeddedSwitch" class="mt-1">
         <SearchPickList :class="$style.popup" v-bind="searchProps" v-slot="{ item }">
             <AnnotationElement :value="item"/>

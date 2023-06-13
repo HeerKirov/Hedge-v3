@@ -138,7 +138,3 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues, enabled:
         </td>
     </tr>
 </template>
-
-<style module lang="sass">
-
-</style>

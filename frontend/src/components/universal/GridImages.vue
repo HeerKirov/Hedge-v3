@@ -6,7 +6,7 @@ import { useAssets } from "@/functions/app"
 // 一个img的Grid组件。它用于将一组img组成Grid，并按指定的样式显示出来。
 
 const props = defineProps<{
-    images: string[]
+    images: (string | null | undefined)[]
     columnNum?: number
     aspect?: number
 }>()
@@ -17,7 +17,7 @@ const { assetsUrl } = useAssets()
 
 <template>
     <AspectGrid :items="images" v-slot="{ item }" :column-num="columnNum" :aspect="aspect" :spacing="1">
-        <img :class="$style.img" :src="assetsUrl(item)" :alt="item"/>
+        <img :class="$style.img" :src="assetsUrl(item)" :alt="item ?? 'null'"/>
     </AspectGrid>
 </template>
 

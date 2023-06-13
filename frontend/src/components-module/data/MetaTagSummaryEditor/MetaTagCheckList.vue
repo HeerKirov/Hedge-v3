@@ -92,33 +92,29 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues) => {
 </script>
 
 <template>
-    <BottomLayout>
-        <div class="p-4">
-            <template v-if="authorFilter">
-                <div v-for="author in authors" :key="author.id" class="mb-1">
-                    <CheckBox :value="selectedAuthors[author.id] ?? true" @update:value="selectedAuthors[author.id] = $event"/>
-                    <SimpleMetaTagElement type="author" :value="author" draggable @click="click($event, 'author', author)" @dblclick="$emit('add', [{type: 'author', value: author}])"/>
-                </div>
-            </template>
-            <template v-if="topicFilter">
-                <div v-for="topic in topics" :key="topic.id" class="mb-1">
-                    <CheckBox :value="selectedTopics[topic.id] ?? true" @update:value="selectedTopics[topic.id] = $event"/>
-                    <SimpleMetaTagElement type="topic" :value="topic" draggable @click="click($event, 'topic', topic)" @dblclick="$emit('add', [{type: 'topic', value: topic}])"/>
-                </div>
-            </template>
-            <template v-if="tagFilter">
-                <div v-for="tag in tags" :key="tag.id" class="mb-1">
-                    <CheckBox :value="selectedTags[tag.id] ?? true" @update:value="selectedTags[tag.id] = $event"/>
-                    <SimpleMetaTagElement type="tag" :value="tag" draggable @click="click($event, 'tag', tag)" @dblclick="$emit('add', [{type: 'tag', value: tag}])"/>
-                </div>
-            </template>
-        </div>
-        <template #bottom>
-            <div class="mt-1 mr-4 mb-4 ml-1">
-                <Button type="primary" icon="check-square" @click="selectAll">全选</Button>
-                <Button type="primary" icon="check-square-regular" @click="selectReverse">反选</Button>
-                <Button class="float-right" type="primary" icon="check-circle" @click="addAll">添加所选项</Button>
+    <div class="p-4 is-overflow-y-auto h-100">
+        <template v-if="authorFilter">
+            <div v-for="author in authors" :key="author.id" class="mb-1">
+                <CheckBox :value="selectedAuthors[author.id] ?? true" @update:value="selectedAuthors[author.id] = $event"/>
+                <SimpleMetaTagElement type="author" :value="author" draggable @click="click($event, 'author', author)" @dblclick="$emit('add', [{type: 'author', value: author}])"/>
             </div>
         </template>
-    </BottomLayout>
+        <template v-if="topicFilter">
+            <div v-for="topic in topics" :key="topic.id" class="mb-1">
+                <CheckBox :value="selectedTopics[topic.id] ?? true" @update:value="selectedTopics[topic.id] = $event"/>
+                <SimpleMetaTagElement type="topic" :value="topic" draggable @click="click($event, 'topic', topic)" @dblclick="$emit('add', [{type: 'topic', value: topic}])"/>
+            </div>
+        </template>
+        <template v-if="tagFilter">
+            <div v-for="tag in tags" :key="tag.id" class="mb-1">
+                <CheckBox :value="selectedTags[tag.id] ?? true" @update:value="selectedTags[tag.id] = $event"/>
+                <SimpleMetaTagElement type="tag" :value="tag" draggable @click="click($event, 'tag', tag)" @dblclick="$emit('add', [{type: 'tag', value: tag}])"/>
+            </div>
+        </template>
+    </div>
+    <div class="mt-1 mr-4 mb-4 ml-1">
+        <Button type="primary" icon="check-square" @click="selectAll">全选</Button>
+        <Button type="primary" icon="check-square-regular" @click="selectReverse">反选</Button>
+        <Button class="float-right" type="primary" icon="check-circle" @click="addAll">添加所选项</Button>
+    </div>
 </template>

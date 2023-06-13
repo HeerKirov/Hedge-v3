@@ -9,6 +9,8 @@ import OtherNameEditor from "./OtherNameEditor.vue"
 import ScoreEditor from "./ScoreEditor.vue"
 import DescriptionEditor from "./DescriptionEditor.vue"
 import RelatedAnnotationEditor from "./RelatedAnnotationEditor.vue"
+import RelatedTopicEditor from "./RelatedTopicEditor.vue"
+import RelatedAuthorEditor from "./RelatedAuthorEditor.vue"
 import ParentTopicEditor from "./ParentTopicEditor.vue"
 import SourceDataSummaryEditor from "./SourceDataSummaryEditor.vue"
 import SourceTagMappingEditor from "./SourceTagMappingEditor.vue"
@@ -19,6 +21,7 @@ import SourceTagEditor from "./SourceTagEditor.vue"
 import SourceBookEditor from "./SourceBookEditor.vue"
 import SourceRelationEditor from "./SourceRelationEditor.vue"
 import SourceEditStatusEditor from "./SourceEditStatusEditor.vue"
+import SourceTagTypeListEditor from "./SourceTagTypeListEditor.vue"
 import TagmeEditor from "./TagmeEditor.vue"
 import DateEditor from "./DateEditor.vue"
 import DateTimeEditor from "./DateTimeEditor.vue"
@@ -26,7 +29,8 @@ import DateTimeEditor from "./DateTimeEditor.vue"
 export { ThemeSelector }
 export { AnnotationTargetEditor }
 export { TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, TagLinkEditor, TagExampleEditor }
-export { OtherNameEditor, ScoreEditor, DescriptionEditor, RelatedAnnotationEditor, ParentTopicEditor }
+export { OtherNameEditor, ScoreEditor, DescriptionEditor }
+export { RelatedAnnotationEditor, ParentTopicEditor, RelatedTopicEditor, RelatedAuthorEditor }
 export { SourceIdentityEditor, SourceIdentityNoPartEditor, SourceDataSummaryEditor, SourceEditStatusEditor, SourceSiteSelectBox }
-export { SourceTagMappingEditor, SourceTagEditor, SourceBookEditor, SourceRelationEditor }
+export { SourceTagMappingEditor, SourceTagEditor, SourceBookEditor, SourceRelationEditor, SourceTagTypeListEditor }
 export { TagmeEditor, DateEditor, DateTimeEditor }

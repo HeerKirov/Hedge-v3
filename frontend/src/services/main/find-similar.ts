@@ -1,6 +1,6 @@
 import { computed, ref, Ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
-import { QueryListview, useFetchEndpoint } from "@/functions/fetch"
+import { useFetchEndpoint, usePathFetchHelper, usePostPathFetchHelper } from "@/functions/fetch"
 import { flatResponse } from "@/functions/http-client"
 import { FindSimilarDetailResult, FindSimilarEntityType, FindSimilarResult, FindSimilarResultImage, FindSimilarResultRelation, FindSimilarResultResolveAction } from "@/functions/http-client/api/find-similar"
 import { RelatedSimpleTag } from "@/functions/http-client/api/tag"
@@ -11,21 +11,21 @@ import { SimpleBook } from "@/functions/http-client/api/book"
 import { SimpleFolder } from "@/functions/http-client/api/folder"
 import { platform } from "@/functions/ipc-client"
 import { useMessageBox } from "@/modules/message-box"
-import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
+import { useDetailViewState } from "@/services/base/detail-view-state"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSettingSite } from "@/services/setting"
 import { installation } from "@/utils/reactivity"
 import { LocalDate, LocalDateTime } from "@/utils/datetime"
+import { arrays } from "@/utils/primitives"
 
 export const [installFindSimilarContext, useFindSimilarContext] = installation(function () {
     const paneState = useDetailViewState<number>()
     const listview = useListView()
-    const operators = useOperators(paneState, listview.listview)
 
     installVirtualViewNavigation()
     useSettingSite()
 
-    return {paneState, listview, operators}
+    return {paneState, listview}
 })
 
 function useListView() {
@@ -45,12 +45,72 @@ function useListView() {
     })
 }
 
-function useOperators(paneState: DetailViewState<number>, listview: QueryListview<FindSimilarResult>) {
+export function useFindSimilarItemContext(item: FindSimilarResult) {
+    const fetchResolve = usePostPathFetchHelper(client => client.findSimilar.result.resolve)
+    const fetchDelete = usePathFetchHelper(client => client.findSimilar.result.delete)
 
+    const status = {
+        onlySame: !item.type.some(i => i !== "SAME"),
+        anySimilar: item.type.some(i => i === "SIMILAR"),
+        anyRelated: item.type.some(i => i === "RELATED"),
+        moreThan2: item.images.length >= 2,
+        moreThan3: item.images.length >= 3
+    }
 
-    return {}
+    const allow = {
+        keepOld: status.onlySame || status.anySimilar,
+        keepNew: status.onlySame || status.anySimilar,
+        keepNewAndCloneProps: (status.onlySame || status.anySimilar) && status.moreThan2
+    }
+
+    const keepOld = () => {
+        if(allow.keepOld) {
+            const takedImages = [...item.images].sort(entityCompare).slice(1)
+            if(takedImages.length > 0) {
+                fetchResolve(item.id, {actions: takedImages.map(i => ({actionType: "DELETE", a: i}))})
+            }
+        }
+    }
+
+    const keepNew = () => {
+        if(allow.keepNew) {
+            const takedImages = [...item.images].sort(entityCompare).slice(0, item.images.length - 1)
+            if(takedImages.length > 0) {
+                fetchResolve(item.id, {actions: takedImages.map(i => ({actionType: "DELETE", a: i}))})
+            }
+        }
+    }
+
+    const keepNewAndCloneProps = () => {
+        if(allow.keepNewAndCloneProps) {
+            const sortedImages = [...item.images].sort(entityCompare)
+            const a = sortedImages[0], b = sortedImages[sortedImages.length - 1], d = sortedImages.slice(1, sortedImages.length - 1)
+            const config = {
+                props: <ImagePropsCloneForm["props"]>{
+                    score: true, favorite: true, description: true, tagme: true, metaTags: true, 
+                    collection: true, books: true, folders: true, associate: true, orderTime: true, 
+                    partitionTime: false, source: false
+                },
+                merge: true,
+                deleteFrom: true
+            }
+            fetchResolve(item.id, {actions: [
+                ...d.map(a => ({actionType: "DELETE", a} as const)),
+                {actionType: "CLONE_IMAGE", a, b, config}
+            ]})
+        }
+    }
+    
+    const ignoreIt = () => {
+        fetchResolve(item.id, {actions: arrays.window(item.images, 2).map(([a, b]) => ({actionType: "MARK_IGNORED", a, b}))})
+    }
+
+    const deleteIt = () => {
+        fetchDelete(item.id, undefined)
+    }
+
+    return {allow, keepOld, keepNewAndCloneProps, keepNew, ignoreIt, deleteIt}
 }
-
 
 export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = installation(function () {
     const message = useMessageBox()
@@ -407,6 +467,10 @@ function useDetailPanelRelationDisplay(data: Ref<FindSimilarDetailResult | null>
 
 function entityEquals(a: {type: FindSimilarEntityType, id: number} | null, b: {type: FindSimilarEntityType, id: number} | null): boolean {
     return a !== null && b !== null && a.type === b.type && a.id === b.id
+}
+
+function entityCompare(a: {type: FindSimilarEntityType, id: number}, b: {type: FindSimilarEntityType, id: number}): number {
+    return a.type !== b.type ? (a.type === "ILLUST" ? -1 : 1) : a.id !== b.id ? (a.id < b.id ? -1 : 1) : 0
 }
 
 export function useFindSimilarCompareData(id: Ref<{type: "IMPORT_IMAGE" | "ILLUST", id: number} | null>) {

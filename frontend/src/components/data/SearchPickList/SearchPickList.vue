@@ -49,8 +49,10 @@ const inputKeypress = (e: KeyEvent) => {
                 contentType.value = "recent"
                 searchKeyword.value = undefined
             }
-        }else{
+        }else if(contentType.value === "query") {
             queryCompRef.value?.enter()
+        }else{
+            recentCompRef.value?.enter()
         }
         e.stopPropagation()
         e.preventDefault()

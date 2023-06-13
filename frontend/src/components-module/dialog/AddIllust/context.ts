@@ -117,7 +117,7 @@ export function useAddIllust(push: Push): AddIllust {
     }
 }
 
-export function useAddIllustContext(p: AddIllustProps, close: () => void) {
+export function useAddIllustContext(p: AddIllustProps, close: () => void): {situations: {ordinal: number | null, id: number, thumbnailFile: string}[], chooseIgnore(): void, chooseResolve(): void} {
     if(p.type === "collection") {
         const chooseIgnore = () => {
             p.resolve(p.ignoreResolution)

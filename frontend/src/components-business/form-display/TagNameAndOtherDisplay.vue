@@ -4,7 +4,7 @@ import { Colors } from "@/constants/ui"
 defineProps<{
     name: string
     otherNames: string[]
-    color: Colors
+    color: Colors | null
 }>()
 
 </script>

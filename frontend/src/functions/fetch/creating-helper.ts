@@ -1,4 +1,4 @@
-import { ref, Ref } from "vue"
+import { ref, Ref, unref } from "vue"
 import { BasicException } from "@/functions/http-client/exceptions"
 import { HttpClient, Response } from "@/functions/http-client"
 import { useFetchManager } from "./install"
@@ -32,7 +32,7 @@ export function useCreatingHelper<FORM, OUTPUT, RESULT, CE extends BasicExceptio
         if(!creating.value) {
             creating.value = true
             try {
-                const form = options.form.value
+                const form = unref(options.form.value)
                 const validated = options.beforeCreate ? (options.beforeCreate(form) ?? true) : true
                 if(!validated) {
                     return false
