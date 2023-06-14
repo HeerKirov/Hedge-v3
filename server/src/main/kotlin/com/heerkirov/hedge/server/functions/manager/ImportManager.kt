@@ -134,7 +134,7 @@ class ImportManager(private val data: DataRepository,
         val newBookIds = if(form.bookIds.isPresent) {
             form.bookIds
         }else if(form.appendBookIds.isPresent) {
-            optOf((record.bookIds ?: emptyList()) + form.appendBookIds.value)
+            optOf(((record.bookIds ?: emptyList()) + form.appendBookIds.value).distinct())
         }else{
             undefined()
         }
@@ -142,7 +142,7 @@ class ImportManager(private val data: DataRepository,
         val newFolderIds = if(form.folderIds.isPresent) {
             form.folderIds
         }else if(form.appendFolderIds.isPresent) {
-            optOf((record.folderIds ?: emptyList()) + form.appendFolderIds.value)
+            optOf(((record.folderIds ?: emptyList()) + form.appendFolderIds.value).distinct())
         }else{
             undefined()
         }

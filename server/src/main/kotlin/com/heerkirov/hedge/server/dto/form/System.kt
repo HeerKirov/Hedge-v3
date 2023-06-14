@@ -8,7 +8,7 @@ data class HistoryPushForm(val type: String, val id: Int)
 data class FindSimilarTaskCreateForm(val selector: FindSimilarTask.TaskSelector, val config: FindSimilarTask.TaskConfig? = null)
 
 data class FindSimilarResultResolveForm(val actions: List<Resolution>) {
-    data class Resolution(val a: FindSimilarEntityKey, val b: FindSimilarEntityKey?, val actionType: ActionType, val config: Any?)
+    data class Resolution(val a: FindSimilarEntityKey, val b: FindSimilarEntityKey? = null, val actionType: ActionType, val config: Any? = null)
 
     enum class ActionType {
         CLONE_IMAGE,

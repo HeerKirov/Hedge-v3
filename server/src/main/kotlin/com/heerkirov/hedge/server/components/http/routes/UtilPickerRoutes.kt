@@ -14,6 +14,7 @@ class UtilPickerRoutes(private val pickerUtilService: PickerUtilService) : Route
             path("api/utils/picker/history") {
                 get("folders", ::getRecentFolders)
                 get("topics", ::getRecentTopics)
+                get("authors", ::getRecentAuthors)
                 get("annotations", ::getRecentAnnotations)
                 post(::push)
             }
@@ -26,6 +27,10 @@ class UtilPickerRoutes(private val pickerUtilService: PickerUtilService) : Route
 
     private fun getRecentTopics(ctx: Context) {
         ctx.json(pickerUtilService.getRecentTopics())
+    }
+
+    private fun getRecentAuthors(ctx: Context) {
+        ctx.json(pickerUtilService.getRecentAuthors())
     }
 
     private fun getRecentAnnotations(ctx: Context) {

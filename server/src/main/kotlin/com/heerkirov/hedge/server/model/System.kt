@@ -24,6 +24,7 @@ data class HistoryRecord(/**
         META_EDITOR_AUTHOR,
         USED_FOLDER,
         USED_TOPIC,
+        USED_AUTHOR,
         USED_ANNOTATION,
     }
 }

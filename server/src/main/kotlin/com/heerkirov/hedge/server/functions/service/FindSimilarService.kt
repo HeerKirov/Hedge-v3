@@ -279,7 +279,7 @@ class FindSimilarService(private val data: DataRepository,
                 }
             }
             for ((collectionId, imageIds) in collectionToImages) {
-                val images = illustManager.unfoldImages(imageIds)
+                val images = illustManager.unfoldImages(imageIds + listOf(collectionId), sorted = false)
                 illustManager.updateImagesInCollection(collectionId, images)
             }
             for ((bookId, imageIds) in bookToImages) {

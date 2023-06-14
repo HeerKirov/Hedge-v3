@@ -2,13 +2,11 @@ package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.Annotations
+import com.heerkirov.hedge.server.dao.Authors
 import com.heerkirov.hedge.server.dao.Folders
 import com.heerkirov.hedge.server.dao.Topics
 import com.heerkirov.hedge.server.dto.form.HistoryPushForm
-import com.heerkirov.hedge.server.dto.res.AnnotationRes
-import com.heerkirov.hedge.server.dto.res.FolderSimpleRes
-import com.heerkirov.hedge.server.dto.res.TopicSimpleRes
-import com.heerkirov.hedge.server.dto.res.newAnnotationRes
+import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.FolderType
 import com.heerkirov.hedge.server.exceptions.ParamError
 import com.heerkirov.hedge.server.exceptions.be
@@ -48,6 +46,21 @@ class PickerUtilService(private val data: DataRepository, private val historyRec
         return topicIds.mapNotNull(result::get)
     }
 
+    fun getRecentAuthors(): List<AuthorSimpleRes> {
+        val authorIds = historyRecordManager.getRecent(HistoryRecord.SystemHistoryRecordType.USED_AUTHOR, limitCount).map { it.toInt() }
+        val authorColors = data.setting.meta.authorColors
+        val result = data.db.from(Authors)
+            .select(Authors.id, Authors.name, Authors.type)
+            .where { Authors.id inList authorIds }
+            .associate {
+                val id = it[Authors.id]!!
+                val type = it[Authors.type]!!
+                val color = authorColors[type]
+                id to AuthorSimpleRes(id, it[Authors.name]!!, type, false, color)
+            }
+        return authorIds.mapNotNull(result::get)
+    }
+
     fun getRecentAnnotations(): List<AnnotationRes> {
         val annotationIds = historyRecordManager.getRecent(HistoryRecord.SystemHistoryRecordType.USED_ANNOTATION, limitCount).map { it.toInt() }
         val result = data.db.sequenceOf(Annotations).filter { it.id inList annotationIds }.associate { it.id to newAnnotationRes(it) }
@@ -58,6 +71,7 @@ class PickerUtilService(private val data: DataRepository, private val historyRec
         when (form.type.lowercase()) {
             "folder" -> historyRecordManager.push(HistoryRecord.SystemHistoryRecordType.USED_FOLDER, form.id.toString())
             "topic" -> historyRecordManager.push(HistoryRecord.SystemHistoryRecordType.USED_TOPIC, form.id.toString())
+            "author" -> historyRecordManager.push(HistoryRecord.SystemHistoryRecordType.USED_AUTHOR, form.id.toString())
             "annotation" -> historyRecordManager.push(HistoryRecord.SystemHistoryRecordType.USED_ANNOTATION, form.id.toString())
             else -> be(ParamError("type"))
         }
