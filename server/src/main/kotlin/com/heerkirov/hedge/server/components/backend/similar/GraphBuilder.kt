@@ -115,7 +115,11 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
             val hasRelations = targetItem.sourceIdentity != null && matched.sourceIdentity != null
                     && targetItem.sourceIdentity!!.first == matched.sourceIdentity!!.first
                     && (!targetItem.sourceRelations.isNullOrEmpty() || !matched.sourceRelations.isNullOrEmpty())
-                    && (matched.sourceIdentity!!.second in targetItem.sourceRelations!! || targetItem.sourceIdentity!!.second in matched.sourceRelations!!)
+                    && (
+                        (!targetItem.sourceRelations.isNullOrEmpty() && matched.sourceIdentity!!.second in targetItem.sourceRelations!!)
+                        || (!matched.sourceRelations.isNullOrEmpty() && targetItem.sourceIdentity!!.second in matched.sourceRelations!!)
+                        || (!targetItem.sourceRelations.isNullOrEmpty() && !matched.sourceRelations.isNullOrEmpty() && targetItem.sourceRelations!!.any { it in matched.sourceRelations!! })
+                    )
             if(hasRelations) {
                 adds.add(Triple(targetItem.toEntityKey(), matched.toEntityKey(), SourceRelatedRelationType(true, null)))
             }

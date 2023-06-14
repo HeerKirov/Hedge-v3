@@ -29,6 +29,7 @@ import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
 import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
+import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.runIf
@@ -896,6 +897,40 @@ class IllustService(private val data: DataRepository,
     fun cloneImageProps(form: ImagePropsCloneForm) {
         data.db.transaction {
             illustManager.cloneProps(form.from, form.to, form.props, form.merge, form.deleteFrom)
+        }
+    }
+
+    /**
+     * 单独的API，查看illust的关联组。
+     */
+    fun getAssociate(id: Int): List<IllustRes> {
+        if(!data.db.from(Illusts).select((count() greaterEq 0).aliased("exist")).where { Illusts.id eq id }.first().getBoolean("exist")) {
+            throw be(NotFound())
+        }
+        return associateManager.getAssociatesOfIllust(id)
+    }
+
+    /**
+     * 单独的API，设置illust的关联组。
+     */
+    fun setAssociate(id: Int, illusts: List<Int>): List<IllustRes> {
+        data.db.transaction {
+            val type = data.db.from(Illusts).select(Illusts.type)
+                .where { Illusts.id eq id }
+                .map { it[Illusts.type]!! }
+                .firstOrNull()
+                ?: throw be(NotFound())
+
+            associateManager.setAssociatesOfIllust(id, illusts)
+
+            bus.emit(IllustUpdated(id, if(type == IllustModelType.COLLECTION) IllustType.COLLECTION else IllustType.IMAGE,
+                generalUpdated = false,
+                metaTagUpdated = false,
+                sourceDataUpdated = false,
+                relatedItemsUpdated = true
+            ))
+
+            return associateManager.getAssociatesOfIllust(id)
         }
     }
 

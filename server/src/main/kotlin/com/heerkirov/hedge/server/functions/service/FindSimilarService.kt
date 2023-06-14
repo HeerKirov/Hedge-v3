@@ -257,9 +257,9 @@ class FindSimilarService(private val data: DataRepository,
                         val ak = action.a.toEntityKeyString()
                         val bk = action.b!!.toEntityKeyString()
                         val exist = data.db.from(FindSimilarIgnores)
-                            .select(count() greater 0)
+                            .select((count() greater 0).aliased("exist"))
                             .where { (FindSimilarIgnores.firstTarget eq ak) and (FindSimilarIgnores.secondTarget eq bk) }
-                            .map { it.getBoolean(0) }
+                            .map { it.getBoolean("exist") }
                             .first()
 
                         if(!exist) {

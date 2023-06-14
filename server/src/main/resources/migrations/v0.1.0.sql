@@ -2,7 +2,7 @@
 
 -- 图片/集合 的混合表
 CREATE TABLE illust(
-    id							INTEGER PRIMARY KEY,
+    id							INTEGER PRIMARY KEY AUTOINCREMENT,
     type						TINYINT NOT NULL,                   -- 对象类型{0=无父集合的图像, 1=有父集合的图像, 2=集合}
     parent_id				    INTEGER,                            -- [only image]有父集合时，记录父集合的ID
     file_id				        INTEGER NOT NULL,				    -- 链接的文件ID。对集合来说链接的是封面图像的ID冗余
@@ -41,7 +41,7 @@ CREATE INDEX associate_illust__index ON associate_relation(illust_id, related_il
 
 -- 画集
 CREATE TABLE book(
-    id 				INTEGER PRIMARY KEY,
+    id 				INTEGER PRIMARY KEY AUTOINCREMENT,
     title 			TEXT COLLATE NOCASE NOT NULL DEFAULT '',       -- 画集标题，不存在时记空串
     description 	TEXT COLLATE NOCASE NOT NULL DEFAULT '',       -- 画集的简述信息，不存在时记空串
     score 			INTEGER DEFAULT NULL,           -- 画集的评分。评分的具体含义和范围在setting中配置
@@ -62,7 +62,7 @@ CREATE INDEX book_image__index ON book_image_relation(book_id, image_id);
 
 -- 文件夹
 CREATE TABLE folder(
-    id 				INTEGER PRIMARY KEY,
+    id 				INTEGER PRIMARY KEY AUTOINCREMENT,
     title 			TEXT COLLATE NOCASE NOT NULL DEFAULT '',   -- 文件夹标题，不存在时记空串
     type            TINYINT NOT NULL,                          -- 类型{0=节点Node, 1=文件夹Folder}
     parent_id       INTEGER DEFAULT NULL,                      -- 父节点的id
@@ -93,7 +93,7 @@ CREATE UNIQUE INDEX partition_date__index ON partition(date);
 
 -- 内容描述 标签
 CREATE TABLE meta_db.tag(
-    id 				INTEGER PRIMARY KEY,
+    id 				INTEGER PRIMARY KEY AUTOINCREMENT,
     global_ordinal  INTEGER NOT NULL,               -- 全局排序下标，从0开始
     ordinal 		INTEGER NOT NULL,               -- 排序下标，由系统维护，同一父标签一组从0开始
     parent_id 		INTEGER DEFAULT NULL,           -- 父标签的ID
@@ -117,7 +117,7 @@ CREATE INDEX meta_db.tag_global_ordinal_index ON tag(global_ordinal);
 
 -- 作者 标签
 CREATE TABLE meta_db.author(
-    id 				INTEGER PRIMARY KEY,
+    id 				INTEGER PRIMARY KEY AUTOINCREMENT,
     name 			TEXT COLLATE NOCASE NOT NULL,                   -- 标签的名称
     other_names     TEXT COLLATE NOCASE NOT NULL DEFAULT '',        -- 标签的别名::string("nameA|nameB|nameC")
     keywords        TEXT COLLATE NOCASE NOT NULL DEFAULT '',        -- 关键字::string("k1|k2")
@@ -136,7 +136,7 @@ CREATE INDEX meta_db.author_filter_index ON author(type, favorite);
 
 -- 主题 标签
 CREATE TABLE meta_db.topic(
-    id 				INTEGER PRIMARY KEY,
+    id 				INTEGER PRIMARY KEY AUTOINCREMENT,
     name 			TEXT COLLATE NOCASE NOT NULL,                   -- 标签的名称
     other_names     TEXT COLLATE NOCASE NOT NULL DEFAULT '',        -- 标签的别名::string("nameA|nameB|nameC")
     keywords        TEXT COLLATE NOCASE NOT NULL DEFAULT '',        -- 关键字::string("k1|k2")
@@ -199,7 +199,7 @@ CREATE UNIQUE INDEX book_topic__index ON book_topic_relation(topic_id, book_id);
 
 -- 注解
 CREATE TABLE meta_db.annotation(
-    id                  INTEGER PRIMARY KEY,
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
     name                TEXT COLLATE NOCASE NOT NULL,   -- 注解名称
     can_be_exported     BOOLEAN NOT NULL,               -- 是否为导出注解
     type                TINYINT NOT NULL,               -- 注解的适用种类
@@ -235,7 +235,7 @@ CREATE UNIQUE INDEX book_annotation__index ON book_annotation_relation(annotatio
 
 -- 导入表
 CREATE TABLE import_image(
-    id                  INTEGER PRIMARY KEY,
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
     file_id             INTEGER NOT NULL,               -- 链接的文件id
 
     file_name           TEXT,                           -- 原文件名，包括扩展名，不包括文件路径。从web导入时可能没有，此时填null
@@ -260,7 +260,7 @@ CREATE TABLE import_image(
 
 -- 来源信息
 CREATE TABLE source_db.source_data(
-    id              INTEGER PRIMARY KEY,                -- id
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,  -- id
     source_site		VARCHAR(16) NOT NULL,               -- 来源网站的代号
     source_id 		BIGINT NOT NULL,                    -- 来源网站中的图像代号
 
@@ -333,7 +333,7 @@ CREATE INDEX source_db.source_mark__index ON source_mark(source_data_id, related
 
 -- 文件
 CREATE TABLE file_db.file(
-    id 				INTEGER PRIMARY KEY,            -- 自增ID
+    id 				INTEGER PRIMARY KEY AUTOINCREMENT, -- 自增ID
     folder 			VARCHAR(16) NOT NULL,           -- 所在文件夹名称::format<yyyy-MM-dd>，一般用其添加日期作为文件夹名称
     extension		VARCHAR(8) NOT NULL,            -- 文件扩展名，同时也表示此文件的类型
 
