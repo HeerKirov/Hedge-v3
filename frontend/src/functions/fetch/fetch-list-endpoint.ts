@@ -230,7 +230,9 @@ export function useFetchListEndpoint<PATH, MODEL, GE extends BasicException>(opt
                 ...e,
                 refresh: restrictedRefresh,
                 update(where: (item: MODEL) => boolean) {
-                    //TODO 需要更成熟、更统一的节流方案。实际上items很大可能会分散到达，面对这种情况也需要节流，将短时间内的items收集起来统一请求
+                    //TODO 节流方案需要更新: 
+                    //需要更成熟、更统一的节流方案。
+                    //实际上items很大可能会分散到达，面对这种情况也需要节流，将短时间内的items收集起来统一请求
                     //选出来的items是需要异步更新的。异步过程中列表可能发生变化。
                     const updatePaths = data.value
                         .map((item, idx) => ({item, idx}))
@@ -341,7 +343,9 @@ export function useFetchSinglePathEndpoint<PATH, MODEL, GE extends BasicExceptio
                 update(where: (item: MODEL) => boolean) {
                     if(!requestMethod) throw new Error("options.eventFilter.request is satisfied.")
 
-                    //TODO 需要更成熟、更统一的节流方案。实际上items很大可能会分散到达，面对这种情况也需要节流，将短时间内的items收集起来统一请求
+                    //TODO 节流方案需要更新: 
+                    //需要更成熟、更统一的节流方案。
+                    //实际上items很大可能会分散到达，面对这种情况也需要节流，将短时间内的items收集起来统一请求
                     //选出来的items是需要异步更新的。异步过程中列表可能发生变化。
                     const updateItems = data.value.filter(i => i !== null && where(i)) as MODEL[]
                     if(updateItems.length) {

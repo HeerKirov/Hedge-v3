@@ -28,7 +28,7 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "normal", label: "删除此目录", click: deleteItem}
 ])
 
-// TODO 完成illust右键菜单的功能 (剪贴板，关联组，导出)
+// TODO 完成illust右键菜单的功能 (剪贴板，导出)
 const menu = useDynamicPopupMenu<FolderImage>(folderImage => [
     {type: "normal", label: "查看详情", click: i => operators.openDetailByClick(i.id)},
     {type: "normal", label: "在新窗口中打开", click: operators.openInNewWindow},
@@ -43,7 +43,7 @@ const menu = useDynamicPopupMenu<FolderImage>(folderImage => [
     {type: "separator"},
     {type: "normal", label: "创建图像集合", click: operators.createCollection},
     {type: "normal", label: "创建画集…", click: operators.createBook},
-    {type: "normal", label: "创建关联组"},
+    {type: "normal", label: "编辑关联组", click: operators.editAssociate},
     {type: "normal", label: "添加到目录…", click: operators.addToFolder},
     {type: "normal", label: "克隆图像属性…", click: operators.cloneImage},
     {type: "separator"},

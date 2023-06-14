@@ -11,12 +11,13 @@ import {
     AllSlice, ListIndexSlice, SliceDataView, SliceOrPath,
     createLazyFetchEndpoint, useFetchListEndpoint, useFetchSinglePathEndpoint,
     usePostFetchHelper, usePostPathFetchHelper,
-    useSliceDataView, useSliceDataViewByRef
+    useSliceDataView, useSliceDataViewByRef, useFetchReactive
 } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
 import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
-import { useGlobalKey } from "@/modules/keyboard"
+import { useGlobalKey, useInterceptedKey } from "@/modules/keyboard"
+import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator } from "@/modules/router"
 import { installation, toRef } from "@/utils/reactivity"
@@ -28,7 +29,7 @@ export const [installImageViewContext, useImageViewContext] = installation(funct
     const navigator = useNavigator(slice, subSlice)
     const target = useTarget(slice, subSlice)
 
-    useViewStackCallback(slice, data, modifiedCallback)
+    useViewStackCallback(slice, modifiedCallback)
 
     const sideBar = useSideBarContext(target.id)
     const playBoard = usePlayBoardContext()
@@ -42,7 +43,7 @@ function useSlice(data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Il
     }else{
         const paths = ref([...data.path])
 
-        const { data: listEndpoint } = useFetchListEndpoint({
+        const { loading, data: listEndpoint } = useFetchListEndpoint({
             paths,
             list: client => client.illust.findByIds,
             get: client => client.illust.get,
@@ -58,7 +59,7 @@ function useSlice(data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Il
             }
         })
 
-        return useSliceDataViewByRef(listEndpoint)
+        return useSliceDataViewByRef(computed(() => loading.value ? null : listEndpoint.value), data.focusIndex)
     }
 }
 
@@ -68,7 +69,7 @@ function useSubSlice(slice: SliceDataView<Illust>) {
     //主slice的变更方向
     const defaultLocation = ref<"first" | "last">("first")
 
-    const { data: subItems } = useFetchSinglePathEndpoint({
+    const { loading, data: subItems } = useFetchSinglePathEndpoint({
         path: parentId,
         list: client => async (path: number) => mapResponse(await client.illust.collection.images.get(path, {}), r => r.result),
         eventFilter: {
@@ -93,7 +94,7 @@ function useSubSlice(slice: SliceDataView<Illust>) {
         }
     })
 
-    return useSliceDataViewByRef(subItems, undefined, defaultLocation)
+    return useSliceDataViewByRef(computed(() => loading.value ? null : subItems.value), undefined, defaultLocation)
 }
 
 function useNavigator(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illust>) {
@@ -162,8 +163,13 @@ function useNavigator(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illu
 }
 
 function useTarget(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illust>) {
+    const toast = useToast()
     const message = useMessageBox()
+    const dialog = useDialogService()
     const navigator = useRouterNavigator()
+
+    const fetchSetData = usePostPathFetchHelper(client => client.illust.image.update)
+    const fetchDeleteData = usePostFetchHelper(client => client.illust.image.delete)
 
     const data = computed(() => {
         if(slice.data.value !== null) {
@@ -179,28 +185,87 @@ function useTarget(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illust>
 
     const id = computed(() => data.value?.id ?? null)
 
-    const setData = usePostPathFetchHelper(client => client.illust.image.update)
-
-    const deleteData = usePostFetchHelper(client => client.illust.image.delete)
-
     const toggleFavorite = () => {
         if(data.value !== null) {
-            setData(data.value.id, {favorite: !data.value.favorite}).finally()
+            fetchSetData(data.value.id, {favorite: !data.value.favorite}).finally()
         }
     }
 
     const deleteItem = async () => {
         if(id.value !== null && await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
-            await deleteData(id.value)
+            await fetchDeleteData(id.value)
         }
     }
 
     const openInNewWindow = () => navigator.newWindow({routeName: "Preview", params: {type: "image", imageIds: [id.value!]}})
 
-    return {data, id, toggleFavorite, deleteItem, openInNewWindow}
+    const editMetaTag = () => {
+        if(id.value !== null) {
+            dialog.metaTagEditor.editIdentity({type: "IMAGE", id: id.value})
+        }
+    }
+
+    const editSourceData = () => {
+        if(data.value !== null && data.value.sourceSite !== null) {
+            dialog.sourceDataEditor.edit({sourceSite: data.value.sourceSite, sourceId: data.value.sourceId!})
+        }
+    }
+
+    const editAssociate = () => {
+        if(id.value !== null) {
+            dialog.associateExplorer.editAssociate(id.value, [], "append", () => toast.toast("已编辑", "success", "已编辑关联组。"))
+        }
+    }
+
+    const addToFolder = () => {
+        if(id.value !== null) {
+            dialog.addToFolder.addToFolder([id.value], () => toast.toast("已添加", "success", "已将图像添加到指定目录。"))
+        }
+    }
+
+    const recentFolders = useRecentFolders(id)
+
+    return {data, id, toggleFavorite, deleteItem, openInNewWindow, editMetaTag, editSourceData, editAssociate, addToFolder, recentFolders}
 }
 
-function useViewStackCallback(slice: SliceDataView<Illust>, data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>, modifiedCallback?: (illustId: number) => void) {
+function useRecentFolders(id: Ref<number | null>) {
+    const toast = useToast()
+    const message = useMessageBox()
+
+    const { data: recentFoldersData } = useFetchReactive({
+        get: client => client.searchUtil.history.folders
+    })
+    const fetchPushHistory = usePostFetchHelper(client => client.searchUtil.history.push)
+    const fetchFolderImagesPartialUpdate = usePostPathFetchHelper({
+        request: client => client.folder.images.partialUpdate,
+        handleErrorInRequest(e) {
+            if(e.code === "REJECT") {
+                message.showOkMessage("prompt", "不能选择节点作为添加对象。")
+            }
+        }
+    })
+
+    const add = async (folderId: number) => {
+        if(id.value !== null) {
+            const res = await fetchFolderImagesPartialUpdate(folderId, {action: "ADD", images: [id.value]})
+            if(res) {
+                fetchPushHistory({type: "FOLDER", id: folderId}).finally()
+                toast.toast("已添加", "success", "已将图像添加到指定目录。")
+            }
+        }
+    }
+
+    return computed(() => {
+        if(recentFoldersData.value?.length) {
+            const id = recentFoldersData.value[0].id
+            return [{fullName: recentFoldersData.value[0].address.join("/"), click: () => add(id)}]
+        }else{
+            return []
+        }
+    })
+}
+
+function useViewStackCallback(slice: SliceDataView<Illust>, modifiedCallback?: (illustId: number) => void) {
     const { isClosable, closeView } = useViewStack()
 
     //列表清空时，自动关闭视图
@@ -228,6 +293,12 @@ function useSideBarContext(path: Ref<number | null>) {
     const storage = useLocalStorage<{tabType: "info" | "source" | "related"}>("image-detail-view/side-bar", () => ({tabType: "info"}), true)
 
     const tabType = toRef(storage, "tabType")
+
+    useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Digit3"], e => {
+        if(e.key === "Digit1") tabType.value = "info"
+        else if(e.key === "Digit2") tabType.value = "source"
+        else if(e.key === "Digit3") tabType.value = "related"
+    })
 
     installDetailInfoLazyEndpoint({
         path,
@@ -286,6 +357,8 @@ export function useSideBarDetailInfo() {
 export function useSideBarRelatedItems() {
     const viewStack = useViewStack()
     const navigator = useRouterNavigator()
+    const dialog = useDialogService()
+    const { target: { id } } = useImageViewContext()
     const { data } = useRelatedItemsLazyEndpoint()
 
     const openRelatedBook = (book: SimpleBook) => {
@@ -300,14 +373,22 @@ export function useSideBarRelatedItems() {
     }
 
     const openAssociate = () => {
-        //TODO relatedItems: 查看关联组
+        if(id.value !== null) {
+            dialog.associateExplorer.openAssociateView(id.value)
+        }
+    }
+
+    const openAssociateInNewView = (index?: number) => {
+        if(data.value?.associates.length) {
+            viewStack.openImageView({imageIds: data.value.associates.map(i => i.id), focusIndex: index})
+        }
     }
 
     const openFolderInNewWindow = (folder: SimpleFolder) => {
         navigator.newWindow({routeName: "MainFolder", query: {detail: folder.id}})
     }
 
-    return {data, openRelatedBook, openRelatedCollection, openAssociate, openFolderInNewWindow}
+    return {data, openRelatedBook, openRelatedCollection, openAssociate, openAssociateInNewView, openFolderInNewWindow}
 }
 
 export function useSideBarSourceData() {

@@ -121,15 +121,17 @@ export function useTimelineContext() {
         }
     })
 
+    //使用一个本地变量，区分来自上层的calendarDate更改和来自自己的更改。在scroll相关事件中，混淆不同更改可能引发意想不到的问题。
+    const localCalendarDate = ref<YearAndMonth>({...calendarDate.value})
     const partitionMonthData = ref<PartitionMonth[]>([])
-
     const partitionData = ref<{year: number, month: number, items: {day: number, count: number}[]}[]>([])
 
     const monthRefs: Record<`${number}-${number}`, HTMLDivElement> = {}
     const pmRefs: Record<`${number}-${number}`, HTMLDivElement> = {}
 
-    watch(partitionMonthData, months => {
+    watch(partitionMonthData, async months => {
         //在当前选择月份不存在的情况下，滚动到存在数据的最后一个月份
+        await nextTick()
         if(months.length > 0 && !months.find(p => p.year === calendarDate.value.year && p.month === calendarDate.value.month)) {
             const {year, month} = months[months.length - 1]
             calendarDate.value = {year, month}
@@ -137,13 +139,29 @@ export function useTimelineContext() {
     })
 
     watch(calendarDate, async calendarDate => {
-        //calendarDate变化后，被选中的项会发生变化，需要将目标项滚动到视野内
-        const key = `${calendarDate.year}-${calendarDate.month}` as const
+        if(localCalendarDate.value.month !== calendarDate.month || localCalendarDate.value.year !== calendarDate.year) {
+            localCalendarDate.value = {...calendarDate}
+            //calendarDate变化后，被选中的项会发生变化，需要将目标项滚动到视野内
+            const key = `${calendarDate.year}-${calendarDate.month}` as const
+            enableScrollEvent = false
+            monthRefs[key]?.scrollIntoView({behavior: "auto"})
+            pmRefs[key]?.scrollIntoView({behavior: "auto"})
+            await sleep(100)
+            enableScrollEvent = true
+        }
+    })
+
+    watch(localCalendarDate, async local => {
+        //localCalendarDate变化后，被选中的项会发生变化，需要将目标项滚动到视野内，但不会滚动pmRefs
+        const key = `${local.year}-${local.month}` as const
         enableScrollEvent = false
         monthRefs[key]?.scrollIntoView({behavior: "auto"})
-        pmRefs[key]?.scrollIntoView({behavior: "auto"})
         await nextTick()
         enableScrollEvent = true
+
+        if(calendarDate.value.month !== local.month || calendarDate.value.year !== local.year) {
+            calendarDate.value = {...local}
+        }
     })
 
     let enableScrollEvent: boolean = false
@@ -168,22 +186,22 @@ export function useTimelineContext() {
                 if(elMin < rangeMid && elMax > rangeMid) {
                     //找到位于中线上的pm
                     const [y, m] = pm.split("-", 2)
-                    calendarDate.value = {year: parseInt(y), month: parseInt(m)}
+                    localCalendarDate.value = {year: parseInt(y), month: parseInt(m)}
                     break
                 }
             }
         }
     }
 
-    const selectMonth = async (year: number, month: number)=> {
+    const selectMonth = async (year: number, month: number) => {
         if(calendarDate.value.year !== year || calendarDate.value.month !== month) {
-            calendarDate.value = {year, month}
-
             enableScrollEvent = false
             const key = `${year}-${month}` as const
             pmRefs[key]?.scrollIntoView({behavior: "auto"})
             await sleep(100)
             enableScrollEvent = true
+
+            calendarDate.value = {year, month}
         }
     }
 
@@ -207,7 +225,7 @@ export function useTimelineContext() {
         }
     }
 
-    return {partitionMonthData, partitionData, monthRefs, pmRefs, calendarDate, selectMonth, scrollEvent, openPartition, setPmRef, setMonthRef}
+    return {partitionMonthData, partitionData, calendarDate, selectMonth, scrollEvent, openPartition, setPmRef, setMonthRef}
 }
 
 export function useDetailIllustContext() {

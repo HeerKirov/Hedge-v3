@@ -2,7 +2,7 @@
 import { Block, Icon } from "@/components/universal"
 import { useTimelineContext } from "@/services/main/partition"
 
-const { partitionMonthData, partitionData, monthRefs, pmRefs, calendarDate, setPmRef, setMonthRef, selectMonth, scrollEvent, openPartition } = useTimelineContext()
+const { partitionMonthData, partitionData, calendarDate, setPmRef, setMonthRef, selectMonth, scrollEvent, openPartition } = useTimelineContext()
 
 </script>
 

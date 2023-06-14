@@ -8,6 +8,7 @@ import { AddIllust, AddIllustProps, useAddIllust } from "./AddIllust/context"
 import { AddToFolder, AddToFolderProps, useAddToFolder } from "./AddToFolder/context"
 import { CloneImage, CloneImageProps, useCloneImage } from "./CloneImage/context"
 import { FindSimilarTaskExplorer, FindSimilarTaskExplorerProps, useFindSimilarTaskExplorer } from "./FindSimilarTaskExplorer/context"
+import { AssociateExplorer, AssociateExplorerProps, useAssociateExplorer } from "./AssociateExplorer/context"
 
 export type {
     SourceDataEditorProps,
@@ -17,7 +18,8 @@ export type {
     AddIllustProps,
     AddToFolderProps,
     CloneImageProps,
-    FindSimilarTaskExplorerProps
+    FindSimilarTaskExplorerProps,
+    AssociateExplorerProps
 }
 
 export interface DialogService {
@@ -29,6 +31,7 @@ export interface DialogService {
     addToFolder: AddToFolder
     cloneImage: CloneImage
     findSimilarTaskExplorer: FindSimilarTaskExplorer
+    associateExplorer: AssociateExplorer
 }
 
 type ServiceContext
@@ -40,6 +43,7 @@ type ServiceContext
     | { type: "addToFolder", props: AddToFolderProps }
     | { type: "cloneImage", props: CloneImageProps }
     | { type: "findSimilarTaskExplorer", props: FindSimilarTaskExplorerProps }
+    | { type: "associateExplorer", props: AssociateExplorerProps }
 
 export type Push = (nc: ServiceContext) => void
 
@@ -76,6 +80,7 @@ export const [installInternalService, useInternalService] = installation(functio
     const addToFolder = useAddToFolder(push)
     const cloneImage = useCloneImage(push)
     const findSimilarTaskExplorer = useFindSimilarTaskExplorer(push)
+    const associateExplorer = useAssociateExplorer(push)
 
     return {
         context,
@@ -88,7 +93,8 @@ export const [installInternalService, useInternalService] = installation(functio
         addIllust,
         addToFolder,
         cloneImage,
-        findSimilarTaskExplorer
+        findSimilarTaskExplorer,
+        associateExplorer
     }
 })
 

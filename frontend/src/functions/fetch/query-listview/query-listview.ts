@@ -188,7 +188,8 @@ function useWsEventProcessor<T, E extends BasicException>(options: EventFilter<T
             ...e,
             refresh: restrictedRefresh,
             update(where: (item: T) => boolean) {
-                //TODO 需要更成熟、更统一的节流方案。实际上items很大可能会分散到达，面对这种情况也需要节流，将短时间内的items收集起来统一请求
+                //TODO 节流方案需要更新:
+                //需要更成熟、更统一的节流方案。实际上items很大可能会分散到达，面对这种情况也需要节流，将短时间内的items收集起来统一请求
                 if(!updateMethod) throw new Error("options.eventFilter.request is satisfied.")
                 const idx = proxyInstance.syncOperations.find(where)
                 if(idx !== undefined) {

@@ -1,4 +1,4 @@
-import { AllSlice, ListIndexSlice, SingletonSlice, SliceOrPath } from "@/functions/fetch"
+import { AllSlice, ListIndexSlice, SingletonSlice, Slice, SliceOrPath } from "@/functions/fetch"
 import { Illust } from "@/functions/http-client/api/illust"
 import { Book } from "@/functions/http-client/api/book"
 import { StacksOperationContext } from "./context"
@@ -20,8 +20,12 @@ interface StackViewBookInfo {
 
 export function generateOperations({ push, setRootView }: StacksOperationContext<StackViewInfo>) {
     return {
-        openImageView(slice: AllSlice<Illust> | ListIndexSlice<Illust> | number[], modifiedCallback?: (illustId: number) => void, isRootView?: boolean) {
-            const sliceOrPath: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]> = slice instanceof Array ? {type: "path", path: slice} : {type: "slice", slice}
+        openImageView(slice: AllSlice<Illust> | ListIndexSlice<Illust> | number[] | {imageIds: number[], focusIndex?: number}, modifiedCallback?: (illustId: number) => void, isRootView?: boolean) {
+            const sliceOrPath: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]> 
+                = slice instanceof Array ? {type: "path", path: slice} 
+                : (<AllSlice<Illust>>slice).type === "ALL" ? {type: "slice", slice: <AllSlice<Illust>>slice}
+                : (<ListIndexSlice<Illust>>slice).type === "LIST" ? {type: "slice", slice: <AllSlice<Illust>>slice}
+                : {type: "path", path: (<{imageIds: number[], focusIndex: number}>slice).imageIds, focusIndex: (<{imageIds: number[], focusIndex: number}>slice).focusIndex}
             const info: StackViewImageInfo = {type: "image", sliceOrPath, modifiedCallback}
             const call = (isRootView ? setRootView : push)
             call(info)

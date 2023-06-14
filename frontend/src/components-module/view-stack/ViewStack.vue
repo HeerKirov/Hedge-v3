@@ -30,7 +30,7 @@ export default defineComponent({
             leaveActiveClass: style['transition-leave-active']
         }, () => splitStacks.value !== null ? [
             ...splitStacks.value.pages.map((page, i) => h(ViewContainer, {
-                key: i,
+                key: `container-${i}`,
                 class: style.container,
                 stackIndex: i,
                 stackViewInfo: page,
@@ -38,7 +38,7 @@ export default defineComponent({
             })),
             h("div", {key: `background-cover-${splitStacks.value.pages.length}`, class: style['background-cover']}),
             h(ViewContainer, {
-                key: splitStacks.value.pages.length,
+                key: `container-${splitStacks.value.pages.length}`,
                 class: style.container,
                 stackIndex: splitStacks.value.pages.length,
                 stackViewInfo: splitStacks.value.top

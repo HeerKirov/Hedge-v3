@@ -6,12 +6,15 @@ import { Flex } from "@/components/layout"
 // 一个Grid组件，将给出的items迭代生成子组件，且所有组件保持相同的长宽。
 // 可以为其设置间隔。
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     items?: T[] | null
     columnNum?: number
     aspect?: number
     spacing?: number
-}>()
+    imgStyle?: "std" | "no-radius" | "none"
+}>(), {
+    imgStyle: "std"
+})
 
 defineSlots<{
     default(props: {item: T, index: number}): any
@@ -28,7 +31,7 @@ const rootStyle = computed(() => ({
 <template>
     <Flex :style="rootStyle" :multiline="true" :spacing="spacing">
         <div v-for="(item, index) in (items ?? [])" :class="$style.item">
-            <div :class="$style.content">
+            <div :class="{[$style.content]: true, [$style['img-std']]: imgStyle === 'std' || imgStyle === 'no-radius', [$style['img-radius']]: imgStyle === 'std'}">
                 <slot :item="item" :index="index"/>
             </div>
         </div>
@@ -50,4 +53,12 @@ const rootStyle = computed(() => ({
         left: 0
         right: 0
         bottom: 0
+
+        &.img-std > img
+            width: 100%
+            height: 100%
+            object-fit: cover
+            object-position: center
+        &.img-radius > img
+            border-radius: $radius-size-std
 </style>

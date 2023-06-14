@@ -31,7 +31,7 @@ const { data, selector: { selectMode, compare, multiple, click }, resolve } = in
             <InfoDisplay/>
         </Block>
         <Block :class="$style.images">
-            <AspectGrid v-if="data !== null" class="p-2" :items="data.images" :column-num="9" :spacing="1" v-slot="{ item, index }">
+            <AspectGrid v-if="data !== null" class="p-2" :items="data.images" :column-num="9" :spacing="1" img-style="none" v-slot="{ item, index }">
                 <FindSimilarDetailPanelImageItem :item="item" @click="click(index, $event)"/>
             </AspectGrid>
         </Block>

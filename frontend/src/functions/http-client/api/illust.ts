@@ -70,6 +70,14 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
                 update: http.createPathDataRequest(id => `/api/illusts/image/${id}/source-data`, "PATCH")
             }
         },
+        associate: {
+            get: http.createPathRequest(id => `/api/illusts/associate/${id}`, "GET", {
+                parseResponse: (result: any[]) => result.map(mapToIllust)
+            }),
+            set: http.createPathDataRequest(id => `/api/illusts/associate/${id}`, "PUT", {
+                parseResponse: (result: any[]) => result.map(mapToIllust)
+            }),
+        },
         batchUpdate: http.createDataRequest("/api/illusts/batch-update", "POST", {
             parseData: mapFromIllustBatchUpdateForm
         }),
@@ -303,6 +311,18 @@ export interface IllustEndpoint {
              */
             update(id: number, form: ImageSourceDataUpdateForm): Promise<Response<null, IllustExceptions["image.sourceData.update"]>>
         }
+    }
+    associate: {
+        /**
+         * 查看illust的关联组。
+         * @exception NOT_FOUND
+         */
+        get(id: number): Promise<Response<Illust[], NotFound>>
+        /**
+         * 修改illust的关联组。
+         * @exception NOT_FOUND
+         */
+        set(id: number, illusts: number[]): Promise<Response<Illust[], NotFound>>
     }
     /**
      * 批量更新元数据。

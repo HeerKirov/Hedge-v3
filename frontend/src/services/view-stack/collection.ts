@@ -5,21 +5,15 @@ import {
 } from "@/functions/http-client/api/illust"
 import { flatResponse } from "@/functions/http-client"
 import {
-    SingletonSlice,
-    SliceOrPath,
-    SingletonDataView,
-    createLazyFetchEndpoint,
-    useFetchEndpoint,
-    useSingletonDataView,
-    usePostPathFetchHelper,
-    usePostFetchHelper,
-    useFetchEvent
+    SingletonSlice, SliceOrPath, SingletonDataView,
+    createLazyFetchEndpoint, useFetchEndpoint, useSingletonDataView, usePostPathFetchHelper, usePostFetchHelper, useFetchEvent 
 } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
 import { useMessageBox } from "@/modules/message-box"
+import { useInterceptedKey } from "@/modules/keyboard"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
@@ -131,6 +125,11 @@ function useSideBarContext(path: Ref<number | null>) {
 
     const tabType = toRef(storage, "tabType")
 
+    useInterceptedKey(["Meta+Digit1", "Meta+Digit2"], e => {
+        if(e.key === "Digit1") tabType.value = "info"
+        else if(e.key === "Digit3") tabType.value = "related"
+    })
+
     installDetailInfoLazyEndpoint({
         path,
         get: client => client.illust.collection.get,
@@ -172,11 +171,22 @@ export function useSideBarDetailInfo() {
 }
 
 export function useSideBarRelatedItems() {
+    const viewStack = useViewStack()
+    const dialog = useDialogService()
+    const { target: { id } } = useCollectionViewContext()
     const { data } = useRelatedItemsLazyEndpoint()
 
     const openAssociate = () => {
-        //TODO relatedItems: 查看关联组
+        if(id.value !== null) {
+            dialog.associateExplorer.openAssociateView(id.value)
+        }
     }
 
-    return {data, openAssociate}
+    const openAssociateInNewView = (index?: number) => {
+        if(data.value?.associates.length) {
+            viewStack.openImageView({imageIds: data.value.associates.map(i => i.id), focusIndex: index})
+        }
+    }
+
+    return {data, openAssociate, openAssociateInNewView}
 }

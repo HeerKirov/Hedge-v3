@@ -116,7 +116,7 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
     const deleting: Ref<boolean> = ref(false)
     const data: Ref<MODEL | null> = ref(null)
 
-    //TODO 使用更统一的、封装好的节流方案
+    //TODO 节流方案需要更新
     const lastUpdateInterval = 100
     let lastUpdated: number | null = null
 

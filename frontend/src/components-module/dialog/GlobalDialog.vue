@@ -3,7 +3,7 @@ import { DialogBox } from "@/components/interaction"
 import {
     useInternalService,
     SourceDataEditorProps, MetaTagEditorProps, CreatingCollectionProps, CreatingBookProps,
-    AddIllustProps, AddToFolderProps, CloneImageProps, FindSimilarTaskExplorerProps
+    AddIllustProps, AddToFolderProps, CloneImageProps, FindSimilarTaskExplorerProps, AssociateExplorerProps
 } from "./context"
 import SourceDataEditor from "./SourceDataEditor/SourceDataEditor.vue"
 import MetaTagEditor from "./MetaTagEditor/MetaTagEditor.vue"
@@ -13,6 +13,7 @@ import CreatingBook from "./CreatingBook/CreatingBook.vue"
 import AddToFolder from "./AddToFolder/AddToFolder.vue"
 import CloneImage from "./CloneImage/CloneImage.vue"
 import FindSimilarTaskExplorer from "./FindSimilarTaskExplorer/FindSimilarTaskExplorer.vue"
+import AssociateExplorer from "./AssociateExplorer/AssociateExplorer.vue"
 
 const { context, close } = useInternalService()
 
@@ -28,6 +29,7 @@ const { context, close } = useInternalService()
         <AddToFolder v-else-if="context!.type === 'addToFolder'" :p="context!.props as AddToFolderProps" @close="close"/>
         <CloneImage v-else-if="context!.type === 'cloneImage'" :p="context!.props as CloneImageProps" @close="close"/>
         <FindSimilarTaskExplorer v-else-if="context!.type === 'findSimilarTaskExplorer'" :p="(context!.props as FindSimilarTaskExplorerProps)" @close="close"/>
+        <AssociateExplorer v-else-if="context!.type === 'associateExplorer'" :p="(context!.props as AssociateExplorerProps)" @close="close"/>
     </DialogBox>
 </template>
 

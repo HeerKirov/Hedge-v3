@@ -33,6 +33,7 @@ export type SliceOrPath<T, S extends Slice<T>, P extends (number[] | number)> = 
 } | {
     type: "path"
     path: P
+    focusIndex?: number
 }
 
 /**
@@ -258,20 +259,25 @@ export function useSingletonDataView<T>(slice: SingletonSlice<T>): SingletonData
     return {data}
 }
 
-export function useSliceDataViewByRef<T>(dataList: Ref<(T | null)[]>, focusIndex?: number, defaultLocation?: Ref<"first" | "last">): SliceDataView<T> {
+export function useSliceDataViewByRef<T>(dataList: Ref<(T | null)[] | null>, focusIndex?: number, defaultLocation?: Ref<"first" | "last">): SliceDataView<T> {
     const data: Ref<T | null> = ref(null)
     const count: Ref<number | null> = ref(null)
     const innerIndex = ref(focusIndex ?? 0)
 
     //挂载时，根据currentIndex初始化，取一次数据
     onBeforeMount(() => {
-        data.value = dataList.value[currentIndex.value] ?? null
-        count.value = dataList.value.length
+        if(dataList.value !== null) {
+            data.value = dataList.value[currentIndex.value] ?? null
+            count.value = dataList.value.length
+        }else{
+            data.value = null
+            count.value = null
+        }
     })
 
     //dataList或innerIndex变更时，重新取数据
     watch([dataList, innerIndex] , ([dataList], [oldDataList]) => {
-        if(defaultLocation !== undefined && dataList !== oldDataList && dataList.length > 0) {
+        if(defaultLocation !== undefined && dataList !== oldDataList && dataList !== null && dataList.length > 0) {
             //dataList已更换，此时需要根据defaultLocation重新定位innerIndex
             if(defaultLocation.value === "first") {
                 innerIndex.value = 0
@@ -279,14 +285,18 @@ export function useSliceDataViewByRef<T>(dataList: Ref<(T | null)[]>, focusIndex
                 innerIndex.value = dataList.length - 1
             }
         }
-        data.value = dataList[innerIndex.value] ?? null
+        data.value = dataList?.[innerIndex.value] ?? null
     }, {deep: true})
 
     //根据dataList的长度，变更count的值，根据范围修正innerIndex的值
-    watch(() => dataList.value.length, cnt => {
-        count.value = cnt
-        if(cnt > 0 && innerIndex.value >= cnt) innerIndex.value = cnt - 1
-        else if(cnt === 0) innerIndex.value = 0
+    watch(() => dataList.value?.length ?? null, cnt => {
+        if(cnt !== null) {
+            count.value = cnt
+            if(cnt > 0 && innerIndex.value >= cnt) innerIndex.value = cnt - 1
+            else if(cnt === 0) innerIndex.value = 0
+        }else{
+            count.value = null
+        }
     })
 
     const currentIndex = computed({

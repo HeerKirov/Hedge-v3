@@ -105,6 +105,11 @@ export interface ImageDatasetOperators<T extends BasicIllust> {
      */
     createBook(illust: T): void
     /**
+     * 编辑关联组。打开一个对话框，以供编辑当前项的关联组信息。
+     * 关联组是不能群体设置的。当选择多个项一同编辑时，会将点击项作为主体，其他选择项作为追加对象。
+     */
+    editAssociate(illust: T): void
+    /**
      * 添加到目录。打开一个对话框，以选择要添加到的目录。
      * @param illust
      */
@@ -297,6 +302,12 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
         dialog.creatingBook.createBook(items, () => toast.toast("已创建", "success", "已创建新画集。"))
     }
 
+    const editAssociate = (illust: T) => {
+        const items = getEffectedItems(illust)
+        const appendIds = items.filter(id => id !== illust.id)
+        dialog.associateExplorer.editAssociate(illust.id, appendIds, "append", () => toast.toast("已编辑", "success", "已编辑关联组。"))
+    }
+
     const addToFolder = (illust: T) => {
         const items = getEffectedItems(illust)
         dialog.addToFolder.addToFolder(items, () => toast.toast("已添加", "success", "已将图像添加到指定目录。"))
@@ -401,7 +412,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
 
     return {
         openDetailByClick, openDetailByEnter, openCollectionDetail, openInNewWindow, modifyFavorite,
-        createCollection, splitToGenerateNewCollection, createBook, addToFolder, cloneImage,
+        createCollection, splitToGenerateNewCollection, createBook, editAssociate, addToFolder, cloneImage,
         deleteItem, removeItemFromCollection, removeItemFromBook, removeItemFromFolder, getEffectedItems, dataDrop
     }
 }

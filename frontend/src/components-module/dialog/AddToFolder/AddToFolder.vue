@@ -55,8 +55,8 @@ const { tabType, folderTree, recentFolders, checkExists, selectedId, submit, cho
                 <div v-if="checkExists !== null">
                     <p class="mb-1 is-line-height-std">部分图像已存在于此目录。请确认处理策略：</p>
                     <div :class="$style['scroll-content']">
-                        <AspectGrid :spacing="1" :column-num="3" :items="checkExists.duplicates" v-slot="{ item, index }">
-                            <img :class="$style.img" :src="assetsUrl(item.thumbnailFile)" :alt="`situation-${item.id}`"/>
+                        <AspectGrid :spacing="1" :column-num="3" default-img-style="no-radius" :items="checkExists.duplicates" v-slot="{ item }">
+                            <img :src="assetsUrl(item.thumbnailFile)" :alt="`situation-${item.id}`"/>
                             <div v-if="item.ordinal !== null" :class="$style['ordinal-flag']">{{item.ordinal + 1}}</div>
                         </AspectGrid>
                     </div>
@@ -81,12 +81,6 @@ const { tabType, folderTree, recentFolders, checkExists, selectedId, submit, cho
 .scroll-content
     overflow-y: auto
     max-height: 40vh
-
-.img
-    width: 100%
-    height: 100%
-    object-fit: cover
-    object-position: center
 
 .ordinal-flag
     position: absolute

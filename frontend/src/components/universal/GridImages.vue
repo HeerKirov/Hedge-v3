@@ -9,25 +9,25 @@ const props = defineProps<{
     images: (string | null | undefined)[]
     columnNum?: number
     aspect?: number
+    clickable?: boolean
+}>()
+
+const emit = defineEmits<{
+    (e: "click", item: string | null | undefined, index: number): void
 }>()
 
 const { assetsUrl } = useAssets()
 
+const click = (item: string | null | undefined, index: number) => {
+    if(props.clickable) {
+        emit("click", item, index)
+    }
+}
+
 </script>
 
 <template>
-    <AspectGrid :items="images" v-slot="{ item }" :column-num="columnNum" :aspect="aspect" :spacing="1">
-        <img :class="$style.img" :src="assetsUrl(item)" :alt="item ?? 'null'"/>
+    <AspectGrid :items="images" :column-num="columnNum" :aspect="aspect" :spacing="1" v-slot="{ item, index }">
+        <img :class="{'is-cursor-pointer': clickable}" :src="assetsUrl(item)" :alt="item ?? 'null'" @click="click(item, index)"/>
     </AspectGrid>
 </template>
-
-<style module lang="sass">
-@import "../../styles/base/size"
-
-.img
-    height: 100%
-    width: 100%
-    border-radius: $radius-size-std
-    object-position: center
-    object-fit: cover
-</style>

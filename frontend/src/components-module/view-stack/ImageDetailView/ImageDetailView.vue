@@ -13,6 +13,7 @@ import { installImageViewContext } from "@/services/view-stack/image"
 import SideBarDetailInfo from "./SideBarDetailInfo.vue"
 import SideBarRelatedItems from "./SideBarRelatedItems.vue"
 import SideBarSourceData from "./SideBarSourceData.vue"
+import { computed } from "vue"
 
 const props = defineProps<{
     sliceOrPath: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>
@@ -21,7 +22,7 @@ const props = defineProps<{
 
 const {
     navigator: { metrics, subMetrics, prev, next },
-    target: { data, toggleFavorite, deleteItem, openInNewWindow },
+    target: { data, toggleFavorite, deleteItem, openInNewWindow, editMetaTag, editSourceData, editAssociate, addToFolder, recentFolders },
     sideBar: { tabType },
     playBoard: { zoomEnabled, zoomValue }
 } = installImageViewContext(props.sliceOrPath, props.modifiedCallback)
@@ -43,19 +44,23 @@ const externalMenuItems = <MenuItem<undefined>[]>[
     {type: "normal", label: "导出"}
 ]
 
-const popupMenu = usePopupMenu([
+//TODO 完成右键菜单(剪贴板，导出)
+
+const popupMenu = usePopupMenu(computed(() => [
     {type: "normal", label: "在新窗口中打开", click: openInNewWindow},
     {type: "separator"},
     {type: "normal", label: "加入剪贴板"},
     {type: "separator"},
-    {type: "normal", label: "添加到目录"},
-    {type: "normal", label: "添加到\"X\""},
-    {type: "normal", label: "添加到临时目录"},
+    {type: "normal", label: "编辑标签", click: editMetaTag},
+    {type: "normal", label: "编辑来源数据", click: editSourceData},
+    {type: "normal", label: "编辑关联组", click: editAssociate},
+    {type: "normal", label: "添加到目录…", click: addToFolder},
+    ...recentFolders.value.map(f => ({type: "normal", label: `添加到目录"${f.fullName}"`, click: f.click} as const)),
     {type: "separator"},
     {type: "normal", label: "导出"},
     {type: "separator"},
     {type: "normal", label: "删除此项目", click: deleteItem}
-])
+]))
 
 </script>
 

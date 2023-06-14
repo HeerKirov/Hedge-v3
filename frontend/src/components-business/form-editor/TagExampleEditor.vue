@@ -33,8 +33,8 @@ const { dragover: _, ...dropEvents } = useDroppable("illusts", illusts => {
 </script>
 
 <template>
-    <AspectGrid :items="value" v-slot="{ item }" :aspect="2" :spacing="1">
-        <img :class="$style.img" :src="assetsUrl(item.thumbnailFile)" :alt="item"/>
+    <AspectGrid :items="value" :aspect="2" :spacing="1" v-slot="{ item }">
+        <img :src="assetsUrl(item.thumbnailFile)" :alt="item.thumbnailFile"/>
     </AspectGrid>
     <div :class="$style['drop-area']" v-bind="dropEvents">
         <div>拖动图像到此处以添加示例</div>
@@ -63,11 +63,4 @@ const { dragover: _, ...dropEvents } = useDroppable("illusts", illusts => {
         display: flex
         justify-content: center
         align-items: center
-
-.img
-    width: 100%
-    height: 100%
-    border-radius: $radius-size-std
-    object-fit: cover
-    object-position: center
 </style>

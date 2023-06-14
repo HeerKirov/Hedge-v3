@@ -22,8 +22,8 @@ const { chooseIgnore, chooseResolve, situations } = useAddIllustContext(props.p,
     <BottomLayout>
         <p class="mt-2 pl-1 is-font-size-large">添加图像到{{p.type === "collection" ? "集合" : p.type === "book" ? "画集" : "目录"}}</p>
         <p class="mb-2 pl-1">{{p.type === "collection" ? "部分图像已存在于其他集合。" : "部分图像被重复添加了。"}}请确认处理策略：</p>
-        <AspectGrid class="px-1" :spacing="1" :column-num="7" :items="situations" v-slot="{ item }">
-            <img :class="$style.img" :src="assetsUrl(item.thumbnailFile)" :alt="`situation-${item.id}`"/>
+        <AspectGrid class="px-1" :spacing="1" :column-num="7" img-style="no-radius" :items="situations" v-slot="{ item }">
+            <img :src="assetsUrl(item.thumbnailFile)" :alt="`situation-${item.id}`"/>
             <div v-if="item.ordinal !== null" :class="$style['ordinal-flag']">{{item.ordinal + 1}}</div>
         </AspectGrid>
         <template #bottom>
@@ -37,12 +37,6 @@ const { chooseIgnore, chooseResolve, situations } = useAddIllustContext(props.p,
 </template>
 
 <style module lang="sass">
-.img
-    width: 100%
-    height: 100%
-    object-fit: cover
-    object-position: center
-
 .ordinal-flag
     position: absolute
     right: 0.25rem

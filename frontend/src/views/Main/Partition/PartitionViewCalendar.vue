@@ -10,22 +10,28 @@ const WEEKDAY_NAMES = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 </script>
 
 <template>
-    <div :class="$style.router"><CalendarRouter v-model:value="calendarDate"/></div>
-    <Block :class="$style.header">
-        <div v-for="i in WEEKDAY_NAMES" :class="$style.col">{{i}}</div>
-    </Block>
-    <div :class="$style.body">
-        <div v-for="item in items" :class="$style.col">
-            <Block v-if="item !== null" :class="{[$style.hoverable]: !!item.count}" :color="item.count ? 'primary' : undefined" @click="openPartition(item)">
-                <b :class="{'has-text-underline': item.today}">{{item.day}}</b>
-                <p v-if="item.count" :class="$style.count">{{item.count}}项</p>
-            </Block>
+    <div :class="$style.root">
+        <div :class="$style.router"><CalendarRouter v-model:value="calendarDate"/></div>
+        <Block :class="$style.header">
+            <div v-for="i in WEEKDAY_NAMES" :class="$style.col">{{i}}</div>
+        </Block>
+        <div :class="$style.body">
+            <div v-for="item in items" :class="$style.col">
+                <Block v-if="item !== null" :class="{[$style.hoverable]: !!item.count}" :color="item.count ? 'primary' : undefined" @click="openPartition(item)">
+                    <b :class="{'has-text-underline': item.today}">{{item.day}}</b>
+                    <p v-if="item.count" :class="$style.count">{{item.count}}项</p>
+                </Block>
+            </div>
         </div>
     </div>
 </template>
 
 <style module lang="sass">
 $column-num: 7
+
+.root
+    overflow-y: auto
+    height: 100%
 
 .router
     display: flex
