@@ -20,6 +20,13 @@ class ContentParseError(message: String) : BadRequestException<Nothing?>("CONTEN
 class FileNotFoundError : BadRequestException<Nothing?>("FILE_NOT_FOUND", "Target file is not found or not accessible.", null)
 
 /**
+ * 当指定的目录不存在或不可访问时，抛出此异常。
+ * 抛出位置：
+ * - export导出时
+ */
+class LocationNotAccessibleError : BadRequestException<Nothing?>("LOCATION_NOT_ACCESSIBLE", "Target location is not found or not accessible.", null)
+
+/**
  * 当指定的文件的扩展名不受支持时，抛出此异常。
  * 抛出位置：
  * - upload/import导入时

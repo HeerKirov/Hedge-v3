@@ -9,6 +9,7 @@ class AllServices(
     val folder: FolderService,
     val partition: PartitionService,
     val import: ImportService,
+    val export: ExportUtilService,
     val tag: TagService,
     val annotation: AnnotationService,
     val author: AuthorService,

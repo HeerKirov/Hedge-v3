@@ -91,8 +91,9 @@ fun runApplication(options: ApplicationOptions) {
 
             val findSimilarService = FindSimilarService(repo, bus, similarFinder, illustManager, importManager, bookManager)
             val metaService = MetaUtilService(repo, metaUtilKit, metaManager, historyRecordManager)
-            val illustUtilService = IllustUtilService(repo)
             val pickerUtilService = PickerUtilService(repo, historyRecordManager)
+            val illustUtilService = IllustUtilService(repo)
+            val exportUtilService = ExportUtilService(appdata, repo)
 
             val settingAppdataService = SettingAppdataService(appdata, bus)
             val settingMetaService = SettingMetaService(repo, bus)
@@ -107,6 +108,7 @@ fun runApplication(options: ApplicationOptions) {
                 folderService,
                 partitionService,
                 importService,
+                exportUtilService,
                 tagService,
                 annotationService,
                 authorService,
