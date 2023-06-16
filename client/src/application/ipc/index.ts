@@ -115,6 +115,13 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
     ipcMain.on("/remote/shell/open-path-in-folder", (e, url: string) => {
         shell.showItemInFolder(url)
     })
+    ipcMain.on("/remote/shell/start-drag-file", (e, thumbnail: string, filepath: string | string[]) => {
+        if(typeof filepath === "string") {
+            e.sender.startDrag({file: filepath, icon: thumbnail})
+        }else{
+            e.sender.startDrag({file: "", files: filepath, icon: thumbnail})
+        }
+    })
 }
 
 /**

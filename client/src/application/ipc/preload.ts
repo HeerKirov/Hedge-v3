@@ -129,12 +129,15 @@ function createRemoteIpcClient(): IpcClient {
                 openExternal(url) {
                     ipcRenderer.send("/remote/shell/open-external", url)
                 },
-                openPath(url: string) {
+                openPath(url) {
                     ipcRenderer.send("/remote/shell/open-path", url)
                 },
-                openPathInFolder(url: string) {
+                openPathInFolder(url) {
                     ipcRenderer.send("/remote/shell/open-path-in-folder", url)
-                }
+                },
+                startDragFile(thumbnail, filepath) {
+                    ipcRenderer.send("/remote/shell/start-drag-file", thumbnail, filepath)
+                },
             }
         }
     }
