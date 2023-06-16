@@ -34,6 +34,13 @@ function analyseSafeURL(url: string): string {
 }
 
 /**
+ * 启用系统级的文件拖曳，允许将目标文件拖曳到外部。
+ */
+export function startDragFile(thumbnail: string, filepath: string | string[]) {
+    remoteIpcClient.remote.shell.startDragFile(thumbnail, filepath)
+}
+
+/**
  * 将文本内容写入剪贴板。
  * @param text
  */

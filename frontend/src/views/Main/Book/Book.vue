@@ -11,7 +11,7 @@ import { installBookContext } from "@/services/main/book"
 import BookGridItem from "./BookGridItem.vue"
 
 const {
-    listview: { listview, paginationData },
+    listview: { paginationData },
     listviewController: { columnNum },
     querySchema,
     operators
@@ -30,7 +30,7 @@ const menu = useDynamicPopupMenu<Book>(book => [
         ? {type: "normal", label: "取消标记为收藏", click: book => operators.switchFavorite(book, false)}
         : {type: "normal", label: "标记为收藏", click: book => operators.switchFavorite(book, true)},
     {type: "separator"},
-    {type: "normal", label: "导出"},
+    {type: "normal", label: "导出", click: operators.exportItem},
     {type: "separator"},
     {type: "normal", label: "删除画集", click: operators.deleteItem}
 ])

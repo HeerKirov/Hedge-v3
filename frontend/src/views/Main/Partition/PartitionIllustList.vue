@@ -27,7 +27,7 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"}
 ])
 
-// TODO 完成illust右键菜单的功能 (剪贴板，导出)
+// TODO 完成illust右键菜单的功能 (剪贴板)
 const menu = useDynamicPopupMenu<Illust>(illust => [
     {type: "normal", label: "查看详情", click: i => operators.openDetailByClick(i.id)},
     (illust.type === "COLLECTION" || null) && {type: "normal", label: "查看集合详情", click: i => operators.openCollectionDetail(i.id)},
@@ -47,7 +47,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
     {type: "normal", label: "添加到目录…", click: operators.addToFolder},
     {type: "normal", label: "克隆图像属性…", click: operators.cloneImage},
     {type: "separator"},
-    {type: "normal", label: "导出"},
+    {type: "normal", label: "导出", click: operators.exportItem},
     {type: "separator"},
     {type: "normal", label: illust.type === "COLLECTION" ? "删除集合项目" : "删除项目", click: operators.deleteItem}
 ])

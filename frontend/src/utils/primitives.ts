@@ -162,6 +162,18 @@ export const strings = {
             ret += k[Math.floor(Math.random() * k.length)]
         }
         return ret
+    },
+    pathJoin(...paths: string[]): string {
+        let ret = ""
+        for(const p of paths) {
+            const path = p.endsWith("/") ? p.substring(0, p.length - 1) : p
+            if(ret) {
+                ret += path.startsWith("/") ? path : ("/" + path)
+            }else{
+                ret = path
+            }
+        }
+        return ret
     }
 }
 

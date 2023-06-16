@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import { Icon } from "@/components/universal"
-import { useAssets } from "@/functions/app"
+import { useAssets, useAssetsLocal } from "@/functions/app"
+import { startDragFile } from "@/modules/others"
 
 const props = defineProps<{
     file?: string | null
+    draggableFile?: string | null
     alt?: string
     numTagValue?: number,
     minHeight?: string,
@@ -12,17 +14,27 @@ const props = defineProps<{
 }>()
 
 const { assetsUrl } = useAssets()
+const { assetsLocal } = useAssetsLocal()
 
 const style = computed(() => ({
     "min-height": props.minHeight ?? "4rem",
     "max-height": props.maxHeight ?? "12rem"
 }))
 
+const onDragstart = (e: DragEvent) => {
+    if(props.draggableFile && props.file) {
+        e.preventDefault()
+        const filepath = assetsLocal(props.draggableFile)
+        const thumbnail = assetsLocal(props.file)
+        startDragFile(thumbnail, filepath)
+    }
+}
+
 </script>
 
 <template>
     <div :class="$style['thumbnail-image']">
-        <img :src="assetsUrl(props.file ?? null)" :alt="alt" :style="style"/>
+        <img :src="assetsUrl(props.file ?? null)" :alt="alt" :style="style" @dragstart="onDragstart"/>
         <div v-if="numTagValue !== undefined" :class="$style['num-tag']">
             <Icon icon="images"/>
             {{numTagValue}}

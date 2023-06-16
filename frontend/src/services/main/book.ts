@@ -6,6 +6,7 @@ import { useRetrieveHelper } from "@/functions/fetch"
 import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator } from "@/modules/router"
 import { useViewStack } from "@/components-module/view-stack"
+import { useDialogService } from "@/components-module/dialog"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useQuerySchema } from "@/services/base/query-schema"
 import { useBookViewController } from "@/services/base/view-controller"
@@ -45,6 +46,7 @@ function useOperators() {
     const messageBox = useMessageBox()
     const viewStack = useViewStack()
     const navigator = useRouterNavigator()
+    const dialog = useDialogService()
 
     const retrieveHelper = useRetrieveHelper({
         update: client => client.book.update,
@@ -59,6 +61,10 @@ function useOperators() {
         navigator.newWindow({routeName: "Preview", params: {type: "book", bookId: book.id}})
     }
 
+    const exportItem = (book: Book) => {
+        dialog.externalExporter.export("BOOK", book)
+    }
+
     const switchFavorite = async (book: Book, favorite: boolean) => {
         await retrieveHelper.setData(book.id, {favorite})
     }
@@ -69,5 +75,5 @@ function useOperators() {
         }
     }
 
-    return {switchFavorite, deleteItem, openBookView, openInNewWindow}
+    return {switchFavorite, deleteItem, openBookView, openInNewWindow, exportItem}
 }

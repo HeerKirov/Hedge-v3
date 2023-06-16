@@ -22,9 +22,13 @@ const props = defineProps<{
 
 const {
     navigator: { metrics, subMetrics, prev, next },
-    target: { data, toggleFavorite, deleteItem, openInNewWindow, editMetaTag, editSourceData, editAssociate, addToFolder, recentFolders },
+    target: { data },
     sideBar: { tabType },
-    playBoard: { zoomEnabled, zoomValue }
+    playBoard: { zoomEnabled, zoomValue },
+    operators: { 
+        toggleFavorite, deleteItem, openInNewWindow, openInLocalFolder, openInLocalPreference,
+        editMetaTag, editSourceData, editAssociate, addToFolder, exportItem, recentFolders 
+    },
 } = installImageViewContext(props.sliceOrPath, props.modifiedCallback)
 
 const { assetsUrl } = useAssets()
@@ -36,15 +40,15 @@ const sideBarButtonItems = [
 ]
 
 const externalMenuItems = <MenuItem<undefined>[]>[
-    {type: "normal", label: "在新窗口中打开"},
+    {type: "normal", label: "在新窗口中打开", click: openInNewWindow},
     {type: "separator"},
-    {type: "normal", label: "在预览中打开"},
-    {type: "normal", label: "在文件夹中显示"},
+    {type: "normal", label: "在预览中打开", click: openInLocalPreference},
+    {type: "normal", label: "在文件夹中显示", click: openInLocalFolder},
     {type: "separator"},
     {type: "normal", label: "导出"}
 ]
 
-//TODO 完成右键菜单(剪贴板，导出)
+//TODO 完成右键菜单(剪贴板)
 
 const popupMenu = usePopupMenu(computed(() => [
     {type: "normal", label: "在新窗口中打开", click: openInNewWindow},
@@ -57,7 +61,7 @@ const popupMenu = usePopupMenu(computed(() => [
     {type: "normal", label: "添加到目录…", click: addToFolder},
     ...recentFolders.value.map(f => ({type: "normal", label: `添加到目录"${f.fullName}"`, click: f.click} as const)),
     {type: "separator"},
-    {type: "normal", label: "导出"},
+    {type: "normal", label: "导出", click: exportItem},
     {type: "separator"},
     {type: "normal", label: "删除此项目", click: deleteItem}
 ]))

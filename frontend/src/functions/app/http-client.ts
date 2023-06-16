@@ -1,6 +1,8 @@
 import { installation } from "@/utils/reactivity"
 import { createHttpClient, HttpClientConfig, ResponseConnectionError, ResponseError } from "@/functions/http-client"
 import { AllException } from "@/functions/http-client/exceptions"
+import { useFetchReactive } from "../fetch"
+import { strings } from "@/utils/primitives"
 
 export const [installHttpClient, useHttpClient] = installation(createHttpClient)
 
@@ -49,4 +51,20 @@ export function useAssets() {
     const httpClient = useHttpClient()
 
     return {assetsUrl: httpClient.assets.assetsUrl}
+}
+
+export function useAssetsLocal() {
+    const { data } = useFetchReactive({
+        get: client => client.serviceRuntime.storage
+    })
+
+    const assetsLocal = (filepath: string | null | undefined) => {
+        if(filepath) {
+            return data.value !== undefined ? strings.pathJoin(data.value.storageDir ?? "", filepath) : filepath
+        }else{
+            return ""
+        }
+    }
+
+    return {assetsLocal}
 }

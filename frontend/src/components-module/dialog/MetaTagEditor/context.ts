@@ -1,5 +1,5 @@
 import { Ref } from "vue"
-import { Response} from "@/functions/http-client"
+import { Response } from "@/functions/http-client"
 import { ConflictingGroupMembersError, NotFound, ResourceNotExist, ResourceNotSuitable } from "@/functions/http-client/exceptions"
 import { MetaUtilIdentity } from "@/functions/http-client/api/util-meta"
 import { RelatedSimpleTopic } from "@/functions/http-client/api/topic"

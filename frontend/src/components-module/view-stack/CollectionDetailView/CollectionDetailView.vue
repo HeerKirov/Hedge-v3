@@ -42,7 +42,7 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "normal", label: "删除此集合", click: deleteItem}
 ])
 
-// TODO 完成illust右键菜单的功能 (剪贴板，导出)
+// TODO 完成illust右键菜单的功能 (剪贴板)
 const menu = useDynamicPopupMenu<Illust>(illust => [
     {type: "normal", label: "查看详情", click: i => operators.openDetailByClick(i.id)},
     {type: "normal", label: illust.type === "COLLECTION" ? "在新窗口中打开集合" : "在新窗口中打开", click: operators.openInNewWindow},
@@ -61,7 +61,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
     {type: "normal", label: "添加到目录…", click: operators.addToFolder},
     {type: "normal", label: "克隆图像属性…", click: operators.cloneImage},
     {type: "separator"},
-    {type: "normal", label: "导出"},
+    {type: "normal", label: "导出", click: operators.exportItem},
     {type: "separator"},
     {type: "normal", label: "删除项目", click: operators.deleteItem},
     {type: "normal", label: "从集合移除此项目", click: operators.removeItemFromCollection}

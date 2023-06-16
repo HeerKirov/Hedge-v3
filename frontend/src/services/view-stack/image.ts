@@ -13,13 +13,14 @@ import {
     usePostFetchHelper, usePostPathFetchHelper,
     useSliceDataView, useSliceDataViewByRef, useFetchReactive
 } from "@/functions/fetch"
-import { useLocalStorage } from "@/functions/app"
+import { useAssetsLocal, useLocalStorage } from "@/functions/app"
 import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
 import { useGlobalKey, useInterceptedKey } from "@/modules/keyboard"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator } from "@/modules/router"
+import { openLocalFile, openLocalFileInFolder } from "@/modules/others"
 import { installation, toRef } from "@/utils/reactivity"
 import { LocalDateTime } from "@/utils/datetime"
 
@@ -28,13 +29,14 @@ export const [installImageViewContext, useImageViewContext] = installation(funct
     const subSlice = useSubSlice(slice)
     const navigator = useNavigator(slice, subSlice)
     const target = useTarget(slice, subSlice)
+    const operators = useOperators(target.data, target.id)
 
     useViewStackCallback(slice, modifiedCallback)
 
     const sideBar = useSideBarContext(target.id)
     const playBoard = usePlayBoardContext()
 
-    return {navigator, target, sideBar, playBoard}
+    return {navigator, target, operators, sideBar, playBoard}
 })
 
 function useSlice(data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>): SliceDataView<Illust> {
@@ -163,14 +165,6 @@ function useNavigator(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illu
 }
 
 function useTarget(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illust>) {
-    const toast = useToast()
-    const message = useMessageBox()
-    const dialog = useDialogService()
-    const navigator = useRouterNavigator()
-
-    const fetchSetData = usePostPathFetchHelper(client => client.illust.image.update)
-    const fetchDeleteData = usePostFetchHelper(client => client.illust.image.delete)
-
     const data = computed(() => {
         if(slice.data.value !== null) {
             if(slice.data.value.type === "COLLECTION") {
@@ -185,6 +179,19 @@ function useTarget(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illust>
 
     const id = computed(() => data.value?.id ?? null)
 
+    return {data, id}
+}
+
+function useOperators(data: Ref<Illust | null>, id: Ref<number | null>) {
+    const toast = useToast()
+    const message = useMessageBox()
+    const dialog = useDialogService()
+    const navigator = useRouterNavigator()
+    const assetsLocal = useAssetsLocal()
+
+    const fetchSetData = usePostPathFetchHelper(client => client.illust.image.update)
+    const fetchDeleteData = usePostFetchHelper(client => client.illust.image.delete)
+
     const toggleFavorite = () => {
         if(data.value !== null) {
             fetchSetData(data.value.id, {favorite: !data.value.favorite}).finally()
@@ -197,7 +204,9 @@ function useTarget(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illust>
         }
     }
 
-    const openInNewWindow = () => navigator.newWindow({routeName: "Preview", params: {type: "image", imageIds: [id.value!]}})
+    const openInNewWindow = () => {
+        navigator.newWindow({routeName: "Preview", params: {type: "image", imageIds: [id.value!]}})
+    }
 
     const editMetaTag = () => {
         if(id.value !== null) {
@@ -223,9 +232,30 @@ function useTarget(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illust>
         }
     }
 
+    const exportItem = () => {
+        if(data.value != null) {
+            dialog.externalExporter.export("ILLUST", [data.value])
+        }
+    }
+
+    const openInLocalPreference = () => {
+        if(data.value !== null) {
+            openLocalFile(assetsLocal.assetsLocal(data.value.file))
+        }
+    }
+
+    const openInLocalFolder = () => {
+        if(data.value !== null) {
+            openLocalFileInFolder(assetsLocal.assetsLocal(data.value.file))
+        }
+    }
+
     const recentFolders = useRecentFolders(id)
 
-    return {data, id, toggleFavorite, deleteItem, openInNewWindow, editMetaTag, editSourceData, editAssociate, addToFolder, recentFolders}
+    return {
+        toggleFavorite, deleteItem, openInNewWindow, openInLocalPreference, openInLocalFolder,
+        editMetaTag, editSourceData, editAssociate, addToFolder, exportItem, recentFolders
+    }
 }
 
 function useRecentFolders(id: Ref<number | null>) {

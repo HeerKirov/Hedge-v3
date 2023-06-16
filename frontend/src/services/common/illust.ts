@@ -1,3 +1,4 @@
+import { Ref, unref } from "vue"
 import { VirtualViewNavigation } from "@/components/data"
 import {
     PaginationDataView, QueryListview, AllSlice, ListIndexSlice, SingletonSlice,
@@ -10,7 +11,7 @@ import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator } from "@/modules/router"
 import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
-import { Ref, unref } from "vue";
+import { LocalDateTime } from "@/utils/datetime"
 
 export interface ImageDatasetOperatorsOptions<T extends BasicIllust> {
     /**
@@ -123,6 +124,10 @@ export interface ImageDatasetOperators<T extends BasicIllust> {
      */
     deleteItem(illust: T): void
     /**
+     * 导出项目。这会打开导出对话框。
+     */
+    exportItem(illust: T): void
+    /**
      * 将项目从其所属的collection中移除。会先打开对话框确认。
      * @param illust
      */
@@ -151,7 +156,7 @@ export interface ImageDatasetOperators<T extends BasicIllust> {
     getEffectedItems(illust: T): number[]
 }
 
-interface BasicIllust { id: number, type?: IllustType }
+interface BasicIllust { id: number, type?: IllustType, file: string, thumbnailFile: string, orderTime: LocalDateTime }
 
 /**
  * 提供一组综合的operators，在Illust列表相关的位置使用。
@@ -340,13 +345,18 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
             toast.toast("选择项过多", "warning", "选择项过多。属性克隆中，请使用1或2个选择项。")
             return
         }
-        dialog.cloneImage.clone({from: items[0], to: items.length >= 2 ? items[1] : undefined}, (from, _, deleted) => {
+        dialog.cloneImage.clone({from: items[0], to: items.length >= 2 ? items[1] : undefined}, (_, __, deleted) => {
             if(deleted) {
                 toast.toast("完成", "success", "已完成属性克隆。源图像已删除。")
             }else{
                 toast.toast("完成", "success", "已完成属性克隆。")
             }
         })
+    }
+
+    const exportItem = (illust: T) => {
+        const itemIds = getEffectedItems(illust)
+        dialog.externalExporter.export("ILLUST", itemIds)
     }
 
     const removeItemFromCollection = async (illust: T) => {
@@ -412,7 +422,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
 
     return {
         openDetailByClick, openDetailByEnter, openCollectionDetail, openInNewWindow, modifyFavorite,
-        createCollection, splitToGenerateNewCollection, createBook, editAssociate, addToFolder, cloneImage,
+        createCollection, splitToGenerateNewCollection, createBook, editAssociate, addToFolder, cloneImage, exportItem,
         deleteItem, removeItemFromCollection, removeItemFromBook, removeItemFromFolder, getEffectedItems, dataDrop
     }
 }
