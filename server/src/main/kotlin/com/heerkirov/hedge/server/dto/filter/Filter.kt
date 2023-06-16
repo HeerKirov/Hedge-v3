@@ -89,6 +89,11 @@ data class ImportFilter(@Limit val limit: Int,
                         @Order(options = ["id", "fileCreateTime", "fileUpdateTime", "fileImportTime", "orderTime"])
                         val order: List<OrderItem> = listOf(OrderItem("id", desc = false)))
 
+data class TrashFilter(@Limit val limit: Int,
+                       @Offset val offset: Int,
+                       @Order(options = ["id", "orderTime", "trashedTime"])
+                       val order: List<OrderItem> = listOf(OrderItem("id", desc = false)))
+
 data class PartitionFilter(val gte: LocalDate? = null,
                            val lt: LocalDate? = null,
                            val type: IllustType = IllustType.IMAGE,

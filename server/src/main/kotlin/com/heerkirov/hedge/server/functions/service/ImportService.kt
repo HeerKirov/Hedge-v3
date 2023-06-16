@@ -35,12 +35,10 @@ import org.ktorm.entity.*
 
 class ImportService(private val data: DataRepository,
                     private val bus: EventBus,
-                    private val fileManager: FileManager,
                     private val importManager: ImportManager,
                     private val illustManager: IllustManager,
                     private val bookManager: BookManager,
                     private val folderManager: FolderManager,
-                    private val sourceManager: SourceDataManager,
                     private val importMetaManager: ImportMetaManager,
                     private val similarFinder: SimilarFinder,
                     private val pathWatcher: PathWatcher) {

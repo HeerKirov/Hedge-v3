@@ -96,6 +96,12 @@ data class ImportDeleted(override val importId: Int) : BaseBusEventImpl("entity/
 
 class ImportSaved(val importIdToImageIds: Map<Int, Int>) : BaseBusEventImpl("entity/import/saved"), EntityEvent
 
+interface TrashedImageEntityEvent : EntityEvent { val imageId: Int }
+
+data class TrashedImageCreated(override val imageId: Int) : BaseBusEventImpl("entity/trashed-image/created"), TrashedImageEntityEvent
+
+data class TrashedImageProcessed(val imageIds: List<Int>, val restored: Boolean) : BaseBusEventImpl("entity/trashed-image/processed"), EntityEvent
+
 interface SourceDataEntityEvent : EntityEvent { val site: String; val sourceId: Long }
 
 data class SourceDataCreated(override val site: String, override val sourceId: Long) : BaseBusEventImpl("entity/source-data/created"), SourceDataEntityEvent

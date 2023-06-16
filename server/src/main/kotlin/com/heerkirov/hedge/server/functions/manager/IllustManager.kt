@@ -34,7 +34,7 @@ class IllustManager(private val data: DataRepository,
                     private val bookManager: BookManager,
                     private val folderManager: FolderManager,
                     private val partitionManager: PartitionManager,
-                    private val fileManager: FileManager,
+                    private val trashManager: TrashManager,
                     private val backendExporter: BackendExporter) {
     /**
      * 创建新的image。
@@ -182,9 +182,13 @@ class IllustManager(private val data: DataRepository,
     }
 
     /**
-     * 删除项目。
+     * 删除项目。对于collection，它将被直接删除；对于image，它将接trash调用，送入已删除列表。
      */
     fun delete(illust: Illust) {
+        if(illust.type != IllustModelType.COLLECTION) {
+            trashManager.trashImage(illust)
+        }
+
         val anyNotExportedMetaExists = kit.anyNotExportedMetaExists(illust.id)
 
         data.db.delete(Illusts) { it.id eq illust.id }
@@ -205,9 +209,6 @@ class IllustManager(private val data: DataRepository,
             partitionManager.deleteItemInPartition(illust.partitionTime)
             //对parent的导出处理
             if(illust.parentId != null) processCollectionChildrenRemoved(illust.parentId, listOf(illust))
-
-            //删除关联的file
-            fileManager.deleteFile(illust.fileId)
 
             bus.emit(IllustDeleted(illust.id, IllustType.IMAGE))
         }else{

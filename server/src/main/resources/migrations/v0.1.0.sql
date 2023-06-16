@@ -91,6 +91,28 @@ CREATE TABLE partition(
 );
 CREATE UNIQUE INDEX partition_date__index ON partition(date);
 
+-- 已删除
+CREATE TABLE trashed_image(
+    image_id				    INTEGER PRIMARY KEY,
+    parent_id				    INTEGER,                            -- 有父集合时，记录父集合的ID
+    file_id				        INTEGER NOT NULL,				    -- 链接的文件ID
+
+    source_site                 VARCHAR(16),                        -- 来源网站的代号
+    source_id                   BIGINT,                             -- 来源网站中的图像代号
+    source_part                 INTEGER,                            -- 来源网站中的二级图像代号
+    metadata                    TEXT NOT NULL,                      -- 其他元数据{tags, topics, authors, books, foldera}
+    description			        TEXT COLLATE NOCASE NOT NULL,       -- 简述信息
+    score						INTEGER,                            -- 图像的评分
+    favorite				    BOOLEAN NOT NULL,                   -- 喜爱标记
+    tagme                       INTEGER NOT NULL,                   -- 标记为tagme
+
+    partition_time	            DATE NOT NULL,                      -- 用于日历分组的时间
+    order_time			        BIGINT NOT NULL,                    -- 用于排序的时间
+    create_time			        TIMESTAMP NOT NULL,                 -- 初次创建的真实时间
+    update_time			        TIMESTAMP NOT NULL,                 -- 对image的图像或集合的项进行更新的时间
+    trashed_time                TIMESTAMP NOT NULL                  -- 此图像被删除的时间
+);
+
 -- 内容描述 标签
 CREATE TABLE meta_db.tag(
     id 				INTEGER PRIMARY KEY AUTOINCREMENT,

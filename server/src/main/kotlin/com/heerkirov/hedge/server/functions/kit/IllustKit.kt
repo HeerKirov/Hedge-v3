@@ -30,6 +30,7 @@ class IllustKit(private val data: DataRepository,
      * 检验给出的tags/topics/authors的正确性，处理导出，并应用其更改。此外，annotations的更改也会被一并导出处理。
      * @param copyFromParent 当当前对象没有任何meta tag关联时，从parent复制tag，并提供parent的id
      * @param copyFromChildren 当当前对象没有任何meta tag关联时，从children复制tag
+     * @param ignoreNotExist 忽略不存在的项，以及其他任何错误。此选项用于模糊/近似地完成metaTag的设置，而不在乎完全精确
      * @throws ResourceNotExist ("topics", number[]) 部分topics资源不存在。给出不存在的topic id列表
      * @throws ResourceNotExist ("authors", number[]) 部分authors资源不存在。给出不存在的author id列表
      * @throws ResourceNotExist ("tags", number[]) 部分tags资源不存在。给出不存在的tag id列表
@@ -37,7 +38,7 @@ class IllustKit(private val data: DataRepository,
      * @throws ConflictingGroupMembersError 发现标签冲突组
      */
     fun updateMeta(thisId: Int, newTags: Opt<List<Int>>, newTopics: Opt<List<Int>>, newAuthors: Opt<List<Int>>,
-                   creating: Boolean = false, copyFromParent: Int? = null, copyFromChildren: Boolean = false) {
+                   creating: Boolean = false, copyFromParent: Int? = null, copyFromChildren: Boolean = false, ignoreNotExist: Boolean = false) {
         val analyseStatisticCount = !copyFromChildren
 
         //检出每种tag的数量。这个数量指新设定的值或已存在的值中notExported的数量
@@ -76,19 +77,19 @@ class IllustKit(private val data: DataRepository,
                 metaTag = Tags,
                 metaRelations = IllustTagRelations,
                 metaAnnotationRelations = TagAnnotationRelations,
-                newTagIds = metaManager.validateAndExportTag(newTags.value))
+                newTagIds = metaManager.validateAndExportTag(newTags.value, ignoreError = ignoreNotExist))
         val topicAnnotations = if(newTopics.isUndefined) null else
             metaManager.processMetaTags(thisId, creating, analyseStatisticCount,
                 metaTag = Topics,
                 metaRelations = IllustTopicRelations,
                 metaAnnotationRelations = TopicAnnotationRelations,
-                newTagIds = metaManager.validateAndExportTopic(newTopics.value))
+                newTagIds = metaManager.validateAndExportTopic(newTopics.value, ignoreError = ignoreNotExist))
         val authorAnnotations = if(newAuthors.isUndefined) null else
             metaManager.processMetaTags(thisId, creating, analyseStatisticCount,
                 metaTag = Authors,
                 metaRelations = IllustAuthorRelations,
                 metaAnnotationRelations = AuthorAnnotationRelations,
-                newTagIds = metaManager.validateAndExportAuthor(newAuthors.value))
+                newTagIds = metaManager.validateAndExportAuthor(newAuthors.value, ignoreError = ignoreNotExist))
 
         processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
     }

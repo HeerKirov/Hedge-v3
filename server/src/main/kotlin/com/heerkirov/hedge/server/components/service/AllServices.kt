@@ -9,7 +9,7 @@ class AllServices(
     val folder: FolderService,
     val partition: PartitionService,
     val import: ImportService,
-    val export: ExportUtilService,
+    val trash: TrashService,
     val tag: TagService,
     val annotation: AnnotationService,
     val author: AuthorService,
@@ -25,6 +25,7 @@ class AllServices(
     val settingFindSimilar: SettingFindSimilarService,
     val queryService: QueryService,
     val findSimilar: FindSimilarService,
+    val exportUtil: ExportUtilService,
     val metaUtil: MetaUtilService,
     val illustUtil: IllustUtilService,
     val pickerUtil: PickerUtilService

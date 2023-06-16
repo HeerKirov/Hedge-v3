@@ -270,6 +270,75 @@ data class ImportImage(val id: Int,
     )
 }
 
+data class TrashedImage(val imageId: Int,
+                        /**
+                         * 所属父集合的id。
+                         */
+                        val parentId: Int?,
+                        /**
+                         * 关联的file record的id。
+                         */
+                        val fileId: Int,
+                        /**
+                         * 链接的来源网站名称。
+                         */
+                        val sourceSite: String? = null,
+                        /**
+                         * 链接的来源网站的图像id。
+                         */
+                        val sourceId: Long? = null,
+                        /**
+                         * 链接的来源网站的二级图像id。有些会有，比如pixiv。
+                         */
+                        val sourcePart: Int? = null,
+                        /**
+                         * 其他元数据。
+                         */
+                        val metadata: Metadata,
+                        /**
+                         * TAGME。
+                         */
+                        val tagme: Illust.Tagme,
+                        /**
+                         * 喜爱标记。
+                         */
+                        val favorite: Boolean,
+                        /**
+                         * 评分。
+                         */
+                        val score: Int?,
+                        /**
+                         * 简述。
+                         */
+                        val description: String,
+                        /**
+                         * 用于日历分组的时间。
+                         */
+                        val partitionTime: LocalDate,
+                        /**
+                         * 用于排序的时间。
+                         */
+                        val orderTime: Long,
+                        /**
+                         * 真实的记录创建时间。
+                         */
+                        val createTime: LocalDateTime,
+                        /**
+                         * 对图像进行替换更新的时间。
+                         */
+                        val updateTime: LocalDateTime,
+                        /**
+                         * 此图像被删除的时间。
+                         */
+                        val trashedTime: LocalDateTime) {
+    data class Metadata(val tags: List<Int>,
+                        val topics: List<Int>,
+                        val authors: List<Int>,
+                        val books: List<Int>,
+                        val folders: List<Int>,
+                        val associates: List<Int>)
+}
+
 /**
  * 物理文件。
  * 此表的每条记录对应一个物理文件。对此表的ORM操作可封装为对物理文件的操作。

@@ -194,6 +194,44 @@ object ImportImages : BaseTable<ImportImage>("import_image") {
     )
 }
 
+object TrashedImages : BaseTable<TrashedImage>("trashed_image") {
+    val imageId = int("image_id")
+    val parentId = int("parent_id")
+    val fileId = int("file_id")
+    val sourceSite = varchar("source_site")
+    val sourceId = long("source_id")
+    val sourcePart = int("source_part")
+    val metadata = json("metadata", typeRef<TrashedImage.Metadata>())
+    val description = varchar("description")
+    val score = int("score")
+    val favorite = boolean("favorite")
+    val tagme = composition<Illust.Tagme>("tagme")
+    val partitionTime = date("partition_time")
+    val orderTime = long("order_time")
+    val createTime = datetime("create_time")
+    val updateTime = datetime("update_time")
+    val trashedTime = datetime("trashed_time")
+
+    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = TrashedImage(
+        imageId = row[imageId]!!,
+        parentId = row[parentId],
+        fileId = row[fileId]!!,
+        sourceSite = row[sourceSite],
+        sourceId = row[sourceId],
+        sourcePart = row[sourcePart],
+        metadata = row[metadata]!!,
+        description = row[description]!!,
+        score = row[score],
+        favorite = row[favorite]!!,
+        tagme = row[tagme]!!,
+        partitionTime = row[partitionTime]!!,
+        orderTime = row[orderTime]!!,
+        createTime = row[createTime]!!,
+        updateTime = row[updateTime]!!,
+        trashedTime = row[trashedTime]!!
+    )
+}
+
 object FileRecords : BaseTable<FileRecord>("file", schema = "file_db") {
     val id = int("id").primaryKey()
     val folder = varchar("folder")

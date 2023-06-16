@@ -57,6 +57,7 @@ fun runApplication(options: ApplicationOptions) {
             val fileManager = FileManager(appdata, repo)
             val importMetaManager = ImportMetaManager(repo)
             val importManager = ImportManager(repo, bus, sourceManager, importMetaManager, fileManager, fileGenerator)
+
             val pathWatcher = define { PathWatcherImpl(appStatus, repo, bus, importManager) }
 
             val annotationKit = AnnotationKit(repo)
@@ -77,7 +78,8 @@ fun runApplication(options: ApplicationOptions) {
             val backendExporter = define { BackendExporterImpl(appStatus, bus, repo, illustKit, bookKit) }
             val bookManager = BookManager(repo, bus, bookKit, backendExporter)
             val folderManager = FolderManager(repo, bus, folderKit)
-            val illustManager = IllustManager(repo, bus, illustKit, sourceManager, associateManager, bookManager, folderManager, partitionManager, fileManager, backendExporter)
+            val trashManager = TrashManager(repo, bus, backendExporter, illustKit, fileManager, bookManager, folderManager, associateManager, partitionManager, sourceManager)
+            val illustManager = IllustManager(repo, bus, illustKit, sourceManager, associateManager, bookManager, folderManager, partitionManager, trashManager, backendExporter)
 
             val illustService = IllustService(repo, bus, illustKit, illustManager, associateManager, sourceManager, partitionManager, queryManager, backendExporter)
             val bookService = BookService(repo, bus, bookKit, bookManager, illustManager, queryManager, backendExporter)
@@ -87,10 +89,11 @@ fun runApplication(options: ApplicationOptions) {
             val tagService = TagService(repo, bus, tagKit, sourceMappingManager, backendExporter)
             val authorService = AuthorService(repo, bus, authorKit, queryManager, sourceMappingManager, backendExporter)
             val topicService = TopicService(repo, bus, topicKit, queryManager, sourceMappingManager, backendExporter)
-            val importService = ImportService(repo, bus, fileManager, importManager, illustManager, bookManager, folderManager, sourceManager, importMetaManager, similarFinder, pathWatcher)
+            val importService = ImportService(repo, bus, importManager, illustManager, bookManager, folderManager, importMetaManager, similarFinder, pathWatcher)
+            val trashService = TrashService(repo, trashManager)
 
             val findSimilarService = FindSimilarService(repo, bus, similarFinder, illustManager, importManager, bookManager)
-            val metaService = MetaUtilService(repo, metaUtilKit, metaManager, historyRecordManager)
+            val metaUtilService = MetaUtilService(repo, metaUtilKit, metaManager, historyRecordManager)
             val pickerUtilService = PickerUtilService(repo, historyRecordManager)
             val illustUtilService = IllustUtilService(repo)
             val exportUtilService = ExportUtilService(appdata, repo)
@@ -108,7 +111,7 @@ fun runApplication(options: ApplicationOptions) {
                 folderService,
                 partitionService,
                 importService,
-                exportUtilService,
+                trashService,
                 tagService,
                 annotationService,
                 authorService,
@@ -124,7 +127,8 @@ fun runApplication(options: ApplicationOptions) {
                 settingFindSimilarService,
                 queryService,
                 findSimilarService,
-                metaService,
+                exportUtilService,
+                metaUtilService,
                 illustUtilService,
                 pickerUtilService
             )
