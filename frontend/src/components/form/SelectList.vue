@@ -35,7 +35,7 @@ const clear = () => {
     <div :class="$style.select" @click="clear">
         <template v-if="!!$slots.default">
             <slot v-for="(item, idx) in items"
-                :key="item.value"
+                :key="`${item.value}`"
                 :index="idx"
                 :value="item.value"
                 :label="item.label"
@@ -45,7 +45,7 @@ const clear = () => {
         </template>
         <template v-else>
             <div v-for="(item, idx) in items" 
-                :key="item.value" 
+                :key="`${item.value}`" 
                 :index="idx"
                 :class="{[$style.item]: true, [$style.selected]: index !== undefined ? (idx === index) : value !== undefined ? (item.value === value) : false}" 
                 @click="select($event, item.value, idx)">

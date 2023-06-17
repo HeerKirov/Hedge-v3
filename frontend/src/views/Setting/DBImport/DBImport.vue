@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { computed } from "vue"
 import { Button } from "@/components/universal"
-import { CheckBox, Select, NumberInput } from "@/components/form"
 import { Group } from "@/components/layout"
-import { OrderTimeType } from "@/functions/http-client/api/setting-import"
+import { CheckBox, Select, NumberInput } from "@/components/form"
+import { OrderTimeType } from "@/functions/http-client/api/setting"
 import { useSettingImportData } from "@/services/setting"
 import { usePropertySot } from "@/utils/forms"
-import { computed } from "@vue/reactivity"
 import DBImportSourceRule from "./DBImportSourceRule.vue"
 import DBImportDirectoriesEditor from "./DBImportDirectoriesEditor.vue"
 

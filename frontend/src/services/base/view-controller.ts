@@ -24,6 +24,15 @@ export interface ImportImageViewController {
 }
 
 /**
+ * trashed image使用的view controller。
+ */
+export interface TrashedImageViewController {
+    fitType: Ref<"cover" | "contain">
+    columnNum: Ref<number>
+    viewMode: Ref<"row" | "grid">
+}
+
+/**
  * book使用的view controller。
  */
 export interface BookViewController {
@@ -52,6 +61,20 @@ export function useImportImageViewController(): ImportImageViewController {
     const storage = useLocalStorage<{
         fitType: "cover" | "contain", columnNum: number, viewMode: "row" | "grid"
     }>("import-image/list/view-controller", () => ({
+        fitType: "cover", columnNum: 8, viewMode: "grid"
+    }), true)
+
+    return {
+        fitType: toRef(storage, "fitType"),
+        columnNum: toRef(storage, "columnNum"),
+        viewMode: toRef(storage, "viewMode")
+    }
+}
+
+export function useTrashedImageViewController(): TrashedImageViewController {
+    const storage = useLocalStorage<{
+        fitType: "cover" | "contain", columnNum: number, viewMode: "row" | "grid"
+    }>("trashed-image/list/view-controller", () => ({
         fitType: "cover", columnNum: 8, viewMode: "grid"
     }), true)
 

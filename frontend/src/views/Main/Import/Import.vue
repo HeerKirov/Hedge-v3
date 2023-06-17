@@ -16,7 +16,7 @@ const {
     paneState,
     importService: { progress, progressing },
     watcher: { state, setState, paths },
-    listview: { listview, paginationData, anyData },
+    listview: { paginationData, anyData },
     listviewController: { viewMode, fitType, columnNum },
     selector: { selected, lastSelected, update: updateSelect },
     operators: { openDialog, save, deleteItem }

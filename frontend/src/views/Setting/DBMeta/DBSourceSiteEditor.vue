@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Block, Button, Icon } from "@/components/universal"
+import { Block, Button } from "@/components/universal"
 import { Input, CheckBox } from "@/components/form"
-import { SiteUpdateForm } from "@/functions/http-client/api/setting-source"
+import { SiteUpdateForm } from "@/functions/http-client/api/setting"
 import { useMessageBox } from "@/modules/message-box"
 import { computedMutable } from "@/utils/reactivity"
 

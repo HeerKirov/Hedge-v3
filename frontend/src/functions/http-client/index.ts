@@ -1,19 +1,16 @@
 import { createHttpInstance, mapResponse, flatResponse, HttpInstance, HttpInstanceConfig, Response, ResponseOk, ResponseError, ResponseConnectionError } from "./instance"
 import { createServiceEndpoint, ServiceEndpoint } from "./api/service"
-import { createSettingServiceEndpoint, SettingServiceEndpoint } from "./api/setting-service"
-import { createSettingImportEndpoint, SettingImportEndpoint } from "./api/setting-import"
-import { createSettingSourceEndpoint, SettingSourceEndpoint } from "./api/setting-source"
-import { createSettingMetaEndpoint, SettingMetaEndpoint } from "./api/setting-meta"
-import { createSettingQueryEndpoint, SettingQueryEndpoint } from "./api/setting-query"
+import { createSettingEndpoint, SettingEndpoint } from "./api/setting"
 import { createIllustEndpoint, IllustEndpoint } from "./api/illust"
+import { createImportEndpoint, ImportEndpoint } from "./api/import"
+import { createTrashEndpoint, TrashEndpoint } from "./api/trash"
 import { createBookEndpoint, BookEndpoint } from "./api/book"
 import { createFolderEndpoint, FolderEndpoint } from "./api/folder"
 import { createTagEndpoint, TagEndpoint } from "./api/tag"
-import { createAnnotationEndpoint, AnnotationEndpoint } from "./api/annotations"
 import { createAuthorEndpoint, AuthorEndpoint } from "./api/author"
 import { createTopicEndpoint, TopicEndpoint } from "./api/topic"
+import { createAnnotationEndpoint, AnnotationEndpoint } from "./api/annotations"
 import { createPartitionEndpoint, PartitionEndpoint } from "./api/partition"
-import { createImportEndpoint, ImportEndpoint } from "./api/import"
 import { createSourceDataEndpoint, SourceDataEndpoint } from "./api/source-data"
 import { createSourceTagMappingEndpoint, SourceTagMappingEndpoint } from "./api/source-tag-mapping"
 import { createFindSimilarEndpoint, FindSimilarEndpoint } from "./api/find-similar"
@@ -21,7 +18,6 @@ import { createUtilMetaEndpoint, UtilMetaEndpoint } from "./api/util-meta"
 import { createUtilIllustEndpoint, UtilIllustEndpoint } from "./api/util-illust"
 import { createUtilQueryEndpoint, UtilQueryEndpoint } from "./api/util-query"
 import { createUtilSearchEndpoint, UtilSearchEndpoint } from "./api/util-picker"
-import { createSettingFindSimilarEndpoint, SettingFindSimilarEndpoint } from "./api/setting-find-similar"
 import { createUtilExportEndpoint, UtilExportEndpoint } from "./api/util-export"
 import { createAssets, Assets } from "./api/assets"
 import { mapListResult, ListResult } from "./api/all"
@@ -31,12 +27,7 @@ export type { HttpInstance, HttpInstanceConfig as HttpClientConfig, Response, Re
 
 export interface HttpClient {
     serviceRuntime: ServiceEndpoint
-    settingService: SettingServiceEndpoint
-    settingMeta: SettingMetaEndpoint
-    settingQuery: SettingQueryEndpoint
-    settingImport: SettingImportEndpoint
-    settingSource: SettingSourceEndpoint
-    settingFindSimilar: SettingFindSimilarEndpoint
+    setting: SettingEndpoint
     illust: IllustEndpoint
     partition: PartitionEndpoint
     book: BookEndpoint
@@ -46,6 +37,7 @@ export interface HttpClient {
     topic: TopicEndpoint
     annotation: AnnotationEndpoint
     import: ImportEndpoint
+    trash: TrashEndpoint
     sourceData: SourceDataEndpoint
     sourceTagMapping: SourceTagMappingEndpoint
     findSimilar: FindSimilarEndpoint
@@ -62,12 +54,7 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
 
     return {
         serviceRuntime: createServiceEndpoint(http),
-        settingService: createSettingServiceEndpoint(http),
-        settingMeta: createSettingMetaEndpoint(http),
-        settingQuery: createSettingQueryEndpoint(http),
-        settingImport: createSettingImportEndpoint(http),
-        settingSource: createSettingSourceEndpoint(http),
-        settingFindSimilar: createSettingFindSimilarEndpoint(http),
+        setting: createSettingEndpoint(http),
         illust: createIllustEndpoint(http),
         partition: createPartitionEndpoint(http),
         book: createBookEndpoint(http),
@@ -77,6 +64,7 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
         topic: createTopicEndpoint(http),
         annotation: createAnnotationEndpoint(http),
         import: createImportEndpoint(http),
+        trash: createTrashEndpoint(http),
         sourceData: createSourceDataEndpoint(http),
         sourceTagMapping: createSourceTagMappingEndpoint(http),
         findSimilar: createFindSimilarEndpoint(http),

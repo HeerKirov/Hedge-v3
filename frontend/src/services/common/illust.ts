@@ -325,13 +325,13 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
                     await fetchIllustDelete(illust.id)
                 }
             }else{
-                if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
+                if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "被删除的项将放入「已删除」归档。")) {
                     await fetchIllustDelete(illust.id)
                 }
             }
         }else{
             const items = getEffectedItems(illust)
-            if(await message.showYesNoMessage("warn", `确定要删除${items.length}个已选择项吗？`, "集合内的图像不会被删除。此操作不可撤回。")) {
+            if(await message.showYesNoMessage("warn", `确定要删除${items.length}个已选择项吗？`, "集合内的图像不会被删除。被删除的项将放入「已删除」归档。")) {
                 for (const id of items) {
                     fetchIllustDelete(id).finally()
                 }

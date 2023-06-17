@@ -14,7 +14,7 @@ const { data, sourceIdentity, setSourceStatus, setSourceIdentity, openSourceData
 
 <template>
     <template v-if="data !== null">
-        <FormEditKit class="mb-2" :value="sourceIdentity" :set-value="setSourceIdentity">
+        <FormEditKit class="mb-2" :value="sourceIdentity!" :set-value="setSourceIdentity">
             <template #default="{ value }">
                 <SourceInfo :source-id="value.sourceId" :source-part="value.sourcePart" :site="value.site"/>
             </template>

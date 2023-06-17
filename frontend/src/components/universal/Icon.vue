@@ -67,7 +67,7 @@ const icon = computed(() => {
 import { library } from "@fortawesome/fontawesome-svg-core"
 
 import {
-    faClose, faStar, faStarHalf, faStarHalfStroke, faSave, faTrash, faFolderOpen, faPlus, faMinus,
+    faClose, faStar, faStarHalf, faStarHalfStroke, faSave, faTrash, faTrashCan, faFolderOpen, faPlus, faMinus,
     faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faAngleLeft, faAngleRight, faAngleDown,
     faCaretDown, faCaretRight, faCaretUp, faCaretLeft, faSortAlphaDown,
     faCircleNotch, faCheck, faFile, faCodeBranch, faFingerprint, faBars,
@@ -82,7 +82,8 @@ import {
     faHistory, faAdjust, faDatabase, faCheckSquare, faCheckCircle, faSyncAlt, faFileImage, faImage, faVideo,
     faInfo, faDiceD6, faExternalLinkAlt, faEye, faPlay, faPause, faVolumeUp, faVolumeDown, faVolumeOff, faVolumeMute,
     faAngleDoubleRight, faSortAmountDown, faCalendar, faThList, faExchangeAlt, faEarListen, faStop, faCopy, faScissors,
-    faEquals, faHandLizard, faHandScissors, faFaceSmileBeam, faFaceLaughBeam, faMarker, faHighlighter, faJoint, faLinkSlash
+    faEquals, faHandLizard, faHandScissors, faFaceSmileBeam, faFaceLaughBeam, faMarker, faHighlighter, faJoint, faLinkSlash, 
+    faBriefcase
 } from "@fortawesome/free-solid-svg-icons"
 
 import {
@@ -90,7 +91,7 @@ import {
 } from "@fortawesome/free-regular-svg-icons"
 
 library.add(
-    faClose, faStar, faStarHalf, faStarHalfStroke, faSave, faTrash, faFolderOpen, faPlus, faMinus,
+    faClose, faStar, faStarHalf, faStarHalfStroke, faSave, faTrash, faTrashCan, faFolderOpen, faPlus, faMinus,
     faArrowLeft, faArrowRight, faArrowUp, faArrowDown, faAngleLeft, faAngleRight, faAngleDown,
     faCaretDown, faCaretRight, faCaretUp, faCaretLeft, faSortAlphaDown,
     faCircleNotch, faCheck, faFile, faCodeBranch, faFingerprint, faBars,
@@ -105,7 +106,8 @@ library.add(
     faHistory, faAdjust, faDatabase, faCheckSquare, faCheckCircle, faSyncAlt, faFileImage, faImage, faVideo,
     faInfo, faDiceD6, faExternalLinkAlt, faEye, faPlay, faPause, faVolumeUp, faVolumeDown, faVolumeOff, faVolumeMute,
     faAngleDoubleRight, faSortAmountDown, faCalendar, faThList, faExchangeAlt, faEarListen, faStop, faCopy, faScissors,
-    faEquals, faHandLizard, faHandScissors, faFaceSmileBeam, faFaceLaughBeam, faMarker, faHighlighter, faJoint, faLinkSlash
+    faEquals, faHandLizard, faHandScissors, faFaceSmileBeam, faFaceLaughBeam, faMarker, faHighlighter, faJoint, faLinkSlash,
+    faBriefcase
 )
 library.add(farStar, farCheckSquare)
 

@@ -3,7 +3,7 @@ import { reactive, computed } from "vue"
 import { Block, Button } from "@/components/universal"
 import { Input, NumberInput, Select } from "@/components/form"
 import { Flex } from "@/components/layout"
-import { SourceAnalyseRule } from "@/functions/http-client/api/setting-import"
+import { SourceAnalyseRule } from "@/functions/http-client/api/setting"
 import { useSettingSite } from "@/services/setting"
 import { useMessageBox } from "@/modules/message-box"
 

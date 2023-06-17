@@ -2,7 +2,7 @@
 import { reactive } from "vue"
 import { Block, Button } from "@/components/universal"
 import { Input, CheckBox } from "@/components/form"
-import { SiteCreateForm } from "@/functions/http-client/api/setting-source"
+import { SiteCreateForm } from "@/functions/http-client/api/setting"
 import { useMessageBox } from "@/modules/message-box"
 
 const emit = defineEmits<{

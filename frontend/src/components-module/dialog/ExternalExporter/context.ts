@@ -5,7 +5,6 @@ import { useVirtualViewNavigation } from "@/components/data"
 import { useMessageBox } from "@/modules/message-box"
 import { dialogManager } from "@/modules/dialog"
 import { Push } from "../context"
-import { LocalDate } from "@/utils/datetime"
 import { ExportSituationImage } from "@/functions/http-client/api/util-export"
 import { useToast } from "@/modules/toast"
 import { useLocalStorage } from "@/functions/app"
@@ -29,7 +28,7 @@ export type ExternalExporterProps = {
     book: number | BasicBook
 }
 
-interface BasicIllust { id: number, type: IllustType, file: string, thumbnailFile: string, partitionTime: LocalDate }
+interface BasicIllust { id: number, type: IllustType, file: string, thumbnailFile: string }
 
 interface BasicBook { id: number, title: string, imageCount: number, file: string | null, thumbnailFile: string | null }
 

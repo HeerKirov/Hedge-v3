@@ -2,7 +2,7 @@
 import { computed, ref } from "vue"
 import { SelectList } from "@/components/form"
 import { Flex, FlexItem } from "@/components/layout"
-import { SourceAnalyseRule } from "@/functions/http-client/api/setting-import"
+import { SourceAnalyseRule } from "@/functions/http-client/api/setting"
 import { installSettingSite } from "@/services/setting"
 import DBImportSourceRuleCreator from "./DBImportSourceRuleCreator.vue"
 import DBImportSourceRuleEditor from "./DBImportSourceRuleEditor.vue"

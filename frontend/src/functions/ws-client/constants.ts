@@ -3,12 +3,6 @@ import { MetaType } from "@/functions/http-client/api/all"
 import { IllustType } from "@/functions/http-client/api/illust"
 import { FolderType } from "@/functions/http-client/api/folder"
 import { PathWatcherError } from "@/functions/http-client/api/import"
-import { ServiceOptionUpdateForm } from "@/functions/http-client/api/setting-service"
-import { MetaOptionUpdateForm } from "@/functions/http-client/api/setting-meta"
-import { QueryOptionUpdateForm } from "@/functions/http-client/api/setting-query"
-import { ImportOptionUpdateForm } from "@/functions/http-client/api/setting-import"
-import { FindSimilarOptionUpdateForm } from "@/functions/http-client/api/setting-find-similar"
-import { Site } from "@/functions/http-client/api/setting-source"
 
 export interface BaseWsEvent<ET extends string> {
     eventType: ET
@@ -27,12 +21,13 @@ type EntityEvents
     | BookCreated | BookUpdated | BookDeleted | BookImagesChanged
     | FolderCreated | FolderUpdated | FolderDeleted | FolderPinChanged | FolderImagesChanged
     | ImportCreated | ImportUpdated | ImportDeleted | ImportSaved
+    | TrashedImageCreated | TrashedImageProcessed
     | SourceDataCreated | SourceDataUpdated | SourceDataDeleted
     | SourceBookUpdated | SourceTagUpdated | SourceTagMappingUpdated
 
 type BackendEvents = PathWatcherStatusChanged | SimilarFinderResultAdded | SimilarFinderResultResolved | SimilarFinderResultDeleted
 
-type SettingEvents = SettingServiceChanged | SettingMetaChanged | SettingQueryChanged | SettingImportChanged | SettingFindSimilarChanged | SettingSourceSiteChanged
+type SettingEvents = SettingServiceChanged | SettingMetaChanged | SettingQueryChanged | SettingImportChanged | SettingFileChanged | SettingFindSimilarChanged | SettingSourceSiteChanged
 
 //== App相关的系统通知 ==
 
@@ -86,6 +81,10 @@ export interface ImportDeleted extends BaseWsEvent<"entity/import/deleted"> { im
 
 export interface ImportSaved extends BaseWsEvent<"entity/import/saved"> { importIdToImageIds: Record<number, number> }
 
+export interface TrashedImageCreated extends BaseWsEvent<"entity/trashed-image/created"> { imageId: number }
+
+export interface TrashedImageProcessed extends BaseWsEvent<"entity/trashed-image/processed"> { imageIds: number[], restore: boolean }
+
 export interface SourceDataCreated extends BaseWsEvent<"entity/source-data/created"> { site: string, sourceId: number }
 
 export interface SourceDataUpdated extends BaseWsEvent<"entity/source-data/updated"> { site: string, sourceId: number }
@@ -109,14 +108,16 @@ export interface SimilarFinderResultDeleted extends BaseWsEvent<"backend/similar
 
 //== setting相关变更通知 ==
 
-export interface SettingServiceChanged extends BaseWsEvent<"setting/service/changed"> { serviceOption: ServiceOptionUpdateForm }
+export interface SettingServiceChanged extends BaseWsEvent<"setting/service/changed"> { }
 
-export interface SettingMetaChanged extends BaseWsEvent<"setting/meta/changed"> { metaOption: MetaOptionUpdateForm }
+export interface SettingMetaChanged extends BaseWsEvent<"setting/meta/changed"> { }
 
-export interface SettingQueryChanged extends BaseWsEvent<"setting/query/changed"> { queryOption: QueryOptionUpdateForm }
+export interface SettingQueryChanged extends BaseWsEvent<"setting/query/changed"> { }
 
-export interface SettingImportChanged extends BaseWsEvent<"setting/import/changed"> { importOption: ImportOptionUpdateForm }
+export interface SettingImportChanged extends BaseWsEvent<"setting/import/changed"> { }
 
-export interface SettingFindSimilarChanged extends BaseWsEvent<"setting/find-similar/changed"> { findSimilarOption: FindSimilarOptionUpdateForm }
+export interface SettingFileChanged extends BaseWsEvent<"setting/file/changed"> { }
 
-export interface SettingSourceSiteChanged extends BaseWsEvent<"setting/source-site/changed"> { sites: Site[] }
+export interface SettingFindSimilarChanged extends BaseWsEvent<"setting/find-similar/changed"> { }
+
+export interface SettingSourceSiteChanged extends BaseWsEvent<"setting/source-site/changed"> { }

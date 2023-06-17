@@ -62,19 +62,24 @@ export default <RouteRecordRaw[]>[
                 component: () => import("@/views/Main/Annotation/Annotation.vue")
             },
             {
-                name: "MainImport",
-                path: "import",
-                component: () => import("@/views/Main/Import/Import.vue")
-            },
-            {
                 name: "MainSourceData",
                 path: "source",
                 component: () => import("@/views/Main/SourceData/SourceData.vue")
             },
             {
+                name: "MainImport",
+                path: "import",
+                component: () => import("@/views/Main/Import/Import.vue")
+            },
+            {
                 name: "MainFindSimilar",
                 path: "find-similar",
                 component: () => import("@/views/Main/FindSimilar/FindSimilar.vue")
+            },
+            {
+                name: "MainTrash",
+                path: "trash",
+                component: () => import("@/views/Main/Trash/Trash.vue")
             },
             {
                 name: "MainFolder",
@@ -122,14 +127,14 @@ export default <RouteRecordRaw[]>[
                 component: () => import("@/views/Setting/DBImport/DBImport.vue")
             },
             {
-                name: "SettingDBSource",
-                path: "db/source",
-                component: () => import("@/views/Setting/DBSource/DBSource.vue")
-            },
-            {
                 name: "SettingDBFindSimilar",
                 path: "db/find-similar",
                 component: () => import("@/views/Setting/DBFindSimilar/DBFindSimilar.vue")
+            },
+            {
+                name: "SettingDBFile",
+                path: "db/file",
+                component: () => import("@/views/Setting/DBFile/DBFile.vue")
             },
             {
                 name: "SettingAdvancedServer",

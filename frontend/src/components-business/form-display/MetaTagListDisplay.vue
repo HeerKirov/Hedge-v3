@@ -66,7 +66,7 @@ const menu = usePopupMenu<MetaTagTypeValue>([
 </script>
 
 <template>
-    <Group v-if="tags.length || authors.length || topics.length && direction === 'horizontal'" class="mt-1">
+    <Group v-if="(tags.length || authors.length || topics.length) && direction === 'horizontal'" class="mt-1">
         <SimpleMetaTagElement v-for="author in authors" type="author" :value="author" @click="click($event, 'author', author)" @contextmenu="menu.popup({type: 'author', value: author})"/>
         <SimpleMetaTagElement v-for="topic in topics" type="topic" :value="topic" @click="click($event, 'topic', topic)" @contextmenu="menu.popup({type: 'topic', value: topic})"/>
         <SimpleMetaTagElement v-for="tag in tags" type="tag" :value="tag" @click="click($event, 'tag', tag)" @contextmenu="menu.popup({type: 'tag', value: tag})"/>

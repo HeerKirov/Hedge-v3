@@ -5,7 +5,7 @@ import { SelectedPaneState } from "@/services/base/selected-pane-state"
 import IllustDetailPaneSingle from "./IllustDetailPaneSingle.vue"
 import IllustDetailPaneMultiple from "./IllustDetailPaneMultiple.vue"
 
-const props = defineProps<{
+defineProps<{
     state: SelectedPaneState<number>
 }>()
 

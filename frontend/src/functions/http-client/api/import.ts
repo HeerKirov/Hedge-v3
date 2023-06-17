@@ -8,7 +8,7 @@ import { IdResponseWithWarnings, LimitAndOffsetFilter, ListResult, mapFromOrderL
 import { ImagePropsCloneForm, SimpleCollection, Tagme } from "./illust"
 import { SimpleFolder } from "./folder"
 import { SimpleBook } from "./book"
-import { OrderTimeType } from "./setting-import"
+import { OrderTimeType } from "./setting"
 
 export function createImportEndpoint(http: HttpInstance): ImportEndpoint {
     return {

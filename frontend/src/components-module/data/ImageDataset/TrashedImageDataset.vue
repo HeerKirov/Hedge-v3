@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, ref } from "vue"
+import { Icon } from "@/components/universal"
 import { Flex, FlexItem } from "@/components/layout"
 import { SourceInfo } from "@/components-business/form-display"
 import { useAssets } from "@/functions/app"
 import { PaginationData, QueryInstance } from "@/functions/fetch"
-import { ImportImage } from "@/functions/http-client/api/import"
-import { TypeDefinition } from "@/modules/drag"
-import { date, datetime } from "@/utils/datetime"
+import { TrashedImage } from "@/functions/http-client/api/trash"
 import { toRef } from "@/utils/reactivity"
 import { installDatasetContext } from "./context"
 import SelectedCountBadge from "./SelectedCountBadge.vue"
@@ -17,11 +16,11 @@ const props = defineProps<{
     /**
      * 分页数据。
      */
-    data: PaginationData<ImportImage>
+    data: PaginationData<TrashedImage>
     /**
      * 查询实例。选择器模块会用到，被用于自由选取数据。
      */
-    queryInstance?: QueryInstance<ImportImage>
+    queryInstance?: QueryInstance<TrashedImage>
     /**
      * 视图模式，Grid表模式或row行模式。
      */
@@ -46,14 +45,6 @@ const props = defineProps<{
      * 是否显示“已选择数量”的浮标UI。
      */
     selectedCountBadge?: boolean
-    /**
-     * 可拖曳开关：项允许被拖曳，被识别为指定的拖曳类型。
-     */
-    draggable?: boolean
-    /**
-     * 可拖放开关：允许将项拖放到此组件，并触发drop事件。
-     */
-    droppable?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -68,7 +59,7 @@ const emit = defineEmits<{
     /**
      * 右键单击某项。
      */
-    (e: "contextmenu", i: ImportImage): void
+    (e: "contextmenu", i: TrashedImage): void
     /**
      * 双击某项。
      */
@@ -77,20 +68,14 @@ const emit = defineEmits<{
      * 在选择项上按下enter。
      */
     (e: "enter", id: number): void
-    /**
-     * 将数据项拖曳到组件上，触发添加项目的事件。
-     */
-    (e: "drop", insertIndex: number | null, images: TypeDefinition["importImages"], mode: "ADD" | "MOVE"): void
 }>()
 
-const keyOf = (item: ImportImage) => item.id
+const keyOf = (item: TrashedImage) => item.id
 
 const data = toRef(props, "data")
 const columnNum = computed(() => props.viewMode === "grid" ? (props.columnNum ?? 3) : undefined)
 const selected = computed(() => props.selected ?? [])
 const lastSelected = computed(() => props.lastSelected ?? null)
-const draggable = computed(() => props.draggable ?? false)
-const droppable = computed(() => props.droppable ?? false)
 
 const { assetsUrl } = useAssets()
 
@@ -100,38 +85,72 @@ installDatasetContext({
     queryInstance: props.queryInstance,
     data, keyOf, columnNum,
     selected, lastSelected,
-    draggable, droppable,
-    dragAndDropType: "importImages",
+    draggable: ref(false), droppable: ref(false),
+    dragAndDropType: "illusts",
     dataUpdate: (_, __) => emit("data-update", _, __),
     select: (_, __) => emit("select", _, __),
-    rightClick: (_) => emit("contextmenu", _ as ImportImage),
+    rightClick: (_) => emit("contextmenu", _ as TrashedImage),
     dblClick: (_, __) => emit("dblclick", _, __),
     enterClick: (_) => emit("enter", _),
-    dropData: (_, __, ___) => emit("drop", _, __ as TypeDefinition["importImages"], ___)
+    dropData: (_, __, ___) => {}
 })
+
+const remain = (remainingTime: number | null) => {
+    if(remainingTime === null) {
+        return ""
+    }else if(remainingTime <= 0) {
+        return "待清理"
+    }else if(remainingTime <= 1000 * 60 * 60 * 24) {
+        return "剩余不足1天"
+    }else{
+        return `剩余${Math.floor(remainingTime / (1000 * 60 * 60 * 24))}天`
+    }
+}
+
+const simpleRemain = (remainingTime: number | null) => {
+    if(remainingTime === null) {
+        return ""
+    }else if(remainingTime <= 0) {
+        return "待清理"
+    }else if(remainingTime <= 1000 * 60 * 60 * 24) {
+        return "<1天"
+    }else{
+        return `${Math.floor(remainingTime / (1000 * 60 * 60 * 24))}天`
+    }
+}
 
 </script>
 
 <template>
     <div class="w-100 h-100 relative" :style="style">
         <DatasetGridFramework v-if="viewMode === 'grid'" :column-num="columnNum!" v-slot="{ item }">
-            <img :class="$style['grid-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`import-image-${item.id}`"/>
+            <img :class="$style['grid-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`trashed-image-${item.id}`"/>
+            <div v-if="item.remainingTime !== null" :class="$style['grid-remain-tag']">{{ simpleRemain(item.remainingTime) }}</div>
         </DatasetGridFramework>
         <DatasetRowFramework v-else :row-height="32" v-slot="{ item }">
             <Flex horizontal="stretch" align="center">
                 <FlexItem :shrink="0" :grow="0">
-                    <img :class="$style['row-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`import-image-${item.id}`"/>
+                    <img :class="$style['row-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`trashed-image-${item.id}`"/>
                 </FlexItem>
-                <FlexItem :width="40">
-                    <div class="ml-1 no-wrap overflow-ellipsis">{{item.fileName}}</div>
+                <FlexItem :width="30">
+                    <div class="ml-1">{{ item.id }}</div>
                 </FlexItem>
-                <FlexItem :width="30" :shrink="0">
-                    <SourceInfo :site="item.sourceSite" :source-id="item.sourceId" :source-part="item.sourcePart"/>
+                <FlexItem :shrink="0">
+                    <div :class="$style['row-favorite']"><Icon v-if="item.favorite" class="has-text-danger" icon="heart"/></div>
                 </FlexItem>
-                <FlexItem :width="30" :shrink="0">
-                    <div class="mr-1 has-text-right">
-                        <span class="secondary-text">({{date.toISOString(item.partitionTime)}})</span>
-                        {{datetime.toSimpleFormat(item.orderTime)}}
+                <FlexItem :width="10" :shrink="0">
+                    <div class="has-text-warning has-text-centered">
+                        <template v-if="item.score">
+                            {{item.score}}<Icon icon="star"/>
+                        </template>
+                    </div>
+                </FlexItem>
+                <FlexItem :width="30">
+                    <div class="no-wrap overflow-hidden"><SourceInfo :site="item.sourceSite" :source-id="item.sourceId" :source-part="item.sourcePart"/></div>
+                </FlexItem>
+                <FlexItem :width="30">
+                    <div class="mr-2 has-text-right">
+                        {{ remain(item.remainingTime) }}
                     </div>
                 </FlexItem>
             </Flex>
@@ -141,11 +160,25 @@ installDatasetContext({
 </template>
 
 <style module lang="sass">
+@import "../../../styles/base/size"
+@import "../../../styles/base/color"
+
 .grid-img
     height: 100%
     width: 100%
     object-position: center
     object-fit: var(--var-fit-type, cover)
+
+.grid-remain-tag
+    position: absolute
+    left: 0
+    bottom: 0
+    padding: 0 0.25rem 0
+    border-top-right-radius: $radius-size-std
+    color: $dark-mode-text-color
+    background-color: rgba(0, 0, 0, 0.65)
+    white-space: nowrap
+    overflow: hidden
 
 .row-img
     margin-top: 1px

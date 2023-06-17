@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from "vue"
+import { computed } from "vue"
 import { SelectList } from "@/components/form"
 import { Flex, FlexItem } from "@/components/layout"
-import { SiteCreateForm, SiteUpdateForm } from "@/functions/http-client/api/setting-source"
+import { SiteCreateForm, SiteUpdateForm } from "@/functions/http-client/api/setting"
 import { useSettingSite } from "@/services/setting"
+import { computedMutable } from "@/utils/reactivity"
 import DBSourceSiteEditor from "./DBSourceSiteEditor.vue"
 import DBSourceSiteCreator from "./DBSourceSiteCreator.vue"
-import { computedMutable } from "@/utils/reactivity"
 
 const { data, createItem, updateItem, deleteItem } = useSettingSite()
 
@@ -40,7 +40,7 @@ const trash = async () => {
 </script>
 
 <template>
-    <label class="label mb-1">来源站点</label>
+    <label class="label mt-2 mb-1">来源站点</label>
     <Flex :class="$style['site-list']" horizontal="stretch" :spacing="1">
         <FlexItem :width="40">
             <SelectList :items="selectItems" v-model:value="selectedItem"/>

@@ -1,11 +1,7 @@
 import { onMounted, onUnmounted, ref, toRaw, watch } from "vue"
 import { remoteIpcClient } from "@/functions/ipc-client"
 import { AuthSetting } from "@/functions/ipc-client/constants"
-import { ServiceOption } from "@/functions/http-client/api/setting-service"
-import { MetaOption } from "@/functions/http-client/api/setting-meta"
-import { QueryOption } from "@/functions/http-client/api/setting-query"
-import { ImportOption } from "@/functions/http-client/api/setting-import"
-import { FindSimilarOption } from "@/functions/http-client/api/setting-find-similar"
+import { ServiceOption, MetaOption, QueryOption, ImportOption, FindSimilarOption, FileOption } from "@/functions/http-client/api/setting"
 import { useFetchReactive, useRetrieveHelper } from "@/functions/fetch"
 import { useAppEnv, useServerStatus } from "@/functions/app"
 import { useMessageBox } from "@/modules/message-box"
@@ -108,41 +104,49 @@ export function useSettingChannel() {
 
 export function useSettingServiceData() {
     return useFetchReactive<ServiceOption>({
-        get: client => client.settingService.get,
-        update: client => client.settingService.update,
+        get: client => client.setting.service.get,
+        update: client => client.setting.service.update,
         eventFilter: "setting/service/changed"
     })
 }
 
 export function useSettingMetaData() {
     return useFetchReactive<MetaOption>({
-        get: client => client.settingMeta.get,
-        update: client => client.settingMeta.update,
+        get: client => client.setting.meta.get,
+        update: client => client.setting.meta.update,
         eventFilter: "setting/meta/changed"
     })
 }
 
 export function useSettingQueryData() {
     return useFetchReactive<QueryOption>({
-        get: client => client.settingQuery.get,
-        update: client => client.settingQuery.update,
+        get: client => client.setting.query.get,
+        update: client => client.setting.query.update,
         eventFilter: "setting/query/changed"
     })
 }
 
 export function useSettingImportData() {
     return useFetchReactive<ImportOption>({
-        get: client => client.settingImport.get,
-        update: client => client.settingImport.update,
+        get: client => client.setting.import.get,
+        update: client => client.setting.import.update,
         eventFilter: "setting/import/changed"
     })
 }
 
 export function useSettingFindSimilarData() {
     return useFetchReactive<FindSimilarOption>({
-        get: client => client.settingFindSimilar.get,
-        update: client => client.settingFindSimilar.update,
+        get: client => client.setting.findSimilar.get,
+        update: client => client.setting.findSimilar.update,
         eventFilter: "setting/find-similar/changed"
+    })
+}
+
+export function useSettingFileData() {
+    return useFetchReactive<FileOption>({
+        get: client => client.setting.file.get,
+        update: client => client.setting.file.update,
+        eventFilter: "setting/file/changed"
     })
 }
 
@@ -150,15 +154,15 @@ export const [installSettingSite, useSettingSite] = optionalInstallation(functio
     const message = useMessageBox()
 
     const { data, refresh } = useFetchReactive({
-        get: client => client.settingSource.site.list,
+        get: client => client.setting.source.site.list,
         eventFilter: "setting/source-site/changed"
     })
 
     const { getData: getItem, createData: createItem, setData: updateItem, deleteData: deleteItem } = useRetrieveHelper({
-        get: client => client.settingSource.site.get,
-        create: client => client.settingSource.site.create,
-        update: client => client.settingSource.site.update,
-        delete: client => client.settingSource.site.delete,
+        get: client => client.setting.source.site.get,
+        create: client => client.setting.source.site.create,
+        update: client => client.setting.source.site.update,
+        delete: client => client.setting.source.site.delete,
         handleErrorInCreate(e) {
             if(e.code === "ALREADY_EXISTS") {
                 message.showOkMessage("prompt", "已经存在同名的站点。")
@@ -171,6 +175,7 @@ export const [installSettingSite, useSettingSite] = optionalInstallation(functio
                 const resourceName = {
                     "Illust": "图库项目",
                     "ImportImage": "导入项目",
+                    "TrashedImage": "已删除项目",
                     "SourceAnalyseRule": "来源解析规则"
                 }[e.info]
                 message.showOkMessage("prompt", "无法删除此来源站点。", `此来源站点仍存在关联的${resourceName}，请先清理关联项，确保没有意外的级联删除。`)
