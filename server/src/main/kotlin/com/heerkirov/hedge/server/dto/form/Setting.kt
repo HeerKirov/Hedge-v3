@@ -44,4 +44,7 @@ data class FindSimilarOptionUpdateForm(val autoFindSimilar: Opt<Boolean>,
                                        val autoTaskConf: Opt<FindSimilarTask.TaskConfig?>,
                                        val defaultTaskConf: Opt<FindSimilarTask.TaskConfig>)
 
+data class FileOptionUpdateForm(val autoCleanTrashes: Opt<Boolean>,
+                                val autoCleanTrashesIntervalDay: Opt<Int>)
+
 data class ServiceOptionUpdateForm(val port: Opt<String?>, val storagePath: Opt<String?>)

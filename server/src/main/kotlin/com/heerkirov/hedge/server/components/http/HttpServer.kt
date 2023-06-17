@@ -68,13 +68,7 @@ class HttpServerImpl(private val health: Health,
             .handle(WsRoutes(lifetime, eventBus))
             .handle(AppRoutes(lifetime, appStatus, appdata))
             .handle(AppServiceRoutes(appdata))
-            .handle(SettingRoutes(
-                allServices.settingMeta,
-                allServices.settingQuery,
-                allServices.settingImport,
-                allServices.settingSource,
-                allServices.settingFindSimilar,
-                allServices.settingAppdata))
+            .handle(SettingRoutes(allServices.setting))
             .handle(UtilQueryRoutes(allServices.queryService))
             .handle(UtilMetaRoutes(allServices.metaUtil))
             .handle(UtilIllustRoutes(allServices.illustUtil))

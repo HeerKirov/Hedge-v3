@@ -9,13 +9,16 @@ import com.heerkirov.hedge.server.enums.TagAddressType
 import com.heerkirov.hedge.server.exceptions.NotFound
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.manager.TrashManager
+import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
+import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
 import com.heerkirov.hedge.server.utils.business.takeAllFilepath
 import com.heerkirov.hedge.server.utils.business.takeThumbnailFilepath
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import org.ktorm.dsl.*
+import kotlin.math.absoluteValue
 
 class TrashService(private val data: DataRepository, private val trashManager: TrashManager) {
     private val orderTranslator = OrderTranslator {
@@ -25,6 +28,8 @@ class TrashService(private val data: DataRepository, private val trashManager: T
     }
 
     fun list(filter: TrashFilter): ListResult<TrashedImageRes> {
+        val deadline = if(data.setting.file.autoCleanTrashes) DateTime.now().minusDays(data.setting.file.autoCleanTrashesIntervalDay.absoluteValue.toLong()).toMillisecond() else null
+
         return data.db.from(TrashedImages)
             .innerJoin(FileRecords, FileRecords.id eq TrashedImages.fileId)
             .select(
@@ -37,11 +42,13 @@ class TrashService(private val data: DataRepository, private val trashManager: T
             .limit(filter.offset, filter.limit)
             .toListResult {
                 val (file, thumbnailFile) = takeAllFilepath(it)
+                val trashedTime = it[TrashedImages.trashedTime]!!
+                val remainingTime = if(deadline != null) trashedTime.toMillisecond() - deadline else null
                 TrashedImageRes(
                     it[TrashedImages.imageId]!!, file, thumbnailFile,
                     it[TrashedImages.score], it[TrashedImages.favorite]!!, it[TrashedImages.tagme]!!,
                     it[TrashedImages.sourceSite], it[TrashedImages.sourceId], it[TrashedImages.sourcePart],
-                    it[TrashedImages.orderTime]!!.parseDateTime(), it[TrashedImages.trashedTime]!!)
+                    it[TrashedImages.orderTime]!!.parseDateTime(), trashedTime, remainingTime)
             }
     }
 
@@ -59,6 +66,9 @@ class TrashService(private val data: DataRepository, private val trashManager: T
         val resolutionHeight = row[FileRecords.resolutionHeight]!!
         val metadata = row[TrashedImages.metadata]!!
         val parentId = row[TrashedImages.parentId]
+        val trashedTime = row[TrashedImages.trashedTime]!!
+        val deadline = if(data.setting.file.autoCleanTrashes) DateTime.now().minusDays(data.setting.file.autoCleanTrashesIntervalDay.absoluteValue.toLong()).toMillisecond() else null
+        val remainingTime = if(deadline != null) trashedTime.toMillisecond() - deadline else null
 
         val authorColors = data.setting.meta.authorColors
         val topicColors = data.setting.meta.topicColors
@@ -119,7 +129,7 @@ class TrashService(private val data: DataRepository, private val trashManager: T
             row[TrashedImages.description]!!, row[TrashedImages.score], row[TrashedImages.favorite]!!, row[TrashedImages.tagme]!!,
             row[TrashedImages.sourceSite], row[TrashedImages.sourceId], row[TrashedImages.sourcePart],
             row[TrashedImages.partitionTime]!!, row[TrashedImages.orderTime]!!.parseDateTime(),
-            row[TrashedImages.createTime]!!, row[TrashedImages.updateTime]!!, row[TrashedImages.trashedTime]!!
+            row[TrashedImages.createTime]!!, row[TrashedImages.updateTime]!!, trashedTime, remainingTime
         )
     }
 

@@ -42,6 +42,10 @@ object MetadataMigrationStrategy : JsonObjectStrategy<Setting>(Setting::class) {
                 autoFindSimilar = false,
                 autoTaskConf = null,
                 defaultTaskConf = DEFAULT_FIND_SIMILAR_TASK_CONF
+            ),
+            file = FileOption(
+                autoCleanTrashes = true,
+                autoCleanTrashesIntervalDay = 30
             )
         )
     }

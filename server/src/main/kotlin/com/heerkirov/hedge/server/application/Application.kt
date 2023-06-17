@@ -3,6 +3,7 @@ package com.heerkirov.hedge.server.application
 import com.heerkirov.hedge.server.components.appdata.AppDataManagerImpl
 import com.heerkirov.hedge.server.components.backend.FileGeneratorImpl
 import com.heerkirov.hedge.server.components.backend.ImportProcessorImpl
+import com.heerkirov.hedge.server.components.backend.TrashCleanerImpl
 import com.heerkirov.hedge.server.components.backend.exporter.BackendExporterImpl
 import com.heerkirov.hedge.server.components.backend.similar.SimilarFinderImpl
 import com.heerkirov.hedge.server.components.backend.watcher.PathWatcherImpl
@@ -81,6 +82,8 @@ fun runApplication(options: ApplicationOptions) {
             val trashManager = TrashManager(repo, bus, backendExporter, illustKit, fileManager, bookManager, folderManager, associateManager, partitionManager, sourceManager)
             val illustManager = IllustManager(repo, bus, illustKit, sourceManager, associateManager, bookManager, folderManager, partitionManager, trashManager, backendExporter)
 
+            define { TrashCleanerImpl(appStatus, repo, trashManager) }
+
             val illustService = IllustService(repo, bus, illustKit, illustManager, associateManager, sourceManager, partitionManager, queryManager, backendExporter)
             val bookService = BookService(repo, bus, bookKit, bookManager, illustManager, queryManager, backendExporter)
             val folderService = FolderService(repo, bus, folderKit, folderManager, illustManager)
@@ -98,12 +101,7 @@ fun runApplication(options: ApplicationOptions) {
             val illustUtilService = IllustUtilService(repo)
             val exportUtilService = ExportUtilService(appdata, repo)
 
-            val settingAppdataService = SettingAppdataService(appdata, bus)
-            val settingMetaService = SettingMetaService(repo, bus)
-            val settingQueryService = SettingQueryService(repo, bus)
-            val settingImportService = SettingImportService(repo, bus)
-            val settingSiteService = SettingSourceService(repo, bus)
-            val settingFindSimilarService = SettingFindSimilarService(repo, bus)
+            val settingService = SettingService(appdata, repo, bus)
 
             AllServices(
                 illustService,
@@ -119,12 +117,7 @@ fun runApplication(options: ApplicationOptions) {
                 sourceDataService,
                 sourceMappingService,
                 sourceMarkService,
-                settingAppdataService,
-                settingMetaService,
-                settingQueryService,
-                settingImportService,
-                settingSiteService,
-                settingFindSimilarService,
+                settingService,
                 queryService,
                 findSimilarService,
                 exportUtilService,

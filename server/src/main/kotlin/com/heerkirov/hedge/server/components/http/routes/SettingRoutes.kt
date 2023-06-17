@@ -8,43 +8,42 @@ import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
 
-class SettingRoutes(settingMetaService: SettingMetaService,
-                    settingQueryService: SettingQueryService,
-                    settingImportService: SettingImportService,
-                    settingSourceService: SettingSourceService,
-                    settingFindSimilarService: SettingFindSimilarService,
-                    settingAppdataService: SettingAppdataService) : Routes {
+class SettingRoutes(private val setting: SettingService) : Routes {
     override fun handle(javalin: Javalin) {
         javalin.routes {
             path("api/setting") {
                 path("service") {
-                    get(service::get)
-                    patch(service::update)
+                    get(::getAppdataService)
+                    patch(::updateAppdataService)
                 }
                 path("meta") {
-                    get(meta::get)
-                    patch(meta::update)
+                    get(::getMeta)
+                    patch(::updateMeta)
                 }
                 path("query") {
-                    get(query::get)
-                    patch(query::update)
+                    get(::getQuery)
+                    patch(::updateQuery)
                 }
                 path("import") {
-                    get(import::get)
-                    patch(import::update)
+                    get(::getImport)
+                    patch(::updateImport)
                 }
                 path("find-similar") {
-                    get(findSimilar::get)
-                    patch(findSimilar::update)
+                    get(::getFindSimilar)
+                    patch(::updateFindSimilar)
+                }
+                path("file") {
+                    get(::getFile)
+                    patch(::updateFile)
                 }
                 path("source") {
                     path("sites") {
-                        get(site::list)
-                        post(site::create)
+                        get(::listSourceSite)
+                        post(::createSourceSite)
                         path("{name}") {
-                            get(site::get)
-                            put(site::update)
-                            delete(site::delete)
+                            get(::getSourceSite)
+                            put(::updateSourceSite)
+                            delete(::deleteSourceSite)
                         }
                     }
                 }
@@ -52,94 +51,84 @@ class SettingRoutes(settingMetaService: SettingMetaService,
         }
     }
 
-    private val meta = Meta(settingMetaService)
-    private val query = Query(settingQueryService)
-    private val import = Import(settingImportService)
-    private val findSimilar = FindSimilar(settingFindSimilarService)
-    private val site = Site(settingSourceService)
-    private val service = Service(settingAppdataService)
-
-    private class Service(private val service: SettingAppdataService) {
-        fun get(ctx: Context) {
-            ctx.json(service.getService())
-        }
-
-        fun update(ctx: Context) {
-            val form = ctx.bodyAsForm<ServiceOptionUpdateForm>()
-            service.updateService(form)
-        }
+    private fun getAppdataService(ctx: Context) {
+        ctx.json(setting.getAppdataService())
     }
 
-    private class Meta(private val service: SettingMetaService) {
-        fun get(ctx: Context) {
-            ctx.json(service.get())
-        }
-
-        fun update(ctx: Context) {
-            val form = ctx.bodyAsForm<MetaOptionUpdateForm>()
-            service.update(form)
-        }
+    private fun updateAppdataService(ctx: Context) {
+        val form = ctx.bodyAsForm<ServiceOptionUpdateForm>()
+        setting.updateAppdataService(form)
     }
 
-    private class Query(private val service: SettingQueryService) {
-        fun get(ctx: Context) {
-            ctx.json(service.get())
-        }
-
-        fun update(ctx: Context) {
-            val form = ctx.bodyAsForm<QueryOptionUpdateForm>()
-            service.update(form)
-        }
+    private fun getMeta(ctx: Context) {
+        ctx.json(setting.getMeta())
     }
 
-    private class Import(private val service: SettingImportService) {
-        fun get(ctx: Context) {
-            ctx.json(service.get())
-        }
-
-        fun update(ctx: Context) {
-            val form = ctx.bodyAsForm<ImportOptionUpdateForm>()
-            service.update(form)
-        }
+    private fun updateMeta(ctx: Context) {
+        val form = ctx.bodyAsForm<MetaOptionUpdateForm>()
+        setting.updateMeta(form)
     }
 
-    private class FindSimilar(private val service: SettingFindSimilarService) {
-        fun get(ctx: Context) {
-            ctx.json(service.get())
-        }
-
-        fun update(ctx: Context) {
-            val form = ctx.bodyAsForm<FindSimilarOptionUpdateForm>()
-            service.update(form)
-        }
+    private fun getQuery(ctx: Context) {
+        ctx.json(setting.getQuery())
     }
 
-    private class Site(private val service: SettingSourceService) {
-        fun list(ctx: Context) {
-            ctx.json(service.list())
-        }
+    private fun updateQuery(ctx: Context) {
+        val form = ctx.bodyAsForm<QueryOptionUpdateForm>()
+        setting.updateQuery(form)
+    }
 
-        fun create(ctx: Context) {
-            val form = ctx.bodyAsForm<SiteCreateForm>()
-            service.create(form)
-            ctx.status(201)
-        }
+    private fun getImport(ctx: Context) {
+        ctx.json(setting.getImport())
+    }
 
-        fun get(ctx: Context) {
-            val name = ctx.pathParam("name")
-            ctx.json(service.get(name))
-        }
+    private fun updateImport(ctx: Context) {
+        val form = ctx.bodyAsForm<ImportOptionUpdateForm>()
+        setting.updateImport(form)
+    }
 
-        fun update(ctx: Context) {
-            val name = ctx.pathParam("name")
-            val form = ctx.bodyAsForm<SiteUpdateForm>()
-            service.update(name, form)
-        }
+    private fun getFindSimilar(ctx: Context) {
+        ctx.json(setting.getFindSimilar())
+    }
 
-        fun delete(ctx: Context) {
-            val name = ctx.pathParam("name")
-            service.delete(name)
-            ctx.status(204)
-        }
+    private fun updateFindSimilar(ctx: Context) {
+        val form = ctx.bodyAsForm<FindSimilarOptionUpdateForm>()
+        setting.updateFindSimilar(form)
+    }
+
+    private fun getFile(ctx: Context) {
+        ctx.json(setting.getFile())
+    }
+
+    private fun updateFile(ctx: Context) {
+        val form = ctx.bodyAsForm<FileOptionUpdateForm>()
+        setting.updateFile(form)
+    }
+
+    private fun listSourceSite(ctx: Context) {
+        ctx.json(setting.listSourceSite())
+    }
+
+    private fun createSourceSite(ctx: Context) {
+        val form = ctx.bodyAsForm<SiteCreateForm>()
+        setting.createSourceSite(form)
+        ctx.status(201)
+    }
+
+    private fun getSourceSite(ctx: Context) {
+        val name = ctx.pathParam("name")
+        ctx.json(setting.getSourceSite(name))
+    }
+
+    private fun updateSourceSite(ctx: Context) {
+        val name = ctx.pathParam("name")
+        val form = ctx.bodyAsForm<SiteUpdateForm>()
+        setting.updateSourceSite(name, form)
+    }
+
+    private fun deleteSourceSite(ctx: Context) {
+        val name = ctx.pathParam("name")
+        setting.deleteSourceSite(name)
+        ctx.status(204)
     }
 }

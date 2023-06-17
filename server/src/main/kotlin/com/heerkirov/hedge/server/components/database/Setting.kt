@@ -9,7 +9,8 @@ data class Setting(
     val query: QueryOption,
     val source: SourceOption,
     val import: ImportOption,
-    val findSimilar: FindSimilarOption
+    val findSimilar: FindSimilarOption,
+    val file: FileOption
 )
 
 data class MetaOption(
@@ -140,4 +141,18 @@ data class FindSimilarOption(
      * 提交手动查找时的默认配置。
      */
     var defaultTaskConf: FindSimilarTask.TaskConfig
+)
+
+/**
+ * 与档案管理相关的选项。
+ */
+data class FileOption(
+    /**
+     * 自动清理已删除的项。
+     */
+    var autoCleanTrashes: Boolean,
+    /**
+     * 自动清理已删除项的间隔天数。
+     */
+    var autoCleanTrashesIntervalDay: Int
 )

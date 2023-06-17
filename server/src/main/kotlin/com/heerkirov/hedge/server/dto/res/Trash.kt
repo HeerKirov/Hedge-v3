@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 data class TrashedImageRes(val id: Int, val file: String, val thumbnailFile: String,
                            val score: Int?, val favorite: Boolean, val tagme: Illust.Tagme,
                            val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?,
-                           val orderTime: LocalDateTime, val trashedTime: LocalDateTime)
+                           val orderTime: LocalDateTime, val trashedTime: LocalDateTime, val remainingTime: Long?)
 
 data class TrashedImageDetailRes(val id: Int, val file: String, val thumbnailFile: String,
                                  val extension: String, val size: Long, val resolutionWidth: Int, val resolutionHeight: Int,
@@ -16,4 +16,5 @@ data class TrashedImageDetailRes(val id: Int, val file: String, val thumbnailFil
                                  val description: String, val score: Int?, val favorite: Boolean, val tagme: Illust.Tagme,
                                  val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?,
                                  val partitionTime: LocalDate, val orderTime: LocalDateTime,
-                                 val createTime: LocalDateTime, val updateTime: LocalDateTime, val trashedTime: LocalDateTime)
+                                 val createTime: LocalDateTime, val updateTime: LocalDateTime,
+                                 val trashedTime: LocalDateTime, val remainingTime: Long?)
