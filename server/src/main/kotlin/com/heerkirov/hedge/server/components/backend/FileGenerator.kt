@@ -5,13 +5,19 @@ import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
+import com.heerkirov.hedge.server.dao.FileFingerprints
 import com.heerkirov.hedge.server.dao.FileRecords
 import com.heerkirov.hedge.server.dao.ImportImages
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.events.ImportUpdated
+import com.heerkirov.hedge.server.exceptions.BusinessException
+import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
 import com.heerkirov.hedge.server.library.framework.StatefulComponent
+import com.heerkirov.hedge.server.model.FileRecord
+import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.Graphics
+import com.heerkirov.hedge.server.utils.Similarity
 import com.heerkirov.hedge.server.utils.business.generateFilepath
 import com.heerkirov.hedge.server.utils.business.generateThumbnailFilepath
 import com.heerkirov.hedge.server.utils.tools.controlledThread
@@ -32,7 +38,7 @@ interface FileGenerator : StatefulComponent {
     fun appendTask(fileId: Int)
 }
 
-const val GENERATE_INTERVAL: Long = 200
+const val GENERATE_INTERVAL: Long = 50
 
 class FileGeneratorImpl(private val appStatus: AppStatusDriver, private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus) : FileGenerator {
     private val log = LoggerFactory.getLogger(FileGenerator::class.java)
@@ -86,60 +92,81 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver, private val appd
                 val filepath = generateFilepath(fileRecord.folder, fileRecord.id, fileRecord.extension)
                 val file = File("${appdata.storagePathAccessor.storageDir}/$filepath")
                 if(file.exists()) {
-                    val (tempFile, resolutionWidth, resolutionHeight) = Graphics.process(file)
-                    if(tempFile != null) {
-                        val thumbnailFilepath = generateThumbnailFilepath(fileRecord.folder, fileRecord.id)
-                        val thumbnailFile = File("${appdata.storagePathAccessor.storageDir}/$thumbnailFilepath")
-                        try {
-                            tempFile.copyTo(thumbnailFile, overwrite = true)
+                    val (thumbnailFileSize, resolutionWidth, resolutionHeight) = processThumbnail(fileRecord, file)
 
-                            data.db.transaction {
-                                data.db.update(FileRecords) {
-                                    where { it.id eq fileId }
-                                    set(it.status, FileStatus.READY)
-                                    set(it.thumbnailSize, thumbnailFile.length())
-                                    set(it.resolutionWidth, resolutionWidth)
-                                    set(it.resolutionHeight, resolutionHeight)
-                                }
-                            }
-
-                            Thread.sleep(GENERATE_INTERVAL)
-                        }catch(_: Exception) {
-                            thumbnailFile.deleteIfExists()
-                        }finally {
-                            tempFile.deleteIfExists()
-                        }
-                    }else{
-                        data.db.transaction {
-                            data.db.update(FileRecords) {
-                                where { it.id eq fileId }
-                                set(it.status, FileStatus.READY_WITHOUT_THUMBNAIL)
-                                set(it.resolutionWidth, resolutionWidth)
-                                set(it.resolutionHeight, resolutionHeight)
-                            }
-                        }
-                    }
-
-                }else{
                     data.db.transaction {
+                        processFingerprint(fileRecord, file)
+
                         data.db.update(FileRecords) {
-                            where { it.id eq fileId }
-                            set(it.status, FileStatus.READY_WITHOUT_THUMBNAIL)
+                            where { it.id eq fileRecord.id }
+                            if(thumbnailFileSize != null) {
+                                set(it.status, FileStatus.READY)
+                                set(it.thumbnailSize, thumbnailFileSize)
+                            }else{
+                                set(it.status, FileStatus.READY_WITHOUT_THUMBNAIL)
+                            }
+                            set(it.resolutionWidth, resolutionWidth)
+                            set(it.resolutionHeight, resolutionHeight)
                         }
                     }
-                }
 
-                val importImageIds = data.db.from(ImportImages)
-                    .select(ImportImages.id)
-                    .where { ImportImages.fileId eq fileRecord.id }
-                    .map { it[ImportImages.id]!! }
-                for (importImageId in importImageIds) {
-                    bus.emit(ImportUpdated(importImageId, generalUpdated = false, thumbnailFileReady = true))
+                    val importImageIds = data.db.from(ImportImages)
+                        .select(ImportImages.id)
+                        .where { ImportImages.fileId eq fileRecord.id }
+                        .map { it[ImportImages.id]!! }
+                    for (importImageId in importImageIds) {
+                        bus.emit(ImportUpdated(importImageId, generalUpdated = false, thumbnailFileReady = true))
+                    }
+
+                    Thread.sleep(GENERATE_INTERVAL)
                 }
             }
-            queue.remove(fileId)
         }catch (e: Exception) {
             log.error("Error occurred in thumbnail task of file $fileId.", e)
+        }finally{
+            //即使报告错误，也会将它从队列移除
+            queue.remove(fileId)
+        }
+    }
+
+    private fun processThumbnail(fileRecord: FileRecord, file: File): Triple<Long?, Int, Int> {
+        val (tempFile, resolutionWidth, resolutionHeight) = Graphics.process(file)
+        return if(tempFile != null) {
+            val thumbnailFilepath = generateThumbnailFilepath(fileRecord.folder, fileRecord.id)
+            val thumbnailFile = File("${appdata.storagePathAccessor.storageDir}/$thumbnailFilepath")
+            try {
+                tempFile.copyTo(thumbnailFile, overwrite = true)
+                Triple(thumbnailFile.length(), resolutionWidth, resolutionHeight)
+            } catch (e: Exception) {
+                thumbnailFile.deleteIfExists()
+                throw e
+            } finally {
+                tempFile.deleteIfExists()
+            }
+        }else{
+            Triple(null, resolutionWidth, resolutionHeight)
+        }
+    }
+
+    private fun processFingerprint(fileRecord: FileRecord, file: File) {
+        val result = try {
+            Similarity.process(file)
+        }catch (e: BusinessException) {
+            if(e.exception is IllegalFileExtensionError) {
+                //忽略文件类型不支持的错误，且不生成指纹，直接退出
+                return
+            }else{
+                throw e
+            }
+        }
+
+        data.db.insert(FileFingerprints) {
+            set(it.fileId, fileRecord.id)
+            set(it.createTime, DateTime.now())
+            set(it.pHashSimple, result.pHashSimple)
+            set(it.dHashSimple, result.dHashSimple)
+            set(it.pHash, result.pHash)
+            set(it.dHash, result.dHash)
         }
     }
 }

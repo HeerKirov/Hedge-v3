@@ -383,3 +383,13 @@ data class FileRecord(val id: Int,
                        * 上次更新物理文件的时间。
                        */
                       val updateTime: LocalDateTime)
+
+/**
+ * 文件指纹。
+ */
+data class FileFingerprint(val fileId: Int,
+                           val pHashSimple: String,
+                           val dHashString: String,
+                           val pHash: String,
+                           val dHash: String,
+                           val createTime: LocalDateTime)

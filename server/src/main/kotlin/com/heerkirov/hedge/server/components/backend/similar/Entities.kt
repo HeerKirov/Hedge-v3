@@ -20,7 +20,7 @@ sealed interface EntityInfo {
     val sourceRelations: List<Long>?
     val sourceBooks: List<Int>?
     val sourceMarks: List<Pair<Int, SourceMarkType>>?
-    val similarityVector: Any?
+    val fingerprint: Fingerprint?
 }
 
 /**
@@ -29,7 +29,7 @@ sealed interface EntityInfo {
  * @param sourceTags 用于filter by sourceTagTypes
  * @param topics 用于filter by topic
  * @param authors 用于filter by author
- * @param similarityVector 用于find by similarity
+ * @param fingerprint 用于find by similarity
  * @param sourceIdentity 用于find by source identity
  * @param sourceRelations 用于find by source relation: relations
  * @param sourceBooks 用于find by source relation: books
@@ -43,7 +43,7 @@ data class IllustEntityInfo(override val id: Int,
                             override val sourceRelations: List<Long>?,
                             override val sourceBooks: List<Int>?,
                             override val sourceMarks: List<Pair<Int, SourceMarkType>>?,
-                            override val similarityVector: Any?,
+                            override val fingerprint: Fingerprint?,
                             val collectionId: Int?,
                             val authors: List<Int>,
                             val topics: List<Int>) : EntityInfo
@@ -52,7 +52,7 @@ data class IllustEntityInfo(override val id: Int,
  * import image类型。
  * @param partitionTime 用于filter by partitionTime
  * @param sourceTags 用于filter by sourceTagTypes
- * @param similarityVector 用于find by similarity
+ * @param fingerprint 用于find by similarity
  * @param sourceIdentity 用于find by source identity
  * @param sourceRelations 用于find by source relation: relations
  * @param sourceBooks 用于find by source relation: books
@@ -65,10 +65,15 @@ data class ImportImageEntityInfo(override val id: Int,
                                  override val sourceRelations: List<Long>?,
                                  override val sourceBooks: List<Int>?,
                                  override val sourceMarks: List<Pair<Int, SourceMarkType>>?,
-                                 override val similarityVector: Any?,
+                                 override val fingerprint: Fingerprint?,
                                  val collectionId: Any?,
                                  val bookIds: List<Int>,
                                  val cloneImage: ImportImage.CloneImageFrom?) : EntityInfo
+
+/**
+ * 指纹数据。
+ */
+data class Fingerprint(val pHashSimple: String, val dHashSimple: String, val pHash: String, val dHash: String)
 
 /**
  * 工作单元的图节点。

@@ -369,6 +369,16 @@ CREATE TABLE file_db.file(
     update_time     TIMESTAMP NOT NULL              -- 上次更新的时间
 );
 
+-- 文件指纹
+CREATE TABLE file_db.file_fingerprint(
+    file_id         INTEGER PRIMARY KEY,
+    p_hash_simple   TEXT NOT NULL,
+    d_hash_simple   TEXT NOT NULL,
+    p_hash          TEXT NOT NULL,
+    d_hash          TEXT NOT NULL,
+    create_time     TIMESTAMP NOT NULL
+);
+
 -- [系统表]导出任务
 CREATE TABLE system_db.exporter_record(
     id                      INTEGER PRIMARY KEY,    -- 自增ID

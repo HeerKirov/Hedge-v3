@@ -3,6 +3,7 @@ package com.heerkirov.hedge.server.dao
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.model.*
+import com.heerkirov.hedge.server.model.FileFingerprint
 import com.heerkirov.hedge.server.utils.ktorm.type.composition
 import com.heerkirov.hedge.server.utils.ktorm.type.enum
 import com.heerkirov.hedge.server.utils.ktorm.type.json
@@ -255,5 +256,23 @@ object FileRecords : BaseTable<FileRecord>("file", schema = "file_db") {
         resolutionHeight = row[resolutionHeight]!!,
         createTime = row[createTime]!!,
         updateTime = row[updateTime]!!
+    )
+}
+
+object FileFingerprints : BaseTable<FileFingerprint>("file_fingerprint", schema = "file_db") {
+    val fileId = int("file_id").primaryKey()
+    val pHashSimple = text("p_hash_simple")
+    val dHashSimple = text("d_hash_simple")
+    val pHash = text("p_hash")
+    val dHash = text("d_hash")
+    val createTime = datetime("create_time")
+
+    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FileFingerprint(
+        fileId = row[fileId]!!,
+        pHashSimple = row[pHashSimple]!!,
+        dHashString = row[dHashSimple]!!,
+        pHash = row[pHash]!!,
+        dHash = row[dHash]!!,
+        createTime = row[createTime]!!
     )
 }
