@@ -4,6 +4,7 @@ import com.heerkirov.hedge.server.functions.service.*
 import com.heerkirov.hedge.server.library.framework.Component
 
 class AllServices(
+    val homepage: HomepageService,
     val illust: IllustService,
     val book: BookService,
     val folder: FolderService,

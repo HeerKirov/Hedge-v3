@@ -398,6 +398,12 @@ CREATE TABLE system_db.history_record(
 );
 CREATE UNIQUE INDEX system_db.history_record__index ON history_record(type, sequence_id);
 
+-- [系统表]主页内容记录表
+CREATE TABLE system_db.homepage_record(
+    `date` DATE NOT NULL PRIMARY KEY,   -- 所属日期
+    content TEXT NOT NULL               -- 所有需要记录的内容
+);
+
 -- find similar: 任务表
 CREATE TABLE system_db.find_similar_task(
     id              INTEGER PRIMARY KEY,

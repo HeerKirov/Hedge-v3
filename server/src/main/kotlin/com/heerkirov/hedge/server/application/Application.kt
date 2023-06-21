@@ -84,6 +84,7 @@ fun runApplication(options: ApplicationOptions) {
 
             define { TrashCleanerImpl(appStatus, repo, trashManager) }
 
+            val homepageService = HomepageService(repo)
             val illustService = IllustService(repo, bus, illustKit, illustManager, associateManager, sourceManager, partitionManager, queryManager, backendExporter)
             val bookService = BookService(repo, bus, bookKit, bookManager, illustManager, queryManager, backendExporter)
             val folderService = FolderService(repo, bus, folderKit, folderManager, illustManager)
@@ -104,6 +105,7 @@ fun runApplication(options: ApplicationOptions) {
             val settingService = SettingService(appdata, repo, bus)
 
             AllServices(
+                homepageService,
                 illustService,
                 bookService,
                 folderService,

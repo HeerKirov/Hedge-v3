@@ -54,7 +54,7 @@ class TagKit(private val data: DataRepository, private val annotationManager: An
                 throw be(ResourceNotExist("links", newLinks.toSet() - links.asSequence().map { it.id }.toSet()))
             }
 
-            val wrongLinks = links.filter { it.type === TagAddressType.VIRTUAL_ADDR }
+            val wrongLinks = links.filter { it.type == TagAddressType.VIRTUAL_ADDR }
             if(wrongLinks.isNotEmpty()) {
                 throw be(ResourceNotSuitable("links", wrongLinks.map { it.id }))
             }

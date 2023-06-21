@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.dao
 
 import com.heerkirov.hedge.server.model.*
 import com.heerkirov.hedge.server.utils.ktorm.type.enum
+import com.heerkirov.hedge.server.utils.ktorm.type.json
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.schema.*
 
@@ -32,5 +33,15 @@ object ExporterRecords : BaseTable<ExporterRecord>("exporter_record", schema = "
         key = row[key]!!,
         content = row[content]!!,
         createTime = row[createTime]!!
+    )
+}
+
+object HomepageRecords : BaseTable<HomepageRecord>("homepage_record", schema = "system_db") {
+    val date = date("date").primaryKey()
+    val content = json("content", typeRef<HomepageRecord.Content>())
+
+    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = HomepageRecord(
+        date = row[date]!!,
+        content = row[content]!!
     )
 }

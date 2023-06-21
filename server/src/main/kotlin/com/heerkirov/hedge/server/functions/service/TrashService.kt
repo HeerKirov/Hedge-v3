@@ -117,7 +117,7 @@ class TrashService(private val data: DataRepository, private val trashManager: T
             .map { FolderSimpleRes(it[Folders.id]!!, (it[Folders.parentAddress] ?: emptyList()) + it[Folders.title]!!, it[Folders.type]!!) }
 
         val associates = if(metadata.associates.isEmpty()) emptyList() else data.db.from(Illusts)
-            .innerJoin(FileRecords, FileRecords.id eq TrashedImages.fileId)
+            .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
             .select(Illusts.id, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList metadata.associates }
             .map { IllustSimpleRes(it[Illusts.id]!!, takeThumbnailFilepath(it)) }

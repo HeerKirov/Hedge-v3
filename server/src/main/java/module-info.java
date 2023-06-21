@@ -4,6 +4,7 @@ module com.heerkirov.hedge.server {
     requires java.desktop;
     requires kotlin.stdlib;
     requires kotlin.reflect;
+    requires kotlin.stdlib.jdk8;
     requires kotlin.stdlib.jdk7;
 
     requires io.javalin;
