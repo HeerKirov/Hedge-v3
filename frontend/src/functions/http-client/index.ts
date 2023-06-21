@@ -1,4 +1,5 @@
 import { createHttpInstance, mapResponse, flatResponse, HttpInstance, HttpInstanceConfig, Response, ResponseOk, ResponseError, ResponseConnectionError } from "./instance"
+import { createHomepageEndpoint, HomepageEndpoint } from "./api/homepage"
 import { createServiceEndpoint, ServiceEndpoint } from "./api/service"
 import { createSettingEndpoint, SettingEndpoint } from "./api/setting"
 import { createIllustEndpoint, IllustEndpoint } from "./api/illust"
@@ -26,6 +27,7 @@ export { mapListResult, mapResponse, flatResponse }
 export type { HttpInstance, HttpInstanceConfig as HttpClientConfig, Response, ResponseOk, ResponseError, ResponseConnectionError, ListResult }
 
 export interface HttpClient {
+    homepage: HomepageEndpoint
     serviceRuntime: ServiceEndpoint
     setting: SettingEndpoint
     illust: IllustEndpoint
@@ -53,6 +55,7 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
     const http = createHttpInstance(config)
 
     return {
+        homepage: createHomepageEndpoint(http),
         serviceRuntime: createServiceEndpoint(http),
         setting: createSettingEndpoint(http),
         illust: createIllustEndpoint(http),

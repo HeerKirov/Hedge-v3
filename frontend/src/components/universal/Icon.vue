@@ -83,7 +83,7 @@ import {
     faInfo, faDiceD6, faExternalLinkAlt, faEye, faPlay, faPause, faVolumeUp, faVolumeDown, faVolumeOff, faVolumeMute,
     faAngleDoubleRight, faSortAmountDown, faCalendar, faThList, faExchangeAlt, faEarListen, faStop, faCopy, faScissors,
     faEquals, faHandLizard, faHandScissors, faFaceSmileBeam, faFaceLaughBeam, faMarker, faHighlighter, faJoint, faLinkSlash, 
-    faBriefcase
+    faBriefcase, faTimeline
 } from "@fortawesome/free-solid-svg-icons"
 
 import {
@@ -107,7 +107,7 @@ library.add(
     faInfo, faDiceD6, faExternalLinkAlt, faEye, faPlay, faPause, faVolumeUp, faVolumeDown, faVolumeOff, faVolumeMute,
     faAngleDoubleRight, faSortAmountDown, faCalendar, faThList, faExchangeAlt, faEarListen, faStop, faCopy, faScissors,
     faEquals, faHandLizard, faHandScissors, faFaceSmileBeam, faFaceLaughBeam, faMarker, faHighlighter, faJoint, faLinkSlash,
-    faBriefcase
+    faBriefcase, faTimeline
 )
 library.add(farStar, farCheckSquare)
 

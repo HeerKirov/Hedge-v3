@@ -56,8 +56,6 @@ const contextmenu = () => emit("contextmenu", props.item)
             height: 80%
             object-position: center
             object-fit: cover
-            box-shadow: 0 0.1em 0.25em rgba(0, 0, 0, 0.1)
-            cursor: pointer
 
         > .fav
             position: absolute
