@@ -73,13 +73,25 @@ class OrderTranslator(private val orderFieldName: String = "order", initializer:
  * 3. 给出query schema时，只使用query schema参数。也就是来自query schema的参数总是最高优先级且排除其他的参数。
  */
 fun Query.orderBy(translator: OrderTranslator, filterOrders: List<OrderItem>?, schemaOrders: List<OrderByExpression>? = null, default: OrderItem? = null): Query {
+    val arr = translator.toOrderByExpressions(filterOrders, schemaOrders, default)
+    return if(arr.isEmpty()) this else this.orderBy(*arr)
+}
+
+/**
+ * 综合处理从query filter中、从query schema中取得的排序参数以及默认参数。
+ * 策略：
+ * 1. 没有任何参数时，使用默认参数。
+ * 2. 只给出了query filter时，使用query filter参数。
+ * 3. 给出query schema时，只使用query schema参数。也就是来自query schema的参数总是最高优先级且排除其他的参数。
+ */
+fun OrderTranslator.toOrderByExpressions(filterOrders: List<OrderItem>?, schemaOrders: List<OrderByExpression>? = null, default: OrderItem? = null): Array<OrderByExpression> {
     return if(!schemaOrders.isNullOrEmpty()) {
-        this.orderBy(*schemaOrders.toTypedArray())
+        schemaOrders.toTypedArray()
     }else if(!filterOrders.isNullOrEmpty()) {
-        this.orderBy(*translator.orderFor(filterOrders))
+        this.orderFor(filterOrders)
     }else if(default != null) {
-        this.orderBy(*translator.orderFor(default).toTypedArray())
+        this.orderFor(default).toTypedArray()
     }else{
-        this
+        emptyArray()
     }
 }

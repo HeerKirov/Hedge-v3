@@ -22,6 +22,15 @@ data class IllustQueryFilter(@Limit val limit: Int,
                              val partition: LocalDate? = null,
                              val favorite: Boolean? = null)
 
+data class IllustLocationFilter(@Search val query: String?,
+                                @Order(options = ["id", "score", "orderTime", "createTime", "updateTime"])
+                                val order: List<OrderItem>? = null,
+                                val topic: Int? = null,
+                                val author: Int? = null,
+                                val partition: LocalDate? = null,
+                                val favorite: Boolean? = null,
+                                val imageId: Int)
+
 data class BookQueryFilter(@Limit val limit: Int,
                             @Offset val offset: Int,
                             @Search val query: String?,

@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.components.http.routes
 
 import com.heerkirov.hedge.server.components.http.Routes
+import com.heerkirov.hedge.server.dto.filter.IllustLocationFilter
 import com.heerkirov.hedge.server.exceptions.ParamTypeError
 import com.heerkirov.hedge.server.dto.filter.IllustQueryFilter
 import com.heerkirov.hedge.server.dto.filter.LimitAndOffsetFilter
@@ -21,6 +22,10 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
             path("api") {
                 path("illusts") {
                     get(::list)
+                    get("find-location", ::findImageLocation)
+                    post("find-by-ids", ::findByIds)
+                    post("batch-update", ::batchUpdate)
+                    post("clone-image-props", ::cloneImageProps)
                     path("{id}") {
                         get(::get)
                         patch(::update)
@@ -63,9 +68,6 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
                             put(::setAssociate)
                         }
                     }
-                    post("find-by-ids", ::findByIds)
-                    post("batch-update", ::batchUpdate)
-                    post("clone-image-props", ::cloneImageProps)
                 }
             }
         }
@@ -81,6 +83,11 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
             throw be(ParamTypeError("images", e.message ?: "cannot convert to List<Int>"))
         }
         ctx.json(illustService.findByIds(images))
+    }
+
+    private fun findImageLocation(ctx: Context) {
+        val filter = ctx.queryAsFilter<IllustLocationFilter>()
+        ctx.json(mapOf("index" to illustService.findImageLocation(filter)))
     }
 
     private fun get(ctx: Context) {

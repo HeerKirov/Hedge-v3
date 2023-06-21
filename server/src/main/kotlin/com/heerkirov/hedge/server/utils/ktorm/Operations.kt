@@ -3,11 +3,9 @@ package com.heerkirov.hedge.server.utils.ktorm
 import com.heerkirov.hedge.server.utils.composition.Composition
 import com.heerkirov.hedge.server.utils.ktorm.type.CompositionType
 import org.ktorm.expression.ArgumentExpression
+import org.ktorm.expression.OrderByExpression
 import org.ktorm.expression.ScalarExpression
-import org.ktorm.schema.BooleanSqlType
-import org.ktorm.schema.ColumnDeclaring
-import org.ktorm.schema.SqlType
-import org.ktorm.schema.VarcharSqlType
+import org.ktorm.schema.*
 
 data class CompositionEmptyExpression<T : Composition<T>>(
     val left: ScalarExpression<T>,
@@ -67,4 +65,15 @@ data class EscapeExpression(
  */
 infix fun ColumnDeclaring<*>.escapeLike(argument: String): ScalarExpression<Boolean> {
     return EscapeExpression(asExpression(), ArgumentExpression(argument, VarcharSqlType), ArgumentExpression("\\", VarcharSqlType))
+}
+
+data class RowNumberExpression(
+    val orders: List<OrderByExpression>,
+    override val sqlType: SqlType<Int> = IntSqlType,
+    override val isLeafNode: Boolean = false,
+    override val extraProperties: Map<String, Any> = emptyMap()
+) : ScalarExpression<Int>()
+
+fun rowNumber(vararg orders: OrderByExpression): ScalarExpression<Int> {
+    return RowNumberExpression(orders.toList())
 }

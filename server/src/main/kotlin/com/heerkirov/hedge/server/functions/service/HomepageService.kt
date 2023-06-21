@@ -55,9 +55,9 @@ class HomepageService(private val data: DataRepository) {
         val todayImages = if(record.content.todayImageIds.isEmpty()) emptyList() else {
             data.db.from(Illusts)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(Illusts.id, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                .select(Illusts.id, Illusts.partitionTime, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
                 .where { (Illusts.id inList record.content.todayImageIds) and (Illusts.type notEq IllustModelType.COLLECTION) }
-                .map { IllustSimpleRes(it[Illusts.id]!!, takeThumbnailFilepath(it)) }
+                .map { HomepageRes.Illust(it[Illusts.id]!!, takeThumbnailFilepath(it), it[Illusts.partitionTime]!!) }
                 .associateBy { it.id }
                 .let { record.content.todayImageIds.mapNotNull(it::get) }
         }
@@ -146,11 +146,11 @@ class HomepageService(private val data: DataRepository) {
 
         val recentImages = data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-            .select(Illusts.id, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, Illusts.partitionTime, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
             .where { Illusts.type notEq IllustModelType.COLLECTION }
             .orderBy(Illusts.createTime.desc())
             .limit(20)
-            .map { IllustSimpleRes(it[Illusts.id]!!, takeThumbnailFilepath(it)) }
+            .map { HomepageRes.Illust(it[Illusts.id]!!, takeThumbnailFilepath(it), it[Illusts.partitionTime]!!) }
 
         return HomepageRes(record.date, todayImages, books, authorAndTopics, recentImages, historyImages)
     }

@@ -86,6 +86,14 @@ class HedgeSqlFormatter(database: Database, beautifySql: Boolean, indentSize: In
 
                 expr
             }
+            is RowNumberExpression -> {
+                write("row_number() OVER (ORDER BY ")
+                visitOrderByList(expr.orders)
+                removeLastBlank()
+                write(") ")
+
+                expr
+            }
             else -> {
                 super.visitUnknown(expr)
             }

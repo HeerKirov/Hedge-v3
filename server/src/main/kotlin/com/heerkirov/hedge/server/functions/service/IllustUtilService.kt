@@ -1,10 +1,7 @@
 package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.database.DataRepository
-import com.heerkirov.hedge.server.dao.BookImageRelations
-import com.heerkirov.hedge.server.dao.FileRecords
-import com.heerkirov.hedge.server.dao.FolderImageRelations
-import com.heerkirov.hedge.server.dao.Illusts
+import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime

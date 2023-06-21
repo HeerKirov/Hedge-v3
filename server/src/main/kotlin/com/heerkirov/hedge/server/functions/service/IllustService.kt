@@ -8,6 +8,7 @@ import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
+import com.heerkirov.hedge.server.dto.filter.IllustLocationFilter
 import com.heerkirov.hedge.server.dto.filter.IllustQueryFilter
 import com.heerkirov.hedge.server.dto.filter.LimitAndOffsetFilter
 import com.heerkirov.hedge.server.dto.form.*
@@ -28,15 +29,14 @@ import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
 import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
 import com.heerkirov.hedge.server.utils.filterInto
-import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
-import com.heerkirov.hedge.server.utils.ktorm.first
-import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
-import com.heerkirov.hedge.server.utils.ktorm.orderBy
+import com.heerkirov.hedge.server.utils.ktorm.*
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.ktorm.expression.BinaryExpression
+import org.ktorm.expression.QuerySourceExpression
+import org.ktorm.expression.SelectExpression
 import kotlin.math.roundToInt
 
 class IllustService(private val data: DataRepository,
@@ -99,6 +99,37 @@ class IllustService(private val data: DataRepository,
             .map { it[Illusts.id]!! to newIllustRes(it) }
             .toMap()
             .let { r -> imageIds.map { r[it] } }
+    }
+
+    fun findImageLocation(filter: IllustLocationFilter): Int {
+        val schema = if(filter.query.isNullOrBlank()) null else {
+            queryManager.querySchema(filter.query, QueryManager.Dialect.ILLUST).executePlan ?: return -2
+        }
+
+        val orderByExpressions = orderTranslator.toOrderByExpressions(filter.order, schema?.orderConditions, default = descendingOrderItem("orderTime"))
+
+        val query = data.db.from(Illusts)
+            .let { schema?.joinConditions?.fold(it) { acc, join -> if(join.left) acc.leftJoin(join.table, join.condition) else acc.innerJoin(join.table, join.condition) } ?: it }
+            .let { if(filter.topic == null) it else it.innerJoin(IllustTopicRelations, (IllustTopicRelations.illustId eq Illusts.id) and (IllustTopicRelations.topicId eq filter.topic)) }
+            .let { if(filter.author == null) it else it.innerJoin(IllustAuthorRelations, (IllustAuthorRelations.illustId eq Illusts.id) and (IllustAuthorRelations.authorId eq filter.author)) }
+            .select(Illusts.id.aliased("id"), rowNumber(*orderByExpressions).aliased("idx"))
+            .whereWithConditions {
+                it += (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)
+                if(filter.partition != null) {
+                    it += Illusts.partitionTime eq filter.partition
+                }
+                if(filter.favorite != null) {
+                    it += if(filter.favorite) Illusts.favorite else Illusts.favorite.not()
+                }
+                if(schema != null && schema.whereConditions.isNotEmpty()) {
+                    it.addAll(schema.whereConditions)
+                }
+            }
+            .runIf(schema?.distinct == true) { groupBy(Illusts.id) }
+
+        val selectExpression = SelectExpression(from = query.expression, where = Illusts.id.aliased("id") eq filter.imageId, limit = 1)
+        val row = data.db.executeQuery(selectExpression)
+        return if(row.next()) row.getInt("idx") else -1
     }
 
     /**

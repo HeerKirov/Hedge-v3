@@ -11,6 +11,7 @@ import com.heerkirov.hedge.server.dto.filter.ImportFilter
 import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.FileStatus
+import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.enums.FolderType
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.events.ImportSaved
@@ -332,7 +333,7 @@ class ImportService(private val data: DataRepository,
                 if(record.preference?.cloneImage != null && record.preference.cloneImage.fromImageId !in existedCloneFromIds) {
                     notExistedCloneFrom = record.preference.cloneImage.fromImageId
                 }
-                if(file.status == FileStatus.NOT_READY) {
+                if(file.status == FileStatus.NOT_READY || file.fingerStatus == FingerprintStatus.NOT_READY) {
                     fileNotReady = true
                 }
                 if(notExistedCollectionId != null || notExistedBookIds != null || notExistedFolderIds != null || notExistedCloneFrom != null || fileNotReady) {
