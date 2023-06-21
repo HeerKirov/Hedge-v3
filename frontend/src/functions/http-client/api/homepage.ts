@@ -15,8 +15,19 @@ export function createHomepageEndpoint(http: HttpInstance): HomepageEndpoint {
 
 function mapToHomepageInfo(data: any): HomepageInfo {
     return {
-        ...data,
         date: date.of(<string>data["date"]),
+        todayImages: (<any[]>data["todayImages"]).map(data => ({
+            id: <number>data["id"],
+            thumbnailFile: <string>data["thumbnailFile"],
+            partitionTime: date.of(<string>data["partitionTime"])
+        })),
+        todayBooks: <Book[]>data["todayBooks"],
+        todayAuthorAndTopics: <AuthorAndTopic[]>data["todayAuthorAndTopics"],
+        recentImages: (<any[]>data["recentImages"]).map(data => ({
+            id: <number>data["id"],
+            thumbnailFile: <string>data["thumbnailFile"],
+            partitionTime: date.of(<string>data["partitionTime"])
+        })),
         historyImages: (<any[]>data["historyImages"]).map(data => ({
             images: <SimpleIllust[]>data["images"],
             date: date.of(<string>data["date"])
@@ -33,10 +44,10 @@ export interface HomepageEndpoint {
 
 interface HomepageInfo {
     date: LocalDate
-    todayImages: SimpleIllust[]
+    todayImages: Illust[]
     todayBooks: Book[]
     todayAuthorAndTopics: AuthorAndTopic[]
-    recentImages: SimpleIllust[]
+    recentImages: Illust[]
     historyImages: HistoryImage[]
 }
 
@@ -61,6 +72,10 @@ interface Book {
     title: string
     thumbnailFile: string | null
     imageCount: number
+}
+
+interface Illust extends SimpleIllust {
+    partitionTime: LocalDate
 }
 
 interface HistoryImage {

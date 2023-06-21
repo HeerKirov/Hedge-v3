@@ -82,13 +82,13 @@ export function useNavHistoryPush<T extends object>(watcher: Ref<T | null>, gene
                 const finalId = typeof id === "number" ? id.toString() : id
                 pushHistory(finalId, name)
             }
-        })
+        }, {immediate: true})
     }else{
         watch(watcher, d => {
             if(d !== null) {
                 const { id, name } = d as {id: number, name: string}
                 pushHistory(id.toString(), name)
             }
-        })
+        }, {immediate: true})
     }
 }

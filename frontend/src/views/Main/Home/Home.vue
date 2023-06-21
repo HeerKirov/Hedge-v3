@@ -7,7 +7,12 @@ import { AUTHOR_TYPE_ICONS, TOPIC_TYPE_ICONS } from "@/constants/entity"
 
 const { assetsUrl } = useAssets()
 
-const { loading, data } = useHomepageContext()
+const { 
+    loading, data, 
+    openBook, openIllustOfRecent,
+    openPartition, openIllustOfPartition, 
+    openAuthorOrTopic, openIllustOfAuthorOrTopic
+} = useHomepageContext()
 
 </script>
 
@@ -21,14 +26,14 @@ const { loading, data } = useHomepageContext()
         <div v-else-if="!!data" :class="$style.root">
             <label :class="$style.header">随便看看</label>
             <div :class="$style['primary-scroll-area']">
-                <img v-for="i in data.todayImages" :class="$style.image" :src="assetsUrl(i.thumbnailFile)"/>
+                <img v-for="i in data.todayImages" :class="$style.image" :src="assetsUrl(i.thumbnailFile)" @click="openIllustOfPartition(i.partitionTime, i.id)"/>
                 <div class="h-100"/>
                 <Block v-for="i in data.todayAuthorAndTopics" :class="$style.block">
-                    <div :class="[$style['title-area'], `has-text-${i.color}`]">
+                    <div :class="[$style['title-area'], `has-text-${i.color}`]" @click="openAuthorOrTopic(i.metaType, i.name)">
                         <Icon class="mr-1" :icon="i.metaType === 'AUTHOR' ? AUTHOR_TYPE_ICONS[i.type] : TOPIC_TYPE_ICONS[i.type]"/>{{ i.name }}
                     </div>
                     <div :class="$style['example-area']">
-                        <img v-for="j in i.images" :class="$style.example" :src="assetsUrl(j.thumbnailFile)"/>
+                        <img v-for="j in i.images" :class="$style.example" :src="assetsUrl(j.thumbnailFile)" @click="openIllustOfAuthorOrTopic(i.metaType, i.name, j.id)"/>
                         <template v-if="i.images.length < 3">
                             <div v-for="_ in (3 - i.images.length)" :class="$style['empty-example']"/>
                         </template>
@@ -38,26 +43,26 @@ const { loading, data } = useHomepageContext()
             <label :class="$style.header">画集推荐</label>
             <div :class="$style['book-scroll-area']">
                 <Block v-for="b in data.todayBooks" :class="$style.book">
-                    <img :class="$style.img" :src="assetsUrl(b.thumbnailFile)"/>
+                    <img :class="$style.img" :src="assetsUrl(b.thumbnailFile)" @click="openBook(b.id)"/>
                     <Icon :class="['has-text-danger', $style.fav]" icon="heart"/>
                     <div :class="$style.info">
-                        <span v-if="true" class="float-right">(<b>0</b>)</span>
+                        <span v-if="b.imageCount > 0" class="float-right">(<b>{{ b.imageCount }}</b>)</span>
                         <span v-else class="float-right has-text-secondary">(空)</span>
-                        <span v-if="b.title" class="selectable is-cursor-pointer">{{ b.title }}</span>
-                        <span v-else class="is-cursor-pointer"><Icon class="mr-2" icon="id-card"/><span class="selectable">{{ b.id }}</span></span>
+                        <span v-if="b.title" class="selectable is-cursor-pointer" @click="openBook(b.id)">{{ b.title }}</span>
+                        <span v-else class="is-cursor-pointer" @click="openBook(b.id)"><Icon class="mr-2" icon="id-card"/><span class="selectable">{{ b.id }}</span></span>
                     </div>
                 </Block>
             </div>
             <template v-if="data.recentImages.length">
                 <label :class="$style.header">最近添加</label>
                 <div :class="$style['secondary-scroll-area']">
-                    <img v-for="i in data.recentImages" :class="$style.image" :src="assetsUrl(i.thumbnailFile)"/>
+                    <img v-for="i in data.recentImages" :class="$style.image" :src="assetsUrl(i.thumbnailFile)" @click="openIllustOfRecent(i.id)"/>
                 </div>
             </template>
             <template v-for="h in data.historyImages">
-                <label :class="$style.header">{{ h.date.year }}年{{ h.date.month }}月{{ h.date.day }}日</label>
+                <label :class="[$style.header, 'is-cursor-pointer']" @click="openPartition(h.date)">{{ h.date.year }}年{{ h.date.month }}月{{ h.date.day }}日</label>
                 <div :class="$style['secondary-scroll-area']">
-                    <img v-for="i in h.images" :class="$style.image" :src="assetsUrl(i.thumbnailFile)"/>
+                    <img v-for="i in h.images" :class="$style.image" :src="assetsUrl(i.thumbnailFile)" @click="openIllustOfPartition(h.date, i.id)"/>
                 </div>
             </template>
         </div>
@@ -109,6 +114,7 @@ $margin-x: $spacing-4
         height: $image-width
         object-fit: cover
         object-position: center
+        cursor: pointer
     > .block
         flex-shrink: 0
         height: calc((#{$image-width * $image-column-num} + #{$image-gap * ($image-column-num - $block-column-num)}) / 3)
@@ -120,6 +126,7 @@ $margin-x: $spacing-4
             white-space: nowrap
             overflow: hidden
             text-overflow: ellipsis
+            cursor: pointer
         > .example-area
             $example-height: calc((#{$image-width * $image-column-num} + #{$image-gap * ($image-column-num - $block-column-num)}) / 3 - #{$element-height-small} - #{$spacing-2 * 2} - 2px)
             height: $example-height
@@ -132,6 +139,7 @@ $margin-x: $spacing-4
                 box-sizing: border-box
                 object-fit: cover
                 object-position: center
+                cursor: pointer
             > .empty-example
                 width: $example-height
                 height: $example-height
@@ -153,6 +161,7 @@ $margin-x: $spacing-4
         height: $image-width
         object-fit: cover
         object-position: center
+        cursor: pointer
 
 .book-scroll-area
     $book-width: 12vw
@@ -174,6 +183,7 @@ $margin-x: $spacing-4
             height: 80%
             object-position: center
             object-fit: cover
+            cursor: pointer
         > .fav
             position: absolute
             right: 0.35rem

@@ -24,6 +24,9 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
         findByIds: http.createDataRequest("/api/illusts/find-by-ids", "POST", {
             parseResponse: (result: (any | null)[]) => result.map(i => i !== null ? mapToIllust(i) : null)
         }),
+        findLocation: http.createQueryRequest("/api/illusts/find-location", "GET", {
+            parseQuery: mapFromIllustFilter
+        }),
         get: http.createPathRequest(id => `/api/illusts/${id}`, "GET", {
             parseResponse: mapToDetailIllust
         }),
@@ -153,7 +156,7 @@ function mapFromIllustBatchUpdateForm(form: IllustBatchUpdateForm): any {
     }
 }
 
-function mapFromIllustFilter(data: IllustFilter) {
+function mapFromIllustFilter(data: IllustFilter | IllustLocationFilter) {
     return {
         ...data,
         partition: data.partition && date.toISOString(data.partition)
@@ -172,6 +175,10 @@ export interface IllustEndpoint {
      * 根据条件执行高级查询。
      */
     findByIds(imageIds: number[]): Promise<Response<(Illust | null)[]>>
+    /**
+     * 查询指定图像在指定查询条件下的列表中的位置下标。
+     */
+    findLocation(filter: IllustLocationFilter): Promise<Response<{index: number}>>
     /**
      * 查看元数据。不区分类型。
      * @exception NOT_FOUND
@@ -657,4 +664,35 @@ export interface IllustQueryFilter {
      * 按author id筛选。
      */
     author?: number
+}
+
+export interface IllustLocationFilter {
+    /**
+     * 使用HQL进行查询。list API不提示解析结果，需要使用另外的API。
+     */
+    query?: string
+    /**
+     * 排序字段列表。优先使用来自HQL的排序。
+     */
+    order?: OrderList<"id" | "score" | "orderTime" | "createTime" | "updateTime">
+    /**
+     * 分区。
+     */
+    partition?: LocalDate
+    /**
+     * 收藏标记。
+     */
+    favorite?: boolean
+    /**
+     * 按topic id筛选。
+     */
+    topic?: number
+    /**
+     * 按author id筛选。
+     */
+    author?: number
+    /**
+     * 要查询的image。
+     */
+    imageId: number
 }

@@ -5,13 +5,13 @@ import { LocalDate } from "@/utils/datetime"
  * app中没有任何复杂地址，所以所有的导航参数都是可选的。
  */
 export interface RouteParameter {
-    "MainIllust": RouteTemplate<{}, { topicName?: string, authorName?: string, tagName?: string, source?: {site: string, id: number} }>
+    "MainIllust": RouteTemplate<{}, { topicName?: string, authorName?: string, tagName?: string, source?: {site: string, id: number}, locateId?: number }>
     "MainBook": RouteTemplate<{}, { topicName?: string, authorName?: string, tagName?: string }>
     "MainTopic": RouteTemplate<{ detail: number }, undefined>
     "MainAuthor": RouteTemplate<{ detail: number }, undefined>
     "MainTag": RouteTemplate<{ detail: number }, undefined>
     "MainAnnotation": RouteTemplate<{ detail: number }, undefined>
-    "MainPartition": RouteTemplate<{ detail: LocalDate }, undefined>
+    "MainPartition": RouteTemplate<{ detail: LocalDate }, { locateId?: number }>
     "MainFolder": RouteTemplate<{ detail: number }, undefined>
     "MainFindSimilar": RouteTemplate<{ detail: number }, undefined>
     "Preview": RouteTemplate<{}, { type: "image", imageIds: number[], currentIndex?: number } | { type: "collection", collectionId: number} | { type: "book", bookId: number }>

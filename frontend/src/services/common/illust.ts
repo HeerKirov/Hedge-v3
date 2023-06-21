@@ -1,10 +1,10 @@
-import { Ref, unref } from "vue"
+import { Ref, ref, unref, watch } from "vue"
 import { VirtualViewNavigation } from "@/components/data"
 import {
     PaginationDataView, QueryListview, AllSlice, ListIndexSlice, SingletonSlice,
-    usePostFetchHelper, usePostPathFetchHelper, useFetchHelper, QueryInstance, createMappedQueryInstance
+    usePostFetchHelper, usePostPathFetchHelper, useFetchHelper, QueryInstance, createMappedQueryInstance, PaginationData
 } from "@/functions/fetch"
-import { CoverIllust, Illust, IllustType } from "@/functions/http-client/api/illust"
+import { CoverIllust, Illust, IllustQueryFilter, IllustType } from "@/functions/http-client/api/illust"
 import { SelectedState } from "@/services/base/selected-state"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
@@ -425,4 +425,41 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
         createCollection, splitToGenerateNewCollection, createBook, editAssociate, addToFolder, cloneImage, exportItem,
         deleteItem, removeItemFromCollection, removeItemFromBook, removeItemFromFolder, getEffectedItems, dataDrop
     }
+}
+
+export interface LocateIdOptions<T extends BasicIllust> {
+    queryFilter: Ref<IllustQueryFilter>
+    paginationData: PaginationDataView<T>
+    selector: SelectedState<number>
+    navigation: VirtualViewNavigation
+}
+
+/**
+ * 提供一组有关locateId的实现。
+ */
+export function useLocateId<T extends BasicIllust>(options: LocateIdOptions<T>) {
+    const locateId = ref<number | null>()
+    const fetchFindLocation = useFetchHelper(client => client.illust.findLocation)
+    
+    watch(() => [options.paginationData.data.metrics.total, locateId.value] as const, async ([total, id]) => {
+        if(total && id) {
+            const res = await fetchFindLocation({
+                ...options.queryFilter.value,
+                imageId: id
+            })
+            if(res !== undefined) {
+                options.selector.update([id], id)
+                options.navigation.navigateTo(res.index)
+            }
+            locateId.value = null
+        }
+    })
+
+    const catchLocateId = (newLocateId: number | null | undefined) => {
+        if(newLocateId) {
+            locateId.value = newLocateId
+        }
+    }
+
+    return {catchLocateId}
 }

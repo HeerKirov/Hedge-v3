@@ -3,7 +3,7 @@ import { installVirtualViewNavigation } from "@/components/data"
 import { useDialogService } from "@/components-module/dialog"
 import { flatResponse } from "@/functions/http-client"
 import { IllustQueryFilter, Tagme } from "@/functions/http-client/api/illust"
-import { SimpleTag, SimpleTopic, SimpleAuthor } from "@/functions/http-client/api/all"
+import { SimpleTag, SimpleTopic, SimpleAuthor, mapFromOrderList } from "@/functions/http-client/api/all"
 import { useFetchEndpoint, usePostFetchHelper } from "@/functions/fetch"
 import { useToast } from "@/modules/toast"
 import { useRouterParamEvent } from "@/modules/router"
@@ -12,7 +12,7 @@ import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useIllustViewController } from "@/services/base/view-controller"
 import { useQuerySchema } from "@/services/base/query-schema"
-import { useImageDatasetOperators } from "@/services/common/illust"
+import { useImageDatasetOperators, useLocateId } from "@/services/common/illust"
 import { useSettingSite } from "@/services/setting"
 import { installation, toRef } from "@/utils/reactivity"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
@@ -29,6 +29,7 @@ export const [installIllustContext] = installation(function () {
         listview: listview.listview,
         selector, navigation
     })
+    const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector, navigation})
 
     useSettingSite()
 
@@ -42,6 +43,8 @@ export const [installIllustContext] = installation(function () {
             params.authorName ? `@\`${params.authorName}\`` : undefined,
             params.source ? `^SITE:${params.source.site} ^ID:${params.source.id}` : undefined
         ].filter(i => i !== undefined).join(" ")
+
+        locateId.catchLocateId(params.locateId)
     })
 
     return {paneState, listview, selector, listviewController, querySchema, operators}

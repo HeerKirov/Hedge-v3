@@ -5,14 +5,14 @@ import { IllustQueryFilter } from "@/functions/http-client/api/illust"
 import { flatResponse } from "@/functions/http-client"
 import { useFetchEndpoint, useFetchReactive } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
-import { useRouterQueryLocalDate } from "@/modules/router"
+import { useRouterParamEvent, useRouterQueryLocalDate } from "@/modules/router"
 import { useNavHistoryPush } from "@/services/base/side-nav-menu"
 import { useQuerySchema } from "@/services/base/query-schema"
 import { useIllustViewController } from "@/services/base/view-controller"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
-import { useImageDatasetOperators } from "@/services/common/illust"
+import { useImageDatasetOperators, useLocateId } from "@/services/common/illust"
 import { useSettingSite } from "@/services/setting"
 import { installation } from "@/utils/reactivity"
 import { sleep } from "@/utils/process"
@@ -239,12 +239,17 @@ export function useDetailIllustContext() {
         listview: listview.listview,
         selector, navigation
     })
+    const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector, navigation})
 
     watch(listviewController.collectionMode, collectionMode => listview.queryFilter.value.type = collectionMode ? "COLLECTION" : "IMAGE", {immediate: true})
     watch(querySchema.query, query => listview.queryFilter.value.query = query, {immediate: true})
     watch(path, path => listview.queryFilter.value.partition = path ?? undefined, {immediate: true})
 
     useSettingSite()
+
+    useRouterParamEvent("MainPartition", params => {
+        locateId.catchLocateId(params.locateId)
+    })
 
     return {path, listview, selector, paneState, operators, querySchema, listviewController}
 }

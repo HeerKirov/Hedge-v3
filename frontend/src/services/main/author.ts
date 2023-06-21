@@ -1,14 +1,7 @@
 import { readonly, Ref, ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useLocalStorage } from "@/functions/app"
-import {
-    ErrorHandler,
-    QueryListview,
-    useCreatingHelper,
-    useFetchEndpoint,
-    useFetchHelper,
-    useRetrieveHelper
-} from "@/functions/fetch"
+import { ErrorHandler, QueryListview, useCreatingHelper, useFetchEndpoint, useFetchHelper, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import {
     Author, DetailAuthor, AuthorCreateForm, AuthorUpdateForm,
