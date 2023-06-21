@@ -365,6 +365,7 @@ CREATE TABLE file_db.file(
     resolution_height   INTEGER NOT NULL,           -- 分辨率高度
 
     status	        TINYINT NOT NULL,               -- 文件准备状态
+    finger_status   TINYINT NOT NULL,               -- 指纹准备状态
     create_time 	TIMESTAMP NOT NULL,             -- 创建时间
     update_time     TIMESTAMP NOT NULL              -- 上次更新的时间
 );

@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.dao
 
 import com.heerkirov.hedge.server.enums.FileStatus
+import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.model.*
 import com.heerkirov.hedge.server.model.FileFingerprint
@@ -242,6 +243,7 @@ object FileRecords : BaseTable<FileRecord>("file", schema = "file_db") {
     val resolutionWidth = int("resolution_width")
     val resolutionHeight = int("resolution_height")
     val status = enum("status", typeRef<FileStatus>())
+    val fingerStatus = enum("finger_status", typeRef<FingerprintStatus>())
     val createTime = datetime("create_time")
     val updateTime = datetime("update_time")
 
@@ -252,6 +254,7 @@ object FileRecords : BaseTable<FileRecord>("file", schema = "file_db") {
         size = row[size]!!,
         thumbnailSize = row[thumbnailSize]!!,
         status = row[status]!!,
+        fingerStatus = row[fingerStatus]!!,
         resolutionWidth = row[resolutionWidth]!!,
         resolutionHeight = row[resolutionHeight]!!,
         createTime = row[createTime]!!,

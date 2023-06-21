@@ -10,6 +10,7 @@ import com.heerkirov.hedge.server.dao.FileRecords
 import com.heerkirov.hedge.server.dao.ImportImages
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.enums.FileStatus
+import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.events.ImportUpdated
 import com.heerkirov.hedge.server.exceptions.BusinessException
 import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
@@ -38,43 +39,59 @@ interface FileGenerator : StatefulComponent {
     fun appendTask(fileId: Int)
 }
 
-const val GENERATE_INTERVAL: Long = 50
+private const val GENERATE_INTERVAL: Long = 50
 
 class FileGeneratorImpl(private val appStatus: AppStatusDriver, private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus) : FileGenerator {
     private val log = LoggerFactory.getLogger(FileGenerator::class.java)
 
-    private val queue: MutableList<Int> = LinkedList()
+    private val thumbnailQueue: MutableList<Int> = LinkedList()
+    private val fingerprintQueue: MutableList<Int> = LinkedList()
 
-    private val daemonTask = controlledThread(thread = ::daemonThread)
+    private val thumbnailTask = controlledThread(thread = ::thumbnailDaemon)
+    private val fingerprintTask = controlledThread(thread = ::fingerprintDaemon)
 
-    override val isIdle: Boolean get() = !daemonTask.isAlive
+    override val isIdle: Boolean get() = !thumbnailTask.isAlive
 
     override fun load() {
         if(appStatus.status == AppLoadStatus.READY) {
-            val tasks = data.db.from(FileRecords)
+            val thumbnailTasks = data.db.from(FileRecords)
                 .select(FileRecords.id)
                 .where { FileRecords.status eq FileStatus.NOT_READY }
                 .orderBy(FileRecords.updateTime.asc())
                 .map { it[FileRecords.id]!! }
-            if(tasks.isNotEmpty()) {
+            if(thumbnailTasks.isNotEmpty()) {
                 synchronized(this) {
-                    queue.addAll(tasks)
-                    daemonTask.start()
+                    thumbnailQueue.addAll(thumbnailTasks)
+                    thumbnailTask.start()
+                }
+            }
+            val fingerprintTasks = data.db.from(FileRecords)
+                .leftJoin(FileFingerprints, FileFingerprints.fileId eq FileRecords.id)
+                .select(FileRecords.id)
+                .where { (FileRecords.fingerStatus eq FingerprintStatus.NOT_READY) or (FileFingerprints.fileId.isNull()) }
+                .orderBy(FileRecords.updateTime.asc())
+                .map { it[FileRecords.id]!! }
+            if(thumbnailTasks.isNotEmpty()) {
+                synchronized(this) {
+                    fingerprintQueue.addAll(fingerprintTasks)
+                    fingerprintTask.start()
                 }
             }
         }
     }
 
     override fun appendTask(fileId: Int) {
-        queue.add(fileId)
-        daemonTask.start()
+        thumbnailQueue.add(fileId)
+        fingerprintQueue.add(fileId)
+        thumbnailTask.start()
+        fingerprintTask.start()
     }
 
-    private fun daemonThread() {
-        if(queue.isEmpty()) {
+    private fun thumbnailDaemon() {
+        if(thumbnailQueue.isEmpty()) {
             synchronized(this) {
-                if(queue.isEmpty()) {
-                    daemonTask.stop()
+                if(thumbnailQueue.isEmpty()) {
+                    thumbnailTask.stop()
                     return
                 }
             }
@@ -84,7 +101,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver, private val appd
             return
         }
 
-        val fileId = queue.first()
+        val fileId = thumbnailQueue.first()
 
         try {
             val fileRecord = data.db.sequenceOf(FileRecords).firstOrNull { it.id eq fileId }
@@ -93,10 +110,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver, private val appd
                 val file = File("${appdata.storagePathAccessor.storageDir}/$filepath")
                 if(file.exists()) {
                     val (thumbnailFileSize, resolutionWidth, resolutionHeight) = processThumbnail(fileRecord, file)
-
                     data.db.transaction {
-                        processFingerprint(fileRecord, file)
-
                         data.db.update(FileRecords) {
                             where { it.id eq fileRecord.id }
                             if(thumbnailFileSize != null) {
@@ -125,7 +139,65 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver, private val appd
             log.error("Error occurred in thumbnail task of file $fileId.", e)
         }finally{
             //即使报告错误，也会将它从队列移除
-            queue.remove(fileId)
+            thumbnailQueue.remove(fileId)
+        }
+    }
+
+    private fun fingerprintDaemon() {
+        if(fingerprintQueue.isEmpty()) {
+            synchronized(this) {
+                if(fingerprintQueue.isEmpty()) {
+                    fingerprintTask.stop()
+                    return
+                }
+            }
+        }
+        if(!appdata.storagePathAccessor.accessible) {
+            log.warn("File storage path ${appdata.storagePathAccessor.storageDir} is not accessible. Fingerprint generator is paused.")
+            return
+        }
+
+        val fileId = fingerprintQueue.first()
+
+        try {
+            val fileRecord = data.db.sequenceOf(FileRecords).firstOrNull { it.id eq fileId }
+            if(fileRecord != null && fileRecord.status == FileStatus.NOT_READY) {
+                val filepath = generateFilepath(fileRecord.folder, fileRecord.id, fileRecord.extension)
+                val file = File("${appdata.storagePathAccessor.storageDir}/$filepath")
+                if(file.exists()) {
+                    val result = try { Similarity.process(file) }catch (e: BusinessException) {
+                        if(e.exception is IllegalFileExtensionError) {
+                            //忽略文件类型不支持的错误，且不生成指纹，直接退出
+                            null
+                        }else{
+                            throw e
+                        }
+                    }
+
+                    if(result != null) data.db.transaction {
+                        data.db.insert(FileFingerprints) {
+                            set(it.fileId, fileRecord.id)
+                            set(it.createTime, DateTime.now())
+                            set(it.pHashSimple, result.pHashSimple)
+                            set(it.dHashSimple, result.dHashSimple)
+                            set(it.pHash, result.pHash)
+                            set(it.dHash, result.dHash)
+                        }
+
+                        data.db.update(FileRecords) {
+                            where { it.id eq fileRecord.id }
+                            set(it.fingerStatus, FingerprintStatus.READY)
+                        }
+                    }
+
+                    Thread.sleep(GENERATE_INTERVAL)
+                }
+            }
+        }catch (e: Exception) {
+            log.error("Error occurred in fingerprint task of file $fileId.", e)
+        }finally{
+            //即使报告错误，也会将它从队列移除
+            fingerprintQueue.remove(fileId)
         }
     }
 
@@ -145,28 +217,6 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver, private val appd
             }
         }else{
             Triple(null, resolutionWidth, resolutionHeight)
-        }
-    }
-
-    private fun processFingerprint(fileRecord: FileRecord, file: File) {
-        val result = try {
-            Similarity.process(file)
-        }catch (e: BusinessException) {
-            if(e.exception is IllegalFileExtensionError) {
-                //忽略文件类型不支持的错误，且不生成指纹，直接退出
-                return
-            }else{
-                throw e
-            }
-        }
-
-        data.db.insert(FileFingerprints) {
-            set(it.fileId, fileRecord.id)
-            set(it.createTime, DateTime.now())
-            set(it.pHashSimple, result.pHashSimple)
-            set(it.dHashSimple, result.dHashSimple)
-            set(it.pHash, result.pHash)
-            set(it.dHash, result.dHash)
         }
     }
 }

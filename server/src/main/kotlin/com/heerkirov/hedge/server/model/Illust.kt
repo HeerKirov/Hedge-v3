@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.model
 
 import com.heerkirov.hedge.server.enums.FileStatus
+import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.utils.composition.Composition
 import java.time.LocalDate
@@ -375,6 +376,10 @@ data class FileRecord(val id: Int,
                        * 文件的处理与可用状态。
                        */
                       val status: FileStatus,
+                      /**
+                       * 指纹的处理与可用状态。
+                       */
+                      val fingerStatus: FingerprintStatus,
                       /**
                        * 记录创建时间。
                        */
