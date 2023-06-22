@@ -31,13 +31,13 @@ function useListView() {
         request: client => (offset, limit, filter) => client.sourceData.list({offset, limit, ...filter}),
         eventFilter: {
             filter: ["entity/source-data/created", "entity/source-data/updated", "entity/source-data/deleted"],
-            operation({ event, refresh, update, remove }) {
+            operation({ event, refresh, updateOne, removeOne }) {
                 if(event.eventType === "entity/source-data/created") {
                     refresh()
                 }else if(event.eventType === "entity/source-data/updated") {
-                    update(i => i.sourceSite === event.site && i.sourceId === event.sourceId)
+                    updateOne(i => i.sourceSite === event.site && i.sourceId === event.sourceId)
                 }else if(event.eventType === "entity/source-data/deleted") {
-                    remove(i => i.sourceSite === event.site && i.sourceId === event.sourceId)
+                    removeOne(i => i.sourceSite === event.site && i.sourceId === event.sourceId)
                 }
             },
             request: client => async items => {

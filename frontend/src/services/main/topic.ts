@@ -38,13 +38,13 @@ function useListView() {
         request: client => (offset, limit, filter) => client.topic.list({offset, limit, ...filter}),
         eventFilter: {
             filter: ["entity/meta-tag/created", "entity/meta-tag/updated", "entity/meta-tag/deleted"],
-            operation({ event, refresh, update, remove }) {
+            operation({ event, refresh, updateOne, removeOne }) {
                 if(event.eventType === "entity/meta-tag/created" && event.metaType === "TOPIC") {
                     refresh()
                 }else if(event.eventType === "entity/meta-tag/updated" && event.metaType === "TOPIC") {
-                    update(i => i.id === event.metaId)
+                    updateOne(i => i.id === event.metaId)
                 }else if(event.eventType === "entity/meta-tag/deleted" && event.metaType === "TOPIC") {
-                    remove(i => i.id === event.metaId)
+                    removeOne(i => i.id === event.metaId)
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.topic.get(a.id))))

@@ -28,13 +28,13 @@ function useListView() {
         request: client => (offset, limit, filter) => client.book.list({offset, limit, ...filter}),
         eventFilter: {
             filter: ["entity/book/created", "entity/book/updated", "entity/book/deleted", "entity/book-images/changed"],
-            operation({ event, refresh, update, remove }) {
+            operation({ event, refresh, updateOne, removeOne }) {
                 if(event.eventType === "entity/book/created") {
                     refresh()
                 }else if((event.eventType === "entity/book/updated" && event.generalUpdated) || event.eventType === "entity/book-images/changed") {
-                    update(i => i.id === event.bookId)
+                    updateOne(i => i.id === event.bookId)
                 }else if(event.eventType === "entity/book/deleted") {
-                    remove(i => i.id === event.bookId)
+                    removeOne(i => i.id === event.bookId)
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.book.get(a.id))))

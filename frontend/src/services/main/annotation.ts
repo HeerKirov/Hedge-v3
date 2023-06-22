@@ -28,13 +28,13 @@ function useListView() {
         request: client => (offset, limit, filter) => client.annotation.list({offset, limit, ...filter}),
         eventFilter: {
             filter: ["entity/annotation/created", "entity/annotation/updated", "entity/annotation/deleted"],
-            operation({ event, refresh, update, remove }) {
+            operation({ event, refresh, updateOne, removeOne }) {
                 if(event.eventType === "entity/annotation/created" && event.type === list.queryFilter.value.type) {
                     refresh()
                 }else if(event.eventType === "entity/annotation/updated" && event.type === list.queryFilter.value.type) {
-                    update(i => i.id === event.annotationId)
+                    updateOne(i => i.id === event.annotationId)
                 }else if(event.eventType === "entity/annotation/deleted" && event.type === list.queryFilter.value.type) {
-                    remove(i => i.id === event.annotationId)
+                    removeOne(i => i.id === event.annotationId)
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.annotation.get(a.id))))

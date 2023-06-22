@@ -39,13 +39,13 @@ function useListView() {
         request: client => (offset, limit, filter) => client.author.list({offset, limit, ...filter}),
         eventFilter: {
             filter: ["entity/meta-tag/created", "entity/meta-tag/updated", "entity/meta-tag/deleted"],
-            operation({ event, refresh, update, remove }) {
+            operation({ event, refresh, updateOne, removeOne }) {
                 if(event.eventType === "entity/meta-tag/created" && event.metaType === "AUTHOR") {
                     refresh()
                 }else if(event.eventType === "entity/meta-tag/updated" && event.metaType === "AUTHOR") {
-                    update(i => i.id === event.metaId)
+                    updateOne(i => i.id === event.metaId)
                 }else if(event.eventType === "entity/meta-tag/deleted" && event.metaType === "AUTHOR") {
-                    remove(i => i.id === event.metaId)
+                    removeOne(i => i.id === event.metaId)
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.author.get(a.id))))

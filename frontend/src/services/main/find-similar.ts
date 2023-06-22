@@ -33,7 +33,7 @@ function useListView() {
         request: client => (offset, limit) => client.findSimilar.result.list({offset, limit}),
         eventFilter: {
             filter: ["backend/similar-finder/result-added", "backend/similar-finder/result-resolved", "backend/similar-finder/result-deleted"],
-            operation({ event, refresh, remove }) {
+            operation({ event, refresh, removeOne: remove }) {
                 if(event.eventType === "backend/similar-finder/result-added" && event.count > 0) {
                     refresh()
                 }else if(event.eventType === "backend/similar-finder/result-resolved" || event.eventType === "backend/similar-finder/result-deleted") {

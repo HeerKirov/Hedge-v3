@@ -18,7 +18,7 @@ import { installation } from "@/utils/reactivity"
 import { objects, strings } from "@/utils/primitives"
 import { date, LocalDate, LocalDateTime } from "@/utils/datetime"
 
-export const [installImportContext] = installation(function () {
+export const [installImportContext, useImportContext] = installation(function () {
     const importService = useImportService()
     const watcher = useImportFileWatcher()
     const listview = useListView()
@@ -104,13 +104,17 @@ function useListView() {
         request: client => (offset, limit, filter) => client.import.list({offset, limit, ...filter}),
         eventFilter: {
             filter: ["entity/import/created", "entity/import/updated", "entity/import/deleted", "entity/import/saved"],
-            operation({ event, refresh, update, remove }) {
-                if(event.eventType === "entity/import/created" || event.eventType === "entity/import/saved") {
+            operation({ event, refresh, updateOne, removeOne }) {
+                if(event.eventType === "entity/import/created") {
                     refresh()
                 }else if(event.eventType === "entity/import/updated") {
-                    update(i => i.id === event.importId)
+                    updateOne(i => i.id === event.importId)
                 }else if(event.eventType === "entity/import/deleted") {
-                    remove(i => i.id === event.importId)
+                    removeOne(i => i.id === event.importId)
+                }else if(event.eventType === "entity/import/saved") {
+                    for(const id of Object.keys(event.importIdToImageIds).map(i => parseInt(i))) {
+                        removeOne(i => i.id === id)
+                    }
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.import.get(a.id))))

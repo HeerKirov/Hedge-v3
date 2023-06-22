@@ -3,7 +3,7 @@ import { AllEvents, WsEventConditions, WsEventResult } from "@/functions/ws-clie
 import { BasicException } from "@/functions/http-client/exceptions"
 import { HttpClient, Response, ListResult } from "@/functions/http-client"
 import { ErrorHandler, useFetchManager } from "./install"
-import { restrict } from "@/utils/process"
+import { hoard } from "@/utils/process"
 import { objects } from "@/utils/primitives"
 
 interface QueryContinuousListviewOptions<T, E extends BasicException> {
@@ -204,43 +204,45 @@ export function useQueryContinuousListView<T, E extends BasicException>(options:
     if(options.eventFilter) {
         const emitter = wsClient.on(options.eventFilter.filter)
 
-        const restrictedReload = restrict({interval: 100, func: reload})
-        const restrictedReset = restrict({interval: 100, func: reset})
+        const hoardedReload = hoard({interval: 50, lengthenInterval: 10, maxInterval: 100, func: reload})
+        const hoardedReset = hoard({interval: 50, lengthenInterval: 10, maxInterval: 100, func: reset})
+        const hoardedUpdate = hoard<[number, T[]]>({interval: 50, lengthenInterval: 10, maxInterval: 100, async func(allItems) {
+            const currentVersion = version
+            const updateItems = allItems.filter(([v, _]) => v === version).map(([_, items]) => items).flat()
+            const res = await updateRequestMethod!(updateItems)
+            if(currentVersion !== version) {
+                //version变化时丢弃所有查询结果
+                return
+            }
+            if(res.ok) {
+                for(let i = 0; i < updateItems.length; ++i) {
+                    //赋值时，采用的是直接修改object fields的方案。这种方案直接引用了原对象，能规避移位问题
+                    //continuous API中的result是响应式的，因此能直接响应修改
+                    if(res.data[i]) {
+                        objects.clear(updateItems[i])
+                        objects.copyTo(res.data[i], updateItems[i])
+                    }
+                }
+            }else if(res.exception) {
+                handleException(res.exception)
+            }
+        }})
+
         const updateRequestMethod = options.eventFilter.request?.(httpClient)
 
         onMounted(() => emitter.addEventListener(receiveEvent))
         onUnmounted(() => emitter.removeEventListener(receiveEvent))
 
         const receiveEvent = async (e: WsEventResult) => {
-            const currentVersion = version
             options.eventFilter!.operation({
                 ...e,
-                reload: restrictedReload,
-                reset: restrictedReset,
+                reload: hoardedReload,
+                reset: hoardedReset,
                 update(where: (item: T) => boolean) {
-                    //TODO 节流方案需要更新:
-                    //需要更成熟、更统一的节流方案。实际上items很大可能会分散到达，面对这种情况也需要节流，将短时间内的items收集起来统一请求
+                    const currentVersion = version
                     if(!updateRequestMethod) throw new Error("options.eventFilter.request is satisfied.")
-                    //选出来的items是需要异步更新的。异步过程中列表可能发生变化。
                     const updateItems = data.value.result.filter(where)
-                    if(updateItems.length) updateRequestMethod(updateItems).then(res => {
-                        if(currentVersion !== version) {
-                            //version变化时丢弃所有查询结果
-                            return
-                        }
-                        if(res.ok) {
-                            for(let i = 0; i < updateItems.length; ++i) {
-                                //赋值时，采用的是直接修改object fields的方案。这种方案直接引用了原对象，能规避移位问题
-                                //continuous API中的result是响应式的，因此能直接响应修改
-                                if(res.data[i]) {
-                                    objects.clear(updateItems[i])
-                                    objects.copyTo(res.data[i], updateItems[i])
-                                }
-                            }
-                        }else if(res.exception) {
-                            handleException(res.exception)
-                        }
-                    })
+                    if(updateItems.length) hoardedUpdate([currentVersion, updateItems])
                 },
                 remove(where: (item: T) => boolean) {
                     //delete过程是同步的。因此可以放心地对列表做筛选和更改。

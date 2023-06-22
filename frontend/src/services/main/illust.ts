@@ -1,7 +1,7 @@
 import { computed, reactive, Ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useDialogService } from "@/components-module/dialog"
-import { flatResponse } from "@/functions/http-client"
+import { flatResponse, mapResponse } from "@/functions/http-client"
 import { IllustQueryFilter, Tagme } from "@/functions/http-client/api/illust"
 import { SimpleTag, SimpleTopic, SimpleAuthor, mapFromOrderList } from "@/functions/http-client/api/all"
 import { useFetchEndpoint, usePostFetchHelper } from "@/functions/fetch"
@@ -56,18 +56,18 @@ function useListView() {
         request: client => (offset, limit, filter) => client.illust.list({offset, limit, ...filter}),
         eventFilter: {
             filter: ["entity/illust/created", "entity/illust/updated", "entity/illust/deleted", "entity/collection-images/changed"],
-            operation({ event, refresh, update, remove }) {
+            operation({ event, refresh, updateOne, removeOne }) {
                 if(event.eventType === "entity/illust/created") {
                     refresh()
                 }else if(event.eventType === "entity/illust/updated" && (event.generalUpdated || event.sourceDataUpdated)) {
-                    update(i => i.id === event.illustId)
+                    updateOne(i => i.id === event.illustId)
                 }else if(event.eventType === "entity/illust/deleted") {
                     if(event.illustType === "COLLECTION") {
                         if(listview.queryFilter.value.type === "COLLECTION") {
                             refresh()
                         }
                     }else{
-                        remove(i => i.id === event.illustId)
+                        removeOne(i => i.id === event.illustId)
                     }
                 }else if(event.eventType === "entity/collection-images/changed") {
                     if(listview.queryFilter.value.type === "COLLECTION") {
@@ -75,7 +75,7 @@ function useListView() {
                     }
                 }
             },
-            request: client => async items => flatResponse(await Promise.all(items.map(a => client.illust.get(a.id))))
+            request: client => async items => mapResponse(await client.illust.findByIds(items.map(i => i.id)), r => r.map(i => i !== null ? i : undefined))
         }
     })
     return listview

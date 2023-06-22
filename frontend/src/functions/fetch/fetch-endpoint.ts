@@ -3,6 +3,7 @@ import { BasicException, NotFound } from "@/functions/http-client/exceptions"
 import { HttpClient, Response } from "@/functions/http-client"
 import { WsEventConditions } from "@/functions/ws-client"
 import { ErrorHandler, useFetchManager } from "./install"
+import { throttle } from "@/utils/process"
 
 // == Fetch Endpoint 端点调用器 ==
 // 专注于处理REST API的detail端点，通过path确定指定的对象。
@@ -116,9 +117,7 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
     const deleting: Ref<boolean> = ref(false)
     const data: Ref<MODEL | null> = ref(null)
 
-    //TODO 节流方案需要更新
-    const lastUpdateInterval = 100
-    let lastUpdated: number | null = null
+    const updatingThrottleMod = throttle({interval: 100})
 
     watch(path, async (path, oldPath, onInvalidate) => {
         //发送beforePath事件，前提是有oldPath
@@ -168,15 +167,11 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
         const receiveEvent = async () => {
             if(path.value !== null && !updating.value) {
                 // 节流机制：EVENT带来的更新请求，在一定时间间隔内不能多次发生。此举是为了防止自己触发的EVENT反过来再次更新自己。
-                // 其具体机制为：
-                // - updating = true时，正在update流程内，因此节流；
-                // - update操作完成时，会设置lastUpdated时间点，在这个时间点后的一定间隔内，仍然屏蔽事件节流；
-                // - event事件成功接收时，也会设置lastUpdated时间点，防止短时间内重复接收多次可能的事件。
-                const now = Date.now()
-                if((lastUpdated === null || now - lastUpdated >= lastUpdateInterval)) {
-                    lastUpdated = now
-
-                    const res = await method.get(path.value)
+                // updating = true时，此时正在update流程内，因此直接节流。
+                // 之后的调用使用了节流器，不允许短时间内的多次重复调用。
+                // 节流器也会在update操作完成后被调用，在那之后的短时间内也不允许更新操作。
+                updatingThrottleMod(async () => {
+                    const res = await method.get(path.value!)
                     if(res.ok) {
                         data.value = res.data
                         options.afterRetrieve?.(path.value, data.value, "EVENT")
@@ -188,7 +183,7 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
                             options.afterRetrieve?.(path.value, null, "EVENT")
                         }
                     }
-                }
+                })
             }
         }
     }
@@ -227,7 +222,7 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
                 }
             }finally{
                 updating.value = false
-                lastUpdated = Date.now()
+                updatingThrottleMod()
             }
             return true
         }

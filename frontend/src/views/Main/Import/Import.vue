@@ -11,6 +11,7 @@ import { MenuItem, usePopupMenu } from "@/modules/popup-menu"
 import { useDroppableForFile } from "@/modules/drag"
 import { installImportContext } from "@/services/main/import"
 import ImportDialog from "./ImportDialog.vue"
+import ImportEmpty from "./ImportEmpty.vue"
 
 const {
     paneState,
@@ -66,13 +67,7 @@ const dropEvents = useDroppableForFile()
         </template>
 
         <PaneLayout :show-pane="paneState.visible.value">
-            <div v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" class="h-100 has-text-centered relative" v-bind="dropEvents">
-                <p class="secondary-text"><i>没有任何暂存的导入项目</i></p>
-                <div class="absolute center">
-                    <Button mode="light" type="success" icon="file" @click="openDialog">添加文件</Button>
-                    <p class="mt-2 has-text-secondary">或拖曳文件到此处</p>
-                </div>
-            </div>
+            <ImportEmpty v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0"/>
             <ImportImageDataset v-else :data="paginationData.data" :query-instance="paginationData.proxy"
                                 :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
                                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"

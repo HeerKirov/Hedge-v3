@@ -29,7 +29,7 @@ function useListView() {
         request: client => (offset, limit, filter) => client.trash.list({offset, limit, ...filter}),
         eventFilter: {
             filter: ["entity/trashed-image/created", "entity/trashed-image/processed"],
-            operation({ event, refresh, remove }) {
+            operation({ event, refresh, removeOne: remove }) {
                 if(event.eventType === "entity/trashed-image/created") {
                     refresh()
                 }else if(event.eventType === "entity/trashed-image/processed") {

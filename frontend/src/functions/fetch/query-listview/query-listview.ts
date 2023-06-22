@@ -4,7 +4,7 @@ import { BasicException } from "@/functions/http-client/exceptions"
 import { HttpClient, Response, ListResult } from "@/functions/http-client"
 import { createEmitter, useRefEmitter, RefEmitter, SendRefEmitter } from "@/utils/emitter"
 import { objects } from "@/utils/primitives"
-import { restrict } from "@/utils/process"
+import { hoard } from "@/utils/process"
 import { useFetchManager } from "../install"
 import { createQueryInstance, ModifiedEvent, QueryArguments, QueryInstance } from "./query-instance"
 
@@ -81,12 +81,12 @@ interface OperationContext<T> {
      * 命令：更新指定的数据项。
      * @param where 给出一个条件，符合这个条件的项会被自动更新。需要注意的是它只匹配一个项。
      */
-    update(where: (item: T) => boolean): void
+    updateOne(where: (item: T) => boolean): void
     /**
      * 命令：移除指定的数据项。
      * @param where 给出一个条件，符合这个条件的项会被自动移除。需要注意的是它只匹配一个项。
      */
-    remove(where: (item: T) => boolean): void
+    removeOne(where: (item: T) => boolean): void
 }
 
 type ListviewModifiedEvent<T> = ModifiedEvent<T> | {
@@ -178,7 +178,45 @@ function useWsEventProcessor<T, E extends BasicException>(options: EventFilter<T
 
     const emitter = wsClient.on(options.filter)
 
-    const restrictedRefresh = restrict({interval: 100, func: refresh})
+    const hoardedRefresh = hoard({interval: 50, lengthenInterval: 10, maxInterval: 100, func: refresh})
+    const hoardedUpdate = hoard<[number, T]>({interval: 50, lengthenInterval: 10, maxInterval: 100, async func(itemsWithIdx) {
+        //事件响应中的更新方法。它是一个囤积式节流函数，一次收集数个更新之后，一口气发出。
+        //tips: 实例不是响应式的，按照规则，仍然需要通过sync operations操作并散布更新事件。
+        //      因此，需要在异步操作结束后通过modify方法写入新值。
+        //      但是，在异步操作期间，items的索引有改变的可能，因此在这途中需要监听删除操作，及时跟进位置变动。
+        const preciseIndexes: (number | null)[] = itemsWithIdx.map(([idx, _]) => idx)
+        const modifiedEvent = (e: ModifiedEvent<T>) => {
+            if(e.type === "REMOVE") {
+                for(let i = 0; i < preciseIndexes.length; ++i) {
+                    const idx = preciseIndexes[i]
+                    if(idx !== null) {
+                        if(idx > e.index) preciseIndexes[i] = idx - 1
+                        else if(idx === e.index) preciseIndexes[i] = null
+                    }
+                }
+            }
+        }
+        proxyInstance.syncOperations.modifiedEvent.addEventListener(modifiedEvent, true)
+
+        const items = itemsWithIdx.map(([_, i]) => i)
+        const res = await updateMethod!(items)
+
+        proxyInstance.syncOperations.modifiedEvent.addEventListener(modifiedEvent, true)
+        
+        if(res.ok) {
+            if(res.data.length > 0) {
+                for(let i = 0; i < res.data.length; ++i) {
+                    const idx = preciseIndexes[i]
+                    const newItem = res.data[i]
+                    if(idx !== null && idx !== undefined && newItem !== undefined) {
+                        proxyInstance.syncOperations.modify(idx, newItem)
+                    }
+                }
+            }
+        }else if(res.exception) {
+            handleException(res.exception)
+        }
+    }})
 
     onMounted(() => emitter.addEventListener(receiveEvent))
     onUnmounted(() => emitter.removeEventListener(receiveEvent))
@@ -186,30 +224,16 @@ function useWsEventProcessor<T, E extends BasicException>(options: EventFilter<T
     const receiveEvent = async (e: WsEventResult) => {
         options.operation({
             ...e,
-            refresh: restrictedRefresh,
-            update(where: (item: T) => boolean) {
-                //TODO 节流方案需要更新:
-                //需要更成熟、更统一的节流方案。实际上items很大可能会分散到达，面对这种情况也需要节流，将短时间内的items收集起来统一请求
+            refresh: hoardedRefresh,
+            updateOne(where: (item: T) => boolean) {
                 if(!updateMethod) throw new Error("options.eventFilter.request is satisfied.")
                 const idx = proxyInstance.syncOperations.find(where)
                 if(idx !== undefined) {
                     const item = proxyInstance.syncOperations.retrieve(idx)!
-                    updateMethod([item]).then(res => {
-                        //tips: 实例不是响应式的，按照规则，仍然需要通过sync operations操作，并散布更新事件。
-                        if(res.ok) {
-                            if(res.data.length > 0 && res.data[0] !== undefined) {
-                                const idx = proxyInstance.syncOperations.find(where)
-                                if(idx !== undefined) {
-                                    proxyInstance.syncOperations.modify(idx, res.data[0])
-                                }
-                            }
-                        }else if(res.exception) {
-                            handleException(res.exception)
-                        }
-                    })
+                    hoardedUpdate([idx, item])
                 }
             },
-            remove(where: (item: T) => boolean) {
+            removeOne(where: (item: T) => boolean) {
                 //delete过程是同步的。因此可以放心地对列表做筛选和更改。
                 const idx = proxyInstance.syncOperations.find(where)
                 if(idx !== undefined) {

@@ -2,7 +2,7 @@ import { onMounted, onUnmounted, ref, Ref, watch } from "vue"
 import { BasicException, NotFound } from "@/functions/http-client/exceptions"
 import { flatResponse, HttpClient, Response } from "@/functions/http-client"
 import { AllEvents, WsEventConditions, WsEventResult } from "@/functions/ws-client"
-import { restrict } from "@/utils/process"
+import { hoard } from "@/utils/process"
 import { objects } from "@/utils/primitives"
 import { useFetchManager } from "./install"
 
@@ -220,7 +220,20 @@ export function useFetchListEndpoint<PATH, MODEL, GE extends BasicException>(opt
     if(options.eventFilter) {
         const emitter = wsClient.on(options.eventFilter.filter)
 
-        const restrictedRefresh = restrict({interval: 100, func() { refreshData().finally() }})
+        const hoardedRefresh = hoard({interval: 50, lengthenInterval: 10, maxInterval: 100, func() { refreshData().finally() }})
+        const hoardedUpdate = hoard<PATH[]>({interval: 50, lengthenInterval: 10, maxInterval: 100, async func(allPaths) {
+            const updatePaths = allPaths.flat()
+            const res = await fetchByPaths(updatePaths)
+            if(res !== undefined && paths.value !== null && paths.value.length > 0) {
+                const resItems = updatePaths.map((path, idx) => ({path, item: res[idx]}))
+                for(const { path, item } of resItems) {
+                    const idx = paths.value.indexOf(path)
+                    if(idx >= 0) {
+                        data.value[idx] = item
+                    }
+                }
+            }
+        }})
 
         onMounted(() => emitter.addEventListener(receiveEvent))
         onUnmounted(() => emitter.removeEventListener(receiveEvent))
@@ -228,28 +241,14 @@ export function useFetchListEndpoint<PATH, MODEL, GE extends BasicException>(opt
         const receiveEvent = async (e: WsEventResult) => {
             options.eventFilter!.operation({
                 ...e,
-                refresh: restrictedRefresh,
+                refresh: hoardedRefresh,
                 update(where: (item: MODEL) => boolean) {
-                    //TODO 节流方案需要更新: 
-                    //需要更成熟、更统一的节流方案。
-                    //实际上items很大可能会分散到达，面对这种情况也需要节流，将短时间内的items收集起来统一请求
-                    //选出来的items是需要异步更新的。异步过程中列表可能发生变化。
                     const updatePaths = data.value
                         .map((item, idx) => ({item, idx}))
                         .filter(({ item }) => item !== null && where(item))
                         .map(({ idx }) => paths.value![idx])
                     if(updatePaths.length) {
-                        fetchByPaths(updatePaths).then(res => {
-                            if(res !== undefined && paths.value !== null && paths.value.length > 0) {
-                                const resItems = updatePaths.map((path, idx) => ({path, item: res[idx]}))
-                                for(const { path, item } of resItems) {
-                                    const idx = paths.value.indexOf(path)
-                                    if(idx >= 0) {
-                                        data.value[idx] = item
-                                    }
-                                }
-                            }
-                        })
+                        hoardedUpdate(updatePaths)
                     }
                 },
                 remove(where: (item: MODEL) => boolean) {
@@ -329,7 +328,23 @@ export function useFetchSinglePathEndpoint<PATH, MODEL, GE extends BasicExceptio
     if(options.eventFilter) {
         const emitter = wsClient.on(options.eventFilter.filter)
 
-        const restrictedRefresh = restrict({interval: 100, func() { refreshData().finally() }})
+        const hoardedRefresh = hoard({interval: 50, lengthenInterval: 10, maxInterval: 100, func() { refreshData().finally() }})
+        const hoardedUpdate = hoard<MODEL[]>({interval: 50, lengthenInterval: 10, maxInterval: 100, async func(allModels) {
+            const updateItems = allModels.flat()
+            const res = await requestMethod!(updateItems)
+            if(res.ok) {
+                for(let i = 0; i < updateItems.length; ++i) {
+                    //赋值时，采用的是直接修改object fields的方案。这种方案直接引用了原对象，能规避移位问题
+                    //result是响应式的，因此能直接响应修改
+                    if(res.data[i]) {
+                        objects.clear(updateItems[i])
+                        objects.copyTo(res.data[i], updateItems[i])
+                    }
+                }
+            }else if(res.exception) {
+                handleException(res.exception)
+            }
+        }})
 
         const requestMethod = options.eventFilter.request?.(httpClient)
 
@@ -339,30 +354,12 @@ export function useFetchSinglePathEndpoint<PATH, MODEL, GE extends BasicExceptio
         const receiveEvent = async (e: WsEventResult) => {
             options.eventFilter!.operation({
                 ...e,
-                refresh: restrictedRefresh,
+                refresh: hoardedRefresh,
                 update(where: (item: MODEL) => boolean) {
                     if(!requestMethod) throw new Error("options.eventFilter.request is satisfied.")
-
-                    //TODO 节流方案需要更新: 
-                    //需要更成熟、更统一的节流方案。
-                    //实际上items很大可能会分散到达，面对这种情况也需要节流，将短时间内的items收集起来统一请求
-                    //选出来的items是需要异步更新的。异步过程中列表可能发生变化。
                     const updateItems = data.value.filter(i => i !== null && where(i)) as MODEL[]
                     if(updateItems.length) {
-                        requestMethod(updateItems).then(res => {
-                            if(res.ok) {
-                                for(let i = 0; i < updateItems.length; ++i) {
-                                    //赋值时，采用的是直接修改object fields的方案。这种方案直接引用了原对象，能规避移位问题
-                                    //result是响应式的，因此能直接响应修改
-                                    if(res.data[i]) {
-                                        objects.clear(updateItems[i])
-                                        objects.copyTo(res.data[i], updateItems[i])
-                                    }
-                                }
-                            }else if(res.exception) {
-                                handleException(res.exception)
-                            }
-                        })
+                        hoardedUpdate(updateItems)
                     }
                 },
                 remove(where: (item: MODEL) => boolean) {
