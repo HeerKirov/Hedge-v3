@@ -1,6 +1,9 @@
+import { ref } from "vue"
 import { useRoute, useRouter } from "vue-router"
-import { date } from "@/utils/datetime"
 import { windowManager } from "@/modules/window"
+import { installation } from "@/utils/reactivity"
+import { useListeningEvent, useRefEmitter } from "@/utils/emitter"
+import { date } from "@/utils/datetime"
 import { RouteName, RouteParameter } from "./definitions"
 import { useRouterParamEmitter } from "./param"
 
@@ -14,12 +17,20 @@ export interface RouterNavigator {
     newWindow<N extends RouteName>(options: {routeName: N, params?: RouteParameter[N]["params"], query?: Partial<RouteParameter[N]["query"]>}): void
 }
 
+export const [installRouterManager, useRouterManager] = installation(function () {
+    return {
+        paramManager: ref<{routeName: RouteName, params: any} | null>(null),
+        navigatorEvent: useRefEmitter<RouteName>()
+    }
+})
+
 /**
  * 创建页面跳转路由器。
  */
 export function useRouterNavigator(): RouterNavigator {
     const router = useRouter()
     const paramEmitter = useRouterParamEmitter()
+    const { navigatorEvent } = useRouterManager()
 
     function goto<N extends RouteName>(options: {routeName: N, params?: RouteParameter[N]["params"], query?: Partial<RouteParameter[N]["query"]>} | N) {
         const routeName = typeof options === "string" ? options : options.routeName
@@ -31,6 +42,8 @@ export function useRouterNavigator(): RouterNavigator {
         const routeQuery = query !== undefined ? encodeRouteQuery(routeName, query) : undefined
 
         router.push({ name: routeName, query: routeQuery }).finally()
+
+        navigatorEvent.emit(routeName)
     }
 
     function newWindow<N extends RouteName>(options: {routeName: N, params?: RouteParameter[N]["params"], query?: Partial<RouteParameter[N]["query"]>} | N) {
@@ -70,6 +83,16 @@ export function useNewWindowRouteReceiver() {
             return true
         }
     }
+}
+
+/**
+ * 对路由的变化发起统一的监听。
+ * 作用是有一个统一的位置，能获知通过router navigator发出的变更。
+ */
+export function useRouteChangeMonitor(receive: (routeName: RouteName) => void) {
+    const { navigatorEvent } = useRouterManager()
+    
+    useListeningEvent(navigatorEvent, receive)
 }
 
 /**

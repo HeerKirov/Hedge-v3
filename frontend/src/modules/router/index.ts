@@ -1,6 +1,6 @@
 export type { RouteName, RouteParameter } from "./definitions"
-export { useRouterNavigator, useNewWindowRouteReceiver } from "./navigator"
-export { installRouterParamManager, useRouterParamEvent } from "./param"
+export { useRouterNavigator, useNewWindowRouteReceiver, useRouteChangeMonitor, installRouterManager } from "./navigator"
+export { useRouterParamEvent } from "./param"
 export { useRouterQuery, useRouterQueryString, useRouterQueryNumber, useRouterQueryLocalDate } from "./query"
 
 /*
