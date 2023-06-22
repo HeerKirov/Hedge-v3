@@ -369,7 +369,7 @@ class FolderService(private val data: DataRepository,
             val folder = data.db.sequenceOf(Folders).firstOrNull { Folders.id eq id } ?: throw be(NotFound())
             if(folder.type !== FolderType.FOLDER) throw be(Reject("Can only update images for FOLDER."))
 
-            val images = if(items.isNotEmpty()) illustManager.unfoldImages(items) else emptyList()
+            val images = illustManager.unfoldImages(items)
             val imageIds = images.map { it.id }
 
             data.db.update(Folders) {

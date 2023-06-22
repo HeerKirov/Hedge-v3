@@ -121,6 +121,7 @@ class IllustManager(private val data: DataRepository,
      * @throws ResourceNotExist ("images", number[]) 给出的部分images不存在。给出不存在的image id列表
      */
     fun newCollection(illustIds: List<Int>, formDescription: String, formScore: Int?, formFavorite: Boolean, formTagme: Illust.Tagme): Int {
+        if(illustIds.isEmpty()) throw be(ParamError("images"))
         val images = unfoldImages(illustIds, sorted = false)
         val (fileId, scoreFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(images)
 
@@ -519,7 +520,6 @@ class IllustManager(private val data: DataRepository,
      * @param sorted 返回结果保持有序。默认开启。对book是有必要的，但collection就没有这个需要。控制这个开关来做查询效率优化。
      */
     fun unfoldImages(illustIds: List<Int>, paramNameWhenThrow: String = "images", sorted: Boolean = true): List<Illust> {
-        if(illustIds.isEmpty()) throw be(ParamRequired(paramNameWhenThrow))
         val result = data.db.sequenceOf(Illusts).filter { it.id inList illustIds }.toList()
         //数量不够表示有imageId不存在
         if(result.size < illustIds.size) throw be(ResourceNotExist(paramNameWhenThrow, illustIds.toSet() - result.asSequence().map { it.id }.toSet()))

@@ -35,7 +35,6 @@ import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.ktorm.expression.BinaryExpression
-import org.ktorm.expression.QuerySourceExpression
 import org.ktorm.expression.SelectExpression
 import kotlin.math.roundToInt
 
@@ -437,6 +436,7 @@ class IllustService(private val data: DataRepository,
         data.db.transaction {
             val illust = data.db.sequenceOf(Illusts).filter { retrieveCondition(id, IllustType.COLLECTION) }.firstOrNull() ?: throw be(NotFound())
 
+            if(imageIds.isEmpty()) throw be(ParamError("images"))
             val images = illustManager.unfoldImages(imageIds, sorted = false)
 
             illustManager.updateImagesInCollection(illust.id, images, illust.score)

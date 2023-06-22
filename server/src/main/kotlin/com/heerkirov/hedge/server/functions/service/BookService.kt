@@ -241,7 +241,7 @@ class BookService(private val data: DataRepository,
         data.db.transaction {
             data.db.sequenceOf(Books).firstOrNull { Books.id eq id } ?: throw be(NotFound())
 
-            val images = if(items.isNotEmpty()) illustManager.unfoldImages(items) else emptyList()
+            val images = illustManager.unfoldImages(items)
             val imageIds = images.map { it.id }
             val fileId = images.firstOrNull()?.fileId
 

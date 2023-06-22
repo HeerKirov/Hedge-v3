@@ -163,7 +163,7 @@ class HomepageService(private val data: DataRepository) {
             //[2, 8]: !fav && score!=NULL && score>=8
             //[0, 8]：!fav && score!=NULL && score>=6 && score<8
             //剩余：!fav && (score=NULL || score<6)
-            val total = 18
+            val total = 28
             val partitions = queryPartition(4, random = true)
             val typeA = queryImage(Random.nextInt(4..8)) { (it.partitionTime inList partitions) and (it.cachedBookCount greater 0) and it.favorite }
             val typeB = queryImage(Random.nextInt(2..8)) { (it.partitionTime inList partitions) and (it.cachedBookCount greater 0) and it.favorite.not() and it.score.isNotNull() and (it.score greaterEq 8) }

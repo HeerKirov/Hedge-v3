@@ -180,26 +180,8 @@ class FindSimilarService(private val data: DataRepository,
                 FindSimilarResultResolveForm.Resolution(action.a, action.b, action.actionType, config)
             }
 
-            //有关collectionId有一个特别机制。
-            //importImage的collectionId可以设置为string，表示导入后会创建一个新collection。
-            //image的collectionId也可以，将立刻创建一个新collection。
-            //当image和importImage混用同一个string时，此collection会立刻创建，且给importImage的是创建的此collectionId。
-            //此处此处提前发现任何给image使用的string hash，并立刻创建对应的collection。
-            val collectionHashToIds = actions.asSequence()
-                .filter { it.actionType == FindSimilarResultResolveForm.ActionType.ADD_TO_COLLECTION }
-                .filter { (it.config as FindSimilarResultResolveForm.AddToCollectionConfig).collectionId is String }
-                .groupBy({ ((it.config as FindSimilarResultResolveForm.AddToCollectionConfig).collectionId as String) }) { it.a }
-                .mapNotNull { (collectionId, entityKeys) ->
-                    if(entityKeys.any { it.type == FindSimilarEntityType.ILLUST }) {
-                        collectionId to illustManager.newCollection(emptyList(), "", null, false, Illust.Tagme.EMPTY)
-                    }else{
-                        null
-                    }
-                }
-                .toMap()
-
             //actions依次执行。其中对image的collection/book更新会被收集起来批量执行
-            val collectionToImages = mutableMapOf<Int, MutableList<Int>>()
+            val collectionToImages = mutableMapOf<Any, MutableList<FindSimilarEntityKey>>()
             val bookToImages = mutableMapOf<Int, MutableList<Int>>()
             for (action in actions) {
                 when(action.actionType) {
@@ -220,21 +202,7 @@ class FindSimilarService(private val data: DataRepository,
                     }
                     FindSimilarResultResolveForm.ActionType.ADD_TO_COLLECTION -> {
                         val config = action.config as FindSimilarResultResolveForm.AddToCollectionConfig
-                        if(action.a.type == FindSimilarEntityType.ILLUST) {
-                            val collectionId: Int = when (config.collectionId) {
-                                is Int -> config.collectionId
-                                is String -> collectionHashToIds[config.collectionId]!!
-                                else -> throw be(ParamTypeError("config.collectionId", "must be number or string."))
-                            }
-                            collectionToImages.computeIfAbsent(collectionId) { mutableListOf() }.add(action.a.id)
-                        }else{
-                            val collectionId: Any = when (config.collectionId) {
-                                is Int -> config.collectionId
-                                is String -> collectionHashToIds[config.collectionId] ?: config.collectionId
-                                else -> throw be(ParamTypeError("config.collectionId", "must be number or string."))
-                            }
-                            importManager.update(action.a.id, ImportUpdateForm(collectionId = optOf(collectionId)))
-                        }
+                        collectionToImages.computeIfAbsent(config.collectionId) { mutableListOf() }.add(action.a)
                     }
                     FindSimilarResultResolveForm.ActionType.ADD_TO_BOOK -> {
                         val config = action.config as FindSimilarResultResolveForm.AddToBookConfig
@@ -278,9 +246,36 @@ class FindSimilarService(private val data: DataRepository,
                     }
                 }
             }
-            for ((collectionId, imageIds) in collectionToImages) {
-                val images = illustManager.unfoldImages(imageIds + listOf(collectionId), sorted = false)
-                illustManager.updateImagesInCollection(collectionId, images)
+
+            //有关collection有些特别机制，因此需要全部提取到一起执行。
+            //importImage的collectionId可以设置为string，表示导入后会创建一个新collection。image的collectionId也可以，将立刻创建一个新collection。
+            //而当image和importImage混用同一个string时，此collection会立刻创建，且给importImage的是此collection的id。
+            for ((collectionId, entities) in collectionToImages) {
+                when (collectionId) {
+                    is Int -> {
+                        val imageIds = entities.filter { it.type == FindSimilarEntityType.ILLUST }.map { it.id }
+                        val images = illustManager.unfoldImages(imageIds + listOf(collectionId), sorted = false)
+                        illustManager.updateImagesInCollection(collectionId, images)
+
+                        val importIds = entities.filter { it.type == FindSimilarEntityType.IMPORT_IMAGE }.map { it.id }
+                        for(importId in importIds) {
+                            importManager.update(importId, ImportUpdateForm(collectionId = optOf(collectionId)))
+                        }
+                    }
+                    is String -> {
+                        val importIds = entities.filter { it.type == FindSimilarEntityType.IMPORT_IMAGE }.map { it.id }
+                        val imageIds = entities.filter { it.type == FindSimilarEntityType.ILLUST }.map { it.id }
+                        val finalCollectionId = if(imageIds.isNotEmpty()) {
+                            illustManager.newCollection(imageIds, "", null, false, Illust.Tagme.EMPTY)
+                        }else{
+                            collectionId
+                        }
+                        for(importId in importIds) {
+                            importManager.update(importId, ImportUpdateForm(collectionId = optOf(finalCollectionId)))
+                        }
+                    }
+                    else -> throw be(ParamTypeError("config.collectionId", "must be number or string."))
+                }
             }
             for ((bookId, imageIds) in bookToImages) {
                 bookManager.addImagesInBook(bookId, imageIds, null)
