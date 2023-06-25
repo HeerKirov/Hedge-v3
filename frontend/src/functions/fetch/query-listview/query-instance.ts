@@ -108,13 +108,13 @@ export function createQueryInstance<T, E extends BasicException>(options: QueryI
         },
         async queryRange(offset: number, limit: number): Promise<T[]> {
             const ok = await segments.loadData(offset, limit)
-            return ok ? datasource.data.buffer.slice(offset, offset + limit) : []
+            return ok ? datasource.data.buffer.slice(offset, Math.min(offset + limit, datasource.data.total!)) : []
         },
         async queryList(indexList: number[]): Promise<T[]> {
             const result: T[] = []
             for (const [i, index] of indexList.entries()) {
                 const ok = await segments.loadData(index, 1)
-                if(ok) result[i] = datasource.data.buffer[index]
+                if(ok && index < datasource.data.total!) result[i] = datasource.data.buffer[index]
             }
             return result
         },
