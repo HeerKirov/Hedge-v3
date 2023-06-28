@@ -1,5 +1,4 @@
 import path from "path"
-import Buffer from "buffer"
 import { openSync } from "fs"
 import { spawn } from "child_process"
 import { DATA_FILE, RESOURCE_FILE } from "../../constants/file"
@@ -375,8 +374,8 @@ function createServiceManager(connectionManager: ConnectionManager): ServiceMana
     connectionManager.wsToastEvent.addEventListener(e => {
         //接收来自ws通知的appStatus变更事件。仅在connection状态可用时响应
         if(e.type === "EVENT" && connectionManager.status() === "OPEN") {
-            if(e.data.event.eventType === "app/app-status/changed") {
-                setStatus((<{status: ServerServiceStatus}>e.data.event).status)
+            if(e.data.eventType === "app/app-status/changed") {
+                setStatus((<{status: ServerServiceStatus}>e.data.events[e.data.events.length - 1].event).status)
             }
         }
     })

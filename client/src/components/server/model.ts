@@ -45,5 +45,5 @@ export type WsToastResult = {
     data: { code: string, message: string | null, info: any }
 } | {
     type: "EVENT"
-    data: { timestamp: number, event: any & { eventType: string } }
+    data: { eventType: string, events: { timestamp: number, event: any & { eventType: string } }[] }
 }
