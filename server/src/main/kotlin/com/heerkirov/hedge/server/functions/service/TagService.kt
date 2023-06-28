@@ -1,9 +1,5 @@
 package com.heerkirov.hedge.server.functions.service
 
-import com.heerkirov.hedge.server.components.backend.exporter.BookMetadataExporterTask
-import com.heerkirov.hedge.server.components.backend.exporter.BackendExporter
-import com.heerkirov.hedge.server.components.backend.exporter.IllustMetadataExporterTask
-import com.heerkirov.hedge.server.components.backend.exporter.TagGlobalSortExporterTask
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
@@ -40,8 +36,7 @@ import org.ktorm.entity.*
 class TagService(private val data: DataRepository,
                  private val bus: EventBus,
                  private val kit: TagKit,
-                 private val sourceMappingManager: SourceMappingManager,
-                 private val backendExporter: BackendExporter) {
+                 private val sourceMappingManager: SourceMappingManager) {
     private val orderTranslator = OrderTranslator {
         "id" to Tags.id
         "name" to Tags.name
@@ -164,8 +159,6 @@ class TagService(private val data: DataRepository,
             kit.processAnnotations(id, form.annotations, creating = true)
 
             bus.emit(MetaTagCreated(id, MetaType.TAG))
-
-            backendExporter.add(TagGlobalSortExporterTask)
 
             return id
         }
@@ -365,33 +358,13 @@ class TagService(private val data: DataRepository,
                 }
             }
 
-            if ((newLinks.isPresent && newLinks.value != record.links) ||
-                (form.type.isPresent && form.type.value != record.type) ||
-                (newParentId.isPresent && newParentId.value != record.parentId) ||
-                form.annotations.isPresent) {
-                    //发生关系类变化时，将关联的illust/book重导出
-                    data.db.from(IllustTagRelations)
-                        .select(IllustTagRelations.illustId)
-                        .where { IllustTagRelations.tagId eq id }
-                        .map { IllustMetadataExporterTask(it[IllustTagRelations.illustId]!!, exportMetaTag = true, exportDescription = false, exportFirstCover = false, exportScore = false) }
-                        .let { backendExporter.add(it) }
-                    data.db.from(BookTagRelations)
-                        .select(BookTagRelations.bookId)
-                        .where { BookTagRelations.tagId eq id }
-                        .map { BookMetadataExporterTask(it[BookTagRelations.bookId]!!, exportMetaTag = true) }
-                        .let { backendExporter.add(it) }
-            }
-
-            if(newParentId.isPresent || newOrdinal.isPresent) {
-                backendExporter.add(TagGlobalSortExporterTask)
-            }
-
-            val generalUpdated = anyOpt(newName, newOtherNames, newColor, form.type, form.description, form.group, newLinks, newExamples)
-            val ordinalUpdated = anyOpt(newParentId, newOrdinal)
-            val annotationUpdated = form.annotations.isPresent
-            val sourceTagMappingUpdated = form.mappingSourceTags.isPresent
-            if(generalUpdated || ordinalUpdated || annotationUpdated || sourceTagMappingUpdated) {
-                bus.emit(MetaTagUpdated(id, MetaType.TAG, generalUpdated, annotationUpdated, ordinalUpdated, sourceTagMappingUpdated))
+            val parentSot = anyOpt(newParentId, newOrdinal)
+            val annotationSot = form.annotations.isPresent
+            val sourceTagMappingSot = form.mappingSourceTags.isPresent
+            val listUpdated = anyOpt(newName, newColor, form.type, form.group)
+            val detailUpdated = listUpdated || parentSot || annotationSot || sourceTagMappingSot || anyOpt(newOtherNames, form.description, newLinks, newExamples)
+            if(listUpdated || detailUpdated) {
+                bus.emit(MetaTagUpdated(id, MetaType.TAG, listUpdated = listUpdated, detailUpdated = true, annotationSot = annotationSot, parentSot = parentSot, sourceTagMappingSot = sourceTagMappingSot))
             }
         }
     }
@@ -417,17 +390,6 @@ class TagService(private val data: DataRepository,
                 where { if(tag.parentId != null) { it.parentId eq tag.parentId }else{ it.parentId.isNull() } and (it.ordinal greater tag.ordinal) }
                 set(it.ordinal, it.ordinal - 1)
             }
-            //删除标签时，将关联的illust/book重导出。只需要导出当前标签的关联，而不需要导出子标签的。
-            data.db.from(IllustTagRelations)
-                .select(IllustTagRelations.illustId)
-                .where { IllustTagRelations.tagId eq id }
-                .map { IllustMetadataExporterTask(it[IllustTagRelations.illustId]!!, exportMetaTag = true, exportDescription = false, exportFirstCover = false, exportScore = false) }
-                .let { backendExporter.add(it) }
-            data.db.from(BookTagRelations)
-                .select(BookTagRelations.bookId)
-                .where { BookTagRelations.tagId eq id }
-                .map { BookMetadataExporterTask(it[BookTagRelations.bookId]!!, exportMetaTag = true) }
-                .let { backendExporter.add(it) }
             recursionDelete(id)
 
             bus.emit(MetaTagDeleted(id, MetaType.TAG))

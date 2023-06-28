@@ -1,8 +1,5 @@
 package com.heerkirov.hedge.server.functions.service
 
-import com.heerkirov.hedge.server.components.backend.exporter.BookMetadataExporterTask
-import com.heerkirov.hedge.server.components.backend.exporter.BackendExporter
-import com.heerkirov.hedge.server.components.backend.exporter.IllustMetadataExporterTask
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
@@ -37,8 +34,7 @@ class TopicService(private val data: DataRepository,
                    private val bus: EventBus,
                    private val kit: TopicKit,
                    private val queryManager: QueryManager,
-                   private val sourceMappingManager: SourceMappingManager,
-                   private val backendExporter: BackendExporter) {
+                   private val sourceMappingManager: SourceMappingManager) {
     private val orderTranslator = OrderTranslator {
         "id" to Topics.id
         "name" to Topics.name
@@ -204,26 +200,13 @@ class TopicService(private val data: DataRepository,
                 kit.exportChildren(id, form.type.unwrapOr { record.type }, form.parentId.unwrapOr { record.parentId })
             }
 
-            if(newAnnotations.isPresent || (newParentId.isPresent && newParentId.value.f1 != record.parentId)) {
-                //发生关系类变化时，将关联的illust/book重导出
-                data.db.from(IllustTopicRelations)
-                    .select(IllustTopicRelations.illustId)
-                    .where { IllustTopicRelations.topicId eq id }
-                    .map { IllustMetadataExporterTask(it[IllustTopicRelations.illustId]!!, exportMetaTag = true, exportDescription = false, exportFirstCover = false, exportScore = false) }
-                    .let { backendExporter.add(it) }
-                data.db.from(BookTopicRelations)
-                    .select(BookTopicRelations.bookId)
-                    .where { BookTopicRelations.topicId eq id }
-                    .map { BookMetadataExporterTask(it[BookTopicRelations.bookId]!!, exportMetaTag = true) }
-                    .let { backendExporter.add(it) }
-            }
-
-            val generalUpdated = anyOpt(newName, newOtherNames, newKeywords, form.type, form.description, form.favorite, form.score)
-            val annotationUpdated = newAnnotations.isPresent
-            val ordinalUpdated = newParentId.isPresent && newParentId.value.f1 != record.parentId
-            val sourceTagMappingUpdated = form.mappingSourceTags.isPresent
-            if(generalUpdated || annotationUpdated || ordinalUpdated || sourceTagMappingUpdated) {
-                bus.emit(MetaTagUpdated(id, MetaType.TOPIC, generalUpdated, annotationUpdated, ordinalUpdated, sourceTagMappingUpdated))
+            val parentSot = newParentId.isPresent && newParentId.value.f1 != record.parentId
+            val annotationSot = newAnnotations.isPresent
+            val sourceTagMappingSot = form.mappingSourceTags.isPresent
+            val listUpdated = anyOpt(newName, newOtherNames, newKeywords, form.type, form.favorite, form.score)
+            val detailUpdated = listUpdated || parentSot || annotationSot || sourceTagMappingSot || form.description.isPresent
+            if(listUpdated || detailUpdated) {
+                bus.emit(MetaTagUpdated(id, MetaType.TOPIC, listUpdated = listUpdated, detailUpdated = true, annotationSot = annotationSot, sourceTagMappingSot = sourceTagMappingSot, parentSot = parentSot))
             }
         }
     }

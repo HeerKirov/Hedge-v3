@@ -13,6 +13,7 @@ import com.heerkirov.hedge.server.dto.filter.FolderTreeFilter
 import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.FolderType
+import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.events.*
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.FolderKit
@@ -150,6 +151,7 @@ class FolderService(private val data: DataRepository,
             if(images != null) kit.updateSubImages(id, images.map { it.id })
 
             bus.emit(FolderCreated(id, form.type))
+            images?.forEach { bus.emit(IllustRelatedItemsUpdated(it.id, IllustType.IMAGE, folderUpdated = true)) }
 
             return id
         }
@@ -322,12 +324,14 @@ class FolderService(private val data: DataRepository,
      */
     fun delete(id: Int) {
         fun recursiveDelete(folder: Folder) {
+            val imageIds = data.db.from(FolderImageRelations).select(FolderImageRelations.imageId).where { FolderImageRelations.folderId eq folder.id }.map { it[FolderImageRelations.imageId]!! }
             data.db.delete(Folders) { it.id eq folder.id }
             data.db.delete(FolderImageRelations) { it.folderId eq folder.id }
 
-            bus.emit(FolderDeleted(folder.id, folder.type))
             //删除folder时，也需要发送pinChanged事件
             if(folder.pin != null) bus.emit(FolderPinChanged(folder.id, false, null))
+            bus.emit(FolderDeleted(folder.id, folder.type))
+            imageIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, folderUpdated = true)) }
 
             val children = data.db.sequenceOf(Folders).filter { it.parentId eq folder.id }
             for (child in children) {
@@ -381,7 +385,11 @@ class FolderService(private val data: DataRepository,
             val oldIdSet = kit.updateSubImages(id, imageIds).toSet()
             val imageIdSet = imageIds.toSet()
 
-            bus.emit(FolderImagesChanged(id, (imageIdSet - oldIdSet).toList(), emptyList(), (oldIdSet - imageIdSet).toList()))
+            val added = (imageIdSet - oldIdSet).toList()
+            val deleted = (oldIdSet - imageIdSet).toList()
+            bus.emit(FolderImagesChanged(id, added, emptyList(), deleted))
+            added.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, folderUpdated = true)) }
+            deleted.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, folderUpdated = true)) }
         }
     }
 

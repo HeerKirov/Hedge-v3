@@ -179,12 +179,13 @@ class TrashManager(private val data: DataRepository,
                 val exist = data.db.from(Folders).select((count(Folders.id) greater 0).aliased("exist")).where { Folders.id eq folderId }.map { it.getBoolean("exist") }.first()
                 if(exist) folderManager.addImagesInFolder(folderId, imageIds, null)
             }
-            backendExportCollections.forEach { backendExporter.add(IllustMetadataExporterTask(it, exportFirstCover = true, exportMetaTag = true, exportScore = true)) }
 
             data.db.delete(TrashedImages) { it.imageId inList imageIds }
 
-            imageIds.forEach { bus.emit(IllustCreated(it, IllustType.IMAGE)) }
             bus.emit(TrashedImageProcessed(imageIds, true))
+            imageIds.forEach { bus.emit(IllustCreated(it, IllustType.IMAGE)) }
+            //手动发送Exporter任务。IllustCreated事件不会触发有关它的parent的变更，也没有其他的事件，因此需要手动处理。
+            backendExportCollections.forEach { backendExporter.add(IllustMetadataExporterTask(it, exportFirstCover = true, exportMetaTag = true, exportScore = true)) }
         }
     }
 }

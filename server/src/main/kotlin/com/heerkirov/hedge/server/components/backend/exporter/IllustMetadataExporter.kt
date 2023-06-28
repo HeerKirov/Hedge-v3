@@ -5,7 +5,6 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.Illusts
 import com.heerkirov.hedge.server.enums.IllustModelType
-import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.events.IllustUpdated
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
@@ -62,10 +61,9 @@ class IllustMetadataExporter(private val data: DataRepository,
                         .limit(0, 1)
                         .firstOrNull()
                         ?.let { Illusts.createEntity(it) }
-                    if(firstChild != null) {
-                        Opt(Triple(firstChild.fileId, firstChild.partitionTime, firstChild.orderTime))
-                    }else undefined()
+                    if(firstChild != null) Opt(Triple(firstChild.fileId, firstChild.partitionTime, firstChild.orderTime)) else undefined()
                 }else undefined()
+
                 cachedChildrenCount = if(task.exportFirstCover) {
                     Opt(data.db.sequenceOf(Illusts).filter { Illusts.parentId eq task.id }.count())
                 }else undefined()
@@ -78,7 +76,6 @@ class IllustMetadataExporter(private val data: DataRepository,
                         .firstOrNull()?.run {
                             if(getInt("count") > 0) getDouble("score").roundToInt() else null
                         })
-
                 }else undefined()
 
                 //exportedMeta通过推导生成，或者缺省时，从children取notExportedMeta的并集推导生成
@@ -89,6 +86,7 @@ class IllustMetadataExporter(private val data: DataRepository,
                 val parent by lazy { if(illust.parentId == null) null else data.db.sequenceOf(Illusts).firstOrNull { it.id eq illust.parentId} }
 
                 exportedFileAndTime = undefined()
+
                 cachedChildrenCount = undefined()
 
                 //exportedDescription取description，或者缺省时，i沿用parent的description
@@ -121,10 +119,10 @@ class IllustMetadataExporter(private val data: DataRepository,
                 }
             }
 
-            val generalUpdated = task.exportDescription || task.exportFirstCover || task.exportScore
-            val metaTagUpdated = task.exportMetaTag
-            if(generalUpdated || metaTagUpdated) {
-                bus.emit(IllustUpdated(illust.id, illust.type.toIllustType(), generalUpdated, metaTagUpdated, sourceDataUpdated = false, relatedItemsUpdated = false))
+            val listUpdated = task.exportFirstCover || task.exportScore
+            val detailUpdated = listUpdated || task.exportDescription || task.exportMetaTag
+            if(listUpdated || detailUpdated) {
+                bus.emit(IllustUpdated(illust.id, illust.type.toIllustType(), listUpdated = listUpdated, detailUpdated = true))
             }
         }
     }

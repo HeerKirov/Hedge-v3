@@ -9,10 +9,7 @@ import com.heerkirov.hedge.server.dao.FindSimilarResults
 import com.heerkirov.hedge.server.dao.FindSimilarTasks
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.enums.FindSimilarEntityType
-import com.heerkirov.hedge.server.events.IllustDeleted
-import com.heerkirov.hedge.server.events.ImportDeleted
-import com.heerkirov.hedge.server.events.ImportSaved
-import com.heerkirov.hedge.server.events.PackagedBusEvent
+import com.heerkirov.hedge.server.events.*
 import com.heerkirov.hedge.server.exceptions.NotFound
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.library.framework.StatefulComponent
@@ -39,7 +36,7 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val data
     private val workerThread = SimilarFinderWorkThread(data, bus)
 
     init {
-        bus.on(::processImportToImage)
+        bus.on(arrayOf(ImportCreated::class, ImportDeleted::class, IllustDeleted::class), ::processImportToImage)
     }
 
     override val isIdle: Boolean get() = !workerThread.isAlive
@@ -70,11 +67,11 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val data
         }
     }
 
-    private fun processImportToImage(e: PackagedBusEvent<*>) {
-        when (e.event) {
-            is ImportSaved -> workerThread.processImportToImageEvent(e.event.importIdToImageIds)
-            is ImportDeleted -> workerThread.processRemoveImportEvent(e.event.importId)
-            is IllustDeleted -> workerThread.processRemoveImageEvent(e.event.illustId)
+    private fun processImportToImage(events: PackagedBusEvent) {
+        events.which {
+            each<ImportSaved> { workerThread.processImportToImageEvent(it.importIdToImageIds) }
+            each<ImportDeleted> { workerThread.processRemoveImportEvent(it.importId) }
+            each<IllustDeleted> { workerThread.processRemoveImageEvent(it.illustId) }
         }
     }
 }

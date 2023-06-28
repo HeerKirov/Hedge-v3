@@ -31,6 +31,7 @@ import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
+import com.heerkirov.hedge.server.utils.types.anyOpt
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 
@@ -257,7 +258,12 @@ class ImportService(private val data: DataRepository,
                             }.toMillisecond())
                         }
 
-                        bus.emit(ImportUpdated(record.id, generalUpdated = true, thumbnailFileReady = false))
+                        val listUpdated = src != null || form.tagme != null || form.partitionTime != null || form.setOrderTimeBy != null
+                        val detailUpdated = listUpdated || form.setCreateTimeBy != null || !form.appendBookIds.isNullOrEmpty() || !form.appendFolderIds.isNullOrEmpty() || newCollectionId != null || anyOpt()
+
+                        if(listUpdated || detailUpdated) {
+                            bus.emit(ImportUpdated(record.id, listUpdated = listUpdated, detailUpdated = true))
+                        }
                     }
 
                 return errors

@@ -11,7 +11,7 @@ import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
 import com.heerkirov.hedge.server.exceptions.StorageNotAccessibleError
 import com.heerkirov.hedge.server.functions.manager.ImportManager
 import com.heerkirov.hedge.server.library.framework.Component
-import com.heerkirov.hedge.server.utils.tools.controlledThread
+import com.heerkirov.hedge.server.utils.tools.loopThread
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.FileSystems
@@ -41,7 +41,7 @@ class PathWatcherImpl(private val appStatus: AppStatusDriver,
     private var _statisticCount: Int = 0
     private val _errors: MutableList<PathWatcherError> = mutableListOf()
 
-    private val controller = controlledThread(false, ::pollThread)
+    private val controller = loopThread(false, ::pollThread)
 
     private val keyToPaths: MutableMap<WatchKey, Path> = ConcurrentHashMap<WatchKey, Path>()
 

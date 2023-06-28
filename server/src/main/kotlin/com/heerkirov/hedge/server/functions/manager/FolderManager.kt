@@ -4,7 +4,9 @@ import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.FolderImageRelations
 import com.heerkirov.hedge.server.dao.Folders
+import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.events.FolderImagesChanged
+import com.heerkirov.hedge.server.events.IllustRelatedItemsUpdated
 import com.heerkirov.hedge.server.functions.kit.FolderKit
 import com.heerkirov.hedge.server.utils.DateTime
 import org.ktorm.dsl.*
@@ -25,10 +27,11 @@ class FolderManager(private val data: DataRepository, private val bus: EventBus,
         }
 
         bus.emit(FolderImagesChanged(folderId, imageIds, emptyList(), emptyList()))
+        imageIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, folderUpdated = true)) }
     }
 
     /**
-     * 移除images.
+     * 移动images.
      */
     fun moveImagesInFolder(folderId: Int, imageIds: List<Int>, ordinal: Int?) {
         kit.moveSubImages(folderId, imageIds, ordinal)
@@ -52,6 +55,7 @@ class FolderManager(private val data: DataRepository, private val bus: EventBus,
         }
 
         bus.emit(FolderImagesChanged(folderId, emptyList(), emptyList(), imageIds))
+        imageIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, folderUpdated = true)) }
     }
     /**
      * 从所有的folders中平滑移除一个image项。
@@ -75,6 +79,7 @@ class FolderManager(private val data: DataRepository, private val bus: EventBus,
         for ((folderId, _, _) in relations) {
             bus.emit(FolderImagesChanged(folderId, emptyList(), emptyList(), listOf(imageId)))
         }
+        bus.emit(IllustRelatedItemsUpdated(imageId, IllustType.IMAGE, folderUpdated = true))
     }
 
     /**
@@ -101,6 +106,7 @@ class FolderManager(private val data: DataRepository, private val bus: EventBus,
             for ((folderId, _) in imageCounts) {
                 bus.emit(FolderImagesChanged(folderId, imageIds, emptyList(), emptyList()))
             }
+            bus.emit(IllustRelatedItemsUpdated(imageId, IllustType.IMAGE, folderUpdated = true))
         }
     }
 }

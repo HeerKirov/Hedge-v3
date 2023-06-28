@@ -1,16 +1,15 @@
 package com.heerkirov.hedge.server.functions.manager
 
-import com.heerkirov.hedge.server.components.backend.exporter.BookMetadataExporterTask
-import com.heerkirov.hedge.server.components.backend.exporter.BackendExporter
-import com.heerkirov.hedge.server.components.backend.exporter.IllustBookMemberExporterTask
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.BookImageRelations
 import com.heerkirov.hedge.server.dao.Books
 import com.heerkirov.hedge.server.dao.Illusts
+import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.events.BookCreated
 import com.heerkirov.hedge.server.events.BookImagesChanged
 import com.heerkirov.hedge.server.events.BookUpdated
+import com.heerkirov.hedge.server.events.IllustRelatedItemsUpdated
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.functions.kit.BookKit
 import com.heerkirov.hedge.server.model.Illust
@@ -22,8 +21,7 @@ import org.ktorm.entity.toList
 
 class BookManager(private val data: DataRepository,
                   private val bus: EventBus,
-                  private val kit: BookKit,
-                  private val backendExporter: BackendExporter) {
+                  private val kit: BookKit) {
     /**
      * 新建一个book。
      * @throws ResourceNotExist ("images", number[]) image项不存在。给出imageId列表
@@ -48,6 +46,7 @@ class BookManager(private val data: DataRepository,
         kit.refreshAllMeta(id)
 
         bus.emit(BookCreated(id))
+        images.forEach { bus.emit(IllustRelatedItemsUpdated(it.id, IllustType.IMAGE, bookUpdated = true)) }
 
         return id
     }
@@ -58,18 +57,18 @@ class BookManager(private val data: DataRepository,
     fun addImagesInBook(bookId: Int, imageIds: List<Int>, ordinal: Int?) {
         kit.upsertSubImages(bookId, imageIds, ordinal)
         kit.refreshAllMeta(bookId)
-        backendExporter.add(IllustBookMemberExporterTask(imageIds))
 
+        bus.emit(BookUpdated(bookId, listUpdated = true))
         bus.emit(BookImagesChanged(bookId, imageIds, emptyList(), emptyList()))
+        imageIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, bookUpdated = true)) }
     }
 
     /**
-     * 移除images.
+     * 移动images.
      */
     fun moveImagesInBook(bookId: Int, imageIds: List<Int>, ordinal: Int?) {
         kit.moveSubImages(bookId, imageIds, ordinal)
         //tips: move操作不需要重置meta
-        backendExporter.add(IllustBookMemberExporterTask(imageIds))
 
         bus.emit(BookImagesChanged(bookId, emptyList(), imageIds, emptyList()))
     }
@@ -80,15 +79,16 @@ class BookManager(private val data: DataRepository,
     fun removeImagesFromBook(bookId: Int, imageIds: List<Int>) {
         kit.deleteSubImages(bookId, imageIds)
         kit.refreshAllMeta(bookId)
-        backendExporter.add(IllustBookMemberExporterTask(imageIds))
 
+        bus.emit(BookUpdated(bookId, listUpdated = true))
         bus.emit(BookImagesChanged(bookId, emptyList(), emptyList(), imageIds))
+        imageIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, bookUpdated = true)) }
     }
 
     /**
      * 从所有的books中平滑移除一个image项。将数量统计-1。如果删掉的image是封面，重新获得下一张封面。
      */
-    fun removeItemFromAllBooks(imageId: Int, exportMetaTags: Boolean = false) {
+    fun removeItemFromAllBooks(imageId: Int) {
         val relations = data.db.sequenceOf(BookImageRelations).filter { it.imageId eq imageId }.toList()
         val bookIds = relations.asSequence().map { it.bookId }.toSet()
 
@@ -109,9 +109,6 @@ class BookManager(private val data: DataRepository,
                     set(it.fileId, newCoverFileId)
                 }
             }
-            if(exportMetaTags) {
-                backendExporter.add(BookMetadataExporterTask(bookId, exportMetaTag = true))
-            }
         }
         data.db.delete(BookImageRelations) { it.imageId eq imageId }
         data.db.update(Books) {
@@ -120,24 +117,24 @@ class BookManager(private val data: DataRepository,
         }
 
         for ((bookId, _, ordinal) in relations) {
-            bus.emit(BookUpdated(bookId, ordinal == 0, false))
+            bus.emit(BookUpdated(bookId, listUpdated = ordinal == 0))
             bus.emit(BookImagesChanged(bookId, emptyList(), emptyList(), listOf(imageId)))
         }
+        bus.emit(IllustRelatedItemsUpdated(imageId, IllustType.IMAGE, bookUpdated = true))
     }
 
     /**
      * 向所有指定的books中平滑添加一个image项，数量+1，并重新导出。
      * @param books (bookId, ordinal)[]
      */
-    fun addItemInBooks(imageId: Int, books: List<Pair<Int, Int>>, exportMetaTags: Boolean = false) {
+    fun addItemInBooks(imageId: Int, books: List<Pair<Int, Int>>) {
         val imageIds = listOf(imageId)
         for ((bookId, ordinal) in books) {
             kit.upsertSubImages(bookId, imageIds, ordinal)
-            if(exportMetaTags) backendExporter.add(BookMetadataExporterTask(bookId, exportMetaTag = true))
 
-            bus.emit(BookUpdated(bookId, generalUpdated = true, metaTagUpdated = false))
+            bus.emit(BookUpdated(bookId, listUpdated = true))
             bus.emit(BookImagesChanged(bookId, imageIds, emptyList(), emptyList()))
+            imageIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, bookUpdated = true)) }
         }
-        backendExporter.add(IllustBookMemberExporterTask(imageIds))
     }
 }

@@ -22,6 +22,7 @@ import com.heerkirov.hedge.server.utils.deleteIfExists
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tools.defer
 import com.heerkirov.hedge.server.utils.types.Opt
+import com.heerkirov.hedge.server.utils.types.anyOpt
 import com.heerkirov.hedge.server.utils.types.optOf
 import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.delete
@@ -164,8 +165,12 @@ class ImportManager(private val data: DataRepository,
                 newBookIds.applyOpt { set(it.bookIds, this) }
                 newCollectionId.applyOpt { set(it.collectionId, this) }
             }
+        }
 
-            bus.emit(ImportUpdated(id, generalUpdated = true, thumbnailFileReady = false))
+        val listUpdated = anyOpt(form.sourceSite, form.sourceId, form.sourcePart, form.tagme, form.partitionTime, form.orderTime)
+        val detailUpdated = listUpdated || anyOpt(form.createTime, form.preference, form.collectionId, newBookIds, newFolderIds)
+        if(listUpdated || detailUpdated) {
+            bus.emit(ImportUpdated(id, listUpdated = listUpdated, detailUpdated = true))
         }
     }
 

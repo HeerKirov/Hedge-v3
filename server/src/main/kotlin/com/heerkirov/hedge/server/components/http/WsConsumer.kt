@@ -1,7 +1,7 @@
 package com.heerkirov.hedge.server.components.http
 
 import com.heerkirov.hedge.server.utils.Json.toJSONString
-import com.heerkirov.hedge.server.utils.tools.controlledThread
+import com.heerkirov.hedge.server.utils.tools.loopPoolThread
 import io.javalin.websocket.*
 import org.slf4j.LoggerFactory
 import java.util.function.Consumer
@@ -18,7 +18,7 @@ class WsConsumer(ctx: (WsConsumer.() -> Unit)? = null) : Consumer<WsConfig> {
     private val whenConnectConsumers: MutableSet<(String) -> Unit> = mutableSetOf()
     private val whenCloseConsumers: MutableSet<(String) -> Unit> = mutableSetOf()
     private val whenReceiveMessageConsumers: MutableSet<(String, String) -> Unit> = mutableSetOf()
-    private val pingThread = controlledThread(false) { pingThread() }
+    private val pingThread = loopPoolThread(false) { pingThread() }
 
     init { ctx?.invoke(this) }
 

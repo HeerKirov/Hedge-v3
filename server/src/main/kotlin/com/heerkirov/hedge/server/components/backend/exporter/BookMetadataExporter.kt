@@ -31,7 +31,7 @@ class BookMetadataExporter(private val data: DataRepository,
 
                 bookKit.refreshAllMeta(task.id)
 
-                bus.emit(BookUpdated(task.id, generalUpdated = false, metaTagUpdated = true))
+                bus.emit(BookUpdated(task.id, detailUpdated = true))
             }
         }
     }

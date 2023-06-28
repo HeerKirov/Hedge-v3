@@ -21,8 +21,8 @@ import com.heerkirov.hedge.server.utils.Graphics
 import com.heerkirov.hedge.server.utils.Similarity
 import com.heerkirov.hedge.server.utils.business.generateFilepath
 import com.heerkirov.hedge.server.utils.business.generateThumbnailFilepath
-import com.heerkirov.hedge.server.utils.tools.controlledThread
 import com.heerkirov.hedge.server.utils.deleteIfExists
+import com.heerkirov.hedge.server.utils.tools.loopPoolThread
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.slf4j.LoggerFactory
@@ -47,8 +47,8 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver, private val appd
     private val thumbnailQueue: MutableList<Int> = LinkedList()
     private val fingerprintQueue: MutableList<Int> = LinkedList()
 
-    private val thumbnailTask = controlledThread(thread = ::thumbnailDaemon)
-    private val fingerprintTask = controlledThread(thread = ::fingerprintDaemon)
+    private val thumbnailTask = loopPoolThread(thread = ::thumbnailDaemon)
+    private val fingerprintTask = loopPoolThread(thread = ::fingerprintDaemon)
 
     override val isIdle: Boolean get() = !thumbnailTask.isAlive
 
@@ -129,7 +129,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver, private val appd
                         .where { ImportImages.fileId eq fileRecord.id }
                         .map { it[ImportImages.id]!! }
                     for (importImageId in importImageIds) {
-                        bus.emit(ImportUpdated(importImageId, generalUpdated = false, thumbnailFileReady = true))
+                        bus.emit(ImportUpdated(importImageId, thumbnailFileReady = true))
                     }
 
                     Thread.sleep(GENERATE_INTERVAL)

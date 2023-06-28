@@ -89,7 +89,7 @@ class SourceDataManager(private val data: DataRepository,
                 set(it.updateTime, now)
             } as Int
 
-            bus.emit(SourceDataCreated(sourceSite, sourceId))
+            bus.emit(SourceDataCreated(sourceSite, sourceId, id))
 
             Triple(id, sourceSite, sourceId)
         }
@@ -169,7 +169,7 @@ class SourceDataManager(private val data: DataRepository,
                 }
             }
 
-            bus.emit(SourceDataCreated(sourceSite, sourceId))
+            bus.emit(SourceDataCreated(sourceSite, sourceId, id))
 
             return Triple(id, sourceSite, sourceId)
         }else{
@@ -233,7 +233,7 @@ class SourceDataManager(private val data: DataRepository,
                 }
             }
 
-            bus.emit(SourceDataUpdated(sourceSite, sourceId))
+            bus.emit(SourceDataUpdated(sourceSite, sourceId, sourceData.id))
 
             return Triple(sourceData.id, sourceSite, sourceId)
         }

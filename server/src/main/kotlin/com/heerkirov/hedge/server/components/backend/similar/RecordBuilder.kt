@@ -4,7 +4,7 @@ import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.FindSimilarResults
-import com.heerkirov.hedge.server.events.SimilarFinderResultAdded
+import com.heerkirov.hedge.server.events.SimilarFinderResultCreated
 import com.heerkirov.hedge.server.model.FindSimilarResult
 import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
@@ -87,7 +87,7 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
         }
         //发送db写入的变更事件
         if(components.size > 0) {
-            bus.emit(SimilarFinderResultAdded(components.size))
+            bus.emit(SimilarFinderResultCreated(components.size))
         }
     }
 

@@ -19,13 +19,11 @@ interface ImportProcessor : Component
 
 class ImportProcessorImpl(private val data: DataRepository, bus: EventBus) : ImportProcessor {
     init {
-        bus.on(IllustDeleted::class, BookDeleted::class, FolderDeleted::class) {
-            if(it.event is IllustDeleted && it.event.illustType == IllustType.COLLECTION) {
-                clean(collectionId = it.event.illustId)
-            }else if(it.event is BookDeleted) {
-                clean(bookId = it.event.bookId)
-            }else if(it.event is FolderDeleted) {
-                clean(folderId = it.event.folderId)
+        bus.on(arrayOf(IllustDeleted::class, BookDeleted::class, FolderDeleted::class)) {
+            it.which {
+                each<IllustDeleted>({ e -> e.illustType == IllustType.COLLECTION }) { e -> clean(collectionId = e.illustId) }
+                each<BookDeleted> { e -> clean(bookId = e.bookId) }
+                each<FolderDeleted> { e -> clean(folderId = e.folderId) }
             }
         }
     }

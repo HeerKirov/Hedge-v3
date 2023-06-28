@@ -1,7 +1,5 @@
 package com.heerkirov.hedge.server.functions.service
 
-import com.heerkirov.hedge.server.components.backend.exporter.BackendExporter
-import com.heerkirov.hedge.server.components.backend.exporter.IllustBookMemberExporterTask
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
@@ -13,10 +11,12 @@ import com.heerkirov.hedge.server.dto.form.BookCreateForm
 import com.heerkirov.hedge.server.dto.form.BookImagesPartialUpdateForm
 import com.heerkirov.hedge.server.dto.form.BookUpdateForm
 import com.heerkirov.hedge.server.dto.res.*
+import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.enums.TagAddressType
 import com.heerkirov.hedge.server.events.BookDeleted
 import com.heerkirov.hedge.server.events.BookImagesChanged
 import com.heerkirov.hedge.server.events.BookUpdated
+import com.heerkirov.hedge.server.events.IllustRelatedItemsUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.BookKit
 import com.heerkirov.hedge.server.functions.manager.BookManager
@@ -39,8 +39,7 @@ class BookService(private val data: DataRepository,
                   private val kit: BookKit,
                   private val bookManager: BookManager,
                   private val illustManager: IllustManager,
-                  private val queryManager: QueryManager,
-                  private val backendExporter: BackendExporter) {
+                  private val queryManager: QueryManager) {
     private val orderTranslator = OrderTranslator {
         "id" to Books.id
         "createTime" to Books.createTime
@@ -181,10 +180,10 @@ class BookService(private val data: DataRepository,
                 }
             }
 
-            val generalUpdated = anyOpt(form.score, form.favorite, newTitle, newDescription)
-            val metaTagUpdated = anyOpt(form.tags, form.authors, form.topics)
-            if(generalUpdated || metaTagUpdated) {
-                bus.emit(BookUpdated(id, generalUpdated, metaTagUpdated))
+            val listUpdated = anyOpt(form.score, form.favorite, newTitle, newDescription)
+            val detailUpdated = listUpdated || anyOpt(form.tags, form.authors, form.topics)
+            if(listUpdated || detailUpdated) {
+                bus.emit(BookUpdated(id, listUpdated, detailUpdated = true))
             }
         }
     }
@@ -196,6 +195,8 @@ class BookService(private val data: DataRepository,
         data.db.transaction {
             data.db.sequenceOf(Books).firstOrNull { it.id eq id } ?: throw be(NotFound())
 
+            val childrenIds = data.db.from(BookImageRelations).select(BookImageRelations.imageId).where { BookImageRelations.bookId eq id }.map { it[BookImageRelations.imageId]!! }
+
             data.db.delete(Books) { it.id eq id }
             data.db.delete(BookTagRelations) { it.bookId eq id }
             data.db.delete(BookTopicRelations) { it.bookId eq id }
@@ -204,6 +205,7 @@ class BookService(private val data: DataRepository,
             data.db.delete(BookImageRelations) { it.bookId eq id }
 
             bus.emit(BookDeleted(id))
+            childrenIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, bookUpdated = true)) }
         }
     }
 
@@ -257,9 +259,12 @@ class BookService(private val data: DataRepository,
 
             kit.refreshAllMeta(id)
 
-            backendExporter.add(IllustBookMemberExporterTask((imageIdSet + oldIdSet).toList()))
-
-            bus.emit(BookImagesChanged(id, (imageIdSet - oldIdSet).toList(), emptyList(), (oldIdSet - imageIdSet).toList()))
+            bus.emit(BookUpdated(id, listUpdated = true))
+            val added = (imageIdSet - oldIdSet).toList()
+            val deleted = (oldIdSet - imageIdSet).toList()
+            bus.emit(BookImagesChanged(id, added, emptyList(), deleted))
+            added.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, bookUpdated = true)) }
+            deleted.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, bookUpdated = true)) }
         }
     }
 

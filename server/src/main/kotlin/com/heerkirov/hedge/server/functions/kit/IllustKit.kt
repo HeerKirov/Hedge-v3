@@ -95,9 +95,10 @@ class IllustKit(private val data: DataRepository,
     }
 
     /**
-     * 在没有更新的情况下，强制重新导出meta tag。
+     * 在没有改变主体的meta tag的情况下，重新导出meta tag。用于当关联客体发生变更时更新。
+     * @param forceUpdate 默认情况下，如果主体有自己的meta tags，则不会更新。开启此选项，在这种情况下强制更新。
      */
-    fun refreshAllMeta(thisId: Int, copyFromParent: Int? = null, copyFromChildren: Boolean = false) {
+    fun refreshAllMeta(thisId: Int, copyFromParent: Int? = null, copyFromChildren: Boolean = false, forceUpdate: Boolean = false) {
         val analyseStatisticCount = !copyFromChildren
 
         val tags = metaManager.getNotExportMetaTags(thisId, IllustTagRelations, Tags)
@@ -116,7 +117,7 @@ class IllustKit(private val data: DataRepository,
             }else if(copyFromParent != null && anyNotExportedMetaExists(copyFromParent)) {
                 copyAllMetaFromParent(thisId, copyFromParent)
             }
-        }else{
+        }else if(forceUpdate) {
             //至少一个列表不为0时，清空所有为0的列表的全部tag
             //在copyFromChildren为false的情况下，认为是image的更改，要求修改统计计数；否则不予修改
             deleteAllMeta(thisId, remainNotExported = true, analyseStatisticCount = analyseStatisticCount, tagCount = tagCount, topicCount = topicCount, authorCount = authorCount)
@@ -277,17 +278,10 @@ class IllustKit(private val data: DataRepository,
     /**
      * 当目标对象存在任意一个not exported的meta tag时，返回true。
      */
-    fun anyNotExportedMetaExists(illustId: Int): Boolean {
+    private fun anyNotExportedMetaExists(illustId: Int): Boolean {
         return metaManager.getNotExportedMetaCount(illustId, IllustTagRelations) > 0
                 || metaManager.getNotExportedMetaCount(illustId, IllustAuthorRelations) > 0
                 || metaManager.getNotExportedMetaCount(illustId, IllustTopicRelations) > 0
-    }
-
-    /**
-     * 查询一个collection的第一个child。当不存在时抛出NPE。
-     */
-    fun getFirstChildOfCollection(collectionId: Int): Illust {
-        return data.db.sequenceOf(Illusts).sortedBy { it.orderTime }.first { it.parentId eq collectionId }
     }
 
     /**

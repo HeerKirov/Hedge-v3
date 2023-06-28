@@ -22,7 +22,7 @@ class QueryManager(private val data: DataRepository, bus: EventBus) {
 
     init {
         //监听meta tag、annotation、source tag的变化，刷新缓存
-        bus.on(MetaTagEntityEvent::class, AnnotationEntityEvent::class, SourceTagUpdated::class) { flushCacheByEvent(it) }
+        bus.on(arrayOf(MetaTagEntityEvent::class, AnnotationEntityEvent::class, SourceTagUpdated::class), ::flushCacheByEvent)
         //监听query option的变化，刷新查询选项
         bus.on(SettingQueryChanged::class) { options.flushOptionsByEvent() }
     }
@@ -68,15 +68,19 @@ class QueryManager(private val data: DataRepository, bus: EventBus) {
         }
     }
 
-    private fun flushCacheByEvent(e: PackagedBusEvent<*>) {
-        when(val event = e.event) {
-            is MetaTagEntityEvent -> when(event.metaType) {
-                MetaType.TAG -> flushCacheOf(CacheType.TAG)
-                MetaType.TOPIC -> flushCacheOf(CacheType.TOPIC)
-                MetaType.AUTHOR -> flushCacheOf(CacheType.AUTHOR)
+    private fun flushCacheByEvent(events: PackagedBusEvent) {
+        events.which {
+            all<MetaTagEntityEvent> { events ->
+                if(events.any { it.metaType == MetaType.TAG }) flushCacheOf(CacheType.TAG)
+                if(events.any { it.metaType == MetaType.TOPIC }) flushCacheOf(CacheType.TOPIC)
+                if(events.any { it.metaType == MetaType.AUTHOR }) flushCacheOf(CacheType.AUTHOR)
             }
-            is AnnotationEntityEvent -> flushCacheOf(CacheType.ANNOTATION)
-            is SourceTagUpdated -> flushCacheOf(CacheType.SOURCE_TAG)
+            all<AnnotationEntityEvent> {
+                flushCacheOf(CacheType.ANNOTATION)
+            }
+            all<SourceTagUpdated> {
+                flushCacheOf(CacheType.SOURCE_TAG)
+            }
         }
     }
 

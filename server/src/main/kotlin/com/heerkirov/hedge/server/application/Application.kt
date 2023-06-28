@@ -8,6 +8,7 @@ import com.heerkirov.hedge.server.components.backend.exporter.BackendExporterImp
 import com.heerkirov.hedge.server.components.backend.similar.SimilarFinderImpl
 import com.heerkirov.hedge.server.components.backend.watcher.PathWatcherImpl
 import com.heerkirov.hedge.server.components.bus.EventBusImpl
+import com.heerkirov.hedge.server.components.compositor.EventCompositorImpl
 import com.heerkirov.hedge.server.components.database.DataRepositoryImpl
 import com.heerkirov.hedge.server.components.health.HealthImpl
 import com.heerkirov.hedge.server.components.http.HttpServerImpl
@@ -31,7 +32,7 @@ fun runApplication(options: ApplicationOptions) {
     val serverOptions = HttpServerOptions(options.forceToken, options.forcePort)
 
     framework {
-        val bus = define { EventBusImpl(context) }
+        val bus = define { EventBusImpl() }
         val health = define { HealthImpl(options.channelPath) }
         val lifetime = define { LifetimeImpl(context, lifetimeOptions) }
         val appStatus = define { AppStatusDriverImpl(context, bus, options.channelPath) }
@@ -40,7 +41,6 @@ fun runApplication(options: ApplicationOptions) {
 
         val services = define {
             define { ImportProcessorImpl(repo, bus) }
-
             val queryManager = QueryManager(repo, bus)
             val queryService = QueryService(queryManager)
 
@@ -74,25 +74,26 @@ fun runApplication(options: ApplicationOptions) {
             val illustKit = IllustKit(repo, metaManager)
             val bookKit = BookKit(repo, metaManager)
             val folderKit = FolderKit(repo)
+            val backendExporter = define { BackendExporterImpl(appStatus, bus, repo, illustKit, bookKit) }
             val partitionManager = PartitionManager(repo)
             val associateManager = AssociateManager(repo)
-            val backendExporter = define { BackendExporterImpl(appStatus, bus, repo, illustKit, bookKit) }
-            val bookManager = BookManager(repo, bus, bookKit, backendExporter)
+            val bookManager = BookManager(repo, bus, bookKit)
             val folderManager = FolderManager(repo, bus, folderKit)
             val trashManager = TrashManager(repo, bus, backendExporter, illustKit, fileManager, bookManager, folderManager, associateManager, partitionManager, sourceManager)
-            val illustManager = IllustManager(repo, bus, illustKit, sourceManager, associateManager, bookManager, folderManager, partitionManager, trashManager, backendExporter)
+            val illustManager = IllustManager(repo, bus, illustKit, sourceManager, associateManager, bookManager, folderManager, partitionManager, trashManager)
 
             define { TrashCleanerImpl(appStatus, repo, trashManager) }
+            define { EventCompositorImpl(repo, bus, backendExporter) }
 
             val homepageService = HomepageService(repo)
-            val illustService = IllustService(repo, bus, illustKit, illustManager, associateManager, sourceManager, partitionManager, queryManager, backendExporter)
-            val bookService = BookService(repo, bus, bookKit, bookManager, illustManager, queryManager, backendExporter)
+            val illustService = IllustService(repo, bus, illustKit, illustManager, associateManager, sourceManager, partitionManager, queryManager)
+            val bookService = BookService(repo, bus, bookKit, bookManager, illustManager, queryManager)
             val folderService = FolderService(repo, bus, folderKit, folderManager, illustManager)
             val partitionService = PartitionService(repo, queryManager)
             val annotationService = AnnotationService(repo, bus, annotationKit, queryManager)
-            val tagService = TagService(repo, bus, tagKit, sourceMappingManager, backendExporter)
-            val authorService = AuthorService(repo, bus, authorKit, queryManager, sourceMappingManager, backendExporter)
-            val topicService = TopicService(repo, bus, topicKit, queryManager, sourceMappingManager, backendExporter)
+            val tagService = TagService(repo, bus, tagKit, sourceMappingManager)
+            val authorService = AuthorService(repo, bus, authorKit, queryManager, sourceMappingManager)
+            val topicService = TopicService(repo, bus, topicKit, queryManager, sourceMappingManager)
             val importService = ImportService(repo, bus, importManager, illustManager, bookManager, folderManager, importMetaManager, similarFinder, pathWatcher)
             val trashService = TrashService(repo, trashManager)
 
