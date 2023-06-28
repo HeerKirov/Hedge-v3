@@ -32,11 +32,11 @@ function useListView() {
     return useListViewContext({
         request: client => (offset, limit) => client.findSimilar.result.list({offset, limit}),
         eventFilter: {
-            filter: ["backend/similar-finder/result-added", "backend/similar-finder/result-resolved", "backend/similar-finder/result-deleted"],
+            filter: ["entity/find-similar-result/created", "entity/find-similar-result/resolved", "entity/find-similar-result/deleted"],
             operation({ event, refresh, removeOne: remove }) {
-                if(event.eventType === "backend/similar-finder/result-added" && event.count > 0) {
+                if(event.eventType === "entity/find-similar-result/created" && event.count > 0) {
                     refresh()
-                }else if(event.eventType === "backend/similar-finder/result-resolved" || event.eventType === "backend/similar-finder/result-deleted") {
+                }else if(event.eventType === "entity/find-similar-result/resolved" || event.eventType === "entity/find-similar-result/deleted") {
                     remove(i => i.id === event.resultId)
                 }
             },
@@ -121,7 +121,7 @@ export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = instal
         get: client => client.findSimilar.result.get,
         update: client => client.findSimilar.result.resolve,
         delete: client => client.findSimilar.result.delete,
-        eventFilter: c => event => (event.eventType === "backend/similar-finder/result-resolved" || event.eventType === "backend/similar-finder/result-deleted") && c.path === event.resultId,
+        eventFilter: c => event => (event.eventType === "entity/find-similar-result/resolved" || event.eventType === "entity/find-similar-result/deleted") && c.path === event.resultId,
         afterRetrieve(path, data) {
             if(path !== null && data === null) {
                 paneState.closeView()

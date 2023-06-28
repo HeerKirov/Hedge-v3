@@ -101,13 +101,13 @@ function useListView(path: Ref<number | null>) {
             return await client.book.images.get(filter, {offset, limit})
         },
         eventFilter: {
-            filter: ["entity/illust/updated", "entity/illust/deleted", "entity/book-images/changed"],
+            filter: ["entity/illust/updated", "entity/illust/deleted", "entity/book/images/changed"],
             operation({ event, refresh, updateOne, removeOne }) {
-                if(event.eventType === "entity/illust/updated" && event.generalUpdated) {
+                if(event.eventType === "entity/illust/updated" && event.listUpdated) {
                     updateOne(i => i.id === event.illustId)
                 }else if(event.eventType === "entity/illust/deleted") {
                     removeOne(i => i.id === event.illustId)
-                }else if(event.eventType === "entity/book-images/changed" && event.bookId === path.value) {
+                }else if(event.eventType === "entity/book/images/changed" && event.bookId === path.value) {
                     refresh()
                 }
             },

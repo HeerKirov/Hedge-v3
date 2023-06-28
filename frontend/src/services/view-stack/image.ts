@@ -52,7 +52,7 @@ function useSlice(data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Il
             eventFilter: {
                 filter: ["entity/illust/updated", "entity/illust/deleted"],
                 operation({ update, event }) {
-                    if(event.eventType === "entity/illust/updated" && event.generalUpdated) {
+                    if(event.eventType === "entity/illust/updated" && event.listUpdated) {
                         update(i => i.id === event.illustId)
                     }else if(event.eventType === "entity/illust/deleted") {
                         paths.value = paths.value.filter(path => path !== event.illustId)
@@ -334,21 +334,21 @@ function useSideBarContext(path: Ref<number | null>) {
         path,
         get: client => client.illust.image.get,
         update: client => client.illust.image.update,
-        eventFilter: c => event => event.eventType === "entity/illust/updated" && event.illustId === c.path && (event.generalUpdated || event.metaTagUpdated)
+        eventFilter: c => event => event.eventType === "entity/illust/updated" && event.illustId === c.path && event.detailUpdated
     })
 
     installRelatedItemsLazyEndpoint({
         path,
         get: client => path => client.illust.image.relatedItems.get(path, {limit: 9}),
         update: client => client.illust.image.relatedItems.update,
-        eventFilter: c => event => event.eventType === "entity/illust/updated" && event.illustId === c.path && event.relatedItemsUpdated
+        eventFilter: c => event => event.eventType === "entity/illust/related-items/updated" && event.illustId === c.path
     })
 
     installSourceDataLazyEndpoint({
         path,
         get: client => client.illust.image.sourceData.get,
         update: client => client.illust.image.sourceData.update,
-        eventFilter: c => event => event.eventType === "entity/illust/updated" && event.illustId === c.path && event.sourceDataUpdated
+        eventFilter: c => event => event.eventType === "entity/illust/source-data/updated" && event.illustId === c.path
     })
 
     return {tabType}

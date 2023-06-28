@@ -37,7 +37,7 @@ export const [installFolderContext, useFolderContext] = installation(function ()
 function useFolderListview() {
     const { loading, data, refresh } = useFetchReactive({
         get: client => () => client.folder.tree({}),
-        eventFilter: ["entity/folder/created", "entity/folder/updated", "entity/folder/deleted", "entity/folder-pin/changed"]
+        eventFilter: ["entity/folder/created", "entity/folder/updated", "entity/folder/deleted", "entity/folder/pin/changed"]
     })
 
     return {loading, data, refresh}
@@ -165,9 +165,9 @@ export function useFolderDetailPane() {
             }
         },
         eventFilter: {
-            filter: ["entity/folder-images/changed"],
+            filter: ["entity/folder/images/changed"],
             operation({ event, refresh }) {
-                if(event.eventType === "entity/folder-images/changed" && event.folderId === data.value?.id) {
+                if(event.eventType === "entity/folder/images/changed" && event.folderId === data.value?.id) {
                     refresh()
                 }
             }
@@ -249,13 +249,13 @@ function useListView(path: Ref<number | null>) {
             return await client.folder.images.get(path, {offset, limit, order: "ordinal"})
         },
         eventFilter: {
-            filter: ["entity/illust/updated", "entity/illust/deleted", "entity/folder-images/changed"],
+            filter: ["entity/illust/updated", "entity/illust/deleted", "entity/folder/images/changed"],
             operation({ event, refresh, updateOne, removeOne }) {
-                if(event.eventType === "entity/illust/updated" && event.generalUpdated) {
+                if(event.eventType === "entity/illust/updated" && event.listUpdated) {
                     updateOne(i => i.id === event.illustId)
                 }else if(event.eventType === "entity/illust/deleted") {
                     removeOne(i => i.id === event.illustId)
-                }else if(event.eventType === "entity/folder-images/changed" && event.folderId === path.value) {
+                }else if(event.eventType === "entity/folder/images/changed" && event.folderId === path.value) {
                     refresh()
                 }
             },

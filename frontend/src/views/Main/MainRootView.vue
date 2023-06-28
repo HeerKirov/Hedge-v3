@@ -14,7 +14,7 @@ const stackExists = computed(() => viewStack.size() > 0)
 
 const { data: pins } = useFetchReactive({
     get: client => client.folder.pin.list,
-    eventFilter: "entity/folder-pin/changed"
+    eventFilter: "entity/folder/pin/changed"
 })
 
 const navHistory = installNavHistory()

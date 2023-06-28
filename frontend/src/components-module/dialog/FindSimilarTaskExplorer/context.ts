@@ -41,7 +41,7 @@ export function useTaskListData() {
     const listview = useQueryListview({
         request: client => (offset, limit, _) => client.findSimilar.task.list({offset, limit, order: "+recordTime"}),
         eventFilter: {
-            filter: ["backend/similar-finder/result-added"],
+            filter: ["entity/find-similar-result/created"],
             operation(context) {
                 context.refresh()
             }

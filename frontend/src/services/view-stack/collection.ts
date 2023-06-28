@@ -92,13 +92,13 @@ function useListView(path: Ref<number | null>) {
             return await client.illust.collection.images.get(filter, {offset, limit})
         },
         eventFilter: {
-            filter: ["entity/illust/updated", "entity/illust/deleted", "entity/collection-images/changed"],
+            filter: ["entity/illust/updated", "entity/illust/deleted", "entity/illust/images/changed"],
             operation({ event, refresh, updateOne, removeOne }) {
-                if(event.eventType === "entity/illust/updated" && event.generalUpdated) {
+                if(event.eventType === "entity/illust/updated" && event.listUpdated) {
                     updateOne(i => i.id === event.illustId)
                 }else if(event.eventType === "entity/illust/deleted") {
                     removeOne(i => i.id === event.illustId)
-                }else if(event.eventType === "entity/collection-images/changed" && event.illustId === path.value) {
+                }else if(event.eventType === "entity/illust/images/changed" && event.illustId === path.value) {
                     refresh()
                 }
             },
@@ -134,14 +134,14 @@ function useSideBarContext(path: Ref<number | null>) {
         path,
         get: client => client.illust.collection.get,
         update: client => client.illust.collection.update,
-        eventFilter: c => event => event.eventType === "entity/illust/updated" && event.illustId === c.path && (event.generalUpdated || event.metaTagUpdated)
+        eventFilter: c => event => event.eventType === "entity/illust/updated" && event.illustId === c.path && event.detailUpdated
     })
 
     installRelatedItemsLazyEndpoint({
         path,
         get: client => path => client.illust.collection.relatedItems.get(path, {limit: 9}),
         update: client => client.illust.collection.relatedItems.update,
-        eventFilter: c => event => event.eventType === "entity/illust/updated" && event.illustId === c.path && event.relatedItemsUpdated
+        eventFilter: c => event => event.eventType === "entity/illust/related-items/updated" && event.illustId === c.path
     })
 
     return {tabType}

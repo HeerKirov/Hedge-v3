@@ -2,7 +2,6 @@ import { WsToastResult } from "@/functions/ipc-client/constants-model"
 import { remoteIpcClient } from "@/functions/ipc-client"
 import { Emitter } from "@/utils/emitter"
 import { AllEvents, AllEventTypes } from "./constants"
-export { wsEventFilters } from "./filters"
 
 export type { AllEvents, AllEventTypes }
 
@@ -43,10 +42,13 @@ export function createWsClient(): WsClient {
 
     function wsToastEvent(e: WsToastResult) {
         if(e.type === "EVENT") {
-            const event = {event: <AllEvents>e.data.event, timestamp: e.data.timestamp}
-            for (const activityEmitter of activityEmitters) {
-                if(activityEmitter.condition(event.event)) {
-                    activityEmitter.emit(event)
+            //TODO 前端事件系统改版：批处理事件
+            for(const event of e.data.events) {
+                const emitEvent = {event: <AllEvents>event.event, timestamp: event.timestamp}
+                for (const activityEmitter of activityEmitters) {
+                    if(activityEmitter.condition(emitEvent.event)) {
+                        activityEmitter.emit(emitEvent)
+                    }
                 }
             }
         }else if(e.type === "ERROR") {

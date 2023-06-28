@@ -27,11 +27,11 @@ function useListView() {
         defaultFilter: <BookQueryFilter>{order: "-updateTime"},
         request: client => (offset, limit, filter) => client.book.list({offset, limit, ...filter}),
         eventFilter: {
-            filter: ["entity/book/created", "entity/book/updated", "entity/book/deleted", "entity/book-images/changed"],
+            filter: ["entity/book/created", "entity/book/updated", "entity/book/deleted", "entity/book/images/changed"],
             operation({ event, refresh, updateOne, removeOne }) {
                 if(event.eventType === "entity/book/created") {
                     refresh()
-                }else if((event.eventType === "entity/book/updated" && event.generalUpdated) || event.eventType === "entity/book-images/changed") {
+                }else if((event.eventType === "entity/book/updated" && event.listUpdated) || event.eventType === "entity/book/images/changed") {
                     updateOne(i => i.id === event.bookId)
                 }else if(event.eventType === "entity/book/deleted") {
                     removeOne(i => i.id === event.bookId)

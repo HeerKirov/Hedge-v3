@@ -54,7 +54,7 @@ export function useAssociateViewData(path: Ref<number>, close: () => void) {
     const { data } = useFetchEndpoint({
         path,
         get: client => client.illust.associate.get,
-        eventFilter: c => event => event.eventType === "entity/illust/updated" && event.relatedItemsUpdated && event.illustId === c.path
+        eventFilter: c => event => event.eventType === "entity/illust/related-items/updated" && event.illustId === c.path
     })
 
     const openAssociateInNewView = (index?: number) => {

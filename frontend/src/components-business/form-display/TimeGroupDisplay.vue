@@ -12,8 +12,8 @@ defineProps<{
 <template>
     <div>
         <p v-if="orderTime" class="secondary-text">排序时间 {{datetime.toSimpleFormat(orderTime)}}</p>
-        <p v-if="createTime" class="secondary-text">添加时间 {{datetime.toSimpleFormat(createTime)}}</p>
-        <p v-if="updateTime && (!createTime || updateTime.timestamp !== createTime.timestamp)" class="has-text-secondary">上次修改 {{datetime.toSimpleFormat(updateTime)}}</p>
+        <p v-if="createTime" class="secondary-text">创建时间 {{datetime.toSimpleFormat(createTime)}}</p>
+        <p v-if="updateTime && (!createTime || updateTime.timestamp !== createTime.timestamp)" class="secondary-text">上次修改 {{datetime.toSimpleFormat(updateTime)}}</p>
     </div>
 </template>
 

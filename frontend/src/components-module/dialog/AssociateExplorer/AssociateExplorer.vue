@@ -20,6 +20,8 @@ const close = () => {
     }else if(props.p.mode === "edit" && props.p.onSucceed) {
         props.p.onSucceed()
         emit("close")
+    }else{
+        emit("close")
     }
 }
 

@@ -259,11 +259,11 @@ function useListView() {
         defaultFilter: <IllustQueryFilter>{order: "-orderTime", type: "IMAGE"},
         request: client => (offset, limit, filter) => client.illust.list({offset, limit, ...filter}),
         eventFilter: {
-            filter: ["entity/illust/created", "entity/illust/updated", "entity/illust/deleted", "entity/collection-images/changed"],
+            filter: ["entity/illust/created", "entity/illust/updated", "entity/illust/deleted", "entity/illust/images/changed"],
             operation({ event, refresh, updateOne, removeOne }) {
                 if(event.eventType === "entity/illust/created") {
                     refresh()
-                }else if(event.eventType === "entity/illust/updated" && event.generalUpdated) {
+                }else if(event.eventType === "entity/illust/updated" && event.listUpdated) {
                     updateOne(i => i.id === event.illustId)
                 }else if(event.eventType === "entity/illust/deleted") {
                     if(event.illustType === "COLLECTION") {
@@ -273,7 +273,7 @@ function useListView() {
                     }else{
                         removeOne(i => i.id === event.illustId)
                     }
-                }else if(event.eventType === "entity/collection-images/changed") {
+                }else if(event.eventType === "entity/illust/images/changed") {
                     if(listview.queryFilter.value.type === "COLLECTION") {
                         refresh()
                     }

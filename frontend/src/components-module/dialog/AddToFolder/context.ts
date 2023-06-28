@@ -1,7 +1,7 @@
 import { ref, Ref } from "vue"
 import { useFetchHelper, useFetchReactive, usePostFetchHelper, usePostPathFetchHelper } from "@/functions/fetch"
 import { useMessageBox } from "@/modules/message-box"
-import { computedAsync } from "@/utils/reactivity";
+import { computedAsync } from "@/utils/reactivity"
 import { Push } from "../context"
 
 export interface AddToFolder {
@@ -43,7 +43,7 @@ export function useAddToFolderContext(illustIds: Ref<number[]>, resolve: () => v
 
     const { data: folderTree } = useFetchReactive({
         get: client => () => client.folder.tree({}),
-        eventFilter: ["entity/folder/created", "entity/folder/updated", "entity/folder/deleted", "entity/folder-pin/changed"]
+        eventFilter: ["entity/folder/created", "entity/folder/updated", "entity/folder/deleted", "entity/folder/pin/changed"]
     })
 
     const { data: recentFolders } = useFetchReactive({
