@@ -13,6 +13,7 @@ import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
 import com.heerkirov.hedge.server.utils.business.takeThumbnailFilepath
 import com.heerkirov.hedge.server.utils.runIf
 import org.ktorm.dsl.*
+import org.ktorm.entity.count
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import org.ktorm.schema.ColumnDeclaring
@@ -49,6 +50,13 @@ class HomepageService(private val data: DataRepository) {
         }
 
         return mapToHomepageRes(currentRecord!!)
+    }
+
+    fun getHomepageState(): HomepageStateRes {
+        val importImageCount = data.db.sequenceOf(ImportImages).count()
+        val findSimilarCount = data.db.sequenceOf(FindSimilarResults).count()
+
+        return HomepageStateRes(importImageCount, findSimilarCount)
     }
 
     private fun mapToHomepageRes(record: HomepageRecord): HomepageRes {

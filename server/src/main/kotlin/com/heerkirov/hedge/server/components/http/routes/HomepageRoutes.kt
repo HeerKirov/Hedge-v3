@@ -12,11 +12,16 @@ class HomepageRoutes(private val service: HomepageService) : Routes {
         javalin.routes {
             path("api/homepage") {
                 get(::homepage)
+                get("state", ::homepageState)
             }
         }
     }
 
     private fun homepage(ctx: Context) {
         ctx.json(service.getHomepageInfo())
+    }
+
+    private fun homepageState(ctx: Context) {
+        ctx.json(service.getHomepageState())
     }
 }

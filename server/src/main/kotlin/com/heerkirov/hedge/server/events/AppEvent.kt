@@ -11,3 +11,8 @@ interface AppEvent : BaseBusEvent
  * AppStatus发生变化。
  */
 class AppStatusChanged(val status: AppLoadStatus) : BaseBusEventImpl("app/app-status/changed"), AppEvent
+
+/**
+ * 主页的state相关内容发生变化。
+ */
+class HomepageStateChanged : BaseBusEventImpl("app/homepage/state/changed"), AppEvent

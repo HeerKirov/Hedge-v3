@@ -42,6 +42,11 @@ class EventCompositorImpl(private val data: DataRepository,
                     sendAssociateUpdatedEvent(e.illustId)
                 }
             }
+            is ImportCreated, is ImportSaved, is ImportDeleted,
+            is SimilarFinderResultCreated, is SimilarFinderResultDeleted, is SimilarFinderResultResolved -> {
+                //import/find similar数量变化时，发送homepage state的更新事件
+                sendHomepageStateChangedEvent()
+            }
         }
     }
 
@@ -113,6 +118,10 @@ class EventCompositorImpl(private val data: DataRepository,
             .where { AssociateRelations.illustId eq illustId }
             .map { it[AssociateRelations.relatedIllustId]!! to it[Illusts.type]!! }
         associates.forEach { (id, type) -> bus.emit(IllustRelatedItemsUpdated(id, type.toIllustType())) }
+    }
+
+    private fun sendHomepageStateChangedEvent() {
+        bus.emit(HomepageStateChanged())
     }
 
     private fun exportTagGlobal() {
