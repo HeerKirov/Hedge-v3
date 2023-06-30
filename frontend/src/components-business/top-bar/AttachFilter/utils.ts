@@ -1,8 +1,8 @@
-import { AttachTemplate, TemplateOption } from "./template"
+import { markRaw } from "vue"
+import { HttpClient, mapResponse } from "@/functions/http-client"
 import { useFetchHelper } from "@/functions/fetch"
-import { markRaw } from "vue";
-import { installation } from "@/utils/reactivity";
-import { HttpClient, mapResponse } from "@/functions/http-client";
+import { installation } from "@/utils/reactivity"
+import { AttachTemplate, TemplateOption } from "./template"
 
 export function parseOrder(order: string): [string, "ascending" | "descending"] {
     if(order.startsWith("+")) {

@@ -23,7 +23,7 @@ const { fromId, toId, ids, titles, exchange, updateId, options, execute } = useC
 </script>
 
 <template>
-    <Flex :spacing="2">
+    <Flex class="h-100" :spacing="2">
         <div :class="$style['info-content']">
             <p class="mt-2 pl-1 is-font-size-large">属性克隆</p>
             <p class="mb-2 pl-1">将源图像的属性、关联关系完整地(或有选择地)复制给目标图像。</p>

@@ -1,19 +1,19 @@
 <script setup lang="ts">
+import { computed } from "vue"
 import { PlayBoard } from "@/components/data"
 import { ElementPopupMenu } from "@/components/interaction"
 import { Button, Separator, OptionButtons } from "@/components/universal"
 import { SideLayout, SideBar, TopBarCollapseLayout, MiddleLayout } from "@/components/layout"
 import { ZoomController } from "@/components-business/top-bar"
 import { ViewStackBackButton } from "@/components-module/view-stack"
+import { useAssets } from "@/functions/app"
 import { Illust } from "@/functions/http-client/api/illust"
 import { AllSlice, ListIndexSlice, SliceOrPath } from "@/functions/fetch"
 import { MenuItem, usePopupMenu } from "@/modules/popup-menu"
-import { useAssets } from "@/functions/app"
 import { installImageViewContext } from "@/services/view-stack/image"
 import SideBarDetailInfo from "./SideBarDetailInfo.vue"
 import SideBarRelatedItems from "./SideBarRelatedItems.vue"
 import SideBarSourceData from "./SideBarSourceData.vue"
-import { computed } from "vue"
 
 const props = defineProps<{
     sliceOrPath: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>

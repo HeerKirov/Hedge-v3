@@ -188,6 +188,10 @@ export interface ImportImage {
 }
 
 export interface DetailImportImage extends ImportImage {
+    extension: string
+    size: number
+    resolutionWidth: number
+    resolutionHeight: number
     filePath: string | null
     fileFromSource: string | null
     fileCreateTime: LocalDateTime | null

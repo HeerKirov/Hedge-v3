@@ -474,7 +474,6 @@ function entityCompare(a: {type: FindSimilarEntityType, id: number}, b: {type: F
 }
 
 export function useFindSimilarCompareData(id: Ref<{type: "IMPORT_IMAGE" | "ILLUST", id: number} | null>) {
-    const message = useMessageBox()
 
     const { data } = useFetchEndpoint({
         path: id,
@@ -497,6 +496,10 @@ export function useFindSimilarCompareData(id: Ref<{type: "IMPORT_IMAGE" | "ILLUS
                         metadata: {
                             id: metadata.data.id,
                             file: null,
+                            extension: metadata.data.extension,
+                            size: metadata.data.size,
+                            resolutionWidth: metadata.data.resolutionWidth,
+                            resolutionHeight: metadata.data.resolutionHeight,
                             score: metadata.data.score,
                             favorite: metadata.data.favorite,
                             description: metadata.data.description,
@@ -533,6 +536,10 @@ export function useFindSimilarCompareData(id: Ref<{type: "IMPORT_IMAGE" | "ILLUS
                         metadata: {
                             id: res.data.id,
                             file: res.data.fileName,
+                            extension: res.data.extension,
+                            size: res.data.size,
+                            resolutionWidth: res.data.resolutionWidth,
+                            resolutionHeight: res.data.resolutionHeight,
                             score: null,
                             favorite: false,
                             description: "",
@@ -581,6 +588,10 @@ export interface FindSimilarCompareData {
     metadata: {
         id: number | null
         file: string | null
+        extension: string
+        size: number
+        resolutionWidth: number
+        resolutionHeight: number
         score: number | null
         favorite: boolean
         description: string

@@ -4,7 +4,7 @@ import TopicDetail from "./TopicDetail.vue"
 import AuthorDetail from "./AuthorDetail.vue"
 import TagDetail from "./TagDetail.vue"
 
-const props = defineProps<{
+defineProps<{
     metaType: MetaTagTypes
     metaId: number
 }>()

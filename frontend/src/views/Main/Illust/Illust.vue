@@ -12,7 +12,7 @@ import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 
 const {
     paneState,
-    listview: { listview, paginationData },
+    listview: { paginationData },
     listviewController: { viewMode, fitType, columnNum, collectionMode },
     selector: { selected, lastSelected, update: updateSelect },
     querySchema,

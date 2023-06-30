@@ -7,6 +7,7 @@ defineProps<{
     fileSize: number
     resolutionWidth: number
     resolutionHeight: number
+    mode?: "block" | "inline"
 }>()
 
 const EXTENSIONS: Record<string, {name: string, icon: string}> = {
@@ -22,7 +23,7 @@ const EXTENSIONS: Record<string, {name: string, icon: string}> = {
 </script>
 
 <template>
-    <div>
+    <div v-if="mode !== 'inline'">
         <p>
             <Icon class="mr-1" :icon="EXTENSIONS[extension]?.icon ?? 'question'"/>
             {{EXTENSIONS[extension]?.name ?? `未知类型${extension.toUpperCase()}`}}
@@ -33,6 +34,17 @@ const EXTENSIONS: Record<string, {name: string, icon: string}> = {
             <span class="has-text-secondary">({{numbers.toBytesDisplay(fileSize)}})</span>
         </p>
     </div>
+    <span v-else>
+        <span class="no-wrap">
+            <Icon class="mr-1" :icon="EXTENSIONS[extension]?.icon ?? 'question'"/>
+            {{EXTENSIONS[extension]?.name ?? `未知类型${extension.toUpperCase()}`}}
+        </span>
+        <span class="ml-2 no-wrap">
+            <Icon class="mr-1" icon="bullseye"/>
+            {{resolutionWidth}} x {{resolutionHeight}}
+            <span class="has-text-secondary">({{numbers.toBytesDisplay(fileSize)}})</span>
+        </span>
+    </span>
 </template>
 
 <style module lang="sass">

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Icon, WrappedText } from "@/components/universal"
-import { ScoreDisplay, TagmeInfo, MetaTagListDisplay, PartitionTimeDisplay, TimeGroupDisplay } from "@/components-business/form-display"
+import { ScoreDisplay, TagmeInfo, MetaTagListDisplay, PartitionTimeDisplay, TimeGroupDisplay, FileInfoDisplay } from "@/components-business/form-display"
 import { ImageData } from "./context"
 
 defineProps<{
@@ -18,6 +18,12 @@ defineProps<{
             </template>
         </td>
     </tr>
+    <tr>
+        <td>文件信息</td>
+        <td v-for="value in values">
+            <FileInfoDisplay v-if="value !== null" mode="inline" :extension="value.extension" :file-size="value.size" :resolution-width="value.resolutionWidth" :resolution-height="value.resolutionHeight"/>
+        </td>
+    </tr>
     <tr v-if="values.some(i => i?.score || i?.favorite)">
         <td>评分/收藏</td>
         <td v-for="value in values">
@@ -31,16 +37,16 @@ defineProps<{
             <WrappedText v-if="value !== null" :value="value.description"/>
         </td>
     </tr>
-    <tr v-if="values.some(i => i?.tagme.length)">
-        <td>Tagme</td>
-        <td v-for="value in values">
-            <TagmeInfo v-if="value !== null" class="is-inline-block" :value="value.tagme"/>
-        </td>
-    </tr>
     <tr v-if="values.some(i => i?.tags.length || i?.topics.length || i?.authors.length)">
         <td>标签</td>
         <td v-for="value in values">
             <MetaTagListDisplay v-if="value !== null" :max="5" :tags="value.tags" :topics="value.topics" :authors="value.authors" direction="horizontal"/>
+        </td>
+    </tr>
+    <tr v-if="values.some(i => i?.tagme.length)">
+        <td>Tagme</td>
+        <td v-for="value in values">
+            <TagmeInfo v-if="value !== null" class="is-inline-block" :value="value.tagme"/>
         </td>
     </tr>
     <tr v-if="values.some(i => !!i)">

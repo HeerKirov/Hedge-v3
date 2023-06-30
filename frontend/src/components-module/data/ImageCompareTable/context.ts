@@ -16,6 +16,10 @@ export interface ImageData {
     thumbnailFile: string | null
     metadata: {
         id: number
+        extension: string
+        size: number
+        resolutionWidth: number
+        resolutionHeight: number
         score: number | null
         favorite: boolean
         description: string
@@ -77,6 +81,10 @@ function useImageData(initIndex: number | null) {
                         thumbnailFile: metadata.data.thumbnailFile,
                         metadata: {
                             id: metadata.data.id,
+                            extension: metadata.data.extension,
+                            size: metadata.data.size,
+                            resolutionWidth: metadata.data.resolutionWidth,
+                            resolutionHeight: metadata.data.resolutionHeight,
                             score: metadata.data.score,
                             favorite: metadata.data.favorite,
                             description: metadata.data.description,
