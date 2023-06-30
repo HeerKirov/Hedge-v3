@@ -1,15 +1,16 @@
+import { UsefulColors } from "@/constants/ui"
 import { LocalDate, date } from "@/utils/datetime"
 import { HttpInstance, Response } from ".."
 import { SimpleIllust } from "./illust"
 import { TopicType } from "./topic"
 import { AuthorType } from "./author"
-import { UsefulColors } from "@/constants/ui"
 
 export function createHomepageEndpoint(http: HttpInstance): HomepageEndpoint {
     return {
         homepage: http.createRequest("/api/homepage", "GET", {
             parseResponse: mapToHomepageInfo
-        })
+        }),
+        state: http.createRequest("/api/homepage/state")
     }
 }
 
@@ -40,6 +41,15 @@ export interface HomepageEndpoint {
      * 获得主页信息。
      */
     homepage(): Promise<Response<HomepageInfo>>
+    /**
+     * 查看主要状态类信息。
+     */
+    state(): Promise<Response<HomepageState>>
+}
+
+interface HomepageState {
+    importImageCount: number
+    findSimilarCount: number
 }
 
 interface HomepageInfo {

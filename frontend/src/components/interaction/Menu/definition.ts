@@ -12,6 +12,7 @@ export interface MenuItemDefinition {
     id: string
     icon: string
     label: string
+    badge?: number | null | undefined
     submenu?: SubMenuItemDefinition[]
 }
 

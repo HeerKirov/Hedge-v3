@@ -5,6 +5,7 @@ import { Icon } from "@/components/universal"
 const props = defineProps<{
     icon: string
     label: string
+    badge: number | null
     checked?: "selected" | "sub-selected" | null
     disabled?: boolean
     hasSub?: boolean
@@ -34,6 +35,9 @@ const divClass = computed(() => [
     <button :class="divClass" @click="$emit('click')">
         <Icon :icon="icon"/>
         <span class="ml-2 no-wrap overflow-hidden">{{label}}</span>
+        <span v-if="badge !== null && badge !== undefined" :class="$style.badge">
+            {{ badge }}
+        </span>
         <span v-if="hasSub" :class="$style.caret" @click="clickCaret">
             <Icon :icon="subOpen ? 'caret-down' : 'caret-right'"/>
         </span>
@@ -110,6 +114,13 @@ const divClass = computed(() => [
             background-color: rgba($dark-mode-primary, 0.28)
         &[disabled]
             color: $dark-mode-secondary-text-color
+
+.badge
+    float: right
+    padding: 2px 6px
+    border-radius: $radius-size-std
+    background-color: rgba(#000000, 0.5)
+    font-weight: 700
 
 .caret
     float: right

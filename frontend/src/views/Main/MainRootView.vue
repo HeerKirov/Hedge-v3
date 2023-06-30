@@ -7,10 +7,16 @@ import { useViewStack } from "@/components-module/view-stack"
 import { useFetchReactive } from "@/functions/fetch"
 import { installNavMenu, installNavHistory, setupItemByNavHistory, setupItemByRef, setupSubItemByNavHistory } from "@/services/base/side-nav-menu"
 import { windowManager } from "@/modules/window"
+import { toRefNullable } from "@/utils/reactivity"
 
 const viewStack = useViewStack()
 
 const stackExists = computed(() => viewStack.size() > 0)
+
+const { data: homepageState } = useFetchReactive({
+    get: client => client.homepage.state,
+    eventFilter: "app/homepage/state/changed"
+})
 
 const { data: pins } = useFetchReactive({
     get: client => client.folder.pin.list,
@@ -37,8 +43,8 @@ const { menuItems, menuSelected } = installNavMenu({
         {type: "menu", routeName: "MainAnnotation", label: "注解", icon: "code"},
         {type: "menu", routeName: "MainSourceData", label: "来源数据", icon: "file-invoice"},
         {type: "scope", scopeName: "tool", label: "工具箱"},
-        {type: "menu", routeName: "MainImport", label: "导入", icon: "plus-square"},
-        {type: "menu", routeName: "MainFindSimilar", label: "相似项目", icon: "grin-squint"},
+        {type: "menu", routeName: "MainImport", label: "导入", icon: "plus-square", badge: computed(() => homepageState.value?.importImageCount || null)},
+        {type: "menu", routeName: "MainFindSimilar", label: "相似项目", icon: "grin-squint", badge: computed(() => homepageState.value?.findSimilarCount || null)},
         {type: "menu", routeName: "MainTrash", label: "已删除", icon: "trash-can"},
         {type: "scope", scopeName: "folder", label: "目录"},
         {type: "menu", routeName: "MainFolder", label: "所有目录", icon: "archive"},

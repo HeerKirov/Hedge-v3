@@ -30,6 +30,7 @@ interface NavMenuItem {
     routeQueryValue?: string
     label: string
     icon: string
+    badge?: Ref<number | null | undefined>
     submenu?: (NavSubMenuItem | NavItemSetup<NavSubMenuItem>)[]
 }
 
@@ -208,8 +209,8 @@ function mapGeneratedNavMenuItemToMenuDefinition(item: GeneratedNavMenuItem): Me
  */
 function mapNavMenuItemToMenuDefinition(item: NavMenuItem, submenu?: Ref<SubMenuItemDefinition[]>): MenuDefinition {
     const id = item.routeName + (item.routeQueryName !== undefined && item.routeQueryValue !== undefined ? `?${item.routeQueryName}=${item.routeQueryValue}` : "")
-    if(submenu !== undefined) {
-        return reactive({type: "menu", id, label: item.label, icon: item.icon, submenu})
+    if(submenu !== undefined || item.badge !== undefined) {
+        return reactive({type: "menu", id, label: item.label, icon: item.icon, badge: item.badge, submenu})
     }else{
         return {type: "menu", id, label: item.label, icon: item.icon}
     }

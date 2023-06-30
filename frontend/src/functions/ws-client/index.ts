@@ -42,7 +42,6 @@ export function createWsClient(): WsClient {
 
     function wsToastEvent(e: WsToastResult) {
         if(e.type === "EVENT") {
-            //TODO 前端事件系统改版：批处理事件
             for(const event of e.data.events) {
                 const emitEvent = {event: <AllEvents>event.event, timestamp: event.timestamp}
                 for (const activityEmitter of activityEmitters) {
