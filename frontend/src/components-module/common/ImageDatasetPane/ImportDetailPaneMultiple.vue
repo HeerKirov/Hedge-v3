@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { toRefs } from "vue"
-import { ThumbnailImage, Icon, Button, Separator } from "@/components/universal"
 import { CheckBox, Select } from "@/components/form"
+import { ThumbnailImage, Icon, Button, Separator } from "@/components/universal"
 import { TagmeEditor, DateEditor } from "@/components-business/form-editor"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
 import { useImportDetailPaneMultiple } from "@/services/main/import"
@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const { selected, latest } = toRefs(props)
 
-const { data, actives, anyActive, form, submit, clear } = useImportDetailPaneMultiple(selected, latest)
+const { data, actives, anyActive, form, submit, openImagePreview } = useImportDetailPaneMultiple(selected, latest)
 
 const timeTypes: {value: OrderTimeType, label: string}[] = [
     {value: "IMPORT_TIME", label: "按 项目导入时间 设定"},
@@ -24,7 +24,7 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
 </script>
 
 <template>
-    <ThumbnailImage minHeight="12rem" maxHeight="40rem" :file="data?.thumbnailFile"/>
+    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.thumbnailFile" @click="openImagePreview"/>
     <p v-if="data?.fileName" class="selectable word-wrap-anywhere my-1">{{data.fileName}}</p>
     <Separator direction="horizontal"/>
     <p class="mt-2"><Icon icon="edit"/>批量编辑</p>

@@ -1,15 +1,9 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue"
-import { Block } from "@/components/universal"
 import { useInterceptedKey } from "@/modules/keyboard"
-
-defineOptions({
-    inheritAttrs: false
-})
 
 const props = defineProps<{
     position?: "absolute" | "fixed"
-    overflow?: "hidden" | "auto" | "default"
     closeOnEscape?: boolean
     interceptEvent?: boolean
 }>()
@@ -46,9 +40,7 @@ onBeforeMount(() => {
 
 <template>
     <div :class="{[$style['box-framework']]: true, [$style['absolute']]: position === 'absolute'}" @click="click">
-        <Block :overflow="overflow ?? 'default'" v-bind="$attrs">
-            <slot/>
-        </Block>
+        <slot/>
     </div>
 </template>
 

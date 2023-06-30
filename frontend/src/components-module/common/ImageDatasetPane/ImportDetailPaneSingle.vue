@@ -2,10 +2,10 @@
 import { toRef } from "vue"
 import { ThumbnailImage, Separator } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
-import { SourceInfo, TagmeInfo, SourcePreferencesDisplay } from "@/components-business/form-display"
+import { SourceInfo, TagmeInfo, SourcePreferencesDisplay, FileInfoDisplay } from "@/components-business/form-display"
 import { SourceIdentityEditor, TagmeEditor, DateEditor, DateTimeEditor } from "@/components-business/form-editor"
-import { date, datetime } from "@/utils/datetime"
 import { useImportDetailPaneSingle } from "@/services/main/import"
+import { date, datetime } from "@/utils/datetime"
 
 const props = defineProps<{
     detailId: number
@@ -13,17 +13,18 @@ const props = defineProps<{
 
 const path = toRef(props, "detailId")
 
-const { data, setTagme, setSourceInfo, setCreateTime, setOrderTime, setPartitionTime, clearAllPreferences } = useImportDetailPaneSingle(path)
+const { data, setTagme, setSourceInfo, setCreateTime, setOrderTime, setPartitionTime, clearAllPreferences, openImagePreview } = useImportDetailPaneSingle(path)
 
 </script>
 
 <template>
-    <ThumbnailImage minHeight="12rem" maxHeight="40rem" :file="data?.thumbnailFile" :draggable-file="data?.file"/>
+    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.thumbnailFile" :draggable-file="data?.file" @click="openImagePreview"/>
     <template v-if="!!data">
         <p v-if="data.fileName" class="selectable word-wrap-anywhere mb-1">{{data.fileName}}</p>
         <p v-if="data.fileCreateTime" class="secondary-text">文件创建时间 {{datetime.toSimpleFormat(data.fileCreateTime)}}</p>
         <p v-if="data.fileUpdateTime" class="secondary-text">文件修改时间 {{datetime.toSimpleFormat(data.fileUpdateTime)}}</p>
         <p v-if="data.fileImportTime" class="secondary-text">文件导入时间 {{datetime.toSimpleFormat(data.fileImportTime)}}</p>
+        <FileInfoDisplay class="mt-1" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionWidth" :resolution-width="data.resolutionHeight"/>
         <Separator direction="horizontal"/>
         <FormEditKit class="mt-1" :value="{site: data.sourceSite, sourceId: data.sourceId, sourcePart: data.sourcePart}" :set-value="setSourceInfo">
             <template #default="{ value: {site, sourceId, sourcePart} }">

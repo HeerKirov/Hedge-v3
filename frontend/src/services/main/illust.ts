@@ -1,10 +1,11 @@
 import { computed, reactive, Ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useDialogService } from "@/components-module/dialog"
-import { flatResponse, mapResponse } from "@/functions/http-client"
+import { mapResponse } from "@/functions/http-client"
 import { IllustQueryFilter, Tagme } from "@/functions/http-client/api/illust"
-import { SimpleTag, SimpleTopic, SimpleAuthor, mapFromOrderList } from "@/functions/http-client/api/all"
+import { SimpleTag, SimpleTopic, SimpleAuthor } from "@/functions/http-client/api/all"
 import { useFetchEndpoint, usePostFetchHelper } from "@/functions/fetch"
+import { usePreviewService } from "@/components-module/preview"
 import { useToast } from "@/modules/toast"
 import { useRouterParamEvent } from "@/modules/router"
 import { useListViewContext } from "@/services/base/list-view-context"
@@ -17,7 +18,7 @@ import { useSettingSite } from "@/services/setting"
 import { installation, toRef } from "@/utils/reactivity"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 
-export const [installIllustContext] = installation(function () {
+export const [installIllustContext, useIllustContext] = installation(function () {
     const listview = useListView()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust", selector)
@@ -82,7 +83,9 @@ function useListView() {
 }
 
 export function useIllustDetailPaneSingle(path: Ref<number | null>) {
+    const preview = usePreviewService()
     const { metaTagEditor } = useDialogService()
+    const { listview, selector, listviewController } = useIllustContext()
 
     const { data, setData } = useFetchEndpoint({
         path,
@@ -113,12 +116,28 @@ export function useIllustDetailPaneSingle(path: Ref<number | null>) {
         }
     }
 
-    return {data, setDescription, setScore, setPartitionTime, setOrderTime, openMetaTagEditor}
+    const openImagePreview = () => {
+        preview.show({
+            preview: "image", 
+            type: "listview", 
+            listview: listview.listview,
+            paginationData: listview.paginationData.data,
+            columnNum: listviewController.columnNum,
+            viewMode: listviewController.viewMode,
+            selected: selector.selected,
+            lastSelected: selector.lastSelected,
+            updateSelect: selector.update
+        })
+    }
+
+    return {data, setDescription, setScore, setPartitionTime, setOrderTime, openMetaTagEditor, openImagePreview}
 }
 
 export function useIllustDetailPaneMultiple(selected: Ref<number[]>, latest: Ref<number | null>) {
     const toast = useToast()
+    const preview = usePreviewService()
     const { metaTagEditor } = useDialogService()
+    const { listview, selector, listviewController } = useIllustContext()
 
     const batchFetch = usePostFetchHelper(httpClient => httpClient.illust.batchUpdate)
 
@@ -164,6 +183,20 @@ export function useIllustDetailPaneMultiple(selected: Ref<number[]>, latest: Ref
             end: datetime.now()
         }
     })
+
+    const openImagePreview = () => {
+        preview.show({
+            preview: "image", 
+            type: "listview", 
+            listview: listview.listview,
+            paginationData: listview.paginationData.data,
+            columnNum: listviewController.columnNum,
+            viewMode: listviewController.viewMode,
+            selected: selector.selected,
+            lastSelected: selector.lastSelected,
+            updateSelect: selector.update
+        })
+    }
 
     const editMetaTag = async () => {
         const res = await metaTagEditor.edit({
@@ -212,5 +245,5 @@ export function useIllustDetailPaneMultiple(selected: Ref<number[]>, latest: Ref
 
     watch(() => actives.metaTag, enabled => { if(enabled) editMetaTag().finally() })
 
-    return {data, actives, anyActive, form, submit, clear}
+    return {data, actives, anyActive, form, submit, clear, openImagePreview}
 }

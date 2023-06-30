@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { toRefs } from "vue"
-import { ThumbnailImage, Icon, Button, Separator } from "@/components/universal"
 import { CheckBox } from "@/components/form"
+import { ThumbnailImage, Icon, Button, Separator } from "@/components/universal"
 import { TagmeEditor, DateEditor, DescriptionEditor, DateTimeEditor, ScoreEditor } from "@/components-business/form-editor"
 import { useIllustDetailPaneMultiple } from "@/services/main/illust"
 
@@ -12,12 +12,12 @@ const props = defineProps<{
 
 const { selected, latest } = toRefs(props)
 
-const { data, actives, anyActive, form, submit, clear } = useIllustDetailPaneMultiple(selected, latest)
+const { data, actives, anyActive, form, submit, openImagePreview } = useIllustDetailPaneMultiple(selected, latest)
 
 </script>
 
 <template>
-    <ThumbnailImage minHeight="12rem" maxHeight="40rem" :file="data?.thumbnailFile"/>
+    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.thumbnailFile" @click="openImagePreview"/>
     <p class="mt-1 mb-1">
         <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{data?.id}}</b>
     </p>

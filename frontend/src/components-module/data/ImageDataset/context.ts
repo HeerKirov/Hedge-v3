@@ -157,7 +157,7 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
         if(queryInstance !== undefined) {
             if(lastSelected.value === null) {
                 //在未选择任何选项时，根据scrollView得知当前显示范围内的上下界，并作为选择项
-                const index = arrow === "ArrowLeft" || arrow === "ArrowUp" ? virtualViewNavigation.state.itemOffset : (virtualViewNavigation.state.itemOffset + virtualViewNavigation.state.itemLimit - 1)
+                const index = arrow === "ArrowLeft" || arrow === "ArrowUp" ? (virtualViewNavigation.state.itemOffset + virtualViewNavigation.state.itemLimit - 1) : virtualViewNavigation.state.itemOffset
                 const illustId = await getOffsetSelectItem(queryInstance, index)
                 if(illustId !== null) {
                     onSelect([illustId], illustId)

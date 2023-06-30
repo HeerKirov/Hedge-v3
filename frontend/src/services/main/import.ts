@@ -10,6 +10,7 @@ import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useImportImageViewController } from "@/services/base/view-controller"
 import { useSettingImportData, useSettingSite } from "@/services/setting"
+import { usePreviewService } from "@/components-module/preview"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useDroppingFileListener } from "@/modules/drag"
@@ -191,7 +192,9 @@ function useOperators(selector: SelectedState<number>, anyData: Ref<boolean>, ad
 }
 
 export function useImportDetailPaneSingle(path: Ref<number | null>) {
+    const preview = usePreviewService()
     const message = useMessageBox()
+    const { listview, listviewController, selector } = useImportContext()
 
     const { data, setData } = useFetchEndpoint({
         path,
@@ -246,11 +249,27 @@ export function useImportDetailPaneSingle(path: Ref<number | null>) {
         }
     }
 
-    return {data, setTagme, setSourceInfo, setPartitionTime, setCreateTime, setOrderTime, clearAllPreferences}
+    const openImagePreview = () => {
+        preview.show({
+            preview: "image", 
+            type: "listview", 
+            listview: listview.listview,
+            paginationData: listview.paginationData.data,
+            columnNum: listviewController.columnNum,
+            viewMode: listviewController.viewMode,
+            selected: selector.selected,
+            lastSelected: selector.lastSelected,
+            updateSelect: selector.update
+        })
+    }
+
+    return {data, setTagme, setSourceInfo, setPartitionTime, setCreateTime, setOrderTime, clearAllPreferences, openImagePreview}
 }
 
 export function useImportDetailPaneMultiple(selected: Ref<number[]>, latest: Ref<number | null>) {
     const toast = useToast()
+    const preview = usePreviewService()
+    const { listview, listviewController, selector } = useImportContext()
 
     const batchFetch = useFetchHelper(httpClient => httpClient.import.batchUpdate)
 
@@ -282,6 +301,20 @@ export function useImportDetailPaneMultiple(selected: Ref<number[]>, latest: Ref
         partitionTime: date.now(),
         analyseSource: false
     })
+
+    const openImagePreview = () => {
+        preview.show({
+            preview: "image", 
+            type: "listview", 
+            listview: listview.listview,
+            paginationData: listview.paginationData.data,
+            columnNum: listviewController.columnNum,
+            viewMode: listviewController.viewMode,
+            selected: selector.selected,
+            lastSelected: selector.lastSelected,
+            updateSelect: selector.update
+        })
+    }
 
     const submit = async () => {
         if(anyActive.value) {
@@ -315,5 +348,5 @@ export function useImportDetailPaneMultiple(selected: Ref<number[]>, latest: Ref
         actives.partitionTime = false
     }
 
-    return {data, actives, anyActive, form, submit, clear}
+    return {data, actives, anyActive, form, submit, clear, openImagePreview}
 }

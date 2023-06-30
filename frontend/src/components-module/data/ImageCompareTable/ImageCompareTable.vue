@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ThumbnailImage } from "@/components/universal"
+import { usePreviewService } from "@/components-module/preview"
 import { toRef } from "@/utils/reactivity"
 import { useImageCompareTableContext } from "./context"
 import MetadataInfo from "./MetadataInfo.vue"
@@ -21,11 +22,21 @@ const emit = defineEmits<{
     (e: "update:id", index: number, id: number): void
 }>()
 
+const previewService = usePreviewService()
+
 const ids = toRef(props, "ids")
 
 const { context } = useImageCompareTableContext(props.columnNum, ids, (idx, id) => emit("update:id", idx, id))
 
 const thStyle = `width: calc((100% - 6rem) / ${props.columnNum})`
+
+const openImagePreview = (index: number) => {
+    const thumbnailList = context.map(c => c.imageData.data.value?.thumbnailFile ?? null)
+    const files = thumbnailList.filter(f => f !== null) as string[]
+    const initIndex = thumbnailList.reduce((cur, f, idx) => f === null && idx <= cur && cur > 0 ? cur - 1 : cur, index)
+    console.log(files, initIndex)
+    previewService.show({preview: "image", type: "array", files, initIndex})
+}
 
 </script>
 
@@ -41,7 +52,7 @@ const thStyle = `width: calc((100% - 6rem) / ${props.columnNum})`
             <tr>
                 <td/>
                 <td v-for="index in columnNum">
-                    <ThumbnailImage :file="context[index - 1].imageData.data.value?.thumbnailFile" v-bind="context[index - 1].dropEvents"/>
+                    <ThumbnailImage class="is-cursor-zoom-in" :file="context[index - 1].imageData.data.value?.thumbnailFile" v-bind="context[index - 1].dropEvents" @click="openImagePreview(index - 1)"/>
                 </td>
             </tr>
             <MetadataInfo :values="context.map(i => i.imageData.data.value?.metadata ?? null)"/>

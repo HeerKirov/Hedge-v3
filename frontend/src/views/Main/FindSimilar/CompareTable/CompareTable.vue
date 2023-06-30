@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import { ThumbnailImage } from "@/components/universal"
-import { toRef } from "@/utils/reactivity"
+import { usePreviewService } from "@/components-module/preview"
 import { useFindSimilarCompareData, useFindSimilarCompareList } from "@/services/main/find-similar"
+import { toRef } from "@/utils/reactivity"
 import MetadataInfo from "./MetadataInfo.vue"
 import SourceDataInfo from "./SourceDataInfo.vue"
 import RelatedItemsInfo from "./RelatedItemsInfo.vue"
@@ -11,6 +12,8 @@ const props = defineProps<{
     itemA: {type: "IMPORT_IMAGE" | "ILLUST", id: number} | null
     itemB: {type: "IMPORT_IMAGE" | "ILLUST", id: number} | null
 }>()
+
+const previewService = usePreviewService()
 
 const columnNum = computed(() => props.itemA !== null && props.itemB !== null ? 2 : 1)
 
@@ -23,6 +26,12 @@ const thumbnailList = useFindSimilarCompareList(columnNum, () => dataA.value?.th
 const metadataList = useFindSimilarCompareList(columnNum, () => dataA.value?.metadata ?? null, () => dataB.value?.metadata ?? null)
 const sourceDataList = useFindSimilarCompareList(columnNum, () => dataA.value?.sourceData ?? null, () => dataB.value?.sourceData ?? null)
 const relatedItemsList = useFindSimilarCompareList(columnNum, () => dataA.value?.relatedItems ?? null, () => dataB.value?.relatedItems ?? null)
+
+const openImagePreview = (index: number) => {
+    const files = thumbnailList.value.filter(f => f !== null) as string[]
+    const initIndex = thumbnailList.value.reduce((cur, f, idx) => f === null && idx <= cur && cur > 0 ? cur - 1 : cur, index)
+    previewService.show({preview: "image", type: "array", files, initIndex})
+}
 
 </script>
 
@@ -42,7 +51,7 @@ const relatedItemsList = useFindSimilarCompareList(columnNum, () => dataA.value?
             <tr>
                 <td/>
                 <td v-for="index in columnNum">
-                    <ThumbnailImage :file="thumbnailList[index - 1]"/>
+                    <ThumbnailImage class="is-cursor-zoom-in" :file="thumbnailList[index - 1]" @click="openImagePreview(index - 1)"/>
                 </td>
             </tr>
             <MetadataInfo :values="metadataList"/>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { toRef } from "vue"
-import { ThumbnailImage, Separator, Icon } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
-import { TagmeInfo, DescriptionDisplay, PartitionTimeDisplay, TimeGroupDisplay, ScoreDisplay, MetaTagListDisplay } from "@/components-business/form-display"
+import { ThumbnailImage, Separator, Icon } from "@/components/universal"
+import { TagmeInfo, DescriptionDisplay, PartitionTimeDisplay, TimeGroupDisplay, ScoreDisplay, MetaTagListDisplay, FileInfoDisplay } from "@/components-business/form-display"
 import { DateEditor, DateTimeEditor } from "@/components-business/form-editor"
 import { DescriptionEditor, ScoreEditor } from "@/components-business/form-editor"
 import { useIllustDetailPaneSingle } from "@/services/main/illust"
@@ -13,12 +13,12 @@ const props = defineProps<{
 
 const path = toRef(props, "detailId")
 
-const { data, setDescription, setScore, setOrderTime, setPartitionTime, openMetaTagEditor } = useIllustDetailPaneSingle(path)
+const { data, setDescription, setScore, setOrderTime, setPartitionTime, openMetaTagEditor, openImagePreview } = useIllustDetailPaneSingle(path)
 
 </script>
 
 <template>
-    <ThumbnailImage minHeight="12rem" maxHeight="40rem" :file="data?.thumbnailFile"/>
+    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.thumbnailFile" @click="openImagePreview"/>
     <template v-if="!!data">
         <p class="my-1">
             <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{path}}</b>
@@ -40,9 +40,10 @@ const { data, setDescription, setScore, setOrderTime, setPartitionTime, openMeta
                 <DescriptionEditor :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
-        <MetaTagListDisplay class="my-2" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
         <TagmeInfo v-if="data.tagme.length > 0" class="mt-1" :value="data.tagme"/>
-        <FormEditKit class="mt-2" :value="data.partitionTime" :set-value="setPartitionTime">
+        <MetaTagListDisplay class="my-2" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
+        <FileInfoDisplay v-if="data.type === 'IMAGE'" class="mt-1" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionWidth" :resolution-width="data.resolutionHeight"/>
+        <FormEditKit class="mt-1" :value="data.partitionTime" :set-value="setPartitionTime">
             <template #default="{ value }">
                 <PartitionTimeDisplay :partition-time="value"/>
             </template>
