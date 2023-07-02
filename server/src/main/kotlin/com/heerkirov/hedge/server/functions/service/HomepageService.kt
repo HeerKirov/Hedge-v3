@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.IllustModelType
+import com.heerkirov.hedge.server.functions.manager.StagingPostManager
 import com.heerkirov.hedge.server.model.HomepageRecord
 import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.DateTime.asZonedTime
@@ -22,7 +23,7 @@ import java.time.LocalDate
 import kotlin.random.Random
 import kotlin.random.nextInt
 
-class HomepageService(private val data: DataRepository) {
+class HomepageService(private val data: DataRepository, private val stagingPostManager: StagingPostManager) {
     fun getHomepageInfo(): HomepageRes {
         val todayDate = DateTime.now()
             .runIf(data.setting.import.setPartitionTimeDelay != null && data.setting.import.setPartitionTimeDelay!!!= 0L) {
@@ -55,8 +56,9 @@ class HomepageService(private val data: DataRepository) {
     fun getHomepageState(): HomepageStateRes {
         val importImageCount = data.db.sequenceOf(ImportImages).count()
         val findSimilarCount = data.db.sequenceOf(FindSimilarResults).count()
+        val stagingPostCount = stagingPostManager.count()
 
-        return HomepageStateRes(importImageCount, findSimilarCount)
+        return HomepageStateRes(importImageCount, findSimilarCount, stagingPostCount)
     }
 
     private fun mapToHomepageRes(record: HomepageRecord): HomepageRes {

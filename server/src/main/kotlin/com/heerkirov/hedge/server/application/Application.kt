@@ -77,6 +77,7 @@ fun runApplication(options: ApplicationOptions) {
             val backendExporter = define { BackendExporterImpl(appStatus, bus, repo, illustKit, bookKit) }
             val partitionManager = PartitionManager(repo)
             val associateManager = AssociateManager(repo)
+            val stagingPostManager = StagingPostManager(repo, bus)
             val bookManager = BookManager(repo, bus, bookKit)
             val folderManager = FolderManager(repo, bus, folderKit)
             val trashManager = TrashManager(repo, bus, backendExporter, illustKit, fileManager, bookManager, folderManager, associateManager, partitionManager, sourceManager)
@@ -85,7 +86,7 @@ fun runApplication(options: ApplicationOptions) {
             define { TrashCleanerImpl(appStatus, repo, trashManager) }
             define { EventCompositorImpl(repo, bus, backendExporter) }
 
-            val homepageService = HomepageService(repo)
+            val homepageService = HomepageService(repo, stagingPostManager)
             val illustService = IllustService(repo, bus, illustKit, illustManager, associateManager, sourceManager, partitionManager, queryManager)
             val bookService = BookService(repo, bus, bookKit, bookManager, illustManager, queryManager)
             val folderService = FolderService(repo, bus, folderKit, folderManager, illustManager)
@@ -95,6 +96,7 @@ fun runApplication(options: ApplicationOptions) {
             val authorService = AuthorService(repo, bus, authorKit, queryManager, sourceMappingManager)
             val topicService = TopicService(repo, bus, topicKit, queryManager, sourceMappingManager)
             val importService = ImportService(repo, bus, importManager, illustManager, bookManager, folderManager, importMetaManager, similarFinder, pathWatcher)
+            val stagingPostService = StagingPostService(illustManager, stagingPostManager)
             val trashService = TrashService(repo, trashManager)
 
             val findSimilarService = FindSimilarService(repo, bus, similarFinder, illustManager, importManager, bookManager)
@@ -112,6 +114,7 @@ fun runApplication(options: ApplicationOptions) {
                 folderService,
                 partitionService,
                 importService,
+                stagingPostService,
                 trashService,
                 tagService,
                 annotationService,

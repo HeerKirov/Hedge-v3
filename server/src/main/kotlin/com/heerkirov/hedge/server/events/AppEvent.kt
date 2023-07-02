@@ -16,3 +16,8 @@ class AppStatusChanged(val status: AppLoadStatus) : BaseBusEventImpl("app/app-st
  * 主页的state相关内容发生变化。
  */
 class HomepageStateChanged : BaseBusEventImpl("app/homepage/state/changed"), AppEvent
+
+/**
+ * 中转站内容发生变化。
+ */
+data class StagingPostChanged(val added: List<Int>, val moved: List<Int>, val deleted: List<Int>) : BaseBusEventImpl("app/staging-post/changed"), AppEvent

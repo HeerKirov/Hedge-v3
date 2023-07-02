@@ -66,12 +66,11 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver, private val appd
                 }
             }
             val fingerprintTasks = data.db.from(FileRecords)
-                .leftJoin(FileFingerprints, FileFingerprints.fileId eq FileRecords.id)
                 .select(FileRecords.id)
-                .where { (FileRecords.fingerStatus eq FingerprintStatus.NOT_READY) or (FileFingerprints.fileId.isNull()) }
+                .where { FileRecords.fingerStatus eq FingerprintStatus.NOT_READY }
                 .orderBy(FileRecords.updateTime.asc())
                 .map { it[FileRecords.id]!! }
-            if(thumbnailTasks.isNotEmpty()) {
+            if(fingerprintTasks.isNotEmpty()) {
                 synchronized(this) {
                     fingerprintQueue.addAll(fingerprintTasks)
                     fingerprintTask.start()
@@ -161,7 +160,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver, private val appd
 
         try {
             val fileRecord = data.db.sequenceOf(FileRecords).firstOrNull { it.id eq fileId }
-            if(fileRecord != null && fileRecord.status == FileStatus.NOT_READY) {
+            if(fileRecord != null && fileRecord.fingerStatus == FingerprintStatus.NOT_READY) {
                 val filepath = generateFilepath(fileRecord.folder, fileRecord.id, fileRecord.extension)
                 val file = File("${appdata.storagePathAccessor.storageDir}/$filepath")
                 if(file.exists()) {

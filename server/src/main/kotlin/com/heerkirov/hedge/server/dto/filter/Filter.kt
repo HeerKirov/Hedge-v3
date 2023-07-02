@@ -121,3 +121,5 @@ data class FindSimilarTaskQueryFilter(@Limit val limit: Int,
                                       @Offset val offset: Int,
                                       @Order(options = ["id", "recordTime"])
                                       val order: List<OrderItem>? = null)
+
+data class StagingPostFilter(val limit: Int? = null, val offset: Int? = null)

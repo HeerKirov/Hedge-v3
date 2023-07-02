@@ -24,3 +24,13 @@ data class FolderImagesPartialUpdateForm(val action: BatchAction,
                                          val ordinal: Int? = null)
 
 data class FolderPinForm(val ordinal: Int? = null)
+
+data class StagingPostUpdateForm(val action: Action,
+                                 /** 添加新的images/移动或删除images，指定其id */
+                                 val images: List<Int>? = null,
+                                 /** 添加或移动项到这个位置 */
+                                 val ordinal: Int? = null) {
+    enum class Action {
+        ADD, MOVE, DELETE, CLEAR
+    }
+}

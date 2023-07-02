@@ -47,6 +47,12 @@ class EventCompositorImpl(private val data: DataRepository,
                 //import/find similar数量变化时，发送homepage state的更新事件
                 sendHomepageStateChangedEvent()
             }
+            is StagingPostChanged -> {
+                if(e.added.isNotEmpty() || e.deleted.isNotEmpty()) {
+                    //staging post数量变化时，发送homepage state的更新事件
+                    sendHomepageStateChangedEvent()
+                }
+            }
         }
     }
 

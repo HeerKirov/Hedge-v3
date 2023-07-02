@@ -18,4 +18,5 @@ data class HomepageRes(val date: LocalDate,
 }
 
 data class HomepageStateRes(val importImageCount: Int,
-                            val findSimilarCount: Int)
+                            val findSimilarCount: Int,
+                            val stagingPostCount: Int)

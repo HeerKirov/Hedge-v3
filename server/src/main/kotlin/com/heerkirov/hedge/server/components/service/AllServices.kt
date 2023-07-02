@@ -10,6 +10,7 @@ class AllServices(
     val folder: FolderService,
     val partition: PartitionService,
     val import: ImportService,
+    val stagingPost: StagingPostService,
     val trash: TrashService,
     val tag: TagService,
     val annotation: AnnotationService,
