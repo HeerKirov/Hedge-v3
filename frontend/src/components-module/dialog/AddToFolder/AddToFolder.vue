@@ -55,7 +55,7 @@ const { tabType, folderTree, recentFolders, checkExists, selectedId, submit, cho
                 <div v-if="checkExists !== null">
                     <p class="mb-1 is-line-height-std">部分图像已存在于此目录。请确认处理策略：</p>
                     <div :class="$style['scroll-content']">
-                        <AspectGrid :spacing="1" :column-num="3" default-img-style="no-radius" :items="checkExists.duplicates" v-slot="{ item }">
+                        <AspectGrid :spacing="1" :column-num="3" img-style="no-radius" :items="checkExists.duplicates" v-slot="{ item }">
                             <img :src="assetsUrl(item.thumbnailFile)" :alt="`situation-${item.id}`"/>
                             <div v-if="item.ordinal !== null" :class="$style['ordinal-flag']">{{item.ordinal + 1}}</div>
                         </AspectGrid>

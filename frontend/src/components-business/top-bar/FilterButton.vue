@@ -1,31 +1,18 @@
 <script setup lang="ts">
-import { ComponentPublicInstance, ref, Ref } from "vue"
 import { Icon } from "@/components/universal"
 import { Colors } from "@/constants/ui"
 
-const props = defineProps<{
+defineProps<{
     icon?: string
     type?: Colors
     square?: boolean
-    exposeEl?: boolean
 }>()
-
-let el: Ref<HTMLElement | undefined> | undefined = undefined
-let setEl: ((ref: Element | ComponentPublicInstance | null, refs: Record<string, any>) => void) | undefined = undefined
-if(props.exposeEl) {
-    el = ref<HTMLElement>()
-    setEl = element => el!.value = (element as HTMLElement | null) ?? undefined
-}
-
-defineExpose({
-    el
-})
 
 </script>
 
 <template>
     <div :class="$style['filter-button']">
-        <div :ref="setEl" :class="{[$style.button]: true, [$style.square]: square, [`has-text-${type}`]: !!type}">
+        <div :class="{[$style.button]: true, [$style.square]: square, [`has-text-${type}`]: !!type}">
             <Icon v-if="icon" class="mr-1" :icon="icon"/>
             <slot/>
         </div>

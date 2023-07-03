@@ -10,7 +10,7 @@ import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useIllustViewController } from "@/services/base/view-controller"
-import { useImageDatasetOperators } from "@/services/common/illust"
+import { installIllustListviewForPreview, useImageDatasetOperators } from "@/services/common/illust"
 import { installation } from "@/utils/reactivity"
 
 export const [installBookViewContext, useBookViewContext] = installation(function (data: SliceOrPath<Book, SingletonSlice<Book>, number>) {
@@ -26,6 +26,8 @@ export const [installBookViewContext, useBookViewContext] = installation(functio
         selector, navigation,
         dataDrop: {dropInType: "book", path: target.id}
     })
+
+    installIllustListviewForPreview({listview, selector, listviewController})
 
     return {target, listview, selector, paneState, listviewController, operators}
 })

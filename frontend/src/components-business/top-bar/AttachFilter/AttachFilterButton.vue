@@ -52,7 +52,7 @@ const activeSearchPicker = ref<{template: SearchTemplate}>()
 <template>
     <ElementPopupCallout v-if="anySearchFilter" :class="$style.root" :visible="activeSearchPicker !== undefined" @close="activeSearchPicker = undefined">
         <ElementPopupMenu :items="popupMenuItems" position="bottom" align="left" v-slot="{ setEl, popup }">
-            <Button :ref="setEl" :class="$style.button" :type="anyActive ? 'primary' : undefined" @click="popup" @contextmenu="popup" icon="filter" square expose-el/>
+            <Button :ref="setEl" :class="$style.button" :type="anyActive ? 'primary' : undefined" @click="popup" @contextmenu="popup" icon="filter" square/>
         </ElementPopupMenu>
         <template #popup>
             <AttachSearchPicker :template="activeSearchPicker!.template" :value="value?.[activeSearchPicker!.template.field]" @update:value="setValue(activeSearchPicker!.template.field, $event)"/>
@@ -60,7 +60,7 @@ const activeSearchPicker = ref<{template: SearchTemplate}>()
     </ElementPopupCallout>
     <template v-else>
         <ElementPopupMenu :items="popupMenuItems" position="bottom" align="left" v-slot="{ setEl, popup }">
-            <Button :ref="setEl" :class="$style.button" :type="anyActive ? 'primary' : undefined" @click="popup" @contextmenu="popup" icon="filter" square expose-el/>
+            <Button :ref="setEl" :class="$style.button" :type="anyActive ? 'primary' : undefined" @click="popup" @contextmenu="popup" icon="filter" square/>
         </ElementPopupMenu>
     </template>
 </template>

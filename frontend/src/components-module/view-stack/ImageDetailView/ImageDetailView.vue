@@ -2,8 +2,9 @@
 import { computed } from "vue"
 import { PlayBoard } from "@/components/data"
 import { ElementPopupMenu } from "@/components/interaction"
+import { StagingPostButton } from "@/components-module/common"
 import { Button, Separator, OptionButtons } from "@/components/universal"
-import { SideLayout, SideBar, TopBarCollapseLayout, MiddleLayout } from "@/components/layout"
+import { SideLayout, SideBar, TopBarCollapseLayout, MiddleLayout, Flex, FlexItem } from "@/components/layout"
 import { ZoomController } from "@/components-business/top-bar"
 import { ViewStackBackButton } from "@/components-module/view-stack"
 import { useAssets } from "@/functions/app"
@@ -27,7 +28,7 @@ const {
     playBoard: { zoomEnabled, zoomValue },
     operators: { 
         toggleFavorite, deleteItem, openInNewWindow, openInLocalFolder, openInLocalPreference,
-        editMetaTag, editSourceData, editAssociate, addToFolder, exportItem, recentFolders 
+        editMetaTag, editSourceData, editAssociate, addToFolder, addToStagingPost, exportItem, recentFolders 
     },
 } = installImageViewContext(props.sliceOrPath, props.modifiedCallback)
 
@@ -35,8 +36,8 @@ const { assetsUrl } = useAssets()
 
 const sideBarButtonItems = [
     {value: "info", label: "项目信息", icon: "info"},
-    {value: "related", label: "相关项目", icon: "dice-d6"},
-    {value: "source", label: "来源信息", icon: "file-invoice"},
+    {value: "related", label: "相关内容", icon: "dice-d6"},
+    {value: "source", label: "来源数据", icon: "file-invoice"},
 ]
 
 const externalMenuItems = <MenuItem<undefined>[]>[
@@ -45,18 +46,16 @@ const externalMenuItems = <MenuItem<undefined>[]>[
     {type: "normal", label: "在预览中打开", click: openInLocalPreference},
     {type: "normal", label: "在文件夹中显示", click: openInLocalFolder},
     {type: "separator"},
-    {type: "normal", label: "导出"}
+    {type: "normal", label: "导出", click: exportItem}
 ]
-
-//TODO 完成右键菜单(剪贴板)
 
 const popupMenu = usePopupMenu(computed(() => [
     {type: "normal", label: "在新窗口中打开", click: openInNewWindow},
     {type: "separator"},
-    {type: "normal", label: "加入剪贴板"},
+    {type: "normal", label: "暂存", click: addToStagingPost},
     {type: "separator"},
     {type: "normal", label: "编辑标签", click: editMetaTag},
-    {type: "normal", label: "编辑来源数据", click: editSourceData},
+    {type: "normal", label: "编辑来源数据", enabled: !!data.value?.sourceSite, click: editSourceData},
     {type: "normal", label: "编辑关联组", click: editAssociate},
     {type: "normal", label: "添加到目录…", click: addToFolder},
     ...recentFolders.value.map(f => ({type: "normal", label: `添加到目录"${f.fullName}"`, click: f.click} as const)),
@@ -76,7 +75,15 @@ const popupMenu = usePopupMenu(computed(() => [
                 <SideBarRelatedItems v-else-if="tabType === 'related'"/>
                 <SideBarSourceData v-else-if="tabType === 'source'"/>
                 <template #bottom>
-                    <OptionButtons :items="sideBarButtonItems" v-model:value="tabType"/>
+                    <Flex horizontal="stretch">
+                        <FlexItem :basis="100" :width="0">
+                            <OptionButtons :items="sideBarButtonItems" v-model:value="tabType"/>
+                        </FlexItem>
+                        <FlexItem :shrink="0" :grow="0">
+                            <Separator size="large"/>
+                            <StagingPostButton/>
+                        </FlexItem>
+                    </Flex>
                 </template>
             </SideBar>
         </template>
@@ -99,7 +106,7 @@ const popupMenu = usePopupMenu(computed(() => [
                         <Button square icon="heart" :type="data?.favorite ? 'danger' : 'secondary'" @click="toggleFavorite"/>
                         <Separator/>
                         <ElementPopupMenu :items="externalMenuItems" position="bottom" align="left" v-slot="{ setEl, popup }">
-                            <Button :ref="setEl" expose-el square icon="external-link-alt" @click="popup"/>
+                            <Button :ref="setEl" square icon="external-link-alt" @click="popup"/>
                         </ElementPopupMenu>
                         <Separator/>
                         <ZoomController :disabled="!zoomEnabled" v-model:value="zoomValue"/>

@@ -62,6 +62,8 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
         const { name: routeName, query: routeQuery } = route
         const hasQuery = Object.keys(routeQuery).length > 0
 
+        let newSelected: {id: string, subId: string | null} | undefined = undefined
+
         for(const menuItem of menuItems) {
            if(menuItem.type === "menu") {
                //tips: 此处的遍历算法使用了较为浪费的写法。
@@ -70,7 +72,7 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
                if(hasQuery) {
                    const param = analyseRouteParamFromSelected({id: menuItem.id, subId: null})
                    if(matchSelectedWithRoute(param, routeName, routeQuery)) {
-                       innerMenuSelected.value = {id: menuItem.id, subId: null}
+                    newSelected = {id: menuItem.id, subId: null}
                        //return
                    }
 
@@ -79,7 +81,7 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
                        for(const submenuItem of menuItem.submenu) {
                            const param = analyseRouteParamFromSelected({id: menuItem.id, subId: submenuItem.id})
                            if(matchSelectedWithRoute(param, routeName, routeQuery)) {
-                               innerMenuSelected.value = {id: menuItem.id, subId: submenuItem.id}
+                            newSelected = {id: menuItem.id, subId: submenuItem.id}
                                //return
                            }
                        }
@@ -88,13 +90,14 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
                    //如果非hasQuery，则只与本体匹配，不尝试submenu，因为submenu必有query参数
                    const param = analyseRouteParamFromSelected({id: menuItem.id, subId: null})
                    if(matchSelectedWithRoute(param, routeName, routeQuery)) {
-                       innerMenuSelected.value = {id: menuItem.id, subId: null}
+                    newSelected = {id: menuItem.id, subId: null}
                        //return
                    }
                }
-
            }
         }
+
+        innerMenuSelected.value = newSelected
     }, {immediate: true})
 
     const menuSelected = computed({

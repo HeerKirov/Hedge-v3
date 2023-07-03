@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Button } from "@/components/universal"
-import { Group } from "@/components/layout"
+import { Flex, FlexItem } from "@/components/layout"
 import { Colors } from "@/constants/ui"
 
 defineProps<{
@@ -18,14 +18,16 @@ defineEmits<{
 </script>
 
 <template>
-    <Group single-line>
-        <Button v-for="item in items"
-                :icon="item.icon" :size="size"
-                :mode="mode && value === item.value ? mode : undefined"
-                :type="type && value === item.value ? type : undefined"
-                :square="value !== item.value"
-                @click="$emit('update:value', item.value)">
-            {{value === item.value ? item.label : null}}
-        </Button>
-    </Group>
+    <Flex>
+        <FlexItem v-for="item in items" :width="value === item.value ? 100 : undefined" :shrink="value === item.value ? undefined : 0">
+            <Button :icon="item.icon" :size="size"
+                    :class="value === item.value ? 'px-2 no-wrap overflow-ellipsis' : ''"
+                    :mode="mode && value === item.value ? mode : undefined"
+                    :type="type && value === item.value ? type : undefined"
+                    :square="value !== item.value"
+                    @click="$emit('update:value', item.value)">
+                {{value === item.value ? item.label : null}}
+            </Button>
+        </FlexItem>
+    </Flex>
 </template>

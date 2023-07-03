@@ -82,6 +82,11 @@ export default <RouteRecordRaw[]>[
                 component: () => import("@/views/Main/Trash/Trash.vue")
             },
             {
+                name: "MainStagingPost",
+                path: "staging-post",
+                component: () => import("@/views/Main/StagingPost/StagingPost.vue")
+            },
+            {
                 name: "MainFolder",
                 path: "folder",
                 component: () => import("@/views/Main/Folder/Folder.vue")

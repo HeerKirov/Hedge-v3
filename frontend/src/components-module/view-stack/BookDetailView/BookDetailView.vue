@@ -2,10 +2,10 @@
 import { computed } from "vue"
 import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
-import { SideLayout, SideBar, TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
+import { SideLayout, SideBar, TopBarLayout, MiddleLayout, PaneLayout, Flex } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
 import { IllustImageDataset } from "@/components-module/data"
-import { IllustDetailPane } from "@/components-module/common"
+import { IllustDetailPane, StagingPostButton } from "@/components-module/common"
 import { ViewStackBackButton } from "@/components-module/view-stack"
 import { Book, BookImage } from "@/functions/http-client/api/book"
 import { SingletonSlice, SliceOrPath } from "@/functions/fetch"
@@ -35,7 +35,6 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "normal", label: "删除此画集", click: deleteItem}
 ])
 
-// TODO 完成illust右键菜单的功能 (剪贴板)
 const menu = useDynamicPopupMenu<BookImage>(bookImage => [
     {type: "normal", label: "查看详情", click: i => operators.openDetailByClick(i.id)},
     {type: "normal", label: "在新窗口中打开", click: operators.openInNewWindow},
@@ -46,7 +45,10 @@ const menu = useDynamicPopupMenu<BookImage>(bookImage => [
         ? {type: "normal", label: "取消标记为收藏", click: i => operators.modifyFavorite(i, false)}
         : {type: "normal", label: "标记为收藏", click: i => operators.modifyFavorite(i, true)},
     {type: "separator"},
-    {type: "normal", label: "加入剪贴板"},
+    {type: "normal", label: "暂存", click: operators.addToStagingPost},
+    operators.stagingPostCount.value > 0 && editableLockOn.value
+        ? {type: "normal", label: `将暂存的${operators.stagingPostCount.value}项添加到此处`, click: operators.popStagingPost}
+        : {type: "normal", label: "将暂存的项添加到此处", enabled: false},
     {type: "separator"},
     {type: "normal", label: "创建图像集合", click: operators.createCollection},
     {type: "normal", label: "创建画集…", click: operators.createBook},
@@ -67,6 +69,13 @@ const menu = useDynamicPopupMenu<BookImage>(bookImage => [
         <template #side>
             <SideBar>
                 <SideBarDetailInfo/>
+
+                <template #bottom>
+                    <Flex horizontal="right">
+                        <Separator size="large"/>
+                        <StagingPostButton/>
+                    </Flex>
+                </template>
             </SideBar>
         </template>
 
@@ -85,7 +94,7 @@ const menu = useDynamicPopupMenu<BookImage>(bookImage => [
                         <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
                         <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
                         <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
-                            <Button :ref="setEl" expose-el square icon="ellipsis-v" @click="popup"/>
+                            <Button :ref="setEl" square icon="ellipsis-v" @click="popup"/>
                         </ElementPopupMenu>
                     </template>
                 </MiddleLayout>

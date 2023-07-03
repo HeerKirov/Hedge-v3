@@ -92,30 +92,29 @@ export interface FolderEndpoint {
     create(form: FolderCreateForm): Promise<Response<IdResponse, FolderExceptions["create"]>>
     /**
      * 查看目录。
-     * @param FolderId
      */
-    get(FolderId: number): Promise<Response<Folder, NotFound>>
+    get(folderId: number): Promise<Response<Folder, NotFound>>
     /**
      * 修改目录的元数据。
      */
-    update(FolderId: number, form: FolderUpdateForm): Promise<Response<null, FolderExceptions["update"]>>
+    update(folderId: number, form: FolderUpdateForm): Promise<Response<null, FolderExceptions["update"]>>
     /**
      * 删除目录。
      */
-    delete(FolderId: number): Promise<Response<null, NotFound>>
+    delete(folderId: number): Promise<Response<null, NotFound>>
     images: {
         /**
          * 查询下属images。
          */
-        get(FolderId: number, filter: FolderImageFilter): Promise<Response<ListResult<FolderImage>>>
+        get(folderId: number, filter: FolderImageFilter): Promise<Response<ListResult<FolderImage>>>
         /**
          * 全量修改images列表。
          */
-        update(FolderId: number, items: number[]): Promise<Response<null, FolderExceptions["images.update"]>>
+        update(folderId: number, items: number[]): Promise<Response<null, FolderExceptions["images.update"]>>
         /**
          * 部分修改images列表。
          */
-        partialUpdate(FolderId: number, form: FolderImagesPartialUpdateForm): Promise<Response<null, FolderExceptions["images.partialUpdate"]>>
+        partialUpdate(folderId: number, form: FolderImagesPartialUpdateForm): Promise<Response<null, FolderExceptions["images.partialUpdate"]>>
     }
     pin: {
         /**

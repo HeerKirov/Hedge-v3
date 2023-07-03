@@ -28,7 +28,7 @@ const ellipsisMenu = <MenuItem<undefined>[]>[
                 <template #right>
                     <DataRouter/>
                     <ElementPopupMenu :items="ellipsisMenu" position="bottom" align="left" v-slot="{ popup, setEl }">
-                        <Button :ref="setEl" expose-el square icon="ellipsis-v" @click="popup"/>
+                        <Button :ref="setEl" square icon="ellipsis-v" @click="popup"/>
                     </ElementPopupMenu>
                 </template>
             </MiddleLayout>

@@ -12,7 +12,7 @@ export type AllEventTypes = AllEvents["eventType"]
 
 export type AllEvents = AppEvents | EntityEvents | BackendEvents | SettingEvents
 
-type AppEvents = AppStatusChanged | HomepageStateChanged
+type AppEvents = AppStatusChanged | HomepageStateChanged | StagingPostChanged
 
 type EntityEvents
     = AnnotationCreated | AnnotationUpdated | AnnotationDeleted
@@ -35,6 +35,8 @@ type SettingEvents = SettingServiceChanged | SettingMetaChanged | SettingQueryCh
 export interface AppStatusChanged extends BaseWsEvent<"app/app-status/changed"> { status: ServerServiceStatus }
 
 export interface HomepageStateChanged extends BaseWsEvent<"app/homepage/state/changed"> { }
+
+export interface StagingPostChanged extends BaseWsEvent<"app/staging-post/changed"> { added: number[], moved: number[], deleted: number[] }
 
 //== 实体类相关的变更通知 ==
 

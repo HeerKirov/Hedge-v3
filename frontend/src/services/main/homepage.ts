@@ -2,6 +2,7 @@ import { useViewStack } from "@/components-module/view-stack"
 import { useFetchReactive } from "@/functions/fetch"
 import { useRouterNavigator } from "@/modules/router"
 import { LocalDate } from "@/utils/datetime"
+import { optionalInstallation } from "@/utils/reactivity"
 
 export function useHomepageContext() {
     const viewStack = useViewStack()
@@ -37,3 +38,12 @@ export function useHomepageContext() {
 
     return {data, loading, openPartition, openIllustOfPartition, openBook, openAuthorOrTopic, openIllustOfAuthorOrTopic, openIllustOfRecent}
 }
+
+export const [installHomepageState, useHomepageState] = optionalInstallation(function() {
+    const { data, loading } = useFetchReactive({
+        get: client => client.homepage.state,
+        eventFilter: "app/homepage/state/changed"
+    })
+
+    return {data, loading}
+})

@@ -17,7 +17,7 @@ defineProps<{
     <span v-else-if="value.begin !== null && value.end !== null" :brackets="(value.includeBegin ? '[' : '(') + (value.includeEnd ? ']' : ')')">
         {{value.begin}}<b class="mx-1">~</b>{{value.end}}
     </span>
-    <span v-else-if="value.begin === null">
+    <span v-else-if="value.end === null">
         <b class="mr-1">{{value.includeBegin ? "≥" : ">"}}</b>{{value.begin}}
     </span>
     <span v-else>

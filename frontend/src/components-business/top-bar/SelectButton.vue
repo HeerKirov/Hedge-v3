@@ -40,6 +40,6 @@ const current = computed(() => {
 
 <template>
     <ElementPopupMenu :items="menuItems" v-slot="{ popup, setEl }" position="bottom" align="left">
-        <FilterButton :ref="setEl" expose-el :square="square" :icon="current?.icon" :type="current?.color" @click="popup">{{!square && current ? current.label : undefined}}</FilterButton>
+        <FilterButton :ref="setEl" :square="square" :icon="current?.icon" :type="current?.color" @click="popup">{{!square && current ? current.label : undefined}}</FilterButton>
     </ElementPopupMenu>
 </template>

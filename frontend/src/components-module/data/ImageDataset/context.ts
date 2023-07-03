@@ -103,10 +103,8 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
     const { selected, lastSelected, queryInstance, data, columnNum, select: onSelect, keyOf } = options
 
     const select = (index: number, illustId: number) => {
-        // 单击一个项时，如果没有选择此项，则取消所有选择项，只选择此项；否则无动作
-        if(!selected.value.includes(illustId)) {
-            onSelect([illustId], illustId)
-        }
+        // 单击一个项时，只选择此项
+        onSelect([illustId], illustId)
     }
 
     const appendSelect = (index: number, illustId: number) => {

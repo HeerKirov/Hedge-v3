@@ -12,7 +12,7 @@ import { useIllustViewController } from "@/services/base/view-controller"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
-import { useImageDatasetOperators, useLocateId } from "@/services/common/illust"
+import { installIllustListviewForPreview, useImageDatasetOperators, useLocateId } from "@/services/common/illust"
 import { useSettingSite } from "@/services/setting"
 import { installation } from "@/utils/reactivity"
 import { sleep } from "@/utils/process"
@@ -244,6 +244,8 @@ export function useDetailIllustContext() {
     watch(listviewController.collectionMode, collectionMode => listview.queryFilter.value.type = collectionMode ? "COLLECTION" : "IMAGE", {immediate: true})
     watch(querySchema.query, query => listview.queryFilter.value.query = query, {immediate: true})
     watch(path, path => listview.queryFilter.value.partition = path ?? undefined, {immediate: true})
+
+    installIllustListviewForPreview({listview, selector, listviewController})
 
     useSettingSite()
 

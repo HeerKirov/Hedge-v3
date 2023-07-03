@@ -1,5 +1,6 @@
 import { createHttpInstance, mapResponse, flatResponse, HttpInstance, HttpInstanceConfig, Response, ResponseOk, ResponseError, ResponseConnectionError } from "./instance"
 import { createHomepageEndpoint, HomepageEndpoint } from "./api/homepage"
+import { createStagingPostEndpoint, StagingPostEndpoint } from "./api/staging-post"
 import { createServiceEndpoint, ServiceEndpoint } from "./api/service"
 import { createSettingEndpoint, SettingEndpoint } from "./api/setting"
 import { createIllustEndpoint, IllustEndpoint } from "./api/illust"
@@ -40,6 +41,7 @@ export interface HttpClient {
     annotation: AnnotationEndpoint
     import: ImportEndpoint
     trash: TrashEndpoint
+    stagingPost: StagingPostEndpoint
     sourceData: SourceDataEndpoint
     sourceTagMapping: SourceTagMappingEndpoint
     findSimilar: FindSimilarEndpoint
@@ -68,6 +70,7 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
         annotation: createAnnotationEndpoint(http),
         import: createImportEndpoint(http),
         trash: createTrashEndpoint(http),
+        stagingPost: createStagingPostEndpoint(http),
         sourceData: createSourceDataEndpoint(http),
         sourceTagMapping: createSourceTagMappingEndpoint(http),
         findSimilar: createFindSimilarEndpoint(http),

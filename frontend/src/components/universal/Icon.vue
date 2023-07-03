@@ -83,11 +83,11 @@ import {
     faInfo, faDiceD6, faExternalLinkAlt, faEye, faPlay, faPause, faVolumeUp, faVolumeDown, faVolumeOff, faVolumeMute,
     faAngleDoubleRight, faSortAmountDown, faCalendar, faThList, faExchangeAlt, faEarListen, faStop, faCopy, faScissors,
     faEquals, faHandLizard, faHandScissors, faFaceSmileBeam, faFaceLaughBeam, faMarker, faHighlighter, faJoint, faLinkSlash, 
-    faBriefcase, faTimeline
+    faBriefcase, faTimeline, faMaximize
 } from "@fortawesome/free-solid-svg-icons"
 
 import {
-    faStar as farStar, faCheckSquare as farCheckSquare
+    faStar as farStar, faCheckSquare as farCheckSquare, faCircleQuestion as farCircleQuestion
 } from "@fortawesome/free-regular-svg-icons"
 
 library.add(
@@ -107,8 +107,8 @@ library.add(
     faInfo, faDiceD6, faExternalLinkAlt, faEye, faPlay, faPause, faVolumeUp, faVolumeDown, faVolumeOff, faVolumeMute,
     faAngleDoubleRight, faSortAmountDown, faCalendar, faThList, faExchangeAlt, faEarListen, faStop, faCopy, faScissors,
     faEquals, faHandLizard, faHandScissors, faFaceSmileBeam, faFaceLaughBeam, faMarker, faHighlighter, faJoint, faLinkSlash,
-    faBriefcase, faTimeline
+    faBriefcase, faTimeline, faMaximize
 )
-library.add(farStar, farCheckSquare)
+library.add(farStar, farCheckSquare, farCircleQuestion)
 
 </script>

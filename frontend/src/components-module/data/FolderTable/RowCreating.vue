@@ -44,7 +44,7 @@ const cancel = () => emit.updateCreatePosition(undefined)
         <td :colspan="mode === 'std' ? 5 : 3">
             <span :style="{'padding-left': `${indent * 1.7}em`}" :class="{'mr-m1': indent > 0}"/>
             <ElementPopupMenu :items="selectMenuItems" position="bottom" align="left" v-slot="{ setEl, popup }">
-                <Button :ref="setEl" expose-el size="small" @click="popup" :icon="type === 'FOLDER' ? 'folder' : 'angle-right'">{{type === "FOLDER" ? "目录" : "节点"}}</Button>
+                <Button :ref="setEl" size="small" @click="popup" :icon="type === 'FOLDER' ? 'folder' : 'angle-right'">{{type === "FOLDER" ? "目录" : "节点"}}</Button>
             </ElementPopupMenu>
             <Input class="ml-1" size="small" :placeholder="`${type === 'FOLDER' ? '目录' : '节点'}标题`" v-model:value="title" @enter="submit"/>
             <Button class="ml-2" size="small" icon="check" @click="submit">保存</Button>

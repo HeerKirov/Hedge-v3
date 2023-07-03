@@ -37,7 +37,7 @@ const ellipsisMenuItems = <MenuItem<undefined>[]>[
                     <Button v-if="editMode" type="primary" icon="save" @click="save">保存</Button>
                     <Button v-else class="mr-1" square icon="edit" @click="edit"/>
                     <ElementPopupMenu v-if="!editMode" :items="ellipsisMenuItems" position="bottom" v-slot="{ setEl, popup }">
-                        <Button :ref="setEl" square icon="ellipsis-v" expose-el @click="popup"/>
+                        <Button :ref="setEl" square icon="ellipsis-v" @click="popup"/>
                     </ElementPopupMenu>
                 </template>
             </MiddleLayout>

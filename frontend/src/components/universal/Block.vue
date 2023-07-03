@@ -62,6 +62,7 @@ const divClass = computed(() => ([
                 background-color: $color
     .color-mode-shadow
         color: $light-mode-text-color
+        background-color: $light-mode-block-color
         box-shadow: 0 0.25rem 0.5rem 0 rgba(59,63,73,.15)
         @each $name, $color in $light-mode-colors
             &.is-color-#{$name}
@@ -90,6 +91,7 @@ const divClass = computed(() => ([
                 background-color: $color
     .color-mode-shadow
         color: $dark-mode-text-color
+        background-color: $dark-mode-block-color
         box-shadow: 0 0.25rem 0.5rem 0 rgba(59,63,73,.45)
         @each $name, $color in $dark-mode-colors
             &.is-color-#{$name}

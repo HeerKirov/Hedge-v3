@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ComponentPublicInstance, computed, Ref, ref, useCssModule } from "vue"
+import { computed, useCssModule } from "vue"
 import { Icon } from "@/components/universal"
 import { Colors } from "@/constants/ui"
 
@@ -11,7 +11,6 @@ const props = defineProps<{
     square?: boolean
     round?: boolean
     disabled?: boolean
-    exposeEl?: boolean
 }>()
 
 const style = useCssModule()
@@ -25,21 +24,10 @@ const buttonClass = computed(() => [
     props.round ? style.round : null
 ])
 
-let el: Ref<HTMLElement | undefined> | undefined = undefined
-let setEl: ((ref: Element | ComponentPublicInstance | null, refs: Record<string, any>) => void) | undefined = undefined
-if(props.exposeEl) {
-    el = ref<HTMLElement>()
-    setEl = element => el!.value = element as HTMLElement | undefined
-}
-
-defineExpose({
-    el
-})
-
 </script>
 
 <template>
-    <button :ref="exposeEl ? setEl : undefined" :class="buttonClass" :disabled="disabled">
+    <button :class="buttonClass" :disabled="disabled">
         <Icon v-if="icon" :class="$style.icon" :icon="icon"/>
         <slot/>
     </button>
@@ -64,16 +52,19 @@ defineExpose({
 .is-size-small
     font-size: $font-size-small
     height: $element-height-small
+    line-height: $element-height-small
     &.square
         width: $element-height-small
 .is-size-std
     font-size: $font-size-std
     height: $element-height-std
+    line-height: $element-height-std
     &.square
         width: $element-height-std
 .is-size-large
     font-size: $font-size-large
     height: $element-height-large
+    line-height: $element-height-large
     &.square
         width: $element-height-large
 

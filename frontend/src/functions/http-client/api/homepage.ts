@@ -50,6 +50,7 @@ export interface HomepageEndpoint {
 interface HomepageState {
     importImageCount: number
     findSimilarCount: number
+    stagingPostCount: number
 }
 
 interface HomepageInfo {

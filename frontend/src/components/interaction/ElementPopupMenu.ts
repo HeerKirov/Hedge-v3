@@ -24,7 +24,7 @@ export default defineComponent({
             }else if(el === null || el === undefined) {
                 element.value = undefined
             }else{
-                element.value = (el as any).el
+                element.value = el.$el
             }
         }
 

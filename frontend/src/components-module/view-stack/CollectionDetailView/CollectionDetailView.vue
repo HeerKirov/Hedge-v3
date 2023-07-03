@@ -2,10 +2,10 @@
 import { computed } from "vue"
 import { OptionButtons, Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
-import { SideLayout, SideBar, TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
+import { SideLayout, SideBar, TopBarLayout, MiddleLayout, PaneLayout, Flex, FlexItem } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
 import { IllustImageDataset } from "@/components-module/data"
-import { IllustDetailPane } from "@/components-module/common"
+import { IllustDetailPane, StagingPostButton } from "@/components-module/common"
 import { ViewStackBackButton } from "@/components-module/view-stack"
 import { Illust } from "@/functions/http-client/api/illust"
 import { SingletonSlice, SliceOrPath } from "@/functions/fetch"
@@ -42,7 +42,6 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "normal", label: "删除此集合", click: deleteItem}
 ])
 
-// TODO 完成illust右键菜单的功能 (剪贴板)
 const menu = useDynamicPopupMenu<Illust>(illust => [
     {type: "normal", label: "查看详情", click: i => operators.openDetailByClick(i.id)},
     {type: "normal", label: illust.type === "COLLECTION" ? "在新窗口中打开集合" : "在新窗口中打开", click: operators.openInNewWindow},
@@ -53,7 +52,10 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
         ? {type: "normal", label: "取消标记为收藏", click: i => operators.modifyFavorite(i, false)}
         : {type: "normal", label: "标记为收藏", click: i => operators.modifyFavorite(i, true)},
     {type: "separator"},
-    {type: "normal", label: "加入剪贴板"},
+    {type: "normal", label: "暂存", click: operators.addToStagingPost},
+    operators.stagingPostCount.value > 0
+        ? {type: "normal", label: `将暂存的${operators.stagingPostCount.value}项添加到此处`, click: operators.popStagingPost}
+        : {type: "normal", label: "将暂存的项添加到此处", enabled: false},
     {type: "separator"},
     {type: "normal", label: "拆分至新集合", click: operators.splitToGenerateNewCollection},
     {type: "normal", label: "创建画集…", click: operators.createBook},
@@ -76,7 +78,15 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
                 <SideBarDetailInfo v-if="tabType === 'info'"/>
                 <SideBarRelatedItems v-else-if="tabType === 'related'"/>
                 <template #bottom>
-                    <OptionButtons :items="sideBarButtonItems" v-model:value="tabType"/>
+                    <Flex horizontal="stretch">
+                        <FlexItem :basis="100" :width="0">
+                            <OptionButtons :items="sideBarButtonItems" v-model:value="tabType"/>
+                        </FlexItem>
+                        <FlexItem :shrink="0" :grow="0">
+                            <Separator size="large"/>
+                            <StagingPostButton/>
+                        </FlexItem>
+                    </Flex>
                 </template>
             </SideBar>
         </template>
@@ -95,7 +105,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
                         <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
                         <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
                         <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
-                            <Button :ref="setEl" expose-el square icon="ellipsis-v" @click="popup"/>
+                            <Button :ref="setEl" square icon="ellipsis-v" @click="popup"/>
                         </ElementPopupMenu>
                     </template>
                 </MiddleLayout>

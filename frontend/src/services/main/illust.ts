@@ -13,7 +13,7 @@ import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useIllustViewController } from "@/services/base/view-controller"
 import { useQuerySchema } from "@/services/base/query-schema"
-import { useImageDatasetOperators, useLocateId } from "@/services/common/illust"
+import { installIllustListviewForPreview, useIllustListviewForPreview, useImageDatasetOperators, useLocateId } from "@/services/common/illust"
 import { useSettingSite } from "@/services/setting"
 import { installation, toRef } from "@/utils/reactivity"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
@@ -31,6 +31,8 @@ export const [installIllustContext, useIllustContext] = installation(function ()
         selector, navigation
     })
     const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector, navigation})
+
+    installIllustListviewForPreview({listview, selector, listviewController})
 
     useSettingSite()
 
@@ -85,7 +87,7 @@ function useListView() {
 export function useIllustDetailPaneSingle(path: Ref<number | null>) {
     const preview = usePreviewService()
     const { metaTagEditor } = useDialogService()
-    const { listview, selector, listviewController } = useIllustContext()
+    const { listview, selector, listviewController } = useIllustListviewForPreview()
 
     const { data, setData } = useFetchEndpoint({
         path,
@@ -137,7 +139,7 @@ export function useIllustDetailPaneMultiple(selected: Ref<number[]>, latest: Ref
     const toast = useToast()
     const preview = usePreviewService()
     const { metaTagEditor } = useDialogService()
-    const { listview, selector, listviewController } = useIllustContext()
+    const { listview, selector, listviewController } = useIllustListviewForPreview()
 
     const batchFetch = usePostFetchHelper(httpClient => httpClient.illust.batchUpdate)
 

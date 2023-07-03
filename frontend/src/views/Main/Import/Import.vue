@@ -60,7 +60,7 @@ const dropEvents = useDroppableForFile()
                     <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
                     <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
                     <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
-                        <Button :ref="setEl" expose-el square icon="ellipsis-v" @click="popup"/>
+                        <Button :ref="setEl" square icon="ellipsis-v" @click="popup"/>
                     </ElementPopupMenu>
                 </template>
             </MiddleLayout>

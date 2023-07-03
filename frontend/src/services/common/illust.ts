@@ -1,4 +1,4 @@
-import { Ref, ref, unref, watch } from "vue"
+import { Ref, computed, ref, shallowRef, unref, watch } from "vue"
 import { VirtualViewNavigation } from "@/components/data"
 import {
     PaginationDataView, QueryListview, AllSlice, ListIndexSlice, SingletonSlice,
@@ -6,11 +6,13 @@ import {
 } from "@/functions/fetch"
 import { CoverIllust, Illust, IllustQueryFilter, IllustType } from "@/functions/http-client/api/illust"
 import { SelectedState } from "@/services/base/selected-state"
+import { useHomepageState } from "@/services/main/homepage"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator } from "@/modules/router"
 import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
+import { installation } from "@/utils/reactivity"
 import { LocalDateTime } from "@/utils/datetime"
 
 export interface ImageDatasetOperatorsOptions<T extends BasicIllust> {
@@ -128,6 +130,14 @@ export interface ImageDatasetOperators<T extends BasicIllust> {
      */
     exportItem(illust: T): void
     /**
+     * 将项目加入暂存区。
+     */
+    addToStagingPost(illust: T): void
+    /**
+     * 从暂存区pop所有数据，插入到选择的指定位置。效果相当于dataDrop，因此要求提供dataDtop options参数。
+     */
+    popStagingPost(illust: T, position?: "before" | "after"): void
+    /**
      * 将项目从其所属的collection中移除。会先打开对话框确认。
      * @param illust
      */
@@ -154,6 +164,10 @@ export interface ImageDatasetOperators<T extends BasicIllust> {
      * 选择行为指：当存在选中项时，在选择项之外右键将仅使用右键项而不包括选择项。它需要影响那些有多项目操作的行为。
      */
     getEffectedItems(illust: T): number[]
+    /**
+     * 暂存区内容数量，用于判定pop staging post功能是否可用。
+     */
+    stagingPostCount: Readonly<Ref<number>>
 }
 
 interface BasicIllust { id: number, type?: IllustType, file: string, thumbnailFile: string, orderTime: LocalDateTime }
@@ -177,6 +191,10 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
     const fetchCollectionImagesUpdate = usePostPathFetchHelper(client => client.illust.collection.images.update)
     const fetchBookImagesPartialUpdate = usePostPathFetchHelper(client => client.book.images.partialUpdate)
     const fetchFolderImagesPartialUpdate = usePostPathFetchHelper(client => client.folder.images.partialUpdate)
+    const fetchStagingPostListAll = useFetchHelper(client => client.stagingPost.list)
+    const fetchStagingPostUpdate = usePostFetchHelper(client => client.stagingPost.update)
+
+    const homepageState = dataDropOptions === undefined ? null : useHomepageState()
 
     const getEffectedItems = (illust: T): number[] => {
         return selector.selected.value.includes(illust.id) ? selector.selected.value : [illust.id]
@@ -354,6 +372,24 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
         })
     }
 
+    const addToStagingPost = async (illust: T) => {
+        const images = getEffectedItems(illust)
+        await fetchStagingPostUpdate({action: "ADD", images})
+    }
+
+    const popStagingPost = dataDropOptions === undefined ? () => {} : async (illust: T, position: "before" | "after" = "after") => {
+        const idx = paginationData.proxy.syncOperations.find(i => i.id === illust.id)
+        if(idx !== undefined) {
+            const res = await fetchStagingPostListAll({})
+            if(res !== undefined) {
+                const ok = await dataDrop(position === "before" ? idx : idx + 1, res.result.map(i => ({id: i.id, thumbnailFile: i.thumbnailFile, type: "IMAGE", childrenCount: null})), "ADD")
+                if(ok) {
+                    await fetchStagingPostUpdate({action: "CLEAR"})
+                }
+            }
+        }
+    }
+
     const exportItem = (illust: T) => {
         const itemIds = getEffectedItems(illust)
         dialog.externalExporter.export("ILLUST", itemIds)
@@ -381,53 +417,60 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
     }
 
     const dataDrop = dataDropOptions === undefined ? () => {} :
-    dataDropOptions.dropInType === "illust" || dataDropOptions.dropInType === "partition" ? (_: number, __: CoverIllust[], ___: "ADD" | "MOVE") => {
+    dataDropOptions.dropInType === "illust" || dataDropOptions.dropInType === "partition" ? async (_: number, __: CoverIllust[], ___: "ADD" | "MOVE"): Promise<boolean> => {
         //FUTURE 以后再实现illust/partition区域的拖放功能
-    } : dataDropOptions.dropInType === "collection" ? async (_: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
+        return false
+    } : dataDropOptions.dropInType === "collection" ? async (_: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE"): Promise<boolean> => {
         const path = unref(dataDropOptions.path)
         if(path !== null && mode === "ADD") {
             //只选取ADD模式。MOVE模式意味着集合内的移动，但集合内是没有移动的，所以什么也不做
             const images = await dialog.addIllust.checkExistsInCollection(illusts.map(i => i.id), path)
             if(images !== undefined && images.length > 0) {
-                await fetchCollectionImagesUpdate(path, [path, ...images])
+                return await fetchCollectionImagesUpdate(path, [path, ...images])
             }
         }
-    } : dataDropOptions.dropInType === "book" ? async (insertIndex: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
+        return false
+    } : dataDropOptions.dropInType === "book" ? async (insertIndex: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE"): Promise<boolean> => {
         const path = unref(dataDropOptions.path)
         if(path !== null) {
             if(mode === "ADD") {
                 const images = await dialog.addIllust.checkExistsInBook(illusts.map(i => i.id), path)
                 if(images !== undefined && images.length > 0) {
-                    await fetchBookImagesPartialUpdate(path, {action: "ADD", images, ordinal: insertIndex})
+                    return await fetchBookImagesPartialUpdate(path, {action: "ADD", images, ordinal: insertIndex})
                 }
             }else if(illusts.length > 0) {
                 //移动操作直接调用API即可，不需要检查
-                await fetchBookImagesPartialUpdate(path, {action: "MOVE", images: illusts.map(i => i.id), ordinal: insertIndex})
+                return await fetchBookImagesPartialUpdate(path, {action: "MOVE", images: illusts.map(i => i.id), ordinal: insertIndex})
             }
         }
-    } : dataDropOptions.dropInType === "folder" ? async (insertIndex: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE") => {
+        return false
+    } : dataDropOptions.dropInType === "folder" ? async (insertIndex: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE"): Promise<boolean> => {
         const path = unref(dataDropOptions.path)
         if(path !== null) {
             if(mode === "ADD") {
                 const images = await dialog.addIllust.checkExistsInFolder(illusts.map(i => i.id), path)
                 if(images !== undefined && images.length > 0) {
-                    await fetchFolderImagesPartialUpdate(path, {action: "ADD", images, ordinal: insertIndex})
+                    return await fetchFolderImagesPartialUpdate(path, {action: "ADD", images, ordinal: insertIndex})
                 }
             }else if(illusts.length > 0) {
                 //移动操作直接调用API即可，不需要检查
-                await fetchFolderImagesPartialUpdate(path, {action: "MOVE", images: illusts.map(i => i.id), ordinal: insertIndex})
+                return await fetchFolderImagesPartialUpdate(path, {action: "MOVE", images: illusts.map(i => i.id), ordinal: insertIndex})
             }
         }
+        return false
     } : () => {}
+
+    const stagingPostCount = homepageState ? computed(() => homepageState.data.value?.stagingPostCount ?? 0) : shallowRef(0)
 
     return {
         openDetailByClick, openDetailByEnter, openCollectionDetail, openInNewWindow, modifyFavorite,
-        createCollection, splitToGenerateNewCollection, createBook, editAssociate, addToFolder, cloneImage, exportItem,
+        createCollection, splitToGenerateNewCollection, createBook, editAssociate, addToFolder, 
+        cloneImage, exportItem, addToStagingPost, popStagingPost, stagingPostCount,
         deleteItem, removeItemFromCollection, removeItemFromBook, removeItemFromFolder, getEffectedItems, dataDrop
     }
 }
 
-export interface LocateIdOptions<T extends BasicIllust> {
+interface LocateIdOptions<T extends BasicIllust> {
     queryFilter: Ref<IllustQueryFilter>
     paginationData: PaginationDataView<T>
     selector: SelectedState<number>
@@ -463,3 +506,19 @@ export function useLocateId<T extends BasicIllust>(options: LocateIdOptions<T>) 
 
     return {catchLocateId}
 }
+
+interface ListviewForPreviewOptions {
+    listview: {
+        listview: QueryListview<{id: number, file: string}>
+        paginationData: PaginationDataView<unknown>
+    }
+    selector: SelectedState<number>
+    listviewController: {
+        columnNum: Ref<number>
+        viewMode: Ref<"grid" | "row">
+    }
+}
+
+export const [installIllustListviewForPreview, useIllustListviewForPreview] = installation(function(options: ListviewForPreviewOptions) {
+    return options
+})

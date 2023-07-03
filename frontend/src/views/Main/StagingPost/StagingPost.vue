@@ -4,20 +4,19 @@ import { Button } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
-import { IllustImageDataset } from "@/components-module/data"
+import { StagingPostDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
-import { FolderImage } from "@/functions/http-client/api/folder"
+import { useStagingPostContext } from "@/services/main/staging-post"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
-import { useFolderDetailPanel } from "@/services/main/folder"
+import { StagingPostImage } from "@/functions/http-client/api/staging-post"
 
-const {
-    data, deleteItem, viewState,
-    listview: { paginationData },
-    listviewController: { viewMode, fitType, columnNum, editableLockOn },
-    selector: { selected, lastSelected, update: updateSelect },
+const { 
     paneState,
+    listview: { paginationData },
+    selector: { selected, lastSelected, update: updateSelect },
+    listviewController: { viewMode, fitType, columnNum },
     operators
-} = useFolderDetailPanel()
+} = useStagingPostContext()
 
 const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "显示信息预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
@@ -25,23 +24,18 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "radio", checked: viewMode.value === "row", label: "列表模式", click: () => viewMode.value = "row"},
     {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"},
     {type: "separator"},
-    {type: "normal", label: "删除此目录", click: deleteItem}
+    {type: "normal", label: "清空暂存区", click: operators.clear}
 ])
 
-const menu = useDynamicPopupMenu<FolderImage>(folderImage => [
+const menu = useDynamicPopupMenu<StagingPostImage>(illust => [
     {type: "normal", label: "查看详情", click: i => operators.openDetailByClick(i.id)},
     {type: "normal", label: "在新窗口中打开", click: operators.openInNewWindow},
     {type: "separator"},
     {type: "checkbox", checked: paneState.visible.value, label: "显示信息预览", click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
-    folderImage.favorite
+    illust.favorite
         ? {type: "normal", label: "取消标记为收藏", click: i => operators.modifyFavorite(i, false)}
         : {type: "normal", label: "标记为收藏", click: i => operators.modifyFavorite(i, true)},
-    {type: "separator"},
-    {type: "normal", label: "暂存", click: operators.addToStagingPost},
-    operators.stagingPostCount.value > 0 && editableLockOn.value
-        ? {type: "normal", label: `将暂存的${operators.stagingPostCount.value}项添加到此处`, click: operators.popStagingPost}
-        : {type: "normal", label: "将暂存的项添加到此处", enabled: false},
     {type: "separator"},
     {type: "normal", label: "创建图像集合", click: operators.createCollection},
     {type: "normal", label: "创建画集…", click: operators.createBook},
@@ -51,8 +45,7 @@ const menu = useDynamicPopupMenu<FolderImage>(folderImage => [
     {type: "separator"},
     {type: "normal", label: "导出", click: operators.exportItem},
     {type: "separator"},
-    {type: "normal", label: "删除项目", click: operators.deleteItem},
-    {type: "normal", label: "从目录移除此项目", click: i => operators.removeItemFromFolder(i, data.value!.id) }
+    {type: "normal", label: "从暂存区移除此项目", click: operators.removeOne}
 ])
 
 </script>
@@ -62,12 +55,9 @@ const menu = useDynamicPopupMenu<FolderImage>(folderImage => [
         <template #top-bar>
             <MiddleLayout>
                 <template #left>
-                    <Button square icon="angle-left" @click="viewState.closeView()"/>
-                    <span v-if="data !== null" class="ml-2 is-font-size-large">{{data.title}}</span>
+                    <span class="ml-2 is-font-size-large">暂存区</span>
                 </template>
-
                 <template #right>
-                    <Button square :mode="editableLockOn ? 'filled' : undefined" :type="editableLockOn ? 'danger' : undefined" :icon="editableLockOn ? 'lock-open' : 'lock'" @click="editableLockOn = !editableLockOn"/>
                     <DataRouter/>
                     <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
                     <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
@@ -79,11 +69,13 @@ const menu = useDynamicPopupMenu<FolderImage>(folderImage => [
         </template>
 
         <PaneLayout :show-pane="paneState.visible.value">
-            <IllustImageDataset :data="paginationData.data" :query-instance="paginationData.proxy"
-                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
+            <div v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" class="h-100 has-text-centered">
+                <p class="secondary-text"><i>暂存区为空</i></p>
+            </div>
+            <StagingPostDataset v-else :data="paginationData.data" :query-instance="paginationData.proxy"
+                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
                                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event as FolderImage)"
-                                @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
+                                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"/>
 
             <template #pane>
                 <IllustDetailPane :state="paneState.state.value" @close="paneState.visible.value = false"/>

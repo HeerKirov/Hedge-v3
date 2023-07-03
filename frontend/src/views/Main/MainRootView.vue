@@ -1,22 +1,20 @@
 <script setup lang="ts">
 import { computed, watch } from "vue"
 import { SideLayout, SideBar } from "@/components/layout"
-import { Button } from "@/components/universal"
+import { Button, Separator } from "@/components/universal"
 import { Menu } from "@/components/interaction"
+import { StagingPostButton } from "@/components-module/common"
 import { useViewStack } from "@/components-module/view-stack"
 import { useFetchReactive } from "@/functions/fetch"
 import { installNavMenu, installNavHistory, setupItemByNavHistory, setupItemByRef, setupSubItemByNavHistory } from "@/services/base/side-nav-menu"
+import { useHomepageState } from "@/services/main/homepage"
 import { windowManager } from "@/modules/window"
-import { toRefNullable } from "@/utils/reactivity"
 
 const viewStack = useViewStack()
 
 const stackExists = computed(() => viewStack.size() > 0)
 
-const { data: homepageState } = useFetchReactive({
-    get: client => client.homepage.state,
-    eventFilter: "app/homepage/state/changed"
-})
+const { data: homepageState } = useHomepageState()
 
 const { data: pins } = useFetchReactive({
     get: client => client.folder.pin.list,
@@ -65,8 +63,11 @@ const { menuItems, menuSelected } = installNavMenu({
 
                 <template #bottom>
                     <Button square icon="gear" @click="windowManager.openSetting"/>
-                    <Button class="ml-1" square icon="circle-question" @click="windowManager.openGuide"/>
-                    <!--Button class="ml-1 float-right" icon="clipboard">10</Button -->
+                    <Button class="ml-1" square icon="circle-question-regular" @click="windowManager.openGuide"/>
+                    <div class="is-inline-block float-right ml-1">
+                        <Separator size="large"/>
+                        <StagingPostButton/>
+                    </div>
                 </template>
             </SideBar>
         </template>

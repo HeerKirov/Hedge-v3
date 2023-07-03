@@ -103,6 +103,8 @@ export function usePaginationDataView<T>(queryListview: QueryListview<T>, option
         lastDataUpdateParams = null
     }
 
+    const proxy = useOptimizedProxy(queryListview.proxy, data)
+
     useListeningEvent(queryListview.modifiedEvent, e => {
         if(e.type === "FILTER_UPDATED") {
             //instance的filter变化时，需要重设查询位点，从头开始查起
@@ -127,5 +129,21 @@ export function usePaginationDataView<T>(queryListview: QueryListview<T>, option
         }
     })
 
-    return {data, dataUpdate, reset, proxy: queryListview.proxy}
+    return {data, dataUpdate, reset, proxy}
+}
+
+function useOptimizedProxy<T>(proxy: QueryInstance<T>, data: PaginationData<T>): QueryInstance<T> {
+    return {
+        ...proxy,
+        syncOperations: {
+            ...proxy.syncOperations,
+            find(condition, priorityRange) {
+                if(priorityRange === undefined) {
+                    return proxy.syncOperations.find(condition, [data.metrics.offset, data.metrics.offset + data.metrics.limit])
+                }else{
+                    return proxy.syncOperations.find(condition, priorityRange)
+                }
+            }
+        }
+    }
 }

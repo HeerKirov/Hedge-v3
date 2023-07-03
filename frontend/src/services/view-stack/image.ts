@@ -21,6 +21,7 @@ import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator } from "@/modules/router"
 import { openLocalFile, openLocalFileInFolder } from "@/modules/others"
+import { useSettingSite } from "@/services/setting"
 import { installation, toRef } from "@/utils/reactivity"
 import { LocalDateTime } from "@/utils/datetime"
 
@@ -191,6 +192,7 @@ function useOperators(data: Ref<Illust | null>, id: Ref<number | null>) {
 
     const fetchSetData = usePostPathFetchHelper(client => client.illust.image.update)
     const fetchDeleteData = usePostFetchHelper(client => client.illust.image.delete)
+    const fetchStagingPostUpdate = usePostFetchHelper(client => client.stagingPost.update)
 
     const toggleFavorite = () => {
         if(data.value !== null) {
@@ -232,6 +234,12 @@ function useOperators(data: Ref<Illust | null>, id: Ref<number | null>) {
         }
     }
 
+    const addToStagingPost = async () => {
+        if(id.value !== null) {
+            await fetchStagingPostUpdate({action: "ADD", images: [id.value]})
+        }
+    }
+
     const exportItem = () => {
         if(data.value != null) {
             dialog.externalExporter.export("ILLUST", [data.value])
@@ -254,7 +262,7 @@ function useOperators(data: Ref<Illust | null>, id: Ref<number | null>) {
 
     return {
         toggleFavorite, deleteItem, openInNewWindow, openInLocalPreference, openInLocalFolder,
-        editMetaTag, editSourceData, editAssociate, addToFolder, exportItem, recentFolders
+        editMetaTag, editSourceData, editAssociate, addToFolder, addToStagingPost, exportItem, recentFolders
     }
 }
 
@@ -326,8 +334,8 @@ function useSideBarContext(path: Ref<number | null>) {
 
     useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Digit3"], e => {
         if(e.key === "Digit1") tabType.value = "info"
-        else if(e.key === "Digit2") tabType.value = "source"
-        else if(e.key === "Digit3") tabType.value = "related"
+        else if(e.key === "Digit2") tabType.value = "related"
+        else if(e.key === "Digit3") tabType.value = "source"
     })
 
     installDetailInfoLazyEndpoint({
@@ -425,6 +433,8 @@ export function useSideBarSourceData() {
     const message = useMessageBox()
     const dialog = useDialogService()
     const { data, setData } = useSourceDataLazyEndpoint()
+
+    useSettingSite()
 
     const sourceIdentity = computed(() => data.value !== null ? {site: data.value.sourceSite, sourceId: data.value.sourceId, sourcePart: data.value.sourcePart} : null)
 

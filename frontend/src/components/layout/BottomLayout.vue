@@ -14,6 +14,9 @@ withDefaults(defineProps<{
 
 <template>
     <div :class="$style['bottom-layout']">
+        <div v-if="!!$slots.top">
+            <slot name="top"/>
+        </div>
         <div :class="{[$style['scroll-container']]: true, 'is-scrollbar-hidden': !scrollbarVisible}">
             <slot/>
         </div>

@@ -14,6 +14,7 @@ export interface RouteParameter {
     "MainPartition": RouteTemplate<{ detail: LocalDate }, { locateId?: number }>
     "MainFolder": RouteTemplate<{ detail: number }, undefined>
     "MainFindSimilar": RouteTemplate<{ detail: number }, undefined>
+    "MainStagingPost": RouteTemplate<{}, undefined>
     "Preview": RouteTemplate<{}, { type: "image", imageIds: number[], currentIndex?: number } | { type: "collection", collectionId: number} | { type: "book", bookId: number }>
 }
 
