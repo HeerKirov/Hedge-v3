@@ -19,9 +19,9 @@ data class ImportImageDetailRes(val id: Int,
                                 val fileName: String?, val filePath: String?,
                                 val fileCreateTime: LocalDateTime?, val fileUpdateTime: LocalDateTime?, val fileImportTime: LocalDateTime,
                                 val extension: String, val size: Long, val resolutionWidth: Int, val resolutionHeight: Int,
-                                val tagme: Illust.Tagme, val preference: ImportImage.Preference,
+                                val tagme: Illust.Tagme, val preference: ImportImage.Preference?,
                                 val collectionId: Any?, val collection: IllustCollectionSimpleRes?, val folders: List<FolderSimpleRes>, val books: List<BookSimpleRes>,
-                                val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?,
+                                val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?, val sourcePreference: ImportImage.SourcePreference?,
                                 val partitionTime: LocalDate, val orderTime: LocalDateTime, val createTime: LocalDateTime)
 
 data class ImportWatcherRes(val isOpen: Boolean, val statisticCount: Int, val errors: List<PathWatcherError>)

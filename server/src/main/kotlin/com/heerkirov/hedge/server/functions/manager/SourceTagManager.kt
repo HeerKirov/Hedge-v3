@@ -89,16 +89,14 @@ class SourceTagManager(private val data: DataRepository, private val bus: EventB
             }
         }
         if(common.isNotEmpty()) {
-            data.db.batchUpdate(SourceTags) {
-                for (name in common) {
-                    val tag = tagMap[name]!!
-                    val dbTag = dbTagMap[name]!!
-                    item {
-                        where { it.id eq dbTag.id }
-                        tag.name.applyOpt { set(it.name, this) }
-                        tag.otherName.applyOpt { set(it.otherName, this) }
-                        tag.type.applyOpt { set(it.type, this) }
-                    }
+            for (name in common) {
+                val tag = tagMap[name]!!
+                val dbTag = dbTagMap[name]!!
+                data.db.update(SourceTags) {
+                    where { it.id eq dbTag.id }
+                    tag.name.applyOpt { set(it.name, this) }
+                    tag.otherName.applyOpt { set(it.otherName, this) }
+                    tag.type.applyOpt { set(it.type, this) }
                 }
             }
         }

@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.dto.form
 
 import com.heerkirov.hedge.server.components.database.ImportOption
 import com.heerkirov.hedge.server.components.database.MetaOption
+import com.heerkirov.hedge.server.components.database.SourceOption
 import com.heerkirov.hedge.server.enums.TagAuthorType
 import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.library.form.Length
@@ -14,9 +15,14 @@ import com.heerkirov.hedge.server.utils.types.Opt
 data class SiteCreateForm(@NotBlank @Length(16) val name: String,
                           @NotBlank val title: String,
                           val hasSecondaryId: Boolean = false,
-                          val ordinal: Int? = null)
+                          val ordinal: Int? = null,
+                          val availableAdditionalInfo: List<SourceOption.AvailableAdditionalInfo> = emptyList(),
+                          val sourceLinkGenerateRules: List<String> = emptyList())
 
-data class SiteUpdateForm(@NotBlank val title: Opt<String>, val ordinal: Opt<Int>)
+data class SiteUpdateForm(@NotBlank val title: Opt<String>,
+                          val ordinal: Opt<Int>,
+                          val availableAdditionalInfo: Opt<List<SourceOption.AvailableAdditionalInfo>>,
+                          val sourceLinkGenerateRules: Opt<List<String>>)
 
 data class ImportOptionUpdateForm(val autoAnalyseSourceData: Opt<Boolean>,
                                   val setTagmeOfTag: Opt<Boolean>,

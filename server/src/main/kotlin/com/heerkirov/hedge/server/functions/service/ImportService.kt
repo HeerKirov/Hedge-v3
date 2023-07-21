@@ -30,8 +30,10 @@ import com.heerkirov.hedge.server.utils.ktorm.escapeLike
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.runIf
-import com.heerkirov.hedge.server.utils.tuples.Tuple4
+import com.heerkirov.hedge.server.utils.tuples.Tuple5
 import com.heerkirov.hedge.server.utils.types.anyOpt
+import com.heerkirov.hedge.server.utils.types.optOf
+import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 
@@ -42,6 +44,7 @@ class ImportService(private val data: DataRepository,
                     private val bookManager: BookManager,
                     private val folderManager: FolderManager,
                     private val importMetaManager: ImportMetaManager,
+                    private val sourceDataManager: SourceDataManager,
                     private val similarFinder: SimilarFinder,
                     private val pathWatcher: PathWatcher) {
     private val orderTranslator = OrderTranslator {
@@ -118,15 +121,15 @@ class ImportService(private val data: DataRepository,
             }
         }
 
-        val folderIds = row[ImportImages.folderIds] ?: emptyList()
-        val bookIds = row[ImportImages.bookIds] ?: emptyList()
+        val folderIds = row[ImportImages.folderIds]
+        val bookIds = row[ImportImages.bookIds]
 
-        val books = if(bookIds.isEmpty()) emptyList() else data.db.from(Books)
+        val books = if(bookIds.isNullOrEmpty()) emptyList() else data.db.from(Books)
             .select(Books.id, Books.title)
             .where { Books.id inList bookIds }
             .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!) }
 
-        val folders = if(folderIds.isEmpty()) emptyList() else data.db.from(Folders)
+        val folders = if(folderIds.isNullOrEmpty()) emptyList() else data.db.from(Folders)
             .select(Folders.id, Folders.title, Folders.parentAddress, Folders.type)
             .where { Folders.id inList folderIds }
             .map { FolderSimpleRes(it[Folders.id]!!, (it[Folders.parentAddress] ?: emptyList()) + it[Folders.title]!!, it[Folders.type]!!) }
@@ -152,7 +155,7 @@ class ImportService(private val data: DataRepository,
             row[FileRecords.extension]!!, row[FileRecords.size]!!, row[FileRecords.resolutionWidth]!!, row[FileRecords.resolutionHeight]!!,
             row[ImportImages.tagme]!!, row[ImportImages.preference] ?: ImportImage.Preference(cloneImage = null),
             collectionId, collection, folders, books,
-            row[ImportImages.sourceSite], row[ImportImages.sourceId], row[ImportImages.sourcePart],
+            row[ImportImages.sourceSite], row[ImportImages.sourceId], row[ImportImages.sourcePart], row[ImportImages.sourcePreference],
             row[ImportImages.partitionTime]!!, row[ImportImages.orderTime]!!.parseDateTime(), row[ImportImages.createTime]!!
         )
     }
@@ -195,13 +198,13 @@ class ImportService(private val data: DataRepository,
                     }
                 }
 
-                val sourceResultMap = mutableMapOf<Int, Tuple4<String, Long?, Int?, Illust.Tagme?>>()
+                val sourceResultMap = mutableMapOf<Int, Tuple5<String, Long?, Int?, Illust.Tagme?, ImportImage.SourcePreference?>>()
                 val errors = mutableMapOf<Int, List<BaseException<*>>>()
                 if(form.analyseSource) {
                     val autoSetTagmeOfSource = data.setting.import.setTagmeOfSource
 
                     for (record in records) {
-                        val (source, sourceId, sourcePart) = try {
+                        val (source, sourceId, sourcePart, sourcePreference) = try {
                             importMetaManager.analyseSourceMeta(record.fileName)
                         } catch (e: BusinessException) {
                             errors[record.id] = listOf(e.exception)
@@ -209,7 +212,7 @@ class ImportService(private val data: DataRepository,
                         }
                         if (source != null) {
                             val tagme = if (autoSetTagmeOfSource && Illust.Tagme.SOURCE in record.tagme) record.tagme - Illust.Tagme.SOURCE else null
-                            sourceResultMap[record.id] = Tuple4(source, sourceId, sourcePart, tagme)
+                            sourceResultMap[record.id] = Tuple5(source, sourceId, sourcePart, tagme, sourcePreference)
                         }
                     }
                 }
@@ -229,11 +232,12 @@ class ImportService(private val data: DataRepository,
                         data.db.update(ImportImages) {
                             where { it.id eq record.id }
                             if(src != null) {
-                                val (sourceSite, sourceId, sourcePart, tagme) = src
+                                val (sourceSite, sourceId, sourcePart, tagme, sourcePreference) = src
                                 set(it.sourceSite, sourceSite)
                                 set(it.sourceId, sourceId)
                                 set(it.sourcePart, sourcePart)
                                 if(tagme != null && form.tagme == null) set(it.tagme, tagme)
+                                if(sourcePreference != null) set(it.sourcePreference, sourcePreference)
                             }
                             if(!form.appendBookIds.isNullOrEmpty()) {
                                 val bookIds = ((record.bookIds ?: emptyList()) + form.appendBookIds).distinct()
@@ -414,6 +418,37 @@ class ImportService(private val data: DataRepository,
                         cloneImage.props.source
                     )
                     illustManager.cloneProps(cloneImage.fromImageId, imageId, props, cloneImage.merge, cloneImage.deleteFrom)
+                }
+
+            records.asSequence()
+                .filter { (record, _) -> record.sourcePreference != null && record.sourceSite != null && record.sourceId != null && record.id in importToImageIds }
+                .map { (record, _) -> Triple(record.sourceSite!!, record.sourceId!!, record.sourcePreference!!) }
+                .groupBy({ (s, i, _) -> s to i }) { (_, _, p) -> p }
+                .forEach { (site, sourceId), preferences ->
+                    val preference = if(preferences.size == 1) preferences.first() else {
+                        ImportImage.SourcePreference(
+                            title = preferences.mapNotNull { it.title }.lastOrNull(),
+                            description = preferences.mapNotNull { it.description }.lastOrNull(),
+                            tags = preferences.flatMap { it.tags ?: emptyList() }.distinct(),
+                            books = preferences.flatMap { it.books ?: emptyList() }.distinct(),
+                            relations = preferences.flatMap { it.relations ?: emptyList() }.distinct(),
+                            additionalInfo = preferences.flatMap { it.additionalInfo?.entries ?: emptyList() }.groupBy { it.key }.mapValues { it.value.last().value }
+                        )
+                    }
+                    sourceDataManager.createOrUpdateSourceData(site, sourceId,
+                        status = undefined(), links = undefined(),
+                        title = if(preference.title != null) optOf(preference.title) else undefined(),
+                        description = if(preference.description != null) optOf(preference.description) else undefined(),
+                        tags = if(preference.tags.isNullOrEmpty()) undefined() else optOf(preference.tags.map {
+                            SourceTagForm(it.code, if(it.name != null) optOf(it.name) else undefined(), if(it.otherName != null) optOf(it.otherName) else undefined(), if(it.type != null) optOf(it.type) else undefined())
+                        }),
+                        books = if(preference.books.isNullOrEmpty()) undefined() else optOf(preference.books.map {
+                            SourceBookForm(it.code, if(it.title != null) optOf(it.title) else undefined(), if(it.otherTitle != null) optOf(it.otherTitle) else undefined())
+                        }),
+                        relations = if(!preference.relations.isNullOrEmpty()) optOf(preference.relations) else undefined(),
+                        additionalInfo = if(!preference.additionalInfo.isNullOrEmpty()) optOf(preference.additionalInfo) else undefined(),
+                        appendUpdate = true
+                    )
                 }
 
             if(form.target.isNullOrEmpty() && importToImageIds.size >= records.size) {

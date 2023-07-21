@@ -16,6 +16,8 @@ object SourceDatas : BaseTable<SourceData>("source_data", schema = "source_db") 
     val title = varchar("title")
     val description = varchar("description")
     val relations = json("relations", typeRef<List<Long>>())
+    val links = json("links", typeRef<List<String>>())
+    val additionalInfo = json("additional_info", typeRef<Map<String, String>>())
     val cachedCount = json("cached_count", typeRef<SourceData.SourceCount>())
     val empty = boolean("empty")
     val status = enum("status", typeRef<SourceEditStatus>())
@@ -29,6 +31,8 @@ object SourceDatas : BaseTable<SourceData>("source_data", schema = "source_db") 
         title = row[title],
         description = row[description],
         relations = row[relations],
+        links = row[links],
+        additionalInfo = row[additionalInfo],
         cachedCount = row[cachedCount]!!,
         empty = row[empty]!!,
         status = row[status]!!,
@@ -42,12 +46,14 @@ object SourceBooks : BaseTable<SourceBook>("source_book", schema = "source_db") 
     val site = varchar("site")
     val code = varchar("code")
     val title = varchar("title")
+    val otherTitle = varchar("other_title")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = SourceBook(
         id = row[id]!!,
         site = row[site]!!,
         code = row[code]!!,
-        title = row[title]!!
+        title = row[title]!!,
+        otherTitle = row[otherTitle]
     )
 }
 

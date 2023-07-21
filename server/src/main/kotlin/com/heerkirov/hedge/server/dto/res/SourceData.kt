@@ -12,11 +12,14 @@ data class SourceDataRes(val sourceSite: String, val sourceSiteName: String, val
 data class SourceDataDetailRes(val sourceSite: String, val sourceSiteName: String, val sourceId: Long,
                                val title: String, val description: String,
                                val empty: Boolean, val status: SourceEditStatus,
-                               val tags: List<SourceTagDto>, val books: List<SourceBookDto>, val relations: List<Long>,
+                               val tags: List<SourceTagDto>, val books: List<SourceBookDto>,
+                               val relations: List<Long>, val links: List<String>, val additionalInfo: List<SourceDataAdditionalInfoDto>,
                                val createTime: LocalDateTime, val updateTime: LocalDateTime)
+
+data class SourceDataAdditionalInfoDto(val field: String, val label: String, val value: String)
 
 data class SourceTagDto(val code: String, val name: String, val otherName: String?, val type: String?)
 
-data class SourceBookDto(val code: String, val title: String)
+data class SourceBookDto(val code: String, val title: String, val otherTitle: String?)
 
 data class SourceMarkRes(val sourceSite: String, val sourceSiteName: String, val sourceId: Long, val markType: SourceMarkType)

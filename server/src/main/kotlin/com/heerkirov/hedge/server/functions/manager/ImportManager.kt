@@ -21,6 +21,7 @@ import com.heerkirov.hedge.server.utils.Fs
 import com.heerkirov.hedge.server.utils.deleteIfExists
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tools.defer
+import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import com.heerkirov.hedge.server.utils.types.Opt
 import com.heerkirov.hedge.server.utils.types.anyOpt
 import com.heerkirov.hedge.server.utils.types.optOf
@@ -149,7 +150,7 @@ class ImportManager(private val data: DataRepository,
         }
 
         if (form.tagme.isPresent || form.sourceSite.isPresent || form.sourceId.isPresent || form.sourcePart.isPresent ||
-            form.partitionTime.isPresent || form.orderTime.isPresent || form.createTime.isPresent ||
+            form.partitionTime.isPresent || form.orderTime.isPresent || form.createTime.isPresent || form.sourcePreference.isPresent ||
             form.preference.isPresent || form.collectionId.isPresent || newBookIds.isPresent || newFolderIds.isPresent) {
             data.db.update(ImportImages) {
                 where { it.id eq id }
@@ -161,6 +162,7 @@ class ImportManager(private val data: DataRepository,
                 form.orderTime.applyOpt { set(it.orderTime, this.toMillisecond()) }
                 form.createTime.applyOpt { set(it.createTime, this) }
                 form.preference.applyOpt { set(it.preference, this) }
+                form.sourcePreference.applyOpt { set(it.sourcePreference, this) }
                 newFolderIds.applyOpt { set(it.folderIds, this) }
                 newBookIds.applyOpt { set(it.bookIds, this) }
                 newCollectionId.applyOpt { set(it.collectionId, this) }
@@ -168,7 +170,7 @@ class ImportManager(private val data: DataRepository,
         }
 
         val listUpdated = anyOpt(form.sourceSite, form.sourceId, form.sourcePart, form.tagme, form.partitionTime, form.orderTime)
-        val detailUpdated = listUpdated || anyOpt(form.createTime, form.preference, form.collectionId, newBookIds, newFolderIds)
+        val detailUpdated = listUpdated || anyOpt(form.createTime, form.preference, form.sourcePreference, form.collectionId, newBookIds, newFolderIds)
         if(listUpdated || detailUpdated) {
             bus.emit(ImportUpdated(id, listUpdated = listUpdated, detailUpdated = true))
         }
@@ -210,14 +212,14 @@ class ImportManager(private val data: DataRepository,
 
         val warnings = mutableListOf<BaseException<*>>()
 
-        val (sourceSite, sourceId, sourcePart) = if(options.autoAnalyseSourceData) {
+        val (sourceSite, sourceId, sourcePart, sourcePreference) = if(options.autoAnalyseSourceData) {
             try {
                 importMetaManager.analyseSourceMeta(sourceFilename)
             }catch (e: BusinessException) {
                 warnings.add(e.exception)
-                Triple(null, null, null)
+                Tuple4(null, null, null, null)
             }
-        }else Triple(null, null, null)
+        }else Tuple4(null, null, null, null)
 
         val tagme = Illust.Tagme.EMPTY.runIf<Illust.Tagme>(options.setTagmeOfTag) {
             this + Illust.Tagme.TAG + Illust.Tagme.AUTHOR + Illust.Tagme.TOPIC
@@ -236,6 +238,7 @@ class ImportManager(private val data: DataRepository,
             set(it.folderIds, null)
             set(it.bookIds, null)
             set(it.preference, null)
+            set(it.sourcePreference, sourcePreference)
             set(it.tagme, tagme)
             set(it.sourceSite, sourceSite)
             set(it.sourceId, sourceId)

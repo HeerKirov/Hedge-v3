@@ -5,27 +5,10 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.SourceBooks
 import com.heerkirov.hedge.server.dto.form.SourceBookForm
 import com.heerkirov.hedge.server.events.SourceBookUpdated
-import com.heerkirov.hedge.server.model.SourceBook
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 
 class SourceBookManager(private val data: DataRepository, private val bus: EventBus) {
-    fun getOrCreateSourceBook(sourceSite: String, code: String, title: String?): SourceBook {
-        return data.db.sequenceOf(SourceBooks)
-            .firstOrNull { it.site eq sourceSite and (it.code eq code) }
-            ?: run {
-                val id = data.db.insertAndGenerateKey(SourceBooks) {
-                    set(it.site, sourceSite)
-                    set(it.code, code)
-                    set(it.title, title ?: "")
-                } as Int
-
-                bus.emit(SourceBookUpdated(sourceSite, code))
-
-                SourceBook(id, sourceSite, code, title ?: "")
-            }
-    }
-
     /**
      * 在image的source update方法中，根据给出的books dto，创建或修改数据库里的source book model，并返回这些model的id。
      * 这个方法的逻辑是，source books总是基于其key做唯一定位，当key不变时，修改其他属性视为更新，而改变key即认为是不同的对象。
@@ -45,7 +28,8 @@ class SourceBookManager(private val data: DataRepository, private val bus: Event
                     item {
                         set(it.site, sourceSite)
                         set(it.code, code)
-                        set(it.title, book.title.unwrapOr { "" })
+                        set(it.title, book.title.unwrapOr { code })
+                        set(it.otherTitle, book.otherTitle.unwrapOrNull())
                     }
                 }
             }
@@ -53,17 +37,17 @@ class SourceBookManager(private val data: DataRepository, private val bus: Event
 
         val common = bookMap.keys.intersect(dbBooksMap.keys).filter { key ->
             val form = bookMap[key]!!
-            form.title.letOpt { it != dbBooksMap[key]!!.title }.unwrapOr { false }
+            val dbBook = dbBooksMap[key]!!
+            form.title.letOpt { it != dbBook.title }.unwrapOr { false } || form.otherTitle.letOpt { it != dbBook.otherTitle }.unwrapOr { false }
         }
         if(common.isNotEmpty()) {
-            data.db.batchUpdate(SourceBooks) {
-                for (key in common) {
-                    val book = bookMap[key]!!
-                    val dbBook = dbBooksMap[key]!!
-                    item {
-                        where { it.id eq dbBook.id }
-                        book.title.applyOpt { set(it.title, this) }
-                    }
+            for (key in common) {
+                val book = bookMap[key]!!
+                val dbBook = dbBooksMap[key]!!
+                data.db.update(SourceBooks) {
+                    where { it.id eq dbBook.id }
+                    book.title.applyOpt { set(it.title, this) }
+                    book.otherTitle.applyOpt { set(it.otherTitle, this) }
                 }
             }
         }

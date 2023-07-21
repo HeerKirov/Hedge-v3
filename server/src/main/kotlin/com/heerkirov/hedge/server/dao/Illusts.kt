@@ -170,6 +170,7 @@ object ImportImages : BaseTable<ImportImage>("import_image") {
     val sourceSite = varchar("source_site")
     val sourceId = long("source_id")
     val sourcePart = int("source_part")
+    val sourcePreference = json("source_preference", typeRef<ImportImage.SourcePreference>())
     val partitionTime = date("partition_time")
     val orderTime = long("order_time")
     val createTime = datetime("create_time")
@@ -190,6 +191,7 @@ object ImportImages : BaseTable<ImportImage>("import_image") {
         sourceSite = row[sourceSite],
         sourceId = row[sourceId],
         sourcePart = row[sourcePart],
+        sourcePreference = row[sourcePreference],
         partitionTime = row[partitionTime]!!,
         orderTime = row[orderTime]!!,
         createTime = row[createTime]!!

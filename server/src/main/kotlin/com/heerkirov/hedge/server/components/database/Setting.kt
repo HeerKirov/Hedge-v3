@@ -66,7 +66,13 @@ data class SourceOption(
      */
     val sites: MutableList<Site>
 ) {
-    data class Site(val name: String, var title: String, val hasSecondaryId: Boolean)
+    data class Site(val name: String,
+                    var title: String,
+                    val hasSecondaryId: Boolean,
+                    var availableAdditionalInfo: List<AvailableAdditionalInfo>,
+                    var sourceLinkGenerateRules: List<String>)
+
+    data class AvailableAdditionalInfo(val field: String, val label: String)
 }
 
 /**
@@ -122,7 +128,18 @@ data class ImportOption(
         UPDATE_TIME
     }
 
-    data class SourceAnalyseRule(val site: String, val regex: String, val idIndex: Int, val secondaryIdIndex: Int?)
+    data class SourceAnalyseRule(val site: String, val regex: String, val idGroup: String, val secondaryIdGroup: String?, val extras: List<SourceAnalyseRuleExtra>?)
+
+    data class SourceAnalyseRuleExtra(val group: String, val target: SourceAnalyseRuleExtraTarget, val optional: Boolean, val tagType: String? = null, val additionalInfoField: String? = null)
+
+    enum class SourceAnalyseRuleExtraTarget {
+        TITLE,
+        DESCRIPTION,
+        ADDITIONAL_INFO,
+        TAG,
+        BOOK,
+        RELATION
+    }
 }
 
 /**

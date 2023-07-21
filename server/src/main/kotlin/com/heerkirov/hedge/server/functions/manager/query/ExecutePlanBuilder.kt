@@ -655,6 +655,7 @@ class SourceDataExecutePlanBuilder(private val db: Database): ExecutePlanBuilder
         SourceDataDialect.sourceSite to SourceDatas.sourceSite,
         SourceDataDialect.title to SourceDatas.title,
         SourceDataDialect.description to SourceDatas.description,
+        SourceDataDialect.status to SourceDatas.status
     )
 
     override fun getOrderDeclareMapping(order: SourceDataDialect.OrderItem): OrderByColumn.ColumnDefinition {

@@ -274,6 +274,7 @@ CREATE TABLE import_image(
     source_site         VARCHAR(16) DEFAULT NULL,       -- 来源网站的代号，没有填null
     source_id           BIGINT DEFAULT NULL,            -- 来源网站中的图像代号，没有填null
     source_part         INTEGER DEFAULT NULL,           -- 来源网站中的二级图像代号，没有填null
+    source_preference   TEXT DEFAULT NULL,              -- 来元数据的预设内容
     tagme               INTEGER NOT NULL,               -- 标记为tagme，详见illust部分。可以通过配置决定要不要给项目加初始tagme，以及该加哪些
     partition_time	    DATE NOT NULL,                  -- 用于日历分组的时间
     order_time			BIGINT NOT NULL,                -- 用于排序的时间
@@ -288,7 +289,9 @@ CREATE TABLE source_db.source_data(
 
     title 			TEXT COLLATE NOCASE DEFAULT NULL,   -- 原数据的标题信息，有些会有，比如pixiv
     description     TEXT COLLATE NOCASE DEFAULT NULL,   -- 原数据的描述信息，有些会有，比如pixiv
-    relations 		TEXT DEFAULT NULL,                  -- 原数据的关系信息::json<Int>
+    relations 		TEXT DEFAULT NULL,                  -- 原数据的关系信息::json<Int[]>
+    links           TEXT DEFAULT NULL,                  -- 此原数据指向的原始链接::json<String[]>
+    additional_info TEXT DEFAULT NULL,                  -- 原数据的额外追加信息::json<{}>
     cached_count    TEXT NOT NULL,                      -- 关系信息的数量缓存::json<SourceCount>
     empty           BOOLEAN NOT NULL,                   -- 是否为空
     status          TINYINT NOT NULL,                   -- 编写状态
@@ -303,7 +306,8 @@ CREATE TABLE source_db.source_book(
     id              INTEGER PRIMARY KEY,            -- id
     site            VARCHAR(16) NOT NULL,           -- 来源网站的代号
     code            TEXT COLLATE NOCASE NOT NULL,   -- book的区分编码，一般指book id
-    title           TEXT COLLATE NOCASE NOT NULL    -- book标题
+    title           TEXT COLLATE NOCASE NOT NULL,   -- book标题
+    other_title     TEXT COLLATE NOCASE             -- book的其他标题(如果有)
 );
 CREATE UNIQUE INDEX source_db.source_book__source__index ON source_book(site, code);
 

@@ -239,6 +239,10 @@ data class ImportImage(val id: Int,
                         */
                        val sourcePart: Int?,
                        /**
+                        * 来源数据的预设操作。
+                        */
+                       val sourcePreference: SourcePreference?,
+                       /**
                         * 用于日历分组的时间。
                         */
                        val partitionTime: LocalDate,
@@ -250,6 +254,17 @@ data class ImportImage(val id: Int,
                         * 初次创建的时间。
                         */
                        val createTime: LocalDateTime) {
+
+    data class SourcePreference(val title: String? = null,
+                                val description: String? = null,
+                                val additionalInfo: Map<String, String>? = null,
+                                val tags: List<SourcePreferenceTag>? = null,
+                                val books: List<SourcePreferenceBook>? = null,
+                                val relations: List<Long>? = null)
+
+    data class SourcePreferenceTag(val code: String, val name: String?, val otherName: String?, val type: String?)
+
+    data class SourcePreferenceBook(val code: String, val title: String?, val otherTitle: String?)
 
     data class Preference(val cloneImage: CloneImageFrom?)
 

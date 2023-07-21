@@ -10,6 +10,7 @@ import com.heerkirov.hedge.server.dao.TrashedImages
 import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.events.*
 import com.heerkirov.hedge.server.exceptions.*
+import com.heerkirov.hedge.server.utils.business.checkVariableName
 import org.ktorm.dsl.eq
 import org.ktorm.entity.any
 import org.ktorm.entity.sequenceOf
@@ -149,7 +150,7 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
             val sites = setting.source.sites
             if(sites.any { it.name == form.name }) throw be(AlreadyExists("site", "name", form.name))
 
-            val newSite = SourceOption.Site(form.name, form.title, form.hasSecondaryId)
+            val newSite = SourceOption.Site(form.name, form.title, form.hasSecondaryId, form.availableAdditionalInfo, form.sourceLinkGenerateRules)
 
             val ordinal = form.ordinal?.let {
                 when {
@@ -184,6 +185,15 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
 
             saveSetting {
                 form.title.alsoOpt { site.title = it }
+                form.sourceLinkGenerateRules.alsoOpt { site.sourceLinkGenerateRules = it }
+                form.availableAdditionalInfo.alsoOpt {
+                    for(metadata in it) {
+                        if(!checkVariableName(metadata.field)) {
+                            throw be(ParamError("availableAdditionalInfo"))
+                        }
+                    }
+                    site.availableAdditionalInfo = it
+                }
                 form.ordinal.alsoOpt {
                     val sites = data.setting.source.sites
                     val newOrdinal = when {
@@ -245,6 +255,19 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
      * @throws InvalidRuleIndexError (string, string) rule的index与regex不匹配
      */
     private fun checkImportRule(rule: ImportOption.SourceAnalyseRule, site: SourceOption.Site) {
-        if((rule.secondaryIdIndex != null) xor site.hasSecondaryId) throw be(InvalidRuleIndexError(site.name, rule.regex))
+        if((rule.secondaryIdGroup != null) xor site.hasSecondaryId) throw be(InvalidRuleIndexError(site.name, rule.regex))
+        if(rule.idGroup.isBlank()) throw be(ParamRequired("idGroup"))
+        if(site.hasSecondaryId && rule.secondaryIdGroup.isNullOrBlank()) throw be(ParamRequired("secondaryIdGroup"))
+        if(!rule.extras.isNullOrEmpty()) {
+            for(extra in rule.extras) {
+                if(extra.group.isBlank()) throw be(ParamRequired("group"))
+                if(extra.target == ImportOption.SourceAnalyseRuleExtraTarget.ADDITIONAL_INFO) {
+                    if(extra.additionalInfoField.isNullOrEmpty()) throw be(ParamRequired("additionalInfoField"))
+                    else if(site.availableAdditionalInfo.none { it.field == extra.additionalInfoField }) throw be(ParamError("additionalInfoField"))
+                }
+                if(extra.target != ImportOption.SourceAnalyseRuleExtraTarget.ADDITIONAL_INFO && !extra.additionalInfoField.isNullOrEmpty()) throw be(ParamNotRequired("additionalInfoField"))
+                if(extra.target != ImportOption.SourceAnalyseRuleExtraTarget.TAG && !extra.tagType.isNullOrEmpty()) throw be(ParamNotRequired("tagType"))
+            }
+        }
     }
 }

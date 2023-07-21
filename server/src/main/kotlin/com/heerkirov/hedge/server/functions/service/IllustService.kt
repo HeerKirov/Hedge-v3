@@ -299,7 +299,7 @@ class IllustService(private val data: DataRepository,
         val sourceId = row[Illusts.sourceId]
         val sourcePart = row[Illusts.sourcePart]
         return if(source != null && sourceId != null) {
-            val sourceTitle = data.setting.source.sites.find { it.name == source }?.title
+            val site = data.setting.source.sites.find { it.name == source }
             val sourceRow = data.db.from(SourceDatas).select()
                 .where { (SourceDatas.sourceSite eq source) and (SourceDatas.sourceId eq sourceId) }
                 .firstOrNull()
@@ -314,19 +314,24 @@ class IllustService(private val data: DataRepository,
                     .innerJoin(SourceBookRelations, (SourceBooks.id eq SourceBookRelations.sourceBookId) and (SourceBookRelations.sourceDataId eq sourceRowId))
                     .select()
                     .map { SourceBooks.createEntity(it) }
-                    .map { SourceBookDto(it.code, it.title) }
+                    .map { SourceBookDto(it.code, it.title, it.otherTitle) }
+                val additionalInfo = (sourceRow[SourceDatas.additionalInfo] ?: emptyMap()).entries.map { (k, v) ->
+                    SourceDataAdditionalInfoDto(k, site?.availableAdditionalInfo?.find { it.field == k }?.label ?: "", v)
+                }
 
-                IllustImageSourceDataRes(source, sourceTitle ?: source, sourceId, sourcePart,
+                IllustImageSourceDataRes(source, site?.title ?: source, sourceId, sourcePart,
                     sourceRow[SourceDatas.empty]!!, sourceRow[SourceDatas.status]!!,
                     sourceRow[SourceDatas.title] ?: "", sourceRow[SourceDatas.description] ?: "",
                     sourceTags, sourcePools,
-                    sourceRow[SourceDatas.relations] ?: emptyList())
+                    sourceRow[SourceDatas.relations] ?: emptyList(),
+                    sourceRow[SourceDatas.links] ?: emptyList(),
+                    additionalInfo)
             }else{
-                IllustImageSourceDataRes(source, sourceTitle ?: source, sourceId, sourcePart,
-                    true, SourceEditStatus.NOT_EDITED, "", "", emptyList(), emptyList(), emptyList())
+                IllustImageSourceDataRes(source, site?.title ?: source, sourceId, sourcePart,
+                    true, SourceEditStatus.NOT_EDITED, "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
             }
         }else{
-            IllustImageSourceDataRes(null, null, null, null, true, SourceEditStatus.NOT_EDITED, null, null, null, null, null)
+            IllustImageSourceDataRes(null, null, null, null, true, SourceEditStatus.NOT_EDITED, null, null, null, null, null, null, null)
         }
     }
 
@@ -564,7 +569,7 @@ class IllustService(private val data: DataRepository,
             if(form.sourceSite.isPresent || form.sourceId.isPresent || form.sourcePart.isPresent) {
                 val newSourcePart = form.sourcePart.unwrapOr { sourcePart }
                 val (newSourceDataId, newSourceSite, newSourceId) = sourceManager.checkSourceSite(form.sourceSite.unwrapOr { sourceSite }, form.sourceId.unwrapOr { sourceId }, newSourcePart)
-                    ?.let { (source, sourceId) -> sourceManager.createOrUpdateSourceData(source, sourceId, form.status, form.title, form.description, form.tags, form.books, form.relations) }
+                    ?.let { (source, sourceId) -> sourceManager.createOrUpdateSourceData(source, sourceId, form.status, form.title, form.description, form.tags, form.books, form.relations, form.links, form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } }) }
                     ?: Triple(null, null, null)
                 data.db.update(Illusts) {
                     where { it.id eq id }
@@ -576,7 +581,7 @@ class IllustService(private val data: DataRepository,
                 }
             }else{
                 sourceManager.checkSourceSite(sourceSite, sourceId, sourcePart)?.let { (source, sourceId) ->
-                    sourceManager.createOrUpdateSourceData(source, sourceId, form.status, form.title, form.description, form.tags, form.books, form.relations)
+                    sourceManager.createOrUpdateSourceData(source, sourceId, form.status, form.title, form.description, form.tags, form.books, form.relations, form.links, form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } })
                 }
             }
         }

@@ -113,7 +113,8 @@ data class SourceDataQueryFilter(@Limit val limit: Int,
                                  @Search val query: String?,
                                  @Order(options = ["rowId", "sourceId", "site", "createTime", "updateTime"])
                                  val order: List<OrderItem>? = null,
-                                 val site: String? = null,
+                                 val status: List<SourceEditStatus>? = null,
+                                 val site: List<String>? = null,
                                  val sourceTag: String? = null,
                                  val imageId: Int? = null)
 

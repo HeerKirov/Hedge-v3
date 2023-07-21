@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.functions.manager
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
+import com.heerkirov.hedge.server.dao.FileFingerprints
 import com.heerkirov.hedge.server.dao.FileRecords
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
@@ -112,9 +113,8 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
         val filepath = generateFilepath(fileRecord.folder, fileRecord.id, fileRecord.extension)
         val thumbnailFilepath = if(fileRecord.status == FileStatus.READY) { generateThumbnailFilepath(fileRecord.folder, fileRecord.id) }else null
 
-        data.db.delete(FileRecords) {
-            it.id eq fileId
-        }
+        data.db.delete(FileRecords) { it.id eq fileId }
+        data.db.delete(FileFingerprints) { it.fileId eq fileId }
 
         File("${appdata.storagePathAccessor.storageDir}/${filepath}").deleteIfExists()
         if(thumbnailFilepath != null) File("${appdata.storagePathAccessor.storageDir}/${thumbnailFilepath}").deleteIfExists()

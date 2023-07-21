@@ -47,6 +47,11 @@ class Opt<T> {
     fun unwrapOrNull(): T? = if(isPresent) value else null
 
     /**
+     * 如果值存在，则使用map生成一个新的opt。
+     */
+    inline fun <R> map(call: T.() -> R): Opt<R> = if(isPresent) Opt(call(value)) else undefined()
+
+    /**
      * 如果值存在，计算一个新值。参数使用this传递。
      */
     inline fun <R> runOpt(call: T.() -> R): Opt<R> = if(isPresent) Opt(value.call()) else {

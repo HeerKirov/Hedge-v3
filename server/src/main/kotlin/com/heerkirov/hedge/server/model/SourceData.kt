@@ -31,6 +31,14 @@ data class SourceData(val id: Int,
                         */
                       val relations: List<Long>? = null,
                       /**
+                       * 此原数据指向的原始链接。
+                       */
+                      val links: List<String>? = null,
+                      /**
+                       * 原数据的额外追加信息。它的数据条目需要定义，在site中定义。
+                       */
+                      val additionalInfo: Map<String, String>? = null,
+                      /**
                         * 关系信息的数量的缓存。
                         */
                       val cachedCount: SourceCount,
@@ -70,7 +78,11 @@ data class SourceBook(val id: Int,
                       /**
                        * 标题。
                        */
-                      val title: String)
+                      val title: String,
+                      /**
+                       * 其他标题。
+                       */
+                      val otherTitle: String?)
 
 /**
  * source image与book的关联。

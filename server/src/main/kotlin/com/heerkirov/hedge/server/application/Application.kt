@@ -95,7 +95,7 @@ fun runApplication(options: ApplicationOptions) {
             val tagService = TagService(repo, bus, tagKit, sourceMappingManager)
             val authorService = AuthorService(repo, bus, authorKit, queryManager, sourceMappingManager)
             val topicService = TopicService(repo, bus, topicKit, queryManager, sourceMappingManager)
-            val importService = ImportService(repo, bus, importManager, illustManager, bookManager, folderManager, importMetaManager, similarFinder, pathWatcher)
+            val importService = ImportService(repo, bus, importManager, illustManager, bookManager, folderManager, importMetaManager, sourceManager, similarFinder, pathWatcher)
             val stagingPostService = StagingPostService(illustManager, stagingPostManager)
             val trashService = TrashService(repo, trashManager)
 

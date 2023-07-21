@@ -41,8 +41,11 @@ class SourceDataService(private val data: DataRepository, private val sourceMana
             .let { if(filter.imageId == null) it else it.innerJoin(Illusts, (Illusts.sourceDataId eq SourceDatas.id) and (Illusts.id eq filter.imageId)) }
             .select(SourceDatas.sourceSite, SourceDatas.sourceId, SourceDatas.cachedCount, SourceDatas.createTime, SourceDatas.updateTime, SourceDatas.empty, SourceDatas.status)
             .whereWithConditions {
-                if(filter.site != null) {
-                    it += SourceDatas.sourceSite eq filter.site
+                if(!filter.site.isNullOrEmpty()) {
+                    it += if(filter.site.size > 1) SourceDatas.sourceSite inList filter.site else SourceDatas.sourceSite eq filter.site.first()
+                }
+                if(filter.status != null) {
+                    it += SourceDatas.status inList filter.status
                 }
                 if(schema != null && schema.whereConditions.isNotEmpty()) {
                     it.addAll(schema.whereConditions)
@@ -72,7 +75,8 @@ class SourceDataService(private val data: DataRepository, private val sourceMana
             sourceManager.checkSourceSite(form.sourceSite, form.sourceId)
             sourceManager.createOrUpdateSourceData(form.sourceSite, form.sourceId,
                 title = form.title, description = form.description, tags = form.tags,
-                books = form.books, relations = form.relations,
+                books = form.books, relations = form.relations, links = form.links,
+                additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
                 status = form.status, allowUpdate = false)
         }
     }
@@ -87,7 +91,9 @@ class SourceDataService(private val data: DataRepository, private val sourceMana
             forms.forEach { form ->
                 sourceManager.createOrUpdateSourceData(form.sourceSite, form.sourceId,
                     title = form.title, description = form.description, tags = form.tags,
-                    books = form.books, relations = form.relations)
+                    books = form.books, relations = form.relations, links = form.links,
+                    additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
+                    status = undefined())
             }
         }
     }
@@ -113,15 +119,21 @@ class SourceDataService(private val data: DataRepository, private val sourceMana
             .innerJoin(SourceBookRelations, (SourceBooks.id eq SourceBookRelations.sourceBookId) and (SourceBookRelations.sourceDataId eq sourceRowId))
             .select()
             .map { SourceBooks.createEntity(it) }
-            .map { SourceBookDto(it.code, it.title) }
-        val sourceTitle = data.setting.source.sites.find { it.name == sourceSite }?.title
+            .map { SourceBookDto(it.code, it.title, it.otherTitle) }
+        val site = data.setting.source.sites.find { it.name == sourceSite }
+        val additionalInfo = (row[SourceDatas.additionalInfo] ?: emptyMap()).entries.map { (k, v) ->
+            SourceDataAdditionalInfoDto(k, site?.availableAdditionalInfo?.find { it.field == k }?.label ?: "", v)
+        }
 
-        return SourceDataDetailRes(sourceSite, sourceTitle ?: sourceSite, sourceId,
+        return SourceDataDetailRes(sourceSite, site?.title ?: sourceSite, sourceId,
             row[SourceDatas.title] ?: "",
             row[SourceDatas.description] ?: "",
             row[SourceDatas.empty]!!,
             row[SourceDatas.status]!!,
-            sourceTags, sourceBooks, row[SourceDatas.relations] ?: emptyList(),
+            sourceTags, sourceBooks,
+            row[SourceDatas.relations] ?: emptyList(),
+            row[SourceDatas.links] ?: emptyList(),
+            additionalInfo,
             createTime, updateTime)
     }
 
@@ -147,7 +159,8 @@ class SourceDataService(private val data: DataRepository, private val sourceMana
             sourceManager.checkSourceSite(sourceSite, sourceId)
             sourceManager.createOrUpdateSourceData(sourceSite, sourceId,
                 title = form.title, description = form.description, tags = form.tags,
-                books = form.books, relations = form.relations,
+                books = form.books, relations = form.relations, links = form.links,
+                additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
                 status = form.status, allowCreate = false)
         }
     }
