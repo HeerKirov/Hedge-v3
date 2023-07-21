@@ -26,4 +26,5 @@ export const QUERY_FIELD_NAMES: {[key: string]: string} = {
     "SOURCE_FROM": "来源站点",
     "SOURCE_DESCRIPTION": "来源描述",
     "TAGME": "TAGME",
+    "STATUS": "状态"
 }

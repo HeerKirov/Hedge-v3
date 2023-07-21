@@ -16,7 +16,7 @@ const { identity, data, submit } = useCreateData(() => emit("completed"))
     <BottomLayout>
         <label class="label">新建来源数据</label>
         <SourceIdentityNoPartEditor class="my-2" :source-id="identity.sourceId" :source-site="identity.sourceSite" @update="identity = $event"/>
-        <SourceDataSummaryEditor v-model:data="data"/>
+        <SourceDataSummaryEditor v-model:data="data" :site="identity.sourceSite"/>
 
         <template #bottom>
             <Button class="float-right" mode="filled" type="primary" :disabled="false" icon="check" @click="submit">保存</Button>

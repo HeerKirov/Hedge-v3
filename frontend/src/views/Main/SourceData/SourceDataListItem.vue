@@ -22,7 +22,7 @@ const description = computed(() => [
     <Block :class="$style.item" :color="selected ? 'primary' : undefined">
         <Flex>
             <FlexItem :width="40" :shrink="0">
-                <div>
+                <div class="no-wrap overflow-hidden overflow-ellipsis">
                     <span class="secondary-text">{{item.sourceSite}}</span>
                     {{item.sourceSiteName}}
                     <b class="ml-2">{{item.sourceId}}</b>

@@ -3,6 +3,7 @@ import { useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import { SourceDataIdentity, SourceDataQueryFilter, SourceEditStatus } from "@/functions/http-client/api/source-data"
 import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
+import { useDialogService } from "@/components-module/dialog"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useQuerySchema } from "@/services/base/query-schema"
 import { useSettingSite } from "@/services/setting"
@@ -74,6 +75,7 @@ function useOperators(paneState: DetailViewState<SourceDataIdentity>) {
 }
 
 export function useSourceDataDetailPane() {
+    const dialog = useDialogService()
     const navigator = useRouterNavigator()
     const { paneState } = useSourceDataContext()
 
@@ -96,6 +98,12 @@ export function useSourceDataDetailPane() {
         eventFilter: c => event => (event.eventType === "entity/source-data/updated" || event.eventType === "entity/source-data/deleted") && c.path !== null && event.site === c.path.sourceSite && event.sourceId === c.path.sourceId,
     })
 
+    const openEditDialog = () => {
+        if(data.value !== null) {
+            dialog.sourceDataEditor.edit({sourceSite: data.value.sourceSite, sourceId: data.value.sourceId})
+        }
+    }
+
     const gotoIllust = () => {
         if(data.value !== null) {
             navigator.goto({routeName: "MainIllust", params: {source: {site: data.value.sourceSite, id: data.value.sourceId}}})
@@ -106,5 +114,5 @@ export function useSourceDataDetailPane() {
         return (status === data.value?.status) || await setData({status})
     }
 
-    return {data, relatedImages, setSourceEditStatus, gotoIllust}
+    return {data, relatedImages, setSourceEditStatus, gotoIllust, openEditDialog}
 }

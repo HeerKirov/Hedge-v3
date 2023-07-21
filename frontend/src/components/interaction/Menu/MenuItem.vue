@@ -86,6 +86,9 @@ const divClass = computed(() => [
             background-color: rgba($light-mode-primary, 0.28)
         &[disabled]
             color: $light-mode-secondary-text-color
+    
+    .badge
+        background-color: rgba(#000000, 0.08)
 
 @media (prefers-color-scheme: dark)
     .general
@@ -115,11 +118,13 @@ const divClass = computed(() => [
         &[disabled]
             color: $dark-mode-secondary-text-color
 
+    .badge
+        background-color: rgba(#000000, 0.3)
+
 .badge
     float: right
     padding: 2px 6px
     border-radius: $radius-size-std
-    background-color: rgba(#000000, 0.5)
     font-weight: 700
 
 .caret

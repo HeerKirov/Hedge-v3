@@ -29,22 +29,30 @@ export function useFetchReactive<T>(options: FetchReactiveOptions<T>): FetchReac
     const updating = ref(false)
     const data = ref<T>()
 
+    let internalSetting = false
+
+    const internalSetData = (t: T) => {
+        internalSetting = true
+        data.value = t
+        internalSetting = false
+    }
+
     onMounted(async () => {
         const res = await options.get(httpClient)()
         if(res.ok) {
-            data.value = res.data
+            internalSetData(res.data)
         }
         loading.value = false
     })
 
     if(options.update !== undefined) watch(data, async (_, o) => {
-        if(o !== undefined && data.value !== undefined) {
+        if(!internalSetting && o !== undefined && data.value !== undefined) {
             updating.value = true
             const res = await options.update!(httpClient)(toRaw(data.value))
             if(!res.ok && res.exception) handleException(res.exception)
             updating.value = false
         }
-    }, {deep: true})
+    }, {deep: true, flush: "sync"})
 
     if(options.eventFilter) {
         const emitter = wsClient.on(options.eventFilter)
@@ -52,7 +60,7 @@ export function useFetchReactive<T>(options: FetchReactiveOptions<T>): FetchReac
         const hoardedUpdate = hoard({interval: 50, lengthenInterval: 10, maxInterval: 100, async func() {
             const res = await options.get(httpClient)()
             if(res.ok) {
-                data.value = res.data
+                internalSetData(res.data)
             }else if(res.exception) {
                 handleException(res.exception)
             }
@@ -66,7 +74,7 @@ export function useFetchReactive<T>(options: FetchReactiveOptions<T>): FetchReac
         loading.value = true
         const res = await options.get(httpClient)()
         if(res.ok) {
-            data.value = res.data
+            internalSetData(res.data)
         }else if(res.exception) {
             handleException(res.exception)
         }

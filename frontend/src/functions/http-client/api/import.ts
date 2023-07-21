@@ -158,6 +158,15 @@ export interface SaveError {
     notExistedFolderIds: number[] | null
 }
 
+export interface SourcePreference {
+    title: string | null
+    description: string | null
+    additionalInfo: {[field: string]: string} | null
+    tags: {code: string, name: string | null, otherName: string | null, type: string | null}[] | null
+    books: {code: string, title: string | null, otherTitle: string | null}[] | null
+    relations: number[] | null
+}
+
 export interface Preference {
     cloneImage: PreferenceCloneImage | null
 }
@@ -198,7 +207,8 @@ export interface DetailImportImage extends ImportImage {
     fileUpdateTime: LocalDateTime | null
     fileImportTime: LocalDateTime | null
     createTime: LocalDateTime
-    preference: Preference
+    sourcePreference: SourcePreference | null
+    preference: Preference | null
     collectionId: string | number | null
     collection: SimpleCollection | null
     folders: SimpleFolder[]
@@ -234,6 +244,7 @@ export interface ImportUpdateForm {
     orderTime?: LocalDateTime
     createTime?: LocalDateTime
     preference?: Preference
+    sourcePreference?: SourcePreference | null
     collectionId?: string | number | null
     folderIds?: number[]
     bookIds?: number[]

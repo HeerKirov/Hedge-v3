@@ -6,7 +6,7 @@ import { usePopupMenu } from "@/modules/popup-menu"
 const props = defineProps<{
     collectionId: string | number | null
     bookIds: number[]
-    preference: Preference
+    preference: Preference | null
 }>()
 
 const emit = defineEmits<{
@@ -18,16 +18,16 @@ const menu = usePopupMenu([
 ])
 
 const popup = () => {
-    if(props.collectionId !== null || props.bookIds.length > 0 || props.preference.cloneImage !== null) menu.popup()
+    if(props.collectionId !== null || props.bookIds.length > 0 || (props.preference?.cloneImage ?? null) !== null) menu.popup()
 }
 
 </script>
 
 <template>
-    <Block v-if="collectionId !== null || bookIds.length > 0 || preference.cloneImage !== null" class="p-1" @contextmenu="popup">
+    <Block v-if="collectionId !== null || bookIds.length > 0 || (preference?.cloneImage ?? null) !== null" class="p-1" @contextmenu="popup">
         <p><b class="mr-2">预设集合</b><Icon icon="id-card" class="mr-1"/>{{collectionId}}</p>
         <p v-for="bookId in bookIds"><b class="mr-2">预设画集</b><Icon icon="clone" class="mr-1"/>{{bookId}}</p>
-        <p v-if="preference.cloneImage">
+        <p v-if="preference?.cloneImage">
             <b>已设置属性克隆</b><i v-if="preference.cloneImage.deleteFrom">(删除源)</i>
             <Icon :icon="preference.cloneImage.deleteFrom ? 'scissors' : 'copy'" class="mr-1 ml-2"/>{{preference.cloneImage.fromImageId}}
         </p>

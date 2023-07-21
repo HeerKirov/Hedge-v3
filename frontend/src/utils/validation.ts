@@ -16,6 +16,18 @@ export function checkTagName(name: string): boolean {
     return true
 }
 
+/**
+ * 检查name的命名是否符合要求。
+ * 要求符合一般变量命名。
+ */
+export function checkVariableName(name: string): boolean {
+    if(name.length === 0) {
+        return false
+    }
+
+    return /^[A-Za-z][A-Za-z0-9_]*$/.test(name)
+}
+
 const DISABLE_CHARACTER = ["'", "\"", "`", ".", "|"]
 
 export type PortType = "AUTO" | "RANGE" | number | "ERROR"

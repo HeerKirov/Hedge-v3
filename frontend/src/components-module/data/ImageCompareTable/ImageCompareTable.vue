@@ -34,7 +34,6 @@ const openImagePreview = (index: number) => {
     const thumbnailList = context.map(c => c.imageData.data.value?.thumbnailFile ?? null)
     const files = thumbnailList.filter(f => f !== null) as string[]
     const initIndex = thumbnailList.reduce((cur, f, idx) => f === null && idx <= cur && cur > 0 ? cur - 1 : cur, index)
-    console.log(files, initIndex)
     previewService.show({preview: "image", type: "array", files, initIndex})
 }
 

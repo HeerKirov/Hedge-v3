@@ -42,11 +42,18 @@ const trash = async () => {
 <template>
     <label class="label mt-2 mb-1">来源站点</label>
     <Flex :class="$style['site-list']" horizontal="stretch" :spacing="1">
-        <FlexItem :width="40">
+        <FlexItem :width="35">
             <SelectList :items="selectItems" v-model:value="selectedItem"/>
         </FlexItem>
-        <FlexItem :width="60">
-            <DBSourceSiteEditor v-if="selectedSite !== null" :name="selectedSite.name" :title="selectedSite.title" :has-secondary-id="selectedSite.hasSecondaryId" :ordinal="selectedIndex!" @update="update" @delete="trash"/>
+        <FlexItem :width="65">
+            <DBSourceSiteEditor v-if="selectedSite !== null" 
+                                :name="selectedSite.name" 
+                                :title="selectedSite.title" 
+                                :has-secondary-id="selectedSite.hasSecondaryId" 
+                                :source-link-generate-rules="selectedSite.sourceLinkGenerateRules"
+                                :available-additional-info="selectedSite.availableAdditionalInfo"
+                                :ordinal="selectedIndex!" 
+                                @update="update" @delete="trash"/>
             <DBSourceSiteCreator v-else-if="selectedItem === '<new>'" @create="create"/>
         </FlexItem>
     </Flex>

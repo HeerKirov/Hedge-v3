@@ -249,6 +249,12 @@ export function useImportDetailPaneSingle(path: Ref<number | null>) {
         }
     }
 
+    const clearAllSourcePreferences = async () => {
+        if(await message.showYesNoMessage("confirm", "确认要清除所有来源数据预设吗？")) {
+            await setData({sourcePreference: null})
+        }
+    }
+
     const openImagePreview = () => {
         preview.show({
             preview: "image", 
@@ -263,7 +269,7 @@ export function useImportDetailPaneSingle(path: Ref<number | null>) {
         })
     }
 
-    return {data, setTagme, setSourceInfo, setPartitionTime, setCreateTime, setOrderTime, clearAllPreferences, openImagePreview}
+    return {data, setTagme, setSourceInfo, setPartitionTime, setCreateTime, setOrderTime, clearAllPreferences, clearAllSourcePreferences, openImagePreview}
 }
 
 export function useImportDetailPaneMultiple(selected: Ref<number[]>, latest: Ref<number | null>) {

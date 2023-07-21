@@ -138,6 +138,14 @@ export interface DetailSourceData extends BasicSourceData {
      * 相关项。
      */
     relations: number[]
+    /**
+     * 相关链接。
+     */
+    links: string[]
+    /**
+     * 附加信息。
+     */
+    additionalInfo: SourceAdditionalInfo[]
 }
 
 export interface SourceTag {
@@ -150,6 +158,13 @@ export interface SourceTag {
 export interface SourceBook {
     code: string
     title: string
+    otherTitle: string | null
+}
+
+export interface SourceAdditionalInfo {
+    field: string
+    label: string
+    value: string
 }
 
 export interface SourceMark {
@@ -183,6 +198,8 @@ export interface SourceDataUpdateForm {
     tags?: SourceTagForm[]
     books?: SourceBookForm[]
     relations?: number[]
+    links?: string[]
+    additionalInfo?: SourceAdditionalInfoForm[]
 }
 
 export interface SourceTagForm {
@@ -195,6 +212,12 @@ export interface SourceTagForm {
 export interface SourceBookForm {
     code: string
     title?: string
+    otherTitle?: string | null
+}
+
+export interface SourceAdditionalInfoForm {
+    field: string
+    value: string
 }
 
 export interface SourceMarkPartialForm {
@@ -216,9 +239,13 @@ export interface SourceDataQueryFilter {
      */
     order?: OrderList<"rowId" | "sourceId" | "site" | "createTime" | "updateTime">
     /**
-     * 按source类型过滤。
+     * 按status类型过滤。
      */
-    source?: string
+    status?: SourceEditStatus[]
+    /**
+     * 按source site类型过滤。
+     */
+    site?: string[]
     /**
      * 按source tag过滤。
      */

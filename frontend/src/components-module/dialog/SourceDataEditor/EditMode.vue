@@ -24,7 +24,7 @@ const { form, save } = useEditorData(identify, () => emit("completed"))
 <template>
     <BottomLayout>
         <SourceInfo class="is-font-size-large mb-2" :source-id="sourceId" :site="sourceSite" :source-part="null"/>
-        <SourceDataSummaryEditor v-if="form !== null" v-model:data="form"/>
+        <SourceDataSummaryEditor v-if="form !== null" v-model:data="form" :site="sourceSite"/>
 
         <template #bottom>
             <Button class="float-right" mode="filled" type="primary" :disabled="false" icon="check" @click="save">保存</Button>

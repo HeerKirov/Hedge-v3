@@ -304,14 +304,25 @@ export interface ImportOptionUpdateForm {
  */
 export type OrderTimeType = "IMPORT_TIME" | "CREATE_TIME" | "UPDATE_TIME"
 
+export type SourceAnalyseRuleExtraTarget = "TITLE" | "DESCRIPTION" | "ADDITIONAL_INFO" | "TAG" | "BOOK" | "RELATION"
+
 /**
  * 一条source解析规则。
  */
 export interface SourceAnalyseRule {
     site: string
     regex: string
-    idIndex: number
-    secondaryIdIndex: number | null
+    idGroup: string
+    secondaryIdGroup: string | null
+    extras: SourceAnalyseRuleExtra[] | null
+}
+
+export interface SourceAnalyseRuleExtra {
+    group: string
+    target: SourceAnalyseRuleExtraTarget
+    optional: boolean
+    tagType: string | null
+    additionalInfoField: string | null
 }
 
 export interface Site {
@@ -328,21 +339,34 @@ export interface Site {
      * @default false
      */
     hasSecondaryId: boolean
+    /**
+     * 此网站可接受的元数据条目。
+     */
+    availableAdditionalInfo: {field: string, label: string}[]
+    /**
+     * 根据元数据id与附加信息，自动生成links的规则列表。
+     */
+    sourceLinkGenerateRules: string[]
 }
 
 export interface SiteCreateForm {
     name: string
     title: string
     hasSecondaryId?: boolean
+    availableAdditionalInfo?: {field: string, label: string}[]
+    sourceLinkGenerateRules?: string[]
     /**
      * 在列表中的排序顺序，从0开始。
      * @default 追加到末尾
      */
     ordinal?: number
+    
 }
 
 export interface SiteUpdateForm {
     title?: string
+    availableAdditionalInfo?: {field: string, label: string}[]
+    sourceLinkGenerateRules?: string[]
     ordinal?: number
 }
 

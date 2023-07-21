@@ -13,7 +13,7 @@ import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
 import { RelatedSimpleTag } from "./tag"
 import { SimpleFolder } from "./folder"
-import { SourceEditStatus, SourceTag, SourceTagForm, SourceBook, SourceBookForm } from "./source-data"
+import { SourceEditStatus, SourceTag, SourceTagForm, SourceBook, SourceBookForm, SourceAdditionalInfoForm, SourceAdditionalInfo } from "./source-data"
 
 export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
     return {
@@ -541,6 +541,14 @@ export type ImageSourceData = {
      * 来源数据：关联项的id列表。
      */
     relations: number[]
+    /**
+     * 相关链接。
+     */
+    links: string[]
+    /**
+     * 附加元数据。
+     */
+    additionalInfo: SourceAdditionalInfo[]
 } | {
     sourceSite: null
     sourceTitle: null
@@ -553,6 +561,8 @@ export type ImageSourceData = {
     tags: null
     books: null
     relations: null
+    links: null
+    additionalInfo: null
 }
 
 export interface CollectionCreateForm {
@@ -595,6 +605,8 @@ export interface ImageSourceDataUpdateForm {
     tags?: SourceTagForm[]
     books?: SourceBookForm[]
     relations?: number[]
+    links?: string[]
+    additionalInfo?: SourceAdditionalInfoForm[]
     status?: SourceEditStatus
 }
 

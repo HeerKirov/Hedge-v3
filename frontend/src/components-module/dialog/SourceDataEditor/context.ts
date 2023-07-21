@@ -1,10 +1,11 @@
 import { ref, Ref, watch } from "vue"
 import {
     SourceBook, SourceTag, SourceDataIdentity,
-    SourceDataCreateForm, SourceDataUpdateForm, DetailSourceData
+    SourceDataCreateForm, SourceDataUpdateForm, DetailSourceData, SourceAdditionalInfo
 } from "@/functions/http-client/api/source-data"
 import { useCreatingHelper, useFetchEndpoint } from "@/functions/fetch"
 import { useMessageBox } from "@/modules/message-box"
+import { useSettingSite } from "@/services/setting"
 import { patchSourceBookForm, patchSourceTagForm } from "@/utils/translation"
 import { toRef } from "@/utils/reactivity"
 import { objects } from "@/utils/primitives"
@@ -51,6 +52,8 @@ export function useSourceDataEditor(push: Push): SourceDataEditor {
 export function useCreateData(completed: () => void) {
     const message = useMessageBox()
 
+    useSettingSite()
+
     const form = ref<SourceDataCreateFormData>({
         identity: {sourceSite: null, sourceId: null},
         data: {
@@ -58,7 +61,9 @@ export function useCreateData(completed: () => void) {
             description: "",
             tags: [],
             books: [],
-            relations: []
+            relations: [],
+            links: [],
+            additionalInfo: []
         }
     })
 
@@ -72,7 +77,9 @@ export function useCreateData(completed: () => void) {
                 description: form.data.description,
                 tags: patchSourceTagForm(form.data.tags, []),
                 books: patchSourceBookForm(form.data.books, []),
-                relations: form.data.relations
+                relations: form.data.relations,
+                links: form.data.links,
+                additionalInfo: form.data.additionalInfo
             }
         },
         create: client => client.sourceData.create,
@@ -99,6 +106,8 @@ export function useCreateData(completed: () => void) {
 }
 
 export function useEditorData(identity: Ref<SourceDataIdentity>, completed: () => void) {
+    useSettingSite()
+
     const { data, setData } = useFetchEndpoint({
         path: identity,
         get: client => client.sourceData.get,
@@ -120,7 +129,9 @@ export function useEditorData(identity: Ref<SourceDataIdentity>, completed: () =
                 description: form.value.description !== data.value.description ? form.value.description : undefined,
                 tags: !objects.deepEquals(form.value.tags, data.value.tags) ? patchSourceTagForm(form.value.tags, data.value.tags) : undefined,
                 books: !objects.deepEquals(form.value.books, data.value.books) ? patchSourceBookForm(form.value.books, data.value.books) : undefined,
-                relations: !objects.deepEquals(form.value.relations, data.value.relations) ? form.value.relations : undefined
+                relations: !objects.deepEquals(form.value.relations, data.value.relations) ? form.value.relations : undefined,
+                links: !objects.deepEquals(form.value.links, data.value.links) ? form.value.links : undefined,
+                additionalInfo: !objects.deepEquals(form.value.additionalInfo, data.value.additionalInfo) ? form.value.additionalInfo : undefined
             }
             const r = !Object.values(form).filter(i => i !== undefined).length || await setData(updateForm)
             if(r && completed) completed()
@@ -135,7 +146,9 @@ interface SourceDataUpdateFormData {
     description: string,
     tags: SourceTag[],
     books: SourceBook[],
-    relations: number[]
+    relations: number[],
+    links: string[],
+    additionalInfo: SourceAdditionalInfo[]
 }
 
 interface SourceDataCreateFormData {
@@ -149,6 +162,8 @@ function mapDataToUpdateForm(data: DetailSourceData): SourceDataUpdateFormData {
         description: data.description,
         tags: data.tags,
         books: data.books,
-        relations: data.relations
+        relations: data.relations,
+        links: data.links,
+        additionalInfo: data.additionalInfo
     }
 }

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Input } from "@/components/form"
 import { Flex, FlexItem } from "@/components/layout"
-import { SourceTagEditor, SourceBookEditor, SourceRelationEditor } from "@/components-business/form-editor"
-import { SourceBook, SourceTag } from "@/functions/http-client/api/source-data"
+import { SourceTagEditor, SourceBookEditor, SourceRelationEditor, SourceLinkEditor, SourceAdditionalInfoEditor } from "@/components-business/form-editor"
+import { SourceAdditionalInfo, SourceBook, SourceTag } from "@/functions/http-client/api/source-data"
 
 interface SummaryData {
     title: string
@@ -10,10 +10,13 @@ interface SummaryData {
     tags: SourceTag[]
     books: SourceBook[]
     relations: number[]
+    links: string[]
+    additionalInfo: SourceAdditionalInfo[]
 }
 
 const props = defineProps<{
-    data: SummaryData
+    data: SummaryData,
+    site: string | null
 }>()
 
 const emit = defineEmits<{
@@ -50,6 +53,20 @@ const set = <K extends keyof SummaryData>(key: K, value: SummaryData[K]) => {
             <div>
                 <label class="label">关联项</label>
                 <SourceRelationEditor :value="data.relations" @update:value="set('relations', $event)"/>
+            </div>
+        </FlexItem>
+    </Flex>
+    <Flex class="mt-1" :spacing="2">
+        <FlexItem :width="65">
+            <div>
+                <label class="label">链接*</label>
+                <SourceLinkEditor v-model:value="data.links"/>
+            </div>
+        </FlexItem>
+        <FlexItem :width="35">
+            <div>
+                <label class="label">附加信息*</label>
+                <SourceAdditionalInfoEditor :site="site" v-model:value="data.additionalInfo"/>
             </div>
         </FlexItem>
     </Flex>

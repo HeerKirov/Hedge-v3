@@ -55,18 +55,18 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
             </Group>
             <p class="secondary-text">从创建时间生成分区时间时，会将0点以后延迟一定时间内的时间点仍然视作前一天。</p>
         </div>
-        <div class="mt-2">
+        <div class="mt-6">
             <label class="label">本地目录自动导入</label>
             <DBImportDirectoriesEditor v-model:value="settingImport.watchPaths"/>
             <p class="secondary-text">此功能可以监听数个本地目录，向这些目录写入文件时，自动导入这些文件。</p>
-            <p class="mt-1"><CheckBox v-model:value="settingImport.autoWatchPath">启动时自动开启</CheckBox></p>
+            <p class="mt-1"><CheckBox v-model:value="settingImport.autoWatchPath">自动开启</CheckBox></p>
             <p class="secondary-text">程序启动时，自动将此功能设置为开启状态。</p>
             <p class="mt-1"><CheckBox v-model:value="settingImport.watchPathInitialize">首先扫描已存在文件</CheckBox></p>
             <p class="secondary-text">此功能开启时，将首先扫描目录中已存在的文件。</p>
-            <p class="mt-1"><CheckBox v-model:value="settingImport.watchPathMoveFile">移除导入的文件</CheckBox></p>
+            <p class="mt-1"><CheckBox v-model:value="settingImport.watchPathMoveFile">移除已被导入的文件</CheckBox></p>
             <p class="secondary-text">导入文件时，将文件从原位置移除。</p>
         </div>
-        <label class="label mt-2">来源数据解析规则</label>
+        <label class="label mt-6">来源数据解析规则</label>
         <DBImportSourceRule class="mt-1" v-model:rules="settingImport.sourceAnalyseRules"/>
     </template>
 </template>
