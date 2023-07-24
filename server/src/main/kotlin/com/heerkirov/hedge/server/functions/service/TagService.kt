@@ -4,20 +4,13 @@ import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.constants.Ui
+import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.TagKit
 import com.heerkirov.hedge.server.functions.manager.SourceMappingManager
-import com.heerkirov.hedge.server.dao.BookTagRelations
-import com.heerkirov.hedge.server.dao.IllustTagRelations
-import com.heerkirov.hedge.server.dao.Illusts
-import com.heerkirov.hedge.server.dao.Annotations
-import com.heerkirov.hedge.server.dao.TagAnnotationRelations
-import com.heerkirov.hedge.server.dao.Tags
-import com.heerkirov.hedge.server.dao.FileRecords
 import com.heerkirov.hedge.server.dto.filter.TagFilter
 import com.heerkirov.hedge.server.dto.filter.TagTreeFilter
-import com.heerkirov.hedge.server.dto.form.TagCreateForm
-import com.heerkirov.hedge.server.dto.form.TagUpdateForm
+import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAddressType
@@ -393,6 +386,107 @@ class TagService(private val data: DataRepository,
             recursionDelete(id)
 
             bus.emit(MetaTagDeleted(id, MetaType.TAG))
+        }
+    }
+
+    /**
+     * 对tag进行声明式的批量操作。link的设置是单独进行的，不会影响到其他配置项的更新。
+     */
+    fun bulk(bulks: List<TagBulkForm>): BulkResult<String> {
+        return collectBulkResult({ it.name }) {
+            val addressRecords = mutableMapOf<String, Int>()
+            val linkRecords = mutableMapOf<Int, TagBulkForm>()
+
+            fun recursive(bulks: List<TagBulkForm>, parentId: Int?, parentAddress: String?) {
+                bulks.forEachIndexed { index, form ->
+                    val id = item(form) {
+                        //在定位目标时，采取的方案是唯一地址定位，即只有name逐级符合的项会被确认为目标项，其他重名或任何因素都不予理睬
+                        val record = data.db.sequenceOf(Tags).firstOrNull { (it.name eq form.name) and if(parentId != null) it.parentId eq parentId else it.parentId.isNull() }
+                        if(record == null) {
+                            //当给出rename字段时，此操作被强制为更新操作，因此当走到这里时要报NotFound
+                            if(form.rename.isPresent) throw be(NotFound()) else create(TagCreateForm(
+                                form.name, form.otherNames.unwrapOrNull(), index, parentId,
+                                form.type.unwrapOr { TagAddressType.VIRTUAL_ADDR },
+                                form.group.unwrapOr { TagGroupType.NO },
+                                null,
+                                form.annotations.unwrapOrNull(), form.description.unwrapOr { "" },
+                                form.color.unwrapOrNull(), null,
+                                form.mappingSourceTags.unwrapOrNull()
+                            ))
+                        }else{
+                            val formOrdinal = if(record.ordinal != index) optOf(index) else undefined()
+                            update(record.id, TagUpdateForm(form.rename, form.otherNames, formOrdinal, undefined(), form.type, form.group, undefined(), form.annotations, form.description, form.color, undefined(), form.mappingSourceTags))
+                            record.id
+                        }
+                    }
+                    if(id != null) {
+                        val address = if(parentAddress != null) "$parentAddress.${form.rename.unwrapOr { form.name }}" else form.rename.unwrapOr { form.name }
+                        addressRecords[address] = id
+                        if(form.links.isPresent && !form.links.value.isNullOrEmpty()) {
+                            linkRecords[id] = form
+                        }
+                        if(!form.children.isNullOrEmpty()) {
+                            recursive(form.children, id, address)
+                        }
+                    }
+                }
+            }
+
+            recursive(bulks, null, null)
+
+            fun getIdByAddress(address: String): Int {
+                //查询address，将其转换为id。
+                //从后往前查询。先查询末尾找出所有符合的列表，然后逐级向上，不断查询列表中tags的parent，验证name是否符合，排除name不符的项以及提前没有了parent的项。
+                //address走完后，仍在列表中的项符合匹配。此时优先挑选type=TAG的项。
+                val split = address.split('.').map(String::trim).asReversed()
+                val tagName = split.first()
+
+                var tags = data.db.from(Tags).select(Tags.id, Tags.type, Tags.parentId).where { Tags.name eq tagName }.map { Triple(it[Tags.id]!!, it[Tags.type]!!, it[Tags.parentId]) }.toList()
+
+                if(split.size > 1) {
+                    for(i in 1 until split.size) {
+                        if(tags.isEmpty()) break
+                        val addr = split[i]
+                        val parentIds = tags.mapNotNull { (_, _, parentId) -> parentId }
+                        val parents = if(parentIds.isEmpty()) emptyMap() else data.db.from(Tags).select(Tags.id, Tags.name, Tags.parentId).where { Tags.id inList parentIds }.associateBy({ it[Tags.id]!! }) { Pair(it[Tags.name]!!, it[Tags.parentId]) }
+
+                        tags = tags.mapNotNull { (tagId, tagType, parentId) ->
+                            parentId?.let { parents[it] }?.let { (pName, ppId) ->
+                                if(pName == addr) {
+                                    Triple(tagId, tagType, ppId)
+                                }else{
+                                    null
+                                }
+                            }
+                        }
+                    }
+                }
+
+                //没有结果时，抛出ResourceNotExist错误
+                if(tags.isEmpty()) {
+                    throw be(ResourceNotExist("links", address))
+                }else if(tags.size == 1) {
+                    //结果为1时，直接选取
+                    val (tagId, _, _) = tags.first()
+                    return tagId
+                }else{
+                    //结果超过1时，优先选取TAG；没有TAG则抛出混淆错误
+                    val tag = tags.firstOrNull { (_, type, _) -> type == TagAddressType.TAG }
+                    if(tag != null) {
+                        val (tagId, _, _) = tags.first()
+                        return tagId
+                    }else{
+                        throw be(ResourceNotUnique("links", address, tags.map { (tagId, _, _) -> tagId }))
+                    }
+                }
+            }
+
+            for ((id, form) in linkRecords) {
+                item(form, calc = false) {
+                    val links = form.links.value!!.map { addressRecords.computeIfAbsent(it, ::getIdByAddress) }
+                    update(id, TagUpdateForm(undefined(), undefined(), undefined(), undefined(), undefined(), undefined(), optOf(links), undefined(), undefined(), undefined(), undefined(), undefined()))
+                }
+            }
         }
     }
 }

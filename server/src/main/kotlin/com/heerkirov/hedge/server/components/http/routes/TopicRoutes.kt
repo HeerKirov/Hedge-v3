@@ -2,12 +2,14 @@ package com.heerkirov.hedge.server.components.http.routes
 
 import com.heerkirov.hedge.server.components.http.Routes
 import com.heerkirov.hedge.server.dto.filter.TopicFilter
+import com.heerkirov.hedge.server.dto.form.TopicBulkForm
 import com.heerkirov.hedge.server.dto.form.TopicCreateForm
 import com.heerkirov.hedge.server.dto.form.TopicUpdateForm
 import com.heerkirov.hedge.server.dto.res.IdRes
 import com.heerkirov.hedge.server.library.form.bodyAsForm
 import com.heerkirov.hedge.server.library.form.queryAsFilter
 import com.heerkirov.hedge.server.functions.service.TopicService
+import com.heerkirov.hedge.server.library.form.bodyAsListForm
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
@@ -18,6 +20,7 @@ class TopicRoutes(private val topicService: TopicService) : Routes {
             path("api/topics") {
                 get(::list)
                 post(::create)
+                post("bulk", ::bulk)
                 path("{id}") {
                     get(::get)
                     patch(::update)
@@ -36,6 +39,11 @@ class TopicRoutes(private val topicService: TopicService) : Routes {
         val form = ctx.bodyAsForm<TopicCreateForm>()
         val id = topicService.create(form)
         ctx.status(201).json(IdRes(id))
+    }
+
+    private fun bulk(ctx: Context) {
+        val form = ctx.bodyAsListForm<TopicBulkForm>()
+        ctx.json(topicService.bulk(form)).status(201)
     }
 
     private fun get(ctx: Context) {

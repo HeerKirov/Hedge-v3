@@ -37,6 +37,18 @@ data class TagUpdateForm(@NotBlank @Length(32) val name: Opt<String>,
                          val examples: Opt<List<Int>?>,
                          val mappingSourceTags: Opt<List<MappingSourceTagForm>?>)
 
+data class TagBulkForm(@NotBlank @Length(32) val name: String,
+                       @NotBlank @Length(32) val rename: Opt<String>,
+                       val otherNames: Opt<List<String>?>,
+                       val type: Opt<TagAddressType>,
+                       val group: Opt<TagGroupType>,
+                       val links: Opt<List<String>?>,
+                       val annotations: Opt<List<Any>?>,
+                       val description: Opt<String>,
+                       val color: Opt<String>,
+                       val mappingSourceTags: Opt<List<MappingSourceTagForm>?>,
+                       val children: List<TagBulkForm>? = null)
+
 data class TopicCreateForm(@NotBlank val name: String,
                            val otherNames: List<String>? = null,
                            val parentId: Int? = null,
@@ -59,6 +71,18 @@ data class TopicUpdateForm(@NotBlank val name: Opt<String>,
                            val score: Opt<Int?>,
                            val mappingSourceTags: Opt<List<MappingSourceTagForm>?>)
 
+data class TopicBulkForm(@NotBlank val name: String,
+                         @NotBlank val rename: Opt<String>,
+                         val otherNames: Opt<List<String>?>,
+                         val type: Opt<TagTopicType>,
+                         val keywords: Opt<List<String>?>,
+                         val description: Opt<String>,
+                         val annotations: Opt<List<Any>?>,
+                         val favorite: Opt<Boolean>,
+                         val score: Opt<Int?>,
+                         val mappingSourceTags: Opt<List<MappingSourceTagForm>?>,
+                         val children: List<TopicBulkForm>? = null)
+
 data class AuthorCreateForm(@NotBlank val name: String,
                             val otherNames: List<String>? = null,
                             val type: TagAuthorType = TagAuthorType.UNKNOWN,
@@ -78,3 +102,14 @@ data class AuthorUpdateForm(@NotBlank val name: Opt<String>,
                             val favorite: Opt<Boolean>,
                             val score: Opt<Int?>,
                             val mappingSourceTags: Opt<List<MappingSourceTagForm>?>)
+
+data class AuthorBulkForm(@NotBlank val name: String,
+                          @NotBlank val rename: Opt<String>,
+                          val otherNames: Opt<List<String>?>,
+                          val type: Opt<TagAuthorType>,
+                          val keywords: Opt<List<String>?>,
+                          val description: Opt<String>,
+                          val annotations: Opt<List<Any>?>,
+                          val favorite: Opt<Boolean>,
+                          val score: Opt<Int?>,
+                          val mappingSourceTags: Opt<List<MappingSourceTagForm>?>)

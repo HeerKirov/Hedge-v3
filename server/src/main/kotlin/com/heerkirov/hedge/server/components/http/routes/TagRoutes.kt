@@ -7,6 +7,7 @@ import com.heerkirov.hedge.server.functions.service.TagService
 import com.heerkirov.hedge.server.dto.filter.*
 import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.*
+import com.heerkirov.hedge.server.library.form.bodyAsListForm
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
@@ -18,6 +19,7 @@ class TagRoutes(private val tagService: TagService) : Routes {
                 get(::list)
                 post(::create)
                 get("tree", ::tree)
+                post("bulk", ::bulk)
                 path("{id}") {
                     get(::get)
                     patch(::update)
@@ -38,6 +40,12 @@ class TagRoutes(private val tagService: TagService) : Routes {
         val form = ctx.bodyAsForm<TagCreateForm>()
         val id = tagService.create(form)
         ctx.status(201).json(IdRes(id))
+    }
+
+
+    private fun bulk(ctx: Context) {
+        val form = ctx.bodyAsListForm<TagBulkForm>()
+        ctx.json(tagService.bulk(form)).status(201)
     }
 
     private fun tree(ctx: Context) {

@@ -82,18 +82,17 @@ class SourceDataService(private val data: DataRepository, private val sourceMana
     }
 
     /**
-     * 对source image进行声明式的大批量操作。
+     * 对source image进行声明式的批量操作。
      * @throws ResourceNotExist ("site", string) 给出的site不存在
      */
-    fun bulk(forms: List<SourceDataCreateForm>) {
-        data.db.transaction {
-            forms.forEach { form -> sourceManager.checkSourceSite(form.sourceSite, form.sourceId) }
-            forms.forEach { form ->
+    fun bulk(bulks: List<SourceDataCreateForm>): BulkResult<SourceDataIdentity> {
+        return bulks.collectBulkResult({ SourceDataIdentity(it.sourceSite, it.sourceId) }) { form ->
+            data.db.transaction {
+                sourceManager.checkSourceSite(form.sourceSite, form.sourceId)
                 sourceManager.createOrUpdateSourceData(form.sourceSite, form.sourceId,
-                    title = form.title, description = form.description, tags = form.tags,
-                    books = form.books, relations = form.relations, links = form.links,
-                    additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
-                    status = undefined())
+                    title = form.title, description = form.description, status = form.status,
+                    tags = form.tags, books = form.books, relations = form.relations, links = form.links,
+                    additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } })
             }
         }
     }

@@ -23,3 +23,5 @@ data class SourceTagDto(val code: String, val name: String, val otherName: Strin
 data class SourceBookDto(val code: String, val title: String, val otherTitle: String?)
 
 data class SourceMarkRes(val sourceSite: String, val sourceSiteName: String, val sourceId: Long, val markType: SourceMarkType)
+
+data class SourceDataIdentity(val sourceSite: String, val sourceId: Long)

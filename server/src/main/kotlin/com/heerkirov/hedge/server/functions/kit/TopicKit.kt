@@ -88,10 +88,10 @@ class TopicKit(private val data: DataRepository, private val annotationManager: 
             if(type == TagTopicType.CHARACTER) {
                 //仅对character类型，追溯其parent root
                 if(tp == TagTopicType.IP) {
-                    //work类型的parent可以放心覆盖任何rootItem的历史记录，这样rootItem总是最上层的那个work
+                    //ip类型的parent可以放心覆盖任何rootItem的历史记录，这样rootItem总是最上层的那个ip
                     rootItem = Tuple2(id, tp)
                 }else if(tp == TagTopicType.COPYRIGHT) {
-                    //只有之前不存在任何rootItem时，才能取copyright，因为默认copyright是不能覆盖work的，只有没有work时采用copyright
+                    //只有之前不存在任何rootItem时，才能取copyright，因为默认copyright是不能覆盖work的，只有没有ip时采用copyright
                     if(rootItem == null) rootItem = Tuple2(id, tp)
                 }
             }

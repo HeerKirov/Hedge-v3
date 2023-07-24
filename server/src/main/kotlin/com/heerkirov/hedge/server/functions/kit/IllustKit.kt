@@ -52,6 +52,7 @@ class IllustKit(private val data: DataRepository,
             if(newTags.isPresent) metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, analyseStatisticCount)
             if(newAuthors.isPresent) metaManager.deleteMetaTags(thisId, IllustAuthorRelations, Authors, analyseStatisticCount)
             if(newTopics.isPresent) metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, analyseStatisticCount)
+            metaManager.deleteAnnotations(thisId, IllustAnnotationRelations)
 
             if(copyFromParent != null) {
                 //如果发现parent有notExported的metaTag，那么从parent直接拷贝全部metaTag
@@ -187,10 +188,10 @@ class IllustKit(private val data: DataRepository,
     }
 
     /**
-     * 从当前项的所有子项拷贝notExported的meta，然后统一导出。
+     * 从当前项的所有子项拷贝meta，统一设定为exported。
      */
     private fun copyAllMetaFromChildren(thisId: Int) {
-        //tips: 此处的实现是直接从所有children拷贝所有metaTag。但这并不是正确的实现方法，这么做可能导致exported metaTag在套娃传递。但后续要重构，就先懒得改了
+        //tips: 此处的实现是直接从所有children拷贝所有metaTag。(但这并不是正确的实现方法，这么做可能导致exported metaTag在套娃传递(?为什么))
         fun <R> copyOneMeta(tagRelations: R) where R: EntityMetaRelationTable<*> {
             val ids = data.db.from(Illusts)
                 .innerJoin(tagRelations, tagRelations.entityId() eq Illusts.id)

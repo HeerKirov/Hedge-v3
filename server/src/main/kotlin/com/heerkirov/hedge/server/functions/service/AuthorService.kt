@@ -8,10 +8,12 @@ import com.heerkirov.hedge.server.dao.Authors
 import com.heerkirov.hedge.server.dao.BookAuthorRelations
 import com.heerkirov.hedge.server.dao.IllustAuthorRelations
 import com.heerkirov.hedge.server.dto.filter.AuthorFilter
+import com.heerkirov.hedge.server.dto.form.AuthorBulkForm
 import com.heerkirov.hedge.server.dto.form.AuthorCreateForm
 import com.heerkirov.hedge.server.dto.form.AuthorUpdateForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.MetaType
+import com.heerkirov.hedge.server.enums.TagAuthorType
 import com.heerkirov.hedge.server.events.MetaTagCreated
 import com.heerkirov.hedge.server.events.MetaTagDeleted
 import com.heerkirov.hedge.server.events.MetaTagUpdated
@@ -182,6 +184,25 @@ class AuthorService(private val data: DataRepository,
             data.db.delete(AuthorAnnotationRelations) { it.authorId eq id }
 
             bus.emit(MetaTagDeleted(id, MetaType.AUTHOR))
+        }
+    }
+
+    /**
+     * 对author进行声明式的批量操作。
+     */
+    fun bulk(bulks: List<AuthorBulkForm>): BulkResult<String> {
+        return bulks.collectBulkResult({ it.name }) { form ->
+            val record = data.db.sequenceOf(Authors).firstOrNull { it.name eq form.name }
+            if(record == null) {
+                //当给出rename字段时，此操作被强制为更新操作，因此当走到这里时要报NotFound
+                if(form.rename.isPresent) throw be(NotFound()) else create(AuthorCreateForm(
+                    form.name, form.otherNames.unwrapOrNull(), form.type.unwrapOr { TagAuthorType.UNKNOWN },
+                    form.keywords.unwrapOrNull(), form.description.unwrapOr { "" }, form.annotations.unwrapOrNull(),
+                    form.favorite.unwrapOr { false }, form.score.unwrapOrNull(), form.mappingSourceTags.unwrapOrNull()
+                ))
+            }else{
+                update(record.id, AuthorUpdateForm(form.rename, form.otherNames, form.type, form.keywords, form.description, form.annotations, form.favorite, form.score, form.mappingSourceTags))
+            }
         }
     }
 }

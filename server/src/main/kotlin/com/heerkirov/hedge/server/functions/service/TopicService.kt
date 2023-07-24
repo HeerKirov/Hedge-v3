@@ -3,18 +3,15 @@ package com.heerkirov.hedge.server.functions.service
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
+import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.functions.kit.TopicKit
 import com.heerkirov.hedge.server.functions.manager.SourceMappingManager
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
-import com.heerkirov.hedge.server.dao.BookTopicRelations
-import com.heerkirov.hedge.server.dao.IllustTopicRelations
-import com.heerkirov.hedge.server.dao.TopicAnnotationRelations
-import com.heerkirov.hedge.server.dao.Topics
 import com.heerkirov.hedge.server.dto.filter.TopicFilter
-import com.heerkirov.hedge.server.dto.form.TopicCreateForm
-import com.heerkirov.hedge.server.dto.form.TopicUpdateForm
+import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.MetaType
+import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.events.MetaTagCreated
 import com.heerkirov.hedge.server.events.MetaTagDeleted
 import com.heerkirov.hedge.server.events.MetaTagUpdated
@@ -229,6 +226,38 @@ class TopicService(private val data: DataRepository,
             }
 
             bus.emit(MetaTagDeleted(id, MetaType.TOPIC))
+        }
+    }
+
+    /**
+     * 对topic进行声明式的批量操作。
+     */
+    fun bulk(bulks: List<TopicBulkForm>): BulkResult<String> {
+        return collectBulkResult({ it.name }) {
+            fun recursive(bulks: List<TopicBulkForm>, parentId: Int?) {
+                for (form in bulks) {
+                    val id = item(form) {
+                        //在定位目标时，采取的方案是唯一地址定位，即只有name逐级符合的项会被确认为目标项，其他重名或任何因素都不予理睬
+                        val record = data.db.sequenceOf(Topics).firstOrNull { (it.name eq form.name) and if(parentId != null) it.parentId eq parentId else it.parentId.isNull() }
+                        if(record == null) {
+                            //当给出rename字段时，此操作被强制为更新操作，因此当走到这里时要报NotFound
+                            if(form.rename.isPresent) throw be(NotFound()) else create(TopicCreateForm(
+                                form.name, form.otherNames.unwrapOrNull(), parentId, form.type.unwrapOr { TagTopicType.UNKNOWN },
+                                form.keywords.unwrapOrNull(), form.description.unwrapOr { "" }, form.annotations.unwrapOrNull(),
+                                form.favorite.unwrapOr { false }, form.score.unwrapOrNull(), form.mappingSourceTags.unwrapOrNull()
+                            ))
+                        }else{
+                            update(record.id, TopicUpdateForm(form.rename, form.otherNames, undefined(), form.type, form.keywords, form.description, form.annotations, form.favorite, form.score, form.mappingSourceTags))
+                            record.id
+                        }
+                    }
+                    if(id != null && !form.children.isNullOrEmpty()) {
+                        recursive(form.children, id)
+                    }
+                }
+            }
+
+            recursive(bulks, null)
         }
     }
 }

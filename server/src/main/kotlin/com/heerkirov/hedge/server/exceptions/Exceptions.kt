@@ -66,6 +66,12 @@ open class ResourceNotExist<V>(prop: String, value: V) : BadRequestException<Tup
 open class ResourceNotSuitable<V>(prop: String, value: V) : BadRequestException<Tuple2<String, V>>("NOT_SUITABLE", "Resource of $prop 'value' is not suitable.", t2(prop, value))
 
 /**
+ * 表单参数选取的某种目标资源无法唯一确定，存在混淆的可能，因此业务无法进行。
+ * info: (string, V, S): 字段名, 目标资源，实际字段列表
+ */
+open class ResourceNotUnique<V, S>(prop: String, value: V, results: Collection<S>) : BadRequestException<Tuple3<String, V, Collection<S>>>("NOT_UNIQUE", "Resource of $prop 'value' is not unique.", t3(prop, value, results))
+
+/**
  * 表单的某种目标资源已经存在，因此业务无法进行。
  * info: (string, string, V[]): 资源名称, 资源字段名, 资源对象
  */

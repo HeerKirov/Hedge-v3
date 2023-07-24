@@ -4,10 +4,12 @@ import com.heerkirov.hedge.server.components.http.Routes
 import com.heerkirov.hedge.server.library.form.bodyAsForm
 import com.heerkirov.hedge.server.library.form.queryAsFilter
 import com.heerkirov.hedge.server.dto.filter.AuthorFilter
+import com.heerkirov.hedge.server.dto.form.AuthorBulkForm
 import com.heerkirov.hedge.server.dto.form.AuthorCreateForm
 import com.heerkirov.hedge.server.dto.form.AuthorUpdateForm
 import com.heerkirov.hedge.server.dto.res.IdRes
 import com.heerkirov.hedge.server.functions.service.AuthorService
+import com.heerkirov.hedge.server.library.form.bodyAsListForm
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
@@ -18,6 +20,7 @@ class AuthorRoutes(private val authorService: AuthorService) : Routes {
             path("api/authors") {
                 get(::list)
                 post(::create)
+                post("bulk", ::bulk)
                 path("{id}") {
                     get(::get)
                     patch(::update)
@@ -36,6 +39,11 @@ class AuthorRoutes(private val authorService: AuthorService) : Routes {
         val form = ctx.bodyAsForm<AuthorCreateForm>()
         val id = authorService.create(form)
         ctx.status(201).json(IdRes(id))
+    }
+
+    private fun bulk(ctx: Context) {
+        val form = ctx.bodyAsListForm<AuthorBulkForm>()
+        ctx.json(authorService.bulk(form)).status(201)
     }
 
     private fun get(ctx: Context) {

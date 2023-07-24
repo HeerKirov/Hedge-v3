@@ -60,9 +60,8 @@ class SourceRoutes(private val sourceDataService: SourceDataService,
         }
 
         fun bulk(ctx: Context) {
-            val form = ctx.bodyAsForm<SourceDataBulkForm>()
-            sourceDataService.bulk(form.items)
-            ctx.status(201)
+            val form = ctx.bodyAsListForm<SourceDataCreateForm>()
+            ctx.json(sourceDataService.bulk(form)).status(201)
         }
 
         fun get(ctx: Context) {
