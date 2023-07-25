@@ -128,9 +128,9 @@ export interface SettingEndpoint {
             /**
              * 删除项。
              * @exception NOT_FOUND 此项不存在。
-             * @exception CASCADE_RESOURCE_EXISTS("Illust"|"ImportImage"|"TrashedImage"|"SourceAnalyseRule") 存在级联资源，无法删除。
+             * @exception CASCADE_RESOURCE_EXISTS("Illust"|"ImportImage"|"TrashedImage"|"SourceAnalyseRule", "site", string) 存在级联资源，无法删除。
              */
-            delete(name: string): Promise<Response<unknown, CascadeResourceExists<"Illust" | "ImportImage" | "TrashedImage" | "SourceAnalyseRule">>>
+            delete(name: string): Promise<Response<unknown, CascadeResourceExists<"Illust" | "ImportImage" | "TrashedImage" | "SourceAnalyseRule", "site", string>>>
         }
     }
     /**

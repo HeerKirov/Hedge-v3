@@ -68,6 +68,7 @@ const emit = defineEmits<{
         padding-right: $spacing-3
         &.overflow
             overflow-y: auto
+            overflow-x: hidden
 
     > .full-content
         box-sizing: border-box
@@ -77,5 +78,6 @@ const emit = defineEmits<{
         padding-right: $spacing-3
         &.overflow
             overflow-y: auto
+            overflow-x: hidden
 
 </style>

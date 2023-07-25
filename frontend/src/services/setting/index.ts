@@ -172,12 +172,13 @@ export const [installSettingSite, useSettingSite] = optionalInstallation(functio
         },
         handleErrorInDelete(e) {
             if(e.code == "CASCADE_RESOURCE_EXISTS") {
+                const [resource, _, __] = e.info
                 const resourceName = {
                     "Illust": "图库项目",
                     "ImportImage": "导入项目",
                     "TrashedImage": "已删除项目",
                     "SourceAnalyseRule": "来源解析规则"
-                }[e.info]
+                }[resource]
                 message.showOkMessage("prompt", "无法删除此来源站点。", `此来源站点仍存在关联的${resourceName}，请先清理关联项，确保没有意外的级联删除。`)
             }else{
                 return e

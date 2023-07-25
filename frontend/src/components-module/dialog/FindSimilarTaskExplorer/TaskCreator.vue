@@ -31,12 +31,6 @@ const { form, submit } = useTaskCreatorData(() => emit("close"))
                 <label class="label">查找选项</label>
                 <p class="mt-2">
                     <CheckBox v-model:value="form.config.findBySimilarity">内容相似度判断</CheckBox>
-                    <p v-if="form.config.findBySimilarity" class="mt-1 is-font-size-small is-line-height-small">
-                        内容相似阈值
-                        <NumberInput width="half" size="small" v-model:value="form.config.similarityThreshold"/>%
-                        高度相似阈值
-                        <NumberInput width="half" size="small" v-model:value="form.config.similarityTooHighThreshold"/>%
-                    </p>
                     <p class="secondary-text">计算图像的特征指纹，比对出内容相似的图像。</p>
                 </p>
                 <p class="mt-3">

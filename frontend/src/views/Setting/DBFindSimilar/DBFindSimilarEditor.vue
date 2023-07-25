@@ -30,12 +30,6 @@ const [filterBySourceTagType, filterBySourceTagTypeSot, saveFilterBySourceTagTyp
         <label class="label">选用查找方案</label>
         <p class="mt-1">
             <CheckBox :value="config.findBySimilarity" @update:value="setValue('findBySimilarity', $event)">内容相似度判断</CheckBox>
-            <p v-if="config.findBySimilarity" class="mt-1 is-font-size-small is-line-height-small">
-                内容相似阈值
-                <NumberInput width="half" size="small" :value="config.similarityThreshold" @update:value="setValue('similarityThreshold', $event)"/>%
-                高度相似阈值
-                <NumberInput width="half" size="small" :value="config.similarityTooHighThreshold" @update:value="setValue('similarityTooHighThreshold', $event)"/>%
-            </p>
             <p class="secondary-text">计算图像的特征指纹，比对出内容相似的图像。</p>
         </p>
         <p class="mt-3">

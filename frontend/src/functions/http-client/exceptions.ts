@@ -56,8 +56,9 @@ type CheckedException =
     PasswordWrong |
     ResourceNotExist<string, unknown> |
     ResourceNotSuitable<string, unknown> |
+    ResourceNotUnique<string, unknown, unknown> |
     AlreadyExists<string, string, unknown> |
-    CascadeResourceExists<string> |
+    CascadeResourceExists<string, string, unknown> |
     FileNotFoundError |
     FileNotReadyError |
     LocationNotAccessibleError |
@@ -93,8 +94,9 @@ export type NotFound = NotFoundException<"NOT_FOUND", null>
 export type Reject = BadRequestException<"REJECT", null>
 export type ResourceNotExist<P extends string, V> = BadRequestException<"NOT_EXIST", [P, V]>
 export type ResourceNotSuitable<P extends string, V> = BadRequestException<"NOT_SUITABLE", [P, V]>
+export type ResourceNotUnique<P extends string, V, S> = BadRequestException<"NOT_UNIQUE", [P, V, S[]]>
 export type AlreadyExists<R extends string, P extends string, V> = BadRequestException<"ALREADY_EXISTS", [R, P, V]>
-export type CascadeResourceExists<P extends string> = BadRequestException<"CASCADE_RESOURCE_EXISTS", P>
+export type CascadeResourceExists<R extends string, P extends string, V> = BadRequestException<"CASCADE_RESOURCE_EXISTS", [R, P, V]>
 
 //== 扩展异常：因为业务原因抛出的非通用异常，这些异常用在特定的API中描述具体的事项 ==
 

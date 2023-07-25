@@ -163,8 +163,6 @@ export interface TaskConfig {
     findBySimilarity: boolean
     findBySourceRelation: boolean
     findBySourceMark: boolean
-    similarityThreshold: number | null
-    similarityTooHighThreshold: number | null
     filterByOtherImport: boolean
     filterByPartition: boolean
     filterByTopic: boolean
