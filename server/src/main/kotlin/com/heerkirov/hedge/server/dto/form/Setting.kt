@@ -24,6 +24,12 @@ data class SiteUpdateForm(@NotBlank val title: Opt<String>,
                           val availableAdditionalInfo: Opt<List<SourceOption.AvailableAdditionalInfo>>,
                           val sourceLinkGenerateRules: Opt<List<String>>)
 
+data class SiteBulkForm(@NotBlank @Length(16) val name: String,
+                        @NotBlank val title: Opt<String>,
+                        val hasSecondaryId: Opt<Boolean>,
+                        val availableAdditionalInfo: Opt<List<SourceOption.AvailableAdditionalInfo>>,
+                        val sourceLinkGenerateRules: Opt<List<String>>)
+
 data class ImportOptionUpdateForm(val autoAnalyseSourceData: Opt<Boolean>,
                                   val setTagmeOfTag: Opt<Boolean>,
                                   val setTagmeOfSource: Opt<Boolean>,

@@ -11,7 +11,9 @@ import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.events.*
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.utils.business.checkVariableName
+import com.heerkirov.hedge.server.utils.filterInto
 import org.ktorm.dsl.eq
+import org.ktorm.dsl.inList
 import org.ktorm.entity.any
 import org.ktorm.entity.sequenceOf
 
@@ -149,6 +151,11 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
         data.syncSetting {
             val sites = setting.source.sites
             if(sites.any { it.name == form.name }) throw be(AlreadyExists("site", "name", form.name))
+            for(metadata in form.availableAdditionalInfo) {
+                if(!checkVariableName(metadata.field)) {
+                    throw be(ParamError("availableAdditionalInfo"))
+                }
+            }
 
             val newSite = SourceOption.Site(form.name, form.title, form.hasSecondaryId, form.availableAdditionalInfo, form.sourceLinkGenerateRules)
 
@@ -222,28 +229,90 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
     }
 
     /**
-     * @throws CascadeResourceExists ("Illust" | "ImportImage" | "TrashedImage | "SourceAnalyseRule" | "SpiderRule") 存在某种资源仍依赖此site，无法删除
+     * @throws CascadeResourceExists ("Illust" | "ImportImage" | "TrashedImage | "SourceAnalyseRule" | "SpiderRule", "site", string) 存在某种资源仍依赖此site，无法删除
      */
     fun deleteSourceSite(name: String) {
         data.db.transaction {
             val site = getSourceSite(name)
 
             if(data.db.sequenceOf(Illusts).any { it.sourceSite eq name }) {
-                throw be(CascadeResourceExists("Illust"))
+                throw be(CascadeResourceExists("Illust", "site", name))
             }
             if(data.db.sequenceOf(ImportImages).any { it.sourceSite eq name }) {
-                throw be(CascadeResourceExists("ImportImage"))
+                throw be(CascadeResourceExists("ImportImage", "site", name))
             }
             if(data.db.sequenceOf(TrashedImages).any { it.sourceSite eq name }) {
-                throw be(CascadeResourceExists("TrashedImage"))
+                throw be(CascadeResourceExists("TrashedImage", "site", name))
             }
             if(data.setting.import.sourceAnalyseRules.any { it.site == name }) {
-                throw be(CascadeResourceExists("SourceAnalyseRule"))
+                throw be(CascadeResourceExists("SourceAnalyseRule", "site", name))
             }
 
             data.syncSetting {
                 saveSetting {
                     source.sites.remove(site)
+                }
+            }
+        }
+
+        bus.emit(SettingSourceSiteChanged())
+    }
+
+    /**
+     * @throws AlreadyExists ("site", "name", string) 此site name重名
+     * @throws CascadeResourceExists ("Illust" | "ImportImage" | "TrashedImage | "SourceAnalyseRule" | "SpiderRule", "site", string[]) 存在某种资源仍依赖此site，无法删除
+     * @throws Reject 部分参数错误给出
+     */
+    fun updateAllSourceSite(sites: List<SiteBulkForm>) {
+        data.syncSetting {
+            sites.groupBy { it.name }.mapValues { (_, v) -> v.count() }.filterValues { it > 1 }.keys.firstOrNull()?.let { throw be(AlreadyExists("site", "name", it)) }
+            if(sites.mapNotNull { it.availableAdditionalInfo.unwrapOrNull() }.flatten().any { !checkVariableName(it.field) }) { throw be(ParamError("availableAdditionalInfo")) }
+            val exists = data.setting.source.sites.associateBy { it.name }
+
+            val (updates, adds) = sites.filterInto { it.name in exists.keys }
+            for(update in updates) {
+                val cur = exists[update.name]!!
+                if(update.hasSecondaryId.isPresent && update.hasSecondaryId.value != cur.hasSecondaryId) throw be(Reject("Param 'hasSecondaryId' cannot be modified for existed site '${update.name}'."))
+            }
+            for(add in adds) {
+                if(add.title.isUndefined) throw be(Reject("Param 'title' must be provided for not existed site '${add.name}'."))
+            }
+
+            val deletes = data.setting.source.sites.filter { it.name !in sites.map(SiteBulkForm::name) }.map { it.name }
+            if(data.db.sequenceOf(Illusts).any { it.sourceSite inList deletes }) {
+                throw be(CascadeResourceExists("Illust", "site", deletes))
+            }
+            if(data.db.sequenceOf(ImportImages).any { it.sourceSite inList deletes }) {
+                throw be(CascadeResourceExists("ImportImage", "site", deletes))
+            }
+            if(data.db.sequenceOf(TrashedImages).any { it.sourceSite inList deletes }) {
+                throw be(CascadeResourceExists("TrashedImage", "site", deletes))
+            }
+            if(data.setting.import.sourceAnalyseRules.any { it.site in deletes }) {
+                throw be(CascadeResourceExists("SourceAnalyseRule", "site", deletes))
+            }
+
+            saveSetting {
+                source.sites.clear()
+                for (form in sites) {
+                    val cur = exists[form.name]
+                    if(cur != null) {
+                        source.sites.add(SourceOption.Site(
+                            form.name,
+                            form.title.unwrapOr { cur.title },
+                            cur.hasSecondaryId,
+                            form.availableAdditionalInfo.unwrapOr { cur.availableAdditionalInfo },
+                            form.sourceLinkGenerateRules.unwrapOr { cur.sourceLinkGenerateRules }
+                        ))
+                    }else{
+                        source.sites.add(SourceOption.Site(
+                            form.name,
+                            form.title.value,
+                            form.hasSecondaryId.unwrapOr { false },
+                            form.availableAdditionalInfo.unwrapOr { emptyList() },
+                            form.sourceLinkGenerateRules.unwrapOr { emptyList() }
+                        ))
+                    }
                 }
             }
         }

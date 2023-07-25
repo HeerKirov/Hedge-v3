@@ -50,8 +50,6 @@ data class FindSimilarTask(val id: Int,
      * @param findBySourceRelation 根据source relation是否有关、source book是否同属一个做判定。
      * @param findBySourceMark 根据source mark的标记做判定。
      * @param findBySimilarity 根据相似度做判定。
-     * @param similarityThreshold 判定为高相似度的阈值。
-     * @param similarityTooHighThreshold 判定为极高相似度的阈值，
      * @param filterByOtherImport 将所有import image加入匹配检测。
      * @param filterByPartition 将所有相同partitionTime的项加入匹配检测。
      * @param filterByAuthor 将所有拥有相同author的项加入匹配检测。
@@ -62,8 +60,6 @@ data class FindSimilarTask(val id: Int,
                           val findBySourceRelation: Boolean,
                           val findBySourceMark: Boolean,
                           val findBySimilarity: Boolean,
-                          val similarityThreshold: Double? = null,
-                          val similarityTooHighThreshold: Double? = null,
                           val filterByOtherImport: Boolean,
                           val filterByPartition: Boolean,
                           val filterByTopic: Boolean,

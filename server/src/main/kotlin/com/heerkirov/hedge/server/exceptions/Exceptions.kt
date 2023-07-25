@@ -82,7 +82,7 @@ open class AlreadyExists<V> (resource: String, prop: String, value: V) : BadRequ
  * 多见于删除业务，且目标资源不允许被静默操作的情况，需要此错误提示，并搭配一个强制删除参数。
  * info: string: 资源名称
  */
-open class CascadeResourceExists(resource: String) : BadRequestException<String>("CASCADE_RESOURCE_EXISTS", "$resource depending on this exists.", resource)
+open class CascadeResourceExists<V>(resource: String, prop: String, value: V) : BadRequestException<Tuple3<String, String, V>>("CASCADE_RESOURCE_EXISTS", "$resource depending on $prop '$value' exists.", t3(resource, prop, value))
 
 /**
  * API的操作或一部分操作，因为某种原因拒绝执行。

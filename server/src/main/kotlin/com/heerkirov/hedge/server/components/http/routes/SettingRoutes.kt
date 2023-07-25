@@ -4,6 +4,7 @@ import com.heerkirov.hedge.server.components.http.Routes
 import com.heerkirov.hedge.server.functions.service.*
 import com.heerkirov.hedge.server.library.form.bodyAsForm
 import com.heerkirov.hedge.server.dto.form.*
+import com.heerkirov.hedge.server.library.form.bodyAsListForm
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
@@ -40,6 +41,7 @@ class SettingRoutes(private val setting: SettingService) : Routes {
                     path("sites") {
                         get(::listSourceSite)
                         post(::createSourceSite)
+                        put(::updateAllSourceSite)
                         path("{name}") {
                             get(::getSourceSite)
                             put(::updateSourceSite)
@@ -130,5 +132,10 @@ class SettingRoutes(private val setting: SettingService) : Routes {
         val name = ctx.pathParam("name")
         setting.deleteSourceSite(name)
         ctx.status(204)
+    }
+
+    private fun updateAllSourceSite(ctx: Context) {
+        val form = ctx.bodyAsListForm<SiteBulkForm>()
+        setting.updateAllSourceSite(form)
     }
 }
