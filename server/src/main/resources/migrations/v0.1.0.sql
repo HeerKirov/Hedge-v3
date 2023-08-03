@@ -356,23 +356,27 @@ CREATE TABLE source_db.source_mark(
 );
 CREATE INDEX source_db.source_mark__index ON source_mark(source_data_id, related_source_data_id);
 
-
 -- 文件
 CREATE TABLE file_db.file(
-    id 				INTEGER PRIMARY KEY AUTOINCREMENT, -- 自增ID
-    folder 			VARCHAR(16) NOT NULL,           -- 所在文件夹名称::format<yyyy-MM-dd>，一般用其添加日期作为文件夹名称
-    extension		VARCHAR(8) NOT NULL,            -- 文件扩展名，同时也表示此文件的类型
+    id 				    INTEGER PRIMARY KEY AUTOINCREMENT, -- 自增ID
+    block 			    VARCHAR(16) NOT NULL,       -- 所属区块名称
+    extension		    VARCHAR(8) NOT NULL,        -- 文件扩展名，同时也表示此文件的类型
 
-    size                BIGINT NOT NULL,            -- 此文件占用的磁盘大小，单位Byte
+    size                BIGINT NOT NULL,            -- 原文件占用的磁盘大小，单位Byte
     thumbnail_size      BIGINT NOT NULL,            -- 缩略图占用的磁盘大小，单位Byte。没有缩略图时记0
+    sample_size         BIGINT NOT NULL,            -- 示意图占用的磁盘大小，单位Byte。没有示意图时记0
     resolution_width    INTEGER NOT NULL,           -- 分辨率宽度
     resolution_height   INTEGER NOT NULL,           -- 分辨率高度
+    origin_filename     TEXT NOT NULL,              -- 原始文件的文件名，包含扩展名，可能为空
 
-    status	        TINYINT NOT NULL,               -- 文件准备状态
-    finger_status   TINYINT NOT NULL,               -- 指纹准备状态
-    create_time 	TIMESTAMP NOT NULL,             -- 创建时间
-    update_time     TIMESTAMP NOT NULL              -- 上次更新的时间
+    status	            TINYINT NOT NULL,           -- 文件的处理与可用状态
+    finger_status       TINYINT NOT NULL,           -- 指纹的处理与可用状态
+    deleted             BOOLEAN NOT NULL,           -- 已删除标记
+    create_time 	    TIMESTAMP NOT NULL,         -- 创建时间
+    update_time         TIMESTAMP NOT NULL,         -- 文件上次被修改的时间
+    last_access_time    TIMESTAMP DEFAULT NULL      -- 上次访问此文件的时间(用于缓存清理)
 );
+CREATE INDEX file_db.file_block__index ON file(block);
 
 -- 文件指纹
 CREATE TABLE file_db.file_fingerprint(

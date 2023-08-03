@@ -52,10 +52,10 @@ class BookService(private val data: DataRepository,
             queryManager.querySchema(filter.query, QueryManager.Dialect.BOOK).executePlan ?: return ListResult(0, emptyList())
         }
         return data.db.from(Books)
-            .leftJoin(FileRecords, Books.fileId eq FileRecords.id)
+            .leftJoin(FileRecords, Books.fileId eq FileRecords.id and FileRecords.deleted.not())
             .let { schema?.joinConditions?.fold(it) { acc, join -> if(join.left) acc.leftJoin(join.table, join.condition) else acc.innerJoin(join.table, join.condition) } ?: it }
             .select(Books.id, Books.title, Books.cachedCount, Books.score, Books.favorite, Books.createTime, Books.updateTime,
-                FileRecords.status, FileRecords.folder, FileRecords.id, FileRecords.extension)
+                FileRecords.status, FileRecords.block, FileRecords.id, FileRecords.extension)
             .whereWithConditions {
                 if(filter.favorite != null) {
                     it += if(filter.favorite) Books.favorite else Books.favorite.not()
@@ -97,10 +97,10 @@ class BookService(private val data: DataRepository,
      */
     fun get(id: Int): BookDetailRes {
         val row = data.db.from(Books)
-            .leftJoin(FileRecords, Books.fileId eq FileRecords.id)
+            .leftJoin(FileRecords, Books.fileId eq FileRecords.id and FileRecords.deleted.not())
             .select(Books.id, Books.title, Books.description, Books.cachedCount,
                 Books.score, Books.favorite, Books.createTime, Books.updateTime,
-                FileRecords.folder, FileRecords.id, FileRecords.extension, FileRecords.status)
+                FileRecords.block, FileRecords.id, FileRecords.extension, FileRecords.status)
             .where { Books.id eq id }
             .firstOrNull()
             ?: throw be(NotFound())
@@ -212,11 +212,11 @@ class BookService(private val data: DataRepository,
     fun getImages(id: Int, filter: LimitAndOffsetFilter): ListResult<BookImageRes> {
         return data.db.from(BookImageRelations)
             .leftJoin(Illusts, BookImageRelations.imageId eq Illusts.id)
-            .leftJoin(FileRecords, Illusts.fileId eq FileRecords.id)
+            .leftJoin(FileRecords, Illusts.fileId eq FileRecords.id and FileRecords.deleted.not())
             .select(BookImageRelations.ordinal, Illusts.id,
                 Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart,
-                FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { BookImageRelations.bookId eq id }
             .limit(filter.offset, filter.limit)
             .orderBy(BookImageRelations.ordinal.asc())

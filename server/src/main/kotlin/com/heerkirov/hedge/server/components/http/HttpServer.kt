@@ -9,6 +9,7 @@ import com.heerkirov.hedge.server.components.lifetime.Lifetime
 import com.heerkirov.hedge.server.components.service.AllServices
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.enums.AppLoadStatus
+import com.heerkirov.hedge.server.functions.manager.FileManager
 import com.heerkirov.hedge.server.library.framework.Component
 import com.heerkirov.hedge.server.utils.Json
 import com.heerkirov.hedge.server.utils.Net
@@ -43,6 +44,7 @@ class HttpServerImpl(private val health: Health,
                      private val lifetime: Lifetime,
                      private val appStatus: AppStatusDriver,
                      private val appdata: AppDataManager,
+                     private val archive: FileManager,
                      private val eventBus: EventBus,
                      private val allServices: AllServices,
                      private val options: HttpServerOptions) : HttpServer {
@@ -54,7 +56,7 @@ class HttpServerImpl(private val health: Health,
     override fun load() {
         val aspect = Aspect(appStatus)
         val authentication = Authentication(token)
-        val staticFileHandler = StaticFileHandler(appdata)
+        val staticFileHandler = StaticFileHandler(archive)
         val errorHandler = ErrorHandler()
 
         server = Javalin

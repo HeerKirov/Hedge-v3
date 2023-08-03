@@ -158,7 +158,7 @@ class StagingPostManager(private val data: DataRepository, private val bus: Even
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
             .select(
                 Illusts.id, Illusts.exportedScore, Illusts.favorite, Illusts.orderTime,
-                FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.type notEq IllustModelType.COLLECTION and (Illusts.id inList imageIds) }
             .map {
                 val itemId = it[Illusts.id]!!

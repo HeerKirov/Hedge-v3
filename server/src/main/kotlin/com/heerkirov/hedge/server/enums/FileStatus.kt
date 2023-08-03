@@ -10,12 +10,17 @@ enum class FileStatus {
     NOT_READY,
 
     /**
-     * 文件已准备完成，已生成缩略图和其他信息。
+     * 文件已准备完成，已生成示意图、缩略图和其他信息。
      */
     READY,
 
     /**
-     * 文件已准备完成，已生成其他信息，但不需要且没有生成缩略图。
+     * 文件已准备完成，已生成示意图、其他信息，但不需要且没有生成缩略图。
      */
-    READY_WITHOUT_THUMBNAIL
+    READY_WITHOUT_THUMBNAIL,
+
+    /**
+     * 文件已准备完成，已生成其他信息，但不需要且没有生成缩略图、示意图。
+     */
+    READY_WITHOUT_THUMBNAIL_SAMPLE
 }

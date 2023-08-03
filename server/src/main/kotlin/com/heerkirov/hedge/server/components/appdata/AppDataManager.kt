@@ -78,15 +78,23 @@ class StoragePathAccessor(private val serverDirPath: String, private var _storag
     val storageDir: String get() = _storageDir
 
     /**
-     * 该路径是否是可访问的。
-     * 默认路径不会不可访问，但是自定义路径存在这个可能，因为它不会自行创建。
-     * 每次访问此变量，都会重新检查可访问性。
+     * 获得cache dir的路径，已经进行了补全，要使用自行拼凑$CACHE_DIR/...即可。
+     */
+    val cacheDir: String get() = _cacheDir
+
+    /**
+     * storage dir路径是否是可访问的。
+     * 默认路径一定是可访问的，但是自定义路径存在不可达的可能，因为它不会自行创建。
      */
     val accessible: Boolean get() = if(_storagePath != null) { Fs.exists(_storageDir) }else{ true }
 
     private var _storageDir: String = ""
+    private var _cacheDir: String = ""
 
     init {
+        this._cacheDir = Fs.toAbsolutePath("$serverDirPath/${Filename.DEFAULT_CACHE_DIR}")
+        Fs.mkdir(this._cacheDir)
+
         if(_storagePath == null) {
             this._storageDir = Fs.toAbsolutePath("$serverDirPath/${Filename.DEFAULT_STORAGE_DIR}")
             Fs.mkdir(this._storageDir)
@@ -99,13 +107,13 @@ class StoragePathAccessor(private val serverDirPath: String, private var _storag
         get() = _storagePath
         set(value) {
             if(this._storagePath != value) {
+                this._storagePath = value
                 if(value == null) {
                     this._storageDir = Fs.toAbsolutePath("$serverDirPath/${Filename.DEFAULT_STORAGE_DIR}")
                     Fs.mkdir(this._storageDir)
                 }else{
                     this._storageDir = value
                 }
-                this._storagePath = value
             }
         }
 }

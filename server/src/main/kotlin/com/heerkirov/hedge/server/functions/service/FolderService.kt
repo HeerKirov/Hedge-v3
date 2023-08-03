@@ -518,7 +518,7 @@ class FolderService(private val data: DataRepository,
             .select(FolderImageRelations.ordinal, Illusts.id,
                 Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart,
-                FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { FolderImageRelations.folderId eq id }
             .limit(filter.offset, filter.limit)
             .orderBy(imagesOrderTranslator, filter.order)

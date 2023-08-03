@@ -8,7 +8,7 @@ import com.heerkirov.hedge.server.components.backend.exporter.BackendExporterImp
 import com.heerkirov.hedge.server.components.backend.similar.SimilarFinderImpl
 import com.heerkirov.hedge.server.components.backend.watcher.PathWatcherImpl
 import com.heerkirov.hedge.server.components.bus.EventBusImpl
-import com.heerkirov.hedge.server.components.compositor.EventCompositorImpl
+import com.heerkirov.hedge.server.components.bus.EventCompositorImpl
 import com.heerkirov.hedge.server.components.database.DataRepositoryImpl
 import com.heerkirov.hedge.server.components.health.HealthImpl
 import com.heerkirov.hedge.server.components.http.HttpServerImpl
@@ -38,9 +38,13 @@ fun runApplication(options: ApplicationOptions) {
         val appStatus = define { AppStatusDriverImpl(context, bus, options.channelPath) }
         val appdata = define { AppDataManagerImpl(options.channelPath) }
         val repo = define { DataRepositoryImpl(options.channelPath) }
+        val file = FileManager(appdata, repo, bus)
 
         val services = define {
+            define { FileGeneratorImpl(appStatus, appdata, repo, bus) }
             define { ImportProcessorImpl(repo, bus) }
+            val similarFinder = define { SimilarFinderImpl(appStatus, repo, bus) }
+
             val queryManager = QueryManager(repo, bus)
             val queryService = QueryService(queryManager)
 
@@ -52,12 +56,8 @@ fun runApplication(options: ApplicationOptions) {
             val sourceDataService = SourceDataService(repo, sourceManager, queryManager)
             val sourceMappingService = SourceMappingService(repo, sourceMappingManager)
 
-            val similarFinder = define { SimilarFinderImpl(appStatus, repo, bus) }
-
-            val fileGenerator = define { FileGeneratorImpl(appStatus, appdata, repo, bus) }
-            val fileManager = FileManager(appdata, repo)
             val importMetaManager = ImportMetaManager(repo)
-            val importManager = ImportManager(repo, bus, sourceManager, importMetaManager, fileManager, fileGenerator)
+            val importManager = ImportManager(repo, bus, sourceManager, importMetaManager, file)
 
             val pathWatcher = define { PathWatcherImpl(appStatus, repo, bus, importManager) }
 
@@ -80,7 +80,7 @@ fun runApplication(options: ApplicationOptions) {
             val stagingPostManager = StagingPostManager(repo, bus)
             val bookManager = BookManager(repo, bus, bookKit)
             val folderManager = FolderManager(repo, bus, folderKit)
-            val trashManager = TrashManager(repo, bus, backendExporter, illustKit, fileManager, bookManager, folderManager, associateManager, partitionManager, sourceManager)
+            val trashManager = TrashManager(repo, bus, backendExporter, illustKit, file, bookManager, folderManager, associateManager, partitionManager, sourceManager)
             val illustManager = IllustManager(repo, bus, illustKit, sourceManager, associateManager, bookManager, folderManager, partitionManager, trashManager)
 
             define { TrashCleanerImpl(appStatus, repo, trashManager) }
@@ -103,7 +103,7 @@ fun runApplication(options: ApplicationOptions) {
             val metaUtilService = MetaUtilService(repo, metaUtilKit, metaManager, historyRecordManager)
             val pickerUtilService = PickerUtilService(repo, historyRecordManager)
             val illustUtilService = IllustUtilService(repo)
-            val exportUtilService = ExportUtilService(appdata, repo)
+            val exportUtilService = ExportUtilService(appdata, repo, file)
 
             val settingService = SettingService(appdata, repo, bus)
 
@@ -133,6 +133,6 @@ fun runApplication(options: ApplicationOptions) {
             )
         }
 
-        define { HttpServerImpl(health, lifetime, appStatus, appdata, bus, services, serverOptions) }
+        define { HttpServerImpl(health, lifetime, appStatus, appdata, file, bus, services, serverOptions) }
     }
 }

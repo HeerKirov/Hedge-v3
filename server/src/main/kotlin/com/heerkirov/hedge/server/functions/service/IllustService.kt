@@ -62,7 +62,7 @@ class IllustService(private val data: DataRepository,
             .let { if(filter.author == null) it else it.innerJoin(IllustAuthorRelations, (IllustAuthorRelations.illustId eq Illusts.id) and (IllustAuthorRelations.authorId eq filter.author)) }
             .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime, Illusts.cachedChildrenCount,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart,
-                FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .whereWithConditions {
                 it += when(filter.type) {
                     IllustType.COLLECTION -> (Illusts.type eq IllustModelType.COLLECTION) or (Illusts.type eq IllustModelType.IMAGE)
@@ -89,7 +89,7 @@ class IllustService(private val data: DataRepository,
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
             .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime, Illusts.cachedChildrenCount,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart,
-                FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList imageIds }
             .map { it[Illusts.id]!! to newIllustRes(it) }
             .toMap()
@@ -134,7 +134,7 @@ class IllustService(private val data: DataRepository,
         val row = data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
             .select(
-                FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status,
+                FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status,
                 FileRecords.extension, FileRecords.size, FileRecords.resolutionWidth, FileRecords.resolutionHeight,
                 Illusts.type, Illusts.cachedChildrenCount, Illusts.description, Illusts.score,
                 Illusts.exportedDescription, Illusts.exportedScore, Illusts.favorite, Illusts.tagme,
@@ -243,7 +243,7 @@ class IllustService(private val data: DataRepository,
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
             .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart,
-                FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { (Illusts.parentId eq id) and (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) }
             .limit(filter.offset, filter.limit)
             .orderBy(Illusts.orderTime.asc())
@@ -263,7 +263,7 @@ class IllustService(private val data: DataRepository,
 
         val parent = if(parentId == null) null else data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
-            .select(Illusts.id, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id eq parentId }
             .firstOrNull()
             ?.let { IllustParent(it[Illusts.id]!!, takeThumbnailFilepath(it), it[Illusts.cachedChildrenCount]!!) }

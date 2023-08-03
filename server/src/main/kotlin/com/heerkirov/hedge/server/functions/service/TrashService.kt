@@ -37,7 +37,7 @@ class TrashService(private val data: DataRepository, private val trashManager: T
                 TrashedImages.sourceSite, TrashedImages.sourceId, TrashedImages.sourcePart,
                 TrashedImages.score, TrashedImages.favorite, TrashedImages.tagme,
                 TrashedImages.trashedTime, TrashedImages.orderTime,
-                FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .orderBy(orderTranslator, filter.order)
             .limit(filter.offset, filter.limit)
             .toListResult {
@@ -101,7 +101,7 @@ class TrashService(private val data: DataRepository, private val trashManager: T
 
         val parent = if(parentId == null) null else data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
-            .select(Illusts.id, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id eq parentId }
             .firstOrNull()
             ?.let { IllustParent(it[Illusts.id]!!, takeThumbnailFilepath(it), it[Illusts.cachedChildrenCount]!!) }
@@ -118,7 +118,7 @@ class TrashService(private val data: DataRepository, private val trashManager: T
 
         val associates = if(metadata.associates.isEmpty()) emptyList() else data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
-            .select(Illusts.id, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList metadata.associates }
             .map { IllustSimpleRes(it[Illusts.id]!!, takeThumbnailFilepath(it)) }
 

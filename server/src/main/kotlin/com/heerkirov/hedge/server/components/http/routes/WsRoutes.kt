@@ -5,11 +5,14 @@ import com.heerkirov.hedge.server.components.http.Routes
 import com.heerkirov.hedge.server.components.http.WsConsumer
 import com.heerkirov.hedge.server.components.lifetime.Lifetime
 import com.heerkirov.hedge.server.dto.res.WsResult
+import com.heerkirov.hedge.server.events.InternalServerEvent
 import com.heerkirov.hedge.server.events.PackagedBusEvent
 import com.heerkirov.hedge.server.events.WsBusEvent
 import io.javalin.Javalin
 
 class WsRoutes(private val lifetime: Lifetime, private val bus: EventBus) : Routes {
+    private val limit = 1000
+
     override fun handle(javalin: Javalin) {
         javalin.ws("websocket", wsConsumer)
     }
@@ -21,7 +24,10 @@ class WsRoutes(private val lifetime: Lifetime, private val bus: EventBus) : Rout
     }
 
     private fun sendBusEvent(ws: WsConsumer, e: PackagedBusEvent) {
-        val limit = 1000
+        if(e.events.first().event is InternalServerEvent) {
+            //InternalServerEvent类型的事件，不会被发送到外部
+            return
+        }
         if(e.events.size > limit) {
             e.events.asSequence().chunked(limit).forEach {
                 val event = WsBusEvent(e.eventType, it)

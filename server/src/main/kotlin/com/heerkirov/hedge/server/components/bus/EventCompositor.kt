@@ -1,7 +1,6 @@
-package com.heerkirov.hedge.server.components.compositor
+package com.heerkirov.hedge.server.components.bus
 
 import com.heerkirov.hedge.server.components.backend.exporter.*
-import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.IllustModelType

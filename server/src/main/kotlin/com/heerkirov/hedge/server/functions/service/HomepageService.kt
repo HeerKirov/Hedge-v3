@@ -65,7 +65,7 @@ class HomepageService(private val data: DataRepository, private val stagingPostM
         val todayImages = if(record.content.todayImageIds.isEmpty()) emptyList() else {
             data.db.from(Illusts)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(Illusts.id, Illusts.partitionTime, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                .select(Illusts.id, Illusts.partitionTime, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
                 .where { (Illusts.id inList record.content.todayImageIds) and (Illusts.type notEq IllustModelType.COLLECTION) }
                 .map { HomepageRes.Illust(it[Illusts.id]!!, takeThumbnailFilepath(it), it[Illusts.partitionTime]!!) }
                 .associateBy { it.id }
@@ -74,8 +74,8 @@ class HomepageService(private val data: DataRepository, private val stagingPostM
 
         val books = if(record.content.todayBookIds.isEmpty()) emptyList() else {
             data.db.from(Books)
-                .leftJoin(FileRecords, Books.fileId eq FileRecords.id)
-                .select(Books.id, Books.title, Books.cachedCount, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                .leftJoin(FileRecords, Books.fileId eq FileRecords.id and FileRecords.deleted.not())
+                .select(Books.id, Books.title, Books.cachedCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
                 .where { Books.id inList record.content.todayBookIds }
                 .map { HomepageRes.Book(it[Books.id]!!, it[Books.title]!!, it[Books.cachedCount]!!, if(it[FileRecords.id] != null) takeThumbnailFilepath(it) else null) }
                 .associateBy { it.id }
@@ -115,7 +115,7 @@ class HomepageService(private val data: DataRepository, private val stagingPostM
                         val images = data.db.from(Illusts)
                             .innerJoin(IllustAuthorRelations, IllustAuthorRelations.illustId eq Illusts.id)
                             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                            .select(Illusts.id, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                            .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
                             .where { (IllustAuthorRelations.authorId eq id) and (Illusts.type notEq IllustModelType.COLLECTION) }
                             .orderBy(Illusts.orderTime.desc())
                             .limit(3)
@@ -128,7 +128,7 @@ class HomepageService(private val data: DataRepository, private val stagingPostM
                         val images = data.db.from(Illusts)
                             .innerJoin(IllustTopicRelations, IllustTopicRelations.illustId eq Illusts.id)
                             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                            .select(Illusts.id, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                            .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
                             .where { (IllustTopicRelations.topicId eq id) and (Illusts.type notEq IllustModelType.COLLECTION) }
                             .orderBy(Illusts.orderTime.desc())
                             .limit(3)
@@ -144,7 +144,7 @@ class HomepageService(private val data: DataRepository, private val stagingPostM
 
             val allImages = data.db.from(Illusts)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(Illusts.id, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
                 .where { (Illusts.id inList allIds) and (Illusts.type notEq IllustModelType.COLLECTION) }
                 .map { IllustSimpleRes(it[Illusts.id]!!, takeThumbnailFilepath(it)) }
                 .associateBy { it.id }
@@ -156,7 +156,7 @@ class HomepageService(private val data: DataRepository, private val stagingPostM
 
         val recentImages = data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-            .select(Illusts.id, Illusts.partitionTime, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, Illusts.partitionTime, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.type notEq IllustModelType.COLLECTION }
             .orderBy(Illusts.createTime.desc())
             .limit(20)

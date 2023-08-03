@@ -1,16 +1,15 @@
 package com.heerkirov.hedge.server.components.http.modules
 
-import com.heerkirov.hedge.server.components.appdata.AppDataManager
+import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.components.http.Routes
+import com.heerkirov.hedge.server.functions.manager.FileManager
 import io.javalin.Javalin
 import io.javalin.http.Context
 import io.javalin.http.HttpCode
 import org.eclipse.jetty.server.handler.ResourceHandler
-import kotlin.io.path.Path
-import kotlin.io.path.absolutePathString
 
-class StaticFileHandler(private val appdata: AppDataManager) : Routes {
-    private val prefix = "/folders"
+class StaticFileHandler(private val archive: FileManager) : Routes {
+    private val prefix = "/archives"
     private val resourceHandler = ResourceHandler()
 
     init {
@@ -25,10 +24,27 @@ class StaticFileHandler(private val appdata: AppDataManager) : Routes {
     }
 
     private fun handle(ctx: Context) {
-        val target = ctx.path().removePrefix(prefix)
+        val target = ctx.path().removePrefix(prefix).trimStart('/')
+        val splits = target.split("/", limit = 3)
+        if(splits.size < 3) {
+            ctx.status(HttpCode.NOT_FOUND)
+            return
+        }
 
-        val pathString = Path(appdata.storagePathAccessor.storageDir, target).absolutePathString()
-        val resource = resourceHandler.getResource(pathString)
+        val archiveType = try {
+            ArchiveType.valueOf(splits[0].uppercase())
+        }catch (e: IllegalArgumentException) {
+            ctx.status(HttpCode.NOT_FOUND)
+            return
+        }
+
+        val path = archive.load(archiveType, splits[1], splits[2])
+        if(path == null) {
+            ctx.status(HttpCode.NOT_FOUND)
+            return
+        }
+
+        val resource = resourceHandler.getResource(path.toString())
 
         if(resource != null && resource.exists() && !resource.isDirectory) {
             val contentType = when(resource.file.extension) {

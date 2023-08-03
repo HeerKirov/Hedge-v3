@@ -139,7 +139,7 @@ class SourceDataService(private val data: DataRepository, private val sourceMana
     fun getRelatedImages(sourceSite: String, sourceId: Long): List<IllustSimpleRes> {
         return data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
-            .select(Illusts.id, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { (Illusts.sourceId eq sourceId) and (Illusts.sourceSite eq sourceSite) }
             .orderBy(Illusts.id.asc())
             .map { row ->

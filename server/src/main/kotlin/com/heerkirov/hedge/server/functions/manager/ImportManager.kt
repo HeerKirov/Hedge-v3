@@ -1,12 +1,12 @@
 package com.heerkirov.hedge.server.functions.manager
 
-import com.heerkirov.hedge.server.components.backend.FileGenerator
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.ImportOption
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.ImportImages
 import com.heerkirov.hedge.server.dto.form.ImportUpdateForm
+import com.heerkirov.hedge.server.events.FileMarkCreated
 import com.heerkirov.hedge.server.events.ImportCreated
 import com.heerkirov.hedge.server.events.ImportDeleted
 import com.heerkirov.hedge.server.events.ImportUpdated
@@ -34,7 +34,6 @@ import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import java.io.File
 import java.io.InputStream
-import java.lang.Exception
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributes
@@ -44,8 +43,7 @@ class ImportManager(private val data: DataRepository,
                     private val bus: EventBus,
                     private val sourceManager: SourceDataManager,
                     private val importMetaManager: ImportMetaManager,
-                    private val fileManager: FileManager,
-                    private val fileGenerator: FileGenerator) {
+                    private val fileManager: FileManager) {
     /**
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      * @throws FileNotFoundError 此文件不存在
@@ -61,19 +59,14 @@ class ImportManager(private val data: DataRepository,
         val fileName = file.name
         val filePath = file.absoluteFile.parent
 
-        val fileId = data.db.transaction { fileManager.newFile(file, mobileImport) }.alsoExcept { fileId ->
-            fileManager.deleteFile(fileId)
-        }.alsoReturns {
-            fileGenerator.appendTask(it)
+        val fileId = data.db.transaction {
+            fileManager.newFile(file, fileName, mobileImport)
+        }.alsoExcept {
+            fileManager.undoFile(file, it, mobileImport)
         }
 
-        try {
-            data.db.transaction {
-                newImportRecord(fileId, sourceFilename = fileName, sourceFilepath = filePath, fileCreateTime, fileUpdateTime)
-            }
-        }catch (e: Exception) {
-            fileManager.undoFile(file, fileId, mobileImport)
-            throw e
+        data.db.transaction {
+            newImportRecord(fileId, sourceFilename = fileName, sourceFilepath = filePath, fileCreateTime, fileUpdateTime)
         }
     }
 
@@ -88,10 +81,10 @@ class ImportManager(private val data: DataRepository,
             Files.copy(content, file.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
 
-        val fileId = data.db.transaction { fileManager.newFile(file) }.alsoExcept { fileId ->
-            fileManager.deleteFile(fileId)
-        }.alsoReturns {
-            fileGenerator.appendTask(it)
+        val fileId = data.db.transaction {
+            fileManager.newFile(file, filename)
+        }.alsoExcept { fileId ->
+            fileManager.undoFile(file, fileId)
         }
 
         data.db.transaction {
@@ -249,6 +242,7 @@ class ImportManager(private val data: DataRepository,
         } as Int
 
         bus.emit(ImportCreated(id))
+        bus.emit(FileMarkCreated(fileId))
 
         return Pair(id, warnings)
     }

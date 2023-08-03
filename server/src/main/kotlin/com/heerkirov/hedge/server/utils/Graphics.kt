@@ -20,7 +20,8 @@ import javax.imageio.plugins.jpeg.JPEGImageWriteParam
 import kotlin.math.sqrt
 
 object Graphics {
-    private const val RESIZE_AREA = 1 shl 20
+    const val THUMBNAIL_RESIZE_AREA = 1200 * 1200
+    const val SAMPLE_RESIZE_AREA = 256 * 256
 
     init {
         //在mac上，调用Graphics组件时，会生成一个愚蠢的dock栏进程。为了隐藏掉这个进程，需要设置此属性
@@ -33,11 +34,12 @@ object Graphics {
      * @return 缩略图文件的临时文件File。如果返回null，表示按照全局策略不需要生成缩略图。
      * @throws IllegalFileExtensionError 不支持的扩展名
      */
-    fun process(src: File): ProcessResult {
+    fun process(src: File, resizeArea: Int): ProcessResult {
+        //对于非jpg类型，将文件转换至jpg类型的snapshot
         val snapshot = when (src.extension.lowercase()) {
             "jpeg", "jpg" -> null
             "png", "gif" -> translateImageToJpg(src, quality = 0.9F)
-            "mp4", "webm" -> translateVideoToJpg(src, timePercent = 0.1F) //取10%进度位置的帧作为截图
+            "mp4", "webm" -> translateVideoToJpg(src, timePercent = 0.25F) //取25%进度位置的帧作为截图
             else -> throw be(IllegalFileExtensionError(src.extension))
         }
         val resolution: Pair<Int, Int>
@@ -46,26 +48,27 @@ object Graphics {
             val source = ImageIO.read(file)
             resolution = Pair(source.width, source.height)
             whetherResize(source, file.extension) { w, h ->
-                //当原始图像的面积超过1024*1024时，对其缩放，保持比例收缩至小于此面积。
-                if(w * h > RESIZE_AREA) {
+                //当原始图像的面积超过RESIZE AREA时，对其缩放，保持比例收缩至小于此面积。
+                if(w * h > resizeArea) {
                     /* nw * nh = RA
                      * w * h = area
                      * nw / nh = w / h
                      * nw = w * nh / h
                      * nh^2 * w / h = RA
-                     * nh = SQRT(RA * h / w)
-                     */
-                    val nh = sqrt(RESIZE_AREA.toDouble() * h / w)
+                     * nh = SQRT(RA * h / w) */
+                    val nh = sqrt(resizeArea.toDouble() * h / w)
                     val nw = nh * w / h
                     Pair(nw.toInt(), nh.toInt())
                 }else null
             }
         }catch (e: Throwable) {
-            if(snapshot?.exists() == true) snapshot.delete()
+            if(snapshot != null && snapshot.exists()) snapshot.delete()
             throw e
         }
 
-        return ProcessResult(resized?.also { if(snapshot?.exists() == true) snapshot.delete() } ?: snapshot, resolution.first, resolution.second)
+        if(resized != null && snapshot != null && snapshot.exists()) snapshot.delete()
+        //使用resized结果，没有resize就使用snapshot的结果。按照目前的策略，除了jpg格式，其他格式一定会生成snapshot，导致有缩略图。
+        return ProcessResult(resized ?: snapshot, resolution.first, resolution.second)
     }
 
     /**

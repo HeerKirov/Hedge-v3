@@ -62,7 +62,7 @@ class ImportService(private val data: DataRepository,
                 ImportImages.id, ImportImages.fileName,
                 ImportImages.sourceSite, ImportImages.sourceId, ImportImages.sourcePart,
                 ImportImages.partitionTime, ImportImages.orderTime, ImportImages.tagme,
-                FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .whereWithConditions {
                 if(!filter.search.isNullOrBlank()) {
                     it += ImportImages.fileName escapeLike filter.search.split(" ").map(String::trim).filter(String::isNotEmpty).joinToString("%", "%", "%")
@@ -137,7 +137,7 @@ class ImportService(private val data: DataRepository,
         val collection = if(collectionId !is Int) null else {
             val collectionRow = data.db.from(Illusts)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(Illusts.cachedChildrenCount, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                .select(Illusts.cachedChildrenCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
                 .where { (Illusts.type eq IllustModelType.COLLECTION) and (Illusts.id eq collectionId) }
                 .firstOrNull()
             if(collectionRow == null) null else {

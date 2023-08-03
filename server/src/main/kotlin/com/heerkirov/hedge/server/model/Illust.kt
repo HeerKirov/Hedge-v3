@@ -364,21 +364,25 @@ data class TrashedImage(val imageId: Int,
  */
 data class FileRecord(val id: Int,
                       /**
-                       * 所在文件夹名称<yyyy-MM-dd>，一般用其添加日期作为文件夹名称。
+                       * 所属区块名称。
                        */
-                      val folder: String,
+                      val block: String,
                       /**
                        * 文件扩展名，同时也表示此文件的类型。
                        */
                       val extension: String,
                       /**
-                       * 此文件占用的磁盘大小，单位Byte。
+                       * 原文件占用的磁盘大小，单位Byte。
                        */
                       val size: Long,
                       /**
                        * 缩略图占用的磁盘大小，单位Byte。没有缩略图时记0。
                        */
                       val thumbnailSize: Long,
+                      /**
+                       * 示意图占用的磁盘大小，单位Byte。没有缩略图时记0。
+                       */
+                      val sampleSize: Long,
                       /**
                        * 分辨率的宽度值。未填写时记0。
                        */
@@ -388,6 +392,10 @@ data class FileRecord(val id: Int,
                        */
                       val resolutionHeight: Int,
                       /**
+                       * 原始文件的文件名，包含扩展名，可能为空
+                       */
+                      val originFilename: String,
+                      /**
                        * 文件的处理与可用状态。
                        */
                       val status: FileStatus,
@@ -396,13 +404,21 @@ data class FileRecord(val id: Int,
                        */
                       val fingerStatus: FingerprintStatus,
                       /**
+                       * 已删除标记。
+                       */
+                      val deleted: Boolean,
+                      /**
                        * 记录创建时间。
                        */
                       val createTime: LocalDateTime,
                       /**
-                       * 上次更新物理文件的时间。
+                       * 文件上次被修改的时间。
                        */
-                      val updateTime: LocalDateTime)
+                      val updateTime: LocalDateTime,
+                      /**
+                       * 上次访问此文件的时间(用于缓存清理)。
+                       */
+                      val lastAccessTime: LocalDateTime?)
 
 /**
  * 文件指纹。

@@ -238,29 +238,37 @@ object TrashedImages : BaseTable<TrashedImage>("trashed_image") {
 
 object FileRecords : BaseTable<FileRecord>("file", schema = "file_db") {
     val id = int("id").primaryKey()
-    val folder = varchar("folder")
+    val block = varchar("block")
     val extension = varchar("extension")
     val size = long("size")
     val thumbnailSize = long("thumbnail_size")
+    val sampleSize = long("sample_size")
     val resolutionWidth = int("resolution_width")
     val resolutionHeight = int("resolution_height")
+    val originFilename = text("origin_filename")
     val status = enum("status", typeRef<FileStatus>())
     val fingerStatus = enum("finger_status", typeRef<FingerprintStatus>())
+    val deleted = boolean("deleted")
     val createTime = datetime("create_time")
     val updateTime = datetime("update_time")
+    val lastAccessTime = datetime("last_access_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FileRecord(
         id = row[id]!!,
-        folder = row[folder]!!,
+        block = row[block]!!,
         extension = row[extension]!!,
         size = row[size]!!,
         thumbnailSize = row[thumbnailSize]!!,
-        status = row[status]!!,
-        fingerStatus = row[fingerStatus]!!,
+        sampleSize = row[sampleSize]!!,
         resolutionWidth = row[resolutionWidth]!!,
         resolutionHeight = row[resolutionHeight]!!,
+        originFilename = row[originFilename]!!,
+        status = row[status]!!,
+        fingerStatus = row[fingerStatus]!!,
+        deleted = row[deleted]!!,
         createTime = row[createTime]!!,
-        updateTime = row[updateTime]!!
+        updateTime = row[updateTime]!!,
+        lastAccessTime = row[lastAccessTime]
     )
 }
 

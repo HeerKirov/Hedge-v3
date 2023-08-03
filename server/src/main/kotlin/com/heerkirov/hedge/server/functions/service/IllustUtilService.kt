@@ -37,7 +37,7 @@ class IllustUtilService(private val data: DataRepository) {
                 val examples = data.db.from(Illusts)
                     .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
                     .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime,
-                        FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+                        FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
                     .where { (Illusts.parentId eq it.id) and (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) }
                     .orderBy(Illusts.orderTime.asc())
                     .limit(exampleCount)
@@ -66,7 +66,7 @@ class IllustUtilService(private val data: DataRepository) {
         //先根据id列表把所有的illust查询出来, 然后从中分离collection, image, image_with_parent
         val rows = data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-            .select(Illusts.id, Illusts.type, Illusts.parentId, Illusts.orderTime, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, Illusts.type, Illusts.parentId, Illusts.orderTime, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList illustIds }
             .map { row ->
                 val thumbnailFile = takeThumbnailFilepath(row)
@@ -80,7 +80,7 @@ class IllustUtilService(private val data: DataRepository) {
         //对于collection，查询下属的所有children
         val childrenRows = data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-            .select(Illusts.id, Illusts.parentId, Illusts.orderTime, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, Illusts.parentId, Illusts.orderTime, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { (Illusts.parentId inList collectionRows.map { it.id }) and (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) }
             .map { row ->
                 val thumbnailFile = takeThumbnailFilepath(row)
@@ -91,7 +91,7 @@ class IllustUtilService(private val data: DataRepository) {
         val imageWithParentIds = imageWithParentRows.asSequence().map { it.parentId!! }.toSet() - collectionRows.asSequence().map { it.id }.toSet()
         val parentsOfImages = data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-            .select(Illusts.id, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { (Illusts.id inList imageWithParentIds) and (Illusts.type eq IllustModelType.COLLECTION) }
             .associate {
                 val id = it[Illusts.id]!!
@@ -120,7 +120,7 @@ class IllustUtilService(private val data: DataRepository) {
         //先根据id列表把所有的illust查询出来, 然后从中分离collection和image
         val (collectionRows, imageRows) = data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-            .select(Illusts.id, Illusts.type, Illusts.parentId, Illusts.orderTime, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, Illusts.type, Illusts.parentId, Illusts.orderTime, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList illustIds }
             .map { row ->
                 val thumbnailFile = takeThumbnailFilepath(row)
@@ -131,7 +131,7 @@ class IllustUtilService(private val data: DataRepository) {
         //对于collection，查询下属的所有children
         val childrenRows = data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-            .select(Illusts.id, Illusts.parentId, Illusts.orderTime, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, Illusts.parentId, Illusts.orderTime, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { (Illusts.parentId inList collectionRows.map { it.id }) and (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) }
             .map { row ->
                 val thumbnailFile = takeThumbnailFilepath(row)
@@ -162,7 +162,7 @@ class IllustUtilService(private val data: DataRepository) {
         //先根据id列表把所有的illust查询出来, 然后从中分离collection和image
         val (collectionRows, imageRows) = data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-            .select(Illusts.id, Illusts.type, Illusts.parentId, Illusts.orderTime, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, Illusts.type, Illusts.parentId, Illusts.orderTime, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList illustIds }
             .map { row ->
                 val thumbnailFile = takeThumbnailFilepath(row)
@@ -173,7 +173,7 @@ class IllustUtilService(private val data: DataRepository) {
         //对于collection，查询下属的所有children
         val childrenRows = data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-            .select(Illusts.id, Illusts.parentId, Illusts.orderTime, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, Illusts.parentId, Illusts.orderTime, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { (Illusts.parentId inList collectionRows.map { it.id }) and (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) }
             .map { row ->
                 val thumbnailFile = takeThumbnailFilepath(row)

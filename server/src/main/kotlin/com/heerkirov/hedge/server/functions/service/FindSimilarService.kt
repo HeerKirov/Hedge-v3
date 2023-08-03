@@ -92,12 +92,12 @@ class FindSimilarService(private val data: DataRepository,
 
         val imageFiles = data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
-            .select(Illusts.id, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList illustIds }
             .associate { it[Illusts.id]!! to takeThumbnailFilepath(it) }
         val importFiles = data.db.from(ImportImages)
             .innerJoin(FileRecords, FileRecords.id eq ImportImages.fileId)
-            .select(ImportImages.id, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(ImportImages.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { ImportImages.id inList importIds }
             .associate { it[ImportImages.id]!! to takeThumbnailFilepath(it) }
 
@@ -119,12 +119,12 @@ class FindSimilarService(private val data: DataRepository,
 
         val imageFiles = data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
-            .select(Illusts.id, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList illustIds }
             .associate { it[Illusts.id]!! to takeThumbnailFilepath(it) }
         val importFiles = data.db.from(ImportImages)
             .innerJoin(FileRecords, FileRecords.id eq ImportImages.fileId)
-            .select(ImportImages.id, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(ImportImages.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { ImportImages.id inList importIds }
             .associate { it[ImportImages.id]!! to takeThumbnailFilepath(it) }
 

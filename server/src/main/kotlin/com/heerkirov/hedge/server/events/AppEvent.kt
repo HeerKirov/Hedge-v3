@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.events
 
+import com.heerkirov.hedge.server.components.backend.watcher.PathWatcherError
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 
 /**
@@ -21,3 +22,8 @@ class HomepageStateChanged : BaseBusEventImpl("app/homepage/state/changed"), App
  * 中转站内容发生变化。
  */
 data class StagingPostChanged(val added: List<Int>, val moved: List<Int>, val deleted: List<Int>) : BaseBusEventImpl("app/staging-post/changed"), AppEvent
+
+/**
+ * PathWatcher状态发生变化。
+ */
+data class PathWatcherStatusChanged(val isOpen: Boolean, val statisticCount: Int, val errors: List<PathWatcherError>) : BaseBusEventImpl("app/path-watcher/status-changed"), AppEvent

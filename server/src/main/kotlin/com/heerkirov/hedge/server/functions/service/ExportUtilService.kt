@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
+import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.BookImageRelations
 import com.heerkirov.hedge.server.dao.FileRecords
@@ -12,18 +13,18 @@ import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.exceptions.LocationNotAccessibleError
 import com.heerkirov.hedge.server.exceptions.ParamRequired
 import com.heerkirov.hedge.server.exceptions.be
+import com.heerkirov.hedge.server.functions.manager.FileManager
 import com.heerkirov.hedge.server.utils.business.takeAllFilepath
-import com.heerkirov.hedge.server.utils.business.takeFilepath
-import com.heerkirov.hedge.server.utils.tuples.Tuple3
+import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import org.ktorm.dsl.*
 import java.io.File
-import java.io.FileInputStream
+import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
 
-class ExportUtilService(private val appdata: AppDataManager, private val data: DataRepository) {
+class ExportUtilService(private val appdata: AppDataManager, private val data: DataRepository, private val archive: FileManager) {
     /**
      * 根据给出的illusts列表，扩展为完整的images列表，并附带file信息。
      */
@@ -32,7 +33,7 @@ class ExportUtilService(private val appdata: AppDataManager, private val data: D
 
         val rows = data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-            .select(Illusts.id, Illusts.type, Illusts.parentId, FileRecords.id, FileRecords.folder, FileRecords.extension, FileRecords.status)
+            .select(Illusts.id, Illusts.type, Illusts.parentId, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { ((Illusts.type eq IllustModelType.IMAGE) and (Illusts.id inList illustIds)) or ((Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) and (Illusts.parentId inList illustIds)) }
             .map {
                 val (file, thumbnail) = takeAllFilepath(it)
@@ -62,16 +63,16 @@ class ExportUtilService(private val appdata: AppDataManager, private val data: D
         val files = if(form.imageIds != null) {
             data.db.from(Illusts)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(Illusts.id, FileRecords.id, FileRecords.folder, FileRecords.extension)
+                .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension)
                 .where { ((Illusts.type eq IllustModelType.IMAGE) and (Illusts.id inList form.imageIds)) or ((Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) and (Illusts.parentId inList form.imageIds)) }
-                .map { Tuple3(it[Illusts.id]!!, takeFilepath(it), it[FileRecords.extension]!!) }
+                .map { Tuple4(it[Illusts.id]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!) }
         }else if(form.bookId != null) {
             data.db.from(BookImageRelations)
                 .innerJoin(Illusts, Illusts.id eq BookImageRelations.imageId)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(BookImageRelations.imageId, FileRecords.id, FileRecords.folder, FileRecords.extension)
+                .select(BookImageRelations.imageId, FileRecords.id, FileRecords.block, FileRecords.extension)
                 .where { BookImageRelations.bookId eq form.bookId }
-                .map { Tuple3(it[BookImageRelations.imageId]!!, takeFilepath(it), it[FileRecords.extension]!!) }
+                .map { Tuple4(it[BookImageRelations.imageId]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!) }
         }else{
             throw be(ParamRequired("imageIds"))
         }
@@ -82,15 +83,16 @@ class ExportUtilService(private val appdata: AppDataManager, private val data: D
 
             FileOutputStream(packageFile).use { fos ->
                 ZipOutputStream(fos).use { zos ->
-                    for((id, file, ext) in files) {
-                        FileInputStream(File("${appdata.storagePathAccessor.storageDir}/$file")).use { fis ->
+                    for((id, block, fileId, ext) in files) {
+                        archive.readInputStream(ArchiveType.ORIGINAL, block, "$fileId.$ext")?.use { fis ->
                             zos.putNextEntry(ZipEntry("$id.$ext"))
-                            var temp: Int
-                            while (fis.read().also { temp = it } != -1) {
-                                zos.write(temp)
+                            var len: Int
+                            val temp = ByteArray(4096)
+                            while (fis.read(temp).also { len = it } != -1) {
+                                zos.write(temp, 0, len)
                             }
                             zos.closeEntry()
-                        }
+                        } ?: throw FileNotFoundException("File ${ArchiveType.ORIGINAL}/$block/$fileId.$ext not found in archive.")
                     }
                 }
             }

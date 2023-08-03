@@ -18,8 +18,10 @@ object Filename {
     const val VERSION_LOCK = "version.lock"
 
     const val SERVER_DIR = "server"
-    const val DEFAULT_STORAGE_DIR = "folders"
+    const val DEFAULT_STORAGE_DIR = "archives"
+    const val DEFAULT_CACHE_DIR = "cache"
 
-    const val ORIGIN_FILE_DIR = "original"
+    const val ORIGINAL_FILE_DIR = "original"
     const val THUMBNAIL_FILE_DIR = "thumbnail"
+    const val SAMPLE_FILE_DIR = "sample"
 }
