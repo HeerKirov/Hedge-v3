@@ -18,8 +18,10 @@ import com.heerkirov.hedge.server.enums.TagGroupType
 import com.heerkirov.hedge.server.events.MetaTagCreated
 import com.heerkirov.hedge.server.events.MetaTagDeleted
 import com.heerkirov.hedge.server.events.MetaTagUpdated
-import com.heerkirov.hedge.server.utils.business.takeThumbnailFilepath
 import com.heerkirov.hedge.server.utils.*
+import com.heerkirov.hedge.server.utils.business.collectBulkResult
+import com.heerkirov.hedge.server.utils.business.filePathFrom
+import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.types.*
@@ -173,7 +175,7 @@ class TagService(private val data: DataRepository,
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
             .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList tag.examples }
-            .map { IllustSimpleRes(it[Illusts.id]!!, takeThumbnailFilepath(it)) }
+            .map { IllustSimpleRes(it[Illusts.id]!!, filePathFrom(it)) }
 
         val links = if(tag.links.isNullOrEmpty()) emptyList() else data.db.sequenceOf(Tags).filter { it.id inList tag.links }.map { TagDetailRes.Link(it.id, it.name, it.type, it.isGroup, it.color) }
 

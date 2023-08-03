@@ -23,7 +23,7 @@ import com.heerkirov.hedge.server.model.ImportImage
 import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import com.heerkirov.hedge.server.utils.Json.toJsonNode
-import com.heerkirov.hedge.server.utils.business.takeThumbnailFilepath
+import com.heerkirov.hedge.server.utils.business.*
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.types.*
@@ -94,17 +94,17 @@ class FindSimilarService(private val data: DataRepository,
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
             .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList illustIds }
-            .associate { it[Illusts.id]!! to takeThumbnailFilepath(it) }
+            .associate { it[Illusts.id]!! to filePathOrNullFrom(it) }
         val importFiles = data.db.from(ImportImages)
             .innerJoin(FileRecords, FileRecords.id eq ImportImages.fileId)
             .select(ImportImages.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { ImportImages.id inList importIds }
-            .associate { it[ImportImages.id]!! to takeThumbnailFilepath(it) }
+            .associate { it[ImportImages.id]!! to filePathOrNullFrom(it) }
 
         return results.map { (id, s, i, r) ->
             val images = i.map {
-                val thumbnailFile = if(it.type == FindSimilarEntityType.ILLUST) imageFiles[it.id] else importFiles[it.id]
-                FindSimilarResultImage(it.type, it.id, thumbnailFile)
+                val filePath = if(it.type == FindSimilarEntityType.ILLUST) imageFiles[it.id] else importFiles[it.id]
+                FindSimilarResultImage(it.type, it.id, filePath)
             }
             FindSimilarResultRes(id, s, images, r)
         }
@@ -121,16 +121,16 @@ class FindSimilarService(private val data: DataRepository,
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
             .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList illustIds }
-            .associate { it[Illusts.id]!! to takeThumbnailFilepath(it) }
+            .associate { it[Illusts.id]!! to filePathOrNullFrom(it) }
         val importFiles = data.db.from(ImportImages)
             .innerJoin(FileRecords, FileRecords.id eq ImportImages.fileId)
             .select(ImportImages.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { ImportImages.id inList importIds }
-            .associate { it[ImportImages.id]!! to takeThumbnailFilepath(it) }
+            .associate { it[ImportImages.id]!! to filePathOrNullFrom(it) }
 
         val images = imageKeys.map {
-            val thumbnailFile = if(it.type == FindSimilarEntityType.ILLUST) imageFiles[it.id] else importFiles[it.id]
-            FindSimilarResultImage(it.type, it.id, thumbnailFile)
+            val filePath = if(it.type == FindSimilarEntityType.ILLUST) imageFiles[it.id] else importFiles[it.id]
+            FindSimilarResultImage(it.type, it.id, filePath)
         }
 
         val relations = result.relations.map { FindSimilarResultRelation(it.a.toEntityKey(), it.b.toEntityKey(), it.type, it.params) }

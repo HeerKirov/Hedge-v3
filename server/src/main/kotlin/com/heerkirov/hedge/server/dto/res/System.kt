@@ -13,7 +13,7 @@ data class FindSimilarResultRes(val id: Int, val type: FindSimilarResult.Summary
 
 data class FindSimilarResultDetailRes(val id: Int, val type: FindSimilarResult.SummaryTypes, val images: List<FindSimilarResultImage>, val relations: List<FindSimilarResultRelation>, val recordTime: LocalDateTime)
 
-data class FindSimilarResultImage(val type: FindSimilarEntityType, val id: Int, val thumbnailFile: String?)
+data class FindSimilarResultImage(val type: FindSimilarEntityType, val id: Int, val filePath: NullableFilePath?)
 
 data class FindSimilarResultRelation(val a: FindSimilarEntityKey, val b: FindSimilarEntityKey, val type: SimilarityType, val info: FindSimilarResult.RelationInfo)
 

@@ -11,7 +11,7 @@ import com.heerkirov.hedge.server.dto.form.AnnotationUpdateForm
 import com.heerkirov.hedge.server.dto.res.AnnotationRes
 import com.heerkirov.hedge.server.dto.res.ListResult
 import com.heerkirov.hedge.server.dto.res.newAnnotationRes
-import com.heerkirov.hedge.server.dto.res.toListResult
+import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.events.AnnotationCreated
 import com.heerkirov.hedge.server.events.AnnotationDeleted
 import com.heerkirov.hedge.server.events.AnnotationUpdated

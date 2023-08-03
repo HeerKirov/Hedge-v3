@@ -6,8 +6,8 @@ data class CollectionSituationRes(val id: Int, val childrenCount: Int, val order
                                   val childrenExamples: List<IllustSimpleRes>,
                                   val belongs: List<Int>)
 
-data class ImageSituationRes(val id: Int, val thumbnailFile: String, val orderTime: LocalDateTime, val belong: IllustParent?)
+data class ImageSituationRes(val id: Int, val filePath: FilePath, val orderTime: LocalDateTime, val belong: IllustParent?)
 
-data class BookSituationRes(val id: Int, val thumbnailFile: String, val ordinal: Int?)
+data class BookSituationRes(val id: Int, val filePath: FilePath, val ordinal: Int?)
 
-data class FolderSituationRes(val id: Int, val thumbnailFile: String, val ordinal: Int?)
+data class FolderSituationRes(val id: Int, val filePath: FilePath, val ordinal: Int?)

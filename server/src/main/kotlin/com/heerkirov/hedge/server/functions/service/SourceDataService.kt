@@ -10,7 +10,9 @@ import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.manager.SourceDataManager
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
-import com.heerkirov.hedge.server.utils.business.takeThumbnailFilepath
+import com.heerkirov.hedge.server.utils.business.collectBulkResult
+import com.heerkirov.hedge.server.utils.business.filePathFrom
+import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
@@ -144,8 +146,8 @@ class SourceDataService(private val data: DataRepository, private val sourceMana
             .orderBy(Illusts.id.asc())
             .map { row ->
                 val id = row[Illusts.id]!!
-                val thumbnailFile = takeThumbnailFilepath(row)
-                IllustSimpleRes(id, thumbnailFile)
+                val filePath = filePathFrom(row)
+                IllustSimpleRes(id, filePath)
             }
     }
 

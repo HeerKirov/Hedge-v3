@@ -22,6 +22,8 @@ import com.heerkirov.hedge.server.functions.kit.AuthorKit
 import com.heerkirov.hedge.server.functions.manager.SourceMappingManager
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.utils.DateTime
+import com.heerkirov.hedge.server.utils.business.collectBulkResult
+import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.runIf

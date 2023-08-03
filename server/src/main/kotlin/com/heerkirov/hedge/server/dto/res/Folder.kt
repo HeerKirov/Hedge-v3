@@ -15,10 +15,12 @@ data class FolderRes(val id: Int, val title: String, val parentId: Int?, val par
 
 data class FolderSimpleRes(val id: Int, val address: List<String>, val type: FolderType)
 
-data class FolderImageRes(val id: Int, val ordinal: Int, val file: String, val thumbnailFile: String,
+data class FolderImageRes(val id: Int, val ordinal: Int, val filePath: FilePath,
                           val score: Int?, val favorite: Boolean, val tagme: Illust.Tagme,
                           val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?,
                           val orderTime: LocalDateTime)
 
-data class StagingPostImageRes(val id: Int, val file: String, val thumbnailFile: String,
-                               val score: Int?, val favorite: Boolean, val orderTime: LocalDateTime)
+data class StagingPostImageRes(val id: Int, val filePath: FilePath,
+                               val score: Int?, val favorite: Boolean,
+                               val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?,
+                               val orderTime: LocalDateTime)

@@ -21,7 +21,7 @@ import kotlin.math.sqrt
 
 object Graphics {
     const val THUMBNAIL_RESIZE_AREA = 1200 * 1200
-    const val SAMPLE_RESIZE_AREA = 256 * 256
+    const val SAMPLE_RESIZE_AREA = 400 * 400
 
     init {
         //在mac上，调用Graphics组件时，会生成一个愚蠢的dock栏进程。为了隐藏掉这个进程，需要设置此属性

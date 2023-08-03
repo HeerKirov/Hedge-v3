@@ -11,7 +11,7 @@ import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.DateTime.asZonedTime
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
 import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
-import com.heerkirov.hedge.server.utils.business.takeThumbnailFilepath
+import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.runIf
 import org.ktorm.dsl.*
 import org.ktorm.entity.count
@@ -67,7 +67,7 @@ class HomepageService(private val data: DataRepository, private val stagingPostM
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
                 .select(Illusts.id, Illusts.partitionTime, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
                 .where { (Illusts.id inList record.content.todayImageIds) and (Illusts.type notEq IllustModelType.COLLECTION) }
-                .map { HomepageRes.Illust(it[Illusts.id]!!, takeThumbnailFilepath(it), it[Illusts.partitionTime]!!) }
+                .map { HomepageRes.Illust(it[Illusts.id]!!, filePathFrom(it), it[Illusts.partitionTime]!!) }
                 .associateBy { it.id }
                 .let { record.content.todayImageIds.mapNotNull(it::get) }
         }
@@ -77,7 +77,7 @@ class HomepageService(private val data: DataRepository, private val stagingPostM
                 .leftJoin(FileRecords, Books.fileId eq FileRecords.id and FileRecords.deleted.not())
                 .select(Books.id, Books.title, Books.cachedCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
                 .where { Books.id inList record.content.todayBookIds }
-                .map { HomepageRes.Book(it[Books.id]!!, it[Books.title]!!, it[Books.cachedCount]!!, if(it[FileRecords.id] != null) takeThumbnailFilepath(it) else null) }
+                .map { HomepageRes.Book(it[Books.id]!!, it[Books.title]!!, it[Books.cachedCount]!!, if(it[FileRecords.id] != null) filePathFrom(it) else null) }
                 .associateBy { it.id }
                 .let { record.content.todayBookIds.mapNotNull(it::get) }
         }
@@ -119,7 +119,7 @@ class HomepageService(private val data: DataRepository, private val stagingPostM
                             .where { (IllustAuthorRelations.authorId eq id) and (Illusts.type notEq IllustModelType.COLLECTION) }
                             .orderBy(Illusts.orderTime.desc())
                             .limit(3)
-                            .map { IllustSimpleRes(it[Illusts.id]!!, takeThumbnailFilepath(it)) }
+                            .map { IllustSimpleRes(it[Illusts.id]!!, filePathFrom(it)) }
 
                         HomepageRes.AuthorOrTopic("AUTHOR", type.toString(), id, name, color, images)
                     }
@@ -132,7 +132,7 @@ class HomepageService(private val data: DataRepository, private val stagingPostM
                             .where { (IllustTopicRelations.topicId eq id) and (Illusts.type notEq IllustModelType.COLLECTION) }
                             .orderBy(Illusts.orderTime.desc())
                             .limit(3)
-                            .map { IllustSimpleRes(it[Illusts.id]!!, takeThumbnailFilepath(it)) }
+                            .map { IllustSimpleRes(it[Illusts.id]!!, filePathFrom(it)) }
 
                         HomepageRes.AuthorOrTopic("TOPIC", type.toString(), id, name, color, images)
                     }
@@ -146,7 +146,7 @@ class HomepageService(private val data: DataRepository, private val stagingPostM
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
                 .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
                 .where { (Illusts.id inList allIds) and (Illusts.type notEq IllustModelType.COLLECTION) }
-                .map { IllustSimpleRes(it[Illusts.id]!!, takeThumbnailFilepath(it)) }
+                .map { IllustSimpleRes(it[Illusts.id]!!, filePathFrom(it)) }
                 .associateBy { it.id }
 
             record.content.historyImages
@@ -160,7 +160,7 @@ class HomepageService(private val data: DataRepository, private val stagingPostM
             .where { Illusts.type notEq IllustModelType.COLLECTION }
             .orderBy(Illusts.createTime.desc())
             .limit(20)
-            .map { HomepageRes.Illust(it[Illusts.id]!!, takeThumbnailFilepath(it), it[Illusts.partitionTime]!!) }
+            .map { HomepageRes.Illust(it[Illusts.id]!!, filePathFrom(it), it[Illusts.partitionTime]!!) }
 
         return HomepageRes(record.date, todayImages, books, authorAndTopics, recentImages, historyImages)
     }

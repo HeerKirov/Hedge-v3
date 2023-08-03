@@ -22,9 +22,10 @@ import com.heerkirov.hedge.server.functions.kit.BookKit
 import com.heerkirov.hedge.server.functions.manager.BookManager
 import com.heerkirov.hedge.server.functions.manager.IllustManager
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
-import com.heerkirov.hedge.server.utils.business.takeAllFilepath
+import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
+import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
@@ -71,12 +72,12 @@ class BookService(private val data: DataRepository,
                 val id = it[Books.id]!!
                 val title = it[Books.title]!!
                 val imageCount = it[Books.cachedCount]!!
-                val (file, thumbnailFile) = if(it[FileRecords.id] != null) takeAllFilepath(it) else null to null
+                val filePath = if(it[FileRecords.id] != null) filePathFrom(it) else null
                 val score = it[Books.score]
                 val favorite = it[Books.favorite]!!
                 val createTime = it[Books.createTime]!!
                 val updateTime = it[Books.updateTime]!!
-                BookRes(id, title, imageCount, file, thumbnailFile, score, favorite, createTime, updateTime)
+                BookRes(id, title, imageCount, filePath, score, favorite, createTime, updateTime)
             }
 
     }
@@ -105,7 +106,7 @@ class BookService(private val data: DataRepository,
             .firstOrNull()
             ?: throw be(NotFound())
 
-        val (file, thumbnailFile) = if(row[FileRecords.id] != null) takeAllFilepath(row) else null to null
+        val filePath = if(row[FileRecords.id] != null) filePathFrom(row) else null
 
         val title = row[Books.title]!!
         val description = row[Books.description]!!
@@ -147,7 +148,7 @@ class BookService(private val data: DataRepository,
             .orderBy(Tags.globalOrdinal.asc())
             .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], it[BookTagRelations.isExported]!!) }
 
-        return BookDetailRes(id, title, imageCount, file, thumbnailFile, topics, authors, tags, description, score, favorite, createTime, updateTime)
+        return BookDetailRes(id, title, imageCount, filePath, topics, authors, tags, description, score, favorite, createTime, updateTime)
     }
 
     /**
@@ -227,11 +228,11 @@ class BookService(private val data: DataRepository,
                 val favorite = it[Illusts.favorite]!!
                 val tagme = it[Illusts.tagme]!!
                 val orderTime = it[Illusts.orderTime]!!.parseDateTime()
-                val (file, thumbnailFile) = takeAllFilepath(it)
+                val filePath = filePathFrom(it)
                 val sourceSite = it[Illusts.sourceSite]
                 val sourceId = it[Illusts.sourceId]
                 val sourcePart = it[Illusts.sourcePart]
-                BookImageRes(imageId, ordinal, file, thumbnailFile, score, favorite, tagme, sourceSite, sourceId, sourcePart, orderTime)
+                BookImageRes(imageId, ordinal, filePath, score, favorite, tagme, sourceSite, sourceId, sourcePart, orderTime)
             }
     }
 

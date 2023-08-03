@@ -20,10 +20,11 @@ import com.heerkirov.hedge.server.functions.kit.FolderKit
 import com.heerkirov.hedge.server.functions.manager.FolderManager
 import com.heerkirov.hedge.server.functions.manager.IllustManager
 import com.heerkirov.hedge.server.model.Folder
-import com.heerkirov.hedge.server.utils.business.takeAllFilepath
+import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
 import com.heerkirov.hedge.server.utils.applyIf
+import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
@@ -529,11 +530,11 @@ class FolderService(private val data: DataRepository,
                 val favorite = it[Illusts.favorite]!!
                 val tagme = it[Illusts.tagme]!!
                 val orderTime = it[Illusts.orderTime]!!.parseDateTime()
-                val (file, thumbnailFile) = takeAllFilepath(it)
+                val filePath = filePathFrom(it)
                 val source = it[Illusts.sourceSite]
                 val sourceId = it[Illusts.sourceId]
                 val sourcePart = it[Illusts.sourcePart]
-                FolderImageRes(itemId, ordinal, file, thumbnailFile, score, favorite, tagme, source, sourceId, sourcePart, orderTime)
+                FolderImageRes(itemId, ordinal, filePath, score, favorite, tagme, source, sourceId, sourcePart, orderTime)
             }
     }
 }

@@ -23,8 +23,9 @@ import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.model.ImportImage
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
 import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
-import com.heerkirov.hedge.server.utils.business.takeAllFilepathOrNull
-import com.heerkirov.hedge.server.utils.business.takeThumbnailFilepath
+import com.heerkirov.hedge.server.utils.business.filePathFrom
+import com.heerkirov.hedge.server.utils.business.filePathOrNullFrom
+import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.escapeLike
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
@@ -71,9 +72,9 @@ class ImportService(private val data: DataRepository,
             .orderBy(orderTranslator, filter.order)
             .limit(filter.offset, filter.limit)
             .toListResult {
-                val (file, thumbnailFile) = takeAllFilepathOrNull(it)
+                val filePath = filePathOrNullFrom(it)
                 ImportImageRes(
-                    it[ImportImages.id]!!, file, thumbnailFile, it[ImportImages.fileName],
+                    it[ImportImages.id]!!, filePath, it[ImportImages.fileName],
                     it[ImportImages.sourceSite], it[ImportImages.sourceId], it[ImportImages.sourcePart],
                     it[ImportImages.tagme]!!,
                     it[ImportImages.partitionTime]!!, it[ImportImages.orderTime]!!.parseDateTime())
@@ -107,7 +108,7 @@ class ImportService(private val data: DataRepository,
             .where { ImportImages.id eq id }
             .firstOrNull() ?: throw be(NotFound())
 
-        val (file, thumbnailFile) = takeAllFilepathOrNull(row)
+        val filePath = filePathOrNullFrom(row)
 
         val collectionId: Any? = row[ImportImages.collectionId].let {
             if(it == null) {
@@ -141,15 +142,14 @@ class ImportService(private val data: DataRepository,
                 .where { (Illusts.type eq IllustModelType.COLLECTION) and (Illusts.id eq collectionId) }
                 .firstOrNull()
             if(collectionRow == null) null else {
-                val collectionThumbnailFile = takeThumbnailFilepath(collectionRow)
+                val collectionFilePath = filePathFrom(collectionRow)
                 val childrenCount = collectionRow[Illusts.cachedChildrenCount]!!
-                IllustCollectionSimpleRes(collectionId, collectionThumbnailFile, childrenCount)
+                IllustCollectionSimpleRes(collectionId, collectionFilePath, childrenCount)
             }
         }
 
         return ImportImageDetailRes(
-            row[ImportImages.id]!!,
-            file, thumbnailFile,
+            row[ImportImages.id]!!, filePath,
             row[ImportImages.fileName], row[ImportImages.filePath],
             row[ImportImages.fileCreateTime], row[ImportImages.fileUpdateTime], row[ImportImages.fileImportTime]!!,
             row[FileRecords.extension]!!, row[FileRecords.size]!!, row[FileRecords.resolutionWidth]!!, row[FileRecords.resolutionHeight]!!,

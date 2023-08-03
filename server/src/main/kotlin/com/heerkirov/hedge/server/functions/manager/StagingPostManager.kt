@@ -12,7 +12,7 @@ import com.heerkirov.hedge.server.events.IllustUpdated
 import com.heerkirov.hedge.server.events.PackagedBusEvent
 import com.heerkirov.hedge.server.events.StagingPostChanged
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
-import com.heerkirov.hedge.server.utils.business.takeAllFilepath
+import com.heerkirov.hedge.server.utils.business.filePathFrom
 import org.ktorm.dsl.*
 import kotlin.math.min
 
@@ -164,9 +164,12 @@ class StagingPostManager(private val data: DataRepository, private val bus: Even
                 val itemId = it[Illusts.id]!!
                 val score = it[Illusts.exportedScore]
                 val favorite = it[Illusts.favorite]!!
+                val sourceSite = it[Illusts.sourceSite]
+                val sourceId = it[Illusts.sourceId]
+                val sourcePart = it[Illusts.sourcePart]
                 val orderTime = it[Illusts.orderTime]!!.parseDateTime()
-                val (file, thumbnailFile) = takeAllFilepath(it)
-                StagingPostImageRes(itemId, file, thumbnailFile, score, favorite, orderTime)
+                val filePath = filePathFrom(it)
+                StagingPostImageRes(itemId, filePath, score, favorite, sourceSite, sourceId, sourcePart, orderTime)
             }
             .associateBy { it.id }
             .let { res -> imageIds.mapNotNull(res::get) }

@@ -313,6 +313,11 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                             where { it.id eq fileRecord.id }
                             set(it.fingerStatus, FingerprintStatus.READY)
                         }
+                    }else{
+                        data.db.update(FileRecords) {
+                            where { it.id eq fileRecord.id }
+                            set(it.fingerStatus, FingerprintStatus.NONE)
+                        }
                     }
 
                     Thread.sleep(GENERATE_INTERVAL)

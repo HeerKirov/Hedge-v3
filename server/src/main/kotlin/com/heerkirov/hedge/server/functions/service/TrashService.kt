@@ -12,8 +12,8 @@ import com.heerkirov.hedge.server.functions.manager.TrashManager
 import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
 import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
-import com.heerkirov.hedge.server.utils.business.takeAllFilepath
-import com.heerkirov.hedge.server.utils.business.takeThumbnailFilepath
+import com.heerkirov.hedge.server.utils.business.filePathFrom
+import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
@@ -41,11 +41,11 @@ class TrashService(private val data: DataRepository, private val trashManager: T
             .orderBy(orderTranslator, filter.order)
             .limit(filter.offset, filter.limit)
             .toListResult {
-                val (file, thumbnailFile) = takeAllFilepath(it)
+                val filePath = filePathFrom(it)
                 val trashedTime = it[TrashedImages.trashedTime]!!
                 val remainingTime = if(deadline != null) trashedTime.toMillisecond() - deadline else null
                 TrashedImageRes(
-                    it[TrashedImages.imageId]!!, file, thumbnailFile,
+                    it[TrashedImages.imageId]!!, filePath,
                     it[TrashedImages.score], it[TrashedImages.favorite]!!, it[TrashedImages.tagme]!!,
                     it[TrashedImages.sourceSite], it[TrashedImages.sourceId], it[TrashedImages.sourcePart],
                     it[TrashedImages.orderTime]!!.parseDateTime(), trashedTime, remainingTime)
@@ -59,7 +59,7 @@ class TrashService(private val data: DataRepository, private val trashManager: T
             .where { TrashedImages.imageId eq imageId }
             .firstOrNull() ?: throw be(NotFound())
 
-        val (file, thumbnailFile) = takeAllFilepath(row)
+        val filePath = filePathFrom(row)
         val extension = row[FileRecords.extension]!!
         val size = row[FileRecords.size]!!
         val resolutionWidth = row[FileRecords.resolutionWidth]!!
@@ -104,7 +104,7 @@ class TrashService(private val data: DataRepository, private val trashManager: T
             .select(Illusts.id, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id eq parentId }
             .firstOrNull()
-            ?.let { IllustParent(it[Illusts.id]!!, takeThumbnailFilepath(it), it[Illusts.cachedChildrenCount]!!) }
+            ?.let { IllustParent(it[Illusts.id]!!, filePathFrom(it), it[Illusts.cachedChildrenCount]!!) }
 
         val books = if(metadata.books.isEmpty()) emptyList() else data.db.from(Books)
             .select(Books.id, Books.title)
@@ -120,10 +120,10 @@ class TrashService(private val data: DataRepository, private val trashManager: T
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
             .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList metadata.associates }
-            .map { IllustSimpleRes(it[Illusts.id]!!, takeThumbnailFilepath(it)) }
+            .map { IllustSimpleRes(it[Illusts.id]!!, filePathFrom(it)) }
 
         return TrashedImageDetailRes(
-            row[TrashedImages.imageId]!!, file, thumbnailFile,
+            row[TrashedImages.imageId]!!, filePath,
             extension, size, resolutionWidth, resolutionHeight,
             topics, authors, tags, parent, books, folders, associates,
             row[TrashedImages.description]!!, row[TrashedImages.score], row[TrashedImages.favorite]!!, row[TrashedImages.tagme]!!,

@@ -144,7 +144,7 @@ class IllustService(private val data: DataRepository,
             .firstOrNull()
             ?: throw be(NotFound())
 
-        val (file, thumbnailFile) = takeAllFilepath(row)
+        val filePath = filePathFrom(row)
         val extension = row[FileRecords.extension]!!
         val size = row[FileRecords.size]!!
         val resolutionWidth = row[FileRecords.resolutionWidth]!!
@@ -199,8 +199,7 @@ class IllustService(private val data: DataRepository,
             .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], it[IllustTagRelations.isExported]!!) }
 
         return IllustDetailRes(
-            id, finalType, childrenCount,
-            file, thumbnailFile,
+            id, finalType, childrenCount, filePath,
             extension, size, resolutionWidth, resolutionHeight,
             topics, authors, tags,
             description, score, favorite, tagme,
@@ -266,7 +265,7 @@ class IllustService(private val data: DataRepository,
             .select(Illusts.id, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id eq parentId }
             .firstOrNull()
-            ?.let { IllustParent(it[Illusts.id]!!, takeThumbnailFilepath(it), it[Illusts.cachedChildrenCount]!!) }
+            ?.let { IllustParent(it[Illusts.id]!!, filePathFrom(it), it[Illusts.cachedChildrenCount]!!) }
 
         val books = data.db.from(Books)
             .innerJoin(BookImageRelations, BookImageRelations.bookId eq Books.id)

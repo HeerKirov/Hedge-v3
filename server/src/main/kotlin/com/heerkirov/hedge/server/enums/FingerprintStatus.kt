@@ -12,5 +12,10 @@ enum class FingerprintStatus {
     /**
      * 指纹已准备完成。
      */
-    READY
+    READY,
+
+    /**
+     * 并没有指纹。
+     */
+    NONE
 }
