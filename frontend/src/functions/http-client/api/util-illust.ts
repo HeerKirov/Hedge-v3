@@ -1,4 +1,5 @@
 import { HttpInstance, Response } from ".."
+import { FilePath } from "./all"
 import { SimpleCollection, SimpleIllust } from "./illust"
 import { datetime, LocalDateTime } from "@/utils/datetime"
 
@@ -30,7 +31,7 @@ function mapToCollectionSituation(data: any): CollectionSituation {
 function mapToImageSituation(data: any): ImageSituation {
     return {
         id: <number>data["id"],
-        thumbnailFile: <string>data["thumbnailFile"],
+        filePath: <FilePath>data["filePath"],
         orderTime: datetime.of(<string>data["orderTime"]),
         belong: <SimpleCollection>data["belong"]
     }
@@ -87,9 +88,9 @@ export interface ImageSituation {
      */
     id: number
     /**
-     * 此图像的缩略图文件路径。
+     * 此图像的文件路径。
      */
-    thumbnailFile: string
+    filePath: FilePath
     /**
      * 排序时间。最终结果是按照排序时间排序的。
      */
@@ -106,9 +107,9 @@ export interface BookSituation {
      */
     id: number
     /**
-     * 此图像的缩略图文件路径。
+     * 此图像的文件路径。
      */
-    thumbnailFile: string
+    filePath: FilePath
     /**
      * 如果此项已在画集中存在，那么给出排序顺位；否则给出null。
      */

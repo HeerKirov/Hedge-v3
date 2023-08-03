@@ -7,7 +7,7 @@ import {
     ResourceNotExist,
     ResourceNotSuitable
 } from "../exceptions"
-import { IdResponse, LimitAndOffsetFilter, LimitFilter, ListResult, OrderList } from "./all"
+import { FilePath, IdResponse, LimitAndOffsetFilter, LimitFilter, ListResult, OrderList } from "./all"
 import { SimpleBook } from "./book"
 import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
@@ -93,8 +93,7 @@ function mapToIllust(data: any): Illust {
         id: <number>data["id"],
         type: <IllustType>data["type"],
         childrenCount: <number | null>data["childrenCount"],
-        file: <string>data["file"],
-        thumbnailFile: <string>data["thumbnailFile"],
+        filePath: <FilePath>data["filePath"],
         score: <number | null>data["score"],
         favorite: <boolean>data["favorite"],
         tagme: <Tagme[]>data["tagme"],
@@ -370,11 +369,8 @@ export interface Illust {
     /**
      * 此项目的文件路径。
      */
-    file: string
-    /**
-     * 此项目的缩略图文件路径。缩略图有不存在的理论可能(未生成)，此时值为null，应该填充占位图像。
-     */
-    thumbnailFile: string
+    filePath: FilePath
+    
     /**
      * 此项目的评分。可能由手写评分或父子项目导出。
      */
@@ -462,7 +458,7 @@ export interface DetailIllust extends Illust {
 
 export interface SimpleIllust {
     id: number
-    thumbnailFile: string
+    filePath: FilePath
 }
 
 export interface SimpleCollection extends SimpleIllust {

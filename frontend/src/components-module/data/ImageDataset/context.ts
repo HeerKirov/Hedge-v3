@@ -7,13 +7,13 @@ import { useInterceptedKey } from "@/modules/keyboard"
 import { TypeDefinition, useDraggable, useDroppable } from "@/modules/drag"
 import { installation } from "@/utils/reactivity"
 import { LocalDateTime } from "@/utils/datetime"
+import { FilePath } from "@/functions/http-client/api/all"
 
 const SELECTED_MAX = 200
 
 export interface SuitableIllust {
     id: number
-    file: string
-    thumbnailFile: string
+    filePath: FilePath
     favorite: boolean
     orderTime: LocalDateTime
     type?: IllustType

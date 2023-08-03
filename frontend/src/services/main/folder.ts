@@ -174,7 +174,7 @@ export function useFolderDetailPane() {
         }
     })
 
-    const exampleThumbnailFiles = computed(() => exampleData.value.filter(f => f !== null).map(f => f!.thumbnailFile))
+    const exampleThumbnailFiles = computed(() => exampleData.value.filter(f => f !== null).map(f => f!.filePath.sample))
 
     const setTitle = async (title: string) => {
         if(title.trim().length <= 0) {

@@ -1,6 +1,6 @@
 import { HttpInstance, Response } from "../instance"
 import { NotFound, ResourceNotExist } from "../exceptions"
-import { IdResponse, LimitAndOffsetFilter, ListResult, OrderList } from "./all"
+import { IdResponse, LimitAndOffsetFilter, ListResult, NullableFilePath, OrderList } from "./all"
 import { ImagePropsCloneForm } from "./illust"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 
@@ -216,7 +216,7 @@ export interface FindSimilarDetailResult extends FindSimilarResult {
 }
 
 export interface FindSimilarResultImage extends FindSimilarEntityKey {
-    thumbnailFile: string | null
+    filePath: NullableFilePath | null
 }
 
 interface FindSimilarResultRelationTemplate<T extends SimilarityType, I extends RelationInfo> { a: FindSimilarEntityKey, b: FindSimilarEntityKey, type: T, info: I }

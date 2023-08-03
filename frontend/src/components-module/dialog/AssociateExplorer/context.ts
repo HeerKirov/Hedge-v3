@@ -74,7 +74,7 @@ export function useAssociateEditorData(props: {id: number, addIds: number[], mod
     const path = toRef(props, "id")
 
     const { dragover: _, ...dropEvents } = useDroppable("illusts", illusts => {
-        const adds = illusts.filter(i => i.id !== props.id && !images.value.some(j => j.id === i.id)).map(i => ({id: i.id, thumbnailFile: i.thumbnailFile}))
+        const adds = illusts.filter(i => i.id !== props.id && !images.value.some(j => j.id === i.id)).map(i => ({id: i.id, filePath: i.filePath}))
         images.value.push(...adds)
     })
 
@@ -102,7 +102,7 @@ export function useAssociateEditorData(props: {id: number, addIds: number[], mod
 
         watchEffect(() => {
             if(data.value !== null && addIllusts.value !== null) {
-                images.value = [...data.value, ...addIllusts.value].map(i => ({id: i.id, thumbnailFile: i.thumbnailFile}))
+                images.value = [...data.value, ...addIllusts.value].map(i => ({id: i.id, filePath: i.filePath}))
             }
         })
     }else if(props.mode == "override") {
@@ -110,7 +110,7 @@ export function useAssociateEditorData(props: {id: number, addIds: number[], mod
             const addIds = props.addIds.filter(id => id !== props.id)
             const res = await fetchIllustByIds(addIds)
             if(res !== undefined) {
-                images.value = <SimpleIllust[]>res.filter(i => i !== null).map(i => ({id: i!.id, thumbnailFile: i!.thumbnailFile}))
+                images.value = <SimpleIllust[]>res.filter(i => i !== null).map(i => ({id: i!.id, filePath: i!.filePath}))
             }
         })
     }else{
@@ -121,7 +121,7 @@ export function useAssociateEditorData(props: {id: number, addIds: number[], mod
 
         watchEffect(() => {
             if(data.value !== null) {
-                images.value = data.value.map(i => ({id: i.id, thumbnailFile: i.thumbnailFile}))
+                images.value = data.value.map(i => ({id: i.id, filePath: i.filePath}))
             }
         })
     }

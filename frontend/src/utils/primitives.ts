@@ -174,6 +174,13 @@ export const strings = {
             }
         }
         return ret
+    },
+    getExtension(src: string): string {
+        const i = src.lastIndexOf(".")
+        if(i >= 0) {
+            return src.substring(i + 1).toLowerCase()
+        }
+        return ""
     }
 }
 

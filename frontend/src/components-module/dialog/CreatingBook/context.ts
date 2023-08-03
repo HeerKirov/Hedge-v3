@@ -54,15 +54,15 @@ export function useCreatingBookContext(images: Ref<number[]>, onCreated: (bookId
         }
     })
 
-    const thumbnailFiles = computedAsync([], async () => {
+    const files = computedAsync([], async () => {
         if(images.value.length > 0) {
             const res = await fetchImageSituation(images.value)
             if(res !== undefined) {
-                return res.map(item => item.thumbnailFile)
+                return res.map(item => item.filePath.sample)
             }
         }
         return []
     })
 
-    return {form, submit, thumbnailFiles}
+    return {form, submit, files}
 }

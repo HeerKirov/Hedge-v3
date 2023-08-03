@@ -21,7 +21,7 @@ const navigator = useRouterNavigator()
 
 const otherNameText = computed(() => props.data.otherNames.length > 0 ? props.data.otherNames.join(" / ") : null)
 
-const exampleImages = computed(() => props.examples?.map(ex => ex.thumbnailFile) ?? [])
+const exampleImages = computed(() => props.examples?.map(ex => ex.filePath.sample) ?? [])
 
 const more = () => navigator.goto({routeName: "MainIllust", params: {authorName: props.data.name}})
 

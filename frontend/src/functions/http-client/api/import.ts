@@ -4,7 +4,7 @@ import {
     NotFound, ResourceNotExist, ParamError, ParamNotRequired, ParamRequired, StorageNotAccessibleError
 } from "../exceptions"
 import { HttpInstance, Response } from "../instance"
-import { IdResponseWithWarnings, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
+import { FilePath, IdResponseWithWarnings, LimitAndOffsetFilter, ListResult, mapFromOrderList, NullableFilePath, OrderList } from "./all"
 import { ImagePropsCloneForm, SimpleCollection, Tagme } from "./illust"
 import { SimpleFolder } from "./folder"
 import { SimpleBook } from "./book"
@@ -185,9 +185,8 @@ export interface PathWatcherError {
 
 export interface ImportImage {
     id: number
-    file: string
-    thumbnailFile: string | null
-    fileName: string | null
+    filePath: NullableFilePath
+    originFileName: string | null
     sourceSite: string | null
     sourceId: number | null
     sourcePart: number | null
@@ -201,7 +200,7 @@ export interface DetailImportImage extends ImportImage {
     size: number
     resolutionWidth: number
     resolutionHeight: number
-    filePath: string | null
+    originalFilePath: string | null
     fileFromSource: string | null
     fileCreateTime: LocalDateTime | null
     fileUpdateTime: LocalDateTime | null

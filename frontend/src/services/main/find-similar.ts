@@ -492,7 +492,7 @@ export function useFindSimilarCompareData(id: Ref<{type: "IMPORT_IMAGE" | "ILLUS
                     ok: true,
                     status: 200,
                     data: <FindSimilarCompareData>{
-                        thumbnailFile: metadata.data.thumbnailFile,
+                        filePath: metadata.data.filePath.thumbnail,
                         metadata: {
                             id: metadata.data.id,
                             file: null,
@@ -532,10 +532,10 @@ export function useFindSimilarCompareData(id: Ref<{type: "IMPORT_IMAGE" | "ILLUS
                     ok: true,
                     status: 200,
                     data: <FindSimilarCompareData>{
-                        thumbnailFile: res.data.thumbnailFile,
+                        filePath: res.data.filePath.thumbnail,
                         metadata: {
                             id: res.data.id,
-                            file: res.data.fileName,
+                            file: res.data.originFileName,
                             extension: res.data.extension,
                             size: res.data.size,
                             resolutionWidth: res.data.resolutionWidth,
@@ -584,7 +584,7 @@ export function useFindSimilarCompareList<T>(columnNum: Ref<number>, a: () => T 
 }
 
 export interface FindSimilarCompareData {
-    thumbnailFile: string | null
+    filePath: string | null
     metadata: {
         id: number | null
         file: string | null

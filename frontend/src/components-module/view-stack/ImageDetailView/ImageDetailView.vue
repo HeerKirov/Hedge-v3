@@ -114,7 +114,7 @@ const popupMenu = usePopupMenu(computed(() => [
                 </MiddleLayout>
             </template>
 
-            <PlayBoard v-if="data !== null" :src="assetsUrl(data.file)" :zoom-value="zoomValue" v-model:zoom-enabled="zoomEnabled" @contextmenu="popupMenu.popup()"/>
+            <PlayBoard v-if="data !== null" :src="assetsUrl(data.filePath.original)" :zoom-value="zoomValue" v-model:zoom-enabled="zoomEnabled" @contextmenu="popupMenu.popup()"/>
         </TopBarCollapseLayout>
     </SideLayout>
 </template>

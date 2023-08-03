@@ -41,6 +41,18 @@ export interface ErrorResult {
     info: any
 }
 
+export interface FilePath {
+    original: string
+    thumbnail: string
+    sample: string
+}
+
+export interface NullableFilePath {
+    original: string
+    thumbnail: string | null
+    sample: string | null
+}
+
 type OrderPrefix = "" | "+" | "-"
 
 type OrderListItem<T extends string> = `${OrderPrefix}${T}`

@@ -1,6 +1,6 @@
 import { HttpInstance, Response } from ".."
 import { ResourceNotExist } from "../exceptions"
-import { LimitAndOffsetFilter, ListResult } from "./all"
+import { FilePath, LimitAndOffsetFilter, ListResult } from "./all"
 import { datetime, LocalDateTime } from "@/utils/datetime"
 
 export function createStagingPostEndpoint(http: HttpInstance): StagingPostEndpoint {
@@ -15,10 +15,12 @@ export function createStagingPostEndpoint(http: HttpInstance): StagingPostEndpoi
 function mapToStagingPostImage(data: any): StagingPostImage {
     return {
         id: <number>data["id"],
-        file: <string>data["file"],
-        thumbnailFile: <string>data["thumbnailFile"],
+        filePath: <FilePath>data["filePath"],
         score: <number | null>data["score"],
         favorite: <boolean>data["favorite"],
+        sourceSite: <string | null>data["sourceSite"],
+        sourceId: <number | null>data["sourceId"],
+        sourcePart: <number | null>data["sourcePart"],
         orderTime: datetime.of(<string>data["orderTime"])
     }
 }
@@ -36,10 +38,12 @@ export interface StagingPostEndpoint {
 
 export interface StagingPostImage {
     id: number
-    file: string
-    thumbnailFile: string
+    filePath: FilePath
     score: number | null
     favorite: boolean
+    sourceSite: string | null
+    sourceId: number | null
+    sourcePart: number | null
     orderTime: LocalDateTime
 }
 

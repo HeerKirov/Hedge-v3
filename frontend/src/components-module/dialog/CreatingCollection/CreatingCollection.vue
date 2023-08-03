@@ -43,11 +43,11 @@ const { selected, submit } = useCreatingCollectionContext(computed(() => props.p
         <template v-if="p.situations.length">
             <Block v-for="s in p.situations" :class="$style.item" :color="selected === s.id ? 'primary' : undefined" @click="selected = s.id">
                 <div :class="$style['left-column']">
-                    <img :class="$style.img" :src="assetsUrl(s.childrenExamples[0].thumbnailFile)" :alt="`collection ${s.id} cover`"/>
+                    <img :class="$style.img" :src="assetsUrl(s.childrenExamples[0].filePath.sample)" :alt="`collection ${s.id} cover`"/>
                 </div>
                 <div :class="$style['right-column']">
                     <p :class="$style.title">合并到集合<Icon class="mx-2" icon="id-card"/><b class="can-be-selected">{{s.id}}</b></p>
-                    <img v-for="child in s.childrenExamples.slice(1)" :key="child.id" :class="$style['example-img']" :alt="`example ${child.id}`" :src="assetsUrl(child.thumbnailFile)"/>
+                    <img v-for="child in s.childrenExamples.slice(1)" :key="child.id" :class="$style['example-img']" :alt="`example ${child.id}`" :src="assetsUrl(child.filePath.sample)"/>
                     <span :class="$style.counter">共{{s.childrenCount}}项</span>
                 </div>
             </Block>

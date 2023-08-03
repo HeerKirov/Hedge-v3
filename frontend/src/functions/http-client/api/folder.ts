@@ -1,6 +1,6 @@
 import { HttpInstance, Response } from ".."
 import { AlreadyExists, NotFound, RecursiveParentError, Reject, ResourceNotExist, ResourceNotSuitable } from "../exceptions"
-import { IdResponse, LimitAndOffsetFilter, ListResult, OrderList } from "./all"
+import { FilePath, IdResponse, LimitAndOffsetFilter, ListResult, OrderList } from "./all"
 import { Tagme } from "./illust"
 import { datetime, LocalDateTime } from "@/utils/datetime"
 
@@ -65,8 +65,7 @@ function mapToFolderTreeNode(data: any): FolderTreeNode {
 function mapToFolderImage(data: any): FolderImage {
     return {
         id: <number>data["id"],
-        file: <string>data["file"],
-        thumbnailFile: <string>data["thumbnailFile"],
+        filePath: <FilePath>data["filePath"],
         score: <number | null>data["score"],
         favorite: <boolean>data["favorite"],
         tagme: <Tagme[]>data["tagme"],
@@ -200,8 +199,7 @@ export interface SimpleFolder {
 
 export interface FolderImage {
     id: number
-    file: string
-    thumbnailFile: string
+    filePath: FilePath
     score: number | null
     favorite: boolean
     tagme: Tagme[]

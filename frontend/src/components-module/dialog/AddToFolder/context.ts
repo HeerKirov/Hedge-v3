@@ -58,7 +58,7 @@ export function useAddToFolderContext(illustIds: Ref<number[]>, resolve: () => v
         if(selectedId.value !== null) {
             const res = await fetchFolderSituation({folderId: selectedId.value, illustIds: illustIds.value})
             if(res !== undefined) {
-                const duplicates = res.filter(d => d.ordinal !== null).map(d => ({id: d.id, thumbnailFile: d.thumbnailFile, ordinal: d.ordinal!}))
+                const duplicates = res.filter(d => d.ordinal !== null).map(d => ({id: d.id, filePath: d.filePath, ordinal: d.ordinal!}))
                 if(duplicates.length > 0) {
                     return {
                         duplicates,

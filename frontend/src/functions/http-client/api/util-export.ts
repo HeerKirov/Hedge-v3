@@ -1,5 +1,6 @@
 import { HttpInstance, Response } from ".."
 import { LocationNotAccessibleError } from "../exceptions"
+import { FilePath } from "./all"
 
 export function createUtilExportEndpoint(http: HttpInstance): UtilExportEndpoint {
     return {
@@ -22,8 +23,7 @@ export interface ExportExecuteForm {
 
 export interface ExportSituationImage {
     id: number
-    file: string
-    thumbnailFile: string
+    filePath: FilePath
 }
 
 export interface ExportExecution {

@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed } from "vue"
+import { Icon } from "@/components/universal"
 import { Flex, FlexItem } from "@/components/layout"
-import { SourceInfo } from "@/components-business/form-display"
-import { useAssets } from "@/functions/app"
+import { FileInfoDisplay, SourceInfo } from "@/components-business/form-display"
 import { PaginationData, QueryInstance } from "@/functions/fetch"
 import { ImportImage } from "@/functions/http-client/api/import"
+import { useAssets } from "@/functions/app"
 import { TypeDefinition } from "@/modules/drag"
 import { date, datetime } from "@/utils/datetime"
 import { toRef } from "@/utils/reactivity"
+import { strings } from "@/utils/primitives"
+import { isVideoExtension } from "@/utils/validation"
 import { installDatasetContext } from "./context"
 import SelectedCountBadge from "./SelectedCountBadge.vue"
 import DatasetGridFramework from "./DatasetGridFramework.vue"
@@ -115,17 +118,23 @@ installDatasetContext({
 <template>
     <div class="w-100 h-100 relative" :style="style">
         <DatasetGridFramework v-if="viewMode === 'grid'" :column-num="columnNum!" v-slot="{ item }">
-            <img :class="$style['grid-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`import-image-${item.id}`"/>
+            <img :class="$style['grid-img']" :src="assetsUrl(item.filePath.thumbnail)" :alt="`import-image-${item.id}`"/>
+            <Icon v-if="isVideoExtension(item.filePath.original)" :class="$style['grid-video']" icon="video"/>
         </DatasetGridFramework>
         <DatasetRowFramework v-else :row-height="32" v-slot="{ item }">
             <Flex horizontal="stretch" align="center">
                 <FlexItem :shrink="0" :grow="0">
-                    <img :class="$style['row-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`import-image-${item.id}`"/>
+                    <img :class="$style['row-img']" :src="assetsUrl(item.filePath.sample)" :alt="`import-image-${item.id}`"/>
                 </FlexItem>
-                <FlexItem :width="40">
-                    <div class="ml-1 no-wrap overflow-ellipsis">{{item.fileName}}</div>
+                <FlexItem :width="35">
+                    <div class="ml-1 no-wrap overflow-ellipsis">{{item.originFileName}}</div>
                 </FlexItem>
-                <FlexItem :width="30" :shrink="0">
+                <FlexItem :width="15" :shrink="0">
+                    <div class="mr-1">
+                        <FileInfoDisplay :extension="strings.getExtension(item.filePath.original)" mode="inline"/>
+                    </div>
+                </FlexItem>
+                <FlexItem :width="25" :shrink="0">
                     <SourceInfo :site="item.sourceSite" :source-id="item.sourceId" :source-part="item.sourcePart"/>
                 </FlexItem>
                 <FlexItem :width="30" :shrink="0">
@@ -141,11 +150,19 @@ installDatasetContext({
 </template>
 
 <style module lang="sass">
+@import "../../../styles/base/color"
+
 .grid-img
     height: 100%
     width: 100%
     object-position: center
     object-fit: var(--var-fit-type, cover)
+
+.grid-video
+    position: absolute
+    left: 0.3rem
+    bottom: 0.25rem
+    color: $dark-mode-text-color
 
 .row-img
     margin-top: 1px

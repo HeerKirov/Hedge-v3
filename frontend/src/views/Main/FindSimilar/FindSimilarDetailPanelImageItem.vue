@@ -34,7 +34,7 @@ const selectedMode = computed(() => {
 </script>
 
 <template>
-    <img :class="$style.img" :src="assetsUrl(item.thumbnailFile)" :alt="`${item.type}-${item.id}`" @click="$emit('click', $event)"/>
+    <img :class="$style.img" :src="assetsUrl(item.filePath?.sample)" :alt="`${item.type}-${item.id}`" @click="$emit('click', $event)"/>
     <div :class="$style['id-badge']">
         <Icon v-if="item.type === 'IMPORT_IMAGE'" icon="plus-square"/>
         <Icon v-else icon="id-card"/>

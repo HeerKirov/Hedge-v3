@@ -23,7 +23,7 @@ const { dragover: _, ...dropEvents } = useDroppable("illusts", illusts => {
         if(illust.type === "COLLECTION") {
             forbidden.push(illust.id)
         }else if(props.value.findIndex(i => i.id === illust.id) === -1) {
-            append.push({id: illust.id, thumbnailFile: illust.thumbnailFile})
+            append.push({id: illust.id, filePath: illust.filePath})
         }
     }
     if(forbidden.length) message.showOkMessage("prompt", "图库集合不能用作示例。", `错误的项目: ${forbidden.join(", ")}`)
@@ -34,7 +34,7 @@ const { dragover: _, ...dropEvents } = useDroppable("illusts", illusts => {
 
 <template>
     <AspectGrid :items="value" :aspect="2" :spacing="1" v-slot="{ item }">
-        <img :src="assetsUrl(item.thumbnailFile)" :alt="item.thumbnailFile"/>
+        <img :src="assetsUrl(item.filePath.sample)"/>
     </AspectGrid>
     <div :class="$style['drop-area']" v-bind="dropEvents">
         <div>拖动图像到此处以添加示例</div>

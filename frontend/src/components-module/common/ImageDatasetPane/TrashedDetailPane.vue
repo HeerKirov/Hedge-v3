@@ -42,7 +42,7 @@ const remain = (remainingTime: number | null) => {
             </p>
         </template>
 
-        <ThumbnailImage minHeight="12rem" maxHeight="40rem" :file="data?.thumbnailFile" :draggable-file="data?.file"/>
+        <ThumbnailImage minHeight="12rem" maxHeight="40rem" :file="data?.filePath.thumbnail" :draggable-file="data?.filePath.original"/>
         <template v-if="!!data">
             <p class="my-1">
                 <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{path}}</b>

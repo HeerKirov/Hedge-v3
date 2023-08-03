@@ -44,7 +44,7 @@ const popupMenu = usePopupMenu([
         <Flex horizontal="stretch">
             <FlexItem :width="80" :shrink="0">
                 <div :class="$style.examples" @click="$emit('click')">
-                    <img v-for="image in item.images" :key="image.id" :class="$style.example" :src="assetsUrl(image.thumbnailFile)" alt="example img"/>
+                    <img v-for="image in item.images" :key="image.id" :class="$style.example" :src="assetsUrl(image.filePath?.sample)" alt="example img"/>
                 </div>
             </FlexItem>
             <FlexItem :width="20" :shrink="0">

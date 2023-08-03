@@ -2,12 +2,14 @@
 import { computed } from "vue"
 import { Icon } from "@/components/universal"
 import { Flex, FlexItem } from "@/components/layout"
-import { SourceInfo, TagmeInfo } from "@/components-business/form-display"
+import { FileInfoDisplay, SourceInfo } from "@/components-business/form-display"
 import { useAssets } from "@/functions/app"
 import { PaginationData, QueryInstance } from "@/functions/fetch"
 import { TypeDefinition } from "@/modules/drag"
 import { datetime } from "@/utils/datetime"
+import { strings } from "@/utils/primitives"
 import { toRef } from "@/utils/reactivity"
+import { isVideoExtension } from "@/utils/validation"
 import { installDatasetContext, SuitableIllust } from "./context"
 import SelectedCountBadge from "./SelectedCountBadge.vue"
 import DatasetGridFramework from "./DatasetGridFramework.vue"
@@ -114,15 +116,17 @@ installDatasetContext({
 
 <template>
     <div class="w-100 h-100 relative" :style="style">
-        <DatasetGridFramework v-if="viewMode === 'grid'" :column-num="columnNum!" v-slot="{ item, index }">
-            <img :class="$style['grid-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`illust-${item.id}`"/>
+        <DatasetGridFramework v-if="viewMode === 'grid'" :column-num="columnNum!" v-slot="{ item }">
+            <!-- TODO 尝试加入动态处理，切换使用thumbnail/sample。对其他dataset也是如此 -->
+            <img :class="$style['grid-img']" :src="assetsUrl(item.filePath.thumbnail)" :alt="`illust-${item.id}`"/>
             <Icon v-if="item.favorite" :class="[$style['grid-favorite'], 'has-text-danger']" icon="heart"/>
+            <Icon v-if="isVideoExtension(item.filePath.original)" :class="$style['grid-video']" icon="video"/>
             <div v-if="item.childrenCount" :class="$style['grid-num-tag']"><Icon class="mr-half" icon="images"/>{{item.childrenCount}}</div>
         </DatasetGridFramework>
-        <DatasetRowFramework v-else :row-height="32" v-slot="{ item, index }">
+        <DatasetRowFramework v-else :row-height="32" v-slot="{ item }">
             <Flex horizontal="stretch" align="center">
                 <FlexItem :shrink="0" :grow="0">
-                    <img :class="$style['row-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`illust-${item.id}`"/>
+                    <img :class="$style['row-img']" :src="assetsUrl(item.filePath.sample)" :alt="`illust-${item.id}`"/>
                 </FlexItem>
                 <FlexItem :width="20">
                     <div class="ml-1">{{item.id}}</div>
@@ -144,9 +148,9 @@ installDatasetContext({
                         </template>
                     </div>
                 </FlexItem>
-                <FlexItem :shrink="0">
-                    <div :class="$style.tagme">
-                        <TagmeInfo v-if="item.tagme.length > 0" mode="simple" :value="item.tagme"/>
+                <FlexItem :width="15" :shrink="0">
+                    <div class="mr-1">
+                        <FileInfoDisplay :extension="strings.getExtension(item.filePath.original)" mode="inline"/>
                     </div>
                 </FlexItem>
                 <FlexItem :width="30">
@@ -173,8 +177,14 @@ installDatasetContext({
 
 .grid-favorite
     position: absolute
-    right: 0.25rem
+    right: 0.3rem
     bottom: 0.25rem
+
+.grid-video
+    position: absolute
+    left: 0.3rem
+    bottom: 0.25rem
+    color: $dark-mode-text-color
 
 .grid-num-tag
     position: absolute
@@ -199,10 +209,6 @@ installDatasetContext({
 .row-favorite
     width: 1.5rem
     text-align: center
-
-.tagme
-    width: 5rem
-    margin-right: 0.5rem
 
 .time
     width: 8rem

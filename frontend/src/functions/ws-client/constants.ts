@@ -10,9 +10,9 @@ export interface BaseWsEvent<ET extends string> {
 
 export type AllEventTypes = AllEvents["eventType"]
 
-export type AllEvents = AppEvents | EntityEvents | BackendEvents | SettingEvents
+export type AllEvents = AppEvents | EntityEvents | SettingEvents
 
-type AppEvents = AppStatusChanged | HomepageStateChanged | StagingPostChanged
+type AppEvents = AppStatusChanged | HomepageStateChanged | StagingPostChanged | PathWatcherStatusChanged
 
 type EntityEvents
     = AnnotationCreated | AnnotationUpdated | AnnotationDeleted
@@ -26,8 +26,6 @@ type EntityEvents
     | SourceBookUpdated | SourceTagUpdated | SourceTagMappingUpdated
     | FindSimilarResultCreated | FindSimilarResultResolved | FindSimilarResultDeleted
 
-type BackendEvents = PathWatcherStatusChanged 
-
 type SettingEvents = SettingServiceChanged | SettingMetaChanged | SettingQueryChanged | SettingImportChanged | SettingFileChanged | SettingFindSimilarChanged | SettingSourceSiteChanged
 
 //== App相关的系统通知 ==
@@ -37,6 +35,8 @@ export interface AppStatusChanged extends BaseWsEvent<"app/app-status/changed"> 
 export interface HomepageStateChanged extends BaseWsEvent<"app/homepage/state/changed"> { }
 
 export interface StagingPostChanged extends BaseWsEvent<"app/staging-post/changed"> { added: number[], moved: number[], deleted: number[] }
+
+export interface PathWatcherStatusChanged extends BaseWsEvent<"app/path-watcher/status-changed"> { isOpen: boolean, statisticCount: number, errors: PathWatcherError[] }
 
 //== 实体类相关的变更通知 ==
 
@@ -111,10 +111,6 @@ export interface FindSimilarResultCreated extends BaseWsEvent<"entity/find-simil
 export interface FindSimilarResultResolved extends BaseWsEvent<"entity/find-similar-result/resolved"> { resultId: number }
 
 export interface FindSimilarResultDeleted extends BaseWsEvent<"entity/find-similar-result/deleted"> { resultId: number }
-
-//== backend后台相关变更通知 ==
-
-export interface PathWatcherStatusChanged extends BaseWsEvent<"backend/path-watcher/status-changed"> { isOpen: boolean, statisticCount: number, errors: PathWatcherError[] }
 
 //== setting相关变更通知 ==
 

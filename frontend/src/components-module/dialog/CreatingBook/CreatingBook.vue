@@ -21,7 +21,7 @@ const onCreated = (bookId: number) => {
     emit("close")
 }
 
-const { form, submit, thumbnailFiles } = useCreatingBookContext(images, onCreated)
+const { form, submit, files } = useCreatingBookContext(images, onCreated)
 
 </script>
 
@@ -34,13 +34,13 @@ const { form, submit, thumbnailFiles } = useCreatingBookContext(images, onCreate
         <Input width="fullwidth" type="textarea" v-model:value="form.description"/>
         <label class="label mt-2">评分</label>
         <div class="w-25"><ScoreEditor :value="form.score ?? null" @update:value="form.score = $event"/></div>
-        <div v-if="thumbnailFiles.length > 0" class="mt-2">
+        <div v-if="files.length > 0" class="mt-2">
             <label class="label">图像列表预览</label>
-            <GridImages :images="thumbnailFiles" :column-num="7"/>
+            <GridImages :images="files" :column-num="7"/>
         </div>
         <template #bottom>
             <div class="mt-2">
-                <span class="ml-2 is-line-height-std">共{{thumbnailFiles.length}}个图像</span>
+                <span class="ml-2 is-line-height-std">共{{files.length}}个图像</span>
                 <Button class="float-right" mode="filled" type="primary" icon="save" @click="submit">保存</Button>
             </div>
         </template>

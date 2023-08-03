@@ -24,8 +24,8 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
 </script>
 
 <template>
-    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.thumbnailFile" @click="openImagePreview"/>
-    <p v-if="data?.fileName" class="selectable word-wrap-anywhere my-1">{{data.fileName}}</p>
+    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.filePath.thumbnail" @click="openImagePreview"/>
+    <p v-if="data?.originFileName" class="selectable word-wrap-anywhere my-1">{{data.originFileName}}</p>
     <Separator direction="horizontal"/>
     <p class="mt-2"><Icon icon="edit"/>批量编辑</p>
     <p class="mt-2"><CheckBox v-model:value="actives.tagme">设置Tagme</CheckBox></p>

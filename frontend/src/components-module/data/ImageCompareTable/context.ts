@@ -13,7 +13,7 @@ import { arrays } from "@/utils/primitives"
 import { LocalDate, LocalDateTime } from "@/utils/datetime"
 
 export interface ImageData {
-    thumbnailFile: string | null
+    filePath: string | null
     metadata: {
         id: number
         extension: string
@@ -78,7 +78,7 @@ function useImageData(initIndex: number | null) {
                     ok: true,
                     status: 200,
                     data: <ImageData>{
-                        thumbnailFile: metadata.data.thumbnailFile,
+                        filePath: metadata.data.filePath.thumbnail,
                         metadata: {
                             id: metadata.data.id,
                             extension: metadata.data.extension,

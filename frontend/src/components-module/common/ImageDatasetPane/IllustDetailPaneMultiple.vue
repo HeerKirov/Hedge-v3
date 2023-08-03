@@ -17,9 +17,10 @@ const { data, actives, anyActive, form, submit, openImagePreview } = useIllustDe
 </script>
 
 <template>
-    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.thumbnailFile" @click="openImagePreview"/>
+    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.filePath.thumbnail" @click="openImagePreview"/>
     <p class="mt-1 mb-1">
         <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{data?.id}}</b>
+        <span v-if="data?.type === 'COLLECTION'" class="float-right"><Icon class="mr-1" icon="images"/>{{ data.childrenCount }}项</span>
     </p>
     <Separator direction="horizontal"/>
     <p class="mt-2"><Icon icon="edit"/>批量编辑</p>

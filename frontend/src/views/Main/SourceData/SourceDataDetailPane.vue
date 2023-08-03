@@ -16,7 +16,7 @@ const { data, relatedImages, setSourceEditStatus, gotoIllust, openEditDialog } =
     <template v-if="data !== null">
         <SourceInfo class="mb-2" :source-id="data.sourceId" :site="data.sourceSite" :source-part="null"/>
         <template v-if="relatedImages?.length">
-            <ThumbnailImage :file="relatedImages[0].thumbnailFile" min-height="12rem" max-height="40rem"/>
+            <ThumbnailImage :file="relatedImages[0].filePath.thumbnail" min-height="12rem" max-height="40rem"/>
             <p class="w-100 has-text-right">
                 <a class="no-wrap" @click="gotoIllust">
                     {{relatedImages.length > 1 ? `在图库查看全部的${relatedImages.length}个项目` : '在图库查看此项目'}}

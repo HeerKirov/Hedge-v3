@@ -91,7 +91,7 @@ function useListThumbnailLoadingCache() {
 
     const fetchThumbnailFiles = async (id: number) => {
         const res = await fetch(id)
-        return res !== undefined ? res.result.map(i => i.thumbnailFile) : []
+        return res !== undefined ? res.result.map(i => i.filePath.sample) : []
     }
 
     const getThumbnailFiles = async (id: number) => {

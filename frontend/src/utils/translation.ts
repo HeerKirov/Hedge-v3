@@ -1,6 +1,5 @@
 import { MappingSourceTag, MappingSourceTagForm } from "@/functions/http-client/api/source-tag-mapping"
 import { SourceBook, SourceBookForm, SourceTag, SourceTagForm } from "@/functions/http-client/api/source-data"
-import { objects } from "./primitives"
 
 /**
  * 结合旧的和新的mapping source tag，patch出需要提交到server的表单内容。
@@ -59,8 +58,7 @@ export function patchSourceBookForm(items: SourceBook[], oldItems: SourceBook[])
             return {
                 code: item.code,
                 title: (item.title || null) !== (oldItem.title || null) ? (item.title || "") : undefined,
-                otherTitle: (item.otherTitle || null) !== (oldItem.otherTitle || null) ? (item.otherTitle || null) : undefined,
-                links: !objects.deepEquals(item.links, oldItem.links) ? item.links : undefined
+                otherTitle: (item.otherTitle || null) !== (oldItem.otherTitle || null) ? (item.otherTitle || null) : undefined
             }
         }
     })

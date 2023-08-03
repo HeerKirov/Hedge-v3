@@ -1,6 +1,6 @@
 import { HttpInstance, Response } from ".."
 import { ConflictingGroupMembersError, NotFound, ResourceNotExist, ResourceNotSuitable } from "../exceptions"
-import { IdResponse, LimitAndOffsetFilter, ListResult, OrderList } from "./all"
+import { FilePath, IdResponse, LimitAndOffsetFilter, ListResult, OrderList } from "./all"
 import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
 import { RelatedSimpleTag } from "./tag"
@@ -33,8 +33,7 @@ function mapToBook(data: any): Book {
         id: <number>data["id"],
         title: <string>data["title"],
         imageCount: <number>data["imageCount"],
-        file: <string | null>data["file"],
-        thumbnailFile: <string | null>data["thumbnailFile"],
+        filePath: <FilePath | null>data["filePath"],
         score: <number | null>data["score"],
         favorite: <boolean>data["favorite"],
         createTime: datetime.of(<string>data["createTime"]),
@@ -55,8 +54,7 @@ function mapToDetailBook(data: any): DetailBook {
 function mapToBookImage(data: any): BookImage {
     return {
         id: <number>data["id"],
-        file: <string>data["file"],
-        thumbnailFile: <string>data["thumbnailFile"],
+        filePath: <FilePath>data["file"],
         score: <number | null>data["score"],
         favorite: <boolean>data["favorite"],
         tagme: <Tagme[]>data["tagme"],
@@ -132,13 +130,9 @@ export interface Book {
      */
     imageCount: number
     /**
-     * 作为book封面的image文件路径。如果book没有项目，那么文件路径是null。
+     * 作为book封面的image文件。如果book没有项目，那么文件是null。
      */
-    file: string | null
-    /**
-     * 作为book封面的image缩略图文件路径。如果book没有项目，那么文件路径是null。
-     */
-    thumbnailFile: string | null
+    filePath: FilePath | null
     /**
      * 评分。
      */
@@ -183,8 +177,7 @@ export interface SimpleBook {
 
 export interface BookImage {
     id: number
-    file: string
-    thumbnailFile: string
+    filePath: FilePath
     score: number | null
     favorite: boolean
     tagme: Tagme[]

@@ -20,7 +20,7 @@ defineProps<{
             </div>
         </template>
         <Gap :class="$style.gap" :parent-id="parentId" :ordinal="nodes.length"/>
-        <!-- TODO 多个层级嵌套时gap会多层，观感不太好。最好有个方案，能合理地只保留一层 -->
+        <!-- FUTURE 多个层级嵌套时gap会多层，观感不太好。最好有个方案，能合理地只保留一层 -->
     </div>
     <div v-else :class="[$style.root, $style.inline]">
         <template v-for="(node, index) in nodes" :key="node.id">

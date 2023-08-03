@@ -14,6 +14,7 @@ import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
 import { installation } from "@/utils/reactivity"
 import { LocalDateTime } from "@/utils/datetime"
+import { FilePath } from "@/functions/http-client/api/all"
 
 export interface ImageDatasetOperatorsOptions<T extends BasicIllust> {
     /**
@@ -170,7 +171,7 @@ export interface ImageDatasetOperators<T extends BasicIllust> {
     stagingPostCount: Readonly<Ref<number>>
 }
 
-interface BasicIllust { id: number, type?: IllustType, file: string, thumbnailFile: string, orderTime: LocalDateTime }
+interface BasicIllust { id: number, type?: IllustType, filePath: FilePath, orderTime: LocalDateTime }
 
 /**
  * 提供一组综合的operators，在Illust列表相关的位置使用。
@@ -382,7 +383,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
         if(idx !== undefined) {
             const res = await fetchStagingPostListAll({})
             if(res !== undefined) {
-                const ok = await dataDrop(position === "before" ? idx : idx + 1, res.result.map(i => ({id: i.id, thumbnailFile: i.thumbnailFile, type: "IMAGE", childrenCount: null})), "ADD")
+                const ok = await dataDrop(position === "before" ? idx : idx + 1, res.result.map(i => ({id: i.id, filePath: i.filePath, type: "IMAGE", childrenCount: null})), "ADD")
                 if(ok) {
                     await fetchStagingPostUpdate({action: "CLEAR"})
                 }
@@ -509,7 +510,7 @@ export function useLocateId<T extends BasicIllust>(options: LocateIdOptions<T>) 
 
 interface ListviewForPreviewOptions {
     listview: {
-        listview: QueryListview<{id: number, file: string}>
+        listview: QueryListview<{id: number, filePath: FilePath}>
         paginationData: PaginationDataView<unknown>
     }
     selector: SelectedState<number>

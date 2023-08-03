@@ -40,15 +40,15 @@ const loadingCache = reactive({
 
 const addImageInputText = ref<string>("")
 
-const imageFilepaths = computed(() => loadingCache.images.map(i => i.thumbnailFile))
+const imageFilepaths = computed(() => loadingCache.images.map(i => i.filePath.sample))
 
-const importImageFilepaths = computed(() => loadingCache.importImages.map(i => i.thumbnailFile))
+const importImageFilepaths = computed(() => loadingCache.importImages.map(i => i.filePath.sample))
 
 const { dragover: _, ...dropEvents } = useDroppable(["importImages", "illusts"], (data, type) => {
     if(props.selector.type === "image" && type === "illusts" && data.length > 0) {
         const imageIds = props.selector.imageIds
         const add = (<CoverIllust[]>data).filter(i => imageIds.indexOf(i.id) < 0)
-        loadingCache.images = [...loadingCache.images, ...add.map(i => ({id: i.id, thumbnailFile: i.thumbnailFile}))]
+        loadingCache.images = [...loadingCache.images, ...add.map(i => ({id: i.id, filePath: i.filePath}))]
         emit("update:selector", {type: "image", imageIds: [...props.selector.imageIds, ...add.map(i => i.id)]})
     }else if(props.selector.type === "importImage" && type === "importImages" && data.length > 0) {
         const importIds = props.selector.importIds
@@ -81,7 +81,7 @@ watch(() => props.selector, async (selector, old) => {
             if(res !== undefined && res.length) {
                 for(const r of res) {
                     if(r !== null) {
-                        map[r.id] = {id: r.id, thumbnailFile: r.thumbnailFile}
+                        map[r.id] = {id: r.id, filePath: r.filePath}
                     }
                 }
             }

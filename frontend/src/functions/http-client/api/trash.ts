@@ -1,7 +1,7 @@
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 import { NotFound } from "../exceptions"
 import { HttpInstance, Response } from "../instance"
-import { LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList, SimpleAuthor, SimpleTag, SimpleTopic } from "./all"
+import { FilePath, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList, SimpleAuthor, SimpleTag, SimpleTopic } from "./all"
 import { SimpleCollection, SimpleIllust, Tagme } from "./illust"
 import { SimpleFolder } from "./folder"
 import { SimpleBook } from "./book"
@@ -69,8 +69,7 @@ export interface TrashEndpoint {
 
 export interface TrashedImage {
     id: number
-    file: string
-    thumbnailFile: string
+    filePath: FilePath
     score: number | null
     favorite: boolean
     tagme: Tagme[]

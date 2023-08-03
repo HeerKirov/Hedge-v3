@@ -24,7 +24,7 @@ const { packageMode, packageName, externalLocation, preview, executing, openDial
 
 const onDragstart = (e: DragEvent, item: ExportSituationImage) => {
     e.preventDefault()
-    startDragFile(assetsLocal(item.thumbnailFile), assetsLocal(item.file))
+    startDragFile(assetsLocal(item.filePath.sample), assetsLocal(item.filePath.original))
 }
 
 </script>
@@ -58,23 +58,23 @@ const onDragstart = (e: DragEvent, item: ExportSituationImage) => {
         </FlexItem>
         <FlexItem :width="80">
             <div v-if="preview.type === 'ILLUST' && preview.images.value.length === 1" :class="$style['single-image']">
-                <img :src="assetsUrl(preview.images.value[0].thumbnailFile)" @dragstart="onDragstart($event, preview.images.value[0])"/>
+                <img :src="assetsUrl(preview.images.value[0].filePath.thumbnail)" @dragstart="onDragstart($event, preview.images.value[0])"/>
             </div>
             <div v-else-if="preview.type === 'ILLUST' && preview.images.value.length <= 7" class="p-2">
                 <AspectGrid :class="$style['single-line']" :column-num="preview.images.value.length" :spacing="1" :items="preview.images.value" v-slot="{ item }">
-                    <img :src="assetsUrl(item.thumbnailFile)" :alt="`${item.id}`" @dragstart="onDragstart($event, item)"/>
+                    <img :src="assetsUrl(item.filePath.thumbnail)" :alt="`${item.id}`" @dragstart="onDragstart($event, item)"/>
                 </AspectGrid>
             </div>
             <div v-else-if="preview.type === 'ILLUST'" class="is-overflow-y-auto p-2">
                 <AspectGrid :column-num="7" :spacing="1" :items="preview.images.value" v-slot="{ item }">
-                    <img :src="assetsUrl(item.thumbnailFile)" :alt="`${item.id}`" @dragstart="onDragstart($event, item)"/>
+                    <img :src="assetsUrl(item.filePath.sample)" :alt="`${item.id}`" @dragstart="onDragstart($event, item)"/>
                 </AspectGrid>
             </div>
             <div v-else-if="preview.type === 'BOOK'" class="p-2">
                 <Block v-if="preview.book.value !== undefined" class="p-2">
                     <Flex :spacing="2" align="center">
-                        <FlexItem v-if="preview.book.value.thumbnailFile !== null" :shrink="0" :grow="0">
-                            <img :class="$style['book-cover']" :src="assetsUrl(preview.book.value.thumbnailFile)"/>
+                        <FlexItem v-if="preview.book.value.filePath !== null" :shrink="0" :grow="0">
+                            <img :class="$style['book-cover']" :src="assetsUrl(preview.book.value.filePath.sample)"/>
                         </FlexItem>
                         <FlexItem :width="100">
                             <div class="is-font-size-large">{{ preview.book.value.title }}</div>
@@ -88,7 +88,7 @@ const onDragstart = (e: DragEvent, item: ExportSituationImage) => {
                                  v-bind="preview.paginationData.data.metrics" @update="preview.paginationData.dataUpdate">
                     <div v-for="item in preview.paginationData.data.result" :class="$style['book-image']">
                         <div :class="$style.content">
-                            <img :src="assetsUrl(item.thumbnailFile)" @dragstart="onDragstart($event, item)"/>
+                            <img :src="assetsUrl(item.filePath.sample)" @dragstart="onDragstart($event, item)"/>
                         </div>
                     </div>
                 </VirtualGridView>

@@ -1,5 +1,6 @@
 import { Ref, ref, watch } from "vue"
 import { PaginationData, QueryListview } from "@/functions/fetch"
+import { NullableFilePath } from "@/functions/http-client/api/all"
 import { ServiceBaseType } from "../context"
 import { useInterceptedKey } from "@/modules/keyboard"
 
@@ -7,7 +8,7 @@ export type ImageProps = ServiceBaseType<"image"> & (ListviewModeProps | ArrayMo
 
 interface ListviewModeProps {
     type: "listview"
-    listview: QueryListview<{id: number, file: string}>
+    listview: QueryListview<{id: number, filePath: NullableFilePath}>
     paginationData: PaginationData<unknown>
     columnNum?: Readonly<Ref<number>>
     viewMode?: Readonly<Ref<"grid" | "row">>
@@ -50,7 +51,7 @@ function useListviewMode(ctx: ListviewModeProps) {
             idx = ctx.listview.proxy.syncOperations.find(i => i.id === selectedId, [ctx.paginationData.metrics.offset, ctx.paginationData.metrics.offset + ctx.paginationData.metrics.limit])
             if(idx !== undefined) {
                 const item = ctx.listview.proxy.syncOperations.retrieve(idx)!
-                targetFile.value = item.file
+                targetFile.value = item.filePath.original
             }else{
                 targetFile.value = null
             }
@@ -114,7 +115,7 @@ function getMultipleCtx(ctx: ListviewModeProps): ArrayModeProps {
         const idx = ctx.listview.proxy.syncOperations.find(i => i.id === id, [ctx.paginationData.metrics.offset, ctx.paginationData.metrics.offset + ctx.paginationData.metrics.limit])
         if(idx !== undefined) {
             const item = ctx.listview.proxy.syncOperations.retrieve(idx)!
-            return item.file
+            return item.filePath.original
         }else{
             return null
         }

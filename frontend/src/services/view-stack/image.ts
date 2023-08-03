@@ -248,13 +248,13 @@ function useOperators(data: Ref<Illust | null>, id: Ref<number | null>) {
 
     const openInLocalPreference = () => {
         if(data.value !== null) {
-            openLocalFile(assetsLocal.assetsLocal(data.value.file))
+            openLocalFile(assetsLocal.assetsLocal(data.value.filePath.original))
         }
     }
 
     const openInLocalFolder = () => {
         if(data.value !== null) {
-            openLocalFileInFolder(assetsLocal.assetsLocal(data.value.file))
+            openLocalFileInFolder(assetsLocal.assetsLocal(data.value.filePath.original))
         }
     }
 

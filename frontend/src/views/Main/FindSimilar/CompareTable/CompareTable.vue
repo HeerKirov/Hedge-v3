@@ -22,7 +22,7 @@ const dataB = useFindSimilarCompareData(toRef(props, "itemB"))
 
 const thStyle = computed(() => `width: calc((100% - 6rem) / ${columnNum.value})`)
 
-const thumbnailList = useFindSimilarCompareList(columnNum, () => dataA.value?.thumbnailFile ?? null, () => dataB.value?.thumbnailFile ?? null)
+const thumbnailList = useFindSimilarCompareList(columnNum, () => dataA.value?.filePath ?? null, () => dataB.value?.filePath ?? null)
 const metadataList = useFindSimilarCompareList(columnNum, () => dataA.value?.metadata ?? null, () => dataB.value?.metadata ?? null)
 const sourceDataList = useFindSimilarCompareList(columnNum, () => dataA.value?.sourceData ?? null, () => dataB.value?.sourceData ?? null)
 const relatedItemsList = useFindSimilarCompareList(columnNum, () => dataA.value?.relatedItems ?? null, () => dataB.value?.relatedItems ?? null)

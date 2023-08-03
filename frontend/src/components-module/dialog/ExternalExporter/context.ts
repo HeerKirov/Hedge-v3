@@ -1,5 +1,5 @@
 import { computed, onMounted, Ref, ref, shallowRef, watch } from "vue"
-import { IllustType, SimpleIllust } from "@/functions/http-client/api/illust"
+import { IllustType } from "@/functions/http-client/api/illust"
 import { useFetchHelper, useFetchReactive, usePaginationDataView, useQueryListview } from "@/functions/fetch"
 import { useVirtualViewNavigation } from "@/components/data"
 import { useMessageBox } from "@/modules/message-box"
@@ -8,6 +8,7 @@ import { Push } from "../context"
 import { ExportSituationImage } from "@/functions/http-client/api/util-export"
 import { useToast } from "@/modules/toast"
 import { useLocalStorage } from "@/functions/app"
+import { FilePath } from "@/functions/http-client/api/all"
 
 export interface ExternalExporter {
     /**
@@ -28,9 +29,9 @@ export type ExternalExporterProps = {
     book: number | BasicBook
 }
 
-interface BasicIllust { id: number, type: IllustType, file: string, thumbnailFile: string }
+interface BasicIllust { id: number, type: IllustType, filePath: FilePath }
 
-interface BasicBook { id: number, title: string, imageCount: number, file: string | null, thumbnailFile: string | null }
+interface BasicBook { id: number, title: string, imageCount: number, filePath: FilePath | null }
 
 export function useExternalExporter(push: Push): ExternalExporter {
     return {
@@ -128,7 +129,7 @@ function useExporterPreview(data: ExternalExporterProps) {
             if(data.illusts.every(i => typeof i === "object" && i.type === "IMAGE")) {
                 images.value = data.illusts.map(i => {
                     const target = <BasicIllust>i
-                    return {id: target.id, file: target.file, thumbnailFile: target.thumbnailFile}
+                    return {id: target.id, filePath: target.filePath}
                 })
             }else{
                 const res = await fetchIllustSituation(data.illusts.map(i => typeof i === "number" ? i : i.id))

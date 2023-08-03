@@ -22,7 +22,7 @@ const contextmenu = () => emit("contextmenu", props.item)
 <template>
     <div :class="$style.root">
         <Block :class="$style.content" @contextmenu="contextmenu">
-            <img :class="$style.img" :src="assetsUrl(item.thumbnailFile)" :alt="`book-${item.id}`" @click="click"/>
+            <img :class="$style.img" :src="assetsUrl(item.filePath?.thumbnail)" :alt="`book-${item.id}`" @click="click"/>
             <Icon v-if="item.favorite" :class="['has-text-danger', $style.fav]" icon="heart"/>
             <div :class="$style.info">
                 <span v-if="item.imageCount > 0" class="float-right">(<b>{{item.imageCount}}</b>)</span>

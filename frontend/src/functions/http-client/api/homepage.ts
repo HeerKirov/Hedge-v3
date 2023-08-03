@@ -4,6 +4,7 @@ import { HttpInstance, Response } from ".."
 import { SimpleIllust } from "./illust"
 import { TopicType } from "./topic"
 import { AuthorType } from "./author"
+import { FilePath } from "./all"
 
 export function createHomepageEndpoint(http: HttpInstance): HomepageEndpoint {
     return {
@@ -19,14 +20,14 @@ function mapToHomepageInfo(data: any): HomepageInfo {
         date: date.of(<string>data["date"]),
         todayImages: (<any[]>data["todayImages"]).map(data => ({
             id: <number>data["id"],
-            thumbnailFile: <string>data["thumbnailFile"],
+            filePath: <FilePath>data["filePath"],
             partitionTime: date.of(<string>data["partitionTime"])
         })),
         todayBooks: <Book[]>data["todayBooks"],
         todayAuthorAndTopics: <AuthorAndTopic[]>data["todayAuthorAndTopics"],
         recentImages: (<any[]>data["recentImages"]).map(data => ({
             id: <number>data["id"],
-            thumbnailFile: <string>data["thumbnailFile"],
+            filePath: <FilePath>data["filePath"],
             partitionTime: date.of(<string>data["partitionTime"])
         })),
         historyImages: (<any[]>data["historyImages"]).map(data => ({
@@ -81,7 +82,7 @@ type AuthorAndTopic = {
 interface Book {
     id: number
     title: string
-    thumbnailFile: string | null
+    filePath: FilePath | null
     imageCount: number
 }
 

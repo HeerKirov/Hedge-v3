@@ -2,11 +2,13 @@
 import { computed, ref } from "vue"
 import { Icon } from "@/components/universal"
 import { Flex, FlexItem } from "@/components/layout"
-import { SourceInfo } from "@/components-business/form-display"
+import { SourceInfo, FileInfoDisplay } from "@/components-business/form-display"
 import { useAssets } from "@/functions/app"
 import { PaginationData, QueryInstance } from "@/functions/fetch"
 import { TrashedImage } from "@/functions/http-client/api/trash"
 import { toRef } from "@/utils/reactivity"
+import { strings } from "@/utils/primitives"
+import { isVideoExtension } from "@/utils/validation"
 import { installDatasetContext } from "./context"
 import SelectedCountBadge from "./SelectedCountBadge.vue"
 import DatasetGridFramework from "./DatasetGridFramework.vue"
@@ -124,15 +126,16 @@ const simpleRemain = (remainingTime: number | null) => {
 <template>
     <div class="w-100 h-100 relative" :style="style">
         <DatasetGridFramework v-if="viewMode === 'grid'" :column-num="columnNum!" v-slot="{ item }">
-            <img :class="$style['grid-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`trashed-image-${item.id}`"/>
+            <img :class="$style['grid-img']" :src="assetsUrl(item.filePath.thumbnail)" :alt="`trashed-image-${item.id}`"/>
             <div v-if="item.remainingTime !== null" :class="$style['grid-remain-tag']">{{ simpleRemain(item.remainingTime) }}</div>
+            <Icon v-if="isVideoExtension(item.filePath.original)" :class="$style['grid-video']" icon="video"/>
         </DatasetGridFramework>
         <DatasetRowFramework v-else :row-height="32" v-slot="{ item }">
             <Flex horizontal="stretch" align="center">
                 <FlexItem :shrink="0" :grow="0">
-                    <img :class="$style['row-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`trashed-image-${item.id}`"/>
+                    <img :class="$style['row-img']" :src="assetsUrl(item.filePath.sample)" :alt="`trashed-image-${item.id}`"/>
                 </FlexItem>
-                <FlexItem :width="30">
+                <FlexItem :width="25">
                     <div class="ml-1">{{ item.id }}</div>
                 </FlexItem>
                 <FlexItem :shrink="0">
@@ -143,6 +146,11 @@ const simpleRemain = (remainingTime: number | null) => {
                         <template v-if="item.score">
                             {{item.score}}<Icon icon="star"/>
                         </template>
+                    </div>
+                </FlexItem>
+                <FlexItem :width="15" :shrink="0">
+                    <div class="mr-2">
+                        <FileInfoDisplay :extension="strings.getExtension(item.filePath.original)" mode="inline"/>
                     </div>
                 </FlexItem>
                 <FlexItem :width="30">
@@ -171,15 +179,21 @@ const simpleRemain = (remainingTime: number | null) => {
 
 .grid-remain-tag
     position: absolute
-    left: 0
+    right: 0
     bottom: 0
     padding: 0 0.25rem 0
-    border-top-right-radius: $radius-size-std
+    border-top-left-radius: $radius-size-std
     color: $dark-mode-text-color
     background-color: rgba(0, 0, 0, 0.65)
     white-space: nowrap
     overflow: hidden
 
+.grid-video
+    position: absolute
+    left: 0.3rem
+    bottom: 0.25rem
+    color: $dark-mode-text-color
+    
 .row-img
     margin-top: 1px
     margin-left: 4px

@@ -1,5 +1,6 @@
 import { useFetchHelper } from "@/functions/fetch"
 import { Push } from "../context"
+import { FilePath } from "@/functions/http-client/api/all"
 
 export interface AddIllust {
     /**
@@ -24,7 +25,7 @@ interface CaseCollectionProps {
     collectionId: number
     includeResolution: number[]
     ignoreResolution: number[]
-    conflicts: {id: number, thumbnailFile: string}[]
+    conflicts: {id: number, filePath: FilePath}[]
     resolve(_: number[] | undefined): void
     cancel(): void
 }
@@ -34,7 +35,7 @@ interface CaseBookProps {
     bookId: number
     moveResolution: number[]
     ignoreResolution: number[]
-    duplicates: {id: number, thumbnailFile: string, ordinal: number}[]
+    duplicates: {id: number, filePath: FilePath, ordinal: number}[]
     resolve(_: number[] | undefined): void
     cancel(): void
 }
@@ -44,7 +45,7 @@ interface CaseFolderProps {
     folderId: number
     moveResolution: number[]
     ignoreResolution: number[]
-    duplicates: {id: number, thumbnailFile: string, ordinal: number}[]
+    duplicates: {id: number, filePath: FilePath, ordinal: number}[]
     resolve(_: number[] | undefined): void
     cancel(): void
 }
@@ -60,7 +61,7 @@ export function useAddIllust(push: Push): AddIllust {
         async checkExistsInCollection(images: number[], collectionId: number): Promise<number[] | undefined> {
             const res = await fetchImageSituation(images)
             if(res !== undefined) {
-                const conflicts = res.filter(d => d.belong !== null && d.belong.id !== collectionId).map(d => ({id: d.id, thumbnailFile: d.thumbnailFile}))
+                const conflicts = res.filter(d => d.belong !== null && d.belong.id !== collectionId).map(d => ({id: d.id, filePath: d.filePath}))
                 if(conflicts.length <= 0) {
                     return images
                 }else{
@@ -79,7 +80,7 @@ export function useAddIllust(push: Push): AddIllust {
         async checkExistsInBook(images: number[], bookId: number): Promise<number[] | undefined> {
             const res = await fetchBookSituation({illustIds: images, bookId})
             if(res !== undefined) {
-                const duplicates = res.filter(d => d.ordinal !== null).map(d => ({id: d.id, thumbnailFile: d.thumbnailFile, ordinal: d.ordinal!}))
+                const duplicates = res.filter(d => d.ordinal !== null).map(d => ({id: d.id, filePath: d.filePath, ordinal: d.ordinal!}))
                 if(duplicates.length <= 0) {
                     return images
                 }else{
@@ -98,7 +99,7 @@ export function useAddIllust(push: Push): AddIllust {
         async checkExistsInFolder(images: number[], folderId: number): Promise<number[] | undefined> {
             const res = await fetchFolderSituation({illustIds: images, folderId})
             if(res !== undefined) {
-                const duplicates = res.filter(d => d.ordinal !== null).map(d => ({id: d.id, thumbnailFile: d.thumbnailFile, ordinal: d.ordinal!}))
+                const duplicates = res.filter(d => d.ordinal !== null).map(d => ({id: d.id, filePath: d.filePath, ordinal: d.ordinal!}))
                 if(duplicates.length <= 0) {
                     return images
                 }else{
@@ -117,7 +118,7 @@ export function useAddIllust(push: Push): AddIllust {
     }
 }
 
-export function useAddIllustContext(p: AddIllustProps, close: () => void): {situations: {ordinal: number | null, id: number, thumbnailFile: string}[], chooseIgnore(): void, chooseResolve(): void} {
+export function useAddIllustContext(p: AddIllustProps, close: () => void): {situations: {ordinal: number | null, id: number, filePath: FilePath}[], chooseIgnore(): void, chooseResolve(): void} {
     if(p.type === "collection") {
         const chooseIgnore = () => {
             p.resolve(p.ignoreResolution)

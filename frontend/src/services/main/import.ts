@@ -87,7 +87,7 @@ function useImportFileWatcher() {
 
     const { data: state } = useFetchReactive({
         get: client => client.import.watcher.get,
-        eventFilter: ["backend/path-watcher/status-changed"]
+        eventFilter: ["app/path-watcher/status-changed"]
     })
 
     const { data: importSettingData } = useSettingImportData()

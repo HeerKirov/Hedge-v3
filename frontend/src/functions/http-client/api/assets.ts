@@ -12,7 +12,7 @@ export function createAssets(http: HttpInstance): Assets {
         assetsUrl(filepath: string | null | undefined): string {
             if(filepath) {
                 const baseUrl = http.baseUrl()
-                return baseUrl ? strings.pathJoin(baseUrl, "folders", filepath) : strings.pathJoin("folders", filepath)
+                return baseUrl ? strings.pathJoin(baseUrl, "archives", filepath) : strings.pathJoin("archives", filepath)
             }else{
                 return emptyFile
             }

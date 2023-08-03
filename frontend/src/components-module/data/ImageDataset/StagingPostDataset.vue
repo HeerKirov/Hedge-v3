@@ -2,11 +2,14 @@
 import { computed, ref } from "vue"
 import { Icon } from "@/components/universal"
 import { Flex, FlexItem } from "@/components/layout"
+import { FileInfoDisplay, SourceInfo } from "@/components-business/form-display"
 import { useAssets } from "@/functions/app"
 import { PaginationData, QueryInstance } from "@/functions/fetch"
 import { StagingPostImage } from "@/functions/http-client/api/staging-post"
 import { toRef } from "@/utils/reactivity"
 import { datetime } from "@/utils/datetime"
+import { strings } from "@/utils/primitives"
+import { isVideoExtension } from "@/utils/validation"
 import { installDatasetContext } from "./context"
 import SelectedCountBadge from "./SelectedCountBadge.vue"
 import DatasetGridFramework from "./DatasetGridFramework.vue"
@@ -100,15 +103,16 @@ installDatasetContext({
 <template>
     <div class="w-100 h-100 relative" :style="style">
         <DatasetGridFramework v-if="viewMode === 'grid'" :column-num="columnNum!" v-slot="{ item }">
-            <img :class="$style['grid-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`staging-post-${item.id}`"/>
+            <img :class="$style['grid-img']" :src="assetsUrl(item.filePath.thumbnail)" :alt="`staging-post-${item.id}`"/>
             <Icon v-if="item.favorite" :class="[$style['grid-favorite'], 'has-text-danger']" icon="heart"/>
+            <Icon v-if="isVideoExtension(item.filePath.original)" :class="$style['grid-video']" icon="video"/>
         </DatasetGridFramework>
         <DatasetRowFramework v-else :row-height="32" v-slot="{ item }">
             <Flex horizontal="stretch" align="center">
                 <FlexItem :shrink="0" :grow="0">
-                    <img :class="$style['row-img']" :src="assetsUrl(item.thumbnailFile)" :alt="`staging-post-${item.id}`"/>
+                    <img :class="$style['row-img']" :src="assetsUrl(item.filePath.sample)" :alt="`staging-post-${item.id}`"/>
                 </FlexItem>
-                <FlexItem :width="50">
+                <FlexItem :width="40">
                     <div class="ml-1">{{ item.id }}</div>
                 </FlexItem>
                 <FlexItem :shrink="0">
@@ -121,7 +125,15 @@ installDatasetContext({
                         </template>
                     </div>
                 </FlexItem>
-                <FlexItem :width="50">
+                <FlexItem :width="15" :shrink="0">
+                    <div class="mr-1">
+                        <FileInfoDisplay :extension="strings.getExtension(item.filePath.original)" mode="inline"/>
+                    </div>
+                </FlexItem>
+                <FlexItem :width="30">
+                    <div class="no-wrap overflow-hidden"><SourceInfo :site="item.sourceSite" :source-id="item.sourceId" :source-part="item.sourcePart"/></div>
+                </FlexItem>
+                <FlexItem :shrink="0">
                     <div :class="$style.time">{{datetime.toSimpleFormat(item.orderTime)}}</div>
                 </FlexItem>
             </Flex>
@@ -142,8 +154,14 @@ installDatasetContext({
 
 .grid-favorite
     position: absolute
-    right: 0.25rem
+    right: 0.3rem
     bottom: 0.25rem
+
+.grid-video
+    position: absolute
+    left: 0.3rem
+    bottom: 0.25rem
+    color: $dark-mode-text-color
 
 .grid-remain-tag
     position: absolute

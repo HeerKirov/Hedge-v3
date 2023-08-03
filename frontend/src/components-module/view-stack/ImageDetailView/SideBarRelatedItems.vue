@@ -22,7 +22,7 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
     </template>
     <template v-if="data?.collection">
         <b class="mr-2">所属集合</b><Icon icon="id-card"/><b class="ml-1 selectable is-font-size-large">{{data.collection.id}}</b>
-        <ThumbnailImage :file="data.collection.thumbnailFile" :num-tag-value="data.collection.childrenCount" @click="openRelatedCollection"/>
+        <ThumbnailImage :file="data.collection.filePath.sample" :num-tag-value="data.collection.childrenCount" @click="openRelatedCollection"/>
         <div class="mb-3"/>
     </template>
     <template v-if="data?.associates?.length">
@@ -30,7 +30,7 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
             <b>关联组</b>
             <a class="float-right" @click="openAssociate"><Icon class="ml-1" icon="eye"/>查看全部项目</a>
         </div>
-        <GridImages :images="data.associates.map(i => i.thumbnailFile)" :column-num="3" clickable @click="(_, i) => openAssociateInNewView(i)"/>
+        <GridImages :images="data.associates.map(i => i.filePath.sample)" :column-num="3" clickable @click="(_, i) => openAssociateInNewView(i)"/>
         <div class="mb-3"/>
     </template>
     <template v-if="data?.folders?.length">

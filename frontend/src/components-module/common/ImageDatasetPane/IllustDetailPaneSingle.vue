@@ -18,10 +18,11 @@ const { data, setDescription, setScore, setOrderTime, setPartitionTime, openMeta
 </script>
 
 <template>
-    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.thumbnailFile" @click="openImagePreview"/>
+    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.filePath.thumbnail" @click="openImagePreview"/>
     <template v-if="!!data">
         <p class="my-1">
-            <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{path}}</b>
+            <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{ path }}</b>
+            <span v-if="data.type === 'COLLECTION'" class="float-right"><Icon class="mr-1" icon="images"/>{{ data.childrenCount }}项</span>
         </p>
         <Separator direction="horizontal"/>
         <FormEditKit class="mt-1" :value="data.score" :set-value="setScore">
