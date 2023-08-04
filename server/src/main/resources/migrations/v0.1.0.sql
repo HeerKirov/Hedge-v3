@@ -373,8 +373,7 @@ CREATE TABLE file_db.file(
     finger_status       TINYINT NOT NULL,           -- 指纹的处理与可用状态
     deleted             BOOLEAN NOT NULL,           -- 已删除标记
     create_time 	    TIMESTAMP NOT NULL,         -- 创建时间
-    update_time         TIMESTAMP NOT NULL,         -- 文件上次被修改的时间
-    last_access_time    TIMESTAMP DEFAULT NULL      -- 上次访问此文件的时间(用于缓存清理)
+    update_time         TIMESTAMP NOT NULL          -- 文件上次被修改的时间
 );
 CREATE INDEX file_db.file_block__index ON file(block);
 
@@ -387,6 +386,16 @@ CREATE TABLE file_db.file_fingerprint(
     d_hash          TEXT NOT NULL,
     create_time     TIMESTAMP NOT NULL
 );
+
+-- 文件缓存访问记录
+CREATE TABLE file_db.file_cache_record(
+    file_id             INTEGER NOT NULL,
+    archive_type        TINYINT NOT NULL,
+    block               VARCHAR(16) NOT NULL,
+    filename            VARCHAR(24) NOT NULL,
+    last_access_time    TIMESTAMP NOT NULL
+);
+CREATE UNIQUE INDEX file_db.file_cache_record__index ON file_cache_record(file_id, archive_type);
 
 -- [系统表]导出任务
 CREATE TABLE system_db.exporter_record(

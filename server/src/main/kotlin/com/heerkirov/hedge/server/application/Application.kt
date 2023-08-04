@@ -38,7 +38,7 @@ fun runApplication(options: ApplicationOptions) {
         val appStatus = define { AppStatusDriverImpl(context, bus, options.channelPath) }
         val appdata = define { AppDataManagerImpl(options.channelPath) }
         val repo = define { DataRepositoryImpl(options.channelPath) }
-        val file = FileManager(appdata, repo, bus)
+        val file = define { FileManager(appdata, repo, bus) }
 
         val services = define {
             define { FileGeneratorImpl(appStatus, appdata, repo, bus) }

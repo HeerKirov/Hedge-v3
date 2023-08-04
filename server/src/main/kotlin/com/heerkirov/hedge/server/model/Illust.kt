@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.model
 
+import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.enums.IllustModelType
@@ -414,11 +415,7 @@ data class FileRecord(val id: Int,
                       /**
                        * 文件上次被修改的时间。
                        */
-                      val updateTime: LocalDateTime,
-                      /**
-                       * 上次访问此文件的时间(用于缓存清理)。
-                       */
-                      val lastAccessTime: LocalDateTime?)
+                      val updateTime: LocalDateTime)
 
 /**
  * 文件指纹。
@@ -429,3 +426,12 @@ data class FileFingerprint(val fileId: Int,
                            val pHash: String,
                            val dHash: String,
                            val createTime: LocalDateTime)
+
+/**
+ * 文件缓存访问记录。
+ */
+data class FileCacheRecord(val fileId: Int,
+                           val archiveType: ArchiveType,
+                           val block: String,
+                           val filename: String,
+                           val lastAccessTime: LocalDateTime)

@@ -16,12 +16,12 @@ import kotlin.math.absoluteValue
  * 处理已删除文件自动清理的相关工作。
  * - 自动清理工作仅在每次程序启动时会执行一次。根据自动清理间隔，与当前时间间隔超出此日数的项会被清除。
  */
-interface TrashCleaner : DaemonThreadComponent
+interface TrashCleaner
 
 class TrashCleanerImpl(private val appStatusDriver: AppStatusDriver,
                        private val appdata: AppDataManager,
                        private val data: DataRepository,
-                       private val trashManager: TrashManager) : TrashCleaner {
+                       private val trashManager: TrashManager) : TrashCleaner, DaemonThreadComponent {
     private val log = LoggerFactory.getLogger(TrashCleaner::class.java)
 
     override fun thread() {

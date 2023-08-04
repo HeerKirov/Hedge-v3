@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.dao
 
+import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.enums.IllustModelType
@@ -251,7 +252,6 @@ object FileRecords : BaseTable<FileRecord>("file", schema = "file_db") {
     val deleted = boolean("deleted")
     val createTime = datetime("create_time")
     val updateTime = datetime("update_time")
-    val lastAccessTime = datetime("last_access_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FileRecord(
         id = row[id]!!,
@@ -267,8 +267,7 @@ object FileRecords : BaseTable<FileRecord>("file", schema = "file_db") {
         fingerStatus = row[fingerStatus]!!,
         deleted = row[deleted]!!,
         createTime = row[createTime]!!,
-        updateTime = row[updateTime]!!,
-        lastAccessTime = row[lastAccessTime]
+        updateTime = row[updateTime]!!
     )
 }
 
@@ -287,5 +286,21 @@ object FileFingerprints : BaseTable<FileFingerprint>("file_fingerprint", schema 
         pHash = row[pHash]!!,
         dHash = row[dHash]!!,
         createTime = row[createTime]!!
+    )
+}
+
+object FileCacheRecords : BaseTable<FileCacheRecord>("file_cache_record", schema = "file_db") {
+    val fileId = int("file_id")
+    val archiveType = enum("archive_type", typeRef<ArchiveType>())
+    val block = varchar("block")
+    val filename = varchar("filename")
+    val lastAccessTime = datetime("last_access_time")
+
+    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FileCacheRecord(
+        fileId = row[fileId]!!,
+        archiveType = row[archiveType]!!,
+        block = row[block]!!,
+        filename = row[filename]!!,
+        lastAccessTime = row[lastAccessTime]!!
     )
 }

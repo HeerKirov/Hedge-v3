@@ -30,8 +30,8 @@ interface DaemonThreadComponent : Component {
 }
 
 /**
- * 线程组件，框架会在初始化结束后调用这些线程，并等待它们执行完毕后，发出程序退出信号。
+ * 主程组件，框架会在初始化结束后调用此程序，并等待其执行完毕后，发出程序退出信号。
  */
-interface ThreadComponent : DaemonThreadComponent {
-    override fun thread()
+interface MainThreadComponent : Component {
+    fun thread()
 }

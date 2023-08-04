@@ -1,8 +1,8 @@
 package com.heerkirov.hedge.server.components.lifetime
 
 import com.heerkirov.hedge.server.library.framework.FrameworkContext
+import com.heerkirov.hedge.server.library.framework.MainThreadComponent
 import com.heerkirov.hedge.server.library.framework.StatefulComponent
-import com.heerkirov.hedge.server.library.framework.ThreadComponent
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
  * 3. 除此之外，生命周期维持还要看其他组件的空闲情况。每过一段时间检查其他有状态组件是否空闲，所有有状态组件都空闲时才允许退出。
  * 4. 最后，还允许用户直接将此组件设定为永久持续。
  */
-interface Lifetime : ThreadComponent {
+interface Lifetime {
     /**
      * 永久存续标记管理。当存在永久存续标记时，server不会退出。
      */
@@ -27,11 +27,6 @@ interface Lifetime : ThreadComponent {
      * 连接会话管理。仍存在已建立的维持连接时，server不会退出。
      */
     val session: Session
-
-    /**
-     * 启动生命周期维持线程。使用此方法阻塞主线程。
-     */
-    override fun thread()
 }
 
 data class LifetimeOptions(
@@ -41,7 +36,8 @@ data class LifetimeOptions(
     val threadContinuousCount: Int = 1
 )
 
-class LifetimeImpl(private val context: FrameworkContext, private val options: LifetimeOptions) : Lifetime {
+class LifetimeImpl(private val context: FrameworkContext, private val options: LifetimeOptions) : Lifetime,
+    MainThreadComponent {
     private val log: Logger = LoggerFactory.getLogger(LifetimeImpl::class.java)
 
     private lateinit var statefulComponents: List<StatefulComponent>

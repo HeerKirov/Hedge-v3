@@ -25,7 +25,7 @@ import kotlin.reflect.KClass
  * 后台导出各类属性重新计算任务的组件。用于在更新过程中异步处理大量数据的重新导出。
  * 会将持有的任务持久化到数据库。
  */
-interface BackendExporter : StatefulComponent {
+interface BackendExporter {
     fun add(tasks: List<ExporterTask>)
 
     fun add(task: ExporterTask) {
@@ -102,7 +102,7 @@ class BackendExporterImpl(private val appStatus: AppStatusDriver,
                           private val bus: EventBus,
                           private val data: DataRepository,
                           private val illustKit: IllustKit,
-                          private val bookKit: BookKit) : BackendExporter {
+                          private val bookKit: BookKit) : BackendExporter, StatefulComponent {
     private val workerThreads: MutableMap<KClass<out ExporterTask>, ExporterWorkerThread<*>> = mutableMapOf()
 
     override val isIdle: Boolean get() = workerThreads.values.none { it.isAlive }

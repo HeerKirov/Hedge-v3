@@ -39,13 +39,9 @@ class Framework {
      */
     fun start() {
         components.forEach { it.load() }
-        components.filterIsInstance<DaemonThreadComponent>()
-            .map { Pair(it, thread { it.thread() }) }
-            .filter { (c, _) -> c is ThreadComponent }
-            .map { (_, t) -> t }
-            .forEach { it.join() }
-        //最后发送关闭指令
-        //不沿执行流程自动退出是因为其他组件可能持有非背景线程，这些线程会阻止shutdown的发生。
+        components.filterIsInstance<DaemonThreadComponent>().forEach { thread(isDaemon = true) { it.thread() } }
+        components.filterIsInstance<MainThreadComponent>().firstOrNull()?.thread()
+        //最后，发送关闭指令。不沿执行流程自动退出是因为其他组件可能持有非背景线程，这些线程会阻止shutdown的发生。
         exitProcess(0)
     }
 

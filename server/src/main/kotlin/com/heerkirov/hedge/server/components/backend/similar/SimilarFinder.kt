@@ -27,13 +27,13 @@ import org.ktorm.entity.*
 /**
  * 处理相似项查找的后台任务。它从task表读取任务，并将确切结果写入result表。
  */
-interface SimilarFinder : StatefulComponent {
+interface SimilarFinder {
     fun add(selector: FindSimilarTask.TaskSelector, config: FindSimilarTask.TaskConfig? = null): Int
 
     fun delete(id: Int)
 }
 
-class SimilarFinderImpl(private val appStatus: AppStatusDriver, appdata: AppDataManager, private val data: DataRepository, bus: EventBus) : SimilarFinder {
+class SimilarFinderImpl(private val appStatus: AppStatusDriver, appdata: AppDataManager, private val data: DataRepository, bus: EventBus) : SimilarFinder, StatefulComponent {
     private val workerThread = SimilarFinderWorkThread(appdata, data, bus)
 
     init {

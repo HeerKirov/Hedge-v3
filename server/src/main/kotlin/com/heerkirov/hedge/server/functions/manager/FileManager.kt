@@ -4,7 +4,9 @@ import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.components.database.DataRepository
+import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.constants.Filename
+import com.heerkirov.hedge.server.dao.FileCacheRecords
 import com.heerkirov.hedge.server.dao.FileFingerprints
 import com.heerkirov.hedge.server.dao.FileRecords
 import com.heerkirov.hedge.server.enums.FileStatus
@@ -13,24 +15,36 @@ import com.heerkirov.hedge.server.events.FileMarkDeleted
 import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
 import com.heerkirov.hedge.server.exceptions.StorageNotAccessibleError
 import com.heerkirov.hedge.server.exceptions.be
+import com.heerkirov.hedge.server.library.framework.DaemonThreadComponent
+import com.heerkirov.hedge.server.library.framework.StatefulComponent
+import com.heerkirov.hedge.server.model.FileCacheRecord
 import com.heerkirov.hedge.server.utils.*
 import com.heerkirov.hedge.server.utils.ktorm.first
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
+import org.ktorm.support.sqlite.bulkInsertOrUpdate
 import java.io.File
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.time.LocalDateTime
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
 
-class FileManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus) {
+class FileManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus): StatefulComponent, DaemonThreadComponent {
     private val extensions = arrayOf("jpeg", "jpg", "png", "gif", "mp4", "webm")
 
     private val nextBlock = NextBlock()
+
+    private val cacheRecord = CacheRecord()
+
+    override val isIdle: Boolean get() = cacheRecord.isIdle
+
+    override fun thread() = cacheRecord.daemonThread()
 
     /**
      * 将指定的File载入到数据库中，同时创建一条新记录。
@@ -62,7 +76,6 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
             set(it.status, FileStatus.NOT_READY)
             set(it.createTime, now)
             set(it.updateTime, now)
-            set(it.lastAccessTime, null)
         } as Int
 
         val targetFile = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), block, "$id.$extension").toFile()
@@ -132,9 +145,13 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
      * 从缓存读取一个文件，如果该文件不在缓存，则将其加载到缓存。
      */
     fun load(archiveType: ArchiveType, block: String, filename: String): Path? {
+        if(!appdata.storage.accessible) {
+            return null
+        }
         val cachePath = Path(appdata.storage.cacheDir, archiveType.toString(), block, filename)
         val cacheFile = cachePath.toFile()
         if(cacheFile.exists()) {
+            cacheRecord.addAccessRecord(archiveType, block, filename)
             return cachePath
         }
 
@@ -154,6 +171,8 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
                 zip.getInputStream(entry).use { fis ->
                     Files.copy(fis, cachePath, StandardCopyOption.REPLACE_EXISTING)
                 }
+
+                cacheRecord.addAccessRecord(archiveType, block, filename)
                 return cachePath
             }
         }
@@ -197,8 +216,6 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
      * next block记录模块。
      */
     private inner class NextBlock {
-        private val settingStorage = appdata.setting.storage
-
         private val pool = Executors.newSingleThreadExecutor()
 
         @Volatile var index: Int? = null; private set
@@ -254,6 +271,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
                 }
             }
 
+            val settingStorage = appdata.setting.storage
             if(count >= settingStorage.blockMaxCount || (size > 0 && size + nextFileSize > settingStorage.blockMaxSizeMB * 1024 * 1024)) {
                 synchronized(this) {
                     if(count >= settingStorage.blockMaxCount || (size > 0 && size + nextFileSize > settingStorage.blockMaxSizeMB * 1024 * 1024)) {
@@ -277,6 +295,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
                     if(block == name) {
                         count += 1
                         size += fileSize
+                        val settingStorage = appdata.setting.storage
                         if(count >= settingStorage.blockMaxCount || size >= settingStorage.blockMaxSizeMB * 1024 * 1024) {
                             //稍后再判断是否要进位到下一个block(防止undo), 以及启动归档操作
                             pool.submit {
@@ -307,6 +326,66 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
                     if(block == name) {
                         count -= 1
                         size -= fileSize
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * cache access record记录模块。
+     */
+    private inner class CacheRecord {
+        private val lastRecords = ConcurrentHashMap<Int, FileCacheRecord>()
+        @Volatile private var cacheRecords = ConcurrentHashMap<Int, LocalDateTime>()
+
+        val isIdle get() = cacheRecords.isEmpty()
+
+        /**
+         * 添加一条对此文件的访问记录。
+         */
+        fun addAccessRecord(archiveType: ArchiveType, block: String, filename: String) {
+            val now = DateTime.now()
+            val fileId = filename.substringBeforeLast('.').toInt()
+            val key = fileId shl 2 + archiveType.ordinal
+            lastRecords[key].let { lastTime ->
+                if(lastTime == null || now >= lastTime.lastAccessTime.plusHours(1)) {
+                    cacheRecords[key] = now
+                    lastRecords[key] = FileCacheRecord(fileId, archiveType, block, filename, now)
+                    //使用lastRecords做总体计量。当一次访问距离上次访问超过1小时时，才允许下一次访问写入。此机制防止频繁写入
+                }
+            }
+        }
+
+        fun daemonThread() {
+            while (true) {
+                try {
+                    Thread.sleep(10000)
+                }catch (e: InterruptedException) {
+                    return
+                }
+
+                if(cacheRecords.isNotEmpty()) {
+                    val records = cacheRecords
+                    cacheRecords = ConcurrentHashMap()
+                    val chunks = records.keys.asSequence().mapNotNull(lastRecords::get).chunked(1000)
+                    data.db.transaction {
+                        for (chunk in chunks) {
+                            data.db.bulkInsertOrUpdate(FileCacheRecords) {
+                                for ((fileId, archiveType, block, filename, lastAccessTime) in chunk) {
+                                    item {
+                                        set(it.fileId, fileId)
+                                        set(it.archiveType, archiveType)
+                                        set(it.block, block)
+                                        set(it.filename, filename)
+                                        set(it.lastAccessTime, lastAccessTime)
+                                    }
+                                }
+                                onConflict(FileCacheRecords.fileId, FileCacheRecords.archiveType) {
+                                    set(it.lastAccessTime, excluded(it.lastAccessTime))
+                                }
+                            }
+                        }
                     }
                 }
             }

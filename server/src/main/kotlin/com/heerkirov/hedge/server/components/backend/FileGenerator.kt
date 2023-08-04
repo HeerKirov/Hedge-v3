@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
+import com.heerkirov.hedge.server.dao.FileCacheRecords
 import com.heerkirov.hedge.server.dao.FileFingerprints
 import com.heerkirov.hedge.server.dao.FileRecords
 import com.heerkirov.hedge.server.dao.ImportImages
@@ -40,11 +41,16 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
+import kotlin.io.path.deleteIfExists
+import kotlin.math.absoluteValue
 
 /**
- * 处理文件的后台任务。每当新建了新的File时，都应当在后台任务生成其缩略图，并解析其附加参数。
+ * 处理文件的后台任务。
+ * - 每当添加了新的文件时，都在后台任务生成其缩略图，并解析其附加参数。
+ * - 每当删除了文件，或触发区块归档时，都在后台任务处理区块的归档。
+ * - 程序启动时，在后台检测并清理缓存文件。
  */
-interface FileGenerator : StatefulComponent, DaemonThreadComponent
+interface FileGenerator
 
 private const val GENERATE_INTERVAL: Long = 50
 private const val ARCHIVE_INTERVAL: Long = 1000 * 30
@@ -52,7 +58,7 @@ private const val ARCHIVE_INTERVAL: Long = 1000 * 30
 class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                         private val appdata: AppDataManager,
                         private val data: DataRepository,
-                        private val bus: EventBus) : FileGenerator {
+                        private val bus: EventBus) : FileGenerator, StatefulComponent, DaemonThreadComponent {
     private val log = LoggerFactory.getLogger(FileGenerator::class.java)
 
     private val archiveQueue = LinkedList<ArchiveQueueUnit>()
@@ -130,6 +136,12 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                     })
                     archiveTask.start()
                 }
+            }
+
+            if(appdata.setting.storage.autoCleanCaches) {
+                val intervalDay = appdata.setting.storage.autoCleanCachesIntervalDay
+                Thread.sleep(5000)
+                executeCacheProcess(intervalDay)
             }
         }
     }
@@ -211,6 +223,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             if(toBeDeleted.isNotEmpty()) {
                 data.db.transaction {
                     data.db.delete(FileRecords) { it.id inList toBeDeleted and it.deleted }
+                    data.db.delete(FileCacheRecords) { it.fileId inList toBeDeleted }
                 }
             }
         } catch (e: Exception) {
@@ -329,6 +342,16 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
         }catch (e: Exception) {
             log.error("Error occurred in fingerprint task of file $fileId.", e)
         }
+    }
+
+    private fun executeCacheProcess(intervalDay: Int) {
+        val deadline = DateTime.now().minusDays(intervalDay.absoluteValue.toLong())
+        for (record in data.db.sequenceOf(FileCacheRecords).filter { it.lastAccessTime lessEq deadline }) {
+            val cachePath = Path(appdata.storage.cacheDir, record.archiveType.toString(), record.block, record.filename)
+            cachePath.deleteIfExists()
+        }
+        val cnt = data.db.delete(FileCacheRecords) { it.lastAccessTime lessEq deadline }
+        if(cnt > 0) log.info("$cnt cache files is cleaned.")
     }
 
     private fun processThumbnail(fileRecord: FileRecord, file: File): Tuple4<Long?, Long?, Int, Int> {
