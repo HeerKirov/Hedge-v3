@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Separator } from "@/components/universal"
 import DBSource from "./DBSource.vue"
 import DBMetadata from "./DBMetadata.vue"
 
@@ -6,6 +7,7 @@ import DBMetadata from "./DBMetadata.vue"
 
 <template>
     <DBMetadata/>
+    <Separator direction="horizontal" :spacing="3"/>
     <DBSource/>
 </template>
 

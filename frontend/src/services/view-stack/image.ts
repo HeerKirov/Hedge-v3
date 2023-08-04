@@ -13,7 +13,7 @@ import {
     usePostFetchHelper, usePostPathFetchHelper,
     useSliceDataView, useSliceDataViewByRef, useFetchReactive
 } from "@/functions/fetch"
-import { useAssetsLocal, useLocalStorage } from "@/functions/app"
+import { useAssets, useLocalStorage } from "@/functions/app"
 import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
 import { useGlobalKey, useInterceptedKey } from "@/modules/keyboard"
@@ -188,7 +188,7 @@ function useOperators(data: Ref<Illust | null>, id: Ref<number | null>) {
     const message = useMessageBox()
     const dialog = useDialogService()
     const navigator = useRouterNavigator()
-    const assetsLocal = useAssetsLocal()
+    const { assetsLocal } = useAssets()
 
     const fetchSetData = usePostPathFetchHelper(client => client.illust.image.update)
     const fetchDeleteData = usePostFetchHelper(client => client.illust.image.delete)
@@ -246,15 +246,15 @@ function useOperators(data: Ref<Illust | null>, id: Ref<number | null>) {
         }
     }
 
-    const openInLocalPreference = () => {
+    const openInLocalPreference = async () => {
         if(data.value !== null) {
-            openLocalFile(assetsLocal.assetsLocal(data.value.filePath.original))
+            openLocalFile(await assetsLocal(data.value.filePath.original))
         }
     }
 
-    const openInLocalFolder = () => {
+    const openInLocalFolder = async () => {
         if(data.value !== null) {
-            openLocalFileInFolder(assetsLocal.assetsLocal(data.value.filePath.original))
+            openLocalFileInFolder(await assetsLocal(data.value.filePath.original))
         }
     }
 

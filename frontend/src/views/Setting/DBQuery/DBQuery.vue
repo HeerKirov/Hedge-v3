@@ -2,11 +2,11 @@
 import { Button } from "@/components/universal"
 import { CheckBox, NumberInput } from "@/components/form"
 import { Group } from "@/components/layout"
-import { useSettingQueryData } from "@/services/setting"
+import { useSettingQuery } from "@/services/setting"
 import { usePropertySot } from "@/utils/forms"
 import { toRefNullable } from "@/utils/reactivity"
 
-const { data: settingQuery } = useSettingQueryData()
+const { data: settingQuery } = useSettingQuery()
 
 const [queryLimitOfQueryItems, queryLimitOfQueryItemsSot, saveQueryLimitOfQueryItems] = usePropertySot(toRefNullable(settingQuery, "queryLimitOfQueryItems"))
 

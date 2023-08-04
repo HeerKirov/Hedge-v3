@@ -51,12 +51,3 @@ export function validatePort(port: string): PortType {
     }
     return "RANGE"
 }
-
-/**
- * 检验文件名是否是视频类型。目前支持的视频类型有mp4, webm.
- */
-export function isVideoExtension(filename: string): boolean {
-    const idx = filename.lastIndexOf(".")
-    const extension = idx >= 0 ? filename.substring(idx + 1).toLowerCase() : ""
-    return extension === "mp4" || extension === "webm"
-}

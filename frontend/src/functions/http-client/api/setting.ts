@@ -7,9 +7,13 @@ import { TaskConfig } from "./find-similar"
 
 export function createSettingEndpoint(http: HttpInstance): SettingEndpoint {
     return {
-        service: {
-            get: http.createRequest("/api/setting/service"),
-            update: http.createDataRequest("/api/setting/service", "PATCH")
+        server: {
+            get: http.createRequest("/api/setting/server"),
+            update: http.createDataRequest("/api/setting/server", "PATCH")
+        },
+        storage: {
+            get: http.createRequest("/api/setting/storage"),
+            update: http.createDataRequest("/api/setting/storage", "PATCH")
         },
         meta: {
             get: http.createRequest("/api/setting/meta"),
@@ -35,10 +39,6 @@ export function createSettingEndpoint(http: HttpInstance): SettingEndpoint {
         findSimilar: {
             get: http.createRequest("/api/setting/find-similar"),
             update: http.createDataRequest("/api/setting/find-similar", "PATCH")
-        },
-        file: {
-            get: http.createRequest("/api/setting/file"),
-            update: http.createDataRequest("/api/setting/file", "PATCH")
         }
     }
 }
@@ -47,15 +47,28 @@ export interface SettingEndpoint {
     /**
      * 设置：后台服务本身相关的选项。
      */
-    service: {
+    server: {
         /**
          * 查看。
          */
-        get(): Promise<Response<ServiceOption>>
+        get(): Promise<Response<ServerOption>>
         /**
          * 更改。
          */
-        update(form: ServiceOptionUpdateForm): Promise<Response<unknown>>
+        update(form: ServerOptionUpdateForm): Promise<Response<unknown>>
+    }
+    /**
+     * 设置：存储相关选项。
+     */
+    storage: {
+        /**
+         * 查看。
+         */
+        get(): Promise<Response<StorageOption>>
+        /**
+         * 更改。
+         */
+        update(form: StorageOptionUpdateForm): Promise<Response<unknown>>
     }
     /**
      * 设置：基本元数据相关的选项。
@@ -148,22 +161,10 @@ export interface SettingEndpoint {
          */
         update(form: FindSimilarOptionUpdateForm): Promise<Response<unknown>>
     }
-    /**
-     * 设置：档案管理相关选项。
-     */
-    file: {
-        /**
-         * 查看。
-         */
-        get(): Promise<Response<FileOption>>
-        /**
-         * 更改。
-         */
-        update(form: FileOptionUpdateForm): Promise<Response<unknown>>
-    }
+    
 }
 
-export interface ServiceOption {
+export interface ServerOption {
     /**
      * 后台服务建议使用的端口。
      * null表示没有建议，由它自己选择端口。
@@ -171,23 +172,45 @@ export interface ServiceOption {
      * 这个参数没有强制检查，如果写错，则在检测时不生效。
      */
     port: string | null
+}
+
+export type ServerOptionUpdateForm = Partial<ServerOption>
+
+export interface StorageOption {
     /**
      * 文件存储使用的存储路径。
      * null表示使用基于userData的默认存储路径，并自行管理；其他值表示使用自定义路径，并需要自行确保路径可用。
      */
     storagePath: string | null
+    /**
+     * 自动清理已删除的项。
+     */
+    autoCleanTrashes: boolean
+    /**
+     * 自动清理已删除项的间隔天数。
+     */
+    autoCleanTrashesIntervalDay: number
+    /**
+     * 自动清理长期未访问的缓存。
+     */
+    autoCleanCaches: boolean
+    /**
+     * 自动清理缓存的间隔天数。
+     */
+    autoCleanCachesIntervalDay: number
+    /**
+     * 区块最大可储存的容量。
+     */
+    blockMaxSizeMB: number
+    /**
+     * 区块最大可储存的数量。
+     */
+    blockMaxCount: number
 }
 
-export interface ServiceOptionUpdateForm {
-    port?: string | null
-    storagePath?: string | null
-}
+export type StorageOptionUpdateForm = Partial<StorageOption>
 
 export interface MetaOption {
-    /**
-     * score的描述。descriptions[i]代表了score = i + 1的描述
-     */
-    scoreDescriptions: {word: string, content: string}[]
     /**
      * 对相关元数据做更改后自动清除对应的tagme标记。
      */
@@ -202,10 +225,7 @@ export interface MetaOption {
     authorColors: {[key in AuthorType]: UsefulColors}
 }
 
-export interface MetaOptionUpdateForm {
-    scoreDescriptions?: {word: string, content: string}[]
-    autoCleanTagme?: boolean
-}
+export type MetaOptionUpdateForm = Partial<MetaOption>
 
 export interface QueryOption {
     /**
@@ -233,13 +253,7 @@ export interface QueryOption {
     warningLimitOfIntersectItems: number
 }
 
-export interface QueryOptionUpdateForm {
-    chineseSymbolReflect?: boolean
-    translateUnderscoreToSpace?: boolean
-    queryLimitOfQueryItems?: number
-    warningLimitOfUnionItems?: number
-    warningLimitOfIntersectItems?: number
-}
+export type QueryOptionUpdateForm = Partial<QueryOption>
 
 export interface ImportOption {
     /**
@@ -259,10 +273,10 @@ export interface ImportOption {
      */
     setOrderTimeBy: OrderTimeType
     /**
-     * 分区的延后时间，单位毫秒。null等同0。
-     * @range [-86400000, 86400000]
+     * 分区的延后时间，单位小时。null等同0。
+     * @range [-24, 24]
      */
-    setPartitionTimeDelay: number | null
+    setPartitionTimeDelayHour: number | null
     /**
      * source分析的规则列表。
      */
@@ -286,25 +300,15 @@ export interface ImportOption {
     watchPathInitialize: boolean
 }
 
-export interface ImportOptionUpdateForm {
-    autoAnalyseMeta?: boolean
-    setTagmeOfTag?: boolean
-    setTagmeOfSource?: boolean
-    setTimeBy?: OrderTimeType
-    setPartitionTimeDelay?: number | null
-    sourceAnalyseRules?: SourceAnalyseRule[]
-    watchPaths?: string[]
-    autoWatchPath?: boolean
-    watchPathMoveFile?: boolean
-    watchPathInitialize?: boolean
+export type ImportOptionUpdateForm = Partial<ImportOption>
+
+export interface FindSimilarOption {
+    autoFindSimilar: boolean
+    autoTaskConf: TaskConfig | null
+    defaultTaskConf: TaskConfig
 }
 
-/**
- * 用来设定order time的时间属性。
- */
-export type OrderTimeType = "IMPORT_TIME" | "CREATE_TIME" | "UPDATE_TIME"
-
-export type SourceAnalyseRuleExtraTarget = "TITLE" | "DESCRIPTION" | "ADDITIONAL_INFO" | "TAG" | "BOOK" | "RELATION"
+export type FindSimilarOptionUpdateForm = Partial<FindSimilarOption>
 
 /**
  * 一条source解析规则。
@@ -360,7 +364,6 @@ export interface SiteCreateForm {
      * @default 追加到末尾
      */
     ordinal?: number
-    
 }
 
 export interface SiteUpdateForm {
@@ -370,17 +373,6 @@ export interface SiteUpdateForm {
     ordinal?: number
 }
 
-export interface FindSimilarOption {
-    autoFindSimilar: boolean
-    autoTaskConf: TaskConfig | null
-    defaultTaskConf: TaskConfig
-}
+export type OrderTimeType = "IMPORT_TIME" | "CREATE_TIME" | "UPDATE_TIME"
 
-export type FindSimilarOptionUpdateForm = Partial<FindSimilarOption>
-
-export interface FileOption {
-    autoCleanTrashes: boolean
-    autoCleanTrashesIntervalDay: number
-}
-
-export type FileOptionUpdateForm = Partial<FileOption>
+export type SourceAnalyseRuleExtraTarget = "TITLE" | "DESCRIPTION" | "ADDITIONAL_INFO" | "TAG" | "BOOK" | "RELATION"

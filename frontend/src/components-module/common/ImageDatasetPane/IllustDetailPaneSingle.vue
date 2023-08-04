@@ -18,7 +18,7 @@ const { data, setDescription, setScore, setOrderTime, setPartitionTime, openMeta
 </script>
 
 <template>
-    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.filePath.thumbnail" @click="openImagePreview"/>
+    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.filePath.thumbnail" :draggable-file="data?.filePath.original" :drag-icon-file="data?.filePath.sample" @click="openImagePreview"/>
     <template v-if="!!data">
         <p class="my-1">
             <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{ path }}</b>

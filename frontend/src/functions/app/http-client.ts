@@ -50,22 +50,18 @@ function useErrorHandler(throwError: (title: string, message: string) => void) {
 export function useAssets() {
     const httpClient = useHttpClient()
 
-    return httpClient.assets
-}
-
-export function useAssetsLocal() {
-    const { data } = useFetchReactive({
-        get: client => client.serviceRuntime.storage
-    })
-
-    //TODO 归档管理系统完成后，此实现失效，需要后端实现，给出cache位置路径
-    const assetsLocal = (filepath: string | null | undefined) => {
+    const assetsLocal = async (filepath: string | null | undefined) => {
         if(filepath) {
-            return data.value !== undefined ? strings.pathJoin(data.value.storageDir ?? "", filepath) : filepath
+            const res = await httpClient.exportUtil.loadLocalFile({filepath})
+            if(res.ok) {
+                return res.data.localFilePath
+            }else{
+                return ""
+            }
         }else{
             return ""
         }
     }
 
-    return {assetsLocal}
+    return {assetsUrl: httpClient.assets.assetsUrl, assetsLocal}
 }

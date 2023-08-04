@@ -9,9 +9,9 @@ const props = defineProps<{
     sourcePart: number | null
 }>()
 
-const { data } = useSettingSite()
+const { data: sites } = useSettingSite()
 
-const site = computed(() => props.site != null ? data.value?.find(s => s.name === props.site) ?? null : null)
+const site = computed(() => props.site != null ? sites.value?.find(s => s.name === props.site) ?? null : null)
 
 const siteTitle = computed(() => site?.value?.title ?? props.site)
 

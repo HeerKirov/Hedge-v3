@@ -24,7 +24,7 @@ const emit = defineEmits<{
 
 const message = useMessageBox()
 
-const { data: site } = useSettingSite()
+const { data: sites } = useSettingSite()
 
 const fetchIllusts = useFetchHelper(client => client.illust.findByIds)
 const fetchImportImage = useFetchHelper(client => client.import.get)
@@ -153,7 +153,7 @@ const updateSelectorType = (v: TaskSelector["type"]) => {
     }else if(v === "author") {
         emit("update:selector", {type: "author", authorIds: []})
     }else if(v === "sourceTag") {
-        emit("update:selector", {type: "sourceTag", sourceSite: site.value?.length ? site.value[0].name : "", sourceTags: []})
+        emit("update:selector", {type: "sourceTag", sourceSite: sites.value?.length ? sites.value[0].name : "", sourceTags: []})
     }
 }
 

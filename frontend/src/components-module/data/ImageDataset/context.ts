@@ -317,3 +317,7 @@ export function useDropEvents<T extends keyof TypeDefinition>(options: {
 
     return {isLeftDragover, isRightDragover, leftDropEvents, rightDropEvents}
 }
+
+export function isVideoExtension(extension: string): boolean {
+    return extension === "mp4" || extension === "webm"
+}

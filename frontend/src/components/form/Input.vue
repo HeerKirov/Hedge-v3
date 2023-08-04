@@ -124,7 +124,7 @@ const inputClass = computed(() => [
 @import "../../styles/base/color"
 
 .input
-    vertical-align: top
+    vertical-align: middle
     align-items: center
     display: inline-flex
     line-height: 1.2

@@ -9,7 +9,7 @@ import { useListViewContext } from "@/services/base/list-view-context"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useImportImageViewController } from "@/services/base/view-controller"
-import { useSettingImportData, useSettingSite } from "@/services/setting"
+import { useSettingImport, useSettingSite } from "@/services/setting"
 import { usePreviewService } from "@/components-module/preview"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
@@ -90,7 +90,7 @@ function useImportFileWatcher() {
         eventFilter: ["app/path-watcher/status-changed"]
     })
 
-    const { data: importSettingData } = useSettingImportData()
+    const { data: importSettingData } = useSettingImport()
 
     const paths = computed(() => importSettingData.value?.watchPaths ?? [])
 

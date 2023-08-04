@@ -26,7 +26,7 @@ type EntityEvents
     | SourceBookUpdated | SourceTagUpdated | SourceTagMappingUpdated
     | FindSimilarResultCreated | FindSimilarResultResolved | FindSimilarResultDeleted
 
-type SettingEvents = SettingServiceChanged | SettingMetaChanged | SettingQueryChanged | SettingImportChanged | SettingFileChanged | SettingFindSimilarChanged | SettingSourceSiteChanged
+type SettingEvents = SettingServerChanged | SettingMetaChanged | SettingQueryChanged | SettingImportChanged | SettingStorageChanged | SettingFindSimilarChanged | SettingSourceSiteChanged
 
 //== App相关的系统通知 ==
 
@@ -114,7 +114,7 @@ export interface FindSimilarResultDeleted extends BaseWsEvent<"entity/find-simil
 
 //== setting相关变更通知 ==
 
-export interface SettingServiceChanged extends BaseWsEvent<"setting/service/changed"> { }
+export interface SettingServerChanged extends BaseWsEvent<"setting/server/changed"> { }
 
 export interface SettingMetaChanged extends BaseWsEvent<"setting/meta/changed"> { }
 
@@ -122,7 +122,7 @@ export interface SettingQueryChanged extends BaseWsEvent<"setting/query/changed"
 
 export interface SettingImportChanged extends BaseWsEvent<"setting/import/changed"> { }
 
-export interface SettingFileChanged extends BaseWsEvent<"setting/file/changed"> { }
+export interface SettingStorageChanged extends BaseWsEvent<"setting/storage/changed"> { }
 
 export interface SettingFindSimilarChanged extends BaseWsEvent<"setting/find-similar/changed"> { }
 

@@ -1,31 +1,31 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import { Icon } from "@/components/universal"
-import { useAssets, useAssetsLocal } from "@/functions/app"
+import { useAssets } from "@/functions/app"
 import { startDragFile } from "@/modules/others"
 
 const props = defineProps<{
     file?: string | null
     draggableFile?: string | null
+    dragIconFile?: string | null
     alt?: string
     numTagValue?: number,
     minHeight?: string,
     maxHeight?: string
 }>()
 
-const { assetsUrl } = useAssets()
-const { assetsLocal } = useAssetsLocal()
+const { assetsUrl, assetsLocal } = useAssets()
 
 const style = computed(() => ({
     "min-height": props.minHeight ?? "4rem",
     "max-height": props.maxHeight ?? "12rem"
 }))
 
-const onDragstart = (e: DragEvent) => {
+const onDragstart = async (e: DragEvent) => {
     if(props.draggableFile && props.file) {
         e.preventDefault()
-        const filepath = assetsLocal(props.draggableFile)
-        const thumbnail = assetsLocal(props.file)
+        const filepath = await assetsLocal(props.draggableFile)
+        const thumbnail = await assetsLocal(props.dragIconFile ?? props.file)
         startDragFile(thumbnail, filepath)
     }
 }

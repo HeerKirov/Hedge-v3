@@ -30,7 +30,7 @@ defineProps<{
 
 .button
     box-sizing: border-box
-    vertical-align: baseline
+    vertical-align: middle
     white-space: nowrap
     display: flex
     flex-wrap: nowrap

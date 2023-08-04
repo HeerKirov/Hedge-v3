@@ -36,7 +36,7 @@ const onUpdate = (e: Event) => {
     position: relative
     input[type=checkbox]
         cursor: pointer
-        vertical-align: bottom
+        vertical-align: top
         margin: 0 0.25em 0.05em 0
     &.disabled
         cursor: default

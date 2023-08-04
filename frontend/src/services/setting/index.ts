@@ -1,19 +1,19 @@
 import { onMounted, onUnmounted, ref, toRaw, watch } from "vue"
 import { remoteIpcClient } from "@/functions/ipc-client"
 import { AuthSetting } from "@/functions/ipc-client/constants"
-import { ServiceOption, MetaOption, QueryOption, ImportOption, FindSimilarOption, FileOption } from "@/functions/http-client/api/setting"
+import { ServerOption, MetaOption, QueryOption, ImportOption, FindSimilarOption, StorageOption } from "@/functions/http-client/api/setting"
 import { useFetchReactive, useRetrieveHelper } from "@/functions/fetch"
 import { useAppEnv, useServerStatus } from "@/functions/app"
 import { useMessageBox } from "@/modules/message-box"
 import { computedMutable, optionalInstallation, toRef } from "@/utils/reactivity"
 
-export function useServiceStorageInfo() {
+export function useServiceStorageStatus() {
     return useFetchReactive({
-        get: client => client.serviceRuntime.storage
+        get: client => client.service.storageStatus
     })
 }
 
-export function useSettingAuthData() {
+export function useSettingAuth() {
     const value = ref<AuthSetting>()
 
     onMounted(async () => value.value = await remoteIpcClient.setting.auth.get())
@@ -24,7 +24,7 @@ export function useSettingAuthData() {
         }
     }, {deep: true})
 
-    return value
+    return {data: value}
 }
 
 export function useSettingConnectionInfo() {
@@ -102,15 +102,23 @@ export function useSettingChannel() {
     return {channels, currentChannel, defaultChannel, toggle: remoteIpcClient.setting.channel.toggle}
 }
 
-export function useSettingServiceData() {
-    return useFetchReactive<ServiceOption>({
-        get: client => client.setting.service.get,
-        update: client => client.setting.service.update,
-        eventFilter: "setting/service/changed"
+export function useSettingServer() {
+    return useFetchReactive<ServerOption>({
+        get: client => client.setting.server.get,
+        update: client => client.setting.server.update,
+        eventFilter: "setting/server/changed"
     })
 }
 
-export function useSettingMetaData() {
+export function useSettingStorage() {
+    return useFetchReactive<StorageOption>({
+        get: client => client.setting.storage.get,
+        update: client => client.setting.storage.update,
+        eventFilter: "setting/storage/changed"
+    })
+}
+
+export function useSettingMeta() {
     return useFetchReactive<MetaOption>({
         get: client => client.setting.meta.get,
         update: client => client.setting.meta.update,
@@ -118,7 +126,7 @@ export function useSettingMetaData() {
     })
 }
 
-export function useSettingQueryData() {
+export function useSettingQuery() {
     return useFetchReactive<QueryOption>({
         get: client => client.setting.query.get,
         update: client => client.setting.query.update,
@@ -126,7 +134,7 @@ export function useSettingQueryData() {
     })
 }
 
-export function useSettingImportData() {
+export function useSettingImport() {
     return useFetchReactive<ImportOption>({
         get: client => client.setting.import.get,
         update: client => client.setting.import.update,
@@ -134,19 +142,11 @@ export function useSettingImportData() {
     })
 }
 
-export function useSettingFindSimilarData() {
+export function useSettingFindSimilar() {
     return useFetchReactive<FindSimilarOption>({
         get: client => client.setting.findSimilar.get,
         update: client => client.setting.findSimilar.update,
         eventFilter: "setting/find-similar/changed"
-    })
-}
-
-export function useSettingFileData() {
-    return useFetchReactive<FileOption>({
-        get: client => client.setting.file.get,
-        update: client => client.setting.file.update,
-        eventFilter: "setting/file/changed"
     })
 }
 

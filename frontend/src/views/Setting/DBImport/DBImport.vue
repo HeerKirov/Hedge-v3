@@ -1,24 +1,17 @@
 <script setup lang="ts">
-import { computed } from "vue"
-import { Button } from "@/components/universal"
+import { Button, Separator } from "@/components/universal"
 import { Group } from "@/components/layout"
 import { CheckBox, Select, NumberInput } from "@/components/form"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
-import { useSettingImportData } from "@/services/setting"
+import { useSettingImport } from "@/services/setting"
 import { usePropertySot } from "@/utils/forms"
 import DBImportSourceRule from "./DBImportSourceRule.vue"
 import DBImportDirectoriesEditor from "./DBImportDirectoriesEditor.vue"
+import { toRefNullable } from "@/utils/reactivity"
 
-const { data: settingImport } = useSettingImportData()
+const { data: settingImport } = useSettingImport()
 
-const [partitionTimeDelay, partitionTimeDelaySot, savePartitionTimeDelay] = usePropertySot(computed({
-    get: () => settingImport.value ? (settingImport.value.setPartitionTimeDelay ?? 0) / (1000 * 60 * 60) : undefined,
-    set: value => {
-        if(settingImport.value && value) {
-            settingImport.value.setPartitionTimeDelay = value * 1000 * 60 * 60
-        }
-    }
-}))
+const [partitionTimeDelay, partitionTimeDelaySot, savePartitionTimeDelay] = usePropertySot(toRefNullable(settingImport, "setPartitionTimeDelayHour"))
 
 const timeTypes: {value: OrderTimeType, label: string}[] = [
     {value: "IMPORT_TIME", label: "项目导入时间"},
@@ -55,7 +48,8 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
             </Group>
             <p class="secondary-text">从创建时间生成分区时间时，会将0点以后延迟一定时间内的时间点仍然视作前一天。</p>
         </div>
-        <div class="mt-6">
+        <Separator direction="horizontal" :spacing="2"/>
+        <div>
             <label class="label">本地目录自动导入</label>
             <DBImportDirectoriesEditor v-model:value="settingImport.watchPaths"/>
             <p class="secondary-text">此功能可以监听数个本地目录，向这些目录写入文件时，自动导入这些文件。</p>
@@ -66,7 +60,8 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
             <p class="mt-1"><CheckBox v-model:value="settingImport.watchPathMoveFile">移除已被导入的文件</CheckBox></p>
             <p class="secondary-text">导入文件时，将文件从原位置移除。</p>
         </div>
-        <label class="label mt-6">来源数据解析规则</label>
+        <Separator direction="horizontal" :spacing="2"/>
+        <label class="label">来源数据解析规则</label>
         <DBImportSourceRule class="mt-1" v-model:rules="settingImport.sourceAnalyseRules"/>
     </template>
 </template>

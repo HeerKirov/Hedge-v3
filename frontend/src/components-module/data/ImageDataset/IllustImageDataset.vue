@@ -7,10 +7,8 @@ import { useAssets } from "@/functions/app"
 import { PaginationData, QueryInstance } from "@/functions/fetch"
 import { TypeDefinition } from "@/modules/drag"
 import { datetime } from "@/utils/datetime"
-import { strings } from "@/utils/primitives"
 import { toRef } from "@/utils/reactivity"
-import { isVideoExtension } from "@/utils/validation"
-import { installDatasetContext, SuitableIllust } from "./context"
+import { installDatasetContext, SuitableIllust, isVideoExtension } from "./context"
 import SelectedCountBadge from "./SelectedCountBadge.vue"
 import DatasetGridFramework from "./DatasetGridFramework.vue"
 import DatasetRowFramework from "./DatasetRowFramework.vue"
@@ -120,7 +118,7 @@ installDatasetContext({
             <!-- TODO 尝试加入动态处理，切换使用thumbnail/sample。对其他dataset也是如此 -->
             <img :class="$style['grid-img']" :src="assetsUrl(item.filePath.thumbnail)" :alt="`illust-${item.id}`"/>
             <Icon v-if="item.favorite" :class="[$style['grid-favorite'], 'has-text-danger']" icon="heart"/>
-            <Icon v-if="isVideoExtension(item.filePath.original)" :class="$style['grid-video']" icon="video"/>
+            <Icon v-if="isVideoExtension(item.filePath.extension)" :class="$style['grid-video']" icon="video"/>
             <div v-if="item.childrenCount" :class="$style['grid-num-tag']"><Icon class="mr-half" icon="images"/>{{item.childrenCount}}</div>
         </DatasetGridFramework>
         <DatasetRowFramework v-else :row-height="32" v-slot="{ item }">
@@ -148,13 +146,13 @@ installDatasetContext({
                         </template>
                     </div>
                 </FlexItem>
-                <FlexItem :width="15" :shrink="0">
-                    <div class="mr-1">
-                        <FileInfoDisplay :extension="strings.getExtension(item.filePath.original)" mode="inline"/>
-                    </div>
-                </FlexItem>
                 <FlexItem :width="30">
                     <div class="no-wrap overflow-hidden"><SourceInfo v-if="item.type === 'IMAGE'" :site="item.sourceSite" :source-id="item.sourceId" :source-part="item.sourcePart"/></div>
+                </FlexItem>
+                <FlexItem :width="15" :shrink="0">
+                    <div class="mr-1">
+                        <FileInfoDisplay :extension="item.filePath.extension" mode="inline"/>
+                    </div>
                 </FlexItem>
                 <FlexItem :shrink="0">
                     <div :class="$style.time">{{datetime.toSimpleFormat(item.orderTime)}}</div>

@@ -7,9 +7,7 @@ import { useAssets } from "@/functions/app"
 import { PaginationData, QueryInstance } from "@/functions/fetch"
 import { TrashedImage } from "@/functions/http-client/api/trash"
 import { toRef } from "@/utils/reactivity"
-import { strings } from "@/utils/primitives"
-import { isVideoExtension } from "@/utils/validation"
-import { installDatasetContext } from "./context"
+import { installDatasetContext, isVideoExtension } from "./context"
 import SelectedCountBadge from "./SelectedCountBadge.vue"
 import DatasetGridFramework from "./DatasetGridFramework.vue"
 import DatasetRowFramework from "./DatasetRowFramework.vue"
@@ -128,7 +126,7 @@ const simpleRemain = (remainingTime: number | null) => {
         <DatasetGridFramework v-if="viewMode === 'grid'" :column-num="columnNum!" v-slot="{ item }">
             <img :class="$style['grid-img']" :src="assetsUrl(item.filePath.thumbnail)" :alt="`trashed-image-${item.id}`"/>
             <div v-if="item.remainingTime !== null" :class="$style['grid-remain-tag']">{{ simpleRemain(item.remainingTime) }}</div>
-            <Icon v-if="isVideoExtension(item.filePath.original)" :class="$style['grid-video']" icon="video"/>
+            <Icon v-if="isVideoExtension(item.filePath.extension)" :class="$style['grid-video']" icon="video"/>
         </DatasetGridFramework>
         <DatasetRowFramework v-else :row-height="32" v-slot="{ item }">
             <Flex horizontal="stretch" align="center">
@@ -148,13 +146,13 @@ const simpleRemain = (remainingTime: number | null) => {
                         </template>
                     </div>
                 </FlexItem>
-                <FlexItem :width="15" :shrink="0">
-                    <div class="mr-2">
-                        <FileInfoDisplay :extension="strings.getExtension(item.filePath.original)" mode="inline"/>
-                    </div>
-                </FlexItem>
                 <FlexItem :width="30">
                     <div class="no-wrap overflow-hidden"><SourceInfo :site="item.sourceSite" :source-id="item.sourceId" :source-part="item.sourcePart"/></div>
+                </FlexItem>
+                <FlexItem :width="15" :shrink="0">
+                    <div class="mr-2">
+                        <FileInfoDisplay :extension="item.filePath.extension" mode="inline"/>
+                    </div>
                 </FlexItem>
                 <FlexItem :width="30">
                     <div class="mr-2 has-text-right">

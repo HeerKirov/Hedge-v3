@@ -9,9 +9,7 @@ import { useAssets } from "@/functions/app"
 import { TypeDefinition } from "@/modules/drag"
 import { date, datetime } from "@/utils/datetime"
 import { toRef } from "@/utils/reactivity"
-import { strings } from "@/utils/primitives"
-import { isVideoExtension } from "@/utils/validation"
-import { installDatasetContext } from "./context"
+import { installDatasetContext, isVideoExtension } from "./context"
 import SelectedCountBadge from "./SelectedCountBadge.vue"
 import DatasetGridFramework from "./DatasetGridFramework.vue"
 import DatasetRowFramework from "./DatasetRowFramework.vue"
@@ -119,7 +117,7 @@ installDatasetContext({
     <div class="w-100 h-100 relative" :style="style">
         <DatasetGridFramework v-if="viewMode === 'grid'" :column-num="columnNum!" v-slot="{ item }">
             <img :class="$style['grid-img']" :src="assetsUrl(item.filePath.thumbnail)" :alt="`import-image-${item.id}`"/>
-            <Icon v-if="isVideoExtension(item.filePath.original)" :class="$style['grid-video']" icon="video"/>
+            <Icon v-if="isVideoExtension(item.filePath.extension)" :class="$style['grid-video']" icon="video"/>
         </DatasetGridFramework>
         <DatasetRowFramework v-else :row-height="32" v-slot="{ item }">
             <Flex horizontal="stretch" align="center">
@@ -129,13 +127,13 @@ installDatasetContext({
                 <FlexItem :width="35">
                     <div class="ml-1 no-wrap overflow-ellipsis">{{item.originFileName}}</div>
                 </FlexItem>
-                <FlexItem :width="15" :shrink="0">
-                    <div class="mr-1">
-                        <FileInfoDisplay :extension="strings.getExtension(item.filePath.original)" mode="inline"/>
-                    </div>
-                </FlexItem>
                 <FlexItem :width="25" :shrink="0">
                     <SourceInfo :site="item.sourceSite" :source-id="item.sourceId" :source-part="item.sourcePart"/>
+                </FlexItem>
+                <FlexItem :width="15" :shrink="0">
+                    <div class="mr-1">
+                        <FileInfoDisplay :extension="item.filePath.extension" mode="inline"/>
+                    </div>
                 </FlexItem>
                 <FlexItem :width="30" :shrink="0">
                     <div class="mr-1 has-text-right">

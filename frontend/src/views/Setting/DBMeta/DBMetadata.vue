@@ -2,10 +2,10 @@
 import { Icon } from "@/components/universal"
 import { CheckBox, ColorPicker } from "@/components/form"
 import { Group } from "@/components/layout"
-import { useSettingMetaData } from "@/services/setting"
+import { useSettingMeta } from "@/services/setting"
 import { TOPIC_TYPES, TOPIC_TYPE_NAMES, TOPIC_TYPE_ICONS, AUTHOR_TYPES, AUTHOR_TYPE_NAMES, AUTHOR_TYPE_ICONS } from "@/constants/entity"
 
-const { data: settingMeta } = useSettingMetaData()
+const { data: settingMeta } = useSettingMeta()
 
 </script>
 

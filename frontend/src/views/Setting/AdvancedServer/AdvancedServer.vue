@@ -4,18 +4,18 @@ import { Block, Button, Icon } from "@/components/universal"
 import { Input } from "@/components/form"
 import { Group } from "@/components/layout"
 import { useServerStatus } from "@/functions/app"
-import { useSettingConnectionInfo, useSettingServiceData } from "@/services/setting"
+import { useSettingConnectionInfo, useSettingServer } from "@/services/setting"
 import { usePropertySot } from "@/utils/forms"
 import { toRefNullable } from "@/utils/reactivity"
 import { PortType, validatePort } from "@/utils/validation"
 import { sleep } from "@/utils/process"
 
 const server = useServerStatus()
-const serviceSetting = useSettingServiceData()
+const serverSetting = useSettingServer()
 
 const { connectionInfo, connectionStatus } = useSettingConnectionInfo()
 
-const [port, portSotFlag, savePort] = usePropertySot(toRefNullable(serviceSetting.data, "port"))
+const [port, portSotFlag, savePort] = usePropertySot(toRefNullable(serverSetting.data, "port"))
 
 const portType = ref<PortType>("AUTO")
 watch(port, async (v, _, onInvalidate) => {
@@ -42,8 +42,8 @@ watch(port, async (v, _, onInvalidate) => {
         <p v-else-if="connectionStatus === 'FAILED'" class="has-text-danger is-font-size-large">
             <Icon class="mr-2" icon="server"/>核心服务发生错误
         </p>
-        <p class="mt-2 is-font-size-small">核心服务是一项独立的进程，在后台为整套Hedge应用提供功能服务。除App外，还可为命令行工具、插件提供服务。</p>
-        <p class="is-font-size-small">Hedge会自己做好对核心服务的管理，通常不必关心这个进程。</p>
+        <p class="mt-2">核心服务是一项独立的进程，在后台为整套Hedge应用提供功能服务。除App外，还可为CLI、插件等提供支持。</p>
+        <p>Hedge会自行管理核心服务，通常不必关心这个进程。</p>
         <p v-if="!!connectionInfo" class="mt-2 is-font-size-small">
             <Icon class="mr-1" icon="bullseye"/>PID <code>{{connectionInfo.pid}}</code>
             <Icon class="mr-1" icon="ethernet"/>端口 <code>:{{connectionInfo.port}}</code>

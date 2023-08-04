@@ -9,12 +9,12 @@ const { menuItems, menuSelected } = installNavMenu({
     menuItems: [
         {type: "scope", scopeName: "app", label: "应用程序"},
         {type: "menu", routeName: "SettingAppGeneral", label: "通用", icon: "cloud-sun"},
+        {type: "menu", routeName: "SettingAppStorage", label: "存储", icon: "briefcase"},
         {type: "scope", scopeName: "db", label: "数据库事务"},
         {type: "menu", routeName: "SettingDBMeta", label: "元数据", icon: "coffee"},
         {type: "menu", routeName: "SettingDBQuery", label: "查询", icon: "search"},
         {type: "menu", routeName: "SettingDBImport", label: "导入", icon: "plus-square"},
         {type: "menu", routeName: "SettingDBFindSimilar", label: "相似项查找", icon: "grin-squint"},
-        {type: "menu", routeName: "SettingDBFile", label: "文件管理", icon: "briefcase"},
         {type: "scope", scopeName: "advanced", label: "高级选项"},
         {type: "menu", routeName: "SettingAdvancedServer", label: "核心服务", icon: "server"},
         {type: "menu", routeName: "SettingAdvancedChannel", label: "频道", icon: "coins"},

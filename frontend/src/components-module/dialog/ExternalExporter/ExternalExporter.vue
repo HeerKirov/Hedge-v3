@@ -5,7 +5,7 @@ import { VirtualGridView } from "@/components/data"
 import { AspectGrid, BottomLayout, Flex, FlexItem } from "@/components/layout"
 import { DataRouter } from "@/components-business/top-bar"
 import { ExportSituationImage } from "@/functions/http-client/api/util-export"
-import { useAssets, useAssetsLocal } from "@/functions/app"
+import { useAssets } from "@/functions/app"
 import { ExternalExporterProps, useExporterData } from "./context"
 import { startDragFile } from "@/modules/others"
 
@@ -17,14 +17,13 @@ const emit = defineEmits<{
     (e: "close"): void
 }>()
 
-const { assetsUrl } = useAssets()
-const { assetsLocal } = useAssetsLocal()
+const { assetsUrl, assetsLocal } = useAssets()
 
 const { packageMode, packageName, externalLocation, preview, executing, openDialog, executeExport } = useExporterData(props.p, () => emit("close"))
 
-const onDragstart = (e: DragEvent, item: ExportSituationImage) => {
+const onDragstart = async (e: DragEvent, item: ExportSituationImage) => {
     e.preventDefault()
-    startDragFile(assetsLocal(item.filePath.sample), assetsLocal(item.filePath.original))
+    startDragFile(await assetsLocal(item.filePath.sample), await assetsLocal(item.filePath.original))
 }
 
 </script>

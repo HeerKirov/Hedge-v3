@@ -29,7 +29,7 @@ export type { HttpInstance, HttpInstanceConfig as HttpClientConfig, Response, Re
 
 export interface HttpClient {
     homepage: HomepageEndpoint
-    serviceRuntime: ServiceEndpoint
+    service: ServiceEndpoint
     setting: SettingEndpoint
     illust: IllustEndpoint
     partition: PartitionEndpoint
@@ -58,7 +58,7 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
 
     return {
         homepage: createHomepageEndpoint(http),
-        serviceRuntime: createServiceEndpoint(http),
+        service: createServiceEndpoint(http),
         setting: createSettingEndpoint(http),
         illust: createIllustEndpoint(http),
         partition: createPartitionEndpoint(http),

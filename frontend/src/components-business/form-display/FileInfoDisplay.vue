@@ -16,8 +16,7 @@ const EXTENSIONS: Record<string, {name: string, icon: string}> = {
     "png": {name: "PNG图像", icon: "image"},
     "gif": {name: "GIF动态图像", icon: "image"},
     "mp4": {name: "MP4视频", icon: "video"},
-    "webm": {name: "WEBM视频", icon: "video"},
-    "ogv": {name: "OGV视频", icon: "video"}
+    "webm": {name: "WEBM视频", icon: "video"}
 }
 
 </script>

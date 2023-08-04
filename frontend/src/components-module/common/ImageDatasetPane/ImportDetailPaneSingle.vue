@@ -18,7 +18,7 @@ const { data, setTagme, setSourceInfo, setCreateTime, setOrderTime, setPartition
 </script>
 
 <template>
-    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.filePath.thumbnail" :draggable-file="data?.filePath.original" @click="openImagePreview"/>
+    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.filePath.thumbnail" @click="openImagePreview"/>
     <template v-if="!!data">
         <p v-if="data.originFileName" class="selectable word-wrap-anywhere mb-1">{{data.originFileName}}</p>
         <p v-if="data.fileCreateTime" class="secondary-text mt-2">文件创建时间 {{datetime.toSimpleFormat(data.fileCreateTime)}}</p>

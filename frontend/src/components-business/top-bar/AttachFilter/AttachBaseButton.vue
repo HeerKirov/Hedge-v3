@@ -45,7 +45,7 @@ defineExpose({
 
 .button
     box-sizing: border-box
-    vertical-align: baseline
+    vertical-align: middle
     white-space: nowrap
     font-size: $font-size-std
     height: $element-height-std

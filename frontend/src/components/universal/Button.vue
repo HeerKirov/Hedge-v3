@@ -39,7 +39,7 @@ const buttonClass = computed(() => [
 
 .button
     box-sizing: border-box
-    vertical-align: baseline
+    vertical-align: middle
     border-radius: $radius-size-std
     padding: 0 1em
     &.square

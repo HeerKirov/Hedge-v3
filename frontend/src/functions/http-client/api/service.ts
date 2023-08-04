@@ -2,24 +2,32 @@ import { HttpInstance, Response } from ".."
 
 export function createServiceEndpoint(http: HttpInstance): ServiceEndpoint {
     return {
-        storage: http.createRequest("/api/service/storage")
+        storageStatus: http.createRequest("/api/service/storage")
     }
 }
 
 export interface ServiceEndpoint {
     /**
-     * 获得service的storage运行时状况信息。
+     * 获得存储的运行时状况信息。
      */
-    storage(): Promise<Response<Storage>>
+    storageStatus(): Promise<Response<StorageStatus>>
 }
 
-interface Storage {
+export interface StorageStatus {
     /**
      * 存储是否是可访问的。
      */
-    accessible: boolean
+    storageAccessible: boolean
     /**
-     * 实时存储路径。
+     * 存储实际存储路径。
      */
     storageDir: string
+    /**
+     * 缓存路径。
+     */
+    cacheDir: string
+    /**
+     * 缓存占用空间大小。
+     */
+    cacheSize: number
 }

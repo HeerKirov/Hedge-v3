@@ -55,7 +55,7 @@ function watchProps() {
 .select
     display: inline-block
     position: relative
-    vertical-align: top
+    vertical-align: middle
     select
         display: block
         outline: none

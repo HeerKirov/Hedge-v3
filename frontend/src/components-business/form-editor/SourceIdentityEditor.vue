@@ -14,9 +14,9 @@ const emit = defineEmits<{
     (e: "update", identity: {site: string | null, sourceId: number | null, sourcePart: number | null}): void
 }>()
 
-const { data: siteList } = useSettingSite()
+const { data: sites } = useSettingSite()
 
-const siteModel = computed(() => props.site != null ? siteList.value?.find(s => s.name === props.site) ?? null : null)
+const siteModel = computed(() => props.site != null ? sites.value?.find(s => s.name === props.site) ?? null : null)
 
 const updateSite = (v: string | null) => emit("update", {site: v, sourceId: props.sourceId, sourcePart: props.sourcePart})
 

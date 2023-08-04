@@ -45,12 +45,14 @@ export interface FilePath {
     original: string
     thumbnail: string
     sample: string
+    extension: string
 }
 
 export interface NullableFilePath {
     original: string
     thumbnail: string | null
     sample: string | null
+    extension: string
 }
 
 type OrderPrefix = "" | "+" | "-"

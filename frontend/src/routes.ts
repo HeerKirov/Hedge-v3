@@ -117,6 +117,11 @@ export default <RouteRecordRaw[]>[
                 component: () => import("@/views/Setting/AppGeneral/AppGeneral.vue")
             },
             {
+                name: "SettingAppStorage",
+                path: "app/storage",
+                component: () => import("@/views/Setting/AppStorage/AppStorage.vue")
+            },
+            {
                 name: "SettingDBMeta",
                 path: "db/meta",
                 component: () => import("@/views/Setting/DBMeta/DBMeta.vue")
@@ -135,11 +140,6 @@ export default <RouteRecordRaw[]>[
                 name: "SettingDBFindSimilar",
                 path: "db/find-similar",
                 component: () => import("@/views/Setting/DBFindSimilar/DBFindSimilar.vue")
-            },
-            {
-                name: "SettingDBFile",
-                path: "db/file",
-                component: () => import("@/views/Setting/DBFile/DBFile.vue")
             },
             {
                 name: "SettingAdvancedServer",

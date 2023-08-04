@@ -1,7 +1,7 @@
 import { ref, watch } from "vue"
 import { useCreatingHelper, usePaginationDataView, useQueryListview } from "@/functions/fetch"
 import { TaskConfig, TaskSelector } from "@/functions/http-client/api/find-similar"
-import { useSettingFindSimilarData } from "@/services/setting"
+import { useSettingFindSimilar } from "@/services/setting"
 import { useToast } from "@/modules/toast"
 import { Push } from "../context"
 
@@ -55,7 +55,7 @@ export function useTaskListData() {
 
 export function useTaskCreatorData(close: () => void) {
     const toast = useToast()
-    const setting = useSettingFindSimilarData()
+    const setting = useSettingFindSimilar()
     
     const form = ref<TaskCreatorForm>(createDefaultForm())
 

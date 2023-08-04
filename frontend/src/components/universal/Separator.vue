@@ -3,12 +3,13 @@
 defineProps<{
     size?: "small" | "std" | "large"
     direction?: "horizontal" | "vertical"
+    spacing?: number
 }>()
 
 </script>
 
 <template>
-    <div :class="[$style.separator, $style[`is-direction-${direction ?? 'vertical'}`], $style[`is-size-${size ?? 'std'}`]]"/>
+    <div :class="[$style.separator, $style[`is-direction-${direction ?? 'vertical'}`], $style[`is-size-${size ?? 'std'}`], $style[`spacing-${spacing ?? 1}`]]"/>
 </template>
 
 <style module lang="sass">
@@ -17,7 +18,6 @@ defineProps<{
 
 .separator.is-direction-vertical
     width: 0
-    margin: 0 $spacing-1
     flex: 0 0 auto
     display: inline-block
     box-sizing: border-box
@@ -26,6 +26,9 @@ defineProps<{
     @media (prefers-color-scheme: dark)
         border-left-color: $dark-mode-border-color
 
+    @each $name, $size in $spacing-map
+        &.spacing-#{$name}
+            margin: 0 $size
     &.is-size-small
         height: #{$element-height-small * 0.8}
     &.is-size-std
@@ -36,11 +39,14 @@ defineProps<{
 .separator.is-direction-horizontal
     height: 0
     width: 100%
-    margin: $spacing-1 0
     flex: 0 0 auto
     display: block
     box-sizing: border-box
     border-top: solid 1px $light-mode-border-color
     @media (prefers-color-scheme: dark)
         border-top-color: $dark-mode-border-color
+    
+    @each $name, $size in $spacing-map
+        &.spacing-#{$name}
+            margin: $size 0
 </style>

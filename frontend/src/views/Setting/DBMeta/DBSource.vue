@@ -8,18 +8,18 @@ import { computedMutable } from "@/utils/reactivity"
 import DBSourceSiteEditor from "./DBSourceSiteEditor.vue"
 import DBSourceSiteCreator from "./DBSourceSiteCreator.vue"
 
-const { data, createItem, updateItem, deleteItem } = useSettingSite()
+const { data: sites, createItem, updateItem, deleteItem } = useSettingSite()
 
-const selectItems = computed(() => data.value?.map(site => ({label: site.title, value: site.name})).concat([{label: "新建站点…", value: "<new>"}]))
+const selectItems = computed(() => sites.value?.map(site => ({label: site.title, value: site.name})).concat([{label: "新建站点…", value: "<new>"}]))
 
 const selectedItem = computedMutable<string | undefined>(o => {
-    if((o !== undefined && data.value?.find(i => i.name === o) !== undefined) || (o === "<new>")) {
+    if((o !== undefined && sites.value?.find(i => i.name === o) !== undefined) || (o === "<new>")) {
         return o
     }
     return undefined
 })
-const selectedIndex = computed(() => selectedItem.value && data.value && selectedItem.value !== "<new>" ? data.value.findIndex(i => i.name === selectedItem.value) : null)
-const selectedSite = computed(() => selectedIndex.value !== null ? data.value![selectedIndex.value] ?? null : null)
+const selectedIndex = computed(() => selectedItem.value && sites.value && selectedItem.value !== "<new>" ? sites.value.findIndex(i => i.name === selectedItem.value) : null)
+const selectedSite = computed(() => selectedIndex.value !== null ? sites.value![selectedIndex.value] ?? null : null)
 
 const create = async (form: SiteCreateForm) => {
     await createItem(form)
