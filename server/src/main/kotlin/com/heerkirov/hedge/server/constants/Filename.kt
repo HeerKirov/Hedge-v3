@@ -6,7 +6,6 @@ package com.heerkirov.hedge.server.constants
 object Filename {
     const val SERVER_PID = "PID"
 
-    const val SETTING_STORAGE_DAT = "setting.dat"
     const val APPDATA_STORAGE_DAT = "appdata.dat"
 
     const val DATA_SQLITE = "data.sqlite"

@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.manager.query
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.enums.MetaType
@@ -14,8 +15,8 @@ import com.heerkirov.hedge.server.library.compiler.translator.visual.*
 import com.heerkirov.hedge.server.library.compiler.utils.CompileError
 import com.heerkirov.hedge.server.utils.structs.CacheMap
 
-class QueryManager(private val data: DataRepository, bus: EventBus) {
-    private val queryer = MetaQueryer(data)
+class QueryManager(private val appdata: AppDataManager, private val data: DataRepository, bus: EventBus) {
+    private val queryer = MetaQueryer(appdata, data)
     private val options = OptionsImpl()
 
     private val executePlanCache = CacheMap<DialectAndText, QuerySchema>(100)
@@ -109,34 +110,34 @@ class QueryManager(private val data: DataRepository, bus: EventBus) {
 
         override val translateUnderscoreToSpace: Boolean get() {
             if (_translateUnderscoreToSpace == null) {
-                _translateUnderscoreToSpace = data.setting.query.translateUnderscoreToSpace
+                _translateUnderscoreToSpace = appdata.setting.query.translateUnderscoreToSpace
             }
             return _translateUnderscoreToSpace!!
         }
 
         override val chineseSymbolReflect: Boolean get() {
             if (_chineseSymbolReflect == null) {
-                _chineseSymbolReflect = data.setting.query.chineseSymbolReflect
+                _chineseSymbolReflect = appdata.setting.query.chineseSymbolReflect
             }
             return _chineseSymbolReflect!!
         }
 
         override val warningLimitOfUnionItems: Int get() {
             if (_warningLimitOfUnionItems == null) {
-                _warningLimitOfUnionItems = data.setting.query.warningLimitOfUnionItems
+                _warningLimitOfUnionItems = appdata.setting.query.warningLimitOfUnionItems
             }
             return _warningLimitOfUnionItems!!
         }
 
         override val warningLimitOfIntersectItems: Int get() {
             if (_warningLimitOfIntersectItems == null) {
-                _warningLimitOfIntersectItems = data.setting.query.warningLimitOfIntersectItems
+                _warningLimitOfIntersectItems = appdata.setting.query.warningLimitOfIntersectItems
             }
             return _warningLimitOfIntersectItems!!
         }
 
         fun flushOptionsByEvent() {
-            val option = data.setting.query
+            val option = appdata.setting.query
             if(option.chineseSymbolReflect != _chineseSymbolReflect) {
                 _chineseSymbolReflect = option.chineseSymbolReflect
                 executePlanCache.clear()

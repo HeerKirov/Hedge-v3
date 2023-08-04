@@ -18,37 +18,34 @@ import org.ktorm.entity.any
 import org.ktorm.entity.sequenceOf
 
 class SettingService(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus) {
-    fun getAppdataService(): ServiceOption {
-        return appdata.appdata.service
+    fun getServer(): ServerOption {
+        return appdata.setting.server
     }
 
-    fun updateAppdataService(form: ServiceOptionUpdateForm) {
-        appdata.save {
-            form.port.alsoOpt { service.port = it }
-            form.storagePath.alsoOpt { service.storagePath = it }
+    fun updateServer(form: ServerOptionUpdateForm) {
+        appdata.saveSetting {
+            form.port.alsoOpt { server.port = it }
         }
 
-        bus.emit(SettingServiceChanged())
+        bus.emit(SettingServerChanged())
     }
 
     fun getFindSimilar(): FindSimilarOption {
-        return data.setting.findSimilar
+        return appdata.setting.findSimilar
     }
 
     fun updateFindSimilar(form: FindSimilarOptionUpdateForm) {
-        data.syncSetting {
-            data.saveSetting {
-                form.autoFindSimilar.alsoOpt { findSimilar.autoFindSimilar = it }
-                form.autoTaskConf.alsoOpt { findSimilar.autoTaskConf = it }
-                form.defaultTaskConf.alsoOpt { findSimilar.defaultTaskConf = it }
-            }
+        appdata.saveSetting {
+            form.autoFindSimilar.alsoOpt { findSimilar.autoFindSimilar = it }
+            form.autoTaskConf.alsoOpt { findSimilar.autoTaskConf = it }
+            form.defaultTaskConf.alsoOpt { findSimilar.defaultTaskConf = it }
         }
 
         bus.emit(SettingFindSimilarChanged())
     }
 
     fun getImport(): ImportOption {
-        return data.setting.import
+        return appdata.setting.import
     }
 
     /**
@@ -56,9 +53,9 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
      * @throws InvalidRuleIndexError (string, string) rules的index与regex不匹配
      */
     fun updateImport(form: ImportOptionUpdateForm) {
-        data.syncSetting {
+        appdata.saveSetting {
             form.sourceAnalyseRules.alsoOpt { rules ->
-                val sites = setting.source.sites.associateBy { it.name }
+                val sites = source.sites.associateBy { it.name }
 
                 for (rule in rules) {
                     val site = sites[rule.site] ?: throw be(ResourceNotExist("site", rule.site))
@@ -66,40 +63,41 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
                 }
             }
 
-            saveSetting {
-                form.autoAnalyseSourceData.alsoOpt { import.autoAnalyseSourceData = it }
-                form.setTagmeOfTag.alsoOpt { import.setTagmeOfTag = it }
-                form.setTagmeOfSource.alsoOpt { import.setTagmeOfSource = it }
-                form.setOrderTimeBy.alsoOpt { import.setOrderTimeBy = it }
-                form.setPartitionTimeDelay.alsoOpt { import.setPartitionTimeDelay = it }
-                form.sourceAnalyseRules.alsoOpt { import.sourceAnalyseRules = it }
-                form.watchPaths.alsoOpt { import.watchPaths = it }
-                form.autoWatchPath.alsoOpt { import.autoWatchPath = it }
-                form.watchPathMoveFile.alsoOpt { import.watchPathMoveFile = it }
-                form.watchPathInitialize.alsoOpt { import.watchPathInitialize = it }
-            }
+            form.autoAnalyseSourceData.alsoOpt { import.autoAnalyseSourceData = it }
+            form.setTagmeOfTag.alsoOpt { import.setTagmeOfTag = it }
+            form.setTagmeOfSource.alsoOpt { import.setTagmeOfSource = it }
+            form.setOrderTimeBy.alsoOpt { import.setOrderTimeBy = it }
+            form.setPartitionTimeDelay.alsoOpt { import.setPartitionTimeDelayHour = it }
+            form.sourceAnalyseRules.alsoOpt { import.sourceAnalyseRules = it }
+            form.watchPaths.alsoOpt { import.watchPaths = it }
+            form.autoWatchPath.alsoOpt { import.autoWatchPath = it }
+            form.watchPathMoveFile.alsoOpt { import.watchPathMoveFile = it }
+            form.watchPathInitialize.alsoOpt { import.watchPathInitialize = it }
         }
 
         bus.emit(SettingImportChanged())
     }
 
-    fun getFile(): FileOption {
-        return data.setting.file
+    fun getStorage(): StorageOption {
+        return appdata.setting.storage
     }
 
-    fun updateFile(form: FileOptionUpdateForm) {
-        data.syncSetting {
-            saveSetting {
-                form.autoCleanTrashes.alsoOpt { file.autoCleanTrashes = it }
-                form.autoCleanTrashesIntervalDay.alsoOpt { file.autoCleanTrashesIntervalDay = it }
-            }
+    fun updateStorage(form: StorageOptionUpdateForm) {
+        appdata.saveSetting {
+            form.storagePath.alsoOpt { storage.storagePath = it }
+            form.autoCleanTrashes.alsoOpt { storage.autoCleanTrashes = it }
+            form.autoCleanTrashesIntervalDay.alsoOpt { storage.autoCleanTrashesIntervalDay = it }
+            form.autoCleanCaches.alsoOpt { storage.autoCleanCaches = it }
+            form.autoCleanCachesIntervalDay.alsoOpt { storage.autoCleanCachesIntervalDay = it }
+            form.blockMaxSizeMB.alsoOpt { storage.blockMaxSizeMB = it }
+            form.blockMaxCount.alsoOpt { storage.blockMaxCount = it }
         }
 
-        bus.emit(SettingFileChanged())
+        bus.emit(SettingArchiveChanged())
     }
 
     fun getMeta(): MetaOption {
-        return data.setting.meta
+        return appdata.setting.meta
     }
 
     fun updateMeta(form: MetaOptionUpdateForm) {
@@ -110,46 +108,41 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
             InvalidColorError(it)
         ) } }
 
-        data.syncSetting {
-            saveSetting {
-                form.autoCleanTagme.alsoOpt { meta.autoCleanTagme = it }
-                form.scoreDescriptions.alsoOpt { meta.scoreDescriptions = it }
-                form.topicColors.alsoOpt { meta.topicColors = it }
-                form.authorColors.alsoOpt { meta.authorColors = it }
-            }
+        appdata.saveSetting {
+            form.autoCleanTagme.alsoOpt { meta.autoCleanTagme = it }
+            form.topicColors.alsoOpt { meta.topicColors = it }
+            form.authorColors.alsoOpt { meta.authorColors = it }
         }
 
         bus.emit(SettingMetaChanged())
     }
 
     fun getQuery(): QueryOption {
-        return data.setting.query
+        return appdata.setting.query
     }
 
     fun updateQuery(form: QueryOptionUpdateForm) {
-        data.syncSetting {
-            saveSetting {
-                form.chineseSymbolReflect.alsoOpt { query.chineseSymbolReflect = it }
-                form.translateUnderscoreToSpace.alsoOpt { query.translateUnderscoreToSpace = it }
-                form.queryLimitOfQueryItems.alsoOpt { query.queryLimitOfQueryItems = it }
-                form.warningLimitOfUnionItems.alsoOpt { query.warningLimitOfUnionItems = it }
-                form.warningLimitOfIntersectItems.alsoOpt { query.warningLimitOfIntersectItems = it }
-            }
+        appdata.saveSetting {
+            form.chineseSymbolReflect.alsoOpt { query.chineseSymbolReflect = it }
+            form.translateUnderscoreToSpace.alsoOpt { query.translateUnderscoreToSpace = it }
+            form.queryLimitOfQueryItems.alsoOpt { query.queryLimitOfQueryItems = it }
+            form.warningLimitOfUnionItems.alsoOpt { query.warningLimitOfUnionItems = it }
+            form.warningLimitOfIntersectItems.alsoOpt { query.warningLimitOfIntersectItems = it }
         }
 
         bus.emit(SettingQueryChanged())
     }
 
     fun listSourceSite(): List<SourceOption.Site> {
-        return data.setting.source.sites
+        return appdata.setting.source.sites
     }
 
     /**
      * @throws AlreadyExists ("site", "name", string) 此site name已经存在
      */
     fun createSourceSite(form: SiteCreateForm) {
-        data.syncSetting {
-            val sites = setting.source.sites
+        appdata.saveSetting {
+            val sites = source.sites
             if(sites.any { it.name == form.name }) throw be(AlreadyExists("site", "name", form.name))
             for(metadata in form.availableAdditionalInfo) {
                 if(!checkVariableName(metadata.field)) {
@@ -167,12 +160,10 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
                 }
             }
 
-            saveSetting {
-                if(ordinal != null) {
-                    sites.add(ordinal, newSite)
-                }else{
-                    sites.add(newSite)
-                }
+            if(ordinal != null) {
+                sites.add(ordinal, newSite)
+            }else{
+                sites.add(newSite)
             }
         }
 
@@ -183,46 +174,45 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
      * @throws NotFound 请求对象不存在
      */
     fun getSourceSite(name: String): SourceOption.Site {
-        return data.setting.source.sites.firstOrNull { it.name == name } ?: throw be(NotFound())
+        return appdata.setting.source.sites.firstOrNull { it.name == name } ?: throw be(NotFound())
     }
 
     fun updateSourceSite(name: String, form: SiteUpdateForm) {
-        data.syncSetting {
+        appdata.saveSetting {
             val site = getSourceSite(name)
 
-            saveSetting {
-                form.title.alsoOpt { site.title = it }
-                form.sourceLinkGenerateRules.alsoOpt { site.sourceLinkGenerateRules = it }
-                form.availableAdditionalInfo.alsoOpt {
-                    for(metadata in it) {
-                        if(!checkVariableName(metadata.field)) {
-                            throw be(ParamError("availableAdditionalInfo"))
-                        }
+            form.title.alsoOpt { site.title = it }
+            form.sourceLinkGenerateRules.alsoOpt { site.sourceLinkGenerateRules = it }
+            form.availableAdditionalInfo.alsoOpt {
+                for(metadata in it) {
+                    if(!checkVariableName(metadata.field)) {
+                        throw be(ParamError("availableAdditionalInfo"))
                     }
-                    site.availableAdditionalInfo = it
                 }
-                form.ordinal.alsoOpt {
-                    val sites = data.setting.source.sites
-                    val newOrdinal = when {
-                        it < 0 -> 0
-                        it > sites.size -> sites.size
-                        else -> it
-                    }
-                    val oldOrdinal = sites.indexOf(site)
+                site.availableAdditionalInfo = it
+            }
+            form.ordinal.alsoOpt {
+                val sites = source.sites
+                val newOrdinal = when {
+                    it < 0 -> 0
+                    it > sites.size -> sites.size
+                    else -> it
+                }
+                val oldOrdinal = sites.indexOf(site)
 
-                    if(oldOrdinal < newOrdinal) {
-                        data.setting.source.sites.apply {
-                            clear()
-                            addAll(sites.subList(0, oldOrdinal) + sites.subList(oldOrdinal + 1, newOrdinal) + site + sites.subList(newOrdinal, sites.size))
-                        }
-                    }else if(oldOrdinal > newOrdinal) {
-                        data.setting.source.sites.apply {
-                            clear()
-                            addAll(sites.subList(0, newOrdinal) + site + sites.subList(newOrdinal, oldOrdinal) + site + sites.subList(oldOrdinal + 1, sites.size))
-                        }
+                if(oldOrdinal < newOrdinal) {
+                    source.sites.apply {
+                        clear()
+                        addAll(sites.subList(0, oldOrdinal) + sites.subList(oldOrdinal + 1, newOrdinal) + site + sites.subList(newOrdinal, sites.size))
+                    }
+                }else if(oldOrdinal > newOrdinal) {
+                    source.sites.apply {
+                        clear()
+                        addAll(sites.subList(0, newOrdinal) + site + sites.subList(newOrdinal, oldOrdinal) + site + sites.subList(oldOrdinal + 1, sites.size))
                     }
                 }
             }
+
         }
 
         bus.emit(SettingSourceSiteChanged())
@@ -244,14 +234,12 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
             if(data.db.sequenceOf(TrashedImages).any { it.sourceSite eq name }) {
                 throw be(CascadeResourceExists("TrashedImage", "site", name))
             }
-            if(data.setting.import.sourceAnalyseRules.any { it.site == name }) {
+            if(appdata.setting.import.sourceAnalyseRules.any { it.site == name }) {
                 throw be(CascadeResourceExists("SourceAnalyseRule", "site", name))
             }
 
-            data.syncSetting {
-                saveSetting {
-                    source.sites.remove(site)
-                }
+            appdata.saveSetting {
+                source.sites.remove(site)
             }
         }
 
@@ -264,10 +252,10 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
      * @throws Reject 部分参数错误给出
      */
     fun updateAllSourceSite(sites: List<SiteBulkForm>) {
-        data.syncSetting {
+        appdata.saveSetting {
             sites.groupBy { it.name }.mapValues { (_, v) -> v.count() }.filterValues { it > 1 }.keys.firstOrNull()?.let { throw be(AlreadyExists("site", "name", it)) }
             if(sites.mapNotNull { it.availableAdditionalInfo.unwrapOrNull() }.flatten().any { !checkVariableName(it.field) }) { throw be(ParamError("availableAdditionalInfo")) }
-            val exists = data.setting.source.sites.associateBy { it.name }
+            val exists = source.sites.associateBy { it.name }
 
             val (updates, adds) = sites.filterInto { it.name in exists.keys }
             for(update in updates) {
@@ -278,7 +266,7 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
                 if(add.title.isUndefined) throw be(Reject("Param 'title' must be provided for not existed site '${add.name}'."))
             }
 
-            val deletes = data.setting.source.sites.filter { it.name !in sites.map(SiteBulkForm::name) }.map { it.name }
+            val deletes = source.sites.filter { it.name !in sites.map(SiteBulkForm::name) }.map { it.name }
             if(data.db.sequenceOf(Illusts).any { it.sourceSite inList deletes }) {
                 throw be(CascadeResourceExists("Illust", "site", deletes))
             }
@@ -288,31 +276,29 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
             if(data.db.sequenceOf(TrashedImages).any { it.sourceSite inList deletes }) {
                 throw be(CascadeResourceExists("TrashedImage", "site", deletes))
             }
-            if(data.setting.import.sourceAnalyseRules.any { it.site in deletes }) {
+            if(import.sourceAnalyseRules.any { it.site in deletes }) {
                 throw be(CascadeResourceExists("SourceAnalyseRule", "site", deletes))
             }
 
-            saveSetting {
-                source.sites.clear()
-                for (form in sites) {
-                    val cur = exists[form.name]
-                    if(cur != null) {
-                        source.sites.add(SourceOption.Site(
-                            form.name,
-                            form.title.unwrapOr { cur.title },
-                            cur.hasSecondaryId,
-                            form.availableAdditionalInfo.unwrapOr { cur.availableAdditionalInfo },
-                            form.sourceLinkGenerateRules.unwrapOr { cur.sourceLinkGenerateRules }
-                        ))
-                    }else{
-                        source.sites.add(SourceOption.Site(
-                            form.name,
-                            form.title.value,
-                            form.hasSecondaryId.unwrapOr { false },
-                            form.availableAdditionalInfo.unwrapOr { emptyList() },
-                            form.sourceLinkGenerateRules.unwrapOr { emptyList() }
-                        ))
-                    }
+            source.sites.clear()
+            for (form in sites) {
+                val cur = exists[form.name]
+                if(cur != null) {
+                    source.sites.add(SourceOption.Site(
+                        form.name,
+                        form.title.unwrapOr { cur.title },
+                        cur.hasSecondaryId,
+                        form.availableAdditionalInfo.unwrapOr { cur.availableAdditionalInfo },
+                        form.sourceLinkGenerateRules.unwrapOr { cur.sourceLinkGenerateRules }
+                    ))
+                }else{
+                    source.sites.add(SourceOption.Site(
+                        form.name,
+                        form.title.value,
+                        form.hasSecondaryId.unwrapOr { false },
+                        form.availableAdditionalInfo.unwrapOr { emptyList() },
+                        form.sourceLinkGenerateRules.unwrapOr { emptyList() }
+                    ))
                 }
             }
         }

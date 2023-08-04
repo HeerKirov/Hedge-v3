@@ -1,8 +1,9 @@
 package com.heerkirov.hedge.server.functions.manager
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
+import com.heerkirov.hedge.server.components.appdata.ImportOption
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
-import com.heerkirov.hedge.server.components.database.ImportOption
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.ImportImages
 import com.heerkirov.hedge.server.dto.form.ImportUpdateForm
@@ -39,7 +40,8 @@ import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.LocalDateTime
 
-class ImportManager(private val data: DataRepository,
+class ImportManager(private val appdata: AppDataManager,
+                    private val data: DataRepository,
                     private val bus: EventBus,
                     private val sourceManager: SourceDataManager,
                     private val importMetaManager: ImportMetaManager,
@@ -189,7 +191,7 @@ class ImportManager(private val data: DataRepository,
                                 sourceFilepath: String? = null,
                                 fileCreateTime: LocalDateTime? = null,
                                 fileUpdateTime: LocalDateTime? = null): Pair<Int, List<BaseException<*>>> {
-        val options = data.setting.import
+        val options = appdata.setting.import
 
         val fileImportTime = DateTime.now()
 
@@ -200,8 +202,9 @@ class ImportManager(private val data: DataRepository,
         }
 
         val partitionTime = orderTime
-            .runIf(options.setPartitionTimeDelay != null && options.setPartitionTimeDelay!!!= 0L) { (this.toMillisecond() - options.setPartitionTimeDelay!!).parseDateTime() }
-            .asZonedTime().toLocalDate()
+            .runIf(options.setPartitionTimeDelayHour != null && options.setPartitionTimeDelayHour!!!= 0L) {
+                (this.toMillisecond() - options.setPartitionTimeDelayHour!! * 1000 * 60 * 60).parseDateTime()
+            }.asZonedTime().toLocalDate()
 
         val warnings = mutableListOf<BaseException<*>>()
 

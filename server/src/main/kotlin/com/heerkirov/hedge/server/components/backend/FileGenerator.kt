@@ -34,6 +34,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.util.LinkedList
 import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
@@ -54,9 +55,9 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                         private val bus: EventBus) : FileGenerator {
     private val log = LoggerFactory.getLogger(FileGenerator::class.java)
 
-    private val archiveQueue = mutableListOf<ArchiveQueueUnit>()
-    private val thumbnailQueue = mutableListOf<Int>()
-    private val fingerprintQueue = mutableListOf<Int>()
+    private val archiveQueue = LinkedList<ArchiveQueueUnit>()
+    private val thumbnailQueue = LinkedList<Int>()
+    private val fingerprintQueue = LinkedList<Int>()
 
     private val archiveTask = loopPoolThread(thread = ::archiveDaemon)
     private val thumbnailTask = loopPoolThread(thread = ::thumbnailDaemon)
@@ -103,7 +104,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                 .where { FileRecords.deleted }
                 .asSequence()
                 .groupBy({ it[FileRecords.block]!! }) { it[FileRecords.id]!! }
-            val archivedTasks = if(!appdata.storagePathAccessor.accessible) emptySet() else {
+            val archivedTasks = if(!appdata.storage.accessible) emptySet() else {
                 val latestBlock = data.db.from(FileRecords)
                     .select(FileRecords.block)
                     .orderBy(FileRecords.id.desc())
@@ -113,7 +114,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                 //从存储位置读取所有的directory，准备在归档线程中将其归档
                 //但是latestBlock总是除外，FileManager会管理它，并在它被归档时发出事件通知
                 ArchiveType.values().asSequence().flatMap { archiveType ->
-                    Path(appdata.storagePathAccessor.storageDir, archiveType.toString())
+                    Path(appdata.storage.storageDir, archiveType.toString())
                         .toFile()
                         .listFiles { f -> f.isDirectory && f.name != latestBlock }
                         ?.asSequence()
@@ -181,8 +182,8 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             }
         }
 
-        if(!appdata.storagePathAccessor.accessible) {
-            log.warn("File storage path ${appdata.storagePathAccessor.storageDir} is not accessible. Archive processor is paused.")
+        if(!appdata.storage.accessible) {
+            log.warn("File storage path ${appdata.storage.storageDir} is not accessible. Archive processor is paused.")
             return
         }
 
@@ -227,15 +228,15 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             }
         }
 
-        if(!appdata.storagePathAccessor.accessible) {
-            log.warn("File storage path ${appdata.storagePathAccessor.storageDir} is not accessible. Thumbnail generator is paused.")
+        if(!appdata.storage.accessible) {
+            log.warn("File storage path ${appdata.storage.storageDir} is not accessible. Thumbnail generator is paused.")
             return
         }
 
         try {
             val fileRecord = data.db.sequenceOf(FileRecords).firstOrNull { it.id eq fileId }
             if(fileRecord != null && fileRecord.status == FileStatus.NOT_READY) {
-                val file = Path(appdata.storagePathAccessor.storageDir, ArchiveType.ORIGINAL.toString(), fileRecord.block, "${fileRecord.id}.${fileRecord.extension}").toFile()
+                val file = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), fileRecord.block, "${fileRecord.id}.${fileRecord.extension}").toFile()
                 if(file.exists()) {
                     val (thumbnailFileSize, sampleFileSize, resolutionWidth, resolutionHeight) = processThumbnail(fileRecord, file)
                     val fileStatus = if(thumbnailFileSize != null) FileStatus.READY
@@ -280,15 +281,15 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             }
         }
 
-        if(!appdata.storagePathAccessor.accessible) {
-            log.warn("File storage path ${appdata.storagePathAccessor.storageDir} is not accessible. Fingerprint generator is paused.")
+        if(!appdata.storage.accessible) {
+            log.warn("File storage path ${appdata.storage.storageDir} is not accessible. Fingerprint generator is paused.")
             return
         }
 
         try {
             val fileRecord = data.db.sequenceOf(FileRecords).firstOrNull { it.id eq fileId }
             if(fileRecord != null && fileRecord.fingerStatus == FingerprintStatus.NOT_READY) {
-                val file = Path(appdata.storagePathAccessor.storageDir, ArchiveType.ORIGINAL.toString(), fileRecord.block, "${fileRecord.id}.${fileRecord.extension}").toFile()
+                val file = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), fileRecord.block, "${fileRecord.id}.${fileRecord.extension}").toFile()
                 if(file.exists()) {
                     val result = try { Similarity.process(file) }catch (e: BusinessException) {
                         if(e.exception is IllegalFileExtensionError) {
@@ -339,7 +340,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
         //实际上，当尺寸小于sample且类型为jpg时，可以只生成thumbnail而不生成sample。
         //此时，需要把thumbnail当作sample去处理。即，sample总是优先于thumbnail。
         val thumbnailFileSize = if(thumbnailTempFile != null && sampleTempFile != null) {
-            val thumbnailPath = Path(appdata.storagePathAccessor.storageDir, ArchiveType.THUMBNAIL.toString(), fileRecord.block, "${fileRecord.id}.jpg")
+            val thumbnailPath = Path(appdata.storage.storageDir, ArchiveType.THUMBNAIL.toString(), fileRecord.block, "${fileRecord.id}.jpg")
             val thumbnailFile = thumbnailPath.toFile()
             val fileSize = thumbnailTempFile.length()
             try {
@@ -356,7 +357,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             null
         }
         val sampleFileSize = if(sampleTempFile != null) {
-            val samplePath = Path(appdata.storagePathAccessor.storageDir, ArchiveType.SAMPLE.toString(), fileRecord.block, "${fileRecord.id}.jpg")
+            val samplePath = Path(appdata.storage.storageDir, ArchiveType.SAMPLE.toString(), fileRecord.block, "${fileRecord.id}.jpg")
             val sampleFile = samplePath.toFile()
             val fileSize = sampleTempFile.length()
             try {
@@ -370,7 +371,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             }
             fileSize
         }else if (thumbnailTempFile != null) {
-            val samplePath = Path(appdata.storagePathAccessor.storageDir, ArchiveType.SAMPLE.toString(), fileRecord.block, "${fileRecord.id}.jpg")
+            val samplePath = Path(appdata.storage.storageDir, ArchiveType.SAMPLE.toString(), fileRecord.block, "${fileRecord.id}.jpg")
             val sampleFile = samplePath.toFile()
             val fileSize = thumbnailTempFile.length()
             try {
@@ -390,11 +391,11 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
     }
 
     private fun processBlockArchive(archiveType: ArchiveType, block: String, toBeDeleted: Set<Int>, toBeArchived: Boolean) {
-        val tmpZipPath = Path(appdata.storagePathAccessor.storageDir, archiveType.toString(), "$block.tmp.zip")
-        val finalZipPath = Path(appdata.storagePathAccessor.storageDir, archiveType.toString(), "$block.zip")
-        val oldZipPath = Path(appdata.storagePathAccessor.storageDir, archiveType.toString(), "$block.zip")
-        val dirPath = Path(appdata.storagePathAccessor.storageDir, archiveType.toString(), block)
-        val cacheDirPath = Path(appdata.storagePathAccessor.cacheDir, archiveType.toString(), block)
+        val tmpZipPath = Path(appdata.storage.storageDir, archiveType.toString(), "$block.tmp.zip")
+        val finalZipPath = Path(appdata.storage.storageDir, archiveType.toString(), "$block.zip")
+        val oldZipPath = Path(appdata.storage.storageDir, archiveType.toString(), "$block.zip")
+        val dirPath = Path(appdata.storage.storageDir, archiveType.toString(), block)
+        val cacheDirPath = Path(appdata.storage.cacheDir, archiveType.toString(), block)
 
         val oldZip = oldZipPath.toFile().takeIf { it.exists() }?.let(::ZipFile)
         val dir = dirPath.toFile().takeIf { it.isDirectory }

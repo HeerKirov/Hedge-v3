@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
@@ -32,7 +33,8 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 
-class AuthorService(private val data: DataRepository,
+class AuthorService(private val appdata: AppDataManager,
+                    private val data: DataRepository,
                     private val bus: EventBus,
                     private val kit: AuthorKit,
                     private val queryManager: QueryManager,
@@ -50,7 +52,7 @@ class AuthorService(private val data: DataRepository,
         val schema = if(filter.query.isNullOrBlank()) null else {
             queryManager.querySchema(filter.query, QueryManager.Dialect.AUTHOR).executePlan ?: return ListResult(0, emptyList())
         }
-        val authorColors = data.setting.meta.authorColors
+        val authorColors = appdata.setting.meta.authorColors
 
         return data.db.from(Authors)
             .let {
@@ -123,7 +125,7 @@ class AuthorService(private val data: DataRepository,
         return data.db.sequenceOf(Authors).firstOrNull { it.id eq id }
             ?.let {
                 val mappingSourceTags = sourceMappingManager.query(MetaType.AUTHOR, id)
-                newAuthorDetailRes(it, data.setting.meta.authorColors, mappingSourceTags)
+                newAuthorDetailRes(it, appdata.setting.meta.authorColors, mappingSourceTags)
             }
             ?: throw be(NotFound())
     }

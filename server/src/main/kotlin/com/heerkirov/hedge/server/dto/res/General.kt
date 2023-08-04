@@ -39,9 +39,9 @@ data class WsResult(val type: String, val data: Any?)
 /**
  * 包含三种文件路径的通用结构。
  */
-data class FilePath(val original: String, val thumbnail: String, val sample: String)
+data class FilePath(val original: String, val thumbnail: String, val sample: String, val extension: String)
 
 /**
  * 包含三种文件路径，但缩略图可空。
  */
-data class NullableFilePath(val original: String, val thumbnail: String?, val sample: String?)
+data class NullableFilePath(val original: String, val thumbnail: String?, val sample: String?, val extension: String)

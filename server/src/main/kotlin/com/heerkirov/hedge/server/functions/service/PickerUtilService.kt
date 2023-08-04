@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.Annotations
 import com.heerkirov.hedge.server.dao.Authors
@@ -17,7 +18,7 @@ import org.ktorm.entity.associate
 import org.ktorm.entity.filter
 import org.ktorm.entity.sequenceOf
 
-class PickerUtilService(private val data: DataRepository, private val historyRecordManager: HistoryRecordManager) {
+class PickerUtilService(private val appdata: AppDataManager, private val data: DataRepository, private val historyRecordManager: HistoryRecordManager) {
     private val limitCount = 20
 
     fun getRecentFolders(): List<FolderSimpleRes> {
@@ -33,7 +34,7 @@ class PickerUtilService(private val data: DataRepository, private val historyRec
 
     fun getRecentTopics(): List<TopicSimpleRes> {
         val topicIds = historyRecordManager.getRecent(HistoryRecord.SystemHistoryRecordType.USED_TOPIC, limitCount).map { it.toInt() }
-        val topicColors = data.setting.meta.topicColors
+        val topicColors = appdata.setting.meta.topicColors
         val result = data.db.from(Topics)
             .select(Topics.id, Topics.name, Topics.type)
             .where { Topics.id inList topicIds }
@@ -48,7 +49,7 @@ class PickerUtilService(private val data: DataRepository, private val historyRec
 
     fun getRecentAuthors(): List<AuthorSimpleRes> {
         val authorIds = historyRecordManager.getRecent(HistoryRecord.SystemHistoryRecordType.USED_AUTHOR, limitCount).map { it.toInt() }
-        val authorColors = data.setting.meta.authorColors
+        val authorColors = appdata.setting.meta.authorColors
         val result = data.db.from(Authors)
             .select(Authors.id, Authors.name, Authors.type)
             .where { Authors.id inList authorIds }

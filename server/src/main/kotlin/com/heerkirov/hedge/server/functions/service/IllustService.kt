@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
@@ -35,7 +36,8 @@ import org.ktorm.expression.BinaryExpression
 import org.ktorm.expression.SelectExpression
 import kotlin.math.roundToInt
 
-class IllustService(private val data: DataRepository,
+class IllustService(private val appdata: AppDataManager,
+                    private val data: DataRepository,
                     private val bus: EventBus,
                     private val kit: IllustKit,
                     private val illustManager: IllustManager,
@@ -166,8 +168,8 @@ class IllustService(private val data: DataRepository,
         val createTime = row[Illusts.createTime]!!
         val updateTime = row[Illusts.updateTime]!!
 
-        val authorColors = data.setting.meta.authorColors
-        val topicColors = data.setting.meta.topicColors
+        val authorColors = appdata.setting.meta.authorColors
+        val topicColors = appdata.setting.meta.topicColors
 
         val topics = data.db.from(Topics)
             .innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id)
@@ -298,7 +300,7 @@ class IllustService(private val data: DataRepository,
         val sourceId = row[Illusts.sourceId]
         val sourcePart = row[Illusts.sourcePart]
         return if(source != null && sourceId != null) {
-            val site = data.setting.source.sites.find { it.name == source }
+            val site = appdata.setting.source.sites.find { it.name == source }
             val sourceRow = data.db.from(SourceDatas).select()
                 .where { (SourceDatas.sourceSite eq source) and (SourceDatas.sourceId eq sourceId) }
                 .firstOrNull()
@@ -371,7 +373,7 @@ class IllustService(private val data: DataRepository,
                 kit.updateMeta(id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromChildren = true)
             }
 
-            val newTagme = if(form.tagme.isPresent) form.tagme else if(data.setting.meta.autoCleanTagme && anyOpt(form.tags, form.authors, form.topics)) {
+            val newTagme = if(form.tagme.isPresent) form.tagme else if(appdata.setting.meta.autoCleanTagme && anyOpt(form.tags, form.authors, form.topics)) {
                 Opt(illust.tagme
                     .runIf(form.tags.isPresent) { this - Illust.Tagme.TAG }
                     .runIf(form.authors.isPresent) { this - Illust.Tagme.AUTHOR }
@@ -458,7 +460,7 @@ class IllustService(private val data: DataRepository,
                 kit.updateMeta(id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromParent = illust.parentId)
             }
             //处理tagme变化
-            val newTagme = if(form.tagme.isPresent) form.tagme else if(data.setting.meta.autoCleanTagme && anyOpt(form.tags, form.authors, form.topics)) {
+            val newTagme = if(form.tagme.isPresent) form.tagme else if(appdata.setting.meta.autoCleanTagme && anyOpt(form.tags, form.authors, form.topics)) {
                 Opt(illust.tagme
                     .runIf(form.tags.isPresent) { this - Illust.Tagme.TAG }
                     .runIf(form.authors.isPresent) { this - Illust.Tagme.AUTHOR }
@@ -576,7 +578,7 @@ class IllustService(private val data: DataRepository,
                     set(it.sourceSite, newSourceSite)
                     set(it.sourceId, newSourceId)
                     set(it.sourcePart, newSourcePart)
-                    if(data.setting.meta.autoCleanTagme && Illust.Tagme.SOURCE in tagme) set(it.tagme, tagme - Illust.Tagme.SOURCE)
+                    if(appdata.setting.meta.autoCleanTagme && Illust.Tagme.SOURCE in tagme) set(it.tagme, tagme - Illust.Tagme.SOURCE)
                 }
             }else{
                 sourceManager.checkSourceSite(sourceSite, sourceId, sourcePart)?.let { (source, sourceId) ->
@@ -724,7 +726,7 @@ class IllustService(private val data: DataRepository,
                     where { it.id inList form.target }
                     set(it.tagme, form.tagme.value)
                 }
-            }else if(data.setting.meta.autoCleanTagme && anyOpt(form.tags, form.authors, form.topics)) {
+            }else if(appdata.setting.meta.autoCleanTagme && anyOpt(form.tags, form.authors, form.topics)) {
                 data.db.batchUpdate(Illusts) {
                     for (record in records) {
                        item {

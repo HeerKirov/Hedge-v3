@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.SourceDatas
@@ -14,7 +15,7 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 
-class SourceMarkService(private val data: DataRepository) {
+class SourceMarkService(private val appdata: AppDataManager, private val data: DataRepository) {
     fun getMarks(site: String, sourceId: Long): List<SourceMarkRes> {
         val sourceDataId = data.db.from(SourceDatas)
             .select(SourceDatas.id)
@@ -23,7 +24,7 @@ class SourceMarkService(private val data: DataRepository) {
             .firstOrNull()
             ?: throw be(NotFound())
 
-        val titles = data.setting.source.sites.associate { it.name to it.title }
+        val titles = appdata.setting.source.sites.associate { it.name to it.title }
 
         return data.db.from(SourceMarks)
             .innerJoin(SourceDatas, SourceDatas.id eq SourceMarks.relatedSourceDataId)

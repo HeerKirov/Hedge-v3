@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.manager
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
@@ -20,7 +21,8 @@ import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 
-class SourceDataManager(private val data: DataRepository,
+class SourceDataManager(private val appdata: AppDataManager,
+                        private val data: DataRepository,
                         private val bus: EventBus,
                         private val sourceTagManager: SourceTagManager,
                         private val sourceBookManager: SourceBookManager) {
@@ -31,7 +33,7 @@ class SourceDataManager(private val data: DataRepository,
      */
     fun checkSourceSite(sourceSite: String?, sourceId: Long?, sourcePart: Int?): Triple<String, Long, Int?>? {
         return if(sourceSite != null) {
-            val site = data.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
+            val site = appdata.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
 
             if(sourceId == null) throw be(ParamRequired("sourceId"))
             else if(sourceId < 0) throw be(ParamError("sourceId"))
@@ -54,7 +56,7 @@ class SourceDataManager(private val data: DataRepository,
      */
     fun checkSourceSite(sourceSite: String?, sourceId: Long?): Pair<String, Long>? {
         return if(sourceSite != null) {
-            data.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
+            appdata.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
 
             if(sourceId == null) throw be(ParamRequired("sourceId"))
             else if(sourceId < 0) throw be(ParamError("sourceId"))
@@ -102,7 +104,7 @@ class SourceDataManager(private val data: DataRepository,
      * @throws ParamError 如果存在不合法的字段，抛出此异常。
      */
     private fun validateAdditionalInfo(sourceSite: String, additionalInfo: Map<String, String>) {
-        val site = data.setting.source.sites.first { it.name == sourceSite }
+        val site = appdata.setting.source.sites.first { it.name == sourceSite }
         val availableFields = site.availableAdditionalInfo.asSequence().map { it.field }.toSet()
         for (field in additionalInfo.keys) {
             if(field !in availableFields) throw be(ParamError("additionalInfo"))
@@ -113,7 +115,7 @@ class SourceDataManager(private val data: DataRepository,
      * 尝试根据site的规则，自动生成新的links，与表单的links一起返回。
      */
     private fun generateLinks(sourceSite: String, sourceId: Long, newInfo: Map<String, String>, newLinks: Opt<List<String>>, oldInfo: Map<String, String>?, oldLinks: List<String>?): Opt<List<String>> {
-        val rules = data.setting.source.sites.first { it.name == sourceSite }.sourceLinkGenerateRules
+        val rules = appdata.setting.source.sites.first { it.name == sourceSite }.sourceLinkGenerateRules
         if(rules.isEmpty()) {
             return newLinks
         }

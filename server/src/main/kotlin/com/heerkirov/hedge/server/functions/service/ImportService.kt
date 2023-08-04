@@ -1,10 +1,11 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
+import com.heerkirov.hedge.server.components.appdata.ImportOption
 import com.heerkirov.hedge.server.components.backend.similar.SimilarFinder
 import com.heerkirov.hedge.server.components.backend.watcher.PathWatcher
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
-import com.heerkirov.hedge.server.components.database.ImportOption
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.filter.ImportFilter
@@ -38,7 +39,8 @@ import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 
-class ImportService(private val data: DataRepository,
+class ImportService(private val appdata: AppDataManager,
+                    private val data: DataRepository,
                     private val bus: EventBus,
                     private val importManager: ImportManager,
                     private val illustManager: IllustManager,
@@ -201,7 +203,7 @@ class ImportService(private val data: DataRepository,
                 val sourceResultMap = mutableMapOf<Int, Tuple5<String, Long?, Int?, Illust.Tagme?, ImportImage.SourcePreference?>>()
                 val errors = mutableMapOf<Int, List<BaseException<*>>>()
                 if(form.analyseSource) {
-                    val autoSetTagmeOfSource = data.setting.import.setTagmeOfSource
+                    val autoSetTagmeOfSource = appdata.setting.import.setTagmeOfSource
 
                     for (record in records) {
                         val (source, sourceId, sourcePart, sourcePreference) = try {
@@ -457,8 +459,8 @@ class ImportService(private val data: DataRepository,
                 data.db.delete(ImportImages) { it.id inList importToImageIds.keys }
             }
 
-            if(data.setting.findSimilar.autoFindSimilar) {
-                similarFinder.add(FindSimilarTask.TaskSelectorOfImage(importToImageIds.values.toList()), data.setting.findSimilar.autoTaskConf ?: data.setting.findSimilar.defaultTaskConf)
+            if(appdata.setting.findSimilar.autoFindSimilar) {
+                similarFinder.add(FindSimilarTask.TaskSelectorOfImage(importToImageIds.values.toList()), appdata.setting.findSimilar.autoTaskConf ?: appdata.setting.findSimilar.defaultTaskConf)
             }
 
             bus.emit(ImportSaved(importToImageIds))

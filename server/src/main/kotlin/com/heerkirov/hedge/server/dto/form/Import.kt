@@ -1,6 +1,6 @@
 package com.heerkirov.hedge.server.dto.form
 
-import com.heerkirov.hedge.server.components.database.ImportOption
+import com.heerkirov.hedge.server.components.appdata.ImportOption
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.model.ImportImage
 import com.heerkirov.hedge.server.utils.types.Opt

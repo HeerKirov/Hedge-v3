@@ -33,10 +33,10 @@ private fun generateSampleFilepath(block: String, fileId: Int): String {
  * 直接从QueryRowSet中提取参数并生成origin/thumbnail/sample file。使用前确保FileRecord的id/block/extension/status都在数据集中。
  */
 fun filePathFrom(it: QueryRowSet): FilePath {
-    val (f, t, s) = filePathOrNullFrom(it)
+    val (f, t, s, e) = filePathOrNullFrom(it)
     if(t == null) throw NullPointerException("Thumbnail file path is null.")
     if(s == null) throw NullPointerException("Sample file path is null.")
-    return FilePath(f, t, s)
+    return FilePath(f, t, s, e)
 }
 
 /**
@@ -59,5 +59,5 @@ fun filePathOrNullFrom(it: QueryRowSet): NullableFilePath {
         FileStatus.READY_WITHOUT_THUMBNAIL_SAMPLE -> file
         FileStatus.NOT_READY -> null
     }
-    return NullableFilePath(file, thumbnailFile, sampleFile)
+    return NullableFilePath(file, thumbnailFile, sampleFile, extension)
 }

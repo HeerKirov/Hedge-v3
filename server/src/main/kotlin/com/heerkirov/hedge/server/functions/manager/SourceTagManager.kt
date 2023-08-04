@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.manager
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.SourceTags
@@ -15,13 +16,13 @@ import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
 
-class SourceTagManager(private val data: DataRepository, private val bus: EventBus) {
+class SourceTagManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus) {
     /**
      * 校验source的合法性。
      * @throws ResourceNotExist ("site", string) 给出的source不存在
      */
     fun checkSourceSite(site: String) {
-        data.setting.source.sites.firstOrNull { it.name == site } ?: throw be(ResourceNotExist("site", site))
+        appdata.setting.source.sites.firstOrNull { it.name == site } ?: throw be(ResourceNotExist("site", site))
     }
 
     /**

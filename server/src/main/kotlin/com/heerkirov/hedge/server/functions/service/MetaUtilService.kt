@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
@@ -25,7 +26,8 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import java.util.*
 
-class MetaUtilService(private val data: DataRepository,
+class MetaUtilService(private val appdata: AppDataManager,
+                      private val data: DataRepository,
                       private val kit: MetaUtilKit,
                       private val metaManager: MetaManager,
                       private val historyRecordManager: HistoryRecordManager) {
@@ -85,8 +87,8 @@ class MetaUtilService(private val data: DataRepository,
             emptyList()
         }
 
-        val topicColors = data.setting.meta.topicColors
-        val authorColors = data.setting.meta.authorColors
+        val topicColors = appdata.setting.meta.topicColors
+        val authorColors = appdata.setting.meta.authorColors
 
         return MetaUtilValidateRes(
             exportedTopics.asSequence()
@@ -248,7 +250,7 @@ class MetaUtilService(private val data: DataRepository,
     private fun mapMetasToEntities(metas: Map<MetaType, List<Int>>): MetaUtilRes {
         val topics = metas[MetaType.TOPIC].let { topicIds ->
             if(topicIds.isNullOrEmpty()) emptyList() else {
-                val topicColors = data.setting.meta.topicColors
+                val topicColors = appdata.setting.meta.topicColors
                 val result = data.db.from(Topics)
                     .select(Topics.id, Topics.name, Topics.type)
                     .where { Topics.id inList topicIds }
@@ -264,7 +266,7 @@ class MetaUtilService(private val data: DataRepository,
 
         val authors = metas[MetaType.AUTHOR].let { authorIds ->
             if(authorIds.isNullOrEmpty()) emptyList() else {
-                val authorColors = data.setting.meta.authorColors
+                val authorColors = appdata.setting.meta.authorColors
                 val result = data.db.from(Authors)
                     .select(Authors.id, Authors.name, Authors.type)
                     .where { Authors.id inList authorIds }

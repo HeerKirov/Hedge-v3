@@ -1,7 +1,7 @@
 package com.heerkirov.hedge.server.functions.manager
 
-import com.heerkirov.hedge.server.components.database.DataRepository
-import com.heerkirov.hedge.server.components.database.ImportOption
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
+import com.heerkirov.hedge.server.components.appdata.ImportOption
 import com.heerkirov.hedge.server.exceptions.InvalidRegexError
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.model.ImportImage
@@ -11,13 +11,13 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
 
-class ImportMetaManager(private val data: DataRepository) {
+class ImportMetaManager(private val appdata: AppDataManager) {
     /**
      * 对一条import记录的内容进行解析，得到source元数据。
      * @throws InvalidRegexError (regex) 执行正则表达式时发生错误，怀疑是表达式或相关参数没写对
      */
     fun analyseSourceMeta(filename: String?): Tuple4<String?, Long?, Int?, ImportImage.SourcePreference?> {
-        for (rule in data.setting.import.sourceAnalyseRules) {
+        for (rule in appdata.setting.import.sourceAnalyseRules) {
             analyseOneRule(rule, filename)?.let { (id, secondaryId, preference) ->
                 return Tuple4(rule.site, id, secondaryId, preference)
             }

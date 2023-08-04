@@ -10,8 +10,10 @@ import com.heerkirov.hedge.server.dto.form.ExecuteExportForm
 import com.heerkirov.hedge.server.dto.res.ExecuteExportRes
 import com.heerkirov.hedge.server.dto.res.ExportImageRes
 import com.heerkirov.hedge.server.dto.res.FilePath
+import com.heerkirov.hedge.server.dto.res.LoadLocalFileRes
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.exceptions.LocationNotAccessibleError
+import com.heerkirov.hedge.server.exceptions.NotFound
 import com.heerkirov.hedge.server.exceptions.ParamRequired
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.manager.FileManager
@@ -107,7 +109,7 @@ class ExportUtilService(private val appdata: AppDataManager, private val data: D
 
             for((id, file, ext) in files) {
                 try {
-                    File("${appdata.storagePathAccessor.storageDir}/$file").copyTo(Path(form.location, "$id.$ext").toFile())
+                    File("${appdata.storage.storageDir}/$file").copyTo(Path(form.location, "$id.$ext").toFile())
                 }catch (e: Exception) {
                     errors.add(ExecuteExportRes.Error(id, "$id.$ext", e.message ?: e.stackTraceToString()))
                 }
@@ -115,5 +117,23 @@ class ExportUtilService(private val appdata: AppDataManager, private val data: D
 
             return ExecuteExportRes(files.size - errors.size, errors)
         }
+    }
+
+    /**
+     * 将一个需要的文件加载到文件系统，然后返回该文件的路径，让前端可以使用此文件。
+     */
+    fun loadLocalFile(filepath: String): LoadLocalFileRes {
+        val splits = filepath.split("/", limit = 3)
+        if(splits.size < 3) throw be(NotFound())
+
+        val archiveType = try {
+            ArchiveType.valueOf(splits[0].uppercase())
+        }catch (e: IllegalArgumentException) {
+            throw be(NotFound())
+        }
+
+        val path = archive.load(archiveType, splits[1], splits[2]) ?: throw be(NotFound())
+
+        return LoadLocalFileRes(path.toString())
     }
 }

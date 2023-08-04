@@ -1,33 +1,34 @@
 package com.heerkirov.hedge.server.components.backend
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.dao.TrashedImages
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.functions.manager.TrashManager
-import com.heerkirov.hedge.server.library.framework.Component
+import com.heerkirov.hedge.server.library.framework.DaemonThreadComponent
 import com.heerkirov.hedge.server.utils.DateTime
 import org.ktorm.dsl.*
 import org.slf4j.LoggerFactory
-import kotlin.concurrent.thread
 import kotlin.math.absoluteValue
 
 /**
  * 处理已删除文件自动清理的相关工作。
  * - 自动清理工作仅在每次程序启动时会执行一次。根据自动清理间隔，与当前时间间隔超出此日数的项会被清除。
  */
-interface TrashCleaner : Component
+interface TrashCleaner : DaemonThreadComponent
 
-class TrashCleanerImpl(private val appStatusDriver: AppStatusDriver, private val data: DataRepository, private val trashManager: TrashManager) : TrashCleaner {
+class TrashCleanerImpl(private val appStatusDriver: AppStatusDriver,
+                       private val appdata: AppDataManager,
+                       private val data: DataRepository,
+                       private val trashManager: TrashManager) : TrashCleaner {
     private val log = LoggerFactory.getLogger(TrashCleaner::class.java)
 
-    override fun load() {
-        if(appStatusDriver.status == AppLoadStatus.READY && data.setting.file.autoCleanTrashes) {
-            val intervalDay = data.setting.file.autoCleanTrashesIntervalDay
-            thread(isDaemon = false) {
-                Thread.sleep(5000)
-                execute(intervalDay)
-            }
+    override fun thread() {
+        if(appStatusDriver.status == AppLoadStatus.READY && appdata.setting.storage.autoCleanTrashes) {
+            val intervalDay = appdata.setting.storage.autoCleanTrashesIntervalDay
+            Thread.sleep(5000)
+            execute(intervalDay)
         }
     }
 

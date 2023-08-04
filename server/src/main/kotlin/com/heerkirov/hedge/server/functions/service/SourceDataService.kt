@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
@@ -20,7 +21,7 @@ import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
 
-class SourceDataService(private val data: DataRepository, private val sourceManager: SourceDataManager, private val queryManager: QueryManager) {
+class SourceDataService(private val appdata: AppDataManager, private val data: DataRepository, private val sourceManager: SourceDataManager, private val queryManager: QueryManager) {
     private val orderTranslator = OrderTranslator {
         "rowId" to SourceDatas.id
         "sourceId" to SourceDatas.sourceId
@@ -33,7 +34,7 @@ class SourceDataService(private val data: DataRepository, private val sourceMana
         val schema = if(filter.query.isNullOrBlank()) null else {
             queryManager.querySchema(filter.query, QueryManager.Dialect.SOURCE_DATA).executePlan ?: return ListResult(0, emptyList())
         }
-        val titles = data.setting.source.sites.associate { it.name to it.title }
+        val titles = appdata.setting.source.sites.associate { it.name to it.title }
         return data.db.from(SourceDatas)
             .let { schema?.joinConditions?.fold(it) { acc, join -> if(join.left) acc.leftJoin(join.table, join.condition) else acc.innerJoin(join.table, join.condition) } ?: it }
             .let { if(filter.sourceTag == null) it else {
@@ -121,7 +122,7 @@ class SourceDataService(private val data: DataRepository, private val sourceMana
             .select()
             .map { SourceBooks.createEntity(it) }
             .map { SourceBookDto(it.code, it.title, it.otherTitle) }
-        val site = data.setting.source.sites.find { it.name == sourceSite }
+        val site = appdata.setting.source.sites.find { it.name == sourceSite }
         val additionalInfo = (row[SourceDatas.additionalInfo] ?: emptyMap()).entries.map { (k, v) ->
             SourceDataAdditionalInfoDto(k, site?.availableAdditionalInfo?.find { it.field == k }?.label ?: "", v)
         }

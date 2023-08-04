@@ -5,11 +5,11 @@ package com.heerkirov.hedge.server.events
  */
 interface SettingEvent : BaseBusEvent
 
-class SettingServiceChanged : BaseBusEventImpl("setting/service/changed"), SettingEvent
+class SettingServerChanged : BaseBusEventImpl("setting/server/changed"), SettingEvent
 
 class SettingMetaChanged : BaseBusEventImpl("setting/meta/changed"), SettingEvent
 
-class SettingFileChanged : BaseBusEventImpl("setting/file/changed"), SettingEvent
+class SettingArchiveChanged : BaseBusEventImpl("setting/storage/changed"), SettingEvent
 
 class SettingQueryChanged : BaseBusEventImpl("setting/query/changed"), SettingEvent
 

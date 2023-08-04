@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.components.backend.similar
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
@@ -32,8 +33,8 @@ interface SimilarFinder : StatefulComponent {
     fun delete(id: Int)
 }
 
-class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val data: DataRepository, bus: EventBus) : SimilarFinder {
-    private val workerThread = SimilarFinderWorkThread(data, bus)
+class SimilarFinderImpl(private val appStatus: AppStatusDriver, appdata: AppDataManager, private val data: DataRepository, bus: EventBus) : SimilarFinder {
+    private val workerThread = SimilarFinderWorkThread(appdata, data, bus)
 
     init {
         bus.on(arrayOf(ImportCreated::class, ImportDeleted::class, IllustDeleted::class), ::processImportToImage)
@@ -76,7 +77,7 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val data
     }
 }
 
-class SimilarFinderWorkThread(private val data: DataRepository, private val bus: EventBus) : ControlledLoopThread() {
+class SimilarFinderWorkThread(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus) : ControlledLoopThread() {
     override fun run() {
         val model = data.db.sequenceOf(FindSimilarTasks).firstOrNull()
         if(model == null) {
@@ -84,7 +85,7 @@ class SimilarFinderWorkThread(private val data: DataRepository, private val bus:
             return
         }
 
-        val config = model.config ?: data.setting.findSimilar.defaultTaskConf
+        val config = model.config ?: appdata.setting.findSimilar.defaultTaskConf
         val entityLoader = EntityLoader(data, config)
         val graphBuilder = GraphBuilder(data, entityLoader, config)
         val recordBuilder = RecordBuilder(data, bus)

@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
@@ -29,7 +30,8 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 
-class TopicService(private val data: DataRepository,
+class TopicService(private val appdata: AppDataManager,
+                   private val data: DataRepository,
                    private val bus: EventBus,
                    private val kit: TopicKit,
                    private val queryManager: QueryManager,
@@ -74,7 +76,7 @@ class TopicService(private val data: DataRepository,
             .limit(filter.offset, filter.limit)
             .toListResult {
                 val root = it[rootAliased.id]?.let { rootId -> Tuple3(rootId, it[rootAliased.name]!!, it[rootAliased.type]!!) }
-                newTopicRes(Topics.createEntity(it), root, data.setting.meta.topicColors)
+                newTopicRes(Topics.createEntity(it), root, appdata.setting.meta.topicColors)
             }
     }
 
@@ -131,9 +133,9 @@ class TopicService(private val data: DataRepository,
     fun get(id: Int): TopicDetailRes {
         val topic = data.db.sequenceOf(Topics).firstOrNull { it.id eq id } ?: throw be(NotFound())
         val parents = kit.getAllParents(topic)
-        val children = kit.getAllChildren(topic, data.setting.meta.topicColors)
+        val children = kit.getAllChildren(topic, appdata.setting.meta.topicColors)
         val mappingSourceTags = sourceMappingManager.query(MetaType.TOPIC, id)
-        return newTopicDetailRes(topic, parents, children, data.setting.meta.topicColors, mappingSourceTags)
+        return newTopicDetailRes(topic, parents, children, appdata.setting.meta.topicColors, mappingSourceTags)
     }
 
     /**

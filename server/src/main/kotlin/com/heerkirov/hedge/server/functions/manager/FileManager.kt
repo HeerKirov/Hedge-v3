@@ -43,7 +43,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      */
     fun newFile(file: File, filename: String, moveFile: Boolean = false): Int {
-        if(!appdata.storagePathAccessor.accessible) throw be(StorageNotAccessibleError(appdata.storagePathAccessor.storageDir))
+        if(!appdata.storage.accessible) throw be(StorageNotAccessibleError(appdata.storage.storageDir))
 
         val now = DateTime.now()
         val extension = validateExtension(file.extension)
@@ -65,7 +65,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
             set(it.lastAccessTime, null)
         } as Int
 
-        val targetFile = Path(appdata.storagePathAccessor.storageDir, ArchiveType.ORIGINAL.toString(), block, "$id.$extension").toFile()
+        val targetFile = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), block, "$id.$extension").toFile()
 
         targetFile.parentFile.mkdirs()
 
@@ -90,11 +90,11 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
      * - 如果缩略图已完成，那么删除缩略图。
      */
     fun undoFile(importFile: File, fileId: Int, moveFile: Boolean = false) {
-        if(!appdata.storagePathAccessor.accessible) throw be(StorageNotAccessibleError(appdata.storagePathAccessor.storageDir))
+        if(!appdata.storage.accessible) throw be(StorageNotAccessibleError(appdata.storage.storageDir))
 
         val fileRecord = data.db.sequenceOf(FileRecords).firstOrNull { it.id eq fileId } ?: return
 
-        val file = Path(appdata.storagePathAccessor.storageDir, ArchiveType.ORIGINAL.toString(), fileRecord.block, "$fileId.${fileRecord.extension}").toFile()
+        val file = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), fileRecord.block, "$fileId.${fileRecord.extension}").toFile()
         if(moveFile) {
             Files.move(file.toPath(), importFile.toPath())
         }else{
@@ -111,7 +111,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
      * 它会将FileRecord标记为deleted，不可用，等待归档线程将其回收。
      */
     fun deleteFile(fileId: Int) {
-        if(!appdata.storagePathAccessor.accessible) throw be(StorageNotAccessibleError(appdata.storagePathAccessor.storageDir))
+        if(!appdata.storage.accessible) throw be(StorageNotAccessibleError(appdata.storage.storageDir))
 
         val file = data.db.sequenceOf(FileRecords).firstOrNull { it.id eq fileId } ?: return
 
@@ -132,19 +132,19 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
      * 从缓存读取一个文件，如果该文件不在缓存，则将其加载到缓存。
      */
     fun load(archiveType: ArchiveType, block: String, filename: String): Path? {
-        val cachePath = Path(appdata.storagePathAccessor.cacheDir, archiveType.toString(), block, filename)
+        val cachePath = Path(appdata.storage.cacheDir, archiveType.toString(), block, filename)
         val cacheFile = cachePath.toFile()
         if(cacheFile.exists()) {
             return cachePath
         }
 
-        val directPath = Path(appdata.storagePathAccessor.storageDir, archiveType.toString(), block, filename)
+        val directPath = Path(appdata.storage.storageDir, archiveType.toString(), block, filename)
         val directFile = directPath.toFile()
         if(directFile.exists()) {
             return directPath
         }
 
-        val zipFile = Path(appdata.storagePathAccessor.storageDir, archiveType.toString(), "$block.zip").toFile()
+        val zipFile = Path(appdata.storage.storageDir, archiveType.toString(), "$block.zip").toFile()
         if(zipFile.exists()) {
             val zip = ZipFile(zipFile)
             val entry = zip.getEntry(filename)
@@ -165,7 +165,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
      * 从存档读取一个文件的内容，并输出至inputStream。
      */
     fun readInputStream(archiveType: ArchiveType, block: String, filename: String): InputStream? {
-        val zipFile = Path(appdata.storagePathAccessor.storageDir, archiveType.toString(), "$block.zip").toFile()
+        val zipFile = Path(appdata.storage.storageDir, archiveType.toString(), "$block.zip").toFile()
         if(zipFile.exists()) {
             val zip = ZipFile(zipFile)
             val entry = zip.getEntry(filename)
@@ -174,7 +174,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
             }
         }
 
-        val directPath = Path(appdata.storagePathAccessor.storageDir, archiveType.toString(), block, filename)
+        val directPath = Path(appdata.storage.storageDir, archiveType.toString(), block, filename)
         val directFile = directPath.toFile()
         if(directFile.exists()) {
             return directFile.inputStream()
@@ -197,8 +197,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
      * next block记录模块。
      */
     private inner class NextBlock {
-        private val blockMaxSize = 1024 * 1024 * 1024 * 4L //4G
-        private val blockMaxCount = 1500
+        private val settingStorage = appdata.setting.storage
 
         private val pool = Executors.newSingleThreadExecutor()
 
@@ -220,7 +219,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
                 name = latestBlock
                 index = latestBlock.toInt(16)
                 //检查此block对应的zip归档文件是否存在
-                val latestBlockFile = Path(appdata.storagePathAccessor.storageDir, Filename.ORIGINAL_FILE_DIR, "$latestBlock.zip").toFile()
+                val latestBlockFile = Path(appdata.storage.storageDir, Filename.ORIGINAL_FILE_DIR, "$latestBlock.zip").toFile()
                 if(latestBlockFile.exists()) {
                     //若存在，则表示上一个block已归档，不再可用，直接迭代至下一个block
                     index = index!! + 1
@@ -255,9 +254,9 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
                 }
             }
 
-            if(count >= blockMaxCount || (size > 0 && size + nextFileSize > blockMaxSize)) {
+            if(count >= settingStorage.blockMaxCount || (size > 0 && size + nextFileSize > settingStorage.blockMaxSizeMB * 1024 * 1024)) {
                 synchronized(this) {
-                    if(count >= blockMaxCount || (size > 0 && size + nextFileSize > blockMaxSize)) {
+                    if(count >= settingStorage.blockMaxCount || (size > 0 && size + nextFileSize > settingStorage.blockMaxSizeMB * 1024 * 1024)) {
                         //发送一个Block已进位的通知，告知FileProcessor有新的归档要处理
                         bus.emit(FileBlockArchived(name!!))
 
@@ -278,13 +277,13 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
                     if(block == name) {
                         count += 1
                         size += fileSize
-                        if(count >= blockMaxCount || size >= blockMaxSize) {
+                        if(count >= settingStorage.blockMaxCount || size >= settingStorage.blockMaxSizeMB * 1024 * 1024) {
                             //稍后再判断是否要进位到下一个block(防止undo), 以及启动归档操作
                             pool.submit {
                                 Thread.sleep(1000L)
-                                if(count >= blockMaxCount || size >= blockMaxSize) {
+                                if(count >= settingStorage.blockMaxCount || size >= settingStorage.blockMaxSizeMB * 1024 * 1024) {
                                     synchronized(this) {
-                                        if(count >= blockMaxCount || size >= blockMaxSize) {
+                                        if(count >= settingStorage.blockMaxCount || size >= settingStorage.blockMaxSizeMB * 1024 * 1024) {
                                             //发送一个Block已进位的通知，告知FileProcessor有新的归档要处理
                                             bus.emit(FileBlockArchived(name!!))
 

@@ -1,8 +1,7 @@
 package com.heerkirov.hedge.server.dto.form
 
-import com.heerkirov.hedge.server.components.database.ImportOption
-import com.heerkirov.hedge.server.components.database.MetaOption
-import com.heerkirov.hedge.server.components.database.SourceOption
+import com.heerkirov.hedge.server.components.appdata.ImportOption
+import com.heerkirov.hedge.server.components.appdata.SourceOption
 import com.heerkirov.hedge.server.enums.TagAuthorType
 import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.library.form.Length
@@ -41,8 +40,7 @@ data class ImportOptionUpdateForm(val autoAnalyseSourceData: Opt<Boolean>,
                                   val watchPathMoveFile: Opt<Boolean>,
                                   val watchPathInitialize: Opt<Boolean>)
 
-data class MetaOptionUpdateForm(val scoreDescriptions: Opt<List<MetaOption.ScoreDescription>>,
-                                val autoCleanTagme: Opt<Boolean>,
+data class MetaOptionUpdateForm(val autoCleanTagme: Opt<Boolean>,
                                 val topicColors: Opt<Map<TagTopicType, String>>,
                                 val authorColors: Opt<Map<TagAuthorType, String>>)
 
@@ -56,7 +54,12 @@ data class FindSimilarOptionUpdateForm(val autoFindSimilar: Opt<Boolean>,
                                        val autoTaskConf: Opt<FindSimilarTask.TaskConfig?>,
                                        val defaultTaskConf: Opt<FindSimilarTask.TaskConfig>)
 
-data class FileOptionUpdateForm(val autoCleanTrashes: Opt<Boolean>,
-                                val autoCleanTrashesIntervalDay: Opt<Int>)
+data class StorageOptionUpdateForm(val storagePath: Opt<String?>,
+                                   val autoCleanTrashes: Opt<Boolean>,
+                                   @Range(1, 90) val autoCleanTrashesIntervalDay: Opt<Int>,
+                                   val autoCleanCaches: Opt<Boolean>,
+                                   @Range(1, 90) val autoCleanCachesIntervalDay: Opt<Int>,
+                                   @Range(10, 10000) val blockMaxSizeMB: Opt<Long>,
+                                   @Range(5, 5000) val blockMaxCount: Opt<Int>)
 
-data class ServiceOptionUpdateForm(val port: Opt<String?>, val storagePath: Opt<String?>)
+data class ServerOptionUpdateForm(val port: Opt<String?>)

@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.manager.query
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.TagAddressType
@@ -18,9 +19,9 @@ import org.ktorm.dsl.*
 import java.util.*
 import kotlin.collections.ArrayList
 
-class MetaQueryer(private val data: DataRepository) : Queryer {
+class MetaQueryer(private val appdata: AppDataManager, private val data: DataRepository) : Queryer {
     private val parser = MetaParserUtil
-    private val queryLimit get() = data.setting.query.queryLimitOfQueryItems
+    private val queryLimit get() = appdata.setting.query.queryLimitOfQueryItems
 
     override fun findTag(metaValue: MetaValue, collector: ErrorCollector<TranslatorError<*>>): List<ElementTag> {
         /**
@@ -313,7 +314,7 @@ class MetaQueryer(private val data: DataRepository) : Queryer {
 
             topicItemsPool.putAll(topics.map { it.id to it })
 
-            val colors = data.setting.meta.topicColors
+            val colors = appdata.setting.meta.topicColors
 
             topics.asSequence()
                 .filter { isAddressMatches(it.parentId, address, address.size - 2) }
@@ -334,7 +335,7 @@ class MetaQueryer(private val data: DataRepository) : Queryer {
             return emptyList()
         }
         return authorCacheMap.computeIfAbsent(metaValue.singleValue) { metaString ->
-            val colors = data.setting.meta.authorColors
+            val colors = appdata.setting.meta.authorColors
 
             data.db.from(Authors).select(Authors.id, Authors.name, Authors.type)
                 .where { parser.compileNameString(metaString, Authors) }

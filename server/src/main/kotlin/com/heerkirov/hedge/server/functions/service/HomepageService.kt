@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
@@ -23,11 +24,11 @@ import java.time.LocalDate
 import kotlin.random.Random
 import kotlin.random.nextInt
 
-class HomepageService(private val data: DataRepository, private val stagingPostManager: StagingPostManager) {
+class HomepageService(private val appdata: AppDataManager, private val data: DataRepository, private val stagingPostManager: StagingPostManager) {
     fun getHomepageInfo(): HomepageRes {
         val todayDate = DateTime.now()
-            .runIf(data.setting.import.setPartitionTimeDelay != null && data.setting.import.setPartitionTimeDelay!!!= 0L) {
-                (this.toMillisecond() - data.setting.import.setPartitionTimeDelay!!).parseDateTime()
+            .runIf(appdata.setting.import.setPartitionTimeDelayHour != null && appdata.setting.import.setPartitionTimeDelayHour!!!= 0L) {
+                (this.toMillisecond() - appdata.setting.import.setPartitionTimeDelayHour!! * 1000 * 60 * 60).parseDateTime()
             }
             .asZonedTime().toLocalDate()
 
@@ -90,7 +91,7 @@ class HomepageService(private val data: DataRepository, private val stagingPostM
                         .where { Topics.id inList this }
                         .map {
                             val topicType = it[Topics.type]!!
-                            val color = data.setting.meta.topicColors[topicType]
+                            val color = appdata.setting.meta.topicColors[topicType]
                             TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, false, color)
                         }
                         .associateBy { it.id }
@@ -103,7 +104,7 @@ class HomepageService(private val data: DataRepository, private val stagingPostM
                         .where { Authors.id inList this }
                         .map {
                             val authorType = it[Authors.type]!!
-                            val color = data.setting.meta.authorColors[authorType]
+                            val color = appdata.setting.meta.authorColors[authorType]
                             AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, false, color)
                         }
                         .associateBy { it.id }

@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.kit
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dao.Authors
@@ -9,7 +10,7 @@ import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.TagAddressType
 import org.ktorm.dsl.*
 
-class MetaUtilKit(private val data: DataRepository) {
+class MetaUtilKit(private val appdata: AppDataManager, private val data: DataRepository) {
     /**
      * 获得一个collection的元数据。
      */
@@ -22,8 +23,8 @@ class MetaUtilKit(private val data: DataRepository) {
      * 获得一个collection的所有下属image的元数据。
      */
     fun suggestMetaOfCollectionChildren(collectionId: Int): MetaUtilSuggestionByChildren {
-        val authorColors = data.setting.meta.authorColors
-        val topicColors = data.setting.meta.topicColors
+        val authorColors = appdata.setting.meta.authorColors
+        val topicColors = appdata.setting.meta.topicColors
 
         val topics = data.db.from(Topics)
             .innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id)
@@ -67,8 +68,8 @@ class MetaUtilKit(private val data: DataRepository) {
      * 获得一个book的下属所有image的元数据。
      */
     fun suggestMetaOfBookChildren(bookId: Int): MetaUtilSuggestionByChildren {
-        val authorColors = data.setting.meta.authorColors
-        val topicColors = data.setting.meta.topicColors
+        val authorColors = appdata.setting.meta.authorColors
+        val topicColors = appdata.setting.meta.topicColors
 
         val topics = data.db.from(Topics)
             .innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id)
@@ -112,8 +113,8 @@ class MetaUtilKit(private val data: DataRepository) {
      * 获得一个associate下所有illust的元数据。
      */
     fun suggestMetaOfAllAssociate(illustId: Int): MetaUtilSuggestionByAssociate {
-        val authorColors = data.setting.meta.authorColors
-        val topicColors = data.setting.meta.topicColors
+        val authorColors = appdata.setting.meta.authorColors
+        val topicColors = appdata.setting.meta.topicColors
 
         val topics = data.db.from(Topics)
             .innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id)
@@ -173,8 +174,8 @@ class MetaUtilKit(private val data: DataRepository) {
      * 获得指定illust的元数据。
      */
     fun getMetaOfIllust(illustId: Int): MetaUtilRes {
-        val authorColors = data.setting.meta.authorColors
-        val topicColors = data.setting.meta.topicColors
+        val authorColors = appdata.setting.meta.authorColors
+        val topicColors = appdata.setting.meta.topicColors
 
         val topics = data.db.from(Topics)
             .innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id)
@@ -212,8 +213,8 @@ class MetaUtilKit(private val data: DataRepository) {
      * 获得指定book的元数据。
      */
     fun getMetaOfBook(bookId: Int): MetaUtilRes {
-        val authorColors = data.setting.meta.authorColors
-        val topicColors = data.setting.meta.topicColors
+        val authorColors = appdata.setting.meta.authorColors
+        val topicColors = appdata.setting.meta.topicColors
 
         val topics = data.db.from(Topics)
             .innerJoin(BookTopicRelations, BookTopicRelations.topicId eq Topics.id)

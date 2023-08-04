@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
@@ -35,7 +36,8 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 
-class BookService(private val data: DataRepository,
+class BookService(private val appdata: AppDataManager,
+                  private val data: DataRepository,
                   private val bus: EventBus,
                   private val kit: BookKit,
                   private val bookManager: BookManager,
@@ -116,8 +118,8 @@ class BookService(private val data: DataRepository,
         val createTime = row[Books.createTime]!!
         val updateTime = row[Books.updateTime]!!
 
-        val authorColors = data.setting.meta.authorColors
-        val topicColors = data.setting.meta.topicColors
+        val authorColors = appdata.setting.meta.authorColors
+        val topicColors = appdata.setting.meta.topicColors
 
         val topics = data.db.from(Topics)
             .innerJoin(BookTopicRelations, BookTopicRelations.topicId eq Topics.id)

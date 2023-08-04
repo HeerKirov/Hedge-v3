@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.manager
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
@@ -17,7 +18,7 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.ktorm.schema.Column
 
-class SourceMappingManager(private val data: DataRepository, private val bus: EventBus, private val sourceTagManager: SourceTagManager) {
+class SourceMappingManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus, private val sourceTagManager: SourceTagManager) {
     fun batchQuery(form: SourceMappingBatchQueryForm): List<SourceMappingBatchQueryResult> {
         val groups = data.db.from(SourceTagMappings)
             .innerJoin(SourceTags, (SourceTags.site eq SourceTagMappings.sourceSite) and (SourceTags.id eq SourceTagMappings.sourceTagId))
@@ -168,8 +169,8 @@ class SourceMappingManager(private val data: DataRepository, private val bus: Ev
     }
 
     private fun mapTargetItemToDetail(items: List<SourceMappingTargetItem>): Map<SourceMappingTargetItem, SourceMappingTargetItemDetail> {
-        val authorColors = data.setting.meta.authorColors
-        val topicColors = data.setting.meta.topicColors
+        val authorColors = appdata.setting.meta.authorColors
+        val topicColors = appdata.setting.meta.topicColors
 
         val metas = items.groupBy { it.metaType }.mapValues { (_, value) -> value.map { it.metaId } }
         val authors = metas[MetaType.AUTHOR]?.let { authorIds ->

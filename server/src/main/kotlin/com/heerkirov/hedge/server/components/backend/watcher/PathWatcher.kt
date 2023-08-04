@@ -1,7 +1,7 @@
 package com.heerkirov.hedge.server.components.backend.watcher
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
-import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.events.PathWatcherStatusChanged
@@ -30,7 +30,7 @@ interface PathWatcher : Component {
 }
 
 class PathWatcherImpl(private val appStatus: AppStatusDriver,
-                      private val data: DataRepository,
+                      private val appdata: AppDataManager,
                       private val bus: EventBus,
                       private val importManager: ImportManager) : PathWatcher {
     private val log = LoggerFactory.getLogger(PathWatcherImpl::class.java)
@@ -58,7 +58,7 @@ class PathWatcherImpl(private val appStatus: AppStatusDriver,
     override val errors: List<PathWatcherError> get() = _errors
 
     override fun load() {
-        if(appStatus.status == AppLoadStatus.READY && data.setting.import.autoWatchPath) {
+        if(appStatus.status == AppLoadStatus.READY && appdata.setting.import.autoWatchPath) {
             isOpen = true
         }
     }
@@ -70,15 +70,15 @@ class PathWatcherImpl(private val appStatus: AppStatusDriver,
     private fun startWatcher() {
         _errors.clear()
         _statisticCount = 0
-        _moveFile = data.setting.import.watchPathMoveFile
+        _moveFile = appdata.setting.import.watchPathMoveFile
         if(_watcher == null) {
             _watcher = FileSystems.getDefault().newWatchService()
         }
-        if(data.setting.import.watchPaths.isEmpty()) {
+        if(appdata.setting.import.watchPaths.isEmpty()) {
             _errors.add(PathWatcherError("", PathWatcherErrorReason.NO_USEFUL_PATH))
             return
         }
-        for (watchPath in data.setting.import.watchPaths) {
+        for (watchPath in appdata.setting.import.watchPaths) {
             val path = Path(watchPath)
             if(!path.exists()) {
                 _errors.add(PathWatcherError(watchPath, PathWatcherErrorReason.PATH_NOT_EXIST))
@@ -101,7 +101,7 @@ class PathWatcherImpl(private val appStatus: AppStatusDriver,
             controller.start()
         }
 
-        if(data.setting.import.watchPathInitialize) {
+        if(appdata.setting.import.watchPathInitialize) {
             thread {
                 keyToPaths.values.forEach(::scanAllFiles)
             }

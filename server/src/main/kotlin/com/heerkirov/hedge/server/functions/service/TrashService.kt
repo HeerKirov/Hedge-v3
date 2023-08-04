@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
@@ -20,7 +21,7 @@ import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import org.ktorm.dsl.*
 import kotlin.math.absoluteValue
 
-class TrashService(private val data: DataRepository, private val trashManager: TrashManager) {
+class TrashService(private val appdata: AppDataManager, private val data: DataRepository, private val trashManager: TrashManager) {
     private val orderTranslator = OrderTranslator {
         "id" to TrashedImages.imageId
         "orderTime" to TrashedImages.orderTime
@@ -28,7 +29,7 @@ class TrashService(private val data: DataRepository, private val trashManager: T
     }
 
     fun list(filter: TrashFilter): ListResult<TrashedImageRes> {
-        val deadline = if(data.setting.file.autoCleanTrashes) DateTime.now().minusDays(data.setting.file.autoCleanTrashesIntervalDay.absoluteValue.toLong()).toMillisecond() else null
+        val deadline = if(appdata.setting.storage.autoCleanTrashes) DateTime.now().minusDays(appdata.setting.storage.autoCleanTrashesIntervalDay.absoluteValue.toLong()).toMillisecond() else null
 
         return data.db.from(TrashedImages)
             .innerJoin(FileRecords, FileRecords.id eq TrashedImages.fileId)
@@ -67,11 +68,11 @@ class TrashService(private val data: DataRepository, private val trashManager: T
         val metadata = row[TrashedImages.metadata]!!
         val parentId = row[TrashedImages.parentId]
         val trashedTime = row[TrashedImages.trashedTime]!!
-        val deadline = if(data.setting.file.autoCleanTrashes) DateTime.now().minusDays(data.setting.file.autoCleanTrashesIntervalDay.absoluteValue.toLong()).toMillisecond() else null
+        val deadline = if(appdata.setting.storage.autoCleanTrashes) DateTime.now().minusDays(appdata.setting.storage.autoCleanTrashesIntervalDay.absoluteValue.toLong()).toMillisecond() else null
         val remainingTime = if(deadline != null) trashedTime.toMillisecond() - deadline else null
 
-        val authorColors = data.setting.meta.authorColors
-        val topicColors = data.setting.meta.topicColors
+        val authorColors = appdata.setting.meta.authorColors
+        val topicColors = appdata.setting.meta.topicColors
 
         val topics = if(metadata.topics.isEmpty()) emptyList() else data.db.from(Topics)
             .select(Topics.id, Topics.name, Topics.type)
