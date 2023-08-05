@@ -26,7 +26,6 @@ import com.heerkirov.hedge.server.utils.deleteIfExists
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.tools.loopPoolThread
-import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.slf4j.LoggerFactory
@@ -251,7 +250,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             if(fileRecord != null && fileRecord.status == FileStatus.NOT_READY) {
                 val file = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), fileRecord.block, "${fileRecord.id}.${fileRecord.extension}").toFile()
                 if(file.exists()) {
-                    val (thumbnailFileSize, sampleFileSize, resolutionWidth, resolutionHeight) = processThumbnail(fileRecord, file)
+                    val (thumbnailFileSize, sampleFileSize, resolutionWidth, resolutionHeight, videoDuration) = processThumbnail(fileRecord, file)
                     val fileStatus = if(thumbnailFileSize != null) FileStatus.READY
                         else if(sampleFileSize != null) FileStatus.READY_WITHOUT_THUMBNAIL
                         else FileStatus.READY_WITHOUT_THUMBNAIL_SAMPLE
@@ -261,6 +260,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                             set(it.status, fileStatus)
                             if(thumbnailFileSize != null) set(it.thumbnailSize, thumbnailFileSize)
                             if(sampleFileSize != null) set(it.sampleSize, sampleFileSize)
+                            if(videoDuration != null) set(it.videoDuration, videoDuration)
                             set(it.resolutionWidth, resolutionWidth)
                             set(it.resolutionHeight, resolutionHeight)
                         }
@@ -354,11 +354,11 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
         if(cnt > 0) log.info("$cnt cache files is cleaned.")
     }
 
-    private fun processThumbnail(fileRecord: FileRecord, file: File): Tuple4<Long?, Long?, Int, Int> {
+    private fun processThumbnail(fileRecord: FileRecord, file: File): Tuple5<Long?, Long?, Int, Int, Long?> {
         //生成thumbnail。当file为除jpg外的其他格式，或file尺寸高于阈值时，会生成thumbnail。
-        val (thumbnailTempFile, resolutionWidth, resolutionHeight) = Graphics.process(file, Graphics.THUMBNAIL_RESIZE_AREA)
+        val (thumbnailTempFile, resolutionWidth, resolutionHeight, videoDuration) = Graphics.process(file, Graphics.THUMBNAIL_RESIZE_AREA)
         //生成sample。由于传入必定是jpg格式，当file尺寸高于阈值时，会生成thumbnail。
-        val (sampleTempFile, _, _) = Graphics.process(thumbnailTempFile ?: file, Graphics.SAMPLE_RESIZE_AREA)
+        val (sampleTempFile, _, _, _) = Graphics.process(thumbnailTempFile ?: file, Graphics.SAMPLE_RESIZE_AREA)
 
         //实际上，当尺寸小于sample且类型为jpg时，可以只生成thumbnail而不生成sample。
         //此时，需要把thumbnail当作sample去处理。即，sample总是优先于thumbnail。
@@ -410,7 +410,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
         }else{
             null
         }
-        return Tuple4(thumbnailFileSize, sampleFileSize, resolutionWidth, resolutionHeight)
+        return Tuple5(thumbnailFileSize, sampleFileSize, resolutionWidth, resolutionHeight, videoDuration)
     }
 
     private fun processBlockArchive(archiveType: ArchiveType, block: String, toBeDeleted: Set<Int>, toBeArchived: Boolean) {

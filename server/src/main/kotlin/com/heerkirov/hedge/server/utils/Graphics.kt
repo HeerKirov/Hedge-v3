@@ -35,31 +35,38 @@ object Graphics {
      * @throws IllegalFileExtensionError 不支持的扩展名
      */
     fun process(src: File, resizeArea: Int): ProcessResult {
+        val resolutionWidth: Int
+        val resolutionHeight: Int
+        var videoDuration: Long? = null
         //对于非jpg类型，将文件转换至jpg类型的snapshot
         val snapshot = when (src.extension.lowercase()) {
             "jpeg", "jpg" -> null
             "png", "gif" -> translateImageToJpg(src, quality = 0.9F)
-            "mp4", "webm" -> translateVideoToJpg(src, timePercent = 0.25F) //取25%进度位置的帧作为截图
+            "mp4", "webm" -> {
+                val media = MultimediaObject(src)
+                videoDuration = media.info.duration.takeIf { it >= 0 }
+                translateVideoToJpg(media, timePercent = 0.25F) //取25%进度位置的帧作为截图
+            }
             else -> throw be(IllegalFileExtensionError(src.extension))
         }
-        val resolution: Pair<Int, Int>
         val resized = try {
             val file = snapshot ?: src
             val source = ImageIO.read(file)
-            resolution = Pair(source.width, source.height)
-            whetherResize(source, file.extension) { w, h ->
-                //当原始图像的面积超过RESIZE AREA时，对其缩放，保持比例收缩至小于此面积。
-                if(w * h > resizeArea) {
-                    /* nw * nh = RA
-                     * w * h = area
-                     * nw / nh = w / h
-                     * nw = w * nh / h
-                     * nh^2 * w / h = RA
-                     * nh = SQRT(RA * h / w) */
-                    val nh = sqrt(resizeArea.toDouble() * h / w)
-                    val nw = nh * w / h
-                    Pair(nw.toInt(), nh.toInt())
-                }else null
+            resolutionWidth = source.width
+            resolutionHeight = source.height
+            //当原始图像的面积超过RESIZE AREA时，对其缩放，保持比例收缩至小于此面积。
+            if(resolutionWidth * resolutionHeight > resizeArea) {
+                /* nw * nh = RA
+                 * w * h = area
+                 * nw / nh = w / h
+                 * nw = w * nh / h
+                 * nh^2 * w / h = RA
+                 * nh = SQRT(RA * h / w) */
+                val nh = sqrt(resizeArea.toDouble() * resolutionWidth / resolutionHeight)
+                val nw = nh * resolutionWidth / resolutionHeight
+                resize(source, file.extension, nw.toInt(), nh.toInt())
+            }else{
+                null
             }
         }catch (e: Throwable) {
             if(snapshot != null && snapshot.exists()) snapshot.delete()
@@ -68,20 +75,7 @@ object Graphics {
 
         if(resized != null && snapshot != null && snapshot.exists()) snapshot.delete()
         //使用resized结果，没有resize就使用snapshot的结果。按照目前的策略，除了jpg格式，其他格式一定会生成snapshot，导致有缩略图。
-        return ProcessResult(resized ?: snapshot, resolution.first, resolution.second)
-    }
-
-    /**
-     * 使用策略判断是否需要缩放。
-     * @param whether 给出当前尺寸，判断是否需要缩放。
-     * @return 返回缩放后的file，或返回null。
-     */
-    private inline fun whetherResize(source: BufferedImage, extension: String, whether: (width: Int, height: Int) -> Pair<Int, Int>?): File? {
-        val result = whether(source.width, source.height)
-        return if(result != null) {
-            val (width, height) = result
-            resize(source, extension, width, height)
-        }else null
+        return ProcessResult(resized ?: snapshot, resolutionWidth, resolutionHeight, videoDuration)
     }
 
     /**
@@ -159,9 +153,7 @@ object Graphics {
      * @param timeMills 采用此时间点的帧。优先使用此参数，但如果影片长度长于此参数则不适用。
      * @param timePercent 使用一个[0, 1]的数值作为百分比值，从影片的此百分比进度处取帧。
      */
-    private fun translateVideoToJpg(src: File, timeMills: Long? = null, timePercent: Float = 0F): File {
-        val media = MultimediaObject(src)
-
+    private fun translateVideoToJpg(media: MultimediaObject, timeMills: Long? = null, timePercent: Float = 0F): File {
         val time = if(timeMills != null && timeMills < media.info.duration) timeMills else (media.info.duration * timePercent).toLong()
 
         return Fs.temp("jpg").also { dest ->
@@ -203,5 +195,5 @@ object Graphics {
         }
     }
 
-    data class ProcessResult(val thumbnailFile: File?, val resolutionWidth: Int, val resolutionHeight: Int)
+    data class ProcessResult(val thumbnailFile: File?, val resolutionWidth: Int, val resolutionHeight: Int, val videoDuration: Long?)
 }

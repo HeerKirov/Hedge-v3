@@ -367,6 +367,7 @@ CREATE TABLE file_db.file(
     sample_size         BIGINT NOT NULL,            -- 示意图占用的磁盘大小，单位Byte。没有示意图时记0
     resolution_width    INTEGER NOT NULL,           -- 分辨率宽度
     resolution_height   INTEGER NOT NULL,           -- 分辨率高度
+    video_duration      BIGINT NOT NULL,            -- 视频文件时长
     origin_filename     TEXT NOT NULL,              -- 原始文件的文件名，包含扩展名，可能为空
 
     status	            TINYINT NOT NULL,           -- 文件的处理与可用状态

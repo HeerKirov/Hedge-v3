@@ -393,6 +393,10 @@ data class FileRecord(val id: Int,
                        */
                       val resolutionHeight: Int,
                       /**
+                       * 视频文件的时长，单位毫秒。未填写或不存在时记0。
+                       */
+                      val videoDuration: Long,
+                      /**
                        * 原始文件的文件名，包含扩展名，可能为空
                        */
                       val originFilename: String,

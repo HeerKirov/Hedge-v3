@@ -136,8 +136,8 @@ class IllustService(private val appdata: AppDataManager,
         val row = data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
             .select(
-                FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status,
-                FileRecords.extension, FileRecords.size, FileRecords.resolutionWidth, FileRecords.resolutionHeight,
+                FileRecords.id, FileRecords.block, FileRecords.status, FileRecords.extension, FileRecords.size,
+                FileRecords.resolutionWidth, FileRecords.resolutionHeight, FileRecords.videoDuration,
                 Illusts.type, Illusts.cachedChildrenCount, Illusts.description, Illusts.score,
                 Illusts.exportedDescription, Illusts.exportedScore, Illusts.favorite, Illusts.tagme,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart,
@@ -151,6 +151,7 @@ class IllustService(private val appdata: AppDataManager,
         val size = row[FileRecords.size]!!
         val resolutionWidth = row[FileRecords.resolutionWidth]!!
         val resolutionHeight = row[FileRecords.resolutionHeight]!!
+        val videoDuration = row[FileRecords.videoDuration]!!
 
         val finalType = type ?: if(row[Illusts.type]!! == IllustModelType.COLLECTION) IllustType.COLLECTION else IllustType.IMAGE
         val childrenCount = row[Illusts.cachedChildrenCount]!!.takeIf { finalType == IllustType.COLLECTION }
@@ -202,7 +203,7 @@ class IllustService(private val appdata: AppDataManager,
 
         return IllustDetailRes(
             id, finalType, childrenCount, filePath,
-            extension, size, resolutionWidth, resolutionHeight,
+            extension, size, resolutionWidth, resolutionHeight, videoDuration,
             topics, authors, tags,
             description, score, favorite, tagme,
             originDescription, originScore,

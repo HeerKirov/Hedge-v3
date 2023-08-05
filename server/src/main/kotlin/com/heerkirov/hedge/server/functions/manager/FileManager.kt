@@ -72,6 +72,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
             set(it.sampleSize, 0)
             set(it.resolutionWidth, 0)
             set(it.resolutionHeight, 0)
+            set(it.videoDuration, 0)
             set(it.originFilename, filename)
             set(it.status, FileStatus.NOT_READY)
             set(it.createTime, now)

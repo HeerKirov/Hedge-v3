@@ -65,6 +65,7 @@ class TrashService(private val appdata: AppDataManager, private val data: DataRe
         val size = row[FileRecords.size]!!
         val resolutionWidth = row[FileRecords.resolutionWidth]!!
         val resolutionHeight = row[FileRecords.resolutionHeight]!!
+        val videoDuration = row[FileRecords.videoDuration]!!
         val metadata = row[TrashedImages.metadata]!!
         val parentId = row[TrashedImages.parentId]
         val trashedTime = row[TrashedImages.trashedTime]!!
@@ -125,7 +126,7 @@ class TrashService(private val appdata: AppDataManager, private val data: DataRe
 
         return TrashedImageDetailRes(
             row[TrashedImages.imageId]!!, filePath,
-            extension, size, resolutionWidth, resolutionHeight,
+            extension, size, resolutionWidth, resolutionHeight, videoDuration,
             topics, authors, tags, parent, books, folders, associates,
             row[TrashedImages.description]!!, row[TrashedImages.score], row[TrashedImages.favorite]!!, row[TrashedImages.tagme]!!,
             row[TrashedImages.sourceSite], row[TrashedImages.sourceId], row[TrashedImages.sourcePart],

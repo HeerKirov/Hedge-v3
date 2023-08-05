@@ -17,7 +17,7 @@ data class ImportImageRes(val id: Int, val filePath: NullableFilePath, val origi
 data class ImportImageDetailRes(val id: Int, val filePath: NullableFilePath,
                                 val originFileName: String?, val originFilePath: String?,
                                 val fileCreateTime: LocalDateTime?, val fileUpdateTime: LocalDateTime?, val fileImportTime: LocalDateTime,
-                                val extension: String, val size: Long, val resolutionWidth: Int, val resolutionHeight: Int,
+                                val extension: String, val size: Long, val resolutionWidth: Int, val resolutionHeight: Int, val videoDuration: Long,
                                 val tagme: Illust.Tagme, val preference: ImportImage.Preference?,
                                 val collectionId: Any?, val collection: IllustCollectionSimpleRes?, val folders: List<FolderSimpleRes>, val books: List<BookSimpleRes>,
                                 val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?, val sourcePreference: ImportImage.SourcePreference?,
