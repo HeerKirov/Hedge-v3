@@ -136,6 +136,22 @@ export const numbers = {
         }else{
             return `${numbers.roundNDecimal(byteSize, 3)} B`
         }
+    },
+    toHourTimesDisplay(mills: number, optionalHour: boolean = true): string {
+        const secInterval = Math.floor(mills / 1000)
+        const sec = secInterval % 60
+        const min = (secInterval - sec) % 3600 / 60
+        const hour = Math.floor(secInterval / 3600)
+
+        function dbl(i: number): string | number {
+            return i >= 10 ? i : `0${i}`
+        }
+
+        if(optionalHour && hour <= 0) {
+            return `${dbl(min)}:${dbl(sec)}`
+        }else{
+            return `${dbl(hour)}:${dbl(min)}:${dbl(sec)}`
+        }
     }
 }
 

@@ -151,7 +151,7 @@ installDatasetContext({
                 </FlexItem>
                 <FlexItem :width="15" :shrink="0">
                     <div class="mr-1">
-                        <FileInfoDisplay :extension="item.filePath.extension" mode="inline"/>
+                        <FileInfoDisplay mode="simple" :extension="item.filePath.extension"/>
                     </div>
                 </FlexItem>
                 <FlexItem :shrink="0">

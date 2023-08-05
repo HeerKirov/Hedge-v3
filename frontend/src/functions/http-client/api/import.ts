@@ -200,6 +200,7 @@ export interface DetailImportImage extends ImportImage {
     size: number
     resolutionWidth: number
     resolutionHeight: number
+    videoDuration: number
     originalFilePath: string | null
     fileFromSource: string | null
     fileCreateTime: LocalDateTime | null

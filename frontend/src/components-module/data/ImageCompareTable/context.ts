@@ -20,6 +20,7 @@ export interface ImageData {
         size: number
         resolutionWidth: number
         resolutionHeight: number
+        videoDuration: number
         score: number | null
         favorite: boolean
         description: string
@@ -85,6 +86,7 @@ function useImageData(initIndex: number | null) {
                             size: metadata.data.size,
                             resolutionWidth: metadata.data.resolutionWidth,
                             resolutionHeight: metadata.data.resolutionHeight,
+                            videoDuration: metadata.data.videoDuration,
                             score: metadata.data.score,
                             favorite: metadata.data.favorite,
                             description: metadata.data.description,

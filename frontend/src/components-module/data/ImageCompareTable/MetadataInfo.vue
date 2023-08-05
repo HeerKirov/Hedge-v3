@@ -21,7 +21,7 @@ defineProps<{
     <tr>
         <td>文件信息</td>
         <td v-for="value in values">
-            <FileInfoDisplay v-if="value !== null" mode="inline" :extension="value.extension" :file-size="value.size" :resolution-width="value.resolutionWidth" :resolution-height="value.resolutionHeight"/>
+            <FileInfoDisplay v-if="value !== null" mode="inline" :extension="value.extension" :file-size="value.size" :resolution-width="value.resolutionWidth" :resolution-height="value.resolutionHeight" :video-duration="value.videoDuration"/>
         </td>
     </tr>
     <tr v-if="values.some(i => i?.score || i?.favorite)">

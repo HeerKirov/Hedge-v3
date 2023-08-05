@@ -500,6 +500,7 @@ export function useFindSimilarCompareData(id: Ref<{type: "IMPORT_IMAGE" | "ILLUS
                             size: metadata.data.size,
                             resolutionWidth: metadata.data.resolutionWidth,
                             resolutionHeight: metadata.data.resolutionHeight,
+                            videoDuration: metadata.data.videoDuration,
                             score: metadata.data.score,
                             favorite: metadata.data.favorite,
                             description: metadata.data.description,
@@ -540,6 +541,7 @@ export function useFindSimilarCompareData(id: Ref<{type: "IMPORT_IMAGE" | "ILLUS
                             size: res.data.size,
                             resolutionWidth: res.data.resolutionWidth,
                             resolutionHeight: res.data.resolutionHeight,
+                            videoDuration: res.data.videoDuration,
                             score: null,
                             favorite: false,
                             description: "",
@@ -592,6 +594,7 @@ export interface FindSimilarCompareData {
         size: number
         resolutionWidth: number
         resolutionHeight: number
+        videoDuration: number
         score: number | null
         favorite: boolean
         description: string

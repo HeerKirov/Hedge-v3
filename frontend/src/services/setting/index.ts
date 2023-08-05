@@ -5,6 +5,7 @@ import { ServerOption, MetaOption, QueryOption, ImportOption, FindSimilarOption,
 import { useFetchReactive, useRetrieveHelper } from "@/functions/fetch"
 import { useAppEnv, useServerStatus } from "@/functions/app"
 import { useMessageBox } from "@/modules/message-box"
+import { numbers } from "@/utils/primitives"
 import { computedMutable, optionalInstallation, toRef } from "@/utils/reactivity"
 
 export function useServiceStorageStatus() {
@@ -35,7 +36,7 @@ export function useSettingConnectionInfo() {
     const connectionInfo = computedMutable(() => {
         if(serverStatus.value.connectionInfo !== null) {
             return {
-                runningTime: formatInterval(Date.now() - serverStatus.value.connectionInfo.startTime),
+                runningTime: numbers.toHourTimesDisplay(Date.now() - serverStatus.value.connectionInfo.startTime, false),
                 port: getPortFromHost(serverStatus.value.connectionInfo!.host),
                 pid: serverStatus.value.connectionInfo!.pid
             }
@@ -48,7 +49,7 @@ export function useSettingConnectionInfo() {
     onMounted(() => {
         timer = setInterval(() => {
             if(connectionInfo.value !== null && serverStatus.value.connectionInfo !== null) {
-                connectionInfo.value.runningTime = formatInterval(Date.now() - serverStatus.value.connectionInfo.startTime)
+                connectionInfo.value.runningTime = numbers.toHourTimesDisplay(Date.now() - serverStatus.value.connectionInfo.startTime, false)
             }
         }, 1000)
     })
@@ -63,19 +64,6 @@ export function useSettingConnectionInfo() {
     function getPortFromHost(host: string): number {
         const idx = host.lastIndexOf(":")
         return parseInt(host.slice(idx + 1))
-    }
-
-    function formatInterval(interval: number): string {
-        const secInterval = Math.floor(interval / 1000)
-        const sec = secInterval % 60
-        const min = (secInterval - sec) % 3600 / 60
-        const hour = Math.floor(secInterval / 3600)
-
-        function dbl(i: number): string | number {
-            return i >= 10 ? i : `0${i}`
-        }
-
-        return `${dbl(hour)}:${dbl(min)}:${dbl(sec)}`
     }
 
     return {connectionStatus, connectionInfo}

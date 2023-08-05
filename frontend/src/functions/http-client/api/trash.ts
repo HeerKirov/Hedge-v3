@@ -86,6 +86,7 @@ export interface DetailTrashedImage extends TrashedImage {
     size: number
     resolutionHeight: number
     resolutionWidth: number
+    videoDuration: number
     topics: SimpleTopic[]
     authors: SimpleAuthor[]
     tags: SimpleTag[]

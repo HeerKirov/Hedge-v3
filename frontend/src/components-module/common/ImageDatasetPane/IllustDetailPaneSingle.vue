@@ -43,7 +43,7 @@ const { data, setDescription, setScore, setOrderTime, setPartitionTime, openMeta
         </FormEditKit>
         <TagmeInfo v-if="data.tagme.length > 0" class="mt-1" :value="data.tagme"/>
         <MetaTagListDisplay class="my-2" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
-        <FileInfoDisplay v-if="data.type === 'IMAGE'" class="mt-1" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionWidth" :resolution-width="data.resolutionHeight"/>
+        <FileInfoDisplay v-if="data.type === 'IMAGE'" class="mt-1" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionWidth" :resolution-width="data.resolutionHeight" :video-duration="data.videoDuration"/>
         <FormEditKit class="mt-2" :value="data.partitionTime" :set-value="setPartitionTime">
             <template #default="{ value }">
                 <PartitionTimeDisplay :partition-time="value"/>

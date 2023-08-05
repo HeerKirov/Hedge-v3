@@ -111,6 +111,7 @@ function mapToDetailIllust(data: any): DetailIllust {
         size: <number>data["size"],
         resolutionWidth: <number>data["resolutionWidth"],
         resolutionHeight: <number>data["resolutionHeight"],
+        videoDuration: <number>data["videoDuration"],
         topics: <RelatedSimpleTopic[]>data["topics"],
         authors: <RelatedSimpleAuthor[]>data["authors"],
         tags: <RelatedSimpleTag[]>data["tags"],
@@ -418,6 +419,10 @@ export interface DetailIllust extends Illust {
      * 分辨率高度。
      */
     resolutionHeight: number
+    /**
+     * 视频文件时长，单位毫秒。如果不存在或没有，则是0。
+     */
+    videoDuration: number
     /**
      * 主题。
      */
