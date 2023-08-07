@@ -26,6 +26,7 @@ import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
+import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
@@ -218,7 +219,7 @@ class BookService(private val appdata: AppDataManager,
             .leftJoin(FileRecords, Illusts.fileId eq FileRecords.id and FileRecords.deleted.not())
             .select(BookImageRelations.ordinal, Illusts.id,
                 Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime,
-                Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart,
+                Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { BookImageRelations.bookId eq id }
             .limit(filter.offset, filter.limit)
@@ -231,10 +232,8 @@ class BookService(private val appdata: AppDataManager,
                 val tagme = it[Illusts.tagme]!!
                 val orderTime = it[Illusts.orderTime]!!.parseDateTime()
                 val filePath = filePathFrom(it)
-                val sourceSite = it[Illusts.sourceSite]
-                val sourceId = it[Illusts.sourceId]
-                val sourcePart = it[Illusts.sourcePart]
-                BookImageRes(imageId, ordinal, filePath, score, favorite, tagme, sourceSite, sourceId, sourcePart, orderTime)
+                val source = sourcePathOf(it)
+                BookImageRes(imageId, ordinal, filePath, score, favorite, tagme, source, orderTime)
             }
     }
 

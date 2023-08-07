@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.functions.manager
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
+import com.heerkirov.hedge.server.components.appdata.SourceOption
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
@@ -19,7 +20,8 @@ import com.heerkirov.hedge.server.utils.types.anyOpt
 import com.heerkirov.hedge.server.utils.types.optOf
 import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
-import org.ktorm.entity.*
+import org.ktorm.entity.firstOrNull
+import org.ktorm.entity.sequenceOf
 
 class SourceDataManager(private val appdata: AppDataManager,
                         private val data: DataRepository,
@@ -31,19 +33,30 @@ class SourceDataManager(private val appdata: AppDataManager,
      * @return 如果给出的值是null，那么返回null，否则，返回一个tuple，用于后续工具链处理。
      * @throws ResourceNotExist ("site", string) 给出的source不存在
      */
-    fun checkSourceSite(sourceSite: String?, sourceId: Long?, sourcePart: Int?): Triple<String, Long, Int?>? {
+    fun checkSourceSite(sourceSite: String?, sourceId: Long?, sourcePart: Int?, sourcePartName: String?): Pair<String, Long>? {
         return if(sourceSite != null) {
             val site = appdata.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
 
             if(sourceId == null) throw be(ParamRequired("sourceId"))
             else if(sourceId < 0) throw be(ParamError("sourceId"))
 
-            if(site.hasSecondaryId && sourcePart == null) throw be(ParamRequired("sourcePart"))
-            else if(!site.hasSecondaryId && sourcePart != null) throw be(ParamNotRequired("sourcePart"))
+            when (site.partMode) {
+                SourceOption.SitePartMode.NO -> {
+                    if(sourcePart != null) throw be(ParamNotRequired("sourcePart"))
+                    if(sourcePartName != null) throw be(ParamNotRequired("sourcePartName"))
+                }
+                SourceOption.SitePartMode.PAGE -> {
+                    if(sourcePart == null) throw be(ParamRequired("sourcePart"))
+                    else if(sourcePart < 0) throw be(ParamError("sourcePart"))
+                    if(sourcePartName != null) throw be(ParamNotRequired("sourcePartName"))
+                }
+                SourceOption.SitePartMode.PAGE_WITH_NAME -> {
+                    if(sourcePart == null) throw be(ParamRequired("sourcePart"))
+                    else if(sourcePart < 0) throw be(ParamError("sourcePart"))
+                }
+            }
 
-            if(sourcePart != null && sourcePart < 0) throw be(ParamError("sourcePart"))
-
-            Triple(sourceSite, sourceId, sourcePart)
+            Pair(sourceSite, sourceId)
         }else{
             null
         }
@@ -69,13 +82,13 @@ class SourceDataManager(private val appdata: AppDataManager,
 
     /**
      * 检查source key是否存在。如果存在，检查目标sourceImage是否存在并创建对应的记录。在创建之前自动检查source key。
-     * @return (rowId, source, sourceId) 返回在sourceImage中实际存储的key。
+     * @return rowId 返回在sourceImage中实际存储的key。
      * @throws ResourceNotExist ("source", string) 给出的source不存在
      */
-    fun validateAndCreateSourceDataIfNotExist(sourceSite: String, sourceId: Long): Triple<Int?, String?, Long?> {
+    fun validateAndCreateSourceDataIfNotExist(sourceSite: String, sourceId: Long): Int {
         val sourceData = data.db.sequenceOf(SourceDatas).firstOrNull { (it.sourceSite eq sourceSite) and (it.sourceId eq sourceId) }
         return if(sourceData != null) {
-            Triple(sourceData.id, sourceSite, sourceId)
+            sourceData.id
         }else{
             val now = DateTime.now()
             val id = data.db.insertAndGenerateKey(SourceDatas) {
@@ -95,7 +108,7 @@ class SourceDataManager(private val appdata: AppDataManager,
 
             bus.emit(SourceDataCreated(sourceSite, sourceId, id))
 
-            Triple(id, sourceSite, sourceId)
+            id
         }
     }
 
@@ -436,6 +449,7 @@ class SourceDataManager(private val appdata: AppDataManager,
             set(it.sourceSite, null)
             set(it.sourceId, null)
             set(it.sourcePart, null)
+            set(it.sourcePartName, null)
         }
 
         data.db.delete(SourceDatas) { it.id eq sourceDataId }

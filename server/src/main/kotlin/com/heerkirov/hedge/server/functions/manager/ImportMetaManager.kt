@@ -6,6 +6,7 @@ import com.heerkirov.hedge.server.exceptions.InvalidRegexError
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.model.ImportImage
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
+import com.heerkirov.hedge.server.utils.tuples.Tuple5
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Matcher
 import java.util.regex.Pattern
@@ -16,20 +17,20 @@ class ImportMetaManager(private val appdata: AppDataManager) {
      * 对一条import记录的内容进行解析，得到source元数据。
      * @throws InvalidRegexError (regex) 执行正则表达式时发生错误，怀疑是表达式或相关参数没写对
      */
-    fun analyseSourceMeta(filename: String?): Tuple4<String?, Long?, Int?, ImportImage.SourcePreference?> {
+    fun analyseSourceMeta(filename: String?): Tuple5<String?, Long?, Int?, String?, ImportImage.SourcePreference?> {
         for (rule in appdata.setting.import.sourceAnalyseRules) {
-            analyseOneRule(rule, filename)?.let { (id, secondaryId, preference) ->
-                return Tuple4(rule.site, id, secondaryId, preference)
+            analyseOneRule(rule, filename)?.let { (id, secondaryId, secondaryName, preference) ->
+                return Tuple5(rule.site, id, secondaryId, secondaryName, preference)
             }
         }
 
-        return Tuple4(null, null, null, null)
+        return Tuple5(null, null, null, null, null)
     }
 
     /**
      * @throws InvalidRegexError (regex) 执行正则表达式时发生错误，怀疑是表达式或相关参数没写对
      */
-    private fun analyseOneRule(rule: ImportOption.SourceAnalyseRule, filename: String?): Triple<Long, Int?, ImportImage.SourcePreference?>? {
+    private fun analyseOneRule(rule: ImportOption.SourceAnalyseRule, filename: String?): Tuple4<Long, Int?, String?, ImportImage.SourcePreference?>? {
         if(filename == null) return null
         try {
             val text = getFilenameWithoutExtension(filename)
@@ -38,8 +39,9 @@ class ImportMetaManager(private val appdata: AppDataManager) {
             val matcher = pattern.matcher(text)
             if(!matcher.find()) return null
 
-            val id = matcher.groupByIt(rule.idGroup).toLong()
-            val secondaryId = rule.secondaryIdGroup?.let { matcher.groupByIt(it) }?.toInt()
+            val id = matcher.groupOfIt(rule.idGroup, rule.regex)?.toLong() ?: throw be(InvalidRegexError(rule.regex, "group '${rule.idGroup}' not matched in regex."))
+            val part = if(rule.partGroup != null) { matcher.groupOfIt(rule.partGroup, rule.regex)?.toInt() ?: throw be(InvalidRegexError(rule.regex, "group '${rule.partGroup}' not matched in regex.")) }else null
+            val partName = if(rule.partNameGroup != null) { matcher.groupOfIt(rule.partNameGroup, rule.regex) ?: throw be(InvalidRegexError(rule.regex, "group '${rule.partNameGroup}' not matched in regex.")) }else null
             val preference = if(rule.extras.isNullOrEmpty()) null else {
                 var title: String? = null
                 var description: String? = null
@@ -49,13 +51,7 @@ class ImportMetaManager(private val appdata: AppDataManager) {
                 val relations: MutableList<Long> = mutableListOf()
 
                 for(extra in rule.extras) {
-                    val result = try {
-                        matcher.groupByIt(extra.group)
-                    }catch(e: IndexOutOfBoundsException) {
-                        if(extra.optional) continue else throw e
-                    }catch(e: IllegalArgumentException) {
-                        if(extra.optional) continue else throw e
-                    }
+                    val result = matcher.groupOfIt(extra.group, rule.regex) ?: if(extra.optional) continue else throw be(InvalidRegexError(rule.regex, "group '${extra.group}' not matched in regex."))
                     when(extra.target) {
                         ImportOption.SourceAnalyseRuleExtraTarget.TITLE -> title = result
                         ImportOption.SourceAnalyseRuleExtraTarget.DESCRIPTION -> description = result
@@ -73,13 +69,9 @@ class ImportMetaManager(private val appdata: AppDataManager) {
                 }
             }
 
-            return Triple(id, secondaryId, preference)
-        }catch(e: IndexOutOfBoundsException) {
-            throw be(InvalidRegexError(rule.regex, "Specified group index of id/secondaryId/extra is out of bounds of matches."))
-        }catch(e: IllegalArgumentException) {
-            throw be(InvalidRegexError(rule.regex, "Specified group name of id/secondaryId/extra is illegal of matches."))
+            return Tuple4(id, part, partName, preference)
         }catch(e: NumberFormatException) {
-            throw be(InvalidRegexError(rule.regex, "Value of id/secondaryId cannot be convert to number."))
+            throw be(InvalidRegexError(rule.regex, "Some value cannot be convert to number."))
         }catch(e: PatternSyntaxException) {
             throw be(InvalidRegexError(rule.regex, "Pattern syntax error: ${e.message}"))
         }catch(e: Exception) {
@@ -87,8 +79,14 @@ class ImportMetaManager(private val appdata: AppDataManager) {
         }
     }
 
-    private fun Matcher.groupByIt(group: String): String {
-        return group.toIntOrNull()?.let { this.group(it) } ?: this.group(group)
+    private fun Matcher.groupOfIt(group: String, regex: String): String? {
+        try {
+            return group.toIntOrNull()?.let { this.group(it) } ?: this.group(group)
+        }catch(e: IndexOutOfBoundsException) {
+            throw be(InvalidRegexError(regex, "group '$group' not exist in regex."))
+        }catch(e: IllegalArgumentException) {
+            throw be(InvalidRegexError(regex, "group '$group' not exist in regex."))
+        }
     }
 
     private fun getFilenameWithoutExtension(filename: String): String {

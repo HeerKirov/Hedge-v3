@@ -45,3 +45,8 @@ data class FilePath(val original: String, val thumbnail: String, val sample: Str
  * 包含三种文件路径，但缩略图可空。
  */
 data class NullableFilePath(val original: String, val thumbnail: String?, val sample: String?, val extension: String)
+
+/**
+ * 包含来源数据定位的所有字段的通用结构。
+ */
+data class SourceDataPath(val sourceSite: String, val sourceId: Long, val sourcePart: Int?, val sourcePartName: String?)

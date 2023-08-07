@@ -110,11 +110,26 @@ data class SourceOption(
 ) {
     data class Site(val name: String,
                     var title: String,
-                    val hasSecondaryId: Boolean,
+                    val partMode: SitePartMode,
                     var availableAdditionalInfo: List<AvailableAdditionalInfo>,
                     var sourceLinkGenerateRules: List<String>)
 
     data class AvailableAdditionalInfo(val field: String, val label: String)
+
+    enum class SitePartMode {
+        /**
+         * 禁用分页。
+         */
+        NO,
+        /**
+         * 仅允许页码。
+         */
+        PAGE,
+        /**
+         * 允许页码，且允许可选的页名。
+         */
+        PAGE_WITH_NAME
+    }
 }
 
 /**
@@ -170,7 +185,7 @@ data class ImportOption(
         UPDATE_TIME
     }
 
-    data class SourceAnalyseRule(val site: String, val regex: String, val idGroup: String, val secondaryIdGroup: String?, val extras: List<SourceAnalyseRuleExtra>?)
+    data class SourceAnalyseRule(val site: String, val regex: String, val idGroup: String, val partGroup: String?, val partNameGroup: String?, val extras: List<SourceAnalyseRuleExtra>?)
 
     data class SourceAnalyseRuleExtra(val group: String, val target: SourceAnalyseRuleExtraTarget, val optional: Boolean, val tagType: String? = null, val additionalInfoField: String? = null)
 

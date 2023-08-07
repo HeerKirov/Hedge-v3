@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.dto.form
 
+import com.heerkirov.hedge.server.dto.res.SourceDataPath
 import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.types.Opt
@@ -24,7 +25,7 @@ class IllustImageUpdateForm(topics: Opt<List<Int>>, authors: Opt<List<Int>>, tag
 
 class IllustImageRelatedUpdateForm(val associates: Opt<List<Int>?>, val collectionId: Opt<Int?>)
 
-class IllustImageSourceDataUpdateForm(val sourceSite: Opt<String?>, val sourceId: Opt<Long?>, val sourcePart: Opt<Int?>,
+class IllustImageSourceDataUpdateForm(val source: Opt<SourceDataPath?>,
                                       val title: Opt<String?>, val description: Opt<String?>, val tags: Opt<List<SourceTagForm>>,
                                       val books: Opt<List<SourceBookForm>>, val relations: Opt<List<Long>>,
                                       val links: Opt<List<String>>, val additionalInfo: Opt<List<SourceDataAdditionalInfoForm>>,

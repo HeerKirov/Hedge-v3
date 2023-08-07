@@ -26,13 +26,13 @@ import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
 import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.business.filePathOrNullFrom
+import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.escapeLike
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.runIf
-import com.heerkirov.hedge.server.utils.tuples.Tuple5
 import com.heerkirov.hedge.server.utils.types.anyOpt
 import com.heerkirov.hedge.server.utils.types.optOf
 import com.heerkirov.hedge.server.utils.types.undefined
@@ -63,7 +63,7 @@ class ImportService(private val appdata: AppDataManager,
             .innerJoin(FileRecords, FileRecords.id eq ImportImages.fileId)
             .select(
                 ImportImages.id, ImportImages.fileName,
-                ImportImages.sourceSite, ImportImages.sourceId, ImportImages.sourcePart,
+                ImportImages.sourceSite, ImportImages.sourceId, ImportImages.sourcePart, ImportImages.sourcePartName,
                 ImportImages.partitionTime, ImportImages.orderTime, ImportImages.tagme,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .whereWithConditions {
@@ -75,11 +75,10 @@ class ImportService(private val appdata: AppDataManager,
             .limit(filter.offset, filter.limit)
             .toListResult {
                 val filePath = filePathOrNullFrom(it)
+                val source = sourcePathOf(it[ImportImages.sourceSite], it[ImportImages.sourceId], it[ImportImages.sourcePart], it[ImportImages.sourcePartName])
                 ImportImageRes(
-                    it[ImportImages.id]!!, filePath, it[ImportImages.fileName],
-                    it[ImportImages.sourceSite], it[ImportImages.sourceId], it[ImportImages.sourcePart],
-                    it[ImportImages.tagme]!!,
-                    it[ImportImages.partitionTime]!!, it[ImportImages.orderTime]!!.parseDateTime())
+                    it[ImportImages.id]!!, filePath, it[ImportImages.fileName], source,
+                    it[ImportImages.tagme]!!, it[ImportImages.partitionTime]!!, it[ImportImages.orderTime]!!.parseDateTime())
             }
     }
 
@@ -111,6 +110,7 @@ class ImportService(private val appdata: AppDataManager,
             .firstOrNull() ?: throw be(NotFound())
 
         val filePath = filePathOrNullFrom(row)
+        val source = sourcePathOf(row[ImportImages.sourceSite], row[ImportImages.sourceId], row[ImportImages.sourcePart], row[ImportImages.sourcePartName])
 
         val collectionId: Any? = row[ImportImages.collectionId].let {
             if(it == null) {
@@ -157,7 +157,7 @@ class ImportService(private val appdata: AppDataManager,
             row[FileRecords.extension]!!, row[FileRecords.size]!!, row[FileRecords.resolutionWidth]!!, row[FileRecords.resolutionHeight]!!, row[FileRecords.videoDuration]!!,
             row[ImportImages.tagme]!!, row[ImportImages.preference] ?: ImportImage.Preference(cloneImage = null),
             collectionId, collection, folders, books,
-            row[ImportImages.sourceSite], row[ImportImages.sourceId], row[ImportImages.sourcePart], row[ImportImages.sourcePreference],
+            source, row[ImportImages.sourcePreference],
             row[ImportImages.partitionTime]!!, row[ImportImages.orderTime]!!.parseDateTime(), row[ImportImages.createTime]!!
         )
     }
@@ -200,13 +200,13 @@ class ImportService(private val appdata: AppDataManager,
                     }
                 }
 
-                val sourceResultMap = mutableMapOf<Int, Tuple5<String, Long?, Int?, Illust.Tagme?, ImportImage.SourcePreference?>>()
+                val sourceResultMap = mutableMapOf<Int, Tuple6<String, Long?, Int?, String?, Illust.Tagme?, ImportImage.SourcePreference?>>()
                 val errors = mutableMapOf<Int, List<BaseException<*>>>()
                 if(form.analyseSource) {
                     val autoSetTagmeOfSource = appdata.setting.import.setTagmeOfSource
 
                     for (record in records) {
-                        val (source, sourceId, sourcePart, sourcePreference) = try {
+                        val (source, sourceId, sourcePart, sourcePartName, sourcePreference) = try {
                             importMetaManager.analyseSourceMeta(record.fileName)
                         } catch (e: BusinessException) {
                             errors[record.id] = listOf(e.exception)
@@ -214,7 +214,7 @@ class ImportService(private val appdata: AppDataManager,
                         }
                         if (source != null) {
                             val tagme = if (autoSetTagmeOfSource && Illust.Tagme.SOURCE in record.tagme) record.tagme - Illust.Tagme.SOURCE else null
-                            sourceResultMap[record.id] = Tuple5(source, sourceId, sourcePart, tagme, sourcePreference)
+                            sourceResultMap[record.id] = Tuple6(source, sourceId, sourcePart, sourcePartName, tagme, sourcePreference)
                         }
                     }
                 }
@@ -234,10 +234,11 @@ class ImportService(private val appdata: AppDataManager,
                         data.db.update(ImportImages) {
                             where { it.id eq record.id }
                             if(src != null) {
-                                val (sourceSite, sourceId, sourcePart, tagme, sourcePreference) = src
+                                val (sourceSite, sourceId, sourcePart, sourcePartName, tagme, sourcePreference) = src
                                 set(it.sourceSite, sourceSite)
                                 set(it.sourceId, sourceId)
                                 set(it.sourcePart, sourcePart)
+                                set(it.sourcePartName, sourcePartName)
                                 if(tagme != null && form.tagme == null) set(it.tagme, tagme)
                                 if(sourcePreference != null) set(it.sourcePreference, sourcePreference)
                             }
@@ -362,6 +363,7 @@ class ImportService(private val appdata: AppDataManager,
                     sourceSite = record.sourceSite,
                     sourceId = record.sourceId,
                     sourcePart = record.sourcePart,
+                    sourcePartName = record.sourcePartName,
                     partitionTime = record.partitionTime,
                     orderTime = record.orderTime,
                     createTime = record.createTime)

@@ -20,7 +20,7 @@ class AssociateManager(private val data: DataRepository) {
             .leftJoin(AssociateRelations, AssociateRelations.relatedIllustId eq Illusts.id)
             .select(
                 Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime,
-                Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart,
+                Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { AssociateRelations.illustId eq illustId }
             .orderBy(Illusts.orderTime.asc())

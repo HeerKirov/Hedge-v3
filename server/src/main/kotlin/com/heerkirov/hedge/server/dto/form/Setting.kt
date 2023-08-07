@@ -13,7 +13,7 @@ import com.heerkirov.hedge.server.utils.types.Opt
 
 data class SiteCreateForm(@NotBlank @Length(16) val name: String,
                           @NotBlank val title: String,
-                          val hasSecondaryId: Boolean = false,
+                          val partMode: SourceOption.SitePartMode = SourceOption.SitePartMode.NO,
                           val ordinal: Int? = null,
                           val availableAdditionalInfo: List<SourceOption.AvailableAdditionalInfo> = emptyList(),
                           val sourceLinkGenerateRules: List<String> = emptyList())
@@ -25,7 +25,7 @@ data class SiteUpdateForm(@NotBlank val title: Opt<String>,
 
 data class SiteBulkForm(@NotBlank @Length(16) val name: String,
                         @NotBlank val title: Opt<String>,
-                        val hasSecondaryId: Opt<Boolean>,
+                        val partMode: Opt<SourceOption.SitePartMode>,
                         val availableAdditionalInfo: Opt<List<SourceOption.AvailableAdditionalInfo>>,
                         val sourceLinkGenerateRules: Opt<List<String>>)
 

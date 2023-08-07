@@ -9,6 +9,7 @@ import com.heerkirov.hedge.server.model.ImportImage
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.runIf
+import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
 import org.ktorm.dsl.*
 import java.time.LocalDate
@@ -45,19 +46,19 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
         return ret
     }
 
-    fun loadByImage(imageIds: List<Int>, enableFilterBy: Boolean = false): List<EntityInfo> {
-        data class ImageRow(val parentId: Int?, val partitionTime: LocalDate, val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?, val fingerprint: Fingerprint?)
+    private fun loadByImage(imageIds: List<Int>, enableFilterBy: Boolean = false): List<EntityInfo> {
+        data class ImageRow(val parentId: Int?, val partitionTime: LocalDate, val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?, val sourcePartName: String?, val fingerprint: Fingerprint?)
 
         return loadByImageCache.computeIfAbsent(imageIds.joinToString()) {
             val imagesMap = data.db.from(Illusts)
                 .leftJoin(FileFingerprints, FileFingerprints.fileId eq Illusts.fileId)
-                .select(Illusts.id, Illusts.parentId, Illusts.partitionTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, FileFingerprints.fileId, FileFingerprints.pHashSimple, FileFingerprints.pHash, FileFingerprints.dHashSimple, FileFingerprints.dHash)
+                .select(Illusts.id, Illusts.parentId, Illusts.partitionTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName, FileFingerprints.fileId, FileFingerprints.pHashSimple, FileFingerprints.pHash, FileFingerprints.dHashSimple, FileFingerprints.dHash)
                 .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.id inList imageIds) }
                 .associateBy({ it[Illusts.id]!! }) {
                     val fingerprint = it[FileFingerprints.fileId]?.run {
                         Fingerprint(it[FileFingerprints.pHashSimple]!!, it[FileFingerprints.dHashSimple]!!, it[FileFingerprints.pHash]!!, it[FileFingerprints.dHash]!!)
                     }
-                    ImageRow(it[Illusts.parentId], it[Illusts.partitionTime]!!, it[Illusts.sourceSite], it[Illusts.sourceId], it[Illusts.sourcePart], fingerprint)
+                    ImageRow(it[Illusts.parentId], it[Illusts.partitionTime]!!, it[Illusts.sourceSite], it[Illusts.sourceId], it[Illusts.sourcePart], it[Illusts.sourcePartName], fingerprint)
                 }
 
             val imageAuthorsMap = if(!enableFilterBy || !config.filterByAuthor) emptyMap() else {
@@ -118,7 +119,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
 
             imageIds.mapNotNull {
                 val row = imagesMap[it] ?: return@mapNotNull null
-                val sourceIdentity = if(config.findBySourceIdentity && row.sourceSite != null && row.sourceId != null) Triple(row.sourceSite, row.sourceId, row.sourcePart) else null
+                val sourceIdentity = if(config.findBySourceIdentity && row.sourceSite != null && row.sourceId != null) Tuple4(row.sourceSite, row.sourceId, row.sourcePart, row.sourcePartName) else null
                 val sourceRelations = if(config.findBySourceRelation) imageSourceRelationsMap[it] ?: emptyList() else null
                 val sourceBooks = if(config.findBySourceRelation) imageSourceBooksMap[it] ?: emptyList() else null
                 val sourceMarks = if(config.findBySourceMark) imageSourceMarksMap[it] ?: emptyList() else null
@@ -139,13 +140,13 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
     }
 
     fun loadByImportImage(importIds: List<Int>? = null, enableFilterBy: Boolean = false): List<EntityInfo> {
-        data class ImageRow(val partitionTime: LocalDate, val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?, val collectionId: Any?, val bookIds: List<Int>, val cloneImage: ImportImage.CloneImageFrom?, val fingerprint: Fingerprint?)
+        data class ImageRow(val partitionTime: LocalDate, val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?, val sourcePartName: String?, val collectionId: Any?, val bookIds: List<Int>, val cloneImage: ImportImage.CloneImageFrom?, val fingerprint: Fingerprint?)
 
         return loadByImportImageCache.computeIfAbsent(importIds?.joinToString() ?: "") {
             val imagesMap = data.db.from(ImportImages)
                 .leftJoin(FileFingerprints, FileFingerprints.fileId eq ImportImages.fileId)
                 .select(
-                    ImportImages.id, ImportImages.partitionTime, ImportImages.sourceSite, ImportImages.sourceId, ImportImages.sourcePart, ImportImages.collectionId, ImportImages.bookIds, ImportImages.preference,
+                    ImportImages.id, ImportImages.partitionTime, ImportImages.sourceSite, ImportImages.sourceId, ImportImages.sourcePart, ImportImages.sourcePartName, ImportImages.collectionId, ImportImages.bookIds, ImportImages.preference,
                     FileFingerprints.fileId, FileFingerprints.pHashSimple, FileFingerprints.pHash, FileFingerprints.dHashSimple, FileFingerprints.dHash
                 )
                 .runIf(importIds != null) { where { ImportImages.id inList importIds!! } }
@@ -156,7 +157,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                     val fingerprint = it[FileFingerprints.fileId]?.run {
                         Fingerprint(it[FileFingerprints.pHashSimple]!!, it[FileFingerprints.dHashSimple]!!, it[FileFingerprints.pHash]!!, it[FileFingerprints.dHash]!!)
                     }
-                    ImageRow(it[ImportImages.partitionTime]!!, it[ImportImages.sourceSite], it[ImportImages.sourceId], it[ImportImages.sourcePart], cid, it[ImportImages.bookIds] ?: emptyList(), it[ImportImages.preference]?.cloneImage, fingerprint)
+                    ImageRow(it[ImportImages.partitionTime]!!, it[ImportImages.sourceSite], it[ImportImages.sourceId], it[ImportImages.sourcePart], it[ImportImages.sourcePartName], cid, it[ImportImages.bookIds] ?: emptyList(), it[ImportImages.preference]?.cloneImage, fingerprint)
                 }
 
             val imagePartitionsMap = if (!enableFilterBy || !config.filterByPartition) emptyMap() else {
@@ -226,7 +227,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
 
             importIds?.mapNotNull { id ->
                 val row = imagesMap[id] ?: return@mapNotNull null
-                val sourceIdentity = if(config.findBySourceIdentity && row.sourceSite != null && row.sourceId != null) Triple(row.sourceSite, row.sourceId, row.sourcePart) else null
+                val sourceIdentity = if(config.findBySourceIdentity && row.sourceSite != null && row.sourceId != null) Tuple4(row.sourceSite, row.sourceId, row.sourcePart, row.sourcePartName) else null
                 val sourceRelations = if(config.findBySourceRelation) imageSourceRelationsMap[id] ?: emptyList() else null
                 val sourceBooks = if(config.findBySourceRelation) imageSourceBooksMap[id] ?: emptyList() else null
                 val sourceMarks = if(config.findBySourceMark) imageSourceMarksMap[id] ?: emptyList() else null
@@ -238,7 +239,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                     sourceIdentity, sourceRelations, sourceBooks, sourceMarks,
                     row.fingerprint, collectionId, bookIds, row.cloneImage)
             } ?: imagesMap.map { (it, row) ->
-                val sourceIdentity = if(config.findBySourceIdentity && row.sourceSite != null && row.sourceId != null) Triple(row.sourceSite, row.sourceId, row.sourcePart) else null
+                val sourceIdentity = if(config.findBySourceIdentity && row.sourceSite != null && row.sourceId != null) Tuple4(row.sourceSite, row.sourceId, row.sourcePart, row.sourcePartName) else null
                 val sourceRelations = if(config.findBySourceRelation) imageSourceRelationsMap[it] ?: emptyList() else null
                 val sourceBooks = if(config.findBySourceRelation) imageSourceBooksMap[it] ?: emptyList() else null
                 val sourceMarks = if(config.findBySourceMark) imageSourceMarksMap[it] ?: emptyList() else null

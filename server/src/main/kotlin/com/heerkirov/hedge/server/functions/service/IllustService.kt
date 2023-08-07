@@ -63,7 +63,7 @@ class IllustService(private val appdata: AppDataManager,
             .let { if(filter.topic == null) it else it.innerJoin(IllustTopicRelations, (IllustTopicRelations.illustId eq Illusts.id) and (IllustTopicRelations.topicId eq filter.topic)) }
             .let { if(filter.author == null) it else it.innerJoin(IllustAuthorRelations, (IllustAuthorRelations.illustId eq Illusts.id) and (IllustAuthorRelations.authorId eq filter.author)) }
             .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime, Illusts.cachedChildrenCount,
-                Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart,
+                Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .whereWithConditions {
                 it += when(filter.type) {
@@ -90,7 +90,7 @@ class IllustService(private val appdata: AppDataManager,
         return data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
             .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime, Illusts.cachedChildrenCount,
-                Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart,
+                Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList imageIds }
             .map { it[Illusts.id]!! to newIllustRes(it) }
@@ -140,7 +140,7 @@ class IllustService(private val appdata: AppDataManager,
                 FileRecords.resolutionWidth, FileRecords.resolutionHeight, FileRecords.videoDuration,
                 Illusts.type, Illusts.cachedChildrenCount, Illusts.description, Illusts.score,
                 Illusts.exportedDescription, Illusts.exportedScore, Illusts.favorite, Illusts.tagme,
-                Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart,
+                Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 Illusts.partitionTime, Illusts.orderTime, Illusts.createTime, Illusts.updateTime)
             .where { retrieveCondition(id, type) }
             .firstOrNull()
@@ -161,13 +161,11 @@ class IllustService(private val appdata: AppDataManager,
         val score = row[Illusts.exportedScore]
         val favorite = row[Illusts.favorite]!!
         val tagme = row[Illusts.tagme]!!
-        val source = row[Illusts.sourceSite]
-        val sourceId = row[Illusts.sourceId]
-        val sourcePart = row[Illusts.sourcePart]
         val partitionTime = row[Illusts.partitionTime]!!
         val orderTime = row[Illusts.orderTime]!!.parseDateTime()
         val createTime = row[Illusts.createTime]!!
         val updateTime = row[Illusts.updateTime]!!
+        val source = sourcePathOf(row)
 
         val authorColors = appdata.setting.meta.authorColors
         val topicColors = appdata.setting.meta.topicColors
@@ -206,8 +204,7 @@ class IllustService(private val appdata: AppDataManager,
             extension, size, resolutionWidth, resolutionHeight, videoDuration,
             topics, authors, tags,
             description, score, favorite, tagme,
-            originDescription, originScore,
-            source, sourceId, sourcePart,
+            originDescription, originScore, source,
             partitionTime, orderTime, createTime, updateTime
         )
     }
@@ -244,7 +241,7 @@ class IllustService(private val appdata: AppDataManager,
         return data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
             .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime,
-                Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart,
+                Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { (Illusts.parentId eq id) and (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) }
             .limit(filter.offset, filter.limit)
@@ -292,18 +289,16 @@ class IllustService(private val appdata: AppDataManager,
      */
     fun getImageSourceData(id: Int): IllustImageSourceDataRes {
         val row = data.db.from(Illusts)
-            .select(Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart)
+            .select(Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName)
             .where { retrieveCondition(id, IllustType.IMAGE) }
             .firstOrNull()
             ?: throw be(NotFound())
 
-        val source = row[Illusts.sourceSite]
-        val sourceId = row[Illusts.sourceId]
-        val sourcePart = row[Illusts.sourcePart]
-        return if(source != null && sourceId != null) {
-            val site = appdata.setting.source.sites.find { it.name == source }
+        val source = sourcePathOf(row)
+        return if(source != null) {
+            val site = appdata.setting.source.sites.find { it.name == source.sourceSite }
             val sourceRow = data.db.from(SourceDatas).select()
-                .where { (SourceDatas.sourceSite eq source) and (SourceDatas.sourceId eq sourceId) }
+                .where { (SourceDatas.sourceSite eq source.sourceSite) and (SourceDatas.sourceId eq source.sourceId) }
                 .firstOrNull()
             if(sourceRow != null) {
                 val sourceRowId = sourceRow[SourceDatas.id]!!
@@ -321,7 +316,8 @@ class IllustService(private val appdata: AppDataManager,
                     SourceDataAdditionalInfoDto(k, site?.availableAdditionalInfo?.find { it.field == k }?.label ?: "", v)
                 }
 
-                IllustImageSourceDataRes(source, site?.title ?: source, sourceId, sourcePart,
+                IllustImageSourceDataRes(
+                    source, site?.title ?: source.sourceSite,
                     sourceRow[SourceDatas.empty]!!, sourceRow[SourceDatas.status]!!,
                     sourceRow[SourceDatas.title] ?: "", sourceRow[SourceDatas.description] ?: "",
                     sourceTags, sourcePools,
@@ -329,11 +325,12 @@ class IllustService(private val appdata: AppDataManager,
                     sourceRow[SourceDatas.links] ?: emptyList(),
                     additionalInfo)
             }else{
-                IllustImageSourceDataRes(source, site?.title ?: source, sourceId, sourcePart,
+                IllustImageSourceDataRes(
+                    source, site?.title ?: source.sourceSite,
                     true, SourceEditStatus.NOT_EDITED, "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
             }
         }else{
-            IllustImageSourceDataRes(null, null, null, null, true, SourceEditStatus.NOT_EDITED, null, null, null, null, null, null, null)
+            IllustImageSourceDataRes(null, null, true, SourceEditStatus.NOT_EDITED, null, null, null, null, null, null, null)
         }
     }
 
@@ -560,29 +557,35 @@ class IllustService(private val appdata: AppDataManager,
      */
     fun updateImageSourceData(id: Int, form: IllustImageSourceDataUpdateForm) {
         data.db.transaction {
-            val row = data.db.from(Illusts).select(Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.tagme)
+            val row = data.db.from(Illusts).select(Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName, Illusts.tagme)
                 .where { retrieveCondition(id, IllustType.IMAGE) }
                 .firstOrNull()
                 ?: throw be(NotFound())
             val sourceSite = row[Illusts.sourceSite]
             val sourceId = row[Illusts.sourceId]
             val sourcePart = row[Illusts.sourcePart]
+            val sourcePartName = row[Illusts.sourcePartName]
             val tagme = row[Illusts.tagme]!!
-            if(form.sourceSite.isPresent || form.sourceId.isPresent || form.sourcePart.isPresent) {
-                val newSourcePart = form.sourcePart.unwrapOr { sourcePart }
-                val (newSourceDataId, newSourceSite, newSourceId) = sourceManager.checkSourceSite(form.sourceSite.unwrapOr { sourceSite }, form.sourceId.unwrapOr { sourceId }, newSourcePart)
-                    ?.let { (source, sourceId) -> sourceManager.createOrUpdateSourceData(source, sourceId, form.status, form.title, form.description, form.tags, form.books, form.relations, form.links, form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } }) }
-                    ?: Triple(null, null, null)
+            if(form.source.isPresent) {
+                val source = form.source.value
+                val newSourceDataId = if(source != null) {
+                    sourceManager.checkSourceSite(source.sourceSite, source.sourceId, source.sourcePart, source.sourcePartName)
+                    val (rowId, _, _) = sourceManager.createOrUpdateSourceData(source.sourceSite, source.sourceId, form.status, form.title, form.description, form.tags, form.books, form.relations, form.links, form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } })
+                    rowId
+                }else{
+                    null
+                }
                 data.db.update(Illusts) {
                     where { it.id eq id }
                     set(it.sourceDataId, newSourceDataId)
-                    set(it.sourceSite, newSourceSite)
-                    set(it.sourceId, newSourceId)
-                    set(it.sourcePart, newSourcePart)
+                    set(it.sourceSite, source?.sourceSite)
+                    set(it.sourceId, source?.sourceId)
+                    set(it.sourcePart, source?.sourcePart)
+                    set(it.sourcePartName, source?.sourcePartName)
                     if(appdata.setting.meta.autoCleanTagme && Illust.Tagme.SOURCE in tagme) set(it.tagme, tagme - Illust.Tagme.SOURCE)
                 }
             }else{
-                sourceManager.checkSourceSite(sourceSite, sourceId, sourcePart)?.let { (source, sourceId) ->
+                sourceManager.checkSourceSite(sourceSite, sourceId, sourcePart, sourcePartName)?.let { (source, sourceId) ->
                     sourceManager.createOrUpdateSourceData(source, sourceId, form.status, form.title, form.description, form.tags, form.books, form.relations, form.links, form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } })
                 }
             }

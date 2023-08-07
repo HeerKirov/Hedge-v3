@@ -22,8 +22,7 @@ import com.heerkirov.hedge.server.utils.Fs
 import com.heerkirov.hedge.server.utils.deleteIfExists
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tools.defer
-import com.heerkirov.hedge.server.utils.tuples.Tuple4
-import com.heerkirov.hedge.server.utils.types.Opt
+import com.heerkirov.hedge.server.utils.tuples.Tuple5
 import com.heerkirov.hedge.server.utils.types.anyOpt
 import com.heerkirov.hedge.server.utils.types.optOf
 import com.heerkirov.hedge.server.utils.types.undefined
@@ -102,22 +101,11 @@ class ImportManager(private val appdata: AppDataManager,
         val record = data.db.sequenceOf(ImportImages).firstOrNull { it.id eq id } ?: throw be(NotFound())
 
         //source更新检查
-        val (newSource, newSourceId, newSourcePart) = if(form.sourceSite.isPresent) {
-            val source = form.sourceSite.value
-            if(source == null) {
-                if(form.sourceId.unwrapOr { null } != null || form.sourcePart.unwrapOr { null } != null) throw be(ParamNotRequired("sourceId/sourcePart"))
-                else Triple(Opt(null), Opt(null), Opt(null))
-            }else{
-                sourceManager.checkSourceSite(source, form.sourceId.unwrapOr { record.sourceId }, form.sourcePart.unwrapOr { record.sourcePart })
-                Triple(form.sourceSite, form.sourceId, form.sourcePart)
+        form.source.alsoOpt { source ->
+            if(source != null) {
+                sourceManager.checkSourceSite(source.sourceSite, source.sourceId, source.sourcePart, source.sourcePartName)
             }
-        }else if(form.sourceId.unwrapOr { null } != null || form.sourcePart.unwrapOr { null } != null) {
-            if(record.sourceSite == null) throw be(ParamNotRequired("sourceId/sourcePart"))
-            else{
-                sourceManager.checkSourceSite(record.sourceSite, form.sourceId.unwrapOr { record.sourceId }, form.sourcePart.unwrapOr { record.sourcePart })
-                Triple(undefined(), form.sourceId, form.sourcePart)
-            }
-        }else Triple(undefined(), undefined(), undefined())
+        }
 
         val newCollectionId = form.collectionId.letOpt {
             when (form.collectionId.value) {
@@ -144,14 +132,16 @@ class ImportManager(private val appdata: AppDataManager,
             undefined()
         }
 
-        if (form.tagme.isPresent || form.sourceSite.isPresent || form.sourceId.isPresent || form.sourcePart.isPresent ||
-            form.partitionTime.isPresent || form.orderTime.isPresent || form.createTime.isPresent || form.sourcePreference.isPresent ||
-            form.preference.isPresent || form.collectionId.isPresent || newBookIds.isPresent || newFolderIds.isPresent) {
+        if (form.source.isPresent || form.tagme.isPresent || form.partitionTime.isPresent || form.orderTime.isPresent || form.createTime.isPresent ||
+            form.preference.isPresent || form.sourcePreference.isPresent || newCollectionId.isPresent || newBookIds.isPresent || newFolderIds.isPresent) {
             data.db.update(ImportImages) {
                 where { it.id eq id }
-                newSource.applyOpt { set(it.sourceSite, this) }
-                newSourceId.applyOpt { set(it.sourceId, this) }
-                newSourcePart.applyOpt { set(it.sourcePart, this) }
+                form.source.applyOpt {
+                    set(it.sourceSite, this?.sourceSite)
+                    set(it.sourceId, this?.sourceId)
+                    set(it.sourcePart, this?.sourcePart)
+                    set(it.sourcePartName, this?.sourcePartName)
+                }
                 form.tagme.applyOpt { set(it.tagme, this) }
                 form.partitionTime.applyOpt { set(it.partitionTime, this) }
                 form.orderTime.applyOpt { set(it.orderTime, this.toMillisecond()) }
@@ -164,7 +154,7 @@ class ImportManager(private val appdata: AppDataManager,
             }
         }
 
-        val listUpdated = anyOpt(form.sourceSite, form.sourceId, form.sourcePart, form.tagme, form.partitionTime, form.orderTime)
+        val listUpdated = anyOpt(form.source, form.tagme, form.partitionTime, form.orderTime)
         val detailUpdated = listUpdated || anyOpt(form.createTime, form.preference, form.sourcePreference, form.collectionId, newBookIds, newFolderIds)
         if(listUpdated || detailUpdated) {
             bus.emit(ImportUpdated(id, listUpdated = listUpdated, detailUpdated = true))
@@ -208,14 +198,14 @@ class ImportManager(private val appdata: AppDataManager,
 
         val warnings = mutableListOf<BaseException<*>>()
 
-        val (sourceSite, sourceId, sourcePart, sourcePreference) = if(options.autoAnalyseSourceData) {
+        val (sourceSite, sourceId, sourcePart, sourcePartName, sourcePreference) = if(options.autoAnalyseSourceData) {
             try {
                 importMetaManager.analyseSourceMeta(sourceFilename)
             }catch (e: BusinessException) {
                 warnings.add(e.exception)
-                Tuple4(null, null, null, null)
+                Tuple5(null, null, null, null, null)
             }
-        }else Tuple4(null, null, null, null)
+        }else Tuple5(null, null, null, null, null)
 
         val tagme = Illust.Tagme.EMPTY.runIf<Illust.Tagme>(options.setTagmeOfTag) {
             this + Illust.Tagme.TAG + Illust.Tagme.AUTHOR + Illust.Tagme.TOPIC
@@ -239,6 +229,7 @@ class ImportManager(private val appdata: AppDataManager,
             set(it.sourceSite, sourceSite)
             set(it.sourceId, sourceId)
             set(it.sourcePart, sourcePart)
+            set(it.sourcePartName, sourcePartName)
             set(it.partitionTime, partitionTime)
             set(it.orderTime, orderTime.toMillisecond())
             set(it.createTime, fileImportTime)

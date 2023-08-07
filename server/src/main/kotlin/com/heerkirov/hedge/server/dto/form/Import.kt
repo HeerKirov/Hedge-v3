@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.dto.form
 
 import com.heerkirov.hedge.server.components.appdata.ImportOption
+import com.heerkirov.hedge.server.dto.res.SourceDataPath
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.model.ImportImage
 import com.heerkirov.hedge.server.utils.types.Opt
@@ -17,9 +18,7 @@ data class UploadForm(val content: InputStream,
                       val extension: String)
 
 class ImportUpdateForm(val tagme: Opt<Illust.Tagme> = undefined(),
-                       val sourceSite: Opt<String?> = undefined(),
-                       val sourceId: Opt<Long?> = undefined(),
-                       val sourcePart: Opt<Int?> = undefined(),
+                       val source: Opt<SourceDataPath?> = undefined(),
                        val preference: Opt<ImportImage.Preference?> = undefined(),
                        val sourcePreference: Opt<ImportImage.SourcePreference?> = undefined(),
                        val collectionId: Opt<Any?> = undefined(),

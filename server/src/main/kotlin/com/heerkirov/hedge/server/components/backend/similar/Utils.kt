@@ -165,7 +165,7 @@ fun RelationType.toRelationType(): SimilarityType {
  */
 fun RelationType.toRecordInfo(): FindSimilarResult.RelationInfo {
     return when (this) {
-        is SourceIdentityRelationType -> FindSimilarResult.SourceIdentityRelationInfo(site, sourceId, sourcePart)
+        is SourceIdentityRelationType -> FindSimilarResult.SourceIdentityRelationInfo(site, sourceId, sourcePart, sourcePartName)
         is SourceRelatedRelationType -> FindSimilarResult.SourceRelatedRelationInfo(hasRelations, sameBooks?.toList() ?: emptyList())
         is SourceMarkRelationType -> FindSimilarResult.SourceMarkRelationInfo(markType)
         is SimilarityRelationType -> FindSimilarResult.SimilarityRelationInfo(similarity)
@@ -181,7 +181,7 @@ fun getRelationType(type: SimilarityType, params: FindSimilarResult.RelationInfo
         SimilarityType.SOURCE_IDENTITY_EQUAL,
         SimilarityType.SOURCE_IDENTITY_SIMILAR -> {
             val info = params as FindSimilarResult.SourceIdentityRelationInfo
-            SourceIdentityRelationType(info.site, info.sourceId, info.sourcePart, type == SimilarityType.SOURCE_IDENTITY_EQUAL)
+            SourceIdentityRelationType(info.site, info.sourceId, info.sourcePart, info.sourcePartName, type == SimilarityType.SOURCE_IDENTITY_EQUAL)
         }
         SimilarityType.SOURCE_RELATED -> {
             val info = params as FindSimilarResult.SourceRelatedRelationInfo

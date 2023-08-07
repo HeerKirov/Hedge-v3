@@ -14,6 +14,7 @@ import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
 import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
 import com.heerkirov.hedge.server.utils.business.filePathFrom
+import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
@@ -35,7 +36,7 @@ class TrashService(private val appdata: AppDataManager, private val data: DataRe
             .innerJoin(FileRecords, FileRecords.id eq TrashedImages.fileId)
             .select(
                 TrashedImages.imageId, TrashedImages.parentId,
-                TrashedImages.sourceSite, TrashedImages.sourceId, TrashedImages.sourcePart,
+                TrashedImages.sourceSite, TrashedImages.sourceId, TrashedImages.sourcePart, TrashedImages.sourcePartName,
                 TrashedImages.score, TrashedImages.favorite, TrashedImages.tagme,
                 TrashedImages.trashedTime, TrashedImages.orderTime,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
@@ -43,13 +44,13 @@ class TrashService(private val appdata: AppDataManager, private val data: DataRe
             .limit(filter.offset, filter.limit)
             .toListResult {
                 val filePath = filePathFrom(it)
+                val source = sourcePathOf(it[TrashedImages.sourceSite], it[TrashedImages.sourceId], it[TrashedImages.sourcePart], it[TrashedImages.sourcePartName])
                 val trashedTime = it[TrashedImages.trashedTime]!!
                 val remainingTime = if(deadline != null) trashedTime.toMillisecond() - deadline else null
                 TrashedImageRes(
                     it[TrashedImages.imageId]!!, filePath,
                     it[TrashedImages.score], it[TrashedImages.favorite]!!, it[TrashedImages.tagme]!!,
-                    it[TrashedImages.sourceSite], it[TrashedImages.sourceId], it[TrashedImages.sourcePart],
-                    it[TrashedImages.orderTime]!!.parseDateTime(), trashedTime, remainingTime)
+                    source, it[TrashedImages.orderTime]!!.parseDateTime(), trashedTime, remainingTime)
             }
     }
 
@@ -61,6 +62,7 @@ class TrashService(private val appdata: AppDataManager, private val data: DataRe
             .firstOrNull() ?: throw be(NotFound())
 
         val filePath = filePathFrom(row)
+        val source = sourcePathOf(row[TrashedImages.sourceSite], row[TrashedImages.sourceId], row[TrashedImages.sourcePart], row[TrashedImages.sourcePartName])
         val extension = row[FileRecords.extension]!!
         val size = row[FileRecords.size]!!
         val resolutionWidth = row[FileRecords.resolutionWidth]!!
@@ -129,8 +131,7 @@ class TrashService(private val appdata: AppDataManager, private val data: DataRe
             extension, size, resolutionWidth, resolutionHeight, videoDuration,
             topics, authors, tags, parent, books, folders, associates,
             row[TrashedImages.description]!!, row[TrashedImages.score], row[TrashedImages.favorite]!!, row[TrashedImages.tagme]!!,
-            row[TrashedImages.sourceSite], row[TrashedImages.sourceId], row[TrashedImages.sourcePart],
-            row[TrashedImages.partitionTime]!!, row[TrashedImages.orderTime]!!.parseDateTime(),
+            source, row[TrashedImages.partitionTime]!!, row[TrashedImages.orderTime]!!.parseDateTime(),
             row[TrashedImages.createTime]!!, row[TrashedImages.updateTime]!!, trashedTime, remainingTime
         )
     }

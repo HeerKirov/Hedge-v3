@@ -55,6 +55,10 @@ data class Illust(val id: Int,
                    */
                   val sourcePart: Int? = null,
                   /**
+                   * 链接的来源网站的二级图像页名。有些会有，比如e-hentai。
+                   */
+                  val sourcePartName: String? = null,
+                  /**
                    * 简述信息。
                    */
                   val description: String = "",
@@ -240,6 +244,10 @@ data class ImportImage(val id: Int,
                         */
                        val sourcePart: Int?,
                        /**
+                        * 链接的来源网站的二级图像页名。
+                        */
+                       val sourcePartName: String? = null,
+                       /**
                         * 来源数据的预设操作。
                         */
                        val sourcePreference: SourcePreference?,
@@ -308,6 +316,10 @@ data class TrashedImage(val imageId: Int,
                          * 链接的来源网站的二级图像id。有些会有，比如pixiv。
                          */
                         val sourcePart: Int? = null,
+                        /**
+                         * 链接的来源网站的二级图像页名。有些会有，比如e-hentai。
+                         */
+                        val sourcePartName: String? = null,
                         /**
                          * 其他元数据。
                          */

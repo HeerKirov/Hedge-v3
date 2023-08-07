@@ -16,5 +16,4 @@ data class BookDetailRes(val id: Int, val title: String, val imageCount: Int, va
 
 data class BookImageRes(val id: Int, val ordinal: Int, val filePath: FilePath,
                         val score: Int?, val favorite: Boolean, val tagme: Illust.Tagme,
-                        val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?,
-                        val orderTime: LocalDateTime)
+                        val source: SourceDataPath?, val orderTime: LocalDateTime)

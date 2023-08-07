@@ -12,7 +12,8 @@ CREATE TABLE illust(
     source_data_id              INTEGER,                            -- 链接的source data ID
     source_site                 VARCHAR(16),                        -- [冗余]来源网站的代号
     source_id                   BIGINT,                             -- [冗余]来源网站中的图像代号
-    source_part                 INTEGER,                            -- 来源网站中的二级图像代号
+    source_part                 INTEGER,                            -- 来源网站中的图像二级页码
+    source_part_name            VARCHAR(32)                         -- 来源网站中的图像二级页名称
 
     description			        TEXT COLLATE NOCASE NOT NULL DEFAULT '',    -- 简述信息，不存在时记空串
     score						INTEGER DEFAULT NULL,                       -- 图像的评分。具体含义由setting定义
@@ -99,7 +100,8 @@ CREATE TABLE trashed_image(
 
     source_site                 VARCHAR(16),                        -- 来源网站的代号
     source_id                   BIGINT,                             -- 来源网站中的图像代号
-    source_part                 INTEGER,                            -- 来源网站中的二级图像代号
+    source_part                 INTEGER,                            -- 来源网站中的图像二级页码
+    source_part_name            VARCHAR(32),                        -- 来源网站中的图像二级页名称
     metadata                    TEXT NOT NULL,                      -- 其他元数据{tags, topics, authors, books, foldera}
     description			        TEXT COLLATE NOCASE NOT NULL,       -- 简述信息
     score						INTEGER,                            -- 图像的评分
@@ -273,7 +275,8 @@ CREATE TABLE import_image(
 
     source_site         VARCHAR(16) DEFAULT NULL,       -- 来源网站的代号，没有填null
     source_id           BIGINT DEFAULT NULL,            -- 来源网站中的图像代号，没有填null
-    source_part         INTEGER DEFAULT NULL,           -- 来源网站中的二级图像代号，没有填null
+    source_part         INTEGER DEFAULT NULL,           -- 来源网站中的图像二级页码，没有填null
+    source_part_name    VARCHAR(32) DEFAULT NULL,       -- 来源网站中的图像二级页名称，没有填null
     source_preference   TEXT DEFAULT NULL,              -- 来元数据的预设内容
     tagme               INTEGER NOT NULL,               -- 标记为tagme，详见illust部分。可以通过配置决定要不要给项目加初始tagme，以及该加哪些
     partition_time	    DATE NOT NULL,                  -- 用于日历分组的时间

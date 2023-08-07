@@ -4,6 +4,7 @@ import com.heerkirov.hedge.server.enums.FindSimilarEntityType
 import com.heerkirov.hedge.server.enums.SourceMarkType
 import com.heerkirov.hedge.server.model.ImportImage
 import com.heerkirov.hedge.server.model.SourceTag
+import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
 import java.time.LocalDate
 
@@ -16,7 +17,7 @@ sealed interface EntityInfo {
     val id: Int
     val partitionTime: LocalDate
     val sourceTags: List<SourceTag>
-    val sourceIdentity: Triple<String, Long, Int?>?
+    val sourceIdentity: Tuple4<String, Long, Int?, String?>?
     val sourceRelations: List<Long>?
     val sourceBooks: List<Int>?
     val sourceMarks: List<Pair<Int, SourceMarkType>>?
@@ -39,7 +40,7 @@ sealed interface EntityInfo {
 data class IllustEntityInfo(override val id: Int,
                             override val partitionTime: LocalDate,
                             override val sourceTags: List<SourceTag>,
-                            override val sourceIdentity: Triple<String, Long, Int?>?,
+                            override val sourceIdentity: Tuple4<String, Long, Int?, String?>?,
                             override val sourceRelations: List<Long>?,
                             override val sourceBooks: List<Int>?,
                             override val sourceMarks: List<Pair<Int, SourceMarkType>>?,
@@ -61,7 +62,7 @@ data class IllustEntityInfo(override val id: Int,
 data class ImportImageEntityInfo(override val id: Int,
                                  override val partitionTime: LocalDate,
                                  override val sourceTags: List<SourceTag>,
-                                 override val sourceIdentity: Triple<String, Long, Int?>?,
+                                 override val sourceIdentity: Tuple4<String, Long, Int?, String?>?,
                                  override val sourceRelations: List<Long>?,
                                  override val sourceBooks: List<Int>?,
                                  override val sourceMarks: List<Pair<Int, SourceMarkType>>?,
@@ -93,7 +94,7 @@ sealed interface RelationType
 /**
  * source identity相等或近似。
  */
-data class SourceIdentityRelationType(var site: String, var sourceId: Long, var sourcePart: Int?, var equal: Boolean) : RelationType
+data class SourceIdentityRelationType(var site: String, var sourceId: Long, var sourcePart: Int?, var sourcePartName: String?, var equal: Boolean) : RelationType
 
 /**
  * source relation/books有关联。

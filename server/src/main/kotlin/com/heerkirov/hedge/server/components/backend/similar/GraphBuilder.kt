@@ -144,11 +144,11 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
         val adds = mutableListOf<Triple<FindSimilarEntityKey, FindSimilarEntityKey, RelationType>>()
         for (matched in matchedItems) {
             val hasRelations = targetItem.sourceIdentity != null && matched.sourceIdentity != null
-                    && targetItem.sourceIdentity!!.first == matched.sourceIdentity!!.first
+                    && targetItem.sourceIdentity!!.f1 == matched.sourceIdentity!!.f1
                     && (!targetItem.sourceRelations.isNullOrEmpty() || !matched.sourceRelations.isNullOrEmpty())
                     && (
-                        (!targetItem.sourceRelations.isNullOrEmpty() && matched.sourceIdentity!!.second in targetItem.sourceRelations!!)
-                        || (!matched.sourceRelations.isNullOrEmpty() && targetItem.sourceIdentity!!.second in matched.sourceRelations!!)
+                        (!targetItem.sourceRelations.isNullOrEmpty() && matched.sourceIdentity!!.f2 in targetItem.sourceRelations!!)
+                        || (!matched.sourceRelations.isNullOrEmpty() && targetItem.sourceIdentity!!.f2 in matched.sourceRelations!!)
                         || (!targetItem.sourceRelations.isNullOrEmpty() && !matched.sourceRelations.isNullOrEmpty() && targetItem.sourceRelations!!.any { it in matched.sourceRelations!! })
                     )
             if(hasRelations) {
@@ -215,41 +215,52 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
     private fun matchForSourceIdentity(targetItem: EntityInfo) {
         if(targetItem.sourceIdentity != null) {
             val adds = mutableListOf<Triple<FindSimilarEntityKey, FindSimilarEntityKey, RelationType>>()
-            val (site, sid, part) = targetItem.sourceIdentity!!
+            val (site, sid, part, partName) = targetItem.sourceIdentity!!
             val entityKey = targetItem.toEntityKey()
 
+            //从Illust、ImportImage中筛选出所有与当前项的sourceIdentity等价的项。
+            //等价的判定条件：site相等；id相等；有partName时partName相等，无时part相等，否则part/name均为null
             data.db.from(Illusts)
                 .select(Illusts.id)
                 .whereWithConditions {
                     if(targetItem is IllustEntityInfo) it += Illusts.id notEq targetItem.id
                     it += (Illusts.sourceSite eq site) and (Illusts.sourceId eq sid)
-                    it += if(part != null) (Illusts.sourcePart eq part) else (Illusts.sourcePart.isNull())
+                    it += if(partName != null) (Illusts.sourcePartName eq partName) else if(part != null) (Illusts.sourcePart eq part) else (Illusts.sourcePart.isNull() and Illusts.sourcePartName.isNull())
                 }
                 .map { it[Illusts.id]!! }
-                .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.ILLUST, it), SourceIdentityRelationType(site, sid, part, true)) }
+                .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.ILLUST, it), SourceIdentityRelationType(site, sid, part, partName, true)) }
                 .let { adds.addAll(it) }
             data.db.from(ImportImages)
                 .select(ImportImages.id)
                 .whereWithConditions {
-                    if(targetItem is ImportImageEntityInfo) it += Illusts.id notEq targetItem.id
+                    if(targetItem is ImportImageEntityInfo) it += ImportImages.id notEq targetItem.id
                     it += (ImportImages.sourceSite eq site) and (ImportImages.sourceId eq sid)
-                    it += if(part != null) (ImportImages.sourcePart eq part) else (ImportImages.sourcePart.isNull()) }
+                    it += if(partName != null) (ImportImages.sourcePartName eq partName) else if(part != null) (ImportImages.sourcePart eq part) else (ImportImages.sourcePart.isNull() and ImportImages.sourcePartName.isNull())
+                }
                 .map { it[ImportImages.id]!! }
-                .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it), SourceIdentityRelationType(site, sid, part, true)) }
+                .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it), SourceIdentityRelationType(site, sid, part, partName, true)) }
                 .let { adds.addAll(it) }
 
-            if(part != null) {
+            if(partName != null || part != null) {
                 data.db.from(Illusts)
                     .select(Illusts.id)
-                    .where { (Illusts.sourceSite eq site) and (Illusts.sourceId eq sid) and (Illusts.sourcePart notEq part) }
+                    .whereWithConditions {
+                        if(targetItem is IllustEntityInfo) it += Illusts.id notEq targetItem.id
+                        it += (Illusts.sourceSite eq site) and (Illusts.sourceId eq sid)
+                        it += if(partName != null) (Illusts.sourcePartName notEq partName) else if(part != null) (Illusts.sourcePart notEq part) else (Illusts.sourcePart.isNotNull() or Illusts.sourcePartName.isNotNull())
+                    }
                     .map { it[Illusts.id]!! }
-                    .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.ILLUST, it), SourceIdentityRelationType(site, sid, null, false)) }
+                    .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.ILLUST, it), SourceIdentityRelationType(site, sid, null, null, false)) }
                     .let { adds.addAll(it) }
                 data.db.from(ImportImages)
                     .select(ImportImages.id)
-                    .where { (ImportImages.sourceSite eq site) and (ImportImages.sourceId eq sid) and (ImportImages.sourcePart notEq part) }
+                    .whereWithConditions {
+                        if(targetItem is ImportImageEntityInfo) it += ImportImages.id notEq targetItem.id
+                        it += (ImportImages.sourceSite eq site) and (ImportImages.sourceId eq sid)
+                        it += if(partName != null) (ImportImages.sourcePartName notEq partName) else if(part != null) (ImportImages.sourcePart notEq part) else (ImportImages.sourcePart.isNotNull() or ImportImages.sourcePartName.isNotNull())
+                    }
                     .map { it[ImportImages.id]!! }
-                    .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it), SourceIdentityRelationType(site, sid, null, false)) }
+                    .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it), SourceIdentityRelationType(site, sid, null, null, false)) }
                     .let { adds.addAll(it) }
             }
 

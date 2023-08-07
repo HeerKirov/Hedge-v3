@@ -1,12 +1,26 @@
 package com.heerkirov.hedge.server.utils.business
 
+import com.heerkirov.hedge.server.dao.Illusts
 import com.heerkirov.hedge.server.dto.res.BulkResult
 import com.heerkirov.hedge.server.dto.res.ErrorResult
 import com.heerkirov.hedge.server.dto.res.ListResult
+import com.heerkirov.hedge.server.dto.res.SourceDataPath
 import com.heerkirov.hedge.server.exceptions.BusinessException
 import org.ktorm.dsl.Query
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.dsl.map
+
+fun sourcePathOf(sourceSite: String?, sourceId: Long?, sourcePart: Int?, sourcePartName: String?): SourceDataPath? {
+    return if(sourceSite != null && sourceId != null) SourceDataPath(sourceSite, sourceId, sourcePart, sourcePartName) else null
+}
+
+fun sourcePathOf(row: QueryRowSet): SourceDataPath? {
+    val source = row[Illusts.sourceSite]
+    val sourceId = row[Illusts.sourceId]
+    val sourcePart = row[Illusts.sourcePart]
+    val sourcePartName = row[Illusts.sourcePartName]
+    return if(source != null && sourceId != null) SourceDataPath(source, sourceId, sourcePart, sourcePartName) else null
+}
 
 inline fun <T, R> ListResult<T>.map(transform: (T) -> R): ListResult<R> {
     return ListResult(this.total, this.result.map(transform))

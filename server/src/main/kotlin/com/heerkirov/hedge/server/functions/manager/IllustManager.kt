@@ -39,14 +39,13 @@ class IllustManager(private val data: DataRepository,
      * @throws ResourceNotSuitable ("tags", number[]) 部分tags资源不适用。地址段不适用于此项。给出不适用的tag id列表
      * @throws ConflictingGroupMembersError 发现标签冲突组
      */
-    fun newImage(fileId: Int, sourceSite: String? = null, sourceId: Long? = null, sourcePart: Int? = null,
+    fun newImage(fileId: Int, sourceSite: String? = null, sourceId: Long? = null, sourcePart: Int? = null, sourcePartName: String? = null,
                  description: String = "", score: Int? = null, favorite: Boolean = false, tagme: Illust.Tagme = Illust.Tagme.EMPTY,
                  partitionTime: LocalDate, orderTime: Long, createTime: LocalDateTime): Int {
         partitionManager.addItemInPartition(partitionTime)
 
-        val (newSourceDataId, newSourceSite, newSourceId) = sourceManager.checkSourceSite(sourceSite, sourceId, sourcePart)
+        val newSourceDataId = sourceManager.checkSourceSite(sourceSite, sourceId, sourcePart, sourcePartName)
             ?.let { (source, sourceId) -> sourceManager.validateAndCreateSourceDataIfNotExist(source, sourceId) }
-            ?: Triple(null, null, null)
 
         val id = data.db.insertAndGenerateKey(Illusts) {
             set(it.type, IllustModelType.IMAGE)
@@ -55,9 +54,10 @@ class IllustManager(private val data: DataRepository,
             set(it.cachedChildrenCount, 0)
             set(it.cachedBookCount, 0)
             set(it.sourceDataId, newSourceDataId)
-            set(it.sourceSite, newSourceSite)
-            set(it.sourceId, newSourceId)
+            set(it.sourceSite, sourceSite)
+            set(it.sourceId, sourceId)
             set(it.sourcePart, sourcePart)
+            set(it.sourcePartName, sourcePartName)
             set(it.description, description)
             set(it.score, score)
             set(it.favorite, favorite)
@@ -99,6 +99,7 @@ class IllustManager(private val data: DataRepository,
             set(it.sourceSite, null)
             set(it.sourceId, null)
             set(it.sourcePart, null)
+            set(it.sourcePartName, null)
             set(it.description, formDescription)
             set(it.score, formScore)
             set(it.favorite, formFavorite)
@@ -240,6 +241,7 @@ class IllustManager(private val data: DataRepository,
                     set(it.sourceSite, fromIllust.sourceSite)
                     set(it.sourceId, fromIllust.sourceId)
                     set(it.sourcePart, fromIllust.sourcePart)
+                    set(it.sourcePartName, fromIllust.sourcePartName)
                     set(it.sourceDataId, fromIllust.sourceDataId)
                 }
             }

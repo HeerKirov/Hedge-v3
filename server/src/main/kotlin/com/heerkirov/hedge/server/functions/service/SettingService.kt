@@ -16,6 +16,7 @@ import org.ktorm.dsl.eq
 import org.ktorm.dsl.inList
 import org.ktorm.entity.any
 import org.ktorm.entity.sequenceOf
+import java.util.regex.Pattern
 
 class SettingService(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus) {
     fun getServer(): ServerOption {
@@ -150,7 +151,7 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
                 }
             }
 
-            val newSite = SourceOption.Site(form.name, form.title, form.hasSecondaryId, form.availableAdditionalInfo, form.sourceLinkGenerateRules)
+            val newSite = SourceOption.Site(form.name, form.title, form.partMode, form.availableAdditionalInfo, form.sourceLinkGenerateRules)
 
             val ordinal = form.ordinal?.let {
                 when {
@@ -260,7 +261,7 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
             val (updates, adds) = sites.filterInto { it.name in exists.keys }
             for(update in updates) {
                 val cur = exists[update.name]!!
-                if(update.hasSecondaryId.isPresent && update.hasSecondaryId.value != cur.hasSecondaryId) throw be(Reject("Param 'hasSecondaryId' cannot be modified for existed site '${update.name}'."))
+                if(update.partMode.isPresent && update.partMode.value != cur.partMode) throw be(Reject("Param 'partMode' cannot be modified for existed site '${update.name}'."))
             }
             for(add in adds) {
                 if(add.title.isUndefined) throw be(Reject("Param 'title' must be provided for not existed site '${add.name}'."))
@@ -287,7 +288,7 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
                     source.sites.add(SourceOption.Site(
                         form.name,
                         form.title.unwrapOr { cur.title },
-                        cur.hasSecondaryId,
+                        cur.partMode,
                         form.availableAdditionalInfo.unwrapOr { cur.availableAdditionalInfo },
                         form.sourceLinkGenerateRules.unwrapOr { cur.sourceLinkGenerateRules }
                     ))
@@ -295,7 +296,7 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
                     source.sites.add(SourceOption.Site(
                         form.name,
                         form.title.value,
-                        form.hasSecondaryId.unwrapOr { false },
+                        form.partMode.unwrapOr { SourceOption.SitePartMode.NO },
                         form.availableAdditionalInfo.unwrapOr { emptyList() },
                         form.sourceLinkGenerateRules.unwrapOr { emptyList() }
                     ))
@@ -310,18 +311,34 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
      * @throws InvalidRuleIndexError (string, string) rule的index与regex不匹配
      */
     private fun checkImportRule(rule: ImportOption.SourceAnalyseRule, site: SourceOption.Site) {
-        if((rule.secondaryIdGroup != null) xor site.hasSecondaryId) throw be(InvalidRuleIndexError(site.name, rule.regex))
+        try {
+            Pattern.compile(rule.regex)
+        }catch (e: Exception) {
+            throw be(InvalidRuleIndexError(site.name, rule.regex, "regex"))
+        }
         if(rule.idGroup.isBlank()) throw be(ParamRequired("idGroup"))
-        if(site.hasSecondaryId && rule.secondaryIdGroup.isNullOrBlank()) throw be(ParamRequired("secondaryIdGroup"))
+        when(site.partMode) {
+            SourceOption.SitePartMode.NO -> {
+                if(!rule.partGroup.isNullOrBlank()) throw be(InvalidRuleIndexError(site.name, rule.regex, "partGroup"))
+                if(!rule.partNameGroup.isNullOrBlank()) throw be(InvalidRuleIndexError(site.name, rule.regex, "partNameGroup"))
+            }
+            SourceOption.SitePartMode.PAGE -> {
+                if(rule.partGroup.isNullOrBlank()) throw be(InvalidRuleIndexError(site.name, rule.regex, "partGroup"))
+                if(!rule.partNameGroup.isNullOrBlank()) throw be(InvalidRuleIndexError(site.name, rule.regex, "partNameGroup"))
+            }
+            SourceOption.SitePartMode.PAGE_WITH_NAME -> {
+                if(rule.partGroup.isNullOrBlank()) throw be(InvalidRuleIndexError(site.name, rule.regex, "partGroup"))
+            }
+        }
         if(!rule.extras.isNullOrEmpty()) {
             for(extra in rule.extras) {
-                if(extra.group.isBlank()) throw be(ParamRequired("group"))
+                if(extra.group.isBlank()) throw be(InvalidRuleIndexError(site.name, rule.regex, "group"))
                 if(extra.target == ImportOption.SourceAnalyseRuleExtraTarget.ADDITIONAL_INFO) {
-                    if(extra.additionalInfoField.isNullOrEmpty()) throw be(ParamRequired("additionalInfoField"))
+                    if(extra.additionalInfoField.isNullOrEmpty()) throw be(InvalidRuleIndexError(site.name, rule.regex, "additionalInfoField"))
                     else if(site.availableAdditionalInfo.none { it.field == extra.additionalInfoField }) throw be(ParamError("additionalInfoField"))
                 }
-                if(extra.target != ImportOption.SourceAnalyseRuleExtraTarget.ADDITIONAL_INFO && !extra.additionalInfoField.isNullOrEmpty()) throw be(ParamNotRequired("additionalInfoField"))
-                if(extra.target != ImportOption.SourceAnalyseRuleExtraTarget.TAG && !extra.tagType.isNullOrEmpty()) throw be(ParamNotRequired("tagType"))
+                if(extra.target != ImportOption.SourceAnalyseRuleExtraTarget.ADDITIONAL_INFO && !extra.additionalInfoField.isNullOrEmpty()) throw be(InvalidRuleIndexError(site.name, rule.regex, "additionalInfoField"))
+                if(extra.target != ImportOption.SourceAnalyseRuleExtraTarget.TAG && !extra.tagType.isNullOrEmpty()) throw be(InvalidRuleIndexError(site.name, rule.regex, "tagType"))
             }
         }
     }

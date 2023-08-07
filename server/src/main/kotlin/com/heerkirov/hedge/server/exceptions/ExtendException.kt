@@ -1,8 +1,6 @@
 package com.heerkirov.hedge.server.exceptions
 
-import com.heerkirov.hedge.server.utils.tuples.Tuple2
 import com.heerkirov.hedge.server.utils.tuples.Tuple3
-import com.heerkirov.hedge.server.utils.tuples.t2
 import com.heerkirov.hedge.server.utils.tuples.t3
 
 /**
@@ -105,13 +103,13 @@ class InvalidRegexError(regex: String, msg: String): BadRequestException<String>
 
 /**
  * 当编写的rule的index与site的规则不匹配时，抛出此异常。
- * 指secondaryId存在/不存在而与site的规则要求相反时的情况。
+ * 指partGroup、partNameGroup、extras等与site的规则要求相反时的情况。
  * 抛出位置：
  * - 更新import rule列表时
  *
- * info: (string, string): site名称, regex内容
+ * info: (string, string, string): site名称, regex内容, 字段名
  */
-class InvalidRuleIndexError(site: String, regex: String) : BadRequestException<Tuple2<String, String>>("INVALID_RULE_INDEX", "Rule [$site] $regex has secondaryId config which not suit to site config.", t2(site, regex))
+class InvalidRuleIndexError(site: String, regex: String, field: String) : BadRequestException<Tuple3<String, String, String>>("INVALID_RULE_INDEX", "Rule [$site] '$regex': $field config which not suit to site config.", t3(site, regex, field))
 
 /**
  * 当给出的颜色值不符合要求时，抛出此异常。

@@ -75,6 +75,7 @@ class TrashManager(private val data: DataRepository,
             set(it.sourceSite, illust.sourceSite)
             set(it.sourceId, illust.sourceId)
             set(it.sourcePart, illust.sourcePart)
+            set(it.sourcePartName, illust.sourcePartName)
             set(it.partitionTime, illust.partitionTime)
             set(it.createTime, illust.createTime)
             set(it.updateTime, illust.updateTime)
@@ -123,9 +124,8 @@ class TrashManager(private val data: DataRepository,
                     data.db.sequenceOf(Illusts).firstOrNull { (Illusts.type eq IllustModelType.COLLECTION) and (Illusts.id eq item.parentId) }
                 }
 
-                val (newSourceDataId, newSourceSite, newSourceId) = sourceManager.checkSourceSite(item.sourceSite, item.sourceId, item.sourcePart)
+                val newSourceDataId = sourceManager.checkSourceSite(item.sourceSite, item.sourceId, item.sourcePart, item.sourcePartName)
                     ?.let { (source, sourceId) -> sourceManager.validateAndCreateSourceDataIfNotExist(source, sourceId) }
-                    ?: Triple(null, null, null)
 
                 val exportedDescription = if(item.description.isEmpty() && collection != null) collection.exportedDescription else item.description
                 val exportedScore = if(item.score == null && collection != null) collection.exportedScore else item.score
@@ -138,9 +138,10 @@ class TrashManager(private val data: DataRepository,
                     set(it.cachedChildrenCount, 0)
                     set(it.cachedBookCount, 0)
                     set(it.sourceDataId, newSourceDataId)
-                    set(it.sourceSite, newSourceSite)
-                    set(it.sourceId, newSourceId)
+                    set(it.sourceSite, item.sourceSite)
+                    set(it.sourceId, item.sourceId)
                     set(it.sourcePart, item.sourcePart)
+                    set(it.sourcePartName, item.sourcePartName)
                     set(it.description, item.description)
                     set(it.score, item.score)
                     set(it.favorite, item.favorite)
