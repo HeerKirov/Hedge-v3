@@ -1,10 +1,11 @@
 const path = require("path")
 const fs = require("fs")
 const child = require("child_process")
+const utils = require("../common/utils")
 
 const APP_NAME = "Hedge.app"
 
-const APP_BIN_NAME = "hedge-v2"
+const APP_BIN_NAME = "hedge"
 const APP_ICN_NAME = "hedge.icns"
 
 function build(argv, target) {
@@ -67,6 +68,7 @@ function installClient(target) {
     fs.mkdirSync(appPath)
     child.spawnSync("cp", ["-R", "target", "node_modules", appPath])
     child.spawnSync("cp", ["package.json", appPath])
+    utils.makePackageProduction(path.join(appPath, "package.json"))
     fs.rmSync(path.join(appPath, "node_modules/typescript"), {recursive: true, force: true})
     fs.rmSync(path.join(appPath, "node_modules/electron/dist"), {recursive: true, force: true})
     fs.rmSync(path.join(appPath, "node_modules/@types"), {recursive: true, force: true})
