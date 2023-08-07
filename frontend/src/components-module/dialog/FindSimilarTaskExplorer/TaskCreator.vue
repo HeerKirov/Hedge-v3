@@ -35,11 +35,11 @@ const { form, submit } = useTaskCreatorData(() => emit("close"))
                 </p>
                 <p class="mt-3">
                     <CheckBox v-model:value="form.config.findBySourceKey">来源一致性判断</CheckBox>
-                    <p class="secondary-text">对于拥有完全相同的来源、来源ID、分P的图像，直接将其判定为相同项。</p>
+                    <p class="secondary-text">对于拥有完全相同的来源、来源ID、分页的图像，直接将其判定为相同项。</p>
                 </p>
                 <p class="mt-1">
                     <CheckBox v-model:value="form.config.findBySourceRelation">来源关系判断</CheckBox>
-                    <p class="secondary-text">根据来源的关联项、集合、分P等属性，查找出在来源具有血缘关系的图像。</p>
+                    <p class="secondary-text">根据来源的关联项、集合、分页等属性，查找出在来源具有血缘关系的图像。</p>
                 </p>
                 <p class="mt-1">
                     <CheckBox v-model:value="form.config.findBySourceMark">来源标记</CheckBox>

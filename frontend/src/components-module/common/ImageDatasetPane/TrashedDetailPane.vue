@@ -49,7 +49,7 @@ const remain = (remainingTime: number | null) => {
                 <span v-if="data.remainingTime !== null" class="float-right has-text-warning">{{ remain(data.remainingTime) }}</span>
             </p>
             <Separator direction="horizontal"/>
-            <SourceInfo v-if="data.sourceSite !== null" class="mt-1" :site="data.sourceSite" :source-id="data.sourceId" :source-part="data.sourcePart"/>
+            <SourceInfo v-if="data.source !== null" class="mt-1" :source="data.source"/>
             <ScoreDisplay v-if="data.score !== null" class="mt-1" :value="data.score"/>
             <DescriptionDisplay v-if="data.description" class="mt-1" :value="data.description"/>
             <MetaTagListDisplay v-if="data.topics.length || data.authors.length || data.tags.length" class="my-1" :topics="data.topics" :authors="data.authors" :tags="data.tags"/>

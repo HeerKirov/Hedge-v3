@@ -8,18 +8,18 @@ import {
 import { SourceIdentityEditor, SourceEditStatusEditor } from "@/components-business/form-editor"
 import { useSideBarSourceData } from "@/services/view-stack/image"
 
-const { data, sourceIdentity, setSourceStatus, setSourceIdentity, openSourceDataEditor } = useSideBarSourceData()
+const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceDataEditor } = useSideBarSourceData()
 
 </script>
 
 <template>
     <template v-if="data !== null">
-        <FormEditKit class="mb-2" :value="sourceIdentity!" :set-value="setSourceIdentity">
+        <FormEditKit class="mb-2" :value="sourceDataPath!" :set-value="setSourceDataPath">
             <template #default="{ value }">
-                <SourceInfo :source-id="value.sourceId" :source-part="value.sourcePart" :site="value.site"/>
+                <SourceInfo :source="value"/>
             </template>
             <template #edit="{ value, setValue }">
-                <SourceIdentityEditor :source-id="value.sourceId" :source-part="value.sourcePart" :site="value.site" @update="setValue"/>
+                <SourceIdentityEditor :source="value" @update:source="setValue"/>
             </template>
         </FormEditKit>
         <FormEditKit class="mb-2" :value="data.status" :set-value="setSourceStatus">
@@ -30,7 +30,7 @@ const { data, sourceIdentity, setSourceStatus, setSourceIdentity, openSourceData
                 <SourceEditStatusEditor :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
-        <template v-if="data.sourceSite !== null">
+        <template v-if="data.source !== null">
             <Separator direction="horizontal"/>
             <TitleDisplay :value="data.title" @dblclick="openSourceDataEditor"/>
             <DescriptionDisplay :value="data.description" @dblclick="openSourceDataEditor"/>

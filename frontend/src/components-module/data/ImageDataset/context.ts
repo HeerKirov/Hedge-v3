@@ -1,5 +1,6 @@
 import { computed, ref, Ref } from "vue"
 import { IllustType, Tagme } from "@/functions/http-client/api/illust"
+import { FilePath, SourceDataPath } from "@/functions/http-client/api/all"
 import { PaginationData, QueryInstance } from "@/functions/fetch"
 import { useVirtualViewNavigation } from "@/components/data"
 import { useToast } from "@/modules/toast"
@@ -7,7 +8,6 @@ import { useInterceptedKey } from "@/modules/keyboard"
 import { TypeDefinition, useDraggable, useDroppable } from "@/modules/drag"
 import { installation } from "@/utils/reactivity"
 import { LocalDateTime } from "@/utils/datetime"
-import { FilePath } from "@/functions/http-client/api/all"
 
 const SELECTED_MAX = 200
 
@@ -20,9 +20,7 @@ export interface SuitableIllust {
     childrenCount?: number | null
     tagme: Tagme[]
     score: number | null
-    sourceSite: string | null
-    sourceId: number | null
-    sourcePart: number | null
+    source: SourceDataPath | null
 }
 
 interface DatasetContextOptions {

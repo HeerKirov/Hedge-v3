@@ -17,6 +17,7 @@ import { useSettingSite } from "@/services/setting"
 import { installation } from "@/utils/reactivity"
 import { LocalDate, LocalDateTime } from "@/utils/datetime"
 import { arrays } from "@/utils/primitives"
+import { SourceDataPath } from "@/functions/http-client/api/all"
 
 export const [installFindSimilarContext, useFindSimilarContext] = installation(function () {
     const paneState = useDetailViewState<number>()
@@ -513,11 +514,7 @@ export function useFindSimilarCompareData(id: Ref<{type: "IMPORT_IMAGE" | "ILLUS
                             updateTime: metadata.data.updateTime,
                             orderTime: metadata.data.orderTime,
                         },
-                        sourceData: {
-                            site: sourceData.data.sourceSite,
-                            sourceId: sourceData.data.sourceId,
-                            sourcePart: sourceData.data.sourcePart,
-                        },
+                        sourceData: sourceData.data.source,
                         relatedItems: {
                             collection: relatedItems.data.collection?.id,
                             books: relatedItems.data.books,
@@ -554,11 +551,7 @@ export function useFindSimilarCompareData(id: Ref<{type: "IMPORT_IMAGE" | "ILLUS
                             updateTime: res.data.createTime,
                             orderTime: res.data.orderTime,
                         },
-                        sourceData: {
-                            site: res.data.sourceSite,
-                            sourceId: res.data.sourceId,
-                            sourcePart: res.data.sourcePart,
-                        },
+                        sourceData: res.data.source,
                         relatedItems: {
                             collection: res.data.collectionId,
                             books: res.data.books,
@@ -607,11 +600,7 @@ export interface FindSimilarCompareData {
         updateTime: LocalDateTime,
         orderTime: LocalDateTime,
     },
-    sourceData: {
-        site: string | null,
-        sourceId: number | null,
-        sourcePart: number | null,
-    },
+    sourceData: SourceDataPath | null,
     relatedItems: {
         collection: number | string | null,
         books: SimpleBook[],

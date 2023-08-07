@@ -26,7 +26,9 @@ const site = computed(() => content.value.site ? sites.value?.find(s => s.name =
 
 const siteSelectItems = computed(() => sites.value?.map(s => ({label: s.title, value: s.name})) ?? [])
 
-const hasSecondaryId = computed(() => site.value?.hasSecondaryId ?? false)
+const hasPart = computed(() => site.value?.partMode !== "NO" ?? false)
+
+const hasPartName = computed(() => site.value?.partMode === "PAGE_WITH_NAME" ?? false)
 
 const extraTargetItems: {label: string, value: SourceAnalyseRuleExtraTarget}[] = [
     {label: "标题", value: "TITLE"},
@@ -94,9 +96,13 @@ const trash = async () => {
                 <label class="label">ID生成位置</label>
                 <Input class="mt-1" width="one-third" v-model:value="content.idGroup"/>
             </div>
-            <div v-if="hasSecondaryId">
-                <label class="label">分P生成位置</label>
-                <Input class="mt-1" width="one-third" v-model:value="content.secondaryIdGroup"/>
+            <div v-if="hasPart">
+                <label class="label">分页生成位置</label>
+                <Input class="mt-1" width="one-third" v-model:value="content.partGroup"/>
+            </div>
+            <div v-if="hasPartName">
+                <label class="label">页码生成位置</label>
+                <Input class="mt-1" width="one-third" v-model:value="content.partNameGroup"/>
             </div>
         </Flex>
         <a class="float-right is-font-size-small has-text-success" @click="addExtra"><Icon class="mr-1" icon="plus"/>添加一项额外信息</a>

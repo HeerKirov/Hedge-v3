@@ -55,7 +55,7 @@ const popupMenu = usePopupMenu(computed(() => [
     {type: "normal", label: "暂存", click: addToStagingPost},
     {type: "separator"},
     {type: "normal", label: "编辑标签", click: editMetaTag},
-    {type: "normal", label: "编辑来源数据", enabled: !!data.value?.sourceSite, click: editSourceData},
+    {type: "normal", label: "编辑来源数据", enabled: !!data.value?.source, click: editSourceData},
     {type: "normal", label: "编辑关联组", click: editAssociate},
     {type: "normal", label: "添加到目录…", click: addToFolder},
     ...recentFolders.value.map(f => ({type: "normal", label: `添加到目录"${f.fullName}"`, click: f.click} as const)),

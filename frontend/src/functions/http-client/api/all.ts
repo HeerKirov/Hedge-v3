@@ -55,6 +55,13 @@ export interface NullableFilePath {
     extension: string
 }
 
+export interface SourceDataPath {
+    sourceSite: string
+    sourceId: number
+    sourcePart: number | null
+    sourcePartName: string | null
+}
+
 type OrderPrefix = "" | "+" | "-"
 
 type OrderListItem<T extends string> = `${OrderPrefix}${T}`

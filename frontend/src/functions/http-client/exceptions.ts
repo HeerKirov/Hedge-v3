@@ -111,7 +111,7 @@ export type CannotGiveColorError = BadRequestException<"CANNOT_GIVE_COLOR", null
 export type IllegalConstraintError<P extends string, R extends string, V> = BadRequestException<"ILLEGAL_CONSTRAINT", [P, R, V[]]>
 export type ConflictingGroupMembersError = BadRequestException<"CONFLICTING_GROUP_MEMBERS", ConflictingMembers[]>
 export type InvalidRegexError = BadRequestException<"INVALID_REGEX", string>
-export type InvalidRuleIndexError = BadRequestException<"INVALID_RULE_INDEX", [string, string]>
+export type InvalidRuleIndexError = BadRequestException<"INVALID_RULE_INDEX", [string, string, string]>
 
 interface ConflictingMembers { group: Member, force: boolean, members: Member[] }
 interface Member { id: number, name: string, color: UsefulColors | null, isExported: boolean }

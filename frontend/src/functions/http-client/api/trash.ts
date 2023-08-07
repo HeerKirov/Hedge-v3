@@ -1,7 +1,7 @@
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 import { NotFound } from "../exceptions"
 import { HttpInstance, Response } from "../instance"
-import { FilePath, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList, SimpleAuthor, SimpleTag, SimpleTopic } from "./all"
+import { FilePath, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList, SimpleAuthor, SimpleTag, SimpleTopic, SourceDataPath } from "./all"
 import { SimpleCollection, SimpleIllust, Tagme } from "./illust"
 import { SimpleFolder } from "./folder"
 import { SimpleBook } from "./book"
@@ -73,9 +73,7 @@ export interface TrashedImage {
     score: number | null
     favorite: boolean
     tagme: Tagme[]
-    sourceSite: string | null
-    sourceId: number | null
-    sourcePart: number | null
+    source: SourceDataPath | null
     orderTime: LocalDateTime
     trashedTime: LocalDateTime
     remainingTime: number | null

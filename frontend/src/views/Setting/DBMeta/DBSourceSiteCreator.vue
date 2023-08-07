@@ -16,7 +16,8 @@ const message = useMessageBox()
 const form = reactive({
     name: "",
     title: "",
-    hasSecondaryId: false,
+    hasPart: false,
+    hasPartName: false,
     availableAdditionalInfo: <{field: string, label: string}[]>[],
     sourceLinkGenerateRules: <string[]>[]
 })
@@ -47,10 +48,19 @@ const submit = () => {
             return
         }
     }
-    emit("create", {...form})
+
+    emit("create", {
+        name: form.name,
+        title: form.title,
+        partMode: form.hasPart ? (form.hasPartName ? "PAGE_WITH_NAME" : "PAGE") : "NO",
+        sourceLinkGenerateRules: form.sourceLinkGenerateRules,
+        availableAdditionalInfo: form.availableAdditionalInfo
+    })
+
     form.name = ""
     form.title = ""
-    form.hasSecondaryId = false
+    form.hasPart = false
+    form.hasPartName = false
     form.sourceLinkGenerateRules = []
     form.availableAdditionalInfo = []
 }
@@ -89,7 +99,10 @@ const trashSourceLinkGenerateRule = (idx: number) => {
                 </div>
             </FlexItem>
         </Flex>
-        <div class="is-line-height-std"><CheckBox v-model:value="form.hasSecondaryId">启用二级ID</CheckBox></div>
+        <div class="is-line-height-std">
+            <CheckBox v-model:value="form.hasPart">启用二级分页</CheckBox>
+            <CheckBox class="ml-2" v-model:value="form.hasPartName" :disabled="!form.hasPart">启用分页页名</CheckBox>
+        </div>
         <Flex :spacing="1">
             <FlexItem :width="50">
                 <div>

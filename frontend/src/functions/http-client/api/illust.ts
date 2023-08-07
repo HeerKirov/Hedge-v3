@@ -7,7 +7,7 @@ import {
     ResourceNotExist,
     ResourceNotSuitable
 } from "../exceptions"
-import { FilePath, IdResponse, LimitAndOffsetFilter, LimitFilter, ListResult, OrderList } from "./all"
+import { FilePath, IdResponse, LimitAndOffsetFilter, LimitFilter, ListResult, OrderList, SourceDataPath } from "./all"
 import { SimpleBook } from "./book"
 import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
@@ -97,9 +97,7 @@ function mapToIllust(data: any): Illust {
         score: <number | null>data["score"],
         favorite: <boolean>data["favorite"],
         tagme: <Tagme[]>data["tagme"],
-        sourceSite: <string | null>data["sourceSite"],
-        sourceId: <number | null>data["sourceId"],
-        sourcePart: <number | null>data["sourcePart"],
+        source: <SourceDataPath | null>data["source"],
         orderTime: datetime.of(<string>data["orderTime"])
     }
 }
@@ -385,17 +383,9 @@ export interface Illust {
      */
     tagme: Tagme[]
     /**
-     * source site name。
+     * source。
      */
-    sourceSite: string | null
-    /**
-     * source id。
-     */
-    sourceId: number | null
-    /**
-     * source part。
-     */
-    sourcePart: number | null
+    source: SourceDataPath | null
     /**
      * 此项目的排序时间。
      */
@@ -499,21 +489,13 @@ export interface ImageRelatedItems extends CollectionRelatedItems {
 
 export type ImageSourceData = {
     /**
-     * source站点的name。
+     * source。
      */
-    sourceSite: string
+    source: SourceDataPath
     /**
      * source站点的显示标题。当此站点没有标题时值为null。
      */
     sourceSiteName: string | null
-    /**
-     * 此项目的source id。
-     */
-    sourceId: number
-    /**
-     * 此项目的secondary id。
-     */
-    sourcePart: number | null
     /**
      * 是否是无内容的。
      */
@@ -551,10 +533,8 @@ export type ImageSourceData = {
      */
     additionalInfo: SourceAdditionalInfo[]
 } | {
-    sourceSite: null
+    source: null
     sourceTitle: null
-    sourceId: null
-    sourcePart: null
     empty: true
     status: "NOT_EDITED"
     title: null
@@ -598,9 +578,7 @@ export interface ImageRelatedUpdateForm extends CollectionRelatedUpdateForm {
 }
 
 export interface ImageSourceDataUpdateForm {
-    sourceSite?: string | null
-    sourceId?: number | null
-    sourcePart?: number | null
+    source?: SourceDataPath | null
     title?: string | null
     description?: string | null
     tags?: SourceTagForm[]

@@ -85,7 +85,10 @@ const trashSourceLinkGenerateRule = (idx: number) => {
                 </div>
             </FlexItem>
         </Flex>
-        <div class="is-line-height-std"><CheckBox :value="hasSecondaryId" disabled>启用二级ID</CheckBox></div>
+        <div class="is-line-height-std">
+            <CheckBox :value="partMode !== 'NO'" disabled>启用二级分页</CheckBox>
+            <CheckBox class="ml-1" :value="partMode === 'PAGE_WITH_NAME'" disabled>启用分页页名</CheckBox>
+        </div>
         <Flex :spacing="1">
             <FlexItem :width="50">
                 <div>

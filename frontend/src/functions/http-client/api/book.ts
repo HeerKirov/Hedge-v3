@@ -1,6 +1,6 @@
 import { HttpInstance, Response } from ".."
 import { ConflictingGroupMembersError, NotFound, ResourceNotExist, ResourceNotSuitable } from "../exceptions"
-import { FilePath, IdResponse, LimitAndOffsetFilter, ListResult, OrderList } from "./all"
+import { FilePath, IdResponse, LimitAndOffsetFilter, ListResult, OrderList, SourceDataPath } from "./all"
 import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
 import { RelatedSimpleTag } from "./tag"
@@ -58,9 +58,7 @@ function mapToBookImage(data: any): BookImage {
         score: <number | null>data["score"],
         favorite: <boolean>data["favorite"],
         tagme: <Tagme[]>data["tagme"],
-        sourceSite: <string | null>data["sourceSite"],
-        sourceId: <number | null>data["sourceId"],
-        sourcePart: <number | null>data["sourcePart"],
+        source: <SourceDataPath | null>data["source"],
         orderTime: datetime.of(<string>data["orderTime"])
     }
 }
@@ -181,9 +179,7 @@ export interface BookImage {
     score: number | null
     favorite: boolean
     tagme: Tagme[]
-    sourceSite: string | null
-    sourceId: number | null
-    sourcePart: number | null
+    source: SourceDataPath | null
     orderTime: LocalDateTime
 }
 

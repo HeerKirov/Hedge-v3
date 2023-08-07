@@ -19,13 +19,16 @@ const site = computed(() => form.site ? sites.value?.find(s => s.name === form.s
 
 const siteSelectItems = computed(() => sites.value?.map(s => ({label: s.title, value: s.name})) ?? [])
 
-const hasSecondaryId = computed(() => site.value?.hasSecondaryId ?? false)
+const hasPart = computed(() => site.value?.partMode !== "NO" ?? false)
+
+const hasPartName = computed(() => site.value?.partMode === "PAGE_WITH_NAME" ?? false)
 
 const form = reactive({
     site: undefined as string | undefined,
     regex: "",
     idGroup: "1",
-    secondaryIdGroup: "2",
+    partGroup: "2",
+    partNameGroup: "3",
     extras: <SourceAnalyseRuleExtra[]>[]
 })
 
@@ -70,13 +73,15 @@ const submit = () => {
         site: form.site,
         regex: form.regex,
         idGroup: form.idGroup,
-        secondaryIdGroup: hasSecondaryId.value ? form.secondaryIdGroup : null,
+        partGroup: hasPart.value ? form.partGroup : null,
+        partNameGroup: hasPartName.value ? form.partNameGroup : null,
         extras
     })
 
     form.regex = ""
     form.idGroup = "1"
-    form.secondaryIdGroup = "2"
+    form.partGroup = "2"
+    form.partNameGroup = "3"
     form.extras = []
 }
 
@@ -95,9 +100,13 @@ const submit = () => {
                 <label class="label">ID生成位置</label>
                 <Input class="mt-1" width="one-third" v-model:value="form.idGroup"/>
             </div>
-            <div v-if="hasSecondaryId">
-                <label class="label">分P生成位置</label>
-                <Input class="mt-1" width="one-third" v-model:value="form.secondaryIdGroup"/>
+            <div v-if="hasPart">
+                <label class="label">分页生成位置</label>
+                <Input class="mt-1" width="one-third" v-model:value="form.partGroup"/>
+            </div>
+            <div v-if="hasPartName">
+                <label class="label">页码生成位置</label>
+                <Input class="mt-1" width="one-third" v-model:value="form.partNameGroup"/>
             </div>
         </Flex>
         <a class="float-right is-font-size-small has-text-success" @click="addExtra"><Icon class="mr-1" icon="plus"/>添加一项额外信息</a>

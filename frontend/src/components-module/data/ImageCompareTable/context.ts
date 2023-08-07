@@ -11,6 +11,7 @@ import { useMessageBox } from "@/modules/message-box"
 import { useDroppable } from "@/modules/drag"
 import { arrays } from "@/utils/primitives"
 import { LocalDate, LocalDateTime } from "@/utils/datetime"
+import { SourceDataPath } from "@/functions/http-client/api/all"
 
 export interface ImageData {
     filePath: string | null
@@ -33,11 +34,7 @@ export interface ImageData {
         updateTime: LocalDateTime,
         orderTime: LocalDateTime,
     },
-    sourceData: {
-        site: string | null,
-        sourceId: number | null,
-        sourcePart: number | null,
-    },
+    sourceData: SourceDataPath | null,
     relatedItems: {
         collection: number | string | null,
         books: SimpleBook[],
@@ -99,11 +96,7 @@ function useImageData(initIndex: number | null) {
                             updateTime: metadata.data.updateTime,
                             orderTime: metadata.data.orderTime,
                         },
-                        sourceData: {
-                            site: sourceData.data.sourceSite,
-                            sourceId: sourceData.data.sourceId,
-                            sourcePart: sourceData.data.sourcePart,
-                        },
+                        sourceData: sourceData.data.source,
                         relatedItems: {
                             collection: relatedItems.data.collection?.id,
                             books: relatedItems.data.books,

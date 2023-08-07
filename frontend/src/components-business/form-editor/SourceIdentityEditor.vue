@@ -2,36 +2,76 @@
 import { computed } from "vue"
 import { Input } from "@/components/form"
 import { SourceSiteSelectBox } from "@/components-business/form-editor"
+import { SourceDataPath } from "@/functions/http-client/api/all"
 import { useSettingSite } from "@/services/setting"
+import { computedMutable } from "@/utils/reactivity"
+import { Flex, FlexItem } from "@/components/layout"
 
 const props = defineProps<{
-    site: string | null
-    sourceId: number | null
-    sourcePart: number | null
+    source: SourceDataPath | null
 }>()
 
 const emit = defineEmits<{
-    (e: "update", identity: {site: string | null, sourceId: number | null, sourcePart: number | null}): void
+    (e: "update:source", source: SourceDataPath | null): void
 }>()
 
 const { data: sites } = useSettingSite()
 
-const siteModel = computed(() => props.site != null ? sites.value?.find(s => s.name === props.site) ?? null : null)
+const site = computedMutable(() => props.source?.sourceSite ?? null)
 
-const updateSite = (v: string | null) => emit("update", {site: v, sourceId: props.sourceId, sourcePart: props.sourcePart})
+const siteModel = computed(() => site.value !== null ? sites.value?.find(s => s.name === site.value) ?? null : null)
 
-const updateId = (v: string | undefined) => emit("update", {site: props.site, sourceId: v ? parseInt(v) : null, sourcePart: props.sourcePart})
+const hasPart = computed(() => siteModel.value != null && siteModel.value.partMode !== "NO")
 
-const updatePart = (v: string | undefined) => emit("update", {site: props.site, sourceId: props.sourceId, sourcePart: v ? parseInt(v) : null})
+const hasPartName = computed(() => siteModel.value != null && siteModel.value.partMode === "PAGE_WITH_NAME")
+
+const updateSite = (v: string | null) => {
+    if(props.source !== null) {
+        emit("update:source", v !== null ? {...props.source, sourceSite: v} : null)
+    }else{
+        site.value = v
+    }
+}
+
+const updateId = (v: string | undefined) => {
+    const sourceId = v && !isNaN(parseInt(v)) ? parseInt(v) : null
+    if(sourceId) {
+        if(props.source !== null) {
+            emit("update:source", {...props.source, sourceId})
+        }else if(site.value !== null) {
+            emit("update:source", {sourceSite: site.value, sourceId, sourcePart: null, sourcePartName: null})
+        }
+    }
+}
+
+const updatePart = (v: string | undefined) => {
+    const sourcePart = v && !isNaN(parseInt(v)) ? parseInt(v) : null
+    if(props.source !== null) {
+        emit("update:source", {...props.source, sourcePart})
+    }
+}
+
+const updatePartName = (v: string | undefined) => {
+    if(props.source !== null) {
+        emit("update:source", {...props.source, sourcePartName: v || null})
+    }
+}
 
 </script>
 
 <template>
     <div>
         <SourceSiteSelectBox :value="site" @update:value="updateSite"/>
-        <p class="mt-1">
-            <Input v-if="site" class="mr-1" size="small" width="three-quarter" update-on-input placeholder="来源ID" :value="sourceId?.toString()" @update:value="updateId"/>
-            <Input v-if="siteModel?.hasSecondaryId" size="small" width="one-third" update-on-input placeholder="分P" :value="sourcePart?.toString()" @update:value="updatePart"/>
-        </p>
+        <Flex v-if="site !== null" class="mt-1 w-100" :width="100" :spacing="1">
+            <FlexItem :width="45">
+                <Input size="small" update-on-input placeholder="来源ID" :value="source?.sourceId.toString()" @update:value="updateId"/>
+            </FlexItem>
+            <FlexItem v-if="hasPart" :width="20">
+                <Input size="small" update-on-input placeholder="分页" :value="source?.sourcePart?.toString()" @update:value="updatePart"/>
+            </FlexItem>
+            <FlexItem v-if="hasPartName" :width="35">
+                <Input size="small" update-on-input placeholder="页名(可选)" :value="source?.sourcePartName" @update:value="updatePartName"/>
+            </FlexItem>
+        </Flex>
     </div>
 </template>

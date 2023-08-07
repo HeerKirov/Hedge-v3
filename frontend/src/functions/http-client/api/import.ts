@@ -4,7 +4,7 @@ import {
     NotFound, ResourceNotExist, ParamError, ParamNotRequired, ParamRequired, StorageNotAccessibleError
 } from "../exceptions"
 import { HttpInstance, Response } from "../instance"
-import { FilePath, IdResponseWithWarnings, LimitAndOffsetFilter, ListResult, mapFromOrderList, NullableFilePath, OrderList } from "./all"
+import { FilePath, IdResponseWithWarnings, LimitAndOffsetFilter, ListResult, mapFromOrderList, NullableFilePath, OrderList, SourceDataPath } from "./all"
 import { ImagePropsCloneForm, SimpleCollection, Tagme } from "./illust"
 import { SimpleFolder } from "./folder"
 import { SimpleBook } from "./book"
@@ -187,9 +187,7 @@ export interface ImportImage {
     id: number
     filePath: NullableFilePath
     originFileName: string | null
-    sourceSite: string | null
-    sourceId: number | null
-    sourcePart: number | null
+    source: SourceDataPath | null
     tagme: Tagme[]
     partitionTime: LocalDate
     orderTime: LocalDateTime
@@ -236,10 +234,8 @@ export interface ImportForm {
 }
 
 export interface ImportUpdateForm {
+    source?: SourceDataPath | null
     tagme?: Tagme[]
-    sourceSite?: string | null
-    sourceId?: number | null
-    sourcePart?: number | null
     partitionTime?: LocalDate
     orderTime?: LocalDateTime
     createTime?: LocalDateTime

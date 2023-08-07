@@ -147,7 +147,7 @@ installDatasetContext({
                     </div>
                 </FlexItem>
                 <FlexItem :width="30">
-                    <div class="no-wrap overflow-hidden"><SourceInfo v-if="item.type === 'IMAGE'" :site="item.sourceSite" :source-id="item.sourceId" :source-part="item.sourcePart"/></div>
+                    <div class="no-wrap overflow-hidden"><SourceInfo v-if="item.type === 'IMAGE'" :source="item.source"/></div>
                 </FlexItem>
                 <FlexItem :width="15" :shrink="0">
                     <div class="mr-1">

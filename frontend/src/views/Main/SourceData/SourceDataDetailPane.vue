@@ -8,13 +8,13 @@ import {
 import { SourceEditStatusEditor } from "@/components-business/form-editor"
 import { useSourceDataDetailPane } from "@/services/main/source-data"
 
-const { data, relatedImages, setSourceEditStatus, gotoIllust, openEditDialog } = useSourceDataDetailPane()
+const { data, sourceDataPath, relatedImages, setSourceEditStatus, gotoIllust, openEditDialog } = useSourceDataDetailPane()
 
 </script>
 
 <template>
     <template v-if="data !== null">
-        <SourceInfo class="mb-2" :source-id="data.sourceId" :site="data.sourceSite" :source-part="null"/>
+        <SourceInfo class="mb-2" :source="sourceDataPath"/>
         <template v-if="relatedImages?.length">
             <ThumbnailImage :file="relatedImages[0].filePath.thumbnail" min-height="12rem" max-height="40rem"/>
             <p class="w-100 has-text-right">

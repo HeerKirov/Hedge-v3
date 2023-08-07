@@ -147,7 +147,9 @@ const simpleRemain = (remainingTime: number | null) => {
                     </div>
                 </FlexItem>
                 <FlexItem :width="30">
-                    <div class="no-wrap overflow-hidden"><SourceInfo :site="item.sourceSite" :source-id="item.sourceId" :source-part="item.sourcePart"/></div>
+                    <div class="no-wrap overflow-hidden">
+                        <SourceInfo :source="item.source"/>
+                    </div>
                 </FlexItem>
                 <FlexItem :width="15" :shrink="0">
                     <div class="mr-2">

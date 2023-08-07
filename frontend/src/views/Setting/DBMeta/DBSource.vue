@@ -49,7 +49,7 @@ const trash = async () => {
             <DBSourceSiteEditor v-if="selectedSite !== null" 
                                 :name="selectedSite.name" 
                                 :title="selectedSite.title" 
-                                :has-secondary-id="selectedSite.hasSecondaryId" 
+                                :part-mode="selectedSite.partMode" 
                                 :source-link-generate-rules="selectedSite.sourceLinkGenerateRules"
                                 :available-additional-info="selectedSite.availableAdditionalInfo"
                                 :ordinal="selectedIndex!" 

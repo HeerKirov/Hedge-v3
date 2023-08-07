@@ -128,7 +128,7 @@ installDatasetContext({
                     <div class="ml-1 no-wrap overflow-ellipsis">{{item.originFileName}}</div>
                 </FlexItem>
                 <FlexItem :width="25" :shrink="0">
-                    <SourceInfo :site="item.sourceSite" :source-id="item.sourceId" :source-part="item.sourcePart"/>
+                    <SourceInfo :source="item.source"/>
                 </FlexItem>
                 <FlexItem :width="15" :shrink="0">
                     <div class="mr-1">

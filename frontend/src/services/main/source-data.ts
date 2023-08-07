@@ -1,3 +1,4 @@
+import { computed } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
@@ -92,6 +93,8 @@ export function useSourceDataDetailPane() {
         }
     })
 
+    const sourceDataPath = computed(() => data.value !== null ? {sourceSite: data.value.sourceSite, sourceId: data.value.sourceId, sourcePart: null, sourcePartName: null} : null)
+
     const { data: relatedImages } = useFetchEndpoint({
         path: paneState.detailPath,
         get: client => client.sourceData.getRelatedImages,
@@ -114,5 +117,5 @@ export function useSourceDataDetailPane() {
         return (status === data.value?.status) || await setData({status})
     }
 
-    return {data, relatedImages, setSourceEditStatus, gotoIllust, openEditDialog}
+    return {data, sourceDataPath, relatedImages, setSourceEditStatus, gotoIllust, openEditDialog}
 }

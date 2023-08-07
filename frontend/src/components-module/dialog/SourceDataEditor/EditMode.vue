@@ -23,7 +23,7 @@ const { form, save } = useEditorData(identify, () => emit("completed"))
 
 <template>
     <BottomLayout>
-        <SourceInfo class="is-font-size-large mb-2" :source-id="sourceId" :site="sourceSite" :source-part="null"/>
+        <SourceInfo class="is-font-size-large mb-2" :source="{sourceSite, sourceId, sourcePart: null, sourcePartName: null}"/>
         <SourceDataSummaryEditor v-if="form !== null" v-model:data="form" :site="sourceSite"/>
 
         <template #bottom>

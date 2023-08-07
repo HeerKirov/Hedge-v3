@@ -625,17 +625,17 @@ export function useSourceDeriveData() {
             derives.value = []
             return
         }
-        if(sourceDataRes.sourceSite === null || !sourceDataRes.tags?.length) {
+        if(sourceDataRes.source === null || !sourceDataRes.tags?.length) {
             sourceSite.value = null
             derives.value = []
             return
         }
-        const res = await fetchSourceTagMappingQuery({site: sourceDataRes.sourceSite, tags: sourceDataRes.tags.map(i => i.code)})
+        const res = await fetchSourceTagMappingQuery({site: sourceDataRes.source.sourceSite, tags: sourceDataRes.tags.map(i => i.code)})
         if(res === undefined) {
             derives.value = []
             return
         }
-        sourceSite.value = sourceDataRes.sourceSite
+        sourceSite.value = sourceDataRes.source.sourceSite
         derives.value = sortDerives(res)
     }
 

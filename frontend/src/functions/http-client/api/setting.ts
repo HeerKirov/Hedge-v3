@@ -107,7 +107,7 @@ export interface SettingEndpoint {
         /**
          * 更改。
          * @exception NOT_EXIST("site", siteName) rules[].site不在sites列表中存在时报告此错误。
-         * @exception INVALID_RULE_INDEX rules[].secondaryIdIndex与对应的site的hasSecondaryId配置不匹配时报告此错误。
+         * @exception INVALID_RULE_INDEX rules[]中part/partName/extras的group配置与site定义不匹配时报告此错误。
          */
         update(form: ImportOptionUpdateForm): Promise<Response<unknown, ResourceNotExist<"site", string> | InvalidRuleIndexError>>
     }
@@ -156,8 +156,6 @@ export interface SettingEndpoint {
         get(): Promise<Response<FindSimilarOption>>
         /**
          * 更改。
-         * @exception NOT_EXIST("site", siteName) rules[].site不在sites列表中存在时报告此错误。
-         * @exception INVALID_RULE_INDEX rules[].secondaryIdIndex与对应的site的hasSecondaryId配置不匹配时报告此错误。
          */
         update(form: FindSimilarOptionUpdateForm): Promise<Response<unknown>>
     }
@@ -317,7 +315,8 @@ export interface SourceAnalyseRule {
     site: string
     regex: string
     idGroup: string
-    secondaryIdGroup: string | null
+    partGroup: string | null
+    partNameGroup: string | null
     extras: SourceAnalyseRuleExtra[] | null
 }
 
@@ -339,10 +338,10 @@ export interface Site {
      */
     title: string
     /**
-     * 此网站是否拥有secondary id。
-     * @default false
+     * 此网站是否拥有part。
+     * @default NO
      */
-    hasSecondaryId: boolean
+    partMode: SitePartMode
     /**
      * 此网站可接受的元数据条目。
      */
@@ -356,7 +355,7 @@ export interface Site {
 export interface SiteCreateForm {
     name: string
     title: string
-    hasSecondaryId?: boolean
+    partMode?: SitePartMode
     availableAdditionalInfo?: {field: string, label: string}[]
     sourceLinkGenerateRules?: string[]
     /**
@@ -376,3 +375,5 @@ export interface SiteUpdateForm {
 export type OrderTimeType = "IMPORT_TIME" | "CREATE_TIME" | "UPDATE_TIME"
 
 export type SourceAnalyseRuleExtraTarget = "TITLE" | "DESCRIPTION" | "ADDITIONAL_INFO" | "TAG" | "BOOK" | "RELATION"
+
+export type SitePartMode = "NO" | "PAGE" | "PAGE_WITH_NAME"

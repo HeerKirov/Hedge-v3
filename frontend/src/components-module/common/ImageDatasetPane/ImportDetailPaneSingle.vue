@@ -26,15 +26,15 @@ const { data, setTagme, setSourceInfo, setCreateTime, setOrderTime, setPartition
         <p v-if="data.fileImportTime" class="secondary-text">文件导入时间 {{datetime.toSimpleFormat(data.fileImportTime)}}</p>
         <FileInfoDisplay class="mt-2" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionWidth" :resolution-width="data.resolutionHeight" :video-duration="data.videoDuration"/>
         <Separator direction="horizontal"/>
-        <FormEditKit class="mt-1" :value="{site: data.sourceSite, sourceId: data.sourceId, sourcePart: data.sourcePart}" :set-value="setSourceInfo">
-            <template #default="{ value: {site, sourceId, sourcePart} }">
-                <SourceInfo :site="site" :source-id="sourceId" :source-part="sourcePart"/>
+        <FormEditKit class="mt-1" :value="data.source" :set-value="setSourceInfo">
+            <template #default="{ value }">
+                <SourceInfo :source="value"/>
             </template>
-            <template #edit="{ value: {site, sourceId, sourcePart}, setValue }">
-                <SourceIdentityEditor :site="site" :source-id="sourceId" :source-part="sourcePart" @update="setValue"/>
+            <template #edit="{ value, setValue }">
+                <SourceIdentityEditor :source="value" @update:source="setValue"/>
             </template>
         </FormEditKit>
-        <ImportSourcePreferencesDisplay class="mt-1" :preference="data.sourcePreference" :site="data.sourceSite" @clear="clearAllSourcePreferences"/>
+        <ImportSourcePreferencesDisplay class="mt-1" :preference="data.sourcePreference" :site="data.source?.sourceSite ?? null" @clear="clearAllSourcePreferences"/>
         <Separator direction="horizontal"/>
         <FormEditKit class="mt-1" :value="data.tagme" :set-value="setTagme">
             <template #default="{ value }">
