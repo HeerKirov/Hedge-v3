@@ -41,14 +41,19 @@ export const arrays = {
         }
         return [r1, r2]
     },
-    window<T>(arr: T[], size: number): T[][] {
+    windowed<T>(arr: T[], size: number, step: number = 1, partialWindow: boolean = false): T[][] {
         const result: T[][] = []
-        let beginIndex = 0
-        for(let i = 0; i < arr.length; i++) {
-            if(i + 1 === arr.length || (i != 0 && i % size === 0)) {
-                const part = arr.slice(beginIndex, i + 1)
-                if(part.length) result.push(part)
-                beginIndex = i + 1
+        for(let i = 0; i < arr.length; i += step) {
+            if(i + size > arr.length) {
+                if(partialWindow) {
+                    const slice = arr.slice(i, arr.length)
+                    result.push(slice)
+                }else{
+                    break
+                }
+            }else{
+                const slice = arr.slice(i, i + size)
+                result.push(slice)
             }
         }
         return result

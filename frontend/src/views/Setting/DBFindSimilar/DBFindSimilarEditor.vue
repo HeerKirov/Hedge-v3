@@ -33,7 +33,7 @@ const [filterBySourceTagType, filterBySourceTagTypeSot, saveFilterBySourceTagTyp
             <p class="secondary-text">计算图像的特征指纹，比对出内容相似的图像。</p>
         </p>
         <p class="mt-3">
-            <CheckBox :value="config.findBySourceKey" @update:value="setValue('findBySourceKey', $event)">来源一致性判断</CheckBox>
+            <CheckBox :value="config.findBySourceIdentity" @update:value="setValue('findBySourceIdentity', $event)">来源一致性判断</CheckBox>
             <p class="secondary-text">对于拥有完全相同的来源、来源ID、分页的图像，直接将其判定为相同项。</p>
         </p>
         <p class="mt-1">

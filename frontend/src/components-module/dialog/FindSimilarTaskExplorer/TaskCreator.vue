@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Flex, BottomLayout } from "@/components/layout"
 import { Button } from "@/components/universal"
-import { CheckBox, NumberInput } from "@/components/form"
+import { CheckBox } from "@/components/form"
 import { SourceTagTypeListEditor } from "@/components-business/form-editor"
 import { useTaskCreatorData } from "./context"
 import TaskSelectorEditor from "./TaskSelectorEditor.vue"
@@ -34,7 +34,7 @@ const { form, submit } = useTaskCreatorData(() => emit("close"))
                     <p class="secondary-text">计算图像的特征指纹，比对出内容相似的图像。</p>
                 </p>
                 <p class="mt-3">
-                    <CheckBox v-model:value="form.config.findBySourceKey">来源一致性判断</CheckBox>
+                    <CheckBox v-model:value="form.config.findBySourceIdentity">来源一致性判断</CheckBox>
                     <p class="secondary-text">对于拥有完全相同的来源、来源ID、分页的图像，直接将其判定为相同项。</p>
                 </p>
                 <p class="mt-1">

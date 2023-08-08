@@ -81,7 +81,7 @@ export function useTaskCreatorData(close: () => void) {
 function createDefaultForm(): TaskCreatorForm {
     return {
         selector: {type: "image", imageIds: []}, 
-        config: {filterByAuthor: false, filterByOtherImport: false, filterByPartition: false, filterBySourceTagType: [], filterByTopic: false, findBySimilarity: false, findBySourceKey: false, findBySourceMark: false, findBySourceRelation: false}
+        config: {filterByAuthor: false, filterByOtherImport: false, filterByPartition: false, filterBySourceTagType: [], filterByTopic: false, findBySimilarity: false, findBySourceIdentity: false, findBySourceMark: false, findBySourceRelation: false}
     }
 }
 

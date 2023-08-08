@@ -71,7 +71,6 @@ const buttonClass = computed(() => [
 @media (prefers-color-scheme: light)
     .color-mode-transparent
         background-color: rgba(#ffffff, 0)
-        color: $light-mode-text-color
         &:hover:not([disabled])
             background-color: rgba(45, 50, 55, 0.09)
         &:active:not([disabled])
@@ -106,7 +105,6 @@ const buttonClass = computed(() => [
 @media (prefers-color-scheme: dark)
     .color-mode-transparent
         background-color: rgba(#000000, 0)
-        color: $dark-mode-text-color
         &:hover:not([disabled])
             background-color: rgba(255, 255, 255, 0.09)
         &:active:not([disabled])

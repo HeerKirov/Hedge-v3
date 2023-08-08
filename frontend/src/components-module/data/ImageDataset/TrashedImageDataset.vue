@@ -133,7 +133,7 @@ const simpleRemain = (remainingTime: number | null) => {
                 <FlexItem :shrink="0" :grow="0">
                     <img :class="$style['row-img']" :src="assetsUrl(item.filePath.sample)" :alt="`trashed-image-${item.id}`"/>
                 </FlexItem>
-                <FlexItem :width="25">
+                <FlexItem :width="35">
                     <div class="ml-1">{{ item.id }}</div>
                 </FlexItem>
                 <FlexItem :shrink="0">
@@ -146,20 +146,18 @@ const simpleRemain = (remainingTime: number | null) => {
                         </template>
                     </div>
                 </FlexItem>
-                <FlexItem :width="30">
+                <FlexItem :width="35">
                     <div class="no-wrap overflow-hidden">
                         <SourceInfo :source="item.source"/>
                     </div>
                 </FlexItem>
-                <FlexItem :width="15" :shrink="0">
-                    <div class="mr-2">
+                <FlexItem :width="20" :shrink="0">
+                    <div class="mr-1">
                         <FileInfoDisplay mode="inline" :extension="item.filePath.extension"/>
                     </div>
                 </FlexItem>
-                <FlexItem :width="30">
-                    <div class="mr-2 has-text-right">
-                        {{ remain(item.remainingTime) }}
-                    </div>
+                <FlexItem :shrink="0">
+                    <div :class="$style.time">{{ remain(item.remainingTime) }}</div>
                 </FlexItem>
             </Flex>
         </DatasetRowFramework>
@@ -201,4 +199,10 @@ const simpleRemain = (remainingTime: number | null) => {
     width: 30px
     object-position: center
     object-fit: cover
+
+.time
+    width: 8rem
+    margin-right: 0.5rem
+    margin-left: 0.25rem
+    text-align: right
 </style>

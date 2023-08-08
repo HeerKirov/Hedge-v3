@@ -124,7 +124,7 @@ installDatasetContext({
                 <FlexItem :shrink="0" :grow="0">
                     <img :class="$style['row-img']" :src="assetsUrl(item.filePath.sample)" :alt="`import-image-${item.id}`"/>
                 </FlexItem>
-                <FlexItem :width="35">
+                <FlexItem :width="30">
                     <div class="ml-1 no-wrap overflow-ellipsis">{{item.originFileName}}</div>
                 </FlexItem>
                 <FlexItem :width="25" :shrink="0">

@@ -85,6 +85,8 @@ const submitActionDelete = (choice: "A" | "B" | "A&B") => {
         <ActionAddToCollection v-if="actionPanel === 'ADD_TO_COLLECTION'" :images="multiple.selected" @submit="submitActionAddToCollection"/>
         <p class="mt-1"><Tag class="mr-1" clickable color="success" icon="clone" @click="clickAction('ADD_TO_BOOK')">加入画集</Tag></p>
         <ActionAddToBook v-if="actionPanel === 'ADD_TO_BOOK'" :images="[compare.a, compare.b]" @submit="submitActionAddToBook"/>
+        <p class="mt-1"><Tag class="mr-1" clickable color="warning" icon="link-slash" @click="clickAction('MARK_IGNORED')">忽略关系</Tag></p>
+        <ActionMarkIgnored v-if="actionPanel === 'MARK_IGNORED'" @submit="submitActionMarkIgnored"/>
         <p class="mt-1"><Tag class="mr-1" clickable color="danger" icon="trash" @click="clickAction('DELETE')">删除项目</Tag></p>
         <ActionDelete v-if="actionPanel === 'DELETE'" mode="MULTIPLE" @submit="submitActionDelete"/>
     </template>

@@ -159,10 +159,10 @@ export type TaskSelector = {
 }
 
 export interface TaskConfig {
-    findBySourceKey: boolean
-    findBySimilarity: boolean
+    findBySourceIdentity: boolean
     findBySourceRelation: boolean
     findBySourceMark: boolean
+    findBySimilarity: boolean
     filterByOtherImport: boolean
     filterByPartition: boolean
     filterByTopic: boolean

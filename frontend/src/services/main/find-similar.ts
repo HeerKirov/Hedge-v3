@@ -103,7 +103,7 @@ export function useFindSimilarItemContext(item: FindSimilarResult) {
     }
     
     const ignoreIt = () => {
-        fetchResolve(item.id, {actions: arrays.window(item.images, 2).map(([a, b]) => ({actionType: "MARK_IGNORED", a, b}))})
+        fetchResolve(item.id, {actions: arrays.windowed(item.images, 2).map(([a, b]) => ({actionType: "MARK_IGNORED", a, b}))})
     }
 
     const deleteIt = () => {
@@ -153,7 +153,7 @@ function useDetailPanelSelector(data: Ref<FindSimilarDetailResult | null>) {
     //使用CTRL/SHIFT的情况下，切换至multiple模式，选择多个item；按CTRL单选，按SHIFT连续选择。
     const selectMode = ref<"COMPARE" | "MULTIPLE">("COMPARE")
     const multiple = ref<{selected: FindSimilarResultImage[], lastSelected: FindSimilarResultImage | null}>({selected: [], lastSelected: null})
-    const compare = ref<{a: FindSimilarResultImage | null, b: FindSimilarResultImage | null, nextUse: "a" | "b"}>({a: null, b: null, nextUse: "a"})
+    const compare = ref<{a: FindSimilarResultImage | null, b: FindSimilarResultImage | null, nextUse: "a" | "b"}>({a: null, b: null, nextUse: "b"})
     
     watch(data, data => {
         //data发生变化时，根据内容重置至初始状态
@@ -161,7 +161,7 @@ function useDetailPanelSelector(data: Ref<FindSimilarDetailResult | null>) {
             if(data.images.length >= 2) {
                 selectMode.value = "COMPARE"
                 multiple.value = {selected: [data.images[0], data.images[1]], lastSelected: data.images[1]}
-                compare.value = {a: data.images[0], b: data.images[1], nextUse: "a"}
+                compare.value = {a: data.images[0], b: data.images[1], nextUse: "b"}
             }else if(data.images.length === 1) {
                 selectMode.value = "MULTIPLE"
                 multiple.value = {selected: [data.images[0]], lastSelected: data.images[0]}
@@ -348,6 +348,12 @@ function useDetailPanelResolves(path: Ref<number | null>, selector: ReturnType<t
         if(selector.selectMode.value === "COMPARE") {
             if(selector.compare.value.a !== null && selector.compare.value.b !== null && !actions.value.some(a => a.actionType === "MARK_IGNORED" && ((entityEquals(a.a, selector.compare.value.a) && entityEquals(a.b, selector.compare.value.b)) || (entityEquals(a.a, selector.compare.value.b) && entityEquals(a.b, selector.compare.value.a))))) {
                 actions.value.push({actionType: "MARK_IGNORED", a: selector.compare.value.a, b: selector.compare.value.b})
+            }
+        }else{
+            for(const [a, b] of arrays.windowed(selector.multiple.value.selected, 2)) {
+                if(!actions.value.some(x => x.actionType === "MARK_IGNORED" && ((entityEquals(x.a, a) && entityEquals(x.b, b)) || (entityEquals(x.a, b) && entityEquals(x.b, a))))) {
+                    actions.value.push({actionType: "MARK_IGNORED", a, b})
+                }
             }
         }
     }

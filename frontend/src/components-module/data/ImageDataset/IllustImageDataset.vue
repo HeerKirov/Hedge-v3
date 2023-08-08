@@ -126,7 +126,7 @@ installDatasetContext({
                 <FlexItem :shrink="0" :grow="0">
                     <img :class="$style['row-img']" :src="assetsUrl(item.filePath.sample)" :alt="`illust-${item.id}`"/>
                 </FlexItem>
-                <FlexItem :width="20">
+                <FlexItem :width="30">
                     <div class="ml-1">{{item.id}}</div>
                 </FlexItem>
                 <FlexItem :shrink="0">
@@ -139,17 +139,17 @@ installDatasetContext({
                 <FlexItem :shrink="0">
                     <div :class="$style['row-favorite']"><Icon v-if="item.favorite" class="has-text-danger" icon="heart"/></div>
                 </FlexItem>
-                <FlexItem :width="10" :shrink="0">
+                <FlexItem :width="15" :shrink="0">
                     <div class="has-text-warning has-text-centered">
                         <template v-if="item.score">
                             {{item.score}}<Icon icon="star"/>
                         </template>
                     </div>
                 </FlexItem>
-                <FlexItem :width="30">
+                <FlexItem :width="35">
                     <div class="no-wrap overflow-hidden"><SourceInfo v-if="item.type === 'IMAGE'" :source="item.source"/></div>
                 </FlexItem>
-                <FlexItem :width="15" :shrink="0">
+                <FlexItem :width="20" :shrink="0">
                     <div class="mr-1">
                         <FileInfoDisplay mode="simple" :extension="item.filePath.extension"/>
                     </div>

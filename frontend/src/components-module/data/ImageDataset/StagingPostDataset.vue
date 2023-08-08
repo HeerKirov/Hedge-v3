@@ -110,7 +110,7 @@ installDatasetContext({
                 <FlexItem :shrink="0" :grow="0">
                     <img :class="$style['row-img']" :src="assetsUrl(item.filePath.sample)" :alt="`staging-post-${item.id}`"/>
                 </FlexItem>
-                <FlexItem :width="40">
+                <FlexItem :width="35">
                     <div class="ml-1">{{ item.id }}</div>
                 </FlexItem>
                 <FlexItem :shrink="0">
@@ -123,18 +123,18 @@ installDatasetContext({
                         </template>
                     </div>
                 </FlexItem>
-                <FlexItem :width="30">
+                <FlexItem :width="35">
                     <div class="no-wrap overflow-hidden">
                         <SourceInfo :source="item.source"/>
                     </div>
                 </FlexItem>
-                <FlexItem :width="15" :shrink="0">
+                <FlexItem :width="20" :shrink="0">
                     <div class="mr-1">
                         <FileInfoDisplay mode="inline" :extension="item.filePath.extension"/>
                     </div>
                 </FlexItem>
                 <FlexItem :shrink="0">
-                    <div :class="$style.time">{{datetime.toSimpleFormat(item.orderTime)}}</div>
+                    <div :class="$style.time">{{ datetime.toSimpleFormat(item.orderTime) }}</div>
                 </FlexItem>
             </Flex>
         </DatasetRowFramework>

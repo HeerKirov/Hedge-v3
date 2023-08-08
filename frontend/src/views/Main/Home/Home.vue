@@ -25,7 +25,7 @@ const {
         </div>
         <div v-else-if="!!data" :class="$style.root">
             <label :class="$style.header">随便看看</label>
-            <div :class="$style['primary-scroll-area']">
+            <div v-if="data.todayImages.length > 0 || data.todayAuthorAndTopics.length > 0" :class="$style['primary-scroll-area']">
                 <img v-for="i in data.todayImages" :class="$style.image" :src="assetsUrl(i.filePath.sample)" @click="openIllustOfPartition(i.partitionTime, i.id)"/>
                 <div class="h-100"/>
                 <Block v-for="i in data.todayAuthorAndTopics" :class="$style.block">

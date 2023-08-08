@@ -6,7 +6,6 @@ import { Flex } from "@/components/layout"
 import { SourceTagElement } from "@/components-business/element"
 import { SourceSiteSelectBox } from "@/components-business/form-editor"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
-import { useMessageBox } from "@/modules/message-box"
 import { useSettingSite } from "@/services/setting"
 
 const props = defineProps<{
@@ -19,8 +18,6 @@ const emit = defineEmits<{
 }>()
 
 useSettingSite()
-
-const message = useMessageBox()
 
 const selectedIndex = ref<number>()
 
@@ -36,7 +33,7 @@ const add = () => {
     const idx = props.value.length
     if(idx > 0) {
         const item = props.value[idx - 1]
-        if(!item.site || !item.code || !item.name) {
+        if(!item.site || !item.code) {
             //如果最后一项是未完成编辑的项，则直接选定此项
             selectedIndex.value = idx - 1
             return
