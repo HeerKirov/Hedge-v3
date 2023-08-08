@@ -9,7 +9,8 @@
     "tsc": "tsc",
     "start": "electron .",
     "dev": "electron . $(sh args.local.sh)",
-    "build": "node build/common/build.js"
+    "build": "node build/common/build.js",
+    "build-install": "node build/common/build.js clean install-app install-client install-frontend install-server"
   },
   "dependencies": {
     "axios": "^0.27.2",

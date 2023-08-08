@@ -1,9 +1,7 @@
 
 
 export interface VersionLock {
-    frontend: Version
     server: Version
-    cli?: Version
 }
 
 export interface Version {
@@ -12,9 +10,7 @@ export interface Version {
 }
 
 export interface VersionStatusSet {
-    frontend?: VersionStatus
     server?: VersionStatus
-    cli?: VersionStatus
 }
 
 export interface VersionStatus {

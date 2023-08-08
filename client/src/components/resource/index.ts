@@ -1,22 +1,21 @@
 import path from "path"
 import { arrays } from "../../utils/types"
-import { cpR, unzip, rename, chmod, rmdir, readFile, writeFile } from "../../utils/fs"
+import { unzip, rename, chmod, rmdir, readFile, writeFile } from "../../utils/fs"
 import { DATA_FILE, APP_FILE, RESOURCE_FILE } from "../../constants/file"
 import { ClientException } from "../../exceptions"
 import { Version, VersionLock, VersionStatus, VersionStatusSet } from "./model"
 
 /**
  * 记录系统中资源组件的最新版本号。必须更新此记录值至最新，才能正确触发版本更新。
+ * TODO 有没有什么办法，在编译时从gradle项目取版本号？包括migrate项目也需要这个
  */
 const VERSION = {
-    server: "0.1.0",
-    frontend: "0.1.0"
+    server: "0.1.0"
 }
 
 /**
  * 对app程序资源进行管理的管理器。
- * 程序资源指的是server及其携带的frontend资源。这些资源平时打包在App资源包下，但运行时需要解压缩并放到userData目录下。
- * server和frontend捆绑更新，并作为程序基础更新。
+ * 程序资源指的是server资源。平时打包在App资源包下，但运行时需要解压缩并放到userData目录下。
  * 同时，这种解压缩还涉及到app版本更新的问题，因此需要一个组件专门去管理。
  */
 export interface ResourceManager {
@@ -30,10 +29,10 @@ export interface ResourceManager {
     update(): Promise<void>
     /**
      * 查看资源的当前状态。
-     * - NOT_INIT: server/frontend资源没有初始化。
-     * - NEED_UPDATE: server/frontend任意资源需要更新。
+     * - NOT_INIT: server资源没有初始化。
+     * - NEED_UPDATE: server任意资源需要更新。
      * - UPDATING: 资源更新中。
-     * - LATEST: server/frontend处于最新。
+     * - LATEST: server处于最新。
      */
     status(): ResourceStatus
 }
@@ -66,10 +65,6 @@ export interface ResourceManagerOptions {
          * 使用此位置的压缩包提供的后台资源，进行资源组件的调试。
          */
         serverFromResource?: string
-        /**
-         * 使用此位置的前端资源，进行资源组件的调试。此选项的前提是启用了后台资源的调试。
-         */
-        frontendFromFolder?: string
     }
 }
 
@@ -107,8 +102,7 @@ function createProductionResourceManager(options: ResourceManagerOptions): Resou
                 status = ResourceStatus.NOT_INIT
             }else{
                 version.server = createVersionStatus(versionLock.server, VERSION.server)
-                version.frontend = createVersionStatus(versionLock.frontend, VERSION.frontend)
-                if(version.server.latestVersion || version.frontend.latestVersion || version.cli?.latestVersion) {
+                if(version.server.latestVersion) {
                     status = ResourceStatus.NEED_UPDATE
                 }else{
                     status = ResourceStatus.LATEST
@@ -127,7 +121,6 @@ function createProductionResourceManager(options: ResourceManagerOptions): Resou
                     if(version.server == undefined || version.server.latestVersion != undefined) {
                         await updatePartServer()
                     }
-                    await updatePartFrontend()
                     status = ResourceStatus.LATEST
                 }
                 await save()
@@ -139,8 +132,7 @@ function createProductionResourceManager(options: ResourceManagerOptions): Resou
 
     async function save() {
         await writeFile<VersionLock>(versionLockPath, {
-            server: {updateTime: version.server!.lastUpdateTime.getTime(), version: version.server!.currentVersion},
-            frontend: {updateTime: version.frontend!.lastUpdateTime.getTime(), version: version.frontend!.currentVersion}
+            server: {updateTime: version.server!.lastUpdateTime.getTime(), version: version.server!.currentVersion}
         })
     }
 
@@ -157,13 +149,6 @@ function createProductionResourceManager(options: ResourceManagerOptions): Resou
         await chmod(path.join(dest, "bin/keytool"), "755")
         await chmod(path.join(dest, "lib/jspawnhelper"), "755")
         version.server = {lastUpdateTime: new Date(), currentVersion: version.server?.latestVersion ?? VERSION.server}
-    }
-
-    async function updatePartFrontend() {
-        const dest = path.join(options.userDataPath, DATA_FILE.RESOURCE.FRONTEND_FOLDER)
-        await rmdir(dest)
-        await cpR(options.debug?.frontendFromFolder || path.join(options.appPath, APP_FILE.FRONTEND_FOLDER), dest)
-        version.frontend = {lastUpdateTime: new Date(), currentVersion: version.frontend?.latestVersion ?? VERSION.frontend}
     }
 
     return {

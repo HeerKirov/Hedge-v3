@@ -72,7 +72,7 @@ export async function createApplication(options?: AppOptions) {
 
         const appDataDriver = createAppDataDriver({userDataPath, channel: channelManager.currentChannel()})
 
-        const resourceManager = createResourceManager({userDataPath, appPath, debug: options?.debug && {frontendFromFolder: options.debug.frontendFromFolder, serverFromResource: options.debug.serverFromResource}})
+        const resourceManager = createResourceManager({userDataPath, appPath, debug: options?.debug && {serverFromResource: options.debug.serverFromResource}})
 
         const serverManager = createServerManager({userDataPath, channel: channelManager.currentChannel(), debug: options?.debug && {serverFromHost: options.debug.serverFromHost, serverFromFolder: options.debug.serverFromFolder}})
 
