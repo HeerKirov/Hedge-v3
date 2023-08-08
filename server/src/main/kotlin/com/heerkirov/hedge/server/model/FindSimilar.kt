@@ -106,8 +106,8 @@ data class FindSimilarResult(val id: Int,
                              val recordTime: LocalDateTime) {
     open class SummaryTypes(value: Int) : Composition<SummaryTypes>(SummaryTypes::class, value) {
         object SAME : SummaryTypes(0b1)
-        object RELATED : SummaryTypes(0b01)
-        object SIMILAR : SummaryTypes(0b001)
+        object RELATED : SummaryTypes(0b10)
+        object SIMILAR : SummaryTypes(0b100)
         object EMPTY : SummaryTypes(0b0)
 
         companion object {

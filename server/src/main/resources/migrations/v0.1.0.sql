@@ -13,7 +13,7 @@ CREATE TABLE illust(
     source_site                 VARCHAR(16),                        -- [冗余]来源网站的代号
     source_id                   BIGINT,                             -- [冗余]来源网站中的图像代号
     source_part                 INTEGER,                            -- 来源网站中的图像二级页码
-    source_part_name            VARCHAR(32)                         -- 来源网站中的图像二级页名称
+    source_part_name            VARCHAR(32),                        -- 来源网站中的图像二级页名称
 
     description			        TEXT COLLATE NOCASE NOT NULL DEFAULT '',    -- 简述信息，不存在时记空串
     score						INTEGER DEFAULT NULL,                       -- 图像的评分。具体含义由setting定义

@@ -141,6 +141,13 @@ class PathWatcherImpl(private val appStatus: AppStatusDriver,
             .map { it.absolutePathString() }
             .toList()
 
+        try {
+            //奇特特性：如果不加延迟地立刻读取文件，那么会读不出来正确的modifiedTime/createTime。可能是因为刚建立的文件还没来得及写入…
+            Thread.sleep(500)
+        }catch (e: InterruptedException) {
+            return
+        }
+
         val success = processFiles(files)
 
         if(success > 0) {

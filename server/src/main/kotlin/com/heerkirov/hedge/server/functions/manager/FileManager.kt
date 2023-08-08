@@ -10,6 +10,7 @@ import com.heerkirov.hedge.server.dao.FileCacheRecords
 import com.heerkirov.hedge.server.dao.FileFingerprints
 import com.heerkirov.hedge.server.dao.FileRecords
 import com.heerkirov.hedge.server.enums.FileStatus
+import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.events.FileBlockArchived
 import com.heerkirov.hedge.server.events.FileMarkDeleted
 import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
@@ -75,6 +76,8 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
             set(it.videoDuration, 0)
             set(it.originFilename, filename)
             set(it.status, FileStatus.NOT_READY)
+            set(it.fingerStatus, FingerprintStatus.NOT_READY)
+            set(it.deleted, false)
             set(it.createTime, now)
             set(it.updateTime, now)
         } as Int
