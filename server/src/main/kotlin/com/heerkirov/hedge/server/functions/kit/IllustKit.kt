@@ -58,7 +58,7 @@ class IllustKit(private val data: DataRepository,
                 //如果发现parent有notExported的metaTag，那么从parent直接拷贝全部metaTag
                 if(anyNotExportedMetaExists(copyFromParent)) copyAllMetaFromParent(thisId, copyFromParent)
             }else if (copyFromChildren) {
-                //从children拷贝全部notExported的metaTag，然后做导出
+                //从children拷贝全部metaTag
                 copyAllMetaFromChildren(thisId)
             }
         }else if(((newTags.isPresent && tagCount > 0) || (newAuthors.isPresent && authorCount > 0) || (newTopics.isPresent && topicCount > 0)) //这行表示存在任意一项是已修改的
@@ -149,7 +149,7 @@ class IllustKit(private val data: DataRepository,
     private fun copyAllMetaFromParent(thisId: Int, fromId: Int) {
         val now = DateTime.now()
         fun <R : EntityMetaRelationTable<*>, T : MetaTagTable<*>> copyOneMeta(tagRelations: R, metaTag: T) {
-            //tips: 有问题的实现方案，违背了推导原则，导致了A1-B-A2传递。如果parent没有自己的meta，但持有从别的项那里推导的meta，就会出现这个场景。
+            //在调用此方法之前，已有anyNotExportedMetaExists调用，保证parent一定是有自己的meta的，不会产生错误的传递。
             val ids = data.db.from(tagRelations).select(tagRelations.metaId()).where { tagRelations.entityId() eq fromId }.map { it[tagRelations.metaId()]!! }
             data.db.batchInsert(tagRelations) {
                 for (tagId in ids) {
@@ -192,19 +192,25 @@ class IllustKit(private val data: DataRepository,
      * 从当前项的所有子项拷贝meta，统一设定为exported。
      */
     private fun copyAllMetaFromChildren(thisId: Int) {
-        //tips: 此处的实现是直接从所有children拷贝所有metaTag。
-        //      但是此实现有问题，children的更改会延后进行，此实现可能拷贝到children中来自parent的推导项，导致套娃传递。
-        //      TODO 在所有的位置，用一个方案区分推导和自带。当target的所有metaTag都是exported时，它是推导的，否则是自带的。
+        val sumAvailableChildren = mutableSetOf<Int>()
         fun <R> copyOneMeta(tagRelations: R) where R: EntityMetaRelationTable<*> {
-            val ids = data.db.from(Illusts)
-                .innerJoin(tagRelations, tagRelations.entityId() eq Illusts.id)
-                .select(tagRelations.metaId())
+            //读取这种tag类型下，每一个child拥有的not exported的tag的数量，筛选出至少有一个not exported的children。
+            //每种metaTag分别判断即可，不需要联合判断某个child是否是“全部notExported”的，因为只要有一个，就肯定是；一个也没有，就肯定不是
+            val availableChildren = data.db.from(Illusts)
+                .innerJoin(tagRelations, tagRelations.entityId() eq Illusts.id and tagRelations.exported().not())
+                .select(Illusts.id, count(tagRelations.metaId()).aliased("count"))
                 .where { Illusts.parentId eq thisId }
+                .groupBy(Illusts.id)
+                .having { count(tagRelations.metaId()).aliased("count") greater 0 }
+                .map { it[Illusts.id]!! }
+            val metaIds = data.db.from(tagRelations)
+                .select(tagRelations.metaId())
+                .where { tagRelations.entityId() inList availableChildren }
                 .asSequence()
                 .map { it[tagRelations.metaId()]!! }
                 .toSet()
             data.db.batchInsert(tagRelations) {
-                for (tagId in ids) {
+                for (tagId in metaIds) {
                     item {
                         set(tagRelations.entityId(), thisId)
                         set(tagRelations.metaId(), tagId)
@@ -212,12 +218,15 @@ class IllustKit(private val data: DataRepository,
                     }
                 }
             }
+
+            sumAvailableChildren.addAll(availableChildren)
         }
         fun copyAnnotation() {
+            //拷贝注解时，也只从之前那些确定是notExported的children中拷贝
             val items = data.db.from(Illusts)
                 .innerJoin(IllustAnnotationRelations, IllustAnnotationRelations.illustId eq Illusts.id)
                 .select(IllustAnnotationRelations.annotationId)
-                .where { Illusts.parentId eq thisId }
+                .where { Illusts.id inList sumAvailableChildren }
                 .asSequence()
                 .map { it[IllustAnnotationRelations.annotationId]!! }
                 .toSet()
