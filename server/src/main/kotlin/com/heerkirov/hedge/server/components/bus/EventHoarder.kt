@@ -1,9 +1,12 @@
 package com.heerkirov.hedge.server.components.bus
 
 import com.heerkirov.hedge.server.events.ItemBusEvent
-import com.heerkirov.hedge.server.utils.tools.loopPoolThread
 import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * 事件囤积器。
@@ -12,8 +15,9 @@ import java.util.concurrent.ConcurrentHashMap
 class EventHoarder<T>(private val emit: (Array<ItemBusEvent<*>>) -> Unit) {
     private val interval = 50L
     private val collectMap = ConcurrentHashMap<T, LinkedList<ItemBusEvent<*>>>()
-    private val timer = loopPoolThread(thread = ::tickThread)
-    private val timerQueue = LinkedList<QueueItem<T>>()
+    private val pool = Executors.newSingleThreadScheduledExecutor()
+    @Volatile private var future: ScheduledFuture<*>? = null
+    private val count = AtomicInteger(0)
 
     fun collect(type: T, element: ItemBusEvent<*>) {
         val collection = collectMap.computeIfAbsent(type) { LinkedList<ItemBusEvent<*>>() }
@@ -21,51 +25,42 @@ class EventHoarder<T>(private val emit: (Array<ItemBusEvent<*>>) -> Unit) {
         synchronized(collection) {
             collection.add(element)
         }
+        count.getAndIncrement()
 
-        synchronized<Unit>(timerQueue) {
-            if(timerQueue.isEmpty()) {
-                val now = System.currentTimeMillis()
-                timerQueue.add(QueueItem(type, interval, now))
-            }else if(timerQueue.all { it.type != type }) {
-                val now = System.currentTimeMillis()
-                val lastTickTime = timerQueue.last().tickTime
-                val interval = if(now - lastTickTime > interval) interval else now - lastTickTime
-                timerQueue.add(QueueItem(type, interval, now))
+        if(future == null) {
+            synchronized(this) {
+                if (future == null) {
+                    future = pool.scheduleAtFixedRate(::tickThread, interval, interval, TimeUnit.MILLISECONDS)
+                }
             }
         }
-
-        if(!timer.isAlive) timer.start()
     }
 
     private fun tickThread() {
-        val (type, interval, _) = synchronized(timerQueue) {
-            timerQueue.peek() ?: run {
-                timer.stop()
-                return
-            }
-        }
-
-        try {
-            Thread.sleep(interval)
-        }catch (e: InterruptedException) {
-            return
-        }
-
-        timerQueue.pop()
-
-        val collection = collectMap[type]
-        if(!collection.isNullOrEmpty()) {
-            synchronized(collection) {
-                collection.toTypedArray().also { collection.clear() }
-            }.also {
-                if(it.isNotEmpty()) {
-                    emit(it)
+        if(count.get() <= 0) {
+            synchronized(this) {
+                if(count.get() <= 0) {
+                    future?.cancel(false)
+                    future = null
+                    if(count.get() > 0) {
+                        future = pool.scheduleAtFixedRate(::tickThread, interval, interval, TimeUnit.MILLISECONDS)
+                    }
+                    return
                 }
             }
-        }else{
-            println("Event ticked: type=$type, size=0, now=${System.currentTimeMillis()}")
+        }
+        for (collection in collectMap.values) {
+            if(collection.isNotEmpty()) {
+                val polledEvents = synchronized(collection) {
+                    val ret = collection.toTypedArray()
+                    collection.clear()
+                    ret
+                }
+                if(polledEvents.isNotEmpty()) {
+                    count.getAndAdd(-polledEvents.size)
+                    emit(polledEvents)
+                }
+            }
         }
     }
-
-    private data class QueueItem<T>(val type: T, val interval: Long, val tickTime: Long)
 }
