@@ -26,6 +26,7 @@ import com.heerkirov.hedge.server.utils.deleteIfExists
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.tools.loopPoolThread
+import com.heerkirov.hedge.server.utils.tools.assignmentTask
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.slf4j.LoggerFactory
@@ -51,7 +52,6 @@ import kotlin.math.absoluteValue
  */
 interface FileGenerator
 
-private const val GENERATE_INTERVAL: Long = 50
 private const val ARCHIVE_INTERVAL: Long = 1000 * 30
 
 class FileGeneratorImpl(private val appStatus: AppStatusDriver,
@@ -61,12 +61,9 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
     private val log = LoggerFactory.getLogger(FileGenerator::class.java)
 
     private val archiveQueue = LinkedList<ArchiveQueueUnit>()
-    private val thumbnailQueue = LinkedList<Int>()
-    private val fingerprintQueue = LinkedList<Int>()
-
     private val archiveTask = loopPoolThread(thread = ::archiveDaemon)
-    private val thumbnailTask = loopPoolThread(thread = ::thumbnailDaemon)
-    private val fingerprintTask = loopPoolThread(thread = ::fingerprintDaemon)
+    private val thumbnailTask = assignmentTask(thread = ::thumbnailDaemon, poolSize = Runtime.getRuntime().availableProcessors() / 2)
+    private val fingerprintTask = assignmentTask(thread = ::fingerprintDaemon, poolSize = Runtime.getRuntime().availableProcessors() / 2)
 
     override val isIdle: Boolean get() = !thumbnailTask.isAlive && !fingerprintTask.isAlive && !archiveTask.isAlive
 
@@ -80,27 +77,21 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             //读取status为NOT_READY的file，准备处理其缩略图
             val thumbnailTasks = data.db.from(FileRecords)
                 .select(FileRecords.id)
-                .where { FileRecords.status eq FileStatus.NOT_READY }
+                .where { FileRecords.status eq FileStatus.NOT_READY and FileRecords.deleted.not() }
                 .orderBy(FileRecords.updateTime.asc())
                 .map { it[FileRecords.id]!! }
             if(thumbnailTasks.isNotEmpty()) {
-                synchronized(thumbnailQueue) {
-                    thumbnailQueue.addAll(thumbnailTasks)
-                    thumbnailTask.start()
-                }
+                thumbnailTask.addAll(thumbnailTasks)
             }
 
             //读取fingerStatus为NOT_READY的file，准备处理其指纹
             val fingerprintTasks = data.db.from(FileRecords)
                 .select(FileRecords.id)
-                .where { FileRecords.fingerStatus eq FingerprintStatus.NOT_READY }
+                .where { FileRecords.fingerStatus eq FingerprintStatus.NOT_READY and FileRecords.deleted.not() }
                 .orderBy(FileRecords.updateTime.asc())
                 .map { it[FileRecords.id]!! }
             if(fingerprintTasks.isNotEmpty()) {
-                synchronized(fingerprintQueue) {
-                    fingerprintQueue.addAll(fingerprintTasks)
-                    fingerprintTask.start()
-                }
+                fingerprintTask.addAll(fingerprintTasks)
             }
 
             //读取deleted为true的file，准备在归档线程中将其删除
@@ -146,6 +137,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
     }
 
     private fun receiveEvents(e: PackagedBusEvent) {
+        val createdFiles = ArrayList<Int>()
         for (event in e.events) {
             when (event.event) {
                 is FileBlockArchived -> {
@@ -163,16 +155,13 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                     }
                 }
                 is FileMarkCreated -> {
-                    synchronized(thumbnailQueue) {
-                        thumbnailQueue.add(event.event.fileId)
-                        thumbnailTask.start()
-                    }
-                    synchronized(fingerprintQueue) {
-                        fingerprintQueue.add(event.event.fileId)
-                        fingerprintTask.start()
-                    }
+                    createdFiles.add(event.event.fileId)
                 }
             }
+        }
+        if(createdFiles.isNotEmpty()) {
+            thumbnailTask.addAll(createdFiles)
+            fingerprintTask.addAll(createdFiles)
         }
     }
 
@@ -230,16 +219,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
         }
     }
 
-    private fun thumbnailDaemon() {
-        val fileId = synchronized(thumbnailQueue) {
-            if(thumbnailQueue.isNotEmpty()) {
-                thumbnailQueue.removeAt(0)
-            }else{
-                thumbnailTask.stop()
-                return
-            }
-        }
-
+    private fun thumbnailDaemon(fileId: Int) {
         if(!appdata.storage.accessible) {
             log.warn("File storage path ${appdata.storage.storageDir} is not accessible. Thumbnail generator is paused.")
             return
@@ -273,8 +253,6 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                     for (importImageId in importImageIds) {
                         bus.emit(ImportUpdated(importImageId, thumbnailFileReady = true))
                     }
-
-                    Thread.sleep(GENERATE_INTERVAL)
                 }else{
                     log.warn("Thumbnail generating failed because file ${file.absolutePath} not exists.")
                 }
@@ -284,16 +262,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
         }
     }
 
-    private fun fingerprintDaemon() {
-        val fileId = synchronized(fingerprintQueue) {
-            if(fingerprintQueue.isNotEmpty()) {
-                fingerprintQueue.removeAt(0)
-            }else{
-                fingerprintTask.stop()
-                return
-            }
-        }
-
+    private fun fingerprintDaemon(fileId: Int) {
         if(!appdata.storage.accessible) {
             log.warn("File storage path ${appdata.storage.storageDir} is not accessible. Fingerprint generator is paused.")
             return
@@ -333,8 +302,6 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                             set(it.fingerStatus, FingerprintStatus.NONE)
                         }
                     }
-
-                    Thread.sleep(GENERATE_INTERVAL)
                 }else{
                     log.warn("Fingerprint generating failed because file ${file.absolutePath} not exists.")
                 }

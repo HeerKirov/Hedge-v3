@@ -72,7 +72,8 @@ abstract class ControlledLoopThread(start: Boolean = false) : ControlledThread {
     abstract fun run()
 }
 
-abstract class ControlledLoopPoolThread(start: Boolean = false, private val pool: ExecutorService = Executors.newSingleThreadExecutor()) : ControlledThread {
+abstract class ControlledLoopPoolThread(start: Boolean = false) : ControlledThread {
+    private val pool: ExecutorService = Executors.newSingleThreadExecutor()
     private var future: Future<*>? = null
 
     init {
