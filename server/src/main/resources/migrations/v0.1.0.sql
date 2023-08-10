@@ -277,7 +277,7 @@ CREATE TABLE import_image(
     source_id           BIGINT DEFAULT NULL,            -- 来源网站中的图像代号，没有填null
     source_part         INTEGER DEFAULT NULL,           -- 来源网站中的图像二级页码，没有填null
     source_part_name    VARCHAR(32) DEFAULT NULL,       -- 来源网站中的图像二级页名称，没有填null
-    source_preference   TEXT DEFAULT NULL,              -- 来元数据的预设内容
+    source_preference   TEXT DEFAULT NULL,              -- 来源数据的预设内容
     tagme               INTEGER NOT NULL,               -- 标记为tagme，详见illust部分。可以通过配置决定要不要给项目加初始tagme，以及该加哪些
     partition_time	    DATE NOT NULL,                  -- 用于日历分组的时间
     order_time			BIGINT NOT NULL,                -- 用于排序的时间

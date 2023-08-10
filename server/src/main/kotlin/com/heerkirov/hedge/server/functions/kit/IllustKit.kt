@@ -149,6 +149,7 @@ class IllustKit(private val data: DataRepository,
     private fun copyAllMetaFromParent(thisId: Int, fromId: Int) {
         val now = DateTime.now()
         fun <R : EntityMetaRelationTable<*>, T : MetaTagTable<*>> copyOneMeta(tagRelations: R, metaTag: T) {
+            //tips: 有问题的实现方案，违背了推导原则，导致了A1-B-A2传递。如果parent没有自己的meta，但持有从别的项那里推导的meta，就会出现这个场景。
             val ids = data.db.from(tagRelations).select(tagRelations.metaId()).where { tagRelations.entityId() eq fromId }.map { it[tagRelations.metaId()]!! }
             data.db.batchInsert(tagRelations) {
                 for (tagId in ids) {
@@ -191,7 +192,9 @@ class IllustKit(private val data: DataRepository,
      * 从当前项的所有子项拷贝meta，统一设定为exported。
      */
     private fun copyAllMetaFromChildren(thisId: Int) {
-        //tips: 此处的实现是直接从所有children拷贝所有metaTag。(但这并不是正确的实现方法，这么做可能导致exported metaTag在套娃传递(?为什么))
+        //tips: 此处的实现是直接从所有children拷贝所有metaTag。
+        //      但是此实现有问题，children的更改会延后进行，此实现可能拷贝到children中来自parent的推导项，导致套娃传递。
+        //      TODO 在所有的位置，用一个方案区分推导和自带。当target的所有metaTag都是exported时，它是推导的，否则是自带的。
         fun <R> copyOneMeta(tagRelations: R) where R: EntityMetaRelationTable<*> {
             val ids = data.db.from(Illusts)
                 .innerJoin(tagRelations, tagRelations.entityId() eq Illusts.id)

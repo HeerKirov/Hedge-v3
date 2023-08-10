@@ -39,27 +39,88 @@ object DateParser : StrComplexParser<FilterDateValue> {
     override fun parse(str: Str): StrComplexResult<FilterDateValue> {
         val splits = str.value.split('-', '/', '.', limit = 3).map { it.toIntOrNull() ?: castError(str) }
         return when (splits.size) {
-            3 -> StrComplexValue(FilterDateValueImpl(try { LocalDate.of(splits[0], splits[1], splits[2]) } catch (e: Exception) {
-                castError(str)
-            }))
+            3 -> {
+                //2022-10-01
+                val date = try { LocalDate.of(splits[0], splits[1], splits[2]) } catch (e: Exception) {
+                    castError(str)
+                }
+                StrComplexValue(FilterDateValueImpl(date))
+            }
             2 -> if(splits[0] >= 1000) {
+                //2022-10
                 val begin = try { LocalDate.of(splits[0], splits[1], 1) } catch (e: Exception) {
                     castError(str)
                 }
                 val end = begin.plusMonths(1)
                 StrComplexRange(FilterDateValueImpl(begin), FilterDateValueImpl(end))
             }else{
+                //10-01
                 StrComplexValue(FilterDateValueImpl(try { LocalDate.of(LocalDate.now().year, splits[0], splits[1]) } catch (e: Exception) {
                     castError(str)
                 }))
             }
             1 -> if(splits[0] >= 1000) {
+                //2022
                 val begin = try { LocalDate.of(splits[0], 1, 1) } catch (e: Exception) {
                     castError(str)
                 }
                 val end = begin.plusYears(1)
                 StrComplexRange(FilterDateValueImpl(begin), FilterDateValueImpl(end))
             }else{
+                //10
+                val begin = try { LocalDate.of(LocalDate.now().year, splits[0], 1) } catch (e: Exception) {
+                    castError(str)
+                }
+                val end = begin.plusMonths(1)
+                StrComplexRange(FilterDateValueImpl(begin), FilterDateValueImpl(end))
+            }
+            else -> castError(str)
+        }
+    }
+
+    private fun castError(str: Str): Nothing = semanticError(TypeCastError(str.value, TypeCastError.Type.DATE, str.beginIndex, str.endIndex))
+}
+
+/**
+ * 日期时间转换器。
+ * 与日期转换器区别不大，但是由于它的最终输出目标是DATETIME，因此在识别转换上会产生优化，所有精确到日的日期也会被转换为范围。
+ */
+object DateTimeParser : StrComplexParser<FilterDateValue> {
+    override fun parse(str: Str): StrComplexResult<FilterDateValue> {
+        val splits = str.value.split('-', '/', '.', limit = 3).map { it.toIntOrNull() ?: castError(str) }
+        return when (splits.size) {
+            3 -> {
+                //2022-10-01
+                val date = try { LocalDate.of(splits[0], splits[1], splits[2]) } catch (e: Exception) {
+                    castError(str)
+                }
+                val end = date.plusDays(1)
+                StrComplexRange(FilterDateValueImpl(date), FilterDateValueImpl(end))
+            }
+            2 -> if(splits[0] >= 1000) {
+                //2022-10
+                val begin = try { LocalDate.of(splits[0], splits[1], 1) } catch (e: Exception) {
+                    castError(str)
+                }
+                val end = begin.plusMonths(1)
+                StrComplexRange(FilterDateValueImpl(begin), FilterDateValueImpl(end))
+            }else{
+                //10-01
+                val date = try { LocalDate.of(LocalDate.now().year, splits[0], splits[1]) } catch (e: Exception) {
+                    castError(str)
+                }
+                val end = date.plusDays(1)
+                StrComplexRange(FilterDateValueImpl(date), FilterDateValueImpl(end))
+            }
+            1 -> if(splits[0] >= 1000) {
+                //2022
+                val begin = try { LocalDate.of(splits[0], 1, 1) } catch (e: Exception) {
+                    castError(str)
+                }
+                val end = begin.plusYears(1)
+                StrComplexRange(FilterDateValueImpl(begin), FilterDateValueImpl(end))
+            }else{
+                //10
                 val begin = try { LocalDate.of(LocalDate.now().year, splits[0], 1) } catch (e: Exception) {
                     castError(str)
                 }

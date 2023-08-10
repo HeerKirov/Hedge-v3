@@ -15,6 +15,7 @@ import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.composition.unionComposition
 import com.heerkirov.hedge.server.utils.ktorm.compositionAny
 import com.heerkirov.hedge.server.utils.ktorm.escapeLike
+import com.heerkirov.hedge.server.utils.letIf
 import org.ktorm.database.Database
 import org.ktorm.dsl.*
 import org.ktorm.expression.ArgumentExpression
@@ -66,7 +67,7 @@ interface FilterByColumn : ExecuteBuilder {
 
     override fun mapFilter(unionItems: Collection<Filter<out FilterValue>>, exclude: Boolean) {
         if(unionItems.isNotEmpty()) {
-            addWhereCondition(unionItems.map { filter ->
+            unionItems.map { filter ->
                 val column = getFilterDeclareMapping(filter.field)
                 @Suppress("UNCHECKED_CAST")
                 when (filter) {
@@ -98,9 +99,7 @@ interface FilterByColumn : ExecuteBuilder {
                     is FlagFilter -> column as ColumnDeclaring<Boolean>
                     else -> throw RuntimeException("Unsupported filter type ${filter::class.simpleName}.")
                 }
-            }.reduce { a, b -> a or b }.let {
-                if (exclude) it.not() else it
-            })
+            }.reduce { a, b -> a or b }.letIf(exclude) { it.not() }.let { addWhereCondition(it) }
         }
     }
 }

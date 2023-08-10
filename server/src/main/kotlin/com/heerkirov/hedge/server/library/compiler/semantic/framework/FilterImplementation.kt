@@ -163,6 +163,7 @@ class FlagField(override val key: String, override val alias: Array<out String>)
 
 /**
  * 更复杂一些的标准解析field。使用复杂组合解析器指定对str的解析策略。
+ * 复杂组合解析器能把str解析为单值Value或范围Range，这使状况处理变得更复杂了一些。
  */
 class ComplexComparableField<V>(override val key: String, override val alias: Array<out String>, private val strComplexParser: StrComplexParser<V>) : FilterFieldByIdentify<V>(), GeneratedSequenceByIdentify<Filter<V>> where V: ComparableValue<*>, V: EquableValue<*> {
     override fun generateSeq(subject: StrList, family: Family?, predicative: Predicative?): Sequence<Filter<V>> {
@@ -178,9 +179,9 @@ class ComplexComparableField<V>(override val key: String, override val alias: Ar
             }
             ">", "<", ">=", "<=" -> when(predicative) {
                 is StrList -> processStrListForCompare(predicative, family.value)
-                is SortList -> semanticError(UnsupportedFilterValueType(key, ValueType.SORT_LIST, predicative.beginIndex, predicative.endIndex))
                 is Col -> semanticError(UnsupportedFilterValueTypeOfRelation(key, ValueType.COLLECTION, family.value, predicative.beginIndex, predicative.endIndex))
                 is Range -> semanticError(UnsupportedFilterValueTypeOfRelation(key, ValueType.RANGE, family.value, predicative.beginIndex, predicative.endIndex))
+                is SortList -> semanticError(UnsupportedFilterValueType(key, ValueType.SORT_LIST, predicative.beginIndex, predicative.endIndex))
                 else -> throw RuntimeException("Unsupported predicative ${predicative::class.simpleName}.")
             }
             "~", "~+", "~-" -> semanticError(UnsupportedFilterRelationSymbol(key, family.value, family.beginIndex, family.endIndex))
@@ -199,39 +200,79 @@ class ComplexComparableField<V>(override val key: String, override val alias: Ar
         })
     }
 
-    private fun processStrListForCompare(strList: StrList, symbol: String): Sequence<Filter<V>> {
-        if(strList.items.size > 1) semanticError(ValueCannotBeAddress(strList.beginIndex, strList.endIndex))
-        val filterValue = parseRangeFilterValue(strList.items.first())
-        val filter = when (symbol) {
-            ">" -> RangeFilter(this, filterValue, null, includeBegin = false, includeEnd = false)
-            ">=" -> RangeFilter(this, filterValue, null, includeBegin = true, includeEnd = false)
-            "<" -> RangeFilter(this, null, filterValue, includeBegin = false, includeEnd = false)
-            "<=" -> RangeFilter(this, null, filterValue, includeBegin = false, includeEnd = true)
-            else -> throw RuntimeException("Unsupported family symbol '${symbol}'.")
-        }
-        return sequenceOf(filter)
-    }
-
     private fun processCol(col: Col): Sequence<Filter<V>> {
         if(col.items.isEmpty()) {
             //如果集合内没有项，就丢弃filter
             return emptySequence()
         }
         val results = col.items.asSequence().map { strComplexParser.parse(it) }.toList()
-        return  results.filterIsInstance<StrComplexValue<V>>().map { it.value }.let { sequenceOf(EqualFilter(this, it)) } +
-                results.filterIsInstance<StrComplexRange<V>>().map { RangeFilter(this, it.begin, it.end, includeBegin = true, includeEnd = false) }.asSequence()
+        return results.filterIsInstance<StrComplexValue<V>>().map { it.value }.let { sequenceOf(EqualFilter(this, it)) } +
+               results.filterIsInstance<StrComplexRange<V>>().map { RangeFilter(this, it.begin, it.end, includeBegin = true, includeEnd = false) }.asSequence()
     }
 
     private fun processRange(range: Range): Sequence<Filter<V>> {
-        val beginValue = parseRangeFilterValue(range.from)
-        val endValue = parseRangeFilterValue(range.to)
-        return sequenceOf(RangeFilter(this, beginValue, endValue, includeBegin = range.includeFrom, includeEnd = range.includeTo))
+        val beginValue: V
+        val endValue: V
+        val includeBegin: Boolean
+        val includeEnd: Boolean
+
+        when(val from = strComplexParser.parse(range.from)) {
+            is StrComplexValue<*> -> {
+                beginValue = (from as StrComplexValue<V>).value
+                includeBegin = range.includeFrom
+            }
+            is StrComplexRange<*> -> if(range.includeFrom) {
+                beginValue = (from as StrComplexRange<V>).begin
+                includeBegin = true
+            }else{
+                beginValue = (from as StrComplexRange<V>).end
+                includeBegin = true
+            }
+        }
+
+        when(val to = strComplexParser.parse(range.to)) {
+            is StrComplexValue<*> -> {
+                endValue = (to as StrComplexValue<V>).value
+                includeEnd = range.includeTo
+            }
+            is StrComplexRange<*> -> if(range.includeTo) {
+                endValue = (to as StrComplexRange<V>).end
+                includeEnd = false
+            }else{
+                endValue = (to as StrComplexRange<V>).begin
+                includeEnd = false
+            }
+        }
+
+        return sequenceOf(RangeFilter(this, beginValue, endValue, includeBegin, includeEnd))
     }
 
-    private fun parseRangeFilterValue(str: Str): V {
-        return when (val result = strComplexParser.parse(str)) {
-            is StrComplexRange<*> -> semanticError(ValueCannotBePatternInComparison(str.beginIndex, str.endIndex))
-            is StrComplexValue<*> -> (result as StrComplexValue<V>).value
+    private fun processStrListForCompare(strList: StrList, symbol: String): Sequence<Filter<V>> {
+        if(strList.items.size > 1) semanticError(ValueCannotBeAddress(strList.beginIndex, strList.endIndex))
+        when (val result = strComplexParser.parse(strList.items.first())) {
+            is StrComplexValue<*> -> {
+                val filterValue = (result as StrComplexValue<V>).value
+                val filter = when (symbol) {
+                    ">" -> RangeFilter(this, filterValue, null, includeBegin = false, includeEnd = false)
+                    ">=" -> RangeFilter(this, filterValue, null, includeBegin = true, includeEnd = false)
+                    "<" -> RangeFilter(this, null, filterValue, includeBegin = false, includeEnd = false)
+                    "<=" -> RangeFilter(this, null, filterValue, includeBegin = false, includeEnd = true)
+                    else -> throw RuntimeException("Unsupported family symbol '$symbol'.")
+                }
+                return sequenceOf(filter)
+            }
+            is StrComplexRange<*> -> {
+                val beginValue = (result as StrComplexRange<V>).begin
+                val endValue = result.end
+                val filter = when (symbol) {
+                    ">" -> RangeFilter(this, endValue, null, includeBegin = true, includeEnd = false)
+                    ">=" -> RangeFilter(this, beginValue, null, includeBegin = true, includeEnd = false)
+                    "<" -> RangeFilter(this, null, beginValue, includeBegin = false, includeEnd = false)
+                    "<=" -> RangeFilter(this, null, endValue, includeBegin = false, includeEnd = false)
+                    else -> throw RuntimeException("Unsupported family symbol '$symbol'.")
+                }
+                return sequenceOf(filter)
+            }
         }
     }
 }
@@ -378,6 +419,11 @@ fun patternNumberField(key: String, vararg alias: String): FilterFieldDefinition
  * 日期型关键字项。
  */
 fun dateField(key: String, vararg alias: String): FilterFieldDefinition<FilterDateValue> = ComplexComparableField(key, alias, DateParser)
+
+/**
+ * 日期时间型关键字项。表面上能写的都是日期，但这个是按照DATETIME类型的需要来翻译日期值的。
+ */
+fun datetimeField(key: String, vararg alias: String): FilterFieldDefinition<FilterDateValue> = ComplexComparableField(key, alias, DateTimeParser)
 
 /**
  * 文件大小型关键字项。

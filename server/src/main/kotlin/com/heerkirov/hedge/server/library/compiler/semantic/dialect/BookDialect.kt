@@ -16,8 +16,8 @@ object BookDialect : QueryDialect<BookDialect.BookOrderItem> {
     val id = patternNumberField("ID", "id")
     val score = numberField("SCORE", "score")
     val imageCount = numberField("IMAGE_COUNT", "count", "image-count")
-    val createTime = dateField("CREATE_TIME", "create", "create-time", "ct")
-    val updateTime = dateField("UPDATE_TIME", "update", "update-time", "ut")
+    val createTime = datetimeField("CREATE_TIME", "create", "create-time", "ct")
+    val updateTime = datetimeField("UPDATE_TIME", "update", "update-time", "ut")
     val title = patternStringField("TITLE", "title")
     val description = patternStringField("DESCRIPTION", "description", "desc")
 
