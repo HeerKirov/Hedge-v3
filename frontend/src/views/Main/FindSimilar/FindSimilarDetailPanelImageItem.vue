@@ -115,4 +115,5 @@ const selectedMode = computed(() => {
     border-top-right-radius: $radius-size-std
     border-bottom-left-radius: $radius-size-std
     background-color: rgba(0, 0, 0, 0.65)
+    color: $dark-mode-text-color
 </style>

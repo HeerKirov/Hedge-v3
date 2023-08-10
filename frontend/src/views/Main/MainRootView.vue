@@ -63,7 +63,7 @@ const { menuItems, menuSelected } = installNavMenu({
 
                 <template #bottom>
                     <Button square icon="gear" @click="windowManager.openSetting"/>
-                    <!-- <Button class="ml-1" square icon="circle-question-regular" @click="windowManager.openGuide"/> -->
+                    <Button class="ml-1" square icon="circle-question-regular" @click="windowManager.openGuide"/>
                     <div class="is-inline-block float-right ml-1">
                         <Separator size="large"/>
                         <StagingPostButton/>

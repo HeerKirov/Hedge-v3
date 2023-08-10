@@ -154,6 +154,14 @@ export default <RouteRecordRaw[]>[
         ]
     },
     {
+        name: "Guide",
+        path: "/guide",
+        component: () => import("@/views/Guide/Guide.vue"),
+        meta: {
+            title: "Hedge指南"
+        }
+    },
+    {
         name: "NotFound",
         path: "/:catchAll(.*)",
         component: () => import("@/views/NotFound.vue"),

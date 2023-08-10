@@ -34,11 +34,11 @@ const [filterBySourceTagType, filterBySourceTagTypeSot, saveFilterBySourceTagTyp
         </p>
         <p class="mt-3">
             <CheckBox :value="config.findBySourceIdentity" @update:value="setValue('findBySourceIdentity', $event)">来源一致性判断</CheckBox>
-            <p class="secondary-text">对于拥有完全相同的来源、来源ID、分页的图像，直接将其判定为相同项。</p>
+            <p class="secondary-text">对于拥有相同的来源、来源ID、分页的图像，直接将其判定为相同项。</p>
         </p>
         <p class="mt-1">
             <CheckBox :value="config.findBySourceRelation" @update:value="setValue('findBySourceRelation', $event)">来源关系判断</CheckBox>
-            <p class="secondary-text">根据来源的关联项、集合、分页等属性，查找出在来源具有血缘关系的图像。</p>
+            <p class="secondary-text">根据来源的关联项、集合等属性，查找出具有血缘关系的图像。</p>
         </p>
         <p class="mt-1">
             <CheckBox :value="config.findBySourceMark" @update:value="setValue('findBySourceMark', $event)">来源标记</CheckBox>

@@ -43,7 +43,7 @@ export function useIllustViewController(queryFilterIllustType?: Ref<IllustType>)
     const storage = useLocalStorage<{
         fitType: "cover" | "contain", columnNum: number, collectionMode: boolean, viewMode: "row" | "grid", editableLockOn: boolean
     }>("illust/list/view-controller", () => ({
-        fitType: "cover", columnNum: 8, collectionMode: false, viewMode: "grid", editableLockOn: false
+        fitType: "cover", columnNum: 8, collectionMode: true, viewMode: "grid", editableLockOn: false
     }), true)
 
     if(queryFilterIllustType !== undefined) watch(() => storage.value.collectionMode, collectionMode => queryFilterIllustType.value = collectionMode ? "COLLECTION" : "IMAGE", {immediate: true})

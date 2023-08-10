@@ -9,7 +9,7 @@ import { TypeDefinition, useDraggable, useDroppable } from "@/modules/drag"
 import { installation } from "@/utils/reactivity"
 import { LocalDateTime } from "@/utils/datetime"
 
-const SELECTED_MAX = 200
+const SELECTED_MAX = 500
 
 export interface SuitableIllust {
     id: number

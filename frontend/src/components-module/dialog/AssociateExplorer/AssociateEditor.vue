@@ -43,6 +43,7 @@ const { images, dropEvents, remove, save } = useAssociateEditorData(props, () =>
 
 <style module lang="sass">
 @import "../../../styles/base/size"
+@import "../../../styles/base/color"
 
 .close-btn
     position: absolute
@@ -57,4 +58,5 @@ const { images, dropEvents, remove, save } = useAssociateEditorData(props, () =>
     border-top-right-radius: $radius-size-std
     border-bottom-left-radius: $radius-size-std
     background-color: rgba(0, 0, 0, 0.65)
+    color: $dark-mode-text-color
 </style>

@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import markdown from 'vite-plugin-md'
 import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   base: "./",
-  plugins: [vue()],
+  plugins: [vue({include: [/\.vue$/, /\.md$/]}), markdown()],
   css: {
     modules: {
       localsConvention: "camelCase"
@@ -38,8 +39,11 @@ export default defineConfig({
           if(id.includes('src/views/Test/')) {
             return 'views-Test'
           }
+          if(id.includes('src/views/Guide/')) {
+            return 'views-Guide'
+          }
           if(id.includes('src/views/')) {
-            return 'views-Others'
+            return 'views'
           }
           if(id.includes('node_modules/')) {
             return 'dependencies'
