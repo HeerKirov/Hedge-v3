@@ -13,6 +13,7 @@ import com.heerkirov.hedge.server.library.form.queryAsFilter
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
+import io.javalin.http.pathParamAsClass
 
 class SourceRoutes(private val sourceDataService: SourceDataService,
                    private val sourceMarkService: SourceMarkService,

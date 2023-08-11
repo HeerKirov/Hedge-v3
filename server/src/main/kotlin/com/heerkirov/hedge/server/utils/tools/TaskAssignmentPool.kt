@@ -14,7 +14,7 @@ abstract class TaskAssignmentThreadImpl<T>(poolSize: Int?) : TaskAssignmentThrea
     private val pool: ExecutorService = Executors.newFixedThreadPool(size)
     private val aliveTaskCount = AtomicInteger(0)
 
-    override val isAlive: Boolean get() = aliveTaskCount.get() <= 0
+    override val isAlive: Boolean get() = aliveTaskCount.get() > 0
 
     override fun addAll(tasks: Iterable<T>) {
         for (t in tasks) {

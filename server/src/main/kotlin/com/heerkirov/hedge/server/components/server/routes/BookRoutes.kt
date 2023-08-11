@@ -15,6 +15,8 @@ import com.heerkirov.hedge.server.library.form.queryAsFilter
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
+import io.javalin.http.bodyAsClass
+import io.javalin.http.pathParamAsClass
 
 class BookRoutes(private val bookService: BookService) : Routes {
     override fun handle(javalin: Javalin) {

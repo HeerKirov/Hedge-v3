@@ -6,6 +6,7 @@ import com.heerkirov.hedge.server.dto.res.WsResult
 import com.heerkirov.hedge.server.exceptions.*
 import io.javalin.Javalin
 import io.javalin.http.Context
+import io.javalin.http.HandlerType
 import io.javalin.websocket.WsConfig
 
 /**
@@ -23,7 +24,7 @@ class Authentication(private val baseToken: String) : Routes {
 
     private fun authenticate(ctx: Context) {
         //对于OPTIONS method放行
-        if(ctx.method() == "OPTIONS") return
+        if(ctx.method() == HandlerType.OPTIONS) return
         val bearer = ctx.header("Authorization") ?: throw be(NoToken())
         val userToken = if(bearer.substring(0, prefixBearer.length).lowercase() == prefixBearer) bearer.substring(prefixBearer.length) else throw be(NoToken())
 

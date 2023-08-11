@@ -103,7 +103,7 @@ class TagKit(private val data: DataRepository, private val annotationManager: An
         data.db.delete(TagAnnotationRelations) { (it.tagId eq thisId) and (it.annotationId inList deleteIds) }
 
         val addIds = annotationIds.keys - oldAnnotationIds
-        data.db.batchInsert(TagAnnotationRelations) {
+        if(addIds.isNotEmpty()) data.db.batchInsert(TagAnnotationRelations) {
             for (addId in addIds) {
                 item {
                     set(it.tagId, thisId)

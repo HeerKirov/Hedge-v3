@@ -221,7 +221,7 @@ class TopicKit(private val data: DataRepository, private val annotationManager: 
         data.db.delete(TopicAnnotationRelations) { (it.topicId eq thisId) and (it.annotationId inList deleteIds) }
 
         val addIds = annotationIds - oldAnnotationIds
-        data.db.batchInsert(TopicAnnotationRelations) {
+        if(addIds.isNotEmpty()) data.db.batchInsert(TopicAnnotationRelations) {
             for (addId in addIds) {
                 item {
                     set(it.topicId, thisId)

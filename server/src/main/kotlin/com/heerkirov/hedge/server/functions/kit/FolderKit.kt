@@ -29,7 +29,7 @@ class FolderKit(private val data: DataRepository) {
 
         data.db.delete(FolderImageRelations) { it.folderId eq thisId }
 
-        data.db.batchInsert(FolderImageRelations) {
+        if(imageIds.isNotEmpty()) data.db.batchInsert(FolderImageRelations) {
             imageIds.forEachIndexed { index, imageId ->
                 item {
                     set(it.folderId, thisId)
@@ -75,7 +75,7 @@ class FolderKit(private val data: DataRepository) {
             set(it.ordinal, it.ordinal plus imageIds.size)
         }
         //然后插入新项
-        data.db.batchInsert(FolderImageRelations) {
+        if(imageIds.isNotEmpty()) data.db.batchInsert(FolderImageRelations) {
             imageIds.forEachIndexed { index, imageId ->
                 item {
                     set(it.folderId, thisId)
@@ -121,7 +121,7 @@ class FolderKit(private val data: DataRepository) {
                 set(it.ordinal, it.ordinal plus indexes.size)
             }
             //重新插入要移动的项
-            data.db.batchInsert(FolderImageRelations) {
+            if(relations.isNotEmpty()) data.db.batchInsert(FolderImageRelations) {
                 //迭代这部分要移动的项目列表
                 relations.forEachIndexed { index, r ->
                     item {

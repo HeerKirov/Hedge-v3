@@ -189,19 +189,21 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository,
 
             val finalTasks = analyseMergeTasks(tasks)
 
-            data.db.batchInsert(ExporterRecords) {
-                for (task in finalTasks) {
-                    item {
-                        set(it.type, typeIndex)
-                        set(it.key, merge?.keyof(task) ?: "")
-                        set(it.content, worker.serialize(task))
-                        set(it.createTime, now)
+            if(finalTasks.isNotEmpty()) {
+                data.db.batchInsert(ExporterRecords) {
+                    for (task in finalTasks) {
+                        item {
+                            set(it.type, typeIndex)
+                            set(it.key, merge?.keyof(task) ?: "")
+                            set(it.content, worker.serialize(task))
+                            set(it.createTime, now)
+                        }
                     }
                 }
-            }
 
-            _totalTaskCount.addAndGet(finalTasks.size)
-            _taskCount.addAndGet(finalTasks.size)
+                _totalTaskCount.addAndGet(finalTasks.size)
+                _taskCount.addAndGet(finalTasks.size)
+            }
         }
 
         if(!this.isAlive) {

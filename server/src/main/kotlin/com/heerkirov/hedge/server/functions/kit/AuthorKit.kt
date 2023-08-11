@@ -80,7 +80,7 @@ class AuthorKit(private val data: DataRepository, private val annotationManager:
         data.db.delete(AuthorAnnotationRelations) { (it.authorId eq thisId) and (it.annotationId inList deleteIds) }
 
         val addIds = annotationIds - oldAnnotationIds
-        data.db.batchInsert(AuthorAnnotationRelations) {
+        if(addIds.isNotEmpty()) data.db.batchInsert(AuthorAnnotationRelations) {
             for (addId in addIds) {
                 item {
                     set(it.authorId, thisId)

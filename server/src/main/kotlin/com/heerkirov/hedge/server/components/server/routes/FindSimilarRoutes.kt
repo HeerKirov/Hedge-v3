@@ -12,6 +12,7 @@ import com.heerkirov.hedge.server.library.form.queryAsFilter
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
+import io.javalin.http.pathParamAsClass
 
 class FindSimilarRoutes(private val findSimilarService: FindSimilarService) : Routes {
     override fun handle(javalin: Javalin) {

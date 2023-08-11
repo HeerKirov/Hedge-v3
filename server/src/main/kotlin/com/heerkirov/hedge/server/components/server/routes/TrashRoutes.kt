@@ -9,6 +9,8 @@ import com.heerkirov.hedge.server.library.form.queryAsFilter
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
+import io.javalin.http.pathParamAsClass
+import io.javalin.http.bodyAsClass
 
 class TrashRoutes(private val trashService: TrashService) : Routes {
     override fun handle(javalin: Javalin) {

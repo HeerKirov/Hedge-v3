@@ -5,7 +5,7 @@ import com.heerkirov.hedge.server.components.server.Routes
 import com.heerkirov.hedge.server.functions.manager.FileManager
 import io.javalin.Javalin
 import io.javalin.http.Context
-import io.javalin.http.HttpCode
+import io.javalin.http.HttpStatus
 import org.eclipse.jetty.server.handler.ResourceHandler
 
 class StaticFileHandler(private val archive: FileManager) : Routes {
@@ -27,20 +27,20 @@ class StaticFileHandler(private val archive: FileManager) : Routes {
         val target = ctx.path().removePrefix(prefix).trimStart('/')
         val splits = target.split("/", limit = 3)
         if(splits.size < 3) {
-            ctx.status(HttpCode.NOT_FOUND)
+            ctx.status(HttpStatus.NOT_FOUND)
             return
         }
 
         val archiveType = try {
             ArchiveType.valueOf(splits[0].uppercase())
         }catch (e: IllegalArgumentException) {
-            ctx.status(HttpCode.NOT_FOUND)
+            ctx.status(HttpStatus.NOT_FOUND)
             return
         }
 
         val path = archive.load(archiveType, splits[1], splits[2])
         if(path == null) {
-            ctx.status(HttpCode.NOT_FOUND)
+            ctx.status(HttpStatus.NOT_FOUND)
             return
         }
 
@@ -55,9 +55,9 @@ class StaticFileHandler(private val archive: FileManager) : Routes {
                 "webm" -> "video/webm"
                 else -> "application/octet-stream"
             }
-            ctx.seekableStream(resource.inputStream, contentType)
+            ctx.writeSeekableStream(resource.inputStream, contentType, resource.length())
         }else{
-            ctx.status(HttpCode.NOT_FOUND)
+            ctx.status(HttpStatus.NOT_FOUND)
         }
     }
 }

@@ -30,7 +30,7 @@ class WsConsumer(ctx: (WsConsumer.() -> Unit)? = null) : Consumer<WsConfig> {
     }
 
     private fun pingThread() {
-        Thread.sleep(1000L * 120)
+        Thread.sleep(1000L * 30)
         connections.forEach { it.sendPing() }
     }
 

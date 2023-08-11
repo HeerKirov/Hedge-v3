@@ -12,6 +12,7 @@ import com.heerkirov.hedge.server.functions.service.ImportService
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
+import io.javalin.http.pathParamAsClass
 
 class ImportRoutes(private val importService: ImportService) : Routes {
     override fun handle(javalin: Javalin) {
@@ -47,7 +48,7 @@ class ImportRoutes(private val importService: ImportService) : Routes {
     }
 
     private fun upload(ctx: Context) {
-        val form = ctx.uploadedFile("file")?.let { UploadForm(it.content, it.filename, it.extension.trimStart('.')) } ?: throw be(ParamRequired("file"))
+        val form = ctx.uploadedFile("file")?.let { UploadForm(it.content(), it.filename(), it.extension().trimStart('.')) } ?: throw be(ParamRequired("file"))
         val (id, warnings) = importService.upload(form)
         ctx.status(201).json(IdResWithWarnings(id, warnings.map { ErrorResult(it) }))
     }

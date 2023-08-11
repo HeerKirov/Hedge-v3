@@ -256,7 +256,7 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
 
         data.db.delete(BookImageRelations) { it.bookId eq thisId }
 
-        data.db.batchInsert(BookImageRelations) {
+        if(imageIds.isNotEmpty()) data.db.batchInsert(BookImageRelations) {
             imageIds.forEachIndexed { index, imageId ->
                 item {
                     set(it.bookId, thisId)
@@ -301,7 +301,7 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
             set(it.ordinal, it.ordinal plus imageIds.size)
         }
         //然后插入新项
-        data.db.batchInsert(BookImageRelations) {
+        if(imageIds.isNotEmpty()) data.db.batchInsert(BookImageRelations) {
             imageIds.forEachIndexed { index, imageId ->
                 item {
                     set(it.bookId, thisId)
@@ -349,7 +349,7 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
                 set(it.ordinal, it.ordinal plus indexes.size)
             }
             //重新插入要移动的项
-            data.db.batchInsert(BookImageRelations) {
+            if(relations.isNotEmpty()) data.db.batchInsert(BookImageRelations) {
                 //迭代这部分要移动的项目列表
                 relations.forEachIndexed { index, r ->
                     item {

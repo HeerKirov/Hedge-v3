@@ -1,21 +1,21 @@
 plugins {
     application
-    kotlin("jvm").version("1.7.10")
+    kotlin("jvm").version("1.9.0")
     id("com.github.johnrengelman.shadow").version("4.0.3")
-    id("org.beryx.jlink").version("2.25.0")
+    id("org.beryx.jlink").version("2.26.0")
 }
 
 group = "com.heerkirov.hedge"
-version = "0.1.0"
+version = "0.1.1"
 
 dependencies {
-    val kotlinVersion = "1.7.10"
-    val javalinVersion = "4.6.4"
-    val ktormVersion = "3.5.0"
-    val sqliteVersion = "3.36.0.3"
-    val jacksonVersion = "2.11.4" //fk, how to upgrade it?
+    val kotlinVersion = "1.9.0"
+    val javalinVersion = "5.6.2"
+    val ktormVersion = "3.6.0"
+    val sqliteVersion = "3.42.0.0"
+    val jacksonVersion = "2.15.2" //fk, how to upgrade it?
     val javeVersion = "3.3.1"
-    val slf4jVersion = "1.7.36"
+    val slf4jVersion = "2.0.7"
     val junitVersion = "4.13.2"
     val javePlatform = when(System.getProperty("os.name").toLowerCase()) {
         "mac" -> "nativebin-osx64"
@@ -58,9 +58,9 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 sourceSets {
@@ -108,5 +108,16 @@ jlink {
         uses("kotlin.reflect.jvm.internal.impl.resolve.ExternalOverridabilityCondition")
         uses("kotlin.reflect.jvm.internal.impl.util.ModuleVisibilityHelper")
         uses("kotlin.reflect.jvm.internal.impl.builtins.BuiltInsLoader")
+    }
+    /* 如果去掉这一条，则会在启动时报告错误：
+     * java.lang.LayerInstantiationException: Package kotlin in both module kotlin.stdlib and module com.heerkirov.hedge.merged.module
+     * 解决方案来自 https://stackoverflow.com/questions/74453018/jlink-package-kotlin-in-both-merged-module-and-kotlin-stdlib
+     */
+    forceMerge("kotlin")
+}
+
+task("printVersion") {
+    doLast {
+        println(project.version)
     }
 }

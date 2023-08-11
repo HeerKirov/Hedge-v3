@@ -234,7 +234,7 @@ class SourceDataManager(private val appdata: AppDataManager,
             tags.applyOpt {
                 if(isNotEmpty()) {
                     val tagIds = sourceTagManager.getAndUpsertSourceTags(sourceSite, this)
-                    data.db.batchInsert(SourceTagRelations) {
+                    if(tagIds.isNotEmpty()) data.db.batchInsert(SourceTagRelations) {
                         for (tagId in tagIds) {
                             item {
                                 set(it.sourceDataId, id)
@@ -248,7 +248,7 @@ class SourceDataManager(private val appdata: AppDataManager,
             books.applyOpt {
                 if(isNotEmpty()) {
                     val bookIds = sourceBookManager.getAndUpsertSourceBooks(sourceSite, this)
-                    data.db.batchInsert(SourceBookRelations) {
+                    if(bookIds.isNotEmpty()) data.db.batchInsert(SourceBookRelations) {
                         for (bookId in bookIds) {
                             item {
                                 set(it.sourceDataId, id)

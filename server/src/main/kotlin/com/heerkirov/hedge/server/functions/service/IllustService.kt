@@ -811,11 +811,13 @@ class IllustService(private val appdata: AppDataManager,
                     listOf(orderTimeBegin.toMillisecond())
                 }
 
-                data.db.batchUpdate(Illusts) {
-                    seq.forEachIndexed { i, (id, _, _) ->
-                        item {
-                            where { it.id eq id }
-                            set(it.orderTime, values[i])
+                if(seq.isNotEmpty()) {
+                    data.db.batchUpdate(Illusts) {
+                        seq.forEachIndexed { i, (id, _, _) ->
+                            item {
+                                where { it.id eq id }
+                                set(it.orderTime, values[i])
+                            }
                         }
                     }
                 }
@@ -826,11 +828,13 @@ class IllustService(private val appdata: AppDataManager,
                         .groupBy { (_, p, _) -> p }
                         .mapValues { (_, values) -> values.minOf { (_, _, t) -> t } }
 
-                    data.db.batchUpdate(Illusts) {
-                        for ((id, ot) in collectionValues) {
-                            item {
-                                where { it.id eq id }
-                                set(it.orderTime, ot)
+                    if(collectionValues.isNotEmpty()) {
+                        data.db.batchUpdate(Illusts) {
+                            for ((id, ot) in collectionValues) {
+                                item {
+                                    where { it.id eq id }
+                                    set(it.orderTime, ot)
+                                }
                             }
                         }
                     }

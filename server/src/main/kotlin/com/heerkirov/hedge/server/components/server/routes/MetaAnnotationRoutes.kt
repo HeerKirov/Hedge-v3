@@ -11,6 +11,7 @@ import com.heerkirov.hedge.server.functions.service.AnnotationService
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
+import io.javalin.http.pathParamAsClass
 
 class MetaAnnotationRoutes(private val annotationService: AnnotationService) : Routes {
     override fun handle(javalin: Javalin) {

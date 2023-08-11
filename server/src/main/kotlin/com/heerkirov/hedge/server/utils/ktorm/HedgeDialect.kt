@@ -88,7 +88,7 @@ class HedgeSqlFormatter(database: Database, beautifySql: Boolean, indentSize: In
             }
             is RowNumberExpression -> {
                 write("row_number() OVER (ORDER BY ")
-                visitOrderByList(expr.orders)
+                visitExpressionList(expr.orders)
                 removeLastBlank()
                 write(") ")
 

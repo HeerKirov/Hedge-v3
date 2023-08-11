@@ -10,6 +10,7 @@ import com.heerkirov.hedge.server.library.form.bodyAsForm
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
+import io.javalin.http.bodyAsClass
 
 class UtilExportRoutes(private val exportUtilService: ExportUtilService) : Routes {
     override fun handle(javalin: Javalin) {

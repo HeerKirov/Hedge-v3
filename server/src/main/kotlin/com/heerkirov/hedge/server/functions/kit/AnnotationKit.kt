@@ -60,11 +60,13 @@ class AnnotationKit(private val data: DataRepository) {
             .map { Pair(it[Authors.id]!!, it[Authors.cachedAnnotations]!!) }
             .map { (id, cache) -> Pair(id, cache.filter { it.id != annotationId }) }
             .toMap()
-        data.db.batchUpdate(Authors) {
-            for ((id, cache) in authors) {
-                item {
-                    where { it.id eq id }
-                    set(it.cachedAnnotations, cache)
+        if(authors.isNotEmpty()) {
+            data.db.batchUpdate(Authors) {
+                for ((id, cache) in authors) {
+                    item {
+                        where { it.id eq id }
+                        set(it.cachedAnnotations, cache)
+                    }
                 }
             }
         }
@@ -77,11 +79,13 @@ class AnnotationKit(private val data: DataRepository) {
             .map { Pair(it[Topics.id]!!, it[Topics.cachedAnnotations]!!) }
             .map { (id, cache) -> Pair(id, cache.filter { it.id != annotationId }) }
             .toMap()
-        data.db.batchUpdate(Topics) {
-            for ((id, cache) in topics) {
-                item {
-                    where { it.id eq id }
-                    set(it.cachedAnnotations, cache)
+        if(topics.isNotEmpty()) {
+            data.db.batchUpdate(Topics) {
+                for ((id, cache) in topics) {
+                    item {
+                        where { it.id eq id }
+                        set(it.cachedAnnotations, cache)
+                    }
                 }
             }
         }

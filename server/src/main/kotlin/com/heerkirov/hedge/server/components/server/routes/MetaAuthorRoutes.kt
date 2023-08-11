@@ -13,6 +13,7 @@ import com.heerkirov.hedge.server.library.form.bodyAsListForm
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
+import io.javalin.http.pathParamAsClass
 
 class MetaAuthorRoutes(private val authorService: AuthorService) : Routes {
     override fun handle(javalin: Javalin) {

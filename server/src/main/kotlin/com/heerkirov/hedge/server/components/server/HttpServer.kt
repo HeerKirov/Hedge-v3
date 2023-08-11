@@ -14,8 +14,9 @@ import com.heerkirov.hedge.server.utils.Json
 import com.heerkirov.hedge.server.utils.Net
 import com.heerkirov.hedge.server.utils.Token
 import io.javalin.Javalin
-import io.javalin.plugin.json.JavalinJackson
+import io.javalin.json.JavalinJackson
 import java.net.BindException
+import java.time.Duration
 
 interface HttpServer : Component {
     /**
@@ -61,8 +62,16 @@ class HttpServerImpl(private val health: Health,
         server = Javalin
             .create {
                 it.showJavalinBanner = false
-                it.maxRequestSize = 1024 * 1024 * 64 //最大64MB的request body限制
-                it.enableCorsForAllOrigins()
+                it.http.maxRequestSize = 1024 * 1024 * 64 //最大64MB的request body限制
+                it.jetty.wsFactoryConfig { ws ->
+                    ws.idleTimeout = Duration.ofSeconds(60)
+                }
+                it.plugins.enableCors { cors ->
+                    cors.add { config ->
+                        config.anyHost()
+                        config.allowCredentials = true
+                    }
+                }
                 it.jsonMapper(JavalinJackson(Json.objectMapper()))
             }
             .handle(aspect, authentication, staticFileHandler, errorHandler)

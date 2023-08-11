@@ -151,7 +151,7 @@ class IllustKit(private val data: DataRepository,
         fun <R : EntityMetaRelationTable<*>, T : MetaTagTable<*>> copyOneMeta(tagRelations: R, metaTag: T) {
             //在调用此方法之前，已有anyNotExportedMetaExists调用，保证parent一定是有自己的meta的，不会产生错误的传递。
             val ids = data.db.from(tagRelations).select(tagRelations.metaId()).where { tagRelations.entityId() eq fromId }.map { it[tagRelations.metaId()]!! }
-            data.db.batchInsert(tagRelations) {
+            if(ids.isNotEmpty()) data.db.batchInsert(tagRelations) {
                 for (tagId in ids) {
                     item {
                         set(tagRelations.entityId(), thisId)
@@ -172,7 +172,7 @@ class IllustKit(private val data: DataRepository,
                 .select(IllustAnnotationRelations.annotationId)
                 .where { IllustAnnotationRelations.illustId eq fromId }
                 .map { it[IllustAnnotationRelations.annotationId]!! }
-            data.db.batchInsert(IllustAnnotationRelations) {
+            if(items.isNotEmpty()) data.db.batchInsert(IllustAnnotationRelations) {
                 for (id in items) {
                     item {
                         set(IllustAnnotationRelations.illustId, thisId)
@@ -209,7 +209,7 @@ class IllustKit(private val data: DataRepository,
                 .asSequence()
                 .map { it[tagRelations.metaId()]!! }
                 .toSet()
-            data.db.batchInsert(tagRelations) {
+            if(metaIds.isNotEmpty()) data.db.batchInsert(tagRelations) {
                 for (tagId in metaIds) {
                     item {
                         set(tagRelations.entityId(), thisId)
@@ -230,7 +230,7 @@ class IllustKit(private val data: DataRepository,
                 .asSequence()
                 .map { it[IllustAnnotationRelations.annotationId]!! }
                 .toSet()
-            data.db.batchInsert(IllustAnnotationRelations) {
+            if(items.isNotEmpty()) data.db.batchInsert(IllustAnnotationRelations) {
                 for (id in items) {
                     item {
                         set(IllustAnnotationRelations.illustId, thisId)
