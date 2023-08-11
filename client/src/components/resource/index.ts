@@ -4,14 +4,7 @@ import { unzip, rename, chmod, rmdir, readFile, writeFile } from "../../utils/fs
 import { DATA_FILE, APP_FILE, RESOURCE_FILE } from "../../constants/file"
 import { ClientException } from "../../exceptions"
 import { Version, VersionLock, VersionStatus, VersionStatusSet } from "./model"
-
-/**
- * 记录系统中资源组件的最新版本号。必须更新此记录值至最新，才能正确触发版本更新。
- * TODO 有没有什么办法，在编译时从gradle项目取版本号？包括migrate项目也需要这个
- */
-const VERSION = {
-    server: "0.1.0"
-}
+import { RESOURCE_VERSION } from "./version"
 
 /**
  * 对app程序资源进行管理的管理器。
@@ -101,7 +94,7 @@ function createProductionResourceManager(options: ResourceManagerOptions): Resou
             if(versionLock == null) {
                 status = ResourceStatus.NOT_INIT
             }else{
-                version.server = createVersionStatus(versionLock.server, VERSION.server)
+                version.server = createVersionStatus(versionLock.server, RESOURCE_VERSION.server)
                 if(version.server.latestVersion) {
                     status = ResourceStatus.NEED_UPDATE
                 }else{
@@ -148,7 +141,7 @@ function createProductionResourceManager(options: ResourceManagerOptions): Resou
         await chmod(path.join(dest, "bin/java"), "755")
         await chmod(path.join(dest, "bin/keytool"), "755")
         await chmod(path.join(dest, "lib/jspawnhelper"), "755")
-        version.server = {lastUpdateTime: new Date(), currentVersion: version.server?.latestVersion ?? VERSION.server}
+        version.server = {lastUpdateTime: new Date(), currentVersion: version.server?.latestVersion ?? RESOURCE_VERSION.server}
     }
 
     return {

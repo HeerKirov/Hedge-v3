@@ -1,12 +1,12 @@
 {
   "name": "hedge-v3",
   "productName": "Hedge-v3-development",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "target/main.js",
   "author": "Heer Kirov",
   "license": "MIT",
   "scripts": {
-    "tsc": "tsc",
+    "tsc": "tsc && node build/common/version.js",
     "start": "electron .",
     "dev": "electron . $(sh args.local.sh)",
     "build": "node build/common/build.js",

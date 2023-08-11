@@ -1,4 +1,5 @@
 const fs = require("fs")
+const child = require("child_process")
 
 function makePackageProduction(packageFile) {
     const s = fs.readFileSync(packageFile, {encoding: 'utf-8'})
@@ -12,4 +13,13 @@ function makePackageProduction(packageFile) {
     }
 }
 
-module.exports = {makePackageProduction}
+function getServerVersion() {
+    const c = child.spawnSync("gradle", ["printVersion", "-q"], {cwd: "../server"})
+    if(c.stdout !== null) {
+        return c.stdout.toString().trim()
+    }else{
+        return null
+    }
+}
+
+module.exports = {makePackageProduction, getServerVersion}
