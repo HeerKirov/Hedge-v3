@@ -124,7 +124,7 @@ const simpleRemain = (remainingTime: number | null) => {
 <template>
     <div class="w-100 h-100 relative" :style="style">
         <DatasetGridFramework v-if="viewMode === 'grid'" :column-num="columnNum!" v-slot="{ item }">
-            <img :class="$style['grid-img']" :src="assetsUrl(item.filePath.thumbnail)" :alt="`trashed-image-${item.id}`"/>
+            <img :class="$style['grid-img']" :src="assetsUrl(columnNum! >= 9 ? item.filePath.sample : item.filePath.thumbnail)" :alt="`trashed-image-${item.id}`"/>
             <div v-if="item.remainingTime !== null" :class="$style['grid-remain-tag']">{{ simpleRemain(item.remainingTime) }}</div>
             <Icon v-if="isVideoExtension(item.filePath.extension)" :class="$style['grid-video']" icon="video"/>
         </DatasetGridFramework>
