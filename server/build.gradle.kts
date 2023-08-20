@@ -13,7 +13,7 @@ dependencies {
     val javalinVersion = "5.6.2"
     val ktormVersion = "3.6.0"
     val sqliteVersion = "3.42.0.0"
-    val jacksonVersion = "2.15.2" //fk, how to upgrade it?
+    val jacksonVersion = "2.15.2"
     val javeVersion = "3.3.1"
     val slf4jVersion = "2.0.7"
     val junitVersion = "4.13.2"
@@ -108,6 +108,15 @@ jlink {
         uses("kotlin.reflect.jvm.internal.impl.resolve.ExternalOverridabilityCondition")
         uses("kotlin.reflect.jvm.internal.impl.util.ModuleVisibilityHelper")
         uses("kotlin.reflect.jvm.internal.impl.builtins.BuiltInsLoader")
+        /* 如果去掉这一条，则会在调用jave模块时报告一个错误：
+         * java.lang.ExceptionInInitializerError: Exception java.lang.IllegalAccessError:
+         * class ws.schild.jave.MultimediaObject (in module com.heerkirov.hedge.merged.module)
+         * cannot access class org.slf4j.LoggerFactory (in module org.slf4j)
+         * because module com.heerkirov.hedge.merged.module does not read module org.slf4j
+         * 错误原因是jave模块包含在merged模块内无法访问slf4j模块。
+         * 解决方案来自 https://github.com/beryx/badass-jlink-plugin/issues/127
+         */
+        requires("org.slf4j")
     }
     /* 如果去掉这一条，则会在启动时报告错误：
      * java.lang.LayerInstantiationException: Package kotlin in both module kotlin.stdlib and module com.heerkirov.hedge.merged.module
