@@ -67,7 +67,9 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, op
         })
 
         if(options.debug) {
-            win.webContents.openDevTools()
+            win.on("ready-to-show", () => {
+                win.webContents.openDevTools()
+            })
         }
 
         registerWindowIpcRemoteEvent(win)

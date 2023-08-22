@@ -27,7 +27,7 @@ export type NativeTheme = "system" | "light" | "dark"
 
 export function defaultValue(): AppData {
     return {
-        version: "0.0.0",
+        version: "0.1.0",
         loginOption: {
             password: null,
             touchID: false,
