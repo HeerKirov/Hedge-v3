@@ -16,6 +16,12 @@ data class SourceDataDetailRes(val sourceSite: String, val sourceSiteName: Strin
                                val relations: List<Long>, val links: List<String>, val additionalInfo: List<SourceDataAdditionalInfoDto>,
                                val createTime: LocalDateTime, val updateTime: LocalDateTime)
 
+data class SourceDataCollectStatus(val source: SourceDataPath,
+                                   val imageCount: Int,
+                                   val collected: Boolean,
+                                   val collectStatus: SourceEditStatus?,
+                                   val collectTime: LocalDateTime?)
+
 data class SourceDataAdditionalInfoDto(val field: String, val label: String, val value: String)
 
 data class SourceTagDto(val code: String, val name: String, val otherName: String?, val type: String?)

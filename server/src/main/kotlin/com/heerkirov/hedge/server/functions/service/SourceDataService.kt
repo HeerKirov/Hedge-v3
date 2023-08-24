@@ -8,6 +8,7 @@ import com.heerkirov.hedge.server.dto.filter.SourceDataQueryFilter
 import com.heerkirov.hedge.server.dto.form.SourceDataCreateForm
 import com.heerkirov.hedge.server.dto.form.SourceDataUpdateForm
 import com.heerkirov.hedge.server.dto.res.*
+import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.manager.SourceDataManager
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
@@ -15,6 +16,7 @@ import com.heerkirov.hedge.server.utils.business.collectBulkResult
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
+import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.runIf
@@ -173,6 +175,58 @@ class SourceDataService(private val appdata: AppDataManager, private val data: D
     fun delete(sourceSite: String, sourceId: Long) {
         data.db.transaction {
             sourceManager.deleteSourceData(sourceSite, sourceId)
+        }
+    }
+
+    fun getCollectStatus(paths: List<SourceDataPath>): List<SourceDataCollectStatus> {
+        //分离sourceIdentity，并查询每个sourceIdentity对应的sourceData的状态
+        val sourceDatas = paths
+            .groupBy({ it.sourceSite }) { it.sourceId }
+            .asSequence()
+            .flatMap { (site, ids) ->
+                data.db.from(SourceDatas)
+                    .select(SourceDatas.id, SourceDatas.sourceId, SourceDatas.status, SourceDatas.updateTime)
+                    .where { (SourceDatas.sourceSite eq site) and (SourceDatas.sourceId inList ids.distinct()) }
+                    .map { (site to it[SourceDatas.sourceId]!!) to Triple(it[SourceDatas.id]!!, it[SourceDatas.status]!!, it[SourceDatas.updateTime]!!) }
+            }.toMap()
+
+        //查询每个sourceDataPath对应的image与importImage的数量
+        //如果要优化的话，这里的场景分支有点多，而且对性能的提升并不明显，因此放弃了优化，逐项统计数量
+        val imageCounts = paths.associate { path ->
+            val key = path.sourceSite to path.sourceId
+            val sourceDataRowId = sourceDatas[key]?.first
+            val imageCount = if (sourceDataRowId == null) 0 else {
+                data.db.from(Illusts)
+                    .select(count(Illusts.id).aliased("count"))
+                    .whereWithConditions {
+                        it += Illusts.sourceDataId eq sourceDataRowId
+                        if (path.sourcePartName != null) it += Illusts.sourcePartName eq path.sourcePartName
+                        else if (path.sourcePart != null) it += Illusts.sourcePart eq path.sourcePart
+                    }
+                    .first()
+                    .getInt("count")
+            }
+            val importImageCount = data.db.from(ImportImages)
+                .select(count(ImportImages.id).aliased("count"))
+                .whereWithConditions {
+                    it += ImportImages.sourceSite eq path.sourceSite
+                    it += ImportImages.sourceId eq path.sourceId
+                    if (path.sourcePartName != null) it += ImportImages.sourcePartName eq path.sourcePartName
+                    else if (path.sourcePart != null) it += ImportImages.sourcePart eq path.sourcePart
+                }
+                .first()
+                .getInt("count")
+            key to (imageCount + importImageCount)
+        }
+
+        return paths.map { path ->
+            val key = path.sourceSite to path.sourceId
+            val sourceData = sourceDatas[key]
+            val imageCount = imageCounts[key] ?: 0
+            val collected = sourceData != null && (sourceData.second == SourceEditStatus.EDITED || sourceData.second == SourceEditStatus.IGNORED)
+            val collectStatus = sourceData?.second
+            val collectTime = sourceData?.third
+            SourceDataCollectStatus(path, imageCount, collected, collectStatus, collectTime)
         }
     }
 }

@@ -3,6 +3,7 @@ package com.heerkirov.hedge.server.components.server.routes
 import com.heerkirov.hedge.server.components.server.Routes
 import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.filter.*
+import com.heerkirov.hedge.server.dto.res.SourceDataPath
 import com.heerkirov.hedge.server.dto.res.SourceMappingTargetItem
 import com.heerkirov.hedge.server.functions.service.SourceDataService
 import com.heerkirov.hedge.server.functions.service.SourceMappingService
@@ -25,6 +26,7 @@ class SourceRoutes(private val sourceDataService: SourceDataService,
                     get(sourceData::list)
                     post(sourceData::create)
                     post("bulk", sourceData::bulk)
+                    post("collect-status", sourceData::collectStatus)
                     path("{source_site}/{source_id}") {
                         get(sourceData::get)
                         patch(sourceData::update)
@@ -89,6 +91,11 @@ class SourceRoutes(private val sourceDataService: SourceDataService,
             val sourceId = ctx.pathParamAsClass<Long>("source_id").get()
             sourceDataService.delete(sourceSite, sourceId)
             ctx.status(204)
+        }
+
+        fun collectStatus(ctx: Context) {
+            val paths = ctx.bodyAsListForm<SourceDataPath>()
+            ctx.json(sourceDataService.getCollectStatus(paths))
         }
 
         fun getSourceMarks(ctx: Context) {
