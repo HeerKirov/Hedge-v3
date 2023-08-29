@@ -335,7 +335,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             val fileSize = thumbnailTempFile.length()
             try {
                 thumbnailFile.parentFile.mkdirs()
-                Files.move(thumbnailTempFile.toPath(), thumbnailPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+                Files.move(thumbnailTempFile.toPath(), thumbnailPath, StandardCopyOption.REPLACE_EXISTING)
             }catch (e: Exception) {
                 thumbnailFile.deleteIfExists()
                 throw e
@@ -352,7 +352,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             val fileSize = sampleTempFile.length()
             try {
                 sampleFile.parentFile.mkdirs()
-                Files.move(sampleTempFile.toPath(), samplePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+                Files.move(sampleTempFile.toPath(), samplePath, StandardCopyOption.REPLACE_EXISTING)
             }catch (e: Exception) {
                 sampleFile.deleteIfExists()
                 throw e
@@ -366,7 +366,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             val fileSize = thumbnailTempFile.length()
             try {
                 sampleFile.parentFile.mkdirs()
-                Files.move(thumbnailTempFile.toPath(), samplePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+                Files.move(thumbnailTempFile.toPath(), samplePath, StandardCopyOption.REPLACE_EXISTING)
             }catch (e: Exception) {
                 sampleFile.deleteIfExists()
                 throw e
@@ -439,6 +439,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
 
             if(addedFromDirCount > 0 || addedFromZipCount > 0) {
                 //存在任意文件被添加到zip时，将tmp.zip移动到final位置转正
+                //此处可以使用ATOMIC_MOVE，因为可以保证tmp zip和final zip位于同一个分区
                 Files.move(tmpZipPath, finalZipPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
             }else{
                 //不存在任何文件被添加时，tmp.zip和现存的正式zip都要被删除

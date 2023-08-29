@@ -87,7 +87,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
         targetFile.parentFile.mkdirs()
 
         if(moveFile) {
-            Files.move(file.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+            Files.move(file.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }else try {
             file.copyTo(targetFile, overwrite = true)
         }catch (e: Exception) {
