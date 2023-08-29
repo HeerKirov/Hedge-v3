@@ -68,7 +68,7 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
             form.setTagmeOfTag.alsoOpt { import.setTagmeOfTag = it }
             form.setTagmeOfSource.alsoOpt { import.setTagmeOfSource = it }
             form.setOrderTimeBy.alsoOpt { import.setOrderTimeBy = it }
-            form.setPartitionTimeDelay.alsoOpt { import.setPartitionTimeDelayHour = it }
+            form.setPartitionTimeDelayHour.alsoOpt { import.setPartitionTimeDelayHour = it }
             form.sourceAnalyseRules.alsoOpt { import.sourceAnalyseRules = it }
             form.watchPaths.alsoOpt { import.watchPaths = it }
             form.autoWatchPath.alsoOpt { import.autoWatchPath = it }
