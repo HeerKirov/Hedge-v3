@@ -15,7 +15,7 @@ const lines = computed(() => props.value ? props.value.split("\n") : [])
 
 <template>
     <template v-if="lines.length">
-        <p v-bind="$attrs" v-for="line in lines">{{line}}</p>
+        <component v-for="line in lines" :is="line ? 'p' : 'br'" v-bind="$attrs">{{line}}</component>
     </template>
     <template v-else>
         <p v-bind="$attrs"/>

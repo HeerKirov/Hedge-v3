@@ -74,6 +74,8 @@ const popupMenu = usePopupMenu([
         gap: 4px
         overflow-x: auto
         overflow-y: hidden
+        &::-webkit-scrollbar
+            display: none
         > .example
             width: $content-height
             height: $content-height

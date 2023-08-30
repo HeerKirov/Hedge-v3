@@ -70,6 +70,7 @@ const { selected, submit } = useCreatingCollectionContext(computed(() => props.p
     flex-wrap: nowrap
     > .left-column
         width: 4rem
+        flex-shrink: 0
         > .img
             border-radius: $radius-size-std
             width: 4rem
@@ -77,11 +78,13 @@ const { selected, submit } = useCreatingCollectionContext(computed(() => props.p
             flex-shrink: 0
             object-fit: cover
     > .right-column
+        width: 100%
         padding-left: 0.5rem
         > .title
             margin-bottom: 0.25rem
             font-size: $font-size-large
         > .example-img
+            display: inline-block
             border-radius: $radius-size-small
             width: 2rem
             height: 2rem

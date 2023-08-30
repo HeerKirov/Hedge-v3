@@ -29,7 +29,7 @@ function existedText(info: { sameCollectionId: number | null, samePreCollection:
 
 <template>
     <p v-if="value.type === 'SOURCE_IDENTITY_EQUAL'" class="has-text-warning"><Icon icon="equals"/>相同来源</p>
-    <p v-else-if="value.type === 'SOURCE_IDENTITY_SIMILAR'" class="has-text-warning"><Icon icon="hand-lizard"/>相同来源，但Part不同</p>
+    <p v-else-if="value.type === 'SOURCE_IDENTITY_SIMILAR'" class="has-text-warning"><Icon icon="hand-lizard"/>相同来源，但分页不同</p>
     <p v-else-if="value.type === 'SOURCE_RELATED'" class="has-text-warning"><Icon icon="hand-scissors"/>来源项目有关联 ({{ sourceRelatedText(value.info) }})</p>
     <p v-else-if="value.type === 'RELATION_MARK_SAME'" class="has-text-danger"><Icon icon="marker"/>来源关系标记：相同</p>
     <p v-else-if="value.type === 'RELATION_MARK_SIMILAR'" class="has-text-danger"><Icon icon="lighlighter"/>来源关系标记：内容近似</p>

@@ -8,9 +8,18 @@ defineProps<{
 </script>
 
 <template>
-    <Block class="py-1 px-2">
-        <WrappedText v-if="value" class="selectable" :value="value"/>
+    <Block :class="$style.block">
+        <WrappedText v-if="value" class="is-font-size-small selectable" :value="value"/>
         <i v-else class="secondary-text">没有描述。</i>
     </Block>
 </template>
 
+<style module lang="sass">
+@import "../../styles/base/size"
+.block
+    padding: $spacing-1 $spacing-2
+    max-height: 200px
+    overflow: auto
+    &::-webkit-scrollbar
+        display: none
+</style>

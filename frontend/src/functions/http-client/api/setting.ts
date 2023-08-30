@@ -343,7 +343,7 @@ export interface Site {
      */
     title: string
     /**
-     * 此网站是否拥有part。
+     * 此网站是否拥有分页。
      * @default NO
      */
     partMode: SitePartMode

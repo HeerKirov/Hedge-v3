@@ -14,6 +14,6 @@ defineEmits<{
 
 <template>
     <div>
-        <Input type="textarea" placeholder="描述" width="fullwidth" :value="value" @update:value="$emit('update:value', $event)" @enter="$emit('save')" update-on-input auto-focus/>
+        <Input type="textarea" placeholder="描述" width="fullwidth" size="small" :value="value" @update:value="$emit('update:value', $event)" @enter="$emit('save')" update-on-input auto-focus/>
     </div>
 </template>
