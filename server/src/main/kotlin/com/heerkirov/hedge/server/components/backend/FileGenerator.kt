@@ -47,7 +47,8 @@ import kotlin.math.absoluteValue
 /**
  * 处理文件的后台任务。
  * - 每当添加了新的文件时，都在后台任务生成其缩略图，并解析其附加参数。
- * - 每当删除了文件，或触发区块归档时，都在后台任务处理区块的归档。
+ * - 每当触发区块归档事件时，都在后台任务处理区块的归档。
+ * - 程序启动时，扫描并清理所有已删除的文件，一并处理归档。
  * - 程序启动时，在后台检测并清理缓存文件。
  */
 interface FileGenerator
@@ -68,7 +69,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
     override val isIdle: Boolean get() = !thumbnailTask.isAlive && !fingerprintTask.isAlive && !archiveTask.isAlive
 
     init {
-        bus.on(arrayOf(FileBlockArchived::class, FileMarkDeleted::class, FileMarkCreated::class), ::receiveEvents)
+        bus.on(arrayOf(FileBlockArchived::class, FileMarkCreated::class), ::receiveEvents)
     }
 
     override fun thread() {
@@ -95,12 +96,15 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             }
 
             //读取deleted为true的file，准备在归档线程中将其删除
-            val deletedTasks = data.db.from(FileRecords)
-                .select(FileRecords.id, FileRecords.block)
+            val anyDeletedBlocks = data.db.from(FileRecords)
+                .select(FileRecords.block, count(FileRecords.id).aliased("count"))
                 .where { FileRecords.deleted }
+                .groupBy(FileRecords.block)
+                .having { count(FileRecords.id).aliased("count") greater 0 }
                 .asSequence()
-                .groupBy({ it[FileRecords.block]!! }) { it[FileRecords.id]!! }
-            val archivedTasks = if(!appdata.storage.accessible) emptySet() else {
+                .map { it[FileRecords.block]!! }
+                .toSet()
+            val toBeArchivedBlocks = if(!appdata.storage.accessible) emptySet() else {
                 val latestBlock = data.db.from(FileRecords)
                     .select(FileRecords.block)
                     .orderBy(FileRecords.id.desc())
@@ -119,12 +123,11 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                         ?: emptySequence()
                 }.map { it.name }.toSet()
             }
-            if(deletedTasks.isNotEmpty() || archivedTasks.isNotEmpty()) {
+            if(anyDeletedBlocks.isNotEmpty() || toBeArchivedBlocks.isNotEmpty()) {
                 synchronized(archiveQueue) {
-                    archiveQueue.addAll((deletedTasks.keys + archivedTasks).asSequence().map { blockName ->
-                        val toBeDeleted = deletedTasks[blockName]?.toMutableSet() ?: mutableSetOf()
-                        val toBeArchived = blockName in archivedTasks
-                        ArchiveQueueUnit(blockName, toBeDeleted, toBeArchived)
+                    archiveQueue.addAll((anyDeletedBlocks + toBeArchivedBlocks).map { blockName ->
+                        val toBeArchived = blockName in toBeArchivedBlocks
+                        ArchiveQueueUnit(blockName, toBeArchived)
                     })
                     archiveTask.start()
                 }
@@ -145,14 +148,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                 is FileBlockArchived -> {
                     synchronized(archiveQueue) {
                         archiveQueue.find { it.block === event.event.block }?.also { it.toBeArchived = true }
-                        ?: archiveQueue.add(ArchiveQueueUnit(event.event.block, mutableSetOf(), true))
-                        archiveTask.start()
-                    }
-                }
-                is FileMarkDeleted -> {
-                    synchronized(archiveQueue) {
-                        archiveQueue.find { it.block == event.event.block }?.toBeDeleted?.add(event.event.fileId)
-                        ?: archiveQueue.add(ArchiveQueueUnit(event.event.block, mutableSetOf(event.event.fileId), false))
+                        ?: archiveQueue.add(ArchiveQueueUnit(event.event.block, toBeArchived = true))
                         archiveTask.start()
                     }
                 }
@@ -175,7 +171,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             return
         }
 
-        val (block, toBeDeleted, toBeArchived) = synchronized(archiveQueue) {
+        val (block, toBeArchived) = synchronized(archiveQueue) {
             if(archiveQueue.isNotEmpty()) {
                 archiveQueue.removeAt(0)
             }else{
@@ -190,30 +186,36 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
         }
 
         try {
-            if(toBeArchived) {
-                //在进行归档处理前，先检查是否所有文件都已READY。如果存在NOT_READY的文件，则将任务放回队列，推迟任务。
-                val anyNotReady = data.db.from(FileRecords)
-                    .select((count(FileRecords.id) greater 0).aliased("any_not_ready"))
-                    .where { FileRecords.deleted.not() and (FileRecords.block eq block) and ((FileRecords.status eq FileStatus.NOT_READY) or (FileRecords.fingerStatus eq FingerprintStatus.NOT_READY)) }
-                    .first()
-                    .getBoolean("any_not_ready")
-                if(anyNotReady) {
-                    synchronized(archiveQueue) {
-                        archiveQueue.find { it.block == block }?.also { it.toBeDeleted.addAll(toBeDeleted); it.toBeArchived = true }
-                            ?: archiveQueue.add(ArchiveQueueUnit(block, toBeDeleted, true))
-                    }
-                    return
+            //在进行处理前，先检查是否所有文件都已READY。如果存在NOT_READY的文件，则将任务放回队列，推迟任务。
+            //这确实有可能造成已删除文件的清理延后，但按照文件process的速度，这完全可以接受。
+            val anyNotReady = data.db.from(FileRecords)
+                .select((count(FileRecords.id) greater 0).aliased("any_not_ready"))
+                .where { FileRecords.deleted.not() and (FileRecords.block eq block) and ((FileRecords.status eq FileStatus.NOT_READY) or (FileRecords.fingerStatus eq FingerprintStatus.NOT_READY)) }
+                .first()
+                .getBoolean("any_not_ready")
+            if(anyNotReady) {
+                synchronized(archiveQueue) {
+                    archiveQueue.find { it.block == block }
+                        ?.also { if(toBeArchived) it.toBeArchived = true }
+                        ?: archiveQueue.add(ArchiveQueueUnit(block, toBeArchived))
                 }
+                return
             }
+            val toBeDeletedFiles = data.db.from(FileRecords)
+                .select(FileRecords.id)
+                .where { FileRecords.deleted and (FileRecords.block eq block) }
+                .asSequence()
+                .map { it[FileRecords.id]!! }
+                .toSet()
 
-            processBlockArchive(ArchiveType.SAMPLE, block, toBeDeleted, toBeArchived)
-            processBlockArchive(ArchiveType.THUMBNAIL, block, toBeDeleted, toBeArchived)
-            processBlockArchive(ArchiveType.ORIGINAL, block, toBeDeleted, toBeArchived)
+            processBlockArchive(ArchiveType.SAMPLE, block, toBeDeletedFiles, toBeArchived)
+            processBlockArchive(ArchiveType.THUMBNAIL, block, toBeDeletedFiles, toBeArchived)
+            processBlockArchive(ArchiveType.ORIGINAL, block, toBeDeletedFiles, toBeArchived)
 
-            if(toBeDeleted.isNotEmpty()) {
+            if(toBeDeletedFiles.isNotEmpty()) {
                 data.db.transaction {
-                    data.db.delete(FileRecords) { it.id inList toBeDeleted and it.deleted }
-                    data.db.delete(FileCacheRecords) { it.fileId inList toBeDeleted }
+                    data.db.delete(FileRecords) { it.id inList toBeDeletedFiles and it.deleted }
+                    data.db.delete(FileCacheRecords) { it.fileId inList toBeDeletedFiles }
                 }
             }
         } catch (e: Exception) {
@@ -468,7 +470,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
     }
 }
 
-private data class ArchiveQueueUnit(val block: String, val toBeDeleted: MutableSet<Int>, var toBeArchived: Boolean)
+private data class ArchiveQueueUnit(val block: String, var toBeArchived: Boolean)
 
 fun ZipOutputStream.putFile(file: File) {
     val entry = ZipEntry(file.name)

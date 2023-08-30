@@ -11,9 +11,10 @@
     3. 在归档开始之前，仍有时间添加文件，此时新添加的文件会添加到该Block，且在归档开始时将这些文件归档为zip，即使此Block没有满(或者说，与满不满根本无关)；
     4. 并且，由于FileManager模块未受影响，下一个文件仍然继续添加到该模块，导致出现latestBlock区块directory与zip同时存在的奇观。
     5. 主要问题来自FileGenerator对哪些Block需要归档划分不清，因此需要精细处理边界条件，使latestBlock默认值为1，且条件改为小于。
-
 ## Features
 * 添加了一个用于快速查询指定来源数据是否已收集的API，用于协助Chrome Extension工作。
+## Optimizes
+* 调整了文件归档和磁盘删除逻辑。现在删除文件不会稍后触发磁盘删除，所有的磁盘删除行为都仅在后端启动时发生。
 
 # v0.1.1
 ## Bug Fixes

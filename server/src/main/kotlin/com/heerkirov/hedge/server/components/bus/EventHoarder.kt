@@ -30,7 +30,7 @@ class EventHoarder<T>(private val emit: (Array<ItemBusEvent<*>>) -> Unit) {
         if(future == null) {
             synchronized(this) {
                 if (future == null) {
-                    future = pool.scheduleAtFixedRate(::tickThread, interval, interval, TimeUnit.MILLISECONDS)
+                    future = pool.scheduleWithFixedDelay(::tickThread, interval, interval, TimeUnit.MILLISECONDS)
                 }
             }
         }
@@ -43,7 +43,7 @@ class EventHoarder<T>(private val emit: (Array<ItemBusEvent<*>>) -> Unit) {
                     future?.cancel(false)
                     future = null
                     if(count.get() > 0) {
-                        future = pool.scheduleAtFixedRate(::tickThread, interval, interval, TimeUnit.MILLISECONDS)
+                        future = pool.scheduleWithFixedDelay(::tickThread, interval, interval, TimeUnit.MILLISECONDS)
                     }
                     return
                 }

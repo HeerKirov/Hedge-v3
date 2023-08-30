@@ -14,6 +14,7 @@ data class FileBlockArchived(val block: String) : BaseBusEventImpl("internal/fil
 /**
  * 文件已被标记为删除，等待被归档。
  */
+@Deprecated("删除不再触发归档，因此不再需要这个事件。")
 data class FileMarkDeleted(val fileId: Int, val block: String) : BaseBusEventImpl("internal/file/mark-deleted"), InternalServerEvent
 
 /**
