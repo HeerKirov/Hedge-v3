@@ -3,22 +3,22 @@ import { sleep } from "@/utils/process"
 
 /**
  * 提供一个observer，监视一个Element的Resize事件。
- * @param ref 引用此Element的ref
+ * @param elementRef 引用此Element的ref
  * @param event 事件
  */
-export function onElementResize(ref: Ref<HTMLElement | undefined>, event: (rect: DOMRect) => void) {
+export function onElementResize(elementRef: Ref<HTMLElement | undefined>, event: (rect: DOMRect) => void) {
     let element: HTMLElement | undefined = undefined
     const observer = new ResizeObserver(entries => event(entries[0].contentRect))
 
     onMounted(() => {
-        if(ref.value) observer.observe(element = ref.value)
+        if(elementRef.value) observer.observe(element = elementRef.value)
     })
 
     onUnmounted(() => {
         if(element) observer.unobserve(element)
     })
 
-    watch(ref, v => {
+    watch(elementRef, v => {
         if(element) observer.unobserve(element)
         if((element = v) != undefined) observer.observe(element)
     })
@@ -129,4 +129,48 @@ export function useResizeBar(options: {areaRef: Ref<HTMLElement | undefined>, lo
     })
 
     return {resizeAreaMouseDown}
+}
+
+/**
+ * 获得窗口尺寸的响应式数据。
+ */
+export function useWindowSize() {
+    const windowSize = ref({height: window.innerHeight, width: window.innerWidth})
+    
+    const windowResized = () => {
+        windowSize.value = {height: window.innerHeight, width: window.innerWidth}
+    }
+
+    onMounted(() => {
+        window.addEventListener("resize", windowResized)
+    })
+
+    onUnmounted(() => {
+        window.removeEventListener("resize", windowResized)
+    })
+
+    return windowSize
+}
+
+/**
+ * 获得元素尺寸和方位的响应式数据。
+ */
+export function useElementRect(elementRef: Ref<HTMLElement | undefined>) {
+    const rect = ref<DOMRect>()
+
+    onMounted(() => {
+        if(elementRef.value) {
+            rect.value = elementRef.value.getBoundingClientRect()
+        }
+    })
+
+    watch(elementRef, ele => {
+        rect.value = ele?.getBoundingClientRect()
+    })
+
+    onElementResize(elementRef, value => {
+        rect.value = value
+    })
+
+    return rect
 }
