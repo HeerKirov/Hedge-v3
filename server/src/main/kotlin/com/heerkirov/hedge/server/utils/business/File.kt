@@ -49,11 +49,17 @@ fun filePathOrNullFrom(it: QueryRowSet): NullableFilePath {
     val extension = it[FileRecords.extension]!!
     val status = it[FileRecords.status]!!
     val file = generateOriginalFilepath(block, fileId, extension)
+    //thumbnail的选取：直接选thumbnail，没有thumbnail时，如果是jpeg可以选original，否则应该先选sample，sample也没有最后才可选original
+    //这是因为jpeg的thumbnail不存在而sample存在时，唯一的可能是文件尺寸正位于sample-thumbnail区间，此时original充当了thumbnail的作用
+    //而其他文件类型出现这种情况唯一的可能是文件尺寸小于sample，否则一定是有thumbnail的
+    //这个比较怪异的选择逻辑是为了贴合FileGenerator的生成逻辑与FileStatus的枚举值。详情参考FileGenerator那边。
     val thumbnailFile = when(status) {
         FileStatus.READY -> generateThumbnailFilepath(block, fileId)
-        FileStatus.READY_WITHOUT_THUMBNAIL, FileStatus.READY_WITHOUT_THUMBNAIL_SAMPLE -> file
+        FileStatus.READY_WITHOUT_THUMBNAIL -> if(extension == "jpg" || extension == "jpeg") file else generateSampleFilepath(block, fileId)
+        FileStatus.READY_WITHOUT_THUMBNAIL_SAMPLE -> file
         FileStatus.NOT_READY -> null
     }
+    //sample的选取：直接选sample,没有sample时必定也没有thumbnail，这时才选original
     val sampleFile = when(status) {
         FileStatus.READY, FileStatus.READY_WITHOUT_THUMBNAIL -> generateSampleFilepath(block, fileId)
         FileStatus.READY_WITHOUT_THUMBNAIL_SAMPLE -> file

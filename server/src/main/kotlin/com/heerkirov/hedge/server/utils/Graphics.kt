@@ -8,8 +8,9 @@ import ws.schild.jave.ScreenExtractor
 import ws.schild.jave.encode.AudioAttributes
 import ws.schild.jave.encode.EncodingAttributes
 import ws.schild.jave.encode.VideoAttributes
+import java.awt.MediaTracker
 import java.awt.RenderingHints
-import java.awt.Transparency
+import java.awt.Toolkit
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.FileOutputStream
@@ -17,6 +18,7 @@ import javax.imageio.IIOImage
 import javax.imageio.ImageIO
 import javax.imageio.ImageWriteParam
 import javax.imageio.plugins.jpeg.JPEGImageWriteParam
+import javax.swing.JPanel
 import kotlin.math.sqrt
 
 object Graphics {
@@ -51,7 +53,7 @@ object Graphics {
         }
         val resized = try {
             val file = snapshot ?: src
-            val source = ImageIO.read(file)
+            val source = loadJpg(file)
             resolutionWidth = source.width
             resolutionHeight = source.height
             //当原始图像的面积超过RESIZE AREA时，对其缩放，保持比例收缩至小于此面积。
@@ -76,6 +78,38 @@ object Graphics {
         if(resized != null && snapshot != null && snapshot.exists()) snapshot.delete()
         //使用resized结果，没有resize就使用snapshot的结果。按照目前的策略，除了jpg格式，其他格式一定会生成snapshot，导致有缩略图。
         return ProcessResult(resized ?: snapshot, resolutionWidth, resolutionHeight, videoDuration)
+    }
+
+    /**
+     * 用正确的方式加载一张JPEG图片，获得BufferedImage，用于后续的流程。
+     * ImageIO对JPEG格式的处理存在大坑，"当没有JFIF信息时，文件会被错误地解释"，具体表现为完全错误的颜色。
+     * 一句话概括的解决方案是用Toolkit.getImage而不是ImageIO.read来读。
+     * 参考回答：
+     * 最直观的问题呈现和解决代码: https://stackoverflow.com/questions/19659269/losing-colors-when-resizing-jpegs-in-java-tried-with-multiple-libraries
+     * 上一条问题的答案来源: https://stackoverflow.com/questions/19654017/resizing-bufferedimages-and-storing-them-to-file-results-in-black-background-for/19654452#19654452
+     * 另一条指出解决方案的问题: https://stackoverflow.com/questions/9340569/jpeg-image-with-wrong-colors
+     */
+    private fun loadJpg(file: File): BufferedImage {
+        val image = Toolkit.getDefaultToolkit().getImage(file.absolutePath)
+
+        //getImage方法是异步的，因此需要等待它加载完成
+        MediaTracker(JPanel()).also { tracker ->
+            tracker.addImage(image, 0)
+            try {
+                tracker.waitForID(0)
+            } catch (ex: InterruptedException) {
+                throw RuntimeException(ex)
+            }
+        }
+
+        if (image is BufferedImage) return image
+
+        val bufferedImage = BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_RGB)
+
+        bufferedImage.graphics.drawImage(image, 0, 0, null)
+        bufferedImage.graphics.dispose()
+
+        return bufferedImage
     }
 
     /**
@@ -112,14 +146,17 @@ object Graphics {
      */
     private fun translateImageToJpg(src: File, quality: Float = 0.92F): File {
         val source = ImageIO.read(src).let {
-            if(it.transparency != Transparency.TRANSLUCENT) it else {
-                //ImageIO无法处理alpha通道，因此要在绘制之前消除透明度。
-                //这段代码能快速消除alpha通道。消除效果比较诡异，不过倒是可以用。
+            if(!it.colorModel.hasAlpha()) it!! else {
+                //消除alpha的代码来自 https://stackoverflow.com/questions/60380175/how-to-resolve-javax-imageio-iioexception-bogus-input-colorspace
                 BufferedImage(it.width, it.height, BufferedImage.TYPE_INT_RGB).apply {
-                    val rgb = it.getRGB(0, 0, it.width, it.height, null, 0, it.width)
-                        .map { i -> i and 0xFFFFFF }
-                        .toIntArray()
-                    setRGB(0, 0, it.width, it.height, rgb, 0, it.width)
+                    createGraphics().apply {
+                        try {
+                            fillRect(0, 0, it.width, it.height)
+                            drawImage(it, 0, 0, null)
+                        }finally {
+                            dispose()
+                        }
+                    }
                 }
             }
         }
