@@ -170,6 +170,11 @@ export interface ServerOption {
      * 这个参数没有强制检查，如果写错，则在检测时不生效。
      */
     port: string | null
+    /**
+     * 后台服务额外的固定Token。
+     * 此Token与生成Token并行可用。使用此Token可在其他位置访问后台服务。
+     */
+    token: string | null
 }
 
 export type ServerOptionUpdateForm = Partial<ServerOption>

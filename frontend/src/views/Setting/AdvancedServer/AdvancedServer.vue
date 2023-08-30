@@ -17,7 +17,10 @@ const { connectionInfo, connectionStatus } = useSettingConnectionInfo()
 
 const [port, portSotFlag, savePort] = usePropertySot(toRefNullable(serverSetting.data, "port"))
 
+const [token, tokenSotFlag, saveToken] = usePropertySot(toRefNullable(serverSetting.data, "token"))
+
 const portType = ref<PortType>("AUTO")
+
 watch(port, async (v, _, onInvalidate) => {
     let validate = true
     onInvalidate(() => validate = false)
@@ -26,6 +29,7 @@ watch(port, async (v, _, onInvalidate) => {
         portType.value = validatePort(v ?? "")
     }
 })
+
 </script>
 
 <template>
@@ -55,12 +59,18 @@ watch(port, async (v, _, onInvalidate) => {
     <label class="mt-2 label">建议的端口</label>
     <Group class="mt-1">
         <Input v-model:value="port" size="small" placeholder="例如: 9000, 9090-9099" update-on-input/>
-        <Button v-if="portSotFlag" mode="light" type="primary" square icon="save" size="small" @click="savePort"></Button>
+        <Button v-if="portSotFlag" mode="light" type="primary" square icon="save" size="small" @click="savePort"/>
     </Group>
     <p v-if="portType === 'AUTO'" class="secondary-text">由Hedge自动搜索可用的端口。</p>
     <p v-else-if="portType === 'RANGE'" class="secondary-text">在指定的范围中搜索可用的端口。</p>
     <p v-else-if="portType === 'ERROR'" class="secondary-text">无效的端口参数。请使用<code>,</code>和<code>-</code>等描述简单的端口或端口范围。</p>
     <p v-else class="secondary-text">使用端口<code>:{{portType}}</code>。</p>
+    <label class="mt-2 label">固定Token</label>
+    <Group class="mt-1">
+        <Input v-model:value="token" size="small" placeholder="任意字符串" update-on-input/>
+        <Button v-if="tokenSotFlag" mode="light" type="primary" square icon="save" size="small" @click="saveToken"/>
+    </Group>
+    <p class="secondary-text">使用固定Token可方便地在其他位置使用核心服务。</p>
 </template>
 
 <style module lang="sass">
