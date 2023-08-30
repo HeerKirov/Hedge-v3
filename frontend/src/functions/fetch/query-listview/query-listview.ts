@@ -92,9 +92,11 @@ interface OperationContext<T> {
 type ListviewModifiedEvent<T> = ModifiedEvent<T> | {
     type: "FILTER_UPDATED",
     newInstance: QueryInstance<T>
+    generation: number
 } | {
     type: "REFRESH"
     newInstance: QueryInstance<T>
+    generation: number
 }
 
 export function useQueryListview<T, K = undefined, E extends BasicException = BasicException>(options: QueryListviewOptions<T, K, E>): QueryListview<T> {
@@ -114,21 +116,25 @@ export function useQueryListview<T, K = undefined, E extends BasicException = Ba
 
     const instance: Ref<QueryInstance<T>> = shallowRef(createInstance(options.filter?.value))
 
+    const generation: Ref<number> = shallowRef(1)
+
     if(options.filter !== undefined) watch(options.filter, filter => {
         instance.value = createInstance(filter)
-        modifiedEvent.emit({type: "FILTER_UPDATED", newInstance: instance.value})
+        generation.value += 1
+        modifiedEvent.emit({type: "FILTER_UPDATED", newInstance: instance.value, generation: generation.value})
     }, {deep: true})
 
     const refresh = () => {
         instance.value = createInstance(options.filter?.value)
-        modifiedEvent.emit({type: "REFRESH", newInstance: instance.value})
+        generation.value += 1
+        modifiedEvent.emit({type: "REFRESH", newInstance: instance.value, generation: generation.value})
     }
 
     const proxy = useProxyInstance(instance)
 
     const modifiedEvent = useModifiedEvent(proxy)
 
-    if(options.eventFilter !== undefined) useWsEventProcessor(options.eventFilter, proxy, refresh)
+    if(options.eventFilter !== undefined) useWsEventProcessor(options.eventFilter, proxy, generation, refresh)
 
     return {proxy, instance, modifiedEvent, refresh}
 }
@@ -172,19 +178,31 @@ function useModifiedEvent<T>(proxyInstance: QueryInstance<T>): SendRefEmitter<Li
     return modifiedEvent
 }
 
-function useWsEventProcessor<T, E extends BasicException>(options: EventFilter<T, E>, proxyInstance: QueryInstance<T>, refresh: () => void) {
+function useWsEventProcessor<T, E extends BasicException>(options: EventFilter<T, E>, proxyInstance: QueryInstance<T>, generation: Ref<number>, refresh: () => void) {
     const { httpClient, wsClient, handleException } = useFetchManager()
     const updateMethod = options.request?.(httpClient)
 
     const emitter = wsClient.on(options.filter)
 
     const hoardedRefresh = hoard({interval: 50, lengthenInterval: 10, maxInterval: 100, func: refresh})
-    const hoardedUpdate = hoard<[number, T]>({interval: 50, lengthenInterval: 10, maxInterval: 100, async func(itemsWithIdx) {
+    const hoardedUpdate = hoard<[number, (item: T) => boolean]>({interval: 50, lengthenInterval: 10, maxInterval: 100, async func(wheres) {
         //事件响应中的更新方法。它是一个囤积式节流函数，一次收集数个更新之后，一口气发出。
         //tips: 实例不是响应式的，按照规则，仍然需要通过sync operations操作并散布更新事件。
         //      因此，需要在异步操作结束后通过modify方法写入新值。
         //      但是，在异步操作期间，items的索引有改变的可能，因此在这途中需要监听删除操作，及时跟进位置变动。
-        const preciseIndexes: (number | null)[] = itemsWithIdx.map(([idx, _]) => idx)
+        //      异步操作期间，实例也有更替的可能，因此引入了代数generation，抛弃不属于当前代的操作。
+        const itemsWithIndex = wheres.map(([gen, where]) => {
+            if(gen < generation.value) return undefined
+            const idx = proxyInstance.syncOperations.find(where)
+            if(idx !== undefined) {
+                const r = proxyInstance.syncOperations.retrieve(idx)
+                return [idx, r]
+            }
+            return undefined
+        }).filter(i => i !== undefined) as [number, T][]
+
+        const gen = generation.value
+        const preciseIndexes: (number | null)[] = itemsWithIndex.map(([idx, _]) => idx)
         const modifiedEvent = (e: ModifiedEvent<T>) => {
             if(e.type === "REMOVE") {
                 for(let i = 0; i < preciseIndexes.length; ++i) {
@@ -196,12 +214,19 @@ function useWsEventProcessor<T, E extends BasicException>(options: EventFilter<T
                 }
             }
         }
-        proxyInstance.syncOperations.modifiedEvent.addEventListener(modifiedEvent, true)
-
-        const items = itemsWithIdx.map(([_, i]) => i)
-        const res = await updateMethod!(items)
+        const items = itemsWithIndex.map(([_, i]) => i)
 
         proxyInstance.syncOperations.modifiedEvent.addEventListener(modifiedEvent, true)
+        let res: Response<(T | undefined)[], E>
+        try {
+            res = await updateMethod!(items)
+        }finally{
+            proxyInstance.syncOperations.modifiedEvent.removeEventListener(modifiedEvent, true)
+        }
+        if(gen < generation.value) {
+            //generation已更新，因此抛弃当前所有更新操作
+            return
+        }
         
         if(res.ok) {
             if(res.data.length > 0) {
@@ -227,11 +252,7 @@ function useWsEventProcessor<T, E extends BasicException>(options: EventFilter<T
             refresh: hoardedRefresh,
             updateOne(where: (item: T) => boolean) {
                 if(!updateMethod) throw new Error("options.eventFilter.request is satisfied.")
-                const idx = proxyInstance.syncOperations.find(where)
-                if(idx !== undefined) {
-                    const item = proxyInstance.syncOperations.retrieve(idx)!
-                    hoardedUpdate([idx, item])
-                }
+                hoardedUpdate([generation.value, where])
             },
             removeOne(where: (item: T) => boolean) {
                 //delete过程是同步的。因此可以放心地对列表做筛选和更改。

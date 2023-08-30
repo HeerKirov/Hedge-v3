@@ -114,8 +114,13 @@ function useListView() {
                 }else if(event.eventType === "entity/import/deleted") {
                     removeOne(i => i.id === event.importId)
                 }else if(event.eventType === "entity/import/saved") {
-                    for(const id of Object.keys(event.importIdToImageIds).map(i => parseInt(i))) {
-                        removeOne(i => i.id === id)
+                    const keys = Object.keys(event.importIdToImageIds)
+                    if(keys.length >= 10) {
+                        refresh()
+                    }else{
+                        for(const id of keys.map(i => parseInt(i))) {
+                            removeOne(i => i.id === id)
+                        }
                     }
                 }
             },

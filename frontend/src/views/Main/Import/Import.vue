@@ -40,8 +40,6 @@ const menu = usePopupMenu<ImportImage>(() => [
     {type: "normal", label: "删除项目", click: i => deleteItem(i.id)},
 ])
 
-const dropEvents = useDroppableForFile()
-
 </script>
 
 <template>
@@ -68,7 +66,8 @@ const dropEvents = useDroppableForFile()
 
         <PaneLayout :show-pane="paneState.visible.value">
             <ImportEmpty v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0"/>
-            <ImportImageDataset v-else :data="paginationData.data" :query-instance="paginationData.proxy"
+            <!-- FUTURE: Import页面有一个空白页面。然而由于设计缺陷，这会导致导航栏的数值无法清零，因为清零操作是在dataset内完成的。现在通过hidden妥协，然而要想完美解决这个问题，只能等虚拟视图的响应结构重构了。 -->
+            <ImportImageDataset v-show="paginationData.data.metrics.total === undefined || paginationData.data.metrics.total > 0" :data="paginationData.data" :query-instance="paginationData.proxy"
                                 :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
                                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                                 @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"/>
