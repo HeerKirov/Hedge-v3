@@ -62,4 +62,4 @@ data class StorageOptionUpdateForm(val storagePath: Opt<String?>,
                                    @Range(10, 10000) val blockMaxSizeMB: Opt<Long>,
                                    @Range(5, 5000) val blockMaxCount: Opt<Int>)
 
-data class ServerOptionUpdateForm(val port: Opt<String?>)
+data class ServerOptionUpdateForm(val port: Opt<String?>, val token: Opt<String?>)

@@ -13,6 +13,7 @@
     5. 主要问题来自FileGenerator对哪些Block需要归档划分不清，因此需要精细处理边界条件，使latestBlock默认值为1，且条件改为小于。
 ## Features
 * 添加了一个用于快速查询指定来源数据是否已收集的API，用于协助Chrome Extension工作。
+* 添加了固定Token的选项，用于协助Chrome Extension工作。
 ## Optimizes
 * 调整了文件归档和磁盘删除逻辑。现在删除文件不会稍后触发磁盘删除，所有的磁盘删除行为都仅在后端启动时发生。
 

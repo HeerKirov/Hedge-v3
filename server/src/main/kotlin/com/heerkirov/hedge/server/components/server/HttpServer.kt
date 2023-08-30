@@ -55,7 +55,7 @@ class HttpServerImpl(private val health: Health,
 
     override fun load() {
         val aspect = Aspect(appStatus)
-        val authentication = Authentication(token)
+        val authentication = Authentication(token, appdata)
         val staticFileHandler = StaticFileHandler(archive)
         val errorHandler = ErrorHandler()
 

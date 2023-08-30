@@ -21,7 +21,11 @@ data class ServerOption(
     /**
      * 后端服务建议使用的端口。
      */
-    var port: String?
+    var port: String?,
+    /**
+     * 后端服务固定可用的token。
+     */
+    var token: String?
 )
 
 /**

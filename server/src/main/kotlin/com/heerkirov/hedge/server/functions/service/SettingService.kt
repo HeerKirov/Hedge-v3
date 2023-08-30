@@ -26,6 +26,7 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
     fun updateServer(form: ServerOptionUpdateForm) {
         appdata.saveSetting {
             form.port.alsoOpt { server.port = it }
+            form.token.alsoOpt { server.token = it }
         }
 
         bus.emit(SettingServerChanged())

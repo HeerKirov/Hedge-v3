@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.components.server.modules
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.server.Routes
 import com.heerkirov.hedge.server.dto.res.ErrorResult
 import com.heerkirov.hedge.server.dto.res.WsResult
@@ -13,7 +14,7 @@ import io.javalin.websocket.WsConfig
  * 登录认证模块。
  * 使用before handler拦截所有需要认证的API，验证其token，检验token是否能访问目标API，然后放通。
  */
-class Authentication(private val baseToken: String) : Routes {
+class Authentication(private val baseToken: String, private val appdata: AppDataManager) : Routes {
     private val prefixBearer = "bearer "
 
     override fun handle(javalin: Javalin) {
@@ -30,6 +31,9 @@ class Authentication(private val baseToken: String) : Routes {
 
         if(baseToken == userToken) {
             //通过baseToken的验证
+            return
+        }else if(appdata.setting.server.token != null && appdata.setting.server.token == userToken) {
+            //通过自定义token的验证
             return
         }else{
             throw be(TokenWrong())

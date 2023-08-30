@@ -9,7 +9,8 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
     override fun defaultData(): AppData {
         return AppData(
             server = ServerOption(
-                port = null
+                port = null,
+                token = null
             ),
             storage = StorageOption(
                 storagePath = null,
