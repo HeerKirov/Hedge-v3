@@ -47,7 +47,7 @@ function useImportService() {
     const addFiles = async (files: string[]) => {
         progress.value.max += files.length
 
-        for await (const filepath of files) {
+        for (const filepath of files) {
             const res = await fetch({filepath}, e => {
                 if(e.code === "FILE_NOT_FOUND") {
                     toast.toast("错误", "danger", `文件${filepath}不存在。`)

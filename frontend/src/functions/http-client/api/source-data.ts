@@ -11,9 +11,7 @@ export function createSourceDataEndpoint(http: HttpInstance): SourceDataEndpoint
             parseResponse: ({ total, result }: ListResult<any>) => ({total, result: result.map(mapToSourceData)})
         }),
         create: http.createDataRequest("/api/source-data", "POST"),
-        bulk: http.createDataRequest("/api/source-data/bulk", "POST", {
-            parseData: items => ({items})
-        }),
+        bulk: http.createDataRequest("/api/source-data/bulk", "POST"),
         get: http.createPathRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}`, "GET", {
             parseResponse: mapToDetailSourceData
         }),

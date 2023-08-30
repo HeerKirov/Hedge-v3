@@ -65,7 +65,7 @@ function useOperators(paneState: DetailViewState<SourceDataIdentity>) {
     })
 
     const deleteItem = async (id: SourceDataIdentity) => {
-        if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
+        if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "与此关联的所有图像的来源将被清空。此操作不可撤回。")) {
             if(await retrieveHelper.deleteData(id)) {
                 if(paneState.detailPath.value === id) paneState.closeView()
             }

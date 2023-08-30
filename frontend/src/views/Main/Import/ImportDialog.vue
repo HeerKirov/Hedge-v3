@@ -9,7 +9,7 @@ const props = defineProps<{
 }>()
 
 const progressingStyle = computed(() => ({
-    'width': props.progress.max > 0 ? `${numbers.round2decimal(props.progress.value / props.progress.max)}%` : `50%`
+    'width': props.progress.max > 0 ? `${numbers.round2decimal(props.progress.value * 100 / props.progress.max)}%` : `50%`
 }))
 
 </script>

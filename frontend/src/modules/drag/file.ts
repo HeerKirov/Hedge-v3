@@ -31,6 +31,9 @@ export function useDroppableForFile() {
                 if(filepath) ret.push(filepath)
             }
             if(ret.length) fileListener.emit(ret)
+
+            e.stopImmediatePropagation()
+            e.stopPropagation()
         }
     }
 

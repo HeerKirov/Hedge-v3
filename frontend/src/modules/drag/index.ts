@@ -76,6 +76,12 @@ function useDroppableInternal<T extends keyof TypeDefinition>(event: (data: Type
     const onDrop = (e: DragEvent) => {
         try {
             if(e.dataTransfer) {
+                e.preventDefault()
+                //阻止向上传递事件，以避免存在上下叠加的dropEvents时，误触上层的drop事件
+                //TODO 移除了stopPropagation参数，将阻止传递改为了无条件的。这个改动可能对除了Grid列表之外的一般拖动有影响，观察一下是否有影响
+                e.stopImmediatePropagation()
+                e.stopPropagation()
+
                 if(fileListener && e.dataTransfer.files.length) {
                     const ret: string[] = []
                     for(let i = 0; i < e.dataTransfer.files.length; ++i) {
@@ -98,13 +104,6 @@ function useDroppableInternal<T extends keyof TypeDefinition>(event: (data: Type
                 }catch (e) {
                     //可能发过来的并不是droppable的东西
                     return
-                }
-
-                e.preventDefault()
-                if(options?.stopPropagation) {
-                    //阻止向上传递事件，以避免存在上下叠加的dropEvents时，误触上层的drop事件
-                    e.stopImmediatePropagation()
-                    e.stopPropagation()
                 }
 
                 event(data, type)

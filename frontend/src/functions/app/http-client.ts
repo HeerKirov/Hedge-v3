@@ -1,8 +1,6 @@
 import { installation } from "@/utils/reactivity"
 import { createHttpClient, HttpClientConfig, ResponseConnectionError, ResponseError } from "@/functions/http-client"
 import { AllException } from "@/functions/http-client/exceptions"
-import { useFetchReactive } from "../fetch"
-import { strings } from "@/utils/primitives"
 
 export const [installHttpClient, useHttpClient] = installation(createHttpClient)
 
