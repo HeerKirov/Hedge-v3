@@ -222,10 +222,10 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
     private inner class NextBlock {
         private val pool = Executors.newSingleThreadExecutor()
 
-        @Volatile var index: Int? = null; private set
-        @Volatile var name: String? = null; private set
-        @Volatile var count: Int = 0; private set
-        @Volatile var size: Long = 0L; private set
+        @Volatile private var index: Int? = null
+        @Volatile private var name: String? = null
+        @Volatile private var count: Int = 0
+        @Volatile private var size: Long = 0L
 
         private fun initialize() {
             //查找最后一条File记录，获取最新的block name

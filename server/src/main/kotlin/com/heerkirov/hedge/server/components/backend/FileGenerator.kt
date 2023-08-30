@@ -52,7 +52,7 @@ import kotlin.math.absoluteValue
  */
 interface FileGenerator
 
-private const val ARCHIVE_INTERVAL: Long = 1000 * 30
+private const val ARCHIVE_INTERVAL: Long = 1000 * 10
 
 class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                         private val appdata: AppDataManager,
@@ -107,12 +107,14 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                     .limit(1)
                     .map { it[FileRecords.block]!! }
                     .firstOrNull()
+                    ?.toInt(16)
+                    ?: 1
                 //从存储位置读取所有的directory，准备在归档线程中将其归档
-                //但是latestBlock总是除外，FileManager会管理它，并在它被归档时发出事件通知
+                //筛选掉比latestBlock大的块，包括latestBlock。FileManager会管理latestBlock，并在它被归档时发出事件通知
                 ArchiveType.values().asSequence().flatMap { archiveType ->
                     Path(appdata.storage.storageDir, archiveType.toString())
                         .toFile()
-                        .listFiles { f -> f.isDirectory && f.name != latestBlock }
+                        .listFiles { f -> f.isDirectory && (f.name.toIntOrNull(16)?.let { it < latestBlock } ?: false) }
                         ?.asSequence()
                         ?: emptySequence()
                 }.map { it.name }.toSet()
@@ -403,7 +405,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                     deletedInDirCount += 1
                 }
             }
-            log.info("Block $archiveType/$block is cleaned. $deletedInDirCount files-in-dir deleted.")
+            log.info("Block $archiveType/$block cleaned. $deletedInDirCount files-in-dir deleted.")
         }else{
             var addedFromZipCount = 0
             var addedFromDirCount = 0
@@ -454,7 +456,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                 listFiles { f -> f.nameWithoutExtension in toBeDeletedStr }?.forEach { it.deleteIfExists() }
             }
 
-            log.info("Block $archiveType/$block is ${if(addedFromZipCount > 0 || deletedInZipCount > 0) "re-archived" else "archived"}. ${
+            log.info("Block $archiveType/$block ${if(addedFromZipCount > 0 || deletedInZipCount > 0) "re-archived" else "archived"}. ${
                 sequenceOf(
                     addedFromZipCount.takeIf { it > 0 }?.let { "$it files-from-zip added" },
                     addedFromDirCount.takeIf { it > 0 }?.let { "$it files-from-dir added" },
