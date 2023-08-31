@@ -7,10 +7,7 @@ import com.heerkirov.hedge.server.dao.BookImageRelations
 import com.heerkirov.hedge.server.dao.FileRecords
 import com.heerkirov.hedge.server.dao.Illusts
 import com.heerkirov.hedge.server.dto.form.ExecuteExportForm
-import com.heerkirov.hedge.server.dto.res.ExecuteExportRes
-import com.heerkirov.hedge.server.dto.res.ExportImageRes
-import com.heerkirov.hedge.server.dto.res.FilePath
-import com.heerkirov.hedge.server.dto.res.LoadLocalFileRes
+import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.exceptions.LocationNotAccessibleError
 import com.heerkirov.hedge.server.exceptions.NotFound
@@ -26,12 +23,13 @@ import java.io.FileOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
+import kotlin.io.path.copyTo
 
 class ExportUtilService(private val appdata: AppDataManager, private val data: DataRepository, private val archive: FileManager) {
     /**
      * 根据给出的illusts列表，扩展为完整的images列表，并附带file信息。
      */
-    fun getExpandedIllusts(illustIds: List<Int>): List<ExportImageRes> {
+    fun getExpandedIllusts(illustIds: List<Int>): List<IllustSimpleRes> {
         data class Row(val id: Int, val parentId: Int, val filePath: FilePath)
 
         val rows = data.db.from(Illusts)
@@ -50,9 +48,9 @@ class ExportUtilService(private val appdata: AppDataManager, private val data: D
             when (id) {
                 in images -> {
                     val row = images[id]!!
-                    listOf(ExportImageRes(row.id, row.filePath))
+                    listOf(IllustSimpleRes(row.id, row.filePath))
                 }
-                in rows -> rows[id]!!.map { ExportImageRes(it.id, it.filePath) }
+                in rows -> rows[id]!!.map { IllustSimpleRes(it.id, it.filePath) }
                 else -> emptyList()
             }
         }
@@ -107,9 +105,14 @@ class ExportUtilService(private val appdata: AppDataManager, private val data: D
 
             val errors = mutableListOf<ExecuteExportRes.Error>()
 
-            for((id, file, ext) in files) {
+            for((id, block, fileId, ext) in files) {
                 try {
-                    File("${appdata.storage.storageDir}/$file").copyTo(Path(form.location, "$id.$ext").toFile())
+                    val path = archive.load(ArchiveType.ORIGINAL, block, "$fileId.$ext")
+                    if(path != null) {
+                        path.copyTo(Path(form.location, "$id.$ext"))
+                    }else{
+                        errors.add(ExecuteExportRes.Error(id, "$id.$ext", "File cannot be loaded."))
+                    }
                 }catch (e: Exception) {
                     errors.add(ExecuteExportRes.Error(id, "$id.$ext", e.message ?: e.stackTraceToString()))
                 }
