@@ -10,7 +10,7 @@ Hedge有以下几项核心功能：
 * 基于以上元数据，进行复杂的查询；
 * 基于以上元数据，寻找重复、相似和关联项。
 
-> Supported platform: `Linux`, `macOS`
+Supported platform: Linux, macOS
 
 ## Development
 
@@ -27,7 +27,7 @@ yarn
 
 > 安装客户端依赖时，需要下载`Electron`依赖，而这可能存在网络问题。要解决这个问题，可以使用环境变量指定Electron的二进制下载源：
 > ```sh
-> yarn config set ELECTRON_MIRROR https://npmmirror.com/mirrors/electron/
+> export ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"
 > ```
 
 客户端使用`tsc`完成编译。在任何客户端代码运行之前或更改之后，执行编译。编译后的产物位于`client/target`。
@@ -88,10 +88,6 @@ yarn build
 gradle
 ```
 
-使用run命令调试运行程序。
-```sh
-gradle run
-```
 在调试运行时，需要为程序指定必须的启动参数。
 ```sh
 --channel-path          # 必选参数，指定启动的channel的资源根目录
