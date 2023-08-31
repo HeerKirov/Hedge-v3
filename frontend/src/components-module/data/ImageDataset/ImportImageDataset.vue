@@ -115,11 +115,11 @@ installDatasetContext({
 
 <template>
     <div class="w-100 h-100 relative" :style="style">
-        <DatasetGridFramework v-if="viewMode === 'grid'" :column-num="columnNum!" v-slot="{ item }">
-            <img :class="$style['grid-img']" :src="assetsUrl(columnNum! >= 9 ? item.filePath.sample : item.filePath.thumbnail)" :alt="`import-image-${item.id}`"/>
+        <DatasetGridFramework v-if="viewMode === 'grid'" :key-of="keyOf" :column-num="columnNum!" v-slot="{ item, thumbType }">
+            <img :class="$style['grid-img']" :src="assetsUrl(item.filePath[thumbType])" :alt="`import-image-${item.id}`"/>
             <Icon v-if="isVideoExtension(item.filePath.extension)" :class="$style['grid-video']" icon="video"/>
         </DatasetGridFramework>
-        <DatasetRowFramework v-else :row-height="32" v-slot="{ item }">
+        <DatasetRowFramework v-else :key-of="keyOf" :row-height="32" v-slot="{ item }">
             <Flex horizontal="stretch" align="center">
                 <FlexItem :shrink="0" :grow="0">
                     <img :class="$style['row-img']" :src="assetsUrl(item.filePath.sample)" :alt="`import-image-${item.id}`"/>

@@ -1,4 +1,4 @@
-import { computed, inject, InjectionKey, isRef, provide, Ref, ref, reactive, watch, watchEffect, toRef as originToRef } from "vue"
+import { computed, inject, InjectionKey, isRef, provide, Ref, ref, reactive, watch, watchEffect, toRef as originToRef, WatchSource } from "vue"
 
 /**
  * 执行computed计算，产生一个ref，它的值会随watch源的变动而重新计算，但它也能被修改。
@@ -23,6 +23,28 @@ export function computedWatchMutable<T, W extends object>(watcher: W, call: (old
     watch(watcher, () => {
         oldValue = call(oldValue)
         data.value = oldValue
+    })
+    return data
+}
+
+/**
+ * 执行computed计算，使用watch实现，有明确watch源。与computed相比，它的响应性更固定，只会在return value确定变化时才更新下游 (这种确定性遵循EQUAL判断，只适用原生类型和引用)。
+ */
+export function computedWatch<T, W>(watcher: WatchSource<W>, call: (w: W) => T): Readonly<Ref<T>> {
+    const data = <Ref<T>>ref()
+    watch(watcher, (value) => {
+        data.value = call(value)
+    }, {immediate: true})
+    return data
+}
+
+/**
+ * 执行computed计算，使用watchEffect实现，没有明确watch源。与computed相比，它的响应性更固定，只会在return value确定变化时才更新下游 (这种确定性遵循EQUAL判断，只适用原生类型和引用)。
+ */
+export function computedEffect<T>(call: () => T): Readonly<Ref<T>> {
+    const data = <Ref<T>>ref()
+    watchEffect(() => {
+        data.value = call()
     })
     return data
 }
