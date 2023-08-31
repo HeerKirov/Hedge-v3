@@ -29,6 +29,7 @@ const close = (index: number) => toasts.splice(index, 1)
     position: fixed
     top: 0
     right: 0
+    width: 35rem
     margin-top: 46px
     margin-right: 8px
     display: flex
@@ -40,8 +41,14 @@ const close = (index: number) => toasts.splice(index, 1)
 .transition-enter-from
     transform: translateX(100%)
 .transition-leave-to
-    transform: translateY(-100%)
-    opacity: 0
+    //通知关闭有两套动画。向右滑动时，使用slide-to-close动画。
+    //这套动画会给ToastItem设置一个.slide-to-close的class，同时style填写一个translateX作为起始偏移。
+    //由于组件已卸载，不能在这之后改变组件内部的style了，因此在leave-to的目标上添加!important标记，强制覆盖数值，以实现终点。
+    &:global(.slide-to-close)
+        transform: translateX(560px) !important
+    &:not(:global(.slide-to-close))
+        transform: translateY(-100%)
+        opacity: 0
 .transition-enter-active
     transition: transform 0.15s ease-out
 .transition-leave-active

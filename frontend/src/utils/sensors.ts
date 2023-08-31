@@ -94,8 +94,8 @@ export function useResizeBar(options: {areaRef: Ref<HTMLElement | undefined>, lo
     const { defaultWidth, maxWidth, minWidth, attachRange, areaRef, location, width } = options
 
     const resizeAreaMouseDown = () => {
-        document.addEventListener('mousemove', mouseMove)
-        document.addEventListener('mouseup', mouseUp)
+        document.addEventListener("mousemove", mouseMove)
+        document.addEventListener("mouseup", mouseUp)
     }
 
     const mouseMove = location === "left" ? (e: MouseEvent) => {
@@ -119,13 +119,13 @@ export function useResizeBar(options: {areaRef: Ref<HTMLElement | undefined>, lo
     }
 
     const mouseUp = () => {
-        document.removeEventListener('mousemove', mouseMove)
-        document.removeEventListener('mouseup', mouseUp)
+        document.removeEventListener("mousemove", mouseMove)
+        document.removeEventListener("mouseup", mouseUp)
     }
 
     onUnmounted(() => {
-        document.removeEventListener('mousemove', mouseMove)
-        document.removeEventListener('mouseup', mouseUp)
+        document.removeEventListener("mousemove", mouseMove)
+        document.removeEventListener("mouseup", mouseUp)
     })
 
     return {resizeAreaMouseDown}
