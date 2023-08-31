@@ -1,14 +1,13 @@
 import { computed, onMounted, Ref, ref, shallowRef, watch } from "vue"
-import { IllustType } from "@/functions/http-client/api/illust"
+import { IllustType, SimpleIllust } from "@/functions/http-client/api/illust"
 import { useFetchHelper, useFetchReactive, usePaginationDataView, useQueryListview } from "@/functions/fetch"
+import { FilePath } from "@/functions/http-client/api/all"
+import { useLocalStorage } from "@/functions/app"
 import { useVirtualViewNavigation } from "@/components/data"
 import { useMessageBox } from "@/modules/message-box"
 import { dialogManager } from "@/modules/dialog"
-import { Push } from "../context"
-import { ExportSituationImage } from "@/functions/http-client/api/util-export"
 import { useToast } from "@/modules/toast"
-import { useLocalStorage } from "@/functions/app"
-import { FilePath } from "@/functions/http-client/api/all"
+import { Push } from "../context"
 
 export interface ExternalExporter {
     /**
@@ -121,7 +120,7 @@ function useExporterPreview(data: ExternalExporterProps) {
         //大于1，则走多项模式。此模式下右侧展示网格(若项较少则调整网格列数)，支持打包。
         const fetchIllustSituation = useFetchHelper(client => client.exportUtil.illustSituation)
         
-        const images = ref<ExportSituationImage[]>([])
+        const images = ref<SimpleIllust[]>([])
 
         const packagable = computed(() => images.value.length > 1)
         

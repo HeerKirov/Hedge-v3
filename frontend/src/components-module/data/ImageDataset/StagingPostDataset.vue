@@ -3,9 +3,10 @@ import { computed, ref } from "vue"
 import { Icon } from "@/components/universal"
 import { Flex, FlexItem } from "@/components/layout"
 import { FileInfoDisplay, SourceInfo } from "@/components-business/form-display"
-import { useAssets } from "@/functions/app"
 import { PaginationData, QueryInstance } from "@/functions/fetch"
 import { StagingPostImage } from "@/functions/http-client/api/staging-post"
+import { useAssets } from "@/functions/app"
+import { TypeDefinition } from "@/modules/drag"
 import { toRef } from "@/utils/reactivity"
 import { datetime } from "@/utils/datetime"
 import { installDatasetContext, isVideoExtension } from "./context"
@@ -46,6 +47,14 @@ const props = defineProps<{
      * 是否显示“已选择数量”的浮标UI。
      */
     selectedCountBadge?: boolean
+    /**
+     * 可拖曳开关：项允许被拖曳，被识别为指定的拖曳类型。
+     */
+     draggable?: boolean
+    /**
+     * 可拖放开关：允许将项拖放到此组件，并触发drop事件。
+     */
+    droppable?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -69,6 +78,10 @@ const emit = defineEmits<{
      * 在选择项上按下enter。
      */
     (e: "enter", id: number): void
+    /**
+     * 将数据项拖曳到组件上，触发添加项目的事件。
+     */
+     (e: "drop", insertIndex: number | null, images: TypeDefinition["illusts"], mode: "ADD" | "MOVE"): void
 }>()
 
 const keyOf = (item: StagingPostImage) => item.id
@@ -77,6 +90,8 @@ const data = toRef(props, "data")
 const columnNum = computed(() => props.viewMode === "grid" ? (props.columnNum ?? 3) : undefined)
 const selected = computed(() => props.selected ?? [])
 const lastSelected = computed(() => props.lastSelected ?? null)
+const draggable = computed(() => props.draggable ?? false)
+const droppable = computed(() => props.droppable ?? false)
 
 const { assetsUrl } = useAssets()
 
@@ -86,14 +101,14 @@ installDatasetContext({
     queryInstance: props.queryInstance,
     data, keyOf, columnNum,
     selected, lastSelected,
-    draggable: ref(false), droppable: ref(false),
+    draggable, droppable,
     dragAndDropType: "illusts",
     dataUpdate: (_, __) => emit("data-update", _, __),
     select: (_, __) => emit("select", _, __),
     rightClick: (_) => emit("contextmenu", _ as StagingPostImage),
     dblClick: (_, __) => emit("dblclick", _, __),
     enterClick: (_) => emit("enter", _),
-    dropData: (_, __, ___) => {}
+    dropData: (_, __, ___) => emit("drop", _, __ as TypeDefinition["illusts"], ___)
 })
 
 </script>

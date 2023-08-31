@@ -4,10 +4,10 @@ import { Input, CheckBox } from "@/components/form"
 import { VirtualGridView } from "@/components/data"
 import { AspectGrid, BottomLayout, Flex, FlexItem } from "@/components/layout"
 import { DataRouter } from "@/components-business/top-bar"
-import { ExportSituationImage } from "@/functions/http-client/api/util-export"
 import { useAssets } from "@/functions/app"
-import { ExternalExporterProps, useExporterData } from "./context"
+import { SimpleIllust } from "@/functions/http-client/api/illust"
 import { startDragFile } from "@/modules/others"
+import { ExternalExporterProps, useExporterData } from "./context"
 
 const props = defineProps<{
     p: ExternalExporterProps
@@ -21,7 +21,7 @@ const { assetsUrl, assetsLocal } = useAssets()
 
 const { packageMode, packageName, externalLocation, preview, executing, openDialog, executeExport } = useExporterData(props.p, () => emit("close"))
 
-const onDragstart = async (e: DragEvent, item: ExportSituationImage) => {
+const onDragstart = async (e: DragEvent, item: SimpleIllust) => {
     e.preventDefault()
     startDragFile(await assetsLocal(item.filePath.sample), await assetsLocal(item.filePath.original))
 }

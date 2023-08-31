@@ -9,6 +9,7 @@ import { useIllustViewController } from "@/services/base/view-controller"
 import { installIllustListviewForPreview, useImageDatasetOperators } from "@/services/common/illust"
 import { useSettingSite } from "@/services/setting"
 import { StagingPostImage } from "@/functions/http-client/api/staging-post"
+import { TypeDefinition } from "@/modules/drag"
 
 export function useStagingPostContext() {
     const listview = useListView()
@@ -40,18 +41,21 @@ function useListView() {
                     updateOne(i => i.id === event.illustId)
                 }else if(event.eventType === "entity/illust/deleted" && event.illustType === "IMAGE") {
                     removeOne(i => i.id === event.illustId)
-                }else if(event.eventType === "app/staging-post/changed" && (event.added.length || event.deleted.length)) {
+                }else if(event.eventType === "app/staging-post/changed" && (event.added.length || event.moved.length || event.deleted.length)) {
                     refresh()
                 }
             },
             request: client => async items => mapResponse(await client.illust.findByIds(items.map(i => i.id)), r => r.map(i => i !== null ? i : undefined))
         }
     })
-
 }
 
 function useOperators() {
     const fetchUpdate = usePostFetchHelper(client => client.stagingPost.update)
+
+    const dropToAdd = (insertIndex: number | null, images: TypeDefinition["illusts"], mode: "ADD" | "MOVE") => {
+        fetchUpdate({action: mode, images: images.map(i => i.id), ordinal: insertIndex})
+    }
 
     const removeOne = (image: StagingPostImage) => {
         fetchUpdate({action: "DELETE", images: [image.id]}).finally()
@@ -61,5 +65,5 @@ function useOperators() {
         fetchUpdate({action: "CLEAR"}).finally()
     }
 
-    return {removeOne, clear}
+    return {dropToAdd, removeOne, clear}
 }

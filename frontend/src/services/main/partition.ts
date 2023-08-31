@@ -258,7 +258,7 @@ export function useDetailIllustContext() {
 
 function useListView() {
     const listview = useListViewContext({
-        defaultFilter: <IllustQueryFilter>{order: "-orderTime", type: "IMAGE"},
+        defaultFilter: <IllustQueryFilter>{order: "orderTime", type: "IMAGE"},
         request: client => (offset, limit, filter) => client.illust.list({offset, limit, ...filter}),
         eventFilter: {
             filter: ["entity/illust/created", "entity/illust/updated", "entity/illust/deleted", "entity/illust/images/changed"],

@@ -73,9 +73,10 @@ const menu = useDynamicPopupMenu<StagingPostImage>(illust => [
                 <p class="secondary-text"><i>暂存区为空</i></p>
             </div>
             <StagingPostDataset v-else :data="paginationData.data" :query-instance="paginationData.proxy"
-                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
+                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable droppable
                                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"/>
+                                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"
+                                @dblclick="(i, s) => operators.openDetailByClick(i, s)" @enter="operators.openDetailByEnter($event)" @drop="operators.dropToAdd"/>
 
             <template #pane>
                 <IllustDetailPane :state="paneState.state.value" @close="paneState.visible.value = false"/>

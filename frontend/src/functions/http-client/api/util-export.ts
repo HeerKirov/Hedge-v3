@@ -1,6 +1,6 @@
 import { HttpInstance, Response } from ".."
 import { LocationNotAccessibleError, NotFound } from "../exceptions"
-import { FilePath } from "./all"
+import { SimpleIllust } from "./illust"
 
 export function createUtilExportEndpoint(http: HttpInstance): UtilExportEndpoint {
     return {
@@ -11,7 +11,7 @@ export function createUtilExportEndpoint(http: HttpInstance): UtilExportEndpoint
 }
 
 export interface UtilExportEndpoint {
-    illustSituation(illusts: number[]): Promise<Response<ExportSituationImage[]>>
+    illustSituation(illusts: number[]): Promise<Response<SimpleIllust[]>>
     executeExport(form: ExportExecuteForm): Promise<Response<ExportExecution, LocationNotAccessibleError>>
     loadLocalFile(form: LoadLocalFileForm): Promise<Response<LoadLocalFile, NotFound>>
 }
@@ -25,11 +25,6 @@ export interface ExportExecuteForm {
 
 export interface LoadLocalFileForm {
     filepath: string
-}
-
-export interface ExportSituationImage {
-    id: number
-    filePath: FilePath
 }
 
 export interface ExportExecution {
