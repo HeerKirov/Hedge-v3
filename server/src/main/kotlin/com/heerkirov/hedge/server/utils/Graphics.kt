@@ -91,25 +91,31 @@ object Graphics {
      */
     private fun loadJpg(file: File): BufferedImage {
         val image = Toolkit.getDefaultToolkit().getImage(file.absolutePath)
-
-        //getImage方法是异步的，因此需要等待它加载完成
-        MediaTracker(JPanel()).also { tracker ->
-            tracker.addImage(image, 0)
-            try {
-                tracker.waitForID(0)
-            } catch (ex: InterruptedException) {
-                throw RuntimeException(ex)
+        try {
+            //getImage方法是异步的，因此需要等待它加载完成
+            MediaTracker(JPanel()).also { tracker ->
+                tracker.addImage(image, 0)
+                try {
+                    tracker.waitForID(0)
+                } catch (ex: InterruptedException) {
+                    throw RuntimeException(ex)
+                }
             }
+
+            // if (image is BufferedImage) return image
+
+            val bufferedImage = BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_RGB)
+
+            bufferedImage.graphics.drawImage(image, 0, 0, null)
+            bufferedImage.graphics.dispose()
+
+            return bufferedImage
+        }finally {
+            //ToolKit加载的Image会被缓存的SoftCache。虽然这是一个弱引用，但实际上还是引起了heap space OOM。
+            //所以要尝试手动卸载缓存。
+            //https://stackoverflow.com/questions/5245864/images-getting-cached-and-eating-up-my-heap-space
+            image.flush()
         }
-
-        if (image is BufferedImage) return image
-
-        val bufferedImage = BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_RGB)
-
-        bufferedImage.graphics.drawImage(image, 0, 0, null)
-        bufferedImage.graphics.dispose()
-
-        return bufferedImage
     }
 
     /**
@@ -146,7 +152,8 @@ object Graphics {
      */
     private fun translateImageToJpg(src: File, quality: Float = 0.92F): File {
         val source = ImageIO.read(src).let {
-            if(!it.colorModel.hasAlpha()) it!! else {
+            //这里同样也会受到PNG读取错误type=0的问题的影响，因此要在遇到这个问题时，主动做一次修改
+            if(it.colorModel.hasAlpha() || it.type == 0) {
                 //消除alpha的代码来自 https://stackoverflow.com/questions/60380175/how-to-resolve-javax-imageio-iioexception-bogus-input-colorspace
                 BufferedImage(it.width, it.height, BufferedImage.TYPE_INT_RGB).apply {
                     createGraphics().apply {
@@ -158,6 +165,8 @@ object Graphics {
                         }
                     }
                 }
+            }else{
+                it
             }
         }
 

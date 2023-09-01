@@ -2,11 +2,14 @@ package com.heerkirov.hedge.server.utils
 
 import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
 import com.heerkirov.hedge.server.exceptions.be
+import java.awt.MediaTracker
 import java.awt.RenderingHints
+import java.awt.Toolkit
 import java.awt.image.BufferedImage
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
+import javax.swing.JPanel
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -26,7 +29,8 @@ object Similarity {
      */
     fun process(src: File): ProcessResult {
         val srcImage = when (src.extension.lowercase()) {
-            "jpeg", "jpg", "png" -> ImageIO.read(src)
+            "jpeg", "jpg" -> loadJpg(src)
+            "png" -> ImageIO.read(src)
             else -> throw be(IllegalFileExtensionError(src.extension))
         }
         val resizedImage = resize(srcImage, HASH_PRECISION, HASH_PRECISION)
@@ -58,6 +62,45 @@ object Similarity {
         }
 
         return ProcessResult(pHashSimple, dHashSimple, pHash, dHash)
+    }
+
+
+    /**
+     * 用正确的方式加载一张JPEG图片，获得BufferedImage，用于后续的流程。
+     * ImageIO对JPEG格式的处理存在大坑，"当没有JFIF信息时，文件会被错误地解释"，具体表现为完全错误的颜色。
+     * 一句话概括的解决方案是用Toolkit.getImage而不是ImageIO.read来读。
+     * 参考回答：
+     * 最直观的问题呈现和解决代码: https://stackoverflow.com/questions/19659269/losing-colors-when-resizing-jpegs-in-java-tried-with-multiple-libraries
+     * 上一条问题的答案来源: https://stackoverflow.com/questions/19654017/resizing-bufferedimages-and-storing-them-to-file-results-in-black-background-for/19654452#19654452
+     * 另一条指出解决方案的问题: https://stackoverflow.com/questions/9340569/jpeg-image-with-wrong-colors
+     */
+    private fun loadJpg(file: File): BufferedImage {
+        val image = Toolkit.getDefaultToolkit().getImage(file.absolutePath)
+        try {
+            //getImage方法是异步的，因此需要等待它加载完成
+            MediaTracker(JPanel()).also { tracker ->
+                tracker.addImage(image, 0)
+                try {
+                    tracker.waitForID(0)
+                } catch (ex: InterruptedException) {
+                    throw RuntimeException(ex)
+                }
+            }
+
+            // if (image is BufferedImage) return image
+
+            val bufferedImage = BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_RGB)
+
+            bufferedImage.graphics.drawImage(image, 0, 0, null)
+            bufferedImage.graphics.dispose()
+
+            return bufferedImage
+        }finally {
+            //ToolKit加载的Image会被缓存的SoftCache。虽然这是一个弱引用，但实际上还是引起了heap space OOM。
+            //所以要尝试手动卸载缓存。
+            //https://stackoverflow.com/questions/5245864/images-getting-cached-and-eating-up-my-heap-space
+            image.flush()
+        }
     }
 
     /**
@@ -139,7 +182,9 @@ object Similarity {
      * 将image缩放至目标大小。
      */
     private fun resize(source: BufferedImage, targetWidth: Int, targetHeight: Int): BufferedImage {
-        return BufferedImage(targetWidth, targetHeight, source.type).apply {
+        //一个hack：在Linux上似乎有可能将PNG格式读为0，但手动设置5似乎是可行的。
+        //https://stackoverflow.com/questions/5836128/how-do-i-make-javas-imagebuffer-to-read-a-png-file-correctly
+        return BufferedImage(targetWidth, targetHeight, if(source.type == 0) BufferedImage.TYPE_3BYTE_BGR else source.type).apply {
             createGraphics().apply {
                 try {
                     setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
