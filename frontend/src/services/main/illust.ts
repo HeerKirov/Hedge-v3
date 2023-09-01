@@ -247,5 +247,5 @@ export function useIllustDetailPaneMultiple(selected: Ref<number[]>, latest: Ref
 
     watch(() => actives.metaTag, enabled => { if(enabled) editMetaTag().finally() })
 
-    return {data, actives, anyActive, form, submit, clear, openImagePreview}
+    return {data, actives, anyActive, form, submit, clear, openImagePreview, editMetaTag}
 }

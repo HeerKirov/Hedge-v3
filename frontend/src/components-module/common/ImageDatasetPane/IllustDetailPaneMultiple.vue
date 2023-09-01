@@ -12,7 +12,7 @@ const props = defineProps<{
 
 const { selected, latest } = toRefs(props)
 
-const { data, actives, anyActive, form, submit, openImagePreview } = useIllustDetailPaneMultiple(selected, latest)
+const { data, actives, anyActive, form, submit, openImagePreview, editMetaTag } = useIllustDetailPaneMultiple(selected, latest)
 
 </script>
 
@@ -26,7 +26,7 @@ const { data, actives, anyActive, form, submit, openImagePreview } = useIllustDe
     <p class="mt-2"><Icon icon="edit"/>批量编辑</p>
     <p class="mt-2"><CheckBox v-model:value="actives.metaTag">设置标签</CheckBox></p>
     <template v-if="actives.metaTag">
-        <a>编辑已选择的标签</a>
+        <a @click="editMetaTag">编辑已选择的标签</a>
         <p>已设置{{form.tags.length}}个标签、{{form.topics.length}}个主题、{{form.authors.length}}个作者</p>
         <p class="mb-2"><i class="secondary-text">批量设定将覆盖所有已存在的标签。</i></p>
     </template>

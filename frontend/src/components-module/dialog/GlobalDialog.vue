@@ -31,7 +31,7 @@ const innerElementHeight = computed(() => innerElementRect.value?.height)
 
 const windowSize = useWindowSize()
 
-const thresholdHeight = computed(() => windowSize.value.height * 0.75 - 20) //magic number 20：是0.5rem+2px的边界值，再加2px的冗余。减去这个数字才是内容区域的边界阈值
+const thresholdHeight = computed(() => windowSize.value.height * 0.8 - 20) //magic number 20：是0.5rem+2px的边界值，再加2px的冗余。减去这个数字才是内容区域的边界阈值
 
 const fixed = computed(() => innerElementHeight.value && innerElementHeight.value >= thresholdHeight.value)
 
@@ -56,9 +56,9 @@ const fixed = computed(() => innerElementHeight.value && innerElementHeight.valu
 .container-box
     padding: 0.5rem
     min-height: 10vh
-    max-height: 75vh
+    max-height: 80vh
     &.fixed
-        height: 75vh
+        height: 80vh
     width: 95vw
     @media screen and (min-width: 800px)
         width: 720px

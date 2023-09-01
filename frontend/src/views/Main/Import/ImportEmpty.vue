@@ -10,7 +10,7 @@ const dropEvents = useDroppableForFile()
 </script>
 
 <template>
-    <div class="h-100 has-text-centered relative" v-bind="dropEvents">
+    <div class="has-text-centered" v-bind="dropEvents">
         <p class="secondary-text"><i>没有任何暂存的导入项目</i></p>
         <div class="absolute center">
             <Button mode="light" type="success" icon="file" @click="openDialog">添加文件</Button>

@@ -28,6 +28,11 @@ const resolve = (data: CommonData | undefined) => {
 </script>
 
 <template>
-    <IdentityMode v-if="p.mode === 'identity'" :identity="p.identity" @updated="updated"/>
-    <OnlyEditorMode v-else :data="p.data" :allow-tagme="p.allowTagme" @resolve="resolve"/>
+    <IdentityMode v-if="p.mode === 'identity'" :class="$style.root" :identity="p.identity" @updated="updated"/>
+    <OnlyEditorMode v-else :class="$style.root" :data="p.data" :allow-tagme="p.allowTagme" @resolve="resolve"/>
 </template>
+
+<style module lang="sass">
+.root
+    height: 75vh
+</style>

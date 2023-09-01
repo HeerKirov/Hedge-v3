@@ -65,12 +65,16 @@ const menu = usePopupMenu<ImportImage>(() => [
         </template>
 
         <PaneLayout :show-pane="paneState.visible.value">
-            <ImportEmpty v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0"/>
-            <!-- FUTURE: Import页面有一个空白页面。然而由于设计缺陷，这会导致导航栏的数值无法清零，因为清零操作是在dataset内完成的。现在通过hidden妥协，然而要想完美解决这个问题，只能等虚拟视图的响应结构重构了。 -->
-            <ImportImageDataset v-show="paginationData.data.metrics.total === undefined || paginationData.data.metrics.total > 0" :data="paginationData.data" :query-instance="paginationData.proxy"
-                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
-                                :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"/>
+            <!-- FUTURE: Import页面有一个空白页面。然而由于设计缺陷，对DataRouter的写操作是在dataset内完成的。-->
+            <!-- 这会导致导航栏的数值无法清零。现在只能通过hidden妥协。 -->
+            <!-- 然而如果只是visibility: hidden，还会继续踩另一个坑，contentWidth会被变成0，最终而导致算出的offset是Infinty。所以只能用透明度0妥协。 -->
+            <!-- 要想完美解决这个问题，只能等虚拟视图的响应结构重构了。 -->
+            <ImportImageDataset :class="{[$style.hidden]: paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0}"
+                :data="paginationData.data" :query-instance="paginationData.proxy"
+                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
+                :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
+                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"/>
+            <ImportEmpty v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" :class="$style.empty"/>
 
             <template #pane>
                 <ImportDetailPane :state="paneState.state.value" @close="paneState.visible.value = false"/>
@@ -79,3 +83,15 @@ const menu = usePopupMenu<ImportImage>(() => [
     </TopBarLayout>
     <ImportDialog :progress="progress" :progressing="progressing"/>
 </template>
+
+<style module lang="sass">
+.hidden
+    opacity: 0
+    position: absolute
+
+.empty
+    height: 100%
+    width: 100%
+    position: absolute
+    top: 0
+</style>
