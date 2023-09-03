@@ -91,31 +91,30 @@ object Graphics {
      */
     private fun loadJpg(file: File): BufferedImage {
         val image = Toolkit.getDefaultToolkit().getImage(file.absolutePath)
-        try {
-            //getImage方法是异步的，因此需要等待它加载完成
-            MediaTracker(JPanel()).also { tracker ->
-                tracker.addImage(image, 0)
-                try {
-                    tracker.waitForID(0)
-                } catch (ex: InterruptedException) {
-                    throw RuntimeException(ex)
-                }
+        //getImage方法是异步的，因此需要等待它加载完成
+        MediaTracker(JPanel()).also { tracker ->
+            tracker.addImage(image, 0)
+            try {
+                tracker.waitForID(0)
+            } catch (ex: InterruptedException) {
+                throw RuntimeException(ex)
             }
-
-            // if (image is BufferedImage) return image
-
-            val bufferedImage = BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_RGB)
-
-            bufferedImage.graphics.drawImage(image, 0, 0, null)
-            bufferedImage.graphics.dispose()
-
-            return bufferedImage
-        }finally {
-            //ToolKit加载的Image会被缓存的SoftCache。虽然这是一个弱引用，但实际上还是引起了heap space OOM。
-            //所以要尝试手动卸载缓存。
-            //https://stackoverflow.com/questions/5245864/images-getting-cached-and-eating-up-my-heap-space
-            image.flush()
         }
+
+        if (image is BufferedImage) return image
+
+        val bufferedImage = BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_RGB)
+
+        bufferedImage.graphics.drawImage(image, 0, 0, null)
+        bufferedImage.graphics.dispose()
+
+        return bufferedImage
+
+        //曾经尝试过进行手动缓存清理以缓解heap space OOM问题，但这引入了一个更大的问题。
+        //加载的图像会不稳定地出现全黑的情况，这对于使用来说是致命的，因此回滚了此更改。
+        //替换ImageIO的优先级更高了一分。
+        //https://stackoverflow.com/questions/5245864/images-getting-cached-and-eating-up-my-heap-space
+        //image.flush()
     }
 
     /**
