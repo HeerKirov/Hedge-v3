@@ -21,8 +21,8 @@ object SourceDatas : BaseTable<SourceData>("source_data", schema = "source_db") 
     val cachedCount = json("cached_count", typeRef<SourceData.SourceCount>())
     val empty = boolean("empty")
     val status = enum("status", typeRef<SourceEditStatus>())
-    val createTime = datetime("create_time")
-    val updateTime = datetime("update_time")
+    val createTime = timestamp("create_time")
+    val updateTime = timestamp("update_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = SourceData(
         id = row[id]!!,
@@ -121,7 +121,7 @@ object SourceMarks : BaseTable<SourceMark>("source_mark", schema = "source_db") 
     val sourceDataId = int("source_data_id")
     val relatedSourceDataId = int("related_source_data_id")
     val markType = enum("mark_type", typeRef<SourceMarkType>())
-    val recordTime = datetime("record_time")
+    val recordTime = timestamp("record_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = SourceMark(
         sourceDataId = row[sourceDataId]!!,

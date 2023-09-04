@@ -8,10 +8,7 @@ import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.functions.manager.StagingPostManager
 import com.heerkirov.hedge.server.model.HomepageRecord
-import com.heerkirov.hedge.server.utils.DateTime
-import com.heerkirov.hedge.server.utils.DateTime.asZonedTime
-import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
-import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
+import com.heerkirov.hedge.server.utils.DateTime.toSystemZonedTime
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.runIf
 import org.ktorm.dsl.*
@@ -20,17 +17,19 @@ import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import org.ktorm.schema.ColumnDeclaring
 import org.ktorm.support.sqlite.random
+import java.time.Instant
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import kotlin.random.Random
 import kotlin.random.nextInt
 
 class HomepageService(private val appdata: AppDataManager, private val data: DataRepository, private val stagingPostManager: StagingPostManager) {
     fun getHomepageInfo(): HomepageRes {
-        val todayDate = DateTime.now()
+        val todayDate = Instant.now()
             .runIf(appdata.setting.import.setPartitionTimeDelayHour != null && appdata.setting.import.setPartitionTimeDelayHour!!!= 0L) {
-                (this.toMillisecond() - appdata.setting.import.setPartitionTimeDelayHour!! * 1000 * 60 * 60).parseDateTime()
+                this.minus(appdata.setting.import.setPartitionTimeDelayHour!!, ChronoUnit.HOURS)
             }
-            .asZonedTime().toLocalDate()
+            .toSystemZonedTime().toLocalDate()
 
         var currentRecord = data.db.sequenceOf(HomepageRecords).firstOrNull()
         if(currentRecord == null || currentRecord.date < todayDate) {

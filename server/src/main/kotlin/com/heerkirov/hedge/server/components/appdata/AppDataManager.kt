@@ -37,7 +37,7 @@ class AppDataManagerImpl(channelPath: String) : AppDataManager, ControlledAppSta
     override fun load(migrator: VersionFileMigrator) {
         val appdataFile = Fs.readText(appDataPath)
         try {
-            val (d, changed) = migrator.migrate(appdataFile, AppDataMigrationStrategy)
+            val (d, changed) = migrator.migrate("[AppData]", appdataFile, AppDataMigrationStrategy)
             if(changed) { Fs.writeFile(appDataPath, d) }
             _appdata = d
         }catch (e: Throwable) {

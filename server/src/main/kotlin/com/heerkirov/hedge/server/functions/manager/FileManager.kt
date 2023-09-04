@@ -30,7 +30,8 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.time.LocalDateTime
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.zip.ZipFile
@@ -60,7 +61,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
     fun newFile(file: File, filename: String, moveFile: Boolean = false): Int {
         if(!appdata.storage.accessible) throw be(StorageNotAccessibleError(appdata.storage.storageDir))
 
-        val now = DateTime.now()
+        val now = Instant.now()
         val extension = validateExtension(file.extension)
 
         val block = nextBlock.nextBlock(file.length())
@@ -341,7 +342,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
      */
     private inner class CacheRecord {
         private val lastRecords = ConcurrentHashMap<Int, FileCacheRecord>()
-        @Volatile private var cacheRecords = ConcurrentHashMap<Int, LocalDateTime>()
+        @Volatile private var cacheRecords = ConcurrentHashMap<Int, Instant>()
 
         val isIdle get() = cacheRecords.isEmpty()
 
@@ -349,11 +350,11 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
          * 添加一条对此文件的访问记录。
          */
         fun addAccessRecord(archiveType: ArchiveType, block: String, filename: String) {
-            val now = DateTime.now()
+            val now = Instant.now()
             val fileId = filename.substringBeforeLast('.').toInt()
             val key = fileId shl 2 + archiveType.ordinal
             lastRecords[key].let { lastTime ->
-                if(lastTime == null || now >= lastTime.lastAccessTime.plusHours(1)) {
+                if(lastTime == null || now >= lastTime.lastAccessTime.plus(1, ChronoUnit.HOURS)) {
                     cacheRecords[key] = now
                     lastRecords[key] = FileCacheRecord(fileId, archiveType, block, filename, now)
                     //使用lastRecords做总体计量。当一次访问距离上次访问超过1小时时，才允许下一次访问写入。此机制防止频繁写入

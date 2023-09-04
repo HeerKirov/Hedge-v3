@@ -4,7 +4,7 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.IllustModelType
-import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
+import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.letIf
@@ -12,7 +12,7 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.filter
 import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
-import java.time.LocalDateTime
+import java.time.Instant
 
 class IllustUtilService(private val data: DataRepository) {
     /**
@@ -52,7 +52,7 @@ class IllustUtilService(private val data: DataRepository) {
                     .map { image -> image.id }
                     .letIf(it.id in collectionResultIds) { l -> l + it.id }
 
-                CollectionSituationRes(it.id, it.cachedChildrenCount, it.orderTime.parseDateTime(), examples, belongs)
+                CollectionSituationRes(it.id, it.cachedChildrenCount, it.orderTime.toInstant(), examples, belongs)
             }.toList()
     }
 
@@ -61,8 +61,8 @@ class IllustUtilService(private val data: DataRepository) {
      * 这个工具API一般用于拖放illusts后，对内容列表做整体解析。
      */
     fun getImageSituation(illustIds: List<Int>): List<ImageSituationRes> {
-        data class Row(val id: Int, val type: IllustModelType, val parentId: Int?, val childrenCount: Int?, val orderTime: LocalDateTime, val filePath: FilePath)
-        data class ChildrenRow(val id: Int, val parentId: Int, val orderTime: LocalDateTime, val filePath: FilePath)
+        data class Row(val id: Int, val type: IllustModelType, val parentId: Int?, val childrenCount: Int?, val orderTime: Instant, val filePath: FilePath)
+        data class ChildrenRow(val id: Int, val parentId: Int, val orderTime: Instant, val filePath: FilePath)
         //先根据id列表把所有的illust查询出来, 然后从中分离collection, image, image_with_parent
         val rows = data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
@@ -70,7 +70,7 @@ class IllustUtilService(private val data: DataRepository) {
             .where { Illusts.id inList illustIds }
             .map { row ->
                 val filePath = filePathFrom(row)
-                Row(row[Illusts.id]!!, row[Illusts.type]!!, row[Illusts.parentId], row[Illusts.cachedChildrenCount], row[Illusts.orderTime]!!.parseDateTime(), filePath)
+                Row(row[Illusts.id]!!, row[Illusts.type]!!, row[Illusts.parentId], row[Illusts.cachedChildrenCount], row[Illusts.orderTime]!!.toInstant(), filePath)
             }
             .groupBy { it.type }
         val collectionRows = rows.getOrDefault(IllustModelType.COLLECTION, emptyList())
@@ -84,7 +84,7 @@ class IllustUtilService(private val data: DataRepository) {
             .where { (Illusts.parentId inList collectionRows.map { it.id }) and (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) }
             .map { row ->
                 val filePath = filePathFrom(row)
-                ChildrenRow(row[Illusts.id]!!, row[Illusts.parentId]!!, row[Illusts.orderTime]!!.parseDateTime(), filePath)
+                ChildrenRow(row[Illusts.id]!!, row[Illusts.parentId]!!, row[Illusts.orderTime]!!.toInstant(), filePath)
             }
 
         //查询image_with_parent类图像的parent信息。查询时排除collection已有的项

@@ -29,6 +29,7 @@ dependencies {
     implementation(group = "com.fasterxml.jackson.core", name = "jackson-core", version = jacksonVersion)
     implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = jacksonVersion)
     implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version = jacksonVersion)
+    implementation(group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version = jacksonVersion)
     implementation(group = "org.xerial", name = "sqlite-jdbc", version = sqliteVersion)
     implementation(group = "org.ktorm", name = "ktorm-core", version = ktormVersion)
     implementation(group = "org.ktorm", name = "ktorm-support-sqlite", version = ktormVersion)

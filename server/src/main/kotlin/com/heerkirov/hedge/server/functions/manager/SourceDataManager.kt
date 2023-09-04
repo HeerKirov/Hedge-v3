@@ -13,7 +13,6 @@ import com.heerkirov.hedge.server.events.SourceDataDeleted
 import com.heerkirov.hedge.server.events.SourceDataUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.model.SourceData
-import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.types.Opt
 import com.heerkirov.hedge.server.utils.types.anyOpt
@@ -22,6 +21,7 @@ import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
+import java.time.Instant
 
 class SourceDataManager(private val appdata: AppDataManager,
                         private val data: DataRepository,
@@ -90,7 +90,7 @@ class SourceDataManager(private val appdata: AppDataManager,
         return if(sourceData != null) {
             sourceData.id
         }else{
-            val now = DateTime.now()
+            val now = Instant.now()
             val id = data.db.insertAndGenerateKey(SourceDatas) {
                 set(it.sourceSite, sourceSite)
                 set(it.sourceId, sourceId)
@@ -215,7 +215,7 @@ class SourceDataManager(private val appdata: AppDataManager,
                     && relations.letOpt { it.isEmpty() }.unwrapOr { true }
             val finalStatus = status.unwrapOr { if(empty) SourceEditStatus.NOT_EDITED else SourceEditStatus.EDITED }
 
-            val now = DateTime.now()
+            val now = Instant.now()
             val id = data.db.insertAndGenerateKey(SourceDatas) {
                 set(it.sourceSite, sourceSite)
                 set(it.sourceId, sourceId)
@@ -295,7 +295,7 @@ class SourceDataManager(private val appdata: AppDataManager,
                     cachedCount.applyOpt { set(it.cachedCount, this) }
                     finalStatus.applyOpt { set(it.status, this) }
                     set(it.empty, empty)
-                    set(it.updateTime, DateTime.now())
+                    set(it.updateTime, Instant.now())
                 }
             }
 
@@ -421,7 +421,7 @@ class SourceDataManager(private val appdata: AppDataManager,
                     cachedCount.applyOpt { set(it.cachedCount, this) }
                     finalStatus.applyOpt { set(it.status, this) }
                     set(it.empty, empty)
-                    set(it.updateTime, DateTime.now())
+                    set(it.updateTime, Instant.now())
                 }
             }
 

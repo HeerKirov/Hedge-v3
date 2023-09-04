@@ -7,13 +7,13 @@ import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.business.checkScore
-import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.types.Opt
 import org.ktorm.dsl.*
 import org.ktorm.dsl.where
 import org.ktorm.entity.*
 import org.ktorm.schema.ColumnDeclaring
+import java.time.Instant
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
@@ -147,7 +147,7 @@ class IllustKit(private val data: DataRepository,
      * 使用目标的所有relations，拷贝一份赋给当前项，统一设定为exported。
      */
     private fun copyAllMetaFromParent(thisId: Int, fromId: Int) {
-        val now = DateTime.now()
+        val now = Instant.now()
         fun <R : EntityMetaRelationTable<*>, T : MetaTagTable<*>> copyOneMeta(tagRelations: R, metaTag: T) {
             //在调用此方法之前，已有anyNotExportedMetaExists调用，保证parent一定是有自己的meta的，不会产生错误的传递。
             val ids = data.db.from(tagRelations).select(tagRelations.metaId()).where { tagRelations.entityId() eq fromId }.map { it[tagRelations.metaId()]!! }

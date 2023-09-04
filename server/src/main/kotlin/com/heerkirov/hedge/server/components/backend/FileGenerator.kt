@@ -19,7 +19,6 @@ import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
 import com.heerkirov.hedge.server.library.framework.DaemonThreadComponent
 import com.heerkirov.hedge.server.library.framework.StatefulComponent
 import com.heerkirov.hedge.server.model.FileRecord
-import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.Graphics
 import com.heerkirov.hedge.server.utils.Similarity
 import com.heerkirov.hedge.server.utils.deleteIfExists
@@ -35,6 +34,8 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.LinkedList
 import java.util.zip.CRC32
 import java.util.zip.ZipEntry
@@ -289,7 +290,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                     if(result != null) data.db.transaction {
                         data.db.insert(FileFingerprints) {
                             set(it.fileId, fileRecord.id)
-                            set(it.createTime, DateTime.now())
+                            set(it.createTime, Instant.now())
                             set(it.pHashSimple, result.pHashSimple)
                             set(it.dHashSimple, result.dHashSimple)
                             set(it.pHash, result.pHash)
@@ -316,7 +317,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
     }
 
     private fun executeCacheProcess(intervalDay: Int) {
-        val deadline = DateTime.now().minusDays(intervalDay.absoluteValue.toLong())
+        val deadline = Instant.now().minus(intervalDay.absoluteValue.toLong(), ChronoUnit.DAYS)
         for (record in data.db.sequenceOf(FileCacheRecords).filter { it.lastAccessTime lessEq deadline }) {
             val cachePath = Path(appdata.storage.cacheDir, record.archiveType.toString(), record.block, record.filename)
             cachePath.deleteIfExists()

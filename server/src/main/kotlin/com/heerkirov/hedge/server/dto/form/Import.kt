@@ -8,7 +8,7 @@ import com.heerkirov.hedge.server.utils.types.Opt
 import com.heerkirov.hedge.server.utils.types.undefined
 import java.io.InputStream
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.Instant
 
 data class ImportForm(val filepath: String,
                       val mobileImport: Boolean = false)
@@ -27,8 +27,8 @@ class ImportUpdateForm(val tagme: Opt<Illust.Tagme> = undefined(),
                        val appendFolderIds: Opt<List<Int>> = undefined(),
                        val appendBookIds: Opt<List<Int>> = undefined(),
                        val partitionTime: Opt<LocalDate> = undefined(),
-                       val orderTime: Opt<LocalDateTime> = undefined(),
-                       val createTime: Opt<LocalDateTime> = undefined())
+                       val orderTime: Opt<Instant> = undefined(),
+                       val createTime: Opt<Instant> = undefined())
 
 class ImportBatchUpdateForm(val target: List<Int>? = null,
                             val tagme: Illust.Tagme? = null,

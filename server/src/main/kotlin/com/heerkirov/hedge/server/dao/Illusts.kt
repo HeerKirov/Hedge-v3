@@ -36,8 +36,8 @@ open class Illusts(alias: String?) : BaseTable<Illust>("illust", alias = alias) 
     val exportedScore = int("exported_score")
     val partitionTime = date("partition_time")
     val orderTime = long("order_time")
-    val createTime = datetime("create_time")
-    val updateTime = datetime("update_time")
+    val createTime = timestamp("create_time")
+    val updateTime = timestamp("update_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = Illust(
         id = row[id]!!,
@@ -162,9 +162,9 @@ object ImportImages : BaseTable<ImportImage>("import_image") {
     val fileId = int("file_id")
     val fileName = varchar("file_name")
     val filePath = varchar("file_path")
-    val fileCreateTime = datetime("file_create_time")
-    val fileUpdateTime = datetime("file_update_time")
-    val fileImportTime = datetime("file_import_time")
+    val fileCreateTime = timestamp("file_create_time")
+    val fileUpdateTime = timestamp("file_update_time")
+    val fileImportTime = timestamp("file_import_time")
     val collectionId = varchar("collection_id")
     val folderIds = unionList("folder_ids") { it.toInt() }
     val bookIds = unionList("book_ids") { it.toInt() }
@@ -177,7 +177,7 @@ object ImportImages : BaseTable<ImportImage>("import_image") {
     val sourcePreference = json("source_preference", typeRef<ImportImage.SourcePreference>())
     val partitionTime = date("partition_time")
     val orderTime = long("order_time")
-    val createTime = datetime("create_time")
+    val createTime = timestamp("create_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = ImportImage(
         id = row[id]!!,
@@ -218,9 +218,9 @@ object TrashedImages : BaseTable<TrashedImage>("trashed_image") {
     val tagme = composition<Illust.Tagme>("tagme")
     val partitionTime = date("partition_time")
     val orderTime = long("order_time")
-    val createTime = datetime("create_time")
-    val updateTime = datetime("update_time")
-    val trashedTime = datetime("trashed_time")
+    val createTime = timestamp("create_time")
+    val updateTime = timestamp("update_time")
+    val trashedTime = timestamp("trashed_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = TrashedImage(
         imageId = row[imageId]!!,
@@ -257,8 +257,8 @@ object FileRecords : BaseTable<FileRecord>("file", schema = "file_db") {
     val status = enum("status", typeRef<FileStatus>())
     val fingerStatus = enum("finger_status", typeRef<FingerprintStatus>())
     val deleted = boolean("deleted")
-    val createTime = datetime("create_time")
-    val updateTime = datetime("update_time")
+    val createTime = timestamp("create_time")
+    val updateTime = timestamp("update_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FileRecord(
         id = row[id]!!,
@@ -285,7 +285,7 @@ object FileFingerprints : BaseTable<FileFingerprint>("file_fingerprint", schema 
     val dHashSimple = text("d_hash_simple")
     val pHash = text("p_hash")
     val dHash = text("d_hash")
-    val createTime = datetime("create_time")
+    val createTime = timestamp("create_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FileFingerprint(
         fileId = row[fileId]!!,
@@ -302,7 +302,7 @@ object FileCacheRecords : BaseTable<FileCacheRecord>("file_cache_record", schema
     val archiveType = enum("archive_type", typeRef<ArchiveType>())
     val block = varchar("block")
     val filename = varchar("filename")
-    val lastAccessTime = datetime("last_access_time")
+    val lastAccessTime = timestamp("last_access_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FileCacheRecord(
         fileId = row[fileId]!!,

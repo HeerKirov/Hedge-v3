@@ -5,7 +5,7 @@ import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.types.Opt
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.Instant
 
 data class IllustCollectionCreateForm(val images: List<Int>,
                                       val description: String? = null,
@@ -21,7 +21,7 @@ class IllustCollectionRelatedUpdateForm(val associates: Opt<List<Int>?>)
 
 class IllustImageUpdateForm(topics: Opt<List<Int>>, authors: Opt<List<Int>>, tags: Opt<List<Int>>,
                             description: Opt<String?>, score: Opt<Int?>, favorite: Opt<Boolean>, tagme: Opt<Illust.Tagme>,
-                            val partitionTime: Opt<LocalDate>, val orderTime: Opt<LocalDateTime>) : IllustCollectionUpdateForm(topics, authors, tags, description, score, favorite, tagme)
+                            val partitionTime: Opt<LocalDate>, val orderTime: Opt<Instant>) : IllustCollectionUpdateForm(topics, authors, tags, description, score, favorite, tagme)
 
 class IllustImageRelatedUpdateForm(val associates: Opt<List<Int>?>, val collectionId: Opt<Int?>)
 
@@ -40,8 +40,8 @@ class IllustBatchUpdateForm(val target: List<Int>,
                             val authors: Opt<List<Int>>,
                             val tagme: Opt<Illust.Tagme>,
                             val partitionTime: Opt<LocalDate>,
-                            val orderTimeBegin: Opt<LocalDateTime>,
-                            val orderTimeEnd: Opt<LocalDateTime>)
+                            val orderTimeBegin: Opt<Instant>,
+                            val orderTimeEnd: Opt<Instant>)
 
 class ImagePropsCloneForm(val props: Props, val merge: Boolean = false, val deleteFrom: Boolean = false, val from: Int, val to: Int) {
     data class Props(

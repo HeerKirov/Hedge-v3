@@ -19,7 +19,7 @@ open class Annotations(alias: String? = null) : BaseTable<Annotation>("annotatio
     val canBeExported = boolean("can_be_exported")
     val type = enum("type", typeRef<MetaType>())
     val target = composition<Annotation.AnnotationTarget>("target")
-    val createTime = datetime("create_time")
+    val createTime = timestamp("create_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = Annotation(
         id = row[id]!!,
@@ -46,8 +46,8 @@ object Tags : MetaTagTable<Tag>("tag", schema = "meta_db") {
     val examples = json("examples", typeRef<List<Int>>())
     val exportedScore = int("exported_score")
     override val cachedCount = int("cached_count")
-    val createTime = datetime("create_time")
-    override val updateTime = datetime("update_time")
+    val createTime = timestamp("create_time")
+    override val updateTime = timestamp("update_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = Tag(
         id = row[id]!!,
@@ -85,8 +85,8 @@ open class Topics(alias: String?) : MetaTagTable<Topic>("topic", schema = "meta_
     val description = varchar("description")
     override val cachedCount = int("cached_count")
     val cachedAnnotations = json("cached_annotations", typeRef<List<Topic.CachedAnnotation>>())
-    val createTime = datetime("create_time")
-    override val updateTime = datetime("update_time")
+    val createTime = timestamp("create_time")
+    override val updateTime = timestamp("update_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = Topic(
         id = row[id]!!,
@@ -117,8 +117,8 @@ object Authors : MetaTagTable<Author>("author", schema = "meta_db") {
     val description = varchar("description")
     override val cachedCount = int("cached_count")
     val cachedAnnotations = json("cached_annotations", typeRef<List<Author.CachedAnnotation>>())
-    val createTime = datetime("create_time")
-    override val updateTime = datetime("update_time")
+    val createTime = timestamp("create_time")
+    override val updateTime = timestamp("update_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = Author(
         id = row[id]!!,

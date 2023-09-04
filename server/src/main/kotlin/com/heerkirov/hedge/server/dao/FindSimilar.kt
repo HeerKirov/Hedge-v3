@@ -14,7 +14,7 @@ object FindSimilarTasks : BaseTable<FindSimilarTask>("find_similar_task", schema
     val id = int("id").primaryKey()
     val selector = json("selector", typeRef<FindSimilarTask.TaskSelector>())
     val config = json("config", typeRef<FindSimilarTask.TaskConfig>())
-    val recordTime = datetime("record_time")
+    val recordTime = timestamp("record_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FindSimilarTask(
         id = row[id]!!,
@@ -28,7 +28,7 @@ object FindSimilarIgnores : BaseTable<FindSimilarIgnored>("find_similar_ignored"
     val id = int("id").primaryKey()
     val firstTarget = text("first_target")
     val secondTarget = text("second_target")
-    val recordTime = datetime("record_time")
+    val recordTime = timestamp("record_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FindSimilarIgnored(
         id = row[id]!!,
@@ -44,7 +44,7 @@ object FindSimilarResults : BaseTable<FindSimilarResult>("find_similar_result", 
     val images = unionList("images")
     val relations = json("relations", typeRef<List<FindSimilarResult.RelationUnit>>())
     val sortPriority = int("sort_priority")
-    val recordTime = datetime("record_time")
+    val recordTime = timestamp("record_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FindSimilarResult(
         id = row[id]!!,

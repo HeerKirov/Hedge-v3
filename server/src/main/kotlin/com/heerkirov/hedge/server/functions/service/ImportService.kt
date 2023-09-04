@@ -22,8 +22,7 @@ import com.heerkirov.hedge.server.functions.manager.*
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.model.ImportImage
-import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
-import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
+import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.business.filePathOrNullFrom
 import com.heerkirov.hedge.server.utils.business.sourcePathOf
@@ -78,7 +77,7 @@ class ImportService(private val appdata: AppDataManager,
                 val source = sourcePathOf(it[ImportImages.sourceSite], it[ImportImages.sourceId], it[ImportImages.sourcePart], it[ImportImages.sourcePartName])
                 ImportImageRes(
                     it[ImportImages.id]!!, filePath, it[ImportImages.fileName], source,
-                    it[ImportImages.tagme]!!, it[ImportImages.partitionTime]!!, it[ImportImages.orderTime]!!.parseDateTime())
+                    it[ImportImages.tagme]!!, it[ImportImages.partitionTime]!!, it[ImportImages.orderTime]!!.toInstant())
             }
     }
 
@@ -158,7 +157,7 @@ class ImportService(private val appdata: AppDataManager,
             row[ImportImages.tagme]!!, row[ImportImages.preference] ?: ImportImage.Preference(cloneImage = null),
             collectionId, collection, folders, books,
             source, row[ImportImages.sourcePreference],
-            row[ImportImages.partitionTime]!!, row[ImportImages.orderTime]!!.parseDateTime(), row[ImportImages.createTime]!!
+            row[ImportImages.partitionTime]!!, row[ImportImages.orderTime]!!.toInstant(), row[ImportImages.createTime]!!
         )
     }
 
@@ -262,7 +261,7 @@ class ImportService(private val appdata: AppDataManager,
                                 ImportOption.TimeType.CREATE_TIME -> record.fileCreateTime ?: record.fileImportTime
                                 ImportOption.TimeType.UPDATE_TIME -> record.fileUpdateTime ?: record.fileImportTime
                                 ImportOption.TimeType.IMPORT_TIME -> record.fileImportTime
-                            }.toMillisecond())
+                            }.toEpochMilli())
                         }
 
                         val listUpdated = src != null || form.tagme != null || form.partitionTime != null || form.setOrderTimeBy != null

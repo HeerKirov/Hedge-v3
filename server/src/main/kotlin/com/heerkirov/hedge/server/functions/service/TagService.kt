@@ -27,6 +27,7 @@ import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
+import java.time.Instant
 
 class TagService(private val data: DataRepository,
                  private val bus: EventBus,
@@ -129,7 +130,7 @@ class TagService(private val data: DataRepository,
                 }
             }
 
-            val createTime = DateTime.now()
+            val createTime = Instant.now()
 
             val id = data.db.insertAndGenerateKey(Tags) {
                 set(it.name, name)

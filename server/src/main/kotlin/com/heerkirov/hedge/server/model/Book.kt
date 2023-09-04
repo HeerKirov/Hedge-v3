@@ -1,6 +1,6 @@
 package com.heerkirov.hedge.server.model
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 /**
  * 画集。
@@ -33,11 +33,11 @@ data class Book(val id: Int,
                 /**
                   * 记录创建的时间。
                   */
-                 val createTime: LocalDateTime,
+                 val createTime: Instant,
                 /**
                   * 画集的项发生更新的时间。
                   */
-                 val updateTime: LocalDateTime)
+                 val updateTime: Instant)
 
 /**
  * 画集中的image的关系。

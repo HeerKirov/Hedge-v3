@@ -6,13 +6,13 @@ import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.FindSimilarResults
 import com.heerkirov.hedge.server.events.SimilarFinderResultCreated
 import com.heerkirov.hedge.server.model.FindSimilarResult
-import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
 import com.heerkirov.hedge.server.utils.types.toEntityKey
 import com.heerkirov.hedge.server.utils.types.toEntityKeyString
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
+import java.time.Instant
 import java.util.LinkedList
 
 class RecordBuilder(private val data: DataRepository, private val bus: EventBus) {
@@ -125,7 +125,7 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
             set(it.images, images)
             set(it.relations, relations)
             set(it.sortPriority, sortPriority)
-            set(it.recordTime, DateTime.now())
+            set(it.recordTime, Instant.now())
         }
     }
 
@@ -154,7 +154,7 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
             set(it.images, images)
             set(it.relations, relations)
             set(it.sortPriority, sortPriority)
-            set(it.recordTime, DateTime.now())
+            set(it.recordTime, Instant.now())
         }
     }
 }

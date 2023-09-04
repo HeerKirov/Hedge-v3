@@ -7,9 +7,10 @@ import com.heerkirov.hedge.server.dao.TrashedImages
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.functions.manager.TrashManager
 import com.heerkirov.hedge.server.library.framework.DaemonThreadComponent
-import com.heerkirov.hedge.server.utils.DateTime
 import org.ktorm.dsl.*
 import org.slf4j.LoggerFactory
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import kotlin.math.absoluteValue
 
 /**
@@ -33,8 +34,8 @@ class TrashCleanerImpl(private val appStatusDriver: AppStatusDriver,
     }
 
     private fun execute(intervalDay: Int) {
-        val now = DateTime.now()
-        val deadline = now.minusDays(intervalDay.absoluteValue.toLong())
+        val now = Instant.now()
+        val deadline = now.minus(intervalDay.absoluteValue.toLong(), ChronoUnit.DAYS)
         val imageIds = data.db.from(TrashedImages)
             .select(TrashedImages.imageId)
             .where { TrashedImages.trashedTime lessEq deadline }

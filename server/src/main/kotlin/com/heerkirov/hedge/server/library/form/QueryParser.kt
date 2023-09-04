@@ -4,7 +4,6 @@ import com.heerkirov.hedge.server.exceptions.ParamRequired
 import com.heerkirov.hedge.server.exceptions.ParamTypeError
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.utils.DateTime.parseDate
-import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
 import com.heerkirov.hedge.server.utils.composition.Composition
 import com.heerkirov.hedge.server.utils.composition.CompositionGenerator
 import com.heerkirov.hedge.server.utils.types.OrderItem
@@ -12,8 +11,8 @@ import com.heerkirov.hedge.server.utils.runIf
 import io.javalin.http.Context
 import java.lang.Exception
 import java.lang.IllegalArgumentException
+import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.format.DateTimeParseException
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
@@ -116,7 +115,7 @@ private fun mapAnyFromString(string: String, kType: KType): Any {
         kClass == Float::class -> string.toFloatOrNull() ?: throw ClassCastException("Expected number type of Float.")
         kClass == Double::class -> string.toDoubleOrNull() ?: throw ClassCastException("Expected number type of Double.")
         kClass == Boolean::class -> string.toBoolean()
-        kClass == LocalDateTime::class -> try { string.parseDateTime() }catch (e: DateTimeParseException) {
+        kClass == Instant::class -> try { Instant.parse(string) }catch (e: DateTimeParseException) {
             throw ClassCastException(e.message)
         }
         kClass == LocalDate::class -> try { string.parseDate() }catch (e: DateTimeParseException) {

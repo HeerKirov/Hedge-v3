@@ -12,8 +12,8 @@ object Books : BaseTable<Book>("book") {
     val favorite = boolean("favorite")
     val fileId = int("file_id")
     val cachedCount = int("cached_count")
-    val createTime = datetime("create_time")
-    val updateTime = datetime("update_time")
+    val createTime = timestamp("create_time")
+    val updateTime = timestamp("update_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = Book(
         id = row[id]!!,

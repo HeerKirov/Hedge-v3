@@ -24,8 +24,7 @@ import com.heerkirov.hedge.server.functions.manager.BookManager
 import com.heerkirov.hedge.server.functions.manager.IllustManager
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.utils.business.filePathFrom
-import com.heerkirov.hedge.server.utils.DateTime
-import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
+import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
@@ -36,6 +35,7 @@ import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
+import java.time.Instant
 
 class BookService(private val appdata: AppDataManager,
                   private val data: DataRepository,
@@ -230,7 +230,7 @@ class BookService(private val appdata: AppDataManager,
                 val score = it[Illusts.exportedScore]
                 val favorite = it[Illusts.favorite]!!
                 val tagme = it[Illusts.tagme]!!
-                val orderTime = it[Illusts.orderTime]!!.parseDateTime()
+                val orderTime = it[Illusts.orderTime]!!.toInstant()
                 val filePath = filePathFrom(it)
                 val source = sourcePathOf(it)
                 BookImageRes(imageId, ordinal, filePath, score, favorite, tagme, source, orderTime)
@@ -253,7 +253,7 @@ class BookService(private val appdata: AppDataManager,
                 where { it.id eq id }
                 set(it.fileId, fileId)
                 set(it.cachedCount, images.size)
-                set(it.updateTime, DateTime.now())
+                set(it.updateTime, Instant.now())
             }
 
             val oldIdSet = kit.updateSubImages(id, imageIds).toSet()

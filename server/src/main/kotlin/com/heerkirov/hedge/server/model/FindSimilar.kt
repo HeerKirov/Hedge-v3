@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.heerkirov.hedge.server.enums.SimilarityType
 import com.heerkirov.hedge.server.enums.SourceMarkType
 import com.heerkirov.hedge.server.utils.composition.Composition
+import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 data class FindSimilarTask(val id: Int,
                            /**
@@ -20,7 +20,8 @@ data class FindSimilarTask(val id: Int,
                            /**
                             * 创建此单位的时间。
                             */
-                           val recordTime: LocalDateTime) {
+                           val recordTime: Instant
+) {
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
     @JsonSubTypes(value = [
@@ -81,7 +82,7 @@ data class FindSimilarIgnored(val id: Int,
                               /**
                                * 此关系记录的时间。
                                */
-                              val recordTime: LocalDateTime)
+                              val recordTime: Instant)
 
 data class FindSimilarResult(val id: Int,
                              /**
@@ -103,7 +104,7 @@ data class FindSimilarResult(val id: Int,
                              /**
                               * 此记录创建的时间。
                               */
-                             val recordTime: LocalDateTime) {
+                             val recordTime: Instant) {
     open class SummaryTypes(value: Int) : Composition<SummaryTypes>(SummaryTypes::class, value) {
         object SAME : SummaryTypes(0b1)
         object RELATED : SummaryTypes(0b10)

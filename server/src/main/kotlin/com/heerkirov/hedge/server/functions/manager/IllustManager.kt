@@ -10,15 +10,14 @@ import com.heerkirov.hedge.server.events.*
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.model.Illust
-import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.types.optOf
 import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
+import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 class IllustManager(private val data: DataRepository,
                     private val bus: EventBus,
@@ -41,7 +40,7 @@ class IllustManager(private val data: DataRepository,
      */
     fun newImage(fileId: Int, sourceSite: String? = null, sourceId: Long? = null, sourcePart: Int? = null, sourcePartName: String? = null,
                  description: String = "", score: Int? = null, favorite: Boolean = false, tagme: Illust.Tagme = Illust.Tagme.EMPTY,
-                 partitionTime: LocalDate, orderTime: Long, createTime: LocalDateTime): Int {
+                 partitionTime: LocalDate, orderTime: Long, createTime: Instant): Int {
         partitionManager.addItemInPartition(partitionTime)
 
         val newSourceDataId = sourceManager.checkSourceSite(sourceSite, sourceId, sourcePart, sourcePartName)
@@ -87,7 +86,7 @@ class IllustManager(private val data: DataRepository,
         val images = unfoldImages(illustIds, sorted = false)
         val (fileId, scoreFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(images)
 
-        val createTime = DateTime.now()
+        val createTime = Instant.now()
 
         val id = data.db.insertAndGenerateKey(Illusts) {
             set(it.type, IllustModelType.COLLECTION)
@@ -134,7 +133,7 @@ class IllustManager(private val data: DataRepository,
             set(it.exportedScore, score ?: scoreFromSub)
             set(it.partitionTime, partitionTime)
             set(it.orderTime, orderTime)
-            set(it.updateTime, DateTime.now())
+            set(it.updateTime, Instant.now())
         }
 
         val oldImageIds = updateSubImages(collectionId, images)
@@ -249,7 +248,7 @@ class IllustManager(private val data: DataRepository,
 
         if(parentChanged) {
             //刷新新旧parent的时间&封面、导出属性
-            val now = DateTime.now()
+            val now = Instant.now()
             if(newParent != null) processCollectionChildrenAdded(newParent.id, toIllust, now)
             if(toIllust.parentId != null) processCollectionChildrenRemoved(toIllust.parentId, listOf(toIllust), now)
         }
@@ -383,7 +382,7 @@ class IllustManager(private val data: DataRepository,
             set(it.type, IllustModelType.IMAGE_WITH_PARENT)
         }
         //这些image有旧的parent，需要对旧parent做重新导出
-        val now = DateTime.now()
+        val now = Instant.now()
         images.asSequence()
             .filter { it.id in addIds && it.parentId != null && it.parentId != collectionId }
             .groupBy { it.parentId!! }
@@ -402,7 +401,7 @@ class IllustManager(private val data: DataRepository,
      * 由于向collection加入了新的child，因此需要处理所有属性的重导出，包括firstCover, count, score, metaTags。
      * 这个函数不是向collection加入child，而是已经加入了，为此需要处理关系，而且必须同步处理。
      */
-    fun processCollectionChildrenAdded(collectionId: Int, addedImage: Illust, updateTime: LocalDateTime? = null) {
+    fun processCollectionChildrenAdded(collectionId: Int, addedImage: Illust, updateTime: Instant? = null) {
         val firstImage = data.db.sequenceOf(Illusts).filter { (it.parentId eq collectionId) and (it.id notEq addedImage.id) }.sortedBy { it.orderTime }.firstOrNull()
 
         data.db.update(Illusts) {
@@ -415,7 +414,7 @@ class IllustManager(private val data: DataRepository,
                 set(it.orderTime, addedImage.orderTime)
             }
             set(it.cachedChildrenCount, it.cachedChildrenCount plus 1)
-            set(it.updateTime, updateTime ?: DateTime.now())
+            set(it.updateTime, updateTime ?: Instant.now())
         }
 
     }
@@ -424,7 +423,7 @@ class IllustManager(private val data: DataRepository,
      * 由于从collection移除了child，因此需要处理所有属性的重导出，包括firstCover, count, score, metaTags。若已净空，则会直接移除collection。
      * 这个函数不是从collection移除child，而是已经移除了，为此需要处理关系，而且必须同步处理。
      */
-    fun processCollectionChildrenRemoved(collectionId: Int, removedImages: List<Illust>, updateTime: LocalDateTime? = null) {
+    fun processCollectionChildrenRemoved(collectionId: Int, removedImages: List<Illust>, updateTime: Instant? = null) {
         //关键属性(fileId, partitionTime, orderTime)的重导出不延后到metaExporter，在事务内立即完成
         val firstImage = data.db.sequenceOf(Illusts)
             .filter { (it.parentId eq collectionId) and (it.id notInList removedImages.map(Illust::id)) }
@@ -441,7 +440,7 @@ class IllustManager(private val data: DataRepository,
                     set(it.orderTime, firstImage.orderTime)
                 }
                 set(it.cachedChildrenCount, it.cachedChildrenCount minus removedImages.size)
-                set(it.updateTime, updateTime ?: DateTime.now())
+                set(it.updateTime, updateTime ?: Instant.now())
             }
 
         }else{

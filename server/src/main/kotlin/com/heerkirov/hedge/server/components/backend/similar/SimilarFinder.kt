@@ -16,13 +16,13 @@ import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.library.framework.StatefulComponent
 import com.heerkirov.hedge.server.model.FindSimilarResult
 import com.heerkirov.hedge.server.model.FindSimilarTask
-import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.tools.ControlledLoopThread
 import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
 import com.heerkirov.hedge.server.utils.types.toEntityKey
 import com.heerkirov.hedge.server.utils.types.toEntityKeyString
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
+import java.time.Instant
 
 /**
  * 处理相似项查找的后台任务。它从task表读取任务，并将确切结果写入result表。
@@ -54,7 +54,7 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, appdata: AppData
         val id = data.db.insertAndGenerateKey(FindSimilarTasks) {
             set(it.selector, selector)
             set(it.config, config)
-            set(it.recordTime, DateTime.now())
+            set(it.recordTime, Instant.now())
         } as Int
 
         workerThread.start()

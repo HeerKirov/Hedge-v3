@@ -5,13 +5,13 @@ import com.heerkirov.hedge.server.enums.SimilarityType
 import com.heerkirov.hedge.server.model.FindSimilarResult
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
-import java.time.LocalDateTime
+import java.time.Instant
 
-data class FindSimilarTaskRes(val id: Int, val selector: FindSimilarTask.TaskSelector, val config: FindSimilarTask.TaskConfig?, val recordTime: LocalDateTime)
+data class FindSimilarTaskRes(val id: Int, val selector: FindSimilarTask.TaskSelector, val config: FindSimilarTask.TaskConfig?, val recordTime: Instant)
 
-data class FindSimilarResultRes(val id: Int, val type: FindSimilarResult.SummaryTypes, val images: List<FindSimilarResultImage>, val recordTime: LocalDateTime)
+data class FindSimilarResultRes(val id: Int, val type: FindSimilarResult.SummaryTypes, val images: List<FindSimilarResultImage>, val recordTime: Instant)
 
-data class FindSimilarResultDetailRes(val id: Int, val type: FindSimilarResult.SummaryTypes, val images: List<FindSimilarResultImage>, val relations: List<FindSimilarResultRelation>, val recordTime: LocalDateTime)
+data class FindSimilarResultDetailRes(val id: Int, val type: FindSimilarResult.SummaryTypes, val images: List<FindSimilarResultImage>, val relations: List<FindSimilarResultRelation>, val recordTime: Instant)
 
 data class FindSimilarResultImage(val type: FindSimilarEntityType, val id: Int, val filePath: NullableFilePath?)
 

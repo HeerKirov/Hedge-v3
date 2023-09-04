@@ -10,10 +10,10 @@ import com.heerkirov.hedge.server.dto.res.SourceMarkRes
 import com.heerkirov.hedge.server.exceptions.NotFound
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.exceptions.be
-import com.heerkirov.hedge.server.utils.DateTime
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
+import java.time.Instant
 
 class SourceMarkService(private val appdata: AppDataManager, private val data: DataRepository) {
     fun getMarks(site: String, sourceId: Long): List<SourceMarkRes> {
@@ -60,7 +60,7 @@ class SourceMarkService(private val appdata: AppDataManager, private val data: D
 
             when (form.action) {
                 SourceMarkPartialUpdateForm.Action.UPSERT -> {
-                    val now = DateTime.now()
+                    val now = Instant.now()
                     if(data.db.sequenceOf(SourceMarks).firstOrNull { (it.sourceDataId eq sourceDataId) and (it.relatedSourceDataId eq targetSourceDataId) } != null) {
                         data.db.update(SourceMarks) {
                             where { (it.sourceDataId eq sourceDataId) and (it.relatedSourceDataId eq targetSourceDataId) }

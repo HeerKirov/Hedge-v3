@@ -20,7 +20,6 @@ import com.heerkirov.hedge.server.functions.manager.IllustManager
 import com.heerkirov.hedge.server.functions.manager.ImportManager
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.model.ImportImage
-import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import com.heerkirov.hedge.server.utils.Json.toJsonNode
 import com.heerkirov.hedge.server.utils.business.*
@@ -30,6 +29,7 @@ import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import java.lang.Exception
+import java.time.Instant
 
 class FindSimilarService(private val data: DataRepository,
                          private val bus: EventBus,
@@ -231,7 +231,7 @@ class FindSimilarService(private val data: DataRepository,
                             .first()
 
                         if(!exist) {
-                            val now = DateTime.now()
+                            val now = Instant.now()
                             data.db.insert(FindSimilarIgnores) {
                                 set(it.firstTarget, ak)
                                 set(it.secondTarget, bk)

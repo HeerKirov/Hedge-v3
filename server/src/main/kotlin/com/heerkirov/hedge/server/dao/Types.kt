@@ -2,7 +2,7 @@ package com.heerkirov.hedge.server.dao
 
 import org.ktorm.schema.BaseTable
 import org.ktorm.schema.Column
-import java.time.LocalDateTime
+import java.time.Instant
 
 /**
  * 实体和注解类型的关系表的抽象表。
@@ -29,7 +29,7 @@ abstract class MetaTagTable<T : Any>(tableName: String, schema: String? = null, 
     abstract val name: Column<String>
     abstract val otherNames: Column<List<String>>
     abstract val cachedCount: Column<Int>
-    abstract val updateTime: Column<LocalDateTime>
+    abstract val updateTime: Column<Instant>
 }
 
 /**

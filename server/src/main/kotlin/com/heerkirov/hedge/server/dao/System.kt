@@ -25,7 +25,7 @@ object ExporterRecords : BaseTable<ExporterRecord>("exporter_record", schema = "
     val type = int("type")
     val key = varchar("key")
     val content = varchar("content")
-    val createTime = datetime("create_time")
+    val createTime = timestamp("create_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = ExporterRecord(
         id = row[id]!!,

@@ -23,9 +23,7 @@ import com.heerkirov.hedge.server.functions.manager.*
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.business.*
-import com.heerkirov.hedge.server.utils.DateTime
-import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
-import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
+import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.*
 import com.heerkirov.hedge.server.utils.runIf
@@ -34,6 +32,7 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.ktorm.expression.BinaryExpression
 import org.ktorm.expression.SelectExpression
+import java.time.Instant
 import kotlin.math.roundToInt
 
 class IllustService(private val appdata: AppDataManager,
@@ -162,7 +161,7 @@ class IllustService(private val appdata: AppDataManager,
         val favorite = row[Illusts.favorite]!!
         val tagme = row[Illusts.tagme]!!
         val partitionTime = row[Illusts.partitionTime]!!
-        val orderTime = row[Illusts.orderTime]!!.parseDateTime()
+        val orderTime = row[Illusts.orderTime]!!.toInstant()
         val createTime = row[Illusts.createTime]!!
         val updateTime = row[Illusts.updateTime]!!
         val source = sourcePathOf(row)
@@ -480,7 +479,7 @@ class IllustService(private val appdata: AppDataManager,
                     newExportedScore.applyOpt { set(it.exportedScore, this) }
                     form.favorite.applyOpt { set(it.favorite, this) }
                     form.partitionTime.applyOpt { set(it.partitionTime, this) }
-                    form.orderTime.applyOpt { set(it.orderTime, this.toMillisecond()) }
+                    form.orderTime.applyOpt { set(it.orderTime, this.toEpochMilli()) }
                 }
             }
 
@@ -526,7 +525,7 @@ class IllustService(private val appdata: AppDataManager,
                     }
 
                     //更换image的parent时，需要对三个方面重导出：image自己; 旧parent; 新parent
-                    val now = DateTime.now()
+                    val now = Instant.now()
                     if(newParent != null) {
                         illustManager.processCollectionChildrenAdded(newParent.id, illust, now)
                     }
@@ -782,9 +781,9 @@ class IllustService(private val appdata: AppDataManager,
                     .toList()
 
                 val values = if(seq.size > 1) {
-                    val beginMs = orderTimeBegin.toMillisecond()
+                    val beginMs = orderTimeBegin.toEpochMilli()
                     val endMs = form.orderTimeEnd.letOpt {
-                        it.toMillisecond().apply {
+                        it.toEpochMilli().apply {
                             if(it < orderTimeBegin) {
                                 throw be(ParamError("orderTimeEnd"))
                             }
@@ -793,7 +792,7 @@ class IllustService(private val appdata: AppDataManager,
                         //若未给出endTime，则尝试如下策略：
                         //如果beginTime距离now很近(每个项的空间<2s)，那么将now作为endTime
                         //但如果beginTime过近(每个项空间<10ms)，或超过了now，或距离过远，那么以1s为单位间隔生成endTime
-                        val nowMs = DateTime.now().toMillisecond()
+                        val nowMs = Instant.now().toEpochMilli()
                         if(nowMs < beginMs + (seq.size - 1) * 2000 && nowMs > beginMs + (seq.size - 1) * 10) {
                             nowMs
                         }else{
@@ -808,7 +807,7 @@ class IllustService(private val appdata: AppDataManager,
                         }
                     }
                 }else{
-                    listOf(orderTimeBegin.toMillisecond())
+                    listOf(orderTimeBegin.toEpochMilli())
                 }
 
                 if(seq.isNotEmpty()) {

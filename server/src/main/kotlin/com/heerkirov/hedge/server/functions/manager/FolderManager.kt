@@ -8,11 +8,11 @@ import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.events.FolderImagesChanged
 import com.heerkirov.hedge.server.events.IllustRelatedItemsUpdated
 import com.heerkirov.hedge.server.functions.kit.FolderKit
-import com.heerkirov.hedge.server.utils.DateTime
 import org.ktorm.dsl.*
 import org.ktorm.entity.filter
 import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
+import java.time.Instant
 
 class FolderManager(private val data: DataRepository, private val bus: EventBus, private val kit: FolderKit) {
     /**
@@ -23,7 +23,7 @@ class FolderManager(private val data: DataRepository, private val bus: EventBus,
         data.db.update(Folders) {
             where { it.id eq folderId }
             set(it.cachedCount, imageCount)
-            set(it.updateTime, DateTime.now())
+            set(it.updateTime, Instant.now())
         }
 
         bus.emit(FolderImagesChanged(folderId, imageIds, emptyList(), emptyList()))
@@ -37,7 +37,7 @@ class FolderManager(private val data: DataRepository, private val bus: EventBus,
         kit.moveSubImages(folderId, imageIds, ordinal)
         data.db.update(Folders) {
             where { it.id eq folderId }
-            set(it.updateTime, DateTime.now())
+            set(it.updateTime, Instant.now())
         }
 
         bus.emit(FolderImagesChanged(folderId, emptyList(), imageIds, emptyList()))
@@ -51,7 +51,7 @@ class FolderManager(private val data: DataRepository, private val bus: EventBus,
         data.db.update(Folders) {
             where { it.id eq folderId }
             if(imageCount != null) set(it.cachedCount, imageCount)
-            set(it.updateTime, DateTime.now())
+            set(it.updateTime, Instant.now())
         }
 
         bus.emit(FolderImagesChanged(folderId, emptyList(), emptyList(), imageIds))
@@ -93,7 +93,7 @@ class FolderManager(private val data: DataRepository, private val bus: EventBus,
             imageCounts[folderId] = kit.upsertSubImages(folderId, imageIds, ordinal)
         }
         if(imageCounts.isNotEmpty()) {
-            val now = DateTime.now()
+            val now = Instant.now()
             data.db.batchUpdate(Folders) {
                 for ((folderId, imageCount) in imageCounts) {
                     item {

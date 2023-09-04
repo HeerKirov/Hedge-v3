@@ -1,7 +1,7 @@
 package com.heerkirov.hedge.server.utils.migrations
 
 import com.heerkirov.hedge.server.utils.Fs
-import java.io.Closeable
+import org.slf4j.LoggerFactory
 
 /**
  * 给定基础版本号。随后调用migrate方法对指定内容进行升级，基于基础版本号，并总结出升级完成后的最终版本号。
@@ -11,6 +11,8 @@ import java.io.Closeable
  * 如果源数据不存在，且策略符合create final策略，将直接创建数据不经过migration。
  */
 private class Migrator(val baseVersion: Version) {
+    private val log = LoggerFactory.getLogger(Migrator::class.java)
+
     var maxVersion: Version = baseVersion
         private set
 
@@ -18,7 +20,7 @@ private class Migrator(val baseVersion: Version) {
      * 使用给定策略升级源数据。
      * @return 输出升级后的数据，并给出一个标记，是否存在任何更改。
      */
-    fun <IN, MID, OUT> migrate(source: IN, strategy: Strategy<IN, MID, OUT>): MigratorResult<OUT> {
+    fun <IN, MID, OUT> migrate(migrationName: String, source: IN, strategy: Strategy<IN, MID, OUT>): MigratorResult<OUT> {
         val migrations = MigrationRegister<MID>().also { strategy.migrations(it) }.build()
         if(migrations.isEmpty()) { throw IllegalArgumentException("Migrations list is empty.") }
 
@@ -38,7 +40,8 @@ private class Migrator(val baseVersion: Version) {
 
             var temp = strategy.translateSourceToTempType(source)
 
-            for ((_, action) in migrations.asSequence().filter { (v, _) -> v > baseVersion }) {
+            for ((v, action) in migrations.asSequence().filter { (v, _) -> v > baseVersion }) {
+                log.info("$migrationName migrate version $v.")
                 temp = action(temp)
             }
 
@@ -55,7 +58,7 @@ class VersionFileMigrator(private val path: String) {
     /**
      * 执行一组合并任务。
      */
-    fun <IN, MID, OUT> migrate(source: IN, strategy: Strategy<IN, MID, OUT>): MigratorResult<OUT> = migrator.migrate(source, strategy)
+    fun <IN, MID, OUT> migrate(migrationName: String, source: IN, strategy: Strategy<IN, MID, OUT>): MigratorResult<OUT> = migrator.migrate(migrationName, source, strategy)
 
     /**
      * 完成整个过程后，将新的版本号写入。

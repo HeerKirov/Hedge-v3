@@ -19,7 +19,6 @@ import com.heerkirov.hedge.server.exceptions.AlreadyExists
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.kit.AnnotationKit
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
-import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.types.anyOpt
 import com.heerkirov.hedge.server.utils.ktorm.compositionContains
@@ -30,6 +29,7 @@ import com.heerkirov.hedge.server.utils.types.ascendingOrderItem
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
+import java.time.Instant
 
 class AnnotationService(private val data: DataRepository, private val bus: EventBus, private val kit: AnnotationKit, private val queryManager: QueryManager) {
     private val orderTranslator = OrderTranslator {
@@ -65,7 +65,7 @@ class AnnotationService(private val data: DataRepository, private val bus: Event
      */
     fun create(form: AnnotationCreateForm): Int {
         data.db.transaction {
-            val createTime = DateTime.now()
+            val createTime = Instant.now()
             val name = kit.validateName(form.name, form.type)
             val target = kit.validateTarget(form.target, form.type)
             val id = data.db.insertAndGenerateKey(Annotations) {

@@ -9,7 +9,6 @@ import com.heerkirov.hedge.server.utils.*
 import com.heerkirov.hedge.server.utils.composition.Composition
 import com.heerkirov.hedge.server.utils.composition.CompositionGenerator
 import com.heerkirov.hedge.server.utils.DateTime.parseDate
-import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import com.heerkirov.hedge.server.utils.Json.parseJsonNode
 import com.heerkirov.hedge.server.utils.types.Opt
@@ -17,8 +16,8 @@ import com.heerkirov.hedge.server.utils.types.undefined
 import io.javalin.http.Context
 import java.lang.Exception
 import java.lang.IllegalArgumentException
+import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.format.DateTimeParseException
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -107,10 +106,10 @@ private fun <T : Any> mapAny(jsonNode: JsonNode, kType: KType): Any? {
             if(jsonNode.nodeType != JsonNodeType.NUMBER) throw ClassCastException("Excepted type is ${JsonNodeType.NUMBER} but actual type is ${jsonNode.nodeType}.")
             jsonNode.asDouble().toFloat() as T
         }
-        kClass == LocalDateTime::class -> {
+        kClass == Instant::class -> {
             if(jsonNode.nodeType != JsonNodeType.STRING) throw ClassCastException("Excepted type is ${JsonNodeType.STRING} but actual type is ${jsonNode.nodeType}.")
             try {
-                jsonNode.asText().parseDateTime() as T
+                Instant.parse(jsonNode.asText()) as T
             }catch (e: DateTimeParseException) {
                 throw ClassCastException(e.message)
             }
@@ -174,9 +173,9 @@ private fun mapStringKey(string: String, kType: KType): Any? {
         kClass == Float::class -> string.toFloatOrNull() ?: throw ClassCastException("Expected number type of Float.")
         kClass == Double::class -> string.toDoubleOrNull() ?: throw ClassCastException("Expected number type of Double.")
         kClass == Boolean::class -> string.toBoolean()
-        kClass == LocalDateTime::class -> {
+        kClass == Instant::class -> {
             try {
-                string.parseDateTime()
+                Instant.parse(string)
             }catch (e: DateTimeParseException) {
                 throw ClassCastException(e.message)
             }

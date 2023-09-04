@@ -5,13 +5,13 @@ import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.manager.MetaManager
 import com.heerkirov.hedge.server.model.BookImageRelation
-import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.business.checkScore
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.types.Opt
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
+import java.time.Instant
 
 class BookKit(private val data: DataRepository, private val metaManager: MetaManager) {
     /**
@@ -239,7 +239,7 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
                 where { it.id eq thisId }
                 if(refreshCount) set(it.cachedCount, count!!)
                 if(refreshFileId) set(it.fileId, fileId)
-                set(it.updateTime, DateTime.now())
+                set(it.updateTime, Instant.now())
             }
         }
     }

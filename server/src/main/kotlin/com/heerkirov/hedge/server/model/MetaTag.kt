@@ -2,7 +2,7 @@ package com.heerkirov.hedge.server.model
 
 import com.heerkirov.hedge.server.enums.*
 import com.heerkirov.hedge.server.utils.composition.Composition
-import java.time.LocalDateTime
+import java.time.Instant
 
 /**
  * 注解。
@@ -31,7 +31,7 @@ data class Annotation(val id: Int,
                       /**
                        * 此注解创建的时间。
                        */
-                      val createTime: LocalDateTime) {
+                      val createTime: Instant) {
 
     open class AnnotationTarget(value: Int) : Composition<AnnotationTarget>(AnnotationTarget::class, value) {
         object TAG : AnnotationTarget(AnnotationTargetValues.TAG)
@@ -124,11 +124,11 @@ data class Tag(val id: Int,
                /**
                 * 此标签创建的时间。
                 */
-               val createTime: LocalDateTime,
+               val createTime: Instant,
                /**
                 * 此标签关联的image项上次发生更新的时间。
                 */
-               val updateTime: LocalDateTime)
+               val updateTime: Instant)
 
 /**
  * 注解与tag的关联。
@@ -178,11 +178,11 @@ data class Author(val id: Int,
                   /**
                    * 此标签创建的时间。
                    */
-                  val createTime: LocalDateTime,
+                  val createTime: Instant,
                   /**
                    * 此标签关联的image项上次发生更新的时间。
                    */
-                  val updateTime: LocalDateTime) {
+                  val updateTime: Instant) {
     data class CachedAnnotation(val id: Int, val name: String)
 }
 
@@ -246,11 +246,11 @@ data class Topic(val id: Int,
                  /**
                   * 此标签创建的时间。
                   */
-                 val createTime: LocalDateTime,
+                 val createTime: Instant,
                  /**
                   * 此标签关联的image项上次发生更新的时间。
                   */
-                 val updateTime: LocalDateTime) {
+                 val updateTime: Instant) {
     data class CachedAnnotation(val id: Int, val name: String)
 }
 

@@ -11,6 +11,7 @@ module com.heerkirov.hedge.server {
     requires org.xerial.sqlitejdbc;
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.kotlin;
+    requires com.fasterxml.jackson.datatype.jsr310;
     requires jave.core;
     requires org.slf4j;
     requires org.slf4j.simple;

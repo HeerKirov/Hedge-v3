@@ -5,8 +5,8 @@ import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.utils.composition.Composition
+import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 /**
  * 图片/集合(image/collection)的混合表。
@@ -95,12 +95,12 @@ data class Illust(val id: Int,
                   /**
                    * 真实的记录创建时间。
                    */
-                  val createTime: LocalDateTime,
+                  val createTime: Instant,
                   /**
                    * [for image]对图像进行替换更新的时间。
                    * [for collection]集合的内容发生变化的时间。
                    */
-                  val updateTime: LocalDateTime) {
+                  val updateTime: Instant) {
 
     open class Tagme(value: Int) : Composition<Tagme>(Tagme::class, value) {
         /**
@@ -194,18 +194,18 @@ data class ImportImage(val id: Int,
                         * 从web导入时可能没有，此时填null。
                         * (一级文件信息，主要是从文件直接取得的原始文件信息，用于配合策略生成后续的二级文件信息。)
                         */
-                       val fileCreateTime: LocalDateTime?,
+                       val fileCreateTime: Instant?,
                        /**
                         * 原文件修改时间。
                         * 从web导入时可能没有，此时填null。
                         * (一级文件信息，主要是从文件直接取得的原始文件信息，用于配合策略生成后续的二级文件信息。)
                         */
-                       val fileUpdateTime: LocalDateTime?,
+                       val fileUpdateTime: Instant?,
                        /**
                         * 一阶导入此文件的时间。
                         * (一级文件信息，主要是从文件直接取得的原始文件信息，用于配合策略生成后续的二级文件信息。)
                         */
-                       val fileImportTime: LocalDateTime,
+                       val fileImportTime: Instant,
                        /**
                         * 预设collection id.
                         */
@@ -262,7 +262,7 @@ data class ImportImage(val id: Int,
                        /**
                         * 初次创建的时间。
                         */
-                       val createTime: LocalDateTime) {
+                       val createTime: Instant) {
 
     data class SourcePreference(val title: String? = null,
                                 val description: String? = null,
@@ -351,15 +351,15 @@ data class TrashedImage(val imageId: Int,
                         /**
                          * 真实的记录创建时间。
                          */
-                        val createTime: LocalDateTime,
+                        val createTime: Instant,
                         /**
                          * 对图像进行替换更新的时间。
                          */
-                        val updateTime: LocalDateTime,
+                        val updateTime: Instant,
                         /**
                          * 此图像被删除的时间。
                          */
-                        val trashedTime: LocalDateTime) {
+                        val trashedTime: Instant) {
     data class Metadata(val tags: List<Int>,
                         val topics: List<Int>,
                         val authors: List<Int>,
@@ -427,11 +427,11 @@ data class FileRecord(val id: Int,
                       /**
                        * 记录创建时间。
                        */
-                      val createTime: LocalDateTime,
+                      val createTime: Instant,
                       /**
                        * 文件上次被修改的时间。
                        */
-                      val updateTime: LocalDateTime)
+                      val updateTime: Instant)
 
 /**
  * 文件指纹。
@@ -441,7 +441,7 @@ data class FileFingerprint(val fileId: Int,
                            val dHashString: String,
                            val pHash: String,
                            val dHash: String,
-                           val createTime: LocalDateTime)
+                           val createTime: Instant)
 
 /**
  * 文件缓存访问记录。
@@ -450,4 +450,4 @@ data class FileCacheRecord(val fileId: Int,
                            val archiveType: ArchiveType,
                            val block: String,
                            val filename: String,
-                           val lastAccessTime: LocalDateTime)
+                           val lastAccessTime: Instant)

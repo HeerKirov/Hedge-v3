@@ -13,11 +13,11 @@ import com.heerkirov.hedge.server.events.IllustRelatedItemsUpdated
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.functions.kit.BookKit
 import com.heerkirov.hedge.server.model.Illust
-import com.heerkirov.hedge.server.utils.DateTime
 import org.ktorm.dsl.*
 import org.ktorm.entity.filter
 import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
+import java.time.Instant
 
 class BookManager(private val data: DataRepository,
                   private val bus: EventBus,
@@ -28,7 +28,7 @@ class BookManager(private val data: DataRepository,
      */
     fun newBook(images: List<Illust>, formTitle: String = "", formDescription: String = "", formScore: Int? = null, formFavorite: Boolean = false): Int {
         val fileId = images.firstOrNull()?.fileId
-        val createTime = DateTime.now()
+        val createTime = Instant.now()
 
         val id = data.db.insertAndGenerateKey(Books) {
             set(it.title, formTitle)

@@ -14,10 +14,8 @@ import com.heerkirov.hedge.server.events.ImportUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.model.ImportImage
-import com.heerkirov.hedge.server.utils.DateTime
-import com.heerkirov.hedge.server.utils.DateTime.asZonedTime
-import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
-import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
+import com.heerkirov.hedge.server.utils.DateTime.toInstant
+import com.heerkirov.hedge.server.utils.DateTime.toSystemZonedTime
 import com.heerkirov.hedge.server.utils.Fs
 import com.heerkirov.hedge.server.utils.deleteIfExists
 import com.heerkirov.hedge.server.utils.runIf
@@ -37,7 +35,8 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributes
-import java.time.LocalDateTime
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 class ImportManager(private val appdata: AppDataManager,
                     private val data: DataRepository,
@@ -55,8 +54,8 @@ class ImportManager(private val appdata: AppDataManager,
         if(!file.exists() || !file.canRead()) throw be(FileNotFoundError())
 
         val attr = Files.readAttributes(file.toPath(), BasicFileAttributes::class.java)
-        val fileCreateTime = attr?.creationTime()?.toMillis()?.parseDateTime()
-        val fileUpdateTime = file.lastModified().parseDateTime()
+        val fileCreateTime = attr?.creationTime()?.toMillis()?.toInstant()
+        val fileUpdateTime = file.lastModified().toInstant()
         val fileName = file.name
         val filePath = file.absoluteFile.parent
 
@@ -144,7 +143,7 @@ class ImportManager(private val appdata: AppDataManager,
                 }
                 form.tagme.applyOpt { set(it.tagme, this) }
                 form.partitionTime.applyOpt { set(it.partitionTime, this) }
-                form.orderTime.applyOpt { set(it.orderTime, this.toMillisecond()) }
+                form.orderTime.applyOpt { set(it.orderTime, this.toEpochMilli()) }
                 form.createTime.applyOpt { set(it.createTime, this) }
                 form.preference.applyOpt { set(it.preference, this) }
                 form.sourcePreference.applyOpt { set(it.sourcePreference, this) }
@@ -179,11 +178,11 @@ class ImportManager(private val appdata: AppDataManager,
     private fun newImportRecord(fileId: Int,
                                 sourceFilename: String? = null,
                                 sourceFilepath: String? = null,
-                                fileCreateTime: LocalDateTime? = null,
-                                fileUpdateTime: LocalDateTime? = null): Pair<Int, List<BaseException<*>>> {
+                                fileCreateTime: Instant? = null,
+                                fileUpdateTime: Instant? = null): Pair<Int, List<BaseException<*>>> {
         val options = appdata.setting.import
 
-        val fileImportTime = DateTime.now()
+        val fileImportTime = Instant.now()
 
         val orderTime = when(options.setOrderTimeBy) {
             ImportOption.TimeType.CREATE_TIME -> fileCreateTime ?: fileImportTime
@@ -193,8 +192,9 @@ class ImportManager(private val appdata: AppDataManager,
 
         val partitionTime = orderTime
             .runIf(options.setPartitionTimeDelayHour != null && options.setPartitionTimeDelayHour!!!= 0L) {
-                (this.toMillisecond() - options.setPartitionTimeDelayHour!! * 1000 * 60 * 60).parseDateTime()
-            }.asZonedTime().toLocalDate()
+                this.minus(options.setPartitionTimeDelayHour!!, ChronoUnit.HOURS)
+            }
+            .toSystemZonedTime().toLocalDate()
 
         val warnings = mutableListOf<BaseException<*>>()
 
@@ -231,7 +231,7 @@ class ImportManager(private val appdata: AppDataManager,
             set(it.sourcePart, sourcePart)
             set(it.sourcePartName, sourcePartName)
             set(it.partitionTime, partitionTime)
-            set(it.orderTime, orderTime.toMillisecond())
+            set(it.orderTime, orderTime.toEpochMilli())
             set(it.createTime, fileImportTime)
         } as Int
 

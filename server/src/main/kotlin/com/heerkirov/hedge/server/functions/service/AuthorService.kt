@@ -22,7 +22,6 @@ import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.AuthorKit
 import com.heerkirov.hedge.server.functions.manager.SourceMappingManager
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
-import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.business.collectBulkResult
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
@@ -32,6 +31,7 @@ import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
+import java.time.Instant
 
 class AuthorService(private val appdata: AppDataManager,
                     private val data: DataRepository,
@@ -92,7 +92,7 @@ class AuthorService(private val appdata: AppDataManager,
             val keywords = kit.validateKeywords(form.keywords)
 
             val annotations = kit.validateAnnotations(form.annotations, form.type)
-            val createTime = DateTime.now()
+            val createTime = Instant.now()
 
             val id = data.db.insertAndGenerateKey(Authors) {
                 set(it.name, name)

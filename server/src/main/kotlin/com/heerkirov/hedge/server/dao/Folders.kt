@@ -17,8 +17,8 @@ object Folders : BaseTable<Folder>("folder") {
     val ordinal = int("ordinal")
     val pin = int("pin")
     val cachedCount = int("cached_count")
-    val createTime = datetime("create_time")
-    val updateTime = datetime("update_time")
+    val createTime = timestamp("create_time")
+    val updateTime = timestamp("update_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = Folder(
         id = row[id]!!,

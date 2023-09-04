@@ -1,7 +1,7 @@
 package com.heerkirov.hedge.server.model
 
+import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 data class HistoryRecord(/**
                           * 根据类型隔离的序列ID。
@@ -49,7 +49,8 @@ data class ExporterRecord(val id: Int,
                           /**
                             * 此任务创建的时间。
                            */
-                          val createTime: LocalDateTime)
+                          val createTime: Instant
+)
 
 /**
  * app主页内容持久化记录表。

@@ -13,12 +13,12 @@ import com.heerkirov.hedge.server.events.TrashedImageProcessed
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.model.TrashedImage
-import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.types.optOf
 import org.ktorm.dsl.*
 import org.ktorm.entity.filter
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
+import java.time.Instant
 
 class TrashManager(private val data: DataRepository,
                    private val bus: EventBus,
@@ -66,7 +66,7 @@ class TrashManager(private val data: DataRepository,
             .map { it[AssociateRelations.relatedIllustId]!! }
 
         val metadata = TrashedImage.Metadata(tags, topics, authors, books, folders, associates)
-        val trashedTime = DateTime.now()
+        val trashedTime = Instant.now()
 
         data.db.insert(TrashedImages) {
             set(it.imageId, illust.id)

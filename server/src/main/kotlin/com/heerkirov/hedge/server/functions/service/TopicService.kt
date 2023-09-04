@@ -17,7 +17,6 @@ import com.heerkirov.hedge.server.events.MetaTagCreated
 import com.heerkirov.hedge.server.events.MetaTagDeleted
 import com.heerkirov.hedge.server.events.MetaTagUpdated
 import com.heerkirov.hedge.server.exceptions.*
-import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.business.collectBulkResult
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
@@ -29,6 +28,7 @@ import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
+import java.time.Instant
 
 class TopicService(private val appdata: AppDataManager,
                    private val data: DataRepository,
@@ -99,7 +99,7 @@ class TopicService(private val appdata: AppDataManager,
 
             val annotations = kit.validateAnnotations(form.annotations, form.type)
 
-            val createTime = DateTime.now()
+            val createTime = Instant.now()
 
             val id = data.db.insertAndGenerateKey(Topics) {
                 set(it.name, name)

@@ -4,9 +4,8 @@ import com.heerkirov.hedge.server.events.BaseBusEvent
 import com.heerkirov.hedge.server.events.ItemBusEvent
 import com.heerkirov.hedge.server.events.PackagedBusEvent
 import com.heerkirov.hedge.server.library.framework.Component
-import com.heerkirov.hedge.server.utils.DateTime
-import com.heerkirov.hedge.server.utils.DateTime.toMillisecond
 import org.slf4j.LoggerFactory
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSuperclassOf
@@ -52,7 +51,7 @@ class EventBusImpl : EventBus {
 
     override fun emit(vararg e: BaseBusEvent) {
         if(e.isNotEmpty()) {
-            val timestamp = DateTime.now().toMillisecond()
+            val timestamp = Instant.now().toEpochMilli()
 
             for (baseBusEvent in e) {
                 val packagedEvent = ItemBusEvent(baseBusEvent, timestamp)

@@ -11,7 +11,7 @@ import com.heerkirov.hedge.server.events.IllustDeleted
 import com.heerkirov.hedge.server.events.IllustUpdated
 import com.heerkirov.hedge.server.events.PackagedBusEvent
 import com.heerkirov.hedge.server.events.StagingPostChanged
-import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
+import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import org.ktorm.dsl.*
@@ -165,7 +165,7 @@ class StagingPostManager(private val data: DataRepository, private val bus: Even
                 val itemId = it[Illusts.id]!!
                 val score = it[Illusts.exportedScore]
                 val favorite = it[Illusts.favorite]!!
-                val orderTime = it[Illusts.orderTime]!!.parseDateTime()
+                val orderTime = it[Illusts.orderTime]!!.toInstant()
                 val source = sourcePathOf(it)
                 val filePath = filePathFrom(it)
                 StagingPostImageRes(itemId, filePath, score, favorite, source, orderTime)

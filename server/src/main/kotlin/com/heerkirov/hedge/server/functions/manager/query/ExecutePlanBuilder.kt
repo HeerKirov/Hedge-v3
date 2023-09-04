@@ -25,9 +25,7 @@ import org.ktorm.schema.BaseTable
 import org.ktorm.schema.BooleanSqlType
 import org.ktorm.schema.Column
 import org.ktorm.schema.ColumnDeclaring
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
+import java.time.*
 import kotlin.collections.ArrayList
 
 interface ExecutePlanBuilder : ExecuteBuilder {
@@ -182,8 +180,8 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, O
 
     override fun mapFilterSpecial(field: FilterFieldDefinition<*>, value: Any): Any {
         return when (field) {
-            IllustDialect.ordinal -> (value as LocalDate).toEpochDay() * 1000L * 60 * 60 * 24
-            IllustDialect.createTime, IllustDialect.updateTime -> LocalDateTime.of(value as LocalDate, LocalTime.MIN)
+            IllustDialect.ordinal -> (value as LocalDate).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            IllustDialect.createTime, IllustDialect.updateTime -> (value as LocalDate).atStartOfDay(ZoneId.systemDefault()).toInstant()
             else -> value
         }
     }
@@ -386,7 +384,7 @@ class BookExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, Ord
 
     override fun mapFilterSpecial(field: FilterFieldDefinition<*>, value: Any): Any {
         return when (field) {
-            BookDialect.createTime, BookDialect.updateTime -> LocalDateTime.of(value as LocalDate, LocalTime.MIN)
+            BookDialect.createTime, BookDialect.updateTime -> (value as LocalDate).atStartOfDay(ZoneId.systemDefault()).toInstant()
             else -> value
         }
     }

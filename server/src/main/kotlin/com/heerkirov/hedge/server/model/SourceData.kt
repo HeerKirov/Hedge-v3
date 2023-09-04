@@ -3,7 +3,7 @@ package com.heerkirov.hedge.server.model
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.enums.SourceMarkType
-import java.time.LocalDateTime
+import java.time.Instant
 
 /**
  * 来源信息。
@@ -53,11 +53,11 @@ data class SourceData(val id: Int,
                       /**
                         * 初次建立的真实时间。
                         */
-                      val createTime: LocalDateTime,
+                      val createTime: Instant,
                       /**
                         * 上次更新的真实更新时间。
                         */
-                      val updateTime: LocalDateTime) {
+                      val updateTime: Instant) {
 
     data class SourceCount(val tagCount: Int, val bookCount: Int, val relationCount: Int)
 
@@ -159,4 +159,4 @@ data class SourceMark(/**
                       /**
                        * 标记记录时间。
                        */
-                      val recordTime: LocalDateTime)
+                      val recordTime: Instant)

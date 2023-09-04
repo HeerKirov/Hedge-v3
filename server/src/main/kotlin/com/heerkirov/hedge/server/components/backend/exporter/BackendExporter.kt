@@ -18,6 +18,7 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.slf4j.LoggerFactory
 import java.lang.IllegalArgumentException
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
 
@@ -183,7 +184,7 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository,
     }
 
     fun add(tasks: List<T>) {
-        val now = DateTime.now()
+        val now = Instant.now()
         synchronized(this) {
             //锁定thread时，处于对models的读写合并状态，以排斥线程任务对相同内容的修改
 

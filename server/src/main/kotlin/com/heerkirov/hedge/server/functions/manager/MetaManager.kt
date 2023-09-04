@@ -10,7 +10,6 @@ import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.exceptions.ResourceNotSuitable
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.model.*
-import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.runIf
@@ -19,6 +18,7 @@ import org.ktorm.entity.filter
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
+import java.time.Instant
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
@@ -193,7 +193,7 @@ class MetaManager(private val data: DataRepository) {
     fun <T, R, RA> processMetaTags(thisId: Int, creating: Boolean = false, analyseStatisticCount: Boolean, newTagIds: List<Pair<Int, Boolean>>,
                                    metaTag: T, metaRelations: R, metaAnnotationRelations: RA): Set<Int>
             where T: MetaTagTable<*>, R: EntityMetaRelationTable<*>, RA: MetaAnnotationRelationTable<*> {
-        val now = DateTime.now()
+        val now = Instant.now()
 
         val tagIds = newTagIds.toMap()
         val oldTagIds = if(creating) emptyMap() else {
@@ -267,7 +267,7 @@ class MetaManager(private val data: DataRepository) {
             data.db.update(metaTag) {
                 where { it.id inList ids }
                 set(it.cachedCount, it.cachedCount minus 1)
-                set(it.updateTime, DateTime.now())
+                set(it.updateTime, Instant.now())
             }
         }else{
             data.db.delete(metaRelations) { condition }

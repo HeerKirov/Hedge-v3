@@ -21,8 +21,7 @@ import com.heerkirov.hedge.server.functions.manager.FolderManager
 import com.heerkirov.hedge.server.functions.manager.IllustManager
 import com.heerkirov.hedge.server.model.Folder
 import com.heerkirov.hedge.server.utils.business.filePathFrom
-import com.heerkirov.hedge.server.utils.DateTime
-import com.heerkirov.hedge.server.utils.DateTime.parseDateTime
+import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.applyIf
 import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import com.heerkirov.hedge.server.utils.business.toListResult
@@ -34,6 +33,7 @@ import com.heerkirov.hedge.server.utils.tuples.Tuple3
 import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
+import java.time.Instant
 
 class FolderService(private val data: DataRepository,
                     private val bus: EventBus,
@@ -136,7 +136,7 @@ class FolderService(private val data: DataRepository,
                 }
             }
 
-            val createTime = DateTime.now()
+            val createTime = Instant.now()
 
             val id = data.db.insertAndGenerateKey(Folders) {
                 set(it.title, form.title)
@@ -381,7 +381,7 @@ class FolderService(private val data: DataRepository,
             data.db.update(Folders) {
                 where { it.id eq id }
                 set(it.cachedCount, images.size)
-                set(it.updateTime, DateTime.now())
+                set(it.updateTime, Instant.now())
             }
 
             val oldIdSet = kit.updateSubImages(id, imageIds).toSet()
@@ -530,7 +530,7 @@ class FolderService(private val data: DataRepository,
                 val score = it[Illusts.exportedScore]
                 val favorite = it[Illusts.favorite]!!
                 val tagme = it[Illusts.tagme]!!
-                val orderTime = it[Illusts.orderTime]!!.parseDateTime()
+                val orderTime = it[Illusts.orderTime]!!.toInstant()
                 val filePath = filePathFrom(it)
                 val source = sourcePathOf(it)
                 FolderImageRes(itemId, ordinal, filePath, score, favorite, tagme, source, orderTime)

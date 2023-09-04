@@ -1,7 +1,7 @@
 package com.heerkirov.hedge.server.model
 
 import com.heerkirov.hedge.server.enums.FolderType
-import java.time.LocalDateTime
+import java.time.Instant
 
 /**
  * 文件夹。
@@ -38,11 +38,11 @@ data class Folder(val id: Int,
                   /**
                    * 文件夹创建时间。
                    */
-                  val createTime: LocalDateTime,
+                  val createTime: Instant,
                   /**
                    * 文件夹中的项的更改时间/query查询表达式的更改时间。
                    */
-                  val updateTime: LocalDateTime)
+                  val updateTime: Instant)
 
 /**
  * 文件夹中的image的关联关系。

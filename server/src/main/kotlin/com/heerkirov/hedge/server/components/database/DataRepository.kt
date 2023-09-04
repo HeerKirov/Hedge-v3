@@ -44,7 +44,7 @@ class DataRepositoryImpl(channelPath: String) : DataRepository, ControlledAppSta
             }
         }
 
-        migrator.migrate(_db!!, DatabaseMigrationStrategy)
+        migrator.migrate("[Database]", _db!!, DatabaseMigrationStrategy)
     }
 
     override fun close() {
