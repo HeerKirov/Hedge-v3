@@ -90,6 +90,7 @@ class SourceDataManager(private val appdata: AppDataManager,
         return if(sourceData != null) {
             sourceData.id
         }else{
+            val links = generateLinks(sourceSite, sourceId, emptyMap(), undefined(), null, null)
             val now = Instant.now()
             val id = data.db.insertAndGenerateKey(SourceDatas) {
                 set(it.sourceSite, sourceSite)
@@ -97,7 +98,7 @@ class SourceDataManager(private val appdata: AppDataManager,
                 set(it.title, null)
                 set(it.description, null)
                 set(it.relations, null)
-                set(it.links, null)
+                set(it.links, links.unwrapOrNull())
                 set(it.additionalInfo, null)
                 set(it.empty, true)
                 set(it.status, SourceEditStatus.NOT_EDITED)
