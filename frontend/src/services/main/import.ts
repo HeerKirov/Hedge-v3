@@ -115,12 +115,9 @@ function useListView() {
                     removeOne(i => i.id === event.importId)
                 }else if(event.eventType === "entity/import/saved") {
                     const keys = Object.keys(event.importIdToImageIds)
-                    if(keys.length >= 10) {
-                        refresh()
-                    }else{
-                        for(const id of keys.map(i => parseInt(i))) {
-                            removeOne(i => i.id === id)
-                        }
+                    //tips: 已内置阈值刷新功能，不再需要外部实现
+                    for(const id of keys.map(i => parseInt(i))) {
+                        removeOne(i => i.id === id)
                     }
                 }
             },

@@ -187,6 +187,13 @@ function useWsEventProcessor<T, E extends BasicException>(options: EventFilter<T
     const hoardedRefresh = hoard({interval: 50, lengthenInterval: 10, maxInterval: 100, func: refresh})
     const hoardedUpdate = hoard<[number, (item: T) => boolean]>({interval: 50, lengthenInterval: 10, maxInterval: 100, async func(wheres) {
         //事件响应中的更新方法。它是一个囤积式节流函数，一次收集数个更新之后，一口气发出。
+
+        //在开始之前，检查累计的事件总量。如果需要更新的项数超过阈值，那么不再执行单独的更新操作，而是直接刷新列表。
+        if(wheres.filter(([gen, _]) => gen >= generation.value).length >= 10) {
+            hoardedRefresh()
+            return
+        }
+
         //tips: 实例不是响应式的，按照规则，仍然需要通过sync operations操作并散布更新事件。
         //      因此，需要在异步操作结束后通过modify方法写入新值。
         //      但是，在异步操作期间，items的索引有改变的可能，因此在这途中需要监听删除操作，及时跟进位置变动。
@@ -242,6 +249,22 @@ function useWsEventProcessor<T, E extends BasicException>(options: EventFilter<T
             handleException(res.exception)
         }
     }})
+    const hoardedRemove = hoard<[number, (item: T) => boolean]>({interval: 50, lengthenInterval: 10, maxInterval: 100, async func(wheres) {
+        //事件响应中的删除方法。它是一个囤积式节流函数，一次收集数个更新之后，一口气发出。
+
+        //在开始之前，检查累计的事件总量。如果需要更新的项数超过阈值，那么不再执行单独的更新操作，而是直接刷新列表。
+        const currentGenWheres = wheres.filter(([gen, _]) => gen >= generation.value)
+        if(currentGenWheres.length >= 10) {
+            hoardedRefresh()
+            return
+        }
+
+        //delete过程是同步的，本来不需要将它们囤积起来。但是上面有事件总量阈值检查的需要，所以仍然需要收集数量。
+        const indexes = currentGenWheres.map(([_, where]) => proxyInstance.syncOperations.find(where)).filter(i => i !== undefined).sort().reverse()
+        for(const idx of indexes) {
+            proxyInstance.syncOperations.remove(idx!)
+        }
+    }})
 
     onMounted(() => emitter.addEventListener(receiveEvent))
     onUnmounted(() => emitter.removeEventListener(receiveEvent))
@@ -255,11 +278,7 @@ function useWsEventProcessor<T, E extends BasicException>(options: EventFilter<T
                 hoardedUpdate([generation.value, where])
             },
             removeOne(where: (item: T) => boolean) {
-                //delete过程是同步的。因此可以放心地对列表做筛选和更改。
-                const idx = proxyInstance.syncOperations.find(where)
-                if(idx !== undefined) {
-                    proxyInstance.syncOperations.remove(idx)
-                }
+                hoardedRemove([generation.value, where])
             }
         })
     }
