@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 interface TaskAssignmentThread<T> {
     val isAlive: Boolean
+    fun add(task: T)
     fun addAll(tasks: Iterable<T>)
 }
 
@@ -15,6 +16,17 @@ abstract class TaskAssignmentThreadImpl<T>(poolSize: Int?) : TaskAssignmentThrea
     private val aliveTaskCount = AtomicInteger(0)
 
     override val isAlive: Boolean get() = aliveTaskCount.get() > 0
+
+    override fun add(task: T) {
+        aliveTaskCount.incrementAndGet()
+        pool.execute {
+            try {
+                thread(task)
+            }finally{
+                aliveTaskCount.decrementAndGet()
+            }
+        }
+    }
 
     override fun addAll(tasks: Iterable<T>) {
         for (t in tasks) {

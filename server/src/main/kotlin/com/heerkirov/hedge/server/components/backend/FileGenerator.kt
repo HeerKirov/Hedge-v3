@@ -19,9 +19,7 @@ import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
 import com.heerkirov.hedge.server.library.framework.DaemonThreadComponent
 import com.heerkirov.hedge.server.library.framework.StatefulComponent
 import com.heerkirov.hedge.server.model.FileRecord
-import com.heerkirov.hedge.server.utils.Graphics
-import com.heerkirov.hedge.server.utils.Similarity
-import com.heerkirov.hedge.server.utils.deleteIfExists
+import com.heerkirov.hedge.server.utils.*
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.tools.loopPoolThread
@@ -48,6 +46,7 @@ import kotlin.math.absoluteValue
 /**
  * 处理文件的后台任务。
  * - 每当添加了新的文件时，都在后台任务生成其缩略图，并解析其附加参数。
+ * - 每当缩略图处理完成时，生成其指纹。
  * - 每当触发区块归档事件时，都在后台任务处理区块的归档。
  * - 程序启动时，扫描并清理所有已删除的文件，一并处理归档。
  * - 程序启动时，在后台检测并清理缓存文件。
@@ -64,7 +63,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
 
     private val archiveQueue = LinkedList<ArchiveQueueUnit>()
     private val archiveTask = loopPoolThread(thread = ::archiveDaemon)
-    private val thumbnailTask = assignmentTask(thread = ::thumbnailDaemon, poolSize = Runtime.getRuntime().availableProcessors() / 2)
+    private val thumbnailTask = assignmentTask(thread = ::thumbnailDaemon, poolSize = Runtime.getRuntime().availableProcessors())
     private val fingerprintTask = assignmentTask(thread = ::fingerprintDaemon, poolSize = Runtime.getRuntime().availableProcessors() / 2)
 
     override val isIdle: Boolean get() = !thumbnailTask.isAlive && !fingerprintTask.isAlive && !archiveTask.isAlive
@@ -86,10 +85,10 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                 thumbnailTask.addAll(thumbnailTasks)
             }
 
-            //读取fingerStatus为NOT_READY的file，准备处理其指纹
+            //读取fingerStatus为NOT_READY且status不为NOT_READY的file，准备处理其指纹
             val fingerprintTasks = data.db.from(FileRecords)
                 .select(FileRecords.id)
-                .where { FileRecords.fingerStatus eq FingerprintStatus.NOT_READY and FileRecords.deleted.not() }
+                .where { FileRecords.fingerStatus eq FingerprintStatus.NOT_READY and (FileRecords.status notEq FileStatus.NOT_READY) and FileRecords.deleted.not() }
                 .orderBy(FileRecords.updateTime.asc())
                 .map { it[FileRecords.id]!! }
             if(fingerprintTasks.isNotEmpty()) {
@@ -160,7 +159,6 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
         }
         if(createdFiles.isNotEmpty()) {
             thumbnailTask.addAll(createdFiles)
-            fingerprintTask.addAll(createdFiles)
         }
     }
 
@@ -258,6 +256,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                     for (importImageId in importImageIds) {
                         bus.emit(ImportUpdated(importImageId, thumbnailFileReady = true))
                     }
+                    fingerprintTask.add(fileRecord.id)
                 }else{
                     log.warn("Thumbnail generating failed because file ${file.absolutePath} not exists.")
                 }
@@ -275,10 +274,15 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
 
         try {
             val fileRecord = data.db.sequenceOf(FileRecords).firstOrNull { it.id eq fileId }
-            if(fileRecord != null && fileRecord.fingerStatus == FingerprintStatus.NOT_READY) {
-                val file = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), fileRecord.block, "${fileRecord.id}.${fileRecord.extension}").toFile()
+            if(fileRecord != null && fileRecord.fingerStatus == FingerprintStatus.NOT_READY && fileRecord.status != FileStatus.NOT_READY) {
+                val file = if(fileRecord.status == FileStatus.READY_WITHOUT_THUMBNAIL_SAMPLE) {
+                    Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), fileRecord.block, "${fileRecord.id}.${fileRecord.extension}").toFile()
+                }else{
+                    Path(appdata.storage.storageDir, ArchiveType.SAMPLE.toString(), fileRecord.block, "${fileRecord.id}.jpg").toFile()
+                }
+
                 if(file.exists()) {
-                    val result = try { Similarity.process(file) }catch (e: BusinessException) {
+                    val result = try { NewSimilarity.process(file) }catch (e: BusinessException) {
                         if(e.exception is IllegalFileExtensionError) {
                             //忽略文件类型不支持的错误，且不生成指纹，直接退出
                             null
@@ -328,9 +332,9 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
 
     private fun processThumbnail(fileRecord: FileRecord, file: File): Tuple5<Long?, Long?, Int, Int, Long?> {
         //生成thumbnail。当file为除jpg外的其他格式，或file尺寸高于阈值时，会生成thumbnail。
-        val (thumbnailTempFile, resolutionWidth, resolutionHeight, videoDuration) = Graphics.process(file, Graphics.THUMBNAIL_RESIZE_AREA)
+        val (thumbnailTempFile, resolutionWidth, resolutionHeight, videoDuration) = NewGraphics.process(file, NewGraphics.THUMBNAIL_RESIZE_AREA)
         //生成sample。由于传入必定是jpg格式，当file尺寸高于阈值时，会生成thumbnail。
-        val (sampleTempFile, _, _, _) = Graphics.process(thumbnailTempFile ?: file, Graphics.SAMPLE_RESIZE_AREA)
+        val (sampleTempFile, _, _, _) = NewGraphics.process(thumbnailTempFile ?: file, NewGraphics.SAMPLE_RESIZE_AREA)
 
         //实际上，当尺寸小于sample且类型为jpg时，可以只生成thumbnail而不生成sample。
         //此时，需要把thumbnail当作sample去处理。即，sample总是优先于thumbnail。

@@ -14,6 +14,8 @@ dependencies {
     val ktormVersion = "3.6.0"
     val sqliteVersion = "3.42.0.0"
     val jacksonVersion = "2.15.2"
+    val thumbnailatorVersion = "0.4.20"
+    val twelvemonkeysVersion = "3.9.4"
     val javeVersion = "3.3.1"
     val slf4jVersion = "2.0.7"
     val junitVersion = "4.13.2"
@@ -24,22 +26,24 @@ dependencies {
         else -> "all-deps"
     }
 
-    implementation(group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk8", version = kotlinVersion)
-    implementation(group = "org.jetbrains.kotlin", name = "kotlin-reflect", version = kotlinVersion)
-    implementation(group = "com.fasterxml.jackson.core", name = "jackson-core", version = jacksonVersion)
-    implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = jacksonVersion)
-    implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version = jacksonVersion)
-    implementation(group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version = jacksonVersion)
-    implementation(group = "org.xerial", name = "sqlite-jdbc", version = sqliteVersion)
-    implementation(group = "org.ktorm", name = "ktorm-core", version = ktormVersion)
-    implementation(group = "org.ktorm", name = "ktorm-support-sqlite", version = ktormVersion)
-    implementation(group = "io.javalin", name = "javalin", version = javalinVersion)
-    implementation(group = "ws.schild", name = "jave-core", version = javeVersion)
-    implementation(group = "ws.schild", name = "jave-$javePlatform", version = javeVersion)
-    implementation(group = "org.slf4j", name = "slf4j-simple", version = slf4jVersion)
-    implementation(group = "org.slf4j", name = "slf4j-api", version = slf4jVersion)
-    testImplementation(group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version = kotlinVersion)
-    testImplementation(group = "junit", name = "junit", version = junitVersion)
+    implementation(group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk8", version = kotlinVersion)        //kotlin标准库
+    implementation(group = "org.jetbrains.kotlin", name = "kotlin-reflect", version = kotlinVersion)            //kotlin反射支持
+    implementation(group = "com.fasterxml.jackson.core", name = "jackson-core", version = jacksonVersion)                   //json序列化
+    implementation(group = "com.fasterxml.jackson.core", name = "jackson-databind", version = jacksonVersion)               //json序列化
+    implementation(group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version = jacksonVersion)        //jackson的kotlin支持
+    implementation(group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version = jacksonVersion)    //支持Java8时间类型的序列化与反序列化
+    implementation(group = "org.xerial", name = "sqlite-jdbc", version = sqliteVersion)                         //sqlite数据库驱动
+    implementation(group = "org.ktorm", name = "ktorm-core", version = ktormVersion)                            //dao层
+    implementation(group = "org.ktorm", name = "ktorm-support-sqlite", version = ktormVersion)                  //dao层sqlite方言支持
+    implementation(group = "io.javalin", name = "javalin", version = javalinVersion)                            //http服务器
+    implementation(group = "net.coobird", name = "thumbnailator", version = thumbnailatorVersion)               //图像处理库，用于缩略图生成
+    implementation(group = "com.twelvemonkeys.imageio", name = "imageio-jpeg", version = twelvemonkeysVersion)  //ImageIO扩展，增强jpeg格式处理，兼容各种错误情况
+    implementation(group = "ws.schild", name = "jave-core", version = javeVersion)                              //视频处理库，用于缩略图生成
+    implementation(group = "ws.schild", name = "jave-$javePlatform", version = javeVersion)                     //视频处理库的平台相关驱动包
+    implementation(group = "org.slf4j", name = "slf4j-simple", version = slf4jVersion)                          //日志
+    implementation(group = "org.slf4j", name = "slf4j-api", version = slf4jVersion)                             //日志
+    testImplementation(group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version = kotlinVersion)     //测试
+    testImplementation(group = "junit", name = "junit", version = junitVersion)                                 //测试
 }
 
 val javaVersion = "17"

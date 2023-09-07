@@ -2,40 +2,29 @@ package com.heerkirov.hedge.server.utils
 
 import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
 import com.heerkirov.hedge.server.exceptions.be
-import java.awt.MediaTracker
-import java.awt.RenderingHints
-import java.awt.Toolkit
+import net.coobird.thumbnailator.Thumbnails
 import java.awt.image.BufferedImage
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
-import javax.imageio.ImageIO
-import javax.swing.JPanel
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
-@Deprecated("已换用新的Thumbnailator实现。")
-object Similarity {
+object NewSimilarity {
+    private val SUPPORTED_EXTENSIONS = setOf("jpeg", "jpg", "png")
     private const val SIMPLE_HASH_PRECISION = 16
     private const val HASH_PRECISION = 32
-    init {
-        //在mac上，调用Graphics组件时，会生成一个愚蠢的dock栏进程。为了隐藏掉这个进程，需要设置此属性
-        System.setProperty("apple.awt.UIElement", "true")
-    }
 
     /**
      * 对目标文件执行综合分析，得出多个指纹。
      * @throws IllegalFileExtensionError 不支持的文件类型。
      */
     fun process(src: File): ProcessResult {
-        val srcImage = when (src.extension.lowercase()) {
-            "jpeg", "jpg" -> loadJpg(src)
-            "png" -> ImageIO.read(src)
-            else -> throw be(IllegalFileExtensionError(src.extension))
-        }
-        val resizedImage = resize(srcImage, HASH_PRECISION, HASH_PRECISION)
-        val simpleResizedImage = resize(srcImage, SIMPLE_HASH_PRECISION, SIMPLE_HASH_PRECISION)
+        if(src.extension.lowercase() !in SUPPORTED_EXTENSIONS) throw be(IllegalFileExtensionError(src.extension))
+
+        val resizedImage = Thumbnails.of(src).forceSize(HASH_PRECISION, HASH_PRECISION).asBufferedImage()
+        val simpleResizedImage = Thumbnails.of(src).forceSize(SIMPLE_HASH_PRECISION, SIMPLE_HASH_PRECISION).asBufferedImage()
         val grayscale = grayscale(resizedImage)
         val simpleGrayscale = grayscale(simpleResizedImage)
 
@@ -65,44 +54,12 @@ object Similarity {
         return ProcessResult(pHashSimple, dHashSimple, pHash, dHash)
     }
 
-
-    /**
-     * 用正确的方式加载一张JPEG图片，获得BufferedImage，用于后续的流程。
-     * ImageIO对JPEG格式的处理存在大坑，"当没有JFIF信息时，文件会被错误地解释"，具体表现为完全错误的颜色。
-     * 一句话概括的解决方案是用Toolkit.getImage而不是ImageIO.read来读。
-     * 参考回答：
-     * 最直观的问题呈现和解决代码: https://stackoverflow.com/questions/19659269/losing-colors-when-resizing-jpegs-in-java-tried-with-multiple-libraries
-     * 上一条问题的答案来源: https://stackoverflow.com/questions/19654017/resizing-bufferedimages-and-storing-them-to-file-results-in-black-background-for/19654452#19654452
-     * 另一条指出解决方案的问题: https://stackoverflow.com/questions/9340569/jpeg-image-with-wrong-colors
-     */
-    private fun loadJpg(file: File): BufferedImage {
-        val image = Toolkit.getDefaultToolkit().getImage(file.absolutePath)
-        //getImage方法是异步的，因此需要等待它加载完成
-        MediaTracker(JPanel()).also { tracker ->
-            tracker.addImage(image, 0)
-            try {
-                tracker.waitForID(0)
-            } catch (ex: InterruptedException) {
-                throw RuntimeException(ex)
-            }
-        }
-
-        if (image is BufferedImage) return image
-
-        val bufferedImage = BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_RGB)
-
-        bufferedImage.graphics.drawImage(image, 0, 0, null)
-        bufferedImage.graphics.dispose()
-
-        return bufferedImage
-    }
-
     /**
      * 平均哈希算法。
      * @param precision 精度，相当于缩放后的哈希图的尺寸。指纹长度等于精度^2。
      */
     fun averageHash(src: File, precision: Int): String {
-        val srcImage = ImageIO.read(src)
+        val srcImage = Thumbnails.of(src)
         val resizedImage = resize(srcImage, precision, precision)
         val arr = grayscale(resizedImage)
         val avg = arr.average().roundToInt()
@@ -116,7 +73,7 @@ object Similarity {
      * @param precision 精度，相当于缩放后的哈希图的尺寸。指纹长度等于(精度/4)^2。
      */
     fun perceiveHash(src: File, precision: Int): String {
-        val srcImage = ImageIO.read(src)
+        val srcImage = Thumbnails.of(src)
         val resizedImage = resize(srcImage, precision, precision)
         val arr = grayscale(resizedImage)
         val dct = dct(arr, precision)
@@ -132,7 +89,7 @@ object Similarity {
      * @param precision 精度，相当于缩放后的哈希图尺寸。指纹长度等于精度^2。
      */
     fun differenceHash(src: File, precision: Int): String {
-        val srcImage = ImageIO.read(src)
+        val srcImage = Thumbnails.of(src)
         val resizedImage = resize(srcImage, precision, precision)
         val arr = grayscale(resizedImage)
         val diff = difference(arr, precision)
@@ -175,19 +132,8 @@ object Similarity {
     /**
      * 将image缩放至目标大小。
      */
-    private fun resize(source: BufferedImage, targetWidth: Int, targetHeight: Int): BufferedImage {
-        //一个hack：在Linux上似乎有可能将PNG格式读为0，但手动设置5似乎是可行的。
-        //https://stackoverflow.com/questions/5836128/how-do-i-make-javas-imagebuffer-to-read-a-png-file-correctly
-        return BufferedImage(targetWidth, targetHeight, if(source.type == 0) BufferedImage.TYPE_3BYTE_BGR else source.type).apply {
-            createGraphics().apply {
-                try {
-                    setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
-                    drawImage(source, 0, 0, targetWidth, targetHeight, 0, 0, source.width, source.height, null)
-                }finally {
-                    dispose()
-                }
-            }
-        }
+    private fun resize(thumb: Thumbnails.Builder<File>, targetWidth: Int, targetHeight: Int): BufferedImage {
+        return thumb.size(targetWidth, targetHeight).asBufferedImage()
     }
 
     /**
@@ -207,8 +153,8 @@ object Similarity {
      * 根据灰度数组，计算此数组DCT变换后的结果。
      */
     private fun dct(signal: IntArray, size: Int): DoubleArray {
-        val coefficientCache = coefficientsCache.computeIfAbsent(size, Similarity::CoefficientCache)
-        val cosineCache = cosineCache.computeIfAbsent(size, Similarity::CosineCache)
+        val coefficientCache = coefficientsCache.computeIfAbsent(size, NewSimilarity::CoefficientCache)
+        val cosineCache = cosineCache.computeIfAbsent(size, NewSimilarity::CosineCache)
         val ret = DoubleArray(signal.size)
         for(u in 0 until size) {
             for(v in 0 until size) {

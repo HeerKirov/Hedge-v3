@@ -5,7 +5,7 @@ import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.FindSimilarEntityType
 import com.heerkirov.hedge.server.enums.SourceMarkType
 import com.heerkirov.hedge.server.model.FindSimilarTask
-import com.heerkirov.hedge.server.utils.Similarity
+import com.heerkirov.hedge.server.utils.NewSimilarity
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.mapEachTwo
 import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
@@ -110,16 +110,16 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
             for (matched in matchedItems) {
                 if(matched.fingerprint != null) {
                     //计算simple得分。任意一方有极低的得分，就立刻跳过
-                    val pHashSimpleRating = Similarity.hammingDistance(targetItem.fingerprint!!.pHashSimple, matched.fingerprint!!.pHashSimple)
+                    val pHashSimpleRating = NewSimilarity.hammingDistance(targetItem.fingerprint!!.pHashSimple, matched.fingerprint!!.pHashSimple)
                     if(pHashSimpleRating <= 0.55) continue
-                    val dHashSimpleRating = Similarity.hammingDistance(targetItem.fingerprint!!.dHashSimple, matched.fingerprint!!.dHashSimple)
+                    val dHashSimpleRating = NewSimilarity.hammingDistance(targetItem.fingerprint!!.dHashSimple, matched.fingerprint!!.dHashSimple)
                     if(dHashSimpleRating <= 0.55) continue
                     //否则，检测是否任意一方有极高的得分，或者加权平均分过线
                     if(pHashSimpleRating >= 0.98 || dHashSimpleRating >= 0.95 || pHashSimpleRating * 0.4 + dHashSimpleRating * 0.6 >= 0.8) {
                         //计算长hash得分，比较原理同上
-                        val pHashRating = Similarity.hammingDistance(targetItem.fingerprint!!.pHash, matched.fingerprint!!.pHash)
+                        val pHashRating = NewSimilarity.hammingDistance(targetItem.fingerprint!!.pHash, matched.fingerprint!!.pHash)
                         if(pHashRating <= 0.55) continue
-                        val dHashRating = Similarity.hammingDistance(targetItem.fingerprint!!.dHash, matched.fingerprint!!.dHash)
+                        val dHashRating = NewSimilarity.hammingDistance(targetItem.fingerprint!!.dHash, matched.fingerprint!!.dHash)
                         if(dHashRating <= 0.55) continue
 
                         val similarity = if(pHashRating >= 0.95) pHashRating

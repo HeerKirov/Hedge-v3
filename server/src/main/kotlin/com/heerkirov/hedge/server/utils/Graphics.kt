@@ -21,6 +21,7 @@ import javax.imageio.plugins.jpeg.JPEGImageWriteParam
 import javax.swing.JPanel
 import kotlin.math.sqrt
 
+@Deprecated("已换用新的Thumbnailator实现。")
 object Graphics {
     const val THUMBNAIL_RESIZE_AREA = 1200 * 1200
     const val SAMPLE_RESIZE_AREA = 400 * 400
