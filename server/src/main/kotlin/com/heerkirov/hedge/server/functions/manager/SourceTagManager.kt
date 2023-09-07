@@ -53,10 +53,10 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
      * 不会校验source的合法性，因为假设之前已经手动校验过了。
      */
     fun getAndUpsertSourceTags(sourceSite: String, tags: List<SourceTagForm>): List<Int> {
-        val tagMap = tags.associateBy { it.code }
+        val tagMap = tags.associateBy { it.code.lowercase() }
 
         val dbTags = data.db.sequenceOf(SourceTags).filter { (it.site eq sourceSite) and (it.code inList tagMap.keys) }.toList()
-        val dbTagMap = dbTags.associateBy { it.code }
+        val dbTagMap = dbTags.associateBy { it.code.lowercase() }
 
         fun SourceTag.mapToDto() = SourceTagDto(code, name, otherName, type)
 
@@ -64,12 +64,12 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
         val minus = tagMap.keys - dbTagMap.keys
         if(minus.isNotEmpty()) {
             data.db.batchInsert(SourceTags) {
-                for (code in minus) {
-                    val tag = tagMap[code]!!
+                for (key in minus) {
+                    val tag = tagMap[key]!!
                     item {
                         set(it.site, sourceSite)
-                        set(it.code, code)
-                        set(it.name, tag.name.unwrapOr { code })
+                        set(it.code, tag.code)
+                        set(it.name, tag.name.unwrapOr { key })
                         set(it.otherName, tag.otherName.unwrapOrNull())
                         set(it.type, tag.type.unwrapOrNull())
                     }

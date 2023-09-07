@@ -15,10 +15,10 @@ class SourceBookManager(private val data: DataRepository, private val bus: Event
      * 不会检验source的合法性，因为假设之前已经手动校验过了。
      */
     fun getAndUpsertSourceBooks(sourceSite: String, books: List<SourceBookForm>): List<Int> {
-        val bookMap = books.associateBy { it.code }
+        val bookMap = books.associateBy { it.code.lowercase() }
 
         val dbBooks = data.db.sequenceOf(SourceBooks).filter { it.site eq sourceSite and (it.code inList bookMap.keys) }.toList()
-        val dbBooksMap = dbBooks.associateBy { it.code }
+        val dbBooksMap = dbBooks.associateBy { it.code.lowercase() }
 
         val minus = bookMap.keys - dbBooksMap.keys
         if(minus.isNotEmpty()) {
