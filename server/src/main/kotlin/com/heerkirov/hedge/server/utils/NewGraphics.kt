@@ -90,6 +90,7 @@ object NewGraphics {
     /**
      * 获取图像的分辨率。直接ImageIO.read的操作太费时了。
      * 该算法来自 https://stackoverflow.com/questions/672916/how-to-get-image-height-and-width-using-java
+     * 不过，该算法虽简洁通用，但还不能保证覆盖全部情况。当无法读取时，回退到ImageIO读取。
      */
     private fun getImageDimension(imgFile: File): Pair<Int, Int> {
         val suffix = imgFile.name.substringAfterLast('.')
@@ -105,7 +106,9 @@ object NewGraphics {
                 reader.dispose()
             }
         }
-        throw IOException("Not a known image file: " + imgFile.absolutePath)
+
+        val bufferedImage = ImageIO.read(imgFile)
+        return Pair(bufferedImage.width, bufferedImage.height)
     }
 
     data class ProcessResult(val thumbnailFile: File?, val resolutionWidth: Int, val resolutionHeight: Int, val videoDuration: Long?)
