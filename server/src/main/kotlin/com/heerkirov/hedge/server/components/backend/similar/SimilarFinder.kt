@@ -99,8 +99,18 @@ class SimilarFinderWorkThread(private val appdata: AppDataManager, private val d
     fun processImportToImageEvent(importIdToImageIds: Map<Int, Int>) {
         data.db.transaction {
             //接收ImportSaved信息，然后更改已有的result
-            val likeCondition = importIdToImageIds.keys.map { FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it).toEntityKeyString() }.map { "%|$it|%" }.map { FindSimilarResults.images like it }.reduce { a, b -> a or b }
-            val existResults = data.db.sequenceOf(FindSimilarResults).filter { likeCondition }.toList()
+            val conditions = importIdToImageIds.keys.asSequence()
+                    .map { FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it).toEntityKeyString() }
+                    .map { "%|$it|%" }
+                    .map { FindSimilarResults.images like it }
+                    .chunked(10)
+                    .map { it.reduce { a, b -> a or b } }
+                    .toList()
+            val existResults = conditions.asSequence()
+                .map { condition -> data.db.sequenceOf(FindSimilarResults).filter { condition }.toList() }
+                .flatten()
+                .distinctBy { it.id }
+                .toList()
             for (result in existResults) {
                 val newImages = result.images.asSequence()
                     .map { it.toEntityKey() }
@@ -132,8 +142,8 @@ class SimilarFinderWorkThread(private val appdata: AppDataManager, private val d
                 }
             }
             //更改已有的ignored
-            val likeCondition1 = importIdToImageIds.keys.map { FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it).toEntityKeyString() }.map { FindSimilarIgnores.firstTarget eq it }.reduce { a, b -> a or b }
-            val existIgnores = data.db.sequenceOf(FindSimilarIgnores).filter { likeCondition1 }.toList()
+            val inListCondition = importIdToImageIds.keys.map { FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it).toEntityKeyString() }
+            val existIgnores = data.db.sequenceOf(FindSimilarIgnores).filter { FindSimilarIgnores.firstTarget inList inListCondition }.toList()
             for (ignored in existIgnores) {
                 val aId = ignored.firstTarget.toEntityKey().id
                 val newA = FindSimilarEntityKey(FindSimilarEntityType.ILLUST, importIdToImageIds[aId]!!).toEntityKeyString()

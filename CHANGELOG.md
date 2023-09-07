@@ -1,3 +1,5 @@
+## Bug Fixes
+* 修复SimilarFinder.RecordBuilder模块在新记录生成时，节点数量过多会导致栈溢出的问题。
 ## Optimizes
 * 更换图像处理使用的库，以改善稳定性和Bug问题。同时略微优化了缩略图和图像指纹生成的流程。
 

@@ -75,8 +75,15 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
         data.db.transaction {
             for (component in components) {
                 //首先去数据库，检查一下是否可能存在有重合节点。若存在重合节点，就认为两个分量是连通的
-                val likeCondition = component.keys.map { "%|${it.toEntityKeyString()}|%" }.map { FindSimilarResults.images like it }.reduce { a, b -> a or b }
-                val existResult = data.db.sequenceOf(FindSimilarResults).firstOrNull { likeCondition }
+
+                //在component.keys数量较大时，会触发SQLite的parser stack overflow。
+                //为解决这个问题，一次连接的OR条件不能太多。(测试的最多数量是88)
+                //在这里使用10条为一组，拆分成多条查询。
+                val existResult = component.keys.asSequence().chunked(10)
+                    .map { li -> li.map { "%|${it.toEntityKeyString()}|%" }.map { FindSimilarResults.images like it }.reduce { a, b -> a or b } }
+                    .map { condition -> data.db.sequenceOf(FindSimilarResults).firstOrNull { condition } }
+                    .filterNotNull()
+                    .firstOrNull()
 
                 if(existResult != null) {
                     generateRecordToExist(component, existResult)
