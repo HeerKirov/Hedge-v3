@@ -134,3 +134,22 @@ inline fun <T> T.letIf(predicate: Boolean, block: (T) -> T): T {
     }
     return this
 }
+
+/**
+ * 将字符串转换为小写。默认的lowercase函数会使用Locale转换，在某些场景下并不适合，而此函数只转换A~Z的26个英文字母。
+ */
+fun String.toAlphabetLowercase(): String {
+    return if(this.any { it in 'A'..'Z' }) {
+        val sb = StringBuilder(this.length)
+        for (char in this) {
+            if(char in 'A'..'Z') {
+                sb.append(char - 'A'.code + 'a'.code)
+            }else{
+                sb.append(char)
+            }
+        }
+        sb.toString()
+    }else{
+        this
+    }
+}

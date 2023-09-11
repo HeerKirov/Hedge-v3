@@ -10,11 +10,13 @@ import com.heerkirov.hedge.server.events.SourceTagUpdated
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.model.SourceTag
+import com.heerkirov.hedge.server.utils.toAlphabetLowercase
 import org.ktorm.dsl.*
 import org.ktorm.entity.filter
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
+import java.util.*
 
 class SourceTagManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus) {
     /**
@@ -53,10 +55,10 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
      * 不会校验source的合法性，因为假设之前已经手动校验过了。
      */
     fun getAndUpsertSourceTags(sourceSite: String, tags: List<SourceTagForm>): List<Int> {
-        val tagMap = tags.associateBy { it.code.lowercase() }
+        val tagMap = tags.associateBy { it.code.toAlphabetLowercase() }
 
         val dbTags = data.db.sequenceOf(SourceTags).filter { (it.site eq sourceSite) and (it.code inList tagMap.keys) }.toList()
-        val dbTagMap = dbTags.associateBy { it.code.lowercase() }
+        val dbTagMap = dbTags.associateBy { it.code.toAlphabetLowercase() }
 
         fun SourceTag.mapToDto() = SourceTagDto(code, name, otherName, type)
 
