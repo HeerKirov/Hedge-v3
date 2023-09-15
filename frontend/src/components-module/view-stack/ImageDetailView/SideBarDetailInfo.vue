@@ -36,7 +36,7 @@ const { data, id, setScore, setDescription, openMetaTagEditor, setPartitionTime,
         </FormEditKit>
         <TagmeInfo v-if="data.tagme.length > 0" class="mt-1" :value="data.tagme"/>
         <MetaTagListDisplay class="mt-2" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
-        <FileInfoDisplay class="mt-3" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionWidth" :resolution-width="data.resolutionHeight" :video-duration="data.videoDuration"/>
+        <FileInfoDisplay class="mt-3" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>
         <FormEditKit class="mt-2" :value="data.partitionTime" :set-value="setPartitionTime">
             <template #default="{ value }">
                 <PartitionTimeDisplay :partition-time="value"/>

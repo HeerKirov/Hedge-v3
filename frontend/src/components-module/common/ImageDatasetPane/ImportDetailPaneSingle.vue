@@ -24,7 +24,7 @@ const { data, setTagme, setSourceInfo, setCreateTime, setOrderTime, setPartition
         <p v-if="data.fileCreateTime" class="secondary-text mt-2">文件创建时间 {{datetime.toSimpleFormat(data.fileCreateTime)}}</p>
         <p v-if="data.fileUpdateTime" class="secondary-text">文件修改时间 {{datetime.toSimpleFormat(data.fileUpdateTime)}}</p>
         <p v-if="data.fileImportTime" class="secondary-text">文件导入时间 {{datetime.toSimpleFormat(data.fileImportTime)}}</p>
-        <FileInfoDisplay class="mt-2" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionWidth" :resolution-width="data.resolutionHeight" :video-duration="data.videoDuration"/>
+        <FileInfoDisplay class="mt-2" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>
         <Separator direction="horizontal"/>
         <FormEditKit class="mt-1" :value="data.source" :set-value="setSourceInfo">
             <template #default="{ value }">
