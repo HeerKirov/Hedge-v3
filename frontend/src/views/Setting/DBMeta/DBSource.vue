@@ -52,6 +52,7 @@ const trash = async () => {
                                 :part-mode="selectedSite.partMode" 
                                 :source-link-generate-rules="selectedSite.sourceLinkGenerateRules"
                                 :available-additional-info="selectedSite.availableAdditionalInfo"
+                                :available-types="selectedSite.availableTypes"
                                 :ordinal="selectedIndex!" 
                                 @update="update" @delete="trash"/>
             <DBSourceSiteCreator v-else-if="selectedItem === '<new>'" @create="create"/>

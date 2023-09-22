@@ -141,7 +141,7 @@ export function useSettingFindSimilar() {
 export const [installSettingSite, useSettingSite] = optionalInstallation(function() {
     const message = useMessageBox()
 
-    const { data, refresh } = useFetchReactive({
+    const { data } = useFetchReactive({
         get: client => client.setting.source.site.list,
         eventFilter: "setting/source-site/changed"
     })
@@ -171,10 +171,7 @@ export const [installSettingSite, useSettingSite] = optionalInstallation(functio
             }else{
                 return e
             }
-        },
-        afterCreate: refresh,
-        afterUpdate: refresh,
-        afterDelete: refresh
+        }
     })
 
     return {data, getItem, createItem, updateItem, deleteItem}

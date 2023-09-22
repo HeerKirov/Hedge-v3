@@ -40,7 +40,7 @@ const set = <K extends keyof SummaryData>(key: K, value: SummaryData[K]) => {
     </div>
     <div class="mt-1">
         <label class="label">标签</label>
-        <SourceTagEditor :value="data.tags" @update:value="set('tags', $event)"/>
+        <SourceTagEditor :site="site" :value="data.tags" @update:value="set('tags', $event)"/>
     </div>
     <Flex class="mt-1" :spacing="2">
         <FlexItem :width="65">

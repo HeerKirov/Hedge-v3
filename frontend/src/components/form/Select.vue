@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T = string">
-import { onMounted, ref, watch } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 
 const props = defineProps<{
     value?: T
@@ -41,8 +41,8 @@ function watchProps() {
 </script>
 
 <template>
-    <select ref="selectDom" :class="[$style.select, $style[`is-size-${size ?? 'std'}`]]" @change="changed">
-        <option v-for="item in items" :key="`${item.value}`" :value="item.value" :selected="item.value === value">{{item.label}}</option>
+    <select ref="selectDom" :value="value" :class="[$style.select, $style[`is-size-${size ?? 'std'}`]]" @change="changed">
+        <option v-for="item in items" :key="`${item.value}`" :value="item.value">{{item.label}}</option>
     </select>
 </template>
 
@@ -53,7 +53,7 @@ function watchProps() {
 .select
     display: inline-block
     vertical-align: middle
-    display: block
+    display: inline-block
     outline: none
     line-height: 1.2
     height: $element-height-std

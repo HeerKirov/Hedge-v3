@@ -19,7 +19,8 @@ const form = reactive({
     hasPart: false,
     hasPartName: false,
     availableAdditionalInfo: <{field: string, label: string}[]>[],
-    sourceLinkGenerateRules: <string[]>[]
+    sourceLinkGenerateRules: <string[]>[],
+    availableTypes: <string[]>[]
 })
 
 const submit = () => {
@@ -54,7 +55,8 @@ const submit = () => {
         title: form.title,
         partMode: form.hasPart ? (form.hasPartName ? "PAGE_WITH_NAME" : "PAGE") : "NO",
         sourceLinkGenerateRules: form.sourceLinkGenerateRules,
-        availableAdditionalInfo: form.availableAdditionalInfo
+        availableAdditionalInfo: form.availableAdditionalInfo,
+        availableTypes: form.availableTypes
     })
 
     form.name = ""
@@ -63,6 +65,7 @@ const submit = () => {
     form.hasPartName = false
     form.sourceLinkGenerateRules = []
     form.availableAdditionalInfo = []
+    form.availableTypes = []
 }
 
 const addAvailableAdditionalInfo = () => {

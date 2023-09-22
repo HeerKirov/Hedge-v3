@@ -355,25 +355,27 @@ export interface Site {
      * 根据元数据id与附加信息，自动生成links的规则列表。
      */
     sourceLinkGenerateRules: string[]
+    /**
+     * 此站点可用的标签类型。
+     */
+    availableTypes: string[]
 }
 
-export interface SiteCreateForm {
+export interface SiteCreateForm extends SiteUpdateForm {
     name: string
     title: string
     partMode?: SitePartMode
-    availableAdditionalInfo?: {field: string, label: string}[]
-    sourceLinkGenerateRules?: string[]
-    /**
-     * 在列表中的排序顺序，从0开始。
-     * @default 追加到末尾
-     */
-    ordinal?: number
 }
 
 export interface SiteUpdateForm {
     title?: string
     availableAdditionalInfo?: {field: string, label: string}[]
     sourceLinkGenerateRules?: string[]
+    availableTypes?: string[]
+    /**
+     * 在列表中的排序顺序，从0开始。
+     * @default 追加到末尾
+     */
     ordinal?: number
 }
 

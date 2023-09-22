@@ -52,7 +52,7 @@ export interface SourceDataEndpoint {
     bulk(items: SourceDataCreateForm[]): Promise<Response<null, SourceDataExceptions["bulk"]>>
     get(key: SourceDataIdentity): Promise<Response<DetailSourceData, NotFound>>
     getRelatedImages(key: SourceDataIdentity): Promise<Response<SimpleIllust[]>>
-    update(key: SourceDataIdentity, form: SourceDataUpdateForm): Promise<Response<null, NotFound>>
+    update(key: SourceDataIdentity, form: SourceDataUpdateForm): Promise<Response<null, SourceDataExceptions["update"]>>
     delete(key: SourceDataIdentity): Promise<Response<null, NotFound>>
     getSourceMarks(key: SourceDataIdentity): Promise<Response<SourceMark[], NotFound>>
     updateSourceMarks(key: SourceDataIdentity, form: SourceMarkPartialForm): Promise<Response<null, NotFound | ResourceNotExist<"related", number>>>
@@ -61,8 +61,9 @@ export interface SourceDataEndpoint {
 export interface SourceDataIdentity { sourceSite: string, sourceId: number }
 
 export interface SourceDataExceptions {
-    "create": ResourceNotExist<"site", string> | AlreadyExists<"SourceData", "sourceId", number>
-    "bulk": ResourceNotExist<"site", string>
+    "create": ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string> | AlreadyExists<"SourceData", "sourceId", number>
+    "bulk": ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string>
+    "update": ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string> | NotFound
 }
 
 export type SourceMarkType = "SAME" | "SIMILAR" | "RELATED" | "UNKNOWN"

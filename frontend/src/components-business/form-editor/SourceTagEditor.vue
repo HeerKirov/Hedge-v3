@@ -6,8 +6,10 @@ import { Input } from "@/components/form"
 import { SourceTagElement } from "@/components-business/element"
 import { SourceTag } from "@/functions/http-client/api/source-data"
 import { useMessageBox } from "@/modules/message-box"
+import { SourceTagTypeSelectBox } from "."
 
 const props = defineProps<{
+    site: string | null
     value: SourceTag[]
 }>()
 
@@ -73,8 +75,8 @@ const setCode = (newCode: string) => {
                 return
             }
             form.value!.code = code
-            selected.value = {mode: "edit", index: props.value.length}
             updateCreateItem(form.value!)
+            selected.value = {mode: "edit", index: props.value.length}
         }else{
             form.value!.code = code
         }
@@ -88,23 +90,9 @@ const setCode = (newCode: string) => {
     }
 }
 
-const setType = (newType: string) => {
-    const type = newType.trim()
+const setType = (type: string) => {
     if(selected.value.mode === "create") {
-        if(type && form.value?.code) {
-            //tag editor的创建逻辑是隐性实现的。
-            //当在新建模式填充了type后，一旦失去焦点(触发setType)，就会立刻将当前create表单创建为一个新的项并存储。
-            //type为空时，则暂时搁置创建。
-            if(props.value.find(t => t.code === form.value!.code && t.type === type)) {
-                message.showOkMessage("prompt", "该标签已存在。", "在同一列表中创建了重名的标签。")
-                return
-            }
-            form.value!.type = type
-            selected.value = {mode: "edit", index: props.value.length}
-            updateCreateItem(form.value!)
-        }else{
-            form.value!.type = type
-        }
+        form.value!.type = type
     }else if(selected.value.mode === "edit") {
         const index = selected.value.index
         if(props.value.find((t, i) => t.code === form.value!.code && t.type === type && index !== i)) {
@@ -145,7 +133,7 @@ const setOtherName = (otherName: string) => {
             <Block class="p-2">
                 <Flex class="mb-1" :spacing="1">
                     <FlexItem :width="100">
-                        <Input size="small" placeholder="分类" :value="form.type" @update:value="setType"/>
+                        <SourceTagTypeSelectBox size="small" :site="site" :value="form.type" @update:value="setType"/>
                     </FlexItem>
                     <FlexItem v-if="selected.mode === 'edit'" :shrink="0">
                         <Button size="small" square mode="light" type="danger" icon="trash" @click="deleteItem"/>

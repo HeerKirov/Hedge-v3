@@ -4,7 +4,7 @@ import { Block, Button, Tag } from "@/components/universal"
 import { Input } from "@/components/form"
 import { Flex } from "@/components/layout"
 import { SourceTagElement } from "@/components-business/element"
-import { SourceSiteSelectBox } from "@/components-business/form-editor"
+import { SourceSiteSelectBox, SourceTagTypeSelectBox } from "@/components-business/form-editor"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { useSettingSite } from "@/services/setting"
 
@@ -99,7 +99,7 @@ watch(form, form => {
         <Block v-if="selectedIndex !== undefined" :class="$style.editor">
             <Flex class="mb-1" :width="100" :spacing="1">
                 <SourceSiteSelectBox size="small" v-model:value="form.site"/>
-                <Input width="fullwidth" size="small" placeholder="分类" v-model:value="form.type"/>
+                <SourceTagTypeSelectBox size="small" :site="form.site" v-model:value="form.type"/>
             </Flex>
             <Input class="mb-1" width="fullwidth" size="small" placeholder="编码" v-model:value="form.code"/>
             <Flex class="mb-1" :width="100" :spacing="1">

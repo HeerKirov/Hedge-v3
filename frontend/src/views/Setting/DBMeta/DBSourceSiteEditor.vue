@@ -19,7 +19,8 @@ const message = useMessageBox()
 const content = computedMutable(() => ({
     title: props.title,
     sourceLinkGenerateRules: props.sourceLinkGenerateRules,
-    availableAdditionalInfo: props.availableAdditionalInfo
+    availableAdditionalInfo: props.availableAdditionalInfo,
+    availableTypes: props.availableTypes
 }))
 
 const submit = () => {
@@ -59,12 +60,24 @@ const addSourceLinkGenerateRule = () => {
     content.value.sourceLinkGenerateRules.push("")
 }
 
+const addAvailableType = () => {
+    content.value.availableTypes.push("")
+}
+
 const trashAvailableAdditionalInfo = (idx: number) => {
     content.value.availableAdditionalInfo.splice(idx, 1)
 }
 
 const trashSourceLinkGenerateRule = (idx: number) => {
     content.value.sourceLinkGenerateRules.splice(idx, 1)
+}
+
+const setAvailableType = (idx: number, v: string) => {
+    if(v.trim()) {
+        content.value.availableTypes[idx] = v
+    }else{
+        content.value.availableTypes.splice(idx, 1)
+    }
 }
 
 </script>
@@ -89,7 +102,16 @@ const trashSourceLinkGenerateRule = (idx: number) => {
             <CheckBox :value="partMode !== 'NO'" disabled>启用二级分页</CheckBox>
             <CheckBox class="ml-1" :value="partMode === 'PAGE_WITH_NAME'" disabled>启用分页页名</CheckBox>
         </div>
-        <Flex :spacing="1">
+        <div>
+            <label class="label">可用来源标签类型</label>
+            <Flex class="mt-1 w-100" :multiline="true" :spacing="1">
+                <FlexItem v-for="(item, idx) in content.availableTypes" :width="22">
+                    <Input size="small" placeholder="标签类型" :value="item" @update:value="setAvailableType(idx, $event)"/>
+                </FlexItem>
+                <Button :class="{'w-100': content.availableTypes.length <= 0}" size="small" type="success" icon="plus" :square="content.availableTypes.length > 0" @click="addAvailableType">{{ content.availableTypes.length <= 0 ? "添加" : undefined }}</Button>
+            </Flex>
+        </div>
+        <Flex class="mt-1" :spacing="1">
             <FlexItem :width="50">
                 <div>
                     <label class="label">可用元数据字段</label>

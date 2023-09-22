@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Input } from "@/components/form"
 import { Button } from "@/components/universal"
-import { SourceSiteSelectBox } from "@/components-business/form-editor"
+import { SourceSiteSelectBox, SourceTagTypeSelectBox } from "@/components-business/form-editor"
 import { useSettingSite } from "@/services/setting"
 
 defineOptions({
@@ -38,9 +38,9 @@ const remove = (index: number) => {
 
 <template>
     <p v-for="(v, idx) in value" class="mb-1" v-bind="$attrs">
-        <SourceSiteSelectBox :value="v.sourceSite" @update:value="updateValueSource(idx, $event)"/>
-        <Input class="ml-1" width="half" placeholder="标签类型" :value="v.tagType" @update:value="updateValueTagType(idx, $event)"/>
-        <Button class="ml-1" square icon="close" @click="remove(idx)"/>
+        <SourceSiteSelectBox size="small" :value="v.sourceSite" @update:value="updateValueSource(idx, $event)"/>
+        <SourceTagTypeSelectBox class="ml-1" size="small" :site="v.sourceSite" :value="v.tagType" @update:value="updateValueTagType(idx, $event)"/>
+        <Button class="ml-1" size="small" square icon="close" @click="remove(idx)"/>
     </p>
     <Button size="small" mode="filled" type="primary" icon="plus" @click="add">添加一行</Button>
 </template>

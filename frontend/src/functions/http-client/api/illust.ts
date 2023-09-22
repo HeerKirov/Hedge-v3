@@ -345,7 +345,7 @@ export interface IllustExceptions {
     "collection.images.update": NotFound | ResourceNotExist<"images", number[]>
     "image.update": NotFound | ResourceNotExist<"topics" | "authors" | "tags", number[]> | ResourceNotSuitable<"tags", number[]> | ConflictingGroupMembersError
     "image.relatedItems.update": NotFound | ResourceNotExist<"collectionId" | "associateId", number>
-    "image.sourceData.update": NotFound | ResourceNotExist<"site", string> | ParamNotRequired | ParamRequired | ParamError
+    "image.sourceData.update": NotFound | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string> | ParamNotRequired | ParamRequired | ParamError
 }
 
 export type IllustType = "COLLECTION" | "IMAGE"
