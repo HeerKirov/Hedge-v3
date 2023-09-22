@@ -115,13 +115,13 @@ class SourceDataManager(private val appdata: AppDataManager,
 
     /**
      * 检查additionalInfo的字段是否合法。
-     * @throws ParamError 如果存在不合法的字段，抛出此异常。
+     * @throws ResourceNotExist ("additionalInfo", field) 如果存在不合法的字段，抛出此异常。
      */
     private fun validateAdditionalInfo(sourceSite: String, additionalInfo: Map<String, String>) {
         val site = appdata.setting.source.sites.first { it.name == sourceSite }
         val availableFields = site.availableAdditionalInfo.asSequence().map { it.field }.toSet()
         for (field in additionalInfo.keys) {
-            if(field !in availableFields) throw be(ParamError("additionalInfo"))
+            if(field !in availableFields) throw be(ResourceNotExist("additionalInfo", field))
         }
     }
 
@@ -180,6 +180,7 @@ class SourceDataManager(private val appdata: AppDataManager,
      * 检查source key是否存在，创建对应记录，并手动更新内容。不会检查sourceSite合法性，因为假设之前已经校验过了。
      * @return (rowId, sourceSite, sourceId) 返回在sourceImage中实际存储的key。
      * @throws ResourceNotExist ("source", string) 给出的source不存在
+     * @throws ResourceNotExist ("additionalInfo", field) 存在不合法的字段
      * @throws ParamError additionalInfo字段不合法
      * @throws NotFound 请求对象不存在 (allowCreate=false时抛出)
      * @throws AlreadyExists 此对象已存在 (allowUpdate=false时抛出)

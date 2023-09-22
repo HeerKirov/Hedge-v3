@@ -147,7 +147,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             when (event.event) {
                 is FileBlockArchived -> {
                     synchronized(archiveQueue) {
-                        archiveQueue.find { it.block === event.event.block }?.also { it.toBeArchived = true }
+                        archiveQueue.find { it.block == event.event.block }?.also { it.toBeArchived = true }
                         ?: archiveQueue.add(ArchiveQueueUnit(event.event.block, toBeArchived = true))
                         archiveTask.start()
                     }

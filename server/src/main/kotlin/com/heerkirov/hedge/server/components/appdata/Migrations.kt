@@ -2,6 +2,8 @@ package com.heerkirov.hedge.server.components.appdata
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.heerkirov.hedge.server.model.FindSimilarTask
+import com.heerkirov.hedge.server.utils.Json.parseJSONObject
+import com.heerkirov.hedge.server.utils.Json.toJsonNode
 import com.heerkirov.hedge.server.utils.migrations.JsonObjectStrategy
 import com.heerkirov.hedge.server.utils.migrations.MigrationRegister
 
@@ -51,24 +53,42 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             findSimilar = FindSimilarOption(
                 autoFindSimilar = false,
                 autoTaskConf = null,
-                defaultTaskConf = DEFAULT_FIND_SIMILAR_TASK_CONF
+                defaultTaskConf = FindSimilarTask.TaskConfig(
+                    findBySourceIdentity = true,
+                    findBySimilarity = true,
+                    findBySourceRelation = true,
+                    findBySourceMark = true,
+                    filterByOtherImport = false,
+                    filterByPartition = true,
+                    filterByAuthor = true,
+                    filterByTopic = true,
+                    filterBySourceTagType = emptyList()
+                )
             )
         )
     }
 
     override fun migrations(register: MigrationRegister<JsonNode>) {
         register.empty("0.1.0")
+        register.map("0.1.4", ::addSiteTypes)
     }
 
-    private val DEFAULT_FIND_SIMILAR_TASK_CONF = FindSimilarTask.TaskConfig(
-        findBySourceIdentity = true,
-        findBySimilarity = true,
-        findBySourceRelation = true,
-        findBySourceMark = true,
-        filterByOtherImport = false,
-        filterByPartition = true,
-        filterByAuthor = true,
-        filterByTopic = true,
-        filterBySourceTagType = emptyList()
-    )
+    /**
+     * 在0.1.4版本，新增了site.availableTypes非空字段。
+     */
+    private fun addSiteTypes(json: JsonNode): JsonNode {
+        data class OldSite(val name: String, var title: String, val partMode: SourceOption.SitePartMode, var availableAdditionalInfo: List<SourceOption.AvailableAdditionalInfo>, var sourceLinkGenerateRules: List<String>)
+
+        val sites = json["source"]["sites"].map { it.parseJSONObject<OldSite>() }.map { SourceOption.Site(it.name, it.title, it.partMode, it.availableAdditionalInfo, it.sourceLinkGenerateRules, mutableListOf()) }.toMutableList()
+
+        return AppData(
+            server = json["server"].parseJSONObject(),
+            storage = json["storage"].parseJSONObject(),
+            meta = json["meta"].parseJSONObject(),
+            query = json["query"].parseJSONObject(),
+            source = SourceOption(sites),
+            import = json["import"].parseJSONObject(),
+            findSimilar = json["findSimilar"].parseJSONObject(),
+        ).toJsonNode()
+    }
 }

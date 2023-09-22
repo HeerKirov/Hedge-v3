@@ -29,13 +29,14 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
 
     /**
      * 查询目标source tag，或在它不存在时创建它，将其余属性留空。
-     * 不会校验source的合法性，因为假设之前已经手动校验过了。
      */
     fun getOrCreateSourceTag(sourceSite: String, sourceTagType: String, sourceTagCode: String): SourceTag {
         return data.db.sequenceOf(SourceTags)
             .firstOrNull { (it.site eq sourceSite) and (it.type eq sourceTagType) and (it.code eq sourceTagCode) }
             ?: run {
-                //TODO 校验type
+                val site = appdata.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
+                if(site.availableTypes.indexOf(sourceTagType) < 0) throw be(ResourceNotExist("sourceTagType", site))
+
                 val id = data.db.insertAndGenerateKey(SourceTags) {
                     set(it.site, sourceSite)
                     set(it.type, sourceTagType)
@@ -56,23 +57,23 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
      * 不会校验source的合法性，因为假设之前已经手动校验过了。
      */
     fun getAndUpsertSourceTags(sourceSite: String, tags: List<SourceTagForm>): List<Int> {
-        val dbTags = tags.groupBy ({ it.type }) { it.code }.flatMap { (type, codes) ->
-            data.db.sequenceOf(SourceTags).filter { (it.site eq sourceSite) and (it.type eq type) and (it.code inList codes) }.toList()
-        }
+        val site = appdata.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
+        tags.asSequence().map { it.type }.distinct().firstOrNull { site.availableTypes.indexOf(it) < 0 }?.let { throw be(ResourceNotExist("sourceTagType", it)) }
+
+        val dbTags = tags.groupBy ({ it.type }) { it.code }.flatMap { (type, codes) -> data.db.sequenceOf(SourceTags).filter { (it.site eq sourceSite) and (it.type eq type) and (it.code inList codes) }.toList() }
         val dbTagMap = dbTags.associateBy { Pair(it.type, it.code.toAlphabetLowercase()) }
         val tagMap = tags.associateBy { Pair(it.type, it.code.toAlphabetLowercase()) }
 
         //挑选出目前在数据库里没有的tag
-        val minus = tagMap.keys - dbTagMap.keys
-        if(minus.isNotEmpty()) {
-            //TODO 校验type
+        val toBeAdd = tagMap.keys - dbTagMap.keys
+        if(toBeAdd.isNotEmpty()) {
             data.db.batchInsert(SourceTags) {
-                for (key in minus) {
+                for (key in toBeAdd) {
                     val tag = tagMap[key]!!
                     item {
                         set(it.site, sourceSite)
                         set(it.code, tag.code)
-                        set(it.name, tag.name.unwrapOr { key.second })
+                        set(it.name, tag.name.unwrapOr { tag.code })
                         set(it.otherName, tag.otherName.unwrapOrNull())
                         set(it.type, tag.type)
                     }
@@ -81,7 +82,7 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
         }
 
         //挑选出在数据库里有，但是发生了变化的tag
-        val common = tagMap.keys.intersect(dbTagMap.keys).filter { key ->
+        val toBeModify = tagMap.keys.intersect(dbTagMap.keys).filter { key ->
             val form = tagMap[key]!!
             if(form.otherName.isPresent || form.name.isPresent) {
                 val dto = dbTagMap[key]!!.run { SourceTagDto(code, type, name, otherName) }
@@ -90,8 +91,8 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
                 false
             }
         }
-        if(common.isNotEmpty()) {
-            for (name in common) {
+        if(toBeModify.isNotEmpty()) {
+            for (name in toBeModify) {
                 val tag = tagMap[name]!!
                 val dbTag = dbTagMap[name]!!
                 data.db.update(SourceTags) {
@@ -102,8 +103,8 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
             }
         }
 
-        minus.forEach { bus.emit(SourceTagUpdated(sourceSite, it.first, it.second)) }
-        common.forEach { bus.emit(SourceTagUpdated(sourceSite, it.first, it.second)) }
+        toBeAdd.forEach { bus.emit(SourceTagUpdated(sourceSite, it.first, it.second)) }
+        toBeModify.forEach { bus.emit(SourceTagUpdated(sourceSite, it.first, it.second)) }
 
         return tags.groupBy ({ it.type }) { it.code }.flatMap { (type, codes) ->
             data.db.from(SourceTags).select(SourceTags.id)

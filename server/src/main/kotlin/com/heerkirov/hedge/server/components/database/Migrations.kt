@@ -18,8 +18,8 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
      * 向database应用resources资源文件中的sql文件。
      */
     private fun Database.useSQLResource(version: Version): Database {
-        useConnection { conn ->
-            conn.createStatement().use { stat ->
+        transaction { t ->
+            t.connection.createStatement().use { stat ->
                 Resources.getResourceAsText("migrations/v$version.sql")
                     .let { SqlDelimiter.splitByDelimiter(it) }
                     .forEach { stat.execute(it) }
@@ -46,8 +46,8 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         val offsetMills = now.atZone(ZoneId.systemDefault()).withZoneSameLocal(ZoneId.of("UTC")).toInstant().toEpochMilli() - now.toEpochMilli()
         if(offsetMills != 0L) {
             val offset = "($offsetMills)"
-            db.useConnection { conn ->
-                conn.createStatement().use { stat ->
+            db.transaction { t ->
+                t.connection.createStatement().use { stat ->
                     stat.execute("update illust set create_time = create_time + $offset, update_time = update_time + $offset")
                     stat.execute("update book set create_time = create_time + $offset, update_time = update_time + $offset")
                     stat.execute("update folder set create_time = create_time + $offset, update_time = update_time + $offset")

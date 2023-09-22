@@ -152,7 +152,7 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
                 }
             }
 
-            val newSite = SourceOption.Site(form.name, form.title, form.partMode, form.availableAdditionalInfo, form.sourceLinkGenerateRules)
+            val newSite = SourceOption.Site(form.name, form.title, form.partMode, form.availableAdditionalInfo, form.sourceLinkGenerateRules, form.availableTypes)
 
             val ordinal = form.ordinal?.let {
                 when {
@@ -185,6 +185,7 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
 
             form.title.alsoOpt { site.title = it }
             form.sourceLinkGenerateRules.alsoOpt { site.sourceLinkGenerateRules = it }
+            form.availableTypes.alsoOpt { site.availableTypes = it }
             form.availableAdditionalInfo.alsoOpt {
                 for(metadata in it) {
                     if(!checkVariableName(metadata.field)) {
@@ -291,7 +292,8 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
                         form.title.unwrapOr { cur.title },
                         cur.partMode,
                         form.availableAdditionalInfo.unwrapOr { cur.availableAdditionalInfo },
-                        form.sourceLinkGenerateRules.unwrapOr { cur.sourceLinkGenerateRules }
+                        form.sourceLinkGenerateRules.unwrapOr { cur.sourceLinkGenerateRules },
+                        form.availableTypes.unwrapOr { cur.availableTypes }
                     ))
                 }else{
                     source.sites.add(SourceOption.Site(
@@ -299,7 +301,8 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
                         form.title.value,
                         form.partMode.unwrapOr { SourceOption.SitePartMode.NO },
                         form.availableAdditionalInfo.unwrapOr { emptyList() },
-                        form.sourceLinkGenerateRules.unwrapOr { emptyList() }
+                        form.sourceLinkGenerateRules.unwrapOr { emptyList() },
+                        form.availableTypes.unwrapOr { emptyList() }
                     ))
                 }
             }

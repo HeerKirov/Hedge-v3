@@ -116,7 +116,8 @@ data class SourceOption(
                     var title: String,
                     val partMode: SitePartMode,
                     var availableAdditionalInfo: List<AvailableAdditionalInfo>,
-                    var sourceLinkGenerateRules: List<String>)
+                    var sourceLinkGenerateRules: List<String>,
+                    var availableTypes: List<String>)
 
     data class AvailableAdditionalInfo(val field: String, val label: String)
 

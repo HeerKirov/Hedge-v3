@@ -73,6 +73,7 @@ class SourceDataService(private val appdata: AppDataManager, private val data: D
 
     /**
      * @throws ResourceNotExist ("site", string) 给出的site不存在
+     * @throws ResourceNotExist ("additionalInfo", field) 存在不合法的字段
      * @throws AlreadyExists 此对象已存在
      */
     fun create(form: SourceDataCreateForm) {
@@ -89,6 +90,7 @@ class SourceDataService(private val appdata: AppDataManager, private val data: D
     /**
      * 对source image进行声明式的批量操作。
      * @throws ResourceNotExist ("site", string) 给出的site不存在
+     * @throws ResourceNotExist ("additionalInfo", field) 存在不合法的字段
      */
     fun bulk(bulks: List<SourceDataCreateForm>): BulkResult<SourceDataIdentity> {
         return bulks.collectBulkResult({ SourceDataIdentity(it.sourceSite, it.sourceId) }) { form ->
@@ -157,6 +159,7 @@ class SourceDataService(private val appdata: AppDataManager, private val data: D
     /**
      * @throws NotFound 请求对象不存在
      * @throws ResourceNotExist ("site", string) 给出的site不存在
+     * @throws ResourceNotExist ("additionalInfo", field) 存在不合法的字段
      */
     fun update(sourceSite: String, sourceId: Long, form: SourceDataUpdateForm) {
         data.db.transaction {
