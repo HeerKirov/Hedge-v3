@@ -49,40 +49,68 @@ const deleteItem = () => {
     }
 }
 
+const updateCreateItem = (item: SourceTag) => {
+    if(selected.value.mode === "create") {
+        emit("update:value", [...props.value, item])
+    }
+}
+
 const updateEditItem = (item: SourceTag) => {
     if(selected.value.mode === "edit") {
         emit("update:value", [...props.value.slice(0, selected.value.index), item, ...props.value.slice(selected.value.index + 1)])
     }
 }
 
-const setCode = (code: string) => {
+const setCode = (newCode: string) => {
+    const code = newCode.trim()
     if(selected.value.mode === "create") {
-        if(code) {
+        if(code && form.value?.type) {
             //tag editor的创建逻辑是隐性实现的。
             //当在新建模式填充了code后，一旦失去焦点(触发setCode)，就会立刻将当前create表单创建为一个新的项并存储。
             //code为空时，则暂时搁置创建。
-            if(props.value.find(t => t.code === code)) {
-                message.showOkMessage("prompt", "该标识编码已存在。", "在同一列表中创建了重名的标签。")
+            if(props.value.find(t => t.code === code && t.type === form.value!.type)) {
+                message.showOkMessage("prompt", "该标签已存在。", "在同一列表中创建了重名的标签。")
                 return
             }
             form.value!.code = code
             selected.value = {mode: "edit", index: props.value.length}
-            emit("update:value", [...props.value, form.value!])
+            updateCreateItem(form.value!)
+        }else{
+            form.value!.code = code
         }
     }else if(selected.value.mode === "edit") {
         const index = selected.value.index
-        if(props.value.find((t, i) => t.code === code && index === i)) {
-            message.showOkMessage("prompt", "该标识编码已存在。", "在同一列表中创建了重名的标签。")
+        if(props.value.find((t, i) => t.code === code && t.type === form.value!.type && index !== i)) {
+            message.showOkMessage("prompt", "该标签已存在。", "在同一列表中创建了重名的标签。")
             return
         }
         updateEditItem({...form.value!, code})
     }
 }
 
-const setType = (type: string) => {
+const setType = (newType: string) => {
+    const type = newType.trim()
     if(selected.value.mode === "create") {
-        form.value!.type = type
+        if(type && form.value?.code) {
+            //tag editor的创建逻辑是隐性实现的。
+            //当在新建模式填充了type后，一旦失去焦点(触发setType)，就会立刻将当前create表单创建为一个新的项并存储。
+            //type为空时，则暂时搁置创建。
+            if(props.value.find(t => t.code === form.value!.code && t.type === type)) {
+                message.showOkMessage("prompt", "该标签已存在。", "在同一列表中创建了重名的标签。")
+                return
+            }
+            form.value!.type = type
+            selected.value = {mode: "edit", index: props.value.length}
+            updateCreateItem(form.value!)
+        }else{
+            form.value!.type = type
+        }
     }else if(selected.value.mode === "edit") {
+        const index = selected.value.index
+        if(props.value.find((t, i) => t.code === form.value!.code && t.type === type && index !== i)) {
+            message.showOkMessage("prompt", "该标签已存在。", "在同一列表中创建了重名的标签。")
+            return
+        }
         updateEditItem({...form.value!, type})
     }
 }
@@ -107,27 +135,27 @@ const setOtherName = (otherName: string) => {
 
 <template>
     <Flex :class="$style.root">
-        <FlexItem :width="100">
+        <FlexItem :width="70">
             <Group class="p-1">
                 <SourceTagElement v-for="(tag, idx) in value" :value="tag" clickable @click="edit(idx)"/>
                 <Tag color="success" icon="plus" clickable @click="create">新标签</Tag>
             </Group>
         </FlexItem>
-        <FlexItem v-if="form !== null" :width="60">
+        <FlexItem v-if="form !== null" :width="30">
             <Block class="p-2">
                 <Flex class="mb-1" :spacing="1">
-                    <FlexItem :width="60">
-                        <Input size="small" placeholder="标识编码" :value="form.code" @update:value="setCode" auto-focus/>
-                    </FlexItem>
-                    <FlexItem :width="40">
+                    <FlexItem :width="100">
                         <Input size="small" placeholder="分类" :value="form.type" @update:value="setType"/>
                     </FlexItem>
                     <FlexItem v-if="selected.mode === 'edit'" :shrink="0">
                         <Button size="small" square mode="light" type="danger" icon="trash" @click="deleteItem"/>
                     </FlexItem>
                 </Flex>
-                <Input class="mb-1" size="small" width="fullwidth" placeholder="显示名称" :value="form.name" @update:value="setName"/>
-                <Input class="mb-1" size="small" width="fullwidth" placeholder="别名" :value="form.otherName" @update:value="setOtherName"/>
+                <Input class="mb-1" width="fullwidth" size="small" placeholder="标识编码" :value="form.code" @update:value="setCode" auto-focus/>
+                <Flex class="mb-1" :spacing="1">
+                    <Input size="small" width="fullwidth" placeholder="显示名称" :value="form.name" @update:value="setName"/>
+                    <Input size="small" width="fullwidth" placeholder="别名" :value="form.otherName" @update:value="setOtherName"/>
+                </Flex>
             </Block>
         </FlexItem>
     </Flex>

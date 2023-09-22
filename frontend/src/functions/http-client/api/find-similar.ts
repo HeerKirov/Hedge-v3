@@ -1,6 +1,6 @@
 import { HttpInstance, Response } from "../instance"
 import { NotFound, ResourceNotExist } from "../exceptions"
-import { IdResponse, LimitAndOffsetFilter, ListResult, NullableFilePath, OrderList } from "./all"
+import { IdResponse, LimitAndOffsetFilter, ListResult, NullableFilePath, OrderList, SourceTagPath } from "./all"
 import { ImagePropsCloneForm } from "./illust"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 
@@ -154,8 +154,7 @@ export type TaskSelector = {
     authorIds: number[]
 } | {
     type: "sourceTag"
-    sourceSite: string
-    sourceTags: string[]
+    sourceTags: SourceTagPath[]
 }
 
 export interface TaskConfig {

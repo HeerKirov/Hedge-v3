@@ -162,7 +162,7 @@ export interface SourcePreference {
     title: string | null
     description: string | null
     additionalInfo: {[field: string]: string} | null
-    tags: {code: string, name: string | null, otherName: string | null, type: string | null}[] | null
+    tags: {code: string, type: string, name: string | null, otherName: string | null}[] | null
     books: {code: string, title: string | null, otherTitle: string | null}[] | null
     relations: number[] | null
 }

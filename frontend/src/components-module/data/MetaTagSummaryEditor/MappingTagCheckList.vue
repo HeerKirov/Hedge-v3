@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue"
 import { Button } from "@/components/universal"
-import { BottomLayout } from "@/components/layout"
 import { MetaTagTypes, MetaTagTypeValue, MetaTagValues } from "@/functions/http-client/api/all"
 import { BatchQueryResult, SourceMappingTargetDetail } from "@/functions/http-client/api/source-tag-mapping"
 import MappingTagCheckListItem from "./MappingTagCheckListItem.vue"
@@ -15,7 +14,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: "add", value: MetaTagTypeValue[]): void
-    (e: "update:sourceTagMapping", sourceTagCode: string, items: SourceMappingTargetDetail[]): void
+    (e: "update:sourceTagMapping", sourceTagType: string, sourceTagCode: string, items: SourceMappingTargetDetail[]): void
 }>()
 
 const selected = ref<Record<string, boolean>>({})
@@ -25,25 +24,26 @@ const selectAll = () => {
 }
 
 const selectNone = () => {
-    for (const { code } of props.mappings) {
-        selected.value[code] = false
+    for (const { type, code } of props.mappings) {
+        selected.value[`${type}/${code}`] = false
     }
 }
 
 const selectReverse = () => {
-    for (const { code } of props.mappings) {
-        if(selected.value[code] as boolean | undefined === false) {
-            delete selected.value[code]
+    for (const { type, code } of props.mappings) {
+        const key = `${type}/${code}`
+        if(selected.value[key] as boolean | undefined === false) {
+            delete selected.value[key]
         }else{
-            selected.value[code] = false
+            selected.value[key] = false
         }
     }
 }
 
 const addAll = () => {
     const addList: MetaTagTypeValue[] = []
-    for (const { code, mappings } of props.mappings) {
-        if(selected.value[code] as boolean | undefined !== false) {
+    for (const { type, code, mappings } of props.mappings) {
+        if(selected.value[`${type}/${code}`] as boolean | undefined !== false) {
             for (const meta of mappings) {
                 if(meta.metaType === "AUTHOR") {
                     if(props.authorFilter) {
@@ -71,8 +71,8 @@ const addOne = (type: MetaTagTypes, value: MetaTagValues) => {
     emit("add", [{type, value} as MetaTagTypeValue])
 }
 
-const updateMappings = (sourceTagCode: string, mappings: SourceMappingTargetDetail[]) => {
-    emit("update:sourceTagMapping", sourceTagCode, mappings)
+const updateMappings = (sourceTagType: string, sourceTagCode: string, mappings: SourceMappingTargetDetail[]) => {
+    emit("update:sourceTagMapping", sourceTagType, sourceTagCode, mappings)
 }
 
 </script>
@@ -81,15 +81,15 @@ const updateMappings = (sourceTagCode: string, mappings: SourceMappingTargetDeta
     <div class="p-4 is-overflow-y-auto h-100">
         <table>
             <tbody>
-                <MappingTagCheckListItem v-for="item in mappings" :key="item.code"
+                <MappingTagCheckListItem v-for="item in mappings" :key="`${item.type}/${item.code}`"
                                          :author-filter="authorFilter"
                                          :topic-filter="topicFilter"
                                          :tag-filter="tagFilter"
                                          :mappings="item.mappings"
                                          :source-tag="item.sourceTag"
-                                         :selected="selected[item.code] ?? true"
-                                         @update:selected="selected[item.code] = $event"
-                                         @update:mappings="updateMappings(item.code, $event)"
+                                         :selected="selected[`${item.type}/${item.code}`] ?? true"
+                                         @update:selected="selected[`${item.type}/${item.code}`] = $event"
+                                         @update:mappings="updateMappings(item.type, item.code, $event)"
                                          @dblclick:one="addOne"/>
             </tbody>
         </table>

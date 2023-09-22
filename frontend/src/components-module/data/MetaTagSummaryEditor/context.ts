@@ -630,7 +630,7 @@ export function useSourceDeriveData() {
             derives.value = []
             return
         }
-        const res = await fetchSourceTagMappingQuery({site: sourceDataRes.source.sourceSite, tags: sourceDataRes.tags.map(i => i.code)})
+        const res = await fetchSourceTagMappingQuery(sourceDataRes.tags.map(i => ({sourceSite: sourceDataRes.source.sourceSite, sourceTagType: i.type, sourceTagCode: i.code})))
         if(res === undefined) {
             derives.value = []
             return
@@ -650,10 +650,10 @@ export function useSourceDeriveData() {
         }
     }, {immediate: true})
 
-    const updateSourceTagMapping = (tagCode: string, items: SourceMappingTargetDetail[]) => {
+    const updateSourceTagMapping = (tagType: string, tagCode: string, items: SourceMappingTargetDetail[]) => {
         if(sourceSite.value !== null) {
             const itemIds = items.map(item => ({metaType: item.metaType, metaId: item.metaTag.id}))
-            fetchSourceTagMappingUpdate({sourceSite: sourceSite.value, sourceTag: tagCode}, itemIds).finally()
+            fetchSourceTagMappingUpdate({sourceSite: sourceSite.value, sourceTagType: tagType, sourceTagCode: tagCode}, itemIds).finally()
         }
     }
 

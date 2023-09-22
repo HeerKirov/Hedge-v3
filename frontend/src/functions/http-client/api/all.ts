@@ -62,6 +62,12 @@ export interface SourceDataPath {
     sourcePartName: string | null
 }
 
+export interface SourceTagPath {
+    sourceSite: string
+    sourceTagType: string
+    sourceTagCode: string
+}
+
 type OrderPrefix = "" | "+" | "-"
 
 type OrderListItem<T extends string> = `${OrderPrefix}${T}`

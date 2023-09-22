@@ -12,7 +12,7 @@ defineProps<{
 
 <template>
     <AnnotationElement v-if="value.type === 'annotation'" :value="{id: value.id, name: value.name}"/>
-    <SourceTagElement v-else-if="value.type === 'source-tag'" :value="{code: '', name: value.name, otherName: null, type: null}"/>
+    <SourceTagElement v-else-if="value.type === 'source-tag'" :value="{code: '', name: value.name, otherName: null, type: ''}"/>
     <Tag v-else-if="value.type === undefined">{{value.value}}</Tag>
     <SimpleMetaTagElement v-else :type="value.type" :value="value as (SimpleAuthor | SimpleTag | SimpleTopic)"/>
 </template>

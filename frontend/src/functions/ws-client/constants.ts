@@ -102,9 +102,9 @@ export interface SourceDataDeleted extends BaseWsEvent<"entity/source-data/delet
 
 export interface SourceBookUpdated extends BaseWsEvent<"entity/source-book/updated"> { site: string, sourceBookCode: string }
 
-export interface SourceTagUpdated extends BaseWsEvent<"entity/source-tag/updated"> { site: string, sourceTagCode: string }
+export interface SourceTagUpdated extends BaseWsEvent<"entity/source-tag/updated"> { site: string, sourceTagType: string, sourceTagCode: string }
 
-export interface SourceTagMappingUpdated extends BaseWsEvent<"entity/source-tag-mapping/updated"> { site: string, sourceTagCode: string }
+export interface SourceTagMappingUpdated extends BaseWsEvent<"entity/source-tag-mapping/updated"> { site: string, sourceTagType: string, sourceTagCode: string }
 
 export interface FindSimilarResultCreated extends BaseWsEvent<"entity/find-similar-result/created"> { count: number }
 

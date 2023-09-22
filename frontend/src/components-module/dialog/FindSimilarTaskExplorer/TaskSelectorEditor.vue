@@ -153,7 +153,7 @@ const updateSelectorType = (v: TaskSelector["type"]) => {
     }else if(v === "author") {
         emit("update:selector", {type: "author", authorIds: []})
     }else if(v === "sourceTag") {
-        emit("update:selector", {type: "sourceTag", sourceSite: sites.value?.length ? sites.value[0].name : "", sourceTags: []})
+        emit("update:selector", {type: "sourceTag", sourceTags: []})
     }
 }
 
@@ -177,21 +177,27 @@ const updatePartitionTime = (v: LocalDate) => {
     emit("update:selector", {type: "partitionTime", partitionTime: v})
 }
 
-const updateSourceSite = (v: string | null) => {
+const updateSourceSite = (idx: number, v: string | null) => {
     if(v !== null && props.selector.type === "sourceTag") {
-        emit("update:selector", {type: "sourceTag", sourceSite: v, sourceTags: props.selector.sourceTags})
+        emit("update:selector", {type: "sourceTag", sourceTags: [...props.selector.sourceTags.slice(0, idx), {...props.selector.sourceTags[idx], sourceSite: v}, ...props.selector.sourceTags.slice(idx + 1)]})
     }
 }
 
-const updateSourceTags = (idx: number, v: string) => {
+const updateSourceTagType = (idx: number, v: string | null) => {
+    if(v !== null && props.selector.type === "sourceTag") {
+        emit("update:selector", {type: "sourceTag", sourceTags: [...props.selector.sourceTags.slice(0, idx), {...props.selector.sourceTags[idx], sourceTagType: v}, ...props.selector.sourceTags.slice(idx + 1)]})
+    }
+}
+
+const updateSourceTagCode = (idx: number, v: string) => {
     if(props.selector.type === "sourceTag") {
-        emit("update:selector", {type: "sourceTag", sourceSite: props.selector.sourceSite, sourceTags: [...props.selector.sourceTags.slice(0, idx), v, ...props.selector.sourceTags.slice(idx + 1)]})
+        emit("update:selector", {type: "sourceTag", sourceTags: [...props.selector.sourceTags.slice(0, idx), {...props.selector.sourceTags[idx], sourceTagCode: v}, ...props.selector.sourceTags.slice(idx + 1)]})
     }
 }
 
 const addSourceTags = () => {
     if(props.selector.type === "sourceTag") {
-        emit("update:selector", {type: "sourceTag", sourceSite: props.selector.sourceSite, sourceTags: [...props.selector.sourceTags, ""]})
+        emit("update:selector", {type: "sourceTag", sourceTags: [...props.selector.sourceTags, {sourceSite: sites.value?.length ? sites.value[0].name : "", sourceTagType: "", sourceTagCode: ""}]})
     }
 }
 
@@ -250,10 +256,11 @@ const selectorItems: {label: string, value: TaskSelector["type"]}[] = [
         <RelatedAuthorEditor mode="embedded" :value="loadingCache.authors" @update:value="updateAuthors"/>
     </div>
     <div v-if="props.selector.type === 'sourceTag'">
-        <SourceSiteSelectBox :value="props.selector.sourceSite" @update:value="updateSourceSite"/>
-        <Group class="mt-1">
-            <Input v-for="(t, idx) in props.selector.sourceTags" placeholder="标签名称" width="half" size="small" :value="t" @update:value="updateSourceTags(idx, $event)"/>
-            <Button square size="small" mode="filled" type="primary" icon="plus" @click="addSourceTags"/>
+        <Group v-for="(s, idx) in props.selector.sourceTags" class="mt-1">
+            <SourceSiteSelectBox size="small" :value="s.sourceSite" @update:value="updateSourceSite(idx, $event)"/>
+            <Input placeholder="标签类型" width="half" size="small" :value="s.sourceTagType" @update:value="updateSourceTagType(idx, $event)"/>
+            <Input placeholder="标签名称" width="half" size="small" :value="s.sourceTagCode" @update:value="updateSourceTagCode(idx, $event)"/>
         </Group>
+        <Button square size="small" mode="filled" type="primary" icon="plus" @click="addSourceTags"/>
     </div>
 </template>

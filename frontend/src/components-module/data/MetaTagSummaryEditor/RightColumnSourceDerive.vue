@@ -3,7 +3,7 @@ import { useEditorContext, useSourceDeriveData } from "./context"
 import MappingTagCheckList from "./MappingTagCheckList.vue"
 
 const { typeFilter, form: { addAll } } = useEditorContext()
-const { sourceSite, derives, updateSourceTagMapping } = useSourceDeriveData()
+const { derives, updateSourceTagMapping } = useSourceDeriveData()
 
 </script>
 

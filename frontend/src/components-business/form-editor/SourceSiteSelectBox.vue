@@ -5,6 +5,7 @@ import { useSettingSite } from "@/services/setting"
 
 defineProps<{
     value: string | null
+    size?: "small" | "std" | "large"
 }>()
 
 const emit = defineEmits<{
@@ -28,5 +29,5 @@ const updateValue = (value: string | undefined) => {
 </script>
 
 <template>
-    <Select :items="items" :value="value || '__UNDEFINED'" @update:value="updateValue"/>
+    <Select :items="items" :size="size" :value="value || '__UNDEFINED'" @update:value="updateValue"/>
 </template>

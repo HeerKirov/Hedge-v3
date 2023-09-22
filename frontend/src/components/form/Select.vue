@@ -41,11 +41,9 @@ function watchProps() {
 </script>
 
 <template>
-    <div :class="[$style.select, $style[`is-size-${size ?? 'std'}`]]">
-        <select ref="selectDom" @change="changed">
-            <option v-for="item in items" :key="`${item.value}`" :value="item.value" :selected="item.value === value">{{item.label}}</option>
-        </select>
-    </div>
+    <select ref="selectDom" :class="[$style.select, $style[`is-size-${size ?? 'std'}`]]" @change="changed">
+        <option v-for="item in items" :key="`${item.value}`" :value="item.value" :selected="item.value === value">{{item.label}}</option>
+    </select>
 </template>
 
 <style module lang="sass">
@@ -54,18 +52,16 @@ function watchProps() {
 
 .select
     display: inline-block
-    position: relative
     vertical-align: middle
-    select
-        display: block
-        outline: none
-        line-height: 1.2
-        height: $element-height-std
-        padding: 0 0.75em 0 0.75em
-        border: 1px solid $light-mode-border-color
-        border-radius: $radius-size-std
-        @media (prefers-color-scheme: dark)
-            border-color: $dark-mode-border-color
+    display: block
+    outline: none
+    line-height: 1.2
+    height: $element-height-std
+    padding: 0 0.75em 0 0.75em
+    border: 1px solid $light-mode-border-color
+    border-radius: $radius-size-std
+    @media (prefers-color-scheme: dark)
+        border-color: $dark-mode-border-color
 
 .is-size-small
     font-size: $font-size-small
