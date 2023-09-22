@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.model
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.heerkirov.hedge.server.dto.res.SourceTagPath
 import com.heerkirov.hedge.server.enums.SimilarityType
 import com.heerkirov.hedge.server.enums.SourceMarkType
 import com.heerkirov.hedge.server.utils.composition.Composition
@@ -44,7 +45,7 @@ data class FindSimilarTask(val id: Int,
 
     data class TaskSelectorOfAuthor(val authorIds: List<Int>) : TaskSelector
 
-    data class TaskSelectorOfSourceTag(val sourceSite: String, val sourceTags: List<String>) : TaskSelector
+    data class TaskSelectorOfSourceTag(val sourceTags: List<SourceTagPath>) : TaskSelector
 
     /**
      * @param findBySourceIdentity 根据source identity是否相等做判定。

@@ -16,7 +16,7 @@ data class SourceDataUpdateForm(val title: Opt<String?>, val description: Opt<St
 
 data class SourceDataAdditionalInfoForm(val field: String, val value: String)
 
-data class SourceTagForm(@NotBlank val code: String, @NotBlank val name: Opt<String>, val otherName: Opt<String?>, val type: Opt<String?>)
+data class SourceTagForm(@NotBlank val code: String, @NotBlank val type: String, @NotBlank val name: Opt<String>, val otherName: Opt<String?>)
 
 data class SourceBookForm(@NotBlank val code: String, @NotBlank val title: Opt<String>, val otherTitle: Opt<String?>)
 

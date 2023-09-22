@@ -4,7 +4,6 @@ import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
-import com.heerkirov.hedge.server.dto.form.SourceMappingBatchQueryForm
 import com.heerkirov.hedge.server.dto.form.MappingSourceTagForm
 import com.heerkirov.hedge.server.dto.form.SourceTagForm
 import com.heerkirov.hedge.server.dto.res.*
@@ -13,43 +12,42 @@ import com.heerkirov.hedge.server.enums.TagAddressType
 import com.heerkirov.hedge.server.events.SourceTagMappingUpdated
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.exceptions.NotFound
+import com.heerkirov.hedge.server.exceptions.ParamRequired
 import com.heerkirov.hedge.server.exceptions.be
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.ktorm.schema.Column
 
 class SourceMappingManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus, private val sourceTagManager: SourceTagManager) {
-    fun batchQuery(form: SourceMappingBatchQueryForm): List<SourceMappingBatchQueryResult> {
+    fun batchQuery(tagPaths: List<SourceTagPath>): List<SourceMappingBatchQueryResult> {
+        val sourceTags = sourceTagManager.getSourceTagIdByPaths(tagPaths)
+
         val groups = data.db.from(SourceTagMappings)
             .innerJoin(SourceTags, (SourceTags.site eq SourceTagMappings.sourceSite) and (SourceTags.id eq SourceTagMappings.sourceTagId))
-            .select(SourceTags.code, SourceTagMappings.targetMetaType, SourceTagMappings.targetMetaId)
-            .where { (SourceTags.site eq form.site) and (SourceTags.code inList form.tags) }
-            .map { row ->
+            .select(SourceTags.site, SourceTags.type, SourceTags.code, SourceTagMappings.targetMetaType, SourceTagMappings.targetMetaId)
+            .where { SourceTagMappings.sourceTagId inList sourceTags.values.map { it.id } }
+            .map {
                 Pair(
-                    row[SourceTags.code]!!,
-                    SourceMappingTargetItem(row[SourceTagMappings.targetMetaType]!!, row[SourceTagMappings.targetMetaId]!!)
+                    SourceTagPath(it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.code]!!),
+                    SourceMappingTargetItem(it[SourceTagMappings.targetMetaType]!!, it[SourceTagMappings.targetMetaId]!!)
                 )
-            }
-            .groupBy { (tagCode, _) -> tagCode }
-            .mapValues { it.value.map { (_, v) -> v } }
+            }.groupBy({ it.first }) { it.second }
 
         val allMappings = groups.flatMap { (_, mappings) -> mappings }.let(::mapTargetItemToDetail)
 
-        val sourceTags = data.db.sequenceOf(SourceTags).filter { (it.site eq form.site) and (it.code inList form.tags) }.associate { it.code to it }
-
-        return form.tags.map { tagCode ->
-            val mappingDetails = groups[tagCode]?.mapNotNull { allMappings[it] } ?: emptyList()
-            val sourceTag = sourceTags[tagCode]!!
-            val sourceTagDto = SourceTagDto(sourceTag.code, sourceTag.name, sourceTag.otherName, sourceTag.type)
-            SourceMappingBatchQueryResult(tagCode, sourceTagDto, mappingDetails)
+        return tagPaths.map { tagPath ->
+            val mappingDetails = groups[tagPath]?.mapNotNull { allMappings[it] } ?: emptyList()
+            val sourceTag = sourceTags[tagPath]!!
+            val sourceTagDto = SourceTagDto(sourceTag.code, sourceTag.type, sourceTag.name, sourceTag.otherName)
+            SourceMappingBatchQueryResult(tagPath.sourceSite, tagPath.sourceTagType, tagPath.sourceTagCode, sourceTagDto, mappingDetails)
         }
     }
 
-    fun query(sourceSite: String, tagCode: String): List<SourceMappingTargetItemDetail> {
+    fun query(sourceSite: String, tagType: String, tagCode: String): List<SourceMappingTargetItemDetail> {
         return data.db.from(SourceTagMappings)
             .innerJoin(SourceTags, (SourceTags.site eq SourceTagMappings.sourceSite) and (SourceTags.id eq SourceTagMappings.sourceTagId))
             .select(SourceTagMappings.targetMetaType, SourceTagMappings.targetMetaId)
-            .where { (SourceTags.site eq sourceSite) and (SourceTags.code eq tagCode) }
+            .where { (SourceTags.site eq sourceSite) and (SourceTags.type eq tagType) and (SourceTags.code eq tagCode) }
             .map { row -> SourceMappingTargetItem(row[SourceTagMappings.targetMetaType]!!, row[SourceTagMappings.targetMetaId]!!) }
             .let { mapTargetItemToDetail(it).values.toList() }
     }
@@ -59,7 +57,7 @@ class SourceMappingManager(private val appdata: AppDataManager, private val data
             .innerJoin(SourceTags, (SourceTags.site eq SourceTagMappings.sourceSite) and (SourceTags.id eq SourceTagMappings.sourceTagId))
             .select(SourceTags.code, SourceTags.name, SourceTags.otherName, SourceTags.type, SourceTags.site)
             .where { SourceTagMappings.targetMetaType eq metaType and (SourceTagMappings.targetMetaId eq metaId) }
-            .map { MappingSourceTagDto(it[SourceTags.site]!!, it[SourceTags.code]!!, it[SourceTags.name]!!, it[SourceTags.otherName], it[SourceTags.type]) }
+            .map { MappingSourceTagDto(it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.code]!!, it[SourceTags.name]!!, it[SourceTags.otherName]) }
     }
 
     /**
@@ -67,10 +65,13 @@ class SourceMappingManager(private val appdata: AppDataManager, private val data
      * @throws ResourceNotExist ("site", string) 给出的site不存在
      * @throws ResourceNotExist ("authors" | "topics" | "tags", number[]) 给出的meta tag不存在
      */
-    fun update(sourceSite: String, tagCode: String, mappings: List<SourceMappingTargetItem>) {
+    fun update(sourceSite: String, tagType: String, tagCode: String, mappings: List<SourceMappingTargetItem>) {
+        if(tagType.isBlank()) throw be(ParamRequired("tagType"))
+        if(tagCode.isBlank()) throw be(ParamRequired("tagCode"))
         sourceTagManager.checkSourceSite(sourceSite)
+
         //查出source tag
-        val sourceTag = sourceTagManager.getOrCreateSourceTag(sourceSite, tagCode)
+        val sourceTag = sourceTagManager.getOrCreateSourceTag(sourceSite, tagType, tagCode)
 
         //首先查出所有已存在的mapping
         val old = data.db.sequenceOf(SourceTagMappings)
@@ -102,7 +103,7 @@ class SourceMappingManager(private val appdata: AppDataManager, private val data
         if(deleted.isNotEmpty()) data.db.delete(SourceTagMappings) { it.id inList deleted }
 
         if(added.isNotEmpty() || deleted.isNotEmpty()) {
-            bus.emit(SourceTagMappingUpdated(sourceSite, tagCode))
+            bus.emit(SourceTagMappingUpdated(sourceSite, tagType, tagCode))
         }
     }
 
@@ -124,7 +125,7 @@ class SourceMappingManager(private val appdata: AppDataManager, private val data
         mappingGroups.forEach { (site, _) -> sourceTagManager.checkSourceSite(site) }
 
         val current = mappingGroups.flatMap { (source, row) ->
-            val sourceTags = row.map { SourceTagForm(it.code, it.name, it.otherName, it.type) }
+            val sourceTags = row.map { SourceTagForm(it.code, it.type, it.name, it.otherName) }
             sourceTagManager.getAndUpsertSourceTags(source, sourceTags).map { source to it }
         }.toSet()
 
@@ -154,7 +155,7 @@ class SourceMappingManager(private val appdata: AppDataManager, private val data
             val effectedSourceTagIds = added.map { (_, sourceTagId) -> sourceTagId } + deleted.map { (_, sourceTagId) -> sourceTagId }
             val effectedSourceTags = data.db.sequenceOf(SourceTags).filter { it.id inList effectedSourceTagIds }
             for (effectedSourceTag in effectedSourceTags) {
-                bus.emit(SourceTagMappingUpdated(effectedSourceTag.site, effectedSourceTag.code))
+                bus.emit(SourceTagMappingUpdated(effectedSourceTag.site, effectedSourceTag.type, effectedSourceTag.code))
             }
         }
     }

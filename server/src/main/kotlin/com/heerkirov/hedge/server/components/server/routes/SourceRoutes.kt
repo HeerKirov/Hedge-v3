@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.filter.*
 import com.heerkirov.hedge.server.dto.res.SourceDataPath
 import com.heerkirov.hedge.server.dto.res.SourceMappingTargetItem
+import com.heerkirov.hedge.server.dto.res.SourceTagPath
 import com.heerkirov.hedge.server.functions.service.SourceDataService
 import com.heerkirov.hedge.server.functions.service.SourceMappingService
 import com.heerkirov.hedge.server.functions.service.SourceMarkService
@@ -40,7 +41,7 @@ class SourceRoutes(private val sourceDataService: SourceDataService,
                 }
                 path("source-tag-mappings") {
                     post("batch-query", sourceTagMappings::batchQuery)
-                    path("{source_site}/{source_tag_code}") {
+                    path("{source_site}/{source_tag_type}/{source_tag_code}") {
                         get(sourceTagMappings::get)
                         put(sourceTagMappings::update)
                         delete(sourceTagMappings::delete)
@@ -114,27 +115,30 @@ class SourceRoutes(private val sourceDataService: SourceDataService,
 
     private val sourceTagMappings = object : Any() {
         fun batchQuery(ctx: Context) {
-            val form = ctx.bodyAsForm<SourceMappingBatchQueryForm>()
+            val form = ctx.bodyAsListForm<SourceTagPath>()
             ctx.json(sourceMappingService.batchQuery(form))
         }
 
         fun get(ctx: Context) {
             val sourceSite = ctx.pathParamAsClass<String>("source_site").get()
+            val sourceTagType = ctx.pathParamAsClass<String>("source_tag_type").get()
             val sourceTagCode = ctx.pathParamAsClass<String>("source_tag_code").get()
-            ctx.json(sourceMappingService.query(sourceSite, sourceTagCode))
+            ctx.json(sourceMappingService.query(sourceSite, sourceTagType, sourceTagCode))
         }
 
         fun update(ctx: Context) {
             val sourceSite = ctx.pathParamAsClass<String>("source_site").get()
+            val sourceTagType = ctx.pathParamAsClass<String>("source_tag_type").get()
             val sourceTagCode = ctx.pathParamAsClass<String>("source_tag_code").get()
             val form = ctx.bodyAsListForm<SourceMappingTargetItem>()
-            sourceMappingService.update(sourceSite, sourceTagCode, form)
+            sourceMappingService.update(sourceSite, sourceTagType, sourceTagCode, form)
         }
 
         fun delete(ctx: Context) {
             val sourceSite = ctx.pathParamAsClass<String>("source_site").get()
+            val sourceTagType = ctx.pathParamAsClass<String>("source_tag_type").get()
             val sourceTagCode = ctx.pathParamAsClass<String>("source_tag_code").get()
-            sourceMappingService.delete(sourceSite, sourceTagCode)
+            sourceMappingService.delete(sourceSite, sourceTagType, sourceTagCode)
             ctx.status(204)
         }
     }

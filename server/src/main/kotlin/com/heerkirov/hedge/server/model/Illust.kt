@@ -271,7 +271,7 @@ data class ImportImage(val id: Int,
                                 val books: List<SourcePreferenceBook>? = null,
                                 val relations: List<Long>? = null)
 
-    data class SourcePreferenceTag(val code: String, val name: String?, val otherName: String?, val type: String?)
+    data class SourcePreferenceTag(val type: String, val code: String, val name: String?, val otherName: String?)
 
     data class SourcePreferenceBook(val code: String, val title: String?, val otherTitle: String?)
 

@@ -443,7 +443,7 @@ class ImportService(private val appdata: AppDataManager,
                         title = if(preference.title != null) optOf(preference.title) else undefined(),
                         description = if(preference.description != null) optOf(preference.description) else undefined(),
                         tags = if(preference.tags.isNullOrEmpty()) undefined() else optOf(preference.tags.map {
-                            SourceTagForm(it.code, if(it.name != null) optOf(it.name) else undefined(), if(it.otherName != null) optOf(it.otherName) else undefined(), if(it.type != null) optOf(it.type) else undefined())
+                            SourceTagForm(it.code, it.type, if(it.name != null) optOf(it.name) else undefined(), if(it.otherName != null) optOf(it.otherName) else undefined())
                         }),
                         books = if(preference.books.isNullOrEmpty()) undefined() else optOf(preference.books.map {
                             SourceBookForm(it.code, if(it.title != null) optOf(it.title) else undefined(), if(it.otherTitle != null) optOf(it.otherTitle) else undefined())

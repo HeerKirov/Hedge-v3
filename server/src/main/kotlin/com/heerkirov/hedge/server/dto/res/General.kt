@@ -50,3 +50,8 @@ data class NullableFilePath(val original: String, val thumbnail: String?, val sa
  * 包含来源数据定位的所有字段的通用结构。
  */
 data class SourceDataPath(val sourceSite: String, val sourceId: Long, val sourcePart: Int?, val sourcePartName: String?)
+
+/**
+ * SourceTag定位的通用结构。
+ */
+data class SourceTagPath(val sourceSite: String, val sourceTagType: String, val sourceTagCode: String)

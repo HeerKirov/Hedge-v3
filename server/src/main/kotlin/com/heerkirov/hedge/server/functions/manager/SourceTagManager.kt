@@ -6,6 +6,7 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.SourceTags
 import com.heerkirov.hedge.server.dto.form.SourceTagForm
 import com.heerkirov.hedge.server.dto.res.SourceTagDto
+import com.heerkirov.hedge.server.dto.res.SourceTagPath
 import com.heerkirov.hedge.server.events.SourceTagUpdated
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.exceptions.be
@@ -16,7 +17,6 @@ import org.ktorm.entity.filter
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
-import java.util.*
 
 class SourceTagManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus) {
     /**
@@ -31,21 +31,22 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
      * 查询目标source tag，或在它不存在时创建它，将其余属性留空。
      * 不会校验source的合法性，因为假设之前已经手动校验过了。
      */
-    fun getOrCreateSourceTag(sourceSite: String, sourceTagCode: String): SourceTag {
+    fun getOrCreateSourceTag(sourceSite: String, sourceTagType: String, sourceTagCode: String): SourceTag {
         return data.db.sequenceOf(SourceTags)
-            .firstOrNull { it.site eq sourceSite and (it.code eq sourceTagCode) }
+            .firstOrNull { (it.site eq sourceSite) and (it.type eq sourceTagType) and (it.code eq sourceTagCode) }
             ?: run {
+                //TODO 校验type
                 val id = data.db.insertAndGenerateKey(SourceTags) {
                     set(it.site, sourceSite)
+                    set(it.type, sourceTagType)
                     set(it.code, sourceTagCode)
                     set(it.name, sourceTagCode)
                     set(it.otherName, null)
-                    set(it.type, null)
                 } as Int
 
-                bus.emit(SourceTagUpdated(sourceSite, sourceTagCode))
+                bus.emit(SourceTagUpdated(sourceSite, sourceTagType, sourceTagCode))
 
-                SourceTag(id, sourceSite, sourceTagCode, sourceTagCode, null, null)
+                SourceTag(id, sourceSite, sourceTagType, sourceTagCode, sourceTagCode, null)
             }
     }
 
@@ -55,25 +56,25 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
      * 不会校验source的合法性，因为假设之前已经手动校验过了。
      */
     fun getAndUpsertSourceTags(sourceSite: String, tags: List<SourceTagForm>): List<Int> {
-        val tagMap = tags.associateBy { it.code.toAlphabetLowercase() }
-
-        val dbTags = data.db.sequenceOf(SourceTags).filter { (it.site eq sourceSite) and (it.code inList tagMap.keys) }.toList()
-        val dbTagMap = dbTags.associateBy { it.code.toAlphabetLowercase() }
-
-        fun SourceTag.mapToDto() = SourceTagDto(code, name, otherName, type)
+        val dbTags = tags.groupBy ({ it.type }) { it.code }.flatMap { (type, codes) ->
+            data.db.sequenceOf(SourceTags).filter { (it.site eq sourceSite) and (it.type eq type) and (it.code inList codes) }.toList()
+        }
+        val dbTagMap = dbTags.associateBy { Pair(it.type, it.code.toAlphabetLowercase()) }
+        val tagMap = tags.associateBy { Pair(it.type, it.code.toAlphabetLowercase()) }
 
         //挑选出目前在数据库里没有的tag
         val minus = tagMap.keys - dbTagMap.keys
         if(minus.isNotEmpty()) {
+            //TODO 校验type
             data.db.batchInsert(SourceTags) {
                 for (key in minus) {
                     val tag = tagMap[key]!!
                     item {
                         set(it.site, sourceSite)
                         set(it.code, tag.code)
-                        set(it.name, tag.name.unwrapOr { key })
+                        set(it.name, tag.name.unwrapOr { key.second })
                         set(it.otherName, tag.otherName.unwrapOrNull())
-                        set(it.type, tag.type.unwrapOrNull())
+                        set(it.type, tag.type)
                     }
                 }
             }
@@ -82,11 +83,9 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
         //挑选出在数据库里有，但是发生了变化的tag
         val common = tagMap.keys.intersect(dbTagMap.keys).filter { key ->
             val form = tagMap[key]!!
-            if(form.type.isPresent || form.otherName.isPresent || form.name.isPresent) {
-                val dto = dbTagMap[key]!!.mapToDto()
-                form.type.letOpt { it != dto.type }.unwrapOr { false }
-                        || form.otherName.letOpt { it != dto.otherName }.unwrapOr { false }
-                        || form.name.letOpt { it != dto.name }.unwrapOr { false }
+            if(form.otherName.isPresent || form.name.isPresent) {
+                val dto = dbTagMap[key]!!.run { SourceTagDto(code, type, name, otherName) }
+                form.otherName.letOpt { it != dto.otherName }.unwrapOr { false } || form.name.letOpt { it != dto.name }.unwrapOr { false }
             }else{
                 false
             }
@@ -99,16 +98,29 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
                     where { it.id eq dbTag.id }
                     tag.name.applyOpt { set(it.name, this) }
                     tag.otherName.applyOpt { set(it.otherName, this) }
-                    tag.type.applyOpt { set(it.type, this) }
                 }
             }
         }
 
-        minus.forEach { bus.emit(SourceTagUpdated(sourceSite, it)) }
-        common.forEach { bus.emit(SourceTagUpdated(sourceSite, it)) }
+        minus.forEach { bus.emit(SourceTagUpdated(sourceSite, it.first, it.second)) }
+        common.forEach { bus.emit(SourceTagUpdated(sourceSite, it.first, it.second)) }
 
-        return data.db.from(SourceTags).select(SourceTags.id)
-            .where { (SourceTags.site eq sourceSite) and (SourceTags.code inList tagMap.keys) }
-            .map { it[SourceTags.id]!! }
+        return tags.groupBy ({ it.type }) { it.code }.flatMap { (type, codes) ->
+            data.db.from(SourceTags).select(SourceTags.id)
+                .where { (SourceTags.site eq sourceSite) and (SourceTags.type eq type) and (SourceTags.code inList codes) }
+                .map { it[SourceTags.id]!! }
+        }
+    }
+
+    /**
+     * 查询一组sourceTagPath所对应的sourceTag。
+     */
+    fun getSourceTagIdByPaths(sourceTags: List<SourceTagPath>): Map<SourceTagPath, SourceTag> {
+        return sourceTags
+            .groupBy({ Pair(it.sourceSite, it.sourceTagType) }) { it.sourceTagCode }
+            .flatMap { (e, codes) ->
+                val (site, type) = e
+                data.db.sequenceOf(SourceTags).filter { (it.site eq site) and (it.type eq type) and (it.code inList codes) }.toList()
+            }.associateBy { SourceTagPath(it.site, it.type, it.code) }
     }
 }

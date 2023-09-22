@@ -305,7 +305,7 @@ class IllustService(private val appdata: AppDataManager,
                     .innerJoin(SourceTagRelations, (SourceTags.id eq SourceTagRelations.sourceTagId) and (SourceTagRelations.sourceDataId eq sourceRowId))
                     .select()
                     .map { SourceTags.createEntity(it) }
-                    .map { SourceTagDto(it.code, it.name, it.otherName, it.type) }
+                    .map { SourceTagDto(it.code, it.type, it.name, it.otherName) }
                 val sourcePools = data.db.from(SourceBooks)
                     .innerJoin(SourceBookRelations, (SourceBooks.id eq SourceBookRelations.sourceBookId) and (SourceBookRelations.sourceDataId eq sourceRowId))
                     .select()

@@ -118,7 +118,7 @@ class SourceDataService(private val appdata: AppDataManager, private val data: D
             .innerJoin(SourceTagRelations, (SourceTags.id eq SourceTagRelations.sourceTagId) and (SourceTagRelations.sourceDataId eq sourceRowId))
             .select()
             .map { SourceTags.createEntity(it) }
-            .map { SourceTagDto(it.code, it.name, it.otherName, it.type) }
+            .map { SourceTagDto(it.code, it.type, it.name, it.otherName) }
         val sourceBooks = data.db.from(SourceBooks)
             .innerJoin(SourceBookRelations, (SourceBooks.id eq SourceBookRelations.sourceBookId) and (SourceBookRelations.sourceDataId eq sourceRowId))
             .select()

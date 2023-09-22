@@ -56,7 +56,7 @@ class ImportMetaManager(private val appdata: AppDataManager) {
                         ImportOption.SourceAnalyseRuleExtraTarget.TITLE -> title = result
                         ImportOption.SourceAnalyseRuleExtraTarget.DESCRIPTION -> description = result
                         ImportOption.SourceAnalyseRuleExtraTarget.ADDITIONAL_INFO -> additionalInfo[extra.additionalInfoField!!] = result
-                        ImportOption.SourceAnalyseRuleExtraTarget.TAG -> tags.add(ImportImage.SourcePreferenceTag(result, null, null, extra.tagType))
+                        ImportOption.SourceAnalyseRuleExtraTarget.TAG -> tags.add(ImportImage.SourcePreferenceTag(extra.tagType!!, result, null, null))
                         ImportOption.SourceAnalyseRuleExtraTarget.BOOK -> books.add(ImportImage.SourcePreferenceBook(result, null, null))
                         ImportOption.SourceAnalyseRuleExtraTarget.RELATION -> relations.add(result.toLong())
                     }

@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.components.backend.similar
 
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
+import com.heerkirov.hedge.server.dto.res.SourceTagPath
 import com.heerkirov.hedge.server.enums.FindSimilarEntityType
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.model.FindSimilarTask
@@ -28,7 +29,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
             is FindSimilarTask.TaskSelectorOfPartition -> loadByPartition(selector.partitionTime, enableFilterBy = true)
             is FindSimilarTask.TaskSelectorOfAuthor -> loadByAuthor(selector.authorIds, enableFilterBy = true)
             is FindSimilarTask.TaskSelectorOfTopic -> loadByTopic(selector.topicIds, enableFilterBy = true)
-            is FindSimilarTask.TaskSelectorOfSourceTag -> loadBySourceTag(selector.sourceSite, selector.sourceTags, enableFilterBy = true)
+            is FindSimilarTask.TaskSelectorOfSourceTag -> loadBySourceTag(selector.sourceTags, enableFilterBy = true)
         }
     }
 
@@ -296,22 +297,29 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
         }
     }
 
-    fun loadBySourceTag(sourceSite: String, sourceTags: List<String>, enableFilterBy: Boolean = false): List<EntityInfo> {
-        return loadBySourceTagCache.computeIfAbsent(sourceSite + ":" + sourceTags.joinToString()) {
+    fun loadBySourceTag(sourceTags: List<SourceTagPath>, enableFilterBy: Boolean = false): List<EntityInfo> {
+        return loadBySourceTagCache.computeIfAbsent(sourceTags.hashCode()) {
+            val sourceTagIds = sourceTags
+                .groupBy({ Pair(it.sourceSite, it.sourceTagType) }) { it.sourceTagCode }
+                .flatMap { (e, codes) ->
+                    data.db.from(SourceTags)
+                        .select(SourceTags.id)
+                        .where { (SourceTags.site eq e.first) and (SourceTags.type eq e.second) and (SourceTags.code inList codes) }
+                        .map { it[SourceTags.id]!! }
+                }
+
             val imageIds = data.db.from(Illusts)
                 .innerJoin(SourceTagRelations, SourceTagRelations.sourceDataId eq Illusts.sourceDataId)
-                .innerJoin(SourceTags, SourceTags.id eq SourceTagRelations.sourceTagId)
                 .select(Illusts.id)
-                .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (SourceTags.site eq sourceSite) and (SourceTags.code inList sourceTags) }
+                .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (SourceTagRelations.sourceTagId inList sourceTagIds) }
                 .groupBy(Illusts.id)
                 .map { it[Illusts.id]!! }
 
             val importIds = data.db.from(ImportImages)
                 .innerJoin(SourceDatas, (SourceDatas.sourceSite eq ImportImages.sourceSite) and (SourceDatas.sourceId eq ImportImages.sourceId))
                 .innerJoin(SourceTagRelations, SourceTagRelations.sourceDataId eq SourceDatas.id)
-                .innerJoin(SourceTags, SourceTags.id eq SourceTagRelations.sourceTagId)
                 .select(ImportImages.id)
-                .where { (SourceTags.site eq sourceSite) and (SourceTags.code inList sourceTags) }
+                .where { SourceTagRelations.sourceTagId inList sourceTagIds }
                 .map { it[ImportImages.id]!! }
 
             loadByImage(imageIds, enableFilterBy) + loadByImportImage(importIds, enableFilterBy)
@@ -323,5 +331,5 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
     private val loadByPartitionCache = mutableMapOf<LocalDate, List<EntityInfo>>()
     private val loadByAuthorCache = mutableMapOf<String, List<EntityInfo>>()
     private val loadByTopicCache = mutableMapOf<String, List<EntityInfo>>()
-    private val loadBySourceTagCache = mutableMapOf<String, List<EntityInfo>>()
+    private val loadBySourceTagCache = mutableMapOf<Int, List<EntityInfo>>()
 }

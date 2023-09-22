@@ -98,6 +98,10 @@ data class SourceTag(val id: Int,
                       */
                      val site: String,
                      /**
+                      * 标签分类。
+                      */
+                     val type: String,
+                     /**
                       * 标签编码。
                       */
                      val code: String,
@@ -108,11 +112,7 @@ data class SourceTag(val id: Int,
                      /**
                       * 标签的其他名称。
                       */
-                     val otherName: String?,
-                     /**
-                      * 标签分类。
-                      */
-                     val type: String?)
+                     val otherName: String?)
 
 /**
  * source image与tag的关联。

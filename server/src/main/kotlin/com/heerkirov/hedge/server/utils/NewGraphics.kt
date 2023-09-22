@@ -11,6 +11,11 @@ import javax.imageio.ImageIO
 import javax.imageio.stream.FileImageInputStream
 import kotlin.math.sqrt
 
+/**
+ * - 已知问题: 极少数的PNG图像(如sankaku/6217893)可能造成Error reading PNG metadata: Invalid chunk length错误。
+ *   暂未找到合适的解决方案，除非直接捕获IIOException，然后用ImageIO直接强转JPEG，将其当做例外处理
+ *   猜测此问题覆盖面可能极窄，因此暂搁置该问题，仅在此记录。
+ */
 object NewGraphics {
     const val THUMBNAIL_RESIZE_AREA = 1200 * 1200
     const val SAMPLE_RESIZE_AREA = 400 * 400

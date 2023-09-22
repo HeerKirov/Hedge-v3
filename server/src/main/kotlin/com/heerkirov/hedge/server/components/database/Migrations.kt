@@ -11,6 +11,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
     override fun migrations(register: MigrationRegister<Database>) {
         register.useSQL("0.1.0")
         register.map("0.1.3", ::migrateTimestampTranslate)
+        register.useSQL("0.1.4")
     }
 
     /**

@@ -132,9 +132,9 @@ data class SourceDataDeleted(override val site: String, override val sourceId: L
 
 data class SourceBookUpdated(val site: String, val sourceBookCode: String) : BaseBusEventImpl("entity/source-book/updated"), EntityEvent
 
-data class SourceTagUpdated(val site: String, val sourceTagCode: String) : BaseBusEventImpl("entity/source-tag/updated"), EntityEvent
+data class SourceTagUpdated(val site: String, val sourceTagType: String, val sourceTagCode: String) : BaseBusEventImpl("entity/source-tag/updated"), EntityEvent
 
-data class SourceTagMappingUpdated(val site: String, val sourceTagCode: String) : BaseBusEventImpl("entity/source-tag-mapping/updated"), EntityEvent
+data class SourceTagMappingUpdated(val site: String, val sourceTagType: String, val sourceTagCode: String) : BaseBusEventImpl("entity/source-tag-mapping/updated"), EntityEvent
 
 data class SimilarFinderResultCreated(val count: Int) : BaseBusEventImpl("entity/find-similar-result/created"), EntityEvent
 

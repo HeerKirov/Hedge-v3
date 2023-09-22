@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.components.backend.similar
 
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
+import com.heerkirov.hedge.server.dto.res.SourceTagPath
 import com.heerkirov.hedge.server.enums.FindSimilarEntityType
 import com.heerkirov.hedge.server.enums.SourceMarkType
 import com.heerkirov.hedge.server.model.FindSimilarTask
@@ -72,10 +73,8 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
                 }
                 if(config.filterBySourceTagType.isNotEmpty()) {
                     targetItem.sourceTags
-                        .groupBy({ it.site }) { it.code }
-                        .forEach { (site, tags) ->
-                            yieldAll(entityLoader.loadBySourceTag(site, tags))
-                        }
+                        .map { SourceTagPath(it.site, it.type, it.code) }
+                        .let { yieldAll(entityLoader.loadBySourceTag(it)) }
                 }
                 if(config.filterByOtherImport) {
                     yieldAll(entityLoader.loadByImportImage())
@@ -87,10 +86,8 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
                 }
                 if(config.filterBySourceTagType.isNotEmpty()) {
                     targetItem.sourceTags
-                        .groupBy({ it.site }) { it.code }
-                        .forEach { (site, tags) ->
-                            yieldAll(entityLoader.loadBySourceTag(site, tags))
-                        }
+                        .map { SourceTagPath(it.site, it.type, it.code) }
+                        .let { yieldAll(entityLoader.loadBySourceTag(it)) }
                 }
                 if(config.filterByOtherImport) {
                     yieldAll(entityLoader.loadByImportImage())

@@ -81,10 +81,10 @@ object SourceTags : BaseTable<SourceTag>("source_tag", schema = "source_db") {
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = SourceTag(
         id = row[id]!!,
         site = row[site]!!,
+        type = row[type]!!,
         code = row[code]!!,
         name = row[name]!!,
-        otherName = row[otherName],
-        type = row[type]
+        otherName = row[otherName]
     )
 }
 
