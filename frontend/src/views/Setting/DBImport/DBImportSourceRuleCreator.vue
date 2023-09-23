@@ -73,8 +73,8 @@ const submit = () => {
         site: form.site,
         regex: form.regex,
         idGroup: form.idGroup,
-        partGroup: hasPart.value ? form.partGroup : null,
-        partNameGroup: hasPartName.value ? form.partNameGroup : null,
+        partGroup: hasPart.value && form.partGroup ? form.partGroup : null,
+        partNameGroup: hasPartName.value && form.partNameGroup ? form.partNameGroup : null,
         extras
     })
 

@@ -72,7 +72,14 @@ const submit = () => {
         additionalInfoField: extra.target === "ADDITIONAL_INFO" ? extra.additionalInfoField : null
     })) : null
 
-    emit("update", {...content.value, extras})
+    emit("update", {
+        site: content.value.site,
+        regex: content.value.regex,
+        idGroup: content.value.idGroup,
+        partGroup: content.value.partGroup || null,
+        partNameGroup: content.value.partNameGroup || null,
+        extras
+    })
 }
 
 const trash = async () => {

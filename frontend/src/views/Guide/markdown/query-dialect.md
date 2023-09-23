@@ -32,6 +32,10 @@
     根据文件大小。运算对象为size。
 * **来源ID**: `source-id`, `^id`  
     根据来源ID。运算对象为patternNumber。
+* **来源分页**: `source-page`, `^page`  
+    根据来源分页。运算对象为patternNumber。
+* **来源分页页名**: `source-page-name`, `^page-name`, `^pn`  
+    根据来源分页页名。运算对象为extractString。
 * **来源站点**: `source-site`, `^site`  
     根据来源站点。运算对象为extractString。
 * **来源描述**: `source-description`, `^description`, `source-desc`, `^desc`  

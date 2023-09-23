@@ -54,7 +54,7 @@ function mapToDetailBook(data: any): DetailBook {
 function mapToBookImage(data: any): BookImage {
     return {
         id: <number>data["id"],
-        filePath: <FilePath>data["file"],
+        filePath: <FilePath>data["filePath"],
         score: <number | null>data["score"],
         favorite: <boolean>data["favorite"],
         tagme: <Tagme[]>data["tagme"],

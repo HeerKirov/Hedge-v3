@@ -202,6 +202,8 @@ favorite|A              //=> 错误的用法：关键字不能与标签查询一
 ^site: pixiv        //=> 查询来源站点为pixiv的项
 ^id: 4396??         //=> 查询来源ID为[439600, 439700)的项
 ^A                  //=> 匹配来源标签A
+^pixiv:A            //=> 匹配来自pixiv的来源标签A
+^pixiv.artist:A     //=> 匹配来自pixiv的、类型为artist的来源标签A
 ^A|B ^C id>1000     //=> 匹配(A or B) and C and id>1000
 ```
 

@@ -23,6 +23,8 @@ export const QUERY_FIELD_NAMES: {[key: string]: string} = {
     "FILESIZE": "文件大小",
     "SOURCE_SITE": "来源",
     "SOURCE_ID": "来源ID",
+    "SOURCE_PAGE": "来源分页",
+    "SOURCE_PAGE_NAME": "来源分页页名",
     "SOURCE_FROM": "来源站点",
     "SOURCE_DESCRIPTION": "来源描述",
     "TAGME": "TAGME",
