@@ -7,6 +7,8 @@
 ## Features
 * 调整了来源标签的唯一定位方式。现在由(site, type, code)唯一定位一个标签。与之对应的，type不再能为空，相关API与UI都有所调整。
 * 来源标签的type更改为仅能从已配置的列表中选取。
+* 来源收集状态API现已支持查询相同part name的分页在不同id下的收集情况。
+* HQL查询的Illust查询已支持通过source part和source part name筛选，并已支持使用site和type限定查询source tag。
 ## Optimizes
 * 更换图像处理使用的库，以改善稳定性和Bug问题。同时略微优化了缩略图和图像指纹生成的流程。
 

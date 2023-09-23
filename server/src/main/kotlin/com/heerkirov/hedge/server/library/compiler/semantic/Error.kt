@@ -78,6 +78,13 @@ class UnsupportedElementValueTypeOfRelation(itemName: String, valueType: ValueTy
     class SelfFilterInfo(filterName: String, val valueType: ValueType, val symbol: String) : BasicInfo(filterName)
 }
 
+/**
+ * 此元素项目不支持这个种类的关系运算。[begin, end)应标记family。
+ */
+class UnsupportedElementRelationSymbol(itemName: String, symbol: String, beginIndex: Int, endIndex: Int) : SemanticError<UnsupportedElementRelationSymbol.SelfFilterInfo>(3011, "Element of $itemName: relation '$symbol' is unsupported.", range(beginIndex, endIndex), SelfFilterInfo(itemName, symbol)) {
+    class SelfFilterInfo(filterName: String, val symbol: String) : BasicInfo(filterName)
+}
+
 //== 排序项相关 ==
 
 /**

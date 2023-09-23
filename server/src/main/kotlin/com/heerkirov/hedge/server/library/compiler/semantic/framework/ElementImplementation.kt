@@ -193,18 +193,36 @@ class SourceTagElementField(override val forSourceFlag: Boolean) : ElementFieldB
 
     override fun generate(element: SemanticElement, minus: Boolean): SourceTagElement {
         if(element.prefix != null) semanticError(ElementPrefixNotRequired(itemName, element.beginIndex, element.endIndex))
-        val items = element.items.map(::mapSfpToMetaValue)
+        val items = element.items.map(::mapSfpToMetaValue).map(::SimpleMetaValue)
         return SourceTagElement(items, minus)
     }
 
     /**
      * 将主系表结构转换为MetaString。
      */
-    private fun mapSfpToMetaValue(sfp: SFP): MetaString {
-        if(sfp.family != null || sfp.predicative != null) semanticError(ElementValueNotRequired(itemName, sfp.beginIndex, sfp.endIndex))
+    private fun mapSfpToMetaValue(sfp: SFP): MetaAddress {
         if(sfp.subject !is StrList) throw RuntimeException("Unsupported subject type ${sfp.subject::class.simpleName}.")
-        if(sfp.subject.items.size > 1) semanticError(ValueCannotBeAddress(sfp.subject.beginIndex, sfp.subject.endIndex))
-        return MetaString(sfp.subject.items.first().value, sfp.subject.items.first().type == Str.Type.BACKTICKS)
+        val subject = sfp.subject.items.map { MetaString(it.value, it.type == Str.Type.BACKTICKS) }
+        val predicative: List<MetaString> = if(sfp.family != null && sfp.predicative != null) {
+            when (sfp.family.value) {
+                ":" -> when (sfp.predicative) {
+                    is StrList -> sfp.predicative.items.map { MetaString(it.value, it.type == Str.Type.BACKTICKS) }
+                    is Range, is Col, is SortList -> semanticError(UnsupportedElementValueType(MetaTagElementField.itemName, ValueType.SORT_LIST, sfp.predicative.beginIndex, sfp.predicative.endIndex))
+                    else -> throw RuntimeException("Unsupported predicative ${sfp.predicative::class.simpleName}.")
+                }
+                ">", ">=", "<", "<=", "~" -> semanticError(UnsupportedElementRelationSymbol(itemName, sfp.family.value, sfp.family.beginIndex, sfp.family.endIndex))
+                else -> throw RuntimeException("Unsupported family ${sfp.family.value}.")
+            }
+        }else if(sfp.family != null) {
+            when (sfp.family.value) {
+                "~+", "~-" -> semanticError(UnsupportedElementRelationSymbol(itemName, sfp.family.value, sfp.family.beginIndex, sfp.family.endIndex))
+                else -> throw RuntimeException("Unsupported unary family ${sfp.family.value}.")
+            }
+        }else{
+            emptyList()
+        }
+
+        return subject + predicative
     }
 }
 

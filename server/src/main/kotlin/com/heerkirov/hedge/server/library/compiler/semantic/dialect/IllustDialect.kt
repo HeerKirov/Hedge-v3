@@ -27,6 +27,8 @@ object IllustDialect : QueryDialect<IllustDialect.IllustOrderItem> {
     val extension = stringField("EXTENSION", "extension", "ext")
     val filesize = sizeField("FILESIZE", "filesize", "size")
     val sourceId = patternNumberField("SOURCE_ID", "^id", "source-id")
+    val sourcePage = patternNumberField("SOURCE_PAGE", "^page", "source-page")
+    val sourcePageName = stringField("SOURCE_PAGE_NAME", "^page-name", "^pn", "source-page-name")
     val sourceSite = stringField("SOURCE_SITE", "^site", "source-site")
     val sourceDescription = patternStringField("SOURCE_DESCRIPTION", "^description", "^desc", "source-description", "source-desc")
     val tagme = compositionField<Tagme>("TAGME", "tagme") {

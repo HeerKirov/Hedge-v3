@@ -52,11 +52,10 @@ data class AnnotationElement(override val items: List<MetaString>, val metaType:
 /**
  * 实现为源标签的连接元素。
  */
-data class SourceTagElement(override val items: List<MetaString>, override val exclude: Boolean) : Element<MetaString>
+data class SourceTagElement(override val items: List<SimpleMetaValue>, override val exclude: Boolean) : Element<SimpleMetaValue>
 
 /**
  * 实现为meta tag的连接元素。它是一个抽象类，并应对三种不同的meta tag有各自的实现。当前层级是对tag的实现。它在topic的基础上扩展了序列化成员。
- * @param noType 此元素没有标记类型，因此类型可能从tag开始向下扩展搜索。
  */
 abstract class TagElement<M : MetaValue>(val metaType: MetaType?, override val exclude: Boolean) : Element<M>
 
@@ -221,12 +220,10 @@ data class SequentialItemMetaValueToOther(override val tag: MetaAddress, val oth
  */
 data class SequentialItemMetaValueToDirection(override val tag: MetaAddress, private val desc: Boolean) : SequentialItemMetaValue() {
     fun isDescending() = desc
-    fun isAscending() = !desc
     override fun revertToQueryString(): String {
         return tag.joinToString(".") { it.revertToQueryString() } + "~" + if(desc) "-" else "+"
     }
 }
-
 
 /**
  * 用地址表示的meta tag。

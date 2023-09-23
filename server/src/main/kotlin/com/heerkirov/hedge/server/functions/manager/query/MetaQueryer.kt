@@ -262,10 +262,10 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
                         val mainTagOrdinal = childrenGroup.indexOfFirst { it.id == mainTag.id }.also {
                             if(it < 0) throw java.lang.RuntimeException("Cannot find main tag [${mainTag.id}]'${mainTag.name}' in children group.")
                         }
-                        if(metaValue.isAscending()) {
-                            childrenGroup.subList(mainTagOrdinal, childrenGroup.size)
-                        }else{
+                        if(metaValue.isDescending()) {
                             childrenGroup.subList(0, mainTagOrdinal + 1)
+                        }else{
+                            childrenGroup.subList(mainTagOrdinal, childrenGroup.size)
                         }
                     }
             }
@@ -388,15 +388,22 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
         }
     }
 
-    override fun findSourceTag(metaString: MetaString, collector: ErrorCollector<TranslatorError<*>>): List<ElementSourceTag> {
-        if(metaString.value.isBlank()) {
+    override fun findSourceTag(metaString: SimpleMetaValue, collector: ErrorCollector<TranslatorError<*>>): List<ElementSourceTag> {
+        if(metaString.value.any { it.value.isBlank() }) {
             //元素内容为空时抛出空警告并直接返回
             collector.warning(BlankElement())
             return emptyList()
         }
-        return sourceTagCacheMap.computeIfAbsent(metaString) { str ->
+        return sourceTagCacheMap.computeIfAbsent(metaString.value) { address ->
+            //在长度为2时，address被认为是site:name；长度为3时，被认为是site.type:name；高于这个长度，则被认为是非法值
+            val where = when(address.size) {
+                3 -> parser.compileNameString(address.last(), SourceTags) and (SourceTags.site eq address.first().value) and (SourceTags.type eq address[1].value)
+                2 -> parser.compileNameString(address.last(), SourceTags) and (SourceTags.site eq address.first().value)
+                1 -> parser.compileNameString(address.last(), SourceTags)
+                else -> return@computeIfAbsent emptyList()
+            }
             data.db.from(SourceTags).select(SourceTags.id, SourceTags.name)
-                .where { parser.compileNameString(str, SourceTags) }
+                .where { where }
                 .limit(0, queryLimit)
                 .map { ElementSourceTag(it[SourceTags.id]!!, it[SourceTags.name]!!) }
         }.also {
@@ -476,7 +483,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
     /**
      * 缓存source tag的查询的最终结果。
      */
-    private val sourceTagCacheMap = CacheMap<MetaString, List<ElementSourceTag>>(256)
+    private val sourceTagCacheMap = CacheMap<MetaAddress, List<ElementSourceTag>>(256)
 
     /**
      * 在parent溯源中缓存每一个遇到的topic。

@@ -181,6 +181,14 @@ class SourceDataService(private val appdata: AppDataManager, private val data: D
         }
     }
 
+    /**
+     * 该API查询一系列的来源对象的收集情况。收集情况包括：来源数据收集状态、已收集图像数量、不在同一个ID下的已收集图像数量。
+     * 每一个path都指定了site, id, part, partName这4个参数，其中part, partName参数可选。
+     * - 来源数据收集状态会根据(site, id)查询获得。
+     * - 已收集图像数量则是统计image/importImage项的数量，存在partName时优先(site, id, partName)，否则(site, id, part)，都没有就(site, id)
+     * - 而不在同一个ID下的图像数量则统计(site, partName)相同但id不同的项的数量。
+     * 在使用中可以轻易发现当前ID下是否已收集当前分页，或当前分页是否已在其他ID下被收集。
+     */
     fun getCollectStatus(paths: List<SourceDataPath>): List<SourceDataCollectStatus> {
         //分离sourceIdentity，并查询每个sourceIdentity对应的sourceData的状态
         val sourceDatas = paths
@@ -193,18 +201,22 @@ class SourceDataService(private val appdata: AppDataManager, private val data: D
                     .map { (site to it[SourceDatas.sourceId]!!) to Triple(it[SourceDatas.id]!!, it[SourceDatas.status]!!, it[SourceDatas.updateTime]!!) }
             }.toMap()
 
-        //查询每个sourceDataPath对应的image与importImage的数量
-        //如果要优化的话，这里的场景分支有点多，而且对性能的提升并不明显，因此放弃了优化，逐项统计数量
-        val imageCounts = paths.associate { path ->
+        return paths.map { path ->
             val key = path.sourceSite to path.sourceId
-            val sourceDataRowId = sourceDatas[key]?.first
-            val imageCount = if (sourceDataRowId == null) 0 else {
+            val sourceData = sourceDatas[key]
+
+            //查询每个sourceDataPath对应的image与importImage的数量
+            //如果要优化的话，这里的场景分支有点多，而且对性能的提升并不明显，因此放弃了优化，逐项统计数量
+            val imageCount = if (sourceData?.first == null) 0 else {
                 data.db.from(Illusts)
                     .select(count(Illusts.id).aliased("count"))
                     .whereWithConditions {
-                        it += Illusts.sourceDataId eq sourceDataRowId
-                        if (path.sourcePartName != null) it += Illusts.sourcePartName eq path.sourcePartName
-                        else if (path.sourcePart != null) it += Illusts.sourcePart eq path.sourcePart
+                        it += Illusts.sourceDataId eq sourceData.first
+                        if(path.sourcePartName != null) {
+                            it += Illusts.sourcePartName eq path.sourcePartName
+                        }else if(path.sourcePart != null) {
+                            it += Illusts.sourcePart eq path.sourcePart
+                        }
                     }
                     .first()
                     .getInt("count")
@@ -214,22 +226,38 @@ class SourceDataService(private val appdata: AppDataManager, private val data: D
                 .whereWithConditions {
                     it += ImportImages.sourceSite eq path.sourceSite
                     it += ImportImages.sourceId eq path.sourceId
-                    if (path.sourcePartName != null) it += ImportImages.sourcePartName eq path.sourcePartName
-                    else if (path.sourcePart != null) it += ImportImages.sourcePart eq path.sourcePart
+                    if(path.sourcePartName != null) {
+                        it += ImportImages.sourcePartName eq path.sourcePartName
+                    }else if(path.sourcePart != null) {
+                        it += ImportImages.sourcePart eq path.sourcePart
+                    }
                 }
                 .first()
                 .getInt("count")
-            key to (imageCount + importImageCount)
-        }
+            val imageInDiffIdCount = if(path.sourcePartName == null) 0 else data.db.from(Illusts)
+                .select(count(Illusts.id).aliased("count"))
+                .whereWithConditions {
+                    it += Illusts.sourceSite eq path.sourceSite
+                    it += Illusts.sourceId notEq path.sourceId
+                    it += Illusts.sourcePartName eq path.sourcePartName
+                }
+                .first()
+                .getInt("count")
 
-        return paths.map { path ->
-            val key = path.sourceSite to path.sourceId
-            val sourceData = sourceDatas[key]
-            val imageCount = imageCounts[key] ?: 0
+            val importImageInDiffIdCount = if(path.sourcePartName == null) 0 else data.db.from(ImportImages)
+                .select(count(ImportImages.id).aliased("count"))
+                .whereWithConditions {
+                    it += ImportImages.sourceSite eq path.sourceSite
+                    it += ImportImages.sourceId notEq path.sourceId
+                    it += ImportImages.sourcePartName eq path.sourcePartName
+                }
+                .first()
+                .getInt("count")
+
             val collected = sourceData != null && (sourceData.second == SourceEditStatus.EDITED || sourceData.second == SourceEditStatus.IGNORED)
             val collectStatus = sourceData?.second
             val collectTime = sourceData?.third
-            SourceDataCollectStatus(path, imageCount, collected, collectStatus, collectTime)
+            SourceDataCollectStatus(path, imageCount + importImageCount, imageInDiffIdCount + importImageInDiffIdCount, collected, collectStatus, collectTime)
         }
     }
 }

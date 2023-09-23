@@ -575,6 +575,11 @@ class IllustService(private val appdata: AppDataManager,
                 }else{
                     null
                 }
+
+                if(newSourceDataId != null) {
+                    bus.emit(IllustUpdated(id, IllustType.IMAGE, listUpdated = true))
+                }
+
                 data.db.update(Illusts) {
                     where { it.id eq id }
                     set(it.sourceDataId, newSourceDataId)

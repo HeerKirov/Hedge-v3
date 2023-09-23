@@ -18,6 +18,7 @@ data class SourceDataDetailRes(val sourceSite: String, val sourceSiteName: Strin
 
 data class SourceDataCollectStatus(val source: SourceDataPath,
                                    val imageCount: Int,
+                                   val imageInDiffIdCount: Int,
                                    val collected: Boolean,
                                    val collectStatus: SourceEditStatus?,
                                    val collectTime: Instant?)

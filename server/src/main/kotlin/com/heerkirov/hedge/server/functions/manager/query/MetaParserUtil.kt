@@ -25,7 +25,7 @@ internal object MetaParserUtil {
     }
 
     /**
-     * 将metaString的值编译为对指定种类metaTag的等价或比较操作。
+     * 将metaString的值编译为对sourceTag的等价或比较操作。
      */
     fun compileNameString(metaString: MetaString, metaTag: SourceTags): BinaryExpression<Boolean> {
         return if(metaString.precise) {
@@ -60,14 +60,14 @@ internal object MetaParserUtil {
     /**
      * 执行sql like转义，将具有特殊意义的符号转义掉。
      */
-    fun escapeSqlSpecial(string: String): String {
+    private fun escapeSqlSpecial(string: String): String {
         return string.replace(sqlLikeReplaceRegex, """\\$0""")
     }
 
     /**
      * 执行sql like转义，将HQL中的查询符号转义到sql like。
      */
-    fun escapeSqlLike(string: String): String {
+    private fun escapeSqlLike(string: String): String {
         return '%' + string.replace('*', '%').replace('?', '_') + '%'
     }
 

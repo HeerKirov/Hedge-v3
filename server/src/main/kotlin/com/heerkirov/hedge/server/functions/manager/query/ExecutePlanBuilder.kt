@@ -154,6 +154,8 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, O
         IllustDialect.extension to FileRecords.extension,
         IllustDialect.filesize to FileRecords.size,
         IllustDialect.sourceId to Illusts.sourceId,
+        IllustDialect.sourcePage to Illusts.sourcePart,
+        IllustDialect.sourcePageName to Illusts.sourcePartName,
         IllustDialect.sourceSite to Illusts.sourceSite,
         IllustDialect.sourceDescription to SourceDatas.description,
         IllustDialect.tagme to Illusts.tagme
