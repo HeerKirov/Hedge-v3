@@ -12,7 +12,6 @@ import com.heerkirov.hedge.server.dao.FileRecords
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.events.FileBlockArchived
-import com.heerkirov.hedge.server.events.FileMarkDeleted
 import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
 import com.heerkirov.hedge.server.exceptions.StorageNotAccessibleError
 import com.heerkirov.hedge.server.exceptions.be
@@ -27,6 +26,7 @@ import org.ktorm.entity.sequenceOf
 import org.ktorm.support.sqlite.bulkInsertOrUpdate
 import java.io.File
 import java.io.InputStream
+import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -83,20 +83,29 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
             set(it.updateTime, now)
         } as Int
 
+        val verifyId = data.db.from(FileRecords).select(max(FileRecords.id).aliased("id")).first().getInt("id")
+        if(verifyId != id) {
+            throw RuntimeException("FileRecord insert failed. generatedKey is $id but queried verify id is $verifyId.")
+        }
+
         val targetFile = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), block, "$id.$extension").toFile()
 
         targetFile.parentFile.mkdirs()
 
-        if(moveFile) {
-            Files.move(file.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-        }else try {
-            file.copyTo(targetFile, overwrite = true)
+        nextBlock.addSizeAndCount(block, file.length())
+
+        try {
+            if(moveFile) {
+                Files.move(file.toPath(), targetFile.toPath())
+            }else{
+                Files.copy(file.toPath(), targetFile.toPath())
+            }
+        }catch (e: FileAlreadyExistsException) {
+            throw e
         }catch (e: Exception) {
             targetFile.deleteIfExists()
             throw e
         }
-
-        nextBlock.addSizeAndCount(block, file.length())
 
         return id
     }
@@ -141,9 +150,6 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
         }
 
         nextBlock.delSizeAndCount(file.block, file.size)
-
-        //发送一个file已删除的通知，告知FileProcessor有新的删除文件要处理
-        bus.emit(FileMarkDeleted(fileId, file.block))
     }
 
     /**

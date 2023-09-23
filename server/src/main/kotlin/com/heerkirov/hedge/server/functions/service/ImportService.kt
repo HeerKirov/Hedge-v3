@@ -293,7 +293,16 @@ class ImportService(private val appdata: AppDataManager,
                 .runIf(!form.target.isNullOrEmpty()) { where { ImportImages.id inList form.target!! } }
                 .map { Pair(ImportImages.createEntity(it), FileRecords.createEntity(it)) }
 
-            if(!form.target.isNullOrEmpty() && records.size < form.target.size) throw be(ResourceNotExist("target", form.target.toSet() - records.map { it.first.id }.toSet()))
+            if(form.target.isNullOrEmpty()) {
+                //添加了一个校验，防止存在那种没有FileRecord关联的ImportImage。
+                //这种ImportImage会在FileManager#newFile的一个bug中存在。
+                if(data.db.sequenceOf(ImportImages).count() != records.size) {
+                    val allIds = data.db.from(ImportImages).select(ImportImages.id).map { it[ImportImages.id]!! }.toSet()
+                    throw be(ResourceNotExist("target", allIds - records.map { it.first.id }.toSet()))
+                }
+            }else{
+                if(records.size < form.target.size) throw be(ResourceNotExist("target", form.target.toSet() - records.map { it.first.id }.toSet()))
+            }
 
             val existedFolderIds = records.map { (r, _) -> r.folderIds ?: emptyList() }.flatten().let { li ->
                 if(li.isEmpty()) emptyList() else data.db.from(Folders).select(Folders.id)
@@ -428,7 +437,8 @@ class ImportService(private val appdata: AppDataManager,
                 .filter { (record, _) -> record.sourcePreference != null && record.sourceSite != null && record.sourceId != null && record.id in importToImageIds }
                 .map { (record, _) -> Triple(record.sourceSite!!, record.sourceId!!, record.sourcePreference!!) }
                 .groupBy({ (s, i, _) -> s to i }) { (_, _, p) -> p }
-                .forEach { (site, sourceId), preferences ->
+                .forEach { (e, preferences) ->
+                    val (site, sourceId) = e
                     val preference = if(preferences.size == 1) preferences.first() else {
                         ImportImage.SourcePreference(
                             title = preferences.mapNotNull { it.title }.lastOrNull(),

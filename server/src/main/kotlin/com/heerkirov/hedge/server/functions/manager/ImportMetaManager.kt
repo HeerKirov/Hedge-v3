@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.functions.manager
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.appdata.ImportOption
+import com.heerkirov.hedge.server.exceptions.BusinessException
 import com.heerkirov.hedge.server.exceptions.InvalidRegexError
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.model.ImportImage
@@ -41,7 +42,7 @@ class ImportMetaManager(private val appdata: AppDataManager) {
 
             val id = matcher.groupOfIt(rule.idGroup, rule.regex)?.toLong() ?: throw be(InvalidRegexError(rule.regex, "group '${rule.idGroup}' not matched in regex."))
             val part = if(rule.partGroup != null) { matcher.groupOfIt(rule.partGroup, rule.regex)?.toInt() ?: throw be(InvalidRegexError(rule.regex, "group '${rule.partGroup}' not matched in regex.")) }else null
-            val partName = if(rule.partNameGroup != null) { matcher.groupOfIt(rule.partNameGroup, rule.regex) ?: throw be(InvalidRegexError(rule.regex, "group '${rule.partNameGroup}' not matched in regex.")) }else null
+            val partName = if(rule.partNameGroup != null) { matcher.groupOfIt(rule.partNameGroup, rule.regex) }else null
             val preference = if(rule.extras.isNullOrEmpty()) null else {
                 var title: String? = null
                 var description: String? = null
@@ -74,7 +75,9 @@ class ImportMetaManager(private val appdata: AppDataManager) {
             throw be(InvalidRegexError(rule.regex, "Some value cannot be convert to number."))
         }catch(e: PatternSyntaxException) {
             throw be(InvalidRegexError(rule.regex, "Pattern syntax error: ${e.message}"))
-        }catch(e: Exception) {
+        }catch (e: BusinessException) {
+            throw e
+        } catch(e: Exception) {
             throw be(InvalidRegexError(rule.regex, e.message ?: e::class.simpleName ?: "Unnamed exception."))
         }
     }
