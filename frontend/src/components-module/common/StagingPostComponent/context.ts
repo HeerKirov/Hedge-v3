@@ -139,7 +139,7 @@ export function useDataContext(close: () => void) {
             dialog.creatingCollection.createCollection(items.result.map(i => i.id), (_, newCollection) => {
                 toast.toast(newCollection ? "已创建" : "已合并", "success",  newCollection ? "已创建新集合。" : "已将图像合并至指定集合。")
                 clear()
-            }, false)
+            })
         }
     }
 
