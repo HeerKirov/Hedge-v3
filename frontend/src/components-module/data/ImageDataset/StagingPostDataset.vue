@@ -117,7 +117,7 @@ installDatasetContext({
     <div class="w-100 h-100 relative" :style="style">
         <DatasetGridFramework v-if="viewMode === 'grid'" :key-of="keyOf" :column-num="columnNum!" v-slot="{ item, thumbType }">
             <img :class="$style['grid-img']" :src="assetsUrl(item.filePath[thumbType])" :alt="`staging-post-${item.id}`"/>
-            <Icon v-if="item.favorite" :class="[$style['grid-favorite'], 'has-text-danger']" icon="heart"/>
+            <Icon v-if="item.favorite" :class="$style['grid-favorite']" icon="heart"/>
             <Icon v-if="isVideoExtension(item.filePath.extension)" :class="$style['grid-video']" icon="video"/>
         </DatasetGridFramework>
         <DatasetRowFramework v-else :key-of="keyOf" :row-height="32" v-slot="{ item }">
@@ -171,12 +171,15 @@ installDatasetContext({
     position: absolute
     right: 0.3rem
     bottom: 0.25rem
+    color: $dark-mode-text-color
+    filter: drop-shadow(0 0 1px $dark-mode-background-color)
 
 .grid-video
     position: absolute
     left: 0.3rem
     bottom: 0.25rem
     color: $dark-mode-text-color
+    filter: drop-shadow(0 0 1px $dark-mode-background-color)
 
 .grid-remain-tag
     position: absolute

@@ -27,7 +27,7 @@ const { images, dropEvents, remove, save } = useAssociateEditorData(props, () =>
             <a class="float-right mr-2" @click="$emit('close')"><Icon icon="close"/>取消编辑</a>
         </p>
         <p class="mb-1 pl-1">将项目拖曳到此处，以添加到此项目的关联组。</p>
-        <AspectGrid :column-num="7" :items="images" :spacing="1" v-slot="{ item, index }">
+        <AspectGrid :column-num="8" :items="images" :spacing="1" v-slot="{ item, index }">
             <img :src="assetsUrl(item.filePath.sample)" :alt="item.filePath.sample"/>
             <div :class="$style['id-badge']">{{ item.id }}</div>
             <Button :class="$style['close-btn']" square size="small" mode="filled" type="danger" icon="close" @click="remove(index)"/>

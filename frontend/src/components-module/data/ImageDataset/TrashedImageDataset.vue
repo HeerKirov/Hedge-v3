@@ -191,6 +191,7 @@ const simpleRemain = (remainingTime: number | null) => {
     left: 0.3rem
     bottom: 0.25rem
     color: $dark-mode-text-color
+    filter: drop-shadow(0 0 1px $dark-mode-background-color)
     
 .row-img
     margin-top: 1px

@@ -22,7 +22,7 @@ const { chooseIgnore, chooseResolve, situations } = useAddIllustContext(props.p,
     <BottomLayout>
         <p class="mt-2 pl-1 is-font-size-large">添加图像到{{p.type === "collection" ? "集合" : p.type === "book" ? "画集" : "目录"}}</p>
         <p class="mb-2 pl-1">{{p.type === "collection" ? "部分图像已存在于其他集合。" : "部分图像被重复添加了。"}}请确认处理策略：</p>
-        <AspectGrid class="px-1" :spacing="1" :column-num="7" img-style="no-radius" :items="situations" v-slot="{ item }">
+        <AspectGrid class="px-1" :spacing="1" :column-num="8" img-style="no-radius" :items="situations" v-slot="{ item }">
             <img :src="assetsUrl(item.filePath.sample)" :alt="`situation-${item.id}`"/>
             <div v-if="item.ordinal !== null" :class="$style['ordinal-flag']">{{item.ordinal + 1}}</div>
         </AspectGrid>
@@ -37,8 +37,17 @@ const { chooseIgnore, chooseResolve, situations } = useAddIllustContext(props.p,
 </template>
 
 <style module lang="sass">
+@import "../../../styles/base/size"
+@import "../../../styles/base/color"
+
 .ordinal-flag
     position: absolute
     right: 0.25rem
     bottom: 0.25rem
+    line-height: 1.5em
+    width: 1.5em
+    text-align: center
+    border-radius: $radius-size-round
+    background-color: rgba(0, 0, 0, 0.65)
+    color: $dark-mode-text-color
 </style>
