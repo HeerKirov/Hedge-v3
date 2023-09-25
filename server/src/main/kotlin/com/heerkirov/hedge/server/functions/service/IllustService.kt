@@ -527,11 +527,11 @@ class IllustService(private val appdata: AppDataManager,
                     //更换image的parent时，需要对三个方面重导出：image自己; 旧parent; 新parent
                     val now = Instant.now()
                     if(newParent != null) {
-                        illustManager.processCollectionChildrenAdded(newParent.id, illust, now)
+                        illustManager.processCollectionChildrenChanged(newParent.id, 1, now)
                     }
                     if(illust.parentId != null) {
                         //处理旧parent
-                        illustManager.processCollectionChildrenRemoved(illust.parentId, listOf(illust), now)
+                        illustManager.processCollectionChildrenChanged(illust.parentId, -1, now)
                     }
                 }
             }

@@ -172,7 +172,7 @@ class IllustManager(private val data: DataRepository,
             //关联的partition的计数-1
             partitionManager.deleteItemInPartition(illust.partitionTime)
             //对parent的导出处理
-            if(illust.parentId != null) processCollectionChildrenRemoved(illust.parentId, listOf(illust))
+            if(illust.parentId != null) processCollectionChildrenChanged(illust.parentId, -1)
 
             bus.emit(IllustDeleted(illust.id, IllustType.IMAGE))
         }else{
@@ -249,8 +249,8 @@ class IllustManager(private val data: DataRepository,
         if(parentChanged) {
             //刷新新旧parent的时间&封面、导出属性
             val now = Instant.now()
-            if(newParent != null) processCollectionChildrenAdded(newParent.id, toIllust, now)
-            if(toIllust.parentId != null) processCollectionChildrenRemoved(toIllust.parentId, listOf(toIllust), now)
+            if(newParent != null) processCollectionChildrenChanged(newParent.id, 1, now)
+            if(toIllust.parentId != null) processCollectionChildrenChanged(toIllust.parentId, -1, now)
         }
 
         if(props.metaTags) {
@@ -387,7 +387,7 @@ class IllustManager(private val data: DataRepository,
             .filter { it.id in addIds && it.parentId != null && it.parentId != collectionId }
             .groupBy { it.parentId!! }
             .forEach { (parentId, images) ->
-                processCollectionChildrenRemoved(parentId, images, now)
+                processCollectionChildrenChanged(parentId, -images.size, now)
                 bus.emit(IllustImagesChanged(parentId, emptyList(), images.map { it.id }))
             }
         //这些image的collection发生变化，发送事件
@@ -398,51 +398,28 @@ class IllustManager(private val data: DataRepository,
     }
 
     /**
-     * 由于向collection加入了新的child，因此需要处理所有属性的重导出，包括firstCover, count, score, metaTags。
-     * 这个函数不是向collection加入child，而是已经加入了，为此需要处理关系，而且必须同步处理。
+     * 由于向collection加入或删除了项，因此需要处理所有属性的重导出，包括firstCover, count, partitionTime, orderTime, updateTime。
+     * 这个函数是在变化已经发生后，处理关系使用的，而且必须同步处理。
      */
-    fun processCollectionChildrenAdded(collectionId: Int, addedImage: Illust, updateTime: Instant? = null) {
-        val firstImage = data.db.sequenceOf(Illusts).filter { (it.parentId eq collectionId) and (it.id notEq addedImage.id) }.sortedBy { it.orderTime }.firstOrNull()
+    fun processCollectionChildrenChanged(collectionId: Int, changedCount: Int, updateTime: Instant? = null) {
+        val children = data.db.from(Illusts)
+            .select(Illusts.fileId, Illusts.partitionTime, Illusts.orderTime)
+            .where { Illusts.parentId eq collectionId }
+            .map { Triple(it[Illusts.fileId]!!, it[Illusts.partitionTime]!!, it[Illusts.orderTime]!!) }
 
-        data.db.update(Illusts) {
-            where { it.id eq collectionId }
-            if(firstImage == null || firstImage.orderTime >= addedImage.orderTime) {
-                //只有当现有列表的第一项的排序顺位>=被放入的项时，才发起更新。
-                //如果顺位<当前项，那么旧parent的封面肯定是这个第一项而不是当前项，就不需要更新。
-                set(it.fileId, addedImage.fileId)
-                set(it.partitionTime, addedImage.partitionTime)
-                set(it.orderTime, addedImage.orderTime)
-            }
-            set(it.cachedChildrenCount, it.cachedChildrenCount plus 1)
-            set(it.updateTime, updateTime ?: Instant.now())
-        }
+        if(children.isNotEmpty()) {
+            val fileId = children.minBy { it.third }.first
+            val partitionTime = children.asSequence().map { it.second }.groupBy { it }.maxBy { it.value.size }.key
+            val orderTime = children.filter { it.second == partitionTime }.minOf { it.third }
 
-    }
-
-    /**
-     * 由于从collection移除了child，因此需要处理所有属性的重导出，包括firstCover, count, score, metaTags。若已净空，则会直接移除collection。
-     * 这个函数不是从collection移除child，而是已经移除了，为此需要处理关系，而且必须同步处理。
-     */
-    fun processCollectionChildrenRemoved(collectionId: Int, removedImages: List<Illust>, updateTime: Instant? = null) {
-        //关键属性(fileId, partitionTime, orderTime)的重导出不延后到metaExporter，在事务内立即完成
-        val firstImage = data.db.sequenceOf(Illusts)
-            .filter { (it.parentId eq collectionId) and (it.id notInList removedImages.map(Illust::id)) }
-            .sortedBy { it.orderTime }
-            .firstOrNull()
-        if(firstImage != null) {
             data.db.update(Illusts) {
                 where { it.id eq collectionId }
-                if(firstImage.orderTime >= removedImages.minOf(Illust::orderTime)) {
-                    //只有被移除的项存在任意项的排序顺位<=当剩余列表的第一项时，才发起更新。
-                    //因为如果移除项顺位<当前第一项，那么旧parent的封面肯定是这个第一项而不是移除的项，就不需要更新。
-                    set(it.fileId, firstImage.fileId)
-                    set(it.partitionTime, firstImage.partitionTime)
-                    set(it.orderTime, firstImage.orderTime)
-                }
-                set(it.cachedChildrenCount, it.cachedChildrenCount minus removedImages.size)
+                set(it.fileId, fileId)
+                set(it.partitionTime, partitionTime)
+                set(it.orderTime, orderTime)
+                set(it.cachedChildrenCount, it.cachedChildrenCount plus changedCount)
                 set(it.updateTime, updateTime ?: Instant.now())
             }
-
         }else{
             //此collection已经没有项了，将其删除
             data.db.delete(Illusts) { it.id eq collectionId }

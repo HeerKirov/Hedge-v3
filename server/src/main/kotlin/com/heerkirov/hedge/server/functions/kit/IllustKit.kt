@@ -302,11 +302,10 @@ class IllustKit(private val data: DataRepository,
      * @return (fileId, score, partitionTime, orderTime)
      */
     fun getExportedPropsFromList(images: List<Illust>): Tuple4<Int, Int?, LocalDate, Long> {
-        val firstImage = images.minByOrNull { it.orderTime }!!
-        val fileId = firstImage.fileId
-        val partitionTime = firstImage.partitionTime
-        val orderTime = firstImage.orderTime
+        val fileId = images.minBy { it.orderTime }.fileId
         val score = images.asSequence().mapNotNull { it.score }.average().run { if(isNaN()) null else this }?.roundToInt()
+        val partitionTime = images.asSequence().map { it.partitionTime }.groupBy { it }.maxBy { it.value.size }.key
+        val orderTime = images.filter { it.partitionTime == partitionTime }.minOf { it.orderTime }
 
         return Tuple4(fileId, score, partitionTime, orderTime)
     }

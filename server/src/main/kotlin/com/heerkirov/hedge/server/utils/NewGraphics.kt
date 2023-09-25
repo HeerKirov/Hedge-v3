@@ -3,8 +3,11 @@ package com.heerkirov.hedge.server.utils
 import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
 import com.heerkirov.hedge.server.exceptions.be
 import net.coobird.thumbnailator.Thumbnails
+import net.coobird.thumbnailator.filters.Canvas
+import net.coobird.thumbnailator.geometry.Positions
 import ws.schild.jave.MultimediaObject
 import ws.schild.jave.ScreenExtractor
+import java.awt.Color
 import java.io.File
 import java.io.IOException
 import javax.imageio.ImageIO
@@ -19,6 +22,7 @@ import kotlin.math.sqrt
 object NewGraphics {
     const val THUMBNAIL_RESIZE_AREA = 1200 * 1200
     const val SAMPLE_RESIZE_AREA = 400 * 400
+    private val BACKGROUND_COLOR = Color(245, 245, 245)
 
     /**
      * 使用全局通用策略生成缩略图，并获得原始分辨率。
@@ -48,15 +52,15 @@ object NewGraphics {
             }
             "png", "gif" -> {
                 val (resolutionWidth, resolutionHeight) = getImageDimension(src)
-                val source = Thumbnails.of(src)
+                val source = Thumbnails.of(src).outputFormat("JPG")
                 val output = Fs.temp("jpg")
                 try {
                     if(resolutionWidth * resolutionHeight > resizeArea) {
                         val nh = sqrt(resizeArea.toDouble() * resolutionWidth / resolutionHeight)
                         val nw = nh * resolutionWidth / resolutionHeight
-                        source.size(nw.toInt(), nh.toInt())
+                        source.size(nw.toInt(), nh.toInt()).addFilter(Canvas(nw.toInt(), nh.toInt(), Positions.CENTER, BACKGROUND_COLOR))
                     }else{
-                        source.size(resolutionWidth, resolutionHeight)
+                        source.size(resolutionWidth, resolutionHeight).addFilter(Canvas(resolutionWidth, resolutionHeight, Positions.CENTER, BACKGROUND_COLOR))
                     }
                     source.outputQuality(0.9).toFile(output)
                 }catch (e: Throwable) {

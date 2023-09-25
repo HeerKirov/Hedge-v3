@@ -10,6 +10,7 @@ import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.types.Opt
 import com.heerkirov.hedge.server.utils.types.anyOpt
+import com.heerkirov.hedge.server.utils.types.optOf
 import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
 import org.ktorm.entity.count
@@ -53,17 +54,24 @@ class IllustMetadataExporter(private val data: DataRepository,
                 //collection不需要重导出description，因为它的值总是取自originDescription，在编写时赋值，不会有别的东西影响它的
                 exportedDescription = undefined()
 
-                //实际上collection还得重新导出file、orderTime和childrenCount
+                //实际上collection还得重新导出file、orderTime、partitionTime
                 exportedFileAndTime = if(task.exportFirstCover) {
-                    val firstChild = data.db.from(Illusts).select()
+                    val children = data.db.from(Illusts)
+                        .select(Illusts.fileId, Illusts.partitionTime, Illusts.orderTime)
                         .where { Illusts.parentId eq task.id }
-                        .orderBy(Illusts.orderTime.asc())
-                        .limit(0, 1)
-                        .firstOrNull()
-                        ?.let { Illusts.createEntity(it) }
-                    if(firstChild != null) Opt(Triple(firstChild.fileId, firstChild.partitionTime, firstChild.orderTime)) else undefined()
+                        .map { Triple(it[Illusts.fileId]!!, it[Illusts.partitionTime]!!, it[Illusts.orderTime]!!) }
+
+                    if(children.isNotEmpty()) {
+                        val fileId = children.minBy { it.third }.first
+                        val partitionTime = children.asSequence().map { it.second }.groupBy { it }.maxBy { it.value.size }.key
+                        val orderTime = children.filter { it.second == partitionTime }.minOf { it.third }
+                        optOf(Triple(fileId, partitionTime, orderTime))
+                    }else{
+                        undefined()
+                    }
                 }else undefined()
 
+                //以及childrenCount
                 cachedChildrenCount = if(task.exportFirstCover) {
                     Opt(data.db.sequenceOf(Illusts).filter { Illusts.parentId eq task.id }.count())
                 }else undefined()

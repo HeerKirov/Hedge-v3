@@ -286,8 +286,7 @@ class BookService(private val appdata: AppDataManager,
                     val formImages = form.images ?: throw be(ParamRequired("images"))
                     val images = illustManager.unfoldImages(formImages)
                     if(images.isNotEmpty()) {
-                        val imageIds = images.map { it.id }
-                        bookManager.addImagesInBook(id, imageIds, form.ordinal)
+                        bookManager.addImagesInBook(id, images, form.ordinal)
                     }
                 }
                 BatchAction.MOVE -> {

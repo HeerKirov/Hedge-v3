@@ -27,7 +27,9 @@ class BookManager(private val data: DataRepository,
      * @throws ResourceNotExist ("images", number[]) image项不存在。给出imageId列表
      */
     fun newBook(images: List<Illust>, formTitle: String = "", formDescription: String = "", formScore: Int? = null, formFavorite: Boolean = false): Int {
-        val fileId = images.firstOrNull()?.fileId
+        //新建book时，加入的images将按照它们的orderTime排序
+        val sortedImages = images.sortedBy { it.orderTime }
+        val fileId = sortedImages.firstOrNull()?.fileId
         val createTime = Instant.now()
 
         val id = data.db.insertAndGenerateKey(Books) {
@@ -36,31 +38,42 @@ class BookManager(private val data: DataRepository,
             set(it.score, formScore)
             set(it.favorite, formFavorite)
             set(it.fileId, fileId)
-            set(it.cachedCount, images.size)
+            set(it.cachedCount, sortedImages.size)
             set(it.createTime, createTime)
             set(it.updateTime, createTime)
         } as Int
 
-        kit.updateSubImages(id, images.map { it.id })
+        kit.updateSubImages(id, sortedImages.map { it.id })
 
         kit.refreshAllMeta(id)
 
         bus.emit(BookCreated(id))
-        images.forEach { bus.emit(IllustRelatedItemsUpdated(it.id, IllustType.IMAGE, bookUpdated = true)) }
+        sortedImages.forEach { bus.emit(IllustRelatedItemsUpdated(it.id, IllustType.IMAGE, bookUpdated = true)) }
 
         return id
     }
 
     /**
-     * 向book追加新的images。
+     * 向book追加新的images。新追加的images将按照Illust的orderTime顺序排列。
      */
-    fun addImagesInBook(bookId: Int, imageIds: List<Int>, ordinal: Int?) {
-        kit.upsertSubImages(bookId, imageIds, ordinal)
+    @JvmName("addImagesInBookByIllusts")
+    fun addImagesInBook(bookId: Int, images: List<Illust>, ordinal: Int?) {
+        val sortedImages = images.sortedBy { it.orderTime }
+        val sortedImageIds = sortedImages.map { it.id }
+        kit.upsertSubImages(bookId, sortedImageIds, ordinal)
         kit.refreshAllMeta(bookId)
 
         bus.emit(BookUpdated(bookId, listUpdated = true))
-        bus.emit(BookImagesChanged(bookId, imageIds, emptyList(), emptyList()))
-        imageIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, bookUpdated = true)) }
+        bus.emit(BookImagesChanged(bookId, sortedImageIds, emptyList(), emptyList()))
+        sortedImageIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, bookUpdated = true)) }
+    }
+
+    /**
+     * 向book追加新的images。给出的参数是ID列表，为了获取orderTime，还会再做一次查询。
+     */
+    fun addImagesInBook(bookId: Int, imageIds: List<Int>, ordinal: Int?) {
+        val images = data.db.sequenceOf(Illusts).filter { it.id inList imageIds }.toList()
+        addImagesInBook(bookId, images, ordinal)
     }
 
     /**
