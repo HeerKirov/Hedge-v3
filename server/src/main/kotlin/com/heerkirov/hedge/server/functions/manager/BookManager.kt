@@ -13,6 +13,7 @@ import com.heerkirov.hedge.server.events.IllustRelatedItemsUpdated
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.functions.kit.BookKit
 import com.heerkirov.hedge.server.model.Illust
+import com.heerkirov.hedge.server.utils.ktorm.first
 import org.ktorm.dsl.*
 import org.ktorm.entity.filter
 import org.ktorm.entity.sequenceOf
@@ -42,6 +43,11 @@ class BookManager(private val data: DataRepository,
             set(it.createTime, createTime)
             set(it.updateTime, createTime)
         } as Int
+
+        val verifyId = data.db.from(Books).select(max(Books.id).aliased("id")).first().getInt("id")
+        if(verifyId != id) {
+            throw RuntimeException("Book insert failed. generatedKey is $id but queried verify id is $verifyId.")
+        }
 
         kit.updateSubImages(id, sortedImages.map { it.id })
 

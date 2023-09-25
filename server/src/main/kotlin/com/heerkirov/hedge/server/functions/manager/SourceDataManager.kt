@@ -13,6 +13,7 @@ import com.heerkirov.hedge.server.events.SourceDataDeleted
 import com.heerkirov.hedge.server.events.SourceDataUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.model.SourceData
+import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.types.Opt
 import com.heerkirov.hedge.server.utils.types.anyOpt
@@ -21,6 +22,7 @@ import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
+import org.ktorm.support.sqlite.bulkInsertReturning
 import java.time.Instant
 
 class SourceDataManager(private val appdata: AppDataManager,
@@ -81,15 +83,71 @@ class SourceDataManager(private val appdata: AppDataManager,
     }
 
     /**
+     * 批量检查source key是否存在。如果存在，检查目标sourceImage是否存在并创建对应的记录。
+     * @return rowIds 返回在sourceImage中实际存储的keys。
+     * @throws ResourceNotExist ("source", string) 给出的source不存在
+     */
+    fun bulkValidateAndCreateSourceDataIfNotExist(sources: Collection<Pair<String, Long>>): Map<Pair<String, Long>, Int> {
+        val existSourceDataIds = sources.groupBy({ it.first }) { it.second }
+            .flatMap { (site, ids) ->
+                data.db.from(SourceDatas)
+                    .select(SourceDatas.id, SourceDatas.sourceId)
+                    .where { (SourceDatas.sourceSite eq site) and (SourceDatas.sourceId inList ids) }
+                    .map { Pair(Pair(site, it[SourceDatas.sourceId]!!), it[SourceDatas.id]!!) }
+            }.toMap()
+
+        val notExistSources = sources.filter { p -> p !in existSourceDataIds }
+        val newSourceDataIds = if(notExistSources.isNotEmpty()) {
+            val now = Instant.now()
+            val returningIds = data.db.bulkInsertReturning(SourceDatas, SourceDatas.id) {
+                for ((sourceSite, sourceId) in notExistSources) {
+                    val links = generateLinks(sourceSite, sourceId, emptyMap(), undefined(), null, null)
+                    item {
+                        set(it.sourceSite, sourceSite)
+                        set(it.sourceId, sourceId)
+                        set(it.title, null)
+                        set(it.description, null)
+                        set(it.relations, null)
+                        set(it.links, links.unwrapOrNull())
+                        set(it.additionalInfo, null)
+                        set(it.empty, true)
+                        set(it.status, SourceEditStatus.NOT_EDITED)
+                        set(it.cachedCount, SourceData.SourceCount(0, 0, 0))
+                        set(it.createTime, now)
+                        set(it.updateTime, now)
+                    }
+                }
+            }
+            if(returningIds.any { it == null }) {
+                val nullIndexes = returningIds.mapIndexedNotNull { index, i -> if(i != null) index else null }
+                throw RuntimeException("Some sourceData insert failed. Indexes are [${nullIndexes.joinToString(", ")}]")
+            }
+            @Suppress("UNCHECKED_CAST")
+            val ids = returningIds as List<Int>
+
+            notExistSources.zip(ids).toMap()
+        }else{
+            emptyMap()
+        }
+
+        newSourceDataIds.forEach { (sourceSite, sourceId), id -> SourceDataCreated(sourceSite, sourceId, id) }
+
+        return sources.associateWith { p -> existSourceDataIds[p] ?: newSourceDataIds[p]!! }
+    }
+
+    /**
      * 检查source key是否存在。如果存在，检查目标sourceImage是否存在并创建对应的记录。在创建之前自动检查source key。
      * @return rowId 返回在sourceImage中实际存储的key。
      * @throws ResourceNotExist ("source", string) 给出的source不存在
      */
     fun validateAndCreateSourceDataIfNotExist(sourceSite: String, sourceId: Long): Int {
-        val sourceData = data.db.sequenceOf(SourceDatas).firstOrNull { (it.sourceSite eq sourceSite) and (it.sourceId eq sourceId) }
-        return if(sourceData != null) {
-            sourceData.id
-        }else{
+        val sourceDataId = data.db.from(SourceDatas)
+            .select(SourceDatas.id)
+            .where { (SourceDatas.sourceSite eq sourceSite) and (SourceDatas.sourceId eq sourceId) }
+            .firstOrNull()
+            ?.let { it[SourceDatas.id]!! }
+
+        return sourceDataId ?: run {
             val links = generateLinks(sourceSite, sourceId, emptyMap(), undefined(), null, null)
             val now = Instant.now()
             val id = data.db.insertAndGenerateKey(SourceDatas) {
@@ -106,6 +164,11 @@ class SourceDataManager(private val appdata: AppDataManager,
                 set(it.createTime, now)
                 set(it.updateTime, now)
             } as Int
+
+            val verifyId = data.db.from(SourceDatas).select(max(SourceDatas.id).aliased("id")).first().getInt("id")
+            if(verifyId != id) {
+                throw RuntimeException("SourceData insert failed. generatedKey is $id but queried verify id is $verifyId.")
+            }
 
             bus.emit(SourceDataCreated(sourceSite, sourceId, id))
 
@@ -232,6 +295,11 @@ class SourceDataManager(private val appdata: AppDataManager,
                 set(it.createTime, now)
                 set(it.updateTime, now)
             } as Int
+
+            val verifyId = data.db.from(SourceDatas).select(max(SourceDatas.id).aliased("id")).first().getInt("id")
+            if(verifyId != id) {
+                throw RuntimeException("SourceData insert failed. generatedKey is $id but queried verify id is $verifyId.")
+            }
 
             tags.applyOpt {
                 if(isNotEmpty()) {

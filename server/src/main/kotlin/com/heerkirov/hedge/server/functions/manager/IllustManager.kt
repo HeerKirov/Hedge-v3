@@ -10,12 +10,16 @@ import com.heerkirov.hedge.server.events.*
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.model.Illust
+import com.heerkirov.hedge.server.model.ImportImage
+import com.heerkirov.hedge.server.utils.duplicateCount
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
+import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.types.optOf
 import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
+import org.ktorm.support.sqlite.bulkInsertReturning
 import java.time.Instant
 import java.time.LocalDate
 
@@ -28,6 +32,65 @@ class IllustManager(private val data: DataRepository,
                     private val folderManager: FolderManager,
                     private val partitionManager: PartitionManager,
                     private val trashManager: TrashManager) {
+
+    /**
+     * 从importImage批量创建新的image。
+     */
+    fun bulkNewImage(importImages: Collection<ImportImage>): Map<Int, Int> {
+        return if(importImages.isNotEmpty()) {
+            val partitionWithCount = importImages.map { it.partitionTime }.duplicateCount()
+            for ((partition, count) in partitionWithCount) {
+                partitionManager.addItemInPartition(partition, count)
+            }
+
+            val sourceToRowIds = importImages.mapNotNull { sourceManager.checkSourceSite(it.sourceSite, it.sourceId, it.sourcePart, it.sourcePartName) }
+                .distinct()
+                .let { sourceManager.bulkValidateAndCreateSourceDataIfNotExist(it) }
+
+            val returningIds = data.db.bulkInsertReturning(Illusts, Illusts.id) {
+                for (record in importImages) {
+                    val newSourceDataId = if(record.sourceSite != null && record.sourceId != null) sourceToRowIds[record.sourceSite to record.sourceId] else null
+                    item {
+                        set(it.type, IllustModelType.IMAGE)
+                        set(it.parentId, null)
+                        set(it.fileId, record.fileId)
+                        set(it.cachedChildrenCount, 0)
+                        set(it.cachedBookCount, 0)
+                        set(it.sourceDataId, newSourceDataId)
+                        set(it.sourceSite, record.sourceSite)
+                        set(it.sourceId, record.sourceId)
+                        set(it.sourcePart, record.sourcePart)
+                        set(it.sourcePartName, record.sourcePartName)
+                        set(it.description, "")
+                        set(it.score, null)
+                        set(it.favorite, false)
+                        set(it.tagme, record.tagme)
+                        set(it.exportedDescription, "")
+                        set(it.exportedScore, null)
+                        set(it.partitionTime, record.partitionTime)
+                        set(it.orderTime, record.orderTime)
+                        set(it.createTime, record.createTime)
+                        set(it.updateTime, record.createTime)
+                    }
+                }
+            }
+
+            if(returningIds.any { it == null }) {
+                val nullIndexes = returningIds.mapIndexedNotNull { index, i -> if(i != null) index else null }
+                throw RuntimeException("Some images insert failed. Indexes are [${nullIndexes.joinToString(", ")}]")
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            val ids = returningIds as List<Int>
+
+            bus.emit(ids.map { IllustCreated(it, IllustType.IMAGE) })
+
+            return importImages.map { it.id }.zip(ids).toMap()
+        }else{
+            emptyMap()
+        }
+    }
+
     /**
      * 创建新的image。
      * @throws ResourceNotExist ("site", string) 给出的site不存在
@@ -38,6 +101,7 @@ class IllustManager(private val data: DataRepository,
      * @throws ResourceNotSuitable ("tags", number[]) 部分tags资源不适用。地址段不适用于此项。给出不适用的tag id列表
      * @throws ConflictingGroupMembersError 发现标签冲突组
      */
+    @Deprecated("使用新的批处理函数代替")
     fun newImage(fileId: Int, sourceSite: String? = null, sourceId: Long? = null, sourcePart: Int? = null, sourcePartName: String? = null,
                  description: String = "", score: Int? = null, favorite: Boolean = false, tagme: Illust.Tagme = Illust.Tagme.EMPTY,
                  partitionTime: LocalDate, orderTime: Long, createTime: Instant): Int {
@@ -110,6 +174,11 @@ class IllustManager(private val data: DataRepository,
             set(it.createTime, createTime)
             set(it.updateTime, createTime)
         } as Int
+
+        val verifyId = data.db.from(Illusts).select(max(Illusts.id).aliased("id")).first().getInt("id")
+        if(verifyId != id) {
+            throw RuntimeException("Illust insert failed. generatedKey is $id but queried verify id is $verifyId.")
+        }
 
         updateSubImages(id, images)
 

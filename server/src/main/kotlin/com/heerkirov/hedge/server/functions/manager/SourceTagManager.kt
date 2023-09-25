@@ -11,6 +11,7 @@ import com.heerkirov.hedge.server.events.SourceTagUpdated
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.model.SourceTag
+import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.toAlphabetLowercase
 import org.ktorm.dsl.*
 import org.ktorm.entity.filter
@@ -44,6 +45,11 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
                     set(it.name, sourceTagCode)
                     set(it.otherName, null)
                 } as Int
+
+                val verifyId = data.db.from(SourceTags).select(max(SourceTags.id).aliased("id")).first().getInt("id")
+                if(verifyId != id) {
+                    throw RuntimeException("SourceTag insert failed. generatedKey is $id but queried verify id is $verifyId.")
+                }
 
                 bus.emit(SourceTagUpdated(sourceSite, sourceTagType, sourceTagCode))
 

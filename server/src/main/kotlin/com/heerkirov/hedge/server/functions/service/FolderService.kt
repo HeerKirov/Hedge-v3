@@ -150,6 +150,11 @@ class FolderService(private val data: DataRepository,
                 set(it.updateTime, createTime)
             } as Int
 
+            val verifyId = data.db.from(Folders).select(max(Folders.id).aliased("id")).first().getInt("id")
+            if(verifyId != id) {
+                throw RuntimeException("Folder insert failed. generatedKey is $id but queried verify id is $verifyId.")
+            }
+
             if(images != null) kit.updateSubImages(id, images.map { it.id })
 
             bus.emit(FolderCreated(id, form.type))

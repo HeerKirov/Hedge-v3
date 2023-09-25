@@ -23,6 +23,7 @@ import com.heerkirov.hedge.server.utils.business.collectBulkResult
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
+import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
@@ -149,6 +150,11 @@ class TagService(private val data: DataRepository,
                 set(it.createTime, createTime)
                 set(it.updateTime, createTime)
             } as Int
+
+            val verifyId = data.db.from(Tags).select(max(Tags.id).aliased("id")).first().getInt("id")
+            if(verifyId != id) {
+                throw RuntimeException("Tag insert failed. generatedKey is $id but queried verify id is $verifyId.")
+            }
 
             form.mappingSourceTags?.also { sourceMappingManager.update(MetaType.TAG, id, it) }
 

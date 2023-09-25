@@ -17,7 +17,12 @@ interface EventBus : Component {
     /**
      * 向事件总线投递事件。
      */
-    fun emit(vararg e: BaseBusEvent)
+    fun emit(e: BaseBusEvent)
+
+    /**
+     * 向事件总线投递事件。
+     */
+    fun emit(e: Collection<BaseBusEvent>)
 
     /**
      * 监听来自事件总线的事件投递，并绕过事件总线的收集器，同步发送至接收者。
@@ -49,7 +54,22 @@ class EventBusImpl : EventBus {
 
     private val eventHoarder = EventHoarder<String>(::sendToConsumer)
 
-    override fun emit(vararg e: BaseBusEvent) {
+    override fun emit(e: BaseBusEvent) {
+        val timestamp = Instant.now().toEpochMilli()
+
+        val packagedEvent = ItemBusEvent(e, timestamp)
+        eventHoarder.collect(e.eventType, packagedEvent)
+
+        for (consumer in immediateSet) {
+            try {
+                consumer(packagedEvent)
+            }catch (e: Exception) {
+                log.error("Error occurred in event consumer ${consumer::class}. ", e)
+            }
+        }
+    }
+
+    override fun emit(e: Collection<BaseBusEvent>) {
         if(e.isNotEmpty()) {
             val timestamp = Instant.now().toEpochMilli()
 

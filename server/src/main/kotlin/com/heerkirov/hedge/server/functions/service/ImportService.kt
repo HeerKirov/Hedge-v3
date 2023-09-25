@@ -330,9 +330,8 @@ class ImportService(private val appdata: AppDataManager,
             }
 
             val errorItems = mutableListOf<ImportSaveRes.SaveErrorItem>()
-            val importToImageIds = mutableMapOf<Int, Int>()
 
-            for ((record, file) in records) {
+            val importToImageIds = records.filter { (record, file) ->
                 //首先对记录所持有的collection、book、folder信息，以及file READY状态进行检查。如果不存在，则跳过此条
                 var notExistedCollectionId: Int? = null
                 var notExistedBookIds: List<Int>? = null
@@ -360,25 +359,11 @@ class ImportService(private val appdata: AppDataManager,
                 }
                 if(notExistedCollectionId != null || notExistedBookIds != null || notExistedFolderIds != null || notExistedCloneFrom != null || fileNotReady) {
                     errorItems.add(ImportSaveRes.SaveErrorItem(record.id, fileNotReady, notExistedCollectionId, notExistedCloneFrom, notExistedBookIds, notExistedFolderIds))
-                    continue
+                    false
+                }else{
+                    true
                 }
-
-                // 虽然{newImage}方法会抛出很多异常，但那都与这里无关。
-                // source虽然是唯一看似有关的，但通过业务逻辑限制，使得有实例的site不可能被删除。
-                // 就算最后真的出了bug，抛出去当unknown error处理算了。
-                val imageId = illustManager.newImage(
-                    fileId = record.fileId,
-                    tagme = record.tagme,
-                    sourceSite = record.sourceSite,
-                    sourceId = record.sourceId,
-                    sourcePart = record.sourcePart,
-                    sourcePartName = record.sourcePartName,
-                    partitionTime = record.partitionTime,
-                    orderTime = record.orderTime,
-                    createTime = record.createTime)
-
-                importToImageIds[record.id] = imageId
-            }
+            }.map { (record, _) -> record }.let { illustManager.bulkNewImage(it) }
 
             records.asSequence()
                 .filter { (record, _) -> record.collectionId != null && record.id in importToImageIds }

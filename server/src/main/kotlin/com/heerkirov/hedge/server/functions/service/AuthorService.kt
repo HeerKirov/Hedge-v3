@@ -25,6 +25,7 @@ import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.utils.business.collectBulkResult
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
+import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.types.*
@@ -107,6 +108,11 @@ class AuthorService(private val appdata: AppDataManager,
                 set(it.createTime, createTime)
                 set(it.updateTime, createTime)
             } as Int
+
+            val verifyId = data.db.from(Authors).select(max(Authors.id).aliased("id")).first().getInt("id")
+            if(verifyId != id) {
+                throw RuntimeException("Author insert failed. generatedKey is $id but queried verify id is $verifyId.")
+            }
 
             form.mappingSourceTags?.also { sourceMappingManager.update(MetaType.AUTHOR, id, it) }
 

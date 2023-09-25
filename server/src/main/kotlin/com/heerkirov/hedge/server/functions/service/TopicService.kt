@@ -20,6 +20,7 @@ import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.utils.business.collectBulkResult
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
+import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tuples.Tuple2
@@ -116,6 +117,11 @@ class TopicService(private val appdata: AppDataManager,
                 set(it.createTime, createTime)
                 set(it.updateTime, createTime)
             } as Int
+
+            val verifyId = data.db.from(Topics).select(max(Topics.id).aliased("id")).first().getInt("id")
+            if(verifyId != id) {
+                throw RuntimeException("Topic insert failed. generatedKey is $id but queried verify id is $verifyId.")
+            }
 
             form.mappingSourceTags?.also { sourceMappingManager.update(MetaType.TOPIC, id, it) }
 
