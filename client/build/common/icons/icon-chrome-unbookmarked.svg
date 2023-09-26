@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     x="0px" y="0px" width="300px" height="300px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve">
+	 <linearGradient class="linearGradient" x1="0%" y1="0%" x2="0%" y2="100%" gradientTransform="translate(0.5,0.5) rotate(0) translate(-0.5,-0.5)">
+		<stop id="stop1" offset="0%" class="linearGradientColor1" stop-color="#05a" />
+        <stop id="stop2" offset="100%" class="linearGradientColor2" stop-color="#0a5"/>
+	</linearGradient>
+
+    <radialGradient class="radialGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+		<stop offset="0%" class="radialGradientColor1" stop-color="#05a"/>
+        <stop offset="100%" class="radialGradientColor2" stop-color="#0a5"/>
+	</radialGradient>
+    <clipPath id="f_round_rect" class="clipPath">
+		<rect fill="none" class="element" stroke="#dddddd" stroke-width="1" stroke-miterlimit="10" x="0" y="0" width="100" height="100" rx="20" ry="20"/>
+	</clipPath>
+    <rect class="fill-color element" fill="#FFFFFF" opacity="1" x="3" y="3" width="95" height="95" rx="20" ry="20"/>
+    <rect class="stroke-color element" fill="none" stroke="#dddddd" stroke-width="0" stroke-miterlimit="10" x="0" y="0" width="100" height="100" rx="20" ry="20" clip-path="url(#f_round_rect)"/>
+    <path fill="#1468cc" d="M80,0H20C8.954,0,0,8.954,0,20v60c0,11.046,8.954,20,20,20h60c11.046,0,20-8.954,20-20V20
+	C100,8.954,91.046,0,80,0z M95,80c0,8.271-6.729,15-15,15H20c-8.271,0-15-6.729-15-15V20c0-8.271,6.729-15,15-15h60
+	c8.271,0,15,6.729,15,15V80z" class="color c1"/>
+    <path transform="scale(2.25, 2.25) translate(6.25, 5.5)" d="M29.707,7.293l-3,-3c-0.3905,-0.39038 -1.0235,-0.39038 -1.414,0l-3,3c-0.18755,0.18749 -0.29294,0.44181 -0.293,0.707v1h-1.094l0.085,-0.639c0.034,-0.26311 -0.03794,-0.52895 -0.2,-0.739l-2.576,-3.369c-0.33534,-0.43759 -0.96157,-0.52124 -1.4,-0.187l-3.37,2.579c-0.21072,0.16102 -0.34884,0.39915 -0.384,0.662l-0.224,1.693h-2.837v-1c-0.00006,-0.26519 -0.10545,-0.51951 -0.293,-0.707l-3,-3c-0.3905,-0.39038 -1.0235,-0.39038 -1.414,0l-3,3c-0.18755,0.18749 -0.29294,0.44181 -0.293,0.707v21c0,0.55228 0.44772,1 1,1h6c0.55228,0 1,-0.44772 1,-1v-2h0.445l-0.145,1.124c-0.07276,0.54728 0.31176,1.04997 0.859,1.123l5.947,0.79c0.04409,0.00589 0.08852,0.0089 0.133,0.009c0.50079,-0.00063 0.9239,-0.37159 0.99,-0.868l0.286,-2.178h3.485v2c0,0.55228 0.44772,1 1,1h6c0.55228,0 1,-0.44772 1,-1v-21c-0.00006,-0.26519 -0.10545,-0.51951 -0.293,-0.707zM20.109,15h1.891v6h-2.688zM22,11v2h-1.625l0.266,-2zM11.242,21h-1.242v-6h2.039zM12.571,11l-0.266,2h-2.305v-2zM8,28h-4v-19.586l2,-2l2,2zM10,25v-2h0.977l-0.266,2zM12.41,27.4l2.579,-19.42l2.245,-1.718l1.72,2.246l-2.579,19.415zM18.78,25l0.266,-2h2.954v2zM28,28h-4v-19.586l2,-2l2,2z" fill="#1468cc" class="fill c1"/>
+</svg>

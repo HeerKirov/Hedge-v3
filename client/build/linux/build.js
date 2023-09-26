@@ -48,7 +48,7 @@ function installElectronApp(target) {
     const appPath = path.join(target, APP_NAME)
     child.spawnSync("cp", ["-R", "node_modules/electron/dist", appPath])
     fs.renameSync(path.join(appPath, "electron"), path.join(appPath, APP_BIN_NAME))
-    fs.copyFileSync(path.join(__dirname, "files/hedge.ico"), path.join(appPath, "resources/hedge.ico"))
+    fs.copyFileSync(path.join(__dirname, "files/hedge.svg"), path.join(appPath, "resources/hedge.svg"))
     fs.copyFileSync(path.join(__dirname, "files/hedge.png"), path.join(appPath, "resources/hedge.png"))
     fs.rmSync(path.join(appPath, "resources/default_app.asar"))
 }
