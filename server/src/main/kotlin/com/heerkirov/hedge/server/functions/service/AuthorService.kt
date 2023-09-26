@@ -85,6 +85,7 @@ class AuthorService(private val appdata: AppDataManager,
      * @throws ResourceNotExist ("annotations", number[]) 有annotation不存在时，抛出此异常。给出不存在的annotation id列表
      * @throws ResourceNotSuitable ("annotations", number[]) 指定target类型且有元素不满足此类型时，抛出此异常。给出不适用的annotation id列表
      * @throws ResourceNotExist ("site", string) 更新source mapping tags时给出的site不存在
+     * @throws ResourceNotExist ("sourceTagType", string[]) 更新source mapping tags时列出的tagType不存在
      */
     fun create(form: AuthorCreateForm): Int {
         data.db.transaction {
@@ -142,6 +143,7 @@ class AuthorService(private val appdata: AppDataManager,
      * @throws ResourceNotExist ("annotations", number[]) 有annotation不存在时，抛出此异常。给出不存在的annotation id列表
      * @throws ResourceNotSuitable ("annotations", number[]) 指定target类型且有元素不满足此类型时，抛出此异常。给出不适用的annotation id列表
      * @throws ResourceNotExist ("site", string) 更新source mapping tags时给出的site不存在
+     * @throws ResourceNotExist ("sourceTagType", string[]) 更新source mapping tags时列出的tagType不存在
      */
     fun update(id: Int, form: AuthorUpdateForm) {
         data.db.transaction {

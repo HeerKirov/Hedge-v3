@@ -554,6 +554,7 @@ class IllustService(private val appdata: AppDataManager,
      * @throws NotFound 请求对象不存在
      * @throws ResourceNotExist ("site", string) 给出的site不存在
      * @throws ResourceNotExist ("additionalInfo", field) 存在不合法的字段
+     * @throws ResourceNotExist ("sourceTagType", string[]) 列出的tagType不存在
      */
     fun updateImageSourceData(id: Int, form: IllustImageSourceDataUpdateForm) {
         data.db.transaction {

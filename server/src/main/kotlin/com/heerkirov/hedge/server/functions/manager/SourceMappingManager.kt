@@ -111,6 +111,7 @@ class SourceMappingManager(private val appdata: AppDataManager, private val data
      * 更新某个meta tag的source mapping。
      * @throws NotFound 请求对象不存在
      * @throws ResourceNotExist ("site", string) 给出的site不存在
+     * @throws ResourceNotExist ("sourceTagType", string[]) 列出的tagType不存在
      */
     fun update(metaType: MetaType, metaId: Int, mappings: List<MappingSourceTagForm>) {
         //查询meta tag确定存在

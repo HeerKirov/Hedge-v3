@@ -283,7 +283,7 @@ class ImportService(private val appdata: AppDataManager,
      * 保存。
      * @throws ResourceNotExist ("target", number[]) 要保存的对象不存在。给出不存在的source image id列表
      * @throws ResourceNotExist ("additionalInfo", field) 存在不合法的字段
-     * @throws NotReadyFileError 还存在文件没有准备好，因此保险起见阻止了所有的导入。
+     * @throws ResourceNotExist ("sourceTagType", string[]) 列出的tagType不存在
      */
     fun save(form: ImportSaveForm): ImportSaveRes {
         data.db.transaction {

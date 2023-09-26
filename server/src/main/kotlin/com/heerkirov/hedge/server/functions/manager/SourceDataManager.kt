@@ -242,8 +242,9 @@ class SourceDataManager(private val appdata: AppDataManager,
     /**
      * 检查source key是否存在，创建对应记录，并手动更新内容。不会检查sourceSite合法性，因为假设之前已经校验过了。
      * @return (rowId, sourceSite, sourceId) 返回在sourceImage中实际存储的key。
-     * @throws ResourceNotExist ("source", string) 给出的source不存在
+     * @throws ResourceNotExist ("site", string) 给出的site不存在
      * @throws ResourceNotExist ("additionalInfo", field) 存在不合法的字段
+     * @throws ResourceNotExist ("sourceTagType", string[]) 列出的tagType不存在
      * @throws ParamError additionalInfo字段不合法
      * @throws NotFound 请求对象不存在 (allowCreate=false时抛出)
      * @throws AlreadyExists 此对象已存在 (allowUpdate=false时抛出)

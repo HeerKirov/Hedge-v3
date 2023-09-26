@@ -61,10 +61,11 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
      * 在image的source update方法中，根据给出的tags dto，创建或修改数据库里的source tag model，并返回这些模型的id。
      * 这个方法的逻辑是，source tags总是基于其name做唯一定位，当name不变时，修改其他属性视为更新，而改变name即认为是不同的对象。
      * 不会校验source的合法性，因为假设之前已经手动校验过了。
+     * @throws ResourceNotExist ("sourceTagType", string[]) 列出的tagType不存在
      */
     fun getAndUpsertSourceTags(sourceSite: String, tags: List<SourceTagForm>): List<Int> {
         val site = appdata.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
-        tags.asSequence().map { it.type }.distinct().firstOrNull { site.availableTypes.indexOf(it) < 0 }?.let { throw be(ResourceNotExist("sourceTagType", it)) }
+        tags.asSequence().map { it.type }.distinct().filter { site.availableTypes.indexOf(it) < 0 }.toList().let { if(it.isNotEmpty()) throw be(ResourceNotExist("sourceTagType", it)) }
 
         val dbTags = tags.groupBy ({ it.type }) { it.code }.flatMap { (type, codes) -> data.db.sequenceOf(SourceTags).filter { (it.site eq sourceSite) and (it.type eq type) and (it.code inList codes) }.toList() }
         val dbTagMap = dbTags.associateBy { Pair(it.type, it.code.toAlphabetLowercase()) }
