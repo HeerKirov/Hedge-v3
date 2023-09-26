@@ -442,7 +442,7 @@ export function useSideBarSourceData() {
 
     const setSourceDataPath = async (source: SourceDataPath | null) => {
         return objects.deepEquals(source, data.value?.source) || await setData({source}, e => {
-            if(e.code === "NOT_EXIST") {
+            if(e.code === "NOT_EXIST" && e.info[0] === "site") {
                 message.showOkMessage("error", `来源${source?.sourceSite}不存在。`)
             }else if(e.code === "PARAM_ERROR") {
                 const target = e.info === "sourceId" ? "来源ID" : e.info === "sourcePart" ? "分页" : e.info === "sourcePartName" ? "分页页名": e.info
@@ -452,11 +452,11 @@ export function useSideBarSourceData() {
                 message.showOkMessage("error", `${target}属性缺失。`)
             }else if(e.code === "PARAM_NOT_REQUIRED") {
                 if(e.info === "sourcePart") {
-                    message.showOkMessage("error", `分页属性不需要填写，因为选择的来源类型不支持分页。`)
+                    message.showOkMessage("error", `分页属性不需要填写，因为选择的来源站点不支持分页。`)
                 }else if(e.info === "sourcePartName") {
-                    message.showOkMessage("error", `分页页名属性不需要填写，因为选择的来源类型不支持分页页名。`)
+                    message.showOkMessage("error", `分页页名属性不需要填写，因为选择的来源站点不支持分页页名。`)
                 }else if(e.info === "sourceId/sourcePart/sourcePartName") {
-                    message.showOkMessage("error", `来源ID/分页属性不需要填写，因为未指定来源类型。`)
+                    message.showOkMessage("error", `来源ID/分页属性不需要填写，因为未指定来源站点。`)
                 }else{
                     message.showOkMessage("error", `${e.info}属性不需要填写。`)
                 }

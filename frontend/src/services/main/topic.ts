@@ -136,6 +136,10 @@ export function useTopicCreatePanel() {
                     message.showOkMessage("error", "选择的注解不存在。", `错误项: ${id}`)
                 }else if(type === "parentId") {
                     message.showOkMessage("error", "选择的父主题不存在。", `错误项: ${id}`)
+                }else if(type === "site") {
+                    message.showOkMessage("error", `选择的来源站点不存在。`, `错误项: ${id}`)
+                }else if(type === "sourceTagType") {
+                    message.showOkMessage("error", `选择的来源标签类型不存在。`, `错误项: ${id.join(", ")}`)
                 }else{
                     message.showOkMessage("error", `选择的资源${type}不存在。`, `错误项: ${id}`)
                 }
@@ -290,6 +294,10 @@ function useTopicDetailPanelEditor(data: Readonly<Ref<DetailTopic | null>>, setD
                         message.showOkMessage("error", "选择的注解不存在。", `错误项: ${id}`)
                     }else if(type === "parentId") {
                         message.showOkMessage("error", "选择的父主题不存在。", `错误项: ${id}`)
+                    }else if(type === "site") {
+                        message.showOkMessage("error", `选择的来源站点不存在。`, `错误项: ${id}`)
+                    }else if(type === "sourceTagType") {
+                        message.showOkMessage("error", `选择的来源标签类型不存在。`, `错误项: ${id.join(", ")}`)
                     }else{
                         message.showOkMessage("error", `选择的资源${type}不存在。`, `错误项: ${id}`)
                     }

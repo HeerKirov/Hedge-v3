@@ -131,7 +131,7 @@ export interface ImportEndpoint {
      * 确认导入，将所有项目导入到图库。
      * @exception FILE_NOT_READY
      */
-    save(form: ImportSaveForm): Promise<Response<ImportSaveResponse, ResourceNotExist<"target", number[]> | FileNotReadyError>>
+    save(form: ImportSaveForm): Promise<Response<ImportSaveResponse, ResourceNotExist<"target", number[]> | ResourceNotExist<"additionalInfo", string> | ResourceNotExist<"sourceTagType", string[]> | FileNotReadyError>>
     /**
      * 目录监听器。
      */

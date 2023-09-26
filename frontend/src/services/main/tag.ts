@@ -113,6 +113,10 @@ export function useTagCreatePane() {
                     message.showOkMessage("error", "选择的示例项不存在。", `错误项: ${ids}`)
                 }else if(type === "annotations") {
                     message.showOkMessage("error", "选择的注解不存在。", `错误项: ${ids}`)
+                }else if(type === "site") {
+                    message.showOkMessage("error", `选择的来源站点不存在。`, `错误项: ${ids}`)
+                }else if(type === "sourceTagType") {
+                    message.showOkMessage("error", `选择的来源标签类型不存在。`, `错误项: ${ids.join(", ")}`)
                 }else{
                     message.showOkMessage("error", `选择的资源${type}不存在。`, `错误项: ${ids}`)
                 }
@@ -283,7 +287,12 @@ export function useTagDetailPane() {
             mappingSourceTags: patchMappingSourceTagForm(mappingSourceTags, data.value?.mappingSourceTags ?? [])
         }, e => {
             if(e.code === "NOT_EXIST") {
-                message.showOkMessage("error", "选择的来源类型不存在。")
+                const [type, id] = e.info
+                if(type === "site") {
+                    message.showOkMessage("error", `选择的来源站点不存在。`, `错误项: ${id}`)
+                }else if(type === "sourceTagType") {
+                    message.showOkMessage("error", `选择的来源标签类型不存在。`, `错误项: ${id.join(", ")}`)
+                }
             }else{
                 return e
             }

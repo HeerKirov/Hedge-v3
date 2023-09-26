@@ -3,12 +3,7 @@ import { HttpInstance, Response } from "../instance"
 import { IdResponse, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
 import { SimpleAnnotation } from "./annotations"
 import { MappingSourceTag, MappingSourceTagForm } from "./source-tag-mapping"
-import {
-    AlreadyExists, IllegalConstraintError, NotFound,
-    RecursiveParentError,
-    ResourceNotExist,
-    ResourceNotSuitable
-} from "../exceptions"
+import { AlreadyExists, IllegalConstraintError, NotFound, RecursiveParentError, ResourceNotExist, ResourceNotSuitable } from "../exceptions"
 
 export function createTopicEndpoint(http: HttpInstance): TopicEndpoint {
     return {
@@ -70,8 +65,8 @@ export interface TopicEndpoint {
 }
 
 export interface TopicExceptions {
-    "create": AlreadyExists<"Topic", "name", string> | ResourceNotExist<"parentId", number> | ResourceNotExist<"annotations", number[]> | ResourceNotSuitable<"annotations", number[]> | RecursiveParentError | IllegalConstraintError<"type", "parent", TopicType[]> | ResourceNotExist<"site", string>
-    "update": NotFound | AlreadyExists<"Topic", "name", string> | ResourceNotExist<"parentId", number> | ResourceNotExist<"annotations", number[]> | ResourceNotSuitable<"annotations", number[]> | RecursiveParentError | IllegalConstraintError<"type", "parent" | "children", TopicType[]> | ResourceNotExist<"site", string>
+    "create": AlreadyExists<"Topic", "name", string> | ResourceNotExist<"parentId", number> | ResourceNotExist<"annotations", number[]> | ResourceNotSuitable<"annotations", number[]> | RecursiveParentError | IllegalConstraintError<"type", "parent", TopicType[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
+    "update": NotFound | AlreadyExists<"Topic", "name", string> | ResourceNotExist<"parentId", number> | ResourceNotExist<"annotations", number[]> | ResourceNotSuitable<"annotations", number[]> | RecursiveParentError | IllegalConstraintError<"type", "parent" | "children", TopicType[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
 }
 
 export type TopicType = "UNKNOWN" | "COPYRIGHT" | "IP" | "CHARACTER"

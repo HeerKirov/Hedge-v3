@@ -222,11 +222,11 @@ export function useImportDetailPaneSingle(path: Ref<number | null>) {
                 message.showOkMessage("error", `${target}属性缺失。`)
             }else if(e.code === "PARAM_NOT_REQUIRED") {
                 if(e.info === "sourcePart") {
-                    message.showOkMessage("error", `分页属性不需要填写，因为选择的来源类型不支持分页。`)
+                    message.showOkMessage("error", `分页属性不需要填写，因为选择的来源站点不支持分页。`)
                 }else if(e.info === "sourcePartName") {
-                    message.showOkMessage("error", `分页页名属性不需要填写，因为选择的来源类型不支持分页页名。`)
+                    message.showOkMessage("error", `分页页名属性不需要填写，因为选择的来源站点不支持分页页名。`)
                 }else if(e.info === "sourceId/sourcePart/sourcePartName") {
-                    message.showOkMessage("error", `来源ID/分页属性不需要填写，因为未指定来源类型。`)
+                    message.showOkMessage("error", `来源ID/分页属性不需要填写，因为未指定来源站点。`)
                 }else{
                     message.showOkMessage("error", `${e.info}属性不需要填写。`)
                 }

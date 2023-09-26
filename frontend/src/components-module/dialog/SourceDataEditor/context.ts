@@ -94,7 +94,8 @@ export function useCreateData(completed: () => void) {
             if(e.code === "ALREADY_EXISTS") {
                 message.showOkMessage("prompt", "该来源数据已存在。", "请尝试编辑此来源数据。")
             }else if(e.code === "NOT_EXIST") {
-                message.showOkMessage("error", "选择的来源类型不存在。")
+                const typeName = {"site": "来源站点", "additionalInfo": "附加信息字段", "sourceTagType": "标签类型"}[e.info[0]]
+                message.showOkMessage("error", `选择的${typeName}不存在。`)
             }
         }
     })
@@ -106,12 +107,20 @@ export function useCreateData(completed: () => void) {
 }
 
 export function useEditorData(identity: Ref<SourceDataIdentity>, completed: () => void) {
+    const message = useMessageBox()
+
     useSettingSite()
 
     const { data, setData } = useFetchEndpoint({
         path: identity,
         get: client => client.sourceData.get,
-        update: client => client.sourceData.update
+        update: client => client.sourceData.update,
+        handleErrorInUpdate(e) {
+            if(e.code === "NOT_EXIST") {
+                const typeName = {"site": "来源站点", "additionalInfo": "附加信息字段", "sourceTagType": "标签类型"}[e.info[0]]
+                message.showOkMessage("error", `选择的${typeName}不存在。`)
+            }
+        }
     })
 
     const form = ref<SourceDataUpdateFormData | null>(null)

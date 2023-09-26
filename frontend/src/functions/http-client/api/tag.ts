@@ -66,8 +66,8 @@ export interface TagEndpoint {
 }
 
 export interface TagExceptions {
-    "create": AlreadyExists<"Tag", "name", string> | CannotGiveColorError | ResourceNotExist<"parentId", number> | ResourceNotExist<"links" | "examples" | "annotations", number[]> | ResourceNotSuitable<"links" | "examples" | "annotations", number[]> | ResourceNotExist<"site", string>
-    "update": NotFound | RecursiveParentError | AlreadyExists<"Tag", "name", string> | CannotGiveColorError | ResourceNotExist<"parentId", number> | ResourceNotExist<"links" | "examples" | "annotations", number[]> | ResourceNotSuitable<"links" | "examples" | "annotations", number[]> | ResourceNotExist<"site", string>
+    "create": AlreadyExists<"Tag", "name", string> | CannotGiveColorError | ResourceNotExist<"parentId", number> | ResourceNotExist<"links" | "examples" | "annotations", number[]> | ResourceNotSuitable<"links" | "examples" | "annotations", number[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
+    "update": NotFound | RecursiveParentError | AlreadyExists<"Tag", "name", string> | CannotGiveColorError | ResourceNotExist<"parentId", number> | ResourceNotExist<"links" | "examples" | "annotations", number[]> | ResourceNotSuitable<"links" | "examples" | "annotations", number[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
     "delete": NotFound
 }
 

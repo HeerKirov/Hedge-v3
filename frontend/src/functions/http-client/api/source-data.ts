@@ -61,9 +61,9 @@ export interface SourceDataEndpoint {
 export interface SourceDataIdentity { sourceSite: string, sourceId: number }
 
 export interface SourceDataExceptions {
-    "create": ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string> | AlreadyExists<"SourceData", "sourceId", number>
-    "bulk": ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string>
-    "update": ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string> | NotFound
+    "create": ResourceNotExist<"site", string> | ResourceNotExist<"additionalInfo", string> | ResourceNotExist<"sourceTagType", string[]> | AlreadyExists<"SourceData", "sourceId", number>
+    "bulk": ResourceNotExist<"site", string> | ResourceNotExist<"additionalInfo", string> | ResourceNotExist<"sourceTagType", string[]>
+    "update": ResourceNotExist<"site", string> | ResourceNotExist<"additionalInfo", string> | ResourceNotExist<"sourceTagType", string[]> | NotFound
 }
 
 export type SourceMarkType = "SAME" | "SIMILAR" | "RELATED" | "UNKNOWN"
