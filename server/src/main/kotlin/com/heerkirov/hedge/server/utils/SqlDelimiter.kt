@@ -4,11 +4,36 @@ import java.util.*
 
 object SqlDelimiter {
     /**
+     * 给出一段SQL语句，使用参数列表渲染其中的可替换值。
+     */
+    fun render(sql: String, arguments: Map<String, String>): String {
+        val sb = StringBuilder()
+        var start = 0
+        while (true) {
+            val idx = sql.indexOf("\${", start)
+            if(idx < start) {
+                sb.append(sql.substring(start))
+                break
+            }
+
+            val endIdx = sql.indexOf("}", idx).let { if(it >= idx) it else sql.length }
+            val argumentName = sql.substring(idx + 2, endIdx)
+            val argumentValue = arguments[argumentName] ?: throw IllegalArgumentException("Argument '$argumentName' not exist.")
+
+            sb.append(sql.substring(start, idx))
+            sb.append(argumentValue)
+
+            start = endIdx + 1
+        }
+        return sb.toString()
+    }
+
+    /**
      * 给出一段(可以包括数行)SQL语句。使用分号，将其分割为单句的SQL语句。
-     * @param SQL SQL语句段
+     * @param sql SQL语句段
      * @return 单句SQL的列表
      */
-    fun splitByDelimiter(SQL: String): List<String> {
+    fun splitByDelimiter(sql: String): List<String> {
         val result: MutableList<String> = ArrayList()
 
         //记录字符串匹配状态。null表示不在字符串内，其他表示在字符串内，且表示字符串字符
@@ -16,28 +41,28 @@ object SqlDelimiter {
         //上一个匹配终点，也就是下一条SQL语句split的起点
         var lastIndex = 0
         var i = 0
-        while (i < SQL.length) {
-            val c = SQL[i]
+        while (i < sql.length) {
+            val c = sql[i]
             if (state == null) {
                 if (c == ';') {
                     //在字符串外遇到分号，开启字符串分割。上一个终点到分号位置分割为一条
-                    result.add(SQL.substring(lastIndex, i))
+                    result.add(sql.substring(lastIndex, i))
                     //终点设为分号位置+1，这样是下一条的起点
                     lastIndex = i + 1
                 } else if (c == '"' || c == '\'' || c == '`') {
                     //在字符串外遇到字符串符号，改变state，进入字符串模式
                     state = c
-                } else if (c == '-' && i + 1 < SQL.length && SQL[i + 1] == '-') {
+                } else if (c == '-' && i + 1 < sql.length && sql[i + 1] == '-') {
                     //在字符串外遇到--，改变state，进入注释模式
                     state = '-'
                     i += 1
-                } else if (c == '/' && i + 1 < SQL.length && SQL[i + 1] == '*') {
+                } else if (c == '/' && i + 1 < sql.length && sql[i + 1] == '*') {
                     //在字符串外遇到/*，改变state，进入注释模式
                     state = '/'
                     i += 1
                 }
             } else if (state == '/') {
-                if (c == '*' && i + 1 < SQL.length && SQL[i + 1] == '/') {
+                if (c == '*' && i + 1 < sql.length && sql[i + 1] == '/') {
                     //遇到*/结束符
                     state = null
                     i += 1
@@ -59,8 +84,8 @@ object SqlDelimiter {
             }
             i += 1
         }
-        if (lastIndex < SQL.length) {
-            result.add(SQL.substring(lastIndex))
+        if (lastIndex < sql.length) {
+            result.add(sql.substring(lastIndex))
         }
         return result.asSequence().map { trimAnyAnnotation(it) }.map { trimWhitespace(it) }.filter { it.isNotEmpty() }.toList()
     }

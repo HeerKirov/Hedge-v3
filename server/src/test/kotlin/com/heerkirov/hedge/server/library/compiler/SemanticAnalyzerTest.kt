@@ -52,14 +52,14 @@ class SemanticAnalyzerTest {
             orders = emptyList(),
             filters = emptyList(),
             elements = listOf(
-                sourceElementOf(MetaString("hello"))
+                sourceElementOf(SimpleMetaValue(listOf(MetaString("hello"))))
             )
         )), parse("^hello", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             orders = emptyList(),
             filters = emptyList(),
             elements = listOf(
-                sourceElementOf(MetaString("hello"), exclude = true)
+                sourceElementOf(SimpleMetaValue(listOf(MetaString("hello"))), exclude = true)
             )
         )), parse("-^hello", IllustDialect::class))
     }
@@ -683,7 +683,7 @@ class SemanticAnalyzerTest {
 
     private fun metaAnnotationElementOf(vararg items: MetaString, exclude: Boolean = false) = AnnotationElementForMeta(items.toList(), exclude)
 
-    private fun sourceElementOf(vararg items: MetaString, exclude: Boolean = false) = SourceTagElement(items.toList(), exclude)
+    private fun sourceElementOf(vararg items: SimpleMetaValue, exclude: Boolean = false) = SourceTagElement(items.toList(), exclude)
 
     private fun nameElementOf(vararg items: MetaString, exclude: Boolean = false) = NameElementForMeta(items.toList(), exclude)
 }

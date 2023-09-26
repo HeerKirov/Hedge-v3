@@ -1,15 +1,11 @@
 package com.heerkirov.hedge.server.dao
 
-import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.model.*
 import com.heerkirov.hedge.server.model.FileFingerprint
-import com.heerkirov.hedge.server.utils.ktorm.type.composition
-import com.heerkirov.hedge.server.utils.ktorm.type.enum
-import com.heerkirov.hedge.server.utils.ktorm.type.json
-import com.heerkirov.hedge.server.utils.ktorm.type.unionList
+import com.heerkirov.hedge.server.utils.ktorm.type.*
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.schema.*
 
@@ -34,7 +30,7 @@ open class Illusts(alias: String?) : BaseTable<Illust>("illust", alias = alias) 
     val tagme = composition<Illust.Tagme>("tagme")
     val exportedDescription = varchar("exported_description")
     val exportedScore = int("exported_score")
-    val partitionTime = date("partition_time")
+    val partitionTime = instantDate("partition_time")
     val orderTime = long("order_time")
     val createTime = timestamp("create_time")
     val updateTime = timestamp("update_time")
@@ -65,7 +61,7 @@ open class Illusts(alias: String?) : BaseTable<Illust>("illust", alias = alias) 
 }
 
 object Partitions : BaseTable<Partition>("partition") {
-    val date = date("date").primaryKey()
+    val date = instantDate("date").primaryKey()
     val cachedCount = int("cached_count")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = Partition(
@@ -175,7 +171,7 @@ object ImportImages : BaseTable<ImportImage>("import_image") {
     val sourcePart = int("source_part")
     val sourcePartName = varchar("source_part_name")
     val sourcePreference = json("source_preference", typeRef<ImportImage.SourcePreference>())
-    val partitionTime = date("partition_time")
+    val partitionTime = instantDate("partition_time")
     val orderTime = long("order_time")
     val createTime = timestamp("create_time")
 
@@ -216,7 +212,7 @@ object TrashedImages : BaseTable<TrashedImage>("trashed_image") {
     val score = int("score")
     val favorite = boolean("favorite")
     val tagme = composition<Illust.Tagme>("tagme")
-    val partitionTime = date("partition_time")
+    val partitionTime = instantDate("partition_time")
     val orderTime = long("order_time")
     val createTime = timestamp("create_time")
     val updateTime = timestamp("update_time")
@@ -294,21 +290,5 @@ object FileFingerprints : BaseTable<FileFingerprint>("file_fingerprint", schema 
         pHash = row[pHash]!!,
         dHash = row[dHash]!!,
         createTime = row[createTime]!!
-    )
-}
-
-object FileCacheRecords : BaseTable<FileCacheRecord>("file_cache_record", schema = "file_db") {
-    val fileId = int("file_id")
-    val archiveType = enum("archive_type", typeRef<ArchiveType>())
-    val block = varchar("block")
-    val filename = varchar("filename")
-    val lastAccessTime = timestamp("last_access_time")
-
-    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FileCacheRecord(
-        fileId = row[fileId]!!,
-        archiveType = row[archiveType]!!,
-        block = row[block]!!,
-        filename = row[filename]!!,
-        lastAccessTime = row[lastAccessTime]!!
     )
 }
