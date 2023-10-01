@@ -5,7 +5,7 @@ import { eachViewInjection } from "./context"
 import { StackViewInfo } from "./definition"
 import ImageDetailView from "./ImageDetailView/ImageDetailView.vue"
 import CollectionDetailView from "./CollectionDetailView/CollectionDetailView.vue"
-import BookDetailView from "@/components-module/view-stack/BookDetailView/BookDetailView.vue";
+import BookDetailView from "@/components-module/view-stack/BookDetailView/BookDetailView.vue"
 
 const props = defineProps<{
     stackViewInfo: StackViewInfo

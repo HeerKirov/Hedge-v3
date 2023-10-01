@@ -352,7 +352,18 @@ export type IllustType = "COLLECTION" | "IMAGE"
 
 export type Tagme = "TAG" | "AUTHOR" | "TOPIC" | "SOURCE"
 
-export interface Illust {
+export interface CommonIllust {
+    id: number
+    filePath: FilePath
+    favorite: boolean
+    orderTime: LocalDateTime
+    type?: IllustType
+    childrenCount?: number | null
+    score: number | null
+    source: SourceDataPath | null
+}
+
+export interface Illust extends CommonIllust {
     /**
      * illust id。
      */

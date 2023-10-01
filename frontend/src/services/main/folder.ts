@@ -14,7 +14,7 @@ import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useIllustViewController } from "@/services/base/view-controller"
 import { installVirtualViewNavigation } from "@/components/data"
-import { installIllustListviewForPreview, useImageDatasetOperators } from "@/services/common/illust"
+import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
 import { useFolderTableSearch } from "@/services/common/folder"
 import { installation } from "@/utils/reactivity"
 
@@ -236,7 +236,7 @@ export function useFolderDetailPanel() {
         dataDrop: {dropInType: "folder", path: viewState.detailPath}
     })
 
-    installIllustListviewForPreview({listview, selector, listviewController})
+    installIllustListviewContext({listview, selector, listviewController})
 
     return {data, listview, selector, viewState, paneState, listviewController, operators, deleteItem}
 }

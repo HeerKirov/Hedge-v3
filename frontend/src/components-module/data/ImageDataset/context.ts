@@ -1,27 +1,12 @@
 import { computed, ref, Ref } from "vue"
-import { IllustType, Tagme } from "@/functions/http-client/api/illust"
-import { FilePath, SourceDataPath } from "@/functions/http-client/api/all"
 import { PaginationData, QueryInstance } from "@/functions/fetch"
 import { useVirtualViewNavigation } from "@/components/data"
 import { useToast } from "@/modules/toast"
 import { useInterceptedKey } from "@/modules/keyboard"
 import { TypeDefinition, useDraggable, useDroppable } from "@/modules/drag"
 import { installation } from "@/utils/reactivity"
-import { LocalDateTime } from "@/utils/datetime"
 
 const SELECTED_MAX = 500
-
-export interface SuitableIllust {
-    id: number
-    filePath: FilePath
-    favorite: boolean
-    orderTime: LocalDateTime
-    type?: IllustType
-    childrenCount?: number | null
-    tagme: Tagme[]
-    score: number | null
-    source: SourceDataPath | null
-}
 
 interface DatasetContextOptions {
     queryInstance: QueryInstance<unknown> | undefined

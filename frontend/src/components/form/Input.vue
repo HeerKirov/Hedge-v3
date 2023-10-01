@@ -69,7 +69,7 @@ const onKeydown = (e: KeyboardEvent) => {
         }
         const keyEvent = toKeyEvent(e)
         emit("keypress", keyEvent)
-        if(USUAL_PRIMITIVE_KEY_VALIDATORS.Enter(e)) {
+        if(props.type !== "textarea" && USUAL_PRIMITIVE_KEY_VALIDATORS.Enter(e)) {
             value.value = (e.target as HTMLInputElement).value
             emit("update:value", value.value)
             emit("enter", keyEvent)

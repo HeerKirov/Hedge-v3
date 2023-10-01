@@ -1,10 +1,16 @@
 <script setup lang="ts">
+import { toRef } from "vue"
 import { Icon, ThumbnailImage, GridImages, Block } from "@/components/universal"
 import { SimpleFolder } from "@/functions/http-client/api/folder"
-import { useSideBarRelatedItems } from "@/services/view-stack/image"
+import { useSideBarRelatedItems } from "@/services/main/illust"
 import { usePopupMenu } from "@/modules/popup-menu"
 
-const { data, openRelatedCollection, openRelatedBook, openAssociate, openAssociateInNewView, openFolderInNewWindow } = useSideBarRelatedItems()
+const props = defineProps<{detailId: number, type: "IMAGE" | "COLLECTION"}>()
+
+const detailId = toRef(props, "detailId")
+const illustType = toRef(props, "type")
+
+const { data, openRelatedCollection, openRelatedBook, openAssociate, openAssociateInNewView, openFolderInNewWindow } = useSideBarRelatedItems(detailId, illustType)
 
 const folderPopupMenu = usePopupMenu<SimpleFolder>([
     {type: "normal", label: "在新窗口打开此文件夹", click: openFolderInNewWindow}
@@ -22,7 +28,7 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
     </template>
     <template v-if="data?.collection">
         <b class="mr-2">所属集合</b><Icon icon="id-card"/><b class="ml-1 selectable is-font-size-large">{{data.collection.id}}</b>
-        <ThumbnailImage :file="data.collection.filePath.sample" :num-tag-value="data.collection.childrenCount" @click="openRelatedCollection"/>
+        <ThumbnailImage max-height="12rem" :file="data.collection.filePath.sample" :num-tag-value="data.collection.childrenCount" @click="openRelatedCollection"/>
         <div class="mb-3"/>
     </template>
     <template v-if="data?.associates?.length">

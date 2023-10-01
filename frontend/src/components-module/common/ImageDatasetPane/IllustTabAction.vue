@@ -1,29 +1,27 @@
 <script setup lang="ts">
 import { toRefs } from "vue"
 import { CheckBox } from "@/components/form"
-import { ThumbnailImage, Icon, Button, Separator } from "@/components/universal"
+import { Icon, Button, Separator } from "@/components/universal"
 import { TagmeEditor, DateEditor, DescriptionEditor, DateTimeEditor, ScoreEditor } from "@/components-business/form-editor"
-import { useIllustDetailPaneMultiple } from "@/services/main/illust"
+import { useSideBarAction } from "@/services/main/illust"
 
 const props = defineProps<{
+    detailId: number
     selected: number[]
-    latest: number
 }>()
 
-const { selected, latest } = toRefs(props)
+const { detailId, selected } = toRefs(props)
 
-const { data, actives, anyActive, form, submit, openImagePreview, editMetaTag } = useIllustDetailPaneMultiple(selected, latest)
+const { actives, anyActive, form, submit, editMetaTag } = useSideBarAction(selected)
 
 </script>
 
 <template>
-    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.filePath.thumbnail" :draggable-file="data?.filePath.original" :drag-icon-file="data?.filePath.sample" @click="openImagePreview"/>
     <p class="mt-1 mb-1">
-        <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{data?.id}}</b>
-        <span v-if="data?.type === 'COLLECTION'" class="float-right"><Icon class="mr-1" icon="images"/>{{ data.childrenCount }}项</span>
+        <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{detailId}}</b>
     </p>
     <Separator direction="horizontal"/>
-    <p class="mt-2"><Icon icon="edit"/>批量编辑</p>
+    <p class="mt-2"><Icon icon="pen-nib"/>多选操作</p>
     <p class="mt-2"><CheckBox v-model:value="actives.metaTag">设置标签</CheckBox></p>
     <template v-if="actives.metaTag">
         <a @click="editMetaTag">编辑已选择的标签</a>

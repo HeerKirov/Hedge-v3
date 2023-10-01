@@ -86,7 +86,7 @@ const menu = useDynamicPopupMenu<FolderImage>(folderImage => [
                                 @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
 
             <template #pane>
-                <IllustDetailPane :state="paneState.state.value" @close="paneState.visible.value = false"/>
+                <IllustDetailPane @close="paneState.visible.value = false"/>
             </template>
         </PaneLayout>
     </TopBarLayout>

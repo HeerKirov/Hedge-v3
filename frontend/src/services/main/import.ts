@@ -1,11 +1,11 @@
-import { computed, reactive, ref, Ref } from "vue"
+import { computed, reactive, ref, Ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { flatResponse } from "@/functions/http-client"
 import { Tagme } from "@/functions/http-client/api/illust"
-import { ImportQueryFilter } from "@/functions/http-client/api/import"
+import { ImportImage, ImportQueryFilter } from "@/functions/http-client/api/import"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
-import { SourceDataPath } from "@/functions/http-client/api/all"
-import { useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
+import { FilePath, NullableFilePath, SourceDataPath } from "@/functions/http-client/api/all"
+import { QueryInstance, QueryListview, useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
@@ -16,9 +16,12 @@ import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useDroppingFileListener } from "@/modules/drag"
 import { dialogManager } from "@/modules/dialog"
-import { installation } from "@/utils/reactivity"
+import { installation, toRef } from "@/utils/reactivity"
 import { objects, strings } from "@/utils/primitives"
 import { date, LocalDate, LocalDateTime } from "@/utils/datetime"
+import { useLocalStorage } from "@/functions/app"
+import { useListeningEvent } from "@/utils/emitter"
+import { useInterceptedKey } from "@/modules/keyboard"
 
 export const [installImportContext, useImportContext] = installation(function () {
     const importService = useImportService()
@@ -194,10 +197,84 @@ function useOperators(selector: SelectedState<number>, anyData: Ref<boolean>, ad
     return {save, openDialog, deleteItem}
 }
 
-export function useImportDetailPaneSingle(path: Ref<number | null>) {
+export function useImportDetailPane() {
     const preview = usePreviewService()
-    const message = useMessageBox()
     const { listview, listviewController, selector } = useImportContext()
+
+    const storage = useLocalStorage<{tabType: "action" | "info"}>("import/list/pane", () => ({tabType: "info"}), true)
+
+    const tabType = toRef(storage, "tabType")
+
+    const path = computed(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
+
+    const detail = useImportDetailPaneId(path, listview.listview, listview.paginationData.proxy)
+
+    useInterceptedKey(["Meta+Digit1", "Meta+Digit2"], e => {
+        if(e.key === "Digit1") tabType.value = "info"
+        else if(e.key === "Digit2") tabType.value = "action"
+    })
+
+    const openImagePreview = () => {
+        preview.show({
+            preview: "image", 
+            type: "listview", 
+            listview: listview.listview,
+            paginationData: listview.paginationData.data,
+            columnNum: listviewController.columnNum,
+            viewMode: listviewController.viewMode,
+            selected: selector.selected,
+            lastSelected: selector.lastSelected,
+            updateSelect: selector.update
+        })
+    }
+
+    return {tabType, detail, selector, openImagePreview}
+}
+
+function useImportDetailPaneId(path: Ref<number | null>, listview: QueryListview<ImportImage>, instance: QueryInstance<ImportImage>) {
+    const detail = ref<{id: number, filename: string | null, filePath: NullableFilePath} | null>(null)
+
+    const fetch = useFetchHelper(client => client.import.get)
+
+    watch(path, async path => {
+        if(path !== null) {
+            const idx = instance.syncOperations.find(i => i.id === path)
+            if(idx !== undefined) {
+                const item = instance.syncOperations.retrieve(idx)!
+                detail.value = {id: item.id, filename: item.originFileName, filePath: item.filePath}
+            }else{
+                const res = await fetch(path)
+                detail.value = res !== undefined ? {id: res.id, filename: res.originFileName, filePath: res.filePath} : null
+            }
+        }else{
+            detail.value = null
+        }
+    }, {immediate: true})
+
+    useListeningEvent(listview.modifiedEvent, async e => {
+        if(path.value !== null) {
+            if(e.type === "FILTER_UPDATED" || e.type === "REFRESH") {
+                const idx = instance.syncOperations.find(i => i.id === path.value)
+                if(idx !== undefined) {
+                    const item = instance.syncOperations.retrieve(idx)!
+                    detail.value = {id: item.id, filename: item.originFileName, filePath: item.filePath}
+                }else{
+                    const res = await fetch(path.value)
+                    detail.value = res !== undefined ? {id: res.id, filename: res.originFileName, filePath: res.filePath} : null
+                }
+            }else if(e.type === "MODIFY" && e.value.id === path.value) {
+                detail.value = {id: e.value.id, filename: e.value.originFileName, filePath: e.value.filePath}
+            }else if(e.type === "REMOVE" && e.oldValue.id === path.value) {
+                detail.value = null
+            }
+        }
+    })
+
+    return detail
+}
+
+export function useSideBarDetailInfo(path: Ref<number | null>) {
+    const message = useMessageBox()
 
     const { data, setData } = useFetchEndpoint({
         path,
@@ -260,35 +337,13 @@ export function useImportDetailPaneSingle(path: Ref<number | null>) {
         }
     }
 
-    const openImagePreview = () => {
-        preview.show({
-            preview: "image", 
-            type: "listview", 
-            listview: listview.listview,
-            paginationData: listview.paginationData.data,
-            columnNum: listviewController.columnNum,
-            viewMode: listviewController.viewMode,
-            selected: selector.selected,
-            lastSelected: selector.lastSelected,
-            updateSelect: selector.update
-        })
-    }
-
-    return {data, setTagme, setSourceInfo, setPartitionTime, setCreateTime, setOrderTime, clearAllPreferences, clearAllSourcePreferences, openImagePreview}
+    return {data, setTagme, setSourceInfo, setPartitionTime, setCreateTime, setOrderTime, clearAllPreferences, clearAllSourcePreferences}
 }
 
-export function useImportDetailPaneMultiple(selected: Ref<number[]>, latest: Ref<number | null>) {
+export function useSideBarAction(selected: Ref<number[]>) {
     const toast = useToast()
-    const preview = usePreviewService()
-    const { listview, listviewController, selector } = useImportContext()
 
     const batchFetch = useFetchHelper(httpClient => httpClient.import.batchUpdate)
-
-    const { data } = useFetchEndpoint({
-        path: latest,
-        get: client => client.import.get,
-        eventFilter: c => event => (event.eventType === "entity/import/updated" || event.eventType === "entity/import/deleted") && event.importId === c.path
-    })
 
     const actives = reactive({
         tagme: false,
@@ -312,20 +367,6 @@ export function useImportDetailPaneMultiple(selected: Ref<number[]>, latest: Ref
         partitionTime: date.now(),
         analyseSource: false
     })
-
-    const openImagePreview = () => {
-        preview.show({
-            preview: "image", 
-            type: "listview", 
-            listview: listview.listview,
-            paginationData: listview.paginationData.data,
-            columnNum: listviewController.columnNum,
-            viewMode: listviewController.viewMode,
-            selected: selector.selected,
-            lastSelected: selector.lastSelected,
-            updateSelect: selector.update
-        })
-    }
 
     const submit = async () => {
         if(anyActive.value) {
@@ -359,5 +400,5 @@ export function useImportDetailPaneMultiple(selected: Ref<number[]>, latest: Ref
         actives.partitionTime = false
     }
 
-    return {data, actives, anyActive, form, submit, clear, openImagePreview}
+    return {actives, anyActive, form, submit, clear}
 }

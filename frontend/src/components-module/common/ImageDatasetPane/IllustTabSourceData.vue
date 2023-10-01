@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toRef } from "vue"
 import { Separator } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
 import {
@@ -6,9 +7,13 @@ import {
     SourceRelationsDisplay, SourceBooksDisplay, SourceTagsDisplay
 } from "@/components-business/form-display"
 import { SourceIdentityEditor, SourceEditStatusEditor } from "@/components-business/form-editor"
-import { useSideBarSourceData } from "@/services/view-stack/image"
+import { useSideBarSourceData } from "@/services/main/illust"
 
-const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceDataEditor } = useSideBarSourceData()
+const props = defineProps<{detailId: number, type: "IMAGE" | "COLLECTION"}>()
+
+const detailId = toRef(props, "detailId")
+
+const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceDataEditor } = useSideBarSourceData(detailId)
 
 </script>
 
@@ -39,8 +44,7 @@ const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceData
             <SourceTagsDisplay :value="data.tags" @dblclick="openSourceDataEditor"/>
         </template>
     </template>
+    <div v-else-if="type === 'COLLECTION'" class="has-text-centered">
+        <i class="has-text-secondary">集合没有来源数据</i>
+    </div>
 </template>
-
-<style module lang="sass">
-
-</style>

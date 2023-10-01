@@ -1,24 +1,21 @@
 <script setup lang="ts">
 import { toRef } from "vue"
-import { ThumbnailImage, Separator } from "@/components/universal"
+import { Separator } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
 import { SourceInfo, TagmeInfo, ImportPreferencesDisplay, ImportSourcePreferencesDisplay, FileInfoDisplay } from "@/components-business/form-display"
 import { SourceIdentityEditor, TagmeEditor, DateEditor, DateTimeEditor } from "@/components-business/form-editor"
-import { useImportDetailPaneSingle } from "@/services/main/import"
+import { useSideBarDetailInfo } from "@/services/main/import"
 import { date, datetime } from "@/utils/datetime"
 
-const props = defineProps<{
-    detailId: number
-}>()
+const props = defineProps<{detailId: number}>()
 
 const path = toRef(props, "detailId")
 
-const { data, setTagme, setSourceInfo, setCreateTime, setOrderTime, setPartitionTime, clearAllPreferences, clearAllSourcePreferences, openImagePreview } = useImportDetailPaneSingle(path)
+const { data, setTagme, setSourceInfo, setCreateTime, setOrderTime, setPartitionTime, clearAllPreferences, clearAllSourcePreferences } = useSideBarDetailInfo(path)
 
 </script>
 
 <template>
-    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.filePath.thumbnail" @click="openImagePreview"/>
     <template v-if="!!data">
         <p v-if="data.originFileName" class="selectable word-wrap-anywhere mb-1">{{data.originFileName}}</p>
         <p v-if="data.fileCreateTime" class="secondary-text mt-2">文件创建时间 {{datetime.toSimpleFormat(data.fileCreateTime)}}</p>

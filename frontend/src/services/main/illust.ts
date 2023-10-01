@@ -1,22 +1,31 @@
-import { computed, reactive, Ref, watch } from "vue"
+import { computed, reactive, ref, Ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
-import { useDialogService } from "@/components-module/dialog"
+import { useLocalStorage } from "@/functions/app"
 import { mapResponse } from "@/functions/http-client"
-import { IllustQueryFilter, Tagme } from "@/functions/http-client/api/illust"
-import { SimpleTag, SimpleTopic, SimpleAuthor } from "@/functions/http-client/api/all"
-import { useFetchEndpoint, usePostFetchHelper } from "@/functions/fetch"
+import { QueryInstance, QueryListview, useFetchEndpoint, useFetchHelper, usePostFetchHelper } from "@/functions/fetch"
+import { CommonIllust, IllustQueryFilter, ImageRelatedUpdateForm, Tagme } from "@/functions/http-client/api/illust"
+import { SimpleTag, SimpleTopic, SimpleAuthor, FilePath, SourceDataPath } from "@/functions/http-client/api/all"
+import { SimpleBook } from "@/functions/http-client/api/book"
+import { SimpleFolder } from "@/functions/http-client/api/folder"
+import { SourceEditStatus } from "@/functions/http-client/api/source-data"
+import { useViewStack } from "@/components-module/view-stack"
 import { usePreviewService } from "@/components-module/preview"
+import { useDialogService } from "@/components-module/dialog"
 import { useToast } from "@/modules/toast"
-import { useRouterParamEvent } from "@/modules/router"
+import { useRouterNavigator, useRouterParamEvent } from "@/modules/router"
+import { useInterceptedKey } from "@/modules/keyboard"
+import { useMessageBox } from "@/modules/message-box"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useIllustViewController } from "@/services/base/view-controller"
 import { useQuerySchema } from "@/services/base/query-schema"
-import { installIllustListviewForPreview, useIllustListviewForPreview, useImageDatasetOperators, useLocateId } from "@/services/common/illust"
 import { useSettingSite } from "@/services/setting"
-import { installation, toRef } from "@/utils/reactivity"
+import { installIllustListviewContext, useIllustListviewContext, useImageDatasetOperators, useLocateId } from "@/services/common/illust"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
+import { installation, toRef } from "@/utils/reactivity"
+import { useListeningEvent } from "@/utils/emitter"
+import { objects } from "@/utils/primitives"
 
 export const [installIllustContext, useIllustContext] = installation(function () {
     const listview = useListView()
@@ -32,7 +41,7 @@ export const [installIllustContext, useIllustContext] = installation(function ()
     })
     const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector, navigation})
 
-    installIllustListviewForPreview({listview, selector, listviewController})
+    installIllustListviewContext({listview, selector, listviewController})
 
     useSettingSite()
 
@@ -84,39 +93,24 @@ function useListView() {
     return listview
 }
 
-export function useIllustDetailPaneSingle(path: Ref<number | null>) {
+export function useIllustDetailPane() {
     const preview = usePreviewService()
-    const { metaTagEditor } = useDialogService()
-    const { listview, selector, listviewController } = useIllustListviewForPreview()
+    const { listview, selector, listviewController } = useIllustListviewContext()
 
-    const { data, setData } = useFetchEndpoint({
-        path,
-        get: client => client.illust.get,
-        update: client => client.illust.update,
-        eventFilter: c => event => (event.eventType === "entity/illust/updated" || event.eventType === "entity/illust/deleted") && event.illustId === c.path
+    const storage = useLocalStorage<{tabType: "action" | "info" | "source" | "related"}>("illust/list/pane", () => ({tabType: "info"}), true)
+
+    const tabType = toRef(storage, "tabType")
+
+    const path = computed(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
+
+    const detail = useIllustDetailPaneId(path, listview.listview, listview.paginationData.proxy)
+
+    useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Digit3", "Meta+Digit4"], e => {
+        if(e.key === "Digit1") tabType.value = "info"
+        else if(e.key === "Digit2") tabType.value = "related"
+        else if(e.key === "Digit3") tabType.value = "source"
+        else if(e.key === "Digit4") tabType.value = "action"
     })
-
-    const setDescription = async (description: string) => {
-        return description === data.value?.description || await setData({ description })
-    }
-
-    const setScore = async (score: number | null) => {
-        return score === data.value?.score || await setData({ score })
-    }
-
-    const setPartitionTime = async (partitionTime: LocalDateTime) => {
-        return partitionTime.timestamp === data.value?.partitionTime?.timestamp || await setData({partitionTime})
-    }
-
-    const setOrderTime = async (orderTime: LocalDateTime) => {
-        return orderTime.timestamp === data.value?.orderTime?.timestamp || await setData({orderTime})
-    }
-
-    const openMetaTagEditor = () => {
-        if(data.value !== null) {
-            metaTagEditor.editIdentity({type: data.value.type, id: data.value.id})
-        }
-    }
 
     const openImagePreview = () => {
         preview.show({
@@ -132,22 +126,56 @@ export function useIllustDetailPaneSingle(path: Ref<number | null>) {
         })
     }
 
-    return {data, setDescription, setScore, setPartitionTime, setOrderTime, openMetaTagEditor, openImagePreview}
+    return {tabType, detail, selector, openImagePreview}
 }
 
-export function useIllustDetailPaneMultiple(selected: Ref<number[]>, latest: Ref<number | null>) {
+function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview<CommonIllust>, instance: QueryInstance<CommonIllust>) {
+    const detail = ref<{id: number, type: "IMAGE" | "COLLECTION", filePath: FilePath} | null>(null)
+
+    const fetch = useFetchHelper(client => client.illust.get)
+
+    watch(path, async path => {
+        if(path !== null) {
+            const idx = instance.syncOperations.find(i => i.id === path)
+            if(idx !== undefined) {
+                const item = instance.syncOperations.retrieve(idx)!
+                detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
+            }else{
+                const res = await fetch(path)
+                detail.value = res !== undefined ? {id: res.id, type: res.type ?? "IMAGE", filePath: res.filePath} : null
+            }
+        }else{
+            detail.value = null
+        }
+    }, {immediate: true})
+
+    useListeningEvent(listview.modifiedEvent, async e => {
+        if(path.value !== null) {
+            if(e.type === "FILTER_UPDATED" || e.type === "REFRESH") {
+                const idx = instance.syncOperations.find(i => i.id === path.value)
+                if(idx !== undefined) {
+                    const item = instance.syncOperations.retrieve(idx)!
+                    detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
+                }else{
+                    const res = await fetch(path.value)
+                    detail.value = res !== undefined ? {id: res.id, type: res.type ?? "IMAGE", filePath: res.filePath} : null
+                }
+            }else if(e.type === "MODIFY" && e.value.id === path.value) {
+                detail.value = {id: e.value.id, type: e.value.type ?? "IMAGE", filePath: e.value.filePath}
+            }else if(e.type === "REMOVE" && e.oldValue.id === path.value) {
+                detail.value = null
+            }
+        }
+    })
+
+    return detail
+}
+
+export function useSideBarAction(selected: Ref<number[]>) {
     const toast = useToast()
-    const preview = usePreviewService()
     const { metaTagEditor } = useDialogService()
-    const { listview, selector, listviewController } = useIllustListviewForPreview()
 
     const batchFetch = usePostFetchHelper(httpClient => httpClient.illust.batchUpdate)
-
-    const { data } = useFetchEndpoint({
-        path: latest,
-        get: client => client.illust.get,
-        eventFilter: c => event => (event.eventType === "entity/illust/updated" || event.eventType === "entity/illust/deleted") && event.illustId === c.path
-    })
 
     const actives = reactive({
         description: false,
@@ -185,20 +213,6 @@ export function useIllustDetailPaneMultiple(selected: Ref<number[]>, latest: Ref
             end: datetime.now()
         }
     })
-
-    const openImagePreview = () => {
-        preview.show({
-            preview: "image", 
-            type: "listview", 
-            listview: listview.listview,
-            paginationData: listview.paginationData.data,
-            columnNum: listviewController.columnNum,
-            viewMode: listviewController.viewMode,
-            selected: selector.selected,
-            lastSelected: selector.lastSelected,
-            updateSelect: selector.update
-        })
-    }
 
     const editMetaTag = async () => {
         const res = await metaTagEditor.edit({
@@ -247,5 +261,141 @@ export function useIllustDetailPaneMultiple(selected: Ref<number[]>, latest: Ref
 
     watch(() => actives.metaTag, enabled => { if(enabled) editMetaTag().finally() })
 
-    return {data, actives, anyActive, form, submit, clear, openImagePreview, editMetaTag}
+    return {actives, anyActive, form, submit, clear, editMetaTag}
+}
+
+export function useSideBarDetailInfo(path: Ref<number | null>) {
+    const dialog = useDialogService()
+    const { data, setData } = useFetchEndpoint({
+        path,
+        get: client => client.illust.get,
+        update: client => client.illust.update,
+        eventFilter: c => event => event.eventType === "entity/illust/updated" && event.illustId === c.path && event.detailUpdated
+    })
+ 
+    const setDescription = async (description: string) => {
+        return description === data.value?.description || await setData({description})
+    }
+    const setScore = async (score: number | null) => {
+        return score === data.value?.score || await setData({score})
+    }
+    const setPartitionTime = async (partitionTime: LocalDateTime) => {
+        return partitionTime.timestamp === data.value?.partitionTime?.timestamp || await setData({partitionTime})
+    }
+    const setOrderTime = async (orderTime: LocalDateTime) => {
+        return orderTime.timestamp === data.value?.orderTime?.timestamp || await setData({orderTime})
+    }
+    const openMetaTagEditor = () => {
+        if(path.value !== null) {
+            dialog.metaTagEditor.editIdentity({type: "IMAGE", id: path.value})
+        }
+    }
+
+    return {data, id: path, setDescription, setScore, setPartitionTime, setOrderTime, openMetaTagEditor}
+}
+
+export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref<"IMAGE" | "COLLECTION">) {
+    const viewStack = useViewStack()
+    const navigator = useRouterNavigator()
+    const dialog = useDialogService()
+    const { data } = useFetchEndpoint({
+        path,
+        get: client => async path => {
+            if(illustType.value === "IMAGE") {
+                return await client.illust.image.relatedItems.get(path, {limit: 9})
+            }else{
+                return mapResponse(await client.illust.collection.relatedItems.get(path, {limit: 9}), d => ({associates: d.associates, collection: null, books: [], folders: []}))
+            }
+        },
+        update: client => (path, form: ImageRelatedUpdateForm) => {
+            if(illustType.value === "IMAGE") {
+                return client.illust.image.relatedItems.update(path, form)
+            }else{
+                return client.illust.collection.relatedItems.update(path, form)
+            }
+        },
+        eventFilter: c => event => event.eventType === "entity/illust/related-items/updated" && event.illustId === c.path
+    })
+
+    const openRelatedBook = (book: SimpleBook) => {
+        viewStack.openBookView(book.id)
+    }
+
+    const openRelatedCollection = () => {
+        const id = data.value?.collection?.id
+        if(id !== undefined) {
+            viewStack.openCollectionView(id)
+        }
+    }
+
+    const openAssociate = () => {
+        if(path.value !== null) {
+            dialog.associateExplorer.openAssociateView(path.value)
+        }
+    }
+
+    const openAssociateInNewView = (index?: number) => {
+        if(data.value?.associates.length) {
+            viewStack.openImageView({imageIds: data.value.associates.map(i => i.id), focusIndex: index})
+        }
+    }
+
+    const openFolderInNewWindow = (folder: SimpleFolder) => {
+        navigator.newWindow({routeName: "MainFolder", query: {detail: folder.id}})
+    }
+
+    return {data, openRelatedBook, openRelatedCollection, openAssociate, openAssociateInNewView, openFolderInNewWindow}
+}
+
+export function useSideBarSourceData(path: Ref<number | null>) {
+    const message = useMessageBox()
+    const dialog = useDialogService()
+    const { data, setData } = useFetchEndpoint({
+        path,
+        get: client => client.illust.image.sourceData.get,
+        update: client => client.illust.image.sourceData.update,
+        eventFilter: c => event => event.eventType === "entity/illust/source-data/updated" && event.illustId === c.path
+    })
+
+    useSettingSite()
+
+    const sourceDataPath: Ref<SourceDataPath | null> = computed(() => data.value?.source ?? null)
+
+    const setSourceDataPath = async (source: SourceDataPath | null) => {
+        return objects.deepEquals(source, data.value?.source) || await setData({source}, e => {
+            if(e.code === "NOT_EXIST" && e.info[0] === "site") {
+                message.showOkMessage("error", `来源${source?.sourceSite}不存在。`)
+            }else if(e.code === "PARAM_ERROR") {
+                const target = e.info === "sourceId" ? "来源ID" : e.info === "sourcePart" ? "分页" : e.info === "sourcePartName" ? "分页页名": e.info
+                message.showOkMessage("error", `${target}的值内容错误。`, "ID只能是自然数。")
+            }else if(e.code === "PARAM_REQUIRED") {
+                const target = e.info === "sourceId" ? "来源ID" : e.info === "sourcePart" ? "分页" : e.info === "sourcePartName" ? "分页页名": e.info
+                message.showOkMessage("error", `${target}属性缺失。`)
+            }else if(e.code === "PARAM_NOT_REQUIRED") {
+                if(e.info === "sourcePart") {
+                    message.showOkMessage("error", `分页属性不需要填写，因为选择的来源站点不支持分页。`)
+                }else if(e.info === "sourcePartName") {
+                    message.showOkMessage("error", `分页页名属性不需要填写，因为选择的来源站点不支持分页页名。`)
+                }else if(e.info === "sourceId/sourcePart/sourcePartName") {
+                    message.showOkMessage("error", `来源ID/分页属性不需要填写，因为未指定来源站点。`)
+                }else{
+                    message.showOkMessage("error", `${e.info}属性不需要填写。`)
+                }
+            }else{
+                return e
+            }
+        })
+    }
+
+    const setSourceStatus = async (status: SourceEditStatus) => {
+        return (status === data.value?.status) || await setData({status})
+    }
+
+    const openSourceDataEditor = () => {
+        if(data.value !== null && data.value.source !== null) {
+            dialog.sourceDataEditor.edit({sourceSite: data.value.source.sourceSite, sourceId: data.value.source.sourceId})
+        }
+    }
+
+    return {data, sourceDataPath, setSourceDataPath, setSourceStatus, openSourceDataEditor}
 }

@@ -79,7 +79,7 @@ const menu = useDynamicPopupMenu<StagingPostImage>(illust => [
                                 @dblclick="(i, s) => operators.openDetailByClick(i, s)" @enter="operators.openDetailByEnter($event)" @drop="operators.dropToAdd"/>
 
             <template #pane>
-                <IllustDetailPane :state="paneState.state.value" @close="paneState.visible.value = false"/>
+                <IllustDetailPane @close="paneState.visible.value = false"/>
             </template>
         </PaneLayout>
     </TopBarLayout>

@@ -51,7 +51,7 @@ const openImagePreview = (index: number) => {
             <tr>
                 <td/>
                 <td v-for="index in columnNum">
-                    <ThumbnailImage class="is-cursor-zoom-in" :file="context[index - 1].imageData.data.value?.filePath" v-bind="context[index - 1].dropEvents" @click="openImagePreview(index - 1)"/>
+                    <ThumbnailImage class="is-cursor-zoom-in" max-height="12rem" :file="context[index - 1].imageData.data.value?.filePath" v-bind="context[index - 1].dropEvents" @click="openImagePreview(index - 1)"/>
                 </td>
             </tr>
             <MetadataInfo :values="context.map(i => i.imageData.data.value?.metadata ?? null)"/>

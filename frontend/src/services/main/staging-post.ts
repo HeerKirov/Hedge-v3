@@ -6,7 +6,7 @@ import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useIllustViewController } from "@/services/base/view-controller"
-import { installIllustListviewForPreview, useImageDatasetOperators } from "@/services/common/illust"
+import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
 import { useSettingSite } from "@/services/setting"
 import { StagingPostImage } from "@/functions/http-client/api/staging-post"
 import { TypeDefinition } from "@/modules/drag"
@@ -24,7 +24,7 @@ export function useStagingPostContext() {
         selector, navigation
     })
 
-    installIllustListviewForPreview({listview, selector, listviewController})
+    installIllustListviewContext({listview, selector, listviewController})
 
     useSettingSite()
 

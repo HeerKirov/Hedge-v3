@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, ref, Ref, watch } from "vue"
+import { onMounted, onUnmounted, ref, Ref, shallowReadonly, watch } from "vue"
 import { BasicException, NotFound } from "@/functions/http-client/exceptions"
 import { HttpClient, Response } from "@/functions/http-client"
 import { WsEventConditions } from "@/functions/ws-client"
@@ -9,7 +9,7 @@ import { throttle } from "@/utils/process"
 // 专注于处理REST API的detail端点，通过path确定指定的对象。
 // 将retrieve, patch, delete行为整合起来，构成对单个对象的复杂CRUD操作。
 
-export interface FetchEndpoint<MODEL, FORM, UE extends BasicException> {
+export interface FetchEndpoint<PATH, MODEL, FORM, UE extends BasicException> {
     /**
      * 正在加载数据。
      */
@@ -26,6 +26,10 @@ export interface FetchEndpoint<MODEL, FORM, UE extends BasicException> {
      * 数据内容。
      */
     data: Readonly<Ref<MODEL | null>>
+    /**
+     * 端点路径。
+     */
+    path: Readonly<Ref<PATH | null>>
     /**
      * 提交修改数据操作。
      * @param form 表单
@@ -102,7 +106,7 @@ interface EventFilterContext<PATH> {
     path: PATH | null
 }
 
-export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, UE extends BasicException, DE extends BasicException>(options: FetchEndpointOptions<PATH, MODEL, FORM, GE, UE, DE>): FetchEndpoint<MODEL, FORM, UE> {
+export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, UE extends BasicException, DE extends BasicException>(options: FetchEndpointOptions<PATH, MODEL, FORM, GE, UE, DE>): FetchEndpoint<PATH, MODEL, FORM, UE> {
     const { httpClient, wsClient, handleException } = useFetchManager()
 
     const method = {
@@ -269,5 +273,5 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
         }
     }
 
-    return {data, loading, updating, deleting, setData, deleteData, refreshData}
+    return {path: shallowReadonly(path), data, loading, updating, deleting, setData, deleteData, refreshData}
 }

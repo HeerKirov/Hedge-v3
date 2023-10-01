@@ -77,7 +77,7 @@ const menu = usePopupMenu<ImportImage>(() => [
             <ImportEmpty v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" :class="$style.empty"/>
 
             <template #pane>
-                <ImportDetailPane :state="paneState.state.value" @close="paneState.visible.value = false"/>
+                <ImportDetailPane @close="paneState.visible.value = false"/>
             </template>
         </PaneLayout>
     </TopBarLayout>

@@ -4,7 +4,7 @@ import {
     PaginationDataView, QueryListview, AllSlice, ListIndexSlice, SingletonSlice,
     usePostFetchHelper, usePostPathFetchHelper, useFetchHelper, QueryInstance, createMappedQueryInstance, PaginationData
 } from "@/functions/fetch"
-import { CoverIllust, Illust, IllustQueryFilter, IllustType } from "@/functions/http-client/api/illust"
+import { CoverIllust, CommonIllust, Illust, IllustQueryFilter, IllustType } from "@/functions/http-client/api/illust"
 import { SelectedState } from "@/services/base/selected-state"
 import { useHomepageState } from "@/services/main/homepage"
 import { useToast } from "@/modules/toast"
@@ -508,10 +508,10 @@ export function useLocateId<T extends BasicIllust>(options: LocateIdOptions<T>) 
     return {catchLocateId}
 }
 
-interface ListviewForPreviewOptions {
+interface IllustListviewContextOptions {
     listview: {
-        listview: QueryListview<{id: number, filePath: FilePath}>
-        paginationData: PaginationDataView<unknown>
+        listview: QueryListview<CommonIllust>
+        paginationData: PaginationDataView<CommonIllust>
     }
     selector: SelectedState<number>
     listviewController: {
@@ -520,6 +520,9 @@ interface ListviewForPreviewOptions {
     }
 }
 
-export const [installIllustListviewForPreview, useIllustListviewForPreview] = installation(function(options: ListviewForPreviewOptions) {
+/**
+ * 提供Illust列表Listview相关的上下文。它按照CommonIllust通用结构安装，被详情页选项卡和预览弹窗引用。
+ */
+export const [installIllustListviewContext, useIllustListviewContext] = installation(function(options: IllustListviewContextOptions) {
     return options
 })

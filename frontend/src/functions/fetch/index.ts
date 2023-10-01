@@ -1,7 +1,6 @@
 import { installFetchManager, ErrorHandler } from "./install"
 import { useFetchEndpoint, FetchEndpointOptions, FetchEndpoint } from "./fetch-endpoint"
 import { useFetchListEndpoint, useFetchSinglePathEndpoint } from "./fetch-list-endpoint"
-import { createLazyFetchEndpoint } from "./fetch-lazy-endpoint"
 import { useFetchReactive } from "./fetch-reactive"
 import { useRetrieveHelper } from "./retrieve-helper"
 import { useCreatingHelper } from "./creating-helper"
@@ -17,7 +16,7 @@ import {
 } from "./query-listview/slice"
 
 export { installFetchManager }
-export { useFetchReactive, useFetchEndpoint, useFetchListEndpoint, useFetchSinglePathEndpoint, createLazyFetchEndpoint }
+export { useFetchReactive, useFetchEndpoint, useFetchListEndpoint, useFetchSinglePathEndpoint }
 export { useRetrieveHelper, useCreatingHelper, useFetchHelper, usePostFetchHelper, usePathFetchHelper, usePostPathFetchHelper }
 export { useFetchEvent }
 export { useQueryContinuousListView }

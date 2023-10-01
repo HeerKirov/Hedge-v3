@@ -1,35 +1,45 @@
 <script setup lang="ts">
 import { Button } from "@/components/universal"
+import { BottomLayout } from "@/components/layout"
 
 // == Base Pane 侧边面板基础布局 ==
 // 适用于PaneLayout的侧边面板的基础布局。它提供了一个右上角的关闭按钮，和一个可滚动的、边距适中的内容区域。
 // 将主要内容放入slot#default；有些标题内容可以放入slot#title，它们将处在和关闭按钮的同一行上。
 // 如果没有slot#title，也不显示关闭按钮，那么主要区域会顶到最顶上。
 
-const props = withDefaults(defineProps<{
+withDefaults(defineProps<{
     showCloseButton?: boolean
-    overflow?: boolean
 }>(), {
-    showCloseButton: true,
-    overflow: true
+    showCloseButton: true
 })
 
-const emit = defineEmits<{
+defineEmits<{
     (e: "close"): void
 }>()
 
 </script>
 
 <template>
-    <div :class="$style['base-pane']">
-        <Button v-if="showCloseButton" :class="$style['button']" icon="close" square @click="$emit('close')"/>
-        <div v-if="!!$slots.title" :class="$style['top-content']">
-            <slot name="title"/>
-        </div>
-        <div :class="[!$slots.title && !showCloseButton ? $style['full-content'] : $style['content'], {[$style['overflow']]: overflow}]">
+    <BottomLayout :class="$style['base-pane']" 
+                  :top-class="!$slots.title && !showCloseButton ? $style['top-content-full'] : $style['top-content']" 
+                  :container-class="$style['content']" 
+                  :bottom-class="$style['bottom-content']">
+        <template #gap>
+            <Button v-if="showCloseButton" :class="$style['close-button']" icon="close" square @click="$emit('close')"/>
+            <div v-if="!!$slots.title" :class="$style['title']">
+                <slot name="title"/>
+            </div>
+        </template>
+        <template #top>
+            <slot name="top"/>
+        </template>
+        <template #default>
             <slot/>
-        </div>
-    </div>
+        </template>
+        <template #bottom>
+            <slot name="bottom"/>
+        </template>
+    </BottomLayout>
 </template>
 
 <style module lang="sass">
@@ -38,46 +48,42 @@ const emit = defineEmits<{
 
 .base-pane
     position: relative
-    height: 100%
+    box-sizing: border-box
     background-color: $light-mode-block-color
     border-left: solid 1px $light-mode-border-color
     @media (prefers-color-scheme: dark)
         background-color: $dark-mode-block-color
         border-left-color: $dark-mode-border-color
 
-    > .button
+    > .close-button
         position: absolute
         top: $spacing-1
         right: $spacing-1
 
-    > .top-content
+    > .title
         position: absolute
         top: $spacing-1
         left: $spacing-1
         right: calc(#{$spacing-1 * 2} + #{$element-height-std})
         height: $element-height-std
 
-    > .content
-        position: absolute
-        top: calc(#{$spacing-1 * 2} + #{$element-height-std})
-        left: 0
-        right: 0
-        bottom: 0
+    > .top-content
         box-sizing: border-box
-        padding-left: $spacing-3
-        padding-right: $spacing-3
-        &.overflow
-            overflow-y: auto
-            overflow-x: hidden
+        padding: calc(#{$spacing-1 * 2} + #{$element-height-std}) $spacing-2 $spacing-1 $spacing-2
+        max-height: 75%
+    
+    > .top-content-full
+        box-sizing: border-box
+        padding: $spacing-1 $spacing-2
+        max-height: 75%
 
-    > .full-content
+    > .content
         box-sizing: border-box
-        height: 100%
-        padding-top: $spacing-1
         padding-left: $spacing-3
         padding-right: $spacing-3
-        &.overflow
-            overflow-y: auto
-            overflow-x: hidden
+
+    > .bottom-content
+        box-sizing: border-box
+        padding: $spacing-1
 
 </style>

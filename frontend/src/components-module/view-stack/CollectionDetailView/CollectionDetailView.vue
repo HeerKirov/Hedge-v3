@@ -5,21 +5,19 @@ import { ElementPopupMenu } from "@/components/interaction"
 import { SideLayout, SideBar, TopBarLayout, MiddleLayout, PaneLayout, Flex, FlexItem } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
 import { IllustImageDataset } from "@/components-module/data"
-import { IllustDetailPane, StagingPostButton } from "@/components-module/common"
+import { IllustDetailPane, StagingPostButton, IllustTabDetailInfo, IllustTabRelatedItems } from "@/components-module/common"
 import { ViewStackBackButton } from "@/components-module/view-stack"
 import { Illust } from "@/functions/http-client/api/illust"
 import { SingletonSlice, SliceOrPath } from "@/functions/fetch"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 import { installCollectionViewContext } from "@/services/view-stack/collection"
-import SideBarDetailInfo from "./SideBarDetailInfo.vue"
-import SideBarRelatedItems from "./SideBarRelatedItems.vue"
 
 const props = defineProps<{
     sliceOrPath: SliceOrPath<Illust, SingletonSlice<Illust>, number>
 }>()
 
 const {
-    target: { data, deleteItem, toggleFavorite },
+    target: { id, data, deleteItem, toggleFavorite },
     sideBar: { tabType },
     listview: { paginationData },
     listviewController: { viewMode, fitType, columnNum },
@@ -75,8 +73,11 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
     <SideLayout>
         <template #side>
             <SideBar>
-                <SideBarDetailInfo v-if="tabType === 'info'"/>
-                <SideBarRelatedItems v-else-if="tabType === 'related'"/>
+                <KeepAlive>
+                    <IllustTabDetailInfo v-if="id !== null && tabType === 'info'" :detail-id="id"/>
+                    <IllustTabRelatedItems v-else-if="id !== null && tabType === 'related'" :detail-id="id" type="COLLECTION"/>
+                </KeepAlive>
+
                 <template #bottom>
                     <Flex horizontal="stretch">
                         <FlexItem :basis="100" :width="0">
@@ -119,7 +120,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
                                     @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
 
                 <template #pane>
-                    <IllustDetailPane :state="paneState.state.value" @close="paneState.visible.value = false"/>
+                    <IllustDetailPane @close="paneState.visible.value = false"/>
                 </template>
             </PaneLayout>
         </TopBarLayout>

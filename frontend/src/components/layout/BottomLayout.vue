@@ -6,6 +6,9 @@
 
 withDefaults(defineProps<{
     scrollbarVisible?: boolean
+    topClass?: string
+    containerClass?: string | Record<string, any> | (string | Record<string, any>)[]
+    bottomClass?: string | Record<string, any> | (string | Record<string, any>)[]
 }>(), {
     scrollbarVisible: true
 })
@@ -14,14 +17,14 @@ withDefaults(defineProps<{
 
 <template>
     <div :class="$style['bottom-layout']">
-        <div v-if="!!$slots.top">
+        <div v-if="!!$slots.top" :class="topClass">
             <slot name="top"/>
         </div>
-        <div :class="{[$style['scroll-container']]: true, 'is-scrollbar-hidden': !scrollbarVisible}">
+        <div :class="[{[$style['scroll-container']]: true, 'is-scrollbar-hidden': !scrollbarVisible}, containerClass]">
             <slot/>
         </div>
         <slot name="gap"/>
-        <div>
+        <div :class="bottomClass">
             <slot name="bottom"/>
         </div>
     </div>

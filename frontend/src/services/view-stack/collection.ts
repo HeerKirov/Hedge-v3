@@ -1,16 +1,12 @@
 import { computed, Ref, ref } from "vue"
-import {
-    CollectionRelatedItems, CollectionRelatedUpdateForm, CollectionUpdateForm,
-    DetailIllust, Illust, IllustExceptions
-} from "@/functions/http-client/api/illust"
+import { Illust } from "@/functions/http-client/api/illust"
 import { flatResponse } from "@/functions/http-client"
 import {
     SingletonSlice, SliceOrPath, SingletonDataView,
-    createLazyFetchEndpoint, useFetchEndpoint, useSingletonDataView, usePostPathFetchHelper, usePostFetchHelper, useFetchEvent 
+    useFetchEndpoint, useSingletonDataView, usePostPathFetchHelper, usePostFetchHelper, useFetchEvent 
 } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
 import { installVirtualViewNavigation } from "@/components/data"
-import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
 import { useMessageBox } from "@/modules/message-box"
 import { useInterceptedKey } from "@/modules/keyboard"
@@ -18,7 +14,7 @@ import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useIllustViewController } from "@/services/base/view-controller"
-import { installIllustListviewForPreview, useImageDatasetOperators } from "@/services/common/illust"
+import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
 import { useSettingSite } from "@/services/setting"
 import { installation, toRef } from "@/utils/reactivity"
 
@@ -37,9 +33,9 @@ export const [installCollectionViewContext, useCollectionViewContext] = installa
         dataDrop: {dropInType: "collection", path: target.id}
     })
 
-    const sideBar = useSideBarContext(target.id)
+    const sideBar = useSideBarContext()
 
-    installIllustListviewForPreview({listview, selector, listviewController})
+    installIllustListviewContext({listview, selector, listviewController})
 
     useSettingSite()
 
@@ -122,73 +118,16 @@ function useViewStackCallback(singleton: SingletonDataView<Illust>) {
     })
 }
 
-function useSideBarContext(path: Ref<number | null>) {
+function useSideBarContext() {
     const storage = useLocalStorage<{tabType: "info"| "related"}>("collection-detail-view/side-bar", () => ({tabType: "info"}), true)
 
     const tabType = toRef(storage, "tabType")
 
-    useInterceptedKey(["Meta+Digit1", "Meta+Digit2"], e => {
+    //由于Meta+N快捷键可能被Illust列表的侧边栏占用，因此此处提供了一个Meta+Shift+N的快捷键
+    useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Shift+Digit1", "Meta+Shift+Digit2"], e => {
         if(e.key === "Digit1") tabType.value = "info"
-        else if(e.key === "Digit3") tabType.value = "related"
-    })
-
-    installDetailInfoLazyEndpoint({
-        path,
-        get: client => client.illust.collection.get,
-        update: client => client.illust.collection.update,
-        eventFilter: c => event => event.eventType === "entity/illust/updated" && event.illustId === c.path && event.detailUpdated
-    })
-
-    installRelatedItemsLazyEndpoint({
-        path,
-        get: client => path => client.illust.collection.relatedItems.get(path, {limit: 9}),
-        update: client => client.illust.collection.relatedItems.update,
-        eventFilter: c => event => event.eventType === "entity/illust/related-items/updated" && event.illustId === c.path
+        else if(e.key === "Digit2") tabType.value = "related"
     })
 
     return {tabType}
-}
-
-const [installDetailInfoLazyEndpoint, useDetailInfoLazyEndpoint] = createLazyFetchEndpoint<number, DetailIllust, CollectionUpdateForm, never, IllustExceptions["collection.update"], never>()
-const [installRelatedItemsLazyEndpoint, useRelatedItemsLazyEndpoint] = createLazyFetchEndpoint<number, CollectionRelatedItems, CollectionRelatedUpdateForm, never, IllustExceptions["collection.relatedItems.update"], never>()
-
-export function useSideBarDetailInfo() {
-    const dialog = useDialogService()
-    const { target: { id } } = useCollectionViewContext()
-    const { data, setData } = useDetailInfoLazyEndpoint()
-
-    const setDescription = async (description: string) => {
-        return description === data.value?.description || await setData({ description })
-    }
-    const setScore = async (score: number | null) => {
-        return score === data.value?.score || await setData({ score })
-    }
-    const openMetaTagEditor = () => {
-        if(id.value !== null) {
-            dialog.metaTagEditor.editIdentity({type: "COLLECTION", id: id.value})
-        }
-    }
-
-    return {data, id, setDescription, setScore, openMetaTagEditor}
-}
-
-export function useSideBarRelatedItems() {
-    const viewStack = useViewStack()
-    const dialog = useDialogService()
-    const { target: { id } } = useCollectionViewContext()
-    const { data } = useRelatedItemsLazyEndpoint()
-
-    const openAssociate = () => {
-        if(id.value !== null) {
-            dialog.associateExplorer.openAssociateView(id.value)
-        }
-    }
-
-    const openAssociateInNewView = (index?: number) => {
-        if(data.value?.associates.length) {
-            viewStack.openImageView({imageIds: data.value.associates.map(i => i.id), focusIndex: index})
-        }
-    }
-
-    return {data, openAssociate, openAssociateInNewView}
 }

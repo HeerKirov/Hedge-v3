@@ -12,7 +12,7 @@ const props = defineProps<{
 }>()
 
 const DEFAULT_WIDTH = 250
-const MAX_WIDTH = 450
+const MAX_WIDTH = 900
 const MIN_WIDTH = 200
 const ATTACH_RANGE = 10
 

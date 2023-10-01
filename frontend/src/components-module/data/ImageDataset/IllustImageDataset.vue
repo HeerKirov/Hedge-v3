@@ -3,12 +3,13 @@ import { computed } from "vue"
 import { Icon } from "@/components/universal"
 import { Flex, FlexItem } from "@/components/layout"
 import { FileInfoDisplay, SourceInfo } from "@/components-business/form-display"
-import { useAssets } from "@/functions/app"
 import { PaginationData, QueryInstance } from "@/functions/fetch"
+import { CommonIllust } from "@/functions/http-client/api/illust"
+import { useAssets } from "@/functions/app"
 import { TypeDefinition } from "@/modules/drag"
 import { datetime } from "@/utils/datetime"
 import { toRef } from "@/utils/reactivity"
-import { installDatasetContext, SuitableIllust, isVideoExtension } from "./context"
+import { installDatasetContext, isVideoExtension } from "./context"
 import SelectedCountBadge from "./SelectedCountBadge.vue"
 import DatasetGridFramework from "./DatasetGridFramework.vue"
 import DatasetRowFramework from "./DatasetRowFramework.vue"
@@ -17,11 +18,11 @@ const props = defineProps<{
     /**
      * 分页数据。
      */
-    data: PaginationData<SuitableIllust>
+    data: PaginationData<CommonIllust>
     /**
      * 查询实例。选择器模块会用到，被用于自由选取数据。
      */
-    queryInstance?: QueryInstance<SuitableIllust>
+    queryInstance?: QueryInstance<CommonIllust>
     /**
      * 视图模式，Grid表模式或row行模式。
      */
@@ -68,7 +69,7 @@ const emit = defineEmits<{
     /**
      * 右键单击某项。
      */
-    (e: "contextmenu", i: SuitableIllust): void
+    (e: "contextmenu", i: CommonIllust): void
     /**
      * 双击某项。
      */
@@ -83,7 +84,7 @@ const emit = defineEmits<{
     (e: "drop", insertIndex: number | null, images: TypeDefinition["illusts"], mode: "ADD" | "MOVE"): void
 }>()
 
-const keyOf = (item: SuitableIllust) => item.id
+const keyOf = (item: CommonIllust) => item.id
 
 const data = toRef(props, "data")
 const columnNum = computed(() => props.viewMode === "grid" ? (props.columnNum ?? 3) : undefined)
@@ -104,7 +105,7 @@ installDatasetContext({
     dragAndDropType: "illusts",
     dataUpdate: (_, __) => emit("data-update", _, __),
     select: (_, __) => emit("select", _, __),
-    rightClick: (_) => emit("contextmenu", _ as SuitableIllust),
+    rightClick: (_) => emit("contextmenu", _ as CommonIllust),
     dblClick: (_, __) => emit("dblclick", _, __),
     enterClick: (_) => emit("enter", _),
     dropData: (_, __, ___) => emit("drop", _, __ as TypeDefinition["illusts"], ___)

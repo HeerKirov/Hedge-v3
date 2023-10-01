@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { toRefs } from "vue"
 import { CheckBox, Select } from "@/components/form"
-import { ThumbnailImage, Icon, Button, Separator } from "@/components/universal"
+import { Icon, Button } from "@/components/universal"
 import { TagmeEditor, DateEditor } from "@/components-business/form-editor"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
-import { useImportDetailPaneMultiple } from "@/services/main/import"
+import { useSideBarAction } from "@/services/main/import"
 
 const props = defineProps<{
+    filename: string | null
     selected: number[]
-    latest: number
 }>()
 
-const { selected, latest } = toRefs(props)
+const { filename, selected } = toRefs(props)
 
-const { data, actives, anyActive, form, submit, openImagePreview } = useImportDetailPaneMultiple(selected, latest)
+const { actives, anyActive, form, submit } = useSideBarAction(selected)
 
 const timeTypes: {value: OrderTimeType, label: string}[] = [
     {value: "IMPORT_TIME", label: "按 项目导入时间 设定"},
@@ -24,10 +24,8 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
 </script>
 
 <template>
-    <ThumbnailImage class="is-cursor-zoom-in" minHeight="12rem" maxHeight="40rem" :file="data?.filePath.thumbnail" @click="openImagePreview"/>
-    <p v-if="data?.originFileName" class="selectable word-wrap-anywhere my-1">{{data.originFileName}}</p>
-    <Separator direction="horizontal"/>
-    <p class="mt-2"><Icon icon="edit"/>批量编辑</p>
+    <p v-if="filename" class="selectable word-wrap-anywhere mb-1">{{filename}}</p>
+    <p class="mt-2"><Icon icon="pen-nib"/>多选操作</p>
     <p class="mt-2"><CheckBox v-model:value="actives.tagme">设置Tagme</CheckBox></p>
     <TagmeEditor v-if="actives.tagme" class="mt-1 mb-2" v-model:value="form.tagme"/>
     <p class="mt-1"><CheckBox v-model:value="actives.setCreatedTimeBy">设置创建时间</CheckBox></p>

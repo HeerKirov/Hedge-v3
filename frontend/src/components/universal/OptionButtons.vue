@@ -1,18 +1,18 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import { Button } from "@/components/universal"
 import { Flex, FlexItem } from "@/components/layout"
 import { Colors } from "@/constants/ui"
 
 defineProps<{
-    items: {value: unknown, label: string, icon: string}[]
-    value?: unknown
+    items: {value: T, label: string, icon: string}[]
+    value?: T
     mode?: "transparent" | "light" | "filled"
     type?: Colors
     size?: "std" | "small" | "large"
 }>()
 
 defineEmits<{
-    (e: "update:value", v: unknown): void
+    (e: "update:value", v: T): void
 }>()
 
 </script>

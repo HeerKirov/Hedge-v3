@@ -1,15 +1,9 @@
 import { computed, onUnmounted, Ref, ref, watch } from "vue"
-import {
-    DetailIllust, Illust, IllustExceptions,
-    ImageRelatedItems, ImageRelatedUpdateForm, ImageSourceData, ImageSourceDataUpdateForm, ImageUpdateForm
-} from "@/functions/http-client/api/illust"
-import { SimpleBook } from "@/functions/http-client/api/book"
-import { SimpleFolder } from "@/functions/http-client/api/folder"
-import { SourceEditStatus } from "@/functions/http-client/api/source-data"
+import { Illust } from "@/functions/http-client/api/illust"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import {
     AllSlice, ListIndexSlice, SliceDataView, SliceOrPath,
-    createLazyFetchEndpoint, useFetchListEndpoint, useFetchSinglePathEndpoint,
+    useFetchListEndpoint, useFetchSinglePathEndpoint,
     usePostFetchHelper, usePostPathFetchHelper,
     useSliceDataView, useSliceDataViewByRef, useFetchReactive
 } from "@/functions/fetch"
@@ -21,11 +15,7 @@ import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator } from "@/modules/router"
 import { openLocalFile, openLocalFileInFolder } from "@/modules/others"
-import { useSettingSite } from "@/services/setting"
 import { installation, toRef } from "@/utils/reactivity"
-import { LocalDateTime } from "@/utils/datetime"
-import { SourceDataPath } from "@/functions/http-client/api/all"
-import { objects } from "@/utils/primitives"
 
 export const [installImageViewContext, useImageViewContext] = installation(function (data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>, modifiedCallback?: (illustId: number) => void) {
     const slice = useSlice(data)
@@ -36,7 +26,7 @@ export const [installImageViewContext, useImageViewContext] = installation(funct
 
     useViewStackCallback(slice, modifiedCallback)
 
-    const sideBar = useSideBarContext(target.id)
+    const sideBar = useSideBarContext()
     const playBoard = usePlayBoardContext()
 
     return {navigator, target, operators, sideBar, playBoard}
@@ -329,7 +319,7 @@ function usePlayBoardContext() {
     return {zoomEnabled, zoomValue}
 }
 
-function useSideBarContext(path: Ref<number | null>) {
+function useSideBarContext() {
     const storage = useLocalStorage<{tabType: "info" | "source" | "related"}>("image-detail-view/side-bar", () => ({tabType: "info"}), true)
 
     const tabType = toRef(storage, "tabType")
@@ -340,141 +330,5 @@ function useSideBarContext(path: Ref<number | null>) {
         else if(e.key === "Digit3") tabType.value = "source"
     })
 
-    installDetailInfoLazyEndpoint({
-        path,
-        get: client => client.illust.image.get,
-        update: client => client.illust.image.update,
-        eventFilter: c => event => event.eventType === "entity/illust/updated" && event.illustId === c.path && event.detailUpdated
-    })
-
-    installRelatedItemsLazyEndpoint({
-        path,
-        get: client => path => client.illust.image.relatedItems.get(path, {limit: 9}),
-        update: client => client.illust.image.relatedItems.update,
-        eventFilter: c => event => event.eventType === "entity/illust/related-items/updated" && event.illustId === c.path
-    })
-
-    installSourceDataLazyEndpoint({
-        path,
-        get: client => client.illust.image.sourceData.get,
-        update: client => client.illust.image.sourceData.update,
-        eventFilter: c => event => event.eventType === "entity/illust/source-data/updated" && event.illustId === c.path
-    })
-
     return {tabType}
-}
-
-const [installDetailInfoLazyEndpoint, useDetailInfoLazyEndpoint] = createLazyFetchEndpoint<number, DetailIllust, ImageUpdateForm, never, IllustExceptions["image.update"], never>()
-const [installRelatedItemsLazyEndpoint, useRelatedItemsLazyEndpoint] = createLazyFetchEndpoint<number, ImageRelatedItems, ImageRelatedUpdateForm, never, IllustExceptions["image.relatedItems.update"], never>()
-const [installSourceDataLazyEndpoint, useSourceDataLazyEndpoint] = createLazyFetchEndpoint<number, ImageSourceData, ImageSourceDataUpdateForm, never, IllustExceptions["image.sourceData.update"], never>()
-
-export function useSideBarDetailInfo() {
-    const dialog = useDialogService()
-    const { target: { id } } = useImageViewContext()
-    const { data, setData } = useDetailInfoLazyEndpoint()
-
-    const setDescription = async (description: string) => {
-        return description === data.value?.description || await setData({ description })
-    }
-    const setScore = async (score: number | null) => {
-        return score === data.value?.score || await setData({ score })
-    }
-    const setPartitionTime = async (partitionTime: LocalDateTime) => {
-        return partitionTime.timestamp === data.value?.partitionTime?.timestamp || await setData({partitionTime})
-    }
-    const setOrderTime = async (orderTime: LocalDateTime) => {
-        return orderTime.timestamp === data.value?.orderTime?.timestamp || await setData({orderTime})
-    }
-    const openMetaTagEditor = () => {
-        if(id.value !== null) {
-            dialog.metaTagEditor.editIdentity({type: "IMAGE", id: id.value})
-        }
-    }
-
-    return {data, id, setDescription, setScore, setPartitionTime, setOrderTime, openMetaTagEditor}
-}
-
-export function useSideBarRelatedItems() {
-    const viewStack = useViewStack()
-    const navigator = useRouterNavigator()
-    const dialog = useDialogService()
-    const { target: { id } } = useImageViewContext()
-    const { data } = useRelatedItemsLazyEndpoint()
-
-    const openRelatedBook = (book: SimpleBook) => {
-        viewStack.openBookView(book.id)
-    }
-
-    const openRelatedCollection = () => {
-        const id = data.value?.collection?.id
-        if(id !== undefined) {
-            viewStack.openCollectionView(id)
-        }
-    }
-
-    const openAssociate = () => {
-        if(id.value !== null) {
-            dialog.associateExplorer.openAssociateView(id.value)
-        }
-    }
-
-    const openAssociateInNewView = (index?: number) => {
-        if(data.value?.associates.length) {
-            viewStack.openImageView({imageIds: data.value.associates.map(i => i.id), focusIndex: index})
-        }
-    }
-
-    const openFolderInNewWindow = (folder: SimpleFolder) => {
-        navigator.newWindow({routeName: "MainFolder", query: {detail: folder.id}})
-    }
-
-    return {data, openRelatedBook, openRelatedCollection, openAssociate, openAssociateInNewView, openFolderInNewWindow}
-}
-
-export function useSideBarSourceData() {
-    const message = useMessageBox()
-    const dialog = useDialogService()
-    const { data, setData } = useSourceDataLazyEndpoint()
-
-    useSettingSite()
-
-    const sourceDataPath: Ref<SourceDataPath | null> = computed(() => data.value?.source ?? null)
-
-    const setSourceDataPath = async (source: SourceDataPath | null) => {
-        return objects.deepEquals(source, data.value?.source) || await setData({source}, e => {
-            if(e.code === "NOT_EXIST" && e.info[0] === "site") {
-                message.showOkMessage("error", `来源${source?.sourceSite}不存在。`)
-            }else if(e.code === "PARAM_ERROR") {
-                const target = e.info === "sourceId" ? "来源ID" : e.info === "sourcePart" ? "分页" : e.info === "sourcePartName" ? "分页页名": e.info
-                message.showOkMessage("error", `${target}的值内容错误。`, "ID只能是自然数。")
-            }else if(e.code === "PARAM_REQUIRED") {
-                const target = e.info === "sourceId" ? "来源ID" : e.info === "sourcePart" ? "分页" : e.info === "sourcePartName" ? "分页页名": e.info
-                message.showOkMessage("error", `${target}属性缺失。`)
-            }else if(e.code === "PARAM_NOT_REQUIRED") {
-                if(e.info === "sourcePart") {
-                    message.showOkMessage("error", `分页属性不需要填写，因为选择的来源站点不支持分页。`)
-                }else if(e.info === "sourcePartName") {
-                    message.showOkMessage("error", `分页页名属性不需要填写，因为选择的来源站点不支持分页页名。`)
-                }else if(e.info === "sourceId/sourcePart/sourcePartName") {
-                    message.showOkMessage("error", `来源ID/分页属性不需要填写，因为未指定来源站点。`)
-                }else{
-                    message.showOkMessage("error", `${e.info}属性不需要填写。`)
-                }
-            }else{
-                return e
-            }
-        })
-    }
-
-    const setSourceStatus = async (status: SourceEditStatus) => {
-        return (status === data.value?.status) || await setData({status})
-    }
-
-    const openSourceDataEditor = () => {
-        if(data.value !== null && data.value.source !== null) {
-            dialog.sourceDataEditor.edit({sourceSite: data.value.source.sourceSite, sourceId: data.value.source.sourceId})
-        }
-    }
-
-    return {data, sourceDataPath, setSourceDataPath, setSourceStatus, openSourceDataEditor}
 }

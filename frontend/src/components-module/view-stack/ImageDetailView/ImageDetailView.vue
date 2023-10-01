@@ -5,6 +5,7 @@ import { ElementPopupMenu } from "@/components/interaction"
 import { StagingPostButton } from "@/components-module/common"
 import { Button, Separator, OptionButtons } from "@/components/universal"
 import { SideLayout, SideBar, TopBarCollapseLayout, MiddleLayout, Flex, FlexItem } from "@/components/layout"
+import { IllustTabDetailInfo, IllustTabRelatedItems, IllustTabSourceData } from "@/components-module/common"
 import { ZoomController } from "@/components-business/top-bar"
 import { ViewStackBackButton } from "@/components-module/view-stack"
 import { useAssets } from "@/functions/app"
@@ -12,9 +13,6 @@ import { Illust } from "@/functions/http-client/api/illust"
 import { AllSlice, ListIndexSlice, SliceOrPath } from "@/functions/fetch"
 import { MenuItem, usePopupMenu } from "@/modules/popup-menu"
 import { installImageViewContext } from "@/services/view-stack/image"
-import SideBarDetailInfo from "./SideBarDetailInfo.vue"
-import SideBarRelatedItems from "./SideBarRelatedItems.vue"
-import SideBarSourceData from "./SideBarSourceData.vue"
 
 const props = defineProps<{
     sliceOrPath: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>
@@ -23,7 +21,7 @@ const props = defineProps<{
 
 const {
     navigator: { metrics, subMetrics, prev, next },
-    target: { data },
+    target: { id, data },
     sideBar: { tabType },
     playBoard: { zoomEnabled, zoomValue },
     operators: { 
@@ -71,9 +69,12 @@ const popupMenu = usePopupMenu(computed(() => [
     <SideLayout>
         <template #side>
             <SideBar>
-                <SideBarDetailInfo v-if="tabType === 'info'"/>
-                <SideBarRelatedItems v-else-if="tabType === 'related'"/>
-                <SideBarSourceData v-else-if="tabType === 'source'"/>
+                <KeepAlive>
+                    <IllustTabDetailInfo v-if="id !== null && tabType === 'info'" :detail-id="id"/>
+                    <IllustTabRelatedItems v-else-if="id !== null && tabType === 'related'" :detail-id="id" type="IMAGE"/>
+                    <IllustTabSourceData v-else-if="id !== null && tabType === 'source'" :detail-id="id" type="IMAGE"/>
+                </KeepAlive>
+
                 <template #bottom>
                     <Flex horizontal="stretch">
                         <FlexItem :basis="100" :width="0">
