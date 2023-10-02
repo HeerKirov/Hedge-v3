@@ -6,10 +6,12 @@ import { KeyEvent } from "@/modules/keyboard"
 
 const props = defineProps<{
     value: LocalDateTime
+    autoFocus?: boolean
 }>()
 
 const emit = defineEmits<{
     (e: "update:value", value: LocalDateTime): void
+    (e: "enter"): void
 }>()
 
 const maxDay = computed(() => props.value ? getDaysOfMonth(props.value.year, props.value.month) : undefined)
@@ -21,12 +23,30 @@ const setHour = (hour: number) => emit("update:value", datetime.withHour(props.v
 const setMinute = (minute: number) => emit("update:value", datetime.withMinute(props.value, minute))
 const setSecond = (second: number) => emit("update:value", datetime.withSecond(props.value, second))
 
-const enterOnYear = (e: KeyEvent) => setYear(parseInt((e.target as HTMLInputElement).value))
-const enterOnMonth = (e: KeyEvent) => setMonth(parseInt((e.target as HTMLInputElement).value))
-const enterOnDay = (e: KeyEvent) => setDay(parseInt((e.target as HTMLInputElement).value))
-const enterOnHour = (e: KeyEvent) => setHour(parseInt((e.target as HTMLInputElement).value))
-const enterOnMinute = (e: KeyEvent) => setMinute(parseInt((e.target as HTMLInputElement).value))
-const enterOnSecond = (e: KeyEvent) => setSecond(parseInt((e.target as HTMLInputElement).value))
+const enterOnYear = (e: KeyEvent) => {
+    setYear(parseInt((e.target as HTMLInputElement).value))
+    emit("enter")
+}
+const enterOnMonth = (e: KeyEvent) => {
+    setMonth(parseInt((e.target as HTMLInputElement).value))
+    emit("enter")
+}
+const enterOnDay = (e: KeyEvent) => {
+    setDay(parseInt((e.target as HTMLInputElement).value))
+    emit("enter")
+}
+const enterOnHour = (e: KeyEvent) => {
+    setHour(parseInt((e.target as HTMLInputElement).value))
+    emit("enter")
+}
+const enterOnMinute = (e: KeyEvent) => {
+    setMinute(parseInt((e.target as HTMLInputElement).value))
+    emit("enter")
+}
+const enterOnSecond = (e: KeyEvent) => {
+    setSecond(parseInt((e.target as HTMLInputElement).value))
+    emit("enter")
+}
 
 </script>
 
@@ -40,7 +60,7 @@ const enterOnSecond = (e: KeyEvent) => setSecond(parseInt((e.target as HTMLInput
             <NumberInput size="small" width="one-third" placeholder="日" :min="1" :max="maxDay" :value="value.day" @update:value="setDay" @enter="enterOnDay"/>
         </div>
         <div class="is-line-height-std">
-            <NumberInput size="small" width="half" placeholder="时" :min="0" :max="23" :value="value.hours" @update:value="setHour" @enter="enterOnHour"/>
+            <NumberInput size="small" width="half" placeholder="时" :min="0" :max="23" :auto-focus="autoFocus" :value="value.hours" @update:value="setHour" @enter="enterOnHour"/>
             :
             <NumberInput size="small" width="one-third" placeholder="分" :min="0" :max="59" :value="value.minutes" @update:value="setMinute" @enter="enterOnMinute"/>
             :

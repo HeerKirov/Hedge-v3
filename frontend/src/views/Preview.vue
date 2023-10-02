@@ -2,12 +2,14 @@
 import { installSideLayoutState } from "@/components/layout"
 import { installDialogService, GlobalDialog } from "@/components-module/dialog"
 import { installCalloutService, GlobalCallout } from "@/components-module/callout"
+import { installPreviewService, GlobalPreview } from "@/components-module/preview"
 import { installViewStack, ViewStack } from "@/components-module/view-stack"
 import { useRouterParamEvent } from "@/modules/router"
 
 installDialogService()
 installCalloutService()
-installSideLayoutState()
+installPreviewService()
+installSideLayoutState({defaultSwitch: false})
 const viewStack = installViewStack()
 
 useRouterParamEvent("Preview", params => {
@@ -26,4 +28,5 @@ useRouterParamEvent("Preview", params => {
     <ViewStack/>
     <GlobalDialog/>
     <GlobalCallout/>
+    <GlobalPreview/>
 </template>

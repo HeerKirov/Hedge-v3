@@ -21,7 +21,13 @@ export function useTopicDetailData(path: Ref<number>) {
         }
     }
 
-    return {data, toggleFavorite}
+    const setScore = (score: number | null) => {
+        if(data.value !== null) {
+            setData({score: score}).finally()
+        }
+    }
+
+    return {data, toggleFavorite, setScore}
 }
 
 export function useAuthorDetailData(path: Ref<number>) {
@@ -37,7 +43,13 @@ export function useAuthorDetailData(path: Ref<number>) {
         }
     }
 
-    return {data, toggleFavorite}
+    const setScore = (score: number | null) => {
+        if(data.value !== null) {
+            setData({score: score}).finally()
+        }
+    }
+
+    return {data, toggleFavorite, setScore}
 }
 
 export function useTagDetailData(path: Ref<number>) {

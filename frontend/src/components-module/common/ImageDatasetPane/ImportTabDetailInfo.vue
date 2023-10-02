@@ -27,8 +27,8 @@ const { data, setTagme, setSourceInfo, setCreateTime, setOrderTime, setPartition
             <template #default="{ value }">
                 <SourceInfo :source="value"/>
             </template>
-            <template #edit="{ value, setValue }">
-                <SourceIdentityEditor :source="value" @update:source="setValue"/>
+            <template #edit="{ value, setValue, save }">
+                <SourceIdentityEditor :source="value" @update:source="setValue" @enter="save"/>
             </template>
         </FormEditKit>
         <ImportSourcePreferencesDisplay class="mt-1" :preference="data.sourcePreference" :site="data.source?.sourceSite ?? null" @clear="clearAllSourcePreferences"/>
@@ -46,24 +46,24 @@ const { data, setTagme, setSourceInfo, setCreateTime, setOrderTime, setPartition
             <template #default="{ value }">
                 <p class="secondary-text">时间分区 {{date.toISOString(value)}}</p>
             </template>
-            <template #edit="{ value, setValue }">
-                <DateEditor :value="value" @update:value="setValue"/>
+            <template #edit="{ value, setValue, save }">
+                <DateEditor auto-focus :value="value" @update:value="setValue" @enter="save"/>
             </template>
         </FormEditKit>
         <FormEditKit :value="data.createTime" :set-value="setCreateTime">
             <template #default="{ value }">
                 <p class="secondary-text">创建时间 {{datetime.toSimpleFormat(value)}}</p>
             </template>
-            <template #edit="{ value, setValue }">
-                <DateTimeEditor :value="value" @update:value="setValue"/>
+            <template #edit="{ value, setValue, save }">
+                <DateTimeEditor auto-focus :value="value" @update:value="setValue" @enter="save"/>
             </template>
         </FormEditKit>
         <FormEditKit :value="data.orderTime" :set-value="setOrderTime">
             <template #default="{ value }">
                 <p class="secondary-text">排序时间 {{datetime.toSimpleFormat(value)}}</p>
             </template>
-            <template #edit="{ value, setValue }">
-                <DateTimeEditor :value="value" @update:value="setValue"/>
+            <template #edit="{ value, setValue, save }">
+                <DateTimeEditor auto-focus :value="value" @update:value="setValue" @enter="save"/>
             </template>
         </FormEditKit>
     </template>

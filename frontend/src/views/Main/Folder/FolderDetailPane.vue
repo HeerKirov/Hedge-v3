@@ -16,7 +16,7 @@ const { data, exampleThumbnailFiles, setTitle, openDetail } = useFolderDetailPan
                 <span class="is-font-size-large">{{value}}</span>
             </template>
             <template #edit="{ value, setValue, save }">
-                <Input placeholder="标题" :value="value" @update:value="setValue" @enter="save" update-on-input auto-focus/>
+                <Input placeholder="标题" :value="value" @update:value="setValue" @enter="save" auto-focus/>
             </template>
         </FormEditKit>
         <p v-if="data.type === 'FOLDER'" class="mt-2"><Icon class="mr-1" icon="folder"/>目录</p>

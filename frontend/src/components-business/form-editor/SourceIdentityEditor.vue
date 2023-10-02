@@ -13,6 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: "update:source", source: SourceDataPath | null): void
+    (e: "enter"): void
 }>()
 
 const { data: sites } = useSettingSite()
@@ -64,13 +65,13 @@ const updatePartName = (v: string | undefined) => {
         <SourceSiteSelectBox :value="site" @update:value="updateSite"/>
         <Flex v-if="site !== null" class="mt-1 w-100" :width="100" :spacing="1">
             <FlexItem :width="45">
-                <Input size="small" update-on-input placeholder="来源ID" :value="source?.sourceId.toString()" @update:value="updateId"/>
+                <Input size="small" update-on-input auto-focus placeholder="来源ID" :value="source?.sourceId.toString()" @update:value="updateId" @enter="$emit('enter')"/>
             </FlexItem>
             <FlexItem v-if="hasPart" :width="20">
-                <Input size="small" update-on-input placeholder="分页" :value="source?.sourcePart?.toString()" @update:value="updatePart"/>
+                <Input size="small" update-on-input placeholder="分页" :value="source?.sourcePart?.toString()" @update:value="updatePart" @enter="$emit('enter')"/>
             </FlexItem>
             <FlexItem v-if="hasPartName" :width="35">
-                <Input size="small" update-on-input placeholder="页名(可选)" :value="source?.sourcePartName" @update:value="updatePartName"/>
+                <Input size="small" update-on-input placeholder="页名(可选)" :value="source?.sourcePartName" @update:value="updatePartName" @enter="$emit('enter')"/>
             </FlexItem>
         </Flex>
     </div>

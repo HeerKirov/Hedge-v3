@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Tag, Icon } from "@/components/universal"
-import { Group } from "@/components/layout"
+import { Group, Flex } from "@/components/layout"
+import { Tag, Icon, Starlight } from "@/components/universal"
 import { SimpleMetaTagElement } from "@/components-business/element"
-import { DescriptionDisplay, RelatedAnnotationDisplay, ScoreDisplay } from "@/components-business/form-display"
+import { DescriptionDisplay, RelatedAnnotationDisplay } from "@/components-business/form-display"
 import { TOPIC_TYPE_ICONS } from "@/constants/entity"
 import { toRef } from "@/utils/reactivity"
 import { useTopicDetailData } from "./context"
@@ -12,7 +12,7 @@ const props = defineProps<{
     topicId: number
 }>()
 
-const { data, toggleFavorite } = useTopicDetailData(toRef(props, "topicId"))
+const { data, toggleFavorite, setScore } = useTopicDetailData(toRef(props, "topicId"))
 
 const otherNameText = computed(() => data.value !== null && data.value.otherNames.length > 0 ? data.value.otherNames.join(" / ") : null)
 
@@ -26,18 +26,16 @@ const otherNameText = computed(() => data.value !== null && data.value.otherName
                 {{data.name}}
             </span>
             <span class="ml-2 has-text-secondary">{{otherNameText}}</span>
-            <Icon :class="`has-text-${data.favorite ? 'danger' : 'secondary'} float-right mt-2 mr-1`" icon="heart" @click="toggleFavorite"/>
+            <Icon :class="`has-text-${data.favorite ? 'danger' : 'secondary'} is-cursor-pointer float-right mt-2 mr-1`" icon="heart" @click="toggleFavorite"/>
         </p>
         <Group v-if="data.parents.length" class="mb-2">
             <SimpleMetaTagElement v-for="topic in data.parents" :key="topic.id" type="topic" :value="topic"/>
         </Group>
-        <Group v-if="data.annotations.length || data.keywords.length">
+        <Flex v-if="data.annotations.length || data.keywords.length || data.score" :multiline="true" :spacing="1">
             <RelatedAnnotationDisplay v-if="data.annotations.length > 0" :value="data.annotations"/>
             <Tag v-for="keyword in data.keywords" color="secondary">{{keyword}}</Tag>
-            <ScoreDisplay v-if="data.score" class="float-right" :value="data.score"/>
-        </Group>
-        <p v-if="data.description">
-            <DescriptionDisplay :value="data.description"/>
-        </p>
+            <Starlight v-if="data.score" class="ml-auto" show-text editable :value="data.score" @update:value="setScore"/>
+        </Flex>
+        <DescriptionDisplay v-if="data.description" class="mt-1" :value="data.description"/>
     </template>
 </template>

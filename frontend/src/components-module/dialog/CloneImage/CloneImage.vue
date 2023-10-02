@@ -51,5 +51,4 @@ const { fromId, toId, ids, titles, exchange, updateId, options, execute } = useC
 .action-content
     width: 12rem
     flex-shrink: 0
-    height: inherit
 </style>

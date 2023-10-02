@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Block, Icon, Tag, GridImages } from "@/components/universal"
+import { Block, Icon, Tag, GridImages, Starlight } from "@/components/universal"
 import { Flex, Group } from "@/components/layout"
 import { SimpleMetaTagElement } from "@/components-business/element"
-import { DescriptionDisplay, RelatedAnnotationDisplay, ScoreDisplay, SourceTagMappingDisplay } from "@/components-business/form-display"
+import { DescriptionDisplay, RelatedAnnotationDisplay, SourceTagMappingDisplay } from "@/components-business/form-display"
 import { Illust } from "@/functions/http-client/api/illust"
 import { DetailTopic } from "@/functions/http-client/api/topic"
 import { TOPIC_TYPE_ICONS, TOPIC_TYPE_NAMES } from "@/constants/entity"
@@ -44,7 +44,7 @@ const more = () => navigator.goto({routeName: "MainIllust", params: {topicName: 
         <p class="mt-4">
             <Icon :icon="TOPIC_TYPE_ICONS[data.type]"/>
             {{TOPIC_TYPE_NAMES[data.type]}}
-            <ScoreDisplay class="float-right" :value="data.score"/>
+            <Starlight class="float-right" :value="data.score"/>
         </p>
         <p class="mt-1">
             <DescriptionDisplay :value="data.description"/>

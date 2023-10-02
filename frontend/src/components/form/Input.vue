@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ComponentPublicInstance, computed, nextTick, ref, useCssModule, watch } from "vue"
 import { KeyEvent, KeyPress, toKeyEvent, useInterceptedKey, useKeyDeclaration, USUAL_PRIMITIVE_KEY_VALIDATORS } from "@/modules/keyboard"
+import { onMounted } from "vue";
 
 const props = defineProps<{
     /**
@@ -89,14 +90,13 @@ let inputRef: HTMLInputElement | null = null
 //按键时聚焦
 if(props.focusOnKeypress) useInterceptedKey(props.focusOnKeypress, () => inputRef?.focus())
 
+//挂载时聚焦
+if(props.autoFocus) onMounted(() => inputRef?.focus())
+
 //挂载ref回调
 const mountedCallback = (props.focusOnKeypress || props.autoFocus || undefined) && async function(el: Element | ComponentPublicInstance | null) {
     const ref = (el as HTMLInputElement | null)
-    if(props.focusOnKeypress) inputRef = ref
-    if(props.autoFocus && ref) {
-        await nextTick()
-        ref.focus()
-    }
+    inputRef = ref
 }
 
 const events = {[props.updateOnInput ? "onInput" : "onChange"]: onUpdate, onKeydown, onCompositionstart, onCompositionend}

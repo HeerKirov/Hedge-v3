@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Icon, WrappedText } from "@/components/universal"
+import { Icon, Starlight, WrappedText } from "@/components/universal"
 import { ScoreDisplay, TagmeInfo, MetaTagListDisplay, PartitionTimeDisplay, TimeGroupDisplay, FileInfoDisplay } from "@/components-business/form-display"
 import { FindSimilarCompareData } from "@/services/main/find-similar"
 
@@ -31,7 +31,7 @@ defineProps<{
     <tr v-if="values.some(i => i?.score || i?.favorite)">
         <td>评分/收藏</td>
         <td v-for="value in values">
-            <ScoreDisplay v-if="value !== null" class="is-inline-block" :value="value.score"/>
+            <Starlight v-if="value !== null" :value="value.score"/>
             <Icon v-if="value?.favorite" class="has-text-danger ml-2" icon="heart"/>
         </td>
     </tr>

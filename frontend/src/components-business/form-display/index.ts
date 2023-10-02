@@ -5,7 +5,6 @@ import TagAddressTypeDisplay from "./TagAddressTypeDisplay.vue"
 import TagGroupTypeDisplay from "./TagGroupTypeDisplay.vue"
 import TagLinkDisplay from "./TagLinkDisplay.vue"
 import TagExampleDisplay from "./TagExampleDisplay.vue"
-import ScoreDisplay from "./ScoreDisplay.vue"
 import TitleDisplay from "./TitleDisplay.vue"
 import DescriptionDisplay from "./DescriptionDisplay.vue"
 import RelatedAnnotationDisplay from "./RelatedAnnotationDisplay.vue"
@@ -27,7 +26,7 @@ import TagmeInfo from "./TagmeInfo.vue"
 
 export { AnnotationTargetDisplay, AnnotationCanBeExportedDisplay }
 export { TagNameAndOtherDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay, PartitionTimeDisplay, TagLinkDisplay, TagExampleDisplay }
-export { ScoreDisplay, TitleDisplay, DescriptionDisplay, TimeGroupDisplay, RelatedAnnotationDisplay }
+export { TitleDisplay, DescriptionDisplay, TimeGroupDisplay, RelatedAnnotationDisplay }
 export { SourceInfo, SourceLinksDisplay, SourceAdditionalInfoDisplay, SourceTagMappingDisplay, SourceTagsDisplay, SourceBooksDisplay, SourceRelationsDisplay }
 export { SourceEditStatusDisplay, ImportPreferencesDisplay, ImportSourcePreferencesDisplay }
 export { TagmeInfo, MetaTagListDisplay }

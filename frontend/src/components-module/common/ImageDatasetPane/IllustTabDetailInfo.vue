@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { toRef } from "vue"
 import { FormEditKit } from "@/components/interaction"
-import { Separator, Icon } from "@/components/universal"
-import { TagmeInfo, DescriptionDisplay, PartitionTimeDisplay, TimeGroupDisplay, ScoreDisplay, MetaTagListDisplay, FileInfoDisplay } from "@/components-business/form-display"
+import { Separator, Icon, Starlight } from "@/components/universal"
+import { TagmeInfo, DescriptionDisplay, PartitionTimeDisplay, TimeGroupDisplay, MetaTagListDisplay, FileInfoDisplay } from "@/components-business/form-display"
 import { DateEditor, DateTimeEditor } from "@/components-business/form-editor"
-import { DescriptionEditor, ScoreEditor } from "@/components-business/form-editor"
+import { DescriptionEditor } from "@/components-business/form-editor"
 import { useSideBarDetailInfo } from "@/services/main/illust"
 
 const props = defineProps<{detailId: number}>()
@@ -22,15 +22,8 @@ const { data, setScore, setDescription, openMetaTagEditor, setPartitionTime, set
             <span v-if="data.type === 'COLLECTION'" class="float-right"><Icon class="mr-1" icon="images"/>{{ data.childrenCount }}项</span>
         </p>
         <Separator direction="horizontal"/>
-        <FormEditKit class="mt-2" :value="data.score" :set-value="setScore">
-            <template #default="{ value }">
-                <ScoreDisplay :value="value"/>
-            </template>
-            <template #edit="{ value, setValue }">
-                <ScoreEditor :value="value" @update:value="setValue"/>
-            </template>
-        </FormEditKit>
-        <FormEditKit class="mt-2" :value="data.description" :set-value="setDescription">
+        <Starlight class="is-inline-block" editable :value="data.score" @update:value="setScore"/>
+        <FormEditKit class="mt-1" :value="data.description" :set-value="setDescription">
             <template #default="{ value }">
                 <DescriptionDisplay :value="value"/>
             </template>
@@ -45,8 +38,8 @@ const { data, setScore, setDescription, openMetaTagEditor, setPartitionTime, set
             <template #default="{ value }">
                 <PartitionTimeDisplay :partition-time="value"/>
             </template>
-            <template #edit="{ value, setValue }">
-                <DateEditor :value="value" @update:value="setValue"/>
+            <template #edit="{ value, setValue, save }">
+                <DateEditor auto-focus :value="value" @update:value="setValue" @enter="save"/>
             </template>
         </FormEditKit>
         <PartitionTimeDisplay v-else class="mt-2" :partition-time="data.partitionTime"/>
@@ -54,8 +47,8 @@ const { data, setScore, setDescription, openMetaTagEditor, setPartitionTime, set
             <template #default="{ value }">
                 <TimeGroupDisplay :order-time="value" :update-time="data.updateTime" :create-time="data.createTime"/>
             </template>
-            <template #edit="{ value, setValue }">
-                <DateTimeEditor :value="value" @update:value="setValue"/>
+            <template #edit="{ value, setValue, save }">
+                <DateTimeEditor auto-focus :value="value" @update:value="setValue" @enter="save"/>
             </template>
         </FormEditKit>
         <TimeGroupDisplay v-else :order-time="data.orderTime" :update-time="data.updateTime" :create-time="data.createTime"/>

@@ -17,7 +17,7 @@ const { data, setName, setCanBeExported, setAnnotationTarget } = useAnnotationDe
                 <Tag class="is-font-size-large" brackets="[]">{{value}}</Tag>
             </template>
             <template #edit="{ value, setValue, save }">
-                <Input placeholder="注解名称" :value="value" @update:value="setValue" @enter="save" update-on-input auto-focus/>
+                <Input placeholder="注解名称" :value="value" @update:value="setValue" @enter="save" auto-focus/>
             </template>
         </FormEditKit>
         <FormEditKit class="mt-4" :value="data.canBeExported" :set-value="setCanBeExported">

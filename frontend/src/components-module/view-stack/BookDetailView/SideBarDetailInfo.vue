@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Input } from "@/components/form"
-import { Icon, Separator } from "@/components/universal"
+import { Icon, Separator, Starlight } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
-import { ScoreEditor, DescriptionEditor } from "@/components-business/form-editor"
-import { ScoreDisplay, DescriptionDisplay, MetaTagListDisplay, TimeGroupDisplay, TitleDisplay } from "@/components-business/form-display"
+import { DescriptionEditor } from "@/components-business/form-editor"
+import { DescriptionDisplay, MetaTagListDisplay, TimeGroupDisplay, TitleDisplay } from "@/components-business/form-display"
 import { useBookViewContext } from "@/services/view-stack/book"
 
 const { target: { data, id, setTitle, setScore, setDescription, openMetaTagEditor } } = useBookViewContext()
@@ -20,18 +20,11 @@ const { target: { data, id, setTitle, setScore, setDescription, openMetaTagEdito
             <template #default="{ value }">
                 <TitleDisplay :value="value"/>
             </template>
-            <template #edit="{ value, setValue }">
-                <Input :value="value" @update:value="setValue"/>
+            <template #edit="{ value, setValue, save }">
+                <Input auto-focus :value="value" @update:value="setValue" @enter="save"/>
             </template>
         </FormEditKit>
-        <FormEditKit class="mt-4" :value="data.score" :set-value="setScore">
-            <template #default="{ value }">
-                <ScoreDisplay :value="value"/>
-            </template>
-            <template #edit="{ value, setValue }">
-                <ScoreEditor :value="value" @update:value="setValue"/>
-            </template>
-        </FormEditKit>
+        <Starlight class="is-inline-block mt-4" editable :value="data.score" @update:value="setScore"/>
         <FormEditKit class="mt-2" :value="data.description" :set-value="setDescription">
             <template #default="{ value }">
                 <DescriptionDisplay :value="value"/>

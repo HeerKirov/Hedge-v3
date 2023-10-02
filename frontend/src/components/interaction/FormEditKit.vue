@@ -31,13 +31,18 @@ const props = withDefaults(defineProps<{
      */
     allowClickOutside?: boolean
     /**
+     * 只要获得数据提交，就保存。适用于那些只会有一次编辑行为，然后就会立即提交的场景。
+     */
+    saveOnceUpdated?: boolean
+    /**
      * 保存时执行此回调。此回调需要异步地返回一个布尔值，以告知此保存行为是否成功。
      * update:value事件则与此不同，它总是会被提交，且先于此回调提交。如果不在意保存结果，那么可以使用emit。
      */
     setValue?(newValue: T): Promise<boolean>
 }>(), {
     allowDoubleClick: true,
-    allowClickOutside: true
+    allowClickOutside: true,
+    saveOnceUpdated: false
 })
 
 const emit = defineEmits<{
@@ -62,6 +67,7 @@ const edit = () => {
 
 const setEditValue = (v: T) => {
     editValue.value = v
+    if(props.saveOnceUpdated) save().finally()
 }
 
 const save = async () => {

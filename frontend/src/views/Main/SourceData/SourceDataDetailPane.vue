@@ -31,7 +31,7 @@ const { data, sourceDataPath, relatedImages, setSourceEditStatus, gotoIllust, op
             </p>
         </template>
         <a class="float-right is-font-size-small mt-2" @click="openEditDialog"><Icon class="mr-1" icon="edit"/>编辑</a>
-        <FormEditKit class="is-line-height-std mt-2" :value="data.status" :set-value="setSourceEditStatus">
+        <FormEditKit class="is-line-height-std mt-2" :value="data.status" :set-value="setSourceEditStatus" save-once-updated>
             <template #default="{ value }">
                 <SourceEditStatusDisplay :value="value"/>
             </template>

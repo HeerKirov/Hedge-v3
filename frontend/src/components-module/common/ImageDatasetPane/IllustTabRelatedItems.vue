@@ -21,14 +21,14 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
 <template>
     <template v-if="data?.books?.length">
         <b class="mb-1">所属画集</b>
-        <Block v-for="book in data.books" :key="book.id" class="mb-1 has-text-centered" @click="openRelatedBook(book)">
+        <Block v-for="book in data.books" :key="book.id" class="mb-1 has-text-centered is-cursor-pointer" @click="openRelatedBook(book)">
             《{{book.title}}》
         </Block>
         <div class="mb-3"/>
     </template>
     <template v-if="data?.collection">
         <b class="mr-2">所属集合</b><Icon icon="id-card"/><b class="ml-1 selectable is-font-size-large">{{data.collection.id}}</b>
-        <ThumbnailImage max-height="12rem" :file="data.collection.filePath.sample" :num-tag-value="data.collection.childrenCount" @click="openRelatedCollection"/>
+        <ThumbnailImage class="is-cursor-pointer" max-height="12rem" :file="data.collection.filePath.sample" :num-tag-value="data.collection.childrenCount" @click="openRelatedCollection"/>
         <div class="mb-3"/>
     </template>
     <template v-if="data?.associates?.length">

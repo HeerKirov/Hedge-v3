@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import { BasePane } from "@/components/layout"
-import { ThumbnailImage, Separator, Icon } from "@/components/universal"
-import { ScoreDisplay, DescriptionDisplay, TagmeInfo, MetaTagListDisplay, PartitionTimeDisplay, TimeGroupDisplay, SourceInfo } from "@/components-business/form-display"
+import { ThumbnailImage, Separator, Icon, Starlight } from "@/components/universal"
+import { DescriptionDisplay, TagmeInfo, MetaTagListDisplay, PartitionTimeDisplay, TimeGroupDisplay, SourceInfo } from "@/components-business/form-display"
 import { SelectedPaneState } from "@/services/base/selected-pane-state"
 import { useTrashDetailPane } from "@/services/main/trash"
 import { datetime } from "@/utils/datetime"
@@ -50,7 +50,7 @@ const remain = (remainingTime: number | null) => {
             </p>
             <Separator direction="horizontal"/>
             <SourceInfo v-if="data.source !== null" class="mt-1" :source="data.source"/>
-            <ScoreDisplay v-if="data.score !== null" class="mt-1" :value="data.score"/>
+            <Starlight v-if="data.score !== null" class="mt-1" :value="data.score"/>
             <DescriptionDisplay v-if="data.description" class="mt-1" :value="data.description"/>
             <MetaTagListDisplay v-if="data.topics.length || data.authors.length || data.tags.length" class="my-1" :topics="data.topics" :authors="data.authors" :tags="data.tags"/>
             <TagmeInfo v-if="data.tagme.length > 0" class="mt-1" :value="data.tagme"/>

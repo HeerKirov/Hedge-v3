@@ -6,10 +6,12 @@ import { KeyEvent } from "@/modules/keyboard"
 
 const props = defineProps<{
     value: LocalDate
+    autoFocus?: boolean
 }>()
 
 const emit = defineEmits<{
     (e: "update:value", value: LocalDate): void
+    (e: "enter"): void
 }>()
 
 const maxDay = computed(() => props.value ? getDaysOfMonth(props.value.year, props.value.month) : undefined)
@@ -18,9 +20,18 @@ const setYear = (year: number) => emit("update:value", date.withYear(props.value
 const setMonth = (month: number) => emit("update:value", date.withMonth(props.value, month))
 const setDay = (day: number) => emit("update:value", date.withDay(props.value, day))
 
-const enterOnYear = (e: KeyEvent) => setYear(parseInt((e.target as HTMLInputElement).value))
-const enterOnMonth = (e: KeyEvent) => setMonth(parseInt((e.target as HTMLInputElement).value))
-const enterOnDay = (e: KeyEvent) => setDay(parseInt((e.target as HTMLInputElement).value))
+const enterOnYear = (e: KeyEvent) => {
+    setYear(parseInt((e.target as HTMLInputElement).value))
+    emit("enter")
+}
+const enterOnMonth = (e: KeyEvent) => {
+    setMonth(parseInt((e.target as HTMLInputElement).value))
+    emit("enter")
+}
+const enterOnDay = (e: KeyEvent) => {
+    setDay(parseInt((e.target as HTMLInputElement).value))
+    emit("enter")
+}
 
 </script>
 
@@ -30,7 +41,7 @@ const enterOnDay = (e: KeyEvent) => setDay(parseInt((e.target as HTMLInputElemen
         /
         <NumberInput size="small" width="one-third" placeholder="月" :min="1" :max="12" :value="value.month" @update:value="setMonth" @enter="enterOnMonth"/>
         /
-        <NumberInput size="small" width="one-third" placeholder="日" :min="1" :max="maxDay" :value="value.day" @update:value="setDay" @enter="enterOnDay"/>
+        <NumberInput size="small" width="one-third" placeholder="日" :min="1" :max="maxDay" :auto-focus="autoFocus" :value="value.day" @update:value="setDay" @enter="enterOnDay"/>
     </div>
 </template>
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Block, Icon } from "@/components/universal"
+import { Block, Icon, Starlight } from "@/components/universal"
 import { Input, Select } from "@/components/form"
 import { Flex } from "@/components/layout"
 import { OtherNameEditor, ParentTopicEditor, DescriptionEditor, RelatedAnnotationEditor, SourceTagMappingEditor, ScoreEditor } from "@/components-business/form-editor"
@@ -82,7 +82,7 @@ const TOPIC_TYPE_SELECT_ITEMS = TOPIC_TYPES.map(t => ({label: TOPIC_TYPE_NAMES[t
         <Flex class="mt-2" :width="40">
             <div>
                 <label class="label">评分</label>
-                <ScoreEditor :value="score" @update:value="setScore"/>
+                <Starlight editable :value="score" @update:value="setScore"/>
             </div>
         </Flex>
     </Block>

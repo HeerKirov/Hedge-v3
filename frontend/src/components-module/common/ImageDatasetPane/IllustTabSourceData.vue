@@ -23,11 +23,11 @@ const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceData
             <template #default="{ value }">
                 <SourceInfo :source="value"/>
             </template>
-            <template #edit="{ value, setValue }">
-                <SourceIdentityEditor :source="value" @update:source="setValue"/>
+            <template #edit="{ value, setValue, save }">
+                <SourceIdentityEditor :source="value" @update:source="setValue" @enter="save"/>
             </template>
         </FormEditKit>
-        <FormEditKit class="mb-2" :value="data.status" :set-value="setSourceStatus">
+        <FormEditKit class="mb-2" :value="data.status" :set-value="setSourceStatus" save-once-updated>
             <template #default="{ value }">
                 <SourceEditStatusDisplay :value="value"/>
             </template>

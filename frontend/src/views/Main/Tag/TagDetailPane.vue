@@ -2,13 +2,14 @@
 import { FormEditKit } from "@/components/interaction"
 import {
     TagNameAndOtherDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay, TagLinkDisplay, TagExampleDisplay,
-    DescriptionDisplay, RelatedAnnotationDisplay, ScoreDisplay, SourceTagMappingDisplay
+    DescriptionDisplay, RelatedAnnotationDisplay, SourceTagMappingDisplay
 } from "@/components-business/form-display"
 import {
     TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, TagLinkEditor, TagExampleEditor,
     DescriptionEditor, RelatedAnnotationEditor, SourceTagMappingEditor
 } from "@/components-business/form-editor"
 import { useTagDetailPane } from "@/services/main/tag"
+import { Starlight } from "@/components/universal";
 
 const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotations, setDescription, setLinks, setMappingSourceTags, setExamples } = useTagDetailPane()
 
@@ -28,7 +29,7 @@ const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotation
             </template>
         </FormEditKit>
 
-        <FormEditKit class="mt-2" :value="data.type" :set-value="setType">
+        <FormEditKit class="mt-2" :value="data.type" :set-value="setType" save-once-updated>
             <template #default="{ value }">
                 <TagAddressTypeDisplay :value="value"/>
             </template>
@@ -64,7 +65,7 @@ const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotation
             </template>
         </FormEditKit>
 
-        <ScoreDisplay v-if="data.score !== null" class="mt-4" :value="data.score"/>
+        <Starlight v-if="data.score !== null" class="is-inline-block mt-4" :value="data.score"/>
 
         <label class="mt-5 label is-font-size-small">标签链接</label>
         <FormEditKit :value="data.links" :set-value="setLinks">

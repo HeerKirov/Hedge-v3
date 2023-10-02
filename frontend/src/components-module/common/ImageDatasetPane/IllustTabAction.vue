@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { toRefs } from "vue"
 import { CheckBox } from "@/components/form"
-import { Icon, Button, Separator } from "@/components/universal"
-import { TagmeEditor, DateEditor, DescriptionEditor, DateTimeEditor, ScoreEditor } from "@/components-business/form-editor"
+import { Icon, Button, Separator, Starlight } from "@/components/universal"
+import { TagmeEditor, DateEditor, DescriptionEditor, DateTimeEditor } from "@/components-business/form-editor"
 import { useSideBarAction } from "@/services/main/illust"
 
 const props = defineProps<{
@@ -33,7 +33,7 @@ const { actives, anyActive, form, submit, editMetaTag } = useSideBarAction(selec
     <p class="mt-1"><CheckBox v-model:value="actives.description">设置描述</CheckBox></p>
     <DescriptionEditor v-if="actives.description" class="mt-1 mb-2" v-model:value="form.description"/>
     <p class="mt-1"><CheckBox v-model:value="actives.score">设置评分</CheckBox></p>
-    <ScoreEditor v-if="actives.score" class="mt-1 mb-2" v-model:value="form.score"/>
+    <Starlight v-if="actives.score" class="mt-1 mb-2" editable v-model:value="form.score"/>
     <p class="mt-1"><CheckBox v-model:value="actives.partitionTime">设置时间分区</CheckBox></p>
     <DateEditor v-if="actives.partitionTime" class="mt-1 mb-2" v-model:value="form.partitionTime"/>
     <p class="mt-1"><CheckBox v-model:value="actives.orderTime">设置排序时间范围</CheckBox></p>

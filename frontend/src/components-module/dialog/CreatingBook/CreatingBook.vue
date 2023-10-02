@@ -2,8 +2,7 @@
 import { computed } from "vue"
 import { Input } from "@/components/form"
 import { BottomLayout } from "@/components/layout"
-import { Button, GridImages } from "@/components/universal"
-import { ScoreEditor } from "@/components-business/form-editor"
+import { Button, GridImages, Starlight } from "@/components/universal"
 import { CreatingBookProps, useCreatingBookContext } from "./context"
 import { installKeyDeclaration } from "@/modules/keyboard"
 
@@ -40,7 +39,7 @@ installKeyDeclaration(["Escape"], true)
         <label class="label mt-2">描述</label>
         <Input width="fullwidth" type="textarea" v-model:value="form.description"/>
         <label class="label mt-2">评分</label>
-        <div class="w-25"><ScoreEditor :value="form.score ?? null" @update:value="form.score = $event"/></div>
+        <div class="w-25"><Starlight editable :value="form.score ?? null" @update:value="form.score = $event"/></div>
         <div v-if="files.length > 0" class="mt-2">
             <label class="label">图像列表预览</label>
             <GridImages :images="files" :column-num="8"/>
