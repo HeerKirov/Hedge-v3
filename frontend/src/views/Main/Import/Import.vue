@@ -71,7 +71,7 @@ const menu = usePopupMenu<ImportImage>(() => [
             <!-- 要想完美解决这个问题，只能等虚拟视图的响应结构重构了。 -->
             <ImportImageDataset :class="{[$style.hidden]: paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0}"
                 :data="paginationData.data" :query-instance="paginationData.proxy"
-                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
+                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable
                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                 @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"/>
             <ImportEmpty v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" :class="$style.empty"/>

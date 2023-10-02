@@ -86,7 +86,7 @@ watch(() => props.images, async (images, oldImages) => {
  
 <template>
     <Block class="p-1">
-        <p class="is-font-size-small">选择一个集合，将所有项加入此集合:</p>
+        <p class="is-font-size-small">选择一个画集，将所有项加入此画集:</p>
         <Select :items="selectItems" v-model:value="selectValue"/>
         <div class="mt-1 has-text-right">
             <Button size="small" mode="filled" type="success" @click="submit">确认</Button>

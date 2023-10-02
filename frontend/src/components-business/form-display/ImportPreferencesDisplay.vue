@@ -25,7 +25,7 @@ const popup = () => {
 
 <template>
     <Block v-if="collectionId !== null || bookIds.length > 0 || (preference?.cloneImage ?? null) !== null" class="p-1" @contextmenu="popup">
-        <p><b class="mr-2">预设集合</b><Icon icon="id-card" class="mr-1"/>{{collectionId}}</p>
+        <p v-if="collectionId !== null"><b class="mr-2">预设集合</b><Icon icon="id-card" class="mr-1"/>{{collectionId}}</p>
         <p v-for="bookId in bookIds"><b class="mr-2">预设画集</b><Icon icon="clone" class="mr-1"/>{{bookId}}</p>
         <p v-if="preference?.cloneImage">
             <b>已设置属性克隆</b><i v-if="preference.cloneImage.deleteFrom">(删除源)</i>

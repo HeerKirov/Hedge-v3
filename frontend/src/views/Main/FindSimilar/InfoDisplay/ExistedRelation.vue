@@ -22,7 +22,7 @@ function existedText(info: { sameCollectionId: number | null, samePreCollection:
     const b = info.sameBooks.length ? "同画集" : ""
     const a = info.sameAssociate ? "关联组相关" : ""
     const i = info.ignored ? "已忽略" : ""
-    return [c, b, a, i].join("/")
+    return [c, b, a, i].filter(i => !!i).join("/")
 }
 
 </script>

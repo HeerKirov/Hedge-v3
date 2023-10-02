@@ -47,10 +47,10 @@ const { form, submit } = useTaskCreatorData(() => emit("close"))
                 </p>
                 <label class="label mt-3">相似项查找范围</label>
                 <p class="secondary-text">对于每一个待处理的任务项，按照下列可选范围查找可能的相似项。</p>
-                <p class="mt-2"><CheckBox :value="form.config.filterByOtherImport">其他导入项目</CheckBox></p>
-                <p class="mt-2"><CheckBox :value="form.config.filterByPartition">相同时间分区的项</CheckBox></p>
-                <p class="mt-2"><CheckBox :value="form.config.filterByAuthor">相同作者标签的项</CheckBox></p>
-                <p class="mt-2"><CheckBox :value="form.config.filterByTopic">相同主题标签的项</CheckBox></p>
+                <p class="mt-2"><CheckBox v-model:value="form.config.filterByOtherImport">其他导入项目</CheckBox></p>
+                <p class="mt-2"><CheckBox v-model:value="form.config.filterByPartition">相同时间分区的项</CheckBox></p>
+                <p class="mt-2"><CheckBox v-model:value="form.config.filterByAuthor">相同作者标签的项</CheckBox></p>
+                <p class="mt-2"><CheckBox v-model:value="form.config.filterByTopic">相同主题标签的项</CheckBox></p>
                 <p class="mt-2">
                     <p>来源类型标签过滤器</p>
                     <p class="secondary-text">根据指定的来源标签类型，选择此类型的标签，过滤持有相同来源标签的项。</p>
