@@ -4,6 +4,7 @@ import com.heerkirov.hedge.server.utils.Json.toJSONString
 import com.heerkirov.hedge.server.utils.tools.loopPoolThread
 import io.javalin.websocket.*
 import org.slf4j.LoggerFactory
+import java.nio.channels.ClosedChannelException
 import java.util.function.Consumer
 
 /**
@@ -53,7 +54,10 @@ class WsConsumer(ctx: (WsConsumer.() -> Unit)? = null) : Consumer<WsConfig> {
     private fun onErrorEvent(ctx: WsErrorContext) {
         connections.remove(ctx)
         whenCloseConsumers.forEach { it(ctx.sessionId) }
-        log.info("connection ${ctx.sessionId} error: ${ctx.error()}")
+        val e = ctx.error()
+        if(e !is ClosedChannelException) {
+            log.info("connection ${ctx.sessionId} error: ${ctx.error()}")
+        }
 
         if(connections.isEmpty()) pingThread.stop()
     }

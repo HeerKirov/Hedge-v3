@@ -143,7 +143,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
     fun loadByImportImage(importIds: List<Int>? = null, enableFilterBy: Boolean = false): List<EntityInfo> {
         data class ImageRow(val partitionTime: LocalDate, val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?, val sourcePartName: String?, val collectionId: Any?, val bookIds: List<Int>, val cloneImage: ImportImage.CloneImageFrom?, val fingerprint: Fingerprint?)
 
-        return loadByImportImageCache.computeIfAbsent(importIds?.joinToString() ?: "") {
+        return loadByImportImageCache.computeIfAbsent(importIds?.joinToString() ?: "<ALL>") {
             val imagesMap = data.db.from(ImportImages)
                 .leftJoin(FileFingerprints, FileFingerprints.fileId eq ImportImages.fileId)
                 .select(

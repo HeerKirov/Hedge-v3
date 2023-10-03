@@ -57,13 +57,13 @@ enum class TagAuthorType {
      */
     ARTIST,
     /**
-     * 工作室。
+     * 社团。
      */
-    STUDIO,
+    GROUP,
     /**
-     * 出版物。
+     * 系列。
      */
-    PUBLISH
+    SERIES
 }
 
 /**

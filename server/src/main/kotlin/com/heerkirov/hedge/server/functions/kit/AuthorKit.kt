@@ -59,8 +59,8 @@ class AuthorKit(private val data: DataRepository, private val annotationManager:
         return if(newAnnotations != null) annotationManager.analyseAnnotationParam(newAnnotations, target = when(type) {
             TagAuthorType.UNKNOWN -> Annotation.AnnotationTarget.authorElements.unionComposition()
             TagAuthorType.ARTIST -> Annotation.AnnotationTarget.ARTIST
-            TagAuthorType.STUDIO -> Annotation.AnnotationTarget.STUDIO
-            TagAuthorType.PUBLISH -> Annotation.AnnotationTarget.PUBLISH
+            TagAuthorType.GROUP -> Annotation.AnnotationTarget.GROUP
+            TagAuthorType.SERIES -> Annotation.AnnotationTarget.SERIES
         }).map { Author.CachedAnnotation(it.key, it.value) } else emptyList()
     }
 

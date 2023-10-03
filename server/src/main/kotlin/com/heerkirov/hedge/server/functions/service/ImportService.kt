@@ -127,9 +127,10 @@ class ImportService(private val appdata: AppDataManager,
         val bookIds = row[ImportImages.bookIds]
 
         val books = if(bookIds.isNullOrEmpty()) emptyList() else data.db.from(Books)
-            .select(Books.id, Books.title)
+            .leftJoin(FileRecords, Books.fileId eq FileRecords.id)
+            .select(Books.id, Books.title, FileRecords.id, FileRecords.status, FileRecords.block, FileRecords.extension)
             .where { Books.id inList bookIds }
-            .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!) }
+            .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!, if(it[FileRecords.id] != null) filePathFrom(it) else null) }
 
         val folders = if(folderIds.isNullOrEmpty()) emptyList() else data.db.from(Folders)
             .select(Folders.id, Folders.title, Folders.parentAddress, Folders.type)

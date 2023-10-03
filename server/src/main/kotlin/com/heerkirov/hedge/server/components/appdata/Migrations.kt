@@ -1,6 +1,8 @@
 package com.heerkirov.hedge.server.components.appdata
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.heerkirov.hedge.server.enums.TagAuthorType
+import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import com.heerkirov.hedge.server.utils.Json.toJsonNode
@@ -71,6 +73,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
     override fun migrations(register: MigrationRegister<JsonNode>) {
         register.empty("0.1.0")
         register.map("0.1.4", ::addSiteTypes)
+        register.map("0.2.0", ::modifyAuthorTypes)
     }
 
     /**
@@ -87,6 +90,34 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             meta = json["meta"].parseJSONObject(),
             query = json["query"].parseJSONObject(),
             source = SourceOption(sites),
+            import = json["import"].parseJSONObject(),
+            findSimilar = json["findSimilar"].parseJSONObject(),
+        ).toJsonNode()
+    }
+
+    /**
+     * 在0.2.0版本，修改了meta.authorColors中的author枚举名称。
+     */
+    private fun modifyAuthorTypes(json: JsonNode): JsonNode {
+        val autoCleanTagme = json["meta"]["autoCleanTagme"].asBoolean()
+        val topicColors = json["meta"]["topicColors"].parseJSONObject<Map<String, String>>()
+            .mapKeys { (k, _) -> TagTopicType.valueOf(k) }
+        val authorColors = json["meta"]["authorColors"].parseJSONObject<Map<String, String>>()
+            .mapKeys { (k, _) ->
+                when(k) {
+                    "ARTIST" -> TagAuthorType.ARTIST
+                    "STUDIO" -> TagAuthorType.GROUP
+                    "PUBLISH" -> TagAuthorType.SERIES
+                    else -> throw RuntimeException("Author type '$k' is illegal.")
+                }
+            }
+
+        return AppData(
+            server = json["server"].parseJSONObject(),
+            storage = json["storage"].parseJSONObject(),
+            meta = MetaOption(autoCleanTagme, topicColors, authorColors),
+            query = json["query"].parseJSONObject(),
+            source = json["source"].parseJSONObject(),
             import = json["import"].parseJSONObject(),
             findSimilar = json["findSimilar"].parseJSONObject(),
         ).toJsonNode()

@@ -36,18 +36,18 @@ data class Annotation(val id: Int,
     open class AnnotationTarget(value: Int) : Composition<AnnotationTarget>(AnnotationTarget::class, value) {
         object TAG : AnnotationTarget(AnnotationTargetValues.TAG)
         object ARTIST : AnnotationTarget(AnnotationTargetValues.ARTIST)
-        object STUDIO : AnnotationTarget(AnnotationTargetValues.STUDIO)
-        object PUBLISH : AnnotationTarget(AnnotationTargetValues.PUBLISH)
+        object GROUP : AnnotationTarget(AnnotationTargetValues.GROUP)
+        object SERIES : AnnotationTarget(AnnotationTargetValues.SERIES)
         object COPYRIGHT : AnnotationTarget(AnnotationTargetValues.COPYRIGHT)
         object IP : AnnotationTarget(AnnotationTargetValues.IP)
         object CHARACTER : AnnotationTarget(AnnotationTargetValues.CHARACTER)
         object EMPTY : AnnotationTarget(0b0)
 
         companion object {
-            val baseElements by lazy { listOf(TAG, ARTIST, STUDIO, PUBLISH, COPYRIGHT, IP, CHARACTER) }
+            val baseElements by lazy { listOf(TAG, ARTIST, GROUP, SERIES, COPYRIGHT, IP, CHARACTER) }
             val empty by lazy { EMPTY }
             val tagElements by lazy { listOf(TAG) }
-            val authorElements by lazy { listOf(ARTIST, STUDIO, PUBLISH) }
+            val authorElements by lazy { listOf(ARTIST, GROUP, SERIES) }
             val topicElements by lazy { listOf(COPYRIGHT, IP, CHARACTER) }
         }
     }
@@ -55,8 +55,8 @@ data class Annotation(val id: Int,
     private object AnnotationTargetValues {
         const val TAG = 0b1
         const val ARTIST = 0b10
-        const val STUDIO = 0b100
-        const val PUBLISH = 0b1000
+        const val GROUP = 0b100
+        const val SERIES = 0b1000
         const val COPYRIGHT = 0b10000
         const val IP = 0b100000
         const val CHARACTER = 0b1000000

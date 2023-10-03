@@ -268,9 +268,10 @@ class IllustService(private val appdata: AppDataManager,
 
         val books = data.db.from(Books)
             .innerJoin(BookImageRelations, BookImageRelations.bookId eq Books.id)
-            .select(Books.id, Books.title)
+            .leftJoin(FileRecords, Books.fileId eq FileRecords.id)
+            .select(Books.id, Books.title, FileRecords.id, FileRecords.status, FileRecords.block, FileRecords.extension)
             .where { BookImageRelations.imageId eq id }
-            .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!) }
+            .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!, if(it[FileRecords.id] != null) filePathFrom(it) else null) }
 
         val folders = data.db.from(Folders)
             .innerJoin(FolderImageRelations, FolderImageRelations.folderId eq Folders.id)

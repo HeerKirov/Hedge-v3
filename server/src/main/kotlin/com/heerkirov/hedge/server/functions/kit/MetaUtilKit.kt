@@ -8,6 +8,7 @@ import com.heerkirov.hedge.server.dao.Tags
 import com.heerkirov.hedge.server.dao.Topics
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.TagAddressType
+import com.heerkirov.hedge.server.utils.business.filePathFrom
 import org.ktorm.dsl.*
 
 class MetaUtilKit(private val appdata: AppDataManager, private val data: DataRepository) {
@@ -160,9 +161,10 @@ class MetaUtilKit(private val appdata: AppDataManager, private val data: DataRep
     fun suggestMetaOfBook(imageId: Int): List<MetaUtilSuggestionByBook> {
         val books = data.db.from(Books)
             .innerJoin(BookImageRelations, BookImageRelations.bookId eq Books.id)
-            .select(Books.id, Books.title)
+            .leftJoin(FileRecords, Books.fileId eq FileRecords.id)
+            .select(Books.id, Books.title, FileRecords.id, FileRecords.status, FileRecords.block, FileRecords.extension)
             .where { BookImageRelations.imageId eq imageId }
-            .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!) }
+            .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!, if(it[FileRecords.id] != null) filePathFrom(it) else null) }
 
         return books.map { book ->
             val res = getMetaOfBook(book.id)

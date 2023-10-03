@@ -7,7 +7,7 @@ data class BookRes(val id: Int, val title: String, val imageCount: Int, val file
                    val score: Int?, val favorite: Boolean,
                    val createTime: Instant, val updateTime: Instant)
 
-data class BookSimpleRes(val id: Int, val title: String)
+data class BookSimpleRes(val id: Int, val title: String, val filePath: FilePath?)
 
 data class BookDetailRes(val id: Int, val title: String, val imageCount: Int, val filePath: FilePath?,
                          val topics: List<TopicSimpleRes>, val authors: List<AuthorSimpleRes>, val tags: List<TagSimpleRes>,

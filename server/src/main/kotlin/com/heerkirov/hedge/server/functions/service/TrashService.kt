@@ -111,9 +111,10 @@ class TrashService(private val appdata: AppDataManager, private val data: DataRe
             ?.let { IllustParent(it[Illusts.id]!!, filePathFrom(it), it[Illusts.cachedChildrenCount]!!) }
 
         val books = if(metadata.books.isEmpty()) emptyList() else data.db.from(Books)
-            .select(Books.id, Books.title)
+            .leftJoin(FileRecords, Books.fileId eq FileRecords.id)
+            .select(Books.id, Books.title, FileRecords.id, FileRecords.status, FileRecords.block, FileRecords.extension)
             .where { Books.id inList metadata.books }
-            .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!) }
+            .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!, if(it[FileRecords.id] != null) filePathFrom(it) else null) }
 
         val folders = if(metadata.folders.isEmpty()) emptyList() else data.db.from(Folders)
             .select(Folders.id, Folders.title, Folders.parentAddress, Folders.type)
