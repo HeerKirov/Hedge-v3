@@ -5,13 +5,12 @@ import { ElementPopupMenu } from "@/components/interaction"
 import { SideLayout, SideBar, TopBarLayout, MiddleLayout, PaneLayout, Flex } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
 import { IllustImageDataset } from "@/components-module/data"
-import { IllustDetailPane, StagingPostButton } from "@/components-module/common"
+import { BookTabDetailInfo, IllustDetailPane, StagingPostButton } from "@/components-module/common"
 import { ViewStackBackButton } from "@/components-module/view-stack"
 import { Book, BookImage } from "@/functions/http-client/api/book"
 import { SingletonSlice, SliceOrPath } from "@/functions/fetch"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 import { installBookViewContext } from "@/services/view-stack/book"
-import SideBarDetailInfo from "./SideBarDetailInfo.vue"
 
 const props = defineProps<{
     sliceOrPath: SliceOrPath<Book, SingletonSlice<Book>, number>
@@ -68,7 +67,7 @@ const menu = useDynamicPopupMenu<BookImage>(bookImage => [
     <SideLayout>
         <template #side>
             <SideBar>
-                <SideBarDetailInfo/>
+                <BookTabDetailInfo :book="data"/>
 
                 <template #bottom>
                     <Flex horizontal="right">

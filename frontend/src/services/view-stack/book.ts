@@ -17,7 +17,7 @@ export const [installBookViewContext, useBookViewContext] = installation(functio
     const target = useTarget(data)
     const listview = useListView(target.id)
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
-    const paneState = useSelectedPaneState("illust", selector)
+    const paneState = useSelectedPaneState("illust")
     const listviewController = useIllustViewController()
     const navigation = installVirtualViewNavigation()
     const operators = useImageDatasetOperators({
@@ -90,7 +90,7 @@ function useTarget(slice: SliceOrPath<Book, SingletonSlice<Book>, number>) {
         }
     }
 
-    return {data: data, id, toggleFavorite, setTitle, setDescription, setScore, deleteItem, openMetaTagEditor}
+    return {data, id, toggleFavorite, setTitle, setDescription, setScore, deleteItem, openMetaTagEditor}
 }
 
 function useListView(path: Ref<number | null>) {

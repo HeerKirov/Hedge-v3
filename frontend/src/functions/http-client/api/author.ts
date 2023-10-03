@@ -65,7 +65,7 @@ export interface AuthorExceptions {
     "update": NotFound | AlreadyExists<"Author", "name", string> | ResourceNotExist<"annotations", number[]> | ResourceNotSuitable<"annotations", number[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
 }
 
-export type AuthorType = "UNKNOWN" | "ARTIST" | "STUDIO" | "PUBLISH"
+export type AuthorType = "UNKNOWN" | "ARTIST" | "GROUP" | "SERIES"
 
 export interface Author {
     /**

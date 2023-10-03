@@ -1,4 +1,4 @@
-import { ref, Ref } from "vue"
+import { computed, ref, Ref } from "vue"
 import { QueryListview } from "@/functions/fetch"
 import { useListeningEvent } from "@/utils/emitter"
 
@@ -10,6 +10,15 @@ export interface SelectedState<T> {
     lastSelected: Readonly<Ref<T | null>>
     update(selected: T[], lastSelected: T | null): void
     remove(value: T): void
+    clear(): void
+}
+
+/**
+ * 为列表提供选择器相关上下文，包括单一选择项。
+ */
+export interface SingleSelectedState<T> {
+    selected: Readonly<Ref<T | null>>
+    set(selected: T | null): void
     clear(): void
 }
 
@@ -52,4 +61,32 @@ export function useSelectedState<T, ITEM = undefined>(options?: SelectedStateOpt
     }
 
     return {selected, lastSelected, update, remove, clear}
+}
+
+export function useSingleSelectedState<T, ITEM = undefined>(options?: SelectedStateOptions<T, ITEM>): SingleSelectedState<T> {
+    const selected = ref(null) as Ref<T | null>
+
+    if(options?.queryListview) {
+        useListeningEvent(options.queryListview.modifiedEvent, e => {
+            if(e.type === "REMOVE") {
+                //与queryListview的联动机制。自动监听queryListview的移除事件，并自动移除选择器中的对应项。
+                if(selected.value !== null && options.keyOf(e.oldValue) === selected.value) {
+                    clear()
+                }
+            }else if(e.type === "FILTER_UPDATED") {
+                //与queryListview的联动机制。当列表被更新重置时，自动清空选择器。
+                clear()
+            }
+        })
+    }
+
+    const set = (newSelected: T | null) => {
+        selected.value = newSelected
+    }
+
+    const clear = () => {
+        selected.value = null
+    }
+
+    return {selected, set, clear}
 }

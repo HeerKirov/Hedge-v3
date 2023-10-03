@@ -19,7 +19,7 @@ const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceData
 
 <template>
     <template v-if="data !== null">
-        <FormEditKit class="mb-2" :value="sourceDataPath!" :set-value="setSourceDataPath">
+        <FormEditKit class="my-1" :value="sourceDataPath!" :set-value="setSourceDataPath">
             <template #default="{ value }">
                 <SourceInfo :source="value"/>
             </template>
@@ -27,6 +27,7 @@ const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceData
                 <SourceIdentityEditor :source="value" @update:source="setValue" @enter="save"/>
             </template>
         </FormEditKit>
+        <Separator direction="horizontal"/>
         <FormEditKit class="mb-2" :value="data.status" :set-value="setSourceStatus" save-once-updated>
             <template #default="{ value }">
                 <SourceEditStatusDisplay :value="value"/>
@@ -36,7 +37,6 @@ const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceData
             </template>
         </FormEditKit>
         <template v-if="data.source !== null">
-            <Separator direction="horizontal"/>
             <TitleDisplay :value="data.title" @dblclick="openSourceDataEditor"/>
             <DescriptionDisplay :value="data.description" @dblclick="openSourceDataEditor"/>
             <SourceRelationsDisplay :value="data.relations" @dblclick="openSourceDataEditor"/>

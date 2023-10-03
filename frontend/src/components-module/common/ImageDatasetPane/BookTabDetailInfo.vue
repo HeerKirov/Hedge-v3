@@ -1,20 +1,27 @@
 <script setup lang="ts">
-import { Input } from "@/components/form"
-import { Icon, Separator, Starlight } from "@/components/universal"
+import { toRef } from "vue"
 import { FormEditKit } from "@/components/interaction"
+import { Input } from "@/components/form"
+import { Separator, Icon, Starlight } from "@/components/universal"
+import { TitleDisplay, DescriptionDisplay, TimeGroupDisplay, MetaTagListDisplay } from "@/components-business/form-display"
 import { DescriptionEditor } from "@/components-business/form-editor"
-import { DescriptionDisplay, MetaTagListDisplay, TimeGroupDisplay, TitleDisplay } from "@/components-business/form-display"
-import { useBookViewContext } from "@/services/view-stack/book"
+import { DetailBook } from "@/functions/http-client/api/book"
+import { useSideBarDetailInfo } from "@/services/main/book"
 
-const { target: { data, id, setTitle, setScore, setDescription, openMetaTagEditor } } = useBookViewContext()
+const props = defineProps<{book: DetailBook | null}>()
+
+const data = toRef(props, "book")
+
+const { setTitle, setScore, setDescription, openMetaTagEditor } = useSideBarDetailInfo(data)
 
 </script>
 
 <template>
-    <p class="mb-1">
-        <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{id}}</b>
-    </p>
-    <template v-if="data !== null">
+    <template v-if="!!data">
+        <p class="my-1">
+            <Icon icon="id-card"/><b class="ml-1 selectable">{{data.id}}</b>
+            <span class="float-right"><Icon class="mr-1" icon="images"/>{{ data.imageCount }}项</span>
+        </p>
         <Separator direction="horizontal"/>
         <FormEditKit class="mt-2" :value="data.title" :set-value="setTitle">
             <template #default="{ value }">

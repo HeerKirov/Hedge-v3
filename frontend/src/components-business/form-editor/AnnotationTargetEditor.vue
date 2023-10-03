@@ -17,7 +17,7 @@ const emit = defineEmits<{
 }>()
 
 const TOPIC_TARGETS: AnnotationTarget[] = ["COPYRIGHT", "IP", "CHARACTER"]
-const AUTHOR_TARGETS: AnnotationTarget[] = ["ARTIST", "STUDIO", "PUBLISH"]
+const AUTHOR_TARGETS: AnnotationTarget[] = ["ARTIST", "GROUP", "SERIES"]
 const TAG_TARGETS: AnnotationTarget[] = ["TAG"]
 
 const TARGETS: Record<MetaType, AnnotationTarget[]> = {

@@ -226,7 +226,7 @@ export function useFolderDetailPanel() {
 
     const listview = useListView(viewState.detailPath)
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
-    const paneState = useSelectedPaneState("illust", selector)
+    const paneState = useSelectedPaneState("illust")
     const listviewController = useIllustViewController()
     const navigation = installVirtualViewNavigation()
     const operators = useImageDatasetOperators({

@@ -1,23 +1,15 @@
 <script setup lang="ts">
-import { computed } from "vue"
 import { BasePane } from "@/components/layout"
 import { ThumbnailImage, Separator, Icon, Starlight } from "@/components/universal"
 import { DescriptionDisplay, TagmeInfo, MetaTagListDisplay, PartitionTimeDisplay, TimeGroupDisplay, SourceInfo } from "@/components-business/form-display"
-import { SelectedPaneState } from "@/services/base/selected-pane-state"
 import { useTrashDetailPane } from "@/services/main/trash"
 import { datetime } from "@/utils/datetime"
-
-const props = defineProps<{
-    state: SelectedPaneState<number>
-}>()
 
 defineEmits<{
     (e: "close"): void
 }>()
 
-const path = computed(() => props.state.type === "single" ? props.state.value : props.state.type === "multiple" ? props.state.latest : null)
-
-const { data } = useTrashDetailPane(path)
+const { data, path, selector: { selected } } = useTrashDetailPane()
 
 const remain = (remainingTime: number | null) => {
     if(remainingTime === null) {
@@ -37,15 +29,17 @@ const remain = (remainingTime: number | null) => {
     <BasePane @close="$emit('close')">
         <template #title>
             <p class="mt-2 ml-2">
-                <i v-if="state.type === 'multiple'">已选择{{state.values.length}}项</i>
-                <i v-else-if="state.type === 'none'" class="has-text-secondary">未选择任何项</i>
+                <i v-if="selected.length > 1">已选择{{selected.length}}项</i>
+                <i v-else-if="selected.length === 0" class="has-text-secondary">未选择任何项</i>
             </p>
         </template>
+        <template #top>
+            <ThumbnailImage :aspect="1" :file="data?.filePath.thumbnail" :draggable-file="data?.filePath.original" :drag-icon-file="data?.filePath.sample"/>
+        </template>
 
-        <ThumbnailImage minHeight="12rem" maxHeight="40rem" :file="data?.filePath.thumbnail" :draggable-file="data?.filePath.original" :drag-icon-file="data?.filePath.sample"/>
         <template v-if="!!data">
             <p class="my-1">
-                <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{path}}</b>
+                <Icon icon="id-card"/><b class="ml-1 selectable">{{path}}</b>
                 <span v-if="data.remainingTime !== null" class="float-right has-text-warning">{{ remain(data.remainingTime) }}</span>
             </p>
             <Separator direction="horizontal"/>

@@ -1,4 +1,3 @@
-import { Ref } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { mapResponse } from "@/functions/http-client"
 import { usePostFetchHelper } from "@/functions/fetch"
@@ -14,7 +13,7 @@ import { TypeDefinition } from "@/modules/drag"
 export function useStagingPostContext() {
     const listview = useListView()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
-    const paneState = useSelectedPaneState("staging-post", selector)
+    const paneState = useSelectedPaneState("staging-post")
     const listviewController = useIllustViewController()
     const navigation = installVirtualViewNavigation()
     const selfOperators = useOperators()

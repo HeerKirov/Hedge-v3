@@ -18,7 +18,7 @@ const { data, setScore, setDescription, openMetaTagEditor, setPartitionTime, set
 <template>
     <template v-if="!!data">
         <p class="my-1">
-            <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{ data.id }}</b>
+            <Icon icon="id-card"/><b class="ml-1 selectable">{{ data.id }}</b>
             <span v-if="data.type === 'COLLECTION'" class="float-right"><Icon class="mr-1" icon="images"/>{{ data.childrenCount }}项</span>
         </p>
         <Separator direction="horizontal"/>

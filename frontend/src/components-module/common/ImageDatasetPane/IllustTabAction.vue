@@ -18,7 +18,7 @@ const { actives, anyActive, form, submit, editMetaTag } = useSideBarAction(selec
 
 <template>
     <p class="mt-1 mb-1">
-        <Icon icon="id-card"/><b class="ml-1 is-font-size-large selectable">{{detailId}}</b>
+        <Icon icon="id-card"/><b class="ml-1 selectable">{{detailId}}</b>
     </p>
     <Separator direction="horizontal"/>
     <p class="mt-2"><Icon icon="pen-nib"/>多选操作</p>

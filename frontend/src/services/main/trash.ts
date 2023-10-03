@@ -1,4 +1,4 @@
-import { Ref } from "vue"
+import { computed } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { flatResponse } from "@/functions/http-client"
 import { TrashQueryFilter } from "@/functions/http-client/api/trash"
@@ -11,10 +11,10 @@ import { useMessageBox } from "@/modules/message-box"
 import { useToast } from "@/modules/toast"
 import { installation } from "@/utils/reactivity"
 
-export const [installTrashContext] = installation(function() {
+export const [installTrashContext, useTrashContext] = installation(function() {
     const listview = useListView()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
-    const paneState = useSelectedPaneState("trashed-image", selector)
+    const paneState = useSelectedPaneState("trashed-image")
     const listviewController = useTrashedImageViewController()
     const operators = useOperators(selector)
 
@@ -71,12 +71,16 @@ function useOperators(selector: SelectedState<number>) {
     return {restoreItem, deleteItem}
 }
 
-export function useTrashDetailPane(path: Ref<number | null>) {
+export function useTrashDetailPane() {
+    const { selector } = useTrashContext()
+    
+    const path = computed<number | null>(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
+
     const { data } = useFetchEndpoint({
         path,
         get: client => client.trash.get,
         eventFilter: c => event => c.path !== null && event.eventType === "entity/trashed-image/processed" && event.imageIds.includes(c.path)
     })
 
-    return {data}
+    return {data, path, selector}
 }

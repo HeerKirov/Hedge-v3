@@ -60,7 +60,7 @@ const menu = usePopupMenu<TrashedImage>(() => [
                                 @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"/>
 
             <template #pane>
-                <TrashedDetailPane :state="paneState.state.value" @close="paneState.visible.value = false"/>
+                <TrashedDetailPane @close="paneState.visible.value = false"/>
             </template>
         </PaneLayout>
     </TopBarLayout>

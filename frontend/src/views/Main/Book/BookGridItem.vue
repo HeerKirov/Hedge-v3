@@ -5,36 +5,41 @@ import { useAssets } from "@/functions/app"
 
 const props = defineProps<{
     item: Book
+    selected: boolean
 }>()
 
 const emit = defineEmits<{
     (e: "click", item: Book): void
+    (e: "dblclick", item: Book): void
     (e: "contextmenu", item: Book): void
 }>()
 
 const { assetsUrl } = useAssets()
 
 const click = () => emit("click", props.item)
+const dblclick = () => emit("dblclick", props.item)
 const contextmenu = () => emit("contextmenu", props.item)
 
 </script>
 
 <template>
     <div :class="$style.root">
-        <Block :class="$style.content" @contextmenu="contextmenu">
-            <img :class="$style.img" :src="assetsUrl(item.filePath?.thumbnail)" :alt="`book-${item.id}`" @click="click"/>
-            <Icon v-if="item.favorite" :class="['has-text-danger', $style.fav]" icon="heart"/>
+        <Block :class="{[$style.content]: true, [$style.selected]: selected}" @contextmenu="contextmenu">
+            <img :class="$style.img" :src="assetsUrl(item.filePath?.thumbnail)" :alt="item.title" @click="click" @dblclick="dblclick"/>
+            <Icon v-if="item.favorite" :class="$style.fav" icon="heart"/>
             <div :class="$style.info">
                 <span v-if="item.imageCount > 0" class="float-right">(<b>{{item.imageCount}}</b>)</span>
                 <span v-else class="float-right has-text-secondary">(空)</span>
-                <span v-if="item.title" class="selectable is-cursor-pointer" @click="click">{{item.title}}</span>
-                <span v-else class="is-cursor-pointer" @click="click"><Icon class="mr-2" icon="id-card"/><span class="selectable">{{item.id}}</span></span>
+                <span v-if="item.title" class="selectable is-cursor-pointer" @click="click" @dblclick="dblclick">{{item.title}}</span>
+                <span v-else class="is-cursor-pointer" @click="click" @dblclick="dblclick"><Icon class="mr-2" icon="id-card"/><span class="selectable">{{item.id}}</span></span>
             </div>
         </Block>
     </div>
 </template>
 
 <style module lang="sass">
+@import "../../../styles/base/color"
+
 //book grid item采用4:3+1:3的比例
 .root
     position: relative
@@ -51,6 +56,11 @@ const contextmenu = () => emit("contextmenu", props.item)
         margin: 0.25rem
         overflow: hidden
 
+        &.selected
+            outline: solid 2px $light-mode-primary
+            @media (prefers-color-scheme: dark)
+                outline-color: $dark-mode-primary
+
         > .img
             width: 100%
             height: 80%
@@ -61,6 +71,8 @@ const contextmenu = () => emit("contextmenu", props.item)
             position: absolute
             right: 0.35rem
             bottom: calc(0.35rem + 20%)
+            color: $dark-mode-text-color
+            filter: drop-shadow(0 0 1px $dark-mode-background-color)
 
         > .info
             position: absolute

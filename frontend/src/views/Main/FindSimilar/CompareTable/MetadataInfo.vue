@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Icon, Starlight, WrappedText } from "@/components/universal"
-import { ScoreDisplay, TagmeInfo, MetaTagListDisplay, PartitionTimeDisplay, TimeGroupDisplay, FileInfoDisplay } from "@/components-business/form-display"
+import { TagmeInfo, MetaTagListDisplay, PartitionTimeDisplay, TimeGroupDisplay, FileInfoDisplay } from "@/components-business/form-display"
 import { FindSimilarCompareData } from "@/services/main/find-similar"
 
 defineProps<{

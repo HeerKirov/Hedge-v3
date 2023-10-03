@@ -171,6 +171,7 @@ export interface DetailBook extends Book {
 export interface SimpleBook {
     id: number
     title: string
+    filePath: FilePath | null
 }
 
 export interface BookImage {

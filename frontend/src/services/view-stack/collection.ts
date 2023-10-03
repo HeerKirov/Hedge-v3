@@ -23,7 +23,7 @@ export const [installCollectionViewContext, useCollectionViewContext] = installa
     const target = useTarget(singleton)
     const listview = useListView(target.id)
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
-    const paneState = useSelectedPaneState("illust", selector)
+    const paneState = useSelectedPaneState("illust")
     const listviewController = useIllustViewController()
     const navigation = installVirtualViewNavigation()
     const operators = useImageDatasetOperators({

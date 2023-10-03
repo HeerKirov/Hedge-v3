@@ -30,7 +30,7 @@ import { objects } from "@/utils/primitives"
 export const [installIllustContext, useIllustContext] = installation(function () {
     const listview = useListView()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
-    const paneState = useSelectedPaneState("illust", selector)
+    const paneState = useSelectedPaneState("illust")
     const querySchema = useQuerySchema("ILLUST", toRef(listview.queryFilter, "query"))
     const listviewController = useIllustViewController(toRef(listview.queryFilter, "type"))
     const navigation = installVirtualViewNavigation()

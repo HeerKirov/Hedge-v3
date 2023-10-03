@@ -232,7 +232,7 @@ export function useDetailIllustContext() {
     const { querySchema, listviewController, partition: { path } } = usePartitionContext()
     const listview = useListView()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
-    const paneState = useSelectedPaneState("illust", selector)
+    const paneState = useSelectedPaneState("illust")
     const navigation = installVirtualViewNavigation()
     const operators = useImageDatasetOperators({
         paginationData: listview.paginationData,

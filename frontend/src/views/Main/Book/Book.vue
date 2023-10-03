@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import { Button } from "@/components/universal"
+import { ElementPopupMenu } from "@/components/interaction"
 import { VirtualGridView } from "@/components/data"
-import { TopBarLayout, MiddleLayout } from "@/components/layout"
+import { TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
 import { DataRouter, ColumnNumButton, SearchInput, QueryNotificationBadge, QueryResult } from "@/components-business/top-bar"
+import { BookDetailPane } from "@/components-module/common"
 import { Book } from "@/functions/http-client/api/book"
 import { useDialogService } from "@/components-module/dialog"
-import { useDynamicPopupMenu } from "@/modules/popup-menu"
+import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 import { installBookContext } from "@/services/main/book"
 import BookGridItem from "./BookGridItem.vue"
 
@@ -14,17 +16,26 @@ const {
     listview: { paginationData },
     listviewController: { columnNum },
     querySchema,
-    operators
+    operators,
+    selector,
+    paneState
 } = installBookContext()
 
 const { creatingBook } = useDialogService()
 
 const bookGridStyle = computed(() => ({"--column-num": columnNum.value}))
 
+const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
+    {type: "checkbox", label: "显示信息预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "separator"},
+    {type: "normal", label: "新建画集", click: creatingBook.createBook}
+])
+
 const menu = useDynamicPopupMenu<Book>(book => [
     {type: "normal", label: "查看详情", click: operators.openBookView},
-    {type: "separator"},
     {type: "normal", label: "在新窗口中打开", click: operators.openInNewWindow},
+    {type: "separator"},
+    {type: "checkbox", checked: paneState.visible.value, label: "显示信息预览", click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     book.favorite
         ? {type: "normal", label: "取消标记为收藏", click: book => operators.switchFavorite(book, false)}
@@ -47,7 +58,9 @@ const menu = useDynamicPopupMenu<Book>(book => [
                 <template #right>
                     <DataRouter/>
                     <ColumnNumButton class="mr-1" v-model:value="columnNum"/>
-                    <Button square icon="plus" @click="creatingBook.createBook()"/>
+                    <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
+                        <Button :ref="setEl" square icon="ellipsis-v" @click="popup"/>
+                    </ElementPopupMenu>
                 </template>
             </MiddleLayout>
         </template>
@@ -56,13 +69,21 @@ const menu = useDynamicPopupMenu<Book>(book => [
             <QueryResult :schema="querySchema.schema.value"/>
         </template>
 
-        <VirtualGridView :style="bookGridStyle" :column-count="columnNum" :padding="{top: 1, bottom: 4, left: 4, right: 4}"
-                         :min-update-delta="1" :buffer-size="5" :aspect-ratio="0.6"
-                         @update="paginationData.dataUpdate" v-bind="paginationData.data.metrics">
-            <BookGridItem v-for="item in paginationData.data.result" :key="item.id" :item="item"
-                          @click="operators.openBookView(item)"
-                          @contextmenu="menu.popup(item)"/>
-        </VirtualGridView>
+        <PaneLayout :show-pane="paneState.visible.value">
+            <VirtualGridView :style="bookGridStyle" :column-count="columnNum" :padding="{top: 1, bottom: 4, left: 4, right: 4}"
+                             :min-update-delta="1" :buffer-size="5" :aspect-ratio="0.6"
+                             @update="paginationData.dataUpdate" v-bind="paginationData.data.metrics">
+                <BookGridItem v-for="item in paginationData.data.result" :key="item.id" :item="item" 
+                              :selected="selector.selected.value === item.id"
+                              @click="selector.set($event.id)" 
+                              @dblclick="operators.openBookView($event)"
+                              @contextmenu="menu.popup(item)"/>
+            </VirtualGridView>
+            
+            <template #pane>
+                <BookDetailPane @close="paneState.visible.value = false"/>
+            </template>
+        </PaneLayout>
 
     </TopBarLayout>
 </template>

@@ -3,9 +3,9 @@ import { provide } from "vue"
 import { useInterception } from "@/modules/keyboard"
 import { eachViewInjection } from "./context"
 import { StackViewInfo } from "./definition"
-import ImageDetailView from "./ImageDetailView/ImageDetailView.vue"
-import CollectionDetailView from "./CollectionDetailView/CollectionDetailView.vue"
-import BookDetailView from "@/components-module/view-stack/BookDetailView/BookDetailView.vue"
+import ImageDetailView from "./ImageDetailView.vue"
+import CollectionDetailView from "./CollectionDetailView.vue"
+import BookDetailView from "./BookDetailView.vue"
 
 const props = defineProps<{
     stackViewInfo: StackViewInfo

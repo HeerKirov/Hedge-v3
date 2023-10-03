@@ -4,7 +4,7 @@ import { flatResponse } from "@/functions/http-client"
 import { Tagme } from "@/functions/http-client/api/illust"
 import { ImportImage, ImportQueryFilter } from "@/functions/http-client/api/import"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
-import { FilePath, NullableFilePath, SourceDataPath } from "@/functions/http-client/api/all"
+import { NullableFilePath, SourceDataPath } from "@/functions/http-client/api/all"
 import { QueryInstance, QueryListview, useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
@@ -28,7 +28,7 @@ export const [installImportContext, useImportContext] = installation(function ()
     const watcher = useImportFileWatcher()
     const listview = useListView()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
-    const paneState = useSelectedPaneState("import-image", selector)
+    const paneState = useSelectedPaneState("import-image")
     const listviewController = useImportImageViewController()
     const operators = useOperators(selector, listview.anyData, importService.addFiles)
 
