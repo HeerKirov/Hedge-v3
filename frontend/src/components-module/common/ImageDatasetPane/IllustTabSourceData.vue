@@ -4,7 +4,7 @@ import { Separator } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
 import {
     SourceInfo, SourceEditStatusDisplay, TitleDisplay, DescriptionDisplay,
-    SourceRelationsDisplay, SourceBooksDisplay, SourceTagsDisplay
+    SourceRelationsDisplay, SourceBooksDisplay, SourceTagsDisplay, SourceLinksDisplay, SourceAdditionalInfoDisplay
 } from "@/components-business/form-display"
 import { SourceIdentityEditor, SourceEditStatusEditor } from "@/components-business/form-editor"
 import { useSideBarSourceData } from "@/services/main/illust"
@@ -37,11 +37,13 @@ const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceData
             </template>
         </FormEditKit>
         <template v-if="data.source !== null">
-            <TitleDisplay :value="data.title" @dblclick="openSourceDataEditor"/>
-            <DescriptionDisplay :value="data.description" @dblclick="openSourceDataEditor"/>
-            <SourceRelationsDisplay :value="data.relations" @dblclick="openSourceDataEditor"/>
-            <SourceBooksDisplay :value="data.books" @dblclick="openSourceDataEditor"/>
-            <SourceTagsDisplay :value="data.tags" @dblclick="openSourceDataEditor"/>
+            <TitleDisplay v-if="data.title" :value="data.title" @dblclick="openSourceDataEditor"/>
+            <DescriptionDisplay v-if="data.description" :value="data.description" @dblclick="openSourceDataEditor"/>
+            <SourceRelationsDisplay v-if="data.relations.length" :value="data.relations" @dblclick="openSourceDataEditor"/>
+            <SourceBooksDisplay v-if="data.books.length" :value="data.books" @dblclick="openSourceDataEditor"/>
+            <SourceTagsDisplay v-if="data.tags.length" :site="data.source.sourceSite" :value="data.tags" @dblclick="openSourceDataEditor"/>
+            <SourceLinksDisplay v-if="data.links.length" :value="data.links" @dblclick="openSourceDataEditor"/>
+            <SourceAdditionalInfoDisplay v-if="data.additionalInfo.length" :value="data.additionalInfo" @dblclick="openSourceDataEditor"/>
         </template>
     </template>
     <div v-else-if="type === 'COLLECTION'" class="has-text-centered">

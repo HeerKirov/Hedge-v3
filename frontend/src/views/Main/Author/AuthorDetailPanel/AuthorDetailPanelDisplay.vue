@@ -30,11 +30,11 @@ const more = () => navigator.goto({routeName: "MainIllust", params: {authorName:
 <template>
     <Block class="p-3">
         <p>
-            <span :class="{'is-font-size-h4': true, [`has-text-${data.color}`]: !!data.color}">
+            <span :class="[{[`has-text-${data.color}`]: !!data.color}, 'is-font-size-h4', 'selectable']">
                 <Icon :icon="AUTHOR_TYPE_ICONS[data.type]"/>
                 {{data.name}}
             </span>
-            <span class="ml-2 has-text-secondary">{{otherNameText}}</span>
+            <span class="pl-2 has-text-secondary selectable">{{otherNameText}}</span>
         </p>
         <p class="mt-4">
             <Icon :icon="AUTHOR_TYPE_ICONS[data.type]"/>

@@ -36,7 +36,7 @@ defineEmits<{
         <template #default>
             <slot/>
         </template>
-        <template #bottom>
+        <template v-if="!!$slots.bottom" #bottom>
             <slot name="bottom"/>
         </template>
     </BottomLayout>

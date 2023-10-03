@@ -46,9 +46,7 @@ const popupMenu = usePopupMenu([
 
         <PaneLayout :show-pane="paneState.opened.value">
             <template #pane>
-                <BasePane @close="paneState.closeView()">
-                    <SourceDataDetailPane v-if="paneState.mode.value === 'detail'"/>
-                </BasePane>
+                <SourceDataDetailPane v-if="paneState.mode.value === 'detail'" @close="paneState.closeView()"/>
             </template>
 
             <VirtualRowView :row-height="40" :padding="6" :buffer-size="10" v-bind="paginationData.data.metrics" @update="paginationData.dataUpdate">

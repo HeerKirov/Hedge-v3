@@ -19,7 +19,7 @@ const { identity, data, submit } = useCreateData(() => emit("completed"))
         <SourceDataSummaryEditor v-model:data="data" :site="identity.sourceSite"/>
 
         <template #bottom>
-            <Button class="float-right" mode="filled" type="primary" :disabled="false" icon="check" @click="submit">保存</Button>
+            <Button class="float-right mt-1" mode="filled" type="primary" :disabled="false" icon="check" @click="submit">保存</Button>
         </template>
     </BottomLayout>
 </template>

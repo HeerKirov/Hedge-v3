@@ -5,7 +5,6 @@
   border-collapse: collapse
   border-spacing: 0
 
-
   tr
     position: relative
 
@@ -17,7 +16,7 @@
       color: $dark-mode-text-inverted-color
 
   //非最后一行，有底边的边框
-  tr:not(:last-child)
+  &:not(.no-border) tr:not(:last-child)
     border: solid $light-mode-border-color
     border-width: 0 0 1px
     @media (prefers-color-scheme: dark)
@@ -27,6 +26,10 @@
   white-space: nowrap
   tr
     line-height: 1.8
+
+.table.baseline
+  tr
+    vertical-align: baseline
 
 .table.round
   //首行和尾行，在开始和结束位置有圆角

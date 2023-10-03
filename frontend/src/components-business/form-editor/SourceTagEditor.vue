@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from "vue"
+import { computed, ref, watch } from "vue"
 import { Group, Flex, FlexItem } from "@/components/layout"
 import { Button, Tag, Block } from "@/components/universal"
 import { Input } from "@/components/form"
 import { SourceTagElement } from "@/components-business/element"
 import { SourceTag } from "@/functions/http-client/api/source-data"
 import { useMessageBox } from "@/modules/message-box"
+import { useSettingSite } from "@/services/setting"
 import { SourceTagTypeSelectBox } from "."
 
 const props = defineProps<{
@@ -19,9 +20,25 @@ const emit = defineEmits<{
 
 const message = useMessageBox()
 
+const { data: sites } = useSettingSite()
+
 const selected = ref<{mode: "create"} | {mode: "edit", index: number} | {mode: "close"}>({mode: "close"})
 
 const form = ref<SourceTag | null>(null)
+
+const groupedTags = computed(() => {
+    if(props.value?.length) {
+        const site = sites.value?.find(s => s.name === props.site)
+        const values = props.value.map((tag, idx) => ({tag, idx}))
+        if(site?.availableTypes?.length) {
+            return site.availableTypes.map(type => ({type, tags: values.filter(st => st.tag.type === type)})).filter(({ tags }) => tags.length > 0)
+        }else{
+            return [{type: "", tags: values}]
+        }
+    }else{
+        return []
+    }
+})
 
 watch(selected, () => {
     if(selected.value.mode === "create") {
@@ -122,12 +139,19 @@ const setOtherName = (otherName: string) => {
 </script>
 
 <template>
-    <Flex :class="$style.root">
+    <Flex :class="$style.root" align="top">
         <FlexItem :width="70">
-            <Group class="p-1">
-                <SourceTagElement v-for="(tag, idx) in value" :value="tag" clickable @click="edit(idx)"/>
-                <Tag color="success" icon="plus" clickable @click="create">新标签</Tag>
-            </Group>
+            <table class="table no-border baseline">
+                <tbody>
+                    <tr v-for="{ type, tags } in groupedTags" :key="type">
+                        <td><b>{{ type }}</b></td>
+                        <td class="w-100"><Group><SourceTagElement v-for="{tag, idx} in tags" :key="tag.code" :value="tag" clickable @click="edit(idx)"/></Group></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <Tag color="success" icon="plus" clickable @click="create">新标签</Tag>
+                </tfoot>
+            </table>
         </FlexItem>
         <FlexItem v-if="form !== null" :width="30">
             <Block class="p-2">

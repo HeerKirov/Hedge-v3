@@ -24,7 +24,7 @@ withDefaults(defineProps<{
             <slot/>
         </div>
         <slot name="gap"/>
-        <div :class="bottomClass">
+        <div v-if="!!$slots.bottom" :class="bottomClass">
             <slot name="bottom"/>
         </div>
     </div>
