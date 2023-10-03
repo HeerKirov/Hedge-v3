@@ -201,9 +201,20 @@ export function useImportDetailPane() {
     const preview = usePreviewService()
     const { listview, listviewController, selector } = useImportContext()
 
-    const storage = useLocalStorage<{tabType: "action" | "info"}>("import/list/pane", () => ({tabType: "info"}), true)
+    const storage = useLocalStorage<{multiple: boolean}>("import/list/pane", () => ({multiple: true}), true)
 
-    const tabType = toRef(storage, "tabType")
+    const tabType = computed({
+        get: () => selector.selected.value.length > 1 && storage.value.multiple ? "action" : "info",
+        set: (value) => {
+            if(selector.selected.value.length > 1) {
+                if(value !== "action") {
+                    storage.value.multiple = false
+                }else if(!storage.value.multiple) {
+                    storage.value.multiple = true
+                }
+            }
+        }
+    })
 
     const path = computed(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
 

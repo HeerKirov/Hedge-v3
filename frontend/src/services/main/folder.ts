@@ -236,7 +236,7 @@ export function useFolderDetailPanel() {
         dataDrop: {dropInType: "folder", path: viewState.detailPath}
     })
 
-    installIllustListviewContext({listview, selector, listviewController})
+    installIllustListviewContext({listview, selector, listviewController, folder: data})
 
     return {data, listview, selector, viewState, paneState, listviewController, operators, deleteItem}
 }

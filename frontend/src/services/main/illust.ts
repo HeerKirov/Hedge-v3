@@ -2,7 +2,7 @@ import { computed, reactive, ref, Ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useLocalStorage } from "@/functions/app"
 import { mapResponse } from "@/functions/http-client"
-import { QueryInstance, QueryListview, useFetchEndpoint, useFetchHelper, usePostFetchHelper } from "@/functions/fetch"
+import { QueryInstance, QueryListview, useFetchEndpoint, useFetchHelper, usePostFetchHelper, usePostPathFetchHelper } from "@/functions/fetch"
 import { CommonIllust, IllustQueryFilter, ImageRelatedUpdateForm, Tagme } from "@/functions/http-client/api/illust"
 import { SimpleTag, SimpleTopic, SimpleAuthor, FilePath, SourceDataPath } from "@/functions/http-client/api/all"
 import { SimpleBook } from "@/functions/http-client/api/book"
@@ -95,15 +95,36 @@ function useListView() {
 
 export function useIllustDetailPane() {
     const preview = usePreviewService()
-    const { listview, selector, listviewController } = useIllustListviewContext()
+    const { listview, selector, listviewController, book, folder } = useIllustListviewContext()
 
-    const storage = useLocalStorage<{tabType: "action" | "info" | "source" | "related"}>("illust/list/pane", () => ({tabType: "info"}), true)
+    const storage = useLocalStorage<{tabType: "info" | "source" | "related", multiple: boolean}>("illust/list/pane", () => ({tabType: "info", multiple: true}), true)
 
-    const tabType = toRef(storage, "tabType")
+    const tabType = computed({
+        get: () => selector.selected.value.length > 1 && storage.value.multiple ? "action" : storage.value.tabType,
+        set: (value) => {
+            if(selector.selected.value.length > 1) {
+                if(value !== "action") {
+                    storage.value = {tabType: value, multiple: false}   
+                }else if(!storage.value.multiple) {
+                    storage.value.multiple = true
+                }
+            }else if(value !== "action") {
+                storage.value.tabType = value
+            }
+        }
+    })
 
     const path = computed(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
 
     const detail = useIllustDetailPaneId(path, listview.listview, listview.paginationData.proxy)
+
+    const parent = computed(() => {
+        if(book !== undefined && book.value !== null) {
+            return {type: "book", bookId: typeof book.value === "number" ? book.value : book.value.id} as const
+        }else if(folder !== undefined && folder.value !== null) {
+            return {type: "folder", folderId: typeof folder.value === "number" ? folder.value : folder.value.id} as const
+        }
+    })
 
     useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Digit3", "Meta+Digit4"], e => {
         if(e.key === "Digit1") tabType.value = "info"
@@ -126,7 +147,7 @@ export function useIllustDetailPane() {
         })
     }
 
-    return {tabType, detail, selector, openImagePreview}
+    return {tabType, detail, selector, parent, openImagePreview}
 }
 
 function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview<CommonIllust>, instance: QueryInstance<CommonIllust>) {
@@ -171,42 +192,38 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
     return detail
 }
 
-export function useSideBarAction(selected: Ref<number[]>) {
+export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "book", bookId: number} | {type: "folder", folderId: number} | null | undefined> | undefined) {
     const toast = useToast()
     const { metaTagEditor } = useDialogService()
 
-    const batchFetch = usePostFetchHelper(httpClient => httpClient.illust.batchUpdate)
-
-    const actives = reactive({
-        description: false,
-        score: false,
-        metaTag: false,
-        tagme: false,
-        partitionTime: false,
-        orderTime: false
+    const batchFetch = usePostFetchHelper({
+        request: httpClient => httpClient.illust.batchUpdate,
+        afterRequest: () => toast.toast("批量编辑完成", "info", "已完成所选项目的更改。")
+    })
+    const bookBatchFetch = usePostPathFetchHelper({
+        request: httpClient => httpClient.book.images.partialUpdate,
+        afterRequest: () => toast.toast("批量编辑完成", "info", "已完成所选项目的更改。")
+    })
+    const folderBatchFetch = usePostPathFetchHelper({
+        request: httpClient => httpClient.folder.images.partialUpdate,
+        afterRequest: () => toast.toast("批量编辑完成", "info", "已完成所选项目的更改。")
     })
 
-    const anyActive = computed(() => actives.description || actives.score || actives.metaTag || actives.tagme || actives.partitionTime || actives.orderTime)
+    const actives = reactive({partitionTime: false, orderTime: false})
 
     const form = reactive<{
-        description: string
-        score: number | null
-        tags: SimpleTag[]
-        topics: SimpleTopic[]
-        authors: SimpleAuthor[]
-        tagme: Tagme[]
+        score: number | null,
+        description: string,
+        tagme: Tagme[],
         partitionTime: LocalDate,
         orderTime: {
             begin: LocalDateTime,
             end: LocalDateTime
         }
     }>({
-        description: "",
         score: null,
-        tags: [],
-        topics: [],
-        authors: [],
-        tagme: ["TAG", "TOPIC", "AUTHOR"],
+        description: "",
+        tagme: [],
         partitionTime: date.now(),
         orderTime: {
             begin: datetime.now(),
@@ -214,54 +231,86 @@ export function useSideBarAction(selected: Ref<number[]>) {
         }
     })
 
+    watch(selected, () => {
+        if(actives.partitionTime) actives.partitionTime = false
+        if(actives.orderTime) actives.orderTime = false
+        if(form.score !== null) form.score = null
+        if(form.description) form.description = ""
+        if(form.tagme.length) form.tagme = []
+    })
+
     const editMetaTag = async () => {
-        const res = await metaTagEditor.edit({
-            topics: form.topics.map(i => ({ ...i, isExported: false })),
-            authors: form.authors.map(i => ({ ...i, isExported: false })),
-            tags: form.tags.map(i => ({ ...i, isExported: false }))
-        }, {
-            allowTagme: false
-        })
+        const res = await metaTagEditor.edit({tags: [], topics: [], authors: []}, {allowTagme: false})
         if(res !== undefined) {
-            form.topics = res.topics
-            form.authors = res.authors
-            form.tags = res.tags
-        }
-    }
-
-    const submit = async () => {
-        if(anyActive.value) {
-            const res = await batchFetch({
+            await batchFetch({
                 target: selected.value,
-                tagme: actives.tagme ? form.tagme : undefined,
-                tags: actives.metaTag && form.tags.length ? form.tags.map(i => i.id) : undefined,
-                topics: actives.metaTag && form.topics.length ? form.topics.map(i => i.id) : undefined,
-                authors: actives.metaTag && form.authors.length ? form.authors.map(i => i.id) : undefined,
-                description: actives.description ? form.description : undefined,
-                score: actives.score ? form.score : undefined,
-                partitionTime: actives.partitionTime ? form.partitionTime : undefined,
-                orderTimeBegin: actives.orderTime ? form.orderTime.begin : undefined,
-                orderTimeEnd: actives.orderTime ? form.orderTime.end : undefined
-            }, toast.handleException)
-            if(res) {
-                toast.toast("批量编辑完成", "info", "已完成所选项目的信息批量编辑。")
-                clear()
-            }
+                tags: res.tags.map(i => i.id),
+                topics: res.topics.map(i => i.id),
+                authors: res.authors.map(i => i.id)
+            })
         }
     }
 
-    const clear = () => {
-        actives.tagme = false
-        actives.description = false
-        actives.score = false
-        actives.metaTag = false
-        actives.partitionTime = false
-        actives.orderTime = false
+    const setScore = (score: number | null) => {
+        if(score !== form.score) {
+            form.score = score
+            batchFetch({target: selected.value, score})
+        }
     }
 
-    watch(() => actives.metaTag, enabled => { if(enabled) editMetaTag().finally() })
+    const setDescription = async (description: string): Promise<boolean> => {
+        if(description !== form.description) {
+            form.description = description
+            return await batchFetch({target: selected.value, description})
+        }
+        return true
+    }
 
-    return {actives, anyActive, form, submit, clear, editMetaTag}
+    const setTagme = async (tagme: Tagme[]): Promise<boolean> => {
+        if(tagme !== form.tagme) {
+            form.tagme = tagme
+            return await batchFetch({target: selected.value, tagme})
+        }
+        return true
+    }
+
+    const submitPartitionTime = async () => {
+        if(actives.partitionTime && await batchFetch({target: selected.value, partitionTime: form.partitionTime})) {
+            actives.partitionTime = false
+        }
+    }
+
+    const submitOrderTimeRange = async () => {
+        if(actives.orderTime && await batchFetch({target: selected.value, orderTimeBegin: form.orderTime.begin, orderTimeEnd: form.orderTime.end})) {
+            actives.orderTime = false
+        }
+    }
+
+    const partitionTimeAction = (action: "TODAY" | "EARLIEST" | "LATEST") => {
+        batchFetch({target: selected.value, action: `SET_PARTITION_TIME_${action}`})
+    }
+
+    const orderTimeAction = (action: "TODAY" | "REVERSE" | "UNIFORMLY" | "BY_SOURCE_ID" | "BY_ORDINAL") => {
+        if(action === "BY_ORDINAL") {
+            if(parent?.value?.type === "book") {
+                batchFetch({target: selected.value, action: "SET_ORDER_TIME_BY_BOOK_ORDINAL", actionBy: parent.value.bookId})
+            }else if(parent?.value?.type === "folder") {
+                batchFetch({target: selected.value, action: "SET_ORDER_TIME_BY_FOLDER_ORDINAL", actionBy: parent.value.folderId})
+            }
+        }else{
+            batchFetch({target: selected.value, action: `SET_ORDER_TIME_${action}`})
+        }
+    }
+
+    const ordinalAction = (action: "MOVE_TO_HEAD" | "MOVE_TO_TAIL" | "REVERSE" | "SORT_BY_ORDER_TIME" | "SORT_BY_SOURCE_ID") => {
+        if(parent?.value?.type === "book") {
+            bookBatchFetch(parent.value.bookId, {action})
+        }else if(parent?.value?.type === "folder") {
+            folderBatchFetch(parent.value.folderId, {action})
+        }
+    }
+
+    return {actives, form, setScore, setDescription, setTagme, editMetaTag, submitPartitionTime, submitOrderTimeRange, partitionTimeAction, orderTimeAction, ordinalAction}
 }
 
 export function useSideBarDetailInfo(path: Ref<number | null>) {

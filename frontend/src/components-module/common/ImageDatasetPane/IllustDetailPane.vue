@@ -2,6 +2,7 @@
 import { BasePane } from "@/components/layout"
 import { ThumbnailImage, OptionButtons } from "@/components/universal"
 import { useIllustDetailPane } from "@/services/main/illust"
+import { computedEffect } from "@/utils/reactivity"
 import IllustTabAction from "./IllustTabAction.vue"
 import IllustTabDetailInfo from "./IllustTabDetailInfo.vue"
 import IllustTabRelatedItems from "./IllustTabRelatedItems.vue"
@@ -11,14 +12,14 @@ defineEmits<{
     (e: "close"): void
 }>()
 
-const { tabType, detail, selector: { selected }, openImagePreview } = useIllustDetailPane()
+const { tabType, detail, selector: { selected }, parent, openImagePreview } = useIllustDetailPane()
 
-const paneButtonItems = [
+const paneButtonItems = computedEffect(() => [
     {value: "info", label: "项目信息", icon: "info"},
     {value: "related", label: "相关内容", icon: "dice-d6"},
     {value: "source", label: "来源数据", icon: "file-invoice"},
-    {value: "action", label: "多选操作", icon: "pen-nib"},
-]
+    {value: "action", label: "多选操作", icon: "pen-nib", visible: selected.value.length > 1},
+])
 
 </script>
 
@@ -26,7 +27,7 @@ const paneButtonItems = [
     <BasePane @close="$emit('close')">
         <template #title>
             <p class="mt-2 ml-2">
-                <div v-if="selected.length > 1" class="has-bg-background-color">已选择<b>{{selected.length}}</b>项</div>
+                <div v-if="selected.length > 1">已选择<b>{{selected.length}}</b>项</div>
                 <i v-else-if="selected.length <= 0" class="has-text-secondary">未选择任何项</i>
             </p>
         </template>
@@ -38,7 +39,7 @@ const paneButtonItems = [
             <IllustTabDetailInfo v-if="detail && tabType === 'info'" :detail-id="detail.id"/>
             <IllustTabRelatedItems v-else-if="detail && tabType === 'related'" :detail-id="detail.id" :type="detail.type"/>
             <IllustTabSourceData v-else-if="detail && tabType === 'source'" :detail-id="detail.id" :type="detail.type"/>
-            <IllustTabAction v-else-if="detail && tabType === 'action'" :detail-id="detail.id" :selected="selected"/>
+            <IllustTabAction v-else-if="tabType === 'action'" :selected="selected" :parent="parent"/>
         </KeepAlive>
 
         <template #bottom>

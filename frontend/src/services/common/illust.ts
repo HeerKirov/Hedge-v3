@@ -15,6 +15,8 @@ import { useViewStack } from "@/components-module/view-stack"
 import { installation } from "@/utils/reactivity"
 import { LocalDateTime } from "@/utils/datetime"
 import { FilePath } from "@/functions/http-client/api/all"
+import { Folder } from "@/functions/http-client/api/folder"
+import { Book } from "@/functions/http-client/api/book"
 
 export interface ImageDatasetOperatorsOptions<T extends BasicIllust> {
     /**
@@ -518,6 +520,8 @@ interface IllustListviewContextOptions {
         columnNum: Ref<number>
         viewMode: Ref<"grid" | "row">
     }
+    book?: Readonly<Ref<number | Book | null>>
+    folder?: Readonly<Ref<number | Folder | null>>
 }
 
 /**

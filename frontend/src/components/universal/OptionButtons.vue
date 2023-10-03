@@ -4,7 +4,7 @@ import { Flex, FlexItem } from "@/components/layout"
 import { Colors } from "@/constants/ui"
 
 defineProps<{
-    items: {value: T, label: string, icon: string}[]
+    items: {value: T, label: string, icon: string, visible?: boolean}[]
     value?: T
     mode?: "transparent" | "light" | "filled"
     type?: Colors
@@ -19,15 +19,17 @@ defineEmits<{
 
 <template>
     <Flex>
-        <FlexItem v-for="item in items" :width="value === item.value ? 100 : undefined" :shrink="value === item.value ? undefined : 0">
-            <Button :icon="item.icon" :size="size"
-                    :class="value === item.value ? 'px-2 no-wrap overflow-ellipsis' : ''"
-                    :mode="mode && value === item.value ? mode : undefined"
-                    :type="type && value === item.value ? type : undefined"
-                    :square="value !== item.value"
-                    @click="$emit('update:value', item.value)">
-                {{value === item.value ? item.label : null}}
-            </Button>
-        </FlexItem>
+        <template v-for="item in items" :key="item.label">
+            <FlexItem v-if="item.visible === undefined || item.visible" :width="value === item.value ? 100 : undefined" :shrink="value === item.value ? undefined : 0">
+                <Button :icon="item.icon" :size="size"
+                        :class="value === item.value ? 'px-2 no-wrap overflow-ellipsis' : ''"
+                        :mode="mode && value === item.value ? mode : undefined"
+                        :type="type && value === item.value ? type : undefined"
+                        :square="value !== item.value"
+                        @click="$emit('update:value', item.value)">
+                    {{value === item.value ? item.label : null}}
+                </Button>
+            </FlexItem>
+        </template>
     </Flex>
 </template>

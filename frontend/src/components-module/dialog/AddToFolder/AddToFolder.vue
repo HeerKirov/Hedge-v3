@@ -40,7 +40,7 @@ const { tabType, folderTree, recentFolders, checkExists, selectedId, submit, cho
                         <FolderTable v-if="tabType === 'all'" :folders="folderTree" mode="simple" v-model:selected="selectedId"/>
                         <table v-else class="table hover round standard-td w-100">
                             <tbody>
-                                <tr v-for="row in recentFolders" @click="selectedId = row.id">
+                                <tr v-for="row in recentFolders" :class="{'selected': selectedId === row.id}" @click="selectedId = row.id">
                                     <td class="pl-1">
                                         <Icon icon="folder"/>
                                         {{row.address.join("/")}}

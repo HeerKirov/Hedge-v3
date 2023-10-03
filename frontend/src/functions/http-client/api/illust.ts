@@ -352,6 +352,10 @@ export type IllustType = "COLLECTION" | "IMAGE"
 
 export type Tagme = "TAG" | "AUTHOR" | "TOPIC" | "SOURCE"
 
+type BatchUpdateAction = "SET_PARTITION_TIME_TODAY" | "SET_PARTITION_TIME_EARLIEST" | "SET_PARTITION_TIME_LATEST" 
+    | "SET_ORDER_TIME_TODAY" | "SET_ORDER_TIME_REVERSE" | "SET_ORDER_TIME_UNIFORMLY"
+    | "SET_ORDER_TIME_BY_SOURCE_ID" | "SET_ORDER_TIME_BY_BOOK_ORDINAL" | "SET_ORDER_TIME_BY_FOLDER_ORDINAL"
+
 export interface CommonIllust {
     id: number
     filePath: FilePath
@@ -612,6 +616,8 @@ export interface IllustBatchUpdateForm {
     partitionTime?: LocalDate
     orderTimeBegin?: LocalDateTime
     orderTimeEnd?: LocalDateTime
+    action?: BatchUpdateAction
+    actionBy?: number
 }
 
 export interface ImagePropsCloneForm {

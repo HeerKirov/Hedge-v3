@@ -2,6 +2,7 @@
 import { BasePane } from "@/components/layout"
 import { ThumbnailImage, OptionButtons } from "@/components/universal"
 import { useImportDetailPane } from "@/services/main/import"
+import { computedEffect } from "@/utils/reactivity"
 import ImportTabDetailInfo from "./ImportTabDetailInfo.vue"
 import ImportTabAction from "./ImportTabAction.vue"
 
@@ -11,10 +12,10 @@ defineEmits<{
 
 const { tabType, detail, selector: { selected }, openImagePreview } = useImportDetailPane()
 
-const paneButtonItems = [
+const paneButtonItems = computedEffect(() => [
     {value: "info", label: "导入项目信息", icon: "info"},
-    {value: "action", label: "多选操作", icon: "pen-nib"},
-]
+    {value: "action", label: "多选操作", icon: "pen-nib", visible: selected.value.length > 1},
+])
 
 </script>
 

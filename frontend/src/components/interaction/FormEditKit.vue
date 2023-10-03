@@ -27,6 +27,10 @@ const props = withDefaults(defineProps<{
      */
     allowDoubleClick?: boolean
     /**
+     * 允许在显示模式下单击以进入编辑模式。会覆盖双击的选项。
+     */
+    allowSingleClick?: boolean
+    /**
      * 允许在编辑模式下点击元素以外的部分以自动保存。
      */
     allowClickOutside?: boolean
@@ -41,6 +45,7 @@ const props = withDefaults(defineProps<{
     setValue?(newValue: T): Promise<boolean>
 }>(), {
     allowDoubleClick: true,
+    allowSingleClick: false,
     allowClickOutside: true,
     saveOnceUpdated: false
 })
@@ -81,6 +86,12 @@ const save = async () => {
     }
 }
 
+const click = () => {
+    if(props.allowSingleClick) {
+        edit()
+    }
+}
+
 const doubleClick = () => {
     if(props.allowDoubleClick) {
         edit()
@@ -100,7 +111,7 @@ if(props.allowClickOutside) {
 </script>
 
 <template>
-    <div ref="divRef" :class="{'is-cursor-text': !editMode}" @dblclick="doubleClick">
+    <div ref="divRef" :class="{'is-cursor-text': !editMode}" @click="click" @dblclick="doubleClick">
         <slot v-if="editMode" name="edit" :value="editValue" :setValue="setEditValue" :save="save"/>
         <slot v-else :value="displayValue" :edit="edit"/>
     </div>

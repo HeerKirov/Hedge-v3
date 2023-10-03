@@ -176,7 +176,7 @@ export interface ElementPopupMenuOptions {
  * 创建提供元素定位的popup menu。其打开位置根据ref element的位置决定。
  */
 export function useElementPopupMenu(items: MenuItem<undefined>[] | Ref<MenuItem<undefined>[]> | (() => MenuItem<undefined>[]), options?: ElementPopupMenuOptions): {
-    element: Ref<HTMLElement | undefined>
+    element: Ref<Element | undefined>
     popup(): void
 }
 
@@ -184,12 +184,12 @@ export function useElementPopupMenu(items: MenuItem<undefined>[] | Ref<MenuItem<
  * 创建提供元素定位的popup menu。其打开位置根据ref element的位置决定。
  */
 export function useElementPopupMenu<P>(items: MenuItem<P>[] | Ref<MenuItem<P>[]> | (() => MenuItem<P>[]), options?: ElementPopupMenuOptions): {
-    element: Ref<HTMLElement | undefined>
+    element: Ref<Element | undefined>
     popup(args: P): void
 }
 
 export function useElementPopupMenu<P = undefined>(items: MenuItem<P>[] | Ref<MenuItem<P>[]> | (() => MenuItem<P>[]), options?: ElementPopupMenuOptions) {
-    const element = ref<HTMLElement>()
+    const element = ref<Element>()
 
     const menu = usePopupMenu(items)
 

@@ -254,6 +254,8 @@ export type FolderImagesPartialUpdateForm = {
      * 要移除的项目的image id。
      */
     images: number[]
+} | {
+    action: "MOVE_TO_HEAD" | "MOVE_TO_TAIL" | "REVERSE" | "SORT_BY_ORDER_TIME" | "SORT_BY_SOURCE_ID"
 }
 
 export type FolderFilter = FolderQueryFilter & LimitAndOffsetFilter

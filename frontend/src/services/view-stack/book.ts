@@ -27,7 +27,7 @@ export const [installBookViewContext, useBookViewContext] = installation(functio
         dataDrop: {dropInType: "book", path: target.id}
     })
 
-    installIllustListviewContext({listview, selector, listviewController})
+    installIllustListviewContext({listview, selector, listviewController, book: target.data})
 
     return {target, listview, selector, paneState, listviewController, operators}
 })
