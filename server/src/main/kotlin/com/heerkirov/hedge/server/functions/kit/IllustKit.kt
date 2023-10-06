@@ -27,6 +27,43 @@ class IllustKit(private val data: DataRepository,
     }
 
     /**
+     * 检验给出的tags/topics/authors的正确性，将其追加到现有列表中，处理导出并应用其更改。
+     */
+    fun appendMeta(thisId: Int, appendTags: List<Int>, appendTopics: List<Int>, appendAuthors: List<Int>, isCollection: Boolean = false, ignoreNotExist: Boolean = false) {
+        if(appendTags.isNotEmpty() || appendTopics.isNotEmpty() || appendAuthors.isNotEmpty()) {
+            //检出每种tag的数量。这个数量指已存在的值中notExported的数量
+            val existTags = metaManager.getNotExportMetaTags(thisId, IllustTagRelations, Tags)
+            val existTopics = metaManager.getNotExportMetaTags(thisId, IllustTopicRelations, Topics)
+            val existAuthors = metaManager.getNotExportMetaTags(thisId, IllustAuthorRelations, Authors)
+
+            val newTags = (appendTags + existTags.map { it.id }).distinct()
+            val newTopics = (appendTopics + existTopics.map { it.id }).distinct()
+            val newAuthors = (appendAuthors + existAuthors.map { it.id }).distinct()
+
+            val tagAnnotations = if(newTags.isEmpty()) null else
+                metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !isCollection,
+                    metaTag = Tags,
+                    metaRelations = IllustTagRelations,
+                    metaAnnotationRelations = TagAnnotationRelations,
+                    newTagIds = metaManager.validateAndExportTag(newTags, ignoreError = ignoreNotExist))
+            val topicAnnotations = if(newTopics.isEmpty()) null else
+                metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !isCollection,
+                    metaTag = Topics,
+                    metaRelations = IllustTopicRelations,
+                    metaAnnotationRelations = TopicAnnotationRelations,
+                    newTagIds = metaManager.validateAndExportTopic(newTopics, ignoreError = ignoreNotExist))
+            val authorAnnotations = if(newAuthors.isEmpty()) null else
+                metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !isCollection,
+                    metaTag = Authors,
+                    metaRelations = IllustAuthorRelations,
+                    metaAnnotationRelations = AuthorAnnotationRelations,
+                    newTagIds = metaManager.validateAndExportAuthor(newAuthors, ignoreError = ignoreNotExist))
+
+            processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
+        }
+    }
+
+    /**
      * 检验给出的tags/topics/authors的正确性，处理导出，并应用其更改。此外，annotations的更改也会被一并导出处理。
      * @param copyFromParent 当当前对象没有任何meta tag关联时，从parent复制tag，并提供parent的id
      * @param copyFromChildren 当当前对象没有任何meta tag关联时，从children复制tag

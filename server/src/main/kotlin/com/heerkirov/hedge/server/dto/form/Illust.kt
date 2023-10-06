@@ -41,7 +41,21 @@ class IllustBatchUpdateForm(val target: List<Int>,
                             val tagme: Opt<Illust.Tagme>,
                             val partitionTime: Opt<LocalDate>,
                             val orderTimeBegin: Opt<Instant>,
-                            val orderTimeEnd: Opt<Instant>)
+                            val orderTimeEnd: Opt<Instant>,
+                            val action: Action? = null,
+                            val actionBy: Int? = null) {
+    enum class Action {
+        SET_PARTITION_TIME_TODAY,
+        SET_PARTITION_TIME_EARLIEST,
+        SET_PARTITION_TIME_LATEST,
+        SET_ORDER_TIME_NOW,
+        SET_ORDER_TIME_REVERSE,
+        SET_ORDER_TIME_UNIFORMLY,
+        SET_ORDER_TIME_BY_SOURCE_ID,
+        SET_ORDER_TIME_BY_BOOK_ORDINAL,
+        SET_ORDER_TIME_BY_FOLDER_ORDINAL,
+    }
+}
 
 class ImagePropsCloneForm(val props: Props, val merge: Boolean = false, val deleteFrom: Boolean = false, val from: Int, val to: Int) {
     data class Props(

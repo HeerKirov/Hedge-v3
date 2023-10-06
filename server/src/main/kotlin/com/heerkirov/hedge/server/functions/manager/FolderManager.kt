@@ -4,6 +4,7 @@ import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.FolderImageRelations
 import com.heerkirov.hedge.server.dao.Folders
+import com.heerkirov.hedge.server.dao.Illusts
 import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.events.FolderImagesChanged
 import com.heerkirov.hedge.server.events.IllustRelatedItemsUpdated
@@ -39,6 +40,33 @@ class FolderManager(private val data: DataRepository, private val bus: EventBus,
             where { it.id eq folderId }
             set(it.updateTime, Instant.now())
         }
+
+        bus.emit(FolderImagesChanged(folderId, emptyList(), imageIds, emptyList()))
+    }
+
+    /**
+     * 按条件重新排序指定的images。
+     */
+    fun sortImagesInFolder(folderId: Int, imageIds: List<Int>, by: String) {
+        val sortedImageIds = when(by) {
+            "REVERSE" -> data.db.from(FolderImageRelations)
+                .select(FolderImageRelations.imageId)
+                .where { (FolderImageRelations.folderId eq folderId) and (FolderImageRelations.imageId inList imageIds) }
+                .orderBy(FolderImageRelations.ordinal.desc())
+                .map { it[FolderImageRelations.imageId]!! }
+            "ORDER_TIME" -> data.db.from(Illusts)
+                .select(Illusts.id)
+                .where { Illusts.id inList imageIds }
+                .orderBy(Illusts.orderTime.asc())
+                .map { it[Illusts.id]!! }
+            "SOURCE_ID" -> data.db.from(Illusts)
+                .select(Illusts.id)
+                .where { Illusts.id inList imageIds }
+                .orderBy(Illusts.sourceSite.isNull().asc(), Illusts.sourceSite.asc(), Illusts.sourceId.asc(), Illusts.sourcePart.isNull().asc(), Illusts.sourcePart.asc())
+                .map { it[Illusts.id]!! }
+            else -> throw RuntimeException("sort type $by is not supported.")
+        }
+        kit.resortSubImages(folderId, sortedImageIds)
 
         bus.emit(FolderImagesChanged(folderId, emptyList(), imageIds, emptyList()))
     }

@@ -93,6 +93,33 @@ class BookManager(private val data: DataRepository,
     }
 
     /**
+     * 按条件重新排序指定的images。
+     */
+    fun sortImagesInBook(bookId: Int, imageIds: List<Int>, by: String) {
+        val sortedImageIds = when(by) {
+            "REVERSE" -> data.db.from(BookImageRelations)
+                .select(BookImageRelations.imageId)
+                .where { (BookImageRelations.bookId eq bookId) and (BookImageRelations.imageId inList imageIds) }
+                .orderBy(BookImageRelations.ordinal.desc())
+                .map { it[BookImageRelations.imageId]!! }
+            "ORDER_TIME" -> data.db.from(Illusts)
+                .select(Illusts.id)
+                .where { Illusts.id inList imageIds }
+                .orderBy(Illusts.orderTime.asc())
+                .map { it[Illusts.id]!! }
+            "SOURCE_ID" -> data.db.from(Illusts)
+                .select(Illusts.id)
+                .where { Illusts.id inList imageIds }
+                .orderBy(Illusts.sourceSite.isNull().asc(), Illusts.sourceSite.asc(), Illusts.sourceId.asc(), Illusts.sourcePart.isNull().asc(), Illusts.sourcePart.asc())
+                .map { it[Illusts.id]!! }
+            else -> throw RuntimeException("sort type $by is not supported.")
+        }
+        kit.resortSubImages(bookId, sortedImageIds)
+
+        bus.emit(BookImagesChanged(bookId, emptyList(), imageIds, emptyList()))
+    }
+
+    /**
      * 从book移除images。
      */
     fun removeImagesFromBook(bookId: Int, imageIds: List<Int>) {

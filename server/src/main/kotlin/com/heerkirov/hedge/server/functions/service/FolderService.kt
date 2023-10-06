@@ -435,6 +435,24 @@ class FolderService(private val data: DataRepository,
                         folderManager.removeImagesFromFolder(id, formImages)
                     }
                 }
+                BatchAction.REVERSE -> {
+                    val formImages = form.images ?: throw be(ParamRequired("images"))
+                    if(formImages.isNotEmpty()) {
+                        folderManager.sortImagesInFolder(id, formImages, "REVERSE")
+                    }
+                }
+                BatchAction.SORT_BY_ORDER_TIME -> {
+                    val formImages = form.images ?: throw be(ParamRequired("images"))
+                    if(formImages.isNotEmpty()) {
+                        folderManager.sortImagesInFolder(id, formImages, "ORDER_TIME")
+                    }
+                }
+                BatchAction.SORT_BY_SOURCE_ID -> {
+                    val formImages = form.images ?: throw be(ParamRequired("images"))
+                    if(formImages.isNotEmpty()) {
+                        folderManager.sortImagesInFolder(id, formImages, "SOURCE_ID")
+                    }
+                }
             }
         }
     }

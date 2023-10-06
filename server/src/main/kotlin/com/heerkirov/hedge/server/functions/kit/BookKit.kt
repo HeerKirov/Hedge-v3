@@ -368,6 +368,31 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
     }
 
     /**
+     * 移动一部分images的顺序。使这部分images在当前book中的ordinal按照List给出的顺序重新排列。
+     * 例如，原先的顺序是1,2,3,4,5,6,7,8,9,10，给出的列表是[7, 5, 6, 10, 3]，则最后获得的顺序是1,2,7,4,5,6,10,8,9,3。
+     * 只有给出的列表中的项参与了顺序调换，其他项的顺序一定不变。
+     */
+    fun resortSubImages(thisId: Int, sortedImageIds: List<Int>) {
+        val relations = retrieveSubOrdinalById(thisId, sortedImageIds)
+        val finalSortedImageIds = if(relations.size == sortedImageIds.size) sortedImageIds else sortedImageIds.filter { id -> relations.any { it.imageId == id } }
+        val ordinals = relations.map { it.ordinal }
+        val imageIdToOrdinals = finalSortedImageIds.zip(ordinals)
+        if(imageIdToOrdinals.isNotEmpty()) {
+            data.db.batchUpdate(BookImageRelations) {
+                for ((imageId, ordinal) in imageIdToOrdinals) {
+                    item {
+                        where { it.bookId eq thisId and (it.imageId eq imageId) }
+                        set(it.ordinal, ordinal)
+                    }
+                }
+            }
+
+            //如果ordinals中有0号，则认为需要刷新封面。
+            refreshFirstCover(thisId, refreshCount = false, refreshFileId = ordinals.first() == 0)
+        }
+    }
+
+    /**
      * 删除一部分images。
      * @throws ResourceNotExist ("images", number[]) 要操作的image不存在
      */

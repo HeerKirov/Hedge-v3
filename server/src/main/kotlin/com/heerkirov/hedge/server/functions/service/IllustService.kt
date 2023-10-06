@@ -27,12 +27,14 @@ import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.*
 import com.heerkirov.hedge.server.utils.runIf
+import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.ktorm.expression.BinaryExpression
 import org.ktorm.expression.SelectExpression
 import java.time.Instant
+import java.time.LocalDate
 import kotlin.math.roundToInt
 
 class IllustService(private val appdata: AppDataManager,
@@ -630,9 +632,24 @@ class IllustService(private val appdata: AppDataManager,
                     throw be(ResourceNotSuitable("target", records.filter { it.parentId in targetSet }))
                 }
             }
+            if(records.isEmpty()) return
             val (collections, images) = records.filterInto { it.type == IllustModelType.COLLECTION }
             val collectionIds by lazy { collections.map { it.id } }
             val childrenOfCollections by lazy { if(collections.isEmpty()) emptyList() else data.db.sequenceOf(Illusts).filter { it.parentId inList collectionIds }.toList() }
+            val orderTimeSeq by lazy {
+                val children = childrenOfCollections.map { Triple(it.id, it.parentId!!, it.orderTime) }
+
+                records.asSequence()
+                    .sortedBy { it.orderTime }
+                    .flatMap {
+                        if(it.type == IllustModelType.COLLECTION) {
+                            children.filter { (_, parentId, _) -> parentId == it.id }.asSequence().sortedBy { (_, _, t) -> t }
+                        }else{
+                            sequenceOf(Triple(it.id, null, it.orderTime))
+                        }
+                    }
+                    .toList()
+            }
 
             //favorite
             form.favorite.alsoOpt { favorite ->
@@ -724,10 +741,10 @@ class IllustService(private val appdata: AppDataManager,
             if(anyOpt(form.tags, form.topics, form.authors)) {
                 //由于meta tag的更新实在复杂，不必在这里搞batch优化了，就挨个处理就好了
                 for (illust in images) {
-                    kit.updateMeta(illust.id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromParent = illust.parentId)
+                    kit.appendMeta(illust.id, appendTags = form.tags.unwrapOr { emptyList() }, appendAuthors = form.authors.unwrapOr { emptyList() }, appendTopics = form.topics.unwrapOr { emptyList() }, isCollection = false)
                 }
                 for (illust in collections) {
-                    kit.updateMeta(illust.id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromChildren = true)
+                    kit.appendMeta(illust.id, appendTags = form.tags.unwrapOr { emptyList() }, appendAuthors = form.authors.unwrapOr { emptyList() }, appendTopics = form.topics.unwrapOr { emptyList() }, isCollection = true)
                 }
             }
 
@@ -752,7 +769,7 @@ class IllustService(private val appdata: AppDataManager,
             }
 
             //partition time
-            form.partitionTime.alsoOpt { partitionTime ->
+            fun setPartitionTime(partitionTime: LocalDate) {
                 //tips: 绕过标准导出流程进行更改。对于collection,直接修改它及它全部children的此属性
                 val children = childrenOfCollections.filter { it.partitionTime != partitionTime }.map { Pair(it.id, it.partitionTime) }
 
@@ -762,77 +779,36 @@ class IllustService(private val appdata: AppDataManager,
                 }
 
                 for ((_, oldPartitionTime) in children) {
-                   partitionManager.updateItemPartition(oldPartitionTime, partitionTime)
+                    partitionManager.updateItemPartition(oldPartitionTime, partitionTime)
                 }
                 for (illust in images) {
-                   if(illust.partitionTime != partitionTime) {
-                       partitionManager.updateItemPartition(illust.partitionTime, partitionTime)
-                   }
+                    if(illust.partitionTime != partitionTime) {
+                        partitionManager.updateItemPartition(illust.partitionTime, partitionTime)
+                    }
                 }
             }
+            form.partitionTime.alsoOpt(::setPartitionTime)
 
             //order time
-            form.orderTimeBegin.alsoOpt { orderTimeBegin ->
-                //找出所有image及collection的children，按照原有orderTime顺序排序，并依次计算新orderTime。排序时相同parent的children保持相邻
-                //对于collection，绕过标准导出流程进行更改。直接按照计算结果修改collection的orderTime，且无需导出，因为orderTime并未变化
-                val children = childrenOfCollections.map { Triple(it.id, it.parentId!!, it.orderTime) }
+            fun setOrderTimeBySeq(newOrderTimeSeq: List<Long>) {
+                if(newOrderTimeSeq.size != orderTimeSeq.size) throw RuntimeException("newOrderTimeSeq is not suitable to seq.")
 
-                val seq = records.asSequence()
-                    .sortedBy { it.orderTime }
-                    .flatMap {
-                        if(it.type == IllustModelType.COLLECTION) {
-                            children.filter { (_, parentId, _) -> parentId == it.id }.asSequence().sortedBy { (_, _, t) -> t }
-                        }else{
-                            sequenceOf(Triple(it.id, null, it.orderTime))
-                        }
-                    }
-                    .toList()
-
-                val values = if(seq.size > 1) {
-                    val beginMs = orderTimeBegin.toEpochMilli()
-                    val endMs = form.orderTimeEnd.letOpt {
-                        it.toEpochMilli().apply {
-                            if(it < orderTimeBegin) {
-                                throw be(ParamError("orderTimeEnd"))
-                            }
-                        }
-                    }.unwrapOr {
-                        //若未给出endTime，则尝试如下策略：
-                        //如果beginTime距离now很近(每个项的空间<2s)，那么将now作为endTime
-                        //但如果beginTime过近(每个项空间<10ms)，或超过了now，或距离过远，那么以1s为单位间隔生成endTime
-                        val nowMs = Instant.now().toEpochMilli()
-                        if(nowMs < beginMs + (seq.size - 1) * 2000 && nowMs > beginMs + (seq.size - 1) * 10) {
-                            nowMs
-                        }else{
-                            beginMs + (seq.size - 1) * 1000
-                        }
-                    }
-                    val step = (endMs - beginMs) / (seq.size - 1)
-                    var value = beginMs
-                    seq.indices.map {
-                        value.also {
-                            value += step
-                        }
-                    }
-                }else{
-                    listOf(orderTimeBegin.toEpochMilli())
-                }
-
-                if(seq.isNotEmpty()) {
+                if(orderTimeSeq.isNotEmpty()) {
                     data.db.batchUpdate(Illusts) {
-                        seq.forEachIndexed { i, (id, _, _) ->
+                        orderTimeSeq.forEachIndexed { i, (id, _, _) ->
                             item {
                                 where { it.id eq id }
-                                set(it.orderTime, values[i])
+                                set(it.orderTime, newOrderTimeSeq[i])
                             }
                         }
                     }
                 }
 
                 if(collections.isNotEmpty()) {
-                    val collectionValues = seq.filter { (_, p, _) -> p != null }
-                        .zip(values) { (id, p, _), ot -> Triple(id, p!!, ot) }
-                        .groupBy { (_, p, _) -> p }
+                    val collectionValues = orderTimeSeq
+                        .zip(newOrderTimeSeq) { (id, p, _), ot -> Triple(id, p, ot) }
+                        .filter { (_, p, _) -> p != null }
+                        .groupBy { (_, p, _) -> p!! }
                         .mapValues { (_, values) -> values.minOf { (_, _, t) -> t } }
 
                     if(collectionValues.isNotEmpty()) {
@@ -844,6 +820,98 @@ class IllustService(private val appdata: AppDataManager,
                                 }
                             }
                         }
+                    }
+                }
+            }
+            fun setOrderTimeByRange(begin: Instant, end: Instant? = null) {
+                //找出所有image及collection的children，按照原有orderTime顺序排序，并依次计算新orderTime。排序时相同parent的children保持相邻
+                //对于collection，绕过标准导出流程进行更改。直接按照计算结果修改collection的orderTime，且无需导出，因为orderTime并未变化
+
+                val values = if(orderTimeSeq.size > 1) {
+                    val beginMs = begin.toEpochMilli()
+                    val endMs = if(end != null) {
+                        end.toEpochMilli().apply {
+                            if(end < begin) {
+                                throw be(ParamError("orderTimeEnd"))
+                            }
+                        }
+                    }else{
+                        //若未给出endTime，则尝试如下策略：
+                        //如果beginTime距离now很近(每个项的空间<2s)，那么将now作为endTime
+                        //但如果beginTime过近(每个项空间<10ms)，或超过了now，或距离过远，那么以1s为单位间隔生成endTime
+                        val nowMs = Instant.now().toEpochMilli()
+                        if(nowMs < beginMs + (orderTimeSeq.size - 1) * 2000 && nowMs > beginMs + (orderTimeSeq.size - 1) * 10) {
+                            nowMs
+                        }else{
+                            beginMs + (orderTimeSeq.size - 1) * 1000
+                        }
+                    }
+                    val step = (endMs - beginMs) / (orderTimeSeq.size - 1)
+                    var value = beginMs
+                    orderTimeSeq.indices.map {
+                        value.also {
+                            value += step
+                        }
+                    }
+                }else{
+                    listOf(begin.toEpochMilli())
+                }
+
+                setOrderTimeBySeq(values)
+            }
+            form.orderTimeBegin.alsoOpt { orderTimeBegin -> setOrderTimeByRange(orderTimeBegin, form.orderTimeEnd.unwrapOrNull()) }
+
+            //action
+            if(form.action != null) {
+                when(form.action) {
+                    IllustBatchUpdateForm.Action.SET_PARTITION_TIME_TODAY -> setPartitionTime(LocalDate.now())
+                    IllustBatchUpdateForm.Action.SET_PARTITION_TIME_EARLIEST -> setPartitionTime(records.minOf { it.partitionTime })
+                    IllustBatchUpdateForm.Action.SET_PARTITION_TIME_LATEST -> setPartitionTime(records.maxOf { it.partitionTime })
+                    IllustBatchUpdateForm.Action.SET_ORDER_TIME_UNIFORMLY -> setOrderTimeByRange(orderTimeSeq.minOf { (_, _, ot) -> ot }.toInstant(), orderTimeSeq.maxOf { (_, _, ot) -> ot }.toInstant())
+                    IllustBatchUpdateForm.Action.SET_ORDER_TIME_REVERSE -> setOrderTimeBySeq(orderTimeSeq.map { (_, _, ot) -> ot }.asReversed())
+                    IllustBatchUpdateForm.Action.SET_ORDER_TIME_NOW -> {
+                        val now = Instant.now()
+                        setOrderTimeByRange(now, now)
+                    }
+                    IllustBatchUpdateForm.Action.SET_ORDER_TIME_BY_SOURCE_ID -> {
+                        //将所有image/children按source排序，然后把所有的orderTime取出排序，依次选取
+                        val sortedIds = (images.map { Tuple4(it.id, it.sourceSite, it.sourceId, it.sourcePart) } + childrenOfCollections.map { Tuple4(it.id, it.sourceSite, it.sourceId, it.sourcePart) })
+                            .sortedWith(compareBy(Tuple4<Int, String?, Long?, Int?>::f2, Tuple4<Int, String?, Long?, Int?>::f3, Tuple4<Int, String?, Long?, Int?>::f4))
+                            .map { it.f1 }
+                        val sortedTimes = orderTimeSeq.map { (_, _, ot) -> ot }.sorted()
+                        val idToTimes = sortedIds.zip(sortedTimes).toMap()
+                        val seq = orderTimeSeq.map { (id, _, _) -> idToTimes[id]!! }
+                        setOrderTimeBySeq(seq)
+                    }
+                    IllustBatchUpdateForm.Action.SET_ORDER_TIME_BY_BOOK_ORDINAL -> {
+                        //将所有images按在book中的顺序排序，然后把所有的orderTime取出来，依次选取
+                        if(form.actionBy == null) throw be(ParamRequired("actionBy"))
+                        val ids = orderTimeSeq.map { (id, _, _) -> id }
+                        val sortedIds = data.db.from(BookImageRelations)
+                            .select(BookImageRelations.imageId)
+                            .where { BookImageRelations.bookId eq form.actionBy and (BookImageRelations.imageId inList ids) }
+                            .orderBy(BookImageRelations.ordinal.asc())
+                            .map { it[BookImageRelations.imageId]!! }
+                        if(sortedIds.size < ids.size) throw be(Reject("Some images (${(ids - sortedIds.toSet()).joinToString(", ")}) not in book ${form.actionBy}."))
+                        val sortedTimes = orderTimeSeq.map { (_, _, ot) -> ot }.sorted()
+                        val idToTimes = sortedIds.zip(sortedTimes).toMap()
+                        val seq = orderTimeSeq.map { (id, _, _) -> idToTimes[id]!! }
+                        setOrderTimeBySeq(seq)
+                    }
+                    IllustBatchUpdateForm.Action.SET_ORDER_TIME_BY_FOLDER_ORDINAL -> {
+                        //将所有images按在folder中的顺序排序，然后把所有的orderTime取出来，依次选取
+                        if(form.actionBy == null) throw be(ParamRequired("actionBy"))
+                        val ids = orderTimeSeq.map { (id, _, _) -> id }
+                        val sortedIds = data.db.from(FolderImageRelations)
+                            .select(FolderImageRelations.imageId)
+                            .where { FolderImageRelations.folderId eq form.actionBy and (FolderImageRelations.imageId inList ids) }
+                            .orderBy(FolderImageRelations.ordinal.asc())
+                            .map { it[FolderImageRelations.imageId]!! }
+                        if(sortedIds.size < ids.size) throw be(Reject("Some images (${(ids - sortedIds.toSet()).joinToString(", ")}) not in folder ${form.actionBy}."))
+                        val sortedTimes = orderTimeSeq.map { (_, _, ot) -> ot }.sorted()
+                        val idToTimes = sortedIds.zip(sortedTimes).toMap()
+                        val seq = orderTimeSeq.map { (id, _, _) -> idToTimes[id]!! }
+                        setOrderTimeBySeq(seq)
                     }
                 }
             }

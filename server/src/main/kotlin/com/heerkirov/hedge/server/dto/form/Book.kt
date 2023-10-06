@@ -23,5 +23,5 @@ data class BookImagesPartialUpdateForm(val action: BatchAction,
                                         val ordinal: Int? = null)
 
 enum class BatchAction {
-    ADD, MOVE, DELETE
+    ADD, MOVE, DELETE, REVERSE, SORT_BY_ORDER_TIME, SORT_BY_SOURCE_ID
 }

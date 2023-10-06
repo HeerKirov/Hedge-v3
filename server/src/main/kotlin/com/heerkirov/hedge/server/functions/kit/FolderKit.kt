@@ -135,6 +135,26 @@ class FolderKit(private val data: DataRepository) {
     }
 
     /**
+     * 移动一部分images的顺序。使这部分images在当前folder中的ordinal按照List给出的顺序重新排列。
+     */
+    fun resortSubImages(thisId: Int, sortedImageIds: List<Int>) {
+        val relations = retrieveSubOrdinalById(thisId, sortedImageIds)
+        val finalSortedImageIds = if(relations.size == sortedImageIds.size) sortedImageIds else sortedImageIds.filter { id -> relations.any { it.imageId == id } }
+        val ordinals = relations.map { it.ordinal }
+        val imageIdToOrdinals = finalSortedImageIds.zip(ordinals)
+        if(imageIdToOrdinals.isNotEmpty()) {
+            data.db.batchUpdate(FolderImageRelations) {
+                for ((imageId, ordinal) in imageIdToOrdinals) {
+                    item {
+                        where { it.folderId eq thisId and (it.imageId eq imageId) }
+                        set(it.ordinal, ordinal)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * 删除一部分images。
      * @return 删除之后，剩余的imageCount。null表示没有变动
      * @throws ResourceNotExist ("images", number[]) 要操作的image不存在
