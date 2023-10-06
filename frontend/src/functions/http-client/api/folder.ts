@@ -221,9 +221,10 @@ export interface FolderUpdateForm {
 
 export type FolderImagesPartialUpdateForm = {
     /**
-     * 添加新项目。这种模式执行添加时总是按照images列表的顺序添加，且允许选择已有项目(这将移动这些项目)。
+     * ADD: 添加新项目。这种模式执行添加时总是按照images列表的顺序添加，且允许选择已有项目(这将移动这些项目)。
+     * MOVE: 移动现有项目的位置。这种模式选取的image必须是已经存在的，且执行移动时，总是保持选取的image之间的相对排序不变。
      */
-    action: "ADD"
+    action: "ADD" | "MOVE"
     /**
      * 新添加的image id。
      */
@@ -234,28 +235,16 @@ export type FolderImagesPartialUpdateForm = {
     ordinal?: number | null
 } | {
     /**
-     * 移动现有项目的位置。这种模式选取的image必须是已经存在的，且执行移动时，总是保持选取的image之间的相对排序不变。
+     * DELETE: 移除现有项目。
+     * REVERSE: 翻转现有项目的排列顺序。
+     * SORT_BY_ORDER_TIME: 按orderTime的排序顺序重新设置排列顺序。
+     * SORT_BY_SOURCE_ID: 按sourceId的排序顺序重新设置排列顺序。
      */
-    action: "MOVE"
+    action: "DELETE" | "REVERSE" | "SORT_BY_ORDER_TIME" | "SORT_BY_SOURCE_ID"
     /**
-     * 选取的项目的image id。
+     * 要操作的项目的image id。
      */
     images: number[]
-    /**
-     * 放置的新位置。不填默认放在末尾。
-     */
-    ordinal?: number | null
-} | {
-    /**
-     * 移除现有项目。
-     */
-    action: "DELETE"
-    /**
-     * 要移除的项目的image id。
-     */
-    images: number[]
-} | {
-    action: "MOVE_TO_HEAD" | "MOVE_TO_TAIL" | "REVERSE" | "SORT_BY_ORDER_TIME" | "SORT_BY_SOURCE_ID"
 }
 
 export type FolderFilter = FolderQueryFilter & LimitAndOffsetFilter

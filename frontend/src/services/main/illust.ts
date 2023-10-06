@@ -290,7 +290,7 @@ export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "bo
         batchFetch({target: selected.value, action: `SET_PARTITION_TIME_${action}`})
     }
 
-    const orderTimeAction = (action: "TODAY" | "REVERSE" | "UNIFORMLY" | "BY_SOURCE_ID" | "BY_ORDINAL") => {
+    const orderTimeAction = (action: "NOW" | "REVERSE" | "UNIFORMLY" | "BY_SOURCE_ID" | "BY_ORDINAL") => {
         if(action === "BY_ORDINAL") {
             if(parent?.value?.type === "book") {
                 batchFetch({target: selected.value, action: "SET_ORDER_TIME_BY_BOOK_ORDINAL", actionBy: parent.value.bookId})
@@ -304,9 +304,21 @@ export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "bo
 
     const ordinalAction = (action: "MOVE_TO_HEAD" | "MOVE_TO_TAIL" | "REVERSE" | "SORT_BY_ORDER_TIME" | "SORT_BY_SOURCE_ID") => {
         if(parent?.value?.type === "book") {
-            bookBatchFetch(parent.value.bookId, {action})
+            if(action === "MOVE_TO_HEAD") {
+                bookBatchFetch(parent.value.bookId, {action: "MOVE", ordinal: 0, images: selected.value})
+            }else if(action === "MOVE_TO_TAIL") {
+                bookBatchFetch(parent.value.bookId, {action: "MOVE", ordinal: null, images: selected.value})
+            }else{
+                bookBatchFetch(parent.value.bookId, {action, images: selected.value})
+            }
         }else if(parent?.value?.type === "folder") {
-            folderBatchFetch(parent.value.folderId, {action})
+            if(action === "MOVE_TO_HEAD") {
+                folderBatchFetch(parent.value.folderId, {action: "MOVE", ordinal: 0, images: selected.value})
+            }else if(action === "MOVE_TO_TAIL") {
+                folderBatchFetch(parent.value.folderId, {action: "MOVE", ordinal: null, images: selected.value})
+            }else{
+                folderBatchFetch(parent.value.folderId, {action, images: selected.value})
+            }
         }
     }
 

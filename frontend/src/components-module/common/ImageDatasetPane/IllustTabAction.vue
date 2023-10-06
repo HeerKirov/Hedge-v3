@@ -27,7 +27,7 @@ const orderTimeEllipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "normal", label: "按来源ID顺序重设排序时间", click: () => orderTimeAction("BY_SOURCE_ID")},
     ...(parent?.value ? [{type: "normal", label: `按${parent.value.type === "book" ? "画集" : "目录"}内排序顺序重设排序时间`, click: () => orderTimeAction("BY_ORDINAL")}] : []),
     {type: "separator"},
-    {type: "normal", label: "将日期挪到今天", click: () => orderTimeAction("TODAY")},
+    {type: "normal", label: "设为当前时间", click: () => orderTimeAction("NOW")},
     {type: "normal", label: "倒置排序时间", click: () => orderTimeAction("REVERSE")},
     {type: "normal", label: "均匀分布排序时间", click: () => orderTimeAction("UNIFORMLY")},
 ]
@@ -96,10 +96,11 @@ const ordinalEllipsisMenuItems = <MenuItem<undefined>[]>[
 </template>
 
 <style module lang="sass">
+@use "sass:math"
 @import "../../../styles/base/size"
 
 .float-right-button-icon
     position: absolute
-    right: calc(#{$element-height-small / 2} - 0.5rem)
-    top: calc(#{$element-height-small / 2} - 0.5rem + 1px)
+    right: calc(math.div($element-height-small, 2) - 0.5rem)
+    top: calc(math.div($element-height-small, 2) - 0.5rem + 1px)
 </style>

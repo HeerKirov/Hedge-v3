@@ -354,62 +354,52 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
 export function useSideBarAction(selected: Ref<number[]>) {
     const toast = useToast()
 
-    const batchFetch = useFetchHelper(httpClient => httpClient.import.batchUpdate)
-
-    const actives = reactive({
-        tagme: false,
-        setCreatedTimeBy: false,
-        setOrderTimeBy: false,
-        partitionTime: false
+    const batchFetch = useFetchHelper({
+        request: httpClient => httpClient.import.batchUpdate,
+        afterRequest: () => toast.toast("批量编辑完成", "info", "已完成所选项目的更改。")
     })
 
-    const anyActive = computed(() => actives.tagme || actives.setOrderTimeBy || actives.setOrderTimeBy || actives.partitionTime || form.analyseSource)
+    const actives = reactive({partitionTime: false})
 
-    const form = reactive<{
-        tagme: Tagme[]
-        setCreatedTimeBy: OrderTimeType
-        setOrderTimeBy: OrderTimeType
-        partitionTime: LocalDate
-        analyseSource: boolean
-    }>({
-        tagme: [],
-        setCreatedTimeBy: "UPDATE_TIME",
-        setOrderTimeBy: "UPDATE_TIME",
-        partitionTime: date.now(),
-        analyseSource: false
+    const form = reactive<{tagme: Tagme[], partitionTime: LocalDate}>({tagme: [], partitionTime: date.now()})
+
+    watch(selected, () => {
+        if(actives.partitionTime) actives.partitionTime = false
+        if(form.tagme.length) form.tagme = []
     })
 
-    const submit = async () => {
-        if(anyActive.value) {
-            const res = await batchFetch({
-                target: selected.value,
-                tagme: actives.tagme ? form.tagme : undefined,
-                setCreateTimeBy: actives.setCreatedTimeBy ? form.setCreatedTimeBy : undefined,
-                setOrderTimeBy: actives.setOrderTimeBy ? form.setOrderTimeBy : undefined,
-                partitionTime: actives.partitionTime ? form.partitionTime : undefined,
-                analyseSource: form.analyseSource
-            }, toast.handleException)
-            if(res) {
-                if(res.length) {
-                    if(res.length > 3) {
-                        toast.toast("来源信息分析失败", "warning", `超过${res.length}个文件的来源信息分析失败，可能是因为正则表达式内容错误。`)
-                    }else{
-                        toast.toast("来源信息分析失败", "warning", "存在文件的来源信息分析失败，可能是因为正则表达式内容错误。")
-                    }
-                }else{
-                    toast.toast("批量编辑完成", "info", "已完成所选项目的信息批量编辑。")
-                }
-                clear()
+    const setTagme = async (tagme: Tagme[]): Promise<boolean> => {
+        if(tagme !== form.tagme) {
+            form.tagme = tagme
+            return await batchFetch({target: selected.value, tagme}) !== undefined
+        }
+        return true
+    }
+
+    const submitPartitionTime = async () => {
+        if(actives.partitionTime && await batchFetch({target: selected.value, partitionTime: form.partitionTime})) {
+            actives.partitionTime = false
+        }
+    }
+
+    const analyseSource = async () => {
+        const res = await batchFetch({target: selected.value, analyseSource: true})
+        if(res && res.length) {
+            if(res.length > 3) {
+                toast.toast("来源信息分析失败", "warning", `超过${res.length}个文件的来源信息分析失败，可能是因为正则表达式内容错误。`)
+            }else{
+                toast.toast("来源信息分析失败", "warning", "存在文件的来源信息分析失败，可能是因为正则表达式内容错误。")
             }
         }
     }
 
-    const clear = () => {
-        actives.tagme = false
-        actives.setCreatedTimeBy = false
-        actives.setOrderTimeBy = false
-        actives.partitionTime = false
+    const createTimeAction = (action: OrderTimeType) => {
+        batchFetch({target: selected.value, setCreateTimeBy: action})
     }
 
-    return {actives, anyActive, form, submit, clear}
+    const orderTimeAction = (action: OrderTimeType) => {
+        batchFetch({target: selected.value, setOrderTimeBy: action})
+    }
+
+    return {actives, form, setTagme, submitPartitionTime, analyseSource, createTimeAction, orderTimeAction}
 }
