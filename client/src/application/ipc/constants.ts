@@ -1,5 +1,5 @@
 import { Platform } from "../../utils/process"
-import { ServerServiceStatus, ServerConnectionStatus, ServerConnectionInfo, WsToastResult } from "../../components/server/model"
+import { ServerServiceStatus, ServerConnectionStatus, ServerConnectionInfo, WsToastResult, ServerStaticInfo } from "../../components/server/model"
 import { AppInitializeForm, AppState, InitializeState, LoginForm } from "../../components/state/model"
 import { NativeTheme } from "../../components/appdata/model"
 import { Emitter } from "../../utils/emitter"
@@ -12,6 +12,7 @@ export interface IpcClient {
         env(): AppEnvironment
         initialize(form: AppInitializeForm): void
         login(form: LoginForm): Promise<boolean>
+        serverForceStop(): void
         envChangedEvent: Emitter<AppEnvironmentChangedEvent>
         initializeUpdatedEvent: Emitter<AppInitializeUpdatedEvent>
         wsToastEvent: Emitter<WsToastResult>
@@ -74,6 +75,7 @@ export interface AppEnvironment {
         serviceStatus: ServerServiceStatus
         connectionStatus: ServerConnectionStatus
         connectionInfo: ServerConnectionInfo | null
+        staticInfo: ServerStaticInfo
     }
 }
 

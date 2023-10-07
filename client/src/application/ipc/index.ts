@@ -47,6 +47,7 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
     ipcHandleSync("/app/env", impl.app.env)
     ipcHandleSync("/app/initialize", impl.app.initialize)
     ipcHandle("/app/login", impl.app.login)
+    ipcHandleSync("/app/server-force-stop", impl.app.serverForceStop)
     ipcEvent("/app/env/on-changed", impl.app.envChangedEvent)
     ipcEvent("/app/initialize/on-updated", impl.app.initializeUpdatedEvent)
     ipcEvent("/app/ws-toast", impl.app.wsToastEvent)

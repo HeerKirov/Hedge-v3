@@ -20,6 +20,9 @@ function createRemoteIpcClient(): IpcClient {
             async login(form) {
                 return await ipcRenderer.invoke("/app/login", form)
             },
+            serverForceStop() {
+                ipcRenderer.send("/app/server-force-stop")
+            },
             envChangedEvent: createProxyEmitter(emit => {
                 ipcRenderer.on("/app/env/on-changed", (_, arg) => emit(arg))
             }),

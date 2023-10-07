@@ -33,14 +33,14 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
                     server: {
                         serviceStatus: server.service.status(),
                         connectionStatus: server.connection.status(),
-                        connectionInfo: server.connection.connectionInfo()
+                        connectionInfo: server.connection.connectionInfo(),
+                        staticInfo: server.connection.staticInfo(),
                     }
                 }
             },
             initialize: state.appInitialize,
-            async login(form) {
-                return await state.login(form)
-            },
+            login: state.login,
+            serverForceStop: server.connection.kill,
             envChangedEvent: createProxyEmitter(func => {
                 //此处的实现使用了一个简单的缓冲池结构，将三种不同的组件状态尽可能收纳在同一个事件中发出。
                 //实现方式基于同步/异步结构。因为组件状态相互依赖且依赖方式为同步通知，因此将发送动作推延到1ms的异步后，确保同步周期内收集到所有事件。

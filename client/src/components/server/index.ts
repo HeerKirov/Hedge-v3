@@ -1,5 +1,6 @@
 import path from "path"
 import { openSync } from "fs"
+import { kill as killProcess } from "process"
 import { spawn } from "child_process"
 import { DATA_FILE, RESOURCE_FILE } from "../../constants/file"
 import { sleep } from "../../utils/process"
@@ -13,6 +14,7 @@ import {
     ServerPIDFile,
     ServerConnectionInfo,
     ServerConnectionError,
+    ServerStaticInfo,
     WsToastResult
 } from "./model"
 
@@ -50,6 +52,16 @@ interface ConnectionManager {
      * 获得当前连接的连接信息。
      */
     connectionInfo(): ServerConnectionInfo | null
+
+    /**
+     * 获得服务的一些静态信息。
+     */
+    staticInfo(): ServerStaticInfo
+
+    /**
+     * 强制关闭后台服务。
+     */
+    kill(): void
 
     /**
      * 连接状态发生改变的事件。
@@ -120,11 +132,11 @@ export function createServerManager(options: ServerManagerOptions): ServerManage
 function createConnectionManager(options: ServerManagerOptions) {
     const debugMode = !!options.debug
     const serverBinPath = options.debug?.serverFromFolder
-        ? path.join(options.debug?.serverFromFolder, RESOURCE_FILE.SERVER.BIN)
-        : path.join(options.userDataPath, DATA_FILE.RESOURCE.SERVER_FOLDER, RESOURCE_FILE.SERVER.BIN)
-    const channelPath = path.join(options.userDataPath, DATA_FILE.APPDATA.CHANNEL_FOLDER, options.channel)
-    const serverPIDPath = path.join(channelPath, DATA_FILE.APPDATA.CHANNEL.SERVER_PID)
-    const serverLogPath = path.join(channelPath, DATA_FILE.APPDATA.CHANNEL.SERVER_LOG)
+        ? path.resolve(options.debug?.serverFromFolder, RESOURCE_FILE.SERVER.BIN)
+        : path.resolve(options.userDataPath, DATA_FILE.RESOURCE.SERVER_FOLDER, RESOURCE_FILE.SERVER.BIN)
+    const channelPath = path.resolve(options.userDataPath, DATA_FILE.APPDATA.CHANNEL_FOLDER, options.channel)
+    const serverPIDPath = path.resolve(channelPath, DATA_FILE.APPDATA.CHANNEL.SERVER_PID)
+    const serverLogPath = path.resolve(channelPath, DATA_FILE.APPDATA.CHANNEL.SERVER_LOG)
 
     const statusChangedEvent = createEmitter<{ status: ServerConnectionStatus, info: ServerConnectionInfo | null, error: ServerConnectionError | null, appLoadStatus?: ServerServiceStatus }>()
     const wsToastEvent = createEmitter<WsToastResult>()
@@ -321,10 +333,22 @@ function createConnectionManager(options: ServerManagerOptions) {
         return _connectionInfo
     }
 
+    function staticInfo(): ServerStaticInfo {
+        return {logPath: serverLogPath}
+    }
+
+    function kill() {
+        if(_connectionInfo !== null) {
+            killProcess(_connectionInfo.pid)
+        }
+    }
+
     return {
         desired,
         status,
         connectionInfo,
+        staticInfo,
+        kill,
         statusChangedEvent,
         wsToastEvent
     }

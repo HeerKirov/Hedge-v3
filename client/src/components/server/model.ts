@@ -12,6 +12,10 @@ export interface ServerConnectionInfo {
     startTime: number
 }
 
+export interface ServerStaticInfo {
+    logPath: string
+}
+
 export interface ServerConnectionError {
     code: ConnectionErrorCode
     message?: string
