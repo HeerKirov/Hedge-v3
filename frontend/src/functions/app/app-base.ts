@@ -14,14 +14,16 @@ const [installAppBase, useAppBase] = installation(function (httpClientConfig: Ht
             server.value = {
                 serviceStatus: server.value.serviceStatus,
                 connectionStatus: e.serverConnection.status,
-                connectionInfo: e.serverConnection.info
+                connectionInfo: e.serverConnection.info,
+                staticInfo: server.value.staticInfo
             }
         }
         if(e.serverService) {
             server.value = {
                 serviceStatus: e.serverService.status,
                 connectionStatus: server.value.connectionStatus,
-                connectionInfo: server.value.connectionInfo
+                connectionInfo: server.value.connectionInfo,
+                staticInfo: server.value.staticInfo
             }
         }
         if(e.serverConnection?.info) {
@@ -51,7 +53,8 @@ const [installAppBase, useAppBase] = installation(function (httpClientConfig: Ht
     const server = ref({
         serviceStatus: appEnvironment.server.serviceStatus,
         connectionStatus: appEnvironment.server.connectionStatus,
-        connectionInfo: appEnvironment.server.connectionInfo
+        connectionInfo: appEnvironment.server.connectionInfo,
+        staticInfo: appEnvironment.server.staticInfo
     })
 
     httpClientConfig.host = appEnvironment.server.connectionInfo?.host

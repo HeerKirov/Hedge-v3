@@ -20,6 +20,10 @@ export interface ServerConnectionInfo {
     startTime: number
 }
 
+export interface ServerStaticInfo {
+    logPath: string
+}
+
 export type WsToastResult = {
     type: "ERROR"
     data: { code: string, message: string | null, info: any }

@@ -3,13 +3,17 @@ import { ref, watch } from "vue"
 import { Block, Button, Icon } from "@/components/universal"
 import { Input } from "@/components/form"
 import { Group } from "@/components/layout"
+import { remoteIpcClient } from "@/functions/ipc-client"
 import { useServerStatus } from "@/functions/app"
 import { useSettingConnectionInfo, useSettingServer } from "@/services/setting"
+import { useMessageBox } from "@/modules/message-box"
+import { openLocalFile } from "@/modules/others"
 import { usePropertySot } from "@/utils/forms"
 import { toRefNullable } from "@/utils/reactivity"
 import { PortType, validatePort } from "@/utils/validation"
 import { sleep } from "@/utils/process"
 
+const message = useMessageBox()
 const server = useServerStatus()
 const serverSetting = useSettingServer()
 
@@ -29,6 +33,14 @@ watch(port, async (v, _, onInvalidate) => {
         portType.value = validatePort(v ?? "")
     }
 })
+
+const openLog = () => openLocalFile(server.value.staticInfo.logPath)
+
+const restart = async () => {
+    if(await message.showYesNoMessage("warn", "将会关闭核心服务，并等待它自动拉起。")) {
+        remoteIpcClient.app.serverForceStop()
+    }
+}
 
 </script>
 
@@ -52,6 +64,8 @@ watch(port, async (v, _, onInvalidate) => {
             <Icon class="mr-1" icon="bullseye"/>PID <code>{{connectionInfo.pid}}</code>
             <Icon class="mr-1" icon="ethernet"/>端口 <code>:{{connectionInfo.port}}</code>
         </p>
+        <Button class="float-right" size="small" icon="power-off" @click="restart">重新启动</Button>
+        <Button class="float-right" size="small" icon="file-waveform" @click="openLog">查看核心服务日志</Button>
         <p v-if="!!connectionInfo" class="mt-1 is-font-size-small">
             <Icon class="mr-1" icon="business-time"/>已运行时长 <code>{{connectionInfo.runningTime}}</code>
         </p>
@@ -72,7 +86,3 @@ watch(port, async (v, _, onInvalidate) => {
     </Group>
     <p class="secondary-text">使用固定Token可方便地在其他位置使用核心服务。</p>
 </template>
-
-<style module lang="sass">
-
-</style>
