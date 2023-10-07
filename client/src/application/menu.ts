@@ -8,6 +8,7 @@ export function registerAppMenu(windowManager: WindowManager, platform: Platform
         Menu.setApplicationMenu(Menu.buildFromTemplate([
             {
                 label: "Hedge",
+                role: 'fileMenu',
                 submenu: [
                     {label: '关于Hedge', role: 'about'},
                     {type: 'separator'},
@@ -39,8 +40,9 @@ export function registerAppMenu(windowManager: WindowManager, platform: Platform
             },
             {
                 label: '显示',
+                role: 'viewMenu',
                 submenu: [
-                    {label: '重新加载', role: 'reload'},
+                    {label: '重新加载', accelerator: 'Command+Shift+R', role: 'reload'},
                     {label: '开发者工具', role: 'toggleDevTools'},
                     {type: 'separator'},
                     {label: '全屏', role: 'togglefullscreen'}
@@ -72,6 +74,7 @@ export function registerAppMenu(windowManager: WindowManager, platform: Platform
         Menu.setApplicationMenu(Menu.buildFromTemplate([
             {
                 label: "Hedge",
+                role: 'fileMenu',
                 submenu: [
                     {label: '关于Hedge', role: 'about'},
                     {type: 'separator'},
@@ -97,8 +100,9 @@ export function registerAppMenu(windowManager: WindowManager, platform: Platform
             },
             {
                 label: '视图',
+                role: 'viewMenu',
                 submenu: [
-                    {label: '重新加载', role: 'reload'},
+                    {label: '重新加载', accelerator: 'Ctrl+Shift+R', role: 'reload'},
                     {label: '开发者工具', role: 'toggleDevTools'},
                     {type: 'separator'},
                     {label: '全屏', role: 'togglefullscreen'}

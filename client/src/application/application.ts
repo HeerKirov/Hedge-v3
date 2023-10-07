@@ -4,6 +4,7 @@ import { createAppDataDriver } from "../components/appdata"
 import { createResourceManager } from "../components/resource"
 import { createServerManager } from "../components/server"
 import { createStateManager } from "../components/state"
+import { createStorageManager } from "../components/storage"
 import { panic } from "../exceptions"
 import { getNodePlatform, promiseAll } from "../utils/process"
 import { registerGlobalIpcRemoteEvents } from "./ipc"
@@ -72,6 +73,8 @@ export async function createApplication(options?: AppOptions) {
 
         const appDataDriver = createAppDataDriver({userDataPath, channel: channelManager.currentChannel()})
 
+        const storageManager = createStorageManager(appDataDriver, {userDataPath, channel: channelManager.currentChannel()})
+
         const resourceManager = createResourceManager({userDataPath, appPath, debug: options?.debug && {serverFromResource: options.debug.serverFromResource}})
 
         const serverManager = createServerManager({userDataPath, channel: channelManager.currentChannel(), debug: options?.debug && {serverFromHost: options.debug.serverFromHost, serverFromFolder: options.debug.serverFromFolder}})
@@ -80,7 +83,7 @@ export async function createApplication(options?: AppOptions) {
 
         const stateManager = createStateManager(appDataDriver, themeManager, resourceManager, serverManager)
 
-        const windowManager = createWindowManager(stateManager, themeManager, {platform, debug: options?.debug && {frontendFromFolder: options.debug.frontendFromFolder, frontendFromURL: options.debug.frontendFromURL}})
+        const windowManager = createWindowManager(stateManager, themeManager, storageManager, {platform, debug: options?.debug && {frontendFromFolder: options.debug.frontendFromFolder, frontendFromURL: options.debug.frontendFromURL}})
 
         registerAppEvents(windowManager, serverManager, platform)
         registerGlobalIpcRemoteEvents(appDataDriver, channelManager, serverManager, stateManager, themeManager, windowManager, {debugMode, userDataPath, platform})

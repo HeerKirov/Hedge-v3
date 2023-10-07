@@ -2,6 +2,7 @@ import * as path from "path"
 import { BrowserWindow, BrowserWindowConstructorOptions } from "electron"
 import { Platform } from "../utils/process"
 import { StateManager } from "../components/state"
+import { StorageManager } from "../components/storage"
 import { APP_FILE, RESOURCE_FILE } from "../constants/file"
 import { registerWindowIpcRemoteEvent } from "./ipc"
 import { ThemeManager } from "./theme"
@@ -41,19 +42,20 @@ export interface WindowManagerOptions {
     }
 }
 
-export function createWindowManager(state: StateManager, theme: ThemeManager, options: WindowManagerOptions): WindowManager {
+export function createWindowManager(state: StateManager, theme: ThemeManager, storage: StorageManager, options: WindowManagerOptions): WindowManager {
     let ready = false
     let guideWindow: BrowserWindow | null = null
     let settingWindow: BrowserWindow | null = null
 
     const icon = createNativeIcon(options.platform, !!options.debug)
+    const boundManager = createWindowBoundManager(storage)
 
     function newBrowserWindow(hashURL: string, configure: BrowserWindowConstructorOptions = {}): BrowserWindow {
+        const pathname = boundManager.getPathname(hashURL)
+
         const win = new BrowserWindow({
             icon,
             title: "Hedge",
-            height: 720,
-            width: options.debug ? 1440 : 1080,
             minHeight: 480,
             minWidth: 640,
             webPreferences: {
@@ -63,6 +65,7 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, op
             },
             autoHideMenuBar: true,
             backgroundColor: theme.getRuntimeTheme() === "dark" ? "#111417" : "#FFFFFF",
+            ...boundManager.getWindowConfiguration(pathname),
             ...configure
         })
 
@@ -71,6 +74,8 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, op
                 win.webContents.openDevTools()
             })
         }
+
+        boundManager.register(win, pathname)
 
         registerWindowIpcRemoteEvent(win)
 
@@ -85,10 +90,12 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, op
     }
 
     function load() {
-        //在load之前，禁止通过任何方式打开窗口，防止在loaded之前的意外的前端加载。
-        ready = true
-        //load时，打开第一个默认窗口
-        createWindow()
+        boundManager.load().then(() => {
+            //在load之前，禁止通过任何方式打开窗口，防止在loaded之前的意外的前端加载。
+            ready = true
+            //load时，打开第一个默认窗口
+            createWindow()
+        })
     }
 
     function createWindow(url?: string): BrowserWindow | null {
@@ -141,6 +148,62 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, op
         openSettingWindow,
         getAllWindows: BrowserWindow.getAllWindows
     }
+}
+
+function createWindowBoundManager(storage: StorageManager) {
+    let bounds: {[pathname: string]: WindowBound | undefined} = {}
+
+    async function load() {
+        const s = storage.isEnabled() ? await storage.get<{[pathname: string]: WindowBound}>("window") : undefined
+        if(s !== undefined) bounds = s
+    }
+
+    function getPathname(hashURL: string) {
+        const idx = hashURL.indexOf("?")
+        const p = idx >= 0 ? hashURL.substring(0, idx) : hashURL
+        const p2 = p.startsWith("/") ? p.substring(1) : p
+        return p2 || "__default__"
+    }
+
+    function getWindowConfiguration(pathname: string): BrowserWindowConstructorOptions {
+        const bound = bounds[pathname]
+        if(bound !== undefined) {
+            return {fullscreen: bound.fullscreen, x: bound.x, y: bound.y, width: bound.width, height: bound.height}
+        }else{
+            return {width: 1080, height: 720}
+        }
+    }
+
+    function register(win: BrowserWindow, pathname: string) {
+        const bound = bounds[pathname]
+        if(bound !== undefined) {
+            win.setBounds({})
+            if(bound.fullscreen) win.setFullScreen(true)
+            else if(bound.maximized) win.maximize()
+        }
+
+        win.on("close", () => {
+            if(storage.isEnabled()) {
+                const current = bounds[pathname]
+                const newBound = {fullscreen: win.isFullScreen(), maximized: win.isMaximized(), ...win.getNormalBounds()}
+                if(current === undefined || newBound.fullscreen !== current.fullscreen || newBound.maximized !== current.maximized || newBound.x !== current.x || newBound.y !== current.y || newBound.width !== current.width || newBound.height !== current.height) {
+                    bounds[pathname] = newBound
+                    storage.set("window", bounds).finally()
+                }
+            }
+        })
+    }
+
+    return {load, getPathname, getWindowConfiguration, register}
+}
+
+interface WindowBound {
+    fullscreen: boolean
+    maximized: boolean
+    x: number
+    y: number
+    width: number
+    height: number
 }
 
 function createNativeIcon(platform: Platform, debug: boolean) {
