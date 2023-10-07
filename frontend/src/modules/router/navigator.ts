@@ -4,7 +4,7 @@ import { windowManager } from "@/modules/window"
 import { installation } from "@/utils/reactivity"
 import { useListeningEvent, useRefEmitter } from "@/utils/emitter"
 import { date } from "@/utils/datetime"
-import { RouteName, RouteParameter } from "./definitions"
+import { PreviewParameter, RouteName, RouteParameter } from "./definitions"
 import { useRouterParamEmitter } from "./param"
 
 /**
@@ -15,6 +15,7 @@ export interface RouterNavigator {
     goto<N extends RouteName>(options: {routeName: N, params?: RouteParameter[N]["params"], query?: Partial<RouteParameter[N]["query"]>}): void
     newWindow(routeName: RouteName): void
     newWindow<N extends RouteName>(options: {routeName: N, params?: RouteParameter[N]["params"], query?: Partial<RouteParameter[N]["query"]>}): void
+    newPreviewWindow(options: PreviewParameter): void
 }
 
 export const [installRouterManager, useRouterManager] = installation(function () {
@@ -56,7 +57,11 @@ export function useRouterNavigator(): RouterNavigator {
             `&query=${query !== undefined ? encodeURIComponent(btoa(JSON.stringify(query))) : ""}`)
     }
 
-    return {goto, newWindow}
+    function newPreviewWindow(options: PreviewParameter) {
+        windowManager.newWindow(`/preview?target=${encodeURIComponent(btoa(JSON.stringify(options)))}`)
+    }
+
+    return {goto, newWindow, newPreviewWindow}
 }
 
 /**
@@ -83,6 +88,19 @@ export function useNewWindowRouteReceiver() {
             return true
         }
     }
+}
+
+/**
+ * 此函数应该被Preview页面引用，以在初始化时提取参数。
+ */
+export function usePreviewWindowRouteReceiver(): PreviewParameter | undefined {
+    const route = useRoute()
+    
+    const q = route.query["target"]
+    if(q && typeof q === "string") {
+        return JSON.parse(atob(q)) as PreviewParameter
+    }
+    return undefined
 }
 
 /**

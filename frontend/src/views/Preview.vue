@@ -4,7 +4,7 @@ import { installDialogService, GlobalDialog } from "@/components-module/dialog"
 import { installCalloutService, GlobalCallout } from "@/components-module/callout"
 import { installPreviewService, GlobalPreview } from "@/components-module/preview"
 import { installViewStack, ViewStack } from "@/components-module/view-stack"
-import { useRouterParamEvent } from "@/modules/router"
+import { usePreviewWindowRouteReceiver } from "@/modules/router"
 
 installDialogService()
 installCalloutService()
@@ -12,15 +12,15 @@ installPreviewService()
 installSideLayoutState({defaultSwitch: false})
 const viewStack = installViewStack()
 
-useRouterParamEvent("Preview", params => {
-    if(params.type === "image") {
-        viewStack.openImageView(params.imageIds, undefined, true)
-    }else if(params.type === "collection") {
-        viewStack.openCollectionView(params.collectionId, true)
-    }else if(params.type === "book") {
-        viewStack.openBookView(params.bookId, true)
-    }
-})
+const parameter = usePreviewWindowRouteReceiver()
+
+if(parameter?.type === "image") {
+    viewStack.openImageView(parameter.imageIds, undefined, true)
+}else if(parameter?.type === "collection") {
+    viewStack.openCollectionView(parameter.collectionId, true)
+}else if(parameter?.type === "book") {
+    viewStack.openBookView(parameter.bookId, true)
+}
 
 </script>
 

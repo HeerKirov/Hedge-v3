@@ -288,11 +288,11 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
 
     const openInNewWindow = (illust: T) => {
         if(illust.type === "COLLECTION") {
-            navigator.newWindow({routeName: "Preview", params: {type: "collection", collectionId: illust.id}})
+            navigator.newPreviewWindow({type: "collection", collectionId: illust.id})
         }else{
             const imageIds = getEffectedItems(illust)
             const currentIndex = imageIds.indexOf(illust.id)
-            navigator.newWindow({routeName: "Preview", params: { type: "image", imageIds, currentIndex}})
+            navigator.newPreviewWindow({type: "image", imageIds, currentIndex})
         }
     }
 

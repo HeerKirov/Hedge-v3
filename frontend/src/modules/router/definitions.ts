@@ -15,8 +15,9 @@ export interface RouteParameter {
     "MainFolder": RouteTemplate<{ detail: number }, undefined>
     "MainFindSimilar": RouteTemplate<{ detail: number }, undefined>
     "MainStagingPost": RouteTemplate<{}, undefined>
-    "Preview": RouteTemplate<{}, { type: "image", imageIds: number[], currentIndex?: number } | { type: "collection", collectionId: number} | { type: "book", bookId: number }>
 }
+
+export type PreviewParameter = { type: "image", imageIds: number[], currentIndex?: number } | { type: "collection", collectionId: number} | { type: "book", bookId: number }
 
 export type RouteName = keyof RouteParameter
 

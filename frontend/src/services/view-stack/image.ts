@@ -199,7 +199,7 @@ function useOperators(data: Ref<Illust | null>, id: Ref<number | null>) {
     }
 
     const openInNewWindow = () => {
-        navigator.newWindow({routeName: "Preview", params: {type: "image", imageIds: [id.value!]}})
+        navigator.newPreviewWindow({type: "image", imageIds: [id.value!]})
     }
 
     const editMetaTag = () => {

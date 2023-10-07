@@ -63,7 +63,7 @@ function useOperators() {
     }
 
     const openInNewWindow = (book: Book) => {
-        navigator.newWindow({routeName: "Preview", params: {type: "book", bookId: book.id}})
+        navigator.newPreviewWindow({type: "book", bookId: book.id})
     }
 
     const exportItem = (book: Book) => {
