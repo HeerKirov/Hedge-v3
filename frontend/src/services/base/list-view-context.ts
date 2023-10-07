@@ -2,9 +2,11 @@ import { ref, Ref } from "vue"
 import { PaginationDataView, QueryListview, usePaginationDataView, useQueryListview } from "@/functions/fetch"
 import { QueryListviewOptions } from "@/functions/fetch/query-listview/query-listview"
 import { BasicException } from "@/functions/http-client/exceptions"
+import { useInterceptedKey } from "@/modules/keyboard"
 
 /**
  * 使用ListView的列表相关上下文。提供：ListView、PaginationDataView、Filter。如果有需要，还包括Selector、QuerySchema。
+ * 同时，它还注册了CTRL+R快捷键，用于刷新列表。
  */
 interface ListViewContext<T, F> {
     listview: QueryListview<T>
@@ -29,6 +31,8 @@ export function useListViewContext<T, F>(options: ListViewContextOptions<T, F>):
     })
 
     const paginationData = usePaginationDataView(listview)
+    
+    useInterceptedKey("Meta+KeyR", listview.refresh)
 
     return {
         listview,

@@ -23,19 +23,19 @@ interface ArrayModeProps {
     initIndex?: number
 }
 
-export function useImagePreviewContext(ctx: ImageProps) {
+export function useImagePreviewContext(ctx: ImageProps, close: () => void) {
     if(ctx.type === "listview") {
         if(ctx.selected.value.length > 1) {
-            return useArrayMode(getMultipleCtx(ctx))
+            return useArrayMode(getMultipleCtx(ctx), close)
         }else{
-            return useListviewMode(ctx)
+            return useListviewMode(ctx, close)
         }
     }else{
-        return useArrayMode(ctx)
+        return useArrayMode(ctx, close)
     }
 }
 
-function useListviewMode(ctx: ListviewModeProps) {
+function useListviewMode(ctx: ListviewModeProps, close: () => void) {
     let idx: number | undefined = undefined
     const targetFile = ref<string | null>(null)
 
@@ -63,7 +63,7 @@ function useListviewMode(ctx: ListviewModeProps) {
 
     watch(ctx.lastSelected, watchRefresh, {immediate: true})
 
-    useInterceptedKey(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"], e => {
+    useInterceptedKey(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"], e => {
         if(idx !== undefined) {
             if(e.key === "ArrowUp" && idx > 0) {
                 if(ctx.viewMode?.value === "grid" && ctx.columnNum?.value) {
@@ -81,6 +81,8 @@ function useListviewMode(ctx: ListviewModeProps) {
                 }
             }else if(e.key === "ArrowRight" && ctx.listview.proxy.syncOperations.count() && idx < ctx.listview.proxy.syncOperations.count()! - 1) {
                 gotoIndex(idx + 1)
+            }else if(e.key === "Space") {
+                close()
             }
         }
     })
@@ -88,15 +90,17 @@ function useListviewMode(ctx: ListviewModeProps) {
     return {targetFile}
 }
 
-function useArrayMode(ctx: ArrayModeProps) {
+function useArrayMode(ctx: ArrayModeProps, close: () => void) {
     let idx: number = ctx.initIndex ?? 0
     const targetFile = ref<string | null>(ctx.files[idx])
 
-    useInterceptedKey(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"], e => {
+    useInterceptedKey(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"], e => {
         if((e.key === "ArrowUp" || e.key === "ArrowLeft") && idx > 0) {
             targetFile.value = ctx.files[--idx]
         }else if((e.key === "ArrowDown" || e.key === "ArrowRight") && idx < ctx.files.length - 1) {
             targetFile.value = ctx.files[++idx]
+        }else if(e.key === "Space") {
+            close()
         }
     })
 

@@ -29,7 +29,7 @@ export const [installCollectionViewContext, useCollectionViewContext] = installa
     const operators = useImageDatasetOperators({
         paginationData: listview.paginationData,
         listview: listview.listview,
-        selector, navigation,
+        listviewController, selector, navigation,
         dataDrop: {dropInType: "collection", path: target.id}
     })
 

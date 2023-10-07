@@ -19,7 +19,7 @@ const {
     listview: { paginationData, anyData },
     listviewController: { viewMode, fitType, columnNum },
     selector: { selected, lastSelected, update: updateSelect },
-    operators: { openDialog, save, deleteItem }
+    operators: { openDialog, save, deleteItem, openImagePreview }
 } = installImportContext()
 
 const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
@@ -72,7 +72,7 @@ const menu = usePopupMenu<ImportImage>(() => [
                 :data="paginationData.data" :query-instance="paginationData.proxy"
                 :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable
                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"/>
+                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)" @space="openImagePreview"/>
             <ImportEmpty v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" :class="$style.empty"/>
 
             <template #pane>

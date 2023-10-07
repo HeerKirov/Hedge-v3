@@ -23,6 +23,7 @@ interface DatasetContextOptions {
     rightClick(i: unknown): void
     dblClick(id: number, shift: boolean): void
     enterClick(id: number): void
+    spaceClick(id: number): void
     dropData(insertIndex: number | null, images: TypeDefinition[keyof TypeDefinition], mode: "ADD" | "MOVE"): void
 }
 
@@ -65,7 +66,7 @@ export const [installDatasetContext, useDatasetContext] = installation(function 
         onDrop: options.dropData
     })
 
-    useKeyboardEvents(selector, options.enterClick)
+    useKeyboardEvents(selector, options.enterClick, options.spaceClick)
 
     return {
         data: options.data,
@@ -200,13 +201,17 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
     return {select, appendSelect, shiftSelect, moveSelect, lastSelected, selected}
 }
 
-function useKeyboardEvents({ moveSelect, lastSelected }: Selector, enter: (illustId: number) => void) {
-    useInterceptedKey(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter"], e => {
+function useKeyboardEvents({ moveSelect, lastSelected }: Selector, enter: (illustId: number) => void, space: (illustId: number) => void) {
+    useInterceptedKey(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "Space"], e => {
         if(e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
             moveSelect(e.key, e.shiftKey).finally()
         }else if(e.key === "Enter") {
             if(lastSelected.value !== null) {
                 enter(lastSelected.value)
+            }
+        }else if(e.key === "Space") {
+            if(lastSelected.value !== null) {
+                space(lastSelected.value)
             }
         }
     })

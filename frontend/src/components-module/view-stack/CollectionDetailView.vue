@@ -117,7 +117,8 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
                                     :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable droppable
                                     :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                                     @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
-                                    @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
+                                    @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
+                                    @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
 
                 <template #pane>
                     <IllustDetailPane @close="paneState.visible.value = false"/>

@@ -68,6 +68,10 @@ const emit = defineEmits<{
      * 在选择项上按下enter。
      */
     (e: "enter", id: number): void
+    /**
+     * 在选择项上按下space。
+     */
+     (e: "space", id: number): void
 }>()
 
 const keyOf = (item: TrashedImage) => item.id
@@ -92,6 +96,7 @@ installDatasetContext({
     rightClick: (_) => emit("contextmenu", _ as TrashedImage),
     dblClick: (_, __) => emit("dblclick", _, __),
     enterClick: (_) => emit("enter", _),
+    spaceClick: (_) => emit("space", _),
     dropData: (_, __, ___) => {}
 })
 

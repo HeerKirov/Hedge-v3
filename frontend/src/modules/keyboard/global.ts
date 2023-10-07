@@ -13,6 +13,8 @@ const [installGlobalKeyManager, useGlobalKeyManager] = installation(function() {
     onMounted(() => document.addEventListener("keydown", keydown))
     onUnmounted(() => document.removeEventListener("keydown", keydown))
 
+    const preventDefaultValidator = createKeyEventValidator(["Space", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"])
+
     function keydown(keyboardEvent: KeyboardEvent) {
         const consumer: KeyEvent = {
             key: keyboardEvent.code as KeyCode,
@@ -34,6 +36,11 @@ const [installGlobalKeyManager, useGlobalKeyManager] = installation(function() {
             if(stopPropagation) {
                 break
             }
+        }
+
+        //类似Space、方向键一类按键具有默认导航行为。键盘事件的target如果是body，则阻止其默认行为。
+        if((consumer.target as Element | null)?.nodeName === "BODY" && preventDefaultValidator(consumer)) {
+            consumer.preventDefault()
         }
     }
 
@@ -66,12 +73,13 @@ export function useGlobalKey(event: (e: KeyEvent) => void) {
  * @param event 触发事件
  * @param options interceptAll: 总是拦截所有按键向上游传递
  */
-export function useInterceptedKey(keys: KeyPress | KeyPress[], event: (e: AnalysedKeyPress) => void, options?: {interceptAll: boolean}) {
+export function useInterceptedKey(keys: KeyPress | KeyPress[], event: (e: AnalysedKeyPress) => void, options?: {interceptAll?: boolean, preventDefault?: boolean}) {
     const checker = createKeyEventValidator(keys)
     if(options?.interceptAll) {
         useGlobalKey(e => {
             if(checker(e)) {
                 event(e)
+                if(options?.preventDefault) e.preventDefault()
             }
             e.stopPropagation()
         })
@@ -80,6 +88,7 @@ export function useInterceptedKey(keys: KeyPress | KeyPress[], event: (e: Analys
             if(checker(e)) {
                 e.stopPropagation()
                 event(e)
+                if(options?.preventDefault) e.preventDefault()
             }
         })
     }

@@ -5,6 +5,10 @@ import {
     usePostFetchHelper, usePostPathFetchHelper, useFetchHelper, QueryInstance, createMappedQueryInstance, PaginationData
 } from "@/functions/fetch"
 import { CoverIllust, CommonIllust, Illust, IllustQueryFilter, IllustType } from "@/functions/http-client/api/illust"
+import { FilePath } from "@/functions/http-client/api/all"
+import { Folder } from "@/functions/http-client/api/folder"
+import { Book } from "@/functions/http-client/api/book"
+import { IllustViewController } from "@/services/base/view-controller"
 import { SelectedState } from "@/services/base/selected-state"
 import { useHomepageState } from "@/services/main/homepage"
 import { useToast } from "@/modules/toast"
@@ -12,11 +16,9 @@ import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator } from "@/modules/router"
 import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
+import { usePreviewService } from "@/components-module/preview"
 import { installation } from "@/utils/reactivity"
 import { LocalDateTime } from "@/utils/datetime"
-import { FilePath } from "@/functions/http-client/api/all"
-import { Folder } from "@/functions/http-client/api/folder"
-import { Book } from "@/functions/http-client/api/book"
 
 export interface ImageDatasetOperatorsOptions<T extends BasicIllust> {
     /**
@@ -27,6 +29,10 @@ export interface ImageDatasetOperatorsOptions<T extends BasicIllust> {
      * endpoint.
      */
     listview: QueryListview<T>
+    /**
+     * 视图控制器。preview功能需要它们。
+     */
+    listviewController: IllustViewController
     /**
      * 已选择项。
      */
@@ -90,6 +96,11 @@ export interface ImageDatasetOperators<T extends BasicIllust> {
      * @param illust
      */
     openInNewWindow(illust: T): void
+    /**
+     * 通过选中空格的方式打开预览。它总是预览最后选中项。
+     * @param illustId 
+     */
+    openPreviewBySpace(): void
     /**
      * 更改favorite属性。
      */
@@ -185,7 +196,8 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
     const navigator = useRouterNavigator()
     const dialog = useDialogService()
     const viewStack = useViewStack()
-    const { paginationData, listview, navigation, selector, dataDrop: dataDropOptions, createCollection: createCollectionOptions } = options
+    const preview = usePreviewService()
+    const { paginationData, listview, listviewController, navigation, selector, dataDrop: dataDropOptions, createCollection: createCollectionOptions } = options
 
     const fetchIllustUpdate = usePostPathFetchHelper(client => client.illust.update)
     const fetchIllustDelete = usePostFetchHelper(client => client.illust.delete)
@@ -218,7 +230,10 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
             viewStack.openImageView(slice, illustId => {
                 //回调：给出了目标id，回查data的此项，并找到此项现在的位置，导航到此位置
                 const index = paginationData.proxy.syncOperations.find(i => i.id === illustId)
-                if(index !== undefined) navigation.navigateTo(index)
+                if(index !== undefined) {
+                    selector.update([illustId], illustId)
+                    navigation.navigateTo(index)
+                }
             })
         }
     }
@@ -294,6 +309,20 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
             const currentIndex = imageIds.indexOf(illust.id)
             navigator.newPreviewWindow({type: "image", imageIds, currentIndex})
         }
+    }
+
+    const openPreviewBySpace = () => {
+        preview.show({
+            preview: "image", 
+            type: "listview", 
+            listview: listview,
+            paginationData: paginationData.data,
+            columnNum: listviewController.columnNum,
+            viewMode: listviewController.viewMode,
+            selected: selector.selected,
+            lastSelected: selector.lastSelected,
+            updateSelect: selector.update
+        })
     }
 
     const modifyFavorite = async (illust: T, favorite: boolean) => {
@@ -466,7 +495,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
     const stagingPostCount = homepageState ? computed(() => homepageState.data.value?.stagingPostCount ?? 0) : shallowRef(0)
 
     return {
-        openDetailByClick, openDetailByEnter, openCollectionDetail, openInNewWindow, modifyFavorite,
+        openDetailByClick, openDetailByEnter, openCollectionDetail, openInNewWindow, openPreviewBySpace, modifyFavorite,
         createCollection, splitToGenerateNewCollection, createBook, editAssociate, addToFolder, 
         cloneImage, exportItem, addToStagingPost, popStagingPost, stagingPostCount,
         deleteItem, removeItemFromCollection, removeItemFromBook, removeItemFromFolder, getEffectedItems, dataDrop

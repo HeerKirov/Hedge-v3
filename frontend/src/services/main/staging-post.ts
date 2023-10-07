@@ -20,7 +20,7 @@ export function useStagingPostContext() {
     const operators = useImageDatasetOperators({
         paginationData: listview.paginationData,
         listview: listview.listview,
-        selector, navigation
+        listviewController, selector, navigation
     })
 
     installIllustListviewContext({listview, selector, listviewController})

@@ -36,8 +36,8 @@ export const [installIllustContext, useIllustContext] = installation(function ()
     const navigation = installVirtualViewNavigation()
     const operators = useImageDatasetOperators({
         paginationData: listview.paginationData,
-        listview: listview.listview,
-        selector, navigation
+        listview: listview.listview, 
+        listviewController, selector, navigation
     })
     const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector, navigation})
 

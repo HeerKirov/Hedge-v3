@@ -17,7 +17,7 @@ const { context, close } = useInternalService()
                      :enter-from-class="$style['transition-enter-from']" 
                      :leave-to-class="$style['transition-leave-to']">
         <Block :class="$style['root-container']" >
-            <ImagePreview v-if="context!.preview === 'image'" :context="context!"/>
+            <ImagePreview v-if="context!.preview === 'image'" :context="context!" @close="close"/>
         </Block>
     </DialogFramework>
 </template>

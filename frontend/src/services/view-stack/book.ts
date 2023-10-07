@@ -23,7 +23,7 @@ export const [installBookViewContext, useBookViewContext] = installation(functio
     const operators = useImageDatasetOperators({
         paginationData: listview.paginationData,
         listview: listview.listview,
-        selector, navigation,
+        listviewController, selector, navigation,
         dataDrop: {dropInType: "book", path: target.id}
     })
 

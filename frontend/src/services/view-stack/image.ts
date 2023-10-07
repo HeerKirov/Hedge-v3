@@ -105,12 +105,11 @@ function useNavigator(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illu
     }
 
     const prevIllust = (count: number = 1) => {
-        if(slice.currentIndex.value > 0) {
-            if(slice.currentIndex.value >= count) {
-                slice.currentIndex.value -= count
-            }else{
-                slice.currentIndex.value = 0
-            }
+        const targetIndex = slice.currentIndex.value - count
+        if(targetIndex >= 0) {
+            slice.currentIndex.value = targetIndex
+        }else if(slice.count.value !== null) {
+            slice.currentIndex.value = slice.count.value + targetIndex
         }
     }
 
@@ -123,11 +122,12 @@ function useNavigator(slice: SliceDataView<Illust>, subSlice: SliceDataView<Illu
     }
 
     const nextIllust = (count: number = 1) => {
-        if(slice.count.value !== null && slice.currentIndex.value < slice.count.value - 1) {
-            if(slice.currentIndex.value <= slice.count.value - count) {
-                slice.currentIndex.value += count
+        if(slice.count.value !== null) {
+            const targetIndex = slice.currentIndex.value + count
+            if(targetIndex < slice.count.value) {
+                slice.currentIndex.value = targetIndex
             }else{
-                slice.currentIndex.value = slice.count.value - 1
+                slice.currentIndex.value = targetIndex - slice.count.value
             }
         }
     }

@@ -237,7 +237,7 @@ export function useDetailIllustContext() {
     const operators = useImageDatasetOperators({
         paginationData: listview.paginationData,
         listview: listview.listview,
-        selector, navigation
+        listviewController, selector, navigation
     })
     const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector, navigation})
 

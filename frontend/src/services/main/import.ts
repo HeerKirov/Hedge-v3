@@ -5,18 +5,18 @@ import { Tagme } from "@/functions/http-client/api/illust"
 import { ImportImage, ImportQueryFilter } from "@/functions/http-client/api/import"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
 import { NullableFilePath, SourceDataPath } from "@/functions/http-client/api/all"
-import { QueryInstance, QueryListview, useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
+import { PaginationData, QueryInstance, QueryListview, useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
-import { useImportImageViewController } from "@/services/base/view-controller"
+import { ImportImageViewController, useImportImageViewController } from "@/services/base/view-controller"
 import { useSettingImport, useSettingSite } from "@/services/setting"
 import { usePreviewService } from "@/components-module/preview"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useDroppingFileListener } from "@/modules/drag"
 import { dialogManager } from "@/modules/dialog"
-import { installation, toRef } from "@/utils/reactivity"
+import { installation } from "@/utils/reactivity"
 import { objects, strings } from "@/utils/primitives"
 import { date, LocalDate, LocalDateTime } from "@/utils/datetime"
 import { useLocalStorage } from "@/functions/app"
@@ -30,7 +30,7 @@ export const [installImportContext, useImportContext] = installation(function ()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("import-image")
     const listviewController = useImportImageViewController()
-    const operators = useOperators(selector, listview.anyData, importService.addFiles)
+    const operators = useOperators(listview.listview, listview.paginationData.data, selector, listview.anyData, listviewController, importService.addFiles)
 
     useDroppingFileListener(importService.addFiles)
     installVirtualViewNavigation()
@@ -133,9 +133,10 @@ function useListView() {
     return {...list, anyData}
 }
 
-function useOperators(selector: SelectedState<number>, anyData: Ref<boolean>, addFiles: (f: string[]) => void) {
+function useOperators(listview: QueryListview<ImportImage>, paginationData: PaginationData<ImportImage>, selector: SelectedState<number>, anyData: Ref<boolean>, listviewController: ImportImageViewController, addFiles: (f: string[]) => void) {
     const toast = useToast()
     const message = useMessageBox()
+    const preview = usePreviewService()
     const saveFetch = useFetchHelper(client => client.import.save)
     const retrieveHelper = useRetrieveHelper({
         delete: client => client.import.delete
@@ -194,7 +195,21 @@ function useOperators(selector: SelectedState<number>, anyData: Ref<boolean>, ad
         }
     }
 
-    return {save, openDialog, deleteItem}
+    const openImagePreview = () => {
+        preview.show({
+            preview: "image", 
+            type: "listview", 
+            listview: listview,
+            paginationData: paginationData,
+            columnNum: listviewController.columnNum,
+            viewMode: listviewController.viewMode,
+            selected: selector.selected,
+            lastSelected: selector.lastSelected,
+            updateSelect: selector.update
+        })
+    }
+
+    return {save, openDialog, deleteItem, openImagePreview}
 }
 
 export function useImportDetailPane() {

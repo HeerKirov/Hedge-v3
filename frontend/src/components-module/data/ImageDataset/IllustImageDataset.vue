@@ -79,6 +79,10 @@ const emit = defineEmits<{
      */
     (e: "enter", id: number): void
     /**
+     * 在选择项上按下space。
+     */
+    (e: "space", id: number): void
+    /**
      * 将数据项拖曳到组件上，触发添加项目的事件。
      */
     (e: "drop", insertIndex: number | null, images: TypeDefinition["illusts"], mode: "ADD" | "MOVE"): void
@@ -108,6 +112,7 @@ installDatasetContext({
     rightClick: (_) => emit("contextmenu", _ as CommonIllust),
     dblClick: (_, __) => emit("dblclick", _, __),
     enterClick: (_) => emit("enter", _),
+    spaceClick: (_) => emit("space", _),
     dropData: (_, __, ___) => emit("drop", _, __ as TypeDefinition["illusts"], ___)
 })
 
