@@ -34,11 +34,24 @@ class ImportBatchUpdateForm(val target: List<Int>? = null,
                             val tagme: Illust.Tagme? = null,
                             val setCreateTimeBy: ImportOption.TimeType? = null,
                             val setOrderTimeBy: ImportOption.TimeType? = null,
+                            val orderTimeBegin: Instant? = null,
+                            val orderTimeEnd: Instant? = null,
                             val partitionTime: LocalDate? = null,
                             val analyseSource: Boolean = false,
                             val collectionId: Any? = null,
                             val appendFolderIds: List<Int>? = null,
-                            val appendBookIds: List<Int>? = null)
+                            val appendBookIds: List<Int>? = null,
+                            val action: Action? = null) {
+    enum class Action {
+        SET_PARTITION_TIME_TODAY,
+        SET_PARTITION_TIME_EARLIEST,
+        SET_PARTITION_TIME_LATEST,
+        SET_ORDER_TIME_NOW,
+        SET_ORDER_TIME_REVERSE,
+        SET_ORDER_TIME_UNIFORMLY,
+        SET_ORDER_TIME_BY_SOURCE_ID
+    }
+}
 
 class ImportSaveForm(val target: List<Int>? = null)
 

@@ -37,6 +37,8 @@ import com.heerkirov.hedge.server.utils.types.optOf
 import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
+import java.time.Instant
+import java.time.LocalDate
 
 class ImportService(private val appdata: AppDataManager,
                     private val data: DataRepository,
@@ -187,24 +189,23 @@ class ImportService(private val appdata: AppDataManager,
      * @warn InvalidRegexError (regex) 执行正则表达式时发生错误，怀疑是表达式或相关参数没写对
      */
     fun batchUpdate(form: ImportBatchUpdateForm): Map<Int, List<BaseException<*>>> {
-        data.db.transaction {
-            if(form.tagme != null || form.partitionTime != null || form.setCreateTimeBy != null || form.setOrderTimeBy != null || form.analyseSource
-                || form.collectionId != null || !form.appendBookIds.isNullOrEmpty() || !form.appendFolderIds.isNullOrEmpty()) {
+        if(form.tagme != null || form.partitionTime != null || form.setCreateTimeBy != null || form.setOrderTimeBy != null || form.orderTimeBegin != null
+            || form.analyseSource || form.action != null || form.collectionId != null || !form.appendBookIds.isNullOrEmpty() || !form.appendFolderIds.isNullOrEmpty()) {
+            data.db.transaction {
                 val records = if(form.target.isNullOrEmpty()) {
-                    data.db.sequenceOf(ImportImages).toList()
+                    data.db.sequenceOf(ImportImages).sortedBy { it.orderTime }.toList()
                 }else{
-                    data.db.sequenceOf(ImportImages).filter { ImportImages.id inList form.target }.toList().also { records ->
+                    data.db.sequenceOf(ImportImages).filter { ImportImages.id inList form.target }.toList().sortedBy { it.orderTime }.also { records ->
                         if(records.size < form.target.size) {
                             throw be(ResourceNotExist("target", form.target.toSet() - records.map { it.id }.toSet()))
                         }
                     }
                 }
-
-                val sourceResultMap = mutableMapOf<Int, Tuple6<String, Long?, Int?, String?, Illust.Tagme?, ImportImage.SourcePreference?>>()
+                val recordIds by lazy { records.map { it.id } }
                 val errors = mutableMapOf<Int, List<BaseException<*>>>()
+
                 if(form.analyseSource) {
                     val autoSetTagmeOfSource = appdata.setting.import.setTagmeOfSource
-
                     for (record in records) {
                         val (source, sourceId, sourcePart, sourcePartName, sourcePreference) = try {
                             importMetaManager.analyseSourceMeta(record.fileName)
@@ -212,36 +213,128 @@ class ImportService(private val appdata: AppDataManager,
                             errors[record.id] = listOf(e.exception)
                             continue
                         }
-                        if (source != null) {
-                            val tagme = if (autoSetTagmeOfSource && Illust.Tagme.SOURCE in record.tagme) record.tagme - Illust.Tagme.SOURCE else null
-                            sourceResultMap[record.id] = Tuple6(source, sourceId, sourcePart, sourcePartName, tagme, sourcePreference)
+                        if(source == null) continue
+
+                        val tagme = if(autoSetTagmeOfSource && Illust.Tagme.SOURCE in record.tagme) record.tagme - Illust.Tagme.SOURCE else null
+
+                        data.db.update(ImportImages) {
+                            where { it.id eq record.id }
+                            set(it.sourceSite, source)
+                            set(it.sourceId, sourceId)
+                            set(it.sourcePart, sourcePart)
+                            set(it.sourcePartName, sourcePartName)
+                            if(tagme != null && form.tagme == null) set(it.tagme, tagme)
+                            if(sourcePreference != null) set(it.sourcePreference, sourcePreference)
                         }
                     }
                 }
-                val newCollectionId = when (form.collectionId) {
-                    null -> null
-                    is String -> "@${form.collectionId}"
-                    is Int -> "#${form.collectionId}"
-                    else -> throw be(ParamTypeError("collectionId", "must be number or string."))
+
+                if(form.collectionId != null) {
+                    val newCollectionId = when (form.collectionId) {
+                        is String -> "@${form.collectionId}"
+                        is Int -> "#${form.collectionId}"
+                        else -> throw be(ParamTypeError("collectionId", "must be number or string."))
+                    }
+                    data.db.update(ImportImages) {
+                        where { it.id inList recordIds }
+                        set(it.collectionId, newCollectionId)
+                    }
                 }
 
-                val filterCommonCondition = !form.appendFolderIds.isNullOrEmpty() || !form.appendBookIds.isNullOrEmpty() || newCollectionId != null || form.tagme != null || form.partitionTime != null || form.setCreateTimeBy != null || form.setOrderTimeBy != null
+                if(form.tagme != null) {
+                    data.db.update(ImportImages) {
+                        where { it.id inList recordIds }
+                        set(it.tagme, form.tagme)
+                    }
+                }
 
-                records.asSequence()
-                    .map { it to sourceResultMap[it.id] }
-                    .filter { (_, src) -> filterCommonCondition || src != null }
-                    .forEach { (record, src) ->
+                fun setPartitionTime(partitionTime: LocalDate) {
+                    data.db.update(ImportImages) {
+                        where { it.id inList recordIds }
+                        set(it.partitionTime, partitionTime)
+                    }
+                }
+                fun setOrderTimeBySeq(newOrderTimeSeq: List<Long>) {
+                    if(newOrderTimeSeq.size != records.size) throw RuntimeException("newOrderTimeSeq is not suitable to seq.")
+
+                    if(records.isNotEmpty()) {
+                        data.db.batchUpdate(ImportImages) {
+                            records.forEachIndexed { i, record ->
+                                item {
+                                    where { it.id eq record.id }
+                                    set(it.orderTime, newOrderTimeSeq[i])
+                                }
+                            }
+                        }
+                    }
+                }
+                fun setOrderTimeByRange(begin: Instant, end: Instant? = null) {
+                    val values = if(records.size > 1) {
+                        val beginMs = begin.toEpochMilli()
+                        val endMs = if(end != null) {
+                            end.toEpochMilli().apply {
+                                if(end < begin) {
+                                    throw be(ParamError("orderTimeEnd"))
+                                }
+                            }
+                        }else{
+                            //若未给出endTime，则尝试如下策略：
+                            //如果beginTime距离now很近(每个项的空间<2s)，那么将now作为endTime
+                            //但如果beginTime过近(每个项空间<10ms)，或超过了now，或距离过远，那么以1s为单位间隔生成endTime
+                            val nowMs = Instant.now().toEpochMilli()
+                            if(nowMs < beginMs + (records.size - 1) * 2000 && nowMs > beginMs + (records.size - 1) * 10) {
+                                nowMs
+                            }else{
+                                beginMs + (records.size - 1) * 1000
+                            }
+                        }
+                        val step = (endMs - beginMs) / (records.size - 1)
+                        var value = beginMs
+                        records.indices.map {
+                            value.also {
+                                value += step
+                            }
+                        }
+                    }else{
+                        listOf(begin.toEpochMilli())
+                    }
+
+                    setOrderTimeBySeq(values)
+                }
+
+                if(form.partitionTime != null) {
+                    setPartitionTime(form.partitionTime)
+                }
+
+                if(form.orderTimeBegin != null) {
+                    setOrderTimeByRange(form.orderTimeBegin, form.orderTimeEnd)
+                }
+
+                if(form.action != null) {
+                    when(form.action) {
+                        ImportBatchUpdateForm.Action.SET_PARTITION_TIME_TODAY -> setPartitionTime(LocalDate.now())
+                        ImportBatchUpdateForm.Action.SET_PARTITION_TIME_EARLIEST -> setPartitionTime(records.minOf { it.partitionTime })
+                        ImportBatchUpdateForm.Action.SET_PARTITION_TIME_LATEST -> setPartitionTime(records.maxOf { it.partitionTime })
+                        ImportBatchUpdateForm.Action.SET_ORDER_TIME_UNIFORMLY -> setOrderTimeByRange(records.minOf { it.orderTime }.toInstant(), records.maxOf { it.orderTime }.toInstant())
+                        ImportBatchUpdateForm.Action.SET_ORDER_TIME_REVERSE -> setOrderTimeBySeq(records.map { it.orderTime }.asReversed())
+                        ImportBatchUpdateForm.Action.SET_ORDER_TIME_NOW -> {
+                            val now = Instant.now()
+                            setOrderTimeByRange(now, now)
+                        }
+                        ImportBatchUpdateForm.Action.SET_ORDER_TIME_BY_SOURCE_ID -> {
+                            val sortedIds = records.sortedWith(compareBy(ImportImage::sourceSite, ImportImage::sourceId, ImportImage::sourcePart)).map { it.id }
+                            val sortedTimes = records.map { it.orderTime }.sorted()
+                            val idToTimes = sortedIds.zip(sortedTimes).toMap()
+                            val seq = records.map { idToTimes[it.id]!! }
+                            setOrderTimeBySeq(seq)
+                        }
+                    }
+                }
+
+                if(!form.appendBookIds.isNullOrEmpty() || !form.appendFolderIds.isNullOrEmpty() || form.setCreateTimeBy != null || form.setOrderTimeBy != null) {
+                    for (record in records) {
                         data.db.update(ImportImages) {
                             where { it.id eq record.id }
-                            if(src != null) {
-                                val (sourceSite, sourceId, sourcePart, sourcePartName, tagme, sourcePreference) = src
-                                set(it.sourceSite, sourceSite)
-                                set(it.sourceId, sourceId)
-                                set(it.sourcePart, sourcePart)
-                                set(it.sourcePartName, sourcePartName)
-                                if(tagme != null && form.tagme == null) set(it.tagme, tagme)
-                                if(sourcePreference != null) set(it.sourcePreference, sourcePreference)
-                            }
                             if(!form.appendBookIds.isNullOrEmpty()) {
                                 val bookIds = ((record.bookIds ?: emptyList()) + form.appendBookIds).distinct()
                                 set(it.bookIds, bookIds)
@@ -250,9 +343,6 @@ class ImportService(private val appdata: AppDataManager,
                                 val folderIds = ((record.folderIds ?: emptyList()) + form.appendFolderIds).distinct()
                                 set(it.folderIds, folderIds)
                             }
-                            if(newCollectionId != null) set(it.collectionId, newCollectionId)
-                            if(form.tagme != null) set(it.tagme, form.tagme)
-                            if(form.partitionTime != null) set(it.partitionTime, form.partitionTime)
                             if(form.setCreateTimeBy != null) set(it.createTime, when(form.setCreateTimeBy) {
                                 ImportOption.TimeType.CREATE_TIME -> record.fileCreateTime ?: record.fileImportTime
                                 ImportOption.TimeType.UPDATE_TIME -> record.fileUpdateTime ?: record.fileImportTime
@@ -264,19 +354,23 @@ class ImportService(private val appdata: AppDataManager,
                                 ImportOption.TimeType.IMPORT_TIME -> record.fileImportTime
                             }.toEpochMilli())
                         }
-
-                        val listUpdated = src != null || form.tagme != null || form.partitionTime != null || form.setOrderTimeBy != null
-                        val detailUpdated = listUpdated || form.setCreateTimeBy != null || !form.appendBookIds.isNullOrEmpty() || !form.appendFolderIds.isNullOrEmpty() || newCollectionId != null || anyOpt()
-
-                        if(listUpdated || detailUpdated) {
-                            bus.emit(ImportUpdated(record.id, listUpdated = listUpdated, detailUpdated = true))
-                        }
                     }
+                }
+
+                val listUpdated = form.analyseSource || form.tagme != null || form.partitionTime != null || form.setOrderTimeBy != null || form.orderTimeBegin != null || form.action != null
+                val detailUpdated = listUpdated || form.setCreateTimeBy != null || !form.appendBookIds.isNullOrEmpty() || !form.appendFolderIds.isNullOrEmpty() || form.collectionId != null || anyOpt()
+
+                if(listUpdated || detailUpdated) {
+                    val timeSot = form.setCreateTimeBy != null || form.setOrderTimeBy != null || form.orderTimeBegin != null || form.partitionTime != null || form.action != null
+                    for (record in records) {
+                        bus.emit(ImportUpdated(record.id, listUpdated = listUpdated, detailUpdated = true, timeSot = timeSot))
+                    }
+                }
 
                 return errors
-            }else{
-                return emptyMap()
             }
+        }else{
+            return emptyMap()
         }
     }
 

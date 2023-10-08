@@ -917,7 +917,7 @@ class IllustService(private val appdata: AppDataManager,
             }
 
             val metaTagSot = anyOpt(form.tags, form.topics, form.authors)
-            val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.orderTimeBegin, form.orderTimeEnd)
+            val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.orderTimeBegin, form.orderTimeEnd) || form.action != null
             val detailUpdated = listUpdated || metaTagSot || anyOpt(form.description, form.partitionTime)
             if(listUpdated || detailUpdated) {
                 for (record in records) {
@@ -928,7 +928,7 @@ class IllustService(private val appdata: AppDataManager,
                         metaTagSot = metaTagSot,
                         scoreSot = form.score.isPresent,
                         descriptionSot = form.description.isPresent,
-                        timeSot = anyOpt(form.partitionTime, form.orderTimeBegin, form.orderTimeEnd)))
+                        timeSot = anyOpt(form.partitionTime, form.orderTimeBegin, form.orderTimeEnd) || form.action != null))
                 }
             }
         }

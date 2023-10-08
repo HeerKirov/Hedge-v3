@@ -156,7 +156,8 @@ class ImportManager(private val appdata: AppDataManager,
         val listUpdated = anyOpt(form.source, form.tagme, form.partitionTime, form.orderTime)
         val detailUpdated = listUpdated || anyOpt(form.createTime, form.preference, form.sourcePreference, form.collectionId, newBookIds, newFolderIds)
         if(listUpdated || detailUpdated) {
-            bus.emit(ImportUpdated(id, listUpdated = listUpdated, detailUpdated = true))
+            val timeSot = anyOpt(form.partitionTime, form.orderTime, form.createTime)
+            bus.emit(ImportUpdated(id, listUpdated = listUpdated, detailUpdated = true, timeSot = timeSot))
         }
     }
 

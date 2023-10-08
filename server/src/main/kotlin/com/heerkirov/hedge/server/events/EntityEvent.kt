@@ -110,6 +110,7 @@ data class ImportCreated(override val importId: Int) : BaseBusEventImpl("entity/
 data class ImportUpdated(override val importId: Int,
                          val listUpdated: Boolean = false,
                          val detailUpdated: Boolean = false,
+                         val timeSot: Boolean = false,
                          val thumbnailFileReady: Boolean = false) : BaseBusEventImpl("entity/import/updated"), ImportEntityEvent
 
 data class ImportDeleted(override val importId: Int) : BaseBusEventImpl("entity/import/deleted"), ImportEntityEvent
