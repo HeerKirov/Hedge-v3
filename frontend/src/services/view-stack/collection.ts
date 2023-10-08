@@ -92,12 +92,12 @@ function useListView(path: Ref<number | null>) {
         eventFilter: {
             filter: ["entity/illust/updated", "entity/illust/deleted", "entity/illust/images/changed"],
             operation({ event, refresh, updateOne, removeOne }) {
-                if(event.eventType === "entity/illust/updated" && event.listUpdated) {
+                if((event.eventType === "entity/illust/images/changed" && event.illustId === path.value) || (event.eventType === "entity/illust/updated" && event.illustType === "IMAGE" && event.timeSot)) {
+                    refresh()
+                }else if(event.eventType === "entity/illust/updated" && event.listUpdated && event.illustType === "IMAGE") {
                     updateOne(i => i.id === event.illustId)
                 }else if(event.eventType === "entity/illust/deleted") {
                     removeOne(i => i.id === event.illustId)
-                }else if(event.eventType === "entity/illust/images/changed" && event.illustId === path.value) {
-                    refresh()
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.illust.get(a.id))))

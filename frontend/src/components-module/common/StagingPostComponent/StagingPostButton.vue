@@ -14,12 +14,14 @@ const { stagingPostCount, dropEvents, divRef, visible, active } = useButtonConte
                 icon="clipboard" v-bind="dropEvents" @click="visible = !visible">
             <b v-if="!!stagingPostCount">{{ stagingPostCount }}</b>
         </Button>
-        <transition :enter-active-class="$style['transition-enter-active']" 
+        <Teleport to="#app">
+            <transition :enter-active-class="$style['transition-enter-active']" 
                     :leave-active-class="$style['transition-leave-active']" 
                     :enter-from-class="$style['transition-enter-from']" 
                     :leave-to-class="$style['transition-leave-to']">
-            <StagingPostCallout v-if="visible" :class="$style.popup" @close="visible = false"/>
-        </transition>
+                <StagingPostCallout v-if="visible" :class="$style.popup" @close="visible = false"/>
+            </transition>
+        </Teleport>
     </div>
 </template>
 

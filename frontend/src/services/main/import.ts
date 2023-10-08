@@ -5,7 +5,7 @@ import { Tagme } from "@/functions/http-client/api/illust"
 import { ImportImage, ImportQueryFilter } from "@/functions/http-client/api/import"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
 import { NullableFilePath, SourceDataPath } from "@/functions/http-client/api/all"
-import { PaginationData, QueryInstance, QueryListview, useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
+import { PaginationDataView, QueryInstance, QueryListview, useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
@@ -18,7 +18,7 @@ import { useDroppingFileListener } from "@/modules/drag"
 import { dialogManager } from "@/modules/dialog"
 import { installation } from "@/utils/reactivity"
 import { objects, strings } from "@/utils/primitives"
-import { date, LocalDate, LocalDateTime } from "@/utils/datetime"
+import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 import { useLocalStorage } from "@/functions/app"
 import { useListeningEvent } from "@/utils/emitter"
 import { useInterceptedKey } from "@/modules/keyboard"
@@ -30,7 +30,7 @@ export const [installImportContext, useImportContext] = installation(function ()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("import-image")
     const listviewController = useImportImageViewController()
-    const operators = useOperators(listview.listview, listview.paginationData.data, selector, listview.anyData, listviewController, importService.addFiles)
+    const operators = useOperators(listview.listview, listview.paginationData, selector, listview.anyData, listviewController, importService.addFiles)
 
     useDroppingFileListener(importService.addFiles)
     installVirtualViewNavigation()
@@ -105,14 +105,15 @@ function useImportFileWatcher() {
 
 function useListView() {
     const list = useListViewContext({
-        defaultFilter: <ImportQueryFilter>{order: "-fileUpdateTime"},
+        defaultFilter: <ImportQueryFilter>{order: "-orderTime"},
         request: client => (offset, limit, filter) => client.import.list({offset, limit, ...filter}),
         eventFilter: {
             filter: ["entity/import/created", "entity/import/updated", "entity/import/deleted", "entity/import/saved"],
             operation({ event, refresh, updateOne, removeOne }) {
-                if(event.eventType === "entity/import/created") {
+
+                if(event.eventType === "entity/import/created" || (event.eventType === "entity/import/updated" && event.timeSot)) {
                     refresh()
-                }else if(event.eventType === "entity/import/updated") {
+                }else if(event.eventType === "entity/import/updated" && event.listUpdated) {
                     updateOne(i => i.id === event.importId)
                 }else if(event.eventType === "entity/import/deleted") {
                     removeOne(i => i.id === event.importId)
@@ -133,10 +134,11 @@ function useListView() {
     return {...list, anyData}
 }
 
-function useOperators(listview: QueryListview<ImportImage>, paginationData: PaginationData<ImportImage>, selector: SelectedState<number>, anyData: Ref<boolean>, listviewController: ImportImageViewController, addFiles: (f: string[]) => void) {
+function useOperators(listview: QueryListview<ImportImage>, paginationData: PaginationDataView<ImportImage>, selector: SelectedState<number>, anyData: Ref<boolean>, listviewController: ImportImageViewController, addFiles: (f: string[]) => void) {
     const toast = useToast()
     const message = useMessageBox()
     const preview = usePreviewService()
+    const batchFetch = useFetchHelper(client => client.import.batchUpdate)
     const saveFetch = useFetchHelper(client => client.import.save)
     const retrieveHelper = useRetrieveHelper({
         delete: client => client.import.delete
@@ -144,6 +146,44 @@ function useOperators(listview: QueryListview<ImportImage>, paginationData: Pagi
 
     const getEffectedItems = (id: number): number[] => {
         return selector.selected.value.includes(id) ? selector.selected.value : [id]
+    }
+
+    const dataDrop = async (insertIndex: number | null, importImages: ImportImage[], _: "ADD" | "MOVE"): Promise<boolean> => {
+        const target = importImages.map(i => i.id)
+        const finalInsertIndex = insertIndex ?? paginationData.proxy.syncOperations.count()
+        if(finalInsertIndex === 0) {
+            const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
+            const afterItem2 = paginationData.proxy.syncOperations.retrieve(finalInsertIndex + 1)
+            const direction = afterItem2 !== undefined ? (afterItem2.orderTime.timestamp > afterItem.orderTime.timestamp ? "asc" : afterItem2.orderTime.timestamp < afterItem.orderTime.timestamp ? "desc" : null) : null            
+            //取出之后的两项，根据这两项的orderTime，猜测是升序还是降序，并设为与之后的一项间隔1s。如果无法猜测，则将时间锁定为与之后的一项相同
+            const orderTimeBegin = direction === "asc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds - 1) : direction === "desc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds + 1) : afterItem.orderTime
+            const orderTimeEnd = direction === null ? afterItem.orderTime : undefined
+
+            await batchFetch({target, orderTimeBegin, orderTimeEnd})
+            return true
+        }else if(finalInsertIndex !== null && finalInsertIndex === paginationData.proxy.syncOperations.count()) {
+            const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
+            const behindItem2 = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 2)!
+            const direction = behindItem2 !== undefined ? (behindItem2.orderTime.timestamp > behindItem.orderTime.timestamp ? "desc" : behindItem2.orderTime.timestamp < behindItem.orderTime.timestamp ? "asc" : null) : null            
+            //取出之前的两项，根据这两项的orderTime，猜测是升序还是降序，并设置为与之前的一项间隔1s。如果无法猜测，则将时间锁定为与之前的一项相同
+            const orderTimeBegin = direction === "asc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds + 1) : direction === "desc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds - 1) : behindItem.orderTime
+            const orderTimeEnd = direction === null ? behindItem.orderTime : undefined
+            await batchFetch({target, orderTimeBegin, orderTimeEnd})
+            return true
+        }else if(finalInsertIndex !== null) {
+            const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
+            const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
+
+            const begin = behindItem.orderTime.timestamp < afterItem.orderTime.timestamp ? behindItem.orderTime : afterItem.orderTime
+            const end = behindItem.orderTime.timestamp > afterItem.orderTime.timestamp ? behindItem.orderTime : afterItem.orderTime
+            //如果begin与end的时间差大于1s，则可以将时间范围定为[begin+1s, end-1s]，这是为了去掉两个端点。但如果时间差不大于1s，则只能使用[begin, end]作为范围。
+            const orderTimeBegin = end.timestamp - begin.timestamp > 1000 ? datetime.withSecond(begin, begin.seconds + 1) : begin
+            const orderTimeEnd = end.timestamp - begin.timestamp > 1000 ? datetime.withSecond(end, end.seconds - 1) : end
+
+            await batchFetch({target, orderTimeBegin, orderTimeEnd})
+            return true
+        }
+        return false
     }
 
     const deleteItem = async (id: number) => {
@@ -200,7 +240,7 @@ function useOperators(listview: QueryListview<ImportImage>, paginationData: Pagi
             preview: "image", 
             type: "listview", 
             listview: listview,
-            paginationData: paginationData,
+            paginationData: paginationData.data,
             columnNum: listviewController.columnNum,
             viewMode: listviewController.viewMode,
             selected: selector.selected,
@@ -209,7 +249,7 @@ function useOperators(listview: QueryListview<ImportImage>, paginationData: Pagi
         })
     }
 
-    return {save, openDialog, deleteItem, openImagePreview}
+    return {save, openDialog, deleteItem, dataDrop, openImagePreview}
 }
 
 export function useImportDetailPane() {
@@ -374,12 +414,13 @@ export function useSideBarAction(selected: Ref<number[]>) {
         afterRequest: () => toast.toast("批量编辑完成", "info", "已完成所选项目的更改。")
     })
 
-    const actives = reactive({partitionTime: false})
+    const actives = reactive({partitionTime: false, orderTime: false})
 
-    const form = reactive<{tagme: Tagme[], partitionTime: LocalDate}>({tagme: [], partitionTime: date.now()})
+    const form = reactive<{tagme: Tagme[], partitionTime: LocalDate, orderTime: {begin: LocalDateTime, end: LocalDateTime}}>({tagme: [], partitionTime: date.now(), orderTime: {begin: datetime.now(), end: datetime.now()}})
 
     watch(selected, () => {
         if(actives.partitionTime) actives.partitionTime = false
+        if(actives.orderTime) actives.orderTime = false
         if(form.tagme.length) form.tagme = []
     })
 
@@ -394,6 +435,12 @@ export function useSideBarAction(selected: Ref<number[]>) {
     const submitPartitionTime = async () => {
         if(actives.partitionTime && await batchFetch({target: selected.value, partitionTime: form.partitionTime})) {
             actives.partitionTime = false
+        }
+    }
+
+    const submitOrderTimeRange = async () => {
+        if(actives.orderTime && await batchFetch({target: selected.value, orderTimeBegin: form.orderTime.begin, orderTimeEnd: form.orderTime.end})) {
+            actives.orderTime = false
         }
     }
 
@@ -412,9 +459,17 @@ export function useSideBarAction(selected: Ref<number[]>) {
         batchFetch({target: selected.value, setCreateTimeBy: action})
     }
 
-    const orderTimeAction = (action: OrderTimeType) => {
-        batchFetch({target: selected.value, setOrderTimeBy: action})
+    const orderTimeAction = (action: OrderTimeType | "NOW" | "REVERSE" | "UNIFORMLY" | "BY_SOURCE_ID") => {
+        if(action === "BY_SOURCE_ID" || action === "NOW" || action === "REVERSE" || action === "UNIFORMLY") {
+            batchFetch({target: selected.value, action: `SET_ORDER_TIME_${action}`})
+        }else{
+            batchFetch({target: selected.value, setOrderTimeBy: action})
+        }
     }
 
-    return {actives, form, setTagme, submitPartitionTime, analyseSource, createTimeAction, orderTimeAction}
+    const partitionTimeAction = (action: "TODAY" | "EARLIEST" | "LATEST") => {
+        batchFetch({target: selected.value, action: `SET_PARTITION_TIME_${action}`})
+    }
+
+    return {actives, form, setTagme, submitPartitionTime, submitOrderTimeRange, analyseSource, createTimeAction, orderTimeAction, partitionTimeAction}
 }

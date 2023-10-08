@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ComponentPublicInstance, computed, nextTick, ref, useCssModule, watch } from "vue"
+import { ComponentPublicInstance, computed, ref, useCssModule, watch, onMounted } from "vue"
 import { KeyEvent, KeyPress, toKeyEvent, useInterceptedKey, useKeyDeclaration, USUAL_PRIMITIVE_KEY_VALIDATORS } from "@/modules/keyboard"
-import { onMounted } from "vue";
 
 const props = defineProps<{
     /**

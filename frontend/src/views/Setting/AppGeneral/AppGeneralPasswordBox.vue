@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { ref } from "vue"
 import { Block, Icon, Button } from "@/components/universal"
 import { Input } from "@/components/form"
 import { MiddleLayout } from "@/components/layout"
-import { ref } from "vue";
 
 defineProps<{
     password: string | null

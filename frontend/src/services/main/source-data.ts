@@ -1,4 +1,4 @@
-import { computed } from "vue"
+import { Ref, computed, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
@@ -10,15 +10,12 @@ import { useQuerySchema } from "@/services/base/query-schema"
 import { useSettingSite } from "@/services/setting"
 import { useMessageBox } from "@/modules/message-box"
 import { useRouterNavigator } from "@/modules/router"
-import { installation, toRef } from "@/utils/reactivity"
+import { installation } from "@/utils/reactivity"
 
 export const [installSourceDataContext, useSourceDataContext] = installation(function () {
     const paneState = useDetailViewState<SourceDataIdentity>()
-
-    const listview = useListView()
-
-    const querySchema = useQuerySchema("SOURCE_DATA", toRef(listview.queryFilter, "query"))
-
+    const querySchema = useQuerySchema("SOURCE_DATA")
+    const listview = useListView(querySchema.query)
     const operators = useOperators(paneState)
 
     installVirtualViewNavigation()
@@ -27,8 +24,8 @@ export const [installSourceDataContext, useSourceDataContext] = installation(fun
     return {listview, operators, paneState, querySchema}
 })
 
-function useListView() {
-    return useListViewContext({
+function useListView(query: Ref<string | undefined>) {
+    const listview = useListViewContext({
         defaultFilter: <SourceDataQueryFilter>{order: "-updateTime"},
         request: client => (offset, limit, filter) => client.sourceData.list({offset, limit, ...filter}),
         eventFilter: {
@@ -55,6 +52,10 @@ function useListView() {
             }
         }
     })
+
+    watch(query, query => listview.queryFilter.value.query = query, {immediate: true})
+
+    return listview
 }
 
 function useOperators(paneState: DetailViewState<SourceDataIdentity>) {

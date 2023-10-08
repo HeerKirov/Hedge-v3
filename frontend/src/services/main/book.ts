@@ -1,5 +1,5 @@
-import { Ref } from "vue"
-import { installation, toRef } from "@/utils/reactivity"
+import { Ref, watch } from "vue"
+import { installation } from "@/utils/reactivity"
 import { installVirtualViewNavigation } from "@/components/data"
 import { Book, BookQueryFilter, DetailBook } from "@/functions/http-client/api/book"
 import { flatResponse } from "@/functions/http-client"
@@ -15,8 +15,8 @@ import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useSingleSelectedState } from "@/services/base/selected-state"
 
 export const [installBookContext, useBookContext] = installation(function () {
-    const listview = useListView()
-    const querySchema = useQuerySchema("BOOK", toRef(listview.queryFilter, "query"))
+    const querySchema = useQuerySchema("BOOK")
+    const listview = useListView(querySchema.query)
     const listviewController = useBookViewController()
     const selector = useSingleSelectedState({queryListview: listview.listview, keyOf: i => i.id})
     const paneState = useSelectedPaneState("book")
@@ -27,8 +27,8 @@ export const [installBookContext, useBookContext] = installation(function () {
     return {listview, querySchema, listviewController, selector, paneState, operators}
 })
 
-function useListView() {
-    return useListViewContext({
+function useListView(query: Ref<string | undefined>) {
+    const listview = useListViewContext({
         defaultFilter: <BookQueryFilter>{order: "-updateTime"},
         request: client => (offset, limit, filter) => client.book.list({offset, limit, ...filter}),
         eventFilter: {
@@ -45,6 +45,10 @@ function useListView() {
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.book.get(a.id))))
         }
     })
+
+    watch(query, query => listview.queryFilter.value.query = query, {immediate: true})
+
+    return listview
 }
 
 function useOperators() {

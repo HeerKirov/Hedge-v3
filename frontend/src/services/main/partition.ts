@@ -237,7 +237,8 @@ export function useDetailIllustContext() {
     const operators = useImageDatasetOperators({
         paginationData: listview.paginationData,
         listview: listview.listview,
-        listviewController, selector, navigation
+        listviewController, selector, navigation,
+        dataDrop: {dropInType: "partition", path}
     })
     const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector, navigation})
 
@@ -263,7 +264,7 @@ function useListView() {
         eventFilter: {
             filter: ["entity/illust/created", "entity/illust/updated", "entity/illust/deleted", "entity/illust/images/changed"],
             operation({ event, refresh, updateOne, removeOne }) {
-                if(event.eventType === "entity/illust/created") {
+                if(event.eventType === "entity/illust/created" || (event.eventType === "entity/illust/updated" && event.timeSot)) {
                     refresh()
                 }else if(event.eventType === "entity/illust/updated" && event.listUpdated) {
                     updateOne(i => i.id === event.illustId)

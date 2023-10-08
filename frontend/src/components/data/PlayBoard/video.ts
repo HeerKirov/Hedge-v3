@@ -2,7 +2,7 @@ import { computed, onBeforeMount, onUnmounted, Ref, watch } from "vue"
 import { useLocalStorage } from "@/functions/app"
 import { numbers } from "@/utils/primitives"
 import { sleep } from "@/utils/process"
-import { useMouseHover } from "@/utils/sensors";
+import { useMouseHover } from "@/utils/sensors"
 
 export function usePlayControl(videoRef: Ref<HTMLMediaElement | undefined>, state: State) {
     const playOrPause = () => {

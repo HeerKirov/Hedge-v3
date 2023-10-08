@@ -18,7 +18,7 @@ import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
 import { usePreviewService } from "@/components-module/preview"
 import { installation } from "@/utils/reactivity"
-import { LocalDateTime } from "@/utils/datetime"
+import { LocalDate, LocalDateTime, datetime } from "@/utils/datetime"
 
 export interface ImageDatasetOperatorsOptions<T extends BasicIllust> {
     /**
@@ -60,9 +60,18 @@ export interface ImageDatasetOperatorsOptions<T extends BasicIllust> {
      */
     dataDrop?: {
         /**
-         * 拖放区域的类型为图库、分区。此时，拖放操作会将illusts的排序时间插入到目标位置。分区还会额外将分区时间设置为目标分区。
+         * 拖放区域的类型为图库。此时，拖放操作会将illusts的排序时间插入到目标位置。
          */
-        dropInType: "illust" | "partition"
+        dropInType: "illust"
+    } | {
+        /**
+         * 拖放区域的类型为分区。此时，拖放操作会将illusts的排序时间插入到目标位置，还会额外将分区时间设置为目标分区。
+         */
+        dropInType: "partition"
+        /**
+         * 分区的日期。
+         */
+        path: LocalDate | Ref<LocalDate | null>
     } | {
         /**
          * 拖放区域的类型为集合、画集、文件夹。此时，拖放操作会将illusts插入目标对象。
@@ -201,6 +210,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
 
     const fetchIllustUpdate = usePostPathFetchHelper(client => client.illust.update)
     const fetchIllustDelete = usePostFetchHelper(client => client.illust.delete)
+    const fetchIllustBatchUpdate = usePostFetchHelper(client => client.illust.batchUpdate)
     const fetchCollectionCreate = useFetchHelper(client => client.illust.collection.create)
     const fetchImageRelatedUpdate = usePostPathFetchHelper(client => client.illust.image.relatedItems.update)
     const fetchCollectionImagesUpdate = usePostPathFetchHelper(client => client.illust.collection.images.update)
@@ -449,8 +459,43 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
     }
 
     const dataDrop = dataDropOptions === undefined ? () => {} :
-    dataDropOptions.dropInType === "illust" || dataDropOptions.dropInType === "partition" ? async (_: number, __: CoverIllust[], ___: "ADD" | "MOVE"): Promise<boolean> => {
-        //FUTURE 以后再实现illust/partition区域的拖放功能
+    dataDropOptions.dropInType === "illust" || dataDropOptions.dropInType === "partition" ? async (insertIndex: number | null, illusts: CoverIllust[], _: "ADD" | "MOVE"): Promise<boolean> => {
+        const target = illusts.map(i => i.id)
+        const partitionTime = dataDropOptions.dropInType === "partition" ? unref(dataDropOptions.path) ?? undefined : undefined
+        const finalInsertIndex = insertIndex ?? paginationData.proxy.syncOperations.count()
+        if(finalInsertIndex === 0) {
+            const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
+            const afterItem2 = paginationData.proxy.syncOperations.retrieve(finalInsertIndex + 1)
+            const direction = afterItem2 !== undefined ? (afterItem2.orderTime.timestamp > afterItem.orderTime.timestamp ? "asc" : afterItem2.orderTime.timestamp < afterItem.orderTime.timestamp ? "desc" : null) : null            
+            //取出之后的两项，根据这两项的orderTime，猜测是升序还是降序，并设为与之后的一项间隔1s。如果无法猜测，则将时间锁定为与之后的一项相同
+            const orderTimeBegin = direction === "asc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds - 1) : direction === "desc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds + 1) : afterItem.orderTime
+            const orderTimeEnd = direction === null ? afterItem.orderTime : undefined
+
+            await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, partitionTime})
+            return true
+        }else if(finalInsertIndex !== null && finalInsertIndex === paginationData.proxy.syncOperations.count()) {
+            const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
+            const behindItem2 = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 2)!
+            const direction = behindItem2 !== undefined ? (behindItem2.orderTime.timestamp > behindItem.orderTime.timestamp ? "desc" : behindItem2.orderTime.timestamp < behindItem.orderTime.timestamp ? "asc" : null) : null            
+            //取出之前的两项，根据这两项的orderTime，猜测是升序还是降序，并设置为与之前的一项间隔1s。如果无法猜测，则将时间锁定为与之前的一项相同
+            const orderTimeBegin = direction === "asc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds + 1) : direction === "desc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds - 1) : behindItem.orderTime
+            const orderTimeEnd = direction === null ? behindItem.orderTime : undefined
+
+            await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, partitionTime})
+            return true
+        }else if(finalInsertIndex !== null) {
+            const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
+            const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
+
+            const begin = behindItem.orderTime.timestamp < afterItem.orderTime.timestamp ? behindItem.orderTime : afterItem.orderTime
+            const end = behindItem.orderTime.timestamp > afterItem.orderTime.timestamp ? behindItem.orderTime : afterItem.orderTime
+            //如果begin与end的时间差大于1s，则可以将时间范围定为[begin+1s, end-1s]，这是为了去掉两个端点。但如果时间差不大于1s，则只能使用[begin, end]作为范围。
+            const orderTimeBegin = end.timestamp - begin.timestamp > 1000 ? datetime.withSecond(begin, begin.seconds + 1) : begin
+            const orderTimeEnd = end.timestamp - begin.timestamp > 1000 ? datetime.withSecond(end, end.seconds - 1) : end
+
+            await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, partitionTime})
+            return true
+        }
         return false
     } : dataDropOptions.dropInType === "collection" ? async (_: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE"): Promise<boolean> => {
         const path = unref(dataDropOptions.path)

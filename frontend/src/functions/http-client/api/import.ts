@@ -4,7 +4,7 @@ import {
     NotFound, ResourceNotExist, ParamError, ParamNotRequired, ParamRequired, StorageNotAccessibleError
 } from "../exceptions"
 import { HttpInstance, Response } from "../instance"
-import { FilePath, IdResponseWithWarnings, LimitAndOffsetFilter, ListResult, mapFromOrderList, NullableFilePath, OrderList, SourceDataPath } from "./all"
+import { IdResponseWithWarnings, LimitAndOffsetFilter, ListResult, mapFromOrderList, NullableFilePath, OrderList, SourceDataPath } from "./all"
 import { ImagePropsCloneForm, SimpleCollection, Tagme } from "./illust"
 import { SimpleFolder } from "./folder"
 import { SimpleBook } from "./book"
@@ -55,7 +55,9 @@ function mapFromImportUpdateForm(form: ImportUpdateForm): any {
 function mapFromBatchUpdateForm(form: ImportBatchUpdateForm): any {
     return {
         ...form,
-        partitionTime: form.partitionTime && date.toISOString(form.partitionTime)
+        partitionTime: form.partitionTime && date.toISOString(form.partitionTime),
+        orderTimeBegin: form.orderTimeBegin && datetime.toISOString(form.orderTimeBegin),
+        orderTimeEnd: form.orderTimeEnd && datetime.toISOString(form.orderTimeEnd)
     }
 }
 
@@ -148,6 +150,9 @@ export interface ImportEndpoint {
 }
 
 export type PathWatcherErrorReason = "NO_USEFUL_PATH" | "PATH_NOT_EXIST" | "PATH_IS_NOT_DIRECTORY" | "PATH_WATCH_FAILED" | "PATH_NO_LONGER_AVAILABLE"
+
+type BatchUpdateAction = "SET_PARTITION_TIME_TODAY" | "SET_PARTITION_TIME_EARLIEST" | "SET_PARTITION_TIME_LATEST" 
+    | "SET_ORDER_TIME_NOW" | "SET_ORDER_TIME_REVERSE" | "SET_ORDER_TIME_UNIFORMLY" | "SET_ORDER_TIME_BY_SOURCE_ID"
 
 export interface SaveError {
     importId: number
@@ -254,10 +259,13 @@ export interface ImportBatchUpdateForm {
     setCreateTimeBy?: OrderTimeType
     setOrderTimeBy?: OrderTimeType
     partitionTime?: LocalDate
+    orderTimeBegin?: LocalDateTime
+    orderTimeEnd?: LocalDateTime
     analyseSource?: boolean
     collectionId?: string | number
     appendFolderIds?: number[]
     appendBookIds?: number[]
+    action?: BatchUpdateAction
 }
 
 export interface ImportSaveForm {

@@ -3,7 +3,7 @@ import { installWsClient, useWsClient, useWsListeningEvent } from "./ws-client"
 import { installFullscreen, useFullscreen, useAppearance } from "./app-runtime"
 import { installAppBase, useAppState, useAppEnv, useServerStatus } from "./app-base"
 import { useAppInitializer } from "./app-initialize"
-import { useLocalStorage } from "./storage"
+import { useLocalStorage, useSessionStorage, useMemoryStorage, installMemoryStorageManager } from "./storage"
 
 interface AppServiceOptions {
     handleError(title: string, message: string): void
@@ -15,6 +15,7 @@ export function installAppService(options: AppServiceOptions) {
     const wsClient = installWsClient()
     const fullscreen = installFullscreen()
     const {env, state, server} = installAppBase(httpClientConfig)
+    installMemoryStorageManager()
 
     return {
         env,
@@ -33,6 +34,8 @@ export {
     useWsClient,
     useWsListeningEvent,
     useLocalStorage,
+    useSessionStorage,
+    useMemoryStorage,
     useAppInitializer,
     useAppState,
     useAppEnv,

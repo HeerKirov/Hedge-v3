@@ -84,7 +84,7 @@ export interface FolderImagesChanged extends BaseWsEvent<"entity/folder/images/c
 
 export interface ImportCreated extends BaseWsEvent<"entity/import/created"> { importId: number }
 
-export interface ImportUpdated extends BaseWsEvent<"entity/import/updated"> { importId: number, listUpdated: boolean, thumbnailFileReady: boolean }
+export interface ImportUpdated extends BaseWsEvent<"entity/import/updated"> { importId: number, listUpdated: boolean, thumbnailFileReady: boolean, timeSot: boolean }
 
 export interface ImportDeleted extends BaseWsEvent<"entity/import/deleted"> { importId: number }
 

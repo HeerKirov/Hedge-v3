@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Button } from "@/components/universal"
+import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { IllustImageDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
@@ -13,7 +13,7 @@ import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 const {
     paneState,
     listview: { paginationData },
-    listviewController: { viewMode, fitType, columnNum, collectionMode },
+    listviewController: { viewMode, fitType, columnNum, collectionMode, editableLockOn },
     selector: { selected, lastSelected, update: updateSelect },
     querySchema,
     operators
@@ -21,6 +21,8 @@ const {
 
 const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "显示信息预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "separator"},
+    {type: "checkbox", label: "解除编辑锁定", checked: editableLockOn.value, click: () => editableLockOn.value = !editableLockOn.value},
     {type: "separator"},
     {type: "radio", checked: viewMode.value === "row", label: "列表模式", click: () => viewMode.value = "row"},
     {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"}
@@ -61,6 +63,8 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
                 <QueryNotificationBadge class="ml-1" :schema="querySchema.schema.value" @click="querySchema.expanded.value = true"/>
 
                 <template #right>
+                    <Button square :mode="editableLockOn ? 'filled' : undefined" :type="editableLockOn ? 'danger' : undefined" :icon="editableLockOn ? 'lock-open' : 'lock'" @click="editableLockOn = !editableLockOn"/>
+                    <Separator/>
                     <DataRouter/>
                     <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
                     <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
@@ -77,10 +81,12 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
 
         <PaneLayout :show-pane="paneState.visible.value">
             <IllustImageDataset :data="paginationData.data" :query-instance="paginationData.proxy"
-                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable
+                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
                                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                                 @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
-                                @dblclick="(i, s) => operators.openDetailByClick(i, s)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"/>
+                                @dblclick="(i, s) => operators.openDetailByClick(i, s)"
+                                @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
+                                @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
 
             <template #pane>
                 <IllustDetailPane @close="paneState.visible.value = false"/>

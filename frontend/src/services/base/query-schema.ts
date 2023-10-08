@@ -1,8 +1,9 @@
 import { ref, Ref, watch } from "vue"
 import { Dialect, QueryRes } from "@/functions/http-client/api/util-query"
 import { useFetchHelper } from "@/functions/fetch"
+import { useMemoryStorage } from "@/functions/app"
 import { useToast } from "@/modules/toast"
-import { useInterceptedKey } from "@/modules/keyboard";
+import { useInterceptedKey } from "@/modules/keyboard"
 
 export interface QuerySchemaContext {
     /**
@@ -23,14 +24,14 @@ export interface QuerySchemaContext {
     schema: Ref<QueryRes | null>
 }
 
-export function useQuerySchema(dialect: Dialect, queryRef?: Ref<string | undefined>): QuerySchemaContext {
+export function useQuerySchema(dialect: Dialect): QuerySchemaContext {
     const toast = useToast()
     const fetch = useFetchHelper(client => client.queryUtil.querySchema)
-
-    const queryInputText = ref<string>()
-
+    
+    const query = useMemoryStorage<string | undefined>(`query-schema/${dialect}`, undefined)
+    
+    const queryInputText = ref<string | undefined>(query.value)
     const expanded = ref<boolean>(false)
-    const query = queryRef ?? ref<string>()
     const schema = ref<QueryRes | null>(null)
 
     watch(queryInputText, async queryInputText => {

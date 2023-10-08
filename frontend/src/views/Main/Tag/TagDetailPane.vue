@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Starlight } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
 import {
     TagNameAndOtherDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay, TagLinkDisplay, TagExampleDisplay,
@@ -9,7 +10,6 @@ import {
     DescriptionEditor, RelatedAnnotationEditor, SourceTagMappingEditor
 } from "@/components-business/form-editor"
 import { useTagDetailPane } from "@/services/main/tag"
-import { Starlight } from "@/components/universal";
 
 const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotations, setDescription, setLinks, setMappingSourceTags, setExamples } = useTagDetailPane()
 

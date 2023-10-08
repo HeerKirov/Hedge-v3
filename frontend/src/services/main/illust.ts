@@ -4,7 +4,7 @@ import { useLocalStorage } from "@/functions/app"
 import { mapResponse } from "@/functions/http-client"
 import { QueryInstance, QueryListview, useFetchEndpoint, useFetchHelper, usePostFetchHelper, usePostPathFetchHelper } from "@/functions/fetch"
 import { CommonIllust, IllustQueryFilter, ImageRelatedUpdateForm, Tagme } from "@/functions/http-client/api/illust"
-import { SimpleTag, SimpleTopic, SimpleAuthor, FilePath, SourceDataPath } from "@/functions/http-client/api/all"
+import { FilePath, SourceDataPath } from "@/functions/http-client/api/all"
 import { SimpleBook } from "@/functions/http-client/api/book"
 import { SimpleFolder } from "@/functions/http-client/api/folder"
 import { SourceEditStatus } from "@/functions/http-client/api/source-data"
@@ -28,16 +28,17 @@ import { useListeningEvent } from "@/utils/emitter"
 import { objects } from "@/utils/primitives"
 
 export const [installIllustContext, useIllustContext] = installation(function () {
-    const listview = useListView()
+    const querySchema = useQuerySchema("ILLUST")
+    const listview = useListView(querySchema.query)
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust")
-    const querySchema = useQuerySchema("ILLUST", toRef(listview.queryFilter, "query"))
     const listviewController = useIllustViewController(toRef(listview.queryFilter, "type"))
     const navigation = installVirtualViewNavigation()
     const operators = useImageDatasetOperators({
         paginationData: listview.paginationData,
         listview: listview.listview, 
-        listviewController, selector, navigation
+        listviewController, selector, navigation,
+        dataDrop: {dropInType: "illust"}
     })
     const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector, navigation})
 
@@ -49,12 +50,14 @@ export const [installIllustContext, useIllustContext] = installation(function ()
         //监听router event。只监听Illust的，Partition没有。
         //对于meta tag，将其简单地转换为DSL的一部分。
         //FUTURE 当然这其实是有问题的，对于topic/tag，还应该使用地址去限制它们。
-        querySchema.queryInputText.value = [
-            params.tagName ? `$\`${params.tagName}\`` : undefined,
-            params.topicName ? `#\`${params.topicName}\`` : undefined,
-            params.authorName ? `@\`${params.authorName}\`` : undefined,
-            params.source ? `^SITE:${params.source.site} ^ID:${params.source.id}` : undefined
-        ].filter(i => i !== undefined).join(" ")
+        if(params.tagName || params.authorName || params.topicName || params.source) {
+            querySchema.queryInputText.value = [
+                params.tagName ? `$\`${params.tagName}\`` : undefined,
+                params.topicName ? `#\`${params.topicName}\`` : undefined,
+                params.authorName ? `@\`${params.authorName}\`` : undefined,
+                params.source ? `^SITE:${params.source.site} ^ID:${params.source.id}` : undefined
+            ].filter(i => i !== undefined).join(" ")
+        }
 
         locateId.catchLocateId(params.locateId)
     })
@@ -62,14 +65,14 @@ export const [installIllustContext, useIllustContext] = installation(function ()
     return {paneState, listview, selector, listviewController, querySchema, operators}
 })
 
-function useListView() {
+function useListView(query: Ref<string | undefined>) {
     const listview = useListViewContext({
         defaultFilter: <IllustQueryFilter>{order: "-orderTime", type: "IMAGE"},
         request: client => (offset, limit, filter) => client.illust.list({offset, limit, ...filter}),
         eventFilter: {
             filter: ["entity/illust/created", "entity/illust/updated", "entity/illust/deleted", "entity/illust/images/changed"],
             operation({ event, refresh, updateOne, removeOne }) {
-                if(event.eventType === "entity/illust/created") {
+                if(event.eventType === "entity/illust/created" || (event.eventType === "entity/illust/updated" && event.timeSot)) {
                     refresh()
                 }else if(event.eventType === "entity/illust/updated" && event.listUpdated) {
                     updateOne(i => i.id === event.illustId)
@@ -90,6 +93,9 @@ function useListView() {
             request: client => async items => mapResponse(await client.illust.findByIds(items.map(i => i.id)), r => r.map(i => i !== null ? i : undefined))
         }
     })
+
+    watch(query, query => listview.queryFilter.value.query = query, {immediate: true})
+
     return listview
 }
 

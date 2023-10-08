@@ -33,7 +33,7 @@ const paneButtonItems = computedEffect(() => [
 
         <KeepAlive>
             <ImportTabDetailInfo v-if="detail && tabType === 'info'" :detail-id="detail.id"/>
-            <ImportTabAction v-else-if="detail && tabType === 'action'" :filename="detail.filename" :selected="selected"/>
+            <ImportTabAction v-else-if="detail && tabType === 'action'" :selected="selected"/>
         </KeepAlive>
 
         <template #bottom>
