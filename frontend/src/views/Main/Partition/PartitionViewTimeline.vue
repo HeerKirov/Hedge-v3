@@ -2,32 +2,43 @@
 import { Block, Icon } from "@/components/universal"
 import { useTimelineContext } from "@/services/main/partition"
 
-const { partitionMonthData, partitionData, calendarDate, setPmRef, setMonthRef, selectMonth, scrollEvent, openPartition } = useTimelineContext()
+const { months, days, calendarDate, setTimelineRef, setDayRef, setMonthRef, selectMonth, scrollEvent, openPartition } = useTimelineContext()
 
 </script>
 
 <template>
     <div :class="$style.timeline">
-        <div :class="[$style['left-column'], $style['timeline-list']]" @scroll="scrollEvent">
-            <div v-for="pm in partitionData" :key="`${pm.year}-${pm.month}`" :ref="el => setPmRef(`${pm.year}-${pm.month}`, el)">
-                <Block v-for="p in pm.items" :key="p.day" :class="$style.item" color="primary" @click="openPartition(pm.year, pm.month, p.day)">
-                    <Icon class="mr-2" icon="th-list"/>{{pm.year}}年{{pm.month}}月{{p.day}}日
-                    <div :class="$style['float-right-message']">{{p.count}}项</div>
-                </Block>
-            </div>
+        <div :ref="setTimelineRef" :class="[$style['left-column'], $style['timeline-list']]" @scroll="scrollEvent">
+            <Block v-for="p in days" :ref="el => setDayRef(p.date.timestamp, el)" :key="p.date.timestamp" :class="$style.item" @click="openPartition(p.date)">
+                <div :class="$style.processor" :style="`width: ${p.width}%`"/>
+                <span :class="$style.content">
+                    <Icon class="mr-2" icon="th-list"/>
+                    {{p.date.year}}年{{p.date.month}}月{{p.date.day}}日
+                </span>
+                <div :class="$style['float-right-message']">{{p.count}}项</div>
+                <div :class="[$style.marked, $style[`lv-${p.level}`]]" :style="`width: ${p.width}%`"/>
+                <div :class="$style.unmarked" :style="`width: ${100 - p.width}%`"/>
+            </Block>
         </div>
         <div :class="[$style['right-column'], $style['timeline-list']]">
-            <div v-for="p in partitionMonthData" :key="`${p.year}-${p.month}`" :ref="el => setMonthRef(`${p.year}-${p.month}`, el)" >
-                <Block :class="$style.item" :color="calendarDate.year === p.year && calendarDate.month === p.month ? 'primary' : undefined" @click="selectMonth(p.year, p.month)">
-                    <Icon class="mr-2" icon="th-list"/>{{p.year}}年{{p.month}}月
-                    <div :class="$style['float-right-message']">共{{p.count}}项 / 共{{p.dayCount}}天</div>
-                </Block>
-            </div>
+            <Block v-for="p in months" :ref="el => setMonthRef(p.uniqueKey, el)" :key="p.uniqueKey" :class="$style.item" :color="calendarDate?.year === p.year && calendarDate.month === p.month ? 'primary' : undefined" @click="selectMonth(p)">
+                <div :class="$style.processor" :style="`width: ${p.width}%`"/>
+                <span :class="$style.content">
+                    <Icon class="mr-2" icon="th-list"/>
+                    {{p.year}}年{{p.month}}月
+                </span>
+                <div :class="$style['float-right-message']">{{p.count}}项 / {{p.dayCount}}天</div>
+                <div :class="[$style.marked, $style[`lv-${p.level}`]]" :style="`width: ${p.width}%`"/>
+                <div :class="$style.unmarked" :style="`width: ${100 - p.width}%`"/>
+            </Block>
         </div>
     </div>
 </template>
 
 <style module lang="sass">
+@import "../../../styles/base/color"
+@import "../../../styles/base/size"
+
 .timeline
     display: flex
     flex-wrap: nowrap
@@ -49,12 +60,58 @@ const { partitionMonthData, partitionData, calendarDate, setPmRef, setMonthRef, 
         padding: 0.5rem 0.75rem
         margin-bottom: 0.3rem
         cursor: pointer
+        overflow: hidden
         &:hover
             transform: translateX(1px)
+        @media (prefers-color-scheme: light)
+            background: white
+        @media (prefers-color-scheme: dark)
+            background: black
+        > .content
+            position: relative
+            mix-blend-mode: difference
+            @media (prefers-color-scheme: light)
+                color: $light-mode-text-inverted-color
+            @media (prefers-color-scheme: dark)
+                color: $light-mode-text-inverted-color
         > .float-right-message
             position: absolute
             right: 0.75rem
             top: 0
             height: 100%
             padding: 0.5rem 0
+            mix-blend-mode: difference
+            @media (prefers-color-scheme: light)
+                color: $light-mode-text-inverted-color
+            @media (prefers-color-scheme: dark)
+                color: $light-mode-text-inverted-color
+        > .processor
+            position: absolute
+            left: 0
+            top: 0
+            bottom: 0
+            background: black
+        > .marked
+            position: absolute
+            left: 0
+            top: 0
+            bottom: 0
+            mix-blend-mode: screen
+            @for $i from 1 through 10
+                &.lv-#{$i}
+                    @media (prefers-color-scheme: light)
+                        background-color: mix($light-mode-primary, $light-mode-block-color, $i * 6% + 40%)
+                    @media (prefers-color-scheme: dark)
+                        background-color: mix($dark-mode-primary, $dark-mode-block-color, $i * 6% + 40%)
+        > .unmarked
+            position: absolute
+            right: 0
+            top: 0
+            bottom: 0
+            mix-blend-mode: screen
+            @media (prefers-color-scheme: light)
+                background: $light-mode-text-color
+            @media (prefers-color-scheme: dark)
+                background: $dark-mode-block-color
+            
 </style>

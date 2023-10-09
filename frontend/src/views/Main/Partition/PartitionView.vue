@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Button } from "@/components/universal"
+import { Button, Tag } from "@/components/universal"
 import { TopBarLayout, MiddleLayout } from "@/components/layout"
 import { SearchInput, QueryNotificationBadge, QueryResult, CollectionModeButton } from "@/components-business/top-bar"
 import { usePartitionContext } from "@/services/main/partition"
@@ -7,7 +7,7 @@ import PartitionViewCalendar from "./PartitionViewCalendar.vue"
 import PartitionViewTimeline from "./PartitionViewTimeline.vue"
 
 const {
-    partition: { viewMode },
+    partition: { viewMode, total },
     querySchema, listviewController: { collectionMode }
 } = usePartitionContext()
 
@@ -26,6 +26,11 @@ const {
                 <QueryNotificationBadge class="ml-1" :schema="querySchema.schema.value" @click="querySchema.expanded.value = true"/>
 
                 <template #right>
+                    <div class="mr-3">
+                        <Tag>{{ total.count }}项</Tag>
+                         / 
+                        <Tag>{{ total.day }}天</Tag>
+                    </div>
                     <Button :type="viewMode === 'timeline' ? 'primary' : undefined" square icon="sort-amount-down" @click="viewMode = 'timeline'"/>
                     <Button :type="viewMode === 'calendar' ? 'primary' : undefined" square icon="calendar" @click="viewMode = 'calendar'"/>
                 </template>

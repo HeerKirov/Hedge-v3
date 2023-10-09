@@ -1,39 +1,27 @@
-import { ComponentPublicInstance, computed, nextTick, ref, watch } from "vue"
+import { ComponentPublicInstance, Ref, computed, onMounted, ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
-import { PartitionMonth } from "@/functions/http-client/api/partition"
+import { Partition } from "@/functions/http-client/api/partition"
 import { IllustQueryFilter } from "@/functions/http-client/api/illust"
 import { flatResponse } from "@/functions/http-client"
-import { useFetchEndpoint, useFetchReactive } from "@/functions/fetch"
-import { useLocalStorage } from "@/functions/app"
+import { useFetchReactive } from "@/functions/fetch"
+import { useLocalStorage, useMemoryStorage } from "@/functions/app"
 import { useRouterParamEvent, useRouterQueryLocalDate } from "@/modules/router"
 import { useNavHistoryPush } from "@/services/base/side-nav-menu"
 import { useQuerySchema } from "@/services/base/query-schema"
-import { useIllustViewController } from "@/services/base/view-controller"
+import { IllustViewController, useIllustViewController } from "@/services/base/view-controller"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { installIllustListviewContext, useImageDatasetOperators, useLocateId } from "@/services/common/illust"
 import { useSettingSite } from "@/services/setting"
-import { installation } from "@/utils/reactivity"
-import { sleep } from "@/utils/process"
-import { arrays } from "@/utils/primitives"
-import { date, datetime, getDaysOfMonth } from "@/utils/datetime"
+import { computedEffect, computedWatch, installation } from "@/utils/reactivity"
+import { arrays, numbers } from "@/utils/primitives"
+import { LocalDate, date, getDaysOfMonth } from "@/utils/datetime"
 
 export const [installPartitionContext, usePartitionContext] = installation(function () {
-    const partition = usePartition()
     const querySchema = useQuerySchema("ILLUST")
     const listviewController = useIllustViewController()
-
-    return {partition, querySchema, listviewController}
-})
-
-function usePartition() {
-    const viewMode = useLocalStorage<"calendar" | "timeline">("partition/list/view-mode", "calendar")
-
-    const today = datetime.now()
-
-    const calendarDate = ref<YearAndMonth>({year: today.year, month: today.month})
-
+    const partition = usePartitionView(listviewController, querySchema.query)
     const path = useRouterQueryLocalDate("MainPartition", "detail")
 
     useNavHistoryPush(path, p => {
@@ -41,195 +29,234 @@ function usePartition() {
         return {id: d, name: d}
     })
 
-    return {viewMode, calendarDate, path, today}
+    return {partition, querySchema, listviewController, path}
+})
+
+function usePartitionView(listviewController: IllustViewController, query: Ref<string | undefined>) {
+    const viewMode = useLocalStorage<"calendar" | "timeline">("partition/list/view-mode", "calendar")
+    const calendarDate = useMemoryStorage<YearAndMonth>("partition/list/calendar-date")
+
+    const { partitionMonths, partitions, total, maxCount, maxCountOfMonth } = usePartitionData(listviewController, query)
+
+    watch(partitionMonths, months => {
+        //在未设置calendarDate，或者当前月份列表中不存在现在的值时，将其重置为最后一个月份
+        if(months !== undefined && months.length && (calendarDate.value === null || !months.some(m => m.year === calendarDate.value!.year && m.month === calendarDate.value!.month))) {
+            calendarDate.value = {year: months[months.length - 1].year, month: months[months.length - 1].month}
+        }
+    })
+
+    return {partitions, partitionMonths, total, maxCount, maxCountOfMonth, viewMode, calendarDate}
+}
+
+function usePartitionData(listviewController: IllustViewController, query: Ref<string | undefined>) {
+    const { data: partitions, refresh } = useFetchReactive({
+        get: client => () => client.partition.list({type: listviewController.collectionMode.value ? "COLLECTION" : "IMAGE", query: query.value})
+    })
+
+    watch([listviewController.collectionMode, query], refresh)
+
+    const partitionMonths = computed(() => {
+        if(partitions.value !== undefined) {
+            const ret: (YearAndMonth & {days: Partition[]})[] = []
+            let current: YearAndMonth & {days: Partition[]} | null = null
+            for(const partition of partitions.value) {
+                if(current === null || partition.date.year !== current.year || partition.date.month !== current.month) {
+                    ret.push(current = {year: partition.date.year, month: partition.date.month, days: [partition]})
+                }else{
+                    current.days.push(partition)
+                }
+            }
+            return ret.map(p => ({year: p.year, month: p.month, count: p.days.map(i => i.count).reduce((a, b) => a + b, 0), days: p.days}))
+        }
+        return undefined
+    })
+
+    const total = computedWatch(partitionMonths, partitionMonths => {
+        if(partitionMonths !== undefined) {
+            let count = 0, day = 0
+            for(const pm of partitionMonths) count += pm.count, day += pm.days.length
+            return {count, day}
+        }
+        return {count: 0, day: 0}
+    })
+
+    const maxCount = computedWatch(partitions, partitions => {
+        let max = 100
+        if(partitions !== undefined) for(const p of partitions) if(p.count > max) max = p.count
+        return max
+    })
+
+    const maxCountOfMonth = computedWatch(partitionMonths, partitionMonths => {
+        let maxCount = 800
+        if(partitionMonths !== undefined) for(const pm of partitionMonths) if(pm.count > maxCount) maxCount = pm.count
+        return maxCount
+    })
+
+    return {partitions, partitionMonths, total, maxCount, maxCountOfMonth}
 }
 
 export function useCalendarContext() {
+    const today = date.now()
     const WEEKDAY_SPACE_COUNT = [6, 0, 1, 2, 3, 4, 5]
 
-    const { partition: { calendarDate, path, today }, listviewController, querySchema } = usePartitionContext()
+    const { partition: { calendarDate, partitionMonths, maxCount }, path } = usePartitionContext()
 
-    const days = computed<(number | null)[]>(() => {
-        const date = new Date(calendarDate.value.year, calendarDate.value.month - 1, 1)
-        const spaceList = Array<number | null>(WEEKDAY_SPACE_COUNT[date.getDay()]).fill(null)
-        const valueList = arrays.newArray(getDaysOfMonth(calendarDate.value.year, calendarDate.value.month), i => i + 1)
-        return [...spaceList, ...valueList]
-    })
-
-    const { data, refreshData } = useFetchEndpoint({
-        path: calendarDate,
-        get: client => d => {
-            const gte = date.ofDate(d.year, d.month, 1)
-            const lt = d.month === 12 ? date.ofDate(d.year + 1, 1, 1) : date.ofDate(d.year, d.month + 1, 1)
-            return client.partition.list({gte, lt, type: listviewController.collectionMode.value ? "COLLECTION" : "IMAGE", query: querySchema.query.value})
+    const days = computedWatch(calendarDate, calendarDate => {
+        if(calendarDate !== null) {
+            const date = new Date(calendarDate.year, calendarDate.month - 1, 1)
+            const spaceList = Array<number | null>(WEEKDAY_SPACE_COUNT[date.getDay()]).fill(null)
+            const valueList = arrays.newArray(getDaysOfMonth(calendarDate.year, calendarDate.month), i => i + 1)
+            return [...spaceList, ...valueList]
         }
+        return []
     })
 
-    watch([listviewController.collectionMode, querySchema.query], refreshData)
-
-    const items = ref<({day: number, count: number | null, today: boolean} | null)[]>([])
-
-    watch(data, partitions => {
-        const thisMonth = today.year === calendarDate.value.year && today.month === calendarDate.value.month
-        if(partitions !== null) {
-            const daysCount: Record<number, number> = {}
-            for (const { date, count } of partitions) {
-                daysCount[date.day] = count
+    const daysCount = computedEffect(() => {
+        if(calendarDate.value !== null && partitionMonths.value !== undefined) {
+            const pm = partitionMonths.value.find(pm => pm.year === calendarDate.value!.year && pm.month === calendarDate.value!.month)
+            if(pm !== undefined) {
+                const daysCount: number[] = new Array(31)
+                for (const { date, count } of pm.days) daysCount[date.day] = count
+                return daysCount
             }
-            items.value = days.value.map(day => day ? {day, count: daysCount[day], today: thisMonth && today.day === day} : null)
-        }else{
-            items.value = days.value.map(day => day ? {day, count: null, today: thisMonth && today.day === day} : null)
         }
+        return null
     })
 
-    const openPartition = ({ day, count }: {day: number, count: number | null}) => {
-        if(count) {
-            path.value = date.ofDate(calendarDate.value.year, calendarDate.value.month, day)
-        }
+    const items = computed(() => {
+        const thisMonth = today.year === calendarDate.value?.year && today.month === calendarDate.value?.month
+        return days.value.map(day => {
+            if(day) {
+                const count = daysCount.value?.[day] ?? null
+                const level = count !== null ? Math.ceil(count * 10 / maxCount.value) : null
+                return {day, count, level, today: thisMonth && today.day === day}
+            }
+            return null
+        })
+    })
+
+    const openPartition = (item: {day: number, count: number | null}) => {
+        if(calendarDate.value !== null && item.count) path.value = date.ofDate(calendarDate.value.year, calendarDate.value.month, item.day)
     }
 
     return {items, openPartition, calendarDate}
 }
 
 export function useTimelineContext() {
-    const { partition: { calendarDate, path }, listviewController, querySchema } = usePartitionContext()
+    const { partition: { calendarDate, partitions, partitionMonths, maxCount, maxCountOfMonth }, path } = usePartitionContext()
 
-    const { data, refresh } = useFetchReactive({
-        get: client => () => client.partition.list({type: listviewController.collectionMode.value ? "COLLECTION" : "IMAGE", query: querySchema.query.value})
-    })
+    const months = computed(() => partitionMonths.value?.map(pm => ({year: pm.year, month: pm.month, uniqueKey: pm.year * 12 + pm.month, dayCount: pm.days.length, count: pm.count, width: numbers.round2decimal(pm.count * 100 / maxCountOfMonth.value), level: Math.ceil(pm.count * 10 / maxCountOfMonth.value)})) ?? [])
 
-    watch([listviewController.collectionMode, querySchema.query], refresh)
+    const days = computed(() => partitions.value?.map(p => ({date: p.date, count: p.count, width: numbers.round2decimal(p.count * 100 / maxCount.value), level: Math.ceil(p.count * 10 / maxCount.value)})) ?? [])
 
-    watch(data, data => {
-        //根据data数据总集，生成月份列表，并将数据按月份划分成组
-        if(data !== undefined) {
-            const ret: {year: number, month: number, items: {day: number, count: number}[]}[] = []
-            let current: {year: number, month: number, items: {day: number, count: number}[]} | null = null
-            for (const partition of data) {
-                if(current === null || partition.date.year !== current.year || partition.date.month !== current.month) {
-                    current = {year: partition.date.year, month: partition.date.month, items: [{day: partition.date.day, count: partition.count}]}
-                    ret.push(current)
-                }else{
-                    current.items.push({day: partition.date.day, count: partition.count})
+    const calendarDateMonths = computed(() => partitionMonths.value !== undefined && calendarDate.value !== null ? partitionMonths.value.find(pm => pm.year === calendarDate.value!.year && pm.month === calendarDate.value!.month) ?? null : null)
+
+    let timelineRef: HTMLDivElement | null = null
+    const monthRefs: Record<number, HTMLDivElement> = {}
+    const dayRefs: Record<number, HTMLDivElement> = {}
+
+    onMounted(() => {
+        //在calendarDate变化时，重新聚焦month
+        watch(calendarDate, async calendarDate => {
+            if(calendarDate !== null) {
+                monthRefs[calendarDate.year * 12 + calendarDate.month]?.scrollIntoView({behavior: "auto"})
+            }
+        }, {immediate: true, flush: "post"})
+
+        //也重新聚焦day，但要复杂一些。如果目标月份在显示区域内，则什么也不做；如果在后面，则滚动到月份的最后一天以显示该月的全部日期；同理如果在前面则滚动到月份的第一天
+        watch(calendarDateMonths, async partitionMonth => {
+            if(partitionMonth !== null) {
+                const positionOffset = getPositionOfMonth(partitionMonth.days)
+                if(positionOffset > 0) {
+                    dayRefs[partitionMonth.days[partitionMonth.days.length - 1].date.timestamp]?.scrollIntoView({behavior: "auto"})
+                }else if(positionOffset < 0) {
+                    dayRefs[partitionMonth.days[0].date.timestamp]?.scrollIntoView({behavior: "auto"})
                 }
             }
-            partitionData.value = ret
-            partitionMonthData.value = ret.map(p => ({year: p.year, month: p.month, count: p.items.map(i => i.count).reduce((a, b) => a + b, 0), dayCount: p.items.length}))
+        }, {immediate: true, flush: "post"})
+    })
+
+    const getPositionOfMonth = (days: Partition[]) => {
+        if(timelineRef !== null) {
+            const visibleTop = timelineRef.scrollTop, visibleBottom = timelineRef.scrollTop + timelineRef.clientHeight
+            const firstRef = dayRefs[days[0].date.timestamp], lastRef = dayRefs[days[days.length - 1].date.timestamp]
+            if(firstRef.offsetTop + firstRef.offsetHeight > visibleBottom) {
+                return firstRef.offsetTop + firstRef.offsetHeight - visibleBottom
+            }else if(lastRef.offsetTop < visibleTop) {
+                return lastRef.offsetTop - visibleTop
+            }else{
+                return 0
+            }
+        }
+        return 0
+    }
+
+    const scrollEvent = () => {
+        if(timelineRef !== null && partitionMonths.value !== undefined && calendarDateMonths.value !== null) {
+            //判断当前calendarDate是否还在视线内。如果已不在实现内，则沿着滚动方向寻找下一个在实现内的月份，并切换到此月份
+            const positionOffset = getPositionOfMonth(calendarDateMonths.value.days)
+            if(positionOffset > 0) {
+                for(let i = partitionMonths.value.indexOf(calendarDateMonths.value) - 1; i >= 0; --i) {
+                    const pm = partitionMonths.value[i]
+                    if(getPositionOfMonth(pm.days) === 0) {
+                        selectMonth(pm)
+                        break
+                    }
+                }
+            }else if(positionOffset < 0) {
+                for(let i = partitionMonths.value.indexOf(calendarDateMonths.value) + 1; i < partitionMonths.value.length; ++i) {
+                    const pm = partitionMonths.value[i]
+                    if(getPositionOfMonth(pm.days) === 0) {
+                        selectMonth(pm)
+                        break
+                    }
+                }
+            }
+        }
+    }
+
+    const selectMonth = async (item: YearAndMonth) => {
+        if(calendarDate.value === null || calendarDate.value.year !== item.year || calendarDate.value.month !== item.month) {
+            calendarDate.value = {year: item.year, month: item.month}
+        }
+    }
+
+    const openPartition = (date: LocalDate) => {
+        if(calendarDate.value === null || calendarDate.value.year !== date.year || calendarDate.value.month !== date.month) {
+            selectMonth({year: date.year, month: date.month})
+        }
+        path.value = date
+    }
+
+    const setTimelineRef = (el: Element | ComponentPublicInstance | null) => {
+        timelineRef = el as HTMLDivElement
+    }
+
+    const setDayRef = (key: number, el: Element | ComponentPublicInstance | null) => {
+        if(el instanceof Element) {
+            dayRefs[key] = el as HTMLDivElement
+        }else if(el === null || el === undefined) {
+            delete dayRefs[key]
         }else{
-            partitionData.value = []
-            partitionMonthData.value = []
-        }
-    })
-
-    //使用一个本地变量，区分来自上层的calendarDate更改和来自自己的更改。在scroll相关事件中，混淆不同更改可能引发意想不到的问题。
-    const localCalendarDate = ref<YearAndMonth>({...calendarDate.value})
-    const partitionMonthData = ref<PartitionMonth[]>([])
-    const partitionData = ref<{year: number, month: number, items: {day: number, count: number}[]}[]>([])
-
-    const monthRefs: Record<`${number}-${number}`, HTMLDivElement> = {}
-    const pmRefs: Record<`${number}-${number}`, HTMLDivElement> = {}
-
-    watch(partitionMonthData, async months => {
-        //在当前选择月份不存在的情况下，滚动到存在数据的最后一个月份
-        await nextTick()
-        if(months.length > 0 && !months.find(p => p.year === calendarDate.value.year && p.month === calendarDate.value.month)) {
-            const {year, month} = months[months.length - 1]
-            calendarDate.value = {year, month}
-        }
-    })
-
-    watch(calendarDate, async calendarDate => {
-        if(localCalendarDate.value.month !== calendarDate.month || localCalendarDate.value.year !== calendarDate.year) {
-            localCalendarDate.value = {...calendarDate}
-            //calendarDate变化后，被选中的项会发生变化，需要将目标项滚动到视野内
-            const key = `${calendarDate.year}-${calendarDate.month}` as const
-            enableScrollEvent = false
-            monthRefs[key]?.scrollIntoView({behavior: "auto"})
-            pmRefs[key]?.scrollIntoView({behavior: "auto"})
-            await sleep(100)
-            enableScrollEvent = true
-        }
-    })
-
-    watch(localCalendarDate, async local => {
-        //localCalendarDate变化后，被选中的项会发生变化，需要将目标项滚动到视野内，但不会滚动pmRefs
-        const key = `${local.year}-${local.month}` as const
-        enableScrollEvent = false
-        monthRefs[key]?.scrollIntoView({behavior: "auto"})
-        await nextTick()
-        enableScrollEvent = true
-
-        if(calendarDate.value.month !== local.month || calendarDate.value.year !== local.year) {
-            calendarDate.value = {...local}
-        }
-    })
-
-    let enableScrollEvent: boolean = false
-
-    const scrollEvent = (e: Event) => {
-        if(enableScrollEvent) {
-            const target = (e.target as HTMLDivElement)
-            //计算当前可视范围的中线位置
-            const rangeMid = target.scrollTop + target.offsetHeight / 2
-            //首先检查现在的calendarDate是否在中线上
-            const currentPmRef = pmRefs[`${calendarDate.value.year}-${calendarDate.value.month}`] as HTMLDivElement | undefined
-            if(currentPmRef) {
-                const elMin = currentPmRef.offsetTop, elMax = currentPmRef.offsetHeight + currentPmRef.offsetTop
-                if(elMin < rangeMid && elMax > rangeMid) {
-                    //当前pm仍在时跳过后续步骤
-                    return
-                }
-            }
-            for(const pm of Object.keys(pmRefs)) {
-                const pmRef = pmRefs[pm as `${number}-${number}`] as HTMLDivElement
-                const elMin = pmRef.offsetTop, elMax = pmRef.offsetHeight + pmRef.offsetTop
-                if(elMin < rangeMid && elMax > rangeMid) {
-                    //找到位于中线上的pm
-                    const [y, m] = pm.split("-", 2)
-                    localCalendarDate.value = {year: parseInt(y), month: parseInt(m)}
-                    break
-                }
-            }
+            dayRefs[key] = el.$el
         }
     }
 
-    const selectMonth = async (year: number, month: number) => {
-        if(calendarDate.value.year !== year || calendarDate.value.month !== month) {
-            enableScrollEvent = false
-            const key = `${year}-${month}` as const
-            pmRefs[key]?.scrollIntoView({behavior: "auto"})
-            await sleep(100)
-            enableScrollEvent = true
-
-            calendarDate.value = {year, month}
-        }
-    }
-
-    const openPartition = (year: number, month: number, day: number) => {
-        path.value = date.ofDate(year, month, day)
-    }
-
-    const setPmRef = (key: `${number}-${number}`, el: Element | ComponentPublicInstance | null) => {
-        if(el !== null && el !== undefined) {
-            pmRefs[key] = el as HTMLDivElement
-        }else{
-            delete pmRefs[key]
-        }
-    }
-
-    const setMonthRef = (key: `${number}-${number}`, el: Element | ComponentPublicInstance | null) => {
-        if(el !== null && el !== undefined) {
+    const setMonthRef = (key: number, el: Element | ComponentPublicInstance | null) => {
+        if(el instanceof Element) {
             monthRefs[key] = el as HTMLDivElement
-        }else{
+        }else if(el === null || el === undefined) {
             delete monthRefs[key]
+        }else{
+            monthRefs[key] = el.$el
         }
     }
 
-    return {partitionMonthData, partitionData, calendarDate, selectMonth, scrollEvent, openPartition, setPmRef, setMonthRef}
+    return {months, days, calendarDate, selectMonth, scrollEvent, openPartition, setTimelineRef, setDayRef, setMonthRef}
 }
 
 export function useDetailIllustContext() {
-    const { querySchema, listviewController, partition: { path } } = usePartitionContext()
+    const { querySchema, listviewController, path } = usePartitionContext()
     const listview = useListView()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust")

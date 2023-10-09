@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Input } from "@/components/form"
 import { Button } from "@/components/universal"
-import { createKeyEventValidator, KeyEvent, USUAL_KEY_VALIDATORS } from "@/modules/keyboard"
+import { createKeyEventValidator, KeyEvent, useInterceptedKey, USUAL_KEY_VALIDATORS } from "@/modules/keyboard"
 import { computedMutable } from "@/utils/reactivity"
 
 const props = defineProps<{
@@ -33,6 +33,19 @@ const keypress = (e: KeyEvent) => {
     }
 }
 
+const clear = () => {
+    if(props.value !== "") {
+        emit("update:value", "")
+        emit("enter", true)
+    }
+}
+
+useInterceptedKey("Meta+KeyE", () => {
+    if(props.enableDropButton) {
+        emit("update:activeDropButton", !props.activeDropButton)
+    }
+})
+
 </script>
 
 <template>
@@ -47,7 +60,13 @@ const keypress = (e: KeyEvent) => {
         />
         <Button 
             v-if="enableDropButton" 
-            :class="$style.button" 
+            :class="$style['clear-button']"
+            icon="close" size="small" square round
+            @click="clear"
+        />
+        <Button 
+            v-if="enableDropButton"
+            :class="$style['dropdown-button']" 
             :icon="activeDropButton ? 'caret-up' : 'caret-down'" size="small" square
             @click="toggleDropButton"
         />
@@ -74,8 +93,15 @@ const keypress = (e: KeyEvent) => {
         @media (prefers-color-scheme: dark)
             background-color: mix($dark-mode-block-color, #000000, 65%)
 
-.button
-    $gap: #{calc(($element-height-std - $element-height-small) / 2)}
+.clear-button
+    position: absolute
+    right: #{calc(($element-height-std - $element-height-small) / 2 + $element-height-small + 1px)}
+    top: #{calc(($element-height-std - $element-height-small) / 2 + 1px)}
+    > svg
+        transform: translateY(1px)
+
+.dropdown-button
+    $gap: #{calc(($element-height-std - $element-height-small) / 2 + 1px)}
     position: absolute
     right: $gap
     top: $gap

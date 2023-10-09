@@ -5,19 +5,19 @@ import CalendarRouter from "./CalendarRouter.vue"
 
 const { items, calendarDate, openPartition } = useCalendarContext()
 
-const WEEKDAY_NAMES = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+const WEEKDAY_NAMES = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const
 
 </script>
 
 <template>
     <div :class="$style.root">
-        <div :class="$style.router"><CalendarRouter v-model:value="calendarDate"/></div>
+        <div :class="$style.router"><CalendarRouter v-if="calendarDate !== null" v-model:value="calendarDate"/></div>
         <Block :class="$style.header">
-            <div v-for="i in WEEKDAY_NAMES" :class="$style.col">{{i}}</div>
+            <b v-for="i in WEEKDAY_NAMES" :class="$style.col">{{i}}</b>
         </Block>
         <div :class="$style.body">
             <div v-for="item in items" :class="$style.col">
-                <Block v-if="item !== null" :class="{[$style.hoverable]: !!item.count}" :color="item.count ? 'primary' : undefined" @click="openPartition(item)">
+                <Block v-if="item !== null" :class="{[$style.hoverable]: !!item.level, [$style[`lv-${item.level}`]]: !!item.level}" @click="openPartition(item)">
                     <b :class="{'has-text-underline': item.today}">{{item.day}}</b>
                     <p v-if="item.count" :class="$style.count">{{item.count}}项</p>
                 </Block>
@@ -27,6 +27,8 @@ const WEEKDAY_NAMES = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 </template>
 
 <style module lang="sass">
+@import "../../../styles/base/color"
+
 $column-num: 7
 
 .root
@@ -71,4 +73,12 @@ $column-num: 7
                 position: absolute
                 right: 0.75rem
                 bottom: 0.5rem
+            @for $i from 1 through 10
+                &.lv-#{$i}
+                    @media (prefers-color-scheme: light)
+                        background-color: mix($light-mode-primary, $light-mode-block-color, $i * 9% + 10%)
+                        color: if($i > 5, $light-mode-text-inverted-color, $light-mode-text-color)
+                    @media (prefers-color-scheme: dark)
+                        background-color: mix($dark-mode-primary, $dark-mode-block-color, $i * 9% + 10%)
+                        color: if($i > 5, $dark-mode-text-inverted-color, $dark-mode-text-color)
 </style>

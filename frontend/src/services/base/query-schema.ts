@@ -3,7 +3,6 @@ import { Dialect, QueryRes } from "@/functions/http-client/api/util-query"
 import { useFetchHelper } from "@/functions/fetch"
 import { useMemoryStorage } from "@/functions/app"
 import { useToast } from "@/modules/toast"
-import { useInterceptedKey } from "@/modules/keyboard"
 
 export interface QuerySchemaContext {
     /**
@@ -27,12 +26,12 @@ export interface QuerySchemaContext {
 export function useQuerySchema(dialect: Dialect): QuerySchemaContext {
     const toast = useToast()
     const fetch = useFetchHelper(client => client.queryUtil.querySchema)
-    
-    const query = useMemoryStorage<string | undefined>(`query-schema/${dialect}`, undefined)
-    
+
+    const query = useMemoryStorage<string | undefined>(`query-schema/${dialect}/query`, undefined)
+    const schema = useMemoryStorage<QueryRes>(`query-schema/${dialect}/schema`)
+
     const queryInputText = ref<string | undefined>(query.value)
     const expanded = ref<boolean>(false)
-    const schema = ref<QueryRes | null>(null)
 
     watch(queryInputText, async queryInputText => {
         const text = queryInputText?.trim()
@@ -47,12 +46,6 @@ export function useQuerySchema(dialect: Dialect): QuerySchemaContext {
                 query.value = text
                 expanded.value = expanded.value || !!res.errors.length
             }
-        }
-    })
-
-    useInterceptedKey("Meta+KeyE", () => {
-        if(schema.value !== null) {
-            expanded.value = !expanded.value
         }
     })
 

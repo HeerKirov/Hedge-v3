@@ -3,7 +3,7 @@ import { installPartitionContext } from "@/services/main/partition"
 import PartitionView from "./PartitionView.vue"
 import PartitionIllustList from "./PartitionIllustList.vue"
 
-const { partition: { path } } = installPartitionContext()
+const { path } = installPartitionContext()
 
 </script>
 
