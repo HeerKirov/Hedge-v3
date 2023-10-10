@@ -89,6 +89,9 @@ object NewGraphics {
                     output.delete()
                     throw e
                 }
+                if(!output.exists()) {
+                    throw RuntimeException("File $src render thumbnail failed. Final file not exist.")
+                }
 
                 ProcessResult(output, resolutionWidth, resolutionHeight, videoDuration)
             }
