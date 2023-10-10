@@ -110,10 +110,9 @@ function useListView() {
         eventFilter: {
             filter: ["entity/import/created", "entity/import/updated", "entity/import/deleted", "entity/import/saved"],
             operation({ event, refresh, updateOne, removeOne }) {
-
                 if(event.eventType === "entity/import/created" || (event.eventType === "entity/import/updated" && event.timeSot)) {
                     refresh()
-                }else if(event.eventType === "entity/import/updated" && event.listUpdated) {
+                }else if(event.eventType === "entity/import/updated" && (event.listUpdated || event.thumbnailFileReady)) {
                     updateOne(i => i.id === event.importId)
                 }else if(event.eventType === "entity/import/deleted") {
                     removeOne(i => i.id === event.importId)

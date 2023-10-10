@@ -278,6 +278,10 @@ export function useDetailIllustContext() {
     useSettingSite()
 
     useRouterParamEvent("MainPartition", params => {
+        if(params.locateId !== undefined && querySchema.queryInputText.value) {
+            //若提供了Locate，则应该清空现有的查询条件
+            querySchema.queryInputText.value = undefined
+        }
         locateId.catchLocateId(params.locateId)
     })
 

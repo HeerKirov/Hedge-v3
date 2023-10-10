@@ -80,5 +80,5 @@ $column-num: 7
                         color: if($i > 5, $light-mode-text-inverted-color, $light-mode-text-color)
                     @media (prefers-color-scheme: dark)
                         background-color: mix($dark-mode-primary, $dark-mode-block-color, $i * 9% + 10%)
-                        color: if($i > 5, $dark-mode-text-inverted-color, $dark-mode-text-color)
+                        color: $dark-mode-text-color
 </style>
