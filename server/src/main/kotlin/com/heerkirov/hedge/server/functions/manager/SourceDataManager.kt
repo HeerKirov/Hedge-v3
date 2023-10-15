@@ -421,14 +421,13 @@ class SourceDataManager(private val appdata: AppDataManager,
 
             var appendTags: Opt<List<Int>> = undefined()
             tags.applyOpt {
-                data.db.delete(SourceTagRelations) { it.sourceDataId eq sourceData.id }
                 if(isNotEmpty()) {
                     val tagIds = sourceTagManager.getAndUpsertSourceTags(sourceSite, this)
                     val existTagIds = data.db.from(SourceTagRelations)
                         .select(SourceTagRelations.sourceTagId)
                         .where { SourceTagRelations.sourceDataId eq sourceData.id and (SourceTagRelations.sourceTagId inList tagIds) }
                         .map { it[SourceTagRelations.sourceTagId]!! }
-                    val appendTagIds = existTagIds - tagIds.toSet()
+                    val appendTagIds = tagIds - existTagIds.toSet()
                     if(appendTagIds.isNotEmpty()) {
                         data.db.batchInsert(SourceTagRelations) {
                             for (tagId in appendTagIds) {
@@ -445,14 +444,13 @@ class SourceDataManager(private val appdata: AppDataManager,
 
             var appendBooks: Opt<List<Int>> = undefined()
             books.applyOpt {
-                data.db.delete(SourceBookRelations) { it.sourceDataId eq sourceData.id }
                 if(isNotEmpty()) {
                     val bookIds = sourceBookManager.getAndUpsertSourceBooks(sourceSite, this)
                     val existBookIds = data.db.from(SourceBookRelations)
                         .select(SourceBookRelations.sourceBookId)
                         .where { SourceBookRelations.sourceDataId eq sourceData.id and (SourceBookRelations.sourceBookId inList bookIds) }
                         .map { it[SourceBookRelations.sourceBookId]!! }
-                    val appendBookIds = existBookIds - bookIds.toSet()
+                    val appendBookIds = bookIds - existBookIds.toSet()
                     if(appendBookIds.isNotEmpty()) {
                         data.db.batchInsert(SourceBookRelations) {
                             for (bookId in appendBookIds) {

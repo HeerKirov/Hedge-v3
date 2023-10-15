@@ -282,7 +282,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                 }
 
                 if(file.exists()) {
-                    val result = try { NewSimilarity.process(file) }catch (e: BusinessException) {
+                    val result = try { Similarity.process(file) }catch (e: BusinessException) {
                         if(e.exception is IllegalFileExtensionError) {
                             //忽略文件类型不支持的错误，且不生成指纹，直接退出
                             null
@@ -332,9 +332,9 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
 
     private fun processThumbnail(fileRecord: FileRecord, file: File): Tuple5<Long?, Long?, Int, Int, Long?> {
         //生成thumbnail。当file为除jpg外的其他格式，或file尺寸高于阈值时，会生成thumbnail。
-        val (thumbnailTempFile, resolutionWidth, resolutionHeight, videoDuration) = NewGraphics.process(file, NewGraphics.THUMBNAIL_RESIZE_AREA)
+        val (thumbnailTempFile, resolutionWidth, resolutionHeight, videoDuration) = Graphics.process(file, Graphics.THUMBNAIL_RESIZE_AREA)
         //生成sample。由于传入必定是jpg格式，当file尺寸高于阈值时，会生成thumbnail。
-        val (sampleTempFile, _, _, _) = NewGraphics.process(thumbnailTempFile ?: file, NewGraphics.SAMPLE_RESIZE_AREA)
+        val (sampleTempFile, _, _, _) = Graphics.process(thumbnailTempFile ?: file, Graphics.SAMPLE_RESIZE_AREA)
 
         //实际上，当尺寸小于sample且类型为jpg时，可以只生成thumbnail而不生成sample。
         //此时，需要把thumbnail当作sample去处理。即，sample总是优先于thumbnail。
