@@ -5,6 +5,7 @@ export interface WindowManager {
     newWindow(url: string): void
     openSetting(): void
     openGuide(): void
+    openNote(): void
 }
 
 export const windowManager: WindowManager = remoteIpcClient.window

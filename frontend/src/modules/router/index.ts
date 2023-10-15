@@ -1,7 +1,7 @@
 export type { RouteName, RouteParameter } from "./definitions"
 export { useRouterNavigator, useNewWindowRouteReceiver, usePreviewWindowRouteReceiver, useRouteChangeMonitor, installRouterManager } from "./navigator"
+export { useRouterQuery, useRouterQueryString, useRouterQueryNumber, useRouterQueryLocalDate, useQuery, useQueryNumber, useQueryString } from "./query"
 export { useRouterParamEvent } from "./param"
-export { useRouterQuery, useRouterQueryString, useRouterQueryNumber, useRouterQueryLocalDate } from "./query"
 
 /*
  * == router 模块 ==

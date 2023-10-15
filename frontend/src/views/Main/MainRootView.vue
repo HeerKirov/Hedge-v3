@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from "vue"
-import { SideLayout, SideBar } from "@/components/layout"
+import { SideLayout, SideBar, Flex, FlexItem } from "@/components/layout"
 import { Button, Separator } from "@/components/universal"
 import { Menu } from "@/components/interaction"
 import { StagingPostButton } from "@/components-module/common"
@@ -23,9 +23,7 @@ const { data: pins } = useFetchReactive({
 
 const navHistory = installNavHistory()
 
-watch(pins, pins => {
-    navHistory.excludes["MainFolder"] = pins?.map(i => i.id.toString()) ?? []
-})
+watch(pins, pins => navHistory.excludes["MainFolder"] = pins?.map(i => i.id.toString()) ?? [])
 
 const { menuItems, menuSelected } = installNavMenu({
     menuItems: [
@@ -62,12 +60,17 @@ const { menuItems, menuSelected } = installNavMenu({
                 <Menu :items="menuItems" v-model:selected="menuSelected"/>
 
                 <template #bottom>
-                    <Button square icon="gear" @click="windowManager.openSetting"/>
-                    <Button class="ml-1" square icon="circle-question-regular" @click="windowManager.openGuide"/>
-                    <div class="is-inline-block float-right ml-1">
-                        <Separator size="large"/>
-                        <StagingPostButton/>
-                    </div>
+                    <Flex>
+                        <Button square icon="gear" @click="windowManager.openSetting"/>
+                        <Button class="ml-1" square icon="circle-question-regular" @click="windowManager.openGuide"/>
+                        <Button class="ml-1" square icon="note-sticky" @click="windowManager.openNote"/>
+                        <FlexItem :shrink="0">
+                            <div class="ml-auto">
+                                <Separator size="large"/>
+                                <StagingPostButton/>
+                            </div>
+                        </FlexItem>
+                    </Flex>
                 </template>
             </SideBar>
         </template>

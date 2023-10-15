@@ -3,6 +3,7 @@ import { createHomepageEndpoint, HomepageEndpoint } from "./api/homepage"
 import { createStagingPostEndpoint, StagingPostEndpoint } from "./api/staging-post"
 import { createServiceEndpoint, ServiceEndpoint } from "./api/service"
 import { createSettingEndpoint, SettingEndpoint } from "./api/setting"
+import { createNoteEndpoint, NoteEndpoint } from "./api/note"
 import { createIllustEndpoint, IllustEndpoint } from "./api/illust"
 import { createImportEndpoint, ImportEndpoint } from "./api/import"
 import { createTrashEndpoint, TrashEndpoint } from "./api/trash"
@@ -31,6 +32,7 @@ export interface HttpClient {
     homepage: HomepageEndpoint
     service: ServiceEndpoint
     setting: SettingEndpoint
+    note: NoteEndpoint
     illust: IllustEndpoint
     partition: PartitionEndpoint
     book: BookEndpoint
@@ -60,6 +62,7 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
         homepage: createHomepageEndpoint(http),
         service: createServiceEndpoint(http),
         setting: createSettingEndpoint(http),
+        note: createNoteEndpoint(http),
         illust: createIllustEndpoint(http),
         partition: createPartitionEndpoint(http),
         book: createBookEndpoint(http),

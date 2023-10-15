@@ -20,7 +20,7 @@ withDefaults(defineProps<{
         <div v-if="!!$slots.top" :class="topClass">
             <slot name="top"/>
         </div>
-        <div :class="[{[$style['scroll-container']]: true, 'is-scrollbar-hidden': !scrollbarVisible}, containerClass]">
+        <div v-if="!!$slots.default" :class="[{[$style['scroll-container']]: true, 'is-scrollbar-hidden': !scrollbarVisible}, containerClass]">
             <slot/>
         </div>
         <slot name="gap"/>

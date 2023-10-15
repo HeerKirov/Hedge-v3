@@ -3,6 +3,7 @@ import { MetaType } from "@/functions/http-client/api/all"
 import { IllustType } from "@/functions/http-client/api/illust"
 import { FolderType } from "@/functions/http-client/api/folder"
 import { PathWatcherError } from "@/functions/http-client/api/import"
+import { NoteStatus } from "@/functions/http-client/api/note"
 
 export interface BaseWsEvent<ET extends string> {
     eventType: ET
@@ -25,6 +26,7 @@ type EntityEvents
     | SourceDataCreated | SourceDataUpdated | SourceDataDeleted
     | SourceBookUpdated | SourceTagUpdated | SourceTagMappingUpdated
     | FindSimilarResultCreated | FindSimilarResultResolved | FindSimilarResultDeleted
+    | NoteCreated | NoteUpdated | NoteDeleted
 
 type SettingEvents = SettingServerChanged | SettingMetaChanged | SettingQueryChanged | SettingImportChanged | SettingStorageChanged | SettingFindSimilarChanged | SettingSourceSiteChanged
 
@@ -111,6 +113,13 @@ export interface FindSimilarResultCreated extends BaseWsEvent<"entity/find-simil
 export interface FindSimilarResultResolved extends BaseWsEvent<"entity/find-similar-result/resolved"> { resultId: number }
 
 export interface FindSimilarResultDeleted extends BaseWsEvent<"entity/find-similar-result/deleted"> { resultId: number }
+
+export interface NoteCreated extends BaseWsEvent<"entity/note/created"> { id: number, status: NoteStatus }
+
+export interface NoteUpdated extends BaseWsEvent<"entity/note/updated"> { id: number, status: NoteStatus, deleted: boolean }
+
+export interface NoteDeleted extends BaseWsEvent<"entity/note/deleted"> { id: number, status: NoteStatus, deleted: boolean }
+
 
 //== setting相关变更通知 ==
 

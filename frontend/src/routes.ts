@@ -99,6 +99,14 @@ export default <RouteRecordRaw[]>[
         component: () => import("@/views/Preview.vue")
     },
     {
+        name: "Note",
+        path: "/note",
+        component: () => import("@/views/Note/Note.vue"),
+        meta: {
+            title: "便签"
+        }
+    },
+    {
         name: "Setting",
         path: "/setting",
         component: () => import("@/views/Setting/Setting.vue"),
@@ -166,7 +174,7 @@ export default <RouteRecordRaw[]>[
         path: "/:catchAll(.*)",
         component: () => import("@/views/NotFound.vue"),
         meta: {
-            title: "Hedge"
+            title: "无效页面"
         }
     }
 ]

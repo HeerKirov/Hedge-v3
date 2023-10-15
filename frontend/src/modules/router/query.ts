@@ -13,6 +13,7 @@ export function useRouterQuery<N extends RouteName, Q extends keyof RouteParamet
     const data: Ref<P | null> = ref(null)
 
     function setNewData(value: P | null) {
+        data.value = value
         router.push({
             name: route.name!,
             query: {
@@ -32,7 +33,10 @@ export function useRouterQuery<N extends RouteName, Q extends keyof RouteParamet
         return null
     }
 
-    watch(() => <[typeof route.name, typeof route.query[string]]>[route.name, route.query[queryName]], () => data.value = calcNewData(), {immediate: true, deep: true})
+    watch(() => <[typeof route.name, typeof route.query[string]]>[route.name, route.query[queryName]], () => {
+        const newData = calcNewData()
+        if(newData !== data.value) data.value = newData
+    }, {immediate: true, deep: true})
 
     return computed({
         get: () => data.value,
@@ -60,3 +64,9 @@ export function useRouterQueryNumber<N extends RouteName, Q extends keyof RouteP
         return isNaN(n) ? null : n as P
     })
 }
+
+export const useQuery: <P>(routerName: string, queryName: string, encode: (a: P) => string, decode: (s: string) => P) => Ref<P | null> = useRouterQuery as any
+
+export const useQueryString: (routerName: string, queryName: string) => Ref<string | null> = useRouterQueryString as any
+
+export const useQueryNumber: (routerName: string, queryName: string) => Ref<number | null> = useRouterQueryNumber as any
