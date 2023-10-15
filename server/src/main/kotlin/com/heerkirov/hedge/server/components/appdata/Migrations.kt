@@ -1,11 +1,11 @@
 package com.heerkirov.hedge.server.components.appdata
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.heerkirov.hedge.server.enums.TagAuthorType
-import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.model.FindSimilarTask
+import com.heerkirov.hedge.server.utils.Json.updateField
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import com.heerkirov.hedge.server.utils.Json.toJsonNode
+import com.heerkirov.hedge.server.utils.Json.upsertField
 import com.heerkirov.hedge.server.utils.migrations.JsonObjectStrategy
 import com.heerkirov.hedge.server.utils.migrations.MigrationRegister
 
@@ -74,24 +74,32 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
         register.empty("0.1.0")
         register.map("0.1.4", ::addSiteTypes)
         register.map("0.2.0", ::modifyAuthorTypes)
+        register.map("0.3.0", ::addSourceAnalyseRuleExtraArguments)
     }
 
     /**
      * 在0.1.4版本，新增了site.availableTypes非空字段。
      */
     private fun addSiteTypes(json: JsonNode): JsonNode {
-        data class OldSite(val name: String, var title: String, val partMode: SourceOption.SitePartMode, var availableAdditionalInfo: List<SourceOption.AvailableAdditionalInfo>, var sourceLinkGenerateRules: List<String>)
-
-        val sites = json["source"]["sites"].map { it.parseJSONObject<OldSite>() }.map { SourceOption.Site(it.name, it.title, it.partMode, it.availableAdditionalInfo, it.sourceLinkGenerateRules, mutableListOf()) }.toMutableList()
-
-        return AppData(
-            server = json["server"].parseJSONObject(),
-            storage = json["storage"].parseJSONObject(),
-            meta = json["meta"].parseJSONObject(),
-            query = json["query"].parseJSONObject(),
-            source = SourceOption(sites),
-            import = json["import"].parseJSONObject(),
-            findSimilar = json["findSimilar"].parseJSONObject(),
+        return mapOf(
+            "server" to json["server"],
+            "storage" to json["storage"],
+            "meta" to json["meta"],
+            "query" to json["query"],
+            "source" to mapOf(
+                "sites" to json["source"]["sites"].map { site ->
+                    mapOf(
+                        "name" to site["name"],
+                        "title" to site["title"],
+                        "partMode" to site["partMode"],
+                        "availableAdditionalInfo" to site["availableAdditionalInfo"],
+                        "sourceLinkGenerateRules" to site["sourceLinkGenerateRules"],
+                        "availableTypes" to emptyList<String>()
+                    )
+                }
+            ),
+            "import" to json["import"],
+            "findSimilar" to json["findSimilar"],
         ).toJsonNode()
     }
 
@@ -99,27 +107,45 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
      * 在0.2.0版本，修改了meta.authorColors中的author枚举名称。
      */
     private fun modifyAuthorTypes(json: JsonNode): JsonNode {
-        val autoCleanTagme = json["meta"]["autoCleanTagme"].asBoolean()
-        val topicColors = json["meta"]["topicColors"].parseJSONObject<Map<String, String>>()
-            .mapKeys { (k, _) -> TagTopicType.valueOf(k) }
-        val authorColors = json["meta"]["authorColors"].parseJSONObject<Map<String, String>>()
-            .mapKeys { (k, _) ->
-                when(k) {
-                    "ARTIST" -> TagAuthorType.ARTIST
-                    "STUDIO" -> TagAuthorType.GROUP
-                    "PUBLISH" -> TagAuthorType.SERIES
-                    else -> throw RuntimeException("Author type '$k' is illegal.")
-                }
-            }
+        return mapOf(
+            "server" to json["server"],
+            "storage" to json["storage"],
+            "meta" to mapOf(
+                "autoCleanTagme" to json["meta"]["autoCleanTagme"],
+                "topicColors" to json["meta"]["topicColors"],
+                "authorColors" to json["meta"]["authorColors"].parseJSONObject<Map<String, String>>()
+                    .mapKeys { (k, _) ->
+                        when(k) {
+                            "ARTIST" -> "ARTIST"
+                            "STUDIO" -> "GROUP"
+                            "PUBLISH" -> "SERIES"
+                            else -> throw RuntimeException("Author type '$k' is illegal.")
+                        }
+                    }
+            ),
+            "query" to json["query"],
+            "source" to json["source"],
+            "import" to json["import"],
+            "findSimilar" to json["findSimilar"],
+        ).toJsonNode()
+    }
 
-        return AppData(
-            server = json["server"].parseJSONObject(),
-            storage = json["storage"].parseJSONObject(),
-            meta = MetaOption(autoCleanTagme, topicColors, authorColors),
-            query = json["query"].parseJSONObject(),
-            source = json["source"].parseJSONObject(),
-            import = json["import"].parseJSONObject(),
-            findSimilar = json["findSimilar"].parseJSONObject(),
+    /**
+     * 在0.3.0版本，在import.sourceAnalyseRules[].extras[]新增了translateUnderscoreToSpace参数。
+     */
+    private fun addSourceAnalyseRuleExtraArguments(json: JsonNode): JsonNode {
+        return mapOf(
+            "server" to json["server"],
+            "storage" to json["storage"],
+            "meta" to json["meta"],
+            "query" to json["query"],
+            "source" to json["source"],
+            "import" to json["import"].updateField("sourceAnalyseRules") { rules -> rules.map { rule ->
+                rule.updateField("extras") { extras -> extras.map { extra ->
+                    extra.upsertField("translateUnderscoreToSpace") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
+                }.toJsonNode() }
+            }.toJsonNode() },
+            "findSimilar" to json["findSimilar"],
         ).toJsonNode()
     }
 }

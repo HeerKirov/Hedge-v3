@@ -6,6 +6,7 @@ import com.heerkirov.hedge.server.exceptions.BusinessException
 import com.heerkirov.hedge.server.exceptions.InvalidRegexError
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.model.ImportImage
+import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import com.heerkirov.hedge.server.utils.tuples.Tuple5
 import java.util.concurrent.ConcurrentHashMap
@@ -52,7 +53,9 @@ class ImportMetaManager(private val appdata: AppDataManager) {
                 val relations: MutableList<Long> = mutableListOf()
 
                 for(extra in rule.extras) {
-                    val result = matcher.groupOfIt(extra.group, rule.regex) ?: if(extra.optional) continue else throw be(InvalidRegexError(rule.regex, "group '${extra.group}' not matched in regex."))
+                    val result = matcher.groupOfIt(extra.group, rule.regex)
+                        ?.runIf(extra.translateUnderscoreToSpace) { replace('_', ' ') }
+                        ?: if(extra.optional) continue else throw be(InvalidRegexError(rule.regex, "group '${extra.group}' not matched in regex."))
                     when(extra.target) {
                         ImportOption.SourceAnalyseRuleExtraTarget.TITLE -> title = result
                         ImportOption.SourceAnalyseRuleExtraTarget.DESCRIPTION -> description = result

@@ -192,7 +192,7 @@ data class ImportOption(
 
     data class SourceAnalyseRule(val site: String, val regex: String, val idGroup: String, val partGroup: String?, val partNameGroup: String?, val extras: List<SourceAnalyseRuleExtra>?)
 
-    data class SourceAnalyseRuleExtra(val group: String, val target: SourceAnalyseRuleExtraTarget, val optional: Boolean, val tagType: String? = null, val additionalInfoField: String? = null)
+    data class SourceAnalyseRuleExtra(val group: String, val target: SourceAnalyseRuleExtraTarget, val optional: Boolean, val tagType: String? = null, val additionalInfoField: String? = null, val translateUnderscoreToSpace: Boolean)
 
     enum class SourceAnalyseRuleExtraTarget {
         TITLE,

@@ -46,6 +46,7 @@ object Json {
     }
 
     fun <T> T.toJsonNode(): JsonNode {
+
         return objectMapper.valueToTree(this)
     }
 
@@ -57,8 +58,28 @@ object Json {
         return objectMapper().convertValue(this, clazz)
     }
 
+    fun <T> JsonNode.parseJSONObject(typeReference: TypeReference<T>): T {
+        return objectMapper().convertValue(this, typeReference)
+    }
+
     fun String.parseJsonNode(): JsonNode {
         return objectMapper.readTree(this)
+    }
+
+    inline fun JsonNode.updateField(field: String, mapper: (fieldValue: JsonNode) -> JsonNode): JsonNode {
+        return this.parseJSONObject(object : TypeReference<Map<String, JsonNode>>() {}).mapValues { (k, v) ->
+            if (k !== field) v else mapper(v)
+        }.toJsonNode()
+    }
+
+    inline fun JsonNode.upsertField(field: String, mapper: (fieldValue: JsonNode?) -> JsonNode): JsonNode {
+        val map = this.parseJSONObject(object : TypeReference<MutableMap<String, JsonNode>>() {})
+        if(map.containsKey(field)) {
+            map[field] = mapper(map[field])
+        }else{
+            map[field] = mapper(null)
+        }
+        return map.toJsonNode()
     }
 }
 
