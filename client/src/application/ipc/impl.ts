@@ -81,6 +81,9 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
             },
             openGuide() {
                 window.openGuideWindow()
+            },
+            openNote() {
+                window.openNoteWindow()
             }
         },
         setting: {

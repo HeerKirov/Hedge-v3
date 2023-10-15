@@ -21,6 +21,7 @@ export interface IpcClient {
         newWindow(url?: string): void
         openSetting(): void
         openGuide(): void
+        openNote(): void
     }
     setting: {
         appearance: {

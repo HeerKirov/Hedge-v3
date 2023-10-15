@@ -42,6 +42,9 @@ function createRemoteIpcClient(): IpcClient {
             },
             openGuide() {
                 ipcRenderer.send("/window/open-guide")
+            },
+            openNote() {
+                ipcRenderer.send("/window/open-note")
             }
         },
         setting: {

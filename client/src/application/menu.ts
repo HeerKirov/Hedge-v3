@@ -12,6 +12,7 @@ export function registerAppMenu(windowManager: WindowManager, platform: Platform
                 submenu: [
                     {label: '关于Hedge', role: 'about'},
                     {type: 'separator'},
+                    {label: '便签', accelerator: 'Command+Y', click() { windowManager.openNoteWindow() }},
                     {label: '偏好设置', accelerator: 'Command+,', click() { windowManager.openSettingWindow() }},
                     {type: 'separator'},
                     {label: '服务', role: 'services'},
@@ -78,6 +79,7 @@ export function registerAppMenu(windowManager: WindowManager, platform: Platform
                 submenu: [
                     {label: '关于Hedge', role: 'about'},
                     {type: 'separator'},
+                    {label: '便签', accelerator: 'Ctrl+Y', click() { windowManager.openNoteWindow() }},
                     {label: '偏好设置', accelerator: 'Ctrl+,', click() { windowManager.openSettingWindow() }},
                     {type: 'separator'},
                     {label: '退出Hedge', role: 'quit'},

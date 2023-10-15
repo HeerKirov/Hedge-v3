@@ -21,6 +21,10 @@ export interface WindowManager {
      */
     createWindow(url?: string): BrowserWindow | null
     /**
+     * 打开note窗口。
+     */
+    openNoteWindow(): BrowserWindow | null
+    /**
      * 打开guide窗口。
      */
     openGuideWindow(): BrowserWindow | null
@@ -44,6 +48,7 @@ export interface WindowManagerOptions {
 
 export function createWindowManager(state: StateManager, theme: ThemeManager, storage: StorageManager, options: WindowManagerOptions): WindowManager {
     let ready = false
+    let noteWindow: BrowserWindow | null = null
     let guideWindow: BrowserWindow | null = null
     let settingWindow: BrowserWindow | null = null
 
@@ -52,6 +57,10 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, st
 
     function newBrowserWindow(hashURL: string, configure: BrowserWindowConstructorOptions = {}): BrowserWindow {
         const pathname = boundManager.getPathname(hashURL)
+
+        const { width, height, ...config } = configure
+        const defaultBound = width && height ? {width, height} : undefined
+        const windowBound = boundManager.getWindowConfiguration(pathname, defaultBound)
 
         const win = new BrowserWindow({
             icon,
@@ -65,8 +74,8 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, st
             },
             autoHideMenuBar: true,
             backgroundColor: theme.getRuntimeTheme() === "dark" ? "#111417" : "#FFFFFF",
-            ...boundManager.getWindowConfiguration(pathname),
-            ...configure
+            ...windowBound,
+            ...config
         })
 
         if(options.debug) {
@@ -116,7 +125,7 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, st
             return null
         }
         if(settingWindow == null) {
-            settingWindow = newBrowserWindow('/setting')
+            settingWindow = newBrowserWindow('/setting', {width: 1080, height: 720})
             settingWindow.on("closed", () => {
                 settingWindow = null
             })
@@ -131,7 +140,7 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, st
             return null
         }
         if(guideWindow == null) {
-            guideWindow = newBrowserWindow('/guide')
+            guideWindow = newBrowserWindow('/guide', {width: 1080, height: 640})
             guideWindow.on("closed", () => {
                 guideWindow = null
             })
@@ -141,9 +150,25 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, st
         return guideWindow
     }
 
+    function openNoteWindow(): BrowserWindow | null {
+        if(!ready) {
+            return null
+        }
+        if(noteWindow == null) {
+            noteWindow = newBrowserWindow('/note', {width: 480, height: 640, minWidth: 240, minHeight: 320, fullscreenable: false, maximizable: false})
+            noteWindow.on("closed", () => {
+                noteWindow = null
+            })
+        }else{
+            noteWindow.show()
+        }
+        return noteWindow
+    }
+
     return {
         load,
         createWindow,
+        openNoteWindow,
         openGuideWindow,
         openSettingWindow,
         getAllWindows: BrowserWindow.getAllWindows
@@ -165,12 +190,12 @@ function createWindowBoundManager(storage: StorageManager) {
         return p2 || "__default__"
     }
 
-    function getWindowConfiguration(pathname: string): BrowserWindowConstructorOptions {
+    function getWindowConfiguration(pathname: string, defaultBound?: {width?: number, height?: number}): BrowserWindowConstructorOptions {
         const bound = bounds[pathname]
         if(bound !== undefined) {
             return {fullscreen: bound.fullscreen, x: bound.x, y: bound.y, width: bound.width, height: bound.height}
         }else{
-            return {width: 1080, height: 720}
+            return {width: defaultBound?.width ?? 1280, height: defaultBound?.height ?? 720}
         }
     }
 

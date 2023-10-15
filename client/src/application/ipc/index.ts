@@ -54,6 +54,7 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
     ipcHandleSync("/window/new-window", impl.window.newWindow)
     ipcHandleSync("/window/open-setting", impl.window.openSetting)
     ipcHandleSync("/window/open-guide", impl.window.openGuide)
+    ipcHandleSync("/window/open-note", impl.window.openNote)
     ipcHandle("/setting/appearance", impl.setting.appearance.get)
     ipcHandle("/setting/appearance/set", impl.setting.appearance.set)
     ipcHandle("/setting/auth", impl.setting.auth.get)
