@@ -105,6 +105,7 @@ fun runApplication(options: ApplicationOptions) {
             val illustUtilService = IllustUtilService(repo)
             val exportUtilService = ExportUtilService(appdata, repo, file)
 
+            val noteService = NoteService(repo, bus)
             val serviceService = ServiceService(appdata)
             val settingService = SettingService(appdata, repo, bus)
 
@@ -126,6 +127,7 @@ fun runApplication(options: ApplicationOptions) {
                 sourceMarkService,
                 serviceService,
                 settingService,
+                noteService,
                 queryService,
                 findSimilarService,
                 exportUtilService,

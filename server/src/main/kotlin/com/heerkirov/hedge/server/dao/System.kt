@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.dao
 
 import com.heerkirov.hedge.server.enums.ArchiveType
+import com.heerkirov.hedge.server.enums.NoteStatus
 import com.heerkirov.hedge.server.model.*
 import com.heerkirov.hedge.server.utils.ktorm.type.enum
 import com.heerkirov.hedge.server.utils.ktorm.type.instantDate
@@ -61,5 +62,25 @@ object FileCacheRecords : BaseTable<FileCacheRecord>("file_cache_record", schema
         block = row[block]!!,
         filename = row[filename]!!,
         lastAccessTime = row[lastAccessTime]!!
+    )
+}
+
+object NoteRecords : BaseTable<NoteRecord>("note_record", schema = "system_db") {
+    val id = int("id").primaryKey()
+    val title = text("title")
+    val content = text("content")
+    val status = enum("status", typeRef<NoteStatus>())
+    val deleted = boolean("deleted")
+    val createTime = timestamp("create_time")
+    val updateTime = timestamp("update_time")
+
+    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = NoteRecord(
+        id = row[id]!!,
+        title = row[title]!!,
+        content = row[content]!!,
+        status = row[status]!!,
+        deleted = row[deleted]!!,
+        createTime = row[createTime]!!,
+        updateTime = row[updateTime]!!
     )
 }

@@ -1,7 +1,9 @@
 package com.heerkirov.hedge.server.dto.form
 
+import com.heerkirov.hedge.server.enums.NoteStatus
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
+import com.heerkirov.hedge.server.utils.types.Opt
 
 data class HistoryPushForm(val type: String, val id: Int)
 
@@ -24,3 +26,7 @@ data class FindSimilarResultResolveForm(val actions: List<Resolution>) {
 
     data class AddToBookConfig(val bookId: Int)
 }
+
+data class NoteCreateForm(val title: String, val content: String? = null, val status: NoteStatus? = null)
+
+data class NoteUpdateForm(val title: Opt<String>, val content: Opt<String>, val status: Opt<NoteStatus>, val deleted: Opt<Boolean>)

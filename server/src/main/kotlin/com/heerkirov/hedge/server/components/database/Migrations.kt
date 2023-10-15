@@ -14,6 +14,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         register.useSQLTemplate("0.1.3", ::generateTimestampOffset)
         register.useSQL("0.1.4")
         register.useSQLTemplate("0.1.5", ::generateTimestampOffset)
+        register.useSQL("0.3.0")
     }
 
     /**

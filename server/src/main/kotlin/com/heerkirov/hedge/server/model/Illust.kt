@@ -442,12 +442,3 @@ data class FileFingerprint(val fileId: Int,
                            val pHash: String,
                            val dHash: String,
                            val createTime: Instant)
-
-/**
- * 文件缓存访问记录。
- */
-data class FileCacheRecord(val fileId: Int,
-                           val archiveType: ArchiveType,
-                           val block: String,
-                           val filename: String,
-                           val lastAccessTime: Instant)

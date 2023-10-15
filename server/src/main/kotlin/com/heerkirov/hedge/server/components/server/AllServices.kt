@@ -21,6 +21,7 @@ class AllServices(
     val sourceMark: SourceMarkService,
     val service: ServiceService,
     val setting: SettingService,
+    val note: NoteService,
     val queryService: QueryService,
     val findSimilar: FindSimilarService,
     val exportUtil: ExportUtilService,

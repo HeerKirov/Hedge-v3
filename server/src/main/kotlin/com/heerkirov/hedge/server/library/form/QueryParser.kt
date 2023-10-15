@@ -31,14 +31,28 @@ fun <T : Any> parseFilter(kClass: KClass<T>, parameterMap: Map<String, List<Stri
     val args = constructor.parameters.mapNotNull { parameter ->
         val name = parameter.name!!
 
-        val parameterValue = takeParameterValue(parameterMap, name)
-
         when(val special = parameter.annotations.firstOrNull { it is Limit || it is Offset || it is Search || it is Order }) {
-            null -> parseGeneralParameter(parameter, parameterValue)
-            is Limit -> parseLimitParameter(special, parameter, parameterValue)
-            is Offset -> parseOffsetParameter(special, parameter, parameterValue)
-            is Search -> parseSearchParameter(parameter, parameterValue)
-            is Order -> parseOrderParameter(special, parameter, parameterValue)
+            null -> {
+                val multi = parameter.type.classifier == List::class || parameter.type.classifier == Set::class
+                val parameterValue = takeParameterValue(parameterMap, name, multi)
+                parseGeneralParameter(parameter, parameterValue)
+            }
+            is Limit -> {
+                val parameterValue = takeParameterValue(parameterMap, name, false)
+                parseLimitParameter(special, parameter, parameterValue?.firstOrNull())
+            }
+            is Offset -> {
+                val parameterValue = takeParameterValue(parameterMap, name, false)
+                parseOffsetParameter(special, parameter, parameterValue?.firstOrNull())
+            }
+            is Search -> {
+                val parameterValue = takeParameterValue(parameterMap, name, false)
+                parseSearchParameter(parameter, parameterValue?.firstOrNull())
+            }
+            is Order -> {
+                val parameterValue = takeParameterValue(parameterMap, name, true)
+                parseOrderParameter(special, parameter, parameterValue)
+            }
             else -> throw UnsupportedOperationException()
         }
     }.toMap()
@@ -46,8 +60,14 @@ fun <T : Any> parseFilter(kClass: KClass<T>, parameterMap: Map<String, List<Stri
     return constructor.callBy(args)
 }
 
-private fun takeParameterValue(parameterMap: Map<String, List<String>>, key: String): String? {
-    return parameterMap[key]?.firstOrNull()?.ifBlank { null }
+private fun takeParameterValue(parameterMap: Map<String, List<String>>, key: String, multi: Boolean, delimiter: Char = ','): List<String>? {
+    return if(multi) {
+        val p = parameterMap[key]?.flatMap { p -> p.split(delimiter) } ?: emptyList()
+        val pList = parameterMap["$key[]"] ?: emptyList()
+        (p + pList).filter { it.isNotBlank() }.map { it.trim() }.takeIf { it.isNotEmpty() }
+    }else{
+        parameterMap[key]
+    }
 }
 
 private fun splitIntoList(parameterValue: String, delimiter: Char = ','): List<String> {
@@ -70,12 +90,12 @@ private fun parseSearchParameter(parameter: KParameter, parameterValue: String?)
     return Pair(parameter, parameterValue)
 }
 
-private fun parseOrderParameter(annotation: Order, parameter: KParameter, parameterValue: String?): Pair<KParameter, List<OrderItem>>? {
+private fun parseOrderParameter(annotation: Order, parameter: KParameter, parameterValue: List<String>?): Pair<KParameter, List<OrderItem>>? {
     return when {
-        !parameterValue.isNullOrBlank() -> {
+        !parameterValue.isNullOrEmpty() -> {
             val options = annotation.options.takeIf { it.isNotEmpty() }?.associate { Pair(it.lowercase(), it) }
 
-            val arraylist = splitIntoList(parameterValue, annotation.delimiter).map(::OrderItem).runIf(options != null) {
+            val arraylist = parameterValue.map(::OrderItem).runIf(options != null) {
                 map {
                     val match = options!![it.name.lowercase()] ?: throw be(ParamTypeError(parameter.name!!, "must be one of [${options.values.joinToString(", ")}]."))
                     OrderItem(match, it.desc)
@@ -89,9 +109,9 @@ private fun parseOrderParameter(annotation: Order, parameter: KParameter, parame
     }
 }
 
-private fun parseGeneralParameter(parameter: KParameter, parameterValue: String?): Pair<KParameter, Any?>? {
+private fun parseGeneralParameter(parameter: KParameter, parameterValue: List<String>?): Pair<KParameter, Any?>? {
     return when {
-        parameterValue != null -> {
+        !parameterValue.isNullOrEmpty() -> {
             val value = try {
                 mapAnyFromString(parameterValue, parameter.type)
             }catch (e: ClassCastException) {
@@ -104,42 +124,45 @@ private fun parseGeneralParameter(parameter: KParameter, parameterValue: String?
     }
 }
 
-private fun mapAnyFromString(string: String, kType: KType): Any {
+private fun mapAnyFromString(string: List<String>, kType: KType): Any {
     @Suppress("UNCHECKED_CAST")
     val kClass = kType.classifier as KClass<*>
     @Suppress("UNCHECKED_CAST")
     return when {
         kClass == String::class -> string
-        kClass == Int::class -> string.toIntOrNull() ?: throw ClassCastException("Expected number type of Int.")
-        kClass == Long::class -> string.toLongOrNull() ?: throw ClassCastException("Expected number type of Long.")
-        kClass == Float::class -> string.toFloatOrNull() ?: throw ClassCastException("Expected number type of Float.")
-        kClass == Double::class -> string.toDoubleOrNull() ?: throw ClassCastException("Expected number type of Double.")
-        kClass == Boolean::class -> string.toBoolean()
-        kClass == Instant::class -> try { Instant.parse(string) }catch (e: DateTimeParseException) {
+        kClass == Int::class -> string.first().toIntOrNull() ?: throw ClassCastException("Expected number type of Int.")
+        kClass == Long::class -> string.first().toLongOrNull() ?: throw ClassCastException("Expected number type of Long.")
+        kClass == Float::class -> string.first().toFloatOrNull() ?: throw ClassCastException("Expected number type of Float.")
+        kClass == Double::class -> string.first().toDoubleOrNull() ?: throw ClassCastException("Expected number type of Double.")
+        kClass == Boolean::class -> string.first().toBoolean()
+        kClass == Instant::class -> try { Instant.parse(string.first()) }catch (e: DateTimeParseException) {
             throw ClassCastException(e.message)
         }
-        kClass == LocalDate::class -> try { string.parseDate() }catch (e: DateTimeParseException) {
+        kClass == LocalDate::class -> try { string.first().parseDate() }catch (e: DateTimeParseException) {
             throw ClassCastException(e.message)
         }
         kClass == List::class || kClass == Set::class -> {
-            val arraylist = splitIntoList(string)
             val subType = kType.arguments.first().type!!
-            try { arraylist.map { mapAnyFromString(it, subType) } }catch (e: NullPointerException) {
+            try {
+                string.map {
+                    val sub = splitIntoList(it)
+                    mapAnyFromString(sub, subType)
+                }
+            }catch (e: NullPointerException) {
                 throw ClassCastException("Element of array cannot be null.")
             }
         }
         kClass.isSubclassOf(Enum::class) -> {
             val valueOf = kClass.java.getDeclaredMethod("valueOf", String::class.java)
             try {
-                valueOf(null, string.uppercase())
+                valueOf(null, string.first().uppercase())
             }catch (e: Exception) {
                 throw ClassCastException("Cannot convert '$string' to enum type ${kClass.simpleName}.")
             }
         }
         kClass.isSubclassOf(Composition::class) -> {
-            val arraylist = splitIntoList(string)
             val generator = CompositionGenerator.getGenericGenerator(kClass as KClass<out Composition<*>>)
-            val elements = arraylist.map {
+            val elements = string.map {
                 generator.parse(it) ?: throw ClassCastException("Cannot convert '$it' to composition type ${kClass.simpleName}.")
             }
             //使用union函数会产生协变类型的问题，因此copy一份实现

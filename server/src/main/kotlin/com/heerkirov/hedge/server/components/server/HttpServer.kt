@@ -80,6 +80,7 @@ class HttpServerImpl(private val health: Health,
             .handle(ServiceRoutes(allServices.service))
             .handle(SettingRoutes(allServices.setting))
             .handle(HomepageRoutes(allServices.homepage))
+            .handle(NoteRoutes(allServices.note))
             .handle(UtilQueryRoutes(allServices.queryService))
             .handle(UtilMetaRoutes(allServices.metaUtil))
             .handle(UtilIllustRoutes(allServices.illustUtil))

@@ -3,6 +3,7 @@ package com.heerkirov.hedge.server.events
 import com.heerkirov.hedge.server.enums.FolderType
 import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.enums.MetaType
+import com.heerkirov.hedge.server.enums.NoteStatus
 
 /**
  * 实体事件，指实体变更等。
@@ -142,3 +143,9 @@ data class SimilarFinderResultCreated(val count: Int) : BaseBusEventImpl("entity
 data class SimilarFinderResultResolved(val resultId: Int) : BaseBusEventImpl("entity/find-similar-result/resolved"), EntityEvent
 
 data class SimilarFinderResultDeleted(val resultId: Int) : BaseBusEventImpl("entity/find-similar-result/deleted"), EntityEvent
+
+data class NoteCreated(val id: Int, val status: NoteStatus) : BaseBusEventImpl("entity/note/created"), EntityEvent
+
+data class NoteUpdated(val id: Int, val status: NoteStatus, val deleted: Boolean) : BaseBusEventImpl("entity/note/updated"), EntityEvent
+
+data class NoteDeleted(val id: Int, val status: NoteStatus, val deleted: Boolean) : BaseBusEventImpl("entity/note/deleted"), EntityEvent
