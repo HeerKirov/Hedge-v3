@@ -28,6 +28,7 @@ data class IllustLocationFilter(@Search val query: String?,
                                 val topic: Int? = null,
                                 val author: Int? = null,
                                 val partition: LocalDate? = null,
+                                val type: IllustType = IllustType.IMAGE,
                                 val favorite: Boolean? = null,
                                 val imageId: Int)
 

@@ -99,9 +99,25 @@ class IllustService(private val appdata: AppDataManager,
             .let { r -> imageIds.map { r[it] } }
     }
 
-    fun findImageLocation(filter: IllustLocationFilter): Int {
+    fun findImageLocation(filter: IllustLocationFilter): IllustLocationRes {
+        val imageId: Int
+        val type: IllustType
+        if(filter.type === IllustType.IMAGE) {
+            imageId = filter.imageId
+            type = IllustType.IMAGE
+        }else{
+            val parentId = data.db.from(Illusts).select(Illusts.parentId).where { Illusts.id eq filter.imageId }.firstOrNull()?.get(Illusts.parentId)
+            if(parentId != null) {
+                imageId = parentId
+                type = IllustType.COLLECTION
+            }else{
+                imageId = filter.imageId
+                type = IllustType.IMAGE
+            }
+        }
+
         val schema = if(filter.query.isNullOrBlank()) null else {
-            queryManager.querySchema(filter.query, QueryManager.Dialect.ILLUST).executePlan ?: return -2
+            queryManager.querySchema(filter.query, QueryManager.Dialect.ILLUST).executePlan ?: return IllustLocationRes(imageId, -2, type)
         }
 
         val orderByExpressions = orderTranslator.toOrderByExpressions(filter.order, schema?.orderConditions, default = descendingOrderItem("orderTime"))
@@ -112,7 +128,10 @@ class IllustService(private val appdata: AppDataManager,
             .let { if(filter.author == null) it else it.innerJoin(IllustAuthorRelations, (IllustAuthorRelations.illustId eq Illusts.id) and (IllustAuthorRelations.authorId eq filter.author)) }
             .select(Illusts.id.aliased("id"), rowNumber(*orderByExpressions).aliased("idx"))
             .whereWithConditions {
-                it += (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)
+                it += when(type) {
+                    IllustType.COLLECTION -> (Illusts.type eq IllustModelType.COLLECTION) or (Illusts.type eq IllustModelType.IMAGE)
+                    IllustType.IMAGE -> (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)
+                }
                 if(filter.partition != null) {
                     it += Illusts.partitionTime eq filter.partition
                 }
@@ -125,9 +144,10 @@ class IllustService(private val appdata: AppDataManager,
             }
             .runIf(schema?.distinct == true) { groupBy(Illusts.id) }
 
-        val selectExpression = SelectExpression(from = query.expression, where = Illusts.id.aliased("id") eq filter.imageId, limit = 1)
+        val selectExpression = SelectExpression(from = query.expression, where = Illusts.id.aliased("id") eq imageId, limit = 1)
         val row = data.db.executeQuery(selectExpression)
-        return if(row.next()) row.getInt("idx") else -1
+        val index = if(row.next()) row.getInt("idx") else -1
+        return IllustLocationRes(imageId, index, type)
     }
 
     /**
@@ -823,7 +843,7 @@ class IllustService(private val appdata: AppDataManager,
                     }
                 }
             }
-            fun setOrderTimeByRange(begin: Instant, end: Instant? = null) {
+            fun setOrderTimeByRange(begin: Instant, end: Instant? = null, excludeBeginAndEnd: Boolean = false) {
                 //找出所有image及collection的children，按照原有orderTime顺序排序，并依次计算新orderTime。排序时相同parent的children保持相邻
                 //对于collection，绕过标准导出流程进行更改。直接按照计算结果修改collection的orderTime，且无需导出，因为orderTime并未变化
 
@@ -846,20 +866,29 @@ class IllustService(private val appdata: AppDataManager,
                             beginMs + (orderTimeSeq.size - 1) * 1000
                         }
                     }
-                    val step = (endMs - beginMs) / (orderTimeSeq.size - 1)
-                    var value = beginMs
-                    orderTimeSeq.indices.map {
-                        value.also {
-                            value += step
-                        }
+
+                    //从begin开始，通过每次迭代step的步长长度来获得整个seq序列
+                    if(excludeBeginAndEnd) {
+                        //如果开启了exclude，则会去掉两个端点，因此step的计算项数+2，初始value额外增加了一个step的值
+                        val step = (endMs - beginMs) / (orderTimeSeq.size + 1)
+                        var value = beginMs + step
+                        orderTimeSeq.indices.map { value.also { value += step } }
+                    }else{
+                        val step = (endMs - beginMs) / (orderTimeSeq.size - 1)
+                        var value = beginMs
+                        orderTimeSeq.indices.map { value.also { value += step } }
                     }
+                }else if(end != null && excludeBeginAndEnd) {
+                    //只有一项，但指定了end且开启了exclude参数，那么应该取begin和end的中点值
+                    listOf((begin.toEpochMilli() + end.toEpochMilli()) / 2)
                 }else{
+                    //只有一项，且没有指定end或没有开启exclude参数，那么取begin即可
                     listOf(begin.toEpochMilli())
                 }
 
                 setOrderTimeBySeq(values)
             }
-            form.orderTimeBegin.alsoOpt { orderTimeBegin -> setOrderTimeByRange(orderTimeBegin, form.orderTimeEnd.unwrapOrNull()) }
+            form.orderTimeBegin.alsoOpt { orderTimeBegin -> setOrderTimeByRange(orderTimeBegin, form.orderTimeEnd.unwrapOrNull(), form.orderTimeExclude) }
 
             //action
             if(form.action != null) {

@@ -89,7 +89,7 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
 
     private fun findImageLocation(ctx: Context) {
         val filter = ctx.queryAsFilter<IllustLocationFilter>()
-        ctx.json(mapOf("index" to illustService.findImageLocation(filter)))
+        ctx.json(illustService.findImageLocation(filter))
     }
 
     private fun get(ctx: Context) {

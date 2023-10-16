@@ -92,56 +92,6 @@ class IllustManager(private val data: DataRepository,
     }
 
     /**
-     * 创建新的image。
-     * @throws ResourceNotExist ("site", string) 给出的site不存在
-     * @throws ResourceNotExist ("parentId", number) 给定的parent不存在，或者它不是一个collection。给出id
-     * @throws ResourceNotExist ("topics", number[]) 部分topics资源不存在。给出不存在的topic id列表
-     * @throws ResourceNotExist ("authors", number[]) 部分authors资源不存在。给出不存在的author id列表
-     * @throws ResourceNotExist ("tags", number[]) 部分tags资源不存在。给出不存在的tag id列表
-     * @throws ResourceNotSuitable ("tags", number[]) 部分tags资源不适用。地址段不适用于此项。给出不适用的tag id列表
-     * @throws ConflictingGroupMembersError 发现标签冲突组
-     */
-    @Deprecated("使用新的批处理函数代替")
-    fun newImage(fileId: Int, sourceSite: String? = null, sourceId: Long? = null, sourcePart: Int? = null, sourcePartName: String? = null,
-                 description: String = "", score: Int? = null, favorite: Boolean = false, tagme: Illust.Tagme = Illust.Tagme.EMPTY,
-                 partitionTime: LocalDate, orderTime: Long, createTime: Instant): Int {
-        partitionManager.addItemInPartition(partitionTime)
-
-        val newSourceDataId = sourceManager.checkSourceSite(sourceSite, sourceId, sourcePart, sourcePartName)
-            ?.let { (source, sourceId) -> sourceManager.validateAndCreateSourceDataIfNotExist(source, sourceId) }
-
-        val id = data.db.insertAndGenerateKey(Illusts) {
-            set(it.type, IllustModelType.IMAGE)
-            set(it.parentId, null)
-            set(it.fileId, fileId)
-            set(it.cachedChildrenCount, 0)
-            set(it.cachedBookCount, 0)
-            set(it.sourceDataId, newSourceDataId)
-            set(it.sourceSite, sourceSite)
-            set(it.sourceId, sourceId)
-            set(it.sourcePart, sourcePart)
-            set(it.sourcePartName, sourcePartName)
-            set(it.description, description)
-            set(it.score, score)
-            set(it.favorite, favorite)
-            set(it.tagme, tagme)
-            set(it.exportedDescription, description)
-            set(it.exportedScore, score)
-            set(it.partitionTime, partitionTime)
-            set(it.orderTime, orderTime)
-            set(it.createTime, createTime)
-            set(it.updateTime, createTime)
-        } as Int
-
-        //对tag进行校验和分析，导出
-        kit.updateMeta(id, creating = true, newTags = undefined(), newTopics = undefined(), newAuthors = undefined())
-
-        bus.emit(IllustCreated(id, IllustType.IMAGE))
-
-        return id
-    }
-
-    /**
      * 创建新的collection。
      * @throws ResourceNotExist ("images", number[]) 给出的部分images不存在。给出不存在的image id列表
      */

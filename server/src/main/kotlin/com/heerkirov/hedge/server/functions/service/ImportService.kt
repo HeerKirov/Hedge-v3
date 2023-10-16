@@ -268,7 +268,7 @@ class ImportService(private val appdata: AppDataManager,
                         }
                     }
                 }
-                fun setOrderTimeByRange(begin: Instant, end: Instant? = null) {
+                fun setOrderTimeByRange(begin: Instant, end: Instant? = null, excludeBeginAndEnd: Boolean = false) {
                     val values = if(records.size > 1) {
                         val beginMs = begin.toEpochMilli()
                         val endMs = if(end != null) {
@@ -288,14 +288,22 @@ class ImportService(private val appdata: AppDataManager,
                                 beginMs + (records.size - 1) * 1000
                             }
                         }
-                        val step = (endMs - beginMs) / (records.size - 1)
-                        var value = beginMs
-                        records.indices.map {
-                            value.also {
-                                value += step
-                            }
+                        //从begin开始，通过每次迭代step的步长长度来获得整个seq序列
+                        if(excludeBeginAndEnd) {
+                            //如果开启了exclude，则会去掉两个端点，因此step的计算项数+2，初始value额外增加了一个step的值
+                            val step = (endMs - beginMs) / (records.size + 1)
+                            var value = beginMs + step
+                            records.indices.map { value.also { value += step } }
+                        }else{
+                            val step = (endMs - beginMs) / (records.size - 1)
+                            var value = beginMs
+                            records.indices.map { value.also { value += step } }
                         }
+                    }else if(end != null && excludeBeginAndEnd) {
+                        //只有一项，但指定了end且开启了exclude参数，那么应该取begin和end的中点值
+                        listOf((begin.toEpochMilli() + end.toEpochMilli()) / 2)
                     }else{
+                        //只有一项，且没有指定end或没有开启exclude参数，那么取begin即可
                         listOf(begin.toEpochMilli())
                     }
 
@@ -307,7 +315,7 @@ class ImportService(private val appdata: AppDataManager,
                 }
 
                 if(form.orderTimeBegin != null) {
-                    setOrderTimeByRange(form.orderTimeBegin, form.orderTimeEnd)
+                    setOrderTimeByRange(form.orderTimeBegin, form.orderTimeEnd, form.orderTimeExclude)
                 }
 
                 if(form.action != null) {

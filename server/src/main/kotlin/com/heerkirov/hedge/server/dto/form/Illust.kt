@@ -42,6 +42,7 @@ class IllustBatchUpdateForm(val target: List<Int>,
                             val partitionTime: Opt<LocalDate>,
                             val orderTimeBegin: Opt<Instant>,
                             val orderTimeEnd: Opt<Instant>,
+                            val orderTimeExclude: Boolean = false,
                             val action: Action? = null,
                             val actionBy: Int? = null) {
     enum class Action {

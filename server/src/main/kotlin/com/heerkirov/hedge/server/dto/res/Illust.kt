@@ -44,6 +44,8 @@ data class IllustImageSourceDataRes(val source: SourceDataPath?, val sourceSiteN
 
 data class IllustParent(val id: Int, val filePath: FilePath, val childrenCount: Int)
 
+data class IllustLocationRes(val id: Int, val index: Int, val type: IllustType)
+
 data class PartitionRes(val date: LocalDate, val count: Int)
 
 data class PartitionMonthRes(val year: Int, val month: Int, val dayCount: Int, val count: Int)
