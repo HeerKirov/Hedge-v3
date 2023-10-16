@@ -1,7 +1,7 @@
 import { ipcRenderer, contextBridge } from "electron"
 import { getNodePlatform } from "../../utils/process"
 import { createProxyEmitter } from "../../utils/emitter"
-import { IpcClient } from "./constants"
+import { IpcClient, MenuTemplate, MenuTemplateInIpc } from "./constants"
 
 /**
  * IPC API Client在前端的实现。这部分代码通过electron preload注入到前端。
@@ -98,15 +98,20 @@ function createRemoteIpcClient(): IpcClient {
                 popup(options) {
                     const callbacks: (() => void)[] = []
 
-                    const refItems = options.items.map(item => {
+                    function mapItem(item: MenuTemplate): MenuTemplateInIpc {
                         if((item.type === "normal" || item.type === "radio" || item.type === "checkbox") && item.click !== undefined) {
                             const { click, ...leave } = item
                             callbacks.push(click)
                             return { ...leave, eventId: callbacks.length - 1 }
+                        }else if(item.type === "submenu" && item.submenu.length > 0) {
+                            const { submenu, ...leave } = item
+                            return { ...leave, submenu: submenu.map(mapItem) }
                         }else{
                             return item
                         }
-                    })
+                    }
+
+                    const refItems = options.items.map(mapItem)
                     const refOptions = options && options.x != null && options.y != null ? { x: options.x, y: options.y } : undefined
 
                     const requestId = ++popupRequestId

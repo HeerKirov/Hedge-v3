@@ -1,7 +1,7 @@
 import { BrowserWindow, dialog, ipcMain, Menu, MessageBoxOptions, OpenDialogOptions, shell } from "electron"
 import { sleep } from "../../utils/process"
 import { Emitter } from "../../utils/emitter"
-import { MenuTemplateInIpc } from "./constants"
+import { MenuTemplate, MenuTemplateInIpc } from "./constants"
 import { AppDataDriver } from "../../components/appdata"
 import { Channel } from "../../components/channel"
 import { ServerManager } from "../../components/server"
@@ -82,7 +82,8 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
     })
     ipcMain.on("/remote/menu/popup", async (e, { requestId, items, options }: {requestId: number, items: MenuTemplateInIpc[], options?: { x: number; y: number }}) => {
         let clicked = false
-        const finalItems = items.map(item => {
+
+        function mapItem(item: MenuTemplateInIpc): MenuTemplate {
             if((item.type === "normal" || item.type === "radio" || item.type === "checkbox") && item.eventId != undefined) {
                 const { eventId, ...leave } = item
                 return {
@@ -92,10 +93,15 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
                         e.sender.send(`/remote/menu/popup/response/${requestId}`, eventId)
                     }
                 }
+            }else if(item.type === "submenu" && item.submenu.length > 0) {
+                const { submenu, ...leave} = item
+                return {...leave, submenu: submenu.map(mapItem)}
             }else{
                 return item
             }
-        })
+        }
+
+        const finalItems = items.map(mapItem)
 
         const menu = Menu.buildFromTemplate(finalItems)
         menu.once("menu-will-close", async () => {
