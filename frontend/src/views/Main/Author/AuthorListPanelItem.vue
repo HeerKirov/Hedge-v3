@@ -138,7 +138,7 @@ const { hover, ...hoverEvents } = useMouseHover()
             padding-top: $spacing-2
 
         > .score-and-count
-            width: 40px
+            width: 52px
             padding-right: $spacing-1
             padding-top: $spacing-1
             text-align: right

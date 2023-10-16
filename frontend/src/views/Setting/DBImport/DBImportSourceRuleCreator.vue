@@ -44,7 +44,7 @@ const extraTargetItems: {label: string, value: SourceAnalyseRuleExtraTarget}[] =
 const additionalInfoFields = computed(() => site.value?.availableAdditionalInfo.map(i => ({label: i.label, value: i.field})) ?? [])
 
 const addExtra = () => {
-    form.extras.push({group: "", target: "ADDITIONAL_INFO", optional: true, tagType: "", additionalInfoField: ""})
+    form.extras.push({group: "", target: "ADDITIONAL_INFO", optional: true, translateUnderscoreToSpace: false, tagType: "", additionalInfoField: ""})
 }
 
 const removeExtra = (idx: number) => {
@@ -122,8 +122,9 @@ const submit = () => {
                 <Input v-else-if="extra.target === 'TAG'" width="fullwidth" placeholder="标签类型(可选)" v-model:value="extra.tagType"/>
             </FlexItem>
             <FlexItem :shrink="0">
-                <div class="is-line-height-std pl-1">
-                    <CheckBox v-model:value="extra.optional">可选</CheckBox>
+                <div class="is-line-height-std">
+                    <CheckBox class="pl-1" v-model:value="extra.optional">可选</CheckBox>
+                    <CheckBox class="pl-1" v-model:value="extra.translateUnderscoreToSpace">下划线转空格</CheckBox>
                 </div>
                 <Button type="danger" icon="close" square @click="removeExtra(idx)"/>
             </FlexItem>

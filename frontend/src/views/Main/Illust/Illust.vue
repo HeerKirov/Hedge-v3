@@ -20,7 +20,7 @@ const {
 } = installIllustContext()
 
 const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
-    {type: "checkbox", label: "显示信息预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "checkbox", label: "解除编辑锁定", checked: editableLockOn.value, click: () => editableLockOn.value = !editableLockOn.value},
     {type: "separator"},
@@ -29,15 +29,14 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
 ])
 
 const menu = useDynamicPopupMenu<Illust>(illust => [
-    {type: "normal", label: "查看详情", click: i => operators.openDetailByClick(i.id)},
+    {type: "normal", label: "打开", click: i => operators.openDetailByClick(i.id)},
     (illust.type === "COLLECTION" || null) && {type: "normal", label: "查看集合详情", click: i => operators.openCollectionDetail(i.id)},
     {type: "normal", label: illust.type === "COLLECTION" ? "在新窗口中打开集合" : "在新窗口中打开", click: operators.openInNewWindow},
     {type: "separator"},
-    {type: "checkbox", checked: paneState.visible.value, label: "显示信息预览", click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "normal", label: "预览", click: operators.openPreviewBySpace},
+    {type: "checkbox", checked: paneState.visible.value, label: "在侧边栏预览", click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
-    illust.favorite
-        ? {type: "normal", label: "取消标记为收藏", click: i => operators.modifyFavorite(i, false)}
-        : {type: "normal", label: "标记为收藏", click: i => operators.modifyFavorite(i, true)},
+    {type: "checkbox", label: "标记为收藏", checked: illust.favorite, click: i => operators.modifyFavorite(i, !i.favorite)},
     {type: "separator"},
     {type: "normal", label: "暂存", click: operators.addToStagingPost},
     {type: "separator"},

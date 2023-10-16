@@ -174,17 +174,18 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
                 // updating = true时，此时正在update流程内，因此直接节流。
                 // 之后的调用使用了节流器，不允许短时间内的多次重复调用。
                 // 节流器也会在update操作完成后被调用，在那之后的短时间内也不允许更新操作。
+                const pathValue = path.value
                 updatingThrottleMod(async () => {
-                    const res = await method.get(path.value!)
+                    const res = await method.get(pathValue)
                     if(res.ok) {
                         data.value = res.data
-                        options.afterRetrieve?.(path.value, data.value, "EVENT")
+                        options.afterRetrieve?.(pathValue, data.value, "EVENT")
                     }else if(res.exception) {
                         data.value = null
                         if(res.exception.code !== "NOT_FOUND") {
                             handleException(res.exception)
                         }else{
-                            options.afterRetrieve?.(path.value, null, "EVENT")
+                            options.afterRetrieve?.(pathValue, null, "EVENT")
                         }
                     }
                 })
@@ -195,26 +196,27 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
     const setData = async (form: FORM, handleError?: (e: UE) => UE | void): Promise<boolean> => {
         if(method.update && !updating.value && path.value != null) {
             updating.value = true
+            const pathValue = path.value
             try {
-                const res = await method.update(path.value, form)
+                const res = await method.update(pathValue, form)
                 if(res.ok) {
                     if(res.data) {
                         data.value = res.data
-                        options.afterRetrieve?.(path.value, data.value, "UPDATE")
-                        options.afterUpdate?.(path.value, data.value)
+                        options.afterRetrieve?.(pathValue, data.value, "UPDATE")
+                        options.afterUpdate?.(pathValue, data.value)
                     }else{
                         //在update函数没有提供返回值的情况下，去请求get函数以更新数据
-                        const res = await method.get(path.value)
+                        const res = await method.get(pathValue)
                         if(res.ok) {
                             data.value = res.data
-                            options.afterRetrieve?.(path.value, data.value, "UPDATE")
-                            options.afterUpdate?.(path.value, data.value)
+                            options.afterRetrieve?.(pathValue, data.value, "UPDATE")
+                            options.afterUpdate?.(pathValue, data.value)
                         }else if(res.exception) {
                             data.value = null
                             if(res.exception.code !== "NOT_FOUND") {
                                 handleException(res.exception)
                             }else{
-                                options.afterRetrieve?.(path.value, null, "UPDATE")
+                                options.afterRetrieve?.(pathValue, null, "UPDATE")
                             }
                         }
                     }
@@ -236,12 +238,13 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
     const deleteData = async (): Promise<boolean> => {
         if(method.delete && !deleting.value && path.value != null) {
             deleting.value = true
+            const pathValue = path.value
             try {
-                const res = await method.delete(path.value)
+                const res = await method.delete(pathValue)
                 if(res.ok) {
                     data.value = null
-                    options.afterRetrieve?.(path.value, null, "DELETE")
-                    options.afterDelete?.(path.value)
+                    options.afterRetrieve?.(pathValue, null, "DELETE")
+                    options.afterDelete?.(pathValue)
                 }else if(res.exception) {
                     //错误处理的调用顺序是：options的handler、fetchManager的handler
                     const e = options.handleErrorInDelete ? options.handleErrorInDelete(res.exception) : res.exception

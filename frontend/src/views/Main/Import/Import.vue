@@ -19,11 +19,11 @@ const {
     listview: { paginationData, anyData },
     listviewController: { viewMode, fitType, columnNum },
     selector: { selected, lastSelected, update: updateSelect },
-    operators: { openDialog, save, deleteItem, dataDrop, openImagePreview }
+    operators: { openDialog, save, deleteItem, dataDrop, openImagePreview, analyseSource, orderTimeAction }
 } = installImportContext()
 
 const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
-    {type: "checkbox", label: "显示信息预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "radio", checked: viewMode.value === "row", label: "列表模式", click: () => viewMode.value = "row"},
     {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"},
@@ -34,7 +34,15 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
 ])
 
 const menu = usePopupMenu<ImportImage>(() => [
-    {type: "checkbox", label: "显示信息预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "normal", label: "预览", click: openImagePreview},
+    {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "separator"},
+    {type: "normal", label: "分析来源", click: analyseSource},
+    {type: "separator"},
+    {type: "normal", label: "按来源ID顺序重设排序时间", enabled: selected.value.length > 1, click: () => orderTimeAction("BY_SOURCE_ID")},
+    {type: "normal", label: "将排序时间设为当前时间", click: () => orderTimeAction("NOW")},
+    {type: "normal", label: "倒置排序时间", enabled: selected.value.length > 1, click: () => orderTimeAction("REVERSE")},
+    {type: "normal", label: "均匀分布排序时间", enabled: selected.value.length > 1, click: () => orderTimeAction("UNIFORMLY")},
     {type: "separator"},
     {type: "normal", label: "删除项目", click: i => deleteItem(i.id)},
 ])
@@ -72,7 +80,7 @@ const menu = usePopupMenu<ImportImage>(() => [
                 :data="paginationData.data" :query-instance="paginationData.proxy"
                 :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable droppable
                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)" @space="openImagePreview" @drop="dataDrop"/>
+                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)" @space="openImagePreview()" @drop="dataDrop"/>
             <ImportEmpty v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" :class="$style.empty"/>
 
             <template #pane>

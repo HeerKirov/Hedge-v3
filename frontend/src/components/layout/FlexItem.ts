@@ -1,4 +1,4 @@
-import { SetupContext } from "vue"
+import { SetupContext, defineComponent } from "vue"
 
 interface FlexItemProps {
     width?: number
@@ -8,6 +8,9 @@ interface FlexItemProps {
     grow?: number
 }
 
+/*
+ * TODO 在生产模式下，这个组件的参数无法动态更新。计划后续将Flex组件替换为普通的CSS实现。
+ */
 export default function (props: FlexItemProps, { slots } : SetupContext) {
     const vNode = slots.default?.()
 

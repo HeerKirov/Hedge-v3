@@ -26,20 +26,18 @@ const { creatingBook } = useDialogService()
 const bookGridStyle = computed(() => ({"--column-num": columnNum.value}))
 
 const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
-    {type: "checkbox", label: "显示信息预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "normal", label: "新建画集", click: creatingBook.createBook}
 ])
 
 const menu = useDynamicPopupMenu<Book>(book => [
-    {type: "normal", label: "查看详情", click: operators.openBookView},
+    {type: "normal", label: "打开", click: operators.openBookView},
     {type: "normal", label: "在新窗口中打开", click: operators.openInNewWindow},
     {type: "separator"},
-    {type: "checkbox", checked: paneState.visible.value, label: "显示信息预览", click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "checkbox", checked: paneState.visible.value, label: "在侧边栏预览", click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
-    book.favorite
-        ? {type: "normal", label: "取消标记为收藏", click: book => operators.switchFavorite(book, false)}
-        : {type: "normal", label: "标记为收藏", click: book => operators.switchFavorite(book, true)},
+    {type: "checkbox", label: "标记为收藏", checked: book.favorite, click: i => operators.switchFavorite(i, !i.favorite)},
     {type: "separator"},
     {type: "normal", label: "导出", click: operators.exportItem},
     {type: "separator"},

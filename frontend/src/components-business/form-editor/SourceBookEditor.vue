@@ -52,6 +52,7 @@ const deleteItem = (index: number) => {
             <FlexItem :width="20">
                 <Input size="small" placeholder="标识编码" :value="book.code" @update:value="setCode(idx, $event)"/>
             </FlexItem>
+            <!-- TODO 此处也使用了动态的Flex参数，它们是无法生效的 -->
             <FlexItem :width="book.otherTitle?.length ? 40 : 60">
                 <Input size="small" placeholder="标题" :value="book.title" @update:value="setTitle(idx, $event)"/>
             </FlexItem>

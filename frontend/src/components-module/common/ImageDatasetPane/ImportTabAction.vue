@@ -23,17 +23,17 @@ const partitionTimeEllipsisMenuItems = <MenuItem<undefined>[]>[
 ]
 
 const createTimeEllipsisMenuItems = <MenuItem<undefined>[]>[
-    {type: "normal", label: "按 项目导入时间 设定", click: () => createTimeAction("IMPORT_TIME")},
-    {type: "normal", label: "按 文件创建时间 设定", click: () => createTimeAction("CREATE_TIME")},
-    {type: "normal", label: "按 文件修改时间 设定", click: () => createTimeAction("UPDATE_TIME")},
+    {type: "normal", label: "设定为文件导入时间", click: () => createTimeAction("IMPORT_TIME")},
+    {type: "normal", label: "设定为文件创建时间", click: () => createTimeAction("CREATE_TIME")},
+    {type: "normal", label: "设定为文件修改时间", click: () => createTimeAction("UPDATE_TIME")},
 ]
 
 const orderTimeEllipsisMenuItems = <MenuItem<undefined>[]>[
     {type: "normal", label: "按来源ID顺序重设排序时间", click: () => orderTimeAction("BY_SOURCE_ID")},
     {type: "separator"},
-    {type: "normal", label: "按文件导入时间设定", click: () => orderTimeAction("IMPORT_TIME")},
-    {type: "normal", label: "按文件创建时间设定", click: () => orderTimeAction("CREATE_TIME")},
-    {type: "normal", label: "按文件修改时间设定", click: () => orderTimeAction("UPDATE_TIME")},
+    {type: "normal", label: "设定为文件导入时间", click: () => orderTimeAction("IMPORT_TIME")},
+    {type: "normal", label: "设定为文件创建时间", click: () => orderTimeAction("CREATE_TIME")},
+    {type: "normal", label: "设定为文件修改时间", click: () => orderTimeAction("UPDATE_TIME")},
     {type: "separator"},
     {type: "normal", label: "设为当前时间", click: () => orderTimeAction("NOW")},
     {type: "normal", label: "倒置排序时间", click: () => orderTimeAction("REVERSE")},

@@ -26,7 +26,7 @@ const {
 } = installBookViewContext(props.sliceOrPath)
 
 const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
-    {type: "checkbox", label: "显示信息预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "checkbox", label: "解除编辑锁定", checked: editableLockOn.value, click: () => editableLockOn.value = !editableLockOn.value},
     {type: "separator"},
@@ -37,14 +37,13 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
 ])
 
 const menu = useDynamicPopupMenu<BookImage>(bookImage => [
-    {type: "normal", label: "查看详情", click: i => operators.openDetailByClick(i.id)},
+    {type: "normal", label: "打开", click: i => operators.openDetailByClick(i.id)},
     {type: "normal", label: "在新窗口中打开", click: operators.openInNewWindow},
     {type: "separator"},
-    {type: "checkbox", checked: paneState.visible.value, label: "显示信息预览", click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "normal", label: "预览", click: operators.openPreviewBySpace},
+    {type: "checkbox", checked: paneState.visible.value, label: "在侧边栏预览", click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
-    bookImage.favorite
-        ? {type: "normal", label: "取消标记为收藏", click: i => operators.modifyFavorite(i, false)}
-        : {type: "normal", label: "标记为收藏", click: i => operators.modifyFavorite(i, true)},
+    {type: "checkbox", label: "标记为收藏", checked: bookImage.favorite, click: i => operators.modifyFavorite(i, !i.favorite)},
     {type: "separator"},
     {type: "normal", label: "暂存", click: operators.addToStagingPost},
     operators.stagingPostCount.value > 0 && editableLockOn.value

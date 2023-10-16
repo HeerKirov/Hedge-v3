@@ -106,10 +106,10 @@ export interface ImageDatasetOperators<T extends BasicIllust> {
      */
     openInNewWindow(illust: T): void
     /**
-     * 通过选中空格的方式打开预览。它总是预览最后选中项。
+     * 通过选中空格的方式打开预览。未指定参数时，它总是预览最后选中项；指定参数时，则尝试预览指定项。
      * @param illustId 
      */
-    openPreviewBySpace(): void
+    openPreviewBySpace(illust?: T): void
     /**
      * 更改favorite属性。
      */
@@ -321,7 +321,15 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
         }
     }
 
-    const openPreviewBySpace = () => {
+    const openPreviewBySpace = (illust?: T) => {
+        if(illust !== undefined) {
+            //如果指定项已选中，那么将最后选中项重新指定为指定项；如果未选中，那么将单独选中此项
+            if(selector.selected.value.includes(illust.id)) {
+                selector.update(selector.selected.value, illust.id)
+            }else{
+                selector.update([illust.id], illust.id)
+            }
+        }
         preview.show({
             preview: "image", 
             type: "listview", 
@@ -424,7 +432,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
         if(idx !== undefined) {
             const res = await fetchStagingPostListAll({})
             if(res !== undefined) {
-                const ok = await dataDrop(position === "before" ? idx : idx + 1, res.result.map(i => ({id: i.id, filePath: i.filePath, type: "IMAGE", childrenCount: null})), "ADD")
+                const ok = await dataDrop(position === "before" ? idx : idx + 1, res.result.map(i => ({id: i.id, filePath: i.filePath, type: "IMAGE", childrenCount: null, orderTime: i.orderTime})), "ADD")
                 if(ok) {
                     await fetchStagingPostUpdate({action: "CLEAR"})
                 }
@@ -467,33 +475,48 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
             const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
             const afterItem2 = paginationData.proxy.syncOperations.retrieve(finalInsertIndex + 1)
             const direction = afterItem2 !== undefined ? (afterItem2.orderTime.timestamp > afterItem.orderTime.timestamp ? "asc" : afterItem2.orderTime.timestamp < afterItem.orderTime.timestamp ? "desc" : null) : null            
-            //取出之后的两项，根据这两项的orderTime，猜测是升序还是降序，并设为与之后的一项间隔1s。如果无法猜测，则将时间锁定为与之后的一项相同
-            const orderTimeBegin = direction === "asc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds - 1) : direction === "desc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds + 1) : afterItem.orderTime
-            const orderTimeEnd = direction === null ? afterItem.orderTime : undefined
+            //取出之后的两项，根据这两项的orderTime，猜测是升序还是降序，根据升降情况，以target数量设置begin和end的间隔秒数。如果无法猜测，则begin和end设置为相同。
+            const orderTimeBegin = direction === "asc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds - target.length - 1) : afterItem.orderTime
+            const orderTimeEnd = direction === "desc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds + target.length + 1) : afterItem.orderTime
 
-            await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, partitionTime})
+            await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true, partitionTime})
             return true
         }else if(finalInsertIndex !== null && finalInsertIndex === paginationData.proxy.syncOperations.count()) {
             const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
             const behindItem2 = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 2)!
             const direction = behindItem2 !== undefined ? (behindItem2.orderTime.timestamp > behindItem.orderTime.timestamp ? "desc" : behindItem2.orderTime.timestamp < behindItem.orderTime.timestamp ? "asc" : null) : null            
-            //取出之前的两项，根据这两项的orderTime，猜测是升序还是降序，并设置为与之前的一项间隔1s。如果无法猜测，则将时间锁定为与之前的一项相同
-            const orderTimeBegin = direction === "asc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds + 1) : direction === "desc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds - 1) : behindItem.orderTime
-            const orderTimeEnd = direction === null ? behindItem.orderTime : undefined
+            //取出之后的两项，根据这两项的orderTime，猜测是升序还是降序，根据升降情况，以target数量设置begin和end的间隔秒数。如果无法猜测，则begin和end设置为相同。
+            const orderTimeBegin = direction === "desc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds - target.length - 1) : behindItem.orderTime
+            const orderTimeEnd = direction === "asc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds + target.length + 1) : behindItem.orderTime
 
-            await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, partitionTime})
+            await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true, partitionTime})
             return true
         }else if(finalInsertIndex !== null) {
             const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
             const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
-
             const begin = behindItem.orderTime.timestamp < afterItem.orderTime.timestamp ? behindItem.orderTime : afterItem.orderTime
             const end = behindItem.orderTime.timestamp > afterItem.orderTime.timestamp ? behindItem.orderTime : afterItem.orderTime
-            //如果begin与end的时间差大于1s，则可以将时间范围定为[begin+1s, end-1s]，这是为了去掉两个端点。但如果时间差不大于1s，则只能使用[begin, end]作为范围。
-            const orderTimeBegin = end.timestamp - begin.timestamp > 1000 ? datetime.withSecond(begin, begin.seconds + 1) : begin
-            const orderTimeEnd = end.timestamp - begin.timestamp > 1000 ? datetime.withSecond(end, end.seconds - 1) : end
+            //如果begin和end相差超过24h，则认为它们相距过远，不应该再使用两者的范围，而是应该使用靠近其中一端的时间点。而这个的判定依据是所选项现在更靠近哪个端点。
+            let orderTimeBegin: LocalDateTime
+            let orderTimeEnd: LocalDateTime
+            if(end.timestamp - begin.timestamp > 1000 * 60 * 60 * 24) {
+                const targetOrderTimes = illusts.map(i => i.orderTime.timestamp)
+                const max = Math.max(...targetOrderTimes), min = Math.min(...targetOrderTimes)
+                const durationToBegin = Math.min(Math.abs(begin.timestamp - max), Math.abs(begin.timestamp - min))
+                const durationToEnd = Math.min(Math.abs(end.timestamp - max), Math.abs(end.timestamp - min))
+                if(durationToBegin <= durationToEnd) {
+                    orderTimeBegin = begin
+                    orderTimeEnd = datetime.withSecond(begin, begin.seconds + target.length + 1)
+                }else{
+                    orderTimeBegin = datetime.withSecond(end, end.seconds - target.length - 1)
+                    orderTimeEnd = end
+                }
+            }else{
+                orderTimeBegin = begin
+                orderTimeEnd = end
+            }
 
-            await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, partitionTime})
+            await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true, partitionTime})
             return true
         }
         return false
@@ -568,8 +591,8 @@ export function useLocateId<T extends BasicIllust>(options: LocateIdOptions<T>) 
                 imageId: id
             })
             if(res !== undefined) {
-                options.selector.update([id], id)
-                options.navigation.navigateTo(res.index)
+                options.selector.update([res.id], res.id)
+                if(res.index >= 0) options.navigation.navigateTo(res.index)
             }
             locateId.value = null
         }

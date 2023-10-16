@@ -91,9 +91,9 @@ const mouseUp = (e: MouseEvent) => {
             //向左拖动50px，就会锁定这条通知
             lock.value = !lock.value
             offsetX.value = null
-        }else if((e.pageX - mousedownPageX > 50 && window.innerWidth - e.pageX < 16) || (mouseStartMoveTime !== null && e.pageX - mousedownPageX > 75 && (e.pageX - mousedownPageX) / (e.timeStamp - mouseStartMoveTime) >= 1.4)) {
+        }else if((e.pageX - mousedownPageX > 50 && window.innerWidth - e.pageX < 16) || (mouseStartMoveTime !== null && e.pageX - mousedownPageX > 75 && (e.pageX - mousedownPageX) / (e.timeStamp - mouseStartMoveTime) >= 1.2)) {
             //向右拖动至少50px，且鼠标终点距离屏幕边缘小于16px
-            //或者向右拖动至少75px，且px/ms的速度高于1.4
+            //或者向右拖动至少75px，且px/ms的速度高于1.2
             //就会清除这条通知
             slideToClose.value = true
             //关闭要等下一个tick，需要等slide-to-close成功应用到DOM上

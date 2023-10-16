@@ -34,7 +34,7 @@ const divClass = computed(() => [
 <template>
     <button :class="divClass" @click="$emit('click')">
         <Icon :icon="icon"/>
-        <span class="ml-2 no-wrap overflow-hidden">{{label}}</span>
+        <span class="ml-2">{{label}}</span>
         <span v-if="badge !== null && badge !== undefined" :class="$style.badge">
             {{ badge }}
         </span>
@@ -51,6 +51,8 @@ const divClass = computed(() => [
 .button
     box-sizing: border-box
     vertical-align: baseline
+    white-space: nowrap
+    overflow: hidden
     border-radius: $radius-size-std
     text-align: left
     margin-top: $spacing-1

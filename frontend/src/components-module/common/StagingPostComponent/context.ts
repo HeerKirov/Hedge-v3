@@ -39,14 +39,15 @@ export function useButtonContext() {
     const visible = ref(false)
 
     const divRef = ref<HTMLElement>()
+    const calloutRef = ref<ComponentPublicInstance>()
 
-    onOutsideClick(divRef, () => {
+    onOutsideClick([divRef, calloutRef], () => {
         if(visible.value) {
             visible.value = false
         }
     })
 
-    return {stagingPostCount, dropEvents, divRef, visible, active}
+    return {stagingPostCount, dropEvents, divRef, calloutRef, visible, active}
 }
 
 export function useCalloutContext() {

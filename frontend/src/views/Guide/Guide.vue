@@ -35,8 +35,8 @@ const { menuItems, menuSelected, component, title } = useMarkdownDocument({
                         {{ title }}
                     </MiddleLayout>
                 </template>
-                <Container class="pt-4">
-                    <component v-if="component !== null" :is="component" :class="$style.markdown"/>
+                <Container v-if="component !== null" :key="component.__name" class="pt-4">
+                    <component :is="component" :class="$style.markdown"/>
                 </Container>
             </TopBarLayout>
         </template>

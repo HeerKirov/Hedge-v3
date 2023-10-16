@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, ref, Ref, watch } from "vue"
+import { ComponentPublicInstance, onMounted, onUnmounted, ref, Ref, watch } from "vue"
 import { sleep } from "@/utils/process"
 
 /**
@@ -26,10 +26,10 @@ export function onElementResize(elementRef: Ref<HTMLElement | undefined>, event:
 
 /**
  * 注册一个监听事件，监听点击目标元素以外的元素的事件。
- * @param ref 监听点击此目标以外的元素
+ * @param refs 监听点击此目标以外的元素
  * @param event 事件
  */
-export function onOutsideClick(ref: Ref<HTMLElement | undefined>, event: (e: MouseEvent) => void) {
+export function onOutsideClick(refs: Ref<HTMLElement | ComponentPublicInstance | undefined> | Ref<HTMLElement | ComponentPublicInstance | undefined>[], event: (e: MouseEvent) => void) {
     onMounted(async() => {
         //tips: 一个magic用法：如果某个click事件造成了此VCA挂载，但click target又不属于ref，那这次click事件仍会传递至本次click事件中。
         //      因此，制造一个微小的延迟，造成事实上的异步，使挂载click事件晚于可能的触发事件
@@ -41,14 +41,27 @@ export function onOutsideClick(ref: Ref<HTMLElement | undefined>, event: (e: Mou
         document.removeEventListener("click", clickDocument)
     })
 
-    watch(ref, (div, o) => {
-        if(o) {
-            o.removeEventListener("click", clickRef)
+    if(refs instanceof Array) {
+        for(const r of refs) {
+            watch(r, (div, o) => {
+                if(o) {
+                    (o instanceof HTMLElement ? o : o.$el).removeEventListener("click", clickRef)
+                }
+                if(div) {
+                    (div instanceof HTMLElement ? div : div.$el).addEventListener("click", clickRef)
+                }
+            }, {immediate: true})
         }
-        if(div) {
-            div.addEventListener("click", clickRef)
-        }
-    }, {immediate: true})
+    }else{
+        watch(refs, (div, o) => {
+            if(o) {
+                (o instanceof HTMLElement ? o : o.$el).removeEventListener("click", clickRef)
+            }
+            if(div) {
+                (div instanceof HTMLElement ? div : div.$el).addEventListener("click", clickRef)
+            }
+        }, {immediate: true})
+    }
 
     let clickEventBuffer: MouseEvent | null = null
 
@@ -62,13 +75,25 @@ export function onOutsideClick(ref: Ref<HTMLElement | undefined>, event: (e: Mou
         clickEventBuffer = null
     }
 
-    const clickDocument = (e: MouseEvent) => {
+    const clickDocument = refs instanceof Array ? (e: MouseEvent) => {
         if(clickEventBuffer === e) {
             clickEventBuffer = null
             return
         }
         const target = e.target
-        if(ref.value && !(ref.value === target || ref.value.contains(target as Node))) {
+        for(const r of refs) {
+            if(r.value && !(r.value === target || (r.value instanceof HTMLElement ? r.value : r.value.$el).contains(target as Node))) {
+                event(e)
+                break
+            }
+        }
+    } : (e: MouseEvent) => {
+        if(clickEventBuffer === e) {
+            clickEventBuffer = null
+            return
+        }
+        const target = e.target
+        if(refs.value && !(refs.value === target || (refs.value instanceof HTMLElement ? refs.value : refs.value.$el).contains(target as Node))) {
             event(e)
         }
     }

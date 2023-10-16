@@ -3,7 +3,7 @@ import { Button } from "@/components/universal"
 import { useButtonContext } from "./context"
 import StagingPostCallout from "./StagingPostCallout.vue"
 
-const { stagingPostCount, dropEvents, divRef, visible, active } = useButtonContext()
+const { stagingPostCount, dropEvents, divRef, calloutRef, visible, active } = useButtonContext()
 
 </script>
 
@@ -19,7 +19,7 @@ const { stagingPostCount, dropEvents, divRef, visible, active } = useButtonConte
                     :leave-active-class="$style['transition-leave-active']" 
                     :enter-from-class="$style['transition-enter-from']" 
                     :leave-to-class="$style['transition-leave-to']">
-                <StagingPostCallout v-if="visible" :class="$style.popup" @close="visible = false"/>
+                <StagingPostCallout v-if="visible" ref="calloutRef" :class="$style.popup" @close="visible = false"/>
             </transition>
         </Teleport>
     </div>

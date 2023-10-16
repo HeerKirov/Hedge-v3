@@ -19,14 +19,14 @@ const {
 } = installTrashContext()
 
 const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
-    {type: "checkbox", label: "显示信息预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "radio", checked: viewMode.value === "row", label: "列表模式", click: () => viewMode.value = "row"},
     {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"}
 ])
 
 const menu = usePopupMenu<TrashedImage>(() => [
-    {type: "checkbox", label: "显示信息预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "normal", label: "还原", click: i => restoreItem(i.id)},
     {type: "separator"},

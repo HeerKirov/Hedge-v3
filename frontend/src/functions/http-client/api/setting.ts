@@ -331,6 +331,7 @@ export interface SourceAnalyseRuleExtra {
     optional: boolean
     tagType: string | null
     additionalInfoField: string | null
+    translateUnderscoreToSpace: boolean
 }
 
 export interface Site {

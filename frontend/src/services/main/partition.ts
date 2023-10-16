@@ -6,6 +6,7 @@ import { flatResponse } from "@/functions/http-client"
 import { useFetchReactive } from "@/functions/fetch"
 import { useLocalStorage, useMemoryStorage } from "@/functions/app"
 import { useRouterParamEvent, useRouterQueryLocalDate } from "@/modules/router"
+import { useInterceptedKey } from "@/modules/keyboard"
 import { useNavHistoryPush } from "@/services/base/side-nav-menu"
 import { useQuerySchema } from "@/services/base/query-schema"
 import { IllustViewController, useIllustViewController } from "@/services/base/view-controller"
@@ -54,6 +55,8 @@ function usePartitionData(listviewController: IllustViewController, query: Ref<s
     })
 
     watch([listviewController.collectionMode, query], refresh)
+
+    useInterceptedKey("Meta+KeyR", refresh)
 
     const partitionMonths = computed(() => {
         if(partitions.value !== undefined) {
@@ -155,26 +158,19 @@ export function useTimelineContext() {
     const monthRefs: Record<number, HTMLDivElement> = {}
     const dayRefs: Record<number, HTMLDivElement> = {}
 
-    onMounted(() => {
-        //在calendarDate变化时，重新聚焦month
-        watch(calendarDate, async calendarDate => {
-            if(calendarDate !== null) {
-                monthRefs[calendarDate.year * 12 + calendarDate.month]?.scrollIntoView({behavior: "auto"})
+    //在calendarDate变化时，重新聚焦month。
+    //也聚焦day，但要复杂一些。如果目标月份在显示区域内，则什么也不做；如果在后面，则滚动到月份的最后一天以显示该月的全部日期；同理如果在前面则滚动到月份的第一天
+    watch(calendarDateMonths, async partitionMonth => {
+        if(partitionMonth !== null) {
+            monthRefs[partitionMonth.year * 12 + partitionMonth.month]?.scrollIntoView({behavior: "auto"})
+            const positionOffset = getPositionOfMonth(partitionMonth.days)
+            if(positionOffset > 0) {
+                dayRefs[partitionMonth.days[partitionMonth.days.length - 1].date.timestamp]?.scrollIntoView({behavior: "auto"})
+            }else if(positionOffset < 0) {
+                dayRefs[partitionMonth.days[0].date.timestamp]?.scrollIntoView({behavior: "auto"})
             }
-        }, {immediate: true, flush: "post"})
-
-        //也重新聚焦day，但要复杂一些。如果目标月份在显示区域内，则什么也不做；如果在后面，则滚动到月份的最后一天以显示该月的全部日期；同理如果在前面则滚动到月份的第一天
-        watch(calendarDateMonths, async partitionMonth => {
-            if(partitionMonth !== null) {
-                const positionOffset = getPositionOfMonth(partitionMonth.days)
-                if(positionOffset > 0) {
-                    dayRefs[partitionMonth.days[partitionMonth.days.length - 1].date.timestamp]?.scrollIntoView({behavior: "auto"})
-                }else if(positionOffset < 0) {
-                    dayRefs[partitionMonth.days[0].date.timestamp]?.scrollIntoView({behavior: "auto"})
-                }
-            }
-        }, {immediate: true, flush: "post"})
-    })
+        }
+    }, {immediate: true, flush: "post"})
 
     const getPositionOfMonth = (days: Partition[]) => {
         if(timelineRef !== null) {

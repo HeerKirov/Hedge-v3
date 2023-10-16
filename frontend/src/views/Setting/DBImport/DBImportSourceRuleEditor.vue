@@ -47,7 +47,7 @@ const content = computedMutable(() => {
 })
 
 const addExtra = () => {
-    content.value.extras.push({group: "", target: "ADDITIONAL_INFO", optional: true, tagType: "", additionalInfoField: null})
+    content.value.extras.push({group: "", target: "ADDITIONAL_INFO", optional: true, translateUnderscoreToSpace: false, tagType: "", additionalInfoField: null})
 }
 
 const removeExtra = (idx: number) => {
@@ -125,8 +125,9 @@ const trash = async () => {
                 <Input v-else-if="extra.target === 'TAG'" width="fullwidth" placeholder="标签类型(可选)" v-model:value="extra.tagType"/>
             </FlexItem>
             <FlexItem :shrink="0">
-                <div class="is-line-height-std pl-1">
-                    <CheckBox v-model:value="extra.optional">可选</CheckBox>
+                <div class="is-line-height-std">
+                    <CheckBox class="pl-1" v-model:value="extra.optional">可选</CheckBox>
+                    <CheckBox class="pl-1" v-model:value="extra.translateUnderscoreToSpace">下划线转空格</CheckBox>
                 </div>
                 <Button type="danger" icon="close" square @click="removeExtra(idx)"/>
             </FlexItem>

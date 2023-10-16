@@ -261,6 +261,7 @@ export interface ImportBatchUpdateForm {
     partitionTime?: LocalDate
     orderTimeBegin?: LocalDateTime
     orderTimeEnd?: LocalDateTime
+    orderTimeExclude?: boolean
     analyseSource?: boolean
     collectionId?: string | number
     appendFolderIds?: number[]

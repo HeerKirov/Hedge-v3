@@ -2,7 +2,7 @@
 import { computed } from "vue"
 import { Button } from "@/components/universal"
 import { VirtualRowView } from "@/components/data"
-import { TopBarLayout, PaneLayout, BasePane, MiddleLayout } from "@/components/layout"
+import { TopBarLayout, PaneLayout, MiddleLayout } from "@/components/layout"
 import { SearchInput, DataRouter, QueryNotificationBadge, QueryResult } from "@/components-business/top-bar"
 import { useDialogService } from "@/components-module/dialog"
 import { usePopupMenu } from "@/modules/popup-menu"
