@@ -30,9 +30,9 @@ yarn
 > export ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"
 > ```
 
-客户端使用`tsc`完成编译。在任何客户端代码运行之前或更改之后，执行编译。编译后的产物位于`client/target`。
+客户端使用`build`完成编译。在任何客户端代码运行之前或更改之后，执行编译。编译后的产物位于`client/target`。
 ```sh
-yarn tsc
+yarn build
 ```
 在开发过程中，有必要使用与生产环境隔离的数据库；此外，客户端还联系前端和后台服务，这两部分都需要不同程度的开发调试。为此客户端提供了相关的调试选项。
 ```sh
@@ -106,10 +106,10 @@ gradle clean jlinkZip
 在`client/build`存放有整体打包脚本。进入`client`目录，执行build script自动完成打包。这将完成默认打包流程。打包后的产物位于`dist/Hedge`。
 ```sh
 cd client
-yarn build
+yarn install
 ```
 
-除默认流程外，还可以添加命令以执行部分构建。
+默认流程不包含编译流程。要想在打包的同时编译所有组件，需要使用`yarn install-all`。此外，也可以在此命令后添加子命令，以自定义要编译和打包的部分。
 ```sh
 clean               # 清空dist目录
 build-client        # 对client项目执行编译
