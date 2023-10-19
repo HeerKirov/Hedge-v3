@@ -9,7 +9,6 @@ import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.model.ImportImage
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
-import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
 import org.ktorm.dsl.*
@@ -47,14 +46,21 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
         return ret
     }
 
-    private fun loadByImage(imageIds: List<Int>, enableFilterBy: Boolean = false): List<EntityInfo> {
+    private fun loadByImage(imageIds: List<Int>, enableFilterBy: Boolean = false): List<IllustEntityInfo> {
         data class ImageRow(val parentId: Int?, val partitionTime: LocalDate, val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?, val sourcePartName: String?, val fingerprint: Fingerprint?)
 
-        return loadByImageCache.computeIfAbsent(imageIds.joinToString()) {
+        val notExistIds = mutableListOf<Int>()
+        val entityInfoList = mutableListOf<IllustEntityInfo>()
+        for (imageId in imageIds) {
+            val cache = loadByImageCache[imageId]
+            if(cache != null) entityInfoList.add(cache) else notExistIds.add(imageId)
+        }
+
+        if(notExistIds.isNotEmpty()) {
             val imagesMap = data.db.from(Illusts)
                 .leftJoin(FileFingerprints, FileFingerprints.fileId eq Illusts.fileId)
                 .select(Illusts.id, Illusts.parentId, Illusts.partitionTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName, FileFingerprints.fileId, FileFingerprints.pHashSimple, FileFingerprints.pHash, FileFingerprints.dHashSimple, FileFingerprints.dHash)
-                .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.id inList imageIds) }
+                .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.id inList notExistIds) }
                 .associateBy({ it[Illusts.id]!! }) {
                     val fingerprint = it[FileFingerprints.fileId]?.run {
                         Fingerprint(it[FileFingerprints.pHashSimple]!!, it[FileFingerprints.dHashSimple]!!, it[FileFingerprints.pHash]!!, it[FileFingerprints.dHash]!!)
@@ -63,9 +69,9 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                 }
 
             val imageAuthorsMap = if(!enableFilterBy || !config.filterByAuthor) emptyMap() else {
-                 data.db.from(IllustAuthorRelations)
+                data.db.from(IllustAuthorRelations)
                     .select(IllustAuthorRelations.authorId, IllustAuthorRelations.illustId)
-                    .where { IllustAuthorRelations.illustId inList imageIds }
+                    .where { IllustAuthorRelations.illustId inList notExistIds }
                     .asSequence()
                     .groupBy({ it[IllustAuthorRelations.illustId]!! }) { it[IllustAuthorRelations.authorId]!! }
             }
@@ -73,7 +79,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
             val imageTopicsMap = if(!enableFilterBy || !config.filterByTopic) emptyMap() else {
                 data.db.from(IllustTopicRelations)
                     .select(IllustTopicRelations.topicId, IllustTopicRelations.illustId)
-                    .where { IllustTopicRelations.illustId inList imageIds }
+                    .where { IllustTopicRelations.illustId inList notExistIds }
                     .asSequence()
                     .groupBy({ it[IllustTopicRelations.illustId]!! }) { it[IllustTopicRelations.topicId]!! }
             }
@@ -87,7 +93,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                     .innerJoin(SourceTagRelations, SourceTagRelations.sourceTagId eq SourceTags.id)
                     .innerJoin(Illusts, Illusts.sourceDataId eq SourceTagRelations.sourceDataId)
                     .select(SourceTags.id, SourceTags.type, SourceTags.site, SourceTags.code, SourceTags.name, SourceTags.otherName, Illusts.id)
-                    .where { (Illusts.id inList imageIds) and sourceTagTypeCondition }
+                    .where { (Illusts.id inList notExistIds) and sourceTagTypeCondition }
                     .asSequence()
                     .groupBy({ it[Illusts.id]!! }) { SourceTags.createEntity(it) }
             }
@@ -96,7 +102,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                 data.db.from(Illusts)
                     .innerJoin(SourceDatas, SourceDatas.id eq Illusts.sourceDataId)
                     .select(Illusts.id, SourceDatas.relations)
-                    .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.id inList imageIds) }
+                    .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.id inList notExistIds) }
                     .associateBy({ it[Illusts.id]!! }) { it[SourceDatas.relations] ?: emptyList() }
             }
 
@@ -104,7 +110,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                 data.db.from(Illusts)
                     .innerJoin(SourceBookRelations, SourceBookRelations.sourceDataId eq Illusts.sourceDataId)
                     .select(Illusts.id, SourceBookRelations.sourceBookId)
-                    .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.id inList imageIds) }
+                    .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.id inList notExistIds) }
                     .asSequence()
                     .groupBy({ it[Illusts.id]!! }) { it[SourceBookRelations.sourceBookId]!! }
             }
@@ -113,44 +119,56 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                 data.db.from(Illusts)
                     .innerJoin(SourceMarks, SourceMarks.sourceDataId eq Illusts.sourceDataId)
                     .select(SourceMarks.relatedSourceDataId, SourceMarks.markType)
-                    .where { Illusts.id inList imageIds }
+                    .where { Illusts.id inList notExistIds }
                     .asSequence()
                     .groupBy({ it[Illusts.id]!! }) { it[SourceMarks.relatedSourceDataId]!! to it[SourceMarks.markType]!! }
             }
 
-            imageIds.mapNotNull {
-                val row = imagesMap[it] ?: return@mapNotNull null
+            for ((id, row) in imagesMap) {
                 val sourceIdentity = if(config.findBySourceIdentity && row.sourceSite != null && row.sourceId != null) Tuple4(row.sourceSite, row.sourceId, row.sourcePart, row.sourcePartName) else null
-                val sourceRelations = if(config.findBySourceRelation) imageSourceRelationsMap[it] ?: emptyList() else null
-                val sourceBooks = if(config.findBySourceRelation) imageSourceBooksMap[it] ?: emptyList() else null
-                val sourceMarks = if(config.findBySourceMark) imageSourceMarksMap[it] ?: emptyList() else null
-                IllustEntityInfo(it,
+                val sourceRelations = if(config.findBySourceRelation) imageSourceRelationsMap[id] ?: emptyList() else null
+                val sourceBooks = if(config.findBySourceRelation) imageSourceBooksMap[id] ?: emptyList() else null
+                val sourceMarks = if(config.findBySourceMark) imageSourceMarksMap[id] ?: emptyList() else null
+                val entityInfo = IllustEntityInfo(id,
                     row.partitionTime,
-                    imageSourceTagsMap[it] ?: emptyList(),
+                    imageSourceTagsMap[id] ?: emptyList(),
                     sourceIdentity,
                     sourceRelations,
                     sourceBooks,
                     sourceMarks,
                     row.fingerprint,
                     row.parentId,
-                    imageAuthorsMap[it] ?: emptyList(),
-                    imageTopicsMap[it] ?: emptyList())
+                    imageAuthorsMap[id] ?: emptyList(),
+                    imageTopicsMap[id] ?: emptyList())
+                loadByImageCache[id] = entityInfo
+                entityInfoList.add(entityInfo)
             }
         }
 
+        return entityInfoList
     }
 
     fun loadByImportImage(importIds: List<Int>? = null, enableFilterBy: Boolean = false): List<EntityInfo> {
         data class ImageRow(val partitionTime: LocalDate, val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?, val sourcePartName: String?, val collectionId: Any?, val bookIds: List<Int>, val cloneImage: ImportImage.CloneImageFrom?, val fingerprint: Fingerprint?)
 
-        return loadByImportImageCache.computeIfAbsent(importIds?.joinToString() ?: "<ALL>") {
+        val notExistIds = mutableListOf<Int>()
+        val entityInfoList = mutableListOf<ImportImageEntityInfo>()
+
+        val finalImportIds = importIds ?: data.db.from(ImportImages).select(ImportImages.id).map { it[ImportImages.id]!! }
+
+        for (importId in finalImportIds) {
+            val cache = loadByImportImageCache[importId]
+            if(cache != null) entityInfoList.add(cache) else notExistIds.add(importId)
+        }
+
+        if(notExistIds.isNotEmpty()) {
             val imagesMap = data.db.from(ImportImages)
                 .leftJoin(FileFingerprints, FileFingerprints.fileId eq ImportImages.fileId)
                 .select(
                     ImportImages.id, ImportImages.partitionTime, ImportImages.sourceSite, ImportImages.sourceId, ImportImages.sourcePart, ImportImages.sourcePartName, ImportImages.collectionId, ImportImages.bookIds, ImportImages.preference,
                     FileFingerprints.fileId, FileFingerprints.pHashSimple, FileFingerprints.pHash, FileFingerprints.dHashSimple, FileFingerprints.dHash
                 )
-                .runIf(importIds != null) { where { ImportImages.id inList importIds!! } }
+                .where { ImportImages.id inList notExistIds }
                 .associateBy({ it[ImportImages.id]!! }) {
                     val cid: Any? = it[ImportImages.collectionId]?.run {
                         if (startsWith('#')) substring(1).toInt() else if (startsWith('@')) substring(1) else this
@@ -164,7 +182,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
             val imagePartitionsMap = if (!enableFilterBy || !config.filterByPartition) emptyMap() else {
                 data.db.from(ImportImages)
                     .select(ImportImages.id, ImportImages.partitionTime)
-                    .runIf(importIds != null) { where { ImportImages.id inList importIds!! } }
+                    .where { ImportImages.id inList notExistIds }
                     .associateBy({ it[ImportImages.id]!! }) { it[ImportImages.partitionTime]!! }
             }
 
@@ -180,7 +198,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                     .select(SourceTags.id, SourceTags.type, SourceTags.site, SourceTags.code, SourceTags.name, SourceTags.otherName, ImportImages.id)
                     .whereWithConditions {
                         it += sourceTagTypeCondition
-                        if (importIds != null) it += ImportImages.id inList importIds
+                        it += ImportImages.id inList notExistIds
                     }
                     .asSequence()
                     .groupBy({ it[ImportImages.id]!! }) { SourceTags.createEntity(it) }
@@ -190,7 +208,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                 data.db.from(ImportImages)
                     .innerJoin(SourceDatas, (SourceDatas.sourceSite eq ImportImages.sourceSite) and (SourceDatas.sourceId eq ImportImages.sourceId))
                     .select(ImportImages.id, SourceDatas.relations)
-                    .runIf(importIds != null) { where { ImportImages.id inList importIds!! } }
+                    .where { ImportImages.id inList notExistIds }
                     .associateBy({ it[ImportImages.id]!! }) { it[SourceDatas.relations] ?: emptyList() }
             }
 
@@ -199,7 +217,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                     .innerJoin(SourceDatas, (SourceDatas.sourceSite eq ImportImages.sourceSite) and (SourceDatas.sourceId eq ImportImages.sourceId))
                     .innerJoin(SourceBookRelations, SourceDatas.id eq SourceBookRelations.sourceDataId)
                     .select(ImportImages.id, SourceBookRelations.sourceBookId)
-                    .runIf(importIds != null) { where { ImportImages.id inList importIds!! } }
+                    .where { ImportImages.id inList notExistIds }
                     .asSequence()
                     .groupBy({ it[ImportImages.id]!! }) { it[SourceBookRelations.sourceBookId]!! }
             }
@@ -209,7 +227,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                     .innerJoin(SourceDatas, (SourceDatas.sourceSite eq ImportImages.sourceSite) and (SourceDatas.sourceId eq ImportImages.sourceId))
                     .innerJoin(SourceMarks, SourceMarks.sourceDataId eq SourceDatas.id)
                     .select(SourceMarks.relatedSourceDataId, SourceMarks.markType)
-                    .runIf(importIds != null) { where { ImportImages.id inList importIds!! } }
+                    .where { ImportImages.id inList notExistIds }
                     .asSequence()
                     .groupBy({ it[ImportImages.id]!! }) { it[SourceMarks.relatedSourceDataId]!! to it[SourceMarks.markType]!! }
             }
@@ -226,33 +244,24 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                 .groupBy({ it[BookImageRelations.imageId]!! }) { it[BookImageRelations.bookId]!! }
                 .toMap()
 
-            importIds?.mapNotNull { id ->
-                val row = imagesMap[id] ?: return@mapNotNull null
+            for ((id, row) in imagesMap) {
                 val sourceIdentity = if(config.findBySourceIdentity && row.sourceSite != null && row.sourceId != null) Tuple4(row.sourceSite, row.sourceId, row.sourcePart, row.sourcePartName) else null
                 val sourceRelations = if(config.findBySourceRelation) imageSourceRelationsMap[id] ?: emptyList() else null
                 val sourceBooks = if(config.findBySourceRelation) imageSourceBooksMap[id] ?: emptyList() else null
                 val sourceMarks = if(config.findBySourceMark) imageSourceMarksMap[id] ?: emptyList() else null
                 val collectionId = if(row.cloneImage?.props?.collection == true && row.cloneImage.fromImageId in cloneImageCollectionIdMap) cloneImageCollectionIdMap[row.cloneImage.fromImageId]!! else row.collectionId
                 val bookIds = row.bookIds + (if(row.cloneImage?.props?.books == true && row.cloneImage.fromImageId in cloneImageBookIdsMap) cloneImageBookIdsMap[row.cloneImage.fromImageId]!! else emptyList())
-                ImportImageEntityInfo(id,
+                val entityInfo = ImportImageEntityInfo(id,
                     imagePartitionsMap[id] ?: LocalDate.MIN,
                     imageSourceTagsMap[id] ?: emptyList(),
                     sourceIdentity, sourceRelations, sourceBooks, sourceMarks,
                     row.fingerprint, collectionId, bookIds, row.cloneImage)
-            } ?: imagesMap.map { (it, row) ->
-                val sourceIdentity = if(config.findBySourceIdentity && row.sourceSite != null && row.sourceId != null) Tuple4(row.sourceSite, row.sourceId, row.sourcePart, row.sourcePartName) else null
-                val sourceRelations = if(config.findBySourceRelation) imageSourceRelationsMap[it] ?: emptyList() else null
-                val sourceBooks = if(config.findBySourceRelation) imageSourceBooksMap[it] ?: emptyList() else null
-                val sourceMarks = if(config.findBySourceMark) imageSourceMarksMap[it] ?: emptyList() else null
-                val collectionId = if(row.cloneImage?.props?.collection == true && row.cloneImage.fromImageId in cloneImageCollectionIdMap) cloneImageCollectionIdMap[row.cloneImage.fromImageId]!! else row.collectionId
-                val bookIds = row.bookIds + (if(row.cloneImage?.props?.books == true && row.cloneImage.fromImageId in cloneImageBookIdsMap) cloneImageBookIdsMap[row.cloneImage.fromImageId]!! else emptyList())
-                ImportImageEntityInfo(it,
-                    imagePartitionsMap[it] ?: LocalDate.MIN,
-                    imageSourceTagsMap[it] ?: emptyList(),
-                    sourceIdentity, sourceRelations, sourceBooks, sourceMarks,
-                    row.fingerprint, collectionId, bookIds, row.cloneImage)
+
+                loadByImportImageCache[id] = entityInfo
+                entityInfoList.add(entityInfo)
             }
         }
+        return entityInfoList
     }
 
     fun loadByPartition(partitionTime: LocalDate, enableFilterBy: Boolean = false): List<EntityInfo> {
@@ -326,8 +335,8 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
         }
     }
 
-    private val loadByImageCache = mutableMapOf<String, List<EntityInfo>>()
-    private val loadByImportImageCache = mutableMapOf<String, List<EntityInfo>>()
+    private val loadByImageCache = mutableMapOf<Int, IllustEntityInfo>()
+    private val loadByImportImageCache = mutableMapOf<Int, ImportImageEntityInfo>()
     private val loadByPartitionCache = mutableMapOf<LocalDate, List<EntityInfo>>()
     private val loadByAuthorCache = mutableMapOf<String, List<EntityInfo>>()
     private val loadByTopicCache = mutableMapOf<String, List<EntityInfo>>()

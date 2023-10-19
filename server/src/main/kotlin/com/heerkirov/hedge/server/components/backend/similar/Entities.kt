@@ -94,7 +94,7 @@ sealed interface RelationType
 /**
  * source identity相等或近似。
  */
-data class SourceIdentityRelationType(var site: String, var sourceId: Long, var sourcePart: Int?, var sourcePartName: String?, var equal: Boolean) : RelationType
+data class SourceIdentityRelationType(var site: String, var sourceId: Long?, var sourcePart: Int?, var sourcePartName: String?, var equal: Boolean) : RelationType
 
 /**
  * source relation/books有关联。

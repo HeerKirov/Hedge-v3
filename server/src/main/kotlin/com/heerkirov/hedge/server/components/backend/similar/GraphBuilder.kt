@@ -7,6 +7,7 @@ import com.heerkirov.hedge.server.enums.FindSimilarEntityType
 import com.heerkirov.hedge.server.enums.SourceMarkType
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.Similarity
+import com.heerkirov.hedge.server.utils.forEachTwo
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.mapEachTwo
 import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
@@ -39,6 +40,7 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
         }
         if(config.findBySourceIdentity) {
             //find by source identity不需要筛选条件，直接全表查询
+            matchForAllSourceIdentities()
             for (targetItem in targetItems) {
                 matchForSourceIdentity(targetItem)
             }
@@ -207,42 +209,13 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
     }
 
     /**
-     * 执行source identity类的匹配检测。
+     * 执行source identity类的匹配检测。检测的对象是id相同而part不同的对象。
      */
     private fun matchForSourceIdentity(targetItem: EntityInfo) {
         if(targetItem.sourceIdentity != null) {
             val adds = mutableListOf<Triple<FindSimilarEntityKey, FindSimilarEntityKey, RelationType>>()
             val (site, sid, part, partName) = targetItem.sourceIdentity!!
             val entityKey = targetItem.toEntityKey()
-
-            //从Illust、ImportImage中筛选出所有与当前项的sourceIdentity等价的项。
-            //等价的要求是：id相同，part相同；或者存在partName时，partName相同
-            data.db.from(Illusts)
-                .select(Illusts.id)
-                .whereWithConditions {
-                    if(targetItem is IllustEntityInfo) it += Illusts.id notEq targetItem.id
-                    it += Illusts.sourceSite eq site
-                }
-                .whereWithOrConditions {
-                    it += (Illusts.sourceId eq sid) and (if(part != null) Illusts.sourcePart eq part else Illusts.sourcePart.isNull())
-                    if(partName != null) it += Illusts.sourcePartName eq partName
-                }
-                .map { it[Illusts.id]!! }
-                .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.ILLUST, it), SourceIdentityRelationType(site, sid, part, partName, true)) }
-                .let { adds.addAll(it) }
-            data.db.from(ImportImages)
-                .select(ImportImages.id)
-                .whereWithConditions {
-                    if(targetItem is ImportImageEntityInfo) it += ImportImages.id notEq targetItem.id
-                    it += ImportImages.sourceSite eq site
-                }
-                .whereWithOrConditions {
-                    it += (ImportImages.sourceId eq sid) and (if(part != null) ImportImages.sourcePart eq part else ImportImages.sourcePart.isNull())
-                    if(partName != null) it += ImportImages.sourcePartName eq partName
-                }
-                .map { it[ImportImages.id]!! }
-                .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it), SourceIdentityRelationType(site, sid, part, partName, true)) }
-                .let { adds.addAll(it) }
 
             //相似的要求是：id相同，part/partName不同
             if(partName != null || part != null) {
@@ -281,6 +254,46 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
             }
 
             addInGraph(adds)
+        }
+    }
+
+    /**
+     * 执行source identity类的匹配检测。检测的对象是id+part相同或partName相同的对象。
+     * 由于这部分的独立性质，可以拆出来单独执行，以提高执行效率。在旧算法中，优化了缓存问题后，最慢的就是这一块了。
+     * 缺点是无法跨Illust/Import查询，不过鉴于该特性的使用现状和未来的功能规划，这一点无伤大雅。
+     */
+    private fun matchForAllSourceIdentities() {
+        val adds = mutableListOf<Triple<FindSimilarEntityKey, FindSimilarEntityKey, RelationType>>()
+        //从Illust中筛选出所有sourceIdentity重复的项。
+        //等价判断的要求是：id相同，part相同；或者存在partName时，partName相同
+        val sameSourceIds = data.db.from(Illusts)
+            .select(Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, count(Illusts.id).aliased("cnt"))
+            .where { Illusts.sourceSite.isNotNull() }
+            .groupBy(Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart)
+            .having { count(Illusts.id).aliased("cnt") greater 1 }
+            .map { Triple(it[Illusts.sourceSite]!!, it[Illusts.sourceId]!!, it[Illusts.sourcePart]) }
+
+        val sameSourcePartNames = data.db.from(Illusts)
+            .select(Illusts.sourceSite, Illusts.sourcePartName, count(Illusts.id).aliased("cnt"))
+            .where { Illusts.sourceSite.isNotNull() and Illusts.sourcePartName.isNotNull() }
+            .groupBy(Illusts.sourceSite, Illusts.sourcePartName)
+            .having { count(Illusts.id).aliased("cnt") greater 1 }
+            .map { Pair(it[Illusts.sourceSite]!!, it[Illusts.sourcePartName]!!) }
+
+        for ((site, id, part) in sameSourceIds) {
+            val illusts = data.db.from(Illusts)
+                .select(Illusts.id)
+                .where { (Illusts.sourceSite eq site) and (Illusts.sourceId eq id) and if(part != null) Illusts.sourcePart eq part else Illusts.sourcePart.isNull() }
+                .map { FindSimilarEntityKey(FindSimilarEntityType.ILLUST, it[Illusts.id]!!) }
+            illusts.forEachTwo { a, b -> adds.add(Triple(a, b, SourceIdentityRelationType(site, id, part, null, true))) }
+        }
+
+        for ((site, pn) in sameSourcePartNames) {
+            val illusts = data.db.from(Illusts)
+                .select(Illusts.id)
+                .where { (Illusts.sourceSite eq site) and (Illusts.sourcePartName eq pn) }
+                .map { FindSimilarEntityKey(FindSimilarEntityType.ILLUST, it[Illusts.id]!!) }
+            illusts.forEachTwo { a, b -> adds.add(Triple(a, b, SourceIdentityRelationType(site, null, null, pn, true))) }
         }
     }
 

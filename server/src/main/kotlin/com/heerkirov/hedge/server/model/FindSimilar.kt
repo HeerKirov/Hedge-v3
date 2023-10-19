@@ -133,7 +133,7 @@ data class FindSimilarResult(val id: Int,
     ])
     sealed interface RelationInfo
 
-    data class SourceIdentityRelationInfo(val site: String, val sourceId: Long, val sourcePart: Int?, val sourcePartName: String?) : RelationInfo
+    data class SourceIdentityRelationInfo(val site: String, val sourceId: Long?, val sourcePart: Int?, val sourcePartName: String?) : RelationInfo
 
     data class SourceRelatedRelationInfo(val hasRelations: Boolean, val sameBooks: List<Int>) : RelationInfo
 
