@@ -186,7 +186,7 @@ interface FindSimilarEntityKey {
 
 interface RelationInfo {}
 
-interface SourceIdentityRelationInfo extends RelationInfo { site: string, sourceId: number, sourcePart: number | null }
+interface SourceIdentityRelationInfo extends RelationInfo { site: string, sourceId: number | null, sourcePart: number | null, sourcePartName: string | null }
 
 interface SourceRelatedRelationInfo extends RelationInfo { hasRelations: boolean, sameBooks: number[] }
 

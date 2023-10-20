@@ -4,7 +4,7 @@ import {
     PaginationDataView, QueryListview, AllSlice, ListIndexSlice, SingletonSlice,
     usePostFetchHelper, usePostPathFetchHelper, useFetchHelper, QueryInstance, createMappedQueryInstance, PaginationData
 } from "@/functions/fetch"
-import { CoverIllust, CommonIllust, Illust, IllustQueryFilter, IllustType } from "@/functions/http-client/api/illust"
+import { DraggingIllust, CommonIllust, Illust, IllustQueryFilter, IllustType } from "@/functions/http-client/api/illust"
 import { FilePath } from "@/functions/http-client/api/all"
 import { Folder } from "@/functions/http-client/api/folder"
 import { Book } from "@/functions/http-client/api/book"
@@ -20,7 +20,7 @@ import { usePreviewService } from "@/components-module/preview"
 import { installation } from "@/utils/reactivity"
 import { LocalDate, LocalDateTime, datetime } from "@/utils/datetime"
 
-export interface ImageDatasetOperatorsOptions<T extends BasicIllust> {
+export interface ImageDatasetOperatorsOptions<T extends CommonIllust> {
     /**
      * data view.
      */
@@ -84,7 +84,7 @@ export interface ImageDatasetOperatorsOptions<T extends BasicIllust> {
     }
 }
 
-export interface ImageDatasetOperators<T extends BasicIllust> {
+export interface ImageDatasetOperators<T extends CommonIllust> {
     /**
      * 通过双击的方式打开详情页。
      * @param illustId illust id
@@ -181,7 +181,7 @@ export interface ImageDatasetOperators<T extends BasicIllust> {
      * 提供数据插入操作，适用于将illusts拖曳到Dataset时的添加操作。
      * 依据options配置的不同，展开不同种类的添加操作。
      */
-    dataDrop(insertIndex: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE"): void
+    dataDrop(insertIndex: number | null, illusts: DraggingIllust[], mode: "ADD" | "MOVE"): void
     /**
      * 获得当前操作中，应该受到影响的对象id列表。此方法被提供给外部实现的其他函数，用于和context内的选择行为统一。
      * 选择行为指：当存在选中项时，在选择项之外右键将仅使用右键项而不包括选择项。它需要影响那些有多项目操作的行为。
@@ -193,13 +193,11 @@ export interface ImageDatasetOperators<T extends BasicIllust> {
     stagingPostCount: Readonly<Ref<number>>
 }
 
-interface BasicIllust { id: number, type?: IllustType, filePath: FilePath, orderTime: LocalDateTime }
-
 /**
  * 提供一组综合的operators，在Illust列表相关的位置使用。
  * Illust列表在多处有不同的实现，而他们的operators又有大量重复和相似之处。
  */
-export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDatasetOperatorsOptions<T>): ImageDatasetOperators<T> {
+export function useImageDatasetOperators<T extends CommonIllust>(options: ImageDatasetOperatorsOptions<T>): ImageDatasetOperators<T> {
     const toast = useToast()
     const message = useMessageBox()
     const navigator = useRouterNavigator()
@@ -210,10 +208,8 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
 
     const fetchIllustUpdate = usePostPathFetchHelper(client => client.illust.update)
     const fetchIllustDelete = usePostFetchHelper(client => client.illust.delete)
-    const fetchIllustBatchUpdate = usePostFetchHelper(client => client.illust.batchUpdate)
     const fetchCollectionCreate = useFetchHelper(client => client.illust.collection.create)
     const fetchImageRelatedUpdate = usePostPathFetchHelper(client => client.illust.image.relatedItems.update)
-    const fetchCollectionImagesUpdate = usePostPathFetchHelper(client => client.illust.collection.images.update)
     const fetchBookImagesPartialUpdate = usePostPathFetchHelper(client => client.book.images.partialUpdate)
     const fetchFolderImagesPartialUpdate = usePostPathFetchHelper(client => client.folder.images.partialUpdate)
     const fetchStagingPostListAll = useFetchHelper(client => client.stagingPost.list)
@@ -432,7 +428,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
         if(idx !== undefined) {
             const res = await fetchStagingPostListAll({})
             if(res !== undefined) {
-                const ok = await dataDrop(position === "before" ? idx : idx + 1, res.result.map(i => ({id: i.id, filePath: i.filePath, type: "IMAGE", childrenCount: null, orderTime: i.orderTime})), "ADD")
+                const ok = await dataDrop(position === "before" ? idx : idx + 1, res.result.map(i => ({id: i.id, filePath: i.filePath, type: "IMAGE", childrenCount: null, orderTime: i.orderTime, favorite: i.favorite, score: i.score, source: i.source})), "ADD")
                 if(ok) {
                     await fetchStagingPostUpdate({action: "CLEAR"})
                 }
@@ -466,99 +462,7 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
         }
     }
 
-    const dataDrop = dataDropOptions === undefined ? () => {} :
-    dataDropOptions.dropInType === "illust" || dataDropOptions.dropInType === "partition" ? async (insertIndex: number | null, illusts: CoverIllust[], _: "ADD" | "MOVE"): Promise<boolean> => {
-        const target = illusts.map(i => i.id)
-        const partitionTime = dataDropOptions.dropInType === "partition" ? unref(dataDropOptions.path) ?? undefined : undefined
-        const finalInsertIndex = insertIndex ?? paginationData.proxy.syncOperations.count()
-        if(finalInsertIndex === 0) {
-            const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
-            const afterItem2 = paginationData.proxy.syncOperations.retrieve(finalInsertIndex + 1)
-            const direction = afterItem2 !== undefined ? (afterItem2.orderTime.timestamp > afterItem.orderTime.timestamp ? "asc" : afterItem2.orderTime.timestamp < afterItem.orderTime.timestamp ? "desc" : null) : null            
-            //取出之后的两项，根据这两项的orderTime，猜测是升序还是降序，根据升降情况，以target数量设置begin和end的间隔秒数。如果无法猜测，则begin和end设置为相同。
-            const orderTimeBegin = direction === "asc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds - target.length - 1) : afterItem.orderTime
-            const orderTimeEnd = direction === "desc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds + target.length + 1) : afterItem.orderTime
-
-            await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true, partitionTime})
-            return true
-        }else if(finalInsertIndex !== null && finalInsertIndex === paginationData.proxy.syncOperations.count()) {
-            const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
-            const behindItem2 = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 2)!
-            const direction = behindItem2 !== undefined ? (behindItem2.orderTime.timestamp > behindItem.orderTime.timestamp ? "desc" : behindItem2.orderTime.timestamp < behindItem.orderTime.timestamp ? "asc" : null) : null            
-            //取出之后的两项，根据这两项的orderTime，猜测是升序还是降序，根据升降情况，以target数量设置begin和end的间隔秒数。如果无法猜测，则begin和end设置为相同。
-            const orderTimeBegin = direction === "desc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds - target.length - 1) : behindItem.orderTime
-            const orderTimeEnd = direction === "asc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds + target.length + 1) : behindItem.orderTime
-
-            await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true, partitionTime})
-            return true
-        }else if(finalInsertIndex !== null) {
-            const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
-            const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
-            const begin = behindItem.orderTime.timestamp < afterItem.orderTime.timestamp ? behindItem.orderTime : afterItem.orderTime
-            const end = behindItem.orderTime.timestamp > afterItem.orderTime.timestamp ? behindItem.orderTime : afterItem.orderTime
-            //如果begin和end相差超过24h，则认为它们相距过远，不应该再使用两者的范围，而是应该使用靠近其中一端的时间点。而这个的判定依据是所选项现在更靠近哪个端点。
-            let orderTimeBegin: LocalDateTime
-            let orderTimeEnd: LocalDateTime
-            if(end.timestamp - begin.timestamp > 1000 * 60 * 60 * 24) {
-                const targetOrderTimes = illusts.map(i => i.orderTime.timestamp)
-                const max = Math.max(...targetOrderTimes), min = Math.min(...targetOrderTimes)
-                const durationToBegin = Math.min(Math.abs(begin.timestamp - max), Math.abs(begin.timestamp - min))
-                const durationToEnd = Math.min(Math.abs(end.timestamp - max), Math.abs(end.timestamp - min))
-                if(durationToBegin <= durationToEnd) {
-                    orderTimeBegin = begin
-                    orderTimeEnd = datetime.withSecond(begin, begin.seconds + target.length + 1)
-                }else{
-                    orderTimeBegin = datetime.withSecond(end, end.seconds - target.length - 1)
-                    orderTimeEnd = end
-                }
-            }else{
-                orderTimeBegin = begin
-                orderTimeEnd = end
-            }
-
-            await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true, partitionTime})
-            return true
-        }
-        return false
-    } : dataDropOptions.dropInType === "collection" ? async (_: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE"): Promise<boolean> => {
-        const path = unref(dataDropOptions.path)
-        if(path !== null && mode === "ADD") {
-            //只选取ADD模式。MOVE模式意味着集合内的移动，但集合内是没有移动的，所以什么也不做
-            const images = await dialog.addIllust.checkExistsInCollection(illusts.map(i => i.id), path)
-            if(images !== undefined && images.length > 0) {
-                return await fetchCollectionImagesUpdate(path, [path, ...images])
-            }
-        }
-        return false
-    } : dataDropOptions.dropInType === "book" ? async (insertIndex: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE"): Promise<boolean> => {
-        const path = unref(dataDropOptions.path)
-        if(path !== null) {
-            if(mode === "ADD") {
-                const images = await dialog.addIllust.checkExistsInBook(illusts.map(i => i.id), path)
-                if(images !== undefined && images.length > 0) {
-                    return await fetchBookImagesPartialUpdate(path, {action: "ADD", images, ordinal: insertIndex})
-                }
-            }else if(illusts.length > 0) {
-                //移动操作直接调用API即可，不需要检查
-                return await fetchBookImagesPartialUpdate(path, {action: "MOVE", images: illusts.map(i => i.id), ordinal: insertIndex})
-            }
-        }
-        return false
-    } : dataDropOptions.dropInType === "folder" ? async (insertIndex: number | null, illusts: CoverIllust[], mode: "ADD" | "MOVE"): Promise<boolean> => {
-        const path = unref(dataDropOptions.path)
-        if(path !== null) {
-            if(mode === "ADD") {
-                const images = await dialog.addIllust.checkExistsInFolder(illusts.map(i => i.id), path)
-                if(images !== undefined && images.length > 0) {
-                    return await fetchFolderImagesPartialUpdate(path, {action: "ADD", images, ordinal: insertIndex})
-                }
-            }else if(illusts.length > 0) {
-                //移动操作直接调用API即可，不需要检查
-                return await fetchFolderImagesPartialUpdate(path, {action: "MOVE", images: illusts.map(i => i.id), ordinal: insertIndex})
-            }
-        }
-        return false
-    } : () => {}
+    const dataDrop = useDataDrop(dataDropOptions, paginationData)
 
     const stagingPostCount = homepageState ? computed(() => homepageState.data.value?.stagingPostCount ?? 0) : shallowRef(0)
 
@@ -570,7 +474,126 @@ export function useImageDatasetOperators<T extends BasicIllust>(options: ImageDa
     }
 }
 
-interface LocateIdOptions<T extends BasicIllust> {
+function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperatorsOptions<T>["dataDrop"], paginationData: PaginationDataView<T>) {
+    if(dataDropOptions !== undefined) {
+        const dialog = useDialogService()
+
+        const fetchIllustBatchUpdate = usePostFetchHelper(client => client.illust.batchUpdate)
+        const fetchCollectionImagesUpdate = usePostPathFetchHelper(client => client.illust.collection.images.update)
+        const fetchBookImagesPartialUpdate = usePostPathFetchHelper(client => client.book.images.partialUpdate)
+        const fetchFolderImagesPartialUpdate = usePostPathFetchHelper(client => client.folder.images.partialUpdate)
+
+        const insertIntoIllusts = async (insertIndex: number | null, illusts: DraggingIllust[], _: "ADD" | "MOVE"): Promise<boolean> => {
+            const target = illusts.map(i => i.id)
+            const partitionTime = dataDropOptions.dropInType === "partition" ? unref(dataDropOptions.path) ?? undefined : undefined
+            const finalInsertIndex = insertIndex ?? paginationData.proxy.syncOperations.count()
+            if(finalInsertIndex === 0) {
+                const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
+                const afterItem2 = paginationData.proxy.syncOperations.retrieve(finalInsertIndex + 1)
+                const direction = afterItem2 !== undefined ? (afterItem2.orderTime.timestamp > afterItem.orderTime.timestamp ? "asc" : afterItem2.orderTime.timestamp < afterItem.orderTime.timestamp ? "desc" : null) : null            
+                //取出之后的两项，根据这两项的orderTime，猜测是升序还是降序，根据升降情况，以target数量设置begin和end的间隔秒数。如果无法猜测，则begin和end设置为相同。
+                const orderTimeBegin = direction === "asc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds - target.length - 1) : afterItem.orderTime
+                const orderTimeEnd = direction === "desc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds + target.length + 1) : afterItem.orderTime
+    
+                await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true, partitionTime})
+                return true
+            }else if(finalInsertIndex !== null && finalInsertIndex === paginationData.proxy.syncOperations.count()) {
+                const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
+                const behindItem2 = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 2)!
+                const direction = behindItem2 !== undefined ? (behindItem2.orderTime.timestamp > behindItem.orderTime.timestamp ? "desc" : behindItem2.orderTime.timestamp < behindItem.orderTime.timestamp ? "asc" : null) : null            
+                //取出之后的两项，根据这两项的orderTime，猜测是升序还是降序，根据升降情况，以target数量设置begin和end的间隔秒数。如果无法猜测，则begin和end设置为相同。
+                const orderTimeBegin = direction === "desc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds - target.length - 1) : behindItem.orderTime
+                const orderTimeEnd = direction === "asc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds + target.length + 1) : behindItem.orderTime
+    
+                await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true, partitionTime})
+                return true
+            }else if(finalInsertIndex !== null) {
+                const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
+                const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
+                const begin = behindItem.orderTime.timestamp < afterItem.orderTime.timestamp ? behindItem.orderTime : afterItem.orderTime
+                const end = behindItem.orderTime.timestamp > afterItem.orderTime.timestamp ? behindItem.orderTime : afterItem.orderTime
+                //如果begin和end相差超过24h，则认为它们相距过远，不应该再使用两者的范围，而是应该使用靠近其中一端的时间点。而这个的判定依据是所选项现在更靠近哪个端点。
+                let orderTimeBegin: LocalDateTime
+                let orderTimeEnd: LocalDateTime
+                if(end.timestamp - begin.timestamp > 1000 * 60 * 60 * 24) {
+                    const targetOrderTimes = illusts.map(i => i.orderTime.timestamp)
+                    const max = Math.max(...targetOrderTimes), min = Math.min(...targetOrderTimes)
+                    const durationToBegin = Math.min(Math.abs(begin.timestamp - max), Math.abs(begin.timestamp - min))
+                    const durationToEnd = Math.min(Math.abs(end.timestamp - max), Math.abs(end.timestamp - min))
+                    if(durationToBegin <= durationToEnd) {
+                        orderTimeBegin = begin
+                        orderTimeEnd = datetime.withSecond(begin, begin.seconds + target.length + 1)
+                    }else{
+                        orderTimeBegin = datetime.withSecond(end, end.seconds - target.length - 1)
+                        orderTimeEnd = end
+                    }
+                }else{
+                    orderTimeBegin = begin
+                    orderTimeEnd = end
+                }
+    
+                await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true, partitionTime})
+                return true
+            }
+            return false
+        }
+
+        if(dataDropOptions.dropInType === "illust" || dataDropOptions.dropInType === "partition") {
+            return insertIntoIllusts
+        }else if(dataDropOptions.dropInType === "collection") {
+            return async (insertIndex: number | null, illusts: DraggingIllust[], mode: "ADD" | "MOVE"): Promise<boolean> => {
+                const path = unref(dataDropOptions.path)
+                if(path !== null) {
+                    if(mode === "ADD") {
+                        const images = await dialog.addIllust.checkExistsInCollection(illusts.map(i => i.id), path)
+                        if(images !== undefined && images.length > 0) {
+                            //在ADD时并不会更改排序，要想在集合中更改排序只能是MOVE操作。这种设计适合只是想将项加入集合而不想重排序的情况。
+                            return await fetchCollectionImagesUpdate(path, [path, ...images])
+                        }
+                    }else{
+                        return await insertIntoIllusts(insertIndex, illusts, "MOVE")
+                    }
+                }
+                return false
+            }
+        }else if(dataDropOptions.dropInType === "book") {
+            return async (insertIndex: number | null, illusts: DraggingIllust[], mode: "ADD" | "MOVE"): Promise<boolean> => {
+                const path = unref(dataDropOptions.path)
+                if(path !== null) {
+                    if(mode === "ADD") {
+                        const images = await dialog.addIllust.checkExistsInBook(illusts.map(i => i.id), path)
+                        if(images !== undefined && images.length > 0) {
+                            return await fetchBookImagesPartialUpdate(path, {action: "ADD", images, ordinal: insertIndex})
+                        }
+                    }else if(illusts.length > 0) {
+                        //移动操作直接调用API即可，不需要检查
+                        return await fetchBookImagesPartialUpdate(path, {action: "MOVE", images: illusts.map(i => i.id), ordinal: insertIndex})
+                    }
+                }
+                return false
+            }
+        }else if(dataDropOptions.dropInType === "folder") {
+            return async (insertIndex: number | null, illusts: DraggingIllust[], mode: "ADD" | "MOVE"): Promise<boolean> => {
+                const path = unref(dataDropOptions.path)
+                if(path !== null) {
+                    if(mode === "ADD") {
+                        const images = await dialog.addIllust.checkExistsInFolder(illusts.map(i => i.id), path)
+                        if(images !== undefined && images.length > 0) {
+                            return await fetchFolderImagesPartialUpdate(path, {action: "ADD", images, ordinal: insertIndex})
+                        }
+                    }else if(illusts.length > 0) {
+                        //移动操作直接调用API即可，不需要检查
+                        return await fetchFolderImagesPartialUpdate(path, {action: "MOVE", images: illusts.map(i => i.id), ordinal: insertIndex})
+                    }
+                }
+                return false
+            }
+        }
+    }
+    return () => {}
+}
+
+interface LocateIdOptions<T extends CommonIllust> {
     queryFilter: Ref<IllustQueryFilter>
     paginationData: PaginationDataView<T>
     selector: SelectedState<number>
@@ -580,7 +603,7 @@ interface LocateIdOptions<T extends BasicIllust> {
 /**
  * 提供一组有关locateId的实现。
  */
-export function useLocateId<T extends BasicIllust>(options: LocateIdOptions<T>) {
+export function useLocateId<T extends CommonIllust>(options: LocateIdOptions<T>) {
     const locateId = ref<number | null>()
     const fetchFindLocation = useFetchHelper(client => client.illust.findLocation)
     

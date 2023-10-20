@@ -356,6 +356,9 @@ type BatchUpdateAction = "SET_PARTITION_TIME_TODAY" | "SET_PARTITION_TIME_EARLIE
     | "SET_ORDER_TIME_NOW" | "SET_ORDER_TIME_REVERSE" | "SET_ORDER_TIME_UNIFORMLY"
     | "SET_ORDER_TIME_BY_SOURCE_ID" | "SET_ORDER_TIME_BY_BOOK_ORDINAL" | "SET_ORDER_TIME_BY_FOLDER_ORDINAL"
 
+/**
+ * 所有Illust的公共结构，包括Illust, BookIllust, FolderIllust, StagingPostIllust等，只要是在Dataset展示的数据，都是它的子类型。
+ */
 export interface CommonIllust {
     id: number
     filePath: FilePath
@@ -365,6 +368,13 @@ export interface CommonIllust {
     childrenCount?: number | null
     score: number | null
     source: SourceDataPath | null
+}
+
+/**
+ * 用在drag&drop系统的类型，符合公共结构，只是把type变成了必选参数。
+ */
+export interface DraggingIllust extends CommonIllust {
+    type: IllustType
 }
 
 export interface IllustLocation {
@@ -390,7 +400,6 @@ export interface Illust extends CommonIllust {
      * 此项目的文件路径。
      */
     filePath: FilePath
-    
     /**
      * 此项目的评分。可能由手写评分或父子项目导出。
      */
@@ -479,12 +488,6 @@ export interface SimpleIllust {
 
 export interface SimpleCollection extends SimpleIllust {
     childrenCount: number
-}
-
-export interface CoverIllust extends SimpleIllust {
-    type: IllustType
-    childrenCount: number | null
-    orderTime: LocalDateTime
 }
 
 export interface CollectionRelatedItems {

@@ -20,7 +20,7 @@ const {
     target: { id, data, deleteItem, toggleFavorite },
     sideBar: { tabType },
     listview: { paginationData },
-    listviewController: { viewMode, fitType, columnNum },
+    listviewController: { viewMode, fitType, columnNum, editableLockOn },
     selector: { selected, lastSelected, update: updateSelect },
     paneState,
     operators
@@ -33,6 +33,8 @@ const sideBarButtonItems = [
 
 const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "separator"},
+    {type: "checkbox", label: "解除编辑锁定", checked: editableLockOn.value, click: () => editableLockOn.value = !editableLockOn.value},
     {type: "separator"},
     {type: "radio", checked: viewMode.value === "row", label: "列表模式", click: () => viewMode.value = "row"},
     {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"},
@@ -100,6 +102,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
 
                     <template #right>
                         <Button square icon="heart" :type="data?.favorite ? 'danger' : 'secondary'" @click="toggleFavorite"/>
+                        <Button square :mode="editableLockOn ? 'filled' : undefined" :type="editableLockOn ? 'danger' : undefined" :icon="editableLockOn ? 'lock-open' : 'lock'" @click="editableLockOn = !editableLockOn"/>
                         <Separator/>
                         <DataRouter/>
                         <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
@@ -113,7 +116,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
 
             <PaneLayout :show-pane="paneState.visible.value">
                 <IllustImageDataset :data="paginationData.data" :query-instance="paginationData.proxy"
-                                    :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable droppable
+                                    :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
                                     :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                                     @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
                                     @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"

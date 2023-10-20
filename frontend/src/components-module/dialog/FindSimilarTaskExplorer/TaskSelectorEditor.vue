@@ -5,7 +5,7 @@ import { Group } from "@/components/layout"
 import { Select, Input } from "@/components/form"
 import { DateEditor, SourceSiteSelectBox, RelatedTopicEditor, RelatedAuthorEditor } from "@/components-business/form-editor"
 import { SimpleAuthor, SimpleTopic } from "@/functions/http-client/api/all"
-import { CoverIllust, SimpleIllust } from "@/functions/http-client/api/illust"
+import { DraggingIllust, SimpleIllust } from "@/functions/http-client/api/illust"
 import { ImportImage } from "@/functions/http-client/api/import"
 import { TaskSelector } from "@/functions/http-client/api/find-similar"
 import { useFetchHelper } from "@/functions/fetch"
@@ -47,7 +47,7 @@ const importImageFilepaths = computed(() => loadingCache.importImages.map(i => i
 const { dragover: _, ...dropEvents } = useDroppable(["importImages", "illusts"], (data, type) => {
     if(props.selector.type === "image" && type === "illusts" && data.length > 0) {
         const imageIds = props.selector.imageIds
-        const add = (<CoverIllust[]>data).filter(i => imageIds.indexOf(i.id) < 0)
+        const add = (<DraggingIllust[]>data).filter(i => imageIds.indexOf(i.id) < 0)
         loadingCache.images = [...loadingCache.images, ...add.map(i => ({id: i.id, filePath: i.filePath}))]
         emit("update:selector", {type: "image", imageIds: [...props.selector.imageIds, ...add.map(i => i.id)]})
     }else if(props.selector.type === "importImage" && type === "importImages" && data.length > 0) {

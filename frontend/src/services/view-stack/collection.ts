@@ -1,6 +1,6 @@
-import { computed, Ref, ref } from "vue"
+import { Ref, ref } from "vue"
 import { Illust } from "@/functions/http-client/api/illust"
-import { flatResponse } from "@/functions/http-client"
+import { flatResponse, mapResponse } from "@/functions/http-client"
 import {
     SingletonSlice, SliceOrPath, SingletonDataView,
     useFetchEndpoint, useSingletonDataView, usePostPathFetchHelper, usePostFetchHelper, useFetchEvent 
@@ -16,7 +16,7 @@ import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useIllustViewController } from "@/services/base/view-controller"
 import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
 import { useSettingSite } from "@/services/setting"
-import { installation, toRef } from "@/utils/reactivity"
+import { computedEffect, installation, toRef } from "@/utils/reactivity"
 
 export const [installCollectionViewContext, useCollectionViewContext] = installation(function (data: SliceOrPath<Illust, SingletonSlice<Illust>, number>) {
     const singleton = useSingleton(data)
@@ -59,7 +59,7 @@ function useSingleton(data: SliceOrPath<Illust, SingletonSlice<Illust>, number>)
 function useTarget(singleton: SingletonDataView<Illust>) {
     const message = useMessageBox()
 
-    const id = computed(() => singleton.data.value?.id ?? null)
+    const id = computedEffect(() => singleton.data.value?.id ?? null)
 
     const setData = usePostPathFetchHelper(client => client.illust.collection.update)
 
@@ -100,7 +100,7 @@ function useListView(path: Ref<number | null>) {
                     removeOne(i => i.id === event.illustId)
                 }
             },
-            request: client => async items => flatResponse(await Promise.all(items.map(a => client.illust.get(a.id))))
+            request: client => async items => mapResponse(await client.illust.findByIds(items.map(i => i.id)), r => r.map(i => i !== null ? i : undefined))
         }
     })
 }

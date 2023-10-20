@@ -18,8 +18,11 @@
     line-height: $size
     > *
       line-height: normal
-  .is-line-height-default
-    line-height: normal
+  .is-element-height-#{$name}
+    height: $size
+
+.is-line-height-default
+  line-height: normal
 
 //元素文本宽度(用于固定文本大小)
 @for $i from 1 through 100

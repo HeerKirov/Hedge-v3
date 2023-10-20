@@ -158,20 +158,6 @@ export function useTimelineContext() {
     const monthRefs: Record<number, HTMLDivElement> = {}
     const dayRefs: Record<number, HTMLDivElement> = {}
 
-    //在calendarDate变化时，重新聚焦month。
-    //也聚焦day，但要复杂一些。如果目标月份在显示区域内，则什么也不做；如果在后面，则滚动到月份的最后一天以显示该月的全部日期；同理如果在前面则滚动到月份的第一天
-    watch(calendarDateMonths, async partitionMonth => {
-        if(partitionMonth !== null) {
-            monthRefs[partitionMonth.year * 12 + partitionMonth.month]?.scrollIntoView({behavior: "auto"})
-            const positionOffset = getPositionOfMonth(partitionMonth.days)
-            if(positionOffset > 0) {
-                dayRefs[partitionMonth.days[partitionMonth.days.length - 1].date.timestamp]?.scrollIntoView({behavior: "auto"})
-            }else if(positionOffset < 0) {
-                dayRefs[partitionMonth.days[0].date.timestamp]?.scrollIntoView({behavior: "auto"})
-            }
-        }
-    }, {immediate: true, flush: "post"})
-
     const getPositionOfMonth = (days: Partition[]) => {
         if(timelineRef !== null) {
             const visibleTop = timelineRef.scrollTop, visibleBottom = timelineRef.scrollTop + timelineRef.clientHeight
@@ -186,6 +172,20 @@ export function useTimelineContext() {
         }
         return 0
     }
+
+    //在calendarDate变化时，重新聚焦month。
+    //也聚焦day，但要复杂一些。如果目标月份在显示区域内，则什么也不做；如果在后面，则滚动到月份的最后一天以显示该月的全部日期；同理如果在前面则滚动到月份的第一天
+    watch(calendarDateMonths, async partitionMonth => {
+        if(partitionMonth !== null) {
+            monthRefs[partitionMonth.year * 12 + partitionMonth.month]?.scrollIntoView({behavior: "auto"})
+            const positionOffset = getPositionOfMonth(partitionMonth.days)
+            if(positionOffset > 0) {
+                dayRefs[partitionMonth.days[partitionMonth.days.length - 1].date.timestamp]?.scrollIntoView({behavior: "auto"})
+            }else if(positionOffset < 0) {
+                dayRefs[partitionMonth.days[0].date.timestamp]?.scrollIntoView({behavior: "auto"})
+            }
+        }
+    }, {immediate: true, flush: "post"})
 
     const scrollEvent = () => {
         if(timelineRef !== null && partitionMonths.value !== undefined && calendarDateMonths.value !== null) {

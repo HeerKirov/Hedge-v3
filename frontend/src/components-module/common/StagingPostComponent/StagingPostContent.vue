@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { BottomLayout } from "@/components/layout"
+import { BottomLayout, MiddleLayout } from "@/components/layout"
 import { Separator, Button } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { StagingPostDataset } from "@/components-module/data"
+import { DataRouter } from "@/components-business/top-bar"
 import { MenuItem } from "@/modules/popup-menu"
 import { useDataContext } from "./context"
 
@@ -25,22 +26,25 @@ const ellipsisMenuItems = <MenuItem<undefined>[]>[
 <template>
     <BottomLayout>
         <template #top>
-            <div class="is-line-height-std px-1 pt-1 mb-mhalf">
-                <span class="is-font-size-large ml-2">暂存区</span>
-                <div class="float-right">
-                    <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
-                        <Button :ref="setEl" icon="ellipsis-v" :disabled="!paginationData.data.metrics.total" @click="popup">更多操作</Button>
-                    </ElementPopupMenu>
+            <MiddleLayout class="px-1 mt-1 mb-1 is-element-height-std">
+                <template #left>
+                    <span class="is-font-size-large ml-2">暂存区</span>
+                    <DataRouter v-if="paginationData.data.metrics.total"/>
+                </template>
+                <template #right>
                     <Button icon="maximize" :disabled="!paginationData.data.metrics.total" @click="openDetailView">详细</Button>
-                </div>
-            </div>
+                    <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
+                        <Button :ref="setEl" square icon="ellipsis-v" :disabled="!paginationData.data.metrics.total" @click="popup"/>
+                    </ElementPopupMenu>
+                </template>
+            </MiddleLayout>
             <Separator direction="horizontal"/>
         </template>
 
         <div v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" class="has-text-centered secondary-text">
             <i>暂存区为空</i>
         </div>
-        <StagingPostDataset v-else view-mode="grid" fit-type="cover" :column-num="6"
+        <StagingPostDataset v-else view-mode="grid" fit-type="cover" :column-num="6" draggable
                             :data="paginationData.data" :query-instance="paginationData.proxy"
                             @data-update="paginationData.dataUpdate"/>
     </BottomLayout>

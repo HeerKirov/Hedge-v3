@@ -1,6 +1,6 @@
 import { SimpleAuthor, SimpleTopic, SimpleTag } from "@/functions/http-client/api/all"
 import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
-import { CoverIllust } from "@/functions/http-client/api/illust"
+import { DraggingIllust } from "@/functions/http-client/api/illust"
 import { ImportImage } from "@/functions/http-client/api/import"
 import { SimpleFolder } from "@/functions/http-client/api/folder"
 import { Book } from "@/functions/http-client/api/book"
@@ -10,7 +10,7 @@ export interface TypeDefinition {
     topic: SimpleTopic
     author: SimpleAuthor
     annotation: SimpleAnnotation
-    illusts: CoverIllust[]
+    illusts: DraggingIllust[]
     importImages: ImportImage[]
     books: Book[]
     folder: SimpleFolder

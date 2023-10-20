@@ -9,7 +9,7 @@ const { months, days, calendarDate, setTimelineRef, setDayRef, setMonthRef, sele
 <template>
     <div :class="$style.timeline">
         <div :ref="setTimelineRef" :class="[$style['left-column'], $style['timeline-list']]" @scroll="scrollEvent">
-            <Block v-for="p in days" v-memo="[calendarDate?.year === p.date.year && calendarDate.month === p.date.month]" :ref="el => setDayRef(p.date.timestamp, el)" :key="p.date.timestamp" :class="[$style.item, $style[`lv-${p.level}`]]" :color="calendarDate?.year === p.date.year && calendarDate.month === p.date.month ? 'primary' : undefined" @click="openPartition(p.date)">
+            <Block v-for="p in days" v-memo="[days, calendarDate?.year === p.date.year && calendarDate.month === p.date.month]" :ref="el => setDayRef(p.date.timestamp, el)" :key="p.date.timestamp" :class="[$style.item, $style[`lv-${p.level}`]]" :color="calendarDate?.year === p.date.year && calendarDate.month === p.date.month ? 'primary' : undefined" @click="openPartition(p.date)">
                 <div :class="$style.processor" :style="`width: ${p.width}%`"/>
                 <span :class="$style.content">
                     <Icon class="mr-2" icon="th-list"/>
@@ -21,7 +21,7 @@ const { months, days, calendarDate, setTimelineRef, setDayRef, setMonthRef, sele
             </Block>
         </div>
         <div :class="[$style['right-column'], $style['timeline-list']]">
-            <Block v-for="p in months" v-memo="[calendarDate?.year === p.year && calendarDate.month === p.month]" :ref="el => setMonthRef(p.uniqueKey, el)" :key="p.uniqueKey" :class="[$style.item, $style[`lv-${p.level}`]]" :color="calendarDate?.year === p.year && calendarDate.month === p.month ? 'primary' : undefined" @click="selectMonth(p)">
+            <Block v-for="p in months" v-memo="[months, calendarDate?.year === p.year && calendarDate.month === p.month]" :ref="el => setMonthRef(p.uniqueKey, el)" :key="p.uniqueKey" :class="[$style.item, $style[`lv-${p.level}`]]" :color="calendarDate?.year === p.year && calendarDate.month === p.month ? 'primary' : undefined" @click="selectMonth(p)">
                 <div :class="$style.processor" :style="`width: ${p.width}%`"/>
                 <span :class="$style.content">
                     <Icon class="mr-2" icon="th-list"/>
