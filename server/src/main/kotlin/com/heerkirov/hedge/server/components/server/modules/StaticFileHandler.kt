@@ -16,11 +16,12 @@ class StaticFileHandler(private val archive: FileManager) : Routes {
         resourceHandler.resourceBase = "/"
         resourceHandler.isDirAllowed = false
         resourceHandler.isEtags = true
-        resourceHandler.start()
     }
 
     override fun handle(javalin: Javalin) {
         javalin.get("$prefix/*", ::handle)
+        javalin.jettyServer()?.server()?.let { resourceHandler.server = it }
+        resourceHandler.start()
     }
 
     private fun handle(ctx: Context) {

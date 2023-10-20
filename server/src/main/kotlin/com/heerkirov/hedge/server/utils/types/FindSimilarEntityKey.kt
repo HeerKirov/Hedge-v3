@@ -17,7 +17,7 @@ fun FindSimilarEntityKey.toEntityKeyString(): String {
 }
 
 fun String.toEntityKey(): FindSimilarEntityKey {
-    val type = FindSimilarEntityType.values().first { it.index.digitToChar() == this.first() }
+    val type = FindSimilarEntityType.entries.first { it.index.digitToChar() == this.first() }
     val id = this.substring(1).toInt()
     return FindSimilarEntityKey(type, id)
 }

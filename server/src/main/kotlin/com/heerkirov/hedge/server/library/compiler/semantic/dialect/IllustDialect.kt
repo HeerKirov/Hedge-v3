@@ -32,7 +32,7 @@ object IllustDialect : QueryDialect<IllustDialect.IllustOrderItem> {
     val sourceSite = stringField("SOURCE_SITE", "^site", "source-site")
     val sourceDescription = patternStringField("SOURCE_DESCRIPTION", "^description", "^desc", "source-description", "source-desc")
     val tagme = compositionField<Tagme>("TAGME", "tagme") {
-        for (value in Tagme.values()) {
+        for (value in Tagme.entries) {
             item(value, value.name)
         }
     }

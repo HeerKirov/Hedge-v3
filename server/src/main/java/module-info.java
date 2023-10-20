@@ -2,6 +2,7 @@ module com.heerkirov.hedge.server {
     requires java.base;
     requires java.sql;
     requires java.desktop;
+    requires java.management;
     requires kotlin.stdlib;
     requires kotlin.reflect;
 
@@ -15,8 +16,8 @@ module com.heerkirov.hedge.server {
     requires net.coobird.thumbnailator;
     requires com.twelvemonkeys.imageio.jpeg;
     requires jave.core;
-    requires org.slf4j;
-    requires org.slf4j.simple;
+    requires ch.qos.logback.core;
+    requires ch.qos.logback.classic;
     requires org.eclipse.jetty.server;
     requires org.eclipse.jetty.util;
 

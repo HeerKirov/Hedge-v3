@@ -1,6 +1,6 @@
 plugins {
     application
-    kotlin("jvm").version("1.9.0")
+    kotlin("jvm").version("1.9.10")
     id("com.github.johnrengelman.shadow").version("4.0.3")
     id("org.beryx.jlink").version("2.26.0")
 }
@@ -9,15 +9,15 @@ group = "com.heerkirov.hedge"
 version = "0.3.0"
 
 dependencies {
-    val kotlinVersion = "1.9.0"
-    val javalinVersion = "5.6.2"
+    val kotlinVersion = "1.9.10"
+    val javalinVersion = "5.6.3"
     val ktormVersion = "3.6.0"
     val sqliteVersion = "3.42.0.0"
     val jacksonVersion = "2.15.2"
     val thumbnailatorVersion = "0.4.20"
     val twelvemonkeysVersion = "3.9.4"
     val javeVersion = "3.3.1"
-    val slf4jVersion = "2.0.7"
+    val logbackVersion = "1.4.11"
     val junitVersion = "4.13.2"
     val javePlatform = when(System.getProperty("os.name").toLowerCase()) {
         "mac" -> "nativebin-osx64"
@@ -40,8 +40,8 @@ dependencies {
     implementation(group = "com.twelvemonkeys.imageio", name = "imageio-jpeg", version = twelvemonkeysVersion)  //ImageIO扩展，增强jpeg格式处理，兼容各种错误情况
     implementation(group = "ws.schild", name = "jave-core", version = javeVersion)                              //视频处理库，用于缩略图生成
     implementation(group = "ws.schild", name = "jave-$javePlatform", version = javeVersion)                     //视频处理库的平台相关驱动包
-    implementation(group = "org.slf4j", name = "slf4j-simple", version = slf4jVersion)                          //日志
-    implementation(group = "org.slf4j", name = "slf4j-api", version = slf4jVersion)                             //日志
+    implementation(group = "ch.qos.logback", name = "logback-core", version = logbackVersion)                   //日志
+    implementation(group = "ch.qos.logback", name = "logback-classic", version = logbackVersion)                //日志
     testImplementation(group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version = kotlinVersion)     //测试
     testImplementation(group = "junit", name = "junit", version = junitVersion)                                 //测试
 }

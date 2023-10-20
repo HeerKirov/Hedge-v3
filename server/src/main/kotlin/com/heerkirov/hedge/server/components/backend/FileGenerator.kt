@@ -115,7 +115,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                     ?: 1
                 //从存储位置读取所有的directory，准备在归档线程中将其归档
                 //筛选掉比latestBlock大的块，包括latestBlock。FileManager会管理latestBlock，并在它被归档时发出事件通知
-                ArchiveType.values().asSequence().flatMap { archiveType ->
+                ArchiveType.entries.asSequence().flatMap { archiveType ->
                     Path(appdata.storage.storageDir, archiveType.toString())
                         .toFile()
                         .listFiles { f -> f.isDirectory && (f.name.toIntOrNull(16)?.let { it < latestBlock } ?: false) }

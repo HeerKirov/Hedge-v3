@@ -17,7 +17,7 @@ object SourceDataDialect : QueryDialect<SourceDataDialect.OrderItem> {
     val status = enumField<SourceEditStatus>("STATUS", "status", "st") {
         //一个额外的别名，下划线换成了了空格
         item(SourceEditStatus.NOT_EDITED, "NOT EDITED")
-        for(value in SourceEditStatus.values()) {
+        for(value in SourceEditStatus.entries) {
             item(value, value.name)
         }
     }
