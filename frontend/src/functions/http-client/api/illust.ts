@@ -39,7 +39,9 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
             get: http.createPathRequest(id => `/api/illusts/collection/${id}`, "GET", {
                 parseResponse: mapToDetailIllust
             }),
-            update: http.createPathDataRequest(id => `/api/illusts/collection/${id}`, "PATCH"),
+            update: http.createPathDataRequest(id => `/api/illusts/collection/${id}`, "PATCH", {
+                parseData: mapFromImageUpdateForm
+            }),
             delete: http.createPathRequest(id => `/api/illusts/collection/${id}`, "DELETE"),
             relatedItems: {
                 get: http.createPathQueryRequest(id => `/api/illusts/collection/${id}/related-items`, "GET", {
@@ -137,7 +139,7 @@ function mapToImageRelatedItems(data: any): ImageRelatedItems {
     }
 }
 
-function mapFromImageUpdateForm(form: ImageUpdateForm): any {
+function mapFromImageUpdateForm(form: IllustUpdateForm): any {
     return {
         ...form,
         partitionTime: form.partitionTime !== undefined ? date.toISOString(form.partitionTime) : undefined,
@@ -190,7 +192,7 @@ export interface IllustEndpoint {
      * @exception NOT_SUITABLE ("tags", number[]) 选择的资源不适用。tag: 不能选择addr类型的tag
      * @exception CONFLICTING_GROUP_MEMBERS ({[id: number]: {memberId: number, member: string}[]}) 违反tag冲突组约束。参数值是每一项冲突组的tagId，以及这个组下有冲突的tag的id和name列表
      */
-    update(id: number, form: ImageUpdateForm): Promise<Response<null, IllustExceptions["collection.update"]>>
+    update(id: number, form: IllustUpdateForm): Promise<Response<null, IllustExceptions["collection.update"]>>
     /**
      * 删除项目。
      * @exception NOT_FOUND
@@ -220,7 +222,7 @@ export interface IllustEndpoint {
          * @exception NOT_SUITABLE ("tags", number[]) 选择的资源不适用。tag: 不能选择addr类型的tag
          * @exception CONFLICTING_GROUP_MEMBERS ({[id: number]: {memberId: number, member: string}[]}) 违反tag冲突组约束。参数值是每一项冲突组的tagId，以及这个组下有冲突的tag的id和name列表
          */
-        update(id: number, form: CollectionUpdateForm): Promise<Response<null, IllustExceptions["collection.update"]>>
+        update(id: number, form: IllustUpdateForm): Promise<Response<null, IllustExceptions["collection.update"]>>
         /**
          * 删除collection。
          * @exception NOT_FOUND
@@ -275,7 +277,7 @@ export interface IllustEndpoint {
          * @exception NOT_SUITABLE ("tags", number[]) 选择的资源不适用。tag: 不能选择addr类型的tag
          * @exception CONFLICTING_GROUP_MEMBERS ({[id: number]: {memberId: number, member: string}[]}) 违反tag冲突组约束。参数值是每一项冲突组的tagId，以及这个组下有冲突的tag的id和name列表
          */
-        update(id: number, form: ImageUpdateForm): Promise<Response<null, IllustExceptions["image.update"]>>
+        update(id: number, form: IllustUpdateForm): Promise<Response<null, IllustExceptions["image.update"]>>
         /**
          * 删除image。
          * @exception NOT_FOUND
@@ -579,24 +581,10 @@ export interface CollectionCreateForm {
     tagme?: Tagme[]
 }
 
-export interface CollectionUpdateForm {
-    topics?: number[]
-    authors?: number[]
-    tags?: number[]
-    description?: string | null
-    score?: number | null
-    favorite?: boolean
-    tagme?: Tagme[]
-}
-
 export interface CollectionRelatedUpdateForm {
     associates?: number[]
 }
 
-export interface ImageUpdateForm extends CollectionUpdateForm {
-    partitionTime?: LocalDate
-    orderTime?: LocalDateTime
-}
 
 export interface ImageRelatedUpdateForm extends CollectionRelatedUpdateForm {
     collectionId?: number | null
@@ -612,6 +600,18 @@ export interface ImageSourceDataUpdateForm {
     links?: string[]
     additionalInfo?: SourceAdditionalInfoForm[]
     status?: SourceEditStatus
+}
+
+export interface IllustUpdateForm {
+    topics?: number[]
+    authors?: number[]
+    tags?: number[]
+    description?: string | null
+    score?: number | null
+    favorite?: boolean
+    tagme?: Tagme[]
+    partitionTime?: LocalDate
+    orderTime?: LocalDateTime
 }
 
 export interface IllustBatchUpdateForm {
