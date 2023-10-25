@@ -238,7 +238,7 @@ class IllustService(private val appdata: AppDataManager,
      * @throws ResourceNotSuitable ("tags", number[]) 部分tags资源不适用。地址段不适用于此项。给出不适用的tag id列表
      * @throws ConflictingGroupMembersError 发现标签冲突组
      */
-    fun update(id: Int, form: IllustImageUpdateForm) {
+    fun update(id: Int, form: IllustUpdateForm) {
         val illust = data.db.sequenceOf(Illusts).firstOrNull { Illusts.id eq id } ?: throw be(NotFound())
         if(illust.type == IllustModelType.COLLECTION) {
             updateCollection(id, form, illust)
@@ -374,7 +374,7 @@ class IllustService(private val appdata: AppDataManager,
      * @throws ResourceNotSuitable ("tags", number[]) 部分tags资源不适用。地址段不适用于此项。给出不适用的tag id列表
      * @throws ConflictingGroupMembersError 发现标签冲突组
      */
-    fun updateCollection(id: Int, form: IllustCollectionUpdateForm, preIllust: Illust? = null) {
+    fun updateCollection(id: Int, form: IllustUpdateForm, preIllust: Illust? = null) {
         data.db.transaction {
             val illust = preIllust ?: data.db.sequenceOf(Illusts).firstOrNull { retrieveCondition(id, IllustType.COLLECTION) } ?: throw be(NotFound())
 
@@ -401,7 +401,7 @@ class IllustService(private val appdata: AppDataManager,
                 )
             }else undefined()
 
-            if(anyOpt(newTagme, newDescription, form.score, form.favorite)) {
+            if(anyOpt(newTagme, newDescription, form.score, form.favorite, form.partitionTime, form.orderTime)) {
                 data.db.update(Illusts) {
                     where { it.id eq id }
                     newTagme.applyOpt { set(it.tagme, this) }
@@ -412,6 +412,24 @@ class IllustService(private val appdata: AppDataManager,
                     form.score.applyOpt { set(it.score, this) }
                     newExportedScore.applyOpt { set(it.exportedScore, this) }
                     form.favorite.applyOpt { set(it.favorite, this) }
+                    form.partitionTime.applyOpt { set(it.partitionTime, this) }
+                    form.orderTime.applyOpt { set(it.orderTime, this.toEpochMilli()) }
+                }
+            }
+
+            if(anyOpt(form.partitionTime, form.orderTime)) {
+                //这些属性是代理属性，将直接更改其children
+                data.db.update(Illusts) {
+                    where { it.parentId eq id }
+                    form.partitionTime.applyOpt { set(it.partitionTime, this) }
+                    form.orderTime.applyOpt { set(it.orderTime, this.toEpochMilli()) }
+                }
+                val childrenListUpdated = anyOpt(form.orderTime)
+                val childrenDetailUpdated = childrenListUpdated || anyOpt(form.partitionTime)
+                if(childrenListUpdated || childrenDetailUpdated) {
+                    val children = data.db.from(Illusts).select(Illusts.id).where { Illusts.parentId eq id }.map { it[Illusts.id]!! }
+                    //tips: 此处并没有设置timeSot，尽管发生了变更。主要是考虑到设置timeSot会触发一次children->parent的重导出，比较浪费，而实际场景里此处没有刷新事件可能不太有影响
+                    bus.emit(children.map { IllustUpdated(it, IllustType.IMAGE, listUpdated = childrenListUpdated, detailUpdated = true, timeSot = false) })
                 }
             }
 
@@ -463,7 +481,7 @@ class IllustService(private val appdata: AppDataManager,
      * @throws ResourceNotSuitable ("tags", number[]) 部分tags资源不适用。地址段不适用于此项。给出不适用的tag id列表
      * @throws ConflictingGroupMembersError 发现标签冲突组
      */
-    fun updateImage(id: Int, form: IllustImageUpdateForm, preIllust: Illust? = null) {
+    fun updateImage(id: Int, form: IllustUpdateForm, preIllust: Illust? = null) {
         data.db.transaction {
             val illust = preIllust ?: data.db.sequenceOf(Illusts).firstOrNull { retrieveCondition(id, IllustType.IMAGE) } ?: throw be(NotFound())
             val parent by lazy { if(illust.parentId == null) null else
@@ -946,6 +964,7 @@ class IllustService(private val appdata: AppDataManager,
             }
 
             val metaTagSot = anyOpt(form.tags, form.topics, form.authors)
+            val timeSot = anyOpt(form.partitionTime, form.orderTimeBegin, form.orderTimeEnd) || form.action != null
             val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.orderTimeBegin, form.orderTimeEnd) || form.action != null
             val detailUpdated = listUpdated || metaTagSot || anyOpt(form.description, form.partitionTime)
             if(listUpdated || detailUpdated) {
@@ -957,7 +976,7 @@ class IllustService(private val appdata: AppDataManager,
                         metaTagSot = metaTagSot,
                         scoreSot = form.score.isPresent,
                         descriptionSot = form.description.isPresent,
-                        timeSot = anyOpt(form.partitionTime, form.orderTimeBegin, form.orderTimeEnd) || form.action != null))
+                        timeSot = timeSot))
                 }
             }
         }

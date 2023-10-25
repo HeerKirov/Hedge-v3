@@ -13,15 +13,12 @@ data class IllustCollectionCreateForm(val images: List<Int>,
                                       val favorite: Boolean = false,
                                       val tagme: Illust.Tagme = Illust.Tagme.EMPTY)
 
-open class IllustCollectionUpdateForm(val topics: Opt<List<Int>>, val authors: Opt<List<Int>>, val tags: Opt<List<Int>>,
-                                      val description: Opt<String?>, val score: Opt<Int?>, val favorite: Opt<Boolean>, val tagme: Opt<Illust.Tagme>
-)
+open class IllustUpdateForm(val topics: Opt<List<Int>>, val authors: Opt<List<Int>>, val tags: Opt<List<Int>>,
+                            val description: Opt<String?>, val score: Opt<Int?>,
+                            val favorite: Opt<Boolean>, val tagme: Opt<Illust.Tagme>,
+                            val partitionTime: Opt<LocalDate>, val orderTime: Opt<Instant>)
 
 class IllustCollectionRelatedUpdateForm(val associates: Opt<List<Int>?>)
-
-class IllustImageUpdateForm(topics: Opt<List<Int>>, authors: Opt<List<Int>>, tags: Opt<List<Int>>,
-                            description: Opt<String?>, score: Opt<Int?>, favorite: Opt<Boolean>, tagme: Opt<Illust.Tagme>,
-                            val partitionTime: Opt<LocalDate>, val orderTime: Opt<Instant>) : IllustCollectionUpdateForm(topics, authors, tags, description, score, favorite, tagme)
 
 class IllustImageRelatedUpdateForm(val associates: Opt<List<Int>?>, val collectionId: Opt<Int?>)
 

@@ -99,7 +99,7 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
 
     private fun update(ctx: Context) {
         val id = ctx.pathParamAsClass<Int>("id").get()
-        val form = ctx.bodyAsForm<IllustImageUpdateForm>()
+        val form = ctx.bodyAsForm<IllustUpdateForm>()
         illustService.update(id, form)
     }
 
@@ -122,7 +122,7 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
 
     private fun updateCollection(ctx: Context) {
         val id = ctx.pathParamAsClass<Int>("id").get()
-        val form = ctx.bodyAsForm<IllustCollectionUpdateForm>()
+        val form = ctx.bodyAsForm<IllustUpdateForm>()
         illustService.updateCollection(id, form)
     }
 
@@ -164,7 +164,7 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
 
     private fun updateImage(ctx: Context) {
         val id = ctx.pathParamAsClass<Int>("id").get()
-        val form = ctx.bodyAsForm<IllustImageUpdateForm>()
+        val form = ctx.bodyAsForm<IllustUpdateForm>()
         illustService.updateImage(id, form)
     }
 
