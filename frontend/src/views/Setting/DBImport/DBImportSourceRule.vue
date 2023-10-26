@@ -42,10 +42,10 @@ const trash = () => {
 
 <template>
     <Flex :class="$style['rule-list']" horizontal="stretch" :spacing="1">
-        <FlexItem :width="40">
+        <FlexItem :width="35">
             <SelectList :items="selectItems" v-model:value="selectedItem"/>
         </FlexItem>
-        <FlexItem :width="60">
+        <FlexItem :width="65">
             <DBImportSourceRuleEditor v-if="selectedRule != null" :rule="selectedRule" @update="update" @delete="trash"/>
             <DBImportSourceRuleCreator v-else-if="selectedItem === '<new>'" @create="create"/>
         </FlexItem>

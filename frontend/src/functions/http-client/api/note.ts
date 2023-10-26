@@ -52,7 +52,7 @@ export interface NoteEndpoint {
     delete(id: number): Promise<Response<null, NotFound>>
 }
 
-export type NoteStatus = "PINNED" | "TODO" | "COMPLETED"
+export type NoteStatus = "PINNED" | "GENERAL" | "COMPLETED"
 
 export interface NoteRecord {
     id: number

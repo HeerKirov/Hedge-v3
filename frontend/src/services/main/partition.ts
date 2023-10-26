@@ -261,7 +261,7 @@ export function useDetailIllustContext() {
         paginationData: listview.paginationData,
         listview: listview.listview,
         listviewController, selector, navigation,
-        dataDrop: {dropInType: "partition", path}
+        dataDrop: {dropInType: "partition", path, querySchema: querySchema.schema, queryFilter: listview.queryFilter}
     })
     const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector, navigation})
 

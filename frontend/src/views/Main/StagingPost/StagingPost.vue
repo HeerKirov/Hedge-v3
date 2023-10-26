@@ -44,7 +44,7 @@ const menu = useDynamicPopupMenu<StagingPostImage>(illust => [
     {type: "separator"},
     {type: "normal", label: "导出", click: operators.exportItem},
     {type: "separator"},
-    {type: "normal", label: "从暂存区移除此项目", click: operators.removeOne}
+    {type: "normal", label: "从暂存区移除此项目", click: operators.removeFromStagingPost}
 ])
 
 </script>

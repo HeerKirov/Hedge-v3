@@ -23,7 +23,7 @@ function useListView() {
     })
 
     const filter = ref<"all" | "pin" | "todo" | "completed" | "deleted">("all")
-    const status = computed<NoteStatus[] | undefined>(() => filter.value === "all" ? ["PINNED", "TODO"] : filter.value === "pin" ? ["PINNED"] : filter.value === "todo" ? ["TODO"] : filter.value === "completed" ? ["COMPLETED"] : undefined)
+    const status = computed<NoteStatus[] | undefined>(() => filter.value === "all" ? ["PINNED", "GENERAL"] : filter.value === "pin" ? ["PINNED"] : filter.value === "todo" ? ["GENERAL"] : filter.value === "completed" ? ["COMPLETED"] : undefined)
 
     const listview = useQueryContinuousListView({
         request: client => (offset, limit) => client.note.list({offset, limit, order: ["status", "createTime"], status: status.value, deleted: filter.value === "deleted"}),
@@ -56,11 +56,11 @@ function useListView() {
     watch(filter, listview.reset)
 
     const toggleCompleted = async (item: NoteRecord) => {
-        await setData(item.id, {status: item.status === "COMPLETED" ? "TODO" : "COMPLETED"})
+        await setData(item.id, {status: item.status === "COMPLETED" ? "GENERAL" : "COMPLETED"})
     }
 
     const togglePinned = async (item: NoteRecord) => {
-        await setData(item.id, {status: item.status === "PINNED" ? "TODO" : "PINNED"})
+        await setData(item.id, {status: item.status === "PINNED" ? "GENERAL" : "PINNED"})
     }
 
     const resumeItem = async (item: NoteRecord) => {
@@ -103,13 +103,13 @@ export function useNoteDetailContext() {
     const submit = async () => {
         if(paneState.mode.value === "create") {
             if(form.value.title || form.value.content) {
-                const res = await createFetch({title: form.value.title, content: form.value.content, status: form.value.pinned ? "PINNED" : form.value.completed ? "COMPLETED" : "TODO"})
+                const res = await createFetch({title: form.value.title, content: form.value.content, status: form.value.pinned ? "PINNED" : form.value.completed ? "COMPLETED" : "GENERAL"})
                 if(res !== undefined && paneState.mode.value === "create") {
                     paneState.openDetailView(res.id)
                 }
             }
         }else if(paneState.mode.value === "detail") {
-            const status = form.value.pinned ? "PINNED" : form.value.completed ? "COMPLETED" : "TODO"
+            const status = form.value.pinned ? "PINNED" : form.value.completed ? "COMPLETED" : "GENERAL"
             if(data.value !== null && (status !== data.value.status || form.value.title !== data.value.title || form.value.content !== data.value.content)) {
                 await setData({title: form.value.title !== data.value.title ? form.value.title : undefined, content: form.value.content !== data.value.content ? form.value.content : undefined, status: status !== data.value.status ? status : undefined})
             }

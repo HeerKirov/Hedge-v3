@@ -41,6 +41,8 @@ const extraTargetItems: {label: string, value: SourceAnalyseRuleExtraTarget}[] =
 
 const additionalInfoFields = computed(() => site.value?.availableAdditionalInfo.map(i => ({label: i.label, value: i.field})) ?? [])
 
+const sourceTagTypeFields = computed(() => site.value?.availableTypes.map(i => ({label: i, value: i})) ?? [])
+
 const content = computedMutable(() => {
     const dep = objects.deepCopy(props.rule)
     return {...dep, extras: dep.extras ?? []}
@@ -64,6 +66,9 @@ const submit = () => {
     }
     if(content.value.extras.some(extra => extra.target === "ADDITIONAL_INFO" && !extra.additionalInfoField)) {
         message.showOkMessage("prompt", "未选择附加信息字段。")
+        return
+    }else if(content.value.extras.some(extra => extra.target === "TAG" && !extra.tagType)) {
+        message.showOkMessage("prompt", "未选择标签类型。")
         return
     }
     const extras = content.value.extras.length ? content.value.extras.map(extra => ({
@@ -122,7 +127,7 @@ const trash = async () => {
             <FlexItem>
                 <Select :items="extraTargetItems" v-model:value="extra.target"/>
                 <Select v-if="extra.target === 'ADDITIONAL_INFO'" :items="additionalInfoFields" v-model:value="extra.additionalInfoField"/>
-                <Input v-else-if="extra.target === 'TAG'" width="fullwidth" placeholder="标签类型(可选)" v-model:value="extra.tagType"/>
+                <Select v-else-if="extra.target === 'TAG'" :items="sourceTagTypeFields" v-model:value="extra.tagType"/>
             </FlexItem>
             <FlexItem :shrink="0">
                 <div class="is-line-height-std">

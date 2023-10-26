@@ -126,6 +126,8 @@ function mapToDetailIllust(data: any): DetailIllust {
 
 function mapToCollectionRelatedItems(data: any): CollectionRelatedItems {
     return {
+        books: <SimpleBook[]>data["books"],
+        folders: <SimpleFolder[]>data["folders"],
         associates: (<any[]>data["associates"]).map(mapToIllust)
     }
 }
@@ -354,8 +356,8 @@ export type IllustType = "COLLECTION" | "IMAGE"
 
 export type Tagme = "TAG" | "AUTHOR" | "TOPIC" | "SOURCE"
 
-type BatchUpdateAction = "SET_PARTITION_TIME_TODAY" | "SET_PARTITION_TIME_EARLIEST" | "SET_PARTITION_TIME_LATEST" 
-    | "SET_ORDER_TIME_NOW" | "SET_ORDER_TIME_REVERSE" | "SET_ORDER_TIME_UNIFORMLY"
+type BatchUpdateAction = "SET_PARTITION_TIME_TODAY" | "SET_PARTITION_TIME_EARLIEST" | "SET_PARTITION_TIME_LATEST" | "SET_PARTITION_TIME_MOST"
+    | "SET_ORDER_TIME_NOW" | "SET_ORDER_TIME_REVERSE" | "SET_ORDER_TIME_UNIFORMLY" | "SET_ORDER_TIME_MOST"
     | "SET_ORDER_TIME_BY_SOURCE_ID" | "SET_ORDER_TIME_BY_BOOK_ORDINAL" | "SET_ORDER_TIME_BY_FOLDER_ORDINAL"
 
 /**
@@ -497,13 +499,6 @@ export interface CollectionRelatedItems {
      * 关联组。
      */
     associates: Illust[]
-}
-
-export interface ImageRelatedItems extends CollectionRelatedItems {
-    /**
-     * image所属的collection。
-     */
-    collection: SimpleCollection | null
     /**
      * image所属的画集列表。
      */
@@ -512,6 +507,13 @@ export interface ImageRelatedItems extends CollectionRelatedItems {
      * image所属的文件夹列表。
      */
     folders: SimpleFolder[]
+}
+
+export interface ImageRelatedItems extends CollectionRelatedItems {
+    /**
+     * image所属的collection。
+     */
+    collection: SimpleCollection | null
 }
 
 export type ImageSourceData = {
@@ -627,6 +629,9 @@ export interface IllustBatchUpdateForm {
     orderTimeBegin?: LocalDateTime
     orderTimeEnd?: LocalDateTime
     orderTimeExclude?: boolean
+    timeInsertBegin?: number
+    timeInsertEnd?: number
+    timeInsertAt?: "behind" | "after"
     action?: BatchUpdateAction
     actionBy?: number
 }

@@ -4,8 +4,8 @@ import {
     PaginationDataView, QueryListview, AllSlice, ListIndexSlice, SingletonSlice,
     usePostFetchHelper, usePostPathFetchHelper, useFetchHelper, QueryInstance, createMappedQueryInstance, PaginationData
 } from "@/functions/fetch"
-import { DraggingIllust, CommonIllust, Illust, IllustQueryFilter, IllustType } from "@/functions/http-client/api/illust"
-import { FilePath } from "@/functions/http-client/api/all"
+import { DraggingIllust, CommonIllust, Illust, IllustQueryFilter } from "@/functions/http-client/api/illust"
+import { QueryRes } from "@/functions/http-client/api/util-query"
 import { Folder } from "@/functions/http-client/api/folder"
 import { Book } from "@/functions/http-client/api/book"
 import { IllustViewController } from "@/services/base/view-controller"
@@ -63,6 +63,14 @@ export interface ImageDatasetOperatorsOptions<T extends CommonIllust> {
          * 拖放区域的类型为图库。此时，拖放操作会将illusts的排序时间插入到目标位置。
          */
         dropInType: "illust"
+        /**
+         * 查询schema。用于辅助判断排序方向。
+         */
+        querySchema: Ref<QueryRes | null>
+        /**
+         * 查询过滤条件。用于辅助判断排序方向。
+         */
+        queryFilter: Ref<IllustQueryFilter>
     } | {
         /**
          * 拖放区域的类型为分区。此时，拖放操作会将illusts的排序时间插入到目标位置，还会额外将分区时间设置为目标分区。
@@ -72,6 +80,14 @@ export interface ImageDatasetOperatorsOptions<T extends CommonIllust> {
          * 分区的日期。
          */
         path: LocalDate | Ref<LocalDate | null>
+        /**
+         * 查询schema。用于辅助判断排序方向。
+         */
+        querySchema: Ref<QueryRes | null>
+        /**
+         * 查询过滤条件。用于辅助判断排序方向。
+         */
+        queryFilter: Ref<IllustQueryFilter>
     } | {
         /**
          * 拖放区域的类型为集合、画集、文件夹。此时，拖放操作会将illusts插入目标对象。
@@ -483,56 +499,47 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
         const fetchBookImagesPartialUpdate = usePostPathFetchHelper(client => client.book.images.partialUpdate)
         const fetchFolderImagesPartialUpdate = usePostPathFetchHelper(client => client.folder.images.partialUpdate)
 
+        const getCurrentOrderDirection = (): "asc" | "desc" => {
+            if(dataDropOptions.dropInType === "illust" || dataDropOptions.dropInType === "partition") {
+                if(dataDropOptions.querySchema.value?.queryPlan?.orders.length) {
+                    //如果存在query schema查询计划，优先从中提取有关orderTime的排序信息。orderTime的排序字段名是ORDINAL，视情况在前面添加+/-
+                    const ordinalOrderValue = dataDropOptions.querySchema.value.queryPlan.orders.find(i => i.endsWith("ORDINAL"))
+                    if(ordinalOrderValue) {
+                        return ordinalOrderValue.startsWith("-") ? "desc" : "asc"
+                    }
+                }
+                if(dataDropOptions.queryFilter.value.order?.length) {
+                    if(typeof dataDropOptions.queryFilter.value.order === "object") {
+                        const orderValue = dataDropOptions.queryFilter.value.order.find(i => i.endsWith("orderTime"))
+                        if(orderValue) {
+                            return orderValue.startsWith("-") ? "desc" : "asc"
+                        }
+                    }else if(dataDropOptions.queryFilter.value.order.endsWith("orderTime")) {
+                        return dataDropOptions.queryFilter.value.order.startsWith("-") ? "desc" : "asc"
+                    }
+                }
+            }
+            return "asc"
+        }
+
         const insertIntoIllusts = async (insertIndex: number | null, illusts: DraggingIllust[], _: "ADD" | "MOVE"): Promise<boolean> => {
             const target = illusts.map(i => i.id)
             const partitionTime = dataDropOptions.dropInType === "partition" ? unref(dataDropOptions.path) ?? undefined : undefined
             const finalInsertIndex = insertIndex ?? paginationData.proxy.syncOperations.count()
             if(finalInsertIndex === 0) {
                 const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
-                const afterItem2 = paginationData.proxy.syncOperations.retrieve(finalInsertIndex + 1)
-                const direction = afterItem2 !== undefined ? (afterItem2.orderTime.timestamp > afterItem.orderTime.timestamp ? "asc" : afterItem2.orderTime.timestamp < afterItem.orderTime.timestamp ? "desc" : null) : null            
-                //取出之后的两项，根据这两项的orderTime，猜测是升序还是降序，根据升降情况，以target数量设置begin和end的间隔秒数。如果无法猜测，则begin和end设置为相同。
-                const orderTimeBegin = direction === "asc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds - target.length - 1) : afterItem.orderTime
-                const orderTimeEnd = direction === "desc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds + target.length + 1) : afterItem.orderTime
-    
-                await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true, partitionTime})
+                const timeInsertAt = getCurrentOrderDirection() === "asc" ? "behind" : "after"
+                await fetchIllustBatchUpdate({target, timeInsertBegin: afterItem.id, timeInsertAt, orderTimeExclude: true, partitionTime})
                 return true
             }else if(finalInsertIndex !== null && finalInsertIndex === paginationData.proxy.syncOperations.count()) {
                 const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
-                const behindItem2 = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 2)!
-                const direction = behindItem2 !== undefined ? (behindItem2.orderTime.timestamp > behindItem.orderTime.timestamp ? "desc" : behindItem2.orderTime.timestamp < behindItem.orderTime.timestamp ? "asc" : null) : null            
-                //取出之后的两项，根据这两项的orderTime，猜测是升序还是降序，根据升降情况，以target数量设置begin和end的间隔秒数。如果无法猜测，则begin和end设置为相同。
-                const orderTimeBegin = direction === "desc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds - target.length - 1) : behindItem.orderTime
-                const orderTimeEnd = direction === "asc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds + target.length + 1) : behindItem.orderTime
-    
-                await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true, partitionTime})
+                const timeInsertAt = getCurrentOrderDirection() === "asc" ? "after" : "behind"
+                await fetchIllustBatchUpdate({target, timeInsertBegin: behindItem.id, timeInsertAt, orderTimeExclude: true, partitionTime})
                 return true
             }else if(finalInsertIndex !== null) {
                 const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
                 const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
-                const begin = behindItem.orderTime.timestamp < afterItem.orderTime.timestamp ? behindItem.orderTime : afterItem.orderTime
-                const end = behindItem.orderTime.timestamp > afterItem.orderTime.timestamp ? behindItem.orderTime : afterItem.orderTime
-                //如果begin和end相差超过24h，则认为它们相距过远，不应该再使用两者的范围，而是应该使用靠近其中一端的时间点。而这个的判定依据是所选项现在更靠近哪个端点。
-                let orderTimeBegin: LocalDateTime
-                let orderTimeEnd: LocalDateTime
-                if(end.timestamp - begin.timestamp > 1000 * 60 * 60 * 24) {
-                    const targetOrderTimes = illusts.map(i => i.orderTime.timestamp)
-                    const max = Math.max(...targetOrderTimes), min = Math.min(...targetOrderTimes)
-                    const durationToBegin = Math.min(Math.abs(begin.timestamp - max), Math.abs(begin.timestamp - min))
-                    const durationToEnd = Math.min(Math.abs(end.timestamp - max), Math.abs(end.timestamp - min))
-                    if(durationToBegin <= durationToEnd) {
-                        orderTimeBegin = begin
-                        orderTimeEnd = datetime.withSecond(begin, begin.seconds + target.length + 1)
-                    }else{
-                        orderTimeBegin = datetime.withSecond(end, end.seconds - target.length - 1)
-                        orderTimeEnd = end
-                    }
-                }else{
-                    orderTimeBegin = begin
-                    orderTimeEnd = end
-                }
-    
-                await fetchIllustBatchUpdate({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true, partitionTime})
+                await fetchIllustBatchUpdate({target, timeInsertBegin: behindItem.id, timeInsertEnd: afterItem.id, partitionTime})
                 return true
             }
             return false

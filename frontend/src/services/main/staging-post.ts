@@ -2,7 +2,7 @@ import { installVirtualViewNavigation } from "@/components/data"
 import { mapResponse } from "@/functions/http-client"
 import { usePostFetchHelper } from "@/functions/fetch"
 import { useListViewContext } from "@/services/base/list-view-context"
-import { useSelectedState } from "@/services/base/selected-state"
+import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useIllustViewController } from "@/services/base/view-controller"
 import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
@@ -16,7 +16,7 @@ export function useStagingPostContext() {
     const paneState = useSelectedPaneState("staging-post")
     const listviewController = useIllustViewController()
     const navigation = installVirtualViewNavigation()
-    const selfOperators = useOperators()
+    const selfOperators = useOperators(selector)
     const operators = useImageDatasetOperators({
         paginationData: listview.paginationData,
         listview: listview.listview,
@@ -49,20 +49,29 @@ function useListView() {
     })
 }
 
-function useOperators() {
+function useOperators(selector: SelectedState<number>) {
     const fetchUpdate = usePostFetchHelper(client => client.stagingPost.update)
+
+    const getEffectedItems = (id: number): number[] => {
+        return selector.selected.value.includes(id) ? selector.selected.value : [id]
+    }
 
     const dropToAdd = (insertIndex: number | null, images: TypeDefinition["illusts"], mode: "ADD" | "MOVE") => {
         fetchUpdate({action: mode, images: images.map(i => i.id), ordinal: insertIndex})
     }
 
-    const removeOne = (image: StagingPostImage) => {
-        fetchUpdate({action: "DELETE", images: [image.id]}).finally()
+    const removeFromStagingPost = (image: StagingPostImage) => {
+        if(selector.selected.value.length === 0 || !selector.selected.value.includes(image.id)) {
+            fetchUpdate({action: "DELETE", images: [image.id]}).finally()
+        }else{
+            const items = getEffectedItems(image.id)
+            fetchUpdate({action: "DELETE", images: items}).finally()
+        }
     }
 
     const clear = () => {
         fetchUpdate({action: "CLEAR"}).finally()
     }
 
-    return {dropToAdd, removeOne, clear}
+    return {dropToAdd, removeFromStagingPost, clear}
 }

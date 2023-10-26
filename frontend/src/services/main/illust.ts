@@ -38,7 +38,7 @@ export const [installIllustContext, useIllustContext] = installation(function ()
         paginationData: listview.paginationData,
         listview: listview.listview, 
         listviewController, selector, navigation,
-        dataDrop: {dropInType: "illust"}
+        dataDrop: {dropInType: "illust", querySchema: querySchema.schema, queryFilter: listview.queryFilter}
     })
     const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector, navigation})
 
@@ -294,11 +294,11 @@ export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "bo
         }
     }
 
-    const partitionTimeAction = (action: "TODAY" | "EARLIEST" | "LATEST") => {
+    const partitionTimeAction = (action: "TODAY" | "EARLIEST" | "LATEST" | "MOST") => {
         batchFetch({target: selected.value, action: `SET_PARTITION_TIME_${action}`})
     }
 
-    const orderTimeAction = (action: "NOW" | "REVERSE" | "UNIFORMLY" | "BY_SOURCE_ID" | "BY_ORDINAL") => {
+    const orderTimeAction = (action: "NOW" | "REVERSE" | "UNIFORMLY" | "MOST" | "BY_SOURCE_ID" | "BY_ORDINAL") => {
         if(action === "BY_ORDINAL") {
             if(parent?.value?.type === "book") {
                 batchFetch({target: selected.value, action: "SET_ORDER_TIME_BY_BOOK_ORDINAL", actionBy: parent.value.bookId})
@@ -373,7 +373,7 @@ export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref
             if(illustType.value === "IMAGE") {
                 return await client.illust.image.relatedItems.get(path, {limit: 9})
             }else{
-                return mapResponse(await client.illust.collection.relatedItems.get(path, {limit: 9}), d => ({associates: d.associates, collection: null, books: [], folders: []}))
+                return mapResponse(await client.illust.collection.relatedItems.get(path, {limit: 9}), d => ({associates: d.associates, collection: null, books: d.books, folders: d.folders}))
             }
         },
         update: client => (path, form: ImageRelatedUpdateForm) => {

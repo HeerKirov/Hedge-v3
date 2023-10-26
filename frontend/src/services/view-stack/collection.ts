@@ -1,6 +1,6 @@
 import { Ref, ref } from "vue"
 import { Illust } from "@/functions/http-client/api/illust"
-import { flatResponse, mapResponse } from "@/functions/http-client"
+import { mapResponse } from "@/functions/http-client"
 import {
     SingletonSlice, SliceOrPath, SingletonDataView,
     useFetchEndpoint, useSingletonDataView, usePostPathFetchHelper, usePostFetchHelper, useFetchEvent 
