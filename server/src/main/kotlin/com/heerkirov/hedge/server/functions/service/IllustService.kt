@@ -26,6 +26,7 @@ import com.heerkirov.hedge.server.utils.business.*
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.*
+import com.heerkirov.hedge.server.utils.mostCount
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import com.heerkirov.hedge.server.utils.types.*
@@ -35,6 +36,8 @@ import org.ktorm.expression.BinaryExpression
 import org.ktorm.expression.SelectExpression
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class IllustService(private val appdata: AppDataManager,
@@ -684,6 +687,7 @@ class IllustService(private val appdata: AppDataManager,
     /**
      * 批量修改属性。
      * @throws ResourceNotExist ("target", number[]) 选取的资源不存在。
+     * @throws ResourceNotExist ("timeInsertBegin"|"timeInsertEnd", number) 选取的时间点项不存在。
      * @throws ResourceNotSuitable ("target", number[]) 不能同时编辑collection和它下属的image。
      */
     fun batchUpdate(form: IllustBatchUpdateForm) {
@@ -937,10 +941,97 @@ class IllustService(private val appdata: AppDataManager,
             }
             form.orderTimeBegin.alsoOpt { orderTimeBegin -> setOrderTimeByRange(orderTimeBegin, form.orderTimeEnd.unwrapOrNull(), form.orderTimeExclude) }
 
+            //insert between illusts
+            form.timeInsertBegin.alsoOpt { beginId ->
+                if(form.timeInsertEnd.isPresent) {
+                    //如果指定了end，将当前所有项插入到指定的两项中间
+                    //如果begin端点是集合，那么会选取集合中在end之前的最大的子项的orderTime；如果end端点是集合，那么使用集合的orderTime即可
+                    //需要注意的是如果两端点相距过远(>=24h)，则会靠近其中一边，变成下述情况的那种排布方式
+                    //如果两端点时间一致，则变成第三种情况的排布方式
+                    val a = data.db.from(Illusts).select(Illusts.type, Illusts.orderTime)
+                        .where { Illusts.id eq beginId }.firstOrNull()
+                        ?.let { Pair(it[Illusts.type]!!, it[Illusts.orderTime]!!) }
+                        ?: throw be(ResourceNotExist("timeInsertBegin", beginId))
+                    val b = data.db.from(Illusts).select(Illusts.type, Illusts.orderTime)
+                        .where { Illusts.id eq form.timeInsertEnd.value }.firstOrNull()
+                        ?.let { Pair(it[Illusts.type]!!, it[Illusts.orderTime]!!) }
+                        ?: throw be(ResourceNotExist("timeInsertEnd", beginId))
+                    if(a.second == b.second) {
+                        setOrderTimeByRange(a.second.toInstant(), a.second.toInstant())
+                        return@alsoOpt
+                    }
+                    val begin = if(a.second < b.second && a.first != IllustModelType.COLLECTION) a.second else if(a.second > b.second && b.first !== IllustModelType.COLLECTION) b.second else {
+                        data.db.from(Illusts)
+                            .select(max(Illusts.orderTime).aliased("ord"))
+                            .where { (Illusts.parentId eq if(a.second < b.second) beginId else form.timeInsertEnd.value) and (Illusts.orderTime less if(a.second < b.second) b.second else a.second) }
+                            .firstOrNull()?.getLong("ord") ?: if(a.second < b.second) a.second else b.second
+                    }
+                    val end = if(a.second < b.second) b.second else a.second
+
+                    val orderTimeBegin: Long
+                    val orderTimeEnd: Long
+                    if(end - begin >= 1000 * 60 * 60 * 24) {
+                        val targetOrderTimes = orderTimeSeq.map { (_, _, ot) -> ot }
+                        val max = targetOrderTimes.max()
+                        val min = targetOrderTimes.min()
+                        val durationToBegin = abs(begin - max).coerceAtMost(abs(begin - min))
+                        val durationToEnd = abs(end - max).coerceAtMost(abs(end - min))
+                        if(durationToBegin <= durationToEnd) {
+                            orderTimeBegin = begin
+                            orderTimeEnd = begin + (orderTimeSeq.size + 1) * 1000
+                        }else{
+                            orderTimeBegin = end - (orderTimeSeq.size + 1) * 1000
+                            orderTimeEnd = end
+                        }
+                    }else{
+                        orderTimeBegin = begin
+                        orderTimeEnd = end
+                    }
+                    setOrderTimeByRange(orderTimeBegin.toInstant(), orderTimeEnd.toInstant(), excludeBeginAndEnd = true)
+
+                }else if(form.timeInsertAt != null) {
+                    //如果未指定end但指定了at，那么按at的值behind/after决定是插入到begin项目的之前还是之后
+                    //端点是集合时的选取逻辑同上；所选项在指定方向上以1s为间隔排布
+                    val a = data.db.from(Illusts).select(Illusts.type, Illusts.orderTime)
+                        .where { Illusts.id eq beginId }.firstOrNull()
+                        ?.let { Pair(it[Illusts.type]!!, it[Illusts.orderTime]!!) }
+                        ?: throw be(ResourceNotExist("timeInsertBegin", beginId))
+
+                    val orderTimeBegin: Long
+                    val orderTimeEnd: Long
+                    when (form.timeInsertAt) {
+                        "behind" -> {
+                            orderTimeBegin = a.second - (orderTimeSeq.size + 1) * 1000
+                            orderTimeEnd = a.second
+                        }
+                        "after" -> {
+                            orderTimeBegin = if(a.first != IllustModelType.COLLECTION) a.second else {
+                                data.db.from(Illusts)
+                                    .select(max(Illusts.orderTime).aliased("ord"))
+                                    .where { Illusts.parentId eq beginId }
+                                    .firstOrNull()?.getLong("ord") ?: a.second
+                            }
+                            orderTimeEnd = orderTimeBegin + (orderTimeSeq.size + 1) * 1000
+                        }
+                        else -> throw be(ParamError("timeInsertAt"))
+                    }
+                    setOrderTimeByRange(orderTimeBegin.toInstant(), orderTimeEnd.toInstant(), excludeBeginAndEnd = true)
+
+                }else{
+                    //如果都没有指定，那么插入的时间点与begin完全相同
+                    val orderTime = data.db.from(Illusts).select(Illusts.orderTime)
+                        .where { Illusts.id eq beginId }.firstOrNull()
+                        ?.let { it[Illusts.orderTime]!!.toInstant() }
+                        ?: throw be(ResourceNotExist("timeInsertBegin", beginId))
+                    setOrderTimeByRange(orderTime, orderTime)
+                }
+            }
+
             //action
             if(form.action != null) {
                 when(form.action) {
                     IllustBatchUpdateForm.Action.SET_PARTITION_TIME_TODAY -> setPartitionTime(LocalDate.now())
+                    IllustBatchUpdateForm.Action.SET_PARTITION_TIME_MOST -> setPartitionTime(records.map { it.partitionTime }.mostCount())
                     IllustBatchUpdateForm.Action.SET_PARTITION_TIME_EARLIEST -> setPartitionTime(records.minOf { it.partitionTime })
                     IllustBatchUpdateForm.Action.SET_PARTITION_TIME_LATEST -> setPartitionTime(records.maxOf { it.partitionTime })
                     IllustBatchUpdateForm.Action.SET_ORDER_TIME_UNIFORMLY -> setOrderTimeByRange(orderTimeSeq.minOf { (_, _, ot) -> ot }.toInstant(), orderTimeSeq.maxOf { (_, _, ot) -> ot }.toInstant())
@@ -948,6 +1039,15 @@ class IllustService(private val appdata: AppDataManager,
                     IllustBatchUpdateForm.Action.SET_ORDER_TIME_NOW -> {
                         val now = Instant.now()
                         setOrderTimeByRange(now, now)
+                    }
+                    IllustBatchUpdateForm.Action.SET_ORDER_TIME_MOST -> {
+                        //从所有image/children中找出项最多的orderTimeDate，在这个范围内找出最大值和最小值，然后按时间端点设置所有项
+                        val instants = orderTimeSeq.map { (_, _, ot) -> ot to LocalDate.ofInstant(ot.toInstant(), ZoneId.systemDefault()) }
+                        val date = instants.map { (_, d) -> d }.mostCount()
+                        val instantsInThisDay = instants.filter { (_, d) -> d == date }.map { (i, _) -> i }
+                        val min = instantsInThisDay.min().toInstant()
+                        val max = instantsInThisDay.max().toInstant()
+                        setOrderTimeByRange(min, max)
                     }
                     IllustBatchUpdateForm.Action.SET_ORDER_TIME_BY_SOURCE_ID -> {
                         //将所有image/children按source排序，然后把所有的orderTime取出排序，依次选取
@@ -993,8 +1093,8 @@ class IllustService(private val appdata: AppDataManager,
             }
 
             val metaTagSot = anyOpt(form.tags, form.topics, form.authors)
-            val timeSot = anyOpt(form.partitionTime, form.orderTimeBegin, form.orderTimeEnd) || form.action != null
-            val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.orderTimeBegin, form.orderTimeEnd) || form.action != null
+            val timeSot = anyOpt(form.partitionTime, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
+            val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
             val detailUpdated = listUpdated || metaTagSot || anyOpt(form.description, form.partitionTime)
             if(listUpdated || detailUpdated) {
                 for (record in records) {

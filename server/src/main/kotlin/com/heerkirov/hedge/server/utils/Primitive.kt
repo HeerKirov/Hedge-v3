@@ -15,6 +15,13 @@ fun <T> Iterable<T>.duplicateCount(): Map<T, Int> {
 }
 
 /**
+ * 计数并找出其中数量最多的重复项。
+ */
+fun <T> Iterable<T>.mostCount(): T {
+    return duplicateCount().entries.maxBy { it.value }.key
+}
+
+/**
  * 按照给定条件，将迭代内容分割至两个列表。
  */
 inline fun <T> Iterable<T>.filterInto(condition: (T) -> Boolean): Pair<List<T>, List<T>> {

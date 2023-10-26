@@ -1,6 +1,5 @@
 package com.heerkirov.hedge.server.model
 
-import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.enums.IllustModelType
