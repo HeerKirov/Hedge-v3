@@ -28,7 +28,7 @@ data class IllustDetailRes(val id: Int, val type: IllustType, val childrenCount:
                            val partitionTime: LocalDate, val orderTime: Instant,
                            val createTime: Instant, val updateTime: Instant)
 
-data class IllustCollectionRelatedRes(val associates: List<IllustRes>)
+data class IllustCollectionRelatedRes(val associates: List<IllustRes>, val books: List<BookSimpleRes>, val folders: List<FolderSimpleRes>)
 
 data class IllustImageRelatedRes(val collection: IllustParent?,
                                  val books: List<BookSimpleRes>,

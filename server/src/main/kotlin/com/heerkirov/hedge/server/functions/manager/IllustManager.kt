@@ -15,13 +15,12 @@ import com.heerkirov.hedge.server.utils.duplicateCount
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.ktorm.first
+import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import com.heerkirov.hedge.server.utils.types.optOf
-import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.ktorm.support.sqlite.bulkInsertReturning
 import java.time.Instant
-import java.time.LocalDate
 
 class IllustManager(private val data: DataRepository,
                     private val bus: EventBus,
@@ -95,10 +94,11 @@ class IllustManager(private val data: DataRepository,
      * 创建新的collection。
      * @throws ResourceNotExist ("images", number[]) 给出的部分images不存在。给出不存在的image id列表
      */
-    fun newCollection(illustIds: List<Int>, formDescription: String, formScore: Int?, formFavorite: Boolean, formTagme: Illust.Tagme): Int {
+    fun newCollection(illustIds: List<Int>, formDescription: String, formScore: Int?, formFavorite: Boolean?, formTagme: Illust.Tagme): Int {
         if(illustIds.isEmpty()) throw be(ParamError("images"))
         val images = unfoldImages(illustIds, sorted = false)
-        val (fileId, scoreFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(images)
+        val (fileId, scoreFromSub, favorite, partitionTime, orderTime) = kit.getExportedPropsFromList(images)
+        val (cachedBookIds, cachedFolderIds) = kit.getCachedBookAndFolderFromImages(images)
 
         val createTime = Instant.now()
 
@@ -107,7 +107,9 @@ class IllustManager(private val data: DataRepository,
             set(it.parentId, null)
             set(it.fileId, fileId)
             set(it.cachedChildrenCount, images.size)
-            set(it.cachedBookCount, 0)
+            set(it.cachedBookCount, cachedBookIds.size)
+            set(it.cachedBookIds, cachedBookIds)
+            set(it.cachedFolderIds, cachedFolderIds)
             set(it.sourceDataId, null)
             set(it.sourceSite, null)
             set(it.sourceId, null)
@@ -115,7 +117,7 @@ class IllustManager(private val data: DataRepository,
             set(it.sourcePartName, null)
             set(it.description, formDescription)
             set(it.score, formScore)
-            set(it.favorite, formFavorite)
+            set(it.favorite, formFavorite ?: favorite)
             set(it.tagme, formTagme)
             set(it.exportedDescription, formDescription)
             set(it.exportedScore, formScore ?: scoreFromSub)
@@ -132,6 +134,13 @@ class IllustManager(private val data: DataRepository,
 
         updateSubImages(id, images)
 
+        if(formFavorite != null) {
+            data.db.update(Illusts) {
+                where { it.parentId eq id }
+                set(it.favorite, formFavorite)
+            }
+        }
+
         kit.refreshAllMeta(id, copyFromChildren = true)
 
         bus.emit(IllustCreated(id, IllustType.COLLECTION))
@@ -142,14 +151,15 @@ class IllustManager(private val data: DataRepository,
     /**
      * 设置一个collection的image列表。
      */
-    fun updateImagesInCollection(collectionId: Int, images: List<Illust>, score: Int? = null) {
-        val (fileId, scoreFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(images)
+    fun updateImagesInCollection(collectionId: Int, images: List<Illust>, originScore: Int? = null) {
+        val (fileId, scoreFromSub, favoriteFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(images)
 
         data.db.update(Illusts) {
             where { it.id eq collectionId }
             set(it.fileId, fileId)
             set(it.cachedChildrenCount, images.size)
-            set(it.exportedScore, score ?: scoreFromSub)
+            set(it.exportedScore, originScore ?: scoreFromSub)
+            set(it.favorite, favoriteFromSub)
             set(it.partitionTime, partitionTime)
             set(it.orderTime, orderTime)
             set(it.updateTime, Instant.now())
@@ -359,6 +369,7 @@ class IllustManager(private val data: DataRepository,
                 metaTagSot = props.metaTags,
                 descriptionSot = props.description,
                 scoreSot = props.score,
+                favoriteSot = props.favorite,
                 timeSot = props.orderTime || props.partitionTime
             ))
         }
@@ -422,18 +433,20 @@ class IllustManager(private val data: DataRepository,
      */
     fun processCollectionChildrenChanged(collectionId: Int, changedCount: Int, updateTime: Instant? = null) {
         val children = data.db.from(Illusts)
-            .select(Illusts.fileId, Illusts.partitionTime, Illusts.orderTime)
+            .select(Illusts.fileId, Illusts.partitionTime, Illusts.orderTime, Illusts.favorite)
             .where { Illusts.parentId eq collectionId }
-            .map { Triple(it[Illusts.fileId]!!, it[Illusts.partitionTime]!!, it[Illusts.orderTime]!!) }
+            .map { Tuple4(it[Illusts.fileId]!!, it[Illusts.partitionTime]!!, it[Illusts.orderTime]!!, it[Illusts.favorite]!!) }
 
         if(children.isNotEmpty()) {
-            val fileId = children.minBy { it.third }.first
-            val partitionTime = children.asSequence().map { it.second }.groupBy { it }.maxBy { it.value.size }.key
-            val orderTime = children.filter { it.second == partitionTime }.minOf { it.third }
+            val fileId = children.minBy { it.f3 }.f1
+            val partitionTime = children.asSequence().map { it.f2 }.groupBy { it }.maxBy { it.value.size }.key
+            val orderTime = children.filter { it.f2 == partitionTime }.minOf { it.f3 }
+            val favorite = children.any { it.f4 }
 
             data.db.update(Illusts) {
                 where { it.id eq collectionId }
                 set(it.fileId, fileId)
+                set(it.favorite, favorite)
                 set(it.partitionTime, partitionTime)
                 set(it.orderTime, orderTime)
                 set(it.cachedChildrenCount, it.cachedChildrenCount plus changedCount)

@@ -9,7 +9,6 @@ import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.functions.kit.BookKit
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.library.framework.StatefulComponent
-import com.heerkirov.hedge.server.utils.DateTime
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import com.heerkirov.hedge.server.utils.Json.toJSONString
 import com.heerkirov.hedge.server.utils.tools.ControlledLoopThread
@@ -95,7 +94,8 @@ private val EXPORTER_TYPE_INDEX = listOf(
     IllustMetadataExporterTask::class,
     BookMetadataExporterTask::class,
     TagGlobalSortExporterTask::class,
-    IllustBookMemberExporterTask::class
+    IllustBookRelationExporterTask::class,
+    IllustFolderRelationExporterTask::class
 )
 private val EXPORTER_TYPES = EXPORTER_TYPE_INDEX.mapIndexed { index, kClass -> kClass to index }.toMap()
 
@@ -142,7 +142,8 @@ class BackendExporterImpl(private val appStatus: AppStatusDriver,
             IllustMetadataExporterTask::class -> IllustMetadataExporter(data, bus, illustKit)
             BookMetadataExporterTask::class -> BookMetadataExporter(data, bus, bookKit)
             TagGlobalSortExporterTask::class -> TagGlobalSortExporter(data)
-            IllustBookMemberExporterTask::class -> IllustBookMemberExporter(data, illustKit)
+            IllustBookRelationExporterTask::class -> IllustBookRelationExporter(data, illustKit)
+            IllustFolderRelationExporterTask::class -> IllustFolderRelationExporter(data, illustKit)
             else -> throw IllegalArgumentException("Unsupported task type ${type.simpleName}.")
         } as ExporterWorker<T>
     }

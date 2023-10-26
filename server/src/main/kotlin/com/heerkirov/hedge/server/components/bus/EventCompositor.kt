@@ -75,8 +75,12 @@ class EventCompositorImpl(private val data: DataRepository,
             }
             each<IllustRelatedItemsUpdated>({ e -> e.illustType == IllustType.IMAGE }) { e ->
                 if(e.bookUpdated) {
-                    //关联的book有更新时，重新导出book member标记
-                    exportBookMember(e.illustId)
+                    //关联的book有更新时，重新导出book与image的有关信息，主要是book-member标记和collection-book关系
+                    exportImageBookRelation(e.illustId)
+                }
+                if(e.folderUpdated) {
+                    //关联的folder有更新时，重新导出folder与image的有关信息，主要是collection-book关系
+                    exportImageFolderRelation(e.illustId)
                 }
                 if(e.collectionSot) {
                     //关联的collection有更新时，重新导出metadata
@@ -87,6 +91,9 @@ class EventCompositorImpl(private val data: DataRepository,
                 if(e.added.isNotEmpty() || e.deleted.isNotEmpty()) {
                     //collection的children发生变化时，重新导出collection的相关属性
                     exportCollectionMetadata(e.illustId)
+                    //重新导出book/folder与image的有关信息
+                    exportImageBookRelation(e.illustId)
+                    exportImageFolderRelation(e.illustId)
                 }
             }
             each<BookImagesChanged> { e ->
@@ -99,7 +106,7 @@ class EventCompositorImpl(private val data: DataRepository,
                 //collection的相关属性变化时，重新导出其children的属性
                 exportImageMetadataOfCollection(events)
             }
-            all/*<IllustUpdated>*/({ e -> e.illustType == IllustType.IMAGE && (e.metaTagSot || e.scoreSot || e.timeSot) }) { events ->
+            all/*<IllustUpdated>*/({ e -> e.illustType == IllustType.IMAGE && (e.metaTagSot || e.scoreSot || e.timeSot || e.favoriteSot) }) { events ->
                 //image相关属性变化时，重新导出其parent的属性
                 exportCollectionMetadataOfImages(events)
             }
@@ -133,8 +140,12 @@ class EventCompositorImpl(private val data: DataRepository,
         backendExporter.add(TagGlobalSortExporterTask)
     }
 
-    private fun exportBookMember(imageId: Int) {
-        backendExporter.add(IllustBookMemberExporterTask(imageIds = listOf(imageId)))
+    private fun exportImageBookRelation(imageId: Int) {
+        backendExporter.add(IllustBookRelationExporterTask(imageIds = listOf(imageId)))
+    }
+
+    private fun exportImageFolderRelation(imageId: Int) {
+        backendExporter.add(IllustFolderRelationExporterTask(imageIds = listOf(imageId)))
     }
 
     private fun exportBookMetadata(bookId: Int) {
@@ -146,7 +157,7 @@ class EventCompositorImpl(private val data: DataRepository,
     }
 
     private fun exportCollectionMetadata(collectionId: Int) {
-        backendExporter.add(IllustMetadataExporterTask(collectionId, exportScore = true, exportMetaTag = true, exportFirstCover = true))
+        backendExporter.add(IllustMetadataExporterTask(collectionId, exportScore = true, exportMetaTag = true, exportFavorite = true, exportFirstCover = true))
     }
 
     private fun exportImageMetadataOfCollection(events: Collection<IllustUpdated>) {
@@ -178,7 +189,8 @@ class EventCompositorImpl(private val data: DataRepository,
             val exportMetaTag = related.any { it?.metaTagSot ?: false }
             val exportScore = related.any { it?.scoreSot ?: false }
             val exportFirstCover = related.any { it?.timeSot ?: false }
-            backendExporter.add(IllustMetadataExporterTask(parentId, exportScore = exportScore, exportMetaTag = exportMetaTag, exportFirstCover = exportFirstCover))
+            val exportFavorite = related.any { it?.favoriteSot ?: false }
+            backendExporter.add(IllustMetadataExporterTask(parentId, exportScore = exportScore, exportMetaTag = exportMetaTag, exportFavorite = exportFavorite, exportFirstCover = exportFirstCover))
         }
     }
 
@@ -200,7 +212,7 @@ class EventCompositorImpl(private val data: DataRepository,
                 data.db.from(IllustAuthorRelations)
                     .select(IllustAuthorRelations.illustId)
                     .where { IllustAuthorRelations.authorId eq metaId }
-                    .map { IllustMetadataExporterTask(it[IllustAuthorRelations.illustId]!!, exportMetaTag = true, exportDescription = false, exportFirstCover = false, exportScore = false) }
+                    .map { IllustMetadataExporterTask(it[IllustAuthorRelations.illustId]!!, exportMetaTag = true, exportDescription = false, exportFavorite = false, exportFirstCover = false, exportScore = false) }
                     .let { backendExporter.add(it) }
                 data.db.from(BookAuthorRelations)
                     .select(BookAuthorRelations.bookId)
@@ -213,7 +225,7 @@ class EventCompositorImpl(private val data: DataRepository,
                 data.db.from(IllustTopicRelations)
                     .select(IllustTopicRelations.illustId)
                     .where { IllustTopicRelations.topicId eq metaId }
-                    .map { IllustMetadataExporterTask(it[IllustTopicRelations.illustId]!!, exportMetaTag = true, exportDescription = false, exportFirstCover = false, exportScore = false) }
+                    .map { IllustMetadataExporterTask(it[IllustTopicRelations.illustId]!!, exportMetaTag = true, exportDescription = false, exportFavorite = false, exportFirstCover = false, exportScore = false) }
                     .let { backendExporter.add(it) }
                 data.db.from(BookTopicRelations)
                     .select(BookTopicRelations.bookId)
@@ -226,7 +238,7 @@ class EventCompositorImpl(private val data: DataRepository,
                 data.db.from(IllustTagRelations)
                     .select(IllustTagRelations.illustId)
                     .where { IllustTagRelations.tagId eq metaId }
-                    .map { IllustMetadataExporterTask(it[IllustTagRelations.illustId]!!, exportMetaTag = true, exportDescription = false, exportFirstCover = false, exportScore = false) }
+                    .map { IllustMetadataExporterTask(it[IllustTagRelations.illustId]!!, exportMetaTag = true, exportDescription = false, exportFavorite = false, exportFirstCover = false, exportScore = false) }
                     .let { backendExporter.add(it) }
                 data.db.from(BookTagRelations)
                     .select(BookTagRelations.bookId)

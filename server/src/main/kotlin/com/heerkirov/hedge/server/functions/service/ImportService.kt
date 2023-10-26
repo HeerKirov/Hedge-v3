@@ -478,7 +478,7 @@ class ImportService(private val appdata: AppDataManager,
                         val images = illustManager.unfoldImages(listOf(collectionId) + imageIds, sorted = false)
                         illustManager.updateImagesInCollection(collectionId, images)
                     }else{
-                        illustManager.newCollection(imageIds, "", null, false, Illust.Tagme.EMPTY)
+                        illustManager.newCollection(imageIds, "", null, null, Illust.Tagme.EMPTY)
                     }
                 }
 

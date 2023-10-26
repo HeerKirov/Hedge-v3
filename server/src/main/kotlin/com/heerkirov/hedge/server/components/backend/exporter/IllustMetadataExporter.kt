@@ -7,6 +7,7 @@ import com.heerkirov.hedge.server.dao.Illusts
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.events.IllustUpdated
 import com.heerkirov.hedge.server.functions.kit.IllustKit
+import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.types.Opt
 import com.heerkirov.hedge.server.utils.types.anyOpt
@@ -25,6 +26,7 @@ data class IllustMetadataExporterTask(val id: Int,
                                       val exportScore: Boolean = false,
                                       val exportMetaTag: Boolean = false,
                                       val exportDescription: Boolean = false,
+                                      val exportFavorite: Boolean = false,
                                       val exportFirstCover: Boolean = false) : ExporterTask
 
 class IllustMetadataExporter(private val data: DataRepository,
@@ -39,6 +41,7 @@ class IllustMetadataExporter(private val data: DataRepository,
             exportScore = tasks.any { it.exportScore },
             exportMetaTag = tasks.any { it.exportMetaTag },
             exportDescription = tasks.any { it.exportDescription },
+            exportFavorite = tasks.any { it.exportFavorite },
             exportFirstCover = tasks.any { it.exportFirstCover }
         )
     }
@@ -47,12 +50,22 @@ class IllustMetadataExporter(private val data: DataRepository,
         data.db.transaction {
             val illust = data.db.sequenceOf(Illusts).firstOrNull { it.id eq task.id } ?: return
             val exportedScore: Opt<Int?>
+            val exportedFavorite: Opt<Boolean>
             val exportedDescription: Opt<String>
             val exportedFileAndTime: Opt<Triple<Int, LocalDate, Long>>
             val cachedChildrenCount: Opt<Int>
             if(illust.type == IllustModelType.COLLECTION) {
                 //collection不需要重导出description，因为它的值总是取自originDescription，在编写时赋值，不会有别的东西影响它的
                 exportedDescription = undefined()
+
+                exportedFavorite = if(task.exportFavorite) {
+                    val cnt = data.db.from(Illusts)
+                        .select(count(Illusts.id).aliased("cnt"))
+                        .where { Illusts.parentId eq task.id and Illusts.favorite }
+                        .first()
+                        .getInt("cnt")
+                    optOf(cnt > 0)
+                }else undefined()
 
                 //实际上collection还得重新导出file、orderTime、partitionTime
                 exportedFileAndTime = if(task.exportFirstCover) {
@@ -93,6 +106,8 @@ class IllustMetadataExporter(private val data: DataRepository,
             }else{
                 val parent by lazy { if(illust.parentId == null) null else data.db.sequenceOf(Illusts).firstOrNull { it.id eq illust.parentId} }
 
+                exportedFavorite = undefined()
+
                 exportedFileAndTime = undefined()
 
                 cachedChildrenCount = undefined()
@@ -113,11 +128,12 @@ class IllustMetadataExporter(private val data: DataRepository,
                 }
             }
 
-            if(anyOpt(exportedDescription, exportedScore, exportedFileAndTime, cachedChildrenCount)) {
+            if(anyOpt(exportedDescription, exportedScore, exportedFileAndTime, exportedFavorite, cachedChildrenCount)) {
                 data.db.update(Illusts) {
                     where { it.id eq task.id }
                     exportedDescription.applyOpt { set(it.exportedDescription, this) }
                     exportedScore.applyOpt { set(it.exportedScore, this) }
+                    exportedFavorite.applyOpt { set(it.favorite, this) }
                     exportedFileAndTime.alsoOpt { (fileId, partitionTime, orderTime) ->
                         set(it.fileId, fileId)
                         set(it.partitionTime, partitionTime)
@@ -127,7 +143,7 @@ class IllustMetadataExporter(private val data: DataRepository,
                 }
             }
 
-            val listUpdated = task.exportFirstCover || task.exportScore
+            val listUpdated = task.exportFirstCover || task.exportScore || task.exportFavorite
             val detailUpdated = listUpdated || task.exportDescription || task.exportMetaTag
             if(listUpdated || detailUpdated) {
                 bus.emit(IllustUpdated(illust.id, illust.type.toIllustType(), listUpdated = listUpdated, detailUpdated = true))

@@ -12,7 +12,6 @@ import com.heerkirov.hedge.server.utils.types.Opt
 import org.ktorm.dsl.*
 import org.ktorm.dsl.where
 import org.ktorm.entity.*
-import org.ktorm.schema.ColumnDeclaring
 import java.time.Instant
 import java.time.LocalDate
 import kotlin.math.roundToInt
@@ -336,21 +335,44 @@ class IllustKit(private val data: DataRepository,
 
     /**
      * 从一组images中，获得firstCover导出属性和score导出属性。
-     * @return (fileId, score, partitionTime, orderTime)
+     * @return (fileId, score, favorite, partitionTime, orderTime)
      */
-    fun getExportedPropsFromList(images: List<Illust>): Tuple4<Int, Int?, LocalDate, Long> {
+    fun getExportedPropsFromList(images: List<Illust>): Tuple5<Int, Int?, Boolean, LocalDate, Long> {
         val fileId = images.minBy { it.orderTime }.fileId
         val score = images.asSequence().mapNotNull { it.score }.average().run { if(isNaN()) null else this }?.roundToInt()
+        val favorite = images.count { it.favorite } * 2 >= images.size
         val partitionTime = images.asSequence().map { it.partitionTime }.groupBy { it }.maxBy { it.value.size }.key
         val orderTime = images.filter { it.partitionTime == partitionTime }.minOf { it.orderTime }
 
-        return Tuple4(fileId, score, partitionTime, orderTime)
+        return Tuple5(fileId, score, favorite, partitionTime, orderTime)
     }
 
     /**
-     * 重新导出列表中所有images的book flag。随后，再重新导出它们关联的collection。
+     * collection：根据children列表，获得cachedBookIds和cachedFolderIds。
+     * 该函数只需要使用在create中，因为create不触发imageChanged事件，而更新操作会触发，并触发backend exporter。
      */
-    fun exportBookFlag(imageIds: List<Int>) {
+    fun getCachedBookAndFolderFromImages(images: List<Illust>): Pair<List<Int>, List<Int>> {
+        val imageIds = images.map { it.id }
+
+        val bookIds = data.db.from(BookImageRelations)
+            .select(BookImageRelations.bookId)
+            .where { BookImageRelations.imageId inList imageIds }
+            .groupBy(BookImageRelations.bookId)
+            .map { it[BookImageRelations.bookId]!! }
+
+        val folderIds = data.db.from(FolderImageRelations)
+            .select(FolderImageRelations.folderId)
+            .where { FolderImageRelations.imageId inList imageIds }
+            .groupBy(FolderImageRelations.folderId)
+            .map { it[FolderImageRelations.folderId]!! }
+
+        return Pair(bookIds, folderIds)
+    }
+
+    /**
+     * 重新导出列表中所有images的book flag，再重新导出它们关联的collection；同时，还重新设置collection的book relations cache。
+     */
+    fun exportIllustBookRelations(imageIds: List<Int>) {
         val images = data.db.from(Illusts)
             .leftJoin(BookImageRelations, BookImageRelations.imageId eq Illusts.id)
             .select(Illusts.id, Illusts.parentId, count(BookImageRelations.bookId).aliased("count"))
@@ -370,20 +392,74 @@ class IllustKit(private val data: DataRepository,
 
             val parentIds = images.mapNotNull { (_, parentId, _) -> parentId }.toSet()
             val j = Illusts.aliased("joined_image")
-            @Suppress("UNCHECKED_CAST")
-            val parents = data.db.from(Illusts)
-                .leftJoin(j, Illusts.id eq j.parentId)
-                .select(Illusts.id, sum((j.cachedBookCount greater 0) as ColumnDeclaring<Number>).aliased("count"))
-                .where { (Illusts.type eq IllustModelType.COLLECTION) and (Illusts.id inList parentIds) }
-                .groupBy(Illusts.id)
-                .map { Tuple2(it[Illusts.id]!!, it.getInt("count")) }
 
-            if(parents.isNotEmpty()) {
+            val parentToBooks = data.db.from(Illusts)
+                .innerJoin(j, Illusts.id eq j.parentId)
+                .innerJoin(BookImageRelations, BookImageRelations.imageId eq j.id)
+                .select(Illusts.id, BookImageRelations.bookId)
+                .where { (Illusts.type eq IllustModelType.COLLECTION) and (Illusts.id inList parentIds) }
+                .groupBy(Illusts.id, BookImageRelations.bookId)
+                .map { Pair(it[Illusts.id]!!, it[BookImageRelations.bookId]!!) }
+                .groupBy({ (i, _) -> i }) { (_, b) -> b }
+
+            val parentWithNoBooks = parentIds - parentToBooks.keys
+
+            if(parentToBooks.isNotEmpty() || parentWithNoBooks.isNotEmpty()) {
                 data.db.batchUpdate(Illusts) {
-                    for ((id, cnt) in parents) {
+                    for ((id, books) in parentToBooks) {
                         item {
                             where { it.id eq id }
-                            set(it.cachedBookCount, cnt)
+                            set(it.cachedBookIds, books.ifEmpty { null })
+                            set(it.cachedBookCount, books.size)
+                        }
+                    }
+                    for (id in parentWithNoBooks) {
+                        item {
+                            where { it.id eq id }
+                            set(it.cachedBookIds, null)
+                            set(it.cachedBookCount, 0)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 重新设置collection的folder relations cache。
+     */
+    fun exportIllustFolderRelations(imageIds: List<Int>) {
+        val parentIds = data.db.from(Illusts)
+            .select(Illusts.parentId)
+            .where { (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) and (Illusts.id inList imageIds) and Illusts.parentId.isNotNull() }
+            .map { it[Illusts.parentId]!! }
+            .toSet()
+
+        if(parentIds.isNotEmpty()) {
+            val j = Illusts.aliased("joined_image")
+            val parentToFolders = data.db.from(Illusts)
+                .innerJoin(j, Illusts.id eq j.parentId)
+                .innerJoin(FolderImageRelations, FolderImageRelations.imageId eq j.id)
+                .select(Illusts.id, FolderImageRelations.folderId)
+                .where { (Illusts.type eq IllustModelType.COLLECTION) and (Illusts.id inList parentIds) }
+                .groupBy(Illusts.id, FolderImageRelations.folderId)
+                .map { Pair(it[Illusts.id]!!, it[FolderImageRelations.folderId]!!) }
+                .groupBy({ (i, _) -> i }) { (_, b) -> b }
+
+            val parentWithNoFolders = parentIds - parentToFolders.keys
+
+            if(parentToFolders.isNotEmpty() || parentWithNoFolders.isNotEmpty()) {
+                data.db.batchUpdate(Illusts) {
+                    for ((id, folders) in parentToFolders) {
+                        item {
+                            where { it.id eq id }
+                            set(it.cachedFolderIds, folders.ifEmpty { null })
+                        }
+                    }
+                    for (id in parentWithNoFolders) {
+                        item {
+                            where { it.id eq id }
+                            set(it.cachedFolderIds, null)
                         }
                     }
                 }

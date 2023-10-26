@@ -21,7 +21,6 @@ import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.types.anyOpt
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
-import org.ktorm.entity.none
 import org.ktorm.entity.sequenceOf
 import java.time.Instant
 
@@ -50,13 +49,13 @@ class NoteService(private val data: DataRepository, private val bus: EventBus) {
             val id = data.db.insertAndGenerateKey(NoteRecords) {
                 set(it.title, form.title)
                 set(it.content, form.content)
-                set(it.status, form.status ?: NoteStatus.TODO)
+                set(it.status, form.status ?: NoteStatus.GENERAL)
                 set(it.deleted, false)
                 set(it.createTime, now)
                 set(it.updateTime, now)
             } as Int
 
-            bus.emit(NoteCreated(id, form.status ?: NoteStatus.TODO))
+            bus.emit(NoteCreated(id, form.status ?: NoteStatus.GENERAL))
 
             return id
         }

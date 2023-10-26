@@ -266,7 +266,7 @@ class FindSimilarService(private val data: DataRepository,
                         val importIds = entities.filter { it.type == FindSimilarEntityType.IMPORT_IMAGE }.map { it.id }
                         val imageIds = entities.filter { it.type == FindSimilarEntityType.ILLUST }.map { it.id }
                         val finalCollectionId = if(imageIds.isNotEmpty()) {
-                            illustManager.newCollection(imageIds, "", null, false, Illust.Tagme.EMPTY)
+                            illustManager.newCollection(imageIds, "", null, null, Illust.Tagme.EMPTY)
                         }else{
                             collectionId
                         }

@@ -251,11 +251,30 @@ class IllustService(private val appdata: AppDataManager,
      * @throws NotFound 请求对象不存在
      */
     fun getCollectionRelatedItems(id: Int): IllustCollectionRelatedRes {
-        data.db.sequenceOf(Illusts).firstOrNull { retrieveCondition(id, IllustType.COLLECTION) } ?: throw be(NotFound())
+        val row = data.db.from(Illusts)
+            .select(Illusts.cachedBookIds, Illusts.cachedFolderIds)
+            .where { retrieveCondition(id, IllustType.COLLECTION) }
+            .firstOrNull()
+            ?: throw be(NotFound())
         
         val associates = associateManager.getAssociatesOfIllust(id)
 
-        return IllustCollectionRelatedRes(associates)
+        val books = row[Illusts.cachedBookIds]?.let {
+            data.db.from(Books)
+                .leftJoin(FileRecords, Books.fileId eq FileRecords.id)
+                .select(Books.id, Books.title, FileRecords.id, FileRecords.status, FileRecords.block, FileRecords.extension)
+                .where { Books.id inList it }
+                .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!, if(it[FileRecords.id] != null) filePathFrom(it) else null) }
+        } ?: emptyList()
+
+        val folders = row[Illusts.cachedFolderIds]?.let {
+            data.db.from(Folders)
+                .select(Folders.id, Folders.title, Folders.parentAddress, Folders.type)
+                .where { Folders.id inList it }
+                .map { FolderSimpleRes(it[Folders.id]!!, (it[Folders.parentAddress] ?: emptyList()) + it[Folders.title]!!, it[Folders.type]!!) }
+        } ?: emptyList()
+
+        return IllustCollectionRelatedRes(associates, books, folders)
     }
 
     fun getCollectionImages(id: Int, filter: LimitAndOffsetFilter): ListResult<IllustRes> {
@@ -417,25 +436,26 @@ class IllustService(private val appdata: AppDataManager,
                 }
             }
 
-            if(anyOpt(form.partitionTime, form.orderTime)) {
+            if(anyOpt(form.partitionTime, form.orderTime, form.favorite)) {
                 //这些属性是代理属性，将直接更改其children
                 data.db.update(Illusts) {
                     where { it.parentId eq id }
+                    form.favorite.applyOpt { set(it.favorite, this) }
                     form.partitionTime.applyOpt { set(it.partitionTime, this) }
                     form.orderTime.applyOpt { set(it.orderTime, this.toEpochMilli()) }
                 }
-                val childrenListUpdated = anyOpt(form.orderTime)
+                val childrenListUpdated = anyOpt(form.orderTime, form.favorite)
                 val childrenDetailUpdated = childrenListUpdated || anyOpt(form.partitionTime)
                 if(childrenListUpdated || childrenDetailUpdated) {
                     val children = data.db.from(Illusts).select(Illusts.id).where { Illusts.parentId eq id }.map { it[Illusts.id]!! }
-                    //tips: 此处并没有设置timeSot，尽管发生了变更。主要是考虑到设置timeSot会触发一次children->parent的重导出，比较浪费，而实际场景里此处没有刷新事件可能不太有影响
-                    bus.emit(children.map { IllustUpdated(it, IllustType.IMAGE, listUpdated = childrenListUpdated, detailUpdated = true, timeSot = false) })
+                    //tips: 此处并没有设置timeSot/favoriteSot，尽管发生了变更。主要是考虑到设置sot会触发一次children->parent的重导出，比较浪费，而实际场景里此处没有刷新事件可能不太有影响
+                    bus.emit(children.map { IllustUpdated(it, IllustType.IMAGE, listUpdated = childrenListUpdated, detailUpdated = true, timeSot = false, favoriteSot = false) })
                 }
             }
 
             val metaTagSot = anyOpt(form.tags, form.authors, form.topics)
             val listUpdated = anyOpt(form.score, form.favorite, newTagme)
-            val detailUpdated = listUpdated || metaTagSot || anyOpt(newTagme, newDescription, form.score, form.favorite)
+            val detailUpdated = listUpdated || metaTagSot || newTagme.isPresent
             if(listUpdated || detailUpdated) {
                 bus.emit(IllustUpdated(id, IllustType.COLLECTION, listUpdated = listUpdated, detailUpdated = true, metaTagSot = metaTagSot, scoreSot = form.score.isPresent, descriptionSot = form.description.isPresent))
             }
@@ -528,7 +548,14 @@ class IllustService(private val appdata: AppDataManager,
             val listUpdated = anyOpt(form.score, form.favorite, form.orderTime, newTagme)
             val detailUpdated = listUpdated || metaTagSot || anyOpt(newTagme, newDescription, form.score, form.favorite, form.partitionTime)
             if(listUpdated || detailUpdated) {
-                bus.emit(IllustUpdated(id, IllustType.IMAGE, listUpdated = listUpdated, detailUpdated = true, metaTagSot = metaTagSot, scoreSot = form.score.isPresent, descriptionSot = form.description.isPresent, timeSot = anyOpt(form.orderTime, form.partitionTime)))
+                bus.emit(IllustUpdated(id, IllustType.IMAGE,
+                    listUpdated = listUpdated, detailUpdated = true,
+                    metaTagSot = metaTagSot,
+                    scoreSot = form.score.isPresent,
+                    descriptionSot = form.description.isPresent,
+                    favoriteSot = form.favorite.isPresent,
+                    timeSot = anyOpt(form.orderTime, form.partitionTime)
+                ))
             }
         }
     }
@@ -691,8 +718,10 @@ class IllustService(private val appdata: AppDataManager,
 
             //favorite
             form.favorite.alsoOpt { favorite ->
+                //favorite的更新会直接更新image, collection以及collection children
+                val allIds = form.target + childrenOfCollections.map { it.id }
                 data.db.update(Illusts) {
-                    where { it.id inList form.target }
+                    where { it.id inList allIds }
                     set(it.favorite, favorite)
                 }
             }
@@ -976,6 +1005,7 @@ class IllustService(private val appdata: AppDataManager,
                         metaTagSot = metaTagSot,
                         scoreSot = form.score.isPresent,
                         descriptionSot = form.description.isPresent,
+                        favoriteSot = form.favorite.isPresent,
                         timeSot = timeSot))
                 }
             }

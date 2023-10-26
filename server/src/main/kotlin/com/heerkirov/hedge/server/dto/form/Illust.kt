@@ -10,7 +10,7 @@ import java.time.Instant
 data class IllustCollectionCreateForm(val images: List<Int>,
                                       val description: String? = null,
                                       val score: Int? = null,
-                                      val favorite: Boolean = false,
+                                      val favorite: Boolean? = null,
                                       val tagme: Illust.Tagme = Illust.Tagme.EMPTY)
 
 open class IllustUpdateForm(val topics: Opt<List<Int>>, val authors: Opt<List<Int>>, val tags: Opt<List<Int>>,

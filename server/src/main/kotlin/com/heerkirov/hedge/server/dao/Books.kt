@@ -29,7 +29,7 @@ object Books : BaseTable<Book>("book") {
 }
 
 object BookImageRelations : BaseTable<BookImageRelation>("book_image_relation") {
-    val bookId = int("Book_id")
+    val bookId = int("book_id")
     val imageId = int("image_id")
     val ordinal = int("ordinal")
 

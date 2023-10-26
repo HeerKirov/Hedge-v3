@@ -39,6 +39,14 @@ data class Illust(val id: Int,
                    */
                   val cachedBookCount: Int = 0,
                   /**
+                   * [cache field]collection的子项所关联的book列表，由于关系仅在一个方向使用、一个位置更改、数量较少，因此缓存即可。image不需要它。
+                   */
+                  val cachedBookIds: List<Int>? = null,
+                  /**
+                   * [cache field]collection的子项所关联的folder列表，由于关系仅在一个方向使用、一个位置更改、数量较少，因此缓存即可。image不需要它。
+                   */
+                  val cachedFolderIds: List<Int>? = null,
+                  /**
                    * 链接的sourceDataId。
                    */
                   val sourceDataId: Int? = null,
