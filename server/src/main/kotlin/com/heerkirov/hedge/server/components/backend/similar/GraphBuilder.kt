@@ -171,13 +171,6 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
                 .where { Illusts.sourceDataId inList markTypes.keys }
                 .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.ILLUST, it[Illusts.id]!!), SourceMarkRelationType(markTypes[it[Illusts.sourceDataId]!!] ?: SourceMarkType.UNKNOWN)) }
                 .let { adds.addAll(it) }
-
-            data.db.from(ImportImages)
-                .innerJoin(SourceDatas, (ImportImages.sourceSite eq SourceDatas.sourceSite) and (ImportImages.sourceId eq SourceDatas.sourceId))
-                .select(ImportImages.id, SourceDatas.id)
-                .where { SourceDatas.id inList markTypes.keys }
-                .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it[ImportImages.id]!!), SourceMarkRelationType(markTypes[it[SourceDatas.id]!!] ?: SourceMarkType.UNKNOWN)) }
-                .let { adds.addAll(it) }
         }
     }
 
@@ -194,14 +187,6 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
                 .select(Illusts.id, SourceBookRelations.sourceBookId)
                 .where { SourceBookRelations.sourceBookId inList targetItem.sourceBooks!! }
                 .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.ILLUST, it[Illusts.id]!!), SourceRelatedRelationType(false, mutableSetOf(it[SourceBookRelations.sourceBookId]!!))) }
-                .let { adds.addAll(it) }
-
-            data.db.from(ImportImages)
-                .innerJoin(SourceDatas, (SourceDatas.sourceSite eq ImportImages.sourceSite) and (SourceDatas.sourceId eq ImportImages.sourceId))
-                .innerJoin(SourceBookRelations, SourceBookRelations.sourceDataId eq SourceDatas.id)
-                .select(ImportImages.id, SourceBookRelations.sourceBookId)
-                .where { SourceBookRelations.sourceBookId inList targetItem.sourceBooks!! }
-                .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it[ImportImages.id]!!), SourceRelatedRelationType(false, mutableSetOf(it[SourceBookRelations.sourceBookId]!!))) }
                 .let { adds.addAll(it) }
 
             addInGraph(adds)
@@ -234,22 +219,6 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
                     }
                     .map { it[Illusts.id]!! }
                     .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.ILLUST, it), SourceIdentityRelationType(site, sid, null, null, false)) }
-                    .let { adds.addAll(it) }
-                data.db.from(ImportImages)
-                    .select(ImportImages.id)
-                    .whereWithConditions {
-                        if(targetItem is ImportImageEntityInfo) it += ImportImages.id notEq targetItem.id
-                        it += (ImportImages.sourceSite eq site) and (ImportImages.sourceId eq sid)
-                        it += if(partName != null && part != null) {
-                            (ImportImages.sourcePartName notEq partName) and (ImportImages.sourcePart notEq part)
-                        }else if(partName != null) {
-                            (ImportImages.sourcePartName notEq partName)
-                        }else{
-                            (ImportImages.sourcePart notEq part!!)
-                        }
-                    }
-                    .map { it[ImportImages.id]!! }
-                    .map { Triple(entityKey, FindSimilarEntityKey(FindSimilarEntityType.IMPORT_IMAGE, it), SourceIdentityRelationType(site, sid, null, null, false)) }
                     .let { adds.addAll(it) }
             }
 
@@ -301,23 +270,6 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
      * 完成全部匹配检测之后，增补已存在的关系。
      */
     private fun supplyExistRelations() {
-        //增补来自preference.cloneImage.delete的信息，删除deleteFrom对应的节点
-        val cloneImageDeleteFromIds = nodes.values.asSequence()
-            .map { it.info }
-            .filterIsInstance<ImportImageEntityInfo>()
-            .mapNotNull { it.cloneImage }
-            .filter { it.deleteFrom }
-            .map { it.fromImageId }
-            .toSet()
-        nodes.entries.filter { (k, _) -> k.type == FindSimilarEntityType.ILLUST && k.id in cloneImageDeleteFromIds }
-            .forEach { (k, _) -> nodes.remove(k) }
-        nodes.entries.map { (_, v) -> v.relations }
-            .forEach { relations ->
-                relations.removeIf { relation ->
-                    relation.another.key.type == FindSimilarEntityType.ILLUST && relation.another.key.id in cloneImageDeleteFromIds
-                }
-            }
-
         //增补collection关系
         val sameCollections = nodes.asSequence()
             .mapNotNull { (k, v) ->

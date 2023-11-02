@@ -5,7 +5,6 @@ import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.*
 import com.heerkirov.hedge.server.constants.Ui
 import com.heerkirov.hedge.server.dao.Illusts
-import com.heerkirov.hedge.server.dao.ImportImages
 import com.heerkirov.hedge.server.dao.TrashedImages
 import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.events.*
@@ -27,6 +26,7 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
         appdata.saveSetting {
             form.port.alsoOpt { server.port = it }
             form.token.alsoOpt { server.token = it }
+            form.timeOffsetHour.alsoOpt { server.timeOffsetHour = it }
         }
 
         bus.emit(SettingServerChanged())
@@ -66,10 +66,9 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
             }
 
             form.autoAnalyseSourceData.alsoOpt { import.autoAnalyseSourceData = it }
+            form.preventNoneSourceData.alsoOpt { import.preventNoneSourceData = it }
             form.setTagmeOfTag.alsoOpt { import.setTagmeOfTag = it }
-            form.setTagmeOfSource.alsoOpt { import.setTagmeOfSource = it }
             form.setOrderTimeBy.alsoOpt { import.setOrderTimeBy = it }
-            form.setPartitionTimeDelayHour.alsoOpt { import.setPartitionTimeDelayHour = it }
             form.sourceAnalyseRules.alsoOpt { import.sourceAnalyseRules = it }
             form.watchPaths.alsoOpt { import.watchPaths = it }
             form.autoWatchPath.alsoOpt { import.autoWatchPath = it }
@@ -231,9 +230,6 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
             if(data.db.sequenceOf(Illusts).any { it.sourceSite eq name }) {
                 throw be(CascadeResourceExists("Illust", "site", name))
             }
-            if(data.db.sequenceOf(ImportImages).any { it.sourceSite eq name }) {
-                throw be(CascadeResourceExists("ImportImage", "site", name))
-            }
             if(data.db.sequenceOf(TrashedImages).any { it.sourceSite eq name }) {
                 throw be(CascadeResourceExists("TrashedImage", "site", name))
             }
@@ -272,9 +268,6 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
             val deletes = source.sites.filter { it.name !in sites.map(SiteBulkForm::name) }.map { it.name }
             if(data.db.sequenceOf(Illusts).any { it.sourceSite inList deletes }) {
                 throw be(CascadeResourceExists("Illust", "site", deletes))
-            }
-            if(data.db.sequenceOf(ImportImages).any { it.sourceSite inList deletes }) {
-                throw be(CascadeResourceExists("ImportImage", "site", deletes))
             }
             if(data.db.sequenceOf(TrashedImages).any { it.sourceSite inList deletes }) {
                 throw be(CascadeResourceExists("TrashedImage", "site", deletes))

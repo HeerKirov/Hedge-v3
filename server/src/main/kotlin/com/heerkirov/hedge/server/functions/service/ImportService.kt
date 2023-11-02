@@ -2,7 +2,6 @@ package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.appdata.ImportOption
-import com.heerkirov.hedge.server.components.backend.similar.SimilarFinder
 import com.heerkirov.hedge.server.components.backend.watcher.PathWatcher
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
@@ -11,19 +10,15 @@ import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.filter.ImportFilter
 import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.*
-import com.heerkirov.hedge.server.enums.FileStatus
-import com.heerkirov.hedge.server.enums.FingerprintStatus
-import com.heerkirov.hedge.server.enums.FolderType
-import com.heerkirov.hedge.server.enums.IllustModelType
-import com.heerkirov.hedge.server.events.ImportSaved
-import com.heerkirov.hedge.server.events.ImportUpdated
+import com.heerkirov.hedge.server.enums.ImportStatus
+import com.heerkirov.hedge.server.enums.TagAddressType
+import com.heerkirov.hedge.server.events.FileCreated
+import com.heerkirov.hedge.server.events.ImportDeleted
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.manager.*
-import com.heerkirov.hedge.server.model.FindSimilarTask
-import com.heerkirov.hedge.server.model.Illust
-import com.heerkirov.hedge.server.model.ImportImage
+import com.heerkirov.hedge.server.model.ImportRecord
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
-import com.heerkirov.hedge.server.utils.business.filePathFrom
+import com.heerkirov.hedge.server.utils.DateTime.toSystemZonedTime
 import com.heerkirov.hedge.server.utils.business.filePathOrNullFrom
 import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import com.heerkirov.hedge.server.utils.business.toListResult
@@ -32,54 +27,61 @@ import com.heerkirov.hedge.server.utils.ktorm.escapeLike
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.runIf
-import com.heerkirov.hedge.server.utils.types.anyOpt
 import com.heerkirov.hedge.server.utils.types.optOf
-import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
-import org.ktorm.entity.*
 import java.time.Instant
-import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 class ImportService(private val appdata: AppDataManager,
                     private val data: DataRepository,
                     private val bus: EventBus,
-                    private val importManager: ImportManager,
+                    private val fileManager: FileManager,
                     private val illustManager: IllustManager,
-                    private val bookManager: BookManager,
-                    private val folderManager: FolderManager,
+                    private val importManager: ImportManager,
                     private val importMetaManager: ImportMetaManager,
                     private val sourceDataManager: SourceDataManager,
-                    private val similarFinder: SimilarFinder,
                     private val pathWatcher: PathWatcher) {
     private val orderTranslator = OrderTranslator {
-        "id" to ImportImages.id
-        "fileCreateTime" to ImportImages.fileCreateTime nulls last
-        "fileUpdateTime" to ImportImages.fileUpdateTime nulls last
-        "fileImportTime" to ImportImages.fileImportTime
-        "orderTime" to ImportImages.orderTime
+        "id" to ImportRecords.id
+        "status" to ImportRecords.status
+        "fileCreateTime" to ImportRecords.fileCreateTime nulls last
+        "fileUpdateTime" to ImportRecords.fileUpdateTime nulls last
+        "importTime" to ImportRecords.importTime
     }
 
     fun list(filter: ImportFilter): ListResult<ImportImageRes> {
-        return data.db.from(ImportImages)
-            .innerJoin(FileRecords, FileRecords.id eq ImportImages.fileId)
+        return data.db.from(ImportRecords)
+            .leftJoin(FileRecords, FileRecords.id eq ImportRecords.fileId)
+            .leftJoin(Illusts, ImportRecords.imageId.isNotNull() and (Illusts.id eq ImportRecords.imageId))
             .select(
-                ImportImages.id, ImportImages.fileName,
-                ImportImages.sourceSite, ImportImages.sourceId, ImportImages.sourcePart, ImportImages.sourcePartName,
-                ImportImages.partitionTime, ImportImages.orderTime, ImportImages.tagme,
+                ImportRecords.id, ImportRecords.fileName, ImportRecords.status, ImportRecords.importTime,
+                Illusts.id, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime, Illusts.partitionTime,
+                Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .whereWithConditions {
+                it += ImportRecords.deleted eq filter.deleted
+                if(filter.status != null) {
+                    it += ImportRecords.status eq filter.status
+                }
                 if(!filter.search.isNullOrBlank()) {
-                    it += ImportImages.fileName escapeLike filter.search.split(" ").map(String::trim).filter(String::isNotEmpty).joinToString("%", "%", "%")
+                    it += ImportRecords.fileName escapeLike filter.search.split(" ").map(String::trim).filter(String::isNotEmpty).joinToString("%", "%", "%")
                 }
             }
             .orderBy(orderTranslator, filter.order)
             .limit(filter.offset, filter.limit)
             .toListResult {
-                val filePath = filePathOrNullFrom(it)
-                val source = sourcePathOf(it[ImportImages.sourceSite], it[ImportImages.sourceId], it[ImportImages.sourcePart], it[ImportImages.sourcePartName])
-                ImportImageRes(
-                    it[ImportImages.id]!!, filePath, it[ImportImages.fileName], source,
-                    it[ImportImages.tagme]!!, it[ImportImages.partitionTime]!!, it[ImportImages.orderTime]!!.toInstant())
+                //由于deleted record的file可能已被删除，因此filePath可能是null
+                val filePath = it[FileRecords.id]?.run { filePathOrNullFrom(it) }
+                val illust = it[Illusts.id]?.let { id ->
+                    val score = it[Illusts.exportedScore]
+                    val favorite = it[Illusts.favorite]!!
+                    val tagme = it[Illusts.tagme]!!
+                    val partitionTime = it[Illusts.partitionTime]!!
+                    val orderTime = Instant.ofEpochMilli(it[Illusts.orderTime]!!)
+                    val source = sourcePathOf(it[Illusts.sourceSite], it[Illusts.sourceId], it[Illusts.sourcePart], it[Illusts.sourcePartName])
+                    ImportImageRes.ImportIllust(id, score, favorite, tagme, source, partitionTime, orderTime)
+                }
+                ImportImageRes(it[ImportRecords.id]!!, it[ImportRecords.status]!!, filePath, illust, it[ImportRecords.fileName], it[ImportRecords.importTime]!!)
             }
     }
 
@@ -88,7 +90,7 @@ class ImportService(private val appdata: AppDataManager,
      * @throws FileNotFoundError 此文件不存在
      * @throws StorageNotAccessibleError 存储路径不可访问
      */
-    fun import(form: ImportForm): Pair<Int, List<BaseException<*>>> {
+    fun import(form: ImportForm): Int {
         return importManager.import(form.filepath, form.mobileImport)
     }
 
@@ -96,7 +98,7 @@ class ImportService(private val appdata: AppDataManager,
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      * @throws StorageNotAccessibleError 存储路径不可访问
      */
-    fun upload(form: UploadForm): Pair<Int, List<BaseException<*>>> {
+    fun upload(form: UploadForm): Int {
         return importManager.upload(form.content, form.filename, form.extension)
     }
 
@@ -104,468 +106,206 @@ class ImportService(private val appdata: AppDataManager,
      * @throws NotFound 请求对象不存在
      */
     fun get(id: Int): ImportImageDetailRes {
-        val row = data.db.from(ImportImages)
-            .innerJoin(FileRecords, FileRecords.id eq ImportImages.fileId)
+        val row = data.db.from(ImportRecords)
+            .leftJoin(FileRecords, FileRecords.id eq ImportRecords.fileId)
+            .leftJoin(Illusts, ImportRecords.imageId.isNotNull() and (ImportRecords.imageId eq Illusts.id))
             .select()
-            .where { ImportImages.id eq id }
+            .where { ImportRecords.id eq id }
             .firstOrNull() ?: throw be(NotFound())
 
-        val filePath = filePathOrNullFrom(row)
-        val source = sourcePathOf(row[ImportImages.sourceSite], row[ImportImages.sourceId], row[ImportImages.sourcePart], row[ImportImages.sourcePartName])
+        //由于deleted record的file可能已被删除，因此filePath可能是null
+        val filePath = row[FileRecords.id]?.run { filePathOrNullFrom(row) }
 
-        val collectionId: Any? = row[ImportImages.collectionId].let {
-            if(it == null) {
-                null
-            }else if(it.startsWith('@')) {
-                it.substring(1)
-            }else if(it.startsWith('#')) {
-                it.substring(1).toInt()
-            }else{
-                it
-            }
-        }
+        val illust = row[Illusts.id]?.let { illustId ->
+            val extension = row[FileRecords.extension]!!
+            val size = row[FileRecords.size]!!
+            val resolutionWidth = row[FileRecords.resolutionWidth]!!
+            val resolutionHeight = row[FileRecords.resolutionHeight]!!
+            val videoDuration = row[FileRecords.videoDuration]!!
 
-        val folderIds = row[ImportImages.folderIds]
-        val bookIds = row[ImportImages.bookIds]
+            val description = row[Illusts.exportedDescription]!!
+            val score = row[Illusts.exportedScore]
+            val favorite = row[Illusts.favorite]!!
+            val tagme = row[Illusts.tagme]!!
+            val partitionTime = row[Illusts.partitionTime]!!
+            val orderTime = row[Illusts.orderTime]!!.toInstant()
+            val source = sourcePathOf(row)
 
-        val books = if(bookIds.isNullOrEmpty()) emptyList() else data.db.from(Books)
-            .leftJoin(FileRecords, Books.fileId eq FileRecords.id)
-            .select(Books.id, Books.title, FileRecords.id, FileRecords.status, FileRecords.block, FileRecords.extension)
-            .where { Books.id inList bookIds }
-            .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!, if(it[FileRecords.id] != null) filePathFrom(it) else null) }
+            val authorColors = appdata.setting.meta.authorColors
+            val topicColors = appdata.setting.meta.topicColors
 
-        val folders = if(folderIds.isNullOrEmpty()) emptyList() else data.db.from(Folders)
-            .select(Folders.id, Folders.title, Folders.parentAddress, Folders.type)
-            .where { Folders.id inList folderIds }
-            .map { FolderSimpleRes(it[Folders.id]!!, (it[Folders.parentAddress] ?: emptyList()) + it[Folders.title]!!, it[Folders.type]!!) }
+            val topics = data.db.from(Topics)
+                .innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id)
+                .select(Topics.id, Topics.name, Topics.type, IllustTopicRelations.isExported)
+                .where { IllustTopicRelations.illustId eq illustId }
+                .orderBy(Topics.type.asc(), Topics.id.asc())
+                .map {
+                    val topicType = it[Topics.type]!!
+                    val color = topicColors[topicType]
+                    TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, it[IllustTopicRelations.isExported]!!, color)
+                }
 
-        val collection = if(collectionId !is Int) null else {
-            val collectionRow = data.db.from(Illusts)
-                .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(Illusts.cachedChildrenCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
-                .where { (Illusts.type eq IllustModelType.COLLECTION) and (Illusts.id eq collectionId) }
-                .firstOrNull()
-            if(collectionRow == null) null else {
-                val collectionFilePath = filePathFrom(collectionRow)
-                val childrenCount = collectionRow[Illusts.cachedChildrenCount]!!
-                IllustCollectionSimpleRes(collectionId, collectionFilePath, childrenCount)
-            }
+            val authors = data.db.from(Authors)
+                .innerJoin(IllustAuthorRelations, IllustAuthorRelations.authorId eq Authors.id)
+                .select(Authors.id, Authors.name, Authors.type, IllustAuthorRelations.isExported)
+                .where { IllustAuthorRelations.illustId eq illustId }
+                .orderBy(Authors.type.asc(), Authors.id.asc())
+                .map {
+                    val authorType = it[Authors.type]!!
+                    val color = authorColors[authorType]
+                    AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, it[IllustAuthorRelations.isExported]!!, color)
+                }
+
+            val tags = data.db.from(Tags)
+                .innerJoin(IllustTagRelations, IllustTagRelations.tagId eq Tags.id)
+                .select(Tags.id, Tags.name, Tags.color, IllustTagRelations.isExported)
+                .where { (IllustTagRelations.illustId eq illustId) and (Tags.type eq TagAddressType.TAG) }
+                .orderBy(Tags.globalOrdinal.asc())
+                .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], it[IllustTagRelations.isExported]!!) }
+
+            ImportImageDetailRes.ImportIllust(
+                illustId,
+                extension, size, resolutionWidth, resolutionHeight, videoDuration,
+                topics, authors, tags,
+                description, score, favorite, tagme, source,
+                partitionTime, orderTime)
         }
 
         return ImportImageDetailRes(
-            row[ImportImages.id]!!, filePath,
-            row[ImportImages.fileName], row[ImportImages.filePath],
-            row[ImportImages.fileCreateTime], row[ImportImages.fileUpdateTime], row[ImportImages.fileImportTime]!!,
-            row[FileRecords.extension]!!, row[FileRecords.size]!!, row[FileRecords.resolutionWidth]!!, row[FileRecords.resolutionHeight]!!, row[FileRecords.videoDuration]!!,
-            row[ImportImages.tagme]!!, row[ImportImages.preference] ?: ImportImage.Preference(cloneImage = null),
-            collectionId, collection, folders, books,
-            source, row[ImportImages.sourcePreference],
-            row[ImportImages.partitionTime]!!, row[ImportImages.orderTime]!!.toInstant(), row[ImportImages.createTime]!!
-        )
-    }
-
-    /**
-     * @throws NotFound 请求对象不存在
-     * @throws ResourceNotExist ("site", string) 给出的site不存在
-     */
-    fun update(id: Int, form: ImportUpdateForm) {
-        data.db.transaction {
-            importManager.update(id, form)
-        }
-    }
-
-    /**
-     * @throws NotFound 请求对象不存在
-     */
-    fun delete(id: Int) {
-        data.db.transaction {
-            val importImage = data.db.sequenceOf(ImportImages).firstOrNull { ImportImages.id eq id } ?: throw be(NotFound())
-            importManager.delete(importImage)
-        }
+            row[ImportRecords.id]!!, row[ImportRecords.status]!!, row[ImportRecords.statusInfo], filePath, illust,
+            row[ImportRecords.fileName], row[ImportRecords.fileCreateTime], row[ImportRecords.fileUpdateTime],
+            row[ImportRecords.importTime]!!)
     }
 
     /**
      * @throws ResourceNotExist ("target", number[]) 要进行解析的对象不存在。给出不存在的source image id列表
-     * @warn InvalidRegexError (regex) 执行正则表达式时发生错误，怀疑是表达式或相关参数没写对
      */
-    fun batchUpdate(form: ImportBatchUpdateForm): Map<Int, List<BaseException<*>>> {
-        if(form.tagme != null || form.partitionTime != null || form.setCreateTimeBy != null || form.setOrderTimeBy != null || form.orderTimeBegin != null
-            || form.analyseSource || form.action != null || form.collectionId != null || !form.appendBookIds.isNullOrEmpty() || !form.appendFolderIds.isNullOrEmpty()) {
-            data.db.transaction {
-                val records = if(form.target.isNullOrEmpty()) {
-                    data.db.sequenceOf(ImportImages).sortedBy { it.orderTime }.toList()
-                }else{
-                    data.db.sequenceOf(ImportImages).filter { ImportImages.id inList form.target }.toList().sortedBy { it.orderTime }.also { records ->
-                        if(records.size < form.target.size) {
-                            throw be(ResourceNotExist("target", form.target.toSet() - records.map { it.id }.toSet()))
-                        }
-                    }
-                }
-                val recordIds by lazy { records.map { it.id } }
-                val errors = mutableMapOf<Int, List<BaseException<*>>>()
-
-                if(form.analyseSource) {
-                    val autoSetTagmeOfSource = appdata.setting.import.setTagmeOfSource
-                    for (record in records) {
-                        val (source, sourceId, sourcePart, sourcePartName, sourcePreference) = try {
-                            importMetaManager.analyseSourceMeta(record.fileName)
-                        } catch (e: BusinessException) {
-                            errors[record.id] = listOf(e.exception)
-                            continue
-                        }
-                        if(source == null) continue
-
-                        val tagme = if(autoSetTagmeOfSource && Illust.Tagme.SOURCE in record.tagme) record.tagme - Illust.Tagme.SOURCE else null
-
-                        data.db.update(ImportImages) {
-                            where { it.id eq record.id }
-                            set(it.sourceSite, source)
-                            set(it.sourceId, sourceId)
-                            set(it.sourcePart, sourcePart)
-                            set(it.sourcePartName, sourcePartName)
-                            if(tagme != null && form.tagme == null) set(it.tagme, tagme)
-                            if(sourcePreference != null) set(it.sourcePreference, sourcePreference)
-                        }
-                    }
-                }
-
-                if(form.collectionId != null) {
-                    val newCollectionId = when (form.collectionId) {
-                        is String -> "@${form.collectionId}"
-                        is Int -> "#${form.collectionId}"
-                        else -> throw be(ParamTypeError("collectionId", "must be number or string."))
-                    }
-                    data.db.update(ImportImages) {
-                        where { it.id inList recordIds }
-                        set(it.collectionId, newCollectionId)
-                    }
-                }
-
-                if(form.tagme != null) {
-                    data.db.update(ImportImages) {
-                        where { it.id inList recordIds }
-                        set(it.tagme, form.tagme)
-                    }
-                }
-
-                fun setPartitionTime(partitionTime: LocalDate) {
-                    data.db.update(ImportImages) {
-                        where { it.id inList recordIds }
-                        set(it.partitionTime, partitionTime)
-                    }
-                }
-                fun setOrderTimeBySeq(newOrderTimeSeq: List<Long>) {
-                    if(newOrderTimeSeq.size != records.size) throw RuntimeException("newOrderTimeSeq is not suitable to seq.")
-
-                    if(records.isNotEmpty()) {
-                        data.db.batchUpdate(ImportImages) {
-                            records.forEachIndexed { i, record ->
-                                item {
-                                    where { it.id eq record.id }
-                                    set(it.orderTime, newOrderTimeSeq[i])
-                                }
-                            }
-                        }
-                    }
-                }
-                fun setOrderTimeByRange(begin: Instant, end: Instant? = null, excludeBeginAndEnd: Boolean = false) {
-                    val values = if(records.size > 1) {
-                        val beginMs = begin.toEpochMilli()
-                        val endMs = if(end != null) {
-                            end.toEpochMilli().apply {
-                                if(end < begin) {
-                                    throw be(ParamError("orderTimeEnd"))
-                                }
-                            }
-                        }else{
-                            //若未给出endTime，则尝试如下策略：
-                            //如果beginTime距离now很近(每个项的空间<2s)，那么将now作为endTime
-                            //但如果beginTime过近(每个项空间<10ms)，或超过了now，或距离过远，那么以1s为单位间隔生成endTime
-                            val nowMs = Instant.now().toEpochMilli()
-                            if(nowMs < beginMs + (records.size - 1) * 2000 && nowMs > beginMs + (records.size - 1) * 10) {
-                                nowMs
-                            }else{
-                                beginMs + (records.size - 1) * 1000
-                            }
-                        }
-                        //从begin开始，通过每次迭代step的步长长度来获得整个seq序列
-                        if(excludeBeginAndEnd) {
-                            //如果开启了exclude，则会去掉两个端点，因此step的计算项数+2，初始value额外增加了一个step的值
-                            val step = (endMs - beginMs) / (records.size + 1)
-                            var value = beginMs + step
-                            records.indices.map { value.also { value += step } }
-                        }else{
-                            val step = (endMs - beginMs) / (records.size - 1)
-                            var value = beginMs
-                            records.indices.map { value.also { value += step } }
-                        }
-                    }else if(end != null && excludeBeginAndEnd) {
-                        //只有一项，但指定了end且开启了exclude参数，那么应该取begin和end的中点值
-                        listOf((begin.toEpochMilli() + end.toEpochMilli()) / 2)
-                    }else{
-                        //只有一项，且没有指定end或没有开启exclude参数，那么取begin即可
-                        listOf(begin.toEpochMilli())
-                    }
-
-                    setOrderTimeBySeq(values)
-                }
-
-                if(form.partitionTime != null) {
-                    setPartitionTime(form.partitionTime)
-                }
-
-                if(form.orderTimeBegin != null) {
-                    setOrderTimeByRange(form.orderTimeBegin, form.orderTimeEnd, form.orderTimeExclude)
-                }
-
-                if(form.action != null) {
-                    when(form.action) {
-                        ImportBatchUpdateForm.Action.SET_PARTITION_TIME_TODAY -> setPartitionTime(LocalDate.now())
-                        ImportBatchUpdateForm.Action.SET_PARTITION_TIME_EARLIEST -> setPartitionTime(records.minOf { it.partitionTime })
-                        ImportBatchUpdateForm.Action.SET_PARTITION_TIME_LATEST -> setPartitionTime(records.maxOf { it.partitionTime })
-                        ImportBatchUpdateForm.Action.SET_ORDER_TIME_UNIFORMLY -> setOrderTimeByRange(records.minOf { it.orderTime }.toInstant(), records.maxOf { it.orderTime }.toInstant())
-                        ImportBatchUpdateForm.Action.SET_ORDER_TIME_REVERSE -> setOrderTimeBySeq(records.map { it.orderTime }.asReversed())
-                        ImportBatchUpdateForm.Action.SET_ORDER_TIME_NOW -> {
-                            val now = Instant.now()
-                            setOrderTimeByRange(now, now)
-                        }
-                        ImportBatchUpdateForm.Action.SET_ORDER_TIME_BY_SOURCE_ID -> {
-                            val sortedIds = records.sortedWith(compareBy(ImportImage::sourceSite, ImportImage::sourceId, ImportImage::sourcePart)).map { it.id }
-                            val sortedTimes = records.map { it.orderTime }.sorted()
-                            val idToTimes = sortedIds.zip(sortedTimes).toMap()
-                            val seq = records.map { idToTimes[it.id]!! }
-                            setOrderTimeBySeq(seq)
-                        }
-                    }
-                }
-
-                if(!form.appendBookIds.isNullOrEmpty() || !form.appendFolderIds.isNullOrEmpty() || form.setCreateTimeBy != null || form.setOrderTimeBy != null) {
-                    for (record in records) {
-                        data.db.update(ImportImages) {
-                            where { it.id eq record.id }
-                            if(!form.appendBookIds.isNullOrEmpty()) {
-                                val bookIds = ((record.bookIds ?: emptyList()) + form.appendBookIds).distinct()
-                                set(it.bookIds, bookIds)
-                            }
-                            if(!form.appendFolderIds.isNullOrEmpty()) {
-                                val folderIds = ((record.folderIds ?: emptyList()) + form.appendFolderIds).distinct()
-                                set(it.folderIds, folderIds)
-                            }
-                            if(form.setCreateTimeBy != null) set(it.createTime, when(form.setCreateTimeBy) {
-                                ImportOption.TimeType.CREATE_TIME -> record.fileCreateTime ?: record.fileImportTime
-                                ImportOption.TimeType.UPDATE_TIME -> record.fileUpdateTime ?: record.fileImportTime
-                                ImportOption.TimeType.IMPORT_TIME -> record.fileImportTime
-                            })
-                            if(form.setOrderTimeBy != null) set(it.orderTime, when(form.setOrderTimeBy) {
-                                ImportOption.TimeType.CREATE_TIME -> record.fileCreateTime ?: record.fileImportTime
-                                ImportOption.TimeType.UPDATE_TIME -> record.fileUpdateTime ?: record.fileImportTime
-                                ImportOption.TimeType.IMPORT_TIME -> record.fileImportTime
-                            }.toEpochMilli())
-                        }
-                    }
-                }
-
-                val listUpdated = form.analyseSource || form.tagme != null || form.partitionTime != null || form.setOrderTimeBy != null || form.orderTimeBegin != null || form.action != null
-                val detailUpdated = listUpdated || form.setCreateTimeBy != null || !form.appendBookIds.isNullOrEmpty() || !form.appendFolderIds.isNullOrEmpty() || form.collectionId != null || anyOpt()
-
-                if(listUpdated || detailUpdated) {
-                    val timeSot = form.setCreateTimeBy != null || form.setOrderTimeBy != null || form.orderTimeBegin != null || form.partitionTime != null || form.action != null
-                    for (record in records) {
-                        bus.emit(ImportUpdated(record.id, listUpdated = listUpdated, detailUpdated = true, timeSot = timeSot))
-                    }
-                }
-
-                return errors
-            }
-        }else{
-            return emptyMap()
-        }
-    }
-
-    /**
-     * 保存。
-     * @throws ResourceNotExist ("target", number[]) 要保存的对象不存在。给出不存在的source image id列表
-     * @throws ResourceNotExist ("additionalInfo", field) 存在不合法的字段
-     * @throws ResourceNotExist ("sourceTagType", string[]) 列出的tagType不存在
-     */
-    fun save(form: ImportSaveForm): ImportSaveRes {
+    fun batch(form: ImportBatchForm) {
+        //在清理record时，就已经删除file了，也就是说它是不可恢复的
         data.db.transaction {
-            val records = data.db.from(ImportImages)
-                .innerJoin(FileRecords, ImportImages.fileId eq FileRecords.id)
-                .select()
-                .runIf(!form.target.isNullOrEmpty()) { where { ImportImages.id inList form.target!! } }
-                .map { Pair(ImportImages.createEntity(it), FileRecords.createEntity(it)) }
-
-            if(form.target.isNullOrEmpty()) {
-                //添加了一个校验，防止存在那种没有FileRecord关联的ImportImage。
-                //这种ImportImage会在FileManager#newFile的一个bug中存在。
-                if(data.db.sequenceOf(ImportImages).count() != records.size) {
-                    val allIds = data.db.from(ImportImages).select(ImportImages.id).map { it[ImportImages.id]!! }.toSet()
-                    throw be(ResourceNotExist("target", allIds - records.map { it.first.id }.toSet()))
-                }
+            val records = if(form.target != null) {
+                data.db.from(ImportRecords).select()
+                    .where { ImportRecords.id inList form.target }
+                    .map { ImportRecords.createEntity(it) }
+                    .also { records ->
+                        if(records.size < form.target.size) throw be(ResourceNotExist("target", form.target - records.map { it.id }.toSet()))
+                    }
             }else{
-                if(records.size < form.target.size) throw be(ResourceNotExist("target", form.target.toSet() - records.map { it.first.id }.toSet()))
+                data.db.from(ImportRecords).select().map { ImportRecords.createEntity(it) }
             }
 
-            val existedFolderIds = records.map { (r, _) -> r.folderIds ?: emptyList() }.flatten().let { li ->
-                if(li.isEmpty()) emptyList() else data.db.from(Folders).select(Folders.id)
-                    .where { Folders.id inList li and (Folders.type eq FolderType.FOLDER) }
-                    .map { it[Folders.id]!! }
-                    .toSet()
-            }
-            val existedBookIds = records.map { (r, _) -> r.bookIds ?: emptyList() }.flatten().let { li ->
-                if(li.isEmpty()) emptyList() else data.db.from(Books).select(Books.id)
-                    .where { Books.id inList li }
-                    .map { it[Books.id]!! }
-                    .toSet()
-            }
-            val existedCollectionIds = records.mapNotNull { (r, _) -> if(r.collectionId?.startsWith('#') == true) r.collectionId.substring(1).toInt() else null }.let { li ->
-                if(li.isEmpty()) emptyList() else data.db.from(Illusts).select(Illusts.id)
-                    .where { Illusts.id inList li and (Illusts.type eq IllustModelType.COLLECTION) }
-                    .map { it[Illusts.id]!! }
-                    .toSet()
-            }
-            val existedCloneFromIds = records.mapNotNull { (r, _) -> r.preference?.cloneImage?.fromImageId }.let { li ->
-                if(li.isEmpty()) emptyList() else data.db.from(Illusts).select(Illusts.id)
-                    .where { Illusts.id inList li and ((Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) or (Illusts.type eq IllustModelType.IMAGE)) }
-                    .map { it[Illusts.id]!! }
-                    .toSet()
+            if(form.deleteDeleted) {
+                data.db.delete(ImportRecords) { if(form.target != null) { it.deleted and (it.id inList form.target) }else{ it.deleted } }
+
+                bus.emit(records.filter { it.deleted }.map { ImportDeleted(it.id) })
             }
 
-            val errorItems = mutableListOf<ImportSaveRes.SaveErrorItem>()
+            if(form.delete) {
+                val now = Instant.now()
+                data.db.update(ImportRecords) {
+                    where { if(form.target != null) { it.id inList form.target and it.deleted.not() }else{ it.deleted.not() } }
+                    set(it.deleted, true)
+                    set(it.deletedTime, now)
+                }
 
-            val importToImageIds = records.filter { (record, file) ->
-                //首先对记录所持有的collection、book、folder信息，以及file READY状态进行检查。如果不存在，则跳过此条
-                var notExistedCollectionId: Int? = null
-                var notExistedBookIds: List<Int>? = null
-                var notExistedFolderIds: List<Int>? = null
-                var notExistedCloneFrom: Int? = null
-                var fileNotReady = false
-
-                if(record.collectionId != null && record.collectionId.startsWith('#')) {
-                    val collectionId = record.collectionId.substring(1).toInt()
-                    if(collectionId !in existedCollectionIds) {
-                        notExistedCollectionId = collectionId
+                for (record in records) {
+                    if(!record.deleted && record.status != ImportStatus.COMPLETED) {
+                        fileManager.deleteFile(record.fileId)
                     }
                 }
-                if(!record.bookIds.isNullOrEmpty() && !existedBookIds.containsAll(record.bookIds)) {
-                    notExistedBookIds = record.bookIds - existedBookIds.toSet()
-                }
-                if(!record.folderIds.isNullOrEmpty() && !existedFolderIds.containsAll(record.folderIds)) {
-                    notExistedFolderIds = record.folderIds - existedFolderIds.toSet()
-                }
-                if(record.preference?.cloneImage != null && record.preference.cloneImage.fromImageId !in existedCloneFromIds) {
-                    notExistedCloneFrom = record.preference.cloneImage.fromImageId
-                }
-                if(file.status == FileStatus.NOT_READY || file.fingerStatus == FingerprintStatus.NOT_READY) {
-                    fileNotReady = true
-                }
-                if(notExistedCollectionId != null || notExistedBookIds != null || notExistedFolderIds != null || notExistedCloneFrom != null || fileNotReady) {
-                    errorItems.add(ImportSaveRes.SaveErrorItem(record.id, fileNotReady, notExistedCollectionId, notExistedCloneFrom, notExistedBookIds, notExistedFolderIds))
-                    false
-                }else{
-                    true
-                }
-            }.map { (record, _) -> record }.let { illustManager.bulkNewImage(it) }
 
-            records.asSequence()
-                .filter { (record, _) -> record.collectionId != null && record.id in importToImageIds }
-                .map { (record, _) -> record.collectionId!! to importToImageIds[record.id]!! }
-                .groupBy({ it.first }) { it.second }
-                .forEach { (cStr, imageIds) ->
-                    if(cStr.startsWith('#')) {
-                        val collectionId = cStr.substring(1).toInt()
-                        val images = illustManager.unfoldImages(listOf(collectionId) + imageIds, sorted = false)
-                        illustManager.updateImagesInCollection(collectionId, images)
+                bus.emit(records.filter { !it.deleted }.map { ImportDeleted(it.id) })
+            }
+
+            if(form.clearCompleted) {
+                val now = Instant.now()
+                data.db.update(ImportRecords) {
+                    where { if(form.target != null) { it.id inList form.target and it.deleted.not() }else{ it.deleted.not() } and (it.status eq ImportStatus.COMPLETED) }
+                    set(it.deleted, true)
+                    set(it.deletedTime, now)
+                }
+
+                bus.emit(records.filter { !it.deleted && it.status == ImportStatus.COMPLETED }.map { ImportDeleted(it.id) })
+            }
+
+            if(form.retry) {
+                //重试操作仅对PROCESSING/ERROR状态的项有效
+                val filteredRecords = records.filter { it.status != ImportStatus.COMPLETED && !it.deleted }
+                data.db.update(ImportRecords) {
+                    where { it.id inList filteredRecords.map(ImportRecord::id) }
+                    set(it.status, ImportStatus.PROCESSING)
+                }
+
+                //该操作的实现方式是发送FileCreated事件，该事件会触发FileGenerator的执行过程
+                bus.emit(filteredRecords.map { FileCreated(it.fileId) })
+            }
+
+            if(form.analyseSource) {
+                //对COMPLETED状态的项重新分析其来源。
+                val filteredRecords = records.filter { it.status == ImportStatus.COMPLETED && it.imageId != null }
+                val errors = mutableMapOf<Int, ImportRecord.StatusInfo>()
+                val sourceForms = mutableListOf<Pair<SourceDataIdentity, SourceDataUpdateForm>>()
+                for (record in filteredRecords) {
+                    val source = try {
+                        importMetaManager.analyseSourceMeta(record.fileName)
+                    }catch (e: BusinessException) {
+                        errors.compute(record.id) { _, info ->
+                            ImportRecord.StatusInfo(
+                                thumbnailError = info?.thumbnailError,
+                                fingerprintError = info?.fingerprintError,
+                                sourceAnalyseError = true,
+                                sourceAnalyseNone = info?.sourceAnalyseNone,
+                                messages = if(e.message == null) info?.messages else if(info?.messages != null) info.messages + listOf(e.message!!) else listOf(e.message!!)
+                            )
+                        }
+                        continue
+                    } ?: if(appdata.setting.import.preventNoneSourceData) {
+                        errors.compute(record.id) { _, info ->
+                            ImportRecord.StatusInfo(
+                                thumbnailError = info?.thumbnailError,
+                                fingerprintError = info?.fingerprintError,
+                                sourceAnalyseError = info?.sourceAnalyseError,
+                                sourceAnalyseNone = true,
+                                messages = info?.messages
+                            )
+                        }
+                        continue
                     }else{
-                        illustManager.newCollection(imageIds, "", null, null, Illust.Tagme.EMPTY)
+                        continue
                     }
-                }
 
-            records.asSequence()
-                .filter { (record, _) -> !record.bookIds.isNullOrEmpty() && record.id in importToImageIds }
-                .map { (record, _) -> record.bookIds!!.asSequence().map { it to importToImageIds[record.id]!! } }
-                .flatten()
-                .groupBy({ it.first }) { it.second }
-                .forEach { (bookId, imageIds) ->
-                    bookManager.addImagesInBook(bookId, imageIds, ordinal = null)
+                    illustManager.updateSourceDataOfImage(record.imageId!!, source.first)
+                    if(source.second != null) sourceForms.add(SourceDataIdentity(source.first.sourceSite, source.first.sourceId) to source.second!!)
                 }
-
-            records.asSequence()
-                .filter { (record, _) -> !record.folderIds.isNullOrEmpty() && record.id in importToImageIds }
-                .map { (record, _) -> record.folderIds!!.asSequence().map { it to importToImageIds[record.id]!! } }
-                .flatten()
-                .groupBy({ it.first }) { it.second }
-                .forEach { (folderId, imageIds) ->
-                    folderManager.addImagesInFolder(folderId, imageIds, ordinal = null)
+                for ((sourceIdentity, updateForm) in sourceForms) {
+                    sourceDataManager.createOrUpdateSourceData(sourceIdentity.sourceSite, sourceIdentity.sourceId,
+                        title = updateForm.title, description = updateForm.description, tags = updateForm.tags,
+                        books = updateForm.books, relations = updateForm.relations, links = updateForm.links,
+                        additionalInfo = updateForm.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
+                        status = updateForm.status, allowUpdate = true, appendUpdate = true)
                 }
-
-            records.asSequence()
-                .filter { (record, _) -> record.preference?.cloneImage != null && record.id in importToImageIds }
-                .map { (record, _) -> importToImageIds[record.id]!! to record.preference?.cloneImage!! }
-                .forEach { (imageId, cloneImage) ->
-                    val props = ImagePropsCloneForm.Props(
-                        cloneImage.props.score,
-                        cloneImage.props.favorite,
-                        cloneImage.props.description,
-                        cloneImage.props.tagme,
-                        cloneImage.props.metaTags,
-                        cloneImage.props.partitionTime,
-                        cloneImage.props.orderTime,
-                        cloneImage.props.collection,
-                        cloneImage.props.books,
-                        cloneImage.props.folders,
-                        cloneImage.props.associate,
-                        cloneImage.props.source
-                    )
-                    illustManager.cloneProps(cloneImage.fromImageId, imageId, props, cloneImage.merge, cloneImage.deleteFrom)
-                }
-
-            records.asSequence()
-                .filter { (record, _) -> record.sourcePreference != null && record.sourceSite != null && record.sourceId != null && record.id in importToImageIds }
-                .map { (record, _) -> Triple(record.sourceSite!!, record.sourceId!!, record.sourcePreference!!) }
-                .groupBy({ (s, i, _) -> s to i }) { (_, _, p) -> p }
-                .forEach { (e, preferences) ->
-                    val (site, sourceId) = e
-                    val preference = if(preferences.size == 1) preferences.first() else {
-                        ImportImage.SourcePreference(
-                            title = preferences.mapNotNull { it.title }.lastOrNull(),
-                            description = preferences.mapNotNull { it.description }.lastOrNull(),
-                            tags = preferences.flatMap { it.tags ?: emptyList() }.distinct(),
-                            books = preferences.flatMap { it.books ?: emptyList() }.distinct(),
-                            relations = preferences.flatMap { it.relations ?: emptyList() }.distinct(),
-                            additionalInfo = preferences.flatMap { it.additionalInfo?.entries ?: emptyList() }.groupBy { it.key }.mapValues { it.value.last().value }
-                        )
-                    }
-                    sourceDataManager.createOrUpdateSourceData(site, sourceId,
-                        status = undefined(), links = undefined(),
-                        title = if(preference.title != null) optOf(preference.title) else undefined(),
-                        description = if(preference.description != null) optOf(preference.description) else undefined(),
-                        tags = if(preference.tags.isNullOrEmpty()) undefined() else optOf(preference.tags.map {
-                            SourceTagForm(it.code, it.type, if(it.name != null) optOf(it.name) else undefined(), if(it.otherName != null) optOf(it.otherName) else undefined())
-                        }),
-                        books = if(preference.books.isNullOrEmpty()) undefined() else optOf(preference.books.map {
-                            SourceBookForm(it.code, if(it.title != null) optOf(it.title) else undefined(), if(it.otherTitle != null) optOf(it.otherTitle) else undefined())
-                        }),
-                        relations = if(!preference.relations.isNullOrEmpty()) optOf(preference.relations) else undefined(),
-                        additionalInfo = if(!preference.additionalInfo.isNullOrEmpty()) optOf(preference.additionalInfo) else undefined(),
-                        appendUpdate = true
-                    )
-                }
-
-            if(form.target.isNullOrEmpty() && importToImageIds.size >= records.size) {
-                data.db.deleteAll(ImportImages)
-            }else{
-                data.db.delete(ImportImages) { it.id inList importToImageIds.keys }
             }
 
-            if(appdata.setting.findSimilar.autoFindSimilar) {
-                similarFinder.add(FindSimilarTask.TaskSelectorOfImage(importToImageIds.values.toList()), appdata.setting.findSimilar.autoTaskConf ?: appdata.setting.findSimilar.defaultTaskConf)
+            if(form.analyseTime) {
+                //对COMPLETED状态的项重新生成其时间。
+                val filteredRecords = records.filter { it.status == ImportStatus.COMPLETED && it.imageId != null }
+                val forms = filteredRecords.map { record ->
+                    val orderTime = when(appdata.setting.import.setOrderTimeBy) {
+                        ImportOption.TimeType.CREATE_TIME -> record.fileCreateTime ?: record.importTime
+                        ImportOption.TimeType.UPDATE_TIME -> record.fileUpdateTime ?: record.importTime
+                        ImportOption.TimeType.IMPORT_TIME -> record.importTime
+                    }
+
+                    val partitionTime = orderTime
+                        .runIf(appdata.setting.server.timeOffsetHour != null && appdata.setting.server.timeOffsetHour!!!= 0) {
+                            this.minus(appdata.setting.server.timeOffsetHour!!.toLong(), ChronoUnit.HOURS)
+                        }
+                        .toSystemZonedTime().toLocalDate()
+
+                    IllustBatchUpdateForm(target = listOf(record.imageId!!), partitionTime = optOf(partitionTime), orderTimeBegin = optOf(orderTime), orderTimeEnd = optOf(orderTime))
+                }
+                forms.forEach { illustManager.bulkUpdate(it) }
             }
-
-            bus.emit(ImportSaved(importToImageIds))
-
-            return ImportSaveRes(importToImageIds.size, errorItems)
         }
     }
 

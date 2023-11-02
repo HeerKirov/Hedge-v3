@@ -4,8 +4,20 @@ import com.heerkirov.hedge.server.dto.res.SourceDataPath
 import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.types.Opt
+import com.heerkirov.hedge.server.utils.types.undefined
 import java.time.LocalDate
 import java.time.Instant
+
+data class IllustImageCreateForm(val importId: Int,
+                                 val fileId: Int,
+                                 val partitionTime: LocalDate,
+                                 val orderTime: Instant,
+                                 val createTime: Instant,
+                                 val source: SourceDataPath? = null,
+                                 val description: String? = null,
+                                 val score: Int? = null,
+                                 val favorite: Boolean = false,
+                                 val tagme: Illust.Tagme = Illust.Tagme.EMPTY)
 
 data class IllustCollectionCreateForm(val images: List<Int>,
                                       val description: String? = null,
@@ -29,19 +41,19 @@ class IllustImageSourceDataUpdateForm(val source: Opt<SourceDataPath?>,
                                       val status: Opt<SourceEditStatus>)
 
 class IllustBatchUpdateForm(val target: List<Int>,
-                            val description: Opt<String?>,
-                            val score: Opt<Int?>,
-                            val favorite: Opt<Boolean>,
-                            val tags: Opt<List<Int>>,
-                            val topics: Opt<List<Int>>,
-                            val authors: Opt<List<Int>>,
-                            val tagme: Opt<Illust.Tagme>,
-                            val timeInsertBegin: Opt<Int>,
-                            val timeInsertEnd: Opt<Int>,
+                            val description: Opt<String?> = undefined(),
+                            val score: Opt<Int?> = undefined(),
+                            val favorite: Opt<Boolean> = undefined(),
+                            val tags: Opt<List<Int>> = undefined(),
+                            val topics: Opt<List<Int>> = undefined(),
+                            val authors: Opt<List<Int>> = undefined(),
+                            val tagme: Opt<Illust.Tagme> = undefined(),
+                            val timeInsertBegin: Opt<Int> = undefined(),
+                            val timeInsertEnd: Opt<Int> = undefined(),
                             val timeInsertAt: String? = null,
-                            val partitionTime: Opt<LocalDate>,
-                            val orderTimeBegin: Opt<Instant>,
-                            val orderTimeEnd: Opt<Instant>,
+                            val partitionTime: Opt<LocalDate> = undefined(),
+                            val orderTimeBegin: Opt<Instant> = undefined(),
+                            val orderTimeEnd: Opt<Instant> = undefined(),
                             val orderTimeExclude: Boolean = false,
                             val action: Action? = null,
                             val actionBy: Int? = null) {

@@ -3,6 +3,7 @@ package com.heerkirov.hedge.server.dao
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.enums.IllustModelType
+import com.heerkirov.hedge.server.enums.ImportStatus
 import com.heerkirov.hedge.server.model.*
 import com.heerkirov.hedge.server.model.FileFingerprint
 import com.heerkirov.hedge.server.utils.ktorm.type.*
@@ -157,49 +158,33 @@ open class IllustAuthorRelations(alias: String?) : EntityMetaRelationTable<Illus
     )
 }
 
-object ImportImages : BaseTable<ImportImage>("import_image") {
+object ImportRecords : BaseTable<ImportRecord>("import_record") {
     val id = int("id").primaryKey()
     val fileId = int("file_id")
+    val imageId = int("image_id")
+    val status = enum("status", typeRef<ImportStatus>())
+    val statusInfo = json("status_info", typeRef<ImportRecord.StatusInfo>())
+    val deleted = boolean("deleted")
     val fileName = varchar("file_name")
     val filePath = varchar("file_path")
     val fileCreateTime = timestamp("file_create_time")
     val fileUpdateTime = timestamp("file_update_time")
-    val fileImportTime = timestamp("file_import_time")
-    val collectionId = varchar("collection_id")
-    val folderIds = unionList("folder_ids") { it.toInt() }
-    val bookIds = unionList("book_ids") { it.toInt() }
-    val preference = json("preference", typeRef<ImportImage.Preference>())
-    val tagme = composition<Illust.Tagme>("tagme")
-    val sourceSite = varchar("source_site")
-    val sourceId = long("source_id")
-    val sourcePart = int("source_part")
-    val sourcePartName = varchar("source_part_name")
-    val sourcePreference = json("source_preference", typeRef<ImportImage.SourcePreference>())
-    val partitionTime = instantDate("partition_time")
-    val orderTime = long("order_time")
-    val createTime = timestamp("create_time")
+    val importTime = timestamp("import_time")
+    val deletedTime = timestamp("deleted_time")
 
-    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = ImportImage(
+    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = ImportRecord(
         id = row[id]!!,
         fileId = row[fileId]!!,
+        imageId = row[imageId],
+        status = row[status]!!,
+        statusInfo = row[statusInfo],
+        deleted = row[deleted]!!,
         fileName = row[fileName],
         filePath = row[filePath],
         fileCreateTime = row[fileCreateTime],
         fileUpdateTime = row[fileUpdateTime],
-        fileImportTime = row[fileImportTime]!!,
-        collectionId = row[collectionId],
-        folderIds = row[folderIds],
-        bookIds = row[bookIds],
-        preference = row[preference],
-        tagme = row[tagme]!!,
-        sourceSite = row[sourceSite],
-        sourceId = row[sourceId],
-        sourcePart = row[sourcePart],
-        sourcePartName = row[sourcePartName],
-        sourcePreference = row[sourcePreference],
-        partitionTime = row[partitionTime]!!,
-        orderTime = row[orderTime]!!,
-        createTime = row[createTime]!!
+        importTime = row[importTime]!!,
+        deletedTime = row[deletedTime]
     )
 }
 

@@ -210,7 +210,7 @@ class SourceDataService(private val appdata: AppDataManager, private val data: D
 
             //查询每个sourceDataPath对应的image与importImage的数量
             //如果要优化的话，这里的场景分支有点多，而且对性能的提升并不明显，因此放弃了优化，逐项统计数量
-            val imageCount = if (sourceData?.first == null) 0 else {
+            val count = if (sourceData?.first == null) 0 else {
                 data.db.from(Illusts)
                     .select(count(Illusts.id).aliased("count"))
                     .whereWithConditions {
@@ -224,20 +224,7 @@ class SourceDataService(private val appdata: AppDataManager, private val data: D
                     .first()
                     .getInt("count")
             }
-            val importImageCount = data.db.from(ImportImages)
-                .select(count(ImportImages.id).aliased("count"))
-                .whereWithConditions {
-                    it += ImportImages.sourceSite eq path.sourceSite
-                    it += ImportImages.sourceId eq path.sourceId
-                    if(path.sourcePartName != null) {
-                        it += ImportImages.sourcePartName eq path.sourcePartName
-                    }else if(path.sourcePart != null) {
-                        it += ImportImages.sourcePart eq path.sourcePart
-                    }
-                }
-                .first()
-                .getInt("count")
-            val imageInDiffIdCount = if(path.sourcePartName == null) 0 else data.db.from(Illusts)
+            val diffIdCount = if(path.sourcePartName == null) 0 else data.db.from(Illusts)
                 .select(count(Illusts.id).aliased("count"))
                 .whereWithConditions {
                     it += Illusts.sourceSite eq path.sourceSite
@@ -247,20 +234,10 @@ class SourceDataService(private val appdata: AppDataManager, private val data: D
                 .first()
                 .getInt("count")
 
-            val importImageInDiffIdCount = if(path.sourcePartName == null) 0 else data.db.from(ImportImages)
-                .select(count(ImportImages.id).aliased("count"))
-                .whereWithConditions {
-                    it += ImportImages.sourceSite eq path.sourceSite
-                    it += ImportImages.sourceId notEq path.sourceId
-                    it += ImportImages.sourcePartName eq path.sourcePartName
-                }
-                .first()
-                .getInt("count")
-
             val collected = sourceData != null && (sourceData.second == SourceEditStatus.EDITED || sourceData.second == SourceEditStatus.IGNORED)
             val collectStatus = sourceData?.second
             val collectTime = sourceData?.third
-            SourceDataCollectStatus(path, imageCount + importImageCount, imageInDiffIdCount + importImageInDiffIdCount, collected, collectStatus, collectTime)
+            SourceDataCollectStatus(path, count, diffIdCount, collected, collectStatus, collectTime)
         }
     }
 }

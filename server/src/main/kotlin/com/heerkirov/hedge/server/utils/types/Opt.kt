@@ -89,11 +89,16 @@ class Opt<T> {
     }
 }
 
-private val undefinedRef = Opt<Any?>()
+val undefinedRef = Opt<Any?>()
 
-fun <T> optOf(value: T) = Opt(value)
+@Suppress("NOTHING_TO_INLINE")
+inline fun <T> optOf(value: T) = Opt(value)
 
-fun <T> undefined(): Opt<T> {
+@Suppress("NOTHING_TO_INLINE")
+inline fun <T> optOrUndefined(value: T?): Opt<T> = if(value != null) Opt(value) else undefined()
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun <T> undefined(): Opt<T> {
     @Suppress("UNCHECKED_CAST")
     return undefinedRef as Opt<T>
 }

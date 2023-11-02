@@ -1,28 +1,42 @@
 package com.heerkirov.hedge.server.functions.manager
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
+import com.heerkirov.hedge.server.dto.form.IllustBatchUpdateForm
+import com.heerkirov.hedge.server.dto.form.IllustImageCreateForm
 import com.heerkirov.hedge.server.dto.form.ImagePropsCloneForm
+import com.heerkirov.hedge.server.dto.res.SourceDataIdentity
+import com.heerkirov.hedge.server.dto.res.SourceDataPath
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.events.*
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.model.Illust
-import com.heerkirov.hedge.server.model.ImportImage
+import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.duplicateCount
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.ktorm.first
+import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
+import com.heerkirov.hedge.server.utils.mostCount
+import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
+import com.heerkirov.hedge.server.utils.types.anyOpt
 import com.heerkirov.hedge.server.utils.types.optOf
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.ktorm.support.sqlite.bulkInsertReturning
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
-class IllustManager(private val data: DataRepository,
+class IllustManager(private val appdata: AppDataManager,
+                    private val data: DataRepository,
                     private val bus: EventBus,
                     private val kit: IllustKit,
                     private val sourceManager: SourceDataManager,
@@ -30,25 +44,27 @@ class IllustManager(private val data: DataRepository,
                     private val bookManager: BookManager,
                     private val folderManager: FolderManager,
                     private val partitionManager: PartitionManager,
+                    private val importManager: ImportManager,
                     private val trashManager: TrashManager) {
 
     /**
-     * 从importImage批量创建新的image。
+     * 批量创建新的image。
      */
-    fun bulkNewImage(importImages: Collection<ImportImage>): Map<Int, Int> {
-        return if(importImages.isNotEmpty()) {
-            val partitionWithCount = importImages.map { it.partitionTime }.duplicateCount()
+    fun bulkNewImage(form: Collection<IllustImageCreateForm>): Map<Int, Int> {
+        return if(form.isNotEmpty()) {
+            val partitionWithCount = form.map { it.partitionTime }.duplicateCount()
             for ((partition, count) in partitionWithCount) {
                 partitionManager.addItemInPartition(partition, count)
             }
 
-            val sourceToRowIds = importImages.mapNotNull { sourceManager.checkSourceSite(it.sourceSite, it.sourceId, it.sourcePart, it.sourcePartName) }
+            val sourceToRowIds = form
+                .mapNotNull { sourceManager.checkSourceSite(it.source?.sourceSite, it.source?.sourceId, it.source?.sourcePart, it.source?.sourcePartName) }
                 .distinct()
                 .let { sourceManager.bulkValidateAndCreateSourceDataIfNotExist(it) }
 
             val returningIds = data.db.bulkInsertReturning(Illusts, Illusts.id) {
-                for (record in importImages) {
-                    val newSourceDataId = if(record.sourceSite != null && record.sourceId != null) sourceToRowIds[record.sourceSite to record.sourceId] else null
+                for (record in form) {
+                    val newSourceDataId = if(record.source != null) sourceToRowIds[SourceDataIdentity(record.source.sourceSite, record.source.sourceId)] else null
                     item {
                         set(it.type, IllustModelType.IMAGE)
                         set(it.parentId, null)
@@ -56,18 +72,18 @@ class IllustManager(private val data: DataRepository,
                         set(it.cachedChildrenCount, 0)
                         set(it.cachedBookCount, 0)
                         set(it.sourceDataId, newSourceDataId)
-                        set(it.sourceSite, record.sourceSite)
-                        set(it.sourceId, record.sourceId)
-                        set(it.sourcePart, record.sourcePart)
-                        set(it.sourcePartName, record.sourcePartName)
-                        set(it.description, "")
-                        set(it.score, null)
-                        set(it.favorite, false)
+                        set(it.sourceSite, record.source?.sourceSite)
+                        set(it.sourceId, record.source?.sourceId)
+                        set(it.sourcePart, record.source?.sourcePart)
+                        set(it.sourcePartName, record.source?.sourcePartName)
+                        set(it.description, record.description ?: "")
+                        set(it.score, record.score)
+                        set(it.favorite, record.favorite)
                         set(it.tagme, record.tagme)
-                        set(it.exportedDescription, "")
-                        set(it.exportedScore, null)
+                        set(it.exportedDescription, record.description ?: "")
+                        set(it.exportedScore, record.score)
                         set(it.partitionTime, record.partitionTime)
-                        set(it.orderTime, record.orderTime)
+                        set(it.orderTime, record.orderTime.toEpochMilli())
                         set(it.createTime, record.createTime)
                         set(it.updateTime, record.createTime)
                     }
@@ -84,7 +100,7 @@ class IllustManager(private val data: DataRepository,
 
             bus.emit(ids.map { IllustCreated(it, IllustType.IMAGE) })
 
-            return importImages.map { it.id }.zip(ids).toMap()
+            return form.map { it.importId }.zip(ids).toMap()
         }else{
             emptyMap()
         }
@@ -177,6 +193,32 @@ class IllustManager(private val data: DataRepository,
     }
 
     /**
+     * 设置一个image的sourceDataPath。仅包括path，不包括其他数据。
+     */
+    fun updateSourceDataOfImage(imageId: Int, sourceDataPath: SourceDataPath?, oldTagme: Illust.Tagme? = null) {
+        val rowId = if(sourceDataPath != null) {
+            sourceManager.checkSourceSite(sourceDataPath.sourceSite, sourceDataPath.sourceId, sourceDataPath.sourcePart, sourceDataPath.sourcePartName)
+            sourceManager.validateAndCreateSourceDataIfNotExist(sourceDataPath.sourceSite, sourceDataPath.sourceId)
+        }else{
+            null
+        }
+
+        val tagme = oldTagme ?: data.db.from(Illusts).select(Illusts.tagme).where { Illusts.id eq imageId }.firstOrNull()?.get(Illusts.tagme)
+
+        data.db.update(Illusts) {
+            where { it.id eq imageId }
+            set(it.sourceDataId, rowId)
+            set(it.sourceSite, sourceDataPath?.sourceSite)
+            set(it.sourceId, sourceDataPath?.sourceId)
+            set(it.sourcePart, sourceDataPath?.sourcePart)
+            set(it.sourcePartName, sourceDataPath?.sourcePartName)
+            if(appdata.setting.meta.autoCleanTagme && tagme != null && Illust.Tagme.SOURCE in tagme) set(it.tagme, tagme - Illust.Tagme.SOURCE)
+        }
+
+        bus.emit(IllustUpdated(imageId, IllustType.IMAGE, listUpdated = true))
+    }
+
+    /**
      * 删除项目。对于collection，它将被直接删除；对于image，它将接trash调用，送入已删除列表。
      */
     fun delete(illust: Illust) {
@@ -194,6 +236,8 @@ class IllustManager(private val data: DataRepository,
         associateManager.setAssociatesOfIllust(illust.id, emptyList())
 
         if(illust.type != IllustModelType.COLLECTION) {
+            //移除importRecord
+            importManager.deleteByImageId(illust.id)
             //从所有book中移除并重导出
             bookManager.removeItemFromAllBooks(illust.id)
             //从所有folder中移除
@@ -217,6 +261,428 @@ class IllustManager(private val data: DataRepository,
             bus.emit(IllustDeleted(illust.id, IllustType.COLLECTION))
             children.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }
         }
+    }
+
+    /**
+     * 批量编辑项目。
+     */
+    fun bulkUpdate(form: IllustBatchUpdateForm) {
+        val records = data.db.sequenceOf(Illusts).filter { it.id inList form.target }.toList().also { records ->
+            val targetSet = form.target.toSet()
+            if(records.size < form.target.size) {
+                throw be(ResourceNotExist("target", targetSet - records.map { it.id }.toSet()))
+            }else if(records.any { it.parentId in targetSet }) {
+                throw be(ResourceNotSuitable("target", records.filter { it.parentId in targetSet }))
+            }
+        }
+        if(records.isEmpty()) return
+        val (collections, images) = records.filterInto { it.type == IllustModelType.COLLECTION }
+        val collectionIds by lazy { collections.map { it.id } }
+        val childrenOfCollections by lazy { if(collections.isEmpty()) emptyList() else data.db.sequenceOf(Illusts).filter { it.parentId inList collectionIds }.toList() }
+        val orderTimeSeq by lazy {
+            val children = childrenOfCollections.map { Triple(it.id, it.parentId!!, it.orderTime) }
+
+            records.asSequence()
+                .sortedBy { it.orderTime }
+                .flatMap {
+                    if(it.type == IllustModelType.COLLECTION) {
+                        children.filter { (_, parentId, _) -> parentId == it.id }.asSequence().sortedBy { (_, _, t) -> t }
+                    }else{
+                        sequenceOf(Triple(it.id, null, it.orderTime))
+                    }
+                }
+                .toList()
+        }
+
+        //favorite
+        form.favorite.alsoOpt { favorite ->
+            //favorite的更新会直接更新image, collection以及collection children
+            val allIds = form.target + childrenOfCollections.map { it.id }
+            data.db.update(Illusts) {
+                where { it.id inList allIds }
+                set(it.favorite, favorite)
+            }
+        }
+
+        //score
+        form.score.alsoOpt { score ->
+            if(score != null) {
+                kit.validateScore(score)
+
+                //在给出score的情况下直接设定所有score
+                data.db.update(Illusts) {
+                    where { it.id inList form.target }
+                    set(it.score, score)
+                    set(it.exportedScore, score)
+                }
+            }else{
+                //在给出null的情况下，对于所有collection,计算children的其平均值
+                val collectionScores = if(collections.isNotEmpty()) emptyMap() else data.db.from(Illusts)
+                    .select(Illusts.parentId, count(Illusts.id).aliased("count"), avg(Illusts.score).aliased("score"))
+                    .where { Illusts.parentId inList collectionIds }
+                    .groupBy(Illusts.parentId)
+                    .associate {
+                        it[Illusts.parentId]!! to if(it.getInt("count") > 0) it.getDouble("score").roundToInt() else null
+                    }
+                //对于所有image,获得其parent的score
+                val imageScores = if(images.isEmpty()) emptyMap() else data.db.from(Illusts)
+                    .select(Illusts.id, Illusts.score)
+                    .where { Illusts.id inList images.mapNotNull { it.parentId } }
+                    .associate { it[Illusts.id]!! to it[Illusts.score] }
+                //然后更新到db
+                data.db.batchUpdate(Illusts) {
+                    for (record in records) {
+                        item {
+                            where { it.id eq record.id }
+                            set(it.score, null)
+                            set(it.exportedScore, if(record.type == IllustModelType.COLLECTION) {
+                                collectionScores[record.id]
+                            }else{
+                                imageScores[record.parentId]
+                            })
+                        }
+                    }
+                }
+            }
+        }
+
+        //description
+        form.description.alsoOpt { description ->
+            if(!description.isNullOrEmpty()) {
+                //在给出description的情况下直接设定所有description
+                data.db.update(Illusts) {
+                    where { it.id inList form.target }
+                    set(it.description, description)
+                    set(it.exportedDescription, description)
+                }
+            }else{
+                //在给出empty的情况下，对于所有collection仍直接设定；对于image,需要获得其parent的description
+                if(collections.isNotEmpty()) {
+                    data.db.update(Illusts) {
+                        where { it.id inList collectionIds }
+                        set(it.description, "")
+                        set(it.exportedDescription, "")
+                    }
+                }
+                if(images.isNotEmpty()) {
+                    val imageDescriptions = data.db.from(Illusts)
+                        .select(Illusts.id, Illusts.description)
+                        .where { Illusts.id inList images.mapNotNull { it.parentId } }
+                        .associate { it[Illusts.id]!! to it[Illusts.description]!! }
+                    data.db.batchUpdate(Illusts) {
+                        for (record in images) {
+                            item {
+                                where { it.id eq record.id }
+                                set(it.description, "")
+                                set(it.exportedDescription, imageDescriptions[record.parentId] ?: "")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        //meta tag
+        if(anyOpt(form.tags, form.topics, form.authors)) {
+            //由于meta tag的更新实在复杂，不必在这里搞batch优化了，就挨个处理就好了
+            for (illust in images) {
+                kit.appendMeta(illust.id, appendTags = form.tags.unwrapOr { emptyList() }, appendAuthors = form.authors.unwrapOr { emptyList() }, appendTopics = form.topics.unwrapOr { emptyList() }, isCollection = false)
+            }
+            for (illust in collections) {
+                kit.appendMeta(illust.id, appendTags = form.tags.unwrapOr { emptyList() }, appendAuthors = form.authors.unwrapOr { emptyList() }, appendTopics = form.topics.unwrapOr { emptyList() }, isCollection = true)
+            }
+        }
+
+        //tagme
+        if(form.tagme.isPresent) {
+            data.db.update(Illusts) {
+                where { it.id inList form.target }
+                set(it.tagme, form.tagme.value)
+            }
+        }else if(appdata.setting.meta.autoCleanTagme && anyOpt(form.tags, form.authors, form.topics)) {
+            data.db.batchUpdate(Illusts) {
+                for (record in records) {
+                    item {
+                        where { it.id eq record.id }
+                        set(it.tagme, record.tagme
+                            .runIf(form.tags.isPresent) { this - Illust.Tagme.TAG }
+                            .runIf(form.authors.isPresent) { this - Illust.Tagme.AUTHOR }
+                            .runIf(form.topics.isPresent) { this - Illust.Tagme.TOPIC })
+                    }
+                }
+            }
+        }
+
+        //partition time
+        fun setPartitionTime(partitionTime: LocalDate) {
+            //tips: 绕过标准导出流程进行更改。对于collection,直接修改它及它全部children的此属性
+            val children = childrenOfCollections.filter { it.partitionTime != partitionTime }.map { Pair(it.id, it.partitionTime) }
+
+            data.db.update(Illusts) {
+                where { it.id inList (children.map { (id, _) -> id } + form.target) }
+                set(it.partitionTime, partitionTime)
+            }
+
+            for ((_, oldPartitionTime) in children) {
+                partitionManager.updateItemPartition(oldPartitionTime, partitionTime)
+            }
+            for (illust in images) {
+                if(illust.partitionTime != partitionTime) {
+                    partitionManager.updateItemPartition(illust.partitionTime, partitionTime)
+                }
+            }
+        }
+        form.partitionTime.alsoOpt(::setPartitionTime)
+
+        //order time
+        fun setOrderTimeBySeq(newOrderTimeSeq: List<Long>) {
+            if(newOrderTimeSeq.size != orderTimeSeq.size) throw RuntimeException("newOrderTimeSeq is not suitable to seq.")
+
+            if(orderTimeSeq.isNotEmpty()) {
+                data.db.batchUpdate(Illusts) {
+                    orderTimeSeq.forEachIndexed { i, (id, _, _) ->
+                        item {
+                            where { it.id eq id }
+                            set(it.orderTime, newOrderTimeSeq[i])
+                        }
+                    }
+                }
+            }
+
+            if(collections.isNotEmpty()) {
+                val collectionValues = orderTimeSeq
+                    .zip(newOrderTimeSeq) { (id, p, _), ot -> Triple(id, p, ot) }
+                    .filter { (_, p, _) -> p != null }
+                    .groupBy { (_, p, _) -> p!! }
+                    .mapValues { (_, values) -> values.minOf { (_, _, t) -> t } }
+
+                if(collectionValues.isNotEmpty()) {
+                    data.db.batchUpdate(Illusts) {
+                        for ((id, ot) in collectionValues) {
+                            item {
+                                where { it.id eq id }
+                                set(it.orderTime, ot)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        fun setOrderTimeByRange(begin: Instant, end: Instant? = null, excludeBeginAndEnd: Boolean = false) {
+            //找出所有image及collection的children，按照原有orderTime顺序排序，并依次计算新orderTime。排序时相同parent的children保持相邻
+            //对于collection，绕过标准导出流程进行更改。直接按照计算结果修改collection的orderTime，且无需导出，因为orderTime并未变化
+
+            val values = if(orderTimeSeq.size > 1) {
+                val beginMs = begin.toEpochMilli()
+                val endMs = if(end != null) {
+                    end.toEpochMilli().apply {
+                        if(end < begin) {
+                            throw be(ParamError("orderTimeEnd"))
+                        }
+                    }
+                }else{
+                    //若未给出endTime，则尝试如下策略：
+                    //如果beginTime距离now很近(每个项的空间<2s)，那么将now作为endTime
+                    //但如果beginTime过近(每个项空间<10ms)，或超过了now，或距离过远，那么以1s为单位间隔生成endTime
+                    val nowMs = Instant.now().toEpochMilli()
+                    if(nowMs < beginMs + (orderTimeSeq.size - 1) * 2000 && nowMs > beginMs + (orderTimeSeq.size - 1) * 10) {
+                        nowMs
+                    }else{
+                        beginMs + (orderTimeSeq.size - 1) * 1000
+                    }
+                }
+
+                //从begin开始，通过每次迭代step的步长长度来获得整个seq序列
+                if(excludeBeginAndEnd) {
+                    //如果开启了exclude，则会去掉两个端点，因此step的计算项数+2，初始value额外增加了一个step的值
+                    val step = (endMs - beginMs) / (orderTimeSeq.size + 1)
+                    var value = beginMs + step
+                    orderTimeSeq.indices.map { value.also { value += step } }
+                }else{
+                    val step = (endMs - beginMs) / (orderTimeSeq.size - 1)
+                    var value = beginMs
+                    orderTimeSeq.indices.map { value.also { value += step } }
+                }
+            }else if(end != null && excludeBeginAndEnd) {
+                //只有一项，但指定了end且开启了exclude参数，那么应该取begin和end的中点值
+                listOf((begin.toEpochMilli() + end.toEpochMilli()) / 2)
+            }else{
+                //只有一项，且没有指定end或没有开启exclude参数，那么取begin即可
+                listOf(begin.toEpochMilli())
+            }
+
+            setOrderTimeBySeq(values)
+        }
+        form.orderTimeBegin.alsoOpt { orderTimeBegin -> setOrderTimeByRange(orderTimeBegin, form.orderTimeEnd.unwrapOrNull(), form.orderTimeExclude) }
+
+        //insert between illusts
+        form.timeInsertBegin.alsoOpt { beginId ->
+            if(form.timeInsertEnd.isPresent) {
+                //如果指定了end，将当前所有项插入到指定的两项中间
+                //如果begin端点是集合，那么会选取集合中在end之前的最大的子项的orderTime；如果end端点是集合，那么使用集合的orderTime即可
+                //需要注意的是如果两端点相距过远(>=24h)，则会靠近其中一边，变成下述情况的那种排布方式
+                //如果两端点时间一致，则变成第三种情况的排布方式
+                val a = data.db.from(Illusts).select(Illusts.type, Illusts.orderTime)
+                    .where { Illusts.id eq beginId }.firstOrNull()
+                    ?.let { Pair(it[Illusts.type]!!, it[Illusts.orderTime]!!) }
+                    ?: throw be(ResourceNotExist("timeInsertBegin", beginId))
+                val b = data.db.from(Illusts).select(Illusts.type, Illusts.orderTime)
+                    .where { Illusts.id eq form.timeInsertEnd.value }.firstOrNull()
+                    ?.let { Pair(it[Illusts.type]!!, it[Illusts.orderTime]!!) }
+                    ?: throw be(ResourceNotExist("timeInsertEnd", beginId))
+                if(a.second == b.second) {
+                    setOrderTimeByRange(a.second.toInstant(), a.second.toInstant())
+                    return@alsoOpt
+                }
+                val begin = if(a.second < b.second && a.first != IllustModelType.COLLECTION) a.second else if(a.second > b.second && b.first !== IllustModelType.COLLECTION) b.second else {
+                    data.db.from(Illusts)
+                        .select(max(Illusts.orderTime).aliased("ord"))
+                        .where { (Illusts.parentId eq if(a.second < b.second) beginId else form.timeInsertEnd.value) and (Illusts.orderTime less if(a.second < b.second) b.second else a.second) }
+                        .firstOrNull()?.getLong("ord") ?: if(a.second < b.second) a.second else b.second
+                }
+                val end = if(a.second < b.second) b.second else a.second
+
+                val orderTimeBegin: Long
+                val orderTimeEnd: Long
+                if(end - begin >= 1000 * 60 * 60 * 24) {
+                    val targetOrderTimes = orderTimeSeq.map { (_, _, ot) -> ot }
+                    val max = targetOrderTimes.max()
+                    val min = targetOrderTimes.min()
+                    val durationToBegin = abs(begin - max).coerceAtMost(abs(begin - min))
+                    val durationToEnd = abs(end - max).coerceAtMost(abs(end - min))
+                    if(durationToBegin <= durationToEnd) {
+                        orderTimeBegin = begin
+                        orderTimeEnd = begin + (orderTimeSeq.size + 1) * 1000
+                    }else{
+                        orderTimeBegin = end - (orderTimeSeq.size + 1) * 1000
+                        orderTimeEnd = end
+                    }
+                }else{
+                    orderTimeBegin = begin
+                    orderTimeEnd = end
+                }
+                setOrderTimeByRange(orderTimeBegin.toInstant(), orderTimeEnd.toInstant(), excludeBeginAndEnd = true)
+
+            }else if(form.timeInsertAt != null) {
+                //如果未指定end但指定了at，那么按at的值behind/after决定是插入到begin项目的之前还是之后
+                //端点是集合时的选取逻辑同上；所选项在指定方向上以1s为间隔排布
+                val a = data.db.from(Illusts).select(Illusts.type, Illusts.orderTime)
+                    .where { Illusts.id eq beginId }.firstOrNull()
+                    ?.let { Pair(it[Illusts.type]!!, it[Illusts.orderTime]!!) }
+                    ?: throw be(ResourceNotExist("timeInsertBegin", beginId))
+
+                val orderTimeBegin: Long
+                val orderTimeEnd: Long
+                when (form.timeInsertAt) {
+                    "behind" -> {
+                        orderTimeBegin = a.second - (orderTimeSeq.size + 1) * 1000
+                        orderTimeEnd = a.second
+                    }
+                    "after" -> {
+                        orderTimeBegin = if(a.first != IllustModelType.COLLECTION) a.second else {
+                            data.db.from(Illusts)
+                                .select(max(Illusts.orderTime).aliased("ord"))
+                                .where { Illusts.parentId eq beginId }
+                                .firstOrNull()?.getLong("ord") ?: a.second
+                        }
+                        orderTimeEnd = orderTimeBegin + (orderTimeSeq.size + 1) * 1000
+                    }
+                    else -> throw be(ParamError("timeInsertAt"))
+                }
+                setOrderTimeByRange(orderTimeBegin.toInstant(), orderTimeEnd.toInstant(), excludeBeginAndEnd = true)
+
+            }else{
+                //如果都没有指定，那么插入的时间点与begin完全相同
+                val orderTime = data.db.from(Illusts).select(Illusts.orderTime)
+                    .where { Illusts.id eq beginId }.firstOrNull()
+                    ?.let { it[Illusts.orderTime]!!.toInstant() }
+                    ?: throw be(ResourceNotExist("timeInsertBegin", beginId))
+                setOrderTimeByRange(orderTime, orderTime)
+            }
+        }
+
+        //action
+        if(form.action != null) {
+            when(form.action) {
+                IllustBatchUpdateForm.Action.SET_PARTITION_TIME_TODAY -> setPartitionTime(LocalDate.now())
+                IllustBatchUpdateForm.Action.SET_PARTITION_TIME_MOST -> setPartitionTime(records.map { it.partitionTime }.mostCount())
+                IllustBatchUpdateForm.Action.SET_PARTITION_TIME_EARLIEST -> setPartitionTime(records.minOf { it.partitionTime })
+                IllustBatchUpdateForm.Action.SET_PARTITION_TIME_LATEST -> setPartitionTime(records.maxOf { it.partitionTime })
+                IllustBatchUpdateForm.Action.SET_ORDER_TIME_UNIFORMLY -> setOrderTimeByRange(orderTimeSeq.minOf { (_, _, ot) -> ot }.toInstant(), orderTimeSeq.maxOf { (_, _, ot) -> ot }.toInstant())
+                IllustBatchUpdateForm.Action.SET_ORDER_TIME_REVERSE -> setOrderTimeBySeq(orderTimeSeq.map { (_, _, ot) -> ot }.asReversed())
+                IllustBatchUpdateForm.Action.SET_ORDER_TIME_NOW -> {
+                    val now = Instant.now()
+                    setOrderTimeByRange(now, now)
+                }
+                IllustBatchUpdateForm.Action.SET_ORDER_TIME_MOST -> {
+                    //从所有image/children中找出项最多的orderTimeDate，在这个范围内找出最大值和最小值，然后按时间端点设置所有项
+                    val instants = orderTimeSeq.map { (_, _, ot) -> ot to LocalDate.ofInstant(ot.toInstant(), ZoneId.systemDefault()) }
+                    val date = instants.map { (_, d) -> d }.mostCount()
+                    val instantsInThisDay = instants.filter { (_, d) -> d == date }.map { (i, _) -> i }
+                    val min = instantsInThisDay.min().toInstant()
+                    val max = instantsInThisDay.max().toInstant()
+                    setOrderTimeByRange(min, max)
+                }
+                IllustBatchUpdateForm.Action.SET_ORDER_TIME_BY_SOURCE_ID -> {
+                    //将所有image/children按source排序，然后把所有的orderTime取出排序，依次选取
+                    val sortedIds = (images.map { Tuple4(it.id, it.sourceSite, it.sourceId, it.sourcePart) } + childrenOfCollections.map { Tuple4(it.id, it.sourceSite, it.sourceId, it.sourcePart) })
+                        .sortedWith(compareBy(Tuple4<Int, String?, Long?, Int?>::f2, Tuple4<Int, String?, Long?, Int?>::f3, Tuple4<Int, String?, Long?, Int?>::f4))
+                        .map { it.f1 }
+                    val sortedTimes = orderTimeSeq.map { (_, _, ot) -> ot }.sorted()
+                    val idToTimes = sortedIds.zip(sortedTimes).toMap()
+                    val seq = orderTimeSeq.map { (id, _, _) -> idToTimes[id]!! }
+                    setOrderTimeBySeq(seq)
+                }
+                IllustBatchUpdateForm.Action.SET_ORDER_TIME_BY_BOOK_ORDINAL -> {
+                    //将所有images按在book中的顺序排序，然后把所有的orderTime取出来，依次选取
+                    if(form.actionBy == null) throw be(ParamRequired("actionBy"))
+                    val ids = orderTimeSeq.map { (id, _, _) -> id }
+                    val sortedIds = data.db.from(BookImageRelations)
+                        .select(BookImageRelations.imageId)
+                        .where { BookImageRelations.bookId eq form.actionBy and (BookImageRelations.imageId inList ids) }
+                        .orderBy(BookImageRelations.ordinal.asc())
+                        .map { it[BookImageRelations.imageId]!! }
+                    if(sortedIds.size < ids.size) throw be(Reject("Some images (${(ids - sortedIds.toSet()).joinToString(", ")}) not in book ${form.actionBy}."))
+                    val sortedTimes = orderTimeSeq.map { (_, _, ot) -> ot }.sorted()
+                    val idToTimes = sortedIds.zip(sortedTimes).toMap()
+                    val seq = orderTimeSeq.map { (id, _, _) -> idToTimes[id]!! }
+                    setOrderTimeBySeq(seq)
+                }
+                IllustBatchUpdateForm.Action.SET_ORDER_TIME_BY_FOLDER_ORDINAL -> {
+                    //将所有images按在folder中的顺序排序，然后把所有的orderTime取出来，依次选取
+                    if(form.actionBy == null) throw be(ParamRequired("actionBy"))
+                    val ids = orderTimeSeq.map { (id, _, _) -> id }
+                    val sortedIds = data.db.from(FolderImageRelations)
+                        .select(FolderImageRelations.imageId)
+                        .where { FolderImageRelations.folderId eq form.actionBy and (FolderImageRelations.imageId inList ids) }
+                        .orderBy(FolderImageRelations.ordinal.asc())
+                        .map { it[FolderImageRelations.imageId]!! }
+                    if(sortedIds.size < ids.size) throw be(Reject("Some images (${(ids - sortedIds.toSet()).joinToString(", ")}) not in folder ${form.actionBy}."))
+                    val sortedTimes = orderTimeSeq.map { (_, _, ot) -> ot }.sorted()
+                    val idToTimes = sortedIds.zip(sortedTimes).toMap()
+                    val seq = orderTimeSeq.map { (id, _, _) -> idToTimes[id]!! }
+                    setOrderTimeBySeq(seq)
+                }
+            }
+        }
+
+        val metaTagSot = anyOpt(form.tags, form.topics, form.authors)
+        val timeSot = anyOpt(form.partitionTime, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
+        val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
+        val detailUpdated = listUpdated || metaTagSot || anyOpt(form.description, form.partitionTime)
+        if(listUpdated || detailUpdated) {
+                for (record in records) {
+                    //tips: 此处使用了偷懒的手法。并没有对受partition/orderTime变更影响的children进行处理
+                    bus.emit(IllustUpdated(record.id, record.type.toIllustType(),
+                        listUpdated = listUpdated,
+                        detailUpdated = true,
+                        metaTagSot = metaTagSot,
+                        scoreSot = form.score.isPresent,
+                        descriptionSot = form.description.isPresent,
+                        favoriteSot = form.favorite.isPresent,
+                        timeSot = timeSot))
+                }
+            }
     }
 
     /**

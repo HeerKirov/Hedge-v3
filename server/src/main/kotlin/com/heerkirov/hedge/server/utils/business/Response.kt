@@ -14,6 +14,10 @@ fun sourcePathOf(sourceSite: String?, sourceId: Long?, sourcePart: Int?, sourceP
     return if(sourceSite != null && sourceId != null) SourceDataPath(sourceSite, sourceId, sourcePart, sourcePartName) else null
 }
 
+fun sourcePathOf(sourceSite: String, sourceId: Long, sourcePart: Int?, sourcePartName: String?): SourceDataPath {
+    return SourceDataPath(sourceSite, sourceId, sourcePart, sourcePartName)
+}
+
 fun sourcePathOf(row: QueryRowSet): SourceDataPath? {
     val source = row[Illusts.sourceSite]
     val sourceId = row[Illusts.sourceId]

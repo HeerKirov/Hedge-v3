@@ -7,6 +7,7 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.form.SourceBookForm
 import com.heerkirov.hedge.server.dto.form.SourceTagForm
+import com.heerkirov.hedge.server.dto.res.SourceDataIdentity
 import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.events.SourceDataCreated
 import com.heerkirov.hedge.server.events.SourceDataDeleted
@@ -35,7 +36,7 @@ class SourceDataManager(private val appdata: AppDataManager,
      * @return 如果给出的值是null，那么返回null，否则，返回一个tuple，用于后续工具链处理。
      * @throws ResourceNotExist ("site", string) 给出的source不存在
      */
-    fun checkSourceSite(sourceSite: String?, sourceId: Long?, sourcePart: Int?, sourcePartName: String?): Pair<String, Long>? {
+    fun checkSourceSite(sourceSite: String?, sourceId: Long?, sourcePart: Int?, sourcePartName: String?): SourceDataIdentity? {
         return if(sourceSite != null) {
             val site = appdata.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
 
@@ -58,7 +59,7 @@ class SourceDataManager(private val appdata: AppDataManager,
                 }
             }
 
-            Pair(sourceSite, sourceId)
+            SourceDataIdentity(sourceSite, sourceId)
         }else{
             null
         }
@@ -69,14 +70,14 @@ class SourceDataManager(private val appdata: AppDataManager,
      * @return 如果给出的值是null，那么返回null，否则，返回一个pair，用于后续工具链处理。
      * @throws ResourceNotExist ("site", string) 给出的source不存在
      */
-    fun checkSourceSite(sourceSite: String?, sourceId: Long?): Pair<String, Long>? {
+    fun checkSourceSite(sourceSite: String?, sourceId: Long?): SourceDataIdentity? {
         return if(sourceSite != null) {
             appdata.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
 
             if(sourceId == null) throw be(ParamRequired("sourceId"))
             else if(sourceId < 0) throw be(ParamError("sourceId"))
 
-            Pair(sourceSite, sourceId)
+            SourceDataIdentity(sourceSite, sourceId)
         }else{
             null
         }
@@ -87,13 +88,13 @@ class SourceDataManager(private val appdata: AppDataManager,
      * @return rowIds 返回在sourceImage中实际存储的keys。
      * @throws ResourceNotExist ("source", string) 给出的source不存在
      */
-    fun bulkValidateAndCreateSourceDataIfNotExist(sources: Collection<Pair<String, Long>>): Map<Pair<String, Long>, Int> {
-        val existSourceDataIds = sources.groupBy({ it.first }) { it.second }
+    fun bulkValidateAndCreateSourceDataIfNotExist(sources: Collection<SourceDataIdentity>): Map<SourceDataIdentity, Int> {
+        val existSourceDataIds = sources.groupBy({ it.sourceSite }) { it.sourceId }
             .flatMap { (site, ids) ->
                 data.db.from(SourceDatas)
                     .select(SourceDatas.id, SourceDatas.sourceId)
                     .where { (SourceDatas.sourceSite eq site) and (SourceDatas.sourceId inList ids) }
-                    .map { Pair(Pair(site, it[SourceDatas.sourceId]!!), it[SourceDatas.id]!!) }
+                    .map { Pair(SourceDataIdentity(site, it[SourceDatas.sourceId]!!), it[SourceDatas.id]!!) }
             }.toMap()
 
         val notExistSources = sources.filter { p -> p !in existSourceDataIds }

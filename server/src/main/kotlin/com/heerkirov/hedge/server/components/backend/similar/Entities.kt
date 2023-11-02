@@ -2,7 +2,6 @@ package com.heerkirov.hedge.server.components.backend.similar
 
 import com.heerkirov.hedge.server.enums.FindSimilarEntityType
 import com.heerkirov.hedge.server.enums.SourceMarkType
-import com.heerkirov.hedge.server.model.ImportImage
 import com.heerkirov.hedge.server.model.SourceTag
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
@@ -68,8 +67,7 @@ data class ImportImageEntityInfo(override val id: Int,
                                  override val sourceMarks: List<Pair<Int, SourceMarkType>>?,
                                  override val fingerprint: Fingerprint?,
                                  val collectionId: Any?,
-                                 val bookIds: List<Int>,
-                                 val cloneImage: ImportImage.CloneImageFrom?) : EntityInfo
+                                 val bookIds: List<Int>) : EntityInfo
 
 /**
  * 指纹数据。

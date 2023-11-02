@@ -14,7 +14,8 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
         return AppData(
             server = ServerOption(
                 port = null,
-                token = null
+                token = null,
+                timeOffsetHour = null
             ),
             storage = StorageOption(
                 storagePath = null,
@@ -42,10 +43,9 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             ),
             import = ImportOption(
                 autoAnalyseSourceData = false,
+                preventNoneSourceData = false,
                 setTagmeOfTag = true,
-                setTagmeOfSource = true,
                 setOrderTimeBy = ImportOption.TimeType.UPDATE_TIME,
-                setPartitionTimeDelayHour = null,
                 sourceAnalyseRules = emptyList(),
                 watchPaths = emptyList(),
                 autoWatchPath = false,
@@ -75,6 +75,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
         register.map("0.1.4", ::addSiteTypes)
         register.map("0.2.0", ::modifyAuthorTypes)
         register.map("0.3.0", ::addSourceAnalyseRuleExtraArguments)
+        register.map("0.4.0", ::addImportArguments)
     }
 
     /**
@@ -145,6 +146,21 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
                     extra.upsertField("translateUnderscoreToSpace") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
                 }.toJsonNode() }
             }.toJsonNode() },
+            "findSimilar" to json["findSimilar"],
+        ).toJsonNode()
+    }
+
+    /**
+     * 在0.4.0版本，在import新增了preventNoneSourceData参数，且setPartitionTimeDelayHour参数移动到了
+     */
+    private fun addImportArguments(json: JsonNode): JsonNode {
+        return mapOf(
+            "server" to json["server"].upsertField("timeOffsetHour") { value -> if(value != null && value.isNumber) value else json["import"]["setPartitionTimeDelayHour"] },
+            "storage" to json["storage"],
+            "meta" to json["meta"],
+            "query" to json["query"],
+            "source" to json["source"],
+            "import" to json["import"].upsertField("preventNoneSourceData") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() },
             "findSimilar" to json["findSimilar"],
         ).toJsonNode()
     }

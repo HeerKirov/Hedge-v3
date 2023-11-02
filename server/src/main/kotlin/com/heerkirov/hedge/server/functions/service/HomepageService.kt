@@ -26,8 +26,8 @@ import kotlin.random.nextInt
 class HomepageService(private val appdata: AppDataManager, private val data: DataRepository, private val stagingPostManager: StagingPostManager) {
     fun getHomepageInfo(): HomepageRes {
         val todayDate = Instant.now()
-            .runIf(appdata.setting.import.setPartitionTimeDelayHour != null && appdata.setting.import.setPartitionTimeDelayHour!!!= 0L) {
-                this.minus(appdata.setting.import.setPartitionTimeDelayHour!!, ChronoUnit.HOURS)
+            .runIf(appdata.setting.server.timeOffsetHour != null && appdata.setting.server.timeOffsetHour!!!= 0) {
+                this.minus(appdata.setting.server.timeOffsetHour!!.toLong(), ChronoUnit.HOURS)
             }
             .toSystemZonedTime().toLocalDate()
 
@@ -54,7 +54,7 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
     }
 
     fun getHomepageState(): HomepageStateRes {
-        val importImageCount = data.db.sequenceOf(ImportImages).count()
+        val importImageCount = data.db.sequenceOf(ImportRecords).count { it.deleted.not() }
         val findSimilarCount = data.db.sequenceOf(FindSimilarResults).count()
         val stagingPostCount = stagingPostManager.count()
 

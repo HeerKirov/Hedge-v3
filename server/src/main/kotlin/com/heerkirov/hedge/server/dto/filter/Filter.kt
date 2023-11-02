@@ -96,8 +96,10 @@ data class AuthorFilter(@Limit val limit: Int,
 data class ImportFilter(@Limit val limit: Int,
                         @Offset val offset: Int,
                         @Search val search: String?,
-                        @Order(options = ["id", "fileCreateTime", "fileUpdateTime", "fileImportTime", "orderTime"])
-                        val order: List<OrderItem> = listOf(OrderItem("id", desc = false)))
+                        @Order(options = ["id", "status", "fileCreateTime", "fileUpdateTime", "importTime"])
+                        val order: List<OrderItem> = listOf(OrderItem("id", desc = false)),
+                        val status: ImportStatus? = null,
+                        val deleted: Boolean = false)
 
 data class TrashFilter(@Limit val limit: Int,
                        @Offset val offset: Int,

@@ -33,6 +33,7 @@ data class SiteBulkForm(@NotBlank @Length(16) val name: String,
                         val availableTypes: Opt<List<String>>)
 
 data class ImportOptionUpdateForm(val autoAnalyseSourceData: Opt<Boolean>,
+                                  val preventNoneSourceData: Opt<Boolean>,
                                   val setTagmeOfTag: Opt<Boolean>,
                                   val setTagmeOfSource: Opt<Boolean>,
                                   val setOrderTimeBy: Opt<ImportOption.TimeType>,
@@ -65,4 +66,4 @@ data class StorageOptionUpdateForm(val storagePath: Opt<String?>,
                                    @Range(10, 10000) val blockMaxSizeMB: Opt<Long>,
                                    @Range(5, 5000) val blockMaxCount: Opt<Int>)
 
-data class ServerOptionUpdateForm(val port: Opt<String?>, val token: Opt<String?>)
+data class ServerOptionUpdateForm(val port: Opt<String?>, val token: Opt<String?>, @Range(min = 0 - 24, max = 24) val timeOffsetHour: Opt<Int?>)

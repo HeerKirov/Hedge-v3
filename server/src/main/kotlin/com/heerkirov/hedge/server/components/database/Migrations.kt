@@ -21,6 +21,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         register.useSQLTemplate("0.1.5", ::generateTimestampOffset)
         register.useSQL("0.3.0")
         register.useSQL("0.3.2", ::initializeIllustCacheBookAndFavorite)
+        register.useSQL("0.4.0")
     }
 
     /**

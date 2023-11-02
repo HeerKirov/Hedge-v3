@@ -8,7 +8,6 @@ import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.dao.FileCacheRecords
 import com.heerkirov.hedge.server.dao.FileFingerprints
 import com.heerkirov.hedge.server.dao.FileRecords
-import com.heerkirov.hedge.server.dao.ImportImages
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.enums.FileStatus
@@ -69,7 +68,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
     override val isIdle: Boolean get() = !thumbnailTask.isAlive && !fingerprintTask.isAlive && !archiveTask.isAlive
 
     init {
-        bus.on(arrayOf(FileBlockArchived::class, FileMarkCreated::class), ::receiveEvents)
+        bus.on(arrayOf(FileBlockArchived::class, FileCreated::class), ::receiveEvents)
     }
 
     override fun thread() {
@@ -142,23 +141,19 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
     }
 
     private fun receiveEvents(e: PackagedBusEvent) {
-        val createdFiles = ArrayList<Int>()
-        for (event in e.events) {
-            when (event.event) {
-                is FileBlockArchived -> {
-                    synchronized(archiveQueue) {
-                        archiveQueue.find { it.block == event.event.block }?.also { it.toBeArchived = true }
-                        ?: archiveQueue.add(ArchiveQueueUnit(event.event.block, toBeArchived = true))
-                        archiveTask.start()
+        e.which {
+            all<FileBlockArchived> { events ->
+                synchronized(archiveQueue) {
+                    for(event in events) {
+                        archiveQueue.find { it.block == event.block }?.also { it.toBeArchived = true }
+                            ?: archiveQueue.add(ArchiveQueueUnit(event.block, toBeArchived = true))
                     }
-                }
-                is FileMarkCreated -> {
-                    createdFiles.add(event.event.fileId)
+                    archiveTask.start()
                 }
             }
-        }
-        if(createdFiles.isNotEmpty()) {
-            thumbnailTask.addAll(createdFiles)
+            all<FileCreated> { events ->
+                thumbnailTask.addAll(events.map { it.fileId })
+            }
         }
     }
 
@@ -225,98 +220,106 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
     private fun thumbnailDaemon(fileId: Int) {
         if(!appdata.storage.accessible) {
             log.warn("File storage path ${appdata.storage.storageDir} is not accessible. Thumbnail generator is paused.")
+            bus.emit(FileProcessError(fileId, "THUMBNAIL", "File storage path is not accessible."))
             return
         }
 
         try {
             val fileRecord = data.db.sequenceOf(FileRecords).firstOrNull { it.id eq fileId }
-            if(fileRecord != null && fileRecord.status == FileStatus.NOT_READY) {
-                val file = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), fileRecord.block, "${fileRecord.id}.${fileRecord.extension}").toFile()
-                if(file.exists()) {
-                    val (thumbnailFileSize, sampleFileSize, resolutionWidth, resolutionHeight, videoDuration) = processThumbnail(fileRecord, file)
-                    val fileStatus = if(thumbnailFileSize != null) FileStatus.READY
-                        else if(sampleFileSize != null) FileStatus.READY_WITHOUT_THUMBNAIL
-                        else FileStatus.READY_WITHOUT_THUMBNAIL_SAMPLE
-                    data.db.transaction {
-                        data.db.update(FileRecords) {
-                            where { it.id eq fileRecord.id }
-                            set(it.status, fileStatus)
-                            if(thumbnailFileSize != null) set(it.thumbnailSize, thumbnailFileSize)
-                            if(sampleFileSize != null) set(it.sampleSize, sampleFileSize)
-                            if(videoDuration != null) set(it.videoDuration, videoDuration)
-                            set(it.resolutionWidth, resolutionWidth)
-                            set(it.resolutionHeight, resolutionHeight)
+            if(fileRecord != null) {
+                if(fileRecord.status == FileStatus.NOT_READY) {
+                    val file = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), fileRecord.block, "${fileRecord.id}.${fileRecord.extension}").toFile()
+                    if(file.exists()) {
+                        val (thumbnailFileSize, sampleFileSize, resolutionWidth, resolutionHeight, videoDuration) = processThumbnail(fileRecord, file)
+                        val fileStatus = if(thumbnailFileSize != null) FileStatus.READY
+                            else if(sampleFileSize != null) FileStatus.READY_WITHOUT_THUMBNAIL
+                            else FileStatus.READY_WITHOUT_THUMBNAIL_SAMPLE
+                        data.db.transaction {
+                            data.db.update(FileRecords) {
+                                where { it.id eq fileRecord.id }
+                                set(it.status, fileStatus)
+                                if(thumbnailFileSize != null) set(it.thumbnailSize, thumbnailFileSize)
+                                if(sampleFileSize != null) set(it.sampleSize, sampleFileSize)
+                                if(videoDuration != null) set(it.videoDuration, videoDuration)
+                                set(it.resolutionWidth, resolutionWidth)
+                                set(it.resolutionHeight, resolutionHeight)
+                            }
                         }
-                    }
 
-                    val importImageIds = data.db.from(ImportImages)
-                        .select(ImportImages.id)
-                        .where { ImportImages.fileId eq fileRecord.id }
-                        .map { it[ImportImages.id]!! }
-                    for (importImageId in importImageIds) {
-                        bus.emit(ImportUpdated(importImageId, thumbnailFileReady = true))
+                        fingerprintTask.add(fileRecord.id)
+                    }else{
+                        log.warn("Thumbnail generating failed because file ${file.absolutePath} not exists.")
+                        bus.emit(FileProcessError(fileId, "THUMBNAIL", "Thumbnail generating failed because file ${file.absolutePath} not exists."))
                     }
-                    fingerprintTask.add(fileRecord.id)
                 }else{
-                    log.warn("Thumbnail generating failed because file ${file.absolutePath} not exists.")
+                    fingerprintTask.add(fileRecord.id)
                 }
             }
         }catch (e: Exception) {
             log.error("Error occurred in thumbnail task of file $fileId.", e)
+            bus.emit(FileProcessError(fileId, "THUMBNAIL", e.message ?: ""))
         }
     }
 
     private fun fingerprintDaemon(fileId: Int) {
         if(!appdata.storage.accessible) {
             log.warn("File storage path ${appdata.storage.storageDir} is not accessible. Fingerprint generator is paused.")
+            bus.emit(FileProcessError(fileId, "FINGERPRINT", "File storage path is not accessible."))
             return
         }
 
         try {
             val fileRecord = data.db.sequenceOf(FileRecords).firstOrNull { it.id eq fileId }
-            if(fileRecord != null && fileRecord.fingerStatus == FingerprintStatus.NOT_READY && fileRecord.status != FileStatus.NOT_READY) {
-                val file = if(fileRecord.status == FileStatus.READY_WITHOUT_THUMBNAIL_SAMPLE) {
-                    Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), fileRecord.block, "${fileRecord.id}.${fileRecord.extension}").toFile()
-                }else{
-                    Path(appdata.storage.storageDir, ArchiveType.SAMPLE.toString(), fileRecord.block, "${fileRecord.id}.jpg").toFile()
-                }
-
-                if(file.exists()) {
-                    val result = try { Similarity.process(file) }catch (e: BusinessException) {
-                        if(e.exception is IllegalFileExtensionError) {
-                            //忽略文件类型不支持的错误，且不生成指纹，直接退出
-                            null
-                        }else{
-                            throw e
-                        }
-                    }
-
-                    if(result != null) data.db.transaction {
-                        data.db.insert(FileFingerprints) {
-                            set(it.fileId, fileRecord.id)
-                            set(it.createTime, Instant.now())
-                            set(it.pHashSimple, result.pHashSimple)
-                            set(it.dHashSimple, result.dHashSimple)
-                            set(it.pHash, result.pHash)
-                            set(it.dHash, result.dHash)
-                        }
-
-                        data.db.update(FileRecords) {
-                            where { it.id eq fileRecord.id }
-                            set(it.fingerStatus, FingerprintStatus.READY)
-                        }
+            if(fileRecord != null) {
+                if(fileRecord.fingerStatus == FingerprintStatus.NOT_READY && fileRecord.status != FileStatus.NOT_READY) {
+                    val file = if(fileRecord.status == FileStatus.READY_WITHOUT_THUMBNAIL_SAMPLE) {
+                        Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), fileRecord.block, "${fileRecord.id}.${fileRecord.extension}").toFile()
                     }else{
-                        data.db.update(FileRecords) {
-                            where { it.id eq fileRecord.id }
-                            set(it.fingerStatus, FingerprintStatus.NONE)
-                        }
+                        Path(appdata.storage.storageDir, ArchiveType.SAMPLE.toString(), fileRecord.block, "${fileRecord.id}.jpg").toFile()
                     }
-                }else{
-                    log.warn("Fingerprint generating failed because file ${file.absolutePath} not exists.")
+
+                    if(file.exists()) {
+                        val result = try { Similarity.process(file) }catch (e: BusinessException) {
+                            if(e.exception is IllegalFileExtensionError) {
+                                //忽略文件类型不支持的错误，且不生成指纹，直接退出
+                                null
+                            }else{
+                                throw e
+                            }
+                        }
+
+                        if(result != null) data.db.transaction {
+                            data.db.insert(FileFingerprints) {
+                                set(it.fileId, fileRecord.id)
+                                set(it.createTime, Instant.now())
+                                set(it.pHashSimple, result.pHashSimple)
+                                set(it.dHashSimple, result.dHashSimple)
+                                set(it.pHash, result.pHash)
+                                set(it.dHash, result.dHash)
+                            }
+
+                            data.db.update(FileRecords) {
+                                where { it.id eq fileRecord.id }
+                                set(it.fingerStatus, FingerprintStatus.READY)
+                            }
+                        }else{
+                            data.db.update(FileRecords) {
+                                where { it.id eq fileRecord.id }
+                                set(it.fingerStatus, FingerprintStatus.NONE)
+                            }
+                        }
+                        bus.emit(FileReady(fileId))
+                    }else{
+                        log.warn("Fingerprint generating failed because file ${file.absolutePath} not exists.")
+                        bus.emit(FileProcessError(fileId, "FINGERPRINT", "Fingerprint generating failed because file ${file.absolutePath} not exists."))
+                    }
+                }else if(fileRecord.fingerStatus == FingerprintStatus.READY) {
+                    bus.emit(FileReady(fileId))
                 }
             }
         }catch (e: Exception) {
             log.error("Error occurred in fingerprint task of file $fileId.", e)
+            bus.emit(FileProcessError(fileId, "FINGERPRINT", e.message ?: ""))
         }
     }
 

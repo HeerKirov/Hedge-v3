@@ -1,33 +1,22 @@
 package com.heerkirov.hedge.server.functions.manager
 
-import com.heerkirov.hedge.server.components.appdata.AppDataManager
-import com.heerkirov.hedge.server.components.appdata.ImportOption
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
-import com.heerkirov.hedge.server.dao.ImportImages
-import com.heerkirov.hedge.server.dto.form.ImportUpdateForm
-import com.heerkirov.hedge.server.events.FileMarkCreated
+import com.heerkirov.hedge.server.dao.ImportRecords
+import com.heerkirov.hedge.server.enums.ImportStatus
+import com.heerkirov.hedge.server.events.FileCreated
 import com.heerkirov.hedge.server.events.ImportCreated
 import com.heerkirov.hedge.server.events.ImportDeleted
-import com.heerkirov.hedge.server.events.ImportUpdated
-import com.heerkirov.hedge.server.exceptions.*
-import com.heerkirov.hedge.server.model.Illust
-import com.heerkirov.hedge.server.model.ImportImage
+import com.heerkirov.hedge.server.exceptions.FileNotFoundError
+import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
+import com.heerkirov.hedge.server.exceptions.StorageNotAccessibleError
+import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
-import com.heerkirov.hedge.server.utils.DateTime.toSystemZonedTime
 import com.heerkirov.hedge.server.utils.Fs
 import com.heerkirov.hedge.server.utils.deleteIfExists
-import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tools.defer
-import com.heerkirov.hedge.server.utils.tuples.Tuple5
-import com.heerkirov.hedge.server.utils.types.anyOpt
-import com.heerkirov.hedge.server.utils.types.optOf
-import com.heerkirov.hedge.server.utils.types.undefined
-import org.ktorm.dsl.delete
-import org.ktorm.dsl.eq
-import org.ktorm.dsl.insertAndGenerateKey
-import org.ktorm.dsl.update
+import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import java.io.File
@@ -36,20 +25,16 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.Instant
-import java.time.temporal.ChronoUnit
 
-class ImportManager(private val appdata: AppDataManager,
-                    private val data: DataRepository,
+class ImportManager(private val data: DataRepository,
                     private val bus: EventBus,
-                    private val sourceManager: SourceDataManager,
-                    private val importMetaManager: ImportMetaManager,
                     private val fileManager: FileManager) {
     /**
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      * @throws FileNotFoundError 此文件不存在
      * @throws StorageNotAccessibleError 存储路径不可访问
      */
-    fun import(filepath: String, mobileImport: Boolean): Pair<Int, List<BaseException<*>>> = defer {
+    fun import(filepath: String, mobileImport: Boolean): Int = defer {
         val file = File(filepath)
         if(!file.exists() || !file.canRead()) throw be(FileNotFoundError())
 
@@ -63,6 +48,8 @@ class ImportManager(private val appdata: AppDataManager,
             fileManager.newFile(file, fileName, mobileImport)
         }.alsoExcept {
             fileManager.undoFile(file, it, mobileImport)
+        }.alsoReturns {
+            bus.emit(FileCreated(it))
         }
 
         data.db.transaction {
@@ -74,7 +61,7 @@ class ImportManager(private val appdata: AppDataManager,
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      * @throws StorageNotAccessibleError 存储路径不可访问
      */
-    fun upload(content: InputStream, filename: String, extension: String): Pair<Int, List<BaseException<*>>> = defer {
+    fun upload(content: InputStream, filename: String, extension: String): Int = defer {
         val file = Fs.temp(extension).applyDefer {
             deleteIfExists()
         }.also { file ->
@@ -85,6 +72,8 @@ class ImportManager(private val appdata: AppDataManager,
             fileManager.newFile(file, filename)
         }.alsoExcept { fileId ->
             fileManager.undoFile(file, fileId)
+        }.alsoReturns {
+            bus.emit(FileCreated(it))
         }
 
         data.db.transaction {
@@ -93,82 +82,19 @@ class ImportManager(private val appdata: AppDataManager,
     }
 
     /**
-     * 修改内容。
-     * @throws NotFound
+     * 删除一条记录。这会将现存记录标记为deleted，但不会将其彻底删除。
      */
-    fun update(id: Int, form: ImportUpdateForm) {
-        val record = data.db.sequenceOf(ImportImages).firstOrNull { it.id eq id } ?: throw be(NotFound())
-
-        //source更新检查
-        form.source.alsoOpt { source ->
-            if(source != null) {
-                sourceManager.checkSourceSite(source.sourceSite, source.sourceId, source.sourcePart, source.sourcePartName)
+    fun deleteByImageId(imageId: Int) {
+        val record = data.db.sequenceOf(ImportRecords).firstOrNull { it.imageId eq imageId }
+        if(record != null && !record.deleted) {
+            data.db.update(ImportRecords) {
+                where { it.id eq record.id }
+                set(it.deleted, true)
+                set(it.deletedTime, Instant.now())
             }
+            //不会删除file，因为此调用永远从image发起，而image联系的importRecord必定是completed状态
+            bus.emit(ImportDeleted(record.id))
         }
-
-        val newCollectionId = form.collectionId.letOpt {
-            when (form.collectionId.value) {
-                null -> null
-                is String -> "@${(form.collectionId.value as String)}"
-                is Int -> "#${(form.collectionId.value as Int)}"
-                else -> throw be(ParamTypeError("collectionId", "must be number or string."))
-            }
-        }
-
-        val newBookIds = if(form.bookIds.isPresent) {
-            form.bookIds
-        }else if(form.appendBookIds.isPresent) {
-            optOf(((record.bookIds ?: emptyList()) + form.appendBookIds.value).distinct())
-        }else{
-            undefined()
-        }
-
-        val newFolderIds = if(form.folderIds.isPresent) {
-            form.folderIds
-        }else if(form.appendFolderIds.isPresent) {
-            optOf(((record.folderIds ?: emptyList()) + form.appendFolderIds.value).distinct())
-        }else{
-            undefined()
-        }
-
-        if (form.source.isPresent || form.tagme.isPresent || form.partitionTime.isPresent || form.orderTime.isPresent || form.createTime.isPresent ||
-            form.preference.isPresent || form.sourcePreference.isPresent || newCollectionId.isPresent || newBookIds.isPresent || newFolderIds.isPresent) {
-            data.db.update(ImportImages) {
-                where { it.id eq id }
-                form.source.applyOpt {
-                    set(it.sourceSite, this?.sourceSite)
-                    set(it.sourceId, this?.sourceId)
-                    set(it.sourcePart, this?.sourcePart)
-                    set(it.sourcePartName, this?.sourcePartName)
-                }
-                form.tagme.applyOpt { set(it.tagme, this) }
-                form.partitionTime.applyOpt { set(it.partitionTime, this) }
-                form.orderTime.applyOpt { set(it.orderTime, this.toEpochMilli()) }
-                form.createTime.applyOpt { set(it.createTime, this) }
-                form.preference.applyOpt { set(it.preference, this) }
-                form.sourcePreference.applyOpt { set(it.sourcePreference, this) }
-                newFolderIds.applyOpt { set(it.folderIds, this) }
-                newBookIds.applyOpt { set(it.bookIds, this) }
-                newCollectionId.applyOpt { set(it.collectionId, this) }
-            }
-        }
-
-        val listUpdated = anyOpt(form.source, form.tagme, form.partitionTime, form.orderTime)
-        val detailUpdated = listUpdated || anyOpt(form.createTime, form.preference, form.sourcePreference, form.collectionId, newBookIds, newFolderIds)
-        if(listUpdated || detailUpdated) {
-            val timeSot = anyOpt(form.partitionTime, form.orderTime, form.createTime)
-            bus.emit(ImportUpdated(id, listUpdated = listUpdated, detailUpdated = true, timeSot = timeSot))
-        }
-    }
-
-    /**
-     * 删除一条记录。
-     */
-    fun delete(importImage: ImportImage) {
-        data.db.delete(ImportImages) { it.id eq importImage.id }
-        fileManager.deleteFile(importImage.fileId)
-
-        bus.emit(ImportDeleted(importImage.id))
     }
 
     /**
@@ -180,65 +106,23 @@ class ImportManager(private val appdata: AppDataManager,
                                 sourceFilename: String? = null,
                                 sourceFilepath: String? = null,
                                 fileCreateTime: Instant? = null,
-                                fileUpdateTime: Instant? = null): Pair<Int, List<BaseException<*>>> {
-        val options = appdata.setting.import
-
-        val fileImportTime = Instant.now()
-
-        val orderTime = when(options.setOrderTimeBy) {
-            ImportOption.TimeType.CREATE_TIME -> fileCreateTime ?: fileImportTime
-            ImportOption.TimeType.UPDATE_TIME -> fileUpdateTime ?: fileImportTime
-            ImportOption.TimeType.IMPORT_TIME -> fileImportTime
-        }
-
-        val partitionTime = orderTime
-            .runIf(options.setPartitionTimeDelayHour != null && options.setPartitionTimeDelayHour!!!= 0L) {
-                this.minus(options.setPartitionTimeDelayHour!!, ChronoUnit.HOURS)
-            }
-            .toSystemZonedTime().toLocalDate()
-
-        val warnings = mutableListOf<BaseException<*>>()
-
-        val (sourceSite, sourceId, sourcePart, sourcePartName, sourcePreference) = if(options.autoAnalyseSourceData) {
-            try {
-                importMetaManager.analyseSourceMeta(sourceFilename)
-            }catch (e: BusinessException) {
-                warnings.add(e.exception)
-                Tuple5(null, null, null, null, null)
-            }
-        }else Tuple5(null, null, null, null, null)
-
-        val tagme = Illust.Tagme.EMPTY.runIf<Illust.Tagme>(options.setTagmeOfTag) {
-            this + Illust.Tagme.TAG + Illust.Tagme.AUTHOR + Illust.Tagme.TOPIC
-        }.runIf(sourceSite == null && options.setTagmeOfSource) {
-            this + Illust.Tagme.SOURCE
-        }
-
-        val id = data.db.insertAndGenerateKey(ImportImages) {
+                                fileUpdateTime: Instant? = null): Int {
+        val id = data.db.insertAndGenerateKey(ImportRecords) {
             set(it.fileId, fileId)
+            set(it.imageId, null)
+            set(it.status, ImportStatus.PROCESSING)
+            set(it.statusInfo, null)
+            set(it.deleted, false)
             set(it.fileName, sourceFilename)
             set(it.filePath, sourceFilepath)
             set(it.fileCreateTime, fileCreateTime)
             set(it.fileUpdateTime, fileUpdateTime)
-            set(it.fileImportTime, fileImportTime)
-            set(it.collectionId, null)
-            set(it.folderIds, null)
-            set(it.bookIds, null)
-            set(it.preference, null)
-            set(it.sourcePreference, sourcePreference)
-            set(it.tagme, tagme)
-            set(it.sourceSite, sourceSite)
-            set(it.sourceId, sourceId)
-            set(it.sourcePart, sourcePart)
-            set(it.sourcePartName, sourcePartName)
-            set(it.partitionTime, partitionTime)
-            set(it.orderTime, orderTime.toEpochMilli())
-            set(it.createTime, fileImportTime)
+            set(it.importTime, Instant.now())
+            set(it.deletedTime, null)
         } as Int
 
         bus.emit(ImportCreated(id))
-        bus.emit(FileMarkCreated(fileId))
 
-        return Pair(id, warnings)
+        return id
     }
 }

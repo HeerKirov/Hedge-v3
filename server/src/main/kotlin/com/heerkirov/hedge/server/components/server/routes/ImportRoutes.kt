@@ -21,17 +21,12 @@ class ImportRoutes(private val importService: ImportService) : Routes {
                 get(::list)
                 post("import", ::import)
                 post("upload", ::upload)
-                post("batch-update", ::batchUpdate)
-                post("save", ::save)
+                post("batch", ::batch)
                 path("watcher") {
                     get(::getWatcher)
                     post(::updateWatcher)
                 }
-                path("{id}") {
-                    get(::get)
-                    patch(::update)
-                    delete(::delete)
-                }
+                get("{id}", ::get)
             }
         }
     }
@@ -43,14 +38,14 @@ class ImportRoutes(private val importService: ImportService) : Routes {
 
     private fun import(ctx: Context) {
         val form = ctx.bodyAsForm<ImportForm>()
-        val (id, warnings) = importService.import(form)
-        ctx.status(201).json(IdResWithWarnings(id, warnings.map { ErrorResult(it) }))
+        val id = importService.import(form)
+        ctx.status(201).json(IdRes(id))
     }
 
     private fun upload(ctx: Context) {
         val form = ctx.uploadedFile("file")?.let { UploadForm(it.content(), it.filename(), it.extension().trimStart('.')) } ?: throw be(ParamRequired("file"))
-        val (id, warnings) = importService.upload(form)
-        ctx.status(201).json(IdResWithWarnings(id, warnings.map { ErrorResult(it) }))
+        val id = importService.upload(form)
+        ctx.status(201).json(IdRes(id))
     }
 
     private fun get(ctx: Context) {
@@ -58,27 +53,10 @@ class ImportRoutes(private val importService: ImportService) : Routes {
         ctx.json(importService.get(id))
     }
 
-    private fun update(ctx: Context) {
-        val id = ctx.pathParamAsClass<Int>("id").get()
-        val form = ctx.bodyAsForm<ImportUpdateForm>()
-        importService.update(id, form)
-    }
-
-    private fun delete(ctx: Context) {
-        val id = ctx.pathParamAsClass<Int>("id").get()
-        importService.delete(id)
-        ctx.status(204)
-    }
-
-    private fun batchUpdate(ctx: Context) {
-        val form = ctx.bodyAsForm<ImportBatchUpdateForm>()
-        val warnings = importService.batchUpdate(form)
-        ctx.status(200).json(warnings.map { (id, values) -> IdResWithWarnings(id, values.map { ErrorResult(it) }) })
-    }
-
-    private fun save(ctx: Context) {
-        val form = ctx.bodyAsForm<ImportSaveForm>()
-        ctx.json(importService.save(form))
+    private fun batch(ctx: Context) {
+        val form = ctx.bodyAsForm<ImportBatchForm>()
+        importService.batch(form)
+        ctx.status(200)
     }
 
     private fun getWatcher(ctx: Context) {

@@ -41,7 +41,7 @@ class EventCompositorImpl(private val data: DataRepository,
                     sendAssociateUpdatedEvent(e.illustId)
                 }
             }
-            is ImportCreated, is ImportSaved, is ImportDeleted,
+            is ImportCreated, is ImportDeleted,
             is SimilarFinderResultCreated, is SimilarFinderResultDeleted, is SimilarFinderResultResolved -> {
                 //import/find similar数量变化时，发送homepage state的更新事件
                 sendHomepageStateChangedEvent()

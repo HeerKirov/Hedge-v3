@@ -25,7 +25,11 @@ data class ServerOption(
     /**
      * 后端服务固定可用的token。
      */
-    var token: String?
+    var token: String?,
+    /**
+     * 在各处有关日期的判定中，每天的日期范围的推迟时间量。
+     */
+    var timeOffsetHour: Int?
 )
 
 /**
@@ -142,26 +146,22 @@ data class SourceOption(
  */
 data class ImportOption(
     /**
-     * 在文件导入时，自动执行对sourceData的分析操作。
+     * 启用来源分析规则来解析文件的来源信息。
      */
     var autoAnalyseSourceData: Boolean,
     /**
-     * 在文件导入时，自动设置tag、topic、author的tagme。
+     * 阻止没有来源信息的项被导入。这有利于保证所有导入项都有来源。
+     */
+    var preventNoneSourceData: Boolean,
+    /**
+     * 在文件导入时，自动设置tag、topic、author、source的tagme。
      */
     var setTagmeOfTag: Boolean,
-    /**
-     * 在文件导入时如果没有解析source或无source，自动设置source的tagme；analyseMeta时如果分析出了值，自动取消source的tagme。
-     */
-    var setTagmeOfSource: Boolean,
     /**
      * 导入的新文件的orderTime属性从什么属性派生。给出的可选项是几类文件的物理属性。
      * 其中有的属性是有可能不存在的。如果选用了这些不存在的属性，那么会去选用必定存在的属性，即IMPORT_TIME。
      */
     var setOrderTimeBy: TimeType,
-    /**
-     * 默认的分区时间从createTime截取。但是此属性将影响日期的范围，使延后一定时间的时间范围仍然算作昨天。
-     */
-    var setPartitionTimeDelayHour: Long?,
     /**
      * 解析来源时，使用的规则列表。
      */

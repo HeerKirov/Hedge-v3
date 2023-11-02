@@ -1,9 +1,6 @@
 package com.heerkirov.hedge.server.events
 
-import com.heerkirov.hedge.server.enums.FolderType
-import com.heerkirov.hedge.server.enums.IllustType
-import com.heerkirov.hedge.server.enums.MetaType
-import com.heerkirov.hedge.server.enums.NoteStatus
+import com.heerkirov.hedge.server.enums.*
 
 /**
  * 实体事件，指实体变更等。
@@ -105,20 +102,14 @@ interface ImportEntityEvent : EntityEvent { val importId: Int }
 
 data class ImportCreated(override val importId: Int) : BaseBusEventImpl("entity/import/created"), ImportEntityEvent
 
-/**
- * @param listUpdated list API相关属性变更。
- * @param detailUpdated retrieve API相关属性变更。
- * @param thumbnailFileReady 缩略图加载完毕。
- */
 data class ImportUpdated(override val importId: Int,
-                         val listUpdated: Boolean = false,
-                         val detailUpdated: Boolean = false,
-                         val timeSot: Boolean = false,
-                         val thumbnailFileReady: Boolean = false) : BaseBusEventImpl("entity/import/updated"), ImportEntityEvent
+                         val status: ImportStatus,
+                         val thumbnailError: Boolean = false,
+                         val fingerprintError: Boolean = false,
+                         val sourceAnalyseError: Boolean = false,
+                         val sourceAnalyseNone: Boolean = false) : BaseBusEventImpl("entity/import/updated"), ImportEntityEvent
 
 data class ImportDeleted(override val importId: Int) : BaseBusEventImpl("entity/import/deleted"), ImportEntityEvent
-
-data class ImportSaved(val importIdToImageIds: Map<Int, Int>) : BaseBusEventImpl("entity/import/saved"), EntityEvent
 
 interface TrashedImageEntityEvent : EntityEvent { val imageId: Int }
 
