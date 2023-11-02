@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Button, Separator } from "@/components/universal"
+import { Button } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton, FileWatcher } from "@/components-business/top-bar"
 import { ImportDetailPane } from "@/components-module/common"
 import { ImportImageDataset } from "@/components-module/data"
-import { ImportImage } from "@/functions/http-client/api/import"
-import { MenuItem, usePopupMenu } from "@/modules/popup-menu"
+import { ImportRecord } from "@/functions/http-client/api/import"
+import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 import { installImportContext } from "@/services/main/import"
 import ImportDialog from "./ImportDialog.vue"
 import ImportEmpty from "./ImportEmpty.vue"
@@ -16,10 +16,10 @@ const {
     paneState,
     importService: { progress, progressing },
     watcher: { state, setState, paths },
-    listview: { paginationData, anyData },
+    listview: { paginationData },
     listviewController: { viewMode, fitType, columnNum },
     selector: { selected, lastSelected, update: updateSelect },
-    operators: { openDialog, save, deleteItem, dataDrop, openImagePreview, analyseSource, orderTimeAction }
+    operators: { historyMode, openDialog, deleteItem, openImagePreview, analyseSource, analyseTime, retry, clear }
 } = installImportContext()
 
 const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
@@ -30,21 +30,19 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "separator"},
     {type: "checkbox", label: "启用自动导入", checked: !!state.value?.isOpen, click: () => setState(!state.value?.isOpen)},
     {type: "separator"},
-    {type: "normal", label: "确认导入图库", enabled: anyData.value, click: save}
+    {type: "normal", label: historyMode.value ? "查看现存记录" : "查看历史记录", checked: historyMode.value, click: () => historyMode.value = !historyMode.value},
+    {type: "normal", label: historyMode.value ? "清理所有历史记录" : "清理已完成的记录", click: clear},
 ])
 
-const menu = usePopupMenu<ImportImage>(() => [
+const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
     {type: "normal", label: "预览", click: openImagePreview},
     {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
-    {type: "normal", label: "分析来源", click: analyseSource},
+    {type: "normal", label: "从导入项重新加载来源", enabled: importRecord.illust !== null && importRecord.status === "COMPLETED", click: analyseSource},
+    {type: "normal", label: "从导入项重新生成时间", enabled: importRecord.illust !== null && importRecord.status === "COMPLETED", click: analyseTime},
+    {type: "normal", label: "重试失败的导入项", enabled: !historyMode.value && importRecord.status === "ERROR", click: retry},
     {type: "separator"},
-    {type: "normal", label: "按来源ID顺序重设排序时间", enabled: selected.value.length > 1, click: () => orderTimeAction("BY_SOURCE_ID")},
-    {type: "normal", label: "将排序时间设为当前时间", click: () => orderTimeAction("NOW")},
-    {type: "normal", label: "倒置排序时间", enabled: selected.value.length > 1, click: () => orderTimeAction("REVERSE")},
-    {type: "normal", label: "均匀分布排序时间", enabled: selected.value.length > 1, click: () => orderTimeAction("UNIFORMLY")},
-    {type: "separator"},
-    {type: "normal", label: "删除项目", click: i => deleteItem(i.id)},
+    {type: "normal", label: historyMode.value ? "彻底删除导入记录" : "删除导入记录", click: i => deleteItem(i.id)},
 ])
 
 </script>
@@ -54,13 +52,11 @@ const menu = usePopupMenu<ImportImage>(() => [
         <template #top-bar>
             <MiddleLayout>
                 <template #left>
-                    <Button type="success" icon="file" @click="openDialog">添加文件</Button>
+                    <span v-if="historyMode" class="ml-2 is-font-size-large">历史记录</span>
+                    <Button v-else type="success" icon="file" @click="openDialog">添加文件</Button>
                     <FileWatcher v-if="state?.isOpen" class="ml-1" :paths="paths" :statistic-count="state.statisticCount" :errors="state.errors" @stop="setState(false)"/>
                 </template>
                 <template #right>
-                    <Button v-if="anyData" type="primary" icon="check" @click="save">{{selected.length > 0 ? `${selected.length}项` : '全部'}}导入图库</Button>
-                    <Button v-else disabled icon="check">全部导入图库</Button>
-                    <Separator/>
                     <DataRouter/>
                     <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
                     <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
@@ -77,10 +73,9 @@ const menu = usePopupMenu<ImportImage>(() => [
             <!-- 然而如果只是visibility: hidden，还会继续踩另一个坑，contentWidth会被变成0，最终而导致算出的offset是Infinty。所以只能用透明度0妥协。 -->
             <!-- 要想完美解决这个问题，只能等虚拟视图的响应结构重构了。 -->
             <ImportImageDataset :class="{[$style.hidden]: paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0}"
-                :data="paginationData.data" :query-instance="paginationData.proxy"
-                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable droppable
+                :data="paginationData.data" :query-instance="paginationData.proxy" :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)" @space="openImagePreview()" @drop="dataDrop"/>
+                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)" @space="openImagePreview()"/>
             <ImportEmpty v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" :class="$style.empty"/>
 
             <template #pane>

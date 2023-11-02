@@ -1,11 +1,8 @@
-import { computed, reactive, ref, Ref, watch } from "vue"
+import { Ref, computed, ref } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { flatResponse } from "@/functions/http-client"
-import { Tagme } from "@/functions/http-client/api/illust"
-import { ImportImage, ImportQueryFilter } from "@/functions/http-client/api/import"
-import { OrderTimeType } from "@/functions/http-client/api/setting"
-import { NullableFilePath, SourceDataPath } from "@/functions/http-client/api/all"
-import { PaginationDataView, QueryInstance, QueryListview, useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
+import { ImportRecord, ImportQueryFilter, DetailImportRecord } from "@/functions/http-client/api/import"
+import { PaginationDataView, QueryListview, useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
@@ -16,12 +13,9 @@ import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useDroppingFileListener } from "@/modules/drag"
 import { dialogManager } from "@/modules/dialog"
+import { useRouterNavigator } from "@/modules/router"
 import { installation } from "@/utils/reactivity"
-import { objects, strings } from "@/utils/primitives"
-import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
-import { useLocalStorage } from "@/functions/app"
-import { useListeningEvent } from "@/utils/emitter"
-import { useInterceptedKey } from "@/modules/keyboard"
+import { strings } from "@/utils/primitives"
 
 export const [installImportContext, useImportContext] = installation(function () {
     const importService = useImportService()
@@ -30,7 +24,7 @@ export const [installImportContext, useImportContext] = installation(function ()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("import-image")
     const listviewController = useImportImageViewController()
-    const operators = useOperators(listview.listview, listview.paginationData, selector, listview.anyData, listviewController, importService.addFiles)
+    const operators = useOperators(listview.listview, listview.paginationData, listview.queryFilter, selector, listviewController, importService.addFiles)
 
     useDroppingFileListener(importService.addFiles)
     installVirtualViewNavigation()
@@ -51,7 +45,7 @@ function useImportService() {
         progress.value.max += files.length
 
         for (const filepath of files) {
-            const res = await fetch({filepath}, e => {
+            await fetch({filepath}, e => {
                 if(e.code === "FILE_NOT_FOUND") {
                     toast.toast("错误", "danger", `文件${filepath}不存在。`)
                 }else if(e.code === "ILLEGAL_FILE_EXTENSION") {
@@ -60,12 +54,6 @@ function useImportService() {
                     toast.handleException(e)
                 }
             })
-            if(res !== undefined) {
-                const { id, warnings } = res
-                if(warnings.length) {
-                    warningList.push({id, filepath, warningMessage: warnings.flatMap(i => i.message ? [i.message] : [])})
-                }
-            }
             progress.value.value += 1
         }
 
@@ -104,129 +92,51 @@ function useImportFileWatcher() {
 }
 
 function useListView() {
-    const list = useListViewContext({
-        defaultFilter: <ImportQueryFilter>{order: "-orderTime"},
+    return useListViewContext({
+        defaultFilter: <ImportQueryFilter>{order: "-importTime", deleted: false},
         request: client => (offset, limit, filter) => client.import.list({offset, limit, ...filter}),
         eventFilter: {
-            filter: ["entity/import/created", "entity/import/updated", "entity/import/deleted", "entity/import/saved"],
+            filter: ["entity/import/created", "entity/import/updated", "entity/import/deleted", "entity/illust/updated", "entity/illust/deleted"],
             operation({ event, refresh, updateOne, removeOne }) {
-                if(event.eventType === "entity/import/created" || (event.eventType === "entity/import/updated" && event.timeSot)) {
+                if(event.eventType === "entity/import/created") {
                     refresh()
-                }else if(event.eventType === "entity/import/updated" && (event.listUpdated || event.thumbnailFileReady)) {
+                }else if(event.eventType === "entity/import/updated") {
                     updateOne(i => i.id === event.importId)
+                }else if((event.eventType === "entity/illust/deleted" && event.illustType === "IMAGE") || (event.eventType === "entity/illust/updated" && event.illustType === "IMAGE" && event.listUpdated)) {
+                    updateOne(i => i.illust?.id === event.illustId)
                 }else if(event.eventType === "entity/import/deleted") {
                     removeOne(i => i.id === event.importId)
-                }else if(event.eventType === "entity/import/saved") {
-                    const keys = Object.keys(event.importIdToImageIds)
-                    //tips: 已内置阈值刷新功能，不再需要外部实现
-                    for(const id of keys.map(i => parseInt(i))) {
-                        removeOne(i => i.id === id)
-                    }
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.import.get(a.id))))
         }
     })
-
-    const anyData = computed(() => list.paginationData.data.metrics.total != undefined && list.paginationData.data.metrics.total > 0)
-
-    return {...list, anyData}
 }
 
-function useOperators(listview: QueryListview<ImportImage>, paginationData: PaginationDataView<ImportImage>, selector: SelectedState<number>, anyData: Ref<boolean>, listviewController: ImportImageViewController, addFiles: (f: string[]) => void) {
+function useOperators(listview: QueryListview<ImportRecord>, paginationData: PaginationDataView<ImportRecord>, queryFilter: Ref<ImportQueryFilter>, selector: SelectedState<number>, listviewController: ImportImageViewController, addFiles: (f: string[]) => void) {
     const toast = useToast()
     const message = useMessageBox()
     const preview = usePreviewService()
-    const batchFetch = useFetchHelper(client => client.import.batchUpdate)
-    const saveFetch = useFetchHelper(client => client.import.save)
-    const retrieveHelper = useRetrieveHelper({
-        delete: client => client.import.delete
+    const batchFetch = useFetchHelper(client => client.import.batch)
+
+    const historyMode = computed({
+        get: () => queryFilter.value.deleted ?? false,
+        set: value => queryFilter.value.deleted = value
     })
 
     const getEffectedItems = (id: number): number[] => {
         return selector.selected.value.includes(id) ? selector.selected.value : [id]
     }
 
-    const dataDrop = async (insertIndex: number | null, importImages: ImportImage[], _: "ADD" | "MOVE"): Promise<boolean> => {
-        const target = importImages.map(i => i.id)
-        const finalInsertIndex = insertIndex ?? paginationData.proxy.syncOperations.count()
-        if(finalInsertIndex === 0) {
-            const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
-            const afterItem2 = paginationData.proxy.syncOperations.retrieve(finalInsertIndex + 1)
-            const direction = afterItem2 !== undefined ? (afterItem2.orderTime.timestamp > afterItem.orderTime.timestamp ? "asc" : afterItem2.orderTime.timestamp < afterItem.orderTime.timestamp ? "desc" : null) : null            
-            //取出之后的两项，根据这两项的orderTime，猜测是升序还是降序，根据升降情况，以target数量设置begin和end的间隔秒数。如果无法猜测，则begin和end设置为相同
-            const orderTimeBegin = direction === "asc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds - target.length - 1) : afterItem.orderTime
-            const orderTimeEnd = direction === "desc" ? datetime.withSecond(afterItem.orderTime, afterItem.orderTime.seconds + target.length + 1) : afterItem.orderTime
-            await batchFetch({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true})
-            return true
-        }else if(finalInsertIndex !== null && finalInsertIndex === paginationData.proxy.syncOperations.count()) {
-            const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
-            const behindItem2 = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 2)!
-            const direction = behindItem2 !== undefined ? (behindItem2.orderTime.timestamp > behindItem.orderTime.timestamp ? "desc" : behindItem2.orderTime.timestamp < behindItem.orderTime.timestamp ? "asc" : null) : null            
-            //取出之后的两项，根据这两项的orderTime，猜测是升序还是降序，根据升降情况，以target数量设置begin和end的间隔秒数。如果无法猜测，则begin和end设置为相同
-            const orderTimeBegin = direction === "desc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds - target.length - 1) : behindItem.orderTime
-            const orderTimeEnd = direction === "asc" ? datetime.withSecond(behindItem.orderTime, behindItem.orderTime.seconds + target.length + 1) : behindItem.orderTime
-            await batchFetch({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true})
-            return true
-        }else if(finalInsertIndex !== null) {
-            const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
-            const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
-            const begin = behindItem.orderTime.timestamp < afterItem.orderTime.timestamp ? behindItem.orderTime : afterItem.orderTime
-            const end = behindItem.orderTime.timestamp > afterItem.orderTime.timestamp ? behindItem.orderTime : afterItem.orderTime
-            //如果begin和end相差超过24h，则认为它们相距过远，不应该再使用两者的范围，而是应该使用靠近其中一端的时间点。而这个的判定依据是所选项现在更靠近哪个端点。
-            let orderTimeBegin: LocalDateTime
-            let orderTimeEnd: LocalDateTime
-            if(end.timestamp - begin.timestamp > 1000 * 60 * 60 * 24) {
-                const targetOrderTimes = importImages.map(i => i.orderTime.timestamp)
-                const max = Math.max(...targetOrderTimes), min = Math.min(...targetOrderTimes)
-                const durationToBegin = Math.min(Math.abs(begin.timestamp - max), Math.abs(begin.timestamp - min))
-                const durationToEnd = Math.min(Math.abs(end.timestamp - max), Math.abs(end.timestamp - min))
-                if(durationToBegin <= durationToEnd) {
-                    orderTimeBegin = begin
-                    orderTimeEnd = datetime.withSecond(begin, begin.seconds + target.length + 1)
-                }else{
-                    orderTimeBegin = datetime.withSecond(end, end.seconds - target.length - 1)
-                    orderTimeEnd = end
-                }
-            }else{
-                orderTimeBegin = begin
-                orderTimeEnd = end
-            }
-
-            await batchFetch({target, orderTimeBegin, orderTimeEnd, orderTimeExclude: true})
-            return true
-        }
-        return false
-    }
-
     const deleteItem = async (id: number) => {
         if(selector.selected.value.length === 0 || !selector.selected.value.includes(id)) {
-            if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
-                await retrieveHelper.deleteData(id)
+            if(await message.showYesNoMessage("warn", "确定要删除此记录吗？", historyMode.value ? "历史记录将被彻底删除。" : "已被删除的记录短期内可在历史记录中查看。相关的图库项目不会被删除。")) {
+                await batchFetch({target: [id], delete: !historyMode.value, deleteDeleted: historyMode.value})
             }
         }else{
             const items = getEffectedItems(id)
-            if(await message.showYesNoMessage("warn", `确定要删除${items.length}个已选择项吗？`, "此操作不可撤回。")) {
-                for (const id of items) {
-                    retrieveHelper.deleteData(id).finally()
-                }
-            }
-        }
-    }
-
-    const save = async () => {
-        if(anyData.value) {
-            const target = selector.selected.value.length > 0 ? selector.selected.value : undefined
-            const res = await saveFetch({target}, e => {
-                if(e.code === "FILE_NOT_READY") {
-                    toast.toast("未准备完毕", "warning", "仍有导入项目未准备完毕。请等待。")
-                }else{
-                    toast.handleException(e)
-                }
-            })
-            if(res !== undefined) {
-                const { total } = res
-                toast.toast("已导入项目", "success", `${total}个项目已导入图库。`)
+            if(await message.showYesNoMessage("warn", `确定要删除${items.length}个记录吗？`, historyMode.value ? "历史记录将被彻底删除。" : "已被删除的记录短期内可在历史记录中查看。相关的图库项目不会被删除。")) {
+                await batchFetch({target: items, delete: !historyMode.value, deleteDeleted: historyMode.value})
             }
         }
     }
@@ -248,7 +158,7 @@ function useOperators(listview: QueryListview<ImportImage>, paginationData: Pagi
         }
     }
 
-    const openImagePreview = (importImage?: ImportImage) => {
+    const openImagePreview = (importImage?: ImportRecord) => {
         if(importImage !== undefined) {
             //如果指定项已选中，那么将最后选中项重新指定为指定项；如果未选中，那么将单独选中此项
             if(selector.selected.value.includes(importImage.id)) {
@@ -270,57 +180,56 @@ function useOperators(listview: QueryListview<ImportImage>, paginationData: Pagi
         })
     }
 
-    const analyseSource = async () => {
-        const res = await batchFetch({target: selector.selected.value, analyseSource: true})
-        if(res) {
-            if(res.length > 3) {
-                toast.toast("来源信息分析失败", "warning", `超过${res.length}个文件的来源信息分析失败，可能是因为正则表达式内容错误。`)
-            }else if(res.length >= 1) {
-                toast.toast("来源信息分析失败", "warning", "存在文件的来源信息分析失败，可能是因为正则表达式内容错误。")
-            }else{
-                toast.toast("分析完成", "info", "已完成来源分析。")
-            }
+    const analyseSource = async (importImage: ImportRecord) => {
+        const res = await batchFetch({target: getEffectedItems(importImage.id), analyseSource: true})
+        if(res !== undefined) toast.toast("已重新生成", "success", "已从导入记录重新生成项目的来源属性。")
+    }
+
+    const analyseTime = async (importImage: ImportRecord) => {
+        const res = await batchFetch({target: getEffectedItems(importImage.id), analyseTime: true})
+        if(res !== undefined) toast.toast("已重新生成", "success", "已从导入记录重新生成项目的时间属性。")
+    }
+
+    const retry = (importImage: ImportRecord) => batchFetch({target: getEffectedItems(importImage.id), retry: true})
+
+    const clear = async () => {
+        if(await message.showYesNoMessage("warn", "确定要清除所有记录吗？", historyMode.value ? "历史记录将被彻底删除。" : "已被删除的记录短期内可在历史记录中查看。相关的图库项目不会被删除。")) {
+            batchFetch({clearCompleted: !historyMode.value, deleteDeleted: historyMode.value})
         }
     }
 
-    const orderTimeAction = (action: OrderTimeType | "NOW" | "REVERSE" | "UNIFORMLY" | "BY_SOURCE_ID") => {
-        if(action === "BY_SOURCE_ID" || action === "NOW" || action === "REVERSE" || action === "UNIFORMLY") {
-            batchFetch({target: selector.selected.value, action: `SET_ORDER_TIME_${action}`})
-        }else{
-            batchFetch({target: selector.selected.value, setOrderTimeBy: action})
-        }
-    }
-
-    return {save, openDialog, deleteItem, dataDrop, openImagePreview, analyseSource, orderTimeAction}
+    return {historyMode, openDialog, deleteItem, openImagePreview, analyseSource, analyseTime, retry, clear}
 }
 
 export function useImportDetailPane() {
+    const message = useMessageBox()
     const preview = usePreviewService()
+    const navigator = useRouterNavigator()
     const { listview, listviewController, selector } = useImportContext()
-
-    const storage = useLocalStorage<{multiple: boolean}>("import/list/pane", () => ({multiple: true}), true)
-
-    const tabType = computed({
-        get: () => selector.selected.value.length > 1 && storage.value.multiple ? "action" : "info",
-        set: (value) => {
-            if(selector.selected.value.length > 1) {
-                if(value !== "action") {
-                    storage.value.multiple = false
-                }else if(!storage.value.multiple) {
-                    storage.value.multiple = true
-                }
-            }
-        }
-    })
 
     const path = computed(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
 
-    const detail = useImportDetailPaneId(path, listview.listview, listview.paginationData.proxy)
-
-    useInterceptedKey(["Meta+Digit1", "Meta+Digit2"], e => {
-        if(e.key === "Digit1") tabType.value = "info"
-        else if(e.key === "Digit2") tabType.value = "action"
+    const { data } = useFetchEndpoint({
+        path,
+        get: client => client.import.get,
+        eventFilter: c => event => ((event.eventType === "entity/import/updated" || event.eventType === "entity/import/deleted") && event.importId === c.path) || ((event.eventType === "entity/illust/deleted" || event.eventType === "entity/illust/updated") && event.illustType === "IMAGE" && event.illustId === c.data?.illust?.id)
     })
+
+    const showStatusInfoMessage = (type: "thumbnailError" | "fingerprintError" | "sourceAnalyseError" | "sourceAnalyseNone") => {
+        const info = type === "thumbnailError" ? "缩略图生成失败"
+            : type === "fingerprintError" ? "指纹生成失败"
+            : type === "sourceAnalyseError" ? "来源数据解析失败"
+            : "无来源数据"
+        const msg = type === "sourceAnalyseNone" ? "已在偏好设置中开启\"阻止无来源的导入\"选项，因此无法解析获得来源数据的项会被阻止。"
+            : data.value?.statusInfo?.messages?.join("\n") ?? ""
+        message.showOkMessage("info", info, msg)
+    }
+
+    const gotoIllust = () => {
+        if(data.value?.illust) {
+            navigator.goto({routeName: "MainPartition", query: {detail: data.value.illust.partitionTime}, params: {locateId: data.value.illust.id}})
+        }
+    }
 
     const openImagePreview = () => {
         preview.show({
@@ -336,182 +245,5 @@ export function useImportDetailPane() {
         })
     }
 
-    return {tabType, detail, selector, openImagePreview}
-}
-
-function useImportDetailPaneId(path: Ref<number | null>, listview: QueryListview<ImportImage>, instance: QueryInstance<ImportImage>) {
-    const detail = ref<{id: number, filename: string | null, filePath: NullableFilePath} | null>(null)
-
-    const fetch = useFetchHelper(client => client.import.get)
-
-    watch(path, async path => {
-        if(path !== null) {
-            const idx = instance.syncOperations.find(i => i.id === path)
-            if(idx !== undefined) {
-                const item = instance.syncOperations.retrieve(idx)!
-                detail.value = {id: item.id, filename: item.originFileName, filePath: item.filePath}
-            }else{
-                const res = await fetch(path)
-                detail.value = res !== undefined ? {id: res.id, filename: res.originFileName, filePath: res.filePath} : null
-            }
-        }else{
-            detail.value = null
-        }
-    }, {immediate: true})
-
-    useListeningEvent(listview.modifiedEvent, async e => {
-        if(path.value !== null) {
-            if(e.type === "FILTER_UPDATED" || e.type === "REFRESH") {
-                const idx = instance.syncOperations.find(i => i.id === path.value)
-                if(idx !== undefined) {
-                    const item = instance.syncOperations.retrieve(idx)!
-                    detail.value = {id: item.id, filename: item.originFileName, filePath: item.filePath}
-                }else{
-                    const res = await fetch(path.value)
-                    detail.value = res !== undefined ? {id: res.id, filename: res.originFileName, filePath: res.filePath} : null
-                }
-            }else if(e.type === "MODIFY" && e.value.id === path.value) {
-                detail.value = {id: e.value.id, filename: e.value.originFileName, filePath: e.value.filePath}
-            }else if(e.type === "REMOVE" && e.oldValue.id === path.value) {
-                detail.value = null
-            }
-        }
-    })
-
-    return detail
-}
-
-export function useSideBarDetailInfo(path: Ref<number | null>) {
-    const message = useMessageBox()
-
-    const { data, setData } = useFetchEndpoint({
-        path,
-        get: client => client.import.get,
-        update: client => client.import.update,
-        eventFilter: c => event => (event.eventType === "entity/import/updated" || event.eventType === "entity/import/deleted") && event.importId === c.path
-    })
-
-    const setTagme = async (tagme: Tagme[]) => {
-        return objects.deepEquals(tagme, data.value?.tagme) || await setData({tagme})
-    }
-
-    const setSourceInfo = async (source: SourceDataPath | null) => {
-        return objects.deepEquals(data.value?.source, source) || await setData({source}, e => {
-            if(e.code === "NOT_EXIST") {
-                message.showOkMessage("error", `来源${source?.sourceSite}不存在。`)
-            }else if(e.code === "PARAM_ERROR") {
-                const target = e.info === "sourceId" ? "来源ID" : e.info === "sourcePart" ? "分页" : e.info === "sourcePartName" ? "分页页名" : e.info
-                message.showOkMessage("error", `${target}的值内容错误。`, "ID只能是自然数。")
-            }else if(e.code === "PARAM_REQUIRED") {
-                const target = e.info === "sourceId" ? "来源ID" : e.info === "sourcePart" ? "分页" : e.info === "sourcePartName" ? "分页页名": e.info
-                message.showOkMessage("error", `${target}属性缺失。`)
-            }else if(e.code === "PARAM_NOT_REQUIRED") {
-                if(e.info === "sourcePart") {
-                    message.showOkMessage("error", `分页属性不需要填写，因为选择的来源站点不支持分页。`)
-                }else if(e.info === "sourcePartName") {
-                    message.showOkMessage("error", `分页页名属性不需要填写，因为选择的来源站点不支持分页页名。`)
-                }else if(e.info === "sourceId/sourcePart/sourcePartName") {
-                    message.showOkMessage("error", `来源ID/分页属性不需要填写，因为未指定来源站点。`)
-                }else{
-                    message.showOkMessage("error", `${e.info}属性不需要填写。`)
-                }
-            }else{
-                return e
-            }
-        })
-    }
-
-    const setPartitionTime = async (partitionTime: LocalDateTime) => {
-        return partitionTime.timestamp === data.value?.partitionTime?.timestamp || await setData({partitionTime})
-    }
-
-    const setCreateTime = async (createTime: LocalDateTime) => {
-        return createTime.timestamp === data.value?.createTime?.timestamp || await setData({createTime})
-    }
-
-    const setOrderTime = async (orderTime: LocalDateTime) => {
-        return orderTime.timestamp === data.value?.orderTime?.timestamp || await setData({orderTime})
-    }
-
-    const clearAllPreferences = async () => {
-        if(await message.showYesNoMessage("confirm", "确认要清除所有预设吗？")) {
-            await setData({preference: {cloneImage: null}, collectionId: null, bookIds: []})
-        }
-    }
-
-    const clearAllSourcePreferences = async () => {
-        if(await message.showYesNoMessage("confirm", "确认要清除所有来源数据预设吗？")) {
-            await setData({sourcePreference: null})
-        }
-    }
-
-    return {data, setTagme, setSourceInfo, setPartitionTime, setCreateTime, setOrderTime, clearAllPreferences, clearAllSourcePreferences}
-}
-
-export function useSideBarAction(selected: Ref<number[]>) {
-    const toast = useToast()
-
-    const batchFetch = useFetchHelper({
-        request: httpClient => httpClient.import.batchUpdate,
-        afterRequest: () => toast.toast("批量编辑完成", "info", "已完成所选项目的更改。")
-    })
-
-    const actives = reactive({partitionTime: false, orderTime: false})
-
-    const form = reactive<{tagme: Tagme[], partitionTime: LocalDate, orderTime: {begin: LocalDateTime, end: LocalDateTime}}>({tagme: [], partitionTime: date.now(), orderTime: {begin: datetime.now(), end: datetime.now()}})
-
-    watch(selected, () => {
-        if(actives.partitionTime) actives.partitionTime = false
-        if(actives.orderTime) actives.orderTime = false
-        if(form.tagme.length) form.tagme = []
-    })
-
-    const setTagme = async (tagme: Tagme[]): Promise<boolean> => {
-        if(tagme !== form.tagme) {
-            form.tagme = tagme
-            return await batchFetch({target: selected.value, tagme}) !== undefined
-        }
-        return true
-    }
-
-    const submitPartitionTime = async () => {
-        if(actives.partitionTime && await batchFetch({target: selected.value, partitionTime: form.partitionTime})) {
-            actives.partitionTime = false
-        }
-    }
-
-    const submitOrderTimeRange = async () => {
-        if(actives.orderTime && await batchFetch({target: selected.value, orderTimeBegin: form.orderTime.begin, orderTimeEnd: form.orderTime.end})) {
-            actives.orderTime = false
-        }
-    }
-
-    const analyseSource = async () => {
-        const res = await batchFetch({target: selected.value, analyseSource: true})
-        if(res && res.length) {
-            if(res.length > 3) {
-                toast.toast("来源信息分析失败", "warning", `超过${res.length}个文件的来源信息分析失败，可能是因为正则表达式内容错误。`)
-            }else{
-                toast.toast("来源信息分析失败", "warning", "存在文件的来源信息分析失败，可能是因为正则表达式内容错误。")
-            }
-        }
-    }
-
-    const createTimeAction = (action: OrderTimeType) => {
-        batchFetch({target: selected.value, setCreateTimeBy: action})
-    }
-
-    const orderTimeAction = (action: OrderTimeType | "NOW" | "REVERSE" | "UNIFORMLY" | "BY_SOURCE_ID") => {
-        if(action === "BY_SOURCE_ID" || action === "NOW" || action === "REVERSE" || action === "UNIFORMLY") {
-            batchFetch({target: selected.value, action: `SET_ORDER_TIME_${action}`})
-        }else{
-            batchFetch({target: selected.value, setOrderTimeBy: action})
-        }
-    }
-
-    const partitionTimeAction = (action: "TODAY" | "EARLIEST" | "LATEST") => {
-        batchFetch({target: selected.value, action: `SET_PARTITION_TIME_${action}`})
-    }
-
-    return {actives, form, setTagme, submitPartitionTime, submitOrderTimeRange, analyseSource, createTimeAction, orderTimeAction, partitionTimeAction}
+    return {path, data, selector, gotoIllust, showStatusInfoMessage, openImagePreview}
 }

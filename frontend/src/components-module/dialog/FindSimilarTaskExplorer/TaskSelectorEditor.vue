@@ -6,7 +6,6 @@ import { Select, Input } from "@/components/form"
 import { DateEditor, SourceSiteSelectBox, RelatedTopicEditor, RelatedAuthorEditor } from "@/components-business/form-editor"
 import { SimpleAuthor, SimpleTopic } from "@/functions/http-client/api/all"
 import { DraggingIllust, SimpleIllust } from "@/functions/http-client/api/illust"
-import { ImportImage } from "@/functions/http-client/api/import"
 import { TaskSelector } from "@/functions/http-client/api/find-similar"
 import { useFetchHelper } from "@/functions/fetch"
 import { useMessageBox } from "@/modules/message-box"
@@ -33,7 +32,6 @@ const fetchAuthor = useFetchHelper(client => client.author.get)
 
 const loadingCache = reactive({
     images: <SimpleIllust[]>[],
-    importImages: <ImportImage[]>[],
     topics: <SimpleTopic[]>[],
     authors: <SimpleAuthor[]>[]
 })
@@ -42,26 +40,18 @@ const addImageInputText = ref<string>("")
 
 const imageFilepaths = computed(() => loadingCache.images.map(i => i.filePath.sample))
 
-const importImageFilepaths = computed(() => loadingCache.importImages.map(i => i.filePath.sample))
-
-const { dragover: _, ...dropEvents } = useDroppable(["importImages", "illusts"], (data, type) => {
-    if(props.selector.type === "image" && type === "illusts" && data.length > 0) {
+const { dragover: _, ...dropEvents } = useDroppable("illusts", (data, type) => {
+    if(props.selector.type === "image" && data.length > 0) {
         const imageIds = props.selector.imageIds
         const add = (<DraggingIllust[]>data).filter(i => imageIds.indexOf(i.id) < 0)
         loadingCache.images = [...loadingCache.images, ...add.map(i => ({id: i.id, filePath: i.filePath}))]
         emit("update:selector", {type: "image", imageIds: [...props.selector.imageIds, ...add.map(i => i.id)]})
-    }else if(props.selector.type === "importImage" && type === "importImages" && data.length > 0) {
-        const importIds = props.selector.importIds
-        const add = (<ImportImage[]>data).filter(i => importIds.indexOf(i.id) < 0)
-        loadingCache.importImages = [...loadingCache.importImages, ...add]
-        emit("update:selector", {type: "importImage", importIds: [...props.selector.importIds, ...add.map(i => i.id)]})
     }
 })
 
 watch(() => props.selector, async (selector, old) => {
     if(old !== undefined && selector.type !== old.type) {
         loadingCache.images = []
-        loadingCache.importImages = []
         loadingCache.topics = []
         loadingCache.authors = []
     }
@@ -87,23 +77,6 @@ watch(() => props.selector, async (selector, old) => {
             }
         }
         loadingCache.images = selector.imageIds.map(id => map[id]).filter(i => i !== null)   
-    }else if(selector.type === "importImage") {
-        const map: Record<number, ImportImage> = {}
-        const newImportIds: number[] = []
-        for(const id of selector.importIds) {
-            const exist = loadingCache.importImages.find(i => i.id === id)
-            if(exist) {
-                map[id] = exist
-            }else{
-                newImportIds.push(id)
-            }
-        }
-        for(const r of await Promise.all(newImportIds.map(id => fetchImportImage(id)))) {
-            if(r !== undefined) {
-                map[r.id] = r
-            }
-        }
-        loadingCache.importImages = selector.importIds.map(id => map[id]).filter(i => i !== null)
     }else if(selector.type === "topic") {
         const map: Record<number, SimpleTopic> = {}
         const newTopicIds: number[] = []
@@ -241,10 +214,6 @@ const selectorItems: {label: string, value: TaskSelector["type"]}[] = [
         <Block class="has-text-centered has-text-secondary is-line-height-small py-2 mt-1">
             拖曳图像到此处 或 直接输入ID <Input width="half" size="small" v-model:value="addImageInputText" @enter="addImageId"/>
         </Block>
-    </div>
-    <div v-if="props.selector.type === 'importImage'">
-        <GridImages :images="importImageFilepaths" :column-num="5"/>
-        <Block class="has-text-centered has-text-secondary is-line-height-small py-2 mt-1" v-bind="dropEvents">拖曳导入项目到此处</Block>
     </div>
     <div v-if="props.selector.type === 'partitionTime'">
         <DateEditor :value="props.selector.partitionTime" @update:value="updatePartitionTime"/>

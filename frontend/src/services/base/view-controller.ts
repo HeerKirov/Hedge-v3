@@ -61,7 +61,7 @@ export function useImportImageViewController(): ImportImageViewController {
     const storage = useLocalStorage<{
         fitType: "cover" | "contain", columnNum: number, viewMode: "row" | "grid"
     }>("import-image/list/view-controller", () => ({
-        fitType: "cover", columnNum: 8, viewMode: "grid"
+        fitType: "cover", columnNum: 8, viewMode: "row"
     }), true)
 
     return {

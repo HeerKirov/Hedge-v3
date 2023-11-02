@@ -4,7 +4,7 @@ import { Icon } from "@/components/universal"
 import { Flex, FlexItem } from "@/components/layout"
 import { FileInfoDisplay, SourceInfo } from "@/components-business/form-display"
 import { PaginationData, QueryInstance } from "@/functions/fetch"
-import { ImportImage } from "@/functions/http-client/api/import"
+import { ImportRecord } from "@/functions/http-client/api/import"
 import { useAssets } from "@/functions/app"
 import { TypeDefinition } from "@/modules/drag"
 import { date, datetime } from "@/utils/datetime"
@@ -18,11 +18,11 @@ const props = defineProps<{
     /**
      * 分页数据。
      */
-    data: PaginationData<ImportImage>
+    data: PaginationData<ImportRecord>
     /**
      * 查询实例。选择器模块会用到，被用于自由选取数据。
      */
-    queryInstance?: QueryInstance<ImportImage>
+    queryInstance?: QueryInstance<ImportRecord>
     /**
      * 视图模式，Grid表模式或row行模式。
      */
@@ -69,7 +69,7 @@ const emit = defineEmits<{
     /**
      * 右键单击某项。
      */
-    (e: "contextmenu", i: ImportImage): void
+    (e: "contextmenu", i: ImportRecord): void
     /**
      * 双击某项。
      */
@@ -88,7 +88,7 @@ const emit = defineEmits<{
     (e: "drop", insertIndex: number | null, images: TypeDefinition["importImages"], mode: "ADD" | "MOVE"): void
 }>()
 
-const keyOf = (item: ImportImage) => item.id
+const keyOf = (item: ImportRecord) => item.id
 
 const data = toRef(props, "data")
 const columnNum = computed(() => props.viewMode === "grid" ? (props.columnNum ?? 3) : undefined)
@@ -109,7 +109,7 @@ installDatasetContext({
     dragAndDropType: "importImages",
     dataUpdate: (_, __) => emit("data-update", _, __),
     select: (_, __) => emit("select", _, __),
-    rightClick: (_) => emit("contextmenu", _ as ImportImage),
+    rightClick: (_) => emit("contextmenu", _ as ImportRecord),
     dblClick: (_, __) => emit("dblclick", _, __),
     enterClick: (_) => emit("enter", _),
     spaceClick: (_) => emit("space", _),
@@ -121,29 +121,39 @@ installDatasetContext({
 <template>
     <div class="w-100 h-100 relative" :style="style">
         <DatasetGridFramework v-if="viewMode === 'grid'" :key-of="keyOf" :column-num="columnNum!" v-slot="{ item, thumbType }">
-            <img :class="$style['grid-img']" :src="assetsUrl(item.filePath[thumbType])" :alt="`import-image-${item.id}`"/>
-            <Icon v-if="isVideoExtension(item.filePath.extension)" :class="$style['grid-video']" icon="video"/>
+            <img :class="$style['grid-img']" :src="assetsUrl(item.filePath?.[thumbType])" :alt="`import-image-${item.id}`"/>
+            <Icon v-if="item.filePath !== null && isVideoExtension(item.filePath.extension)" :class="$style['grid-video']" icon="video"/>
+            <div v-if="item.status === 'PROCESSING'" :class="[$style['grid-status-icon'], $style[item.status.toLowerCase()]]"><Icon spin icon="arrow-right-rotate"/></div>
+            <div v-else-if="item.status === 'ERROR'" :class="[$style['grid-status-icon'], $style[item.status.toLowerCase()]]"><Icon icon="exclamation"/></div>
+            <div v-else-if="item.status === 'COMPLETED'" :class="[$style['grid-status-icon'], $style[item.status.toLowerCase()]]"><Icon icon="check"/></div>
         </DatasetGridFramework>
         <DatasetRowFramework v-else :key-of="keyOf" :row-height="32" v-slot="{ item }">
             <Flex horizontal="stretch" align="center">
                 <FlexItem :shrink="0" :grow="0">
-                    <img :class="$style['row-img']" :src="assetsUrl(item.filePath.sample)" :alt="`import-image-${item.id}`"/>
+                    <img :class="$style['row-img']" :src="assetsUrl(item.filePath?.sample)" :alt="`import-image-${item.id}`"/>
                 </FlexItem>
                 <FlexItem :width="30">
-                    <div class="ml-1 no-wrap overflow-ellipsis">{{item.originFileName}}</div>
+                    <div class="ml-1 no-wrap overflow-ellipsis">{{item.fileName}}</div>
                 </FlexItem>
-                <FlexItem :width="25" :shrink="0">
-                    <SourceInfo :source="item.source"/>
+                <FlexItem :shrink="0">
+                    <div v-if="item.status === 'PROCESSING'" :class="[$style['status-icon'], 'has-text-primary']"><Icon spin icon="arrow-right-rotate"/></div>
+                    <div v-else-if="item.status === 'ERROR'" :class="[$style['status-icon'], 'has-text-danger']"><Icon icon="exclamation"/></div>
+                    <div v-else-if="item.status === 'COMPLETED'" :class="[$style['status-icon'], 'has-text-success']"><Icon icon="check"/></div>
                 </FlexItem>
                 <FlexItem :width="15" :shrink="0">
                     <div class="mr-1">
-                        <FileInfoDisplay mode="inline" :extension="item.filePath.extension"/>
+                        <FileInfoDisplay mode="inline" :extension="item.filePath?.extension"/>
                     </div>
+                </FlexItem>
+                <FlexItem :width="25" :shrink="0">
+                    <SourceInfo :source="item.illust?.source ?? null"/>
                 </FlexItem>
                 <FlexItem :width="30" :shrink="0">
                     <div class="mr-1 has-text-right">
-                        <span class="secondary-text">({{date.toISOString(item.partitionTime)}})</span>
-                        {{datetime.toSimpleFormat(item.orderTime)}}
+                        <template v-if="item.illust !== null">
+                            <span class="secondary-text">({{date.toISOString(item.illust.partitionTime)}})</span>
+                            {{datetime.toSimpleFormat(item.illust.orderTime)}}
+                        </template>
                     </div>
                 </FlexItem>
             </Flex>
@@ -168,6 +178,34 @@ installDatasetContext({
     color: $dark-mode-text-color
     filter: drop-shadow(0 0 1px $dark-mode-background-color)
 
+.grid-status-icon
+    position: absolute
+    right: 0
+    bottom: 0
+    width: 0
+    height: 0
+    border-left: 1.7rem solid transparent
+    border-bottom: 1.7rem solid transparent
+    color: $white
+    > svg 
+        position: absolute
+        top: 0.7rem
+        right: 0
+    @media (prefers-color-scheme: light)
+        &.completed
+            border-bottom-color: $light-mode-success
+        &.error
+            border-bottom-color: $light-mode-danger
+        &.processing
+            border-bottom-color: $light-mode-primary
+    @media (prefers-color-scheme: dark)
+        &.completed
+            border-bottom-color: $dark-mode-success
+        &.error
+            border-bottom-color: $dark-mode-danger
+        &.processing
+            border-bottom-color: $dark-mode-primary
+
 .row-img
     margin-top: 1px
     margin-left: 4px
@@ -175,4 +213,8 @@ installDatasetContext({
     width: 30px
     object-position: center
     object-fit: cover
+
+.status-icon
+    width: 1.5em
+    text-align: center
 </style>

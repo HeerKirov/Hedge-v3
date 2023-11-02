@@ -43,8 +43,7 @@ watch(() => props.images, async (images, oldImages) => {
             })
         }else{
             return new Promise<[`${FindSimilarEntityType}-${number}`, SimpleCollection | string | undefined]>(async resolve => {
-                const res = await fetchImport(image!.id)
-                resolve([key, res !== undefined ? (typeof res.collectionId === 'string' ? res.collectionId : res.collection!) : undefined])
+                resolve([key, undefined])
             })
         }
     })

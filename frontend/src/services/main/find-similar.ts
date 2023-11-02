@@ -529,42 +529,7 @@ export function useFindSimilarCompareData(id: Ref<{type: "IMPORT_IMAGE" | "ILLUS
                     }
                 }
             }else{
-                const res = await client.import.get(path.id)
-                if(!res.ok) return res
-
-                return {
-                    ok: true,
-                    status: 200,
-                    data: <FindSimilarCompareData>{
-                        filePath: res.data.filePath.thumbnail,
-                        metadata: {
-                            id: res.data.id,
-                            file: res.data.originFileName,
-                            extension: res.data.extension,
-                            size: res.data.size,
-                            resolutionWidth: res.data.resolutionWidth,
-                            resolutionHeight: res.data.resolutionHeight,
-                            videoDuration: res.data.videoDuration,
-                            score: null,
-                            favorite: false,
-                            description: "",
-                            tagme: res.data.tagme,
-                            tags: [],
-                            topics: [],
-                            authors: [],
-                            partitionTime: res.data.partitionTime,
-                            createTime: res.data.createTime,
-                            updateTime: res.data.createTime,
-                            orderTime: res.data.orderTime,
-                        },
-                        sourceData: res.data.source,
-                        relatedItems: {
-                            collection: res.data.collectionId,
-                            books: res.data.books,
-                            folders: res.data.folders
-                        }
-                    }
-                }
+                throw new Error("ImportRecord is not supported in FindSimilar.")
             }
         }
     })

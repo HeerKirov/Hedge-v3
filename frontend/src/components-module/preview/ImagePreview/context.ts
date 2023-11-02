@@ -8,7 +8,7 @@ export type ImageProps = ServiceBaseType<"image"> & (ListviewModeProps | ArrayMo
 
 interface ListviewModeProps {
     type: "listview"
-    listview: QueryListview<{id: number, filePath: NullableFilePath}>
+    listview: QueryListview<{id: number, filePath: NullableFilePath | null}>
     paginationData: PaginationData<unknown>
     columnNum?: Readonly<Ref<number>>
     viewMode?: Readonly<Ref<"grid" | "row">>
@@ -51,7 +51,7 @@ function useListviewMode(ctx: ListviewModeProps, close: () => void) {
             idx = ctx.listview.proxy.syncOperations.find(i => i.id === selectedId, [ctx.paginationData.metrics.offset, ctx.paginationData.metrics.offset + ctx.paginationData.metrics.limit])
             if(idx !== undefined) {
                 const item = ctx.listview.proxy.syncOperations.retrieve(idx)!
-                targetFile.value = item.filePath.original
+                targetFile.value = item.filePath?.original ?? null
             }else{
                 targetFile.value = null
             }
@@ -119,7 +119,7 @@ function getMultipleCtx(ctx: ListviewModeProps): ArrayModeProps {
         const idx = ctx.listview.proxy.syncOperations.find(i => i.id === id, [ctx.paginationData.metrics.offset, ctx.paginationData.metrics.offset + ctx.paginationData.metrics.limit])
         if(idx !== undefined) {
             const item = ctx.listview.proxy.syncOperations.retrieve(idx)!
-            return item.filePath.original
+            return item.filePath?.original ?? null
         }else{
             return null
         }

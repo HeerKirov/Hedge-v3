@@ -175,6 +175,10 @@ export interface ServerOption {
      * 此Token与生成Token并行可用。使用此Token可在其他位置访问后台服务。
      */
     token: string | null
+    /**
+     * 在各处有关日期的判定中，每天的日期范围的推迟时间量。
+     */
+    timeOffsetHour: number | null
 }
 
 export type ServerOptionUpdateForm = Partial<ServerOption>
@@ -264,22 +268,17 @@ export interface ImportOption {
      */
     autoAnalyseSourceData: boolean
     /**
+     * 阻止没有来源信息的项被导入。这有利于保证所有导入项都有来源。
+     */
+    preventNoneSourceData: boolean
+    /**
      * 导入时，自动设定meta tag的tagme。
      */
     setTagmeOfTag: boolean
     /**
-     * 导入时，根据情况自动设定source的tagme。
-     */
-    setTagmeOfSource: boolean
-    /**
      * 导入时，使用哪种属性设置create time。
      */
     setOrderTimeBy: OrderTimeType
-    /**
-     * 分区的延后时间，单位小时。null等同0。
-     * @range [-24, 24]
-     */
-    setPartitionTimeDelayHour: number | null
     /**
      * source分析的规则列表。
      */

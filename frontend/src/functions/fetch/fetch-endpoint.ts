@@ -69,7 +69,7 @@ export interface FetchEndpointOptions<PATH, MODEL, FORM, GE extends BasicExcepti
      * 事件过滤器。提供一个过滤器，以从wsEvents中过滤当前对象的变更通知。获得变更通知后，自动刷新对象。
      * tips: 不要直接解包context。解包会使path的内容被固定，失去响应性。应该直接取用path，或在返回函数内解包context。
      */
-    eventFilter?(context: EventFilterContext<PATH>): WsEventConditions
+    eventFilter?(context: EventFilterContext<PATH, MODEL>): WsEventConditions
     /**
      * 在path变化之前发生调用的事件。
      */
@@ -102,8 +102,9 @@ export interface FetchEndpointOptions<PATH, MODEL, FORM, GE extends BasicExcepti
     handleErrorInDelete?: ErrorHandler<DE>
 }
 
-interface EventFilterContext<PATH> {
+interface EventFilterContext<PATH, MODEL> {
     path: PATH | null
+    data: MODEL | null
 }
 
 export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, UE extends BasicException, DE extends BasicException>(options: FetchEndpointOptions<PATH, MODEL, FORM, GE, UE, DE>): FetchEndpoint<PATH, MODEL, FORM, UE> {
@@ -158,9 +159,7 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
     }, {immediate: true})
 
     if(options.eventFilter) {
-        const context: EventFilterContext<PATH> = {
-            path: path.value
-        }
+        const context: EventFilterContext<PATH, MODEL> = {path: path.value, data: data.value}
         watch(path, path => context.path = path, {flush: "sync"})
 
         const emitter = wsClient.on(options.eventFilter(context))

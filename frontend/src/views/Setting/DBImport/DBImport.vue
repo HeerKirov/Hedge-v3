@@ -1,17 +1,12 @@
 <script setup lang="ts">
-import { Button, Separator } from "@/components/universal"
-import { Group } from "@/components/layout"
-import { CheckBox, Select, NumberInput } from "@/components/form"
+import { Separator } from "@/components/universal"
+import { CheckBox, Select } from "@/components/form"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
 import { useSettingImport } from "@/services/setting"
-import { usePropertySot } from "@/utils/forms"
 import DBImportSourceRule from "./DBImportSourceRule.vue"
 import DBImportDirectoriesEditor from "./DBImportDirectoriesEditor.vue"
-import { toRefNullable } from "@/utils/reactivity"
 
 const { data: settingImport } = useSettingImport()
-
-const [partitionTimeDelay, partitionTimeDelaySot, savePartitionTimeDelay] = usePropertySot(toRefNullable(settingImport, "setPartitionTimeDelayHour"))
 
 const timeTypes: {value: OrderTimeType, label: string}[] = [
     {value: "IMPORT_TIME", label: "项目导入时间"},
@@ -23,34 +18,25 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
 <template>
     <template v-if="!!settingImport">
         <div class="mt-2">
-            <CheckBox v-model:value="settingImport.autoAnalyseSourceData">自动分析来源数据</CheckBox>
-            <p class="secondary-text">导入文件时，自动分析导入项目的来源。</p>
+            <CheckBox v-model:value="settingImport.autoAnalyseSourceData">分析来源数据</CheckBox>
+            <p class="secondary-text">导入文件时，通过文件名分析导入项目的来源数据。</p>
         </div>
         <div class="mt-2">
-            <CheckBox v-model:value="settingImport.setTagmeOfTag">自动设定Tagme:标签</CheckBox>
-            <p class="secondary-text">导入文件时，自动将导入项目的Tagme标记为标签、主题和作者。</p>
+            <CheckBox :disabled="!settingImport.autoAnalyseSourceData" v-model:value="settingImport.preventNoneSourceData">阻止无来源的导入</CheckBox>
+            <p class="secondary-text">导入文件时，无法分析获得来源数据的项目将被阻止。</p>
         </div>
         <div class="mt-2">
-            <CheckBox v-model:value="settingImport.setTagmeOfSource">自动设定Tagme:来源</CheckBox>
-            <p class="secondary-text">导入文件时，自动将导入项目的Tagme标记为来源。不过，如果项目的来源可以被分析，则不会设定。</p>
+            <CheckBox v-model:value="settingImport.setTagmeOfTag">设定Tagme</CheckBox>
+            <p class="secondary-text">导入文件时，自动设置导入项目的Tagme。</p>
         </div>
         <div class="mt-2">
             <label class="label">排序时间方案</label>
             <Select class="mt-1" :items="timeTypes" v-model:value="settingImport.setOrderTimeBy"/>
             <p class="secondary-text">使用选定的属性作为导入项目的排序时间。当选定的属性不存在时，自动选择其他属性。</p>
         </div>
-        <div class="mt-2">
-            <label class="label">分区判定时间段</label>
-            <Group class="mt-1">
-                <NumberInput :min="-23" :max="23" v-model:value="partitionTimeDelay"/>
-                <span class="is-line-height-std">小时</span>
-                <Button v-if="partitionTimeDelaySot" class="ml-2" mode="filled" type="primary" icon="save" square @click="savePartitionTimeDelay"/>
-            </Group>
-            <p class="secondary-text">从创建时间生成分区时间时，会将0点以后延迟一定时间内的时间点仍然视作前一天。</p>
-        </div>
         <Separator direction="horizontal" :spacing="2"/>
         <div>
-            <label class="label">本地目录自动导入</label>
+            <label class="label">监听自动导入</label>
             <DBImportDirectoriesEditor v-model:value="settingImport.watchPaths"/>
             <p class="secondary-text">此功能可以监听数个本地目录，向这些目录写入文件时，自动导入这些文件。</p>
             <p class="mt-1"><CheckBox v-model:value="settingImport.autoWatchPath">自动开启</CheckBox></p>

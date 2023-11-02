@@ -1,21 +1,15 @@
 <script setup lang="ts">
 import { BasePane } from "@/components/layout"
-import { ThumbnailImage, OptionButtons } from "@/components/universal"
+import { Icon, Block, Separator, ThumbnailImage } from "@/components/universal"
+import { SourceInfo, FileInfoDisplay } from "@/components-business/form-display"
 import { useImportDetailPane } from "@/services/main/import"
-import { computedEffect } from "@/utils/reactivity"
-import ImportTabDetailInfo from "./ImportTabDetailInfo.vue"
-import ImportTabAction from "./ImportTabAction.vue"
+import { datetime, date } from "@/utils/datetime"
 
 defineEmits<{
     (e: "close"): void
 }>()
 
-const { tabType, detail, selector: { selected }, openImagePreview } = useImportDetailPane()
-
-const paneButtonItems = computedEffect(() => [
-    {value: "info", label: "导入项目信息", icon: "info"},
-    {value: "action", label: "多选操作", icon: "pen-nib", visible: selected.value.length > 1},
-])
+const { data, selector: { selected }, gotoIllust, showStatusInfoMessage, openImagePreview } = useImportDetailPane()
 
 </script>
 
@@ -28,16 +22,37 @@ const paneButtonItems = computedEffect(() => [
             </p>
         </template>
         <template #top>
-            <ThumbnailImage class="is-cursor-zoom-in" :aspect="1" :file="detail?.filePath.thumbnail" :draggable-file="detail?.filePath.original" :drag-icon-file="detail?.filePath.sample" @click="openImagePreview"/>
+            <ThumbnailImage class="is-cursor-zoom-in" :aspect="1" :file="data?.filePath?.thumbnail" :draggable-file="data?.filePath?.original" :drag-icon-file="data?.filePath?.sample" @click="openImagePreview"/>
         </template>
 
-        <KeepAlive>
-            <ImportTabDetailInfo v-if="detail && tabType === 'info'" :detail-id="detail.id"/>
-            <ImportTabAction v-else-if="detail && tabType === 'action'" :selected="selected"/>
-        </KeepAlive>
-
-        <template #bottom>
-            <OptionButtons :items="paneButtonItems" v-model:value="tabType"/>
+        <template v-if="!!data">
+            <p v-if="data.fileName" class="selectable word-wrap-anywhere mb-1">{{data.fileName}}</p>
+            <p v-if="data.fileCreateTime" class="secondary-text mt-2">文件创建时间 {{datetime.toSimpleFormat(data.fileCreateTime)}}</p>
+            <p v-if="data.fileUpdateTime" class="secondary-text">文件修改时间 {{datetime.toSimpleFormat(data.fileUpdateTime)}}</p>
+            <p v-if="data.importTime" class="secondary-text">文件导入时间 {{datetime.toSimpleFormat(data.importTime)}}</p>
+            <FileInfoDisplay class="mt-2" 
+                :extension="data.illust?.extension" 
+                :file-size="data.illust?.size" 
+                :resolution-height="data.illust?.resolutionHeight" 
+                :resolution-width="data.illust?.resolutionWidth" 
+                :video-duration="data.illust?.videoDuration"
+            />
+            <Separator direction="horizontal"/>
+            <template v-if="data.statusInfo !== null">
+                <Block v-if="data.statusInfo.thumbnailError" class="p-half is-font-size-small is-cursor-pointer" mode="light" color="danger" @click="showStatusInfoMessage('thumbnailError')"><Icon icon="exclamation-triangle"/>错误：缩略图生成失败。</Block>
+                <Block v-if="data.statusInfo.fingerprintError" class="p-half is-font-size-small is-cursor-pointer" mode="light" color="danger" @click="showStatusInfoMessage('fingerprintError')"><Icon icon="exclamation-triangle"/>错误：指纹生成失败。</Block>
+                <Block v-if="data.statusInfo.sourceAnalyseError" class="p-half is-font-size-small is-cursor-pointer" mode="light" color="danger" @click="showStatusInfoMessage('sourceAnalyseError')"><Icon icon="exclamation-triangle"/>错误：来源数据解析失败。</Block>
+                <Block v-if="data.statusInfo.sourceAnalyseNone" class="p-half is-font-size-small is-cursor-pointer" mode="light" color="danger" @click="showStatusInfoMessage('sourceAnalyseNone')"><Icon icon="exclamation-triangle"/>错误：无来源数据。</Block>
+            </template>
+            <template v-if="data.illust !== null">
+                <div class="is-cursor-pointer" @click="gotoIllust">
+                    <Icon icon="id-card"/><b class="ml-1 selectable">{{ data.illust.id }}</b>
+                    <a class="float-right">在图库定位此项<Icon icon="angle-double-right"/></a>
+                </div>
+                <SourceInfo class="mt-1" :source="data.illust.source ?? null"/>
+                <p class="mt-1 secondary-text">时间分区 {{date.toISOString(data.illust.partitionTime)}}</p>
+                <p class="secondary-text">排序时间 {{datetime.toSimpleFormat(data.illust.orderTime)}}</p>
+            </template>
         </template>
     </BasePane>
 </template>

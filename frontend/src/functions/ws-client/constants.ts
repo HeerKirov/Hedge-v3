@@ -2,12 +2,10 @@ import { ServerServiceStatus } from "@/functions/ipc-client"
 import { MetaType } from "@/functions/http-client/api/all"
 import { IllustType } from "@/functions/http-client/api/illust"
 import { FolderType } from "@/functions/http-client/api/folder"
-import { PathWatcherError } from "@/functions/http-client/api/import"
+import { ImportStatus, PathWatcherError } from "@/functions/http-client/api/import"
 import { NoteStatus } from "@/functions/http-client/api/note"
 
-export interface BaseWsEvent<ET extends string> {
-    eventType: ET
-}
+export interface BaseWsEvent<ET extends string> { eventType: ET }
 
 export type AllEventTypes = AllEvents["eventType"]
 
@@ -21,7 +19,7 @@ type EntityEvents
     | IllustCreated | IllustUpdated | IllustDeleted | IllustSourceDataUpdated | IllustRelatedItemsUpdated | IllustImagesChanged
     | BookCreated | BookUpdated | BookDeleted | BookImagesChanged
     | FolderCreated | FolderUpdated | FolderDeleted | FolderPinChanged | FolderImagesChanged
-    | ImportCreated | ImportUpdated | ImportDeleted | ImportSaved
+    | ImportCreated | ImportUpdated | ImportDeleted
     | TrashedImageCreated | TrashedImageProcessed
     | SourceDataCreated | SourceDataUpdated | SourceDataDeleted
     | SourceBookUpdated | SourceTagUpdated | SourceTagMappingUpdated
@@ -86,11 +84,9 @@ export interface FolderImagesChanged extends BaseWsEvent<"entity/folder/images/c
 
 export interface ImportCreated extends BaseWsEvent<"entity/import/created"> { importId: number }
 
-export interface ImportUpdated extends BaseWsEvent<"entity/import/updated"> { importId: number, listUpdated: boolean, thumbnailFileReady: boolean, timeSot: boolean }
+export interface ImportUpdated extends BaseWsEvent<"entity/import/updated"> { importId: number, status: ImportStatus, thumbnailFileError: boolean | null, fingerprintError: boolean | null, sourceAnalyseError: boolean | null, sourceAnalyseNone: boolean | null }
 
 export interface ImportDeleted extends BaseWsEvent<"entity/import/deleted"> { importId: number }
-
-export interface ImportSaved extends BaseWsEvent<"entity/import/saved"> { importIdToImageIds: Record<number, number> }
 
 export interface TrashedImageCreated extends BaseWsEvent<"entity/trashed-image/created"> { imageId: number }
 

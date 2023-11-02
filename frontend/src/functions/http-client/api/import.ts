@@ -1,14 +1,14 @@
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 import {
-    FileNotFoundError, FileNotReadyError, IllegalFileExtensionError,
-    NotFound, ResourceNotExist, ParamError, ParamNotRequired, ParamRequired, StorageNotAccessibleError
+    FileNotFoundError, IllegalFileExtensionError,
+    NotFound, ResourceNotExist, StorageNotAccessibleError
 } from "../exceptions"
 import { HttpInstance, Response } from "../instance"
-import { IdResponseWithWarnings, LimitAndOffsetFilter, ListResult, mapFromOrderList, NullableFilePath, OrderList, SourceDataPath } from "./all"
-import { ImagePropsCloneForm, SimpleCollection, Tagme } from "./illust"
-import { SimpleFolder } from "./folder"
-import { SimpleBook } from "./book"
-import { OrderTimeType } from "./setting"
+import { IdResponse, LimitAndOffsetFilter, ListResult, mapFromOrderList, NullableFilePath, OrderList, SourceDataPath } from "./all"
+import { ImagePropsCloneForm, Tagme } from "./illust"
+import { RelatedSimpleTopic } from "./topic"
+import { RelatedSimpleAuthor } from "./author"
+import { RelatedSimpleTag } from "./tag"
 
 export function createImportEndpoint(http: HttpInstance): ImportEndpoint {
     return {
@@ -16,13 +16,10 @@ export function createImportEndpoint(http: HttpInstance): ImportEndpoint {
             parseQuery: mapFromImportFilter, 
             parseResponse: ({ total, result }: ListResult<any>) => ({total, result: result.map(mapToImportImage)}) 
         }),
-        get: http.createPathRequest(id => `/api/imports/${id}`, "GET", { parseResponse: mapToDetailImportImage }),
-        update: http.createPathDataRequest(id => `/api/imports/${id}`, "PATCH", { parseData: mapFromImportUpdateForm }),
-        delete: http.createPathRequest(id => `/api/imports/${id}`, "DELETE"),
         import: http.createDataRequest("/api/imports/import", "POST"),
         upload: http.createDataRequest("/api/imports/upload", "POST", { parseData: mapFromUploadFile }),
-        batchUpdate: http.createDataRequest("/api/imports/batch-update", "POST", { parseData: mapFromBatchUpdateForm }),
-        save: http.createDataRequest("/api/imports/save", "POST"),
+        batch: http.createDataRequest("/api/imports/batch", "POST"),
+        get: http.createPathRequest(id => `/api/imports/${id}`, "GET", { parseResponse: mapToDetailImportImage }),
         watcher: {
             get: http.createRequest("/api/imports/watcher", "GET"),
             update: http.createDataRequest("/api/imports/watcher", "POST")
@@ -43,52 +40,40 @@ function mapFromUploadFile(file: File): FormData {
     return form
 }
 
-function mapFromImportUpdateForm(form: ImportUpdateForm): any {
-    return {
-        ...form,
-        partitionTime: form.partitionTime && date.toISOString(form.partitionTime),
-        orderTime: form.orderTime && datetime.toISOString(form.orderTime),
-        createTime: form.createTime && datetime.toISOString(form.createTime)
-    }
-}
-
-function mapFromBatchUpdateForm(form: ImportBatchUpdateForm): any {
-    return {
-        ...form,
-        partitionTime: form.partitionTime && date.toISOString(form.partitionTime),
-        orderTimeBegin: form.orderTimeBegin && datetime.toISOString(form.orderTimeBegin),
-        orderTimeEnd: form.orderTimeEnd && datetime.toISOString(form.orderTimeEnd)
-    }
-}
-
-function mapToImportImage(data: any): ImportImage {
+function mapToImportImage(data: any): ImportRecord {
     return {
         ...data,
-        partitionTime: date.of(<string>data["partitionTime"]),
-        orderTime: datetime.of(<string>data["orderTime"]),
+        importTime: datetime.of(<string>data["importTime"]),
+        illust: data["illust"] && {
+            ...data["illust"],
+            orderTime: datetime.of(<string>data["illust"]["orderTime"]),
+            partitionTime: date.of(<string>data["illust"]["partitionTime"])
+        }
     }
 }
 
-function mapToDetailImportImage(data: any): DetailImportImage {
+function mapToDetailImportImage(data: any): DetailImportRecord {
     return {
         ...data,
-        fileCreateTime: data["fileCreateTime"] != null ? datetime.of(<string>data["fileCreateTime"]) : null,
-        fileUpdateTime: data["fileUpdateTime"] != null ? datetime.of(<string>data["fileUpdateTime"]) : null,
-        fileImportTime: data["fileImportTime"] != null ? datetime.of(<string>data["fileImportTime"]) : null,
-        partitionTime: date.of(<string>data["partitionTime"]),
-        orderTime: datetime.of(<string>data["orderTime"]),
-        createTime: datetime.of(<string>data["createTime"])
+        importTime: datetime.of(<string>data["importTime"]),
+        fileCreateTime: data["fileCreateTime"] !== null ? datetime.of(<string>data["fileCreateTime"]) : null,
+        fileUpdateTime: data["fileUpdateTime"] !== null ? datetime.of(<string>data["fileUpdateTime"]) : null,
+        illust: data["illust"] && {
+            ...data["illust"],
+            orderTime: datetime.of(<string>data["illust"]["orderTime"]),
+            partitionTime: date.of(<string>data["illust"]["partitionTime"])
+        }
     }
 }
 
 /**
- * 导入项目。
+ * 导入记录。
  */
 export interface ImportEndpoint {
     /**
      * 查询所有导入列表中的项目。
      */
-    list(filter: ImportFilter): Promise<Response<ListResult<ImportImage>>>
+    list(filter: ImportFilter): Promise<Response<ListResult<ImportRecord>>>
     /**
      * 从本地文件系统导入新项目。
      * @exception FILE_NOT_FOUND 指定的文件无法找到。
@@ -96,44 +81,25 @@ export interface ImportEndpoint {
      * @exception STORAGE_NOT_ACCESSIBLE 存储目录无法访问。
      * @exception:warning INVALID_REGEX (regex) 解析错误，解析规则的正则表达式有误。
      */
-    import(form: ImportForm): Promise<Response<IdResponseWithWarnings, FileNotFoundError | IllegalFileExtensionError | StorageNotAccessibleError>>
+    import(form: ImportForm): Promise<Response<IdResponse, FileNotFoundError | IllegalFileExtensionError | StorageNotAccessibleError>>
     /**
      * 通过file upload远程上传新项目。
      * @exception ILLEGAL_FILE_EXTENSION 不受支持的文件扩展名。
      * @exception STORAGE_NOT_ACCESSIBLE 存储目录无法访问。
      * @exception:warning INVALID_REGEX (regex) 解析错误，解析规则的正则表达式有误。
      */
-    upload(file: File): Promise<Response<IdResponseWithWarnings, IllegalFileExtensionError | StorageNotAccessibleError>>
+    upload(file: File): Promise<Response<IdResponse, IllegalFileExtensionError | StorageNotAccessibleError>>
     /**
-     * 查看导入项目。
+     * 查看导入记录。
      * @exception NOT_FOUND
      * @exception PARAM_NOT_REQUIRED ("sourceId/sourcePart") source未填写时，不能填写更详细的id/part信息
      */
-    get(id: number): Promise<Response<DetailImportImage, NotFound>>
+    get(id: number): Promise<Response<DetailImportRecord, NotFound>>
     /**
-     * 更改导入项目的元数据。
-     * @exception NOT_EXIST ("site", source) 此source不存在
-     * @exception PARAM_ERROR ("sourceId"/"sourcePart") 参数值错误，需要为自然数
-     * @exception PARAM_REQUIRED ("sourceId"/"sourcePart") 需要这些参数
-     * @exception PARAM_NOT_REQUIRED ("sourcePart"/"sourceId/sourcePart") 不需要这些参数
-     * @exception NOT_FOUND
-     */
-    update(id: number, form: ImportUpdateForm): Promise<Response<null, NotFound | ResourceNotExist<"site", string> | ParamError | ParamRequired | ParamNotRequired>>
-    /**
-     * 删除导入项目。
-     * @exception NOT_FOUND
-     */
-    delete(id: number): Promise<Response<null, NotFound>>
-    /**
-     * 批量更新导入项目的元数据。
+     * 批量操作导入记录。
      * @exception:warning INVALID_REGEX (regex) 解析错误，解析规则的正则表达式有误。
      */
-    batchUpdate(form: ImportBatchUpdateForm): Promise<Response<IdResponseWithWarnings[], ResourceNotExist<"target", number[]>>>
-    /**
-     * 确认导入，将所有项目导入到图库。
-     * @exception FILE_NOT_READY
-     */
-    save(form: ImportSaveForm): Promise<Response<ImportSaveResponse, ResourceNotExist<"target", number[]> | ResourceNotExist<"additionalInfo", string> | ResourceNotExist<"sourceTagType", string[]> | FileNotReadyError>>
+    batch(form: ImportBatchForm): Promise<Response<null, ResourceNotExist<"target", number[]>>>
     /**
      * 目录监听器。
      */
@@ -149,10 +115,17 @@ export interface ImportEndpoint {
     }
 }
 
+export type ImportStatus = "PROCESSING" | "COMPLETED" | "ERROR"
+
 export type PathWatcherErrorReason = "NO_USEFUL_PATH" | "PATH_NOT_EXIST" | "PATH_IS_NOT_DIRECTORY" | "PATH_WATCH_FAILED" | "PATH_NO_LONGER_AVAILABLE"
 
-type BatchUpdateAction = "SET_PARTITION_TIME_TODAY" | "SET_PARTITION_TIME_EARLIEST" | "SET_PARTITION_TIME_LATEST" 
-    | "SET_ORDER_TIME_NOW" | "SET_ORDER_TIME_REVERSE" | "SET_ORDER_TIME_UNIFORMLY" | "SET_ORDER_TIME_BY_SOURCE_ID"
+export interface ImportStatusInfo {
+    thumbnailError: boolean | null
+    fingerprintError: boolean | null
+    sourceAnalyseError: boolean | null
+    sourceAnalyseNone: boolean | null
+    messages: string[] | null
+}
 
 export interface SaveError {
     importId: number
@@ -188,34 +161,38 @@ export interface PathWatcherError {
     reason: PathWatcherErrorReason
 }
 
-export interface ImportImage {
+export interface ImportRecord {
     id: number
-    filePath: NullableFilePath
-    originFileName: string | null
-    source: SourceDataPath | null
-    tagme: Tagme[]
-    partitionTime: LocalDate
-    orderTime: LocalDateTime
+    status: ImportStatus
+    filePath: NullableFilePath | null
+    fileName: string | null
+    importTime: LocalDateTime
+    illust: {
+        id: number
+        score: number | null
+        favorite: boolean
+        tagme: Tagme[]
+        source: SourceDataPath | null
+        partitionTime: LocalDate
+        orderTime: LocalDateTime
+    } | null
 }
 
-export interface DetailImportImage extends ImportImage {
-    extension: string
-    size: number
-    resolutionWidth: number
-    resolutionHeight: number
-    videoDuration: number
-    originalFilePath: string | null
-    fileFromSource: string | null
+export interface DetailImportRecord extends ImportRecord {
+    statusInfo: ImportStatusInfo | null
     fileCreateTime: LocalDateTime | null
     fileUpdateTime: LocalDateTime | null
-    fileImportTime: LocalDateTime | null
-    createTime: LocalDateTime
-    sourcePreference: SourcePreference | null
-    preference: Preference | null
-    collectionId: string | number | null
-    collection: SimpleCollection | null
-    folders: SimpleFolder[]
-    books: SimpleBook[]
+    illust: ImportRecord["illust"] & {
+        extension: string
+        size: number
+        resolutionWidth: number
+        resolutionHeight: number
+        videoDuration: number
+        topics: RelatedSimpleTopic[]
+        authors: RelatedSimpleAuthor[]
+        tags: RelatedSimpleTag[]
+        description: string
+    } | null
 }
 
 export interface ImportSaveResponse {
@@ -238,44 +215,21 @@ export interface ImportForm {
     removeOriginFile?: boolean
 }
 
-export interface ImportUpdateForm {
-    source?: SourceDataPath | null
-    tagme?: Tagme[]
-    partitionTime?: LocalDate
-    orderTime?: LocalDateTime
-    createTime?: LocalDateTime
-    preference?: Preference
-    sourcePreference?: SourcePreference | null
-    collectionId?: string | number | null
-    folderIds?: number[]
-    bookIds?: number[]
-    appendFolderIds?: number[]
-    appendBookIds?: number[]
-}
-
-export interface ImportBatchUpdateForm {
+export interface ImportBatchForm {
     target?: number[]
-    tagme?: Tagme[]
-    setCreateTimeBy?: OrderTimeType
-    setOrderTimeBy?: OrderTimeType
-    partitionTime?: LocalDate
-    orderTimeBegin?: LocalDateTime
-    orderTimeEnd?: LocalDateTime
-    orderTimeExclude?: boolean
     analyseSource?: boolean
-    collectionId?: string | number
-    appendFolderIds?: number[]
-    appendBookIds?: number[]
-    action?: BatchUpdateAction
-}
-
-export interface ImportSaveForm {
-    target?: number[]
+    analyseTime?: boolean
+    retry?: boolean
+    clearCompleted?: boolean
+    delete?: boolean
+    deleteDeleted?: boolean
 }
 
 export type ImportFilter = ImportQueryFilter & LimitAndOffsetFilter
 
 export interface ImportQueryFilter {
     search?: string
-    order?: OrderList<"id" | "fileCreateTime" | "fileUpdateTime" | "fileImportTime" | "orderTime">
+    order?: OrderList<"id" | "status" | "fileCreateTime" | "fileUpdateTime" | "importTime">
+    status?: ImportStatus
+    deleted?: boolean
 }
