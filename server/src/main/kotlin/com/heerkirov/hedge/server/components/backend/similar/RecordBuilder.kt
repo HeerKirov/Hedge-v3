@@ -6,23 +6,20 @@ import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.FindSimilarResults
 import com.heerkirov.hedge.server.events.SimilarFinderResultCreated
 import com.heerkirov.hedge.server.model.FindSimilarResult
-import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
-import com.heerkirov.hedge.server.utils.types.toEntityKey
-import com.heerkirov.hedge.server.utils.types.toEntityKeyString
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import java.time.Instant
-import java.util.LinkedList
+import java.util.*
 
 class RecordBuilder(private val data: DataRepository, private val bus: EventBus) {
-    private val components = mutableSetOf<Map<FindSimilarEntityKey, GraphNode>>()
+    private val components = mutableSetOf<Map<Int, GraphNode>>()
 
     /**
      * 载入一个图，进行处理，将此图拆分为数个连通分量，随后生成记录。
      */
-    fun loadGraph(graph: Map<FindSimilarEntityKey, GraphNode>) {
-        val accessedNodes = mutableSetOf<FindSimilarEntityKey>()
+    fun loadGraph(graph: Map<Int, GraphNode>) {
+        val accessedNodes = mutableSetOf<Int>()
         for ((key, node) in graph) {
             if(key !in accessedNodes) {
                 traverse(node, graph, accessedNodes)
@@ -33,8 +30,8 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
     /**
      * 从一个节点开始遍历，以生成连通分量。
      */
-    private fun traverse(baseNode: GraphNode, graph: Map<FindSimilarEntityKey, GraphNode>, accessedNodes: MutableSet<FindSimilarEntityKey>) {
-        val accessed = mutableSetOf<FindSimilarEntityKey>()
+    private fun traverse(baseNode: GraphNode, graph: Map<Int, GraphNode>, accessedNodes: MutableSet<Int>) {
+        val accessed = mutableSetOf<Int>()
         val queue = LinkedList<GraphNode>()
         queue.add(baseNode)
 
@@ -55,7 +52,7 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
         }
 
         if(accessed.size > 1) {
-            val component = mutableMapOf<FindSimilarEntityKey, GraphNode>()
+            val component = mutableMapOf<Int, GraphNode>()
 
             for (entityKey in accessed) {
                 val graphNode = graph[entityKey]!!
@@ -80,7 +77,7 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
                 //为解决这个问题，一次连接的OR条件不能太多。(测试的最多数量是88)
                 //在这里使用10条为一组，拆分成多条查询。
                 val existResult = component.keys.asSequence().chunked(10)
-                    .map { li -> li.map { "%|${it.toEntityKeyString()}|%" }.map { FindSimilarResults.images like it }.reduce { a, b -> a or b } }
+                    .map { li -> li.map { it.toString() }.map { FindSimilarResults.images like it }.reduce { a, b -> a or b } }
                     .map { condition -> data.db.sequenceOf(FindSimilarResults).firstOrNull { condition } }
                     .filterNotNull()
                     .firstOrNull()
@@ -101,9 +98,9 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
     /**
      * 将连通分量追加到已有的记录。
      */
-    private fun generateRecordToExist(component: Map<FindSimilarEntityKey, GraphNode>, target: FindSimilarResult) {
-        val targetRelations = target.relations.map { Triple(it.a.toEntityKey(), it.b.toEntityKey(), getRelationType(it.type, it.params)) }
-        val images = (component.keys.asSequence().map { it.toEntityKeyString() }.toSet() + target.relations.asSequence().flatMap { sequenceOf(it.a, it.b) }.toSet()).toList()
+    private fun generateRecordToExist(component: Map<Int, GraphNode>, target: FindSimilarResult) {
+        val targetRelations = target.relations.map { Triple(it.a, it.b, getRelationType(it.type, it.params)) }
+        val images = (component.keys + target.relations.asSequence().flatMap { sequenceOf(it.a, it.b) }.toSet()).map { it.toString() }.toList()
         val relations = mergeRelations(
             component.values.asSequence()
                 .flatMap { node ->
@@ -115,8 +112,8 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
             targetRelations
                 .groupBy({ it.first to it.second }) { it.third }
         ).flatMap { (k, v) ->
-            val ak = k.first.toEntityKeyString()
-            val bk = k.second.toEntityKeyString()
+            val ak = k.first
+            val bk = k.second
             v.map {
                 FindSimilarResult.RelationUnit(ak, bk, it.toRelationType(), it.toRecordInfo())
             }
@@ -139,13 +136,13 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
     /**
      * 生成一条新的记录。
      */
-    private fun generateNewRecord(component: Map<FindSimilarEntityKey, GraphNode>) {
-        val images = component.keys.map { it.toEntityKeyString() }
+    private fun generateNewRecord(component: Map<Int, GraphNode>) {
+        val images = component.keys.map { it.toString() }
         val relations = component.values.asSequence()
             .flatMap { node ->
                 node.relations.asSequence().flatMap { r ->
                     r.relations.asSequence().map {
-                        Triple(node.key.toEntityKeyString(), r.another.key.toEntityKeyString(), it)
+                        Triple(node.key, r.another.key, it)
                     }
                 }
             }

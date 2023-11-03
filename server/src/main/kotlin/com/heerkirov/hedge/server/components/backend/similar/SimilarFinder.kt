@@ -7,7 +7,6 @@ import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.dao.FindSimilarIgnores
 import com.heerkirov.hedge.server.dao.FindSimilarTasks
 import com.heerkirov.hedge.server.enums.AppLoadStatus
-import com.heerkirov.hedge.server.enums.FindSimilarEntityType
 import com.heerkirov.hedge.server.events.IllustDeleted
 import com.heerkirov.hedge.server.events.PackagedBusEvent
 import com.heerkirov.hedge.server.exceptions.NotFound
@@ -15,8 +14,6 @@ import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.library.framework.StatefulComponent
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.tools.ControlledLoopThread
-import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
-import com.heerkirov.hedge.server.utils.types.toEntityKeyString
 import org.ktorm.dsl.delete
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.insertAndGenerateKey
@@ -97,7 +94,7 @@ class SimilarFinderWorkThread(private val appdata: AppDataManager, private val d
     }
 
     fun processRemoveImageEvent(illustId: Int) {
-        val key = FindSimilarEntityKey(FindSimilarEntityType.ILLUST, illustId).toEntityKeyString()
+        val key = illustId.toString()
         data.db.delete(FindSimilarIgnores) { (it.firstTarget eq key) or (it.secondTarget eq key) }
     }
 }

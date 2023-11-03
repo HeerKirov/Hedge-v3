@@ -3,13 +3,10 @@ package com.heerkirov.hedge.server.components.backend.similar
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.res.SourceTagPath
-import com.heerkirov.hedge.server.enums.FindSimilarEntityType
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.model.FindSimilarTask
-import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
-import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
 import org.ktorm.dsl.*
 import java.time.LocalDate
 
@@ -22,8 +19,7 @@ import java.time.LocalDate
 class EntityLoader(private val data: DataRepository, private val config: FindSimilarTask.TaskConfig) {
     fun loadBySelector(selector: FindSimilarTask.TaskSelector): List<EntityInfo> {
         return when (selector) {
-            is FindSimilarTask.TaskSelectorOfImage -> loadByImage(selector.imageIds, enableFilterBy = true)
-            is FindSimilarTask.TaskSelectorOfImportImage -> loadByImportImage(selector.importIds, enableFilterBy = true)
+            is FindSimilarTask.TaskSelectorOfImage -> loadImage(selector.imageIds, enableFilterBy = true)
             is FindSimilarTask.TaskSelectorOfPartition -> loadByPartition(selector.partitionTime, enableFilterBy = true)
             is FindSimilarTask.TaskSelectorOfAuthor -> loadByAuthor(selector.authorIds, enableFilterBy = true)
             is FindSimilarTask.TaskSelectorOfTopic -> loadByTopic(selector.topicIds, enableFilterBy = true)
@@ -31,25 +27,15 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
         }
     }
 
-    fun loadByEntityKeys(entityKeys: Iterable<FindSimilarEntityKey>): Map<FindSimilarEntityKey, EntityInfo> {
-        val (illusts, importImages) = entityKeys.filterInto { it.type == FindSimilarEntityType.ILLUST }
-        val illustsRes = loadByImage(illusts.map { it.id }, enableFilterBy = false).associateBy { it.id }
-        val importImagesRes = loadByImportImage(importImages.map { it.id }, enableFilterBy = false).associateBy { it.id }
-        val ret = mutableMapOf<FindSimilarEntityKey, EntityInfo>()
-        illusts.forEach { entityKey ->
-            if(entityKey.id in illustsRes) ret[entityKey] = illustsRes[entityKey.id]!!
-        }
-        importImages.forEach { entityKey ->
-            if(entityKey.id in importImagesRes) ret[entityKey] = importImagesRes[entityKey.id]!!
-        }
-        return ret
+    fun loadByEntityKeys(entityKeys: Iterable<Int>): Map<Int, EntityInfo> {
+        return loadImage(entityKeys, enableFilterBy = false).associateBy { it.id }
     }
 
-    private fun loadByImage(imageIds: List<Int>, enableFilterBy: Boolean = false): List<IllustEntityInfo> {
+    private fun loadImage(imageIds: Iterable<Int>, enableFilterBy: Boolean = false): List<EntityInfo> {
         data class ImageRow(val parentId: Int?, val partitionTime: LocalDate, val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?, val sourcePartName: String?, val fingerprint: Fingerprint?)
 
         val notExistIds = mutableListOf<Int>()
-        val entityInfoList = mutableListOf<IllustEntityInfo>()
+        val entityInfoList = mutableListOf<EntityInfo>()
         for (imageId in imageIds) {
             val cache = loadByImageCache[imageId]
             if(cache != null) entityInfoList.add(cache) else notExistIds.add(imageId)
@@ -128,7 +114,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                 val sourceRelations = if(config.findBySourceRelation) imageSourceRelationsMap[id] ?: emptyList() else null
                 val sourceBooks = if(config.findBySourceRelation) imageSourceBooksMap[id] ?: emptyList() else null
                 val sourceMarks = if(config.findBySourceMark) imageSourceMarksMap[id] ?: emptyList() else null
-                val entityInfo = IllustEntityInfo(id,
+                val entityInfo = EntityInfo(id,
                     row.partitionTime,
                     imageSourceTagsMap[id] ?: emptyList(),
                     sourceIdentity,
@@ -147,10 +133,6 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
         return entityInfoList
     }
 
-    fun loadByImportImage(importIds: List<Int>? = null, enableFilterBy: Boolean = false): List<EntityInfo> {
-        return emptyList()
-    }
-
     fun loadByPartition(partitionTime: LocalDate, enableFilterBy: Boolean = false): List<EntityInfo> {
         return loadByPartitionCache.computeIfAbsent(partitionTime) {
             val imageIds = data.db.from(Illusts)
@@ -158,7 +140,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                 .where { (Illusts.partitionTime eq partitionTime) and ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) }
                 .map { it[Illusts.id]!! }
 
-            loadByImage(imageIds, enableFilterBy)
+            loadImage(imageIds, enableFilterBy)
         }
     }
 
@@ -171,7 +153,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                 .groupBy(Illusts.id)
                 .map { it[Illusts.id]!! }
 
-            loadByImage(imageIds, enableFilterBy)
+            loadImage(imageIds, enableFilterBy)
         }
     }
 
@@ -184,7 +166,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                 .groupBy(Illusts.id)
                 .map { it[Illusts.id]!! }
 
-            loadByImage(imageIds, enableFilterBy)
+            loadImage(imageIds, enableFilterBy)
         }
     }
 
@@ -206,11 +188,11 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                 .groupBy(Illusts.id)
                 .map { it[Illusts.id]!! }
 
-            loadByImage(imageIds, enableFilterBy)
+            loadImage(imageIds, enableFilterBy)
         }
     }
 
-    private val loadByImageCache = mutableMapOf<Int, IllustEntityInfo>()
+    private val loadByImageCache = mutableMapOf<Int, EntityInfo>()
     private val loadByPartitionCache = mutableMapOf<LocalDate, List<EntityInfo>>()
     private val loadByAuthorCache = mutableMapOf<String, List<EntityInfo>>()
     private val loadByTopicCache = mutableMapOf<String, List<EntityInfo>>()

@@ -27,7 +27,6 @@ data class FindSimilarTask(val id: Int,
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
     @JsonSubTypes(value = [
         JsonSubTypes.Type(value = TaskSelectorOfImage::class, name = "image"),
-        JsonSubTypes.Type(value = TaskSelectorOfImportImage::class, name = "importImage"),
         JsonSubTypes.Type(value = TaskSelectorOfPartition::class, name = "partitionTime"),
         JsonSubTypes.Type(value = TaskSelectorOfTopic::class, name = "topic"),
         JsonSubTypes.Type(value = TaskSelectorOfAuthor::class, name = "author"),
@@ -36,8 +35,6 @@ data class FindSimilarTask(val id: Int,
     sealed interface TaskSelector
 
     data class TaskSelectorOfImage(val imageIds: List<Int>) : TaskSelector
-
-    data class TaskSelectorOfImportImage(val importIds: List<Int>) : TaskSelector
 
     data class TaskSelectorOfPartition(val partitionTime: LocalDate) : TaskSelector
 
@@ -52,7 +49,6 @@ data class FindSimilarTask(val id: Int,
      * @param findBySourceRelation 根据source relation是否有关、source book是否同属一个做判定。
      * @param findBySourceMark 根据source mark的标记做判定。
      * @param findBySimilarity 根据相似度做判定。
-     * @param filterByOtherImport 将所有import image加入匹配检测。
      * @param filterByPartition 将所有相同partitionTime的项加入匹配检测。
      * @param filterByAuthor 将所有拥有相同author的项加入匹配检测。
      * @param filterByTopic 将所有拥有相同topic的项加入匹配检测。
@@ -62,7 +58,6 @@ data class FindSimilarTask(val id: Int,
                           val findBySourceRelation: Boolean,
                           val findBySourceMark: Boolean,
                           val findBySimilarity: Boolean,
-                          val filterByOtherImport: Boolean,
                           val filterByPartition: Boolean,
                           val filterByTopic: Boolean,
                           val filterByAuthor: Boolean,
@@ -118,8 +113,8 @@ data class FindSimilarResult(val id: Int,
         }
     }
 
-    data class RelationUnit(val a: String,
-                            val b: String,
+    data class RelationUnit(val a: Int,
+                            val b: Int,
                             val type: SimilarityType,
                             @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
                             val params: RelationInfo)

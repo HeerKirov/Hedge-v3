@@ -10,12 +10,12 @@ import com.heerkirov.hedge.server.dto.filter.LimitAndOffsetFilter
 import com.heerkirov.hedge.server.dto.form.FindSimilarResultResolveForm
 import com.heerkirov.hedge.server.dto.form.FindSimilarTaskCreateForm
 import com.heerkirov.hedge.server.dto.res.*
-import com.heerkirov.hedge.server.enums.FindSimilarEntityType
 import com.heerkirov.hedge.server.events.SimilarFinderResultDeleted
 import com.heerkirov.hedge.server.events.SimilarFinderResultResolved
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.manager.BookManager
 import com.heerkirov.hedge.server.functions.manager.IllustManager
+import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import com.heerkirov.hedge.server.utils.Json.toJsonNode
 import com.heerkirov.hedge.server.utils.business.filePathOrNullFrom
@@ -23,10 +23,7 @@ import com.heerkirov.hedge.server.utils.business.map
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
-import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
 import com.heerkirov.hedge.server.utils.types.descendingOrderItem
-import com.heerkirov.hedge.server.utils.types.toEntityKey
-import com.heerkirov.hedge.server.utils.types.toEntityKeyString
 import org.ktorm.dsl.*
 import org.ktorm.entity.Tuple4
 import org.ktorm.entity.firstOrNull
@@ -82,30 +79,23 @@ class FindSimilarService(private val data: DataRepository,
             .toListResult {
                 val id = it[FindSimilarResults.id]!!
                 val summaryTypes = it[FindSimilarResults.summaryTypes]!!
-                val images = it[FindSimilarResults.images]!!.map { i -> i.toEntityKey() }
+                val images = it[FindSimilarResults.images]!!.map { i -> i.toInt() }
                 val recordTime = it[FindSimilarResults.recordTime]!!
                 Tuple4(id, summaryTypes, images, recordTime)
             }
 
-        val imageKeys = results.result.asSequence().map { (_, _, images, _) -> images }.flatten().toList()
-        val illustIds = imageKeys.filter { it.type == FindSimilarEntityType.ILLUST }.map { it.id }
-        val importIds = imageKeys.filter { it.type == FindSimilarEntityType.IMPORT_IMAGE }.map { it.id }
+        val illustIds = results.result.asSequence().map { (_, _, images, _) -> images }.flatten().toList()
 
         val imageFiles = data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
             .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList illustIds }
             .associate { it[Illusts.id]!! to filePathOrNullFrom(it) }
-        val importFiles = data.db.from(ImportRecords)
-            .innerJoin(FileRecords, FileRecords.id eq ImportRecords.fileId)
-            .select(ImportRecords.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
-            .where { ImportRecords.id inList importIds }
-            .associate { it[ImportRecords.id]!! to filePathOrNullFrom(it) }
 
         return results.map { (id, s, i, r) ->
             val images = i.map {
-                val filePath = if(it.type == FindSimilarEntityType.ILLUST) imageFiles[it.id] else importFiles[it.id]
-                FindSimilarResultImage(it.type, it.id, filePath)
+                val filePath = imageFiles[it]
+                FindSimilarResultImage(it, filePath)
             }
             FindSimilarResultRes(id, s, images, r)
         }
@@ -114,27 +104,20 @@ class FindSimilarService(private val data: DataRepository,
     fun getResult(id: Int): FindSimilarResultDetailRes {
         val result = data.db.sequenceOf(FindSimilarResults).firstOrNull { it.id eq id } ?: throw be(NotFound())
 
-        val imageKeys = result.images.map { it.toEntityKey() }.toList()
-        val illustIds = imageKeys.filter { it.type == FindSimilarEntityType.ILLUST }.map { it.id }
-        val importIds = imageKeys.filter { it.type == FindSimilarEntityType.IMPORT_IMAGE }.map { it.id }
+        val illustIds = result.images.map { it.toInt() }.toList()
 
         val imageFiles = data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
             .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList illustIds }
             .associate { it[Illusts.id]!! to filePathOrNullFrom(it) }
-        val importFiles = data.db.from(ImportRecords)
-            .innerJoin(FileRecords, FileRecords.id eq ImportRecords.fileId)
-            .select(ImportRecords.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
-            .where { ImportRecords.id inList importIds }
-            .associate { it[ImportRecords.id]!! to filePathOrNullFrom(it) }
 
-        val images = imageKeys.map {
-            val filePath = if(it.type == FindSimilarEntityType.ILLUST) imageFiles[it.id] else importFiles[it.id]
-            FindSimilarResultImage(it.type, it.id, filePath)
+        val images = illustIds.map {
+            val filePath = imageFiles[it]
+            FindSimilarResultImage(it, filePath)
         }
 
-        val relations = result.relations.map { FindSimilarResultRelation(it.a.toEntityKey(), it.b.toEntityKey(), it.type, it.params) }
+        val relations = result.relations.map { FindSimilarResultRelation(it.a, it.b, it.type, it.params) }
 
         return FindSimilarResultDetailRes(result.id, result.summaryTypes, images, relations, result.recordTime)
     }
@@ -146,14 +129,12 @@ class FindSimilarService(private val data: DataRepository,
         data.db.transaction {
             val result = data.db.sequenceOf(FindSimilarResults).firstOrNull { it.id eq id } ?: throw be(NotFound())
 
-            val entityKeys = result.images.map { it.toEntityKey() }.toSet()
+            val entityKeys = result.images.map { it.toInt() }.toSet()
 
             //actions参数校验
             val actions = form.actions.map { action ->
                 when(action.actionType) {
-                    FindSimilarResultResolveForm.ActionType.CLONE_IMAGE -> {
-                        if(action.b == null) throw be(ParamRequired("config.b")) else if(action.a.type !== FindSimilarEntityType.ILLUST) throw be(ParamError("config.a"))
-                    }
+                    FindSimilarResultResolveForm.ActionType.CLONE_IMAGE,
                     FindSimilarResultResolveForm.ActionType.MARK_IGNORED -> {
                         if(action.b == null) throw be(ParamRequired("config.b"))
                     }
@@ -182,16 +163,13 @@ class FindSimilarService(private val data: DataRepository,
             }
 
             //actions依次执行。其中对image的collection/book更新会被收集起来批量执行
-            val collectionToImages = mutableMapOf<Any, MutableList<FindSimilarEntityKey>>()
+            val collectionToImages = mutableMapOf<Any, MutableList<Int>>()
             val bookToImages = mutableMapOf<Int, MutableList<Int>>()
             for (action in actions) {
                 when(action.actionType) {
                     FindSimilarResultResolveForm.ActionType.CLONE_IMAGE -> {
                         val config = action.config as FindSimilarResultResolveForm.CloneImageConfig
-                        //已经过校验，a必为ILLUST
-                        if(action.b!!.type == FindSimilarEntityType.ILLUST) {
-                            illustManager.cloneProps(action.a.id, action.b.id, config.props, config.merge, config.deleteFrom)
-                        }
+                        illustManager.cloneProps(action.a, action.b!!, config.props, config.merge, config.deleteFrom)
                     }
                     FindSimilarResultResolveForm.ActionType.ADD_TO_COLLECTION -> {
                         val config = action.config as FindSimilarResultResolveForm.AddToCollectionConfig
@@ -199,19 +177,15 @@ class FindSimilarService(private val data: DataRepository,
                     }
                     FindSimilarResultResolveForm.ActionType.ADD_TO_BOOK -> {
                         val config = action.config as FindSimilarResultResolveForm.AddToBookConfig
-                        if(action.a.type == FindSimilarEntityType.ILLUST) {
-                            bookToImages.computeIfAbsent(config.bookId) { mutableListOf() }.add(action.a.id)
-                        }
+                        bookToImages.computeIfAbsent(config.bookId) { mutableListOf() }.add(action.a)
                     }
                     FindSimilarResultResolveForm.ActionType.DELETE -> {
-                        if(action.a.type == FindSimilarEntityType.ILLUST) {
-                            val illust = data.db.sequenceOf(Illusts).firstOrNull { it.id eq action.a.id }
-                            if(illust != null) illustManager.delete(illust)
-                        }
+                        val illust = data.db.sequenceOf(Illusts).firstOrNull { it.id eq action.a }
+                        if(illust != null) illustManager.delete(illust)
                     }
                     FindSimilarResultResolveForm.ActionType.MARK_IGNORED -> {
-                        val ak = action.a.toEntityKeyString()
-                        val bk = action.b!!.toEntityKeyString()
+                        val ak = action.a.toString()
+                        val bk = action.b!!.toString()
                         val exist = data.db.from(FindSimilarIgnores)
                             .select((count() greater 0).aliased("exist"))
                             .where { (FindSimilarIgnores.firstTarget eq ak) and (FindSimilarIgnores.secondTarget eq bk) }
@@ -236,16 +210,15 @@ class FindSimilarService(private val data: DataRepository,
             }
 
             //有关collection有些特别机制，因此需要全部提取到一起执行。
-            //importImage的collectionId可以设置为string，表示导入后会创建一个新collection。image的collectionId也可以，将立刻创建一个新collection。
-            //而当image和importImage混用同一个string时，此collection会立刻创建，且给importImage的是此collection的id。
+            //collectionId可以设置为string，表示导入后会创建一个新collection。
             for ((collectionId, entities) in collectionToImages) {
                 when (collectionId) {
                     is Int -> {
-                        val imageIds = entities.filter { it.type == FindSimilarEntityType.ILLUST }.map { it.id }
-                        val images = illustManager.unfoldImages(imageIds + listOf(collectionId), sorted = false)
+                        val images = illustManager.unfoldImages(entities + listOf(collectionId), sorted = false)
                         illustManager.updateImagesInCollection(collectionId, images)
                     }
-                    is String -> {
+                    is String -> if(entities.isNotEmpty()) {
+                        illustManager.newCollection(entities, "", null, null, Illust.Tagme.EMPTY)
                     }
                     else -> throw be(ParamTypeError("config.collectionId", "must be number or string."))
                 }

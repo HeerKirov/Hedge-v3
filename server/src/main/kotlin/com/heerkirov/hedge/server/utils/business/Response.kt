@@ -31,7 +31,7 @@ inline fun <T, R> ListResult<T>.map(transform: (T) -> R): ListResult<R> {
 }
 
 inline fun <T> Query.toListResult(transform: (QueryRowSet) -> T): ListResult<T> {
-    return ListResult(this.totalRecords, this.map(transform))
+    return ListResult(this.totalRecordsInAllPages, this.map(transform))
 }
 
 inline fun <T, I> Iterable<T>.collectBulkResult(getIdentity: (T) -> I, execution: (T) -> Unit): BulkResult<I> {

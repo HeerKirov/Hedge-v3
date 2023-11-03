@@ -2,7 +2,6 @@ package com.heerkirov.hedge.server.dto.form
 
 import com.heerkirov.hedge.server.enums.NoteStatus
 import com.heerkirov.hedge.server.model.FindSimilarTask
-import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
 import com.heerkirov.hedge.server.utils.types.Opt
 
 data class HistoryPushForm(val type: String, val id: Int)
@@ -10,7 +9,7 @@ data class HistoryPushForm(val type: String, val id: Int)
 data class FindSimilarTaskCreateForm(val selector: FindSimilarTask.TaskSelector, val config: FindSimilarTask.TaskConfig? = null)
 
 data class FindSimilarResultResolveForm(val actions: List<Resolution>) {
-    data class Resolution(val a: FindSimilarEntityKey, val b: FindSimilarEntityKey? = null, val actionType: ActionType, val config: Any? = null)
+    data class Resolution(val a: Int, val b: Int? = null, val actionType: ActionType, val config: Any? = null)
 
     enum class ActionType {
         CLONE_IMAGE,

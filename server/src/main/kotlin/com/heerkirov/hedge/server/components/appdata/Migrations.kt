@@ -60,7 +60,6 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
                     findBySimilarity = true,
                     findBySourceRelation = true,
                     findBySourceMark = true,
-                    filterByOtherImport = false,
                     filterByPartition = true,
                     filterByAuthor = true,
                     filterByTopic = true,

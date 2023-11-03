@@ -1,10 +1,8 @@
 package com.heerkirov.hedge.server.components.backend.similar
 
-import com.heerkirov.hedge.server.enums.FindSimilarEntityType
 import com.heerkirov.hedge.server.enums.SourceMarkType
 import com.heerkirov.hedge.server.model.SourceTag
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
-import com.heerkirov.hedge.server.utils.types.FindSimilarEntityKey
 import java.time.LocalDate
 
 /**
@@ -12,62 +10,17 @@ import java.time.LocalDate
  * 携带的信息一方面用于filter by时，依据这些信息立刻决定要查询的条件；另一方面用于find by时，依据这些信息做出判断。
  * 在一开始就尽可能查出更多信息，以避免日后再做详情查询。
  */
-sealed interface EntityInfo {
-    val id: Int
-    val partitionTime: LocalDate
-    val sourceTags: List<SourceTag>
-    val sourceIdentity: Tuple4<String, Long, Int?, String?>?
-    val sourceRelations: List<Long>?
-    val sourceBooks: List<Int>?
-    val sourceMarks: List<Pair<Int, SourceMarkType>>?
-    val fingerprint: Fingerprint?
-}
-
-/**
- * illust类型。
- * @param partitionTime 用于filter by partitionTime
- * @param sourceTags 用于filter by sourceTagTypes
- * @param topics 用于filter by topic
- * @param authors 用于filter by author
- * @param fingerprint 用于find by similarity
- * @param sourceIdentity 用于find by source identity
- * @param sourceRelations 用于find by source relation: relations
- * @param sourceBooks 用于find by source relation: books
- * @param sourceMarks 用于find by source mark
- * @param collectionId 用于关系增补环节的collection增补
- */
-data class IllustEntityInfo(override val id: Int,
-                            override val partitionTime: LocalDate,
-                            override val sourceTags: List<SourceTag>,
-                            override val sourceIdentity: Tuple4<String, Long, Int?, String?>?,
-                            override val sourceRelations: List<Long>?,
-                            override val sourceBooks: List<Int>?,
-                            override val sourceMarks: List<Pair<Int, SourceMarkType>>?,
-                            override val fingerprint: Fingerprint?,
-                            val collectionId: Int?,
-                            val authors: List<Int>,
-                            val topics: List<Int>) : EntityInfo
-
-/**
- * import image类型。
- * @param partitionTime 用于filter by partitionTime
- * @param sourceTags 用于filter by sourceTagTypes
- * @param fingerprint 用于find by similarity
- * @param sourceIdentity 用于find by source identity
- * @param sourceRelations 用于find by source relation: relations
- * @param sourceBooks 用于find by source relation: books
- * @param sourceMarks 用于find by source mark
- */
-data class ImportImageEntityInfo(override val id: Int,
-                                 override val partitionTime: LocalDate,
-                                 override val sourceTags: List<SourceTag>,
-                                 override val sourceIdentity: Tuple4<String, Long, Int?, String?>?,
-                                 override val sourceRelations: List<Long>?,
-                                 override val sourceBooks: List<Int>?,
-                                 override val sourceMarks: List<Pair<Int, SourceMarkType>>?,
-                                 override val fingerprint: Fingerprint?,
-                                 val collectionId: Any?,
-                                 val bookIds: List<Int>) : EntityInfo
+data class EntityInfo(val id: Int,
+                      val partitionTime: LocalDate,
+                      val sourceTags: List<SourceTag>,
+                      val sourceIdentity: Tuple4<String, Long, Int?, String?>?,
+                      val sourceRelations: List<Long>?,
+                      val sourceBooks: List<Int>?,
+                      val sourceMarks: List<Pair<Int, SourceMarkType>>?,
+                      val fingerprint: Fingerprint?,
+                      val collectionId: Int?,
+                      val authors: List<Int>,
+                      val topics: List<Int>)
 
 /**
  * 指纹数据。
@@ -77,7 +30,7 @@ data class Fingerprint(val pHashSimple: String, val dHashSimple: String, val pHa
 /**
  * 工作单元的图节点。
  */
-data class GraphNode(val key: FindSimilarEntityKey, val info: EntityInfo, val relations: MutableSet<GraphRelation>)
+data class GraphNode(val key: Int, val info: EntityInfo, val relations: MutableSet<GraphRelation>)
 
 /**
  * 工作单元的图关系。
@@ -117,7 +70,3 @@ data class ExistedRelationType(var sameCollectionId: Int? = null,
                                var sameBooks: MutableSet<Int>? = null,
                                var sameAssociate: Boolean = false,
                                var ignored: Boolean = false) : RelationType
-
-fun EntityInfo.toEntityKey(): FindSimilarEntityKey {
-    return FindSimilarEntityKey(if(this is IllustEntityInfo) FindSimilarEntityType.ILLUST else FindSimilarEntityType.IMPORT_IMAGE, this.id)
-}
