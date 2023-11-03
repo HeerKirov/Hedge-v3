@@ -26,7 +26,6 @@ const message = useMessageBox()
 const { data: sites } = useSettingSite()
 
 const fetchIllusts = useFetchHelper(client => client.illust.findByIds)
-const fetchImportImage = useFetchHelper(client => client.import.get)
 const fetchTopic = useFetchHelper(client => client.topic.get)
 const fetchAuthor = useFetchHelper(client => client.author.get)
 
@@ -117,8 +116,6 @@ watch(() => props.selector, async (selector, old) => {
 const updateSelectorType = (v: TaskSelector["type"]) => {
     if(v === "image") {
         emit("update:selector", {type: "image", imageIds: []})
-    }else if(v === "importImage") {
-        emit("update:selector", {type: "importImage", importIds: []})
     }else if(v === "partitionTime") {
         emit("update:selector", {type: "partitionTime", partitionTime: date.now()})
     }else if(v === "topic") {
@@ -186,7 +183,6 @@ const updateAuthors = (v: SimpleAuthor[]) => {
 
 const description: Record<TaskSelector["type"], string> = {
     "image": "给出特定的图像。",
-    "importImage": "给出特定的导入项目。",
     "partitionTime": "选择指定时间分区内的所有图像和导入项目。",
     "topic": "选择指定主题所属的所有图像。",
     "author": "选择指定作者所属的所有图像。",
@@ -195,7 +191,6 @@ const description: Record<TaskSelector["type"], string> = {
 
 const selectorItems: {label: string, value: TaskSelector["type"]}[] = [
     {value: "image", label: "图像"},
-    {value: "importImage", label: "导入项目"},
     {value: "partitionTime", label: "时间分区"},
     {value: "topic", label: "主题"},
     {value: "author", label: "作者"},

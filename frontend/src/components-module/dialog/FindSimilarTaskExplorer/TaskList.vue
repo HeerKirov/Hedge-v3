@@ -14,7 +14,6 @@ const { paginationData } = useTaskListData()
 
 const SLEECTOR_TYPE_NAMES: Record<TaskSelector["type"], string> = {
     "image": "图像",
-    "importImage": "导入项目",
     "author": "作者",
     "topic": "主题",
     "sourceTag": "来源标签",

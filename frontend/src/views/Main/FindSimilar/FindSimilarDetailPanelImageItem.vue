@@ -20,11 +20,11 @@ const {
 const { assetsUrl } = useAssets()
 
 const selectedMode = computed(() => {
-    if(selectMode.value === "COMPARE" && compare.value.a !== null && compare.value.a.type === props.item.type && compare.value.a.id === props.item.id) {
+    if(selectMode.value === "COMPARE" && compare.value.a !== null && compare.value.a.id === props.item.id) {
         return "A"
-    }else if(selectMode.value === "COMPARE" && compare.value.b !== null && compare.value.b.type === props.item.type && compare.value.b.id === props.item.id) {
+    }else if(selectMode.value === "COMPARE" && compare.value.b !== null && compare.value.b.id === props.item.id) {
         return "B"
-    }else if(selectMode.value === "MULTIPLE" && multiple.value.selected.some(i => i.type === props.item.type && i.id === props.item.id)) {
+    }else if(selectMode.value === "MULTIPLE" && multiple.value.selected.some(i => i.id === props.item.id)) {
         return "selected"
     }else{
         return "none"
@@ -34,10 +34,9 @@ const selectedMode = computed(() => {
 </script>
 
 <template>
-    <img :class="$style.img" :src="assetsUrl(item.filePath?.sample)" :alt="`${item.type}-${item.id}`" @click="$emit('click', $event)"/>
+    <img :class="$style.img" :src="assetsUrl(item.filePath?.sample)" :alt="item.filePath?.original" @click="$emit('click', $event)"/>
     <div :class="$style['id-badge']">
-        <Icon v-if="item.type === 'IMPORT_IMAGE'" icon="plus-square"/>
-        <Icon v-else icon="id-card"/>
+        <Icon icon="id-card"/>
         {{item.id}}
     </div>
     <div v-if="selectedMode === 'A'" :class="[$style.selected, $style.a]">

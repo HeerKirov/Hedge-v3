@@ -2,7 +2,7 @@ import { computed, ref, Ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useFetchEndpoint, usePathFetchHelper, usePostPathFetchHelper } from "@/functions/fetch"
 import { flatResponse } from "@/functions/http-client"
-import { FindSimilarDetailResult, FindSimilarEntityType, FindSimilarResult, FindSimilarResultImage, FindSimilarResultRelation, FindSimilarResultResolveAction } from "@/functions/http-client/api/find-similar"
+import { FindSimilarDetailResult, FindSimilarResult, FindSimilarResultImage, FindSimilarResultRelation, FindSimilarResultResolveAction } from "@/functions/http-client/api/find-similar"
 import { RelatedSimpleTag } from "@/functions/http-client/api/tag"
 import { RelatedSimpleTopic } from "@/functions/http-client/api/topic"
 import { RelatedSimpleAuthor } from "@/functions/http-client/api/author"
@@ -66,25 +66,25 @@ export function useFindSimilarItemContext(item: FindSimilarResult) {
 
     const keepOld = () => {
         if(allow.keepOld) {
-            const takedImages = [...item.images].sort(entityCompare).slice(1)
+            const takedImages = [...item.images].sort(resultCompare).slice(1)
             if(takedImages.length > 0) {
-                fetchResolve(item.id, {actions: takedImages.map(i => ({actionType: "DELETE", a: i}))})
+                fetchResolve(item.id, {actions: takedImages.map(i => ({actionType: "DELETE", a: i.id}))})
             }
         }
     }
 
     const keepNew = () => {
         if(allow.keepNew) {
-            const takedImages = [...item.images].sort(entityCompare).slice(0, item.images.length - 1)
+            const takedImages = [...item.images].sort(resultCompare).slice(0, item.images.length - 1)
             if(takedImages.length > 0) {
-                fetchResolve(item.id, {actions: takedImages.map(i => ({actionType: "DELETE", a: i}))})
+                fetchResolve(item.id, {actions: takedImages.map(i => ({actionType: "DELETE", a: i.id}))})
             }
         }
     }
 
     const keepNewAndCloneProps = () => {
         if(allow.keepNewAndCloneProps) {
-            const sortedImages = [...item.images].sort(entityCompare)
+            const sortedImages = [...item.images].sort(resultCompare)
             const a = sortedImages[0], b = sortedImages[sortedImages.length - 1], d = sortedImages.slice(1, sortedImages.length - 1)
             const config = {
                 props: <ImagePropsCloneForm["props"]>{
@@ -96,14 +96,14 @@ export function useFindSimilarItemContext(item: FindSimilarResult) {
                 deleteFrom: true
             }
             fetchResolve(item.id, {actions: [
-                ...d.map(a => ({actionType: "DELETE", a} as const)),
-                {actionType: "CLONE_IMAGE", a, b, config}
+                ...d.map(a => ({actionType: "DELETE", a: a.id} as const)),
+                {actionType: "CLONE_IMAGE", a: a.id, b: b.id, config}
             ]})
         }
     }
     
     const ignoreIt = () => {
-        fetchResolve(item.id, {actions: arrays.windowed(item.images, 2).map(([a, b]) => ({actionType: "MARK_IGNORED", a, b}))})
+        fetchResolve(item.id, {actions: arrays.windowed(item.images, 2).map(([a, b]) => ({actionType: "MARK_IGNORED", a: a.id, b: b.id}))})
     }
 
     const deleteIt = () => {
@@ -191,7 +191,7 @@ function useDetailPanelSelector(data: Ref<FindSimilarDetailResult | null>) {
                     //从compare进入multiple模式时，将re-nextUse作为上一次的lastSelected，将AB都包含在已选项内
                     const lastSelected = compare.value.nextUse === "a" ? compare.value.b : compare.value.a
                     if(lastSelected !== null) {
-                        const lastSelectedIndex = data.value!.images.findIndex(i => entityEquals(i, lastSelected))
+                        const lastSelectedIndex = data.value!.images.findIndex(i => i.id === lastSelected.id)
                         const slice = lastSelectedIndex < 0 ? data.value!.images.slice(0, index) : lastSelectedIndex < index ? data.value!.images.slice(lastSelectedIndex + 1, index + 1) : data.value!.images.slice(index, lastSelectedIndex)
                         multiple.value = {
                             selected: [compare.value.a, compare.value.b, ...slice].filter(it => it !== null) as FindSimilarResultImage[], 
@@ -213,9 +213,9 @@ function useDetailPanelSelector(data: Ref<FindSimilarDetailResult | null>) {
             }else{
                 if(shiftKey) {
                     if(multiple.value.lastSelected !== null) {
-                        const lastSelectedIndex = data.value!.images.findIndex(i => entityEquals(i, multiple.value.lastSelected!))
+                        const lastSelectedIndex = data.value!.images.findIndex(i => i.id === multiple.value.lastSelected!.id)
                         const slice = lastSelectedIndex < 0 ? data.value!.images.slice(0, index) : lastSelectedIndex < index ? data.value!.images.slice(lastSelectedIndex + 1, index + 1) : data.value!.images.slice(index, lastSelectedIndex)
-                        const filteredSlice = slice.filter(i => !multiple.value.selected.some(s => entityEquals(s, i)))
+                        const filteredSlice = slice.filter(i => !multiple.value.selected.some(s => s.id === i.id))
                         multiple.value = {
                             selected: [...multiple.value.selected, ...filteredSlice],
                             lastSelected: item
@@ -223,7 +223,7 @@ function useDetailPanelSelector(data: Ref<FindSimilarDetailResult | null>) {
                     }
                 }else{
                     //按下CTRL，点选加入选择
-                    const idx = multiple.value.selected.findIndex(i => entityEquals(i, item))
+                    const idx = multiple.value.selected.findIndex(i => i.id === item.id)
                     if(idx >= 0) {
                         //已存在此item时取消选择，并将lastSelected重置为selected的上一个
                         const selected = [...multiple.value.selected.slice(0, idx), ...multiple.value.selected.slice(idx + 1)]
@@ -246,7 +246,7 @@ function useDetailPanelSelector(data: Ref<FindSimilarDetailResult | null>) {
                 //从multiple进入compare模式时，从a开始选择，并空缺b
                 compare.value = {a: item, b: null, nextUse: "b"}
                 multiple.value = {selected: [], lastSelected: null}
-            }else if(!entityEquals(item, compare.value.a) && !entityEquals(item, compare.value.b)) {
+            }else if(item.id !== compare.value.a?.id && item.id !== compare.value.b?.id) {
                 if(compare.value.nextUse === "a") {
                     compare.value = {
                         a: item,
@@ -283,11 +283,11 @@ function useDetailPanelResolves(path: Ref<number | null>, selector: ReturnType<t
     const addActionClone = (props: ImagePropsCloneForm["props"], merge: boolean, deleteFrom: boolean) => {
         if(selector.selectMode.value === "COMPARE") {
             if(selector.compare.value.a !== null && selector.compare.value.b !== null) {
-                const existActionIdx = actions.value.findIndex(a => a.actionType === "MARK_IGNORED" && ((entityEquals(a.a, selector.compare.value.a) && entityEquals(a.b, selector.compare.value.b)) || (entityEquals(a.a, selector.compare.value.b) && entityEquals(a.b, selector.compare.value.a))))
+                const existActionIdx = actions.value.findIndex(a => a.actionType === "MARK_IGNORED" && ((a.a === selector.compare.value.a?.id && a.b === selector.compare.value.b?.id) || (a.a === selector.compare.value.b?.id && a.b === selector.compare.value.a?.id)))
                 if(existActionIdx >= 0) {
-                    actions.value.splice(existActionIdx, 1, {actionType: "CLONE_IMAGE", a: selector.compare.value.a, b: selector.compare.value.b, config: {props, merge, deleteFrom}})
+                    actions.value.splice(existActionIdx, 1, {actionType: "CLONE_IMAGE", a: selector.compare.value.a.id, b: selector.compare.value.b.id, config: {props, merge, deleteFrom}})
                 }else{
-                    actions.value.push({actionType: "CLONE_IMAGE", a: selector.compare.value.a, b: selector.compare.value.b, config: {props, merge, deleteFrom}})
+                    actions.value.push({actionType: "CLONE_IMAGE", a: selector.compare.value.a.id, b: selector.compare.value.b.id, config: {props, merge, deleteFrom}})
                 }
             }
         }
@@ -295,16 +295,16 @@ function useDetailPanelResolves(path: Ref<number | null>, selector: ReturnType<t
 
     const addActionCollection = (collectionId: string | number) => {
         if(selector.selectMode.value === "COMPARE") {
-            if(selector.compare.value.a !== null && !actions.value.some(a => a.actionType === "ADD_TO_COLLECTION" && a.config.collectionId === collectionId && entityEquals(a.a, selector.compare.value.a))) {
-                actions.value.push({actionType: "ADD_TO_COLLECTION", a: selector.compare.value.a, config: {collectionId}})
+            if(selector.compare.value.a !== null && !actions.value.some(a => a.actionType === "ADD_TO_COLLECTION" && a.config.collectionId === collectionId && a.a === selector.compare.value.a?.id)) {
+                actions.value.push({actionType: "ADD_TO_COLLECTION", a: selector.compare.value.a.id, config: {collectionId}})
             }
-            if(selector.compare.value.b !== null && !actions.value.some(a => a.actionType === "ADD_TO_COLLECTION" && a.config.collectionId === collectionId && entityEquals(a.a, selector.compare.value.b))) {
-                actions.value.push({actionType: "ADD_TO_COLLECTION", a: selector.compare.value.b, config: {collectionId}})
+            if(selector.compare.value.b !== null && !actions.value.some(a => a.actionType === "ADD_TO_COLLECTION" && a.config.collectionId === collectionId && a.a === selector.compare.value.b?.id)) {
+                actions.value.push({actionType: "ADD_TO_COLLECTION", a: selector.compare.value.b.id, config: {collectionId}})
             }
         }else{
             for(const item of selector.multiple.value.selected) {
-                if(!actions.value.some(a => a.actionType === "ADD_TO_COLLECTION" && a.config.collectionId === collectionId && entityEquals(a.a, item))) {
-                    actions.value.push({actionType: "ADD_TO_COLLECTION", a: item, config: {collectionId}})
+                if(!actions.value.some(a => a.actionType === "ADD_TO_COLLECTION" && a.config.collectionId === collectionId && a.a === item.id)) {
+                    actions.value.push({actionType: "ADD_TO_COLLECTION", a: item.id, config: {collectionId}})
                 }
             }
         }
@@ -312,16 +312,16 @@ function useDetailPanelResolves(path: Ref<number | null>, selector: ReturnType<t
 
     const addActionBook = (bookId: number) => {
         if(selector.selectMode.value === "COMPARE") {
-            if(selector.compare.value.a !== null && !actions.value.some(a => a.actionType === "ADD_TO_BOOK" && a.config.bookId === bookId && entityEquals(a.a, selector.compare.value.a))) {
-                actions.value.push({actionType: "ADD_TO_BOOK", a: selector.compare.value.a, config: {bookId}})
+            if(selector.compare.value.a !== null && !actions.value.some(a => a.actionType === "ADD_TO_BOOK" && a.config.bookId === bookId && a.a === selector.compare.value.a?.id)) {
+                actions.value.push({actionType: "ADD_TO_BOOK", a: selector.compare.value.a.id, config: {bookId}})
             }
-            if(selector.compare.value.b !== null && !actions.value.some(a => a.actionType === "ADD_TO_BOOK" && a.config.bookId === bookId && entityEquals(a.a, selector.compare.value.b))) {
-                actions.value.push({actionType: "ADD_TO_BOOK", a: selector.compare.value.b, config: {bookId}})
+            if(selector.compare.value.b !== null && !actions.value.some(a => a.actionType === "ADD_TO_BOOK" && a.config.bookId === bookId && a.a === selector.compare.value.b?.id)) {
+                actions.value.push({actionType: "ADD_TO_BOOK", a: selector.compare.value.b.id, config: {bookId}})
             }
         }else{
             for(const item of selector.multiple.value.selected) {
-                if(!actions.value.some(a => a.actionType === "ADD_TO_BOOK" && a.config.bookId === bookId && entityEquals(a.a, item))) {
-                    actions.value.push({actionType: "ADD_TO_BOOK", a: item, config: {bookId}})
+                if(!actions.value.some(a => a.actionType === "ADD_TO_BOOK" && a.config.bookId === bookId && a.a === item.id)) {
+                    actions.value.push({actionType: "ADD_TO_BOOK", a: item.id, config: {bookId}})
                 }
             }
         }
@@ -329,16 +329,16 @@ function useDetailPanelResolves(path: Ref<number | null>, selector: ReturnType<t
 
     const addActionDelete = (goal: "A" | "B" | "A&B") => {
         if(selector.selectMode.value === "COMPARE") {
-            if((goal === "A" || goal === "A&B") && selector.compare.value.a !== null && !actions.value.some(a => a.actionType === "DELETE" && entityEquals(a.a, selector.compare.value.a))) {
-                actions.value.push({actionType: "DELETE", a: selector.compare.value.a})
+            if((goal === "A" || goal === "A&B") && selector.compare.value.a !== null && !actions.value.some(a => a.actionType === "DELETE" && a.a === selector.compare.value.a?.id)) {
+                actions.value.push({actionType: "DELETE", a: selector.compare.value.a.id})
             }
-            if((goal === "B" || goal === "A&B") && selector.compare.value.b !== null && !actions.value.some(a => a.actionType === "DELETE" && entityEquals(a.a, selector.compare.value.b))) {
-                actions.value.push({actionType: "DELETE", a: selector.compare.value.b})
+            if((goal === "B" || goal === "A&B") && selector.compare.value.b !== null && !actions.value.some(a => a.actionType === "DELETE" && a.a === selector.compare.value.b?.id)) {
+                actions.value.push({actionType: "DELETE", a: selector.compare.value.b.id})
             }
         }else{
             for(const item of selector.multiple.value.selected) {
-                if(!actions.value.some(a => a.actionType === "DELETE" && entityEquals(a.a, item))) {
-                    actions.value.push({actionType: "DELETE", a: item})
+                if(!actions.value.some(a => a.actionType === "DELETE" && a.a === item.id)) {
+                    actions.value.push({actionType: "DELETE", a: item.id})
                 }
             }
         }
@@ -346,13 +346,13 @@ function useDetailPanelResolves(path: Ref<number | null>, selector: ReturnType<t
 
     const addActionIgnore = () => {
         if(selector.selectMode.value === "COMPARE") {
-            if(selector.compare.value.a !== null && selector.compare.value.b !== null && !actions.value.some(a => a.actionType === "MARK_IGNORED" && ((entityEquals(a.a, selector.compare.value.a) && entityEquals(a.b, selector.compare.value.b)) || (entityEquals(a.a, selector.compare.value.b) && entityEquals(a.b, selector.compare.value.a))))) {
-                actions.value.push({actionType: "MARK_IGNORED", a: selector.compare.value.a, b: selector.compare.value.b})
+            if(selector.compare.value.a !== null && selector.compare.value.b !== null && !actions.value.some(a => a.actionType === "MARK_IGNORED" && ((a.a === selector.compare.value.a?.id && a.b === selector.compare.value.b?.id) || (a.a === selector.compare.value.b?.id && a.b === selector.compare.value.a?.id)))) {
+                actions.value.push({actionType: "MARK_IGNORED", a: selector.compare.value.a.id, b: selector.compare.value.b.id})
             }
         }else{
             for(const [a, b] of arrays.windowed(selector.multiple.value.selected, 2)) {
-                if(!actions.value.some(x => x.actionType === "MARK_IGNORED" && ((entityEquals(x.a, a) && entityEquals(x.b, b)) || (entityEquals(x.a, b) && entityEquals(x.b, a))))) {
-                    actions.value.push({actionType: "MARK_IGNORED", a, b})
+                if(!actions.value.some(x => x.actionType === "MARK_IGNORED" && ((x.a === a.id && x.b === b.id) || (x.a === b.id && x.b === a.id)))) {
+                    actions.value.push({actionType: "MARK_IGNORED", a: a.id, b: b.id})
                 }
             }
         }
@@ -377,7 +377,7 @@ function useDetailPanelRelationDisplay(data: Ref<FindSimilarDetailResult | null>
         if(a !== null && b !== null && data.value?.relations?.length) {
             const newRelations: FindSimilarResultRelation[] = []
             for(const r of data.value.relations) {
-                if((entityEquals(r.a, a) && entityEquals(r.b, b)) || (entityEquals(r.a, b) && entityEquals(r.b, a))) {
+                if((r.a === a.id && r.b === b.id) || (r.a === b.id && r.b === a.id)) {
                     newRelations.push(r)
                 }
             }
@@ -393,31 +393,31 @@ function useDetailPanelRelationDisplay(data: Ref<FindSimilarDetailResult | null>
             const newRelations: EditedRelation[] = []
             for(const action of resolves.actions.value) {
                 if(action.actionType === "CLONE_IMAGE") {
-                    if(entityEquals(action.a, a) && entityEquals(action.b, b)) {
+                    if(action.a === a.id && action.b === b.id) {
                         newRelations.push({type: "CLONE_IMAGE", direction: "A to B", props: action.config.props, merge: action.config.merge ?? false, deleteFrom: action.config.deleteFrom ?? false})    
-                    }else if(entityEquals(action.a, b) && entityEquals(action.b, a)) {
+                    }else if(action.a === b.id && action.b === a.id) {
                         newRelations.push({type: "CLONE_IMAGE", direction: "B to A", props: action.config.props, merge: action.config.merge ?? false, deleteFrom: action.config.deleteFrom ?? false})    
                     }
                 }else if(action.actionType === "ADD_TO_COLLECTION") {
-                    if(entityEquals(action.a, a)) {
+                    if(action.a === a.id) {
                         newRelations.push({type: "ADD_TO_COLLECTION", goal: "A", collectionId: action.config.collectionId})
-                    }else if(entityEquals(action.a, b)) {
+                    }else if(action.a === b.id) {
                         newRelations.push({type: "ADD_TO_COLLECTION", goal: "B", collectionId: action.config.collectionId})
                     }
                 }else if(action.actionType === "ADD_TO_BOOK") {
-                    if(entityEquals(action.a, a)) {
+                    if(action.a === a.id) {
                         newRelations.push({type: "ADD_TO_BOOK", goal: "A", bookId: action.config.bookId})
-                    }else if(entityEquals(action.a, b)) {
+                    }else if(action.a === b.id) {
                         newRelations.push({type: "ADD_TO_BOOK", goal: "B", bookId: action.config.bookId})
                     }
                 }else if(action.actionType === "MARK_IGNORED") {
-                    if((entityEquals(action.a, a) && entityEquals(action.b, b)) || (entityEquals(action.a, b) && entityEquals(action.b, a))) {
+                    if((action.a === a.id && action.b === b.id) || (action.a === b.id && action.b === a.id)) {
                         newRelations.push({type: "MARK_IGNORED"})
                     }
                 }else if(action.actionType === "DELETE") {
-                    if(entityEquals(action.a, a)) {
+                    if(action.a === a.id) {
                         newRelations.push({type: "DELETE", goal: "A"})
-                    }else if(entityEquals(action.a, b)) {
+                    }else if(action.a === b.id) {
                         newRelations.push({type: "DELETE", goal: "B"})
                     }
                 }
@@ -472,64 +472,56 @@ function useDetailPanelRelationDisplay(data: Ref<FindSimilarDetailResult | null>
     return {existedRelations, editedRelations}
 }
 
-function entityEquals(a: {type: FindSimilarEntityType, id: number} | null, b: {type: FindSimilarEntityType, id: number} | null): boolean {
-    return a !== null && b !== null && a.type === b.type && a.id === b.id
+function resultCompare(a: FindSimilarResultImage, b: FindSimilarResultImage): number {
+    return a.id !== b.id ? (a.id < b.id ? -1 : 1) : 0
 }
 
-function entityCompare(a: {type: FindSimilarEntityType, id: number}, b: {type: FindSimilarEntityType, id: number}): number {
-    return a.type !== b.type ? (a.type === "ILLUST" ? -1 : 1) : a.id !== b.id ? (a.id < b.id ? -1 : 1) : 0
-}
-
-export function useFindSimilarCompareData(id: Ref<{type: "IMPORT_IMAGE" | "ILLUST", id: number} | null>) {
+export function useFindSimilarCompareData(id: Ref<number | null>) {
 
     const { data } = useFetchEndpoint({
         path: id,
         get: client => async path => {
-            if(path.type === "ILLUST") {
-                const metadata = await client.illust.image.get(path.id)
-                if(!metadata.ok) return metadata
+            const metadata = await client.illust.image.get(path)
+            if(!metadata.ok) return metadata
 
-                const relatedItems = await client.illust.image.relatedItems.get(path.id, {limit: 9})
-                if(!relatedItems.ok) return relatedItems
+            const relatedItems = await client.illust.image.relatedItems.get(path, {limit: 9})
+            if(!relatedItems.ok) return relatedItems
 
-                const sourceData = await client.illust.image.sourceData.get(path.id)
-                if(!sourceData.ok) return sourceData
+            const sourceData = await client.illust.image.sourceData.get(path)
+            if(!sourceData.ok) return sourceData
 
-                return {
-                    ok: true,
-                    status: 200,
-                    data: <FindSimilarCompareData>{
-                        filePath: metadata.data.filePath.thumbnail,
-                        metadata: {
-                            id: metadata.data.id,
-                            file: null,
-                            extension: metadata.data.extension,
-                            size: metadata.data.size,
-                            resolutionWidth: metadata.data.resolutionWidth,
-                            resolutionHeight: metadata.data.resolutionHeight,
-                            videoDuration: metadata.data.videoDuration,
-                            score: metadata.data.score,
-                            favorite: metadata.data.favorite,
-                            description: metadata.data.description,
-                            tagme: metadata.data.tagme,
-                            tags: metadata.data.tags,
-                            topics: metadata.data.topics,
-                            authors: metadata.data.authors,
-                            partitionTime: metadata.data.partitionTime,
-                            createTime: metadata.data.createTime,
-                            updateTime: metadata.data.updateTime,
-                            orderTime: metadata.data.orderTime,
-                        },
-                        sourceData: sourceData.data.source,
-                        relatedItems: {
-                            collection: relatedItems.data.collection?.id,
-                            books: relatedItems.data.books,
-                            folders: relatedItems.data.folders
-                        }
+            return {
+                ok: true,
+                status: 200,
+                data: <FindSimilarCompareData>{
+                    filePath: metadata.data.filePath.thumbnail,
+                    metadata: {
+                        id: metadata.data.id,
+                        file: null,
+                        extension: metadata.data.extension,
+                        size: metadata.data.size,
+                        resolutionWidth: metadata.data.resolutionWidth,
+                        resolutionHeight: metadata.data.resolutionHeight,
+                        videoDuration: metadata.data.videoDuration,
+                        score: metadata.data.score,
+                        favorite: metadata.data.favorite,
+                        description: metadata.data.description,
+                        tagme: metadata.data.tagme,
+                        tags: metadata.data.tags,
+                        topics: metadata.data.topics,
+                        authors: metadata.data.authors,
+                        partitionTime: metadata.data.partitionTime,
+                        createTime: metadata.data.createTime,
+                        updateTime: metadata.data.updateTime,
+                        orderTime: metadata.data.orderTime,
+                    },
+                    sourceData: sourceData.data.source,
+                    relatedItems: {
+                        collection: relatedItems.data.collection?.id,
+                        books: relatedItems.data.books,
+                        folders: relatedItems.data.folders
                     }
                 }
-            }else{
-                throw new Error("ImportRecord is not supported in FindSimilar.")
             }
         }
     })

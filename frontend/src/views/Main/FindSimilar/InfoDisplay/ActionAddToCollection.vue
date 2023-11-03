@@ -2,7 +2,7 @@
 import { ref, watch } from "vue"
 import { Block, Button } from "@/components/universal"
 import { Select } from "@/components/form"
-import { FindSimilarEntityType, FindSimilarResultImage } from "@/functions/http-client/api/find-similar"
+import { FindSimilarEntityKey, FindSimilarResultImage } from "@/functions/http-client/api/find-similar"
 import { useFetchHelper } from "@/functions/fetch"
 import { SimpleCollection } from "@/functions/http-client/api/illust"
 import { strings } from "@/utils/primitives"
@@ -19,33 +19,24 @@ const submit = () => {
     if(selectValue.value !== undefined) emit("submit", selectValue.value)
 }
 
-const fetchImport = useFetchHelper(client => client.import.get)
 const fetchIllust = useFetchHelper(client => (id: number) => client.illust.image.relatedItems.get(id, {}))
 
-const collectionResults: Record<`${FindSimilarEntityType}-${number}`, SimpleCollection | string> = {}
+const collectionResults: Record<FindSimilarEntityKey, SimpleCollection | string> = {}
 
 const selectItems = ref<{label: string, value: string | number}[]>([])
 const selectValue = ref<number | string>()
 
 watch(() => props.images, async (images, oldImages) => {
-    const remove = oldImages !== undefined && oldImages.length > 0 ? oldImages.filter(i => !images.some(j => i !== null && j !== null && i.type === j.type && i.id === j.id)) : []
+    const remove = oldImages !== undefined && oldImages.length > 0 ? oldImages.filter(i => !images.some(j => i !== null && j !== null && i.id === j.id)) : []
     for(const image of remove) {
-        const key = `${image!.type}-${image!.id}` as const
-        delete collectionResults[key]
+        delete collectionResults[image!.id]
     }
-    const add = oldImages !== undefined && oldImages.length > 0 ? images.filter(i => !oldImages.some(j => i !== null && j !== null && i.type === j.type && i.id === j.id)) : images
+    const add = oldImages !== undefined && oldImages.length > 0 ? images.filter(i => !oldImages.some(j => i !== null && j !== null && i.id === j.id)) : images
     const promises = add.filter(i => i !== null).map(image => {
-        const key = `${image!.type}-${image!.id}` as const
-        if(image!.type === 'ILLUST') {
-            return new Promise<[`${FindSimilarEntityType}-${number}`, SimpleCollection | string | undefined]>(async resolve => {
-                const res = await fetchIllust(image!.id)
-                resolve([key, res?.collection ?? undefined])
-            })
-        }else{
-            return new Promise<[`${FindSimilarEntityType}-${number}`, SimpleCollection | string | undefined]>(async resolve => {
-                resolve([key, undefined])
-            })
-        }
+        return new Promise<[FindSimilarEntityKey, SimpleCollection | string | undefined]>(async resolve => {
+            const res = await fetchIllust(image!.id)
+            resolve([image!.id, res?.collection ?? undefined])
+        })
     })
     const newResults = await Promise.all(promises)
     for(const [key, result] of newResults) {
@@ -59,7 +50,7 @@ watch(() => props.images, async (images, oldImages) => {
 
     for(const image of images) {
         if(image !== null) {
-            const collection = collectionResults[`${image!.type}-${image!.id}`]
+            const collection = collectionResults[image!.id]
             if(collection) {
                 const collectionId = typeof collection === "string" ? collection : collection.id
                 if(imageByCollections.has(collectionId)) {
@@ -74,7 +65,7 @@ watch(() => props.images, async (images, oldImages) => {
     const newSelectItems: {label: string, value: string | number}[] = []
 
     imageByCollections.forEach((images, collectionId) => {
-        const imageIdStr = images.map(i => `${i.type === "IMPORT_IMAGE" ? "+" : ""}${i.id}`).join(", ")
+        const imageIdStr = images.join(", ")
         newSelectItems.push({label: `集合${typeof collectionId === "string" ? "#" : "@"}${collectionId} [ ${imageIdStr} ]`, value: collectionId})
     })
 

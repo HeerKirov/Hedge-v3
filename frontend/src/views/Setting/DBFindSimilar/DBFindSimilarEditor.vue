@@ -46,7 +46,6 @@ const [filterBySourceTagType, filterBySourceTagTypeSot, saveFilterBySourceTagTyp
         </p>
         <label class="label mt-3">相似项查找范围</label>
         <p class="secondary-text">对于每一个待处理的任务项，按照下列可选范围查找可能的相似项。</p>
-        <p class="mt-2"><CheckBox :value="config.filterByOtherImport" @update:value="setValue('filterByOtherImport', $event)">其他导入项目</CheckBox></p>
         <p class="mt-2"><CheckBox :value="config.filterByPartition" @update:value="setValue('filterByPartition', $event)">相同时间分区的项</CheckBox></p>
         <p class="mt-2"><CheckBox :value="config.filterByAuthor" @update:value="setValue('filterByAuthor', $event)">相同作者标签的项</CheckBox></p>
         <p class="mt-2"><CheckBox :value="config.filterByTopic" @update:value="setValue('filterByTopic', $event)">相同主题标签的项</CheckBox></p>

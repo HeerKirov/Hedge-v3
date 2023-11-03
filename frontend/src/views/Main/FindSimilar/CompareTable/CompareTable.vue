@@ -9,8 +9,8 @@ import SourceDataInfo from "./SourceDataInfo.vue"
 import RelatedItemsInfo from "./RelatedItemsInfo.vue"
 
 const props = defineProps<{
-    itemA: {type: "IMPORT_IMAGE" | "ILLUST", id: number} | null
-    itemB: {type: "IMPORT_IMAGE" | "ILLUST", id: number} | null
+    itemA: number | null
+    itemB: number | null
 }>()
 
 const previewService = usePreviewService()

@@ -24,8 +24,8 @@ const { data, selector: { selectMode, compare, multiple, click }, resolve } = in
             </MiddleLayout>
         </template>
         <Block :class="$style['compare-table']">
-            <CompareTable v-if="selectMode === 'COMPARE'" :item-a="compare.a !== null ? compare.a : compare.b" :item-b="compare.a !== null ? compare.b : null"/>
-            <CompareTable v-else :item-a="multiple.lastSelected" :item-b="null"/>
+            <CompareTable v-if="selectMode === 'COMPARE'" :item-a="compare.a !== null ? compare.a?.id : compare.b?.id ?? null" :item-b="compare.a !== null ? compare.b?.id ?? null : null"/>
+            <CompareTable v-else :item-a="multiple.lastSelected?.id ?? null" :item-b="null"/>
         </Block>
         <Block :class="$style['action-area']">
             <InfoDisplay/>

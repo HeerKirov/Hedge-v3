@@ -141,9 +141,6 @@ export type TaskSelector = {
     type: "image"
     imageIds: number[]
 } | {
-    type: "importImage"
-    importIds: number[]
-} | {
     type: "partitionTime"
     partitionTime: LocalDate
 } | {
@@ -162,14 +159,11 @@ export interface TaskConfig {
     findBySourceRelation: boolean
     findBySourceMark: boolean
     findBySimilarity: boolean
-    filterByOtherImport: boolean
     filterByPartition: boolean
     filterByTopic: boolean
     filterByAuthor: boolean
     filterBySourceTagType: {sourceSite: string, tagType: string}[]
 }
-
-export type FindSimilarEntityType = "ILLUST" | "IMPORT_IMAGE"
 
 export type SummaryTypes = "SAME" | "RELATED" | "SIMILAR"
 
@@ -179,10 +173,7 @@ export type MarkType = SummaryTypes | "UNKNOWN"
 
 export type ActionType = "CLONE_IMAGE" | "DELETE" | "ADD_TO_COLLECTION" | "ADD_TO_BOOK" | "MARK_IGNORED"
 
-interface FindSimilarEntityKey {
-    type: FindSimilarEntityType
-    id: number
-}
+export type FindSimilarEntityKey = number
 
 interface RelationInfo {}
 
@@ -214,7 +205,8 @@ export interface FindSimilarDetailResult extends FindSimilarResult {
     relations: FindSimilarResultRelation[]
 }
 
-export interface FindSimilarResultImage extends FindSimilarEntityKey {
+export interface FindSimilarResultImage {
+    id: FindSimilarEntityKey
     filePath: NullableFilePath | null
 }
 
