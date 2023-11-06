@@ -213,7 +213,7 @@ data class FindSimilarOption(
      */
     var autoFindSimilar: Boolean,
     /**
-     * 自动出发查找时使用的配置。
+     * 自动触发查找时使用的配置。
      */
     var autoTaskConf: FindSimilarTask.TaskConfig?,
     /**

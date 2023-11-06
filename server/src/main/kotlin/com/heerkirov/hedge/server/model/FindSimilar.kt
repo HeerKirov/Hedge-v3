@@ -26,17 +26,20 @@ data class FindSimilarTask(val id: Int,
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
     @JsonSubTypes(value = [
-        JsonSubTypes.Type(value = TaskSelectorOfImage::class, name = "image"),
+        JsonSubTypes.Type(value = TaskSelectorOfImages::class, name = "illust"),
         JsonSubTypes.Type(value = TaskSelectorOfPartition::class, name = "partitionTime"),
+        JsonSubTypes.Type(value = TaskSelectorOfBook::class, name = "book"),
         JsonSubTypes.Type(value = TaskSelectorOfTopic::class, name = "topic"),
         JsonSubTypes.Type(value = TaskSelectorOfAuthor::class, name = "author"),
         JsonSubTypes.Type(value = TaskSelectorOfSourceTag::class, name = "sourceTag"),
     ])
     sealed interface TaskSelector
 
-    data class TaskSelectorOfImage(val imageIds: List<Int>) : TaskSelector
+    data class TaskSelectorOfImages(val imageIds: List<Int>) : TaskSelector
 
     data class TaskSelectorOfPartition(val partitionTime: LocalDate) : TaskSelector
+
+    data class TaskSelectorOfBook(val bookIds: List<Int>) : TaskSelector
 
     data class TaskSelectorOfTopic(val topicIds: List<Int>) : TaskSelector
 
@@ -45,19 +48,29 @@ data class FindSimilarTask(val id: Int,
     data class TaskSelectorOfSourceTag(val sourceTags: List<SourceTagPath>) : TaskSelector
 
     /**
-     * @param findBySourceIdentity 根据source identity是否相等做判定。
-     * @param findBySourceRelation 根据source relation是否有关、source book是否同属一个做判定。
-     * @param findBySourceMark 根据source mark的标记做判定。
+     * @param findBySourceIdentity 根据来源一致性做判定，要求id+part相同或partName相同。
+     * @param findBySourcePart 根据来源part近似性做判定，要求id相同而part不同。
+     * @param findBySourceRelation 根据source relation做判定。
+     * @param findBySourceBook 根据source book做判定。
      * @param findBySimilarity 根据相似度做判定。
-     * @param filterByPartition 将所有相同partitionTime的项加入匹配检测。
-     * @param filterByAuthor 将所有拥有相同author的项加入匹配检测。
-     * @param filterByTopic 将所有拥有相同topic的项加入匹配检测。
-     * @param filterBySourceTagType 按照给出的sourceTagType，将所有拥有相同的这一类type的sourceTag的项加入匹配检测。
+     * @param filterInCurrentScope 匹配当前查找范围内的其他项。
+     * @param filterByPartition 匹配所有相同partitionTime的项。
+     * @param filterByAuthor 匹配所有相同author的项。
+     * @param filterByTopic 匹配所有相同topic的项。
+     * @param filterBySourcePart 匹配所有相同source id不同part的项。
+     * @param filterBySourceBook 匹配所有相同source book的项。
+     * @param filterBySourceRelation 匹配所有由source relation关联的项。
+     * @param filterBySourceTagType 按照给出的sourceTagType，匹配所有拥有相同的这一类type的sourceTag的项。
      */
     data class TaskConfig(val findBySourceIdentity: Boolean,
+                          val findBySourcePart: Boolean,
                           val findBySourceRelation: Boolean,
-                          val findBySourceMark: Boolean,
+                          val findBySourceBook: Boolean,
                           val findBySimilarity: Boolean,
+                          val filterInCurrentScope: Boolean,
+                          val filterBySourcePart: Boolean,
+                          val filterBySourceBook: Boolean,
+                          val filterBySourceRelation: Boolean,
                           val filterByPartition: Boolean,
                           val filterByTopic: Boolean,
                           val filterByAuthor: Boolean,

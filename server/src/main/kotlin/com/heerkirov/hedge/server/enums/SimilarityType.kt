@@ -2,7 +2,7 @@ package com.heerkirov.hedge.server.enums
 
 enum class SimilarityType {
     /**
-     * source site&id&part完全一致，即两者是完全相同的来源。
+     * source site&id/part完全一致，即两者是完全相同的来源。
      */
     SOURCE_IDENTITY_EQUAL,
     /**

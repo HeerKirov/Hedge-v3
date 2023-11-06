@@ -3,6 +3,7 @@ package com.heerkirov.hedge.server.components.backend.similar
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
+import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.dao.FindSimilarIgnores
 import com.heerkirov.hedge.server.dao.FindSimilarTasks
@@ -14,10 +15,7 @@ import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.library.framework.StatefulComponent
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.tools.ControlledLoopThread
-import org.ktorm.dsl.delete
-import org.ktorm.dsl.eq
-import org.ktorm.dsl.insertAndGenerateKey
-import org.ktorm.dsl.or
+import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.isNotEmpty
 import org.ktorm.entity.sequenceOf
@@ -69,7 +67,7 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, appdata: AppData
 
     private fun processImportToImage(events: PackagedBusEvent) {
         events.which {
-            each<IllustDeleted> { workerThread.processRemoveImageEvent(it.illustId) }
+            all<IllustDeleted> { events -> workerThread.processRemoveImageEvent(events.map { it.illustId }) }
         }
     }
 }
@@ -90,11 +88,15 @@ class SimilarFinderWorkThread(private val appdata: AppDataManager, private val d
         recordBuilder.loadGraph(graph)
         recordBuilder.generateRecords()
 
-        data.db.delete(FindSimilarTasks) { it.id eq model.id }
+        data.db.transaction {
+            data.db.delete(FindSimilarTasks) { it.id eq model.id }
+        }
     }
 
-    fun processRemoveImageEvent(illustId: Int) {
-        val key = illustId.toString()
-        data.db.delete(FindSimilarIgnores) { (it.firstTarget eq key) or (it.secondTarget eq key) }
+    fun processRemoveImageEvent(illustIds: List<Int>) {
+        val key = illustIds.map { it.toString() }
+        data.db.transaction {
+            data.db.delete(FindSimilarIgnores) { (it.firstTarget inList key) or (it.secondTarget inList key) }
+        }
     }
 }

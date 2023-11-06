@@ -57,12 +57,17 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
                 autoTaskConf = null,
                 defaultTaskConf = FindSimilarTask.TaskConfig(
                     findBySourceIdentity = true,
-                    findBySimilarity = true,
+                    findBySourcePart = false,
                     findBySourceRelation = true,
-                    findBySourceMark = true,
+                    findBySourceBook = false,
+                    findBySimilarity = true,
+                    filterInCurrentScope = true,
                     filterByPartition = true,
                     filterByAuthor = true,
                     filterByTopic = true,
+                    filterBySourceBook = true,
+                    filterBySourcePart = true,
+                    filterBySourceRelation = false,
                     filterBySourceTagType = emptyList()
                 )
             )

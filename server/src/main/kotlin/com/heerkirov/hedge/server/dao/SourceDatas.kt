@@ -117,6 +117,7 @@ object SourceTagMappings : BaseTable<SourceTagMapping>("source_tag_mapping", sch
     )
 }
 
+@Deprecated("已移除source mark功能")
 object SourceMarks : BaseTable<SourceMark>("source_mark", schema = "source_db") {
     val sourceDataId = int("source_data_id")
     val relatedSourceDataId = int("related_source_data_id")

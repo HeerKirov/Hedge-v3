@@ -3,7 +3,6 @@ package com.heerkirov.hedge.server.components.backend.similar
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.res.SourceTagPath
-import com.heerkirov.hedge.server.enums.SourceMarkType
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.Similarity
 import com.heerkirov.hedge.server.utils.forEachTwo
@@ -28,17 +27,14 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
                 matchForSourceBooks(targetItem)
             }
         }
-        if(config.findBySourceMark) {
-            //find by source mark不需要筛选条件，直接全表查询
-            for (targetItem in targetItems) {
-                matchForSourceMark(targetItem)
-            }
-        }
         if(config.findBySourceIdentity) {
             //find by source identity不需要筛选条件，直接全表查询
-            matchForAllSourceIdentities()
+            matchForAllSourceIdentity()
+        }
+        if(config.findBySourcePart) {
             for (targetItem in targetItems) {
-                matchForSourceIdentity(targetItem)
+                //find by source part需要走筛选
+                matchForSourcePart(targetItem)
             }
         }
         if(config.findBySimilarity) {
@@ -59,6 +55,18 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
      */
     private fun getFilteredItems(targetItem: EntityInfo): Sequence<EntityInfo> {
         return sequence {
+            if(config.filterInCurrentScope) {
+                yieldAll(entityLoader.loadImage(nodes.keys))
+            }
+            if(config.filterBySourceBook && !targetItem.sourceBooks.isNullOrEmpty()) {
+                yieldAll(entityLoader.loadByBook(targetItem.sourceBooks))
+            }
+            if(config.filterBySourceRelation && targetItem.sourceIdentity != null && !targetItem.sourceRelations.isNullOrEmpty()) {
+                yieldAll(entityLoader.loadBySourceId(targetItem.sourceIdentity.f1, targetItem.sourceRelations))
+            }
+            if(config.filterBySourcePart && targetItem.sourceIdentity != null && targetItem.sourceIdentity.f3 != null) {
+                yieldAll(entityLoader.loadBySourceId(targetItem.sourceIdentity.f1, listOf(targetItem.sourceIdentity.f2)))
+            }
             if(config.filterByPartition) {
                 yieldAll(entityLoader.loadByPartition(targetItem.partitionTime))
             }
@@ -73,7 +81,7 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
                     .map { SourceTagPath(it.site, it.type, it.code) }
                     .let { yieldAll(entityLoader.loadBySourceTag(it)) }
             }
-        }
+        }.distinctBy { it.id }
     }
 
     /**
@@ -136,22 +144,6 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
     }
 
     /**
-     * 执行source mark类的匹配检测。
-     */
-    private fun matchForSourceMark(targetItem: EntityInfo) {
-        if(!targetItem.sourceMarks.isNullOrEmpty()) {
-            val adds = mutableListOf<Triple<Int, Int, RelationType>>()
-            val markTypes = targetItem.sourceMarks.toMap()
-
-            data.db.from(Illusts)
-                .select(Illusts.id, Illusts.sourceDataId)
-                .where { Illusts.sourceDataId inList markTypes.keys }
-                .map { Triple(targetItem.id, it[Illusts.id]!!, SourceMarkRelationType(markTypes[it[Illusts.sourceDataId]!!] ?: SourceMarkType.UNKNOWN)) }
-                .let { adds.addAll(it) }
-        }
-    }
-
-    /**
      * 执行source relation:book类的匹配检测。
      */
     private fun matchForSourceBooks(targetItem: EntityInfo) {
@@ -170,9 +162,9 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
     }
 
     /**
-     * 执行source identity类的匹配检测。检测的对象是id相同而part不同的对象。
+     * 执行source part类的匹配检测。检测的对象是id相同而part不同的对象。
      */
-    private fun matchForSourceIdentity(targetItem: EntityInfo) {
+    private fun matchForSourcePart(targetItem: EntityInfo) {
         if(targetItem.sourceIdentity != null) {
             val adds = mutableListOf<Triple<Int, Int, RelationType>>()
             val (site, sid, part, partName) = targetItem.sourceIdentity
@@ -204,9 +196,8 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
     /**
      * 执行source identity类的匹配检测。检测的对象是id+part相同或partName相同的对象。
      * 由于这部分的独立性质，可以拆出来单独执行，以提高执行效率。在旧算法中，优化了缓存问题后，最慢的就是这一块了。
-     * 缺点是无法跨Illust/Import查询，不过鉴于该特性的使用现状和未来的功能规划，这一点无伤大雅。
      */
-    private fun matchForAllSourceIdentities() {
+    private fun matchForAllSourceIdentity() {
         val adds = mutableListOf<Triple<Int, Int, RelationType>>()
         //从Illust中筛选出所有sourceIdentity重复的项。
         //等价判断的要求是：id相同，part相同；或者存在partName时，partName相同
@@ -294,7 +285,7 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
      */
     private fun addInGraph(adds: Iterable<Triple<Int, Int, RelationType>>) {
         val allEntityKeys = adds.asSequence().flatMap { sequenceOf(it.first, it.second) }.toSet()
-        val allEntityInfo = entityLoader.loadByEntityKeys(allEntityKeys)
+        val allEntityInfo = entityLoader.loadImage(allEntityKeys, enableFilterBy = false).associateBy { it.id }
         val allNodes = allEntityInfo.mapValues { (entityKey, entityInfo) -> nodes.computeIfAbsent(entityKey) { GraphNode(entityKey, entityInfo, mutableSetOf()) } }
         for ((keyA, keyB, newRelation) in adds) {
             val nodeA = allNodes[keyA]

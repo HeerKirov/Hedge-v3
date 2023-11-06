@@ -144,6 +144,7 @@ data class SourceTagMapping(val id: Int,
 /**
  * 来源信息的手动关系标记。此关系是双边的，每次总是维护成对的记录。
  */
+@Deprecated("已移除source mark功能")
 data class SourceMark(/**
                        * 关联的一方。
                        */

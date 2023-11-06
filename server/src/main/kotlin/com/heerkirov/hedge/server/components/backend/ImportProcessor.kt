@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.components.backend
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.appdata.ImportOption
+import com.heerkirov.hedge.server.components.backend.similar.SimilarFinder
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
@@ -16,6 +17,7 @@ import com.heerkirov.hedge.server.functions.manager.IllustManager
 import com.heerkirov.hedge.server.functions.manager.ImportMetaManager
 import com.heerkirov.hedge.server.functions.manager.SourceDataManager
 import com.heerkirov.hedge.server.library.framework.Component
+import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.model.ImportRecord
 import com.heerkirov.hedge.server.utils.DateTime.toSystemZonedTime
@@ -37,6 +39,7 @@ interface ImportProcessor : Component
 class ImportProcessorImpl(private val appdata: AppDataManager,
                           private val data: DataRepository,
                           private val bus: EventBus,
+                          private val similarFinder: SimilarFinder,
                           private val illustManager: IllustManager,
                           private val importMetaManager: ImportMetaManager,
                           private val sourceDataManager: SourceDataManager) : ImportProcessor {
@@ -200,6 +203,10 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
                         set(it.imageId, imageId)
                     }
                 }
+            }
+
+            if(appdata.setting.findSimilar.autoFindSimilar) {
+                similarFinder.add(FindSimilarTask.TaskSelectorOfImages(importToImageIds.values.toList()), appdata.setting.findSimilar.autoTaskConf ?: appdata.setting.findSimilar.defaultTaskConf)
             }
 
             bus.emit(oks.map { ImportUpdated(it.importId, status = ImportStatus.COMPLETED) })

@@ -15,6 +15,7 @@ import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import java.time.Instant
 
+@Deprecated("已移除source mark功能")
 class SourceMarkService(private val appdata: AppDataManager, private val data: DataRepository) {
     fun getMarks(site: String, sourceId: Long): List<SourceMarkRes> {
         val sourceDataId = data.db.from(SourceDatas)

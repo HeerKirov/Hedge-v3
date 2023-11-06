@@ -9,6 +9,7 @@ import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import org.ktorm.dsl.*
 import java.time.LocalDate
+import java.util.Objects
 
 /**
  * 数据加载器。所有数据都从这里读。
@@ -19,19 +20,22 @@ import java.time.LocalDate
 class EntityLoader(private val data: DataRepository, private val config: FindSimilarTask.TaskConfig) {
     fun loadBySelector(selector: FindSimilarTask.TaskSelector): List<EntityInfo> {
         return when (selector) {
-            is FindSimilarTask.TaskSelectorOfImage -> loadImage(selector.imageIds, enableFilterBy = true)
+            is FindSimilarTask.TaskSelectorOfImages -> loadImage(selector.imageIds, enableFilterBy = true)
             is FindSimilarTask.TaskSelectorOfPartition -> loadByPartition(selector.partitionTime, enableFilterBy = true)
+            is FindSimilarTask.TaskSelectorOfBook -> loadByBook(selector.bookIds, enableFilterBy = true)
             is FindSimilarTask.TaskSelectorOfAuthor -> loadByAuthor(selector.authorIds, enableFilterBy = true)
             is FindSimilarTask.TaskSelectorOfTopic -> loadByTopic(selector.topicIds, enableFilterBy = true)
             is FindSimilarTask.TaskSelectorOfSourceTag -> loadBySourceTag(selector.sourceTags, enableFilterBy = true)
         }
     }
 
-    fun loadByEntityKeys(entityKeys: Iterable<Int>): Map<Int, EntityInfo> {
-        return loadImage(entityKeys, enableFilterBy = false).associateBy { it.id }
-    }
-
-    private fun loadImage(imageIds: Iterable<Int>, enableFilterBy: Boolean = false): List<EntityInfo> {
+    /**
+     * enableFilterBy参数为false时将无视filterBy配置项，不加载一部分附加属性。
+     * 该参数只有在作为源项加载时为true，作为匹配项加载时则都是false。
+     * 这是因为它控制的附加属性都是用作源项搜索匹配项的，作为匹配项加载的项自然不需要这些加载。
+     * 并且所有源项总是首先全部加载完成，之后才加载匹配项，因此也不必担心缓存。
+     */
+    fun loadImage(imageIds: Iterable<Int>, enableFilterBy: Boolean = false): List<EntityInfo> {
         data class ImageRow(val parentId: Int?, val partitionTime: LocalDate, val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?, val sourcePartName: String?, val fingerprint: Fingerprint?)
 
         val notExistIds = mutableListOf<Int>()
@@ -83,7 +87,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                     .groupBy({ it[Illusts.id]!! }) { SourceTags.createEntity(it) }
             }
 
-            val imageSourceRelationsMap = if(!config.findBySourceRelation) emptyMap() else {
+            val imageSourceRelationsMap = if(!config.findBySourceRelation && !config.filterBySourceRelation) emptyMap() else {
                 data.db.from(Illusts)
                     .innerJoin(SourceDatas, SourceDatas.id eq Illusts.sourceDataId)
                     .select(Illusts.id, SourceDatas.relations)
@@ -91,7 +95,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                     .associateBy({ it[Illusts.id]!! }) { it[SourceDatas.relations] ?: emptyList() }
             }
 
-            val imageSourceBooksMap = if(!config.findBySourceRelation) emptyMap() else {
+            val imageSourceBooksMap = if(!config.findBySourceBook && !config.filterBySourceBook) emptyMap() else {
                 data.db.from(Illusts)
                     .innerJoin(SourceBookRelations, SourceBookRelations.sourceDataId eq Illusts.sourceDataId)
                     .select(Illusts.id, SourceBookRelations.sourceBookId)
@@ -100,27 +104,16 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                     .groupBy({ it[Illusts.id]!! }) { it[SourceBookRelations.sourceBookId]!! }
             }
 
-            val imageSourceMarksMap = if(!config.findBySourceMark) emptyMap() else {
-                data.db.from(Illusts)
-                    .innerJoin(SourceMarks, SourceMarks.sourceDataId eq Illusts.sourceDataId)
-                    .select(SourceMarks.relatedSourceDataId, SourceMarks.markType)
-                    .where { Illusts.id inList notExistIds }
-                    .asSequence()
-                    .groupBy({ it[Illusts.id]!! }) { it[SourceMarks.relatedSourceDataId]!! to it[SourceMarks.markType]!! }
-            }
-
             for ((id, row) in imagesMap) {
-                val sourceIdentity = if(config.findBySourceIdentity && row.sourceSite != null && row.sourceId != null) Tuple4(row.sourceSite, row.sourceId, row.sourcePart, row.sourcePartName) else null
-                val sourceRelations = if(config.findBySourceRelation) imageSourceRelationsMap[id] ?: emptyList() else null
-                val sourceBooks = if(config.findBySourceRelation) imageSourceBooksMap[id] ?: emptyList() else null
-                val sourceMarks = if(config.findBySourceMark) imageSourceMarksMap[id] ?: emptyList() else null
+                val sourceIdentity = if(row.sourceSite != null && row.sourceId != null) Tuple4(row.sourceSite, row.sourceId, row.sourcePart, row.sourcePartName) else null
+                val sourceRelations = if(config.findBySourceRelation || config.filterBySourceRelation) imageSourceRelationsMap[id] ?: emptyList() else null
+                val sourceBooks = if(config.findBySourceBook || config.filterBySourceBook) imageSourceBooksMap[id] ?: emptyList() else null
                 val entityInfo = EntityInfo(id,
                     row.partitionTime,
                     imageSourceTagsMap[id] ?: emptyList(),
                     sourceIdentity,
                     sourceRelations,
                     sourceBooks,
-                    sourceMarks,
                     row.fingerprint,
                     row.parentId,
                     imageAuthorsMap[id] ?: emptyList(),
@@ -139,6 +132,18 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
                 .select(Illusts.id)
                 .where { (Illusts.partitionTime eq partitionTime) and ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) }
                 .map { it[Illusts.id]!! }
+
+            loadImage(imageIds, enableFilterBy)
+        }
+    }
+
+    fun loadByBook(bookIds: List<Int>, enableFilterBy: Boolean = false): List<EntityInfo> {
+        return loadByBookCache.computeIfAbsent(bookIds.joinToString()) {
+            val imageIds = data.db.from(BookImageRelations)
+                .select(BookImageRelations.imageId)
+                .where { BookImageRelations.bookId inList bookIds }
+                .groupBy(BookImageRelations.imageId)
+                .map { it[BookImageRelations.imageId]!! }
 
             loadImage(imageIds, enableFilterBy)
         }
@@ -170,6 +175,18 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
         }
     }
 
+    fun loadBySourceId(site: String, sourceIds: List<Long>, enableFilterBy: Boolean = false): List<EntityInfo> {
+        return loadBySourceIdCache.computeIfAbsent(Objects.hash(site, sourceIds)) {
+            val imageIds = data.db.from(Illusts)
+                .select(Illusts.id)
+                .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.sourceSite eq site) and (Illusts.sourceId inList sourceIds) }
+                .groupBy(Illusts.id)
+                .map { it[Illusts.id]!! }
+
+            loadImage(imageIds, enableFilterBy)
+        }
+    }
+
     fun loadBySourceTag(sourceTags: List<SourceTagPath>, enableFilterBy: Boolean = false): List<EntityInfo> {
         return loadBySourceTagCache.computeIfAbsent(sourceTags.hashCode()) {
             val sourceTagIds = sourceTags
@@ -194,7 +211,9 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
 
     private val loadByImageCache = mutableMapOf<Int, EntityInfo>()
     private val loadByPartitionCache = mutableMapOf<LocalDate, List<EntityInfo>>()
+    private val loadByBookCache = mutableMapOf<String, List<EntityInfo>>()
     private val loadByAuthorCache = mutableMapOf<String, List<EntityInfo>>()
     private val loadByTopicCache = mutableMapOf<String, List<EntityInfo>>()
     private val loadBySourceTagCache = mutableMapOf<Int, List<EntityInfo>>()
+    private val loadBySourceIdCache = mutableMapOf<Int, List<EntityInfo>>()
 }
