@@ -85,7 +85,7 @@ fun runApplication(options: ApplicationOptions) {
 
             define { TrashCleanerImpl(appStatus, appdata, repo, trashManager) }
             define { EventCompositorImpl(repo, bus, backendExporter) }
-            define { ImportProcessorImpl(appdata, repo, bus, illustManager, importMetaManager, sourceManager) }
+            define { ImportProcessorImpl(appdata, repo, bus, similarFinder, illustManager, importMetaManager, sourceManager) }
 
             val homepageService = HomepageService(appdata, repo, stagingPostManager)
             val illustService = IllustService(appdata, repo, bus, illustKit, illustManager, associateManager, sourceManager, partitionManager, queryManager)

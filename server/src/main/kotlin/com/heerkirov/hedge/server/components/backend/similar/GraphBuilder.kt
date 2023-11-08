@@ -3,27 +3,31 @@ package com.heerkirov.hedge.server.components.backend.similar
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.res.SourceTagPath
+import com.heerkirov.hedge.server.model.FindSimilarIgnored
+import com.heerkirov.hedge.server.model.FindSimilarResult
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.Similarity
 import com.heerkirov.hedge.server.utils.forEachTwo
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
-import com.heerkirov.hedge.server.utils.mapEachTwo
 import org.ktorm.dsl.*
+import org.ktorm.entity.count
+import org.ktorm.entity.sequenceOf
 
 class GraphBuilder(private val data: DataRepository, private val entityLoader: EntityLoader, private val config: FindSimilarTask.TaskConfig) {
-    private val nodes: MutableMap<Int, GraphNode> = mutableMapOf()
+    private val vertices: MutableMap<Int, GraphVertex> = mutableMapOf()
+    private val coverages: MutableMap<FindSimilarResult.RelationCoverageType, GraphCoverage> = mutableMapOf()
 
     /**
      * 开始处理selector。
      */
-    fun process(selector: FindSimilarTask.TaskSelector): Map<Int, GraphNode> {
+    fun process(selector: FindSimilarTask.TaskSelector): Map<Int, GraphVertex> {
         val targetItems = entityLoader.loadBySelector(selector)
         if(config.findBySourceRelation) {
             for (targetItem in targetItems) {
                 val matchedItems = getFilteredItems(targetItem)
                 //find by source relation需要走筛选
                 matchForSourceRelations(targetItem, matchedItems)
-                //find by source relation:book部分不需要筛选条件，直接全表查询
+                //find by source book部分不需要筛选条件，直接全表查询
                 matchForSourceBooks(targetItem)
             }
         }
@@ -47,7 +51,7 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
 
         supplyExistRelations()
 
-        return nodes
+        return vertices
     }
 
     /**
@@ -56,16 +60,16 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
     private fun getFilteredItems(targetItem: EntityInfo): Sequence<EntityInfo> {
         return sequence {
             if(config.filterInCurrentScope) {
-                yieldAll(entityLoader.loadImage(nodes.keys))
+                yieldAll(entityLoader.loadImage(vertices.keys))
             }
             if(config.filterBySourceBook && !targetItem.sourceBooks.isNullOrEmpty()) {
                 yieldAll(entityLoader.loadByBook(targetItem.sourceBooks))
             }
             if(config.filterBySourceRelation && targetItem.sourceIdentity != null && !targetItem.sourceRelations.isNullOrEmpty()) {
-                yieldAll(entityLoader.loadBySourceId(targetItem.sourceIdentity.f1, targetItem.sourceRelations))
+                yieldAll(entityLoader.loadBySourceId(targetItem.sourceIdentity.sourceSite, targetItem.sourceRelations))
             }
-            if(config.filterBySourcePart && targetItem.sourceIdentity != null && targetItem.sourceIdentity.f3 != null) {
-                yieldAll(entityLoader.loadBySourceId(targetItem.sourceIdentity.f1, listOf(targetItem.sourceIdentity.f2)))
+            if(config.filterBySourcePart && targetItem.sourceIdentity != null && targetItem.sourceIdentity.sourcePart != null) {
+                yieldAll(entityLoader.loadBySourceId(targetItem.sourceIdentity.sourceSite, listOf(targetItem.sourceIdentity.sourceId)))
             }
             if(config.filterByPartition) {
                 yieldAll(entityLoader.loadByPartition(targetItem.partitionTime))
@@ -91,7 +95,7 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
         //similarity检测。
         //FUTURE: 后面的检测要注意利用已有的node graph剪枝，已存在高位关系(如source relation same)的就跳过其他检测。
         if(targetItem.fingerprint != null) {
-            val adds = mutableListOf<Triple<Int, Int, RelationType>>()
+            val adds = mutableListOf<Triple<Int, Int, FindSimilarResult.RelationEdgeType>>()
             for (matched in matchedItems) {
                 if(matched.fingerprint != null) {
                     //计算simple得分。任意一方有极低的得分，就立刻跳过
@@ -111,9 +115,8 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
                             else if(dHashRating >= 0.92) dHashRating
                             else if(pHashRating * 0.6 + dHashRating * 0.4 >= 0.76) pHashRating * 0.6 + dHashRating * 0.4
                             else continue
-                        val level = if(similarity >= 0.98) 2 else 1
 
-                        adds.add(Triple(targetItem.id, matched.id, SimilarityRelationType(similarity, level)))
+                        adds.add(Triple(targetItem.id, matched.id, FindSimilarResult.HighSimilarity(similarity)))
                     }
                 }
             }
@@ -122,42 +125,40 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
     }
 
     /**
-     * 执行source relation:relations类的匹配检测。
+     * 执行source relation类的匹配检测。
      * 此项检测包括：检查targetItem和matched的source relations是否包含对方(任一即可)。
      */
     private fun matchForSourceRelations(targetItem: EntityInfo, matchedItems: Sequence<EntityInfo>) {
-        val adds = mutableListOf<Triple<Int, Int, RelationType>>()
+        val adds = mutableListOf<Triple<Int, Int, FindSimilarResult.RelationEdgeType>>()
         for (matched in matchedItems) {
             val hasRelations = targetItem.sourceIdentity != null && matched.sourceIdentity != null
-                    && targetItem.sourceIdentity.f1 == matched.sourceIdentity.f1
+                    && targetItem.sourceIdentity.sourceSite == matched.sourceIdentity.sourceSite
                     && (!targetItem.sourceRelations.isNullOrEmpty() || !matched.sourceRelations.isNullOrEmpty())
                     && (
-                        (!targetItem.sourceRelations.isNullOrEmpty() && matched.sourceIdentity.f2 in targetItem.sourceRelations)
-                        || (!matched.sourceRelations.isNullOrEmpty() && targetItem.sourceIdentity.f2 in matched.sourceRelations)
+                        (!targetItem.sourceRelations.isNullOrEmpty() && matched.sourceIdentity.sourceId in targetItem.sourceRelations)
+                        || (!matched.sourceRelations.isNullOrEmpty() && targetItem.sourceIdentity.sourceId in matched.sourceRelations)
                         || (!targetItem.sourceRelations.isNullOrEmpty() && !matched.sourceRelations.isNullOrEmpty() && targetItem.sourceRelations.any { it in matched.sourceRelations })
                     )
             if(hasRelations) {
-                adds.add(Triple(targetItem.id, matched.id, SourceRelatedRelationType(true, null)))
+                adds.add(Triple(targetItem.id, matched.id, FindSimilarResult.SourceRelated))
             }
         }
         addInGraph(adds)
     }
 
     /**
-     * 执行source relation:book类的匹配检测。
+     * 执行source book类的匹配检测。
      */
     private fun matchForSourceBooks(targetItem: EntityInfo) {
         if(!targetItem.sourceBooks.isNullOrEmpty()) {
-            val adds = mutableListOf<Triple<Int, Int, RelationType>>()
-
             data.db.from(Illusts)
                 .innerJoin(SourceBookRelations, SourceBookRelations.sourceDataId eq Illusts.sourceDataId)
                 .select(Illusts.id, SourceBookRelations.sourceBookId)
                 .where { SourceBookRelations.sourceBookId inList targetItem.sourceBooks }
-                .map { Triple(targetItem.id, it[Illusts.id]!!, SourceRelatedRelationType(false, mutableSetOf(it[SourceBookRelations.sourceBookId]!!))) }
-                .let { adds.addAll(it) }
-
-            addInGraph(adds)
+                .asSequence()
+                .groupBy({ it[SourceBookRelations.sourceBookId]!! }) { it[Illusts.id]!! }
+                .map { (k, v) -> Pair(FindSimilarResult.SourceBookCoverage(k), v) }
+                .let { addInGraph(it) }
         }
     }
 
@@ -166,12 +167,11 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
      */
     private fun matchForSourcePart(targetItem: EntityInfo) {
         if(targetItem.sourceIdentity != null) {
-            val adds = mutableListOf<Triple<Int, Int, RelationType>>()
-            val (site, sid, part, partName) = targetItem.sourceIdentity
+            val (_, site, sid, part, partName) = targetItem.sourceIdentity
 
-            //相似的要求是：id相同，part/partName不同
+            //相似的要求是id相同，part/partName不同
             if(partName != null || part != null) {
-                data.db.from(Illusts)
+                val illustIds = data.db.from(Illusts)
                     .select(Illusts.id)
                     .whereWithConditions {
                         it += Illusts.id notEq targetItem.id
@@ -185,11 +185,9 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
                         }
                     }
                     .map { it[Illusts.id]!! }
-                    .map { Triple(targetItem.id, it, SourceIdentityRelationType(site, sid, null, null, false)) }
-                    .let { adds.addAll(it) }
-            }
 
-            addInGraph(adds)
+                addInGraph(listOf(Pair(FindSimilarResult.SourceIdentitySimilarCoverage(site, sid), illustIds)))
+            }
         }
     }
 
@@ -198,7 +196,7 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
      * 由于这部分的独立性质，可以拆出来单独执行，以提高执行效率。在旧算法中，优化了缓存问题后，最慢的就是这一块了。
      */
     private fun matchForAllSourceIdentity() {
-        val adds = mutableListOf<Triple<Int, Int, RelationType>>()
+        val adds = mutableListOf<Triple<Int, Int, FindSimilarResult.RelationEdgeType>>()
         //从Illust中筛选出所有sourceIdentity重复的项。
         //等价判断的要求是：id相同，part相同；或者存在partName时，partName相同
         val sameSourceIds = data.db.from(Illusts)
@@ -220,7 +218,7 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
                 .select(Illusts.id)
                 .where { (Illusts.sourceSite eq site) and (Illusts.sourceId eq id) and if(part != null) Illusts.sourcePart eq part else Illusts.sourcePart.isNull() }
                 .map { it[Illusts.id]!! }
-            illusts.forEachTwo { a, b -> adds.add(Triple(a, b, SourceIdentityRelationType(site, id, part, null, true))) }
+            illusts.forEachTwo { a, b -> adds.add(Triple(a, b, FindSimilarResult.SourceIdentityEqual(site, id, part, null))) }
         }
 
         for ((site, pn) in sameSourcePartNames) {
@@ -228,7 +226,7 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
                 .select(Illusts.id)
                 .where { (Illusts.sourceSite eq site) and (Illusts.sourcePartName eq pn) }
                 .map { it[Illusts.id]!! }
-            illusts.forEachTwo { a, b -> adds.add(Triple(a, b, SourceIdentityRelationType(site, null, null, pn, true))) }
+            illusts.forEachTwo { a, b -> adds.add(Triple(a, b, FindSimilarResult.SourceIdentityEqual(site, null, null, pn))) }
         }
     }
 
@@ -237,69 +235,127 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
      */
     private fun supplyExistRelations() {
         //增补collection关系
-        val sameCollections = nodes.asSequence()
-            .mapNotNull { (k, v) ->
-                if(v.info.collectionId != null) {
-                    v.info.collectionId to k
-                }else{
-                    null
-                }
-            }
+        vertices.asSequence()
+            .mapNotNull { (k, v) -> v.entity.collectionId?.let { it to k } }
             .groupBy({ (k, _) -> k }) { (_, v) -> v }
             .filterValues { it.size > 1 }
-        for ((collectionId, keys) in sameCollections) {
-            addInGraph(keys.mapEachTwo { a, b -> Triple(a, b, ExistedRelationType(sameCollectionId = collectionId)) })
-        }
+            .map { (k, v) -> Pair(FindSimilarResult.CollectionCoverage(k), v) }
+            .let { addInGraph(it) }
 
         //增补book关系
-        val sameBooks = data.db.from(Illusts)
+        data.db.from(Illusts)
             .innerJoin(BookImageRelations, BookImageRelations.imageId eq Illusts.id)
             .select(BookImageRelations.bookId, Illusts.id)
-            .where { Illusts.id inList nodes.keys }
+            .where { Illusts.id inList vertices.keys }
             .asSequence()
             .map { it[BookImageRelations.bookId]!! to it[Illusts.id]!! }
             .groupBy({ it.first }) { it.second }
             .filterValues { it.size > 1 }
-        for ((bookId, keys) in sameBooks) {
-            addInGraph(keys.mapEachTwo { a, b -> Triple(a, b, ExistedRelationType(sameBooks = mutableSetOf(bookId))) })
-        }
+            .map { (k, v) -> Pair(FindSimilarResult.BookCoverage(k), v) }
+            .let { addInGraph(it) }
 
         //增补associate关系
         //添加了illustId < relatedIllustId的条件，节省查找结果
         data.db.from(AssociateRelations)
             .select()
-            .where { AssociateRelations.illustId inList nodes.keys and (AssociateRelations.illustId less AssociateRelations.relatedIllustId) }
-            .map { Triple(it[AssociateRelations.illustId]!!, it[AssociateRelations.relatedIllustId]!!, ExistedRelationType(sameAssociate = true)) }
+            .where { AssociateRelations.illustId inList vertices.keys and (AssociateRelations.illustId less AssociateRelations.relatedIllustId) }
+            .map { Triple(it[AssociateRelations.illustId]!!, it[AssociateRelations.relatedIllustId]!!, FindSimilarResult.Associated) }
             .let { addInGraph(it) }
 
-        //增补ignored关系
-        data.db.from(FindSimilarIgnores)
-            .select(FindSimilarIgnores.secondTarget, FindSimilarIgnores.firstTarget)
-            .where { FindSimilarIgnores.firstTarget inList nodes.keys.map { it.toString() } and (FindSimilarIgnores.firstTarget less FindSimilarIgnores.secondTarget) }
-            .map { Triple(it[FindSimilarIgnores.firstTarget]!!.toInt(), it[FindSimilarIgnores.secondTarget]!!.toInt(), ExistedRelationType(ignored = true)) }
-            .let { addInGraph(it) }
+        //预查询ignored表，以节省后续的查询
+        val ignoredExists = data.db.from(FindSimilarIgnores)
+            .select(FindSimilarIgnores.type, count(FindSimilarIgnores.id).aliased("cnt"))
+            .groupBy(FindSimilarIgnores.type)
+            .having(count(FindSimilarIgnores.id).aliased("cnt") greater 0)
+            .map { it[FindSimilarIgnores.type]!! }
+            .toSet()
+
+        if(FindSimilarIgnored.IgnoredType.EDGE in ignoredExists) {
+            //增补edge类型的ignored关系
+            //添加了first < second的条件，节省查找结果
+            data.db.from(FindSimilarIgnores)
+                .select(FindSimilarIgnores.secondTarget, FindSimilarIgnores.firstTarget)
+                .where { (FindSimilarIgnores.type eq FindSimilarIgnored.IgnoredType.EDGE) and (FindSimilarIgnores.firstTarget inList vertices.keys) and (FindSimilarIgnores.firstTarget less FindSimilarIgnores.secondTarget) }
+                .map { Triple(it[FindSimilarIgnores.firstTarget]!!, it[FindSimilarIgnores.secondTarget]!!, FindSimilarResult.Ignored) }
+                .let { addInGraph(it) }
+        }
+
+        if(FindSimilarIgnored.IgnoredType.SOURCE_BOOK in ignoredExists) {
+            //增补sourceBook类型的ignored关系。当添加ignored关系时，不需要提供节点，它只会将现有的coverage标记为ignored
+            val sourceBookIds = vertices.values.asSequence().mapNotNull { it.entity.sourceBooks }.flatten().distinct().toList()
+            data.db.from(FindSimilarIgnores)
+                .select(FindSimilarIgnores.firstTarget)
+                .where { (FindSimilarIgnores.type eq FindSimilarIgnored.IgnoredType.SOURCE_BOOK) and (FindSimilarIgnores.firstTarget inList sourceBookIds) }
+                .map { Pair(FindSimilarResult.SourceBookCoverage(it[FindSimilarIgnores.firstTarget]!!), true) }
+                .let { addInGraph(it) }
+        }
+
+        if(FindSimilarIgnored.IgnoredType.SOURCE_IDENTITY_SIMILAR in ignoredExists) {
+            //增补sourceIdentity类型的ignored关系。当添加ignored关系时，不需要提供节点，它只会将现有的coverage标记为ignored
+            if(data.db.sequenceOf(FindSimilarIgnores).count { it.type eq FindSimilarIgnored.IgnoredType.SOURCE_IDENTITY_SIMILAR } > 0) {
+                val sourceDataIds = vertices.values.asSequence().mapNotNull { it.entity.sourceIdentity?.sourceDataId }.distinct().toList()
+                data.db.from(FindSimilarIgnores)
+                    .select(FindSimilarIgnores.firstTarget)
+                    .where { (FindSimilarIgnores.type eq FindSimilarIgnored.IgnoredType.SOURCE_IDENTITY_SIMILAR) and (FindSimilarIgnores.firstTarget inList sourceDataIds) }
+                    .asSequence()
+                    .map { it[FindSimilarIgnores.firstTarget]!! }
+                    .mapNotNull { sourceDataId -> vertices.values.firstOrNull { it.entity.sourceIdentity?.sourceDataId == sourceDataId }?.entity?.sourceIdentity }
+                    .map { Pair(FindSimilarResult.SourceIdentitySimilarCoverage(it.sourceSite, it.sourceId), true) }
+                    .toList()
+                    .let { addInGraph(it) }
+            }
+        }
     }
 
     /**
      * 将添加一组图关系。
      */
-    private fun addInGraph(adds: Iterable<Triple<Int, Int, RelationType>>) {
+    @JvmName("AddEdgeInGraph")
+    private fun addInGraph(adds: Iterable<Triple<Int, Int, FindSimilarResult.RelationEdgeType>>) {
         val allEntityKeys = adds.asSequence().flatMap { sequenceOf(it.first, it.second) }.toSet()
         val allEntityInfo = entityLoader.loadImage(allEntityKeys, enableFilterBy = false).associateBy { it.id }
-        val allNodes = allEntityInfo.mapValues { (entityKey, entityInfo) -> nodes.computeIfAbsent(entityKey) { GraphNode(entityKey, entityInfo, mutableSetOf()) } }
+        val allNodes = allEntityInfo.mapValues { (entityKey, entityInfo) -> vertices.computeIfAbsent(entityKey) { GraphVertex(entityKey, entityInfo, mutableSetOf(), mutableSetOf()) } }
         for ((keyA, keyB, newRelation) in adds) {
             val nodeA = allNodes[keyA]
             val nodeB = allNodes[keyB]
             if(nodeA != null && nodeB != null && keyA != keyB) {
                 //首先尝试从nodeA中获取与nodeB关联的relation。如果不存在则创建新的relation，且两个relation共用一个relation list
-                val relationList = nodeA.relations.firstOrNull { it.another.key == nodeB.key }?.relations ?: run {
-                    val list = mutableListOf<RelationType>()
-                    nodeA.relations.add(GraphRelation(nodeB, list))
-                    nodeB.relations.add(GraphRelation(nodeA, list))
+                val relationList = nodeA.edges.firstOrNull { it.another.key == nodeB.key }?.relations ?: run {
+                    val list = mutableListOf<FindSimilarResult.RelationEdgeType>()
+                    nodeA.edges.add(GraphEdge(nodeB, list))
+                    nodeB.edges.add(GraphEdge(nodeA, list))
                     list
                 }
-                relationList.addNewRelation(newRelation)
+                relationList.addNewEdge(newRelation)
             }
+        }
+    }
+
+    /**
+     * 添加一组图上的覆盖关系。
+     */
+    @JvmName("AddCoverageInGraph")
+    private fun addInGraph(adds: Iterable<Pair<FindSimilarResult.RelationCoverageType, List<Int>>>) {
+        for ((coverageType, imageIds) in adds) {
+            val coverage = coverages.computeIfAbsent(coverageType) { GraphCoverage(mutableSetOf(), it, false) }
+
+            //筛选出新加入的imageId
+            val appendIds = imageIds - coverage.vertices.map { it.key }.toSet()
+            //加载其entity，然后统统放入coverage的节点列表
+            val appendNodes = entityLoader.loadImage(appendIds, enableFilterBy = false).associateBy { it.id }.map { (entityKey, entityInfo) -> vertices.computeIfAbsent(entityKey) { GraphVertex(entityKey, entityInfo, mutableSetOf(), mutableSetOf()) } }
+            coverage.vertices.addAll(appendNodes)
+            //最后将coverage加入其每个节点的coverages列表
+            appendIds.mapNotNull { vertices[it] }.forEach { it.coverages.add(coverage) }
+        }
+    }
+
+    /**
+     * 添加一组图上的覆盖关系的ignored属性。
+     */
+    @JvmName("ignoreCoverageInGraph")
+    private fun addInGraph(adds: Iterable<Pair<FindSimilarResult.RelationCoverageType, Boolean>>) {
+        for ((coverageType, ignored) in adds) {
+            coverages.compute(coverageType) { k, cur -> cur?.also { it.ignored = ignored } ?:  GraphCoverage(mutableSetOf(), k, ignored) }
         }
     }
 }

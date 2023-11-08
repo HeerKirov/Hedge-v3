@@ -26,21 +26,21 @@ object StringUnionListType : SqlType<List<String>>(Types.VARCHAR, typeName = "va
     }
 }
 
-class UnionListType<T>(private val parser: (String) -> T) : SqlType<List<T>>(Types.VARCHAR, typeName = "varchar") {
-    private val SPLIT = "|"
+object IntUnionListType : SqlType<List<Int>>(Types.VARCHAR, typeName = "varchar") {
+    private const val SPLIT = "|"
 
-    override fun doGetResult(rs: ResultSet, index: Int): List<T> {
+    override fun doGetResult(rs: ResultSet, index: Int): List<Int> {
         val value = rs.getString(index)
         return if(value.isNullOrBlank()) {
             emptyList()
         }else{
             val start = if(value.startsWith(SPLIT)) 1 else 0
             val end = if(value.endsWith(SPLIT)) value.length - 1 else value.length
-            value.substring(start, end).split(SPLIT).map(parser)
+            value.substring(start, end).split(SPLIT).map { it.toInt() }
         }
     }
 
-    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: List<T>) {
+    override fun doSetParameter(ps: PreparedStatement, index: Int, parameter: List<Int>) {
         ps.setString(index, if(parameter.isEmpty()) "" else parameter.joinToString(SPLIT, SPLIT, SPLIT))
     }
 }
@@ -53,8 +53,8 @@ fun BaseTable<*>.unionList(name: String): Column<List<String>> {
 }
 
 /**
- * 将数组映射为联合字符串。
+ * 将数值数组映射为联合字符串。
  */
-fun <T> BaseTable<*>.unionList(name: String, parser: (String) -> T): Column<List<T>> {
-    return registerColumn(name, UnionListType(parser))
+fun BaseTable<*>.intUnionList(name: String): Column<List<Int>> {
+    return registerColumn(name, IntUnionListType)
 }

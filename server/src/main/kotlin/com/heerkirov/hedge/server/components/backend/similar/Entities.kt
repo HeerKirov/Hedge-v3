@@ -1,8 +1,7 @@
 package com.heerkirov.hedge.server.components.backend.similar
 
-import com.heerkirov.hedge.server.enums.SourceMarkType
+import com.heerkirov.hedge.server.model.FindSimilarResult
 import com.heerkirov.hedge.server.model.SourceTag
-import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import java.time.LocalDate
 
 /**
@@ -13,13 +12,15 @@ import java.time.LocalDate
 data class EntityInfo(val id: Int,
                       val partitionTime: LocalDate,
                       val sourceTags: List<SourceTag>,
-                      val sourceIdentity: Tuple4<String, Long, Int?, String?>?,
+                      val sourceIdentity: SourceIdentity?,
                       val sourceRelations: List<Long>?,
                       val sourceBooks: List<Int>?,
                       val fingerprint: Fingerprint?,
                       val collectionId: Int?,
                       val authors: List<Int>,
                       val topics: List<Int>)
+
+data class SourceIdentity(val sourceDataId: Int, val sourceSite: String, val sourceId: Long, val sourcePart: Int?, val sourcePartName: String?)
 
 /**
  * 指纹数据。
@@ -29,43 +30,15 @@ data class Fingerprint(val pHashSimple: String, val dHashSimple: String, val pHa
 /**
  * 工作单元的图节点。
  */
-data class GraphNode(val key: Int, val info: EntityInfo, val relations: MutableSet<GraphRelation>)
+class GraphVertex(val key: Int, val entity: EntityInfo, val edges: MutableSet<GraphEdge>, val coverages: MutableSet<GraphCoverage>)
 
 /**
  * 工作单元的图关系。
  */
-class GraphRelation(val another: GraphNode, val relations: MutableList<RelationType>)
+class GraphEdge(val another: GraphVertex, val relations: MutableList<FindSimilarResult.RelationEdgeType>)
 
 /**
- * 关系类型与附加信息。
+ * 工作单元的覆盖领域。
  */
-sealed interface RelationType
+class GraphCoverage(val vertices: MutableSet<GraphVertex>, val type: FindSimilarResult.RelationCoverageType, var ignored: Boolean)
 
-/**
- * source identity相等或近似。
- */
-data class SourceIdentityRelationType(var site: String, var sourceId: Long?, var sourcePart: Int?, var sourcePartName: String?, var equal: Boolean) : RelationType
-
-/**
- * source relation/books有关联。
- */
-data class SourceRelatedRelationType(var hasRelations: Boolean, var sameBooks: MutableSet<Int>?) : RelationType
-
-/**
- * source mark已被标记。
- */
-data class SourceMarkRelationType(var markType: SourceMarkType) : RelationType
-
-/**
- * similarity达到近似阈值。
- */
-data class SimilarityRelationType(var similarity: Double, var level: Int) : RelationType
-
-/**
- * 已存在的关系类型。
- */
-data class ExistedRelationType(var sameCollectionId: Int? = null,
-                               var samePreCollection: String? = null,
-                               var sameBooks: MutableSet<Int>? = null,
-                               var sameAssociate: Boolean = false,
-                               var ignored: Boolean = false) : RelationType

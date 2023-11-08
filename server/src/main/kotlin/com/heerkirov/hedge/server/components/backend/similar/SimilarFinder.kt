@@ -8,11 +8,13 @@ import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.dao.FindSimilarIgnores
 import com.heerkirov.hedge.server.dao.FindSimilarTasks
 import com.heerkirov.hedge.server.enums.AppLoadStatus
+import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.events.IllustDeleted
 import com.heerkirov.hedge.server.events.PackagedBusEvent
 import com.heerkirov.hedge.server.exceptions.NotFound
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.library.framework.StatefulComponent
+import com.heerkirov.hedge.server.model.FindSimilarIgnored
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.tools.ControlledLoopThread
 import org.ktorm.dsl.*
@@ -34,7 +36,7 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, appdata: AppData
     private val workerThread = SimilarFinderWorkThread(appdata, data, bus)
 
     init {
-        bus.on(IllustDeleted::class, ::processImportToImage)
+        bus.on(IllustDeleted::class, ::processIgnoredDeleted)
     }
 
     override val isIdle: Boolean get() = !workerThread.isAlive
@@ -65,9 +67,14 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, appdata: AppData
         }
     }
 
-    private fun processImportToImage(events: PackagedBusEvent) {
+    private fun processIgnoredDeleted(events: PackagedBusEvent) {
         events.which {
-            all<IllustDeleted> { events -> workerThread.processRemoveImageEvent(events.map { it.illustId }) }
+            all<IllustDeleted> { events ->
+                val illustIds = events.filter { it.illustType == IllustType.IMAGE }.map { it.illustId }
+                if(illustIds.isNotEmpty()) data.db.transaction {
+                    data.db.delete(FindSimilarIgnores) { (it.type eq FindSimilarIgnored.IgnoredType.EDGE) and (it.firstTarget inList illustIds) or (it.secondTarget inList illustIds) }
+                }
+            }
         }
     }
 }
@@ -90,13 +97,6 @@ class SimilarFinderWorkThread(private val appdata: AppDataManager, private val d
 
         data.db.transaction {
             data.db.delete(FindSimilarTasks) { it.id eq model.id }
-        }
-    }
-
-    fun processRemoveImageEvent(illustIds: List<Int>) {
-        val key = illustIds.map { it.toString() }
-        data.db.transaction {
-            data.db.delete(FindSimilarIgnores) { (it.firstTarget inList key) or (it.secondTarget inList key) }
         }
     }
 }

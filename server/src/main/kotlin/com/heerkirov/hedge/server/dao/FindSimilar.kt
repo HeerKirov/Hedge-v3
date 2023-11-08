@@ -3,9 +3,7 @@ package com.heerkirov.hedge.server.dao
 import com.heerkirov.hedge.server.model.FindSimilarIgnored
 import com.heerkirov.hedge.server.model.FindSimilarResult
 import com.heerkirov.hedge.server.model.FindSimilarTask
-import com.heerkirov.hedge.server.utils.ktorm.type.composition
-import com.heerkirov.hedge.server.utils.ktorm.type.json
-import com.heerkirov.hedge.server.utils.ktorm.type.unionList
+import com.heerkirov.hedge.server.utils.ktorm.type.*
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.schema.*
 
@@ -26,32 +24,38 @@ object FindSimilarTasks : BaseTable<FindSimilarTask>("find_similar_task", schema
 
 object FindSimilarIgnores : BaseTable<FindSimilarIgnored>("find_similar_ignored", schema = "system_db") {
     val id = int("id").primaryKey()
-    val firstTarget = text("first_target")
-    val secondTarget = text("second_target")
+    val type = enum("type", typeRef<FindSimilarIgnored.IgnoredType>())
+    val firstTarget = int("first_target")
+    val secondTarget = int("second_target")
     val recordTime = timestamp("record_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FindSimilarIgnored(
         id = row[id]!!,
+        type = row[type]!!,
         firstTarget = row[firstTarget]!!,
-        secondTarget = row[secondTarget]!!,
+        secondTarget = row[secondTarget],
         recordTime = row[recordTime]!!
     )
 }
 
 object FindSimilarResults : BaseTable<FindSimilarResult>("find_similar_result", schema = "system_db") {
     val id = int("id").primaryKey()
-    val summaryTypes = composition<FindSimilarResult.SummaryTypes>("summary_types")
-    val images = unionList("images")
-    val relations = json("relations", typeRef<List<FindSimilarResult.RelationUnit>>())
-    val sortPriority = int("sort_priority")
+    val category = enum("category", typeRef<FindSimilarResult.SimilarityCategory>())
+    val summaryType = composition<FindSimilarResult.SummaryTypes>("summary_type")
+    val imageIds = intUnionList("image_ids")
+    val edges = json("edges", typeRef<List<FindSimilarResult.RelationEdge>>())
+    val coverages = json("coverages", typeRef<List<FindSimilarResult.RelationCoverage>>())
+    val resolved = boolean("resolved")
     val recordTime = timestamp("record_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FindSimilarResult(
         id = row[id]!!,
-        summaryTypes = row[summaryTypes]!!,
-        images = row[images]!!,
-        relations = row[relations]!!,
-        sortPriority = row[sortPriority]!!,
+        category = row[category]!!,
+        summaryType = row[summaryType]!!,
+        imageIds = row[imageIds]!!,
+        edges = row[edges]!!,
+        coverages = row[coverages]!!,
+        resolved = row[resolved]!!,
         recordTime = row[recordTime]!!
     )
 }

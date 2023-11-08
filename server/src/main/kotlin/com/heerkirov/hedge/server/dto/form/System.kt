@@ -1,5 +1,7 @@
 package com.heerkirov.hedge.server.dto.form
 
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.heerkirov.hedge.server.enums.NoteStatus
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.types.Opt
@@ -8,22 +10,36 @@ data class HistoryPushForm(val type: String, val id: Int)
 
 data class FindSimilarTaskCreateForm(val selector: FindSimilarTask.TaskSelector, val config: FindSimilarTask.TaskConfig? = null)
 
-data class FindSimilarResultResolveForm(val actions: List<Resolution>) {
-    data class Resolution(val a: Int, val b: Int? = null, val actionType: ActionType, val config: Any? = null)
+data class FindSimilarResultResolveForm(val actions: List<Resolution>, val clear: Boolean) {
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+    @JsonSubTypes(value = [
+        JsonSubTypes.Type(value = CloneImageResolution::class, name = "CLONE_IMAGE"),
+        JsonSubTypes.Type(value = AddToCollectionResolution::class, name = "ADD_TO_COLLECTION"),
+        JsonSubTypes.Type(value = AddToBookResolution::class, name = "ADD_TO_BOOK"),
+        JsonSubTypes.Type(value = DeleteResolution::class, name = "DELETE"),
+        JsonSubTypes.Type(value = MarkIgnoredResolution::class, name = "MARK_IGNORED"),
+        JsonSubTypes.Type(value = MarkIgnoredSourceBookResolution::class, name = "MARK_IGNORED_SOURCE_BOOK"),
+        JsonSubTypes.Type(value = MarkIgnoredSourceDataResolution::class, name = "MARK_IGNORED_SOURCE_DATA"),
+    ])
+    sealed interface Resolution
 
-    enum class ActionType {
-        CLONE_IMAGE,
-        DELETE,
-        ADD_TO_COLLECTION,
-        ADD_TO_BOOK,
-        MARK_IGNORED
-    }
+    sealed interface ResolutionForTwoImage : Resolution { val from: Int; val to: Int }
 
-    data class CloneImageConfig(val props: ImagePropsCloneForm.Props, val merge: Boolean = false, val deleteFrom: Boolean = false)
+    sealed interface ResolutionForMultipleImage : Resolution { val imageIds: List<Int> }
 
-    data class AddToCollectionConfig(val collectionId: Any)
+    data class CloneImageResolution(override val from: Int, override val to: Int, val props: ImagePropsCloneForm.Props, val merge: Boolean = false, val deleteFrom: Boolean = false) : ResolutionForTwoImage
 
-    data class AddToBookConfig(val bookId: Int)
+    data class AddToCollectionResolution(override val imageIds: List<Int>, val collectionId: Any) : ResolutionForMultipleImage
+
+    data class AddToBookResolution(override val imageIds: List<Int>, val bookId: Int) : ResolutionForMultipleImage
+
+    data class DeleteResolution(override val imageIds: List<Int>) : ResolutionForMultipleImage
+
+    data class MarkIgnoredResolution(override val from: Int, override val to: Int) : ResolutionForTwoImage
+
+    data class MarkIgnoredSourceBookResolution(val site: String, val sourceBookCode: String) : Resolution
+
+    data class MarkIgnoredSourceDataResolution(val site: String, val sourceId: Long) : Resolution
 }
 
 data class NoteCreateForm(val title: String, val content: String? = null, val status: NoteStatus? = null)

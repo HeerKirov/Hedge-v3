@@ -133,7 +133,7 @@ data class SourceTagMappingUpdated(val site: String, val sourceTagType: String, 
 
 data class SimilarFinderResultCreated(val count: Int) : BaseBusEventImpl("entity/find-similar-result/created"), EntityEvent
 
-data class SimilarFinderResultResolved(val resultId: Int) : BaseBusEventImpl("entity/find-similar-result/resolved"), EntityEvent
+data class SimilarFinderResultUpdated(val resultId: Int) : BaseBusEventImpl("entity/find-similar-result/updated"), EntityEvent
 
 data class SimilarFinderResultDeleted(val resultId: Int) : BaseBusEventImpl("entity/find-similar-result/deleted"), EntityEvent
 

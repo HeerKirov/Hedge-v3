@@ -6,7 +6,6 @@ import com.heerkirov.hedge.server.dto.res.SourceTagPath
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
-import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import org.ktorm.dsl.*
 import java.time.LocalDate
 import java.util.Objects
@@ -36,7 +35,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
      * 并且所有源项总是首先全部加载完成，之后才加载匹配项，因此也不必担心缓存。
      */
     fun loadImage(imageIds: Iterable<Int>, enableFilterBy: Boolean = false): List<EntityInfo> {
-        data class ImageRow(val parentId: Int?, val partitionTime: LocalDate, val sourceSite: String?, val sourceId: Long?, val sourcePart: Int?, val sourcePartName: String?, val fingerprint: Fingerprint?)
+        data class ImageRow(val parentId: Int?, val partitionTime: LocalDate, val sourceIdentity: SourceIdentity?, val fingerprint: Fingerprint?)
 
         val notExistIds = mutableListOf<Int>()
         val entityInfoList = mutableListOf<EntityInfo>()
@@ -48,13 +47,19 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
         if(notExistIds.isNotEmpty()) {
             val imagesMap = data.db.from(Illusts)
                 .leftJoin(FileFingerprints, FileFingerprints.fileId eq Illusts.fileId)
-                .select(Illusts.id, Illusts.parentId, Illusts.partitionTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName, FileFingerprints.fileId, FileFingerprints.pHashSimple, FileFingerprints.pHash, FileFingerprints.dHashSimple, FileFingerprints.dHash)
+                .select(Illusts.id, Illusts.parentId, Illusts.partitionTime,
+                    Illusts.sourceDataId, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
+                    FileFingerprints.fileId, FileFingerprints.pHashSimple, FileFingerprints.pHash,
+                    FileFingerprints.dHashSimple, FileFingerprints.dHash)
                 .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.id inList notExistIds) }
                 .associateBy({ it[Illusts.id]!! }) {
                     val fingerprint = it[FileFingerprints.fileId]?.run {
                         Fingerprint(it[FileFingerprints.pHashSimple]!!, it[FileFingerprints.dHashSimple]!!, it[FileFingerprints.pHash]!!, it[FileFingerprints.dHash]!!)
                     }
-                    ImageRow(it[Illusts.parentId], it[Illusts.partitionTime]!!, it[Illusts.sourceSite], it[Illusts.sourceId], it[Illusts.sourcePart], it[Illusts.sourcePartName], fingerprint)
+                    val sourceIdentity = it[Illusts.sourceDataId]?.let { sourceDataId ->
+                        SourceIdentity(sourceDataId, it[Illusts.sourceSite]!!, it[Illusts.sourceId]!!, it[Illusts.sourcePart], it[Illusts.sourcePartName])
+                    }
+                    ImageRow(it[Illusts.parentId], it[Illusts.partitionTime]!!, sourceIdentity, fingerprint)
                 }
 
             val imageAuthorsMap = if(!enableFilterBy || !config.filterByAuthor) emptyMap() else {
@@ -105,13 +110,12 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
             }
 
             for ((id, row) in imagesMap) {
-                val sourceIdentity = if(row.sourceSite != null && row.sourceId != null) Tuple4(row.sourceSite, row.sourceId, row.sourcePart, row.sourcePartName) else null
                 val sourceRelations = if(config.findBySourceRelation || config.filterBySourceRelation) imageSourceRelationsMap[id] ?: emptyList() else null
                 val sourceBooks = if(config.findBySourceBook || config.filterBySourceBook) imageSourceBooksMap[id] ?: emptyList() else null
                 val entityInfo = EntityInfo(id,
                     row.partitionTime,
                     imageSourceTagsMap[id] ?: emptyList(),
-                    sourceIdentity,
+                    row.sourceIdentity,
                     sourceRelations,
                     sourceBooks,
                     row.fingerprint,

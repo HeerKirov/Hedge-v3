@@ -3,8 +3,6 @@ package com.heerkirov.hedge.server.model
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.heerkirov.hedge.server.dto.res.SourceTagPath
-import com.heerkirov.hedge.server.enums.SimilarityType
-import com.heerkirov.hedge.server.enums.SourceMarkType
 import com.heerkirov.hedge.server.utils.composition.Composition
 import java.time.Instant
 import java.time.LocalDate
@@ -21,8 +19,7 @@ data class FindSimilarTask(val id: Int,
                            /**
                             * 创建此单位的时间。
                             */
-                           val recordTime: Instant
-) {
+                           val recordTime: Instant) {
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
     @JsonSubTypes(value = [
@@ -79,75 +76,137 @@ data class FindSimilarTask(val id: Int,
     data class SourceAndTagType(val sourceSite: String, val tagType: String)
 }
 
+/**
+ * 相似项查找的忽略标记。
+ */
 data class FindSimilarIgnored(val id: Int,
+                              /**
+                               * 此忽略标记的类型。
+                               * EDGE：两个节点之间的忽略标记，此时使用两个节点；
+                               * SOURCE_IDENTITY：忽略一个sourceId，节点填sourceDataId；
+                               * SOURCE_BOOK：忽略一个sourceBook，节点填sourceBookId。
+                               */
+                              val type: IgnoredType,
                               /**
                                * 第一个节点。
                                */
-                              val firstTarget: String,
+                              val firstTarget: Int,
                               /**
                                * 第二个节点。
                                */
-                              val secondTarget: String,
+                              val secondTarget: Int?,
                               /**
                                * 此关系记录的时间。
                                */
-                              val recordTime: Instant)
+                              val recordTime: Instant) {
+    enum class IgnoredType {
+        EDGE, SOURCE_IDENTITY_SIMILAR, SOURCE_BOOK
+    }
+}
 
+/**
+ * 一条相似项查找的记录，一条记录等同于一个连通分量。
+ */
 data class FindSimilarResult(val id: Int,
                              /**
-                              * 此result的主要内容类型。
+                              * 此result的类型。
                               */
-                             val summaryTypes: SummaryTypes,
+                             val category: SimilarityCategory,
                              /**
-                              * 此待处理结果包含的所有image。
+                              * 此result包含哪些类型的关系。
                               */
-                             val images: List<String>,
+                             val summaryType: SummaryTypes,
                              /**
-                              * 包含的所有关系。
+                              * 此result是否已完全resolved。
                               */
-                             val relations: List<RelationUnit>,
+                             val resolved: Boolean,
                              /**
-                              * 排序优先级。根据主要内容类型计算。
+                              * 此result包含的所有image的id。
                               */
-                             val sortPriority: Int,
+                             val imageIds: List<Int>,
+                             /**
+                              * 包含的所有节点关系。
+                              */
+                             val edges: List<RelationEdge>,
+                             /**
+                              * 包含的所有节点覆盖区域。
+                              */
+                             val coverages: List<RelationCoverage>,
                              /**
                               * 此记录创建的时间。
                               */
                              val recordTime: Instant) {
+    enum class SimilarityCategory {
+        /**
+         * 这是一条特殊的记录，它仅包括完全确定的等价关系，如source identity equal。这有可能是另一个连通分量的子图。把它划分出来是为了方便地处理完全等价关系。
+         */
+        EQUIVALENCE,
+        /**
+         * 这是一条普通的记录，包含一个完整的连通分量。
+         */
+        GRAPH
+    }
+
     open class SummaryTypes(value: Int) : Composition<SummaryTypes>(SummaryTypes::class, value) {
-        object SAME : SummaryTypes(0b1)
+        /**
+         * 等价关系，如source identity equal。
+         */
+        object EQUIVALENCE : SummaryTypes(0b1)
+        /**
+         * 关联关系，各种由source关联引起的联系。
+         */
         object RELATED : SummaryTypes(0b10)
+        /**
+         * 相近关系，内容相似度高引起的联系。
+         */
         object SIMILAR : SummaryTypes(0b100)
+
         object EMPTY : SummaryTypes(0b0)
 
         companion object {
-            val baseElements by lazy { listOf(SAME, RELATED, SIMILAR) }
+            val baseElements by lazy { listOf(EQUIVALENCE, RELATED, SIMILAR) }
             val empty by lazy { EMPTY }
         }
     }
 
-    data class RelationUnit(val a: Int,
-                            val b: Int,
-                            val type: SimilarityType,
-                            @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-                            val params: RelationInfo)
+    data class RelationEdge(val a: Int, val b: Int, val info: RelationEdgeType)
 
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
     @JsonSubTypes(value = [
-        JsonSubTypes.Type(value = SourceIdentityRelationInfo::class, name = "SOURCE_IDENTITY"),
-        JsonSubTypes.Type(value = SourceRelatedRelationInfo::class, name = "SOURCE_RELATED"),
-        JsonSubTypes.Type(value = SourceMarkRelationInfo::class, name = "SOURCE_MARK"),
-        JsonSubTypes.Type(value = SimilarityRelationInfo::class, name = "SIMILARITY"),
-        JsonSubTypes.Type(value = ExistedRelationInfo::class, name = "EXISTED"),
+        JsonSubTypes.Type(value = SourceIdentityEqual::class, name = "SOURCE_IDENTITY_EQUAL"),
+        JsonSubTypes.Type(value = SourceRelated::class, name = "SOURCE_RELATED"),
+        JsonSubTypes.Type(value = HighSimilarity::class, name = "HIGH_SIMILARITY"),
+        JsonSubTypes.Type(value = Associated::class, name = "ASSOCIATED"),
+        JsonSubTypes.Type(value = Ignored::class, name = "EXISTED"),
     ])
-    sealed interface RelationInfo
+    sealed interface RelationEdgeType
 
-    data class SourceIdentityRelationInfo(val site: String, val sourceId: Long?, val sourcePart: Int?, val sourcePartName: String?) : RelationInfo
+    data class SourceIdentityEqual(val site: String, val sourceId: Long?, val sourcePart: Int?, val sourcePartName: String?) : RelationEdgeType
 
-    data class SourceRelatedRelationInfo(val hasRelations: Boolean, val sameBooks: List<Int>) : RelationInfo
+    data class HighSimilarity(val similarity: Double) : RelationEdgeType
 
-    data class SourceMarkRelationInfo(val markType: SourceMarkType) : RelationInfo
+    data object SourceRelated : RelationEdgeType
 
-    data class SimilarityRelationInfo(val similarity: Double) : RelationInfo
+    data object Associated : RelationEdgeType
 
-    data class ExistedRelationInfo(val sameCollectionId: Int?, val samePreCollection: String?, val sameBooks: List<Int>, val sameAssociate: Boolean, val ignored: Boolean) : RelationInfo
+    data object Ignored : RelationEdgeType
+
+    data class RelationCoverage(val imageIds: List<Int>, val info: RelationCoverageType, val ignored: Boolean)
+
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+    @JsonSubTypes(value = [
+        JsonSubTypes.Type(value = SourceIdentitySimilarCoverage::class, name = "SOURCE_IDENTITY_SIMILAR"),
+        JsonSubTypes.Type(value = SourceBookCoverage::class, name = "SOURCE_BOOK"),
+        JsonSubTypes.Type(value = CollectionCoverage::class, name = "COLLECTION"),
+        JsonSubTypes.Type(value = BookCoverage::class, name = "BOOK"),
+    ])
+    sealed interface RelationCoverageType
+
+    data class SourceIdentitySimilarCoverage(val site: String, val sourceId: Long) : RelationCoverageType
+
+    data class SourceBookCoverage(val sourceBookId: Int) : RelationCoverageType
+
+    data class CollectionCoverage(val collectionId: Int) : RelationCoverageType
+
+    data class BookCoverage(val bookId: Int) : RelationCoverageType
 }

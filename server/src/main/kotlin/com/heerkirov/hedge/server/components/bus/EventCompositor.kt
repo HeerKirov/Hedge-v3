@@ -42,7 +42,7 @@ class EventCompositorImpl(private val data: DataRepository,
                 }
             }
             is ImportCreated, is ImportDeleted,
-            is SimilarFinderResultCreated, is SimilarFinderResultDeleted, is SimilarFinderResultResolved -> {
+            is SimilarFinderResultCreated, is SimilarFinderResultDeleted -> {
                 //import/find similar数量变化时，发送homepage state的更新事件
                 sendHomepageStateChangedEvent()
             }
