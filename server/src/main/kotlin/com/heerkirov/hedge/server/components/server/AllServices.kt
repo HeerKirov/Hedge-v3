@@ -18,7 +18,6 @@ class AllServices(
     val topic: TopicService,
     val sourceData: SourceDataService,
     val sourceMapping: SourceMappingService,
-    val sourceMark: SourceMarkService,
     val service: ServiceService,
     val setting: SettingService,
     val note: NoteService,

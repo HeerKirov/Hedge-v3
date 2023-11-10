@@ -1,7 +1,6 @@
 package com.heerkirov.hedge.server.dto.res
 
 import com.heerkirov.hedge.server.enums.SourceEditStatus
-import com.heerkirov.hedge.server.enums.SourceMarkType
 import java.time.Instant
 
 data class SourceDataRes(val sourceSite: String, val sourceSiteName: String, val sourceId: Long,
@@ -28,7 +27,5 @@ data class SourceDataAdditionalInfoDto(val field: String, val label: String, val
 data class SourceTagDto(val code: String, val type: String, val name: String, val otherName: String?)
 
 data class SourceBookDto(val code: String, val title: String, val otherTitle: String?)
-
-data class SourceMarkRes(val sourceSite: String, val sourceSiteName: String, val sourceId: Long, val markType: SourceMarkType)
 
 data class SourceDataIdentity(val sourceSite: String, val sourceId: Long)

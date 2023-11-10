@@ -27,3 +27,40 @@ SELECT id, file_id, NULL, 0, NULL, FALSE, file_name, file_path, file_create_time
 FROM import_image;
 
 DROP TABLE import_image;
+
+-- 新的相似项查找结果表。旧的结果抛弃不继承
+CREATE TABLE system_db.new_find_similar_result(
+    id              INTEGER PRIMARY KEY,
+    category        TINYINT NOT NULL,
+    summary_type    TINYINT NOT NULL,
+    resolved        BOOLEAN NOT NULL,
+    image_ids       TEXT NOT NULL,
+    edges           TEXT NOT NULL,
+    coverages       TEXT NOT NULL,
+    record_time     TIMESTAMP NOT NULL
+);
+
+DROP TABLE system_db.find_similar_result;
+ALTER TABLE system_db.new_find_similar_result RENAME TO find_similar_result;
+
+-- 新的相似项查找忽略关系表
+CREATE TABLE system_db.new_find_similar_ignored(
+    id              INTEGER PRIMARY KEY,
+    type            TINYINT NOT NULL,
+    first_target    INTEGER NOT NULL,
+    second_target   INTEGER,
+    record_time     TIMESTAMP NOT NULL
+);
+
+INSERT INTO system_db.new_find_similar_ignored
+SELECT id, 1, CAST(substring(first_target, 1) AS INTEGER), CAST(substring(second_target, 1) AS INTEGER), record_time
+FROM system_db.find_similar_ignored;
+
+DROP TABLE system_db.find_similar_ignored;
+ALTER TABLE system_db.new_find_similar_ignored RENAME TO find_similar_ignored;
+
+CREATE INDEX system_db.find_similar_ignored__index ON find_similar_ignored(type, first_target, second_target);
+CREATE INDEX system_db.find_similar_ignored_re__index ON find_similar_ignored(type, second_target, first_target);
+
+-- 移除source mark
+DROP TABLE source_db.source_mark;

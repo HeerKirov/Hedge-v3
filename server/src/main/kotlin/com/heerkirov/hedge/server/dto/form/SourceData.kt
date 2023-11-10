@@ -1,7 +1,6 @@
 package com.heerkirov.hedge.server.dto.form
 
 import com.heerkirov.hedge.server.enums.SourceEditStatus
-import com.heerkirov.hedge.server.enums.SourceMarkType
 import com.heerkirov.hedge.server.library.form.NotBlank
 import com.heerkirov.hedge.server.utils.types.Opt
 
@@ -19,7 +18,3 @@ data class SourceDataAdditionalInfoForm(val field: String, val value: String)
 data class SourceTagForm(@NotBlank val code: String, @NotBlank val type: String, @NotBlank val name: Opt<String>, val otherName: Opt<String?>)
 
 data class SourceBookForm(@NotBlank val code: String, @NotBlank val title: Opt<String>, val otherTitle: Opt<String?>)
-
-data class SourceMarkPartialUpdateForm(val action: Action, val sourceSite: String, val sourceId: Long, val markType: SourceMarkType = SourceMarkType.UNKNOWN) {
-    enum class Action { UPSERT, REMOVE }
-}

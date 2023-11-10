@@ -14,13 +14,15 @@ data class EntityInfo(val id: Int,
                       val sourceTags: List<SourceTag>,
                       val sourceIdentity: SourceIdentity?,
                       val sourceRelations: List<Long>?,
-                      val sourceBooks: List<Int>?,
+                      val sourceBooks: List<SourceBookIdentity>?,
                       val fingerprint: Fingerprint?,
                       val collectionId: Int?,
                       val authors: List<Int>,
                       val topics: List<Int>)
 
 data class SourceIdentity(val sourceDataId: Int, val sourceSite: String, val sourceId: Long, val sourcePart: Int?, val sourcePartName: String?)
+
+data class SourceBookIdentity(val sourceBookId: Int, val sourceSite: String, val sourceBookCode: String)
 
 /**
  * 指纹数据。

@@ -2,7 +2,6 @@ package com.heerkirov.hedge.server.model
 
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.SourceEditStatus
-import com.heerkirov.hedge.server.enums.SourceMarkType
 import java.time.Instant
 
 /**
@@ -140,24 +139,3 @@ data class SourceTagMapping(val id: Int,
                              * 目标tag的tag id。
                              */
                             val targetMetaId: Int)
-
-/**
- * 来源信息的手动关系标记。此关系是双边的，每次总是维护成对的记录。
- */
-@Deprecated("已移除source mark功能")
-data class SourceMark(/**
-                       * 关联的一方。
-                       */
-                      val sourceDataId: Int,
-                      /**
-                       * 关联的另一方。
-                       */
-                      val relatedSourceDataId: Int,
-                      /**
-                       * 关联标记类型。
-                       */
-                      val markType: SourceMarkType,
-                      /**
-                       * 标记记录时间。
-                       */
-                      val recordTime: Instant)

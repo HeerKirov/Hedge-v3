@@ -8,7 +8,6 @@ import com.heerkirov.hedge.server.dto.res.SourceMappingTargetItem
 import com.heerkirov.hedge.server.dto.res.SourceTagPath
 import com.heerkirov.hedge.server.functions.service.SourceDataService
 import com.heerkirov.hedge.server.functions.service.SourceMappingService
-import com.heerkirov.hedge.server.functions.service.SourceMarkService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
 import com.heerkirov.hedge.server.library.form.bodyAsListForm
 import com.heerkirov.hedge.server.library.form.queryAsFilter
@@ -18,7 +17,6 @@ import io.javalin.http.Context
 import io.javalin.http.pathParamAsClass
 
 class SourceRoutes(private val sourceDataService: SourceDataService,
-                   private val sourceMarkService: SourceMarkService,
                    private val sourceMappingService: SourceMappingService) : Routes {
     override fun handle(javalin: Javalin) {
         javalin.routes {
@@ -33,10 +31,6 @@ class SourceRoutes(private val sourceDataService: SourceDataService,
                         patch(sourceData::update)
                         delete(sourceData::delete)
                         get("related-images", sourceData::getRelatedImages)
-                        path("source-marks") {
-                            get(sourceData::getSourceMarks)
-                            patch(sourceData::updateSourceMarks)
-                        }
                     }
                 }
                 path("source-tag-mappings") {
@@ -97,19 +91,6 @@ class SourceRoutes(private val sourceDataService: SourceDataService,
         fun collectStatus(ctx: Context) {
             val paths = ctx.bodyAsListForm<SourceDataPath>()
             ctx.json(sourceDataService.getCollectStatus(paths))
-        }
-
-        fun getSourceMarks(ctx: Context) {
-            val sourceSite = ctx.pathParamAsClass<String>("source_site").get()
-            val sourceId = ctx.pathParamAsClass<Long>("source_id").get()
-            ctx.json(sourceMarkService.getMarks(sourceSite, sourceId))
-        }
-
-        fun updateSourceMarks(ctx: Context) {
-            val sourceSite = ctx.pathParamAsClass<String>("source_site").get()
-            val sourceId = ctx.pathParamAsClass<Long>("source_id").get()
-            val form = ctx.bodyAsForm<SourceMarkPartialUpdateForm>()
-            sourceMarkService.partialUpdateMarks(sourceSite, sourceId, form)
         }
     }
 

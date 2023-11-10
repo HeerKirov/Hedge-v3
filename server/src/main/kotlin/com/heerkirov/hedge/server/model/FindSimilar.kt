@@ -23,7 +23,7 @@ data class FindSimilarTask(val id: Int,
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
     @JsonSubTypes(value = [
-        JsonSubTypes.Type(value = TaskSelectorOfImages::class, name = "illust"),
+        JsonSubTypes.Type(value = TaskSelectorOfImages::class, name = "image"),
         JsonSubTypes.Type(value = TaskSelectorOfPartition::class, name = "partitionTime"),
         JsonSubTypes.Type(value = TaskSelectorOfBook::class, name = "book"),
         JsonSubTypes.Type(value = TaskSelectorOfTopic::class, name = "topic"),
@@ -177,7 +177,7 @@ data class FindSimilarResult(val id: Int,
         JsonSubTypes.Type(value = SourceRelated::class, name = "SOURCE_RELATED"),
         JsonSubTypes.Type(value = HighSimilarity::class, name = "HIGH_SIMILARITY"),
         JsonSubTypes.Type(value = Associated::class, name = "ASSOCIATED"),
-        JsonSubTypes.Type(value = Ignored::class, name = "EXISTED"),
+        JsonSubTypes.Type(value = Ignored::class, name = "IGNORED"),
     ])
     sealed interface RelationEdgeType
 
@@ -204,7 +204,7 @@ data class FindSimilarResult(val id: Int,
 
     data class SourceIdentitySimilarCoverage(val site: String, val sourceId: Long) : RelationCoverageType
 
-    data class SourceBookCoverage(val sourceBookId: Int) : RelationCoverageType
+    data class SourceBookCoverage(val site: String, val sourceBookCode: String) : RelationCoverageType
 
     data class CollectionCoverage(val collectionId: Int) : RelationCoverageType
 

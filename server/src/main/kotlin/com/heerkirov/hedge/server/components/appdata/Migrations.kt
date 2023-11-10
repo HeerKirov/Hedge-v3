@@ -79,7 +79,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
         register.map("0.1.4", ::addSiteTypes)
         register.map("0.2.0", ::modifyAuthorTypes)
         register.map("0.3.0", ::addSourceAnalyseRuleExtraArguments)
-        register.map("0.4.0", ::addImportArguments)
+        register.map("0.4.0", ::modifyImportAndFindSimilarArguments)
     }
 
     /**
@@ -155,9 +155,9 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
     }
 
     /**
-     * 在0.4.0版本，在import新增了preventNoneSourceData参数，且setPartitionTimeDelayHour参数移动到了
+     * 在0.4.0版本，在import新增了preventNoneSourceData参数，且setPartitionTimeDelayHour参数移动到了server。最后还调整了findSimilar的一些参数。
      */
-    private fun addImportArguments(json: JsonNode): JsonNode {
+    private fun modifyImportAndFindSimilarArguments(json: JsonNode): JsonNode {
         return mapOf(
             "server" to json["server"].upsertField("timeOffsetHour") { value -> if(value != null && value.isNumber) value else json["import"]["setPartitionTimeDelayHour"] },
             "storage" to json["storage"],
@@ -165,7 +165,21 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             "query" to json["query"],
             "source" to json["source"],
             "import" to json["import"].upsertField("preventNoneSourceData") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() },
-            "findSimilar" to json["findSimilar"],
+            "findSimilar" to json["findSimilar"].updateField("autoTaskConf") { conf ->
+                conf.upsertField("findBySourcePart") { value -> if(value != null && value.isBoolean) value else conf["findBySourceIdentity"] }
+                    .upsertField("findBySourceBook") { value -> if(value != null && value.isBoolean) value else conf["findBySourceRelation"] }
+                    .upsertField("filterInCurrentScope") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() }
+                    .upsertField("filterBySourcePart") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
+                    .upsertField("filterBySourceBook") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
+                    .upsertField("filterBySourceRelation") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
+            }.updateField("defaultTaskConf") { conf ->
+                conf.upsertField("findBySourcePart") { value -> if(value != null && value.isBoolean) value else conf["findBySourceIdentity"] }
+                    .upsertField("findBySourceBook") { value -> if(value != null && value.isBoolean) value else conf["findBySourceRelation"] }
+                    .upsertField("filterInCurrentScope") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() }
+                    .upsertField("filterBySourcePart") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
+                    .upsertField("filterBySourceBook") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
+                    .upsertField("filterBySourceRelation") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
+            }
         ).toJsonNode()
     }
 }

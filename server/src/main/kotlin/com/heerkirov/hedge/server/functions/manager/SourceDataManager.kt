@@ -525,8 +525,6 @@ class SourceDataManager(private val appdata: AppDataManager,
         data.db.delete(SourceDatas) { it.id eq sourceDataId }
         data.db.delete(SourceTagRelations) { it.sourceDataId eq sourceDataId }
         data.db.delete(SourceBookRelations) { it.sourceDataId eq sourceDataId }
-        data.db.delete(SourceMarks) { it.sourceDataId eq sourceDataId }
-        data.db.delete(SourceMarks) { it.relatedSourceDataId eq sourceDataId }
 
         bus.emit(SourceDataDeleted(sourceSite, sourceId))
     }

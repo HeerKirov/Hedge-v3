@@ -16,12 +16,14 @@ data class FindSimilarResultRes(val id: Int,
 data class FindSimilarResultDetailRes(val id: Int,
                                       val category: FindSimilarResult.SimilarityCategory,
                                       val summaryType: FindSimilarResult.SummaryTypes,
-                                      val images: List<FindSimilarResultImage>,
+                                      val images: List<FindSimilarDetailResultImage>,
                                       val edges: List<FindSimilarResult.RelationEdge>,
                                       val coverages: List<FindSimilarResult.RelationCoverage>,
                                       val resolved: Boolean,
                                       val recordTime: Instant)
 
 data class FindSimilarResultImage(val id: Int, val filePath: NullableFilePath?)
+
+data class FindSimilarDetailResultImage(val id: Int, val filePath: FilePath, val favorite: Boolean, val score: Int?, val orderTime: Instant, val source: SourceDataPath?)
 
 fun newFindSimilarTaskRes(task: FindSimilarTask) = FindSimilarTaskRes(task.id, task.selector, task.config, task.recordTime)

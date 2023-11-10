@@ -2,7 +2,6 @@ package com.heerkirov.hedge.server.dao
 
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.SourceEditStatus
-import com.heerkirov.hedge.server.enums.SourceMarkType
 import com.heerkirov.hedge.server.model.*
 import com.heerkirov.hedge.server.utils.ktorm.type.enum
 import com.heerkirov.hedge.server.utils.ktorm.type.json
@@ -114,20 +113,5 @@ object SourceTagMappings : BaseTable<SourceTagMapping>("source_tag_mapping", sch
         sourceTagId = row[sourceTagId]!!,
         targetMetaType = row[targetMetaType]!!,
         targetMetaId = row[targetMetaId]!!
-    )
-}
-
-@Deprecated("已移除source mark功能")
-object SourceMarks : BaseTable<SourceMark>("source_mark", schema = "source_db") {
-    val sourceDataId = int("source_data_id")
-    val relatedSourceDataId = int("related_source_data_id")
-    val markType = enum("mark_type", typeRef<SourceMarkType>())
-    val recordTime = timestamp("record_time")
-
-    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = SourceMark(
-        sourceDataId = row[sourceDataId]!!,
-        relatedSourceDataId = row[relatedSourceDataId]!!,
-        markType = row[markType]!!,
-        recordTime = row[recordTime]!!
     )
 }

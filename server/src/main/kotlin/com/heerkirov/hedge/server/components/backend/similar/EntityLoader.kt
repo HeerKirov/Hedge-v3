@@ -103,10 +103,11 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
             val imageSourceBooksMap = if(!config.findBySourceBook && !config.filterBySourceBook) emptyMap() else {
                 data.db.from(Illusts)
                     .innerJoin(SourceBookRelations, SourceBookRelations.sourceDataId eq Illusts.sourceDataId)
-                    .select(Illusts.id, SourceBookRelations.sourceBookId)
+                    .innerJoin(SourceBooks, SourceBookRelations.sourceBookId eq SourceBooks.id)
+                    .select(Illusts.id, SourceBooks.id, SourceBooks.site, SourceBooks.code)
                     .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.id inList notExistIds) }
                     .asSequence()
-                    .groupBy({ it[Illusts.id]!! }) { it[SourceBookRelations.sourceBookId]!! }
+                    .groupBy({ it[Illusts.id]!! }) { SourceBookIdentity(it[SourceBooks.id]!!, it[SourceBooks.site]!!, it[SourceBooks.code]!!) }
             }
 
             for ((id, row) in imagesMap) {

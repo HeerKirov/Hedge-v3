@@ -98,7 +98,7 @@ class HttpServerImpl(private val health: Health,
             .handle(MetaTopicRoutes(allServices.topic))
             .handle(MetaAuthorRoutes(allServices.author))
             .handle(MetaAnnotationRoutes(allServices.annotation))
-            .handle(SourceRoutes(allServices.sourceData, allServices.sourceMark, allServices.sourceMapping))
+            .handle(SourceRoutes(allServices.sourceData, allServices.sourceMapping))
             .bind()
     }
 

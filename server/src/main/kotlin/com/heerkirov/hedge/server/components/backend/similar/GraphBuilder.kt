@@ -63,7 +63,7 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
                 yieldAll(entityLoader.loadImage(vertices.keys))
             }
             if(config.filterBySourceBook && !targetItem.sourceBooks.isNullOrEmpty()) {
-                yieldAll(entityLoader.loadByBook(targetItem.sourceBooks))
+                yieldAll(entityLoader.loadByBook(targetItem.sourceBooks.map { it.sourceBookId }))
             }
             if(config.filterBySourceRelation && targetItem.sourceIdentity != null && !targetItem.sourceRelations.isNullOrEmpty()) {
                 yieldAll(entityLoader.loadBySourceId(targetItem.sourceIdentity.sourceSite, targetItem.sourceRelations))
@@ -154,10 +154,13 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
             data.db.from(Illusts)
                 .innerJoin(SourceBookRelations, SourceBookRelations.sourceDataId eq Illusts.sourceDataId)
                 .select(Illusts.id, SourceBookRelations.sourceBookId)
-                .where { SourceBookRelations.sourceBookId inList targetItem.sourceBooks }
+                .where { SourceBookRelations.sourceBookId inList targetItem.sourceBooks.map { it.sourceBookId } }
                 .asSequence()
                 .groupBy({ it[SourceBookRelations.sourceBookId]!! }) { it[Illusts.id]!! }
-                .map { (k, v) -> Pair(FindSimilarResult.SourceBookCoverage(k), v) }
+                .map { (k, v) ->
+                    val sb = targetItem.sourceBooks.find { it.sourceBookId == k }!!
+                    Pair(FindSimilarResult.SourceBookCoverage(sb.sourceSite, sb.sourceBookCode), v)
+                }
                 .let { addInGraph(it) }
         }
     }
@@ -282,11 +285,15 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
 
         if(FindSimilarIgnored.IgnoredType.SOURCE_BOOK in ignoredExists) {
             //增补sourceBook类型的ignored关系。当添加ignored关系时，不需要提供节点，它只会将现有的coverage标记为ignored
-            val sourceBookIds = vertices.values.asSequence().mapNotNull { it.entity.sourceBooks }.flatten().distinct().toList()
+            val sourceBooks = vertices.values.asSequence().mapNotNull { it.entity.sourceBooks }.flatten().associateBy { it.sourceBookId }
             data.db.from(FindSimilarIgnores)
                 .select(FindSimilarIgnores.firstTarget)
-                .where { (FindSimilarIgnores.type eq FindSimilarIgnored.IgnoredType.SOURCE_BOOK) and (FindSimilarIgnores.firstTarget inList sourceBookIds) }
-                .map { Pair(FindSimilarResult.SourceBookCoverage(it[FindSimilarIgnores.firstTarget]!!), true) }
+                .where { (FindSimilarIgnores.type eq FindSimilarIgnored.IgnoredType.SOURCE_BOOK) and (FindSimilarIgnores.firstTarget inList sourceBooks.keys) }
+                .asSequence()
+                .map { it[FindSimilarIgnores.firstTarget]!! }
+                .mapNotNull { sourceBooks[it] }
+                .map { Pair(FindSimilarResult.SourceBookCoverage(it.sourceSite, it.sourceBookCode), true) }
+                .toList()
                 .let { addInGraph(it) }
         }
 
