@@ -14,7 +14,7 @@ defineEmits<{
 </script>
 
 <template>
-    <div>
+    <div class="h-100">
         <TaskCreator v-if="p.mode === 'create'" @close="$emit('close')"/>
         <TaskList v-else @close="$emit('close')"/>
     </div>

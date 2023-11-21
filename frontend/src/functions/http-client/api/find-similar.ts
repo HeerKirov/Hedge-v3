@@ -1,7 +1,7 @@
 import { HttpInstance, Response } from "../instance"
 import { NotFound, ResourceNotExist } from "../exceptions"
-import { IdResponse, LimitAndOffsetFilter, ListResult, NullableFilePath, OrderList, SourceTagPath } from "./all"
-import { ImagePropsCloneForm } from "./illust"
+import { FilePath, IdResponse, LimitAndOffsetFilter, ListResult, OrderList, SourceDataPath, SourceTagPath } from "./all"
+import { CommonIllust, ImagePropsCloneForm } from "./illust"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 
 export function createFindSimilarEndpoint(http: HttpInstance): FindSimilarEndpoint {
@@ -72,8 +72,10 @@ function mapToTask(data: any): FindSimilarTask {
 function mapToResult(data: any): FindSimilarResult {
     return {
         id: <number>data["id"],
-        type: <SummaryTypes[]>data["type"],
+        category: <SimilarityCategory>data["category"],
+        summaryType: <SimilaritySummaryType[]>data["summaryType"],
         images: <FindSimilarResultImage[]>data["images"],
+        resolved: <boolean>data["resolved"],
         recordTime: datetime.of(<string>data["recordTime"])
     }
 }
@@ -81,9 +83,15 @@ function mapToResult(data: any): FindSimilarResult {
 function mapToDetailResult(data: any): FindSimilarDetailResult {
     return {
         id: <number>data["id"],
-        type: <SummaryTypes[]>data["type"],
-        images: <FindSimilarResultImage[]>data["images"],
-        relations: <FindSimilarResultRelation[]>data["relations"],
+        category: <SimilarityCategory>data["category"],
+        summaryType: <SimilaritySummaryType[]>data["summaryType"],
+        images: (<any[]>data["images"]).map(img => ({
+            ...img,
+            orderTime: datetime.of(<string>img["orderTime"])
+        })),
+        edges: <SimilarityRelationEdge[]>data["edges"],
+        coverages: <SimilarityRelationCoverage[]>data["coverages"],
+        resolved: <boolean>data["resolved"],
         recordTime: datetime.of(<string>data["recordTime"])
     }
 }
@@ -128,7 +136,7 @@ export interface FindSimilarEndpoint {
         /**
          * 处理结果。
          */
-        resolve(id: number, form: FindSimilarResultResolveForm): Promise<Response<null, NotFound | ResourceNotExist<"config.a" | "config.b", FindSimilarEntityKey>>>
+        resolve(id: number, form: FindSimilarResultResolveForm): Promise<Response<null, NotFound | ResourceNotExist<"imageIds", number[]> | ResourceNotExist<"from" | "to", number>>>
         /**
          * 直接删除结果。
          * @param id
@@ -144,6 +152,9 @@ export type TaskSelector = {
     type: "partitionTime"
     partitionTime: LocalDate
 } | {
+    type: "book"
+    bookIds: number[]
+} | {
     type: "topic"
     topicIds: number[]
 } | {
@@ -156,36 +167,23 @@ export type TaskSelector = {
 
 export interface TaskConfig {
     findBySourceIdentity: boolean
+    findBySourcePart: boolean
     findBySourceRelation: boolean
-    findBySourceMark: boolean
+    findBySourceBook: boolean
     findBySimilarity: boolean
+    filterInCurrentScope: boolean
+    filterBySourcePart: boolean
+    filterBySourceBook: boolean
+    filterBySourceRelation: boolean
     filterByPartition: boolean
     filterByTopic: boolean
     filterByAuthor: boolean
     filterBySourceTagType: {sourceSite: string, tagType: string}[]
 }
 
-export type SummaryTypes = "SAME" | "RELATED" | "SIMILAR"
+export type SimilarityCategory = "EQUIVALENCE" | "GRAPH"
 
-export type SimilarityType = "SOURCE_IDENTITY_EQUAL" | "SOURCE_IDENTITY_SIMILAR" | "SOURCE_RELATED" | "RELATION_MARK_SAME" | "RELATION_MARK_SIMILAR" | "RELATION_MARK_RELATED" | "TOO_HIGH_SIMILARITY" | "HIGH_SIMILARITY" | "EXISTED"
-
-export type MarkType = SummaryTypes | "UNKNOWN"
-
-export type ActionType = "CLONE_IMAGE" | "DELETE" | "ADD_TO_COLLECTION" | "ADD_TO_BOOK" | "MARK_IGNORED"
-
-export type FindSimilarEntityKey = number
-
-interface RelationInfo {}
-
-interface SourceIdentityRelationInfo extends RelationInfo { site: string, sourceId: number | null, sourcePart: number | null, sourcePartName: string | null }
-
-interface SourceRelatedRelationInfo extends RelationInfo { hasRelations: boolean, sameBooks: number[] }
-
-interface SourceMarkRelationInfo extends RelationInfo { markType: MarkType }
-
-interface SimilarityRelationInfo extends RelationInfo { similarity: number }
-
-interface ExistedRelationInfo extends RelationInfo { sameCollectionId: number | null, samePreCollection: string | null, sameBooks: number[], sameAssociate: boolean, ignored: boolean }
+export type SimilaritySummaryType = "EQUIVALENCE" | "RELATED" | "SIMILAR"
 
 export interface FindSimilarTask {
     id: number
@@ -196,32 +194,73 @@ export interface FindSimilarTask {
 
 export interface FindSimilarResult {
     id: number
-    type: SummaryTypes[]
+    category: SimilarityCategory
+    summaryType: SimilaritySummaryType[]
     images: FindSimilarResultImage[]
+    resolved: boolean
     recordTime: LocalDateTime
 }
 
 export interface FindSimilarDetailResult extends FindSimilarResult {
-    relations: FindSimilarResultRelation[]
+    images: FindSimilarResultDetailImage[]
+    edges: SimilarityRelationEdge[]
+    coverages: SimilarityRelationCoverage[]
 }
 
 export interface FindSimilarResultImage {
-    id: FindSimilarEntityKey
-    filePath: NullableFilePath | null
+    id: number
+    filePath: FilePath | null
 }
 
-interface FindSimilarResultRelationTemplate<T extends SimilarityType, I extends RelationInfo> { a: FindSimilarEntityKey, b: FindSimilarEntityKey, type: T, info: I }
+export interface FindSimilarResultDetailImage extends CommonIllust {
+    id: number
+    filePath: FilePath
+    favorite: boolean
+    orderTime: LocalDateTime
+    score: number | null
+    source: SourceDataPath | null
+}
 
-export type FindSimilarResultRelation
-    = FindSimilarResultRelationTemplate<"SOURCE_IDENTITY_EQUAL", SourceIdentityRelationInfo>
-    | FindSimilarResultRelationTemplate<"SOURCE_IDENTITY_SIMILAR", SourceIdentityRelationInfo>
-    | FindSimilarResultRelationTemplate<"SOURCE_RELATED", SourceRelatedRelationInfo>
-    | FindSimilarResultRelationTemplate<"RELATION_MARK_SAME", SourceMarkRelationInfo>
-    | FindSimilarResultRelationTemplate<"RELATION_MARK_SIMILAR", SourceMarkRelationInfo>
-    | FindSimilarResultRelationTemplate<"RELATION_MARK_RELATED", SourceMarkRelationInfo>
-    | FindSimilarResultRelationTemplate<"HIGH_SIMILARITY", SimilarityRelationInfo>
-    | FindSimilarResultRelationTemplate<"TOO_HIGH_SIMILARITY", SimilarityRelationInfo>
-    | FindSimilarResultRelationTemplate<"EXISTED", ExistedRelationInfo>
+export interface SimilarityRelationEdge {
+    a: number
+    b: number
+    types: SimilarityRelationEdgeType[]
+}
+
+export interface SimilarityRelationCoverage {
+    imageIds: number[]
+    ignored: boolean
+    info: SimilarityRelationCoverageType
+}
+
+export type SimilarityRelationEdgeType = {
+    type: "SOURCE_IDENTITY_EQUAL"
+    site: string
+    sourceId: number | null
+    sourcePart: number | null
+    sourcePartName: string | null
+} | {
+    type: "HIGH_SIMILARITY"
+    similarity: number
+} | {
+    type: "SOURCE_RELATED" | "ASSOCIATED" | "IGNORED"
+}
+
+export type SimilarityRelationCoverageType = {
+    type: "SOURCE_IDENTITY_SIMILAR"
+    site: string
+    sourceId: number
+} | {
+    type: "SOURCE_BOOK"
+    site: string
+    sourceBookCode: string
+} | {
+    type: "COLLECTION"
+    collectionId: number
+} | {
+    type: "BOOK"
+    bookId: number
+}
 
 export interface FindSimilarTaskCreateForm {
     selector: TaskSelector
@@ -230,16 +269,33 @@ export interface FindSimilarTaskCreateForm {
 
 export interface FindSimilarResultResolveForm {
     actions: FindSimilarResultResolveAction[]
+    clear: boolean
 }
 
-interface FindSimilarResultResolveActionTemplate<A extends ActionType> { a: FindSimilarEntityKey, actionType: A }
-
-export type FindSimilarResultResolveAction
-    = (FindSimilarResultResolveActionTemplate<"CLONE_IMAGE"> & { b: FindSimilarEntityKey, config: { props: ImagePropsCloneForm["props"], merge?: boolean, deleteFrom?: boolean } })
-    | (FindSimilarResultResolveActionTemplate<"ADD_TO_COLLECTION"> & { config: { collectionId: string | number } })
-    | (FindSimilarResultResolveActionTemplate<"ADD_TO_BOOK"> & { config: { bookId: number } })
-    | FindSimilarResultResolveActionTemplate<"DELETE">
-    | (FindSimilarResultResolveActionTemplate<"MARK_IGNORED"> & { b: FindSimilarEntityKey })
+export type FindSimilarResultResolveAction = ({type: "CLONE_IMAGE"} & ImagePropsCloneForm) | {
+    type: "ADD_TO_COLLECTION"
+    imageIds: number[]
+    collectionId: number
+} | {
+    type: "ADD_TO_BOOK"
+    imageIds: number
+    bookId: number
+} | {
+    type: "DELETE"
+    imageIds: number[]
+} | {
+    type: "MARK_IGNORED"
+    from: number
+    to: number
+} | {
+    type: "MARK_IGNORED_SOURCE_BOOK"
+    site: string
+    sourceBookCode: string
+} | {
+    type: "MARK_IGNORED_SOURCE_DATA"
+    site: string
+    sourceId: number
+}
 
 export interface FindSimilarTaskQueryFilter {
     order?: OrderList<"id" | "recordTime">

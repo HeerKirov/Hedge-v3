@@ -23,7 +23,7 @@ type EntityEvents
     | TrashedImageCreated | TrashedImageProcessed
     | SourceDataCreated | SourceDataUpdated | SourceDataDeleted
     | SourceBookUpdated | SourceTagUpdated | SourceTagMappingUpdated
-    | FindSimilarResultCreated | FindSimilarResultResolved | FindSimilarResultDeleted
+    | FindSimilarResultCreated | FindSimilarResultUpdated | FindSimilarResultDeleted
     | NoteCreated | NoteUpdated | NoteDeleted
 
 type SettingEvents = SettingServerChanged | SettingMetaChanged | SettingQueryChanged | SettingImportChanged | SettingStorageChanged | SettingFindSimilarChanged | SettingSourceSiteChanged
@@ -106,7 +106,7 @@ export interface SourceTagMappingUpdated extends BaseWsEvent<"entity/source-tag-
 
 export interface FindSimilarResultCreated extends BaseWsEvent<"entity/find-similar-result/created"> { count: number }
 
-export interface FindSimilarResultResolved extends BaseWsEvent<"entity/find-similar-result/resolved"> { resultId: number }
+export interface FindSimilarResultUpdated extends BaseWsEvent<"entity/find-similar-result/updated"> { resultId: number }
 
 export interface FindSimilarResultDeleted extends BaseWsEvent<"entity/find-similar-result/deleted"> { resultId: number }
 

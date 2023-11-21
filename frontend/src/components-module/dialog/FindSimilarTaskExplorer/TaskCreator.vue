@@ -35,21 +35,29 @@ const { form, submit } = useTaskCreatorData(() => emit("close"))
                 </p>
                 <p class="mt-3">
                     <CheckBox v-model:value="form.config.findBySourceIdentity">来源一致性判断</CheckBox>
-                    <p class="secondary-text">对于拥有相同的来源、来源ID、分页的图像，直接将其判定为相同项。</p>
+                    <p class="secondary-text">对于拥有相同的来源、ID、分页的图像，或拥有相同的来源、页名的图像，将其判定为相同项。</p>
+                </p>
+                <p class="mt-3">
+                    <CheckBox v-model:value="form.config.findBySourcePart">来源近似性判断</CheckBox>
+                    <p class="secondary-text">对于拥有相同的来源、ID，但分页不同的图像，将其判定为关系相近项。</p>
                 </p>
                 <p class="mt-1">
                     <CheckBox v-model:value="form.config.findBySourceRelation">来源关系判断</CheckBox>
-                    <p class="secondary-text">根据来源的关联项、集合等属性，查找出具有血缘关系的图像。</p>
+                    <p class="secondary-text">对于来源的关联项相关的图像，将其判定为关系相近项。</p>
                 </p>
                 <p class="mt-1">
-                    <CheckBox v-model:value="form.config.findBySourceMark">来源标记</CheckBox>
-                    <p class="secondary-text">扩展功能：根据外来添加的标记获知图像之间的血缘关系。</p>
+                    <CheckBox v-model:value="form.config.findBySourceBook">来源集合判断</CheckBox>
+                    <p class="secondary-text">对于来源的集合相关的图像，将其判定为关系相近项。</p>
                 </p>
                 <label class="label mt-3">相似项查找范围</label>
-                <p class="secondary-text">对于每一个待处理的任务项，按照下列可选范围查找可能的相似项。</p>
+                <p class="secondary-text">对于每一个待处理的任务项，按照下列可选范围查找其可能的相似项。</p>
+                <p class="mt-2"><CheckBox v-model:value="form.config.filterInCurrentScope">当前待处理的所有项</CheckBox></p>
                 <p class="mt-2"><CheckBox v-model:value="form.config.filterByPartition">相同时间分区的项</CheckBox></p>
                 <p class="mt-2"><CheckBox v-model:value="form.config.filterByAuthor">相同作者标签的项</CheckBox></p>
                 <p class="mt-2"><CheckBox v-model:value="form.config.filterByTopic">相同主题标签的项</CheckBox></p>
+                <p class="mt-2"><CheckBox v-model:value="form.config.filterBySourcePart">相同来源、ID的项</CheckBox></p>
+                <p class="mt-2"><CheckBox v-model:value="form.config.filterBySourceBook">相同来源集合的项</CheckBox></p>
+                <p class="mt-2"><CheckBox v-model:value="form.config.filterBySourceRelation">来源关系相关的项</CheckBox></p>
                 <p class="mt-2">
                     <p>来源类型标签过滤器</p>
                     <p class="secondary-text">根据指定的来源标签类型，选择此类型的标签，过滤持有相同来源标签的项。</p>

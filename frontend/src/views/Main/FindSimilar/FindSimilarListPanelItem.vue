@@ -18,7 +18,7 @@ const emit = defineEmits<{
 
 const { assetsUrl } = useAssets()
 
-const summaryText = props.item.type.map(t => ({"SAME": "相同", "SIMILAR": "相似", "RELATED": "关系接近"}[t])).join("、")
+const summaryText = props.item.summaryType.map(t => ({"EQUIVALENCE": "相同", "SIMILAR": "内容相似", "RELATED": "关系接近"}[t])).join("、")
 
 const { allow, keepNew, keepNewAndCloneProps, keepOld, ignoreIt, deleteIt } = useFindSimilarItemContext(props.item)
 

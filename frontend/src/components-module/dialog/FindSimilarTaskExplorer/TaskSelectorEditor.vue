@@ -39,7 +39,7 @@ const addImageInputText = ref<string>("")
 
 const imageFilepaths = computed(() => loadingCache.images.map(i => i.filePath.sample))
 
-const { dragover: _, ...dropEvents } = useDroppable("illusts", (data, type) => {
+const { dragover: _, ...dropEvents } = useDroppable("illusts", data => {
     if(props.selector.type === "image" && data.length > 0) {
         const imageIds = props.selector.imageIds
         const add = (<DraggingIllust[]>data).filter(i => imageIds.indexOf(i.id) < 0)
@@ -184,6 +184,7 @@ const updateAuthors = (v: SimpleAuthor[]) => {
 const description: Record<TaskSelector["type"], string> = {
     "image": "给出特定的图像。",
     "partitionTime": "选择指定时间分区内的所有图像和导入项目。",
+    "book": "选择指定画集所属的所有图像。",
     "topic": "选择指定主题所属的所有图像。",
     "author": "选择指定作者所属的所有图像。",
     "sourceTag": "选择指定来源标签关联的所有图像和导入项目。"

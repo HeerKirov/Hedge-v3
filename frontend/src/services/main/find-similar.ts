@@ -1,8 +1,9 @@
 import { computed, ref, Ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
-import { useFetchEndpoint, usePathFetchHelper, usePostPathFetchHelper } from "@/functions/fetch"
+import { useFetchEndpoint, usePaginationDataView, usePathFetchHelper, usePostPathFetchHelper, useQueryListview } from "@/functions/fetch"
 import { flatResponse } from "@/functions/http-client"
-import { FindSimilarDetailResult, FindSimilarResult, FindSimilarResultImage, FindSimilarResultRelation, FindSimilarResultResolveAction } from "@/functions/http-client/api/find-similar"
+import { FindSimilarDetailResult, FindSimilarResult, FindSimilarResultImage } from "@/functions/http-client/api/find-similar"
+import { SourceDataPath } from "@/functions/http-client/api/all"
 import { RelatedSimpleTag } from "@/functions/http-client/api/tag"
 import { RelatedSimpleTopic } from "@/functions/http-client/api/topic"
 import { RelatedSimpleAuthor } from "@/functions/http-client/api/author"
@@ -14,10 +15,13 @@ import { useMessageBox } from "@/modules/message-box"
 import { useDetailViewState } from "@/services/base/detail-view-state"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSettingSite } from "@/services/setting"
-import { installation } from "@/utils/reactivity"
+import { installation, toRef } from "@/utils/reactivity"
 import { LocalDate, LocalDateTime } from "@/utils/datetime"
 import { arrays } from "@/utils/primitives"
-import { SourceDataPath } from "@/functions/http-client/api/all"
+import { useLocalStorage } from "@/functions/app"
+import { useSelectedState } from "@/services/base/selected-state"
+import { useIllustViewController } from "@/services/base/view-controller"
+import { installIllustListviewContext } from "@/services/common/illust"
 
 export const [installFindSimilarContext, useFindSimilarContext] = installation(function () {
     const paneState = useDetailViewState<number>()
@@ -33,12 +37,14 @@ function useListView() {
     return useListViewContext({
         request: client => (offset, limit) => client.findSimilar.result.list({offset, limit}),
         eventFilter: {
-            filter: ["entity/find-similar-result/created", "entity/find-similar-result/resolved", "entity/find-similar-result/deleted"],
-            operation({ event, refresh, removeOne: remove }) {
+            filter: ["entity/find-similar-result/created", "entity/find-similar-result/updated", "entity/find-similar-result/deleted"],
+            operation({ event, refresh, updateOne, removeOne }) {
                 if(event.eventType === "entity/find-similar-result/created" && event.count > 0) {
                     refresh()
-                }else if(event.eventType === "entity/find-similar-result/resolved" || event.eventType === "entity/find-similar-result/deleted") {
-                    remove(i => i.id === event.resultId)
+                }else if(event.eventType === "entity/find-similar-result/deleted") {
+                    removeOne(i => i.id === event.resultId)
+                }else if(event.eventType === "entity/find-similar-result/updated") {
+                    updateOne(i => i.id === event.resultId)
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.findSimilar.result.get(a.id))))
@@ -51,9 +57,9 @@ export function useFindSimilarItemContext(item: FindSimilarResult) {
     const fetchDelete = usePathFetchHelper(client => client.findSimilar.result.delete)
 
     const status = {
-        onlySame: !item.type.some(i => i !== "SAME"),
-        anySimilar: item.type.some(i => i === "SIMILAR"),
-        anyRelated: item.type.some(i => i === "RELATED"),
+        onlySame: !item.summaryType.some(i => i !== "EQUIVALENCE"),
+        anySimilar: item.summaryType.some(i => i === "SIMILAR"),
+        anyRelated: item.summaryType.some(i => i === "RELATED"),
         moreThan2: item.images.length >= 2,
         moreThan3: item.images.length >= 3
     }
@@ -68,7 +74,7 @@ export function useFindSimilarItemContext(item: FindSimilarResult) {
         if(allow.keepOld) {
             const takedImages = [...item.images].sort(resultCompare).slice(1)
             if(takedImages.length > 0) {
-                fetchResolve(item.id, {actions: takedImages.map(i => ({actionType: "DELETE", a: i.id}))})
+                fetchResolve(item.id, {actions: [{type: "DELETE", imageIds: takedImages.map(i => i.id)}], clear: true})
             }
         }
     }
@@ -77,7 +83,7 @@ export function useFindSimilarItemContext(item: FindSimilarResult) {
         if(allow.keepNew) {
             const takedImages = [...item.images].sort(resultCompare).slice(0, item.images.length - 1)
             if(takedImages.length > 0) {
-                fetchResolve(item.id, {actions: takedImages.map(i => ({actionType: "DELETE", a: i.id}))})
+                fetchResolve(item.id, {actions: [{type: "DELETE", imageIds: takedImages.map(i => i.id)}], clear: true})
             }
         }
     }
@@ -96,14 +102,14 @@ export function useFindSimilarItemContext(item: FindSimilarResult) {
                 deleteFrom: true
             }
             fetchResolve(item.id, {actions: [
-                ...d.map(a => ({actionType: "DELETE", a: a.id} as const)),
-                {actionType: "CLONE_IMAGE", a: a.id, b: b.id, config}
-            ]})
+                {type: "DELETE", imageIds: d.map(i => i.id)},
+                {type: "CLONE_IMAGE", from: a.id, to: b.id, ...config}
+            ], clear: true})
         }
     }
     
     const ignoreIt = () => {
-        fetchResolve(item.id, {actions: arrays.windowed(item.images, 2).map(([a, b]) => ({actionType: "MARK_IGNORED", a: a.id, b: b.id}))})
+        fetchResolve(item.id, {actions: arrays.windowed(item.images, 2).map(([a, b]) => ({type: "MARK_IGNORED", from: a.id, to: b.id})), clear: true})
     }
 
     const deleteIt = () => {
@@ -117,12 +123,18 @@ export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = instal
     const message = useMessageBox()
     const { paneState } = useFindSimilarContext()
 
+    const storage = useLocalStorage<{viewMode: "grid" | "graph" | "compare"}>("find-similar/detail", () => ({viewMode: "graph"}), true)
+
+    const viewMode = toRef(storage, "viewMode")
+
+    const listviewController = useIllustViewController()
+
     const { data, setData: resolveIt, deleteData: deleteIt } = useFetchEndpoint({
         path: paneState.detailPath,
         get: client => client.findSimilar.result.get,
         update: client => client.findSimilar.result.resolve,
         delete: client => client.findSimilar.result.delete,
-        eventFilter: c => event => (event.eventType === "entity/find-similar-result/resolved" || event.eventType === "entity/find-similar-result/deleted") && c.path === event.resultId,
+        eventFilter: c => event => (event.eventType === "entity/find-similar-result/updated" || event.eventType === "entity/find-similar-result/deleted") && c.path === event.resultId,
         afterRetrieve(path, data) {
             if(path !== null && data === null) {
                 paneState.closeView()
@@ -130,22 +142,37 @@ export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = instal
         }
     })
 
-    const selector = useDetailPanelSelector(data)
-    
-    const resolves = useDetailPanelResolves(paneState.detailPath, selector)
-    
-    const display = useDetailPanelRelationDisplay(data, resolves, selector)
+    const listview = useQueryListview({
+        request: () => async (offset, limit) => ({ok: true, status: 200, data: {total: data.value?.images.length ?? 0, result: data.value?.images.slice(offset, limit) ?? []}})
+    })
+
+    const paginationData = usePaginationDataView(listview)
+
+    const selector = useSelectedState({queryListview: listview, keyOf: item => item.id})
+
+    installIllustListviewContext({listview: {listview, paginationData}, selector, listviewController})
 
     const resolve = async () => {
-        if(resolves.actions.value.length > 0) {
-            await resolveIt({actions: resolves.actions.value})
-        }else if(await message.showYesNoMessage("prompt", "未添加任何操作", "继续操作将清除本条记录，且覆盖的关系不会有任何变化。确定要继续吗？")) {
-            await deleteIt()
-        }
+        // if(resolves.actions.value.length > 0) {
+            // await resolveIt({actions: resolves.actions.value})
+        // }else if(await message.showYesNoMessage("prompt", "未添加任何操作", "继续操作将清除本条记录，且覆盖的关系不会有任何变化。确定要继续吗？")) {
+        //     await deleteIt()
+        // }
     }
 
-    return {data, selector, display, resolves, resolve}
+    return {data, listview, paginationData, selector, listviewController, viewMode, resolve}
 })
+
+export function useGridList() {
+    const { data, listview, paginationData, selector, listviewController } = useFindSimilarDetailPanel()
+
+    return {listview, paginationData, selector, listviewController}
+}
+
+export function useGraphView() {
+    const { data, listview, paginationData, selector, listviewController } = useFindSimilarDetailPanel()
+    return {}
+}
 
 function useDetailPanelSelector(data: Ref<FindSimilarDetailResult | null>) {
     //find similar详情页的选择器采用双模式。
@@ -276,6 +303,7 @@ function useDetailPanelSelector(data: Ref<FindSimilarDetailResult | null>) {
 }
 
 function useDetailPanelResolves(path: Ref<number | null>, selector: ReturnType<typeof useDetailPanelSelector>) {
+    /*
     const actions = ref<FindSimilarResultResolveAction[]>([])
 
     watch(path, () => actions.value = [])
@@ -359,9 +387,11 @@ function useDetailPanelResolves(path: Ref<number | null>, selector: ReturnType<t
     }
 
     return {actions, addActionClone, addActionCollection, addActionBook, addActionIgnore, addActionDelete}
+    */
 }
 
 function useDetailPanelRelationDisplay(data: Ref<FindSimilarDetailResult | null>, resolves: ReturnType<typeof useDetailPanelResolves>, selector: ReturnType<typeof useDetailPanelSelector>) {
+    /*
     type EditedRelation
         = {type: "CLONE_IMAGE", direction: "A to B" | "B to A", props: ImagePropsCloneForm["props"], merge: boolean, deleteFrom: boolean}
         | {type: "ADD_TO_COLLECTION", goal: "A" | "B", collectionId: string | number}
@@ -470,6 +500,8 @@ function useDetailPanelRelationDisplay(data: Ref<FindSimilarDetailResult | null>
     }, {deep: true})
 
     return {existedRelations, editedRelations}
+
+     */
 }
 
 function resultCompare(a: FindSimilarResultImage, b: FindSimilarResultImage): number {
