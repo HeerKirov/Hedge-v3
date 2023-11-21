@@ -169,7 +169,7 @@ data class FindSimilarResult(val id: Int,
         }
     }
 
-    data class RelationEdge(val a: Int, val b: Int, val info: RelationEdgeType)
+    data class RelationEdge(val a: Int, val b: Int, val types: List<RelationEdgeType>)
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
     @JsonSubTypes(value = [

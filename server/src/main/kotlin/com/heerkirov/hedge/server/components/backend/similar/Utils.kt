@@ -53,7 +53,7 @@ fun GraphEdge.isExistedRelation(): Boolean {
  * 判断GraphCoverage是否是“已存在关系”。
  */
 fun GraphCoverage.isExistedRelation(): Boolean {
-    return this.ignored || this.type is FindSimilarResult.SourceIdentitySimilarCoverage || this.type is FindSimilarResult.SourceBookCoverage
+    return this.ignored || this.type is FindSimilarResult.BookCoverage || this.type is FindSimilarResult.CollectionCoverage
 }
 
 /**

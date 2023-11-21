@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.FindSimilarResults
 import com.heerkirov.hedge.server.events.SimilarFinderResultCreated
+import com.heerkirov.hedge.server.events.SimilarFinderResultUpdated
 import com.heerkirov.hedge.server.model.FindSimilarResult
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
@@ -101,6 +102,8 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
      * 根据图结果，生成record记录。
      */
     fun generateRecords() {
+        var createNum = 0
+        val updated = mutableListOf<Int>()
         data.db.transaction {
             for (component in components) {
                 //首先去数据库，检查一下是否可能存在有重合节点。若存在重合节点，就认为两个分量是连通的
@@ -109,47 +112,56 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
                 //为解决这个问题，一次连接的OR条件不能太多。(测试的最多数量是88)
                 //在这里使用10条为一组，拆分成多条查询。
                 val existResult = component.keys.asSequence().chunked(10)
-                    .map { li -> li.map { "|$it|" }.map { FindSimilarResults.imageIds like it }.reduce { a, b -> a or b } }
+                    .map { li -> li.map { "%|$it|%" }.map { FindSimilarResults.imageIds like it }.reduce { a, b -> a or b } }
                     .map { condition -> data.db.sequenceOf(FindSimilarResults).firstOrNull { condition } }
                     .filterNotNull()
                     .firstOrNull()
 
                 if(existResult != null) {
-                    generateRecordToExist(component, existResult)
+                    val recordId = generateRecordToExist(component, existResult)
+                    updated.add(recordId)
                 }else{
                     generateNewRecord(component)
+                    createNum += 1
                 }
             }
         }
         //发送db写入的变更事件
-        if(components.size > 0) {
-            bus.emit(SimilarFinderResultCreated(components.size))
+        if(createNum > 0) {
+            bus.emit(SimilarFinderResultCreated(createNum))
+        }
+        if(updated.isNotEmpty()) {
+            bus.emit(updated.map { SimilarFinderResultUpdated(it) })
         }
     }
 
     /**
      * 将连通分量追加到已有的记录。
      */
-    private fun generateRecordToExist(component: Map<Int, GraphVertex>, target: FindSimilarResult) {
+    private fun generateRecordToExist(component: Map<Int, GraphVertex>, target: FindSimilarResult): Int {
         val imageIds = (component.keys + target.edges.asSequence().flatMap { sequenceOf(it.a, it.b) }.toSet()).toList()
 
         val edges = mergeEdges(
+            target.edges.associateBy({ it.a to it.b }) { it.types },
             component.values.asSequence()
                 .flatMap { node ->
                     node.edges.asSequence()
                         .filter { node.key < it.another.key }
                         .map { Pair(node.key, it.another.key) to it.relations }
                 }
-                .toMap(),
-            target.edges.groupBy({ it.a to it.b }) { it.info }
-        ).flatMap { (k, v) -> v.map { FindSimilarResult.RelationEdge(k.first, k.second, it) } }
+                .toMap()
+        ).map { (k, v) -> FindSimilarResult.RelationEdge(k.first, k.second, v) }
 
         val coverages = mergeCoverages(
-            component.values.asSequence().flatMap { node -> node.coverages }.distinct().map { FindSimilarResult.RelationCoverage(it.vertices.map(GraphVertex::key), it.type, it.ignored) }.toList(),
+            component.values.asSequence()
+                .flatMap { it.coverages }
+                .distinct()
+                .map { FindSimilarResult.RelationCoverage(it.vertices.map(GraphVertex::key), it.type, it.ignored) }
+                .toList(),
             target.coverages
         )
 
-        val edgeTypes = component.values.asSequence().flatMap { it.edges }.flatMap { it.relations }.toSet() + target.edges.asSequence().map { it.info }.toSet()
+        val edgeTypes = component.values.asSequence().flatMap { it.edges }.flatMap { it.relations }.toSet() + target.edges.asSequence().flatMap { it.types }.toSet()
         val category = getSimilarityCategory(edgeTypes)
         val summaryType = getSummaryType(edgeTypes)
 
@@ -163,6 +175,8 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
             set(it.resolved, false)
             set(it.recordTime, Instant.now())
         }
+
+        return target.id
     }
 
     /**
@@ -171,16 +185,13 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
     private fun generateNewRecord(component: Map<Int, GraphVertex>) {
         val images = component.keys.toList()
         val edges = component.values.asSequence()
-            .flatMap { vertex ->
-                vertex.edges.asSequence().flatMap { edge ->
-                    edge.relations.asSequence().map { Triple(vertex.key, edge.another.key, it) }
-                }
-            }
+            .flatMap { vertex -> vertex.edges.asSequence().map { edge -> Triple(vertex.key, edge.another.key, edge.relations) } }
             .filter { (a, b, _) -> a < b }
             .map { (a, b, i) -> FindSimilarResult.RelationEdge(a, b, i) }
             .toList()
         val coverages = component.values.asSequence()
             .flatMap { it.coverages }
+            .distinct()
             .map { c -> FindSimilarResult.RelationCoverage(c.vertices.map { it.key }, c.type, c.ignored) }
             .toList()
         val edgeTypes = component.values.asSequence().flatMap { it.edges }.flatMap { it.relations }.toSet()

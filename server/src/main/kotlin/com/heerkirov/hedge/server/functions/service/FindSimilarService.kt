@@ -305,8 +305,13 @@ class FindSimilarService(private val data: DataRepository,
                                     ignoredSourceDatas: Set<FindSimilarResult.SourceIdentitySimilarCoverage>): FindSimilarResult {
         val imageIds = if(deleted.isNotEmpty()) result.imageIds.filter { it !in deleted } else result.imageIds
 
-        val newEdgesFromIgnored = ignoredEdges.map { FindSimilarResult.RelationEdge(it.first, it.second, FindSimilarResult.Ignored) }
-        val edges = (newEdgesFromIgnored + result.edges).filter { it.a !in deleted && it.b !in deleted }
+        val newEdgesFromIgnored = ignoredEdges.map { FindSimilarResult.RelationEdge(it.first, it.second, listOf(FindSimilarResult.Ignored)) }
+        val edges = (newEdgesFromIgnored + result.edges)
+            .filter { it.a !in deleted && it.b !in deleted }
+            .groupBy { it.a to it.b }
+            .mapValues { (k, v) -> FindSimilarResult.RelationEdge(k.first, k.second, v.flatMap { it.types }) }
+            .values
+            .toList()
 
         val imageToNewCollections = addToCollections.asSequence().flatMap { (k, v) -> v.map { it to k } }.toMap()
         val newCoveragesFromBook = addToBooks.asSequence()
@@ -373,7 +378,7 @@ class FindSimilarService(private val data: DataRepository,
             }
             .toList()
 
-        val edgeTypes = edges.asSequence().map { it.info }.toSet()
+        val edgeTypes = edges.asSequence().flatMap { it.types }.toSet()
         val category = getSimilarityCategory(edgeTypes)
         val summaryType = getSummaryType(edgeTypes)
         val resolved = computeResultResolved(imageIds, edges, coverages)
@@ -388,9 +393,9 @@ class FindSimilarService(private val data: DataRepository,
         val r1 = coverages
             .flatMap {  coverage -> coverage.imageIds.mapEachTwo { a, b -> min(a, b) to (max(a, b) to coverage.ignored) } }
             .groupBy({ it.first }) { it.second }
-        //将edges转换为a->b的边结构。总是保持a<b，且在后面附上existed标记
+        //将edges转换为a->b的边结构。总是保持a<b(在RecordBuilder中已经可以保证edge的a总是小于b)，且在后面附上existed标记
         val r2 = edges
-            .groupBy({ min(it.a, it.b) }) { max(it.a, it.b) to (it.info is FindSimilarResult.Associated || it.info is FindSimilarResult.Ignored) }
+            .groupBy({ it.a }) { it.b to it.types.any { t -> t is FindSimilarResult.Associated || t is FindSimilarResult.Ignored } }
 
         //取出每个节点的所有边，然后按照目标节点对边分类，使与同一个节点连接的边分到一组里。
         //随后统计每个组中existed标记的数量。只要数量不为0，就表示当前节点与目标节点的连接是existed relation。

@@ -231,6 +231,8 @@ class GraphBuilder(private val data: DataRepository, private val entityLoader: E
                 .map { it[Illusts.id]!! }
             illusts.forEachTwo { a, b -> adds.add(Triple(a, b, FindSimilarResult.SourceIdentityEqual(site, null, null, pn))) }
         }
+
+        addInGraph(adds)
     }
 
     /**
