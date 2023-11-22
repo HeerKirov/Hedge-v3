@@ -219,6 +219,7 @@ export interface FindSimilarResultDetailImage extends CommonIllust {
     orderTime: LocalDateTime
     score: number | null
     source: SourceDataPath | null
+    parentId: number | null
 }
 
 export interface SimilarityRelationEdge {
@@ -275,10 +276,10 @@ export interface FindSimilarResultResolveForm {
 export type FindSimilarResultResolveAction = ({type: "CLONE_IMAGE"} & ImagePropsCloneForm) | {
     type: "ADD_TO_COLLECTION"
     imageIds: number[]
-    collectionId: number
+    collectionId: number | string
 } | {
     type: "ADD_TO_BOOK"
-    imageIds: number
+    imageIds: number[]
     bookId: number
 } | {
     type: "DELETE"

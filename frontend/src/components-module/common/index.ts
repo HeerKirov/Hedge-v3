@@ -5,9 +5,10 @@ import StagingPostButton from "./StagingPostComponent/StagingPostButton.vue"
 import IllustTabDetailInfo from "./ImageDatasetPane/IllustTabDetailInfo.vue"
 import IllustTabSourceData from "./ImageDatasetPane/IllustTabSourceData.vue"
 import IllustTabRelatedItems from "./ImageDatasetPane/IllustTabRelatedItems.vue"
+import IllustTabAction from "./ImageDatasetPane/IllustTabAction.vue"
 import BookTabDetailInfo from "./ImageDatasetPane/BookTabDetailInfo.vue"
 import BookDetailPane from "./ImageDatasetPane/BookDetailPane.vue"
 
 export { ImportDetailPane, IllustDetailPane, TrashedDetailPane, BookDetailPane }
-export { IllustTabDetailInfo, IllustTabRelatedItems, IllustTabSourceData, BookTabDetailInfo }
+export { IllustTabDetailInfo, IllustTabRelatedItems, IllustTabSourceData, IllustTabAction, BookTabDetailInfo }
 export { StagingPostButton }

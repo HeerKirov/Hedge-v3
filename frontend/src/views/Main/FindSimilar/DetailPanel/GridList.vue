@@ -1,8 +1,32 @@
 <script setup lang="ts">
 import { IllustImageDataset } from "@/components-module/data"
-import { useGridList } from "@/services/main/find-similar"
+import { CommonIllust } from "@/functions/http-client/api/illust"
+import { useDynamicPopupMenu } from "@/modules/popup-menu"
+import { useFindSimilarDetailPanel } from "@/services/main/find-similar"
 
-const { paginationData, selector: { selected, lastSelected, update: updateSelect }, listviewController: { viewMode, fitType, columnNum } } = useGridList()
+const { 
+    paginationData, 
+    selector: { selected, lastSelected, update: updateSelect }, 
+    listviewController: { fitType, columnNum }, 
+    operators: { allBooks, allCollections, addToCollection, addToBook, markIgnored, deleteItem, cloneImage } 
+} = useFindSimilarDetailPanel()
+
+const menu = useDynamicPopupMenu<CommonIllust>(illust => [
+    {type: "normal", label: "预览"},
+    {type: "separator"},
+    {type: "checkbox", label: "标记为收藏", checked: illust.favorite},
+    {type: "separator"},
+    {type: "submenu", label: "加入集合", submenu: [
+        ...allCollections.value.map(id => ({type: "normal", label: `集合:${id}`, click: () => addToCollection(id, illust.id) } as const)),
+        ...(allCollections.value.length > 0 ? [{type: "separator"} as const] : []),
+        {type: "normal", label: "创建新集合", click: () => addToCollection("new", illust.id)}
+    ]},
+    {type: "submenu", label: "加入画集", enabled: allBooks.value.length > 0, submenu: allBooks.value.map(id => ({type: "normal", label: `画集:${id}`, click: () => addToBook(id, illust.id)} as const))},
+    {type: "normal", label: "克隆图像属性…", click: () => cloneImage(illust.id)},
+    {type: "normal", label: "添加忽略标记", click: () => markIgnored(illust.id)},
+    {type: "separator"},
+    {type: "normal", label: "删除此项目", click: () => deleteItem(illust.id)}
+])
 
 </script>
 
@@ -10,5 +34,5 @@ const { paginationData, selector: { selected, lastSelected, update: updateSelect
     <IllustImageDataset :data="paginationData.data" :query-instance="paginationData.proxy"
                         view-mode="grid" :fit-type="fitType" :column-num="columnNum"
                         :selected="selected" :last-selected="lastSelected" @select="updateSelect"
-                        @data-update="paginationData.dataUpdate"/>
+                        @data-update="paginationData.dataUpdate" @contextmenu="menu.popup($event)"/>
 </template>

@@ -84,7 +84,7 @@ import {
     faAngleDoubleRight, faSortAmountDown, faCalendar, faThList, faExchangeAlt, faEarListen, faStop, faCopy, faScissors,
     faEquals, faHandLizard, faHandScissors, faFaceSmileBeam, faFaceLaughBeam, faMarker, faHighlighter, faJoint, faLinkSlash, 
     faBriefcase, faTimeline, faMaximize, faDiamond, faFlag, faKeyboard, faLandmarkFlag, faCalendarPlus, faFileWaveform,
-    faPowerOff, faNoteSticky, faBookOpenReader, faArrowRightRotate, faDiagramProject, faBorderAll, faTableColumns
+    faPowerOff, faNoteSticky, faBookOpenReader, faArrowRightRotate, faDiagramProject, faBorderAll, faTableColumns, faWineBottle
 } from "@fortawesome/free-solid-svg-icons"
 
 import {
@@ -109,7 +109,7 @@ library.add(
     faAngleDoubleRight, faSortAmountDown, faCalendar, faThList, faExchangeAlt, faEarListen, faStop, faCopy, faScissors,
     faEquals, faHandLizard, faHandScissors, faFaceSmileBeam, faFaceLaughBeam, faMarker, faHighlighter, faJoint, faLinkSlash,
     faBriefcase, faTimeline, faMaximize, faDiamond, faFlag, faKeyboard, faLandmarkFlag, faCalendarPlus, faFileWaveform,
-    faPowerOff, faNoteSticky, faBookOpenReader, faArrowRightRotate, faDiagramProject, faBorderAll, faTableColumns
+    faPowerOff, faNoteSticky, faBookOpenReader, faArrowRightRotate, faDiagramProject, faBorderAll, faTableColumns, faWineBottle
 )
 library.add(farStar, farCheckSquare, farCircleQuestion)
 

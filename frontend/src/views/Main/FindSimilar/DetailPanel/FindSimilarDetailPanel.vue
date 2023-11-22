@@ -9,7 +9,7 @@ import GridList from "./GridList.vue"
 import DetailPane from "./DetailPane.vue"
 
 const { paneState } = useFindSimilarContext()
-const { data, viewMode, listviewController, resolve } = installFindSimilarDetailPanel()
+const { data, viewMode, listviewController, operators: { complete } } = installFindSimilarDetailPanel()
 
 </script>
 
@@ -31,7 +31,7 @@ const { data, viewMode, listviewController, resolve } = installFindSimilarDetail
                     <Button :type="viewMode === 'graph' ? 'primary' : 'secondary'" square icon="diagram-project" @click="viewMode = 'graph'"/>
                     <Button :type="viewMode === 'compare' ? 'primary' : 'secondary'" square icon="table-columns" @click="viewMode = 'compare'"/>
                     <Separator/>
-                    <Button :type="data?.resolved ? 'success' : undefined" :mode="data?.resolved ? 'filled' : undefined" icon="check" @click="resolve">完成</Button>
+                    <Button :type="data?.resolved ? 'success' : undefined" :mode="data?.resolved ? 'filled' : undefined" icon="check" @click="complete">完成</Button>
                 </template>
             </MiddleLayout>
         </template>
@@ -39,7 +39,7 @@ const { data, viewMode, listviewController, resolve } = installFindSimilarDetail
             <PaneLayout :show-pane="viewMode === 'graph' || viewMode === 'grid'">
                 <div v-if="viewMode === 'graph' || viewMode === 'compare'" :class="viewMode === 'graph' ? $style['grid-mode'] : $style['compare-mode']">
                     <CompareTable v-if="viewMode === 'compare'"/>
-                    <GraphView :images="data.images" :coverages="data.coverages" :edges="data.edges"/>
+                    <GraphView/>
                 </div>
                 <GridList v-else/>
                 <template #pane>
