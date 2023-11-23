@@ -20,15 +20,12 @@ const { assetsUrl } = useAssets()
 
 const summaryText = props.item.summaryType.map(t => ({"EQUIVALENCE": "相同", "SIMILAR": "内容相似", "RELATED": "关系接近"}[t])).join("、")
 
-const { allow, keepNew, keepNewAndCloneProps, keepOld, ignoreIt, deleteIt } = useFindSimilarItemContext(props.item)
+const { ignoreIt, deleteIt } = useFindSimilarItemContext(props.item)
 
 const actionMenuItems = <MenuItem<undefined>[]>[
-    allow.keepNewAndCloneProps ? {type: "normal", label: "保留新项并从旧项克隆属性", click: keepNewAndCloneProps} : null,
-    allow.keepNew ? {type: "normal", label: "保留新项但不克隆属性", click: keepNew} : null,
-    allow.keepOld ? {type: "normal", label: "保留旧项", click: keepOld} : null,
-    allow.keepNewAndCloneProps || allow.keepNew || allow.keepOld ? {type: "separator"} : null,
-    {type: "normal", label: "标记为忽略", click: ignoreIt},
-    {type: "normal", label: "清除此记录", click: deleteIt},
+    {type: "normal", label: "全部标记为忽略", click: ignoreIt},
+    {type: "separator"},
+    {type: "normal", label: "不采取任何操作并清除记录", click: deleteIt},
 ].filter(i => i !== null)
 
 const popupMenu = usePopupMenu([
@@ -62,7 +59,7 @@ const popupMenu = usePopupMenu([
 
 <style module lang="sass">
 .item
-    $height: 76px
+    $height: 86px
     $padding: 8px
     $content-height: $height - $padding * 2
     height: $height

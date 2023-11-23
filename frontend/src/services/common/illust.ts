@@ -2,7 +2,7 @@ import { Ref, computed, ref, shallowRef, unref, watch } from "vue"
 import { VirtualViewNavigation } from "@/components/data"
 import {
     PaginationDataView, QueryListview, AllSlice, ListIndexSlice, SingletonSlice,
-    usePostFetchHelper, usePostPathFetchHelper, useFetchHelper, QueryInstance, createMappedQueryInstance, PaginationData
+    usePostFetchHelper, usePostPathFetchHelper, useFetchHelper, QueryInstance, createMappedQueryInstance
 } from "@/functions/fetch"
 import { DraggingIllust, CommonIllust, Illust, IllustQueryFilter } from "@/functions/http-client/api/illust"
 import { QueryRes } from "@/functions/http-client/api/util-query"
@@ -18,7 +18,7 @@ import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
 import { usePreviewService } from "@/components-module/preview"
 import { installation } from "@/utils/reactivity"
-import { LocalDate, LocalDateTime, datetime } from "@/utils/datetime"
+import { LocalDate } from "@/utils/datetime"
 
 export interface ImageDatasetOperatorsOptions<T extends CommonIllust> {
     /**
@@ -169,6 +169,10 @@ export interface ImageDatasetOperators<T extends CommonIllust> {
      */
     exportItem(illust: T): void
     /**
+     * 使用选定的项，提交相似项查找任务。
+     */
+    findSimilarOfImage(illust: T): void
+    /**
      * 将项目加入暂存区。
      */
     addToStagingPost(illust: T): void
@@ -230,6 +234,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     const fetchFolderImagesPartialUpdate = usePostPathFetchHelper(client => client.folder.images.partialUpdate)
     const fetchStagingPostListAll = useFetchHelper(client => client.stagingPost.list)
     const fetchStagingPostUpdate = usePostFetchHelper(client => client.stagingPost.update)
+    const fetchFindSimilarTaskCreate = usePostFetchHelper(client => client.findSimilar.task.create)
 
     const homepageState = dataDropOptions === undefined ? null : useHomepageState()
 
@@ -452,6 +457,12 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
         }
     }
 
+    const findSimilarOfImage = async (illust: T) => {
+        const imageIds = getEffectedItems(illust)
+        await fetchFindSimilarTaskCreate({selector: {type: "image", imageIds}})
+        toast.toast("已创建", "success", "相似项查找任务已创建完成。")
+    }
+
     const exportItem = (illust: T) => {
         const itemIds = getEffectedItems(illust)
         dialog.externalExporter.export("ILLUST", itemIds)
@@ -485,7 +496,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     return {
         openDetailByClick, openDetailByEnter, openCollectionDetail, openInNewWindow, openPreviewBySpace, modifyFavorite,
         createCollection, splitToGenerateNewCollection, createBook, editAssociate, addToFolder, 
-        cloneImage, exportItem, addToStagingPost, popStagingPost, stagingPostCount,
+        cloneImage, exportItem, findSimilarOfImage, addToStagingPost, popStagingPost, stagingPostCount,
         deleteItem, removeItemFromCollection, removeItemFromBook, removeItemFromFolder, getEffectedItems, dataDrop
     }
 }

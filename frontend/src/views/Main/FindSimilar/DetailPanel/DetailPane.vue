@@ -35,7 +35,7 @@ const paneButtonItems = computedEffect(() => [
             <IllustTabRelatedItems v-else-if="detail && tabType === 'related'" :detail-id="detail.id" :type="detail.type"/>
             <IllustTabSourceData v-else-if="detail && tabType === 'source'" :detail-id="detail.id" :type="detail.type"/>
             <IllustTabAction v-else-if="detail && tabType === 'action'" :selected="selected"/>
-            <DetailPaneTabResolve v-else-if="detail && tabType === 'resolve'" :selected="selected"/>
+            <DetailPaneTabResolve v-else-if="detail && tabType === 'resolve'"/>
         </KeepAlive>
 
         <template #bottom>

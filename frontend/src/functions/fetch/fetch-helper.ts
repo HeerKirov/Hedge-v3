@@ -22,6 +22,10 @@ export interface PostPathFetchHelper<PATH, PARAM, E extends BasicException> {
     (path: PATH, param: PARAM, handleError?: ErrorHandler<E>): Promise<boolean>
 }
 
+export interface HttpClientHelper {
+    <MODEL, E extends BasicException>(choose: (client: HttpClient) => Promise<Response<MODEL, E>>, handleError?: ErrorHandler<E>): Promise<MODEL | undefined>
+}
+
 interface FetchHelperOptions<PARAM, MODEL, E extends BasicException> {
     request(httpClient: HttpClient): (param: PARAM) => Promise<Response<MODEL, E>>
     handleErrorInRequest?(e: E): E | void
@@ -123,5 +127,19 @@ export function usePostPathFetchHelper<PATH, PARAM, MODEL, E extends BasicExcept
             if(e !== undefined) handleException(res.exception)
         }
         return false
+    }
+}
+
+export function useHttpClientHelper(): HttpClientHelper {
+    const { httpClient, handleException } = useFetchManager()
+    return async <MODEL, E extends BasicException>(choose: (client: HttpClient) => Promise<Response<MODEL, E>>, handleError?: ErrorHandler<E>): Promise<MODEL | undefined> => {
+        const res = await choose(httpClient)
+        if (res.ok) {
+            return res.data
+        } else if (res.exception) {
+            const e = handleError ? handleError(res.exception) : res.exception
+            if (e !== undefined) handleException(res.exception)
+        }
+        return undefined
     }
 }

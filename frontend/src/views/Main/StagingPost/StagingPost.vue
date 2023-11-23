@@ -42,6 +42,7 @@ const menu = useDynamicPopupMenu<StagingPostImage>(illust => [
     {type: "normal", label: "添加到目录…", click: operators.addToFolder},
     {type: "normal", label: "克隆图像属性…", click: operators.cloneImage},
     {type: "separator"},
+    {type: "normal", label: "查找相似项", click: operators.findSimilarOfImage},
     {type: "normal", label: "导出", click: operators.exportItem},
     {type: "separator"},
     {type: "normal", label: "从暂存区移除此项目", click: operators.removeFromStagingPost}

@@ -17,7 +17,14 @@ const emit = defineEmits<{
 
 const message = useMessageBox()
 
-const fetch = useFetchHelper(client => client.tag.get)
+const fetch = useFetchHelper({
+    request: client => client.tag.get, 
+    handleErrorInRequest(e) {
+        if(e.code !== "NOT_FOUND") {
+            return e
+        }
+    }
+})
 
 const add = async ({ id }: SimpleTag) => {
     const tag = await fetch(id)

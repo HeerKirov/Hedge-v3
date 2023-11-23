@@ -42,9 +42,8 @@ const ellipsisMenu = <MenuItem<undefined>[]>[
                     <a @click="findSimilarTaskExplorer.list()"><Icon icon="list"/>查看查找任务队列</a>
                 </p>
             </div>
-        <VirtualRowView v-else :row-height="80" :padding="6" :buffer-size="8" v-bind="paginationData.data.metrics" @update="paginationData.dataUpdate">
-            <FindSimilarListPanelItem v-for="item in paginationData.data.result" :key="item.id"
-                                      :item="item" @click="paneState.openDetailView(item.id)"/>
+        <VirtualRowView v-else :row-height="90" :padding="6" :buffer-size="8" v-bind="paginationData.data.metrics" @update="paginationData.dataUpdate">
+            <FindSimilarListPanelItem v-for="item in paginationData.data.result" :key="item.id" :item="item" @click="paneState.openDetailView(item.id)"/>
         </VirtualRowView>
     </TopBarLayout>
 </template>

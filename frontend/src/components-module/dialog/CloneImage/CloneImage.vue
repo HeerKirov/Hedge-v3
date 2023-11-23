@@ -4,6 +4,7 @@ import { Button } from "@/components/universal"
 import { Flex, BottomLayout } from "@/components/layout"
 import { ImageCompareTable } from "@/components-module/data"
 import { CloneImageProps, useCloneImageContext, FORM_OPTIONS, FORM_PROPS, FORM_TITLE } from "./context"
+import { ImagePropsCloneForm } from "@/functions/http-client/api/illust"
 
 const props = defineProps<{
     p: CloneImageProps
@@ -13,12 +14,17 @@ const emit = defineEmits<{
     (e: "close"): void
 }>()
 
-const succeed = (from: number, to: number, fromDeleted: boolean) => {
+const succeed = props.p.onSucceed && function(from: number, to: number, fromDeleted: boolean) {
     props.p.onSucceed?.(from, to, fromDeleted)
     emit("close")
 }
 
-const { fromId, toId, ids, titles, exchange, updateId, options, execute } = useCloneImageContext(props.p.from, props.p.to, succeed)
+const onlyGetProps = props.p.onlyGetProps && function(form: ImagePropsCloneForm) {
+    props.p.onlyGetProps?.(form)
+    emit("close")
+}
+
+const { fromId, toId, ids, titles, droppable, exchange, updateId, options, execute } = useCloneImageContext(props.p.from, props.p.to, succeed, onlyGetProps)
 
 </script>
 
@@ -27,7 +33,7 @@ const { fromId, toId, ids, titles, exchange, updateId, options, execute } = useC
         <div :class="$style['info-content']">
             <p class="mt-2 pl-1 is-font-size-large">属性克隆</p>
             <p class="mb-2 pl-1">将源图像的属性、关联关系完整地(或有选择地)复制给目标图像。</p>
-            <ImageCompareTable :column-num="2" :ids="ids" :titles="titles" @update:id="updateId" droppable/>
+            <ImageCompareTable :column-num="2" :ids="ids" :titles="titles" @update:id="updateId" :droppable="droppable"/>
         </div>
         <BottomLayout :class="$style['action-content']">
             <Button class="w-100" icon="exchange-alt" :disabled="fromId === null && toId === null" @click="exchange">交换源与目标</Button>

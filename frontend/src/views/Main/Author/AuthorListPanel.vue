@@ -3,6 +3,7 @@ import { Button } from "@/components/universal"
 import { VirtualRowView } from "@/components/data"
 import { TopBarLayout, MiddleLayout } from "@/components/layout"
 import { SearchInput, DataRouter, AttachFilter, AttachTemplate } from "@/components-business/top-bar"
+import { Author } from "@/functions/http-client/api/author"
 import { Annotation } from "@/functions/http-client/api/annotations"
 import { AUTHOR_TYPE_ICONS, AUTHOR_TYPE_NAMES, AUTHOR_TYPES_WITHOUT_UNKNOWN } from "@/constants/entity"
 import { useAuthorContext } from "@/services/main/author"
@@ -12,7 +13,7 @@ import AuthorListPanelItem from "./AuthorListPanelItem.vue"
 const {
     paneState,
     listview: { queryFilter, paginationData },
-    operators: { toggleFavorite, createByTemplate, deleteItem }
+    operators: { toggleFavorite, createByTemplate, deleteItem, findSimilarOfAuthor, openIllustsOfAuthor }
 } = useAuthorContext()
 
 const attachFilterTemplates: AttachTemplate[] = [
@@ -61,10 +62,13 @@ const attachFilterTemplates: AttachTemplate[] = [
     }
 ]
 
-const popupMenu = usePopupMenu<number>([
-    {type: "normal", label: "查看详情", click: paneState.openDetailView},
+const popupMenu = usePopupMenu<Author>([
+    {type: "normal", label: "查看详情", click: a => paneState.openDetailView(a.id)},
     {type: "separator"},
     {type: "normal", label: "以此为模板新建", click: createByTemplate},
+    {type: "separator"},
+    {type: "normal", label: "在图库查看此作者的所有项目", click: openIllustsOfAuthor},
+    {type: "normal", label: "在此作者范围内查找相似项", click: findSimilarOfAuthor},
     {type: "separator"},
     {type: "normal", label: "删除此作者", click: deleteItem},
 ])
@@ -88,9 +92,9 @@ const popupMenu = usePopupMenu<number>([
         <VirtualRowView :row-height="80" :padding="6" :buffer-size="8" v-bind="paginationData.data.metrics" @update="paginationData.dataUpdate">
             <AuthorListPanelItem v-for="item in paginationData.data.result" :key="item.id"
                                 :item="item"
-                                @update:favorite="toggleFavorite(item.id, $event)"
+                                @update:favorite="toggleFavorite(item, $event)"
                                 @click="paneState.openDetailView(item.id)"
-                                @contextmenu="popupMenu.popup(item.id)"/>
+                                @contextmenu="popupMenu.popup(item)"/>
         </VirtualRowView>
     </TopBarLayout>
 </template>

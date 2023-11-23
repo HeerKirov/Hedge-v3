@@ -26,8 +26,22 @@ const message = useMessageBox()
 const { data: sites } = useSettingSite()
 
 const fetchIllusts = useFetchHelper(client => client.illust.findByIds)
-const fetchTopic = useFetchHelper(client => client.topic.get)
-const fetchAuthor = useFetchHelper(client => client.author.get)
+const fetchTopic = useFetchHelper({
+    request: client => client.topic.get, 
+    handleErrorInRequest(e) {
+        if(e.code !== "NOT_FOUND") {
+            return e
+        }
+    }
+})
+const fetchAuthor = useFetchHelper({
+    request: client => client.author.get, 
+    handleErrorInRequest(e) {
+        if(e.code !== "NOT_FOUND") {
+            return e
+        }
+    }
+})
 
 const loadingCache = reactive({
     images: <SimpleIllust[]>[],

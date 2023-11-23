@@ -144,7 +144,14 @@ export function useTagCreatePane() {
         }
     })
 
-    const fetch = useFetchHelper(client => client.tag.get)
+    const fetch = useFetchHelper({
+        request: client => client.tag.get, 
+        handleErrorInRequest(e) {
+            if(e.code !== "NOT_FOUND") {
+                return e
+            }
+        }
+    })
 
     const addressInfo = computedAsync<{address: string | null, member: boolean, memberIndex: number | null}>({address: null, member: false, memberIndex: null}, async () => {
         if(form.value !== null && form.value.parentId !== null) {

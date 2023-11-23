@@ -11,26 +11,41 @@ export interface CloneImage {
      * 关系克隆操作可以选择要对哪些属性做克隆，以及要不要删除from图像。
      */
     clone(options: {from?: number, to?: number}, onSucceed?: (from: number, to: number, fromDeleted: boolean) => void): void
+    /**
+     * 打开一个对话框，执行图像属性克隆的参数选定操作。
+     * 它不会实际执行属性克隆，而是异步返回属性克隆的参数，后续应当手动调用属性克隆API。
+     */
+    getCloneProps(options: {from: number, to: number}): Promise<ImagePropsCloneForm | undefined>
 }
 
 export interface CloneImageProps {
     from: number | null
     to: number | null
     onSucceed?(from: number, to: number, fromDeleted: boolean): void
+    onlyGetProps?(form: ImagePropsCloneForm): void
+    cancel(): void
 }
 
-export function useCloneImage(push: Push) {
+export function useCloneImage(push: Push): CloneImage {
     return {
-        clone(options: { from?: number; to?: number }, onSucceed?: (from: number, to: number, fromDeleted: boolean) => void) {
+        clone(options, onSucceed) {
             push({
                 type: "cloneImage",
-                props: {from: options.from ?? null, to: options.to ?? null, onSucceed}
+                props: {from: options.from ?? null, to: options.to ?? null, onSucceed, cancel: () => {}}
             })
-        }
+        },
+        getCloneProps(options) {
+            return new Promise(resolve => {
+                push({
+                    type: "cloneImage",
+                    props: {from: options.from ?? null, to: options.to ?? null, onlyGetProps: resolve, cancel: () => resolve(undefined)}
+                })
+            })
+        },
     }
 }
 
-export function useCloneImageContext(from: number | null, to: number | null, onSucceed: (from: number, to: number, fromDeleted: boolean) => void) {
+export function useCloneImageContext(from: number | null, to: number | null, onSucceed?: (from: number, to: number, fromDeleted: boolean) => void, onlyGetProps?: (form: ImagePropsCloneForm) => void) {
     const fetchCloneImage = usePostFetchHelper(client => client.illust.cloneImageProps)
 
     const fromId = ref(from)
@@ -38,6 +53,7 @@ export function useCloneImageContext(from: number | null, to: number | null, onS
 
     const ids = computed(() => [fromId.value, toId.value])
     const titles = ["FROM", "TO"]
+    const droppable = onlyGetProps === undefined
 
     const exchange = () => {
         function exchangeRefValue<T>(a: Ref<T>, b: Ref<T>) {
@@ -60,17 +76,18 @@ export function useCloneImageContext(from: number | null, to: number | null, onS
 
     const execute = async () => {
         if(fromId.value !== null && toId.value !== null) {
-            const { merge, deleteFrom, ...props } = options.value
-            const res = await fetchCloneImage({
-                props, merge, deleteFrom, from: fromId.value, to: toId.value
-            })
-            if(res) {
-                onSucceed(fromId.value, toId.value, deleteFrom ?? false)
+            if(onlyGetProps) {
+                const { merge, deleteFrom, ...props } = options.value
+                onlyGetProps({props, merge, deleteFrom, from: fromId.value, to: toId.value})
+            }else{
+                const { merge, deleteFrom, ...props } = options.value
+                const res = await fetchCloneImage({props, merge, deleteFrom, from: fromId.value, to: toId.value})
+                if(res && onSucceed) onSucceed(fromId.value, toId.value, deleteFrom ?? false)
             }
         }
     }
 
-    return {fromId, toId, ids, titles, exchange, updateId, options, execute}
+    return {fromId, toId, ids, titles, droppable, exchange, updateId, options, execute}
 }
 
 export type Form = ImagePropsCloneForm["props"] & {merge?: boolean, deleteFrom?: boolean}

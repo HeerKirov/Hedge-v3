@@ -161,7 +161,14 @@ export function useIllustDetailPane() {
 function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview<CommonIllust>, instance: QueryInstance<CommonIllust>) {
     const detail = ref<{id: number, type: "IMAGE" | "COLLECTION", filePath: FilePath} | null>(null)
 
-    const fetch = useFetchHelper(client => client.illust.get)
+    const fetch = useFetchHelper({
+        request: client => client.illust.get, 
+        handleErrorInRequest(e) {
+            if(e.code !== "NOT_FOUND") {
+                return e
+            }
+        }
+    })
 
     watch(path, async path => {
         if(path !== null) {

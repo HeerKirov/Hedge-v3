@@ -1,20 +1,17 @@
 import { readonly, Ref, ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useLocalStorage } from "@/functions/app"
-import {useCreatingHelper, useFetchEndpoint, useRetrieveHelper, ErrorHandler, QueryListview} from "@/functions/fetch"
+import { useCreatingHelper, useFetchEndpoint, useRetrieveHelper, ErrorHandler, QueryListview, usePostFetchHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
-import {
-    DetailTopic, ParentTopic, Topic,
-    TopicCreateForm, TopicUpdateForm, TopicExceptions,
-    TopicQueryFilter, TopicType
-} from "@/functions/http-client/api/topic"
+import { DetailTopic, ParentTopic, Topic, TopicCreateForm, TopicUpdateForm, TopicExceptions, TopicQueryFilter, TopicType } from "@/functions/http-client/api/topic"
 import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { DetailViewState, useRouterViewState } from "@/services/base/detail-view-state"
 import { useNavHistoryPush } from "@/services/base/side-nav-menu"
 import { useListViewContext } from "@/services/base/list-view-context"
-import { useRouterQueryNumber } from "@/modules/router"
+import { useRouterNavigator, useRouterQueryNumber } from "@/modules/router"
 import { useMessageBox } from "@/modules/message-box"
+import { useToast } from "@/modules/toast"
 import { checkTagName } from "@/utils/validation"
 import { patchMappingSourceTagForm } from "@/utils/translation"
 import { computedWatchMutable, installation } from "@/utils/reactivity"
@@ -53,23 +50,27 @@ function useListView() {
 }
 
 function useOperators(paneState: DetailViewState<number, Partial<DetailTopic>>, listview: QueryListview<Topic>) {
+    const toast = useToast()
     const message = useMessageBox()
+    const navigator = useRouterNavigator()
 
     const retrieveHelper = useRetrieveHelper({
         update: client => client.topic.update,
         delete: client => client.topic.delete
     })
 
-    const createByTemplate = (id: number) => {
-        const idx = listview.proxy.syncOperations.find(a => a.id === id)
+    const fetchFindSimilarTaskCreate = usePostFetchHelper(client => client.findSimilar.task.create)
+
+    const createByTemplate = (topic: Topic) => {
+        const idx = listview.proxy.syncOperations.find(a => a.id === topic.id)
         if(idx != undefined) {
             const topic = listview.proxy.syncOperations.retrieve(idx)
             paneState.openCreateView(topic)
         }
     }
 
-    const createChildOfTemplate = (id: number) => {
-        const idx = listview.proxy.syncOperations.find(a => a.id === id)
+    const createChildOfTemplate = (topic: Topic) => {
+        const idx = listview.proxy.syncOperations.find(a => a.id === topic.id)
         if(idx != undefined) {
             const topic = listview.proxy.syncOperations.retrieve(idx)
             if(topic !== undefined) {
@@ -85,19 +86,28 @@ function useOperators(paneState: DetailViewState<number, Partial<DetailTopic>>, 
         }
     }
 
-    const deleteItem = async (id: number) => {
+    const deleteItem = async (topic: Topic) => {
         if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
-            if(await retrieveHelper.deleteData(id)) {
-                if(paneState.detailPath.value === id) paneState.closeView()
+            if(await retrieveHelper.deleteData(topic.id)) {
+                if(paneState.detailPath.value === topic.id) paneState.closeView()
             }
         }
     }
 
-    const toggleFavorite = async (topicId: number, favorite: boolean) => {
-        await retrieveHelper.setData(topicId, {favorite})
+    const toggleFavorite = async (topic: Topic, favorite: boolean) => {
+        await retrieveHelper.setData(topic.id, {favorite})
     }
 
-    return {createByTemplate, createChildOfTemplate, deleteItem, toggleFavorite}
+    const findSimilarOfTopic = async (topic: Topic) => {
+        await fetchFindSimilarTaskCreate({selector: {type: "topic", topicIds: [topic.id]}})
+        toast.toast("已创建", "success", "相似项查找任务已创建完成。")
+    }
+
+    const openIllustsOfTopic = (topic: Topic) => {
+        navigator.goto({routeName: "MainIllust", params: {topicName: topic.name}})
+    }
+
+    return {createByTemplate, createChildOfTemplate, deleteItem, toggleFavorite, findSimilarOfTopic, openIllustsOfTopic}
 }
 
 export function useTopicCreatePanel() {

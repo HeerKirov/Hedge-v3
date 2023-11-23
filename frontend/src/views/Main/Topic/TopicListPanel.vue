@@ -13,7 +13,7 @@ import TopicListPanelItem from "./TopicListPanelItem.vue"
 const {
     paneState,
     listview: { queryFilter, paginationData },
-    operators: { toggleFavorite, deleteItem, createByTemplate, createChildOfTemplate }
+    operators: { toggleFavorite, deleteItem, createByTemplate, createChildOfTemplate, findSimilarOfTopic, openIllustsOfTopic }
 } = useTopicContext()
 
 const attachFilterTemplates: AttachTemplate[] = [
@@ -78,11 +78,14 @@ const attachFilterTemplates: AttachTemplate[] = [
     }
 ]
 
-const popupMenu = usePopupMenu<number>([
-    {type: "normal", label: "查看详情", click: paneState.openDetailView},
+const popupMenu = usePopupMenu<Topic>([
+    {type: "normal", label: "查看详情", click: t => paneState.openDetailView(t.id)},
     {type: "separator"},
-    {type: "normal", label: "新建子主题", click: createChildOfTemplate},
+    {type: "normal", label: "以此为父主题新建", click: createChildOfTemplate},
     {type: "normal", label: "以此为模板新建", click: createByTemplate},
+    {type: "separator"},
+    {type: "normal", label: "在图库查看此主题的所有项目", click: openIllustsOfTopic},
+    {type: "normal", label: "在此主题范围内查找相似项", click: findSimilarOfTopic},
     {type: "separator"},
     {type: "normal", label: "删除此主题", click: deleteItem},
 ])
@@ -106,9 +109,9 @@ const popupMenu = usePopupMenu<number>([
         <VirtualRowView :row-height="44" :padding="6" :buffer-size="10" v-bind="paginationData.data.metrics" @update="paginationData.dataUpdate">
             <TopicListPanelItem v-for="item in paginationData.data.result" :key="item.id"
                                 :item="item"
-                                @update:favorite="toggleFavorite(item.id, $event)"
+                                @update:favorite="toggleFavorite(item, $event)"
                                 @click="paneState.openDetailView(item.id)"
-                                @contextmenu="popupMenu.popup(item.id)"/>
+                                @contextmenu="popupMenu.popup(item)"/>
         </VirtualRowView>
     </TopBarLayout>
 </template>

@@ -22,7 +22,7 @@ const { data, viewMode, listviewController, operators: { complete } } = installF
                     <span class="ml-2 is-font-size-large">{{viewMode === "graph" ? "相似关系图" : viewMode === "grid" ? "相似项列表" : "相似项对比"}}</span>
                 </template>
                 <template #right>
-                    <template v-if="viewMode === 'grid' || viewMode === 'compare'">
+                    <template v-if="viewMode === 'grid'">
                         <FitTypeButton class="mr-1" v-model:value="listviewController.fitType.value"/>
                         <ColumnNumButton v-model:value="listviewController.columnNum.value"/>
                         <Separator/>
@@ -39,6 +39,7 @@ const { data, viewMode, listviewController, operators: { complete } } = installF
             <PaneLayout :show-pane="viewMode === 'graph' || viewMode === 'grid'">
                 <div v-if="viewMode === 'graph' || viewMode === 'compare'" :class="viewMode === 'graph' ? $style['grid-mode'] : $style['compare-mode']">
                     <CompareTable v-if="viewMode === 'compare'"/>
+                    <Separator :class="$style.separator" direction="horizontal" :spacing="0"/>
                     <GraphView/>
                 </div>
                 <GridList v-else/>
@@ -62,13 +63,16 @@ const { data, viewMode, listviewController, operators: { complete } } = installF
         top: 0
         left: 0
         right: 0
-        height: 65%
+        height: 55%
+    > .separator
+        position: absolute
+        top: 55%
     > div:last-child
         position: absolute !important
         bottom: 0
         left: 0
         right: 0
-        height: 35%
+        height: 45%
 
 .grid-mode
     width: 100%

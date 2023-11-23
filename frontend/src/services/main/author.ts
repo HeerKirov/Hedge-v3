@@ -1,19 +1,17 @@
 import { readonly, Ref, ref, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { useLocalStorage } from "@/functions/app"
-import { ErrorHandler, QueryListview, useCreatingHelper, useFetchEndpoint, useFetchHelper, useRetrieveHelper } from "@/functions/fetch"
+import { ErrorHandler, QueryListview, useCreatingHelper, useFetchEndpoint, useFetchHelper, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
-import {
-    Author, DetailAuthor, AuthorCreateForm, AuthorUpdateForm,
-    AuthorExceptions, AuthorQueryFilter, AuthorType,
-} from "@/functions/http-client/api/author"
+import { Author, DetailAuthor, AuthorCreateForm, AuthorUpdateForm, AuthorExceptions, AuthorQueryFilter, AuthorType } from "@/functions/http-client/api/author"
 import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { DetailViewState, useRouterViewState } from "@/services/base/detail-view-state"
 import { useNavHistoryPush } from "@/services/base/side-nav-menu"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useMessageBox } from "@/modules/message-box"
-import { useRouterQueryNumber } from "@/modules/router"
+import { useToast } from "@/modules/toast"
+import { useRouterNavigator, useRouterQueryNumber } from "@/modules/router"
 import { checkTagName } from "@/utils/validation"
 import { patchMappingSourceTagForm } from "@/utils/translation"
 import { computedWatchMutable, installation } from "@/utils/reactivity"
@@ -54,34 +52,47 @@ function useListView() {
 }
 
 function useOperators(paneState: DetailViewState<number, Partial<DetailAuthor>>, listview: QueryListview<Author>) {
+    const toast = useToast()
     const message = useMessageBox()
+    const navigator = useRouterNavigator()
 
     const retrieveHelper = useRetrieveHelper({
         update: client => client.author.update,
         delete: client => client.author.delete
     })
 
-    const createByTemplate = (id: number) => {
-        const idx = listview.proxy.syncOperations.find(a => a.id === id)
+    const fetchFindSimilarTaskCreate = usePostFetchHelper(client => client.findSimilar.task.create)
+
+    const createByTemplate = (author: Author) => {
+        const idx = listview.proxy.syncOperations.find(a => a.id === author.id)
         if(idx != undefined) {
             const author = listview.proxy.syncOperations.retrieve(idx)
             paneState.openCreateView(author)
         }
     }
 
-    const deleteItem = async (id: number) => {
+    const deleteItem = async (author: Author) => {
         if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
-            if(await retrieveHelper.deleteData(id)) {
-                if(paneState.detailPath.value === id) paneState.closeView()
+            if(await retrieveHelper.deleteData(author.id)) {
+                if(paneState.detailPath.value === author.id) paneState.closeView()
             }
         }
     }
 
-    const toggleFavorite = async (authorId: number, favorite: boolean) => {
-        await retrieveHelper.setData(authorId, {favorite})
+    const toggleFavorite = async (author: Author, favorite: boolean) => {
+        await retrieveHelper.setData(author.id, {favorite})
     }
 
-    return {createByTemplate, deleteItem, toggleFavorite}
+    const findSimilarOfAuthor = async (author: Author) => {
+        await fetchFindSimilarTaskCreate({selector: {type: "author", authorIds: [author.id]}})
+        toast.toast("已创建", "success", "相似项查找任务已创建完成。")
+    }
+
+    const openIllustsOfAuthor = (author: Author) => {
+        navigator.goto({routeName: "MainIllust", params: {authorName: author.name}})
+    }
+
+    return {createByTemplate, deleteItem, toggleFavorite, findSimilarOfAuthor, openIllustsOfAuthor}
 }
 
 function useListThumbnailLoadingCache() {
