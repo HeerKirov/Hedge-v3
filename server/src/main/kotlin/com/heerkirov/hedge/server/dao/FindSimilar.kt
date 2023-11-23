@@ -17,7 +17,7 @@ object FindSimilarTasks : BaseTable<FindSimilarTask>("find_similar_task", schema
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FindSimilarTask(
         id = row[id]!!,
         selector = row[selector]!!,
-        config = row[config],
+        config = row[config]!!,
         recordTime = row[recordTime]!!
     )
 }

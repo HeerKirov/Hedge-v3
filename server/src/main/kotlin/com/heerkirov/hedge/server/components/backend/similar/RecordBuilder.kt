@@ -36,18 +36,18 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
         val accessedCoverages = mutableSetOf<GraphCoverage>()
         val queue = LinkedList<GraphVertex>().apply { add(baseVertex) }
 
-        queue.add(baseVertex)
         accessed.add(baseVertex.key)
         accessedVertices.add(baseVertex.key)
 
         //遍历算法只需要从一个节点出发，沿着有效关系，标记它所有经过的节点即可
         while (queue.isNotEmpty()) {
             val vertex = queue.pop()
+            val existedVerticesInCoverage = vertex.coverages.asSequence().filter { it.isExistedRelation() }.flatMap { it.vertices }.toSet()
 
             for (edge in vertex.edges) {
                 //检测此边连接的下一个节点是否已被访问过
                 //依次访问与此节点连接的所有节点。若两者的连接关系不存在existedRelation，且在coverage中也不存在通过existedRelation的连接，则视为有效连通
-                if(edge.another.key !in accessedVertices && !edge.isExistedRelation() && vertex.coverages.none { it.isExistedRelation() && edge.another in it.vertices }) {
+                if(edge.another.key !in accessedVertices && !edge.isExistedRelation() && edge.another !in existedVerticesInCoverage) {
                     queue.add(edge.another)
                     accessed.add(edge.another.key)
                     accessedVertices.add(edge.another.key)
@@ -60,7 +60,7 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
                     //需要过滤覆盖映射的节点，选取的节点是未访问过的，且未在edges中存在existedRelation
                     var any = false
                     for(another in coverage.vertices) {
-                        if(another.key != vertex.key && another.key !in accessedVertices && vertex.edges.none { edge -> another == edge.another && edge.isExistedRelation() }) {
+                        if(another.key != vertex.key && another.key !in accessedVertices && vertex.edges.none { edge -> another == edge.another && edge.isExistedRelation() } && another !in existedVerticesInCoverage) {
                             queue.add(another)
                             accessed.add(another.key)
                             accessedVertices.add(another.key)

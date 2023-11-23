@@ -13,9 +13,9 @@ data class FindSimilarTask(val id: Int,
                             */
                            val selector: TaskSelector,
                            /**
-                            * 此task的查询选项。是可选的。
+                            * 此task的查询选项。
                             */
-                           val config: TaskConfig?,
+                           val config: TaskConfig,
                            /**
                             * 创建此单位的时间。
                             */

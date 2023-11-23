@@ -5,10 +5,15 @@ import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.res.SourceTagPath
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.model.FindSimilarTask
+import com.heerkirov.hedge.server.model.Illust
+import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import org.ktorm.dsl.*
+import org.ktorm.entity.filter
+import org.ktorm.entity.sequenceOf
+import org.ktorm.entity.toList
 import java.time.LocalDate
-import java.util.Objects
+import java.util.*
 
 /**
  * 数据加载器。所有数据都从这里读。
@@ -19,7 +24,7 @@ import java.util.Objects
 class EntityLoader(private val data: DataRepository, private val config: FindSimilarTask.TaskConfig) {
     fun loadBySelector(selector: FindSimilarTask.TaskSelector): List<EntityInfo> {
         return when (selector) {
-            is FindSimilarTask.TaskSelectorOfImages -> loadImage(selector.imageIds, enableFilterBy = true)
+            is FindSimilarTask.TaskSelectorOfImages -> loadByIllusts(selector.imageIds)
             is FindSimilarTask.TaskSelectorOfPartition -> loadByPartition(selector.partitionTime, enableFilterBy = true)
             is FindSimilarTask.TaskSelectorOfBook -> loadByBook(selector.bookIds, enableFilterBy = true)
             is FindSimilarTask.TaskSelectorOfAuthor -> loadByAuthor(selector.authorIds, enableFilterBy = true)
@@ -129,6 +134,22 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
         }
 
         return entityInfoList
+    }
+
+    private fun loadByIllusts(illustIds: Collection<Int>): List<EntityInfo> {
+        val result = data.db.sequenceOf(Illusts).filter { it.id inList illustIds }.toList()
+
+        //对于collection，做一个易用性处理，将它们的所有子项包括在images列表中; 对于image/image_with_parent，直接加入images列表
+        val (collectionResult, imageResult) = result.filterInto { it.type == IllustModelType.COLLECTION }
+        //非有序时，一口气查询出所有的children
+        val childrenResult = if(collectionResult.isEmpty()) emptyList() else {
+            data.db.sequenceOf(Illusts)
+                .filter { it.parentId inList collectionResult.map(Illust::id) }
+                .toList()
+        }
+        //然后将children和image一起去重
+        val imageIds = (imageResult.asSequence() + childrenResult.asSequence()).map { it.id }.distinct().toList()
+        return loadImage(imageIds, true)
     }
 
     fun loadByPartition(partitionTime: LocalDate, enableFilterBy: Boolean = false): List<EntityInfo> {

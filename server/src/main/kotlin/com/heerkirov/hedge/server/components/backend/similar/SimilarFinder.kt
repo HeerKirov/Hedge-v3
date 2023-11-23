@@ -32,8 +32,8 @@ interface SimilarFinder {
     fun delete(id: Int)
 }
 
-class SimilarFinderImpl(private val appStatus: AppStatusDriver, appdata: AppDataManager, private val data: DataRepository, bus: EventBus) : SimilarFinder, StatefulComponent {
-    private val workerThread = SimilarFinderWorkThread(appdata, data, bus)
+class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val appdata: AppDataManager, private val data: DataRepository, bus: EventBus) : SimilarFinder, StatefulComponent {
+    private val workerThread = SimilarFinderWorkThread(data, bus)
 
     init {
         bus.on(IllustDeleted::class, ::processIgnoredDeleted)
@@ -52,7 +52,7 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, appdata: AppData
     override fun add(selector: FindSimilarTask.TaskSelector, config: FindSimilarTask.TaskConfig?): Int {
         val id = data.db.insertAndGenerateKey(FindSimilarTasks) {
             set(it.selector, selector)
-            set(it.config, config)
+            set(it.config, config ?: appdata.setting.findSimilar.defaultTaskConf)
             set(it.recordTime, Instant.now())
         } as Int
 
@@ -79,7 +79,7 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, appdata: AppData
     }
 }
 
-class SimilarFinderWorkThread(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus) : ControlledLoopThread() {
+class SimilarFinderWorkThread(private val data: DataRepository, private val bus: EventBus) : ControlledLoopThread() {
     override fun run() {
         val model = data.db.sequenceOf(FindSimilarTasks).firstOrNull()
         if(model == null) {
@@ -87,7 +87,7 @@ class SimilarFinderWorkThread(private val appdata: AppDataManager, private val d
             return
         }
 
-        val config = model.config ?: appdata.setting.findSimilar.defaultTaskConf
+        val config = model.config
         val entityLoader = EntityLoader(data, config)
         val graphBuilder = GraphBuilder(data, entityLoader, config)
         val recordBuilder = RecordBuilder(data, bus)

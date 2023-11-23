@@ -110,7 +110,7 @@ class FindSimilarService(private val data: DataRepository,
 
         val images = data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
-            .select(Illusts.id, Illusts.favorite, Illusts.score, Illusts.orderTime,
+            .select(Illusts.id, Illusts.favorite, Illusts.score, Illusts.orderTime, Illusts.parentId,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList result.imageIds }
@@ -118,11 +118,12 @@ class FindSimilarService(private val data: DataRepository,
             .map {
                 val filePath = filePathFrom(it)
                 val illustId = it[Illusts.id]!!
+                val parentId = it[Illusts.parentId]
                 val score = it[Illusts.score]
                 val favorite = it[Illusts.favorite]!!
                 val orderTime = it[Illusts.orderTime]!!.toInstant()
                 val source = sourcePathOf(it)
-                FindSimilarDetailResultImage(illustId, filePath, favorite, score, orderTime, source)
+                FindSimilarDetailResultImage(illustId, filePath, parentId, favorite, score, orderTime, source)
             }
 
         return FindSimilarResultDetailRes(result.id, result.category, result.summaryType, images, result.edges, result.coverages, result.resolved, result.recordTime)
@@ -157,13 +158,18 @@ class FindSimilarService(private val data: DataRepository,
             val collectionToImages = mutableMapOf<Any, MutableList<Int>>()
             val bookToImages = mutableMapOf<Int, MutableList<Int>>()
             val toBeDeleted = mutableSetOf<Int>()
+            val imageClonedCollections = mutableMapOf<Int, MutableList<Int>>()
+            val imageCloneBooks = mutableMapOf<Int, MutableList<Int>>()
             val ignoredEdges = mutableListOf<Pair<Int, Int>>()
             val ignoredSourceBooks = mutableSetOf<FindSimilarResult.SourceBookCoverage>()
             val ignoredSourceDatas = mutableSetOf<FindSimilarResult.SourceIdentitySimilarCoverage>()
             for (action in form.actions) {
                 when(action) {
                     is FindSimilarResultResolveForm.CloneImageResolution -> {
-                        illustManager.cloneProps(action.from, action.to, action.props, action.merge, action.deleteFrom)
+                        val (colId, bookIds) = illustManager.cloneProps(action.from, action.to, action.props, action.merge, false)
+                        if(action.deleteFrom) toBeDeleted.add(action.from)
+                        if(colId != null) imageClonedCollections.computeIfAbsent(colId) { mutableListOf() }.add(action.to)
+                        bookIds?.forEach { bookId -> imageCloneBooks.computeIfAbsent(bookId) { mutableListOf() }.add(action.to) }
                     }
                     is FindSimilarResultResolveForm.AddToCollectionResolution -> {
                         collectionToImages.computeIfAbsent(action.collectionId) { mutableListOf() }.addAll(action.imageIds)
@@ -279,7 +285,22 @@ class FindSimilarService(private val data: DataRepository,
                 data.db.delete(FindSimilarResults) { it.id eq id }
                 bus.emit(SimilarFinderResultDeleted(id))
             }else{
-                computeResultChange(result, collectionToImages.mapKeys { (k, _) -> if(k is Int) k else newCollectionIds[k as String]!! }, bookToImages, toBeDeleted, ignoredEdges, ignoredSourceBooks, ignoredSourceDatas)
+                val books = (bookToImages.asSequence() + imageCloneBooks.asSequence())
+                    .groupBy({ it.key }) { it.value }
+                    .mapValues { it.value.asSequence().flatten().distinct().toList() }
+                val collections = (collectionToImages.mapKeys { (k, _) -> if(k is Int) k else newCollectionIds[k as String]!! }.asSequence() + imageClonedCollections.asSequence())
+                    .groupBy({ it.key }) { it.value }
+                    .mapValues { it.value.asSequence().flatten().distinct().toList() }
+                val newRes = computeResultChange(result, collections, books, toBeDeleted, ignoredEdges, ignoredSourceBooks, ignoredSourceDatas)
+                data.db.update(FindSimilarResults) {
+                    where { it.id eq id }
+                    set(it.category, newRes.category)
+                    set(it.summaryType, newRes.summaryType)
+                    set(it.imageIds, newRes.imageIds)
+                    set(it.edges, newRes.edges)
+                    set(it.coverages, newRes.coverages)
+                    set(it.resolved, newRes.resolved)
+                }
                 bus.emit(SimilarFinderResultUpdated(id))
             }
 
@@ -391,7 +412,7 @@ class FindSimilarService(private val data: DataRepository,
 
         //将coverages转换为a->b的边结构。总是保持a<b，且在后面附上existed标记
         val r1 = coverages
-            .flatMap {  coverage -> coverage.imageIds.mapEachTwo { a, b -> min(a, b) to (max(a, b) to coverage.ignored) } }
+            .flatMap {  coverage -> coverage.imageIds.mapEachTwo { a, b -> min(a, b) to (max(a, b) to (coverage.ignored || coverage.info is FindSimilarResult.CollectionCoverage || coverage.info is FindSimilarResult.BookCoverage)) } }
             .groupBy({ it.first }) { it.second }
         //将edges转换为a->b的边结构。总是保持a<b(在RecordBuilder中已经可以保证edge的a总是小于b)，且在后面附上existed标记
         val r2 = edges

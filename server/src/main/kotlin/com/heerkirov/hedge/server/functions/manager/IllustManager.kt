@@ -690,22 +690,25 @@ class IllustManager(private val appdata: AppDataManager,
      * @throws ResourceNotExist ("from" | "to", number) 源或目标不存在
      * @throws ResourceNotSuitable ("from" | "to", number) 源或目标类型不适用，不能使用集合
      */
-    fun cloneProps(fromIllustId: Int, toIllustId: Int, props: ImagePropsCloneForm.Props, merge: Boolean, deleteFrom: Boolean) {
+    fun cloneProps(fromIllustId: Int, toIllustId: Int, props: ImagePropsCloneForm.Props, merge: Boolean, deleteFrom: Boolean): Pair<Int?, List<Int>?> {
         val fromIllust = data.db.sequenceOf(Illusts).firstOrNull { it.id eq fromIllustId } ?: throw be(ResourceNotExist("from", fromIllustId))
         val toIllust = data.db.sequenceOf(Illusts).firstOrNull { it.id eq toIllustId } ?: throw be(ResourceNotExist("to", toIllustId))
         if(fromIllust.type == IllustModelType.COLLECTION) throw be(ResourceNotSuitable("from", fromIllustId))
         if(toIllust.type == IllustModelType.COLLECTION) throw be(ResourceNotSuitable("to", toIllustId))
-        cloneProps(fromIllust, toIllust, props, merge)
+        val ret = cloneProps(fromIllust, toIllust, props, merge)
 
         if(deleteFrom) {
             delete(fromIllust)
         }
+
+        return ret
     }
 
     /**
      * 复制属性。
+     * @return (newCollectionId, newBookIds) 返回toIllust新加入的collection和book。
      */
-    private fun cloneProps(fromIllust: Illust, toIllust: Illust, props: ImagePropsCloneForm.Props, merge: Boolean) {
+    private fun cloneProps(fromIllust: Illust, toIllust: Illust, props: ImagePropsCloneForm.Props, merge: Boolean): Pair<Int?, List<Int>?> {
         //根据是否更改了parent，有两种不同的处理路径
         val parentChanged = props.collection && fromIllust.parentId != toIllust.parentId
         val newParent = if(parentChanged && fromIllust.parentId != null) data.db.sequenceOf(Illusts).first { (it.id eq fromIllust.parentId) and (it.type eq IllustModelType.COLLECTION) } else null
@@ -719,8 +722,10 @@ class IllustManager(private val appdata: AppDataManager,
                     set(it.type, if(newParent != null) IllustModelType.IMAGE_WITH_PARENT else IllustModelType.IMAGE)
                     set(it.exportedScore, if(props.score) { fromIllust.score }else{ toIllust.score } ?: newParent?.score)
                     set(it.exportedDescription, if(props.description) { fromIllust.description }else{ toIllust.description }.ifEmpty { newParent?.description ?: "" })
+                }else{
+                    if(props.score) set(it.exportedScore, fromIllust.score)
+                    if(props.description) set(it.exportedDescription, fromIllust.description)
                 }
-                //bug: score/description的更改仅反映在了origin属性上。这个问题先不解决了，等元数据exporter系统统一处理来解决
                 if(props.favorite) set(it.favorite, fromIllust.favorite)
                 if(props.tagme) set(it.tagme, if(merge) { fromIllust.tagme + toIllust.tagme }else{ fromIllust.tagme })
                 if(props.score) set(it.score, fromIllust.score)
@@ -783,7 +788,7 @@ class IllustManager(private val appdata: AppDataManager,
             associateManager.copyAssociatesFromIllust(toIllust.id, fromIllust.id)
         }
 
-        if(props.books) {
+        val newBooks = if(props.books) {
             val books = data.db.from(BookImageRelations)
                 .select(BookImageRelations.bookId, BookImageRelations.ordinal)
                 .where { BookImageRelations.imageId eq fromIllust.id }
@@ -797,13 +802,16 @@ class IllustManager(private val appdata: AppDataManager,
                     .toSet()
 
                 val newBooks = books.filter { (id, _) -> id !in existsBooks }
-                if(newBooks.isNotEmpty()) bookManager.addItemInBooks(toIllust.id, newBooks)
+                if(newBooks.isNotEmpty()) {
+                    bookManager.addItemInBooks(toIllust.id, newBooks)
+                    newBooks.map { (id, _) -> id }
+                }else null
             }else{
                 bookManager.removeItemFromAllBooks(toIllust.id)
                 bookManager.addItemInBooks(toIllust.id, books)
+                books.map { (id, _) -> id }
             }
-
-        }
+        }else null
 
         if(props.folders) {
             val folders = data.db.from(FolderImageRelations)
@@ -849,6 +857,8 @@ class IllustManager(private val appdata: AppDataManager,
             if(newParent != null) bus.emit(IllustImagesChanged(newParent.id, listOf(toIllust.id), emptyList()))
             if(toIllust.parentId != null) bus.emit(IllustImagesChanged(toIllust.parentId, emptyList(), listOf(toIllust.id)))
         }
+
+        return Pair(newParent?.id, newBooks)
     }
 
     /**
