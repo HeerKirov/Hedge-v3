@@ -83,6 +83,7 @@ interface Book {
     id: number
     title: string
     filePath: FilePath | null
+    favorite: boolean
     imageCount: number
 }
 

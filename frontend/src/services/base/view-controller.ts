@@ -1,5 +1,5 @@
 import { Ref, watch } from "vue"
-import { IllustType } from "@/functions/http-client/api/illust"
+import { IllustQueryType } from "@/functions/http-client/api/illust"
 import { useLocalStorage } from "@/functions/app"
 import { toRef } from "@/utils/reactivity"
 
@@ -9,7 +9,7 @@ import { toRef } from "@/utils/reactivity"
 export interface IllustViewController {
     fitType: Ref<"cover" | "contain">
     columnNum: Ref<number>
-    collectionMode: Ref<boolean>
+    collectionMode: Ref<IllustQueryType>
     viewMode: Ref<"row" | "grid">
     editableLockOn: Ref<boolean>
 }
@@ -39,14 +39,17 @@ export interface BookViewController {
     columnNum: Ref<number>
 }
 
-export function useIllustViewController(queryFilterIllustType?: Ref<IllustType>): IllustViewController {
+export function useIllustViewController(queryFilterIllustType?: Ref<IllustQueryType>): IllustViewController {
     const storage = useLocalStorage<{
-        fitType: "cover" | "contain", columnNum: number, collectionMode: boolean, viewMode: "row" | "grid", editableLockOn: boolean
+        fitType: "cover" | "contain", columnNum: number, collectionMode: IllustQueryType, viewMode: "row" | "grid", editableLockOn: boolean
     }>("illust/list/view-controller", () => ({
-        fitType: "cover", columnNum: 8, collectionMode: true, viewMode: "grid", editableLockOn: false
+        fitType: "cover", columnNum: 8, collectionMode: "COLLECTION", viewMode: "grid", editableLockOn: false
     }), true)
 
-    if(queryFilterIllustType !== undefined) watch(() => storage.value.collectionMode, collectionMode => queryFilterIllustType.value = collectionMode ? "COLLECTION" : "IMAGE", {immediate: true})
+    if(queryFilterIllustType !== undefined) {
+        //tips: 向前兼容之前的boolean类型
+        watch(() => storage.value.collectionMode, collectionMode => queryFilterIllustType.value = typeof collectionMode === "boolean" ? (collectionMode ? "COLLECTION" : "IMAGE") : collectionMode, {immediate: true})
+    }
 
     return {
         fitType: toRef(storage, "fitType"),

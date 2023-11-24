@@ -3,6 +3,8 @@ import { computed } from "vue"
 import { SourceTag } from "@/functions/http-client/api/source-data"
 import { SourceTagElement } from "@/components-business/element"
 import { useSettingSite } from "@/services/setting"
+import { usePopupMenu } from "@/modules/popup-menu"
+import { writeClipboard } from "@/modules/others"
 
 const props = defineProps<{
     site?: string
@@ -24,6 +26,14 @@ const groupedTags = computed(() => {
     }
 })
 
+const copySourceTagCode = ({ code }: SourceTag) => writeClipboard(code)
+const copySourceTagName = ({ name }: SourceTag) => writeClipboard(name)
+
+const menu = usePopupMenu<SourceTag>([
+    {type: "normal", "label": "复制此标签的标识编码", click: copySourceTagCode},
+    {type: "normal", "label": "复制此标签的显示名称", click: copySourceTagName},
+])
+
 </script>
 
 <template>
@@ -31,7 +41,7 @@ const groupedTags = computed(() => {
         <template v-for="{type, tags} in groupedTags" :key="type">
             <p v-if="!!type"><b>{{ type }}</b></p>
             <p v-for="tag in tags" :key="tag.code" class="mb-1">
-                <SourceTagElement :value="tag" selectable/>
+                <SourceTagElement :value="tag" selectable @contextmenu="menu.popup(tag)"/>
             </p>
         </template>
     </div>

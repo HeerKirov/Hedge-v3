@@ -51,7 +51,7 @@ const router = useRouter()
                 <div :class="$style['book-scroll-area']">
                     <Block v-for="b in data.todayBooks" :class="$style.book">
                         <img :class="$style.img" :src="assetsUrl(b.filePath?.sample)" @click="openBook(b.id)"/>
-                        <Icon :class="['has-text-danger', $style.fav]" icon="heart"/>
+                        <Icon v-if="b.favorite" :class="$style.fav" icon="heart"/>
                         <div :class="$style.info">
                             <span v-if="b.imageCount > 0" class="float-right">(<b>{{ b.imageCount }}</b>)</span>
                             <span v-else class="float-right has-text-secondary">(空)</span>
@@ -201,6 +201,8 @@ $margin-x: $spacing-4
             position: absolute
             right: 0.35rem
             bottom: calc(0.35rem + 20%)
+            color: $dark-mode-text-color
+            filter: drop-shadow(0 0 1px $dark-mode-background-color)
         > .info
             position: absolute
             bottom: 0

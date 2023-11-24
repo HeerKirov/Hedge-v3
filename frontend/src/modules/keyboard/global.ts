@@ -13,7 +13,7 @@ const [installGlobalKeyManager, useGlobalKeyManager] = installation(function() {
     onMounted(() => document.addEventListener("keydown", keydown))
     onUnmounted(() => document.removeEventListener("keydown", keydown))
 
-    const preventDefaultValidator = createKeyEventValidator(["Space", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"])
+    const preventDefaultValidator = createKeyEventValidator(["Space", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"])
 
     function keydown(keyboardEvent: KeyboardEvent) {
         const consumer: KeyEvent = {

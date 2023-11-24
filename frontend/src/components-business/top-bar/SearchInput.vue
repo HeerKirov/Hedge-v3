@@ -51,7 +51,7 @@ useInterceptedKey("Meta+KeyE", () => {
 <template>
     <div :class="$style.root">
         <Input
-            :class="{[$style.input]: true, [$style.active]: activeDropButton}"
+            :class="{[$style.input]: true, [$style.active]: activeDropButton, [$style['enable-button']]: enableDropButton}"
             :placeholder="placeholder"
             v-model:value="textValue"
             focus-on-keypress="Meta+KeyF"
@@ -87,6 +87,8 @@ useInterceptedKey("Meta+KeyE", () => {
 .input
     border: none
     width: 100%
+    &.enable-button
+        padding-right: 3.75rem
     &:focus,
     &.active
         background-color: mix($light-mode-block-color, #000000, 90%)

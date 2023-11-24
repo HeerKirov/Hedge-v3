@@ -4,7 +4,7 @@ import { useInterceptedKey } from "@/modules/keyboard"
 import { usePlayControl, useVolumeControl } from "./video"
 import VideoControls from "./VideoControls.vue"
 
-const props = defineProps<{
+defineProps<{
     src: string
 }>()
 
@@ -32,18 +32,13 @@ watch(videoRef, dom => {
     }
 })
 
-useInterceptedKey(["Space", "Meta+ArrowLeft", "Meta+ArrowRight", "Meta+ArrowUp", "Meta+ArrowDown", "Home", "End", "Meta+Home", "Meta+End"], e => {
-    //上面有一些按键是例外实现，由于我的按键映射做了这些映射而添加了它们。
+useInterceptedKey(["Space", "ArrowLeft", "ArrowRight"], e => {
     if(e.key === "Space") {
         playOrPause()
-    }else if(e.key === "ArrowLeft" || (e.key === "Home" && !e.metaKey)) {
+    }else if(e.key === "ArrowLeft") {
         fastRewind()
-    }else if(e.key === "ArrowRight" || (e.key === "End" && !e.metaKey)) {
+    }else if(e.key === "ArrowRight") {
         fastForward()
-    }else if(e.key === "ArrowUp" || (e.key === "Home" && e.metaKey)) {
-        updateVolume(state.volume + 0.1)
-    }else if(e.key === "ArrowDown" || (e.key === "End" && e.metaKey)) {
-        updateVolume(state.volume - 0.1)
     }
 })
 
@@ -70,5 +65,4 @@ useInterceptedKey(["Space", "Meta+ArrowLeft", "Meta+ArrowRight", "Meta+ArrowUp",
     > video
         width: 100%
         height: 100%
-        //opacity: 0.1
 </style>

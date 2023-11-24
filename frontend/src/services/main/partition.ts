@@ -8,7 +8,7 @@ import { useLocalStorage, useMemoryStorage } from "@/functions/app"
 import { useRouterParamEvent, useRouterQueryLocalDate } from "@/modules/router"
 import { useInterceptedKey } from "@/modules/keyboard"
 import { useNavHistoryPush } from "@/services/base/side-nav-menu"
-import { useQuerySchema } from "@/services/base/query-schema"
+import { QuerySchemaContext, useQuerySchema } from "@/services/base/query-schema"
 import { IllustViewController, useIllustViewController } from "@/services/base/view-controller"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
@@ -18,11 +18,12 @@ import { useSettingSite } from "@/services/setting"
 import { computedEffect, computedWatch, installation } from "@/utils/reactivity"
 import { arrays, numbers } from "@/utils/primitives"
 import { LocalDate, date, getDaysOfMonth } from "@/utils/datetime"
+import { writeClipboard } from "@/modules/others"
 
 export const [installPartitionContext, usePartitionContext] = installation(function () {
     const querySchema = useQuerySchema("ILLUST")
     const listviewController = useIllustViewController()
-    const partition = usePartitionView(listviewController, querySchema.query)
+    const partition = usePartitionView(listviewController, querySchema)
     const path = useRouterQueryLocalDate("MainPartition", "detail")
 
     useNavHistoryPush(path, p => {
@@ -33,11 +34,12 @@ export const [installPartitionContext, usePartitionContext] = installation(funct
     return {partition, querySchema, listviewController, path}
 })
 
-function usePartitionView(listviewController: IllustViewController, query: Ref<string | undefined>) {
+function usePartitionView(listviewController: IllustViewController, querySchema: QuerySchemaContext) {
     const viewMode = useLocalStorage<"calendar" | "timeline">("partition/list/view-mode", "calendar")
     const calendarDate = useMemoryStorage<YearAndMonth>("partition/list/calendar-date")
 
-    const { partitionMonths, partitions, total, maxCount, maxCountOfMonth } = usePartitionData(listviewController, query)
+    const { partitionMonths, partitions, total, maxCount, maxCountOfMonth } = usePartitionData(listviewController, querySchema.query)
+    const operators = usePartitionOperators(partitions, querySchema.queryInputText)
 
     watch(partitionMonths, months => {
         //在未设置calendarDate，或者当前月份列表中不存在现在的值时，将其重置为最后一个月份
@@ -46,12 +48,12 @@ function usePartitionView(listviewController: IllustViewController, query: Ref<s
         }
     })
 
-    return {partitions, partitionMonths, total, maxCount, maxCountOfMonth, viewMode, calendarDate}
+    return {partitions, partitionMonths, total, maxCount, maxCountOfMonth, viewMode, calendarDate, operators}
 }
 
 function usePartitionData(listviewController: IllustViewController, query: Ref<string | undefined>) {
     const { data: partitions, refresh } = useFetchReactive({
-        get: client => () => client.partition.list({type: listviewController.collectionMode.value ? "COLLECTION" : "IMAGE", query: query.value})
+        get: client => () => client.partition.list({type: typeof listviewController.collectionMode.value === "boolean" ? (listviewController.collectionMode.value ? "COLLECTION" : "IMAGE") : listviewController.collectionMode.value, query: query.value})
     })
 
     watch([listviewController.collectionMode, query], refresh)
@@ -96,6 +98,24 @@ function usePartitionData(listviewController: IllustViewController, query: Ref<s
     })
 
     return {partitions, partitionMonths, total, maxCount, maxCountOfMonth}
+}
+
+function usePartitionOperators(partitions: Ref<Partition[] | undefined>, queryText: Ref<string | undefined>) {
+    const copyDateList = () => {
+        if(partitions.value?.length) {
+            const text = partitions.value.map(p => date.toISOString(p.date)).join("\n")
+            writeClipboard(text)
+        }
+    }
+
+    const addDateListToQueryText = () => {
+        if(partitions.value?.length) {
+            const text = `partition:{${partitions.value.map(p => date.toISOString(p.date)).join(", ")}}`
+            queryText.value += (queryText.value ? " " : "") + text
+        }
+    }
+
+    return {copyDateList, addDateListToQueryText}
 }
 
 export function useCalendarContext() {
@@ -146,7 +166,7 @@ export function useCalendarContext() {
 }
 
 export function useTimelineContext() {
-    const { partition: { calendarDate, partitions, partitionMonths, maxCount, maxCountOfMonth }, path } = usePartitionContext()
+    const { partition: { calendarDate, partitions, partitionMonths, maxCount, maxCountOfMonth, operators }, path } = usePartitionContext()
 
     const months = computed(() => partitionMonths.value?.map(pm => ({year: pm.year, month: pm.month, uniqueKey: pm.year * 12 + pm.month, dayCount: pm.days.length, count: pm.count, width: numbers.round2decimal(pm.count * 100 / maxCountOfMonth.value), level: Math.ceil(pm.count * 10 / maxCountOfMonth.value)})) ?? [])
 
@@ -248,7 +268,7 @@ export function useTimelineContext() {
         }
     }
 
-    return {months, days, calendarDate, selectMonth, scrollEvent, openPartition, setTimelineRef, setDayRef, setMonthRef}
+    return {months, days, calendarDate, selectMonth, scrollEvent, openPartition, setTimelineRef, setDayRef, setMonthRef, operators}
 }
 
 export function useDetailIllustContext() {

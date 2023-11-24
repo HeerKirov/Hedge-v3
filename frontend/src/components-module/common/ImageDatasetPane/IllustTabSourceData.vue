@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { toRef } from "vue"
-import { Separator } from "@/components/universal"
+import { Separator, Icon } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
 import {
     SourceInfo, SourceEditStatusDisplay, TitleDisplay, DescriptionDisplay,
@@ -30,9 +30,11 @@ const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceData
         <Separator direction="horizontal"/>
         <FormEditKit class="mb-2" :value="data.status" :set-value="setSourceStatus" save-once-updated>
             <template #default="{ value }">
+                <a class="float-right" @click="openSourceDataEditor"><Icon icon="edit"/>编辑</a>
                 <SourceEditStatusDisplay :value="value"/>
             </template>
             <template #edit="{ value, setValue }">
+                <a class="float-right" @click="openSourceDataEditor"><Icon icon="edit"/>编辑</a>
                 <SourceEditStatusEditor :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>

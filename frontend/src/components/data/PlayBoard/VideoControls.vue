@@ -71,7 +71,7 @@ const { volumeHover, volumeHoverEvents, volumeBarStyle, mousemove, mousedown } =
     bottom: 0
     left: 0
     width: 100%
-    height: 8rem
+    height: calc(10% + 5rem)
     &.visible
         background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.9))
 
@@ -79,8 +79,8 @@ const { volumeHover, volumeHoverEvents, volumeBarStyle, mousemove, mousedown } =
     position: absolute
     left: 1rem
     right: 1rem
-    bottom: 0.5rem
-    height: 0.25rem
+    bottom: 1rem
+    height: 0.5rem
     background-color: rgba(64, 64, 64, 0.5)
     > .hidden-trigger-area
         position: absolute
@@ -95,14 +95,14 @@ const { volumeHover, volumeHoverEvents, volumeBarStyle, mousemove, mousedown } =
 .progress-span
     position: absolute
     right: 1.5rem
-    bottom: 2.25rem
+    bottom: 2.5rem
     text-align: right
     color: $white
 
 .play-button
     position: absolute
     left: 1.5rem
-    bottom: 1.5rem
+    bottom: 2rem
     width: 2.5rem
     height: 2.5rem
     padding-left: 2px
@@ -118,7 +118,7 @@ const { volumeHover, volumeHoverEvents, volumeBarStyle, mousemove, mousedown } =
 .volume-control
     position: absolute
     right: 8rem
-    bottom: 1.75rem
+    bottom: 2rem
     height: 2rem
     width: 2rem
     line-height: 2rem

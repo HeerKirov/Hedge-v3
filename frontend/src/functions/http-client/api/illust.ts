@@ -354,6 +354,8 @@ export interface IllustExceptions {
 
 export type IllustType = "COLLECTION" | "IMAGE"
 
+export type IllustQueryType = IllustType | "ONLY_IMAGE" | "ONLY_COLLECTION"
+
 export type Tagme = "TAG" | "AUTHOR" | "TOPIC" | "SOURCE"
 
 type BatchUpdateAction = "SET_PARTITION_TIME_TODAY" | "SET_PARTITION_TIME_EARLIEST" | "SET_PARTITION_TIME_LATEST" | "SET_PARTITION_TIME_MOST"
@@ -382,8 +384,17 @@ export interface DraggingIllust extends CommonIllust {
 }
 
 export interface IllustLocation {
+    /**
+     * 最终获得的那个项的id。
+     */
     id: number
+    /**
+     * 最终搜索到的偏移量。-1表示无结果，-2表示HQL查询错误因此中止搜索。
+     */
     index: number | -1 | -2
+    /**
+     * 最终获得的那个项的类型，是保持原IMAGE还是转而搜索了它的父COLLECTION。
+     */
     type: IllustType
 }
 
@@ -671,7 +682,7 @@ export interface IllustQueryFilter {
     /**
      * 查询类型。IMAGE仅查询image类型；COLLECTION查询collection项以及非collection所属的项。
      */
-    type: IllustType
+    type: IllustQueryType
     /**
      * 分区。
      */

@@ -1,6 +1,6 @@
 import { HttpInstance, Response } from "../instance"
 import { NotFound } from "../exceptions"
-import { IllustType } from "./illust"
+import { IllustQueryType } from "./illust"
 import { date, LocalDate } from "@/utils/datetime"
 
 export function createPartitionEndpoint(http: HttpInstance): PartitionEndpoint {
@@ -67,5 +67,5 @@ export interface PartitionFilter {
     gte?: LocalDate
     lt?: LocalDate
     query?: string
-    type?: IllustType
+    type?: IllustQueryType
 }

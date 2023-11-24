@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import { Block, Icon } from "@/components/universal"
+import { usePopupMenu } from "@/modules/popup-menu"
 import { useTimelineContext } from "@/services/main/partition"
 
-const { months, days, calendarDate, setTimelineRef, setDayRef, setMonthRef, selectMonth, scrollEvent, openPartition } = useTimelineContext()
+const { months, days, calendarDate, setTimelineRef, setDayRef, setMonthRef, selectMonth, scrollEvent, openPartition, operators } = useTimelineContext()
+
+const menu = usePopupMenu([
+    {type: "normal", label: "拷贝所有日期列表", click: operators.copyDateList},
+    {type: "normal", label: "添加所有日期作为查询条件", click: operators.addDateListToQueryText},
+])
 
 </script>
 
 <template>
     <div :class="$style.timeline">
-        <div :ref="setTimelineRef" :class="[$style['left-column'], $style['timeline-list']]" @scroll="scrollEvent">
+        <div :ref="setTimelineRef" :class="[$style['left-column'], $style['timeline-list']]" @scroll="scrollEvent" @contextmenu="menu.popup()">
             <Block v-for="p in days" v-memo="[days, calendarDate?.year === p.date.year && calendarDate.month === p.date.month]" :ref="el => setDayRef(p.date.timestamp, el)" :key="p.date.timestamp" :class="[$style.item, $style[`lv-${p.level}`]]" :color="calendarDate?.year === p.date.year && calendarDate.month === p.date.month ? 'primary' : undefined" @click="openPartition(p.date)">
                 <div :class="$style.processor" :style="`width: ${p.width}%`"/>
                 <span :class="$style.content">
@@ -89,14 +95,16 @@ const { months, days, calendarDate, setTimelineRef, setDayRef, setMonthRef, sele
                 background: black
             > .marked, > .unmarked
                 position: absolute
-                left: 0
                 top: 0
                 bottom: 0
                 mix-blend-mode: screen
             @for $i from 1 through 10
                 &.lv-#{$i} > .marked
                     background-color: mix($light-mode-primary, $light-mode-block-color, $i * 6% + 40%)
+            > .marked
+                left: 0
             > .unmarked
+                right: 0
                 background: $light-mode-text-color
 
         @media (prefers-color-scheme: dark)
