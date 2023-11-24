@@ -11,6 +11,10 @@ import java.time.LocalDate
 
 data class LimitAndOffsetFilter(@Limit val limit: Int, @Offset val offset: Int)
 
+enum class IllustQueryType {
+    IMAGE, COLLECTION, ONLY_IMAGE, ONLY_COLLECTION
+}
+
 data class IllustQueryFilter(@Limit val limit: Int,
                              @Offset val offset: Int,
                              @Search val query: String?,
@@ -18,7 +22,7 @@ data class IllustQueryFilter(@Limit val limit: Int,
                              val order: List<OrderItem>? = null,
                              val topic: Int? = null,
                              val author: Int? = null,
-                             val type: IllustType,
+                             val type: IllustQueryType,
                              val partition: LocalDate? = null,
                              val favorite: Boolean? = null)
 
@@ -28,7 +32,7 @@ data class IllustLocationFilter(@Search val query: String?,
                                 val topic: Int? = null,
                                 val author: Int? = null,
                                 val partition: LocalDate? = null,
-                                val type: IllustType = IllustType.IMAGE,
+                                val type: IllustQueryType = IllustQueryType.IMAGE,
                                 val favorite: Boolean? = null,
                                 val imageId: Int)
 
@@ -108,7 +112,7 @@ data class TrashFilter(@Limit val limit: Int,
 
 data class PartitionFilter(val gte: LocalDate? = null,
                            val lt: LocalDate? = null,
-                           val type: IllustType = IllustType.IMAGE,
+                           val type: IllustQueryType = IllustQueryType.IMAGE,
                            @Search val query: String?)
 
 data class SourceDataQueryFilter(@Limit val limit: Int,

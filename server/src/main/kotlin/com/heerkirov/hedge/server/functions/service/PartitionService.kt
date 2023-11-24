@@ -2,12 +2,12 @@ package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
+import com.heerkirov.hedge.server.dto.filter.IllustQueryType
 import com.heerkirov.hedge.server.exceptions.NotFound
 import com.heerkirov.hedge.server.dto.filter.PartitionFilter
 import com.heerkirov.hedge.server.dto.res.PartitionMonthRes
 import com.heerkirov.hedge.server.dto.res.PartitionRes
 import com.heerkirov.hedge.server.enums.IllustModelType
-import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
@@ -19,7 +19,7 @@ import java.time.LocalDate
 
 class PartitionService(private val data: DataRepository, private val queryManager: QueryManager) {
     fun list(filter: PartitionFilter): List<PartitionRes> {
-        if(filter.query.isNullOrBlank() && filter.type == IllustType.IMAGE) {
+        if(filter.query.isNullOrBlank() && filter.type == IllustQueryType.IMAGE) {
             return data.db.from(Partitions).select()
                 .whereWithConditions {
                     if(filter.gte != null) it += Partitions.date greaterEq filter.gte
@@ -39,8 +39,10 @@ class PartitionService(private val data: DataRepository, private val queryManage
                 .select(Illusts.partitionTime, countDistinct(Illusts.id).aliased("count"))
                 .whereWithConditions {
                     it += when(filter.type) {
-                        IllustType.COLLECTION -> (Illusts.type eq IllustModelType.COLLECTION) or (Illusts.type eq IllustModelType.IMAGE)
-                        IllustType.IMAGE -> (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)
+                        IllustQueryType.COLLECTION -> (Illusts.type eq IllustModelType.COLLECTION) or (Illusts.type eq IllustModelType.IMAGE)
+                        IllustQueryType.IMAGE -> (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)
+                        IllustQueryType.ONLY_COLLECTION -> Illusts.type eq IllustModelType.COLLECTION
+                        IllustQueryType.ONLY_IMAGE -> Illusts.type eq IllustModelType.IMAGE
                     }
                     if(filter.gte != null) it += Illusts.partitionTime greaterEq filter.gte
                     if(filter.lt != null) it += Illusts.partitionTime less filter.lt

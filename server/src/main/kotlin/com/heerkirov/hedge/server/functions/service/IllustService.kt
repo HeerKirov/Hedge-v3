@@ -6,6 +6,7 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.filter.IllustLocationFilter
+import com.heerkirov.hedge.server.dto.filter.IllustQueryType
 import com.heerkirov.hedge.server.dto.filter.IllustQueryFilter
 import com.heerkirov.hedge.server.dto.filter.LimitAndOffsetFilter
 import com.heerkirov.hedge.server.dto.form.*
@@ -76,8 +77,10 @@ class IllustService(private val appdata: AppDataManager,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .whereWithConditions {
                 it += when(filter.type) {
-                    IllustType.COLLECTION -> (Illusts.type eq IllustModelType.COLLECTION) or (Illusts.type eq IllustModelType.IMAGE)
-                    IllustType.IMAGE -> (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)
+                    IllustQueryType.COLLECTION -> (Illusts.type eq IllustModelType.COLLECTION) or (Illusts.type eq IllustModelType.IMAGE)
+                    IllustQueryType.IMAGE -> (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)
+                    IllustQueryType.ONLY_COLLECTION -> Illusts.type eq IllustModelType.COLLECTION
+                    IllustQueryType.ONLY_IMAGE -> Illusts.type eq IllustModelType.IMAGE
                 }
                 if(filter.partition != null) {
                     it += Illusts.partitionTime eq filter.partition
@@ -109,23 +112,43 @@ class IllustService(private val appdata: AppDataManager,
 
     fun findImageLocation(filter: IllustLocationFilter): IllustLocationRes {
         val imageId: Int
-        val type: IllustType
-        if(filter.type === IllustType.IMAGE) {
+        val finalType: IllustType
+
+        if(filter.type === IllustQueryType.IMAGE) {
             imageId = filter.imageId
-            type = IllustType.IMAGE
+            finalType = IllustType.IMAGE
         }else{
             val parentId = data.db.from(Illusts).select(Illusts.parentId).where { Illusts.id eq filter.imageId }.firstOrNull()?.get(Illusts.parentId)
-            if(parentId != null) {
-                imageId = parentId
-                type = IllustType.COLLECTION
+            if(filter.type === IllustQueryType.COLLECTION) {
+                //在COLLECTION模式下，如果image是集合成员，就应该转而搜索它的父集合
+                if(parentId != null) {
+                    imageId = parentId
+                    finalType = IllustType.COLLECTION
+                }else{
+                    imageId = filter.imageId
+                    finalType = IllustType.IMAGE
+                }
+            }else if(filter.type === IllustQueryType.ONLY_IMAGE) {
+                //在ONLY_IMAGE模式下，如果image是集合成员，那么是没有搜索结果的
+                if(parentId == null) {
+                    imageId = filter.imageId
+                    finalType = IllustType.IMAGE
+                }else{
+                    return IllustLocationRes(parentId, -1, IllustType.COLLECTION)
+                }
             }else{
-                imageId = filter.imageId
-                type = IllustType.IMAGE
+                //在ONLY_COLLECTION模式下，如果image不是集合成员，那么是没有搜索结果的
+                if(parentId != null) {
+                    imageId = parentId
+                    finalType = IllustType.COLLECTION
+                }else{
+                    return IllustLocationRes(filter.imageId, -1, IllustType.IMAGE)
+                }
             }
         }
 
         val schema = if(filter.query.isNullOrBlank()) null else {
-            queryManager.querySchema(filter.query, QueryManager.Dialect.ILLUST).executePlan ?: return IllustLocationRes(imageId, -2, type)
+            queryManager.querySchema(filter.query, QueryManager.Dialect.ILLUST).executePlan ?: return IllustLocationRes(imageId, -2, finalType)
         }
 
         val orderByExpressions = orderTranslator.toOrderByExpressions(filter.order, schema?.orderConditions, default = descendingOrderItem("orderTime"))
@@ -136,9 +159,11 @@ class IllustService(private val appdata: AppDataManager,
             .let { if(filter.author == null) it else it.innerJoin(IllustAuthorRelations, (IllustAuthorRelations.illustId eq Illusts.id) and (IllustAuthorRelations.authorId eq filter.author)) }
             .select(Illusts.id.aliased("id"), rowNumber(*orderByExpressions).aliased("idx"))
             .whereWithConditions {
-                it += when(type) {
-                    IllustType.COLLECTION -> (Illusts.type eq IllustModelType.COLLECTION) or (Illusts.type eq IllustModelType.IMAGE)
-                    IllustType.IMAGE -> (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)
+                it += when(filter.type) {
+                    IllustQueryType.COLLECTION -> (Illusts.type eq IllustModelType.COLLECTION) or (Illusts.type eq IllustModelType.IMAGE)
+                    IllustQueryType.IMAGE -> (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)
+                    IllustQueryType.ONLY_COLLECTION -> Illusts.type eq IllustModelType.COLLECTION
+                    IllustQueryType.ONLY_IMAGE -> Illusts.type eq IllustModelType.IMAGE
                 }
                 if(filter.partition != null) {
                     it += Illusts.partitionTime eq filter.partition
@@ -155,7 +180,7 @@ class IllustService(private val appdata: AppDataManager,
         val selectExpression = SelectExpression(from = query.expression, where = Illusts.id.aliased("id") eq imageId, limit = 1)
         val row = data.db.executeQuery(selectExpression)
         val index = if(row.next()) row.getInt("idx") else -1
-        return IllustLocationRes(imageId, index, type)
+        return IllustLocationRes(imageId, index, finalType)
     }
 
     /**

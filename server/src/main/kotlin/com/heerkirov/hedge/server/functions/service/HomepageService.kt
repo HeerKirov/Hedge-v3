@@ -75,9 +75,9 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
         val books = if(record.content.todayBookIds.isEmpty()) emptyList() else {
             data.db.from(Books)
                 .leftJoin(FileRecords, Books.fileId eq FileRecords.id and FileRecords.deleted.not())
-                .select(Books.id, Books.title, Books.cachedCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
+                .select(Books.id, Books.title, Books.favorite, Books.cachedCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
                 .where { Books.id inList record.content.todayBookIds }
-                .map { HomepageRes.Book(it[Books.id]!!, it[Books.title]!!, it[Books.cachedCount]!!, if(it[FileRecords.id] != null) filePathFrom(it) else null) }
+                .map { HomepageRes.Book(it[Books.id]!!, it[Books.title]!!, it[Books.favorite]!!, it[Books.cachedCount]!!, if(it[FileRecords.id] != null) filePathFrom(it) else null) }
                 .associateBy { it.id }
                 .let { record.content.todayBookIds.mapNotNull(it::get) }
         }
