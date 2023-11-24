@@ -405,9 +405,9 @@ class IllustManager(private val appdata: AppDataManager,
                     item {
                         where { it.id eq record.id }
                         set(it.tagme, record.tagme
-                            .runIf(form.tags.isPresent) { this - Illust.Tagme.TAG }
-                            .runIf(form.authors.isPresent) { this - Illust.Tagme.AUTHOR }
-                            .runIf(form.topics.isPresent) { this - Illust.Tagme.TOPIC })
+                            .runIf(form.tags.isPresent && form.tags.value.isNotEmpty()) { this - Illust.Tagme.TAG }
+                            .runIf(form.authors.isPresent && form.authors.value.isNotEmpty()) { this - Illust.Tagme.AUTHOR }
+                            .runIf(form.topics.isPresent && form.topics.value.isNotEmpty()) { this - Illust.Tagme.TOPIC })
                     }
                 }
             }

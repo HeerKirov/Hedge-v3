@@ -112,7 +112,7 @@ class IllustMetadataExporter(private val data: DataRepository,
 
                 cachedChildrenCount = undefined()
 
-                //exportedDescription取description，或者缺省时，i沿用parent的description
+                //exportedDescription取description，或者缺省时，沿用parent的description
                 exportedDescription = if(task.exportDescription) {
                     Opt(illust.description.ifEmpty { parent?.description ?: "" })
                 }else undefined()

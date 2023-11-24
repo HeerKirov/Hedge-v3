@@ -462,8 +462,8 @@ class IllustService(private val appdata: AppDataManager,
             }
 
             val metaTagSot = anyOpt(form.tags, form.authors, form.topics)
-            val listUpdated = anyOpt(form.score, form.favorite, newTagme)
-            val detailUpdated = listUpdated || metaTagSot || newTagme.isPresent
+            val listUpdated = anyOpt(form.score, form.favorite, form.orderTime, newTagme)
+            val detailUpdated = listUpdated || metaTagSot || anyOpt(newDescription, form.partitionTime)
             if(listUpdated || detailUpdated) {
                 bus.emit(IllustUpdated(id, IllustType.COLLECTION, listUpdated = listUpdated, detailUpdated = true, metaTagSot = metaTagSot, scoreSot = form.score.isPresent, descriptionSot = form.description.isPresent))
             }
@@ -554,7 +554,7 @@ class IllustService(private val appdata: AppDataManager,
 
             val metaTagSot = anyOpt(form.tags, form.authors, form.topics)
             val listUpdated = anyOpt(form.score, form.favorite, form.orderTime, newTagme)
-            val detailUpdated = listUpdated || metaTagSot || anyOpt(newTagme, newDescription, form.score, form.favorite, form.partitionTime)
+            val detailUpdated = listUpdated || metaTagSot || anyOpt(newDescription, form.partitionTime)
             if(listUpdated || detailUpdated) {
                 bus.emit(IllustUpdated(id, IllustType.IMAGE,
                     listUpdated = listUpdated, detailUpdated = true,

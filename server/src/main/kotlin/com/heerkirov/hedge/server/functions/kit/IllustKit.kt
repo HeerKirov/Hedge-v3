@@ -340,7 +340,7 @@ class IllustKit(private val data: DataRepository,
     fun getExportedPropsFromList(images: List<Illust>): Tuple5<Int, Int?, Boolean, LocalDate, Long> {
         val fileId = images.minBy { it.orderTime }.fileId
         val score = images.asSequence().mapNotNull { it.score }.average().run { if(isNaN()) null else this }?.roundToInt()
-        val favorite = images.count { it.favorite } * 2 >= images.size
+        val favorite = images.any { it.favorite }
         val partitionTime = images.asSequence().map { it.partitionTime }.groupBy { it }.maxBy { it.value.size }.key
         val orderTime = images.filter { it.partitionTime == partitionTime }.minOf { it.orderTime }
 
