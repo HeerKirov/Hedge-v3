@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.heerkirov.hedge"
-version = "0.3.2"
+version = "0.4.0"
 
 dependencies {
     val kotlinVersion = "1.9.10"
@@ -20,7 +20,7 @@ dependencies {
     val logbackVersion = "1.4.11"
     val junitVersion = "4.13.2"
     val javePlatform = when(System.getProperty("os.name").toLowerCase()) {
-        "mac" -> "nativebin-osx64"
+        "mac" -> "nativebin-osxm1"
         "linux" -> "nativebin-linux64"
         "win" -> "nativebin-win64"
         else -> "all-deps"
