@@ -166,19 +166,21 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             "source" to json["source"],
             "import" to json["import"].upsertField("preventNoneSourceData") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() },
             "findSimilar" to json["findSimilar"].updateField("autoTaskConf") { conf ->
-                conf.upsertField("findBySourcePart") { value -> if(value != null && value.isBoolean) value else conf["findBySourceIdentity"] }
-                    .upsertField("findBySourceBook") { value -> if(value != null && value.isBoolean) value else conf["findBySourceRelation"] }
-                    .upsertField("filterInCurrentScope") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() }
-                    .upsertField("filterBySourcePart") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
-                    .upsertField("filterBySourceBook") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
-                    .upsertField("filterBySourceRelation") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
+                if(conf.isNull) conf else
+                    conf.upsertField("findBySourcePart") { value -> if(value != null && value.isBoolean) value else conf["findBySourceIdentity"] }
+                        .upsertField("findBySourceBook") { value -> if(value != null && value.isBoolean) value else conf["findBySourceRelation"] }
+                        .upsertField("filterInCurrentScope") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() }
+                        .upsertField("filterBySourcePart") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
+                        .upsertField("filterBySourceBook") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
+                        .upsertField("filterBySourceRelation") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
             }.updateField("defaultTaskConf") { conf ->
-                conf.upsertField("findBySourcePart") { value -> if(value != null && value.isBoolean) value else conf["findBySourceIdentity"] }
-                    .upsertField("findBySourceBook") { value -> if(value != null && value.isBoolean) value else conf["findBySourceRelation"] }
-                    .upsertField("filterInCurrentScope") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() }
-                    .upsertField("filterBySourcePart") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
-                    .upsertField("filterBySourceBook") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
-                    .upsertField("filterBySourceRelation") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
+                if(conf.isNull) conf else
+                    conf.upsertField("findBySourcePart") { value -> if(value != null && value.isBoolean) value else conf["findBySourceIdentity"] }
+                        .upsertField("findBySourceBook") { value -> if(value != null && value.isBoolean) value else conf["findBySourceRelation"] }
+                        .upsertField("filterInCurrentScope") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() }
+                        .upsertField("filterBySourcePart") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
+                        .upsertField("filterBySourceBook") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
+                        .upsertField("filterBySourceRelation") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
             }
         ).toJsonNode()
     }
