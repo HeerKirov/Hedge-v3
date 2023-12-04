@@ -55,7 +55,7 @@ function installElectronApp(target) {
 
 function buildClient() {
     console.log("build client...")
-    child.spawnSync("npm", ["run", "compile"])
+    child.spawnSync("yarn", ["build"])
 }
 
 function installClient(target) {
@@ -89,7 +89,7 @@ function installFrontend(target) {
 
 function buildServer() {
     console.log("build server...")
-    child.spawnSync("gradle", ["clean", "jlinkZip"], {cwd: "../server", stdio: "ignore"})
+    child.spawnSync("./gradlew", ["clean", "jlinkZip"], {cwd: "../server", stdio: "ignore"})
 }
 
 function installServer(target) {

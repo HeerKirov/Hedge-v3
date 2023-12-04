@@ -2,12 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>BuildMachineOSBuild</key>
-	<string>19F101</string>
 	<key>CFBundleDisplayName</key>
 	<string>Hedge v3</string>
 	<key>CFBundleExecutable</key>
-	<string>hedge-v3</string>
+	<string>hedge</string>
 	<key>CFBundleIconFile</key>
 	<string>hedge.icns</string>
 	<key>CFBundleIdentifier</key>
@@ -19,23 +17,33 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.0</string>
+	<string>0.4.1</string>
 	<key>CFBundleVersion</key>
-	<string>0.1.0</string>
+	<string>0.4.1</string>
 	<key>DTCompiler</key>
 	<string>com.apple.compilers.llvm.clang.1_0</string>
 	<key>DTSDKBuild</key>
-	<string>11.0</string>
+	<string>22E245</string>
 	<key>DTSDKName</key>
-	<string>macosx11.0</string>
+	<string>macosx13.3</string>
 	<key>DTXcode</key>
-	<string>1220</string>
+	<string>1431</string>
 	<key>DTXcodeBuild</key>
-	<string>12B45b</string>
+	<string>14E300c</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.developer-tools</string>
+	<key>LSEnvironment</key>
+	<dict>
+		<key>MallocNanoZone</key>
+		<string>0</string>
+	</dict>
 	<key>LSMinimumSystemVersion</key>
-	<string>10.10.0</string>
+	<string>10.13</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>This app needs access to Bluetooth</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>

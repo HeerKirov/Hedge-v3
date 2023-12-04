@@ -1,8 +1,7 @@
 import nodeFs, { Dirent, Mode } from "fs"
 import nodeFsPromises from "fs/promises"
 import unzipper from "unzipper"
-import { exec, spawn } from "child_process"
-import { promisify } from "util"
+import { spawn } from "child_process"
 
 export function writeFile<T>(file: string, data: T): Promise<void> {
     return nodeFsPromises.writeFile(file, JSON.stringify(data), {encoding: "utf-8"})
@@ -48,7 +47,7 @@ export async function rmdir(path: string): Promise<void> {
     if(!await existsFile(path)) {
         return
     }
-    await promisify(exec)(`rm -rf ${path}`)
+    await nodeFsPromises.rm(path, {recursive: true, force: true})
 }
 
 export function cpR(src: string, dest: string): Promise<void> {

@@ -14,7 +14,7 @@ function makePackageProduction(packageFile) {
 }
 
 function getServerVersion() {
-    const c = child.spawnSync("gradle", ["printVersion", "-q"], {cwd: "../server"})
+    const c = child.spawnSync("./gradlew", ["printVersion", "-q"], {cwd: "../server"})
     if(c.stdout !== null) {
         return c.stdout.toString().trim()
     }else{
