@@ -5,7 +5,6 @@ import { DescriptionDisplay, TagmeInfo } from "@/components-business/form-displa
 import { TagmeEditor, DescriptionEditor, DateEditor, DateTimeEditor } from "@/components-business/form-editor"
 import { useSideBarAction } from "@/services/main/illust"
 import { ElementPopupMenu, FormEditKit } from "@/components/interaction"
-import { Flex, FlexItem } from "@/components/layout"
 import { MenuItem } from "@/modules/popup-menu"
 
 const props = defineProps<{
@@ -18,7 +17,9 @@ const { selected, parent } = toRefs(props)
 const { actives, form, editMetaTag, setScore, setDescription, setTagme, submitOrderTimeRange, submitPartitionTime, partitionTimeAction, orderTimeAction, ordinalAction } = useSideBarAction(selected, parent)
 
 const partitionTimeEllipsisMenuItems = <MenuItem<undefined>[]>[
-    {type: "normal", label: "设为分布最多的那天", click: () => partitionTimeAction("MOST")},
+    {type: "normal", label: "设置日期…", click: () => actives.partitionTime = !actives.partitionTime},
+    {type: "separator"},
+    {type: "normal", label: "集中在分布最多的那天", click: () => partitionTimeAction("MOST")},
     {type: "normal", label: "设为最早的那天", click: () => partitionTimeAction("EARLIEST")},
     {type: "normal", label: "设为最晚的那天", click: () => partitionTimeAction("LATEST")},
     {type: "separator"},
@@ -26,23 +27,25 @@ const partitionTimeEllipsisMenuItems = <MenuItem<undefined>[]>[
 ]
 
 const orderTimeEllipsisMenuItems = () => <MenuItem<undefined>[]>[
-    {type: "normal", label: "按来源ID顺序重设排序时间", click: () => orderTimeAction("BY_SOURCE_ID")},
-    ...(parent?.value ? [{type: "normal", label: `按${parent.value.type === "book" ? "画集" : "目录"}内排序顺序重设排序时间`, click: () => orderTimeAction("BY_ORDINAL")}] : []),
+    {type: "normal", label: "设置时间范围…", click: () => actives.orderTime = !actives.orderTime},
     {type: "separator"},
     {type: "normal", label: "集中在分布最多的那天", click: () => orderTimeAction("MOST")},
     {type: "normal", label: "倒置排序时间", click: () => orderTimeAction("REVERSE")},
     {type: "normal", label: "均匀分布排序时间", click: () => orderTimeAction("UNIFORMLY")},
     {type: "separator"},
     {type: "normal", label: "设为当前时间", click: () => orderTimeAction("NOW")},
+    {type: "separator"},
+    {type: "normal", label: "按来源ID顺序重设排序时间", click: () => orderTimeAction("BY_SOURCE_ID")},
+    ...(parent?.value ? [{type: "normal", label: `按${parent.value.type === "book" ? "画集" : "目录"}内排序顺序重设排序时间`, click: () => orderTimeAction("BY_ORDINAL")}] : []),
 ]
 
 const ordinalEllipsisMenuItems = <MenuItem<undefined>[]>[
-    {type: "normal", label: "按排序时间顺序重排序", click: () => ordinalAction("SORT_BY_ORDER_TIME")},
-    {type: "normal", label: "按来源ID顺序重排序", click: () => ordinalAction("SORT_BY_SOURCE_ID")},
-    {type: "separator"},
     {type: "normal", label: "挪到开头", click: () => ordinalAction("MOVE_TO_HEAD")},
     {type: "normal", label: "挪到末尾", click: () => ordinalAction("MOVE_TO_TAIL")},
     {type: "normal", label: "倒置排序顺序", click: () => ordinalAction("REVERSE")},
+    {type: "separator"},
+    {type: "normal", label: "按排序时间顺序重排序", click: () => ordinalAction("SORT_BY_ORDER_TIME")},
+    {type: "normal", label: "按来源ID顺序重排序", click: () => ordinalAction("SORT_BY_SOURCE_ID")},
 ]
 
 </script>
@@ -71,23 +74,13 @@ const ordinalEllipsisMenuItems = <MenuItem<undefined>[]>[
         </template>
     </FormEditKit>
     <Button class="mt-1 w-100 has-text-left" size="small" icon="tag" @click="editMetaTag">添加标签…</Button>
-    <Flex>
-        <FlexItem :width="100"><Button class="has-text-left" size="small" icon="calendar-alt" :type="actives.partitionTime ? 'primary' : undefined" @click="actives.partitionTime = !actives.partitionTime">设置时间分区</Button></FlexItem>
-        <FlexItem :shrink="0">
-            <ElementPopupMenu :items="partitionTimeEllipsisMenuItems" position="bottom" v-slot="{ popup, setEl, attrs }">
-                <Button :ref="setEl" v-bind="attrs" size="small" square icon="ellipsis-v" @click="popup"/>
-            </ElementPopupMenu>
-        </FlexItem>
-    </Flex>
+    <ElementPopupMenu :items="partitionTimeEllipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
+        <Button :ref="setEl" class="w-100 has-text-left" size="small" icon="calendar-alt" end-icon="ellipsis-v" @click="popup">设置时间分区</Button>
+    </ElementPopupMenu>
     <DateEditor v-if="actives.partitionTime" class="mb-1" auto-focus v-model:value="form.partitionTime" @enter="submitPartitionTime"/>
-    <Flex>
-        <FlexItem :width="100"><Button class="has-text-left" size="small" icon="business-time" :type="actives.orderTime ? 'primary' : undefined" @click="actives.orderTime = !actives.orderTime">设置排序时间</Button></FlexItem>
-        <FlexItem :shrink="0">
-            <ElementPopupMenu :items="orderTimeEllipsisMenuItems" position="bottom" v-slot="{ popup, setEl, attrs }">
-                <Button :ref="setEl" v-bind="attrs" size="small" square icon="ellipsis-v" @click="popup"/>
-            </ElementPopupMenu>
-        </FlexItem>
-    </Flex>
+    <ElementPopupMenu :items="orderTimeEllipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
+        <Button :ref="setEl" class="w-100 has-text-left" size="small" icon="business-time" end-icon="ellipsis-v" @click="popup">设置排序时间</Button>
+    </ElementPopupMenu>
     <div v-if="actives.orderTime" class="mb-1">
         <label class="label is-font-size-small">起始时间</label>
         <DateTimeEditor auto-focus v-model:value="form.orderTime.begin" @enter="submitOrderTimeRange"/>
@@ -95,16 +88,6 @@ const ordinalEllipsisMenuItems = <MenuItem<undefined>[]>[
         <DateTimeEditor v-model:value="form.orderTime.end" @enter="submitOrderTimeRange"/>
     </div>
     <ElementPopupMenu v-if="!!parent" :items="ordinalEllipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
-        <Button :ref="setEl" class="w-100 has-text-left relative" size="small" icon="sort-amount-down" @click="popup">{{ parent.type === "book" ? "画集" : "目录" }}内部顺序<Icon :class="$style['float-right-button-icon']" icon="ellipsis-v"/></Button>
+        <Button :ref="setEl" class="w-100 has-text-left" size="small" icon="sort-amount-down" end-icon="ellipsis-v" @click="popup">{{ parent.type === "book" ? "画集" : "目录" }}内部顺序</Button>
     </ElementPopupMenu>
 </template>
-
-<style module lang="sass">
-@use "sass:math"
-@import "../../../styles/base/size"
-
-.float-right-button-icon
-    position: absolute
-    right: calc(math.div($element-height-small, 2) - 0.5rem)
-    top: calc(math.div($element-height-small, 2) - 0.5rem + 1px)
-</style>

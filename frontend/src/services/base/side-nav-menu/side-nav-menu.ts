@@ -1,6 +1,6 @@
 import { computed, isReactive, isRef, reactive, ref, Ref, unref, watch } from "vue"
 import { LocationQuery, RouteRecordName, useRouter } from "vue-router"
-import { MenuDefinition, SubMenuItemDefinition } from "@/components/interaction"
+import { MenuDefinition, SubMenuItemDefinition, BadgeDefinition } from "@/components/interaction"
 import { installation, toReactiveArray } from "@/utils/reactivity"
 
 /**
@@ -30,7 +30,7 @@ interface NavMenuItem {
     routeQueryValue?: string
     label: string
     icon: string
-    badge?: Ref<number | null | undefined>
+    badge?: Ref<number | BadgeDefinition | BadgeDefinition[] | null | undefined>
     submenu?: (NavSubMenuItem | NavItemSetup<NavSubMenuItem>)[]
 }
 

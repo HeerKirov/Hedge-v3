@@ -31,9 +31,9 @@ const { context } = useImageCompareTableContext(props.columnNum, ids, (idx, id) 
 const thStyle = `width: calc((100% - 6rem) / ${props.columnNum})`
 
 const openImagePreview = (index: number) => {
-    const thumbnailList = context.map(c => c.imageData.data.value?.filePath ?? null)
-    const files = thumbnailList.filter(f => f !== null) as string[]
-    const initIndex = thumbnailList.reduce((cur, f, idx) => f === null && idx <= cur && cur > 0 ? cur - 1 : cur, index)
+    const fileList = context.map(c => c.imageData.data.value?.filePath ?? null)
+    const files = fileList.filter(f => f !== null).map(f => f!.original) as string[]
+    const initIndex = fileList.reduce((cur, f, idx) => f === null && idx <= cur && cur > 0 ? cur - 1 : cur, index)
     previewService.show({preview: "image", type: "array", files, initIndex})
 }
 
@@ -51,7 +51,7 @@ const openImagePreview = (index: number) => {
             <tr>
                 <td/>
                 <td v-for="index in columnNum">
-                    <ThumbnailImage class="is-cursor-zoom-in" max-height="12rem" :file="context[index - 1].imageData.data.value?.filePath" v-bind="context[index - 1].dropEvents" @click="openImagePreview(index - 1)"/>
+                    <ThumbnailImage class="is-cursor-zoom-in" max-height="12rem" :file="context[index - 1].imageData.data.value?.filePath?.thumbnail" v-bind="context[index - 1].dropEvents" @click="openImagePreview(index - 1)"/>
                 </td>
             </tr>
             <MetadataInfo :values="context.map(i => i.imageData.data.value?.metadata ?? null)"/>

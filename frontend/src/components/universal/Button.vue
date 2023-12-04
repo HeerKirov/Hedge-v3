@@ -5,6 +5,7 @@ import { Colors } from "@/constants/ui"
 
 const props = defineProps<{
     icon?: string
+    endIcon?: string
     mode?: "transparent" | "light" | "filled"
     type?: Colors
     size?: "std" | "small" | "large"
@@ -30,14 +31,17 @@ const buttonClass = computed(() => [
     <button :class="buttonClass" :disabled="disabled">
         <Icon v-if="icon" :class="$style.icon" :icon="icon"/>
         <slot/>
+        <Icon v-if="endIcon" :class="$style['end-icon']" :icon="endIcon"/>
     </button>
 </template>
 
 <style module lang="sass">
+@use "sass:math"
 @import "../../styles/base/size"
 @import "../../styles/base/color"
 
 .button
+    position: relative
     box-sizing: border-box
     vertical-align: middle
     border-radius: $radius-size-std
@@ -48,6 +52,10 @@ const buttonClass = computed(() => [
         transform: translateX(#{-$spacing-1})
     &.round
         border-radius: $radius-size-round
+    .end-icon
+        position: absolute
+        right: calc(math.div($element-height-small, 2) - 0.5rem)
+        top: calc(math.div($element-height-small, 2) - 0.5rem + 1px)
 
 .is-size-small
     font-size: $font-size-small

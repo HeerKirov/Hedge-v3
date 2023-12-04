@@ -11,7 +11,7 @@ const { assetsUrl } = useAssets()
 
 const { 
     loading, data, 
-    openBook, openIllustOfRecent,
+    openBook,
     openPartition, openIllustOfPartition, 
     openAuthorOrTopic, openIllustOfAuthorOrTopic
 } = useHomepageContext()
@@ -22,12 +22,25 @@ const router = useRouter()
 
 <template>
     <TopBarLayout>
-        <div v-if="loading" class="relative w-100 h-100">
-            <div class="absolute center has-text-centered">
-                <Icon icon="circle-notch" size="3x" spin/>
+        <div v-if="loading || !data?.ready" :class="[$style.root, $style.loading]">
+            <label :class="$style.header">随便看看</label>
+            <div :class="$style['primary-scroll-area']">
+                <div v-for="_ in 28" :class="$style.image"/>
+                <div class="h-100"/>
+                <Block v-for="_ in 3" :class="$style.block">
+                    <div :class="$style['example-area']"/>
+                </Block>
+            </div>
+            <label :class="$style.header">画集推荐</label>
+            <div :class="$style['book-scroll-area']">
+                <Block v-for="_ in 6" :class="$style.book"/>
+            </div>
+            <label :class="$style.header">最近添加</label>
+            <div :class="$style['secondary-scroll-area']">
+                <div v-for="_ in 8" :class="$style.image"/>
             </div>
         </div>
-        <div v-else-if="!!data && (data.todayImages.length || data.todayAuthorAndTopics.length || data.todayBooks.length || data.recentImages.length || data.historyImages.length)" :class="$style.root">
+        <div v-else-if="data && (data.todayImages.length || data.todayAuthorAndTopics.length || data.todayBooks.length || data.recentImages.length || data.historyImages.length)" :class="$style.root">
             <template v-if="data.todayImages.length > 0 || data.todayAuthorAndTopics.length > 0">
                 <label :class="$style.header">随便看看</label>
                 <div :class="$style['primary-scroll-area']">
@@ -64,7 +77,7 @@ const router = useRouter()
             <template v-if="data.recentImages.length">
                 <label :class="$style.header">最近添加</label>
                 <div :class="$style['secondary-scroll-area']">
-                    <img v-for="i in data.recentImages" :class="$style.image" :src="assetsUrl(i.filePath.sample)" @click="openIllustOfRecent(i.id)"/>
+                    <img v-for="i in data.recentImages" :class="$style.image" :src="assetsUrl(i.filePath.sample)" @click="openIllustOfPartition(i.partitionTime, i.id)"/>
                 </div>
             </template>
             <template v-for="h in data.historyImages">
@@ -143,6 +156,7 @@ $margin-x: $spacing-4
         > .example-area
             $example-height: calc((#{$image-width * $image-column-num} + #{$image-gap * ($image-column-num - $block-column-num)}) / 3 - #{$element-height-small} - #{$spacing-2 * 2} - 2px)
             height: $example-height
+            width: calc(#{$example-height} * 3 + #{$image-gap * 2})
             display: flex
             gap: $image-gap
             > .example
@@ -214,4 +228,23 @@ $margin-x: $spacing-4
             box-sizing: border-box
             &::-webkit-scrollbar
                display: none
+
+.loading
+    overflow-y: hidden
+    
+    .header
+        visibility: hidden
+    .image
+        background-color: $light-mode-block-color
+        @media (color-prefers-scheme: dark) 
+            background-color: $dark-mode-block-color
+    .block, .book
+        border-width: 0
+    .image, .block, .book
+        animation: std 4s infinite linear alternate forwards 1s
+        @keyframes std
+            25%
+                opacity: 100%
+            50%
+                opacity: 30%
 </style>

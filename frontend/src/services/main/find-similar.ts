@@ -2,21 +2,22 @@ import * as echarts from "echarts/core"
 import { GraphSeriesOption, GraphChart } from "echarts/charts"
 import { CanvasRenderer } from "echarts/renderers"
 import { TooltipComponentOption, TooltipComponent } from "echarts/components"
-import { computed, onBeforeUnmount, onMounted, ref, Ref, watch } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref, Ref, shallowRef, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { usePreviewService } from "@/components-module/preview"
 import { useDialogService } from "@/components-module/dialog"
-import { QueryInstance, QueryListview, useFetchEndpoint, useFetchHelper, usePaginationDataView, usePathFetchHelper, usePostPathFetchHelper, useQueryListview } from "@/functions/fetch"
+import { PaginationDataView, QueryInstance, QueryListview, useFetchEndpoint, useFetchHelper, usePaginationDataView, usePathFetchHelper, usePostPathFetchHelper, useQueryListview } from "@/functions/fetch"
 import { FindSimilarDetailResult, FindSimilarResult, FindSimilarResultDetailImage, FindSimilarResultResolveAction, FindSimilarResultResolveForm, SimilarityRelationCoverage } from "@/functions/http-client/api/find-similar"
 import { FilePath } from "@/functions/http-client/api/all"
 import { CommonIllust } from "@/functions/http-client/api/illust"
 import { flatResponse } from "@/functions/http-client"
+import { platform } from "@/functions/ipc-client"
 import { useAssets, useLocalStorage } from "@/functions/app"
 import { useMessageBox } from "@/modules/message-box"
 import { useInterceptedKey } from "@/modules/keyboard"
 import { useDetailViewState } from "@/services/base/detail-view-state"
 import { useListViewContext } from "@/services/base/list-view-context"
-import { useIllustViewController } from "@/services/base/view-controller"
+import { IllustViewController, useIllustViewController } from "@/services/base/view-controller"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSettingSite } from "@/services/setting"
 import { installation, toRef } from "@/utils/reactivity"
@@ -97,14 +98,22 @@ export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = instal
 
     const selector = useSelectedState({queryListview: listview, keyOf: item => item.id})
 
-    const operators = useOperators(data, selector, resolve, clear)
+    const operators = useOperators(data, selector, listviewController, listview, paginationData, resolve, clear)
 
     return {data, listview, paginationData, selector, listviewController, viewMode, operators}
 })
 
-function useOperators(data: Ref<FindSimilarDetailResult | null>, selector: SelectedState<number>, resolve: (f: FindSimilarResultResolveForm) => Promise<boolean>, clear: () => Promise<boolean>) {
+function useOperators(data: Ref<FindSimilarDetailResult | null>, 
+                      selector: SelectedState<number>, 
+                      listviewController: IllustViewController, 
+                      listview: QueryListview<FindSimilarResultDetailImage>, 
+                      paginationData: PaginationDataView<FindSimilarResultDetailImage>, 
+                      resolve: (f: FindSimilarResultResolveForm) => Promise<boolean>, 
+                      clear: () => Promise<boolean>) {
     const message = useMessageBox()
     const dialog = useDialogService()
+    const preview = usePreviewService()
+    const gridMode = shallowRef<"grid">("grid")
 
     const allCollections = computed(() => {
         if(data.value !== null) {
@@ -178,7 +187,29 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>, selector: Selec
         }
     }
 
-    return {allCollections, allBooks, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, complete}
+    const openPreviewBySpace = (illust?: CommonIllust) => {
+        if(illust !== undefined) {
+            //如果指定项已选中，那么将最后选中项重新指定为指定项；如果未选中，那么将单独选中此项
+            if(selector.selected.value.includes(illust.id)) {
+                selector.update(selector.selected.value, illust.id)
+            }else{
+                selector.update([illust.id], illust.id)
+            }
+        }
+        if(selector.selected.value.length > 0) preview.show({
+            preview: "image", 
+            type: "listview", 
+            listview: listview,
+            paginationData: paginationData.data,
+            columnNum: listviewController.columnNum,
+            viewMode: gridMode,
+            selected: selector.selected,
+            lastSelected: selector.lastSelected,
+            updateSelect: selector.update
+        })
+    }
+
+    return {allCollections, allBooks, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, complete, openPreviewBySpace}
 }
 
 export function useGraphView({ menu }: {menu: (i: FindSimilarResultDetailImage) => void}) {
@@ -208,13 +239,14 @@ export function useGraphView({ menu }: {menu: (i: FindSimilarResultDetailImage) 
             }
         }
         
-        const shift = e.event?.event.ctrlKey || e.event?.event.shiftKey
+        const ctrl = (platform === "darwin" && e.event?.event.metaKey) || (platform !== "darwin" && e.event?.event.ctrlKey)
+        const shift = e.event?.event.shiftKey
         const effectedImageIds = getEffectedImages()
-        if(shift) {
+        if(ctrl || shift) {
             const filtered = effectedImageIds.filter(id => !selected.value.includes(id))
             if(filtered.length > 0) {
                 updateSelect([...selected.value, ...filtered], filtered[filtered.length - 1])
-            }else if(effectedImageIds.length > 0) {
+            }else if(ctrl && effectedImageIds.length > 0) {
                 const final = selected.value.filter(i => !effectedImageIds.includes(i))
                 updateSelect(final, final[final.length - 1])
             }
@@ -440,7 +472,7 @@ export function useGraphView({ menu }: {menu: (i: FindSimilarResultDetailImage) 
 
 export function useDetailPane() {
     const preview = usePreviewService()
-    const { listview, paginationData, selector, listviewController } = useFindSimilarDetailPanel()
+    const { data, listview, paginationData, selector, listviewController, viewMode } = useFindSimilarDetailPanel()
 
     const storage = useLocalStorage<{tabType: "info" | "source" | "related", multiple: "action" | "resolve" | false}>("find-similar/detail/pane", () => ({tabType: "info", multiple: "resolve"}), true)
 
@@ -472,17 +504,25 @@ export function useDetailPane() {
     })
 
     const openImagePreview = () => {
-        preview.show({
-            preview: "image", 
-            type: "listview", 
-            listview: listview,
-            paginationData: paginationData.data,
-            columnNum: listviewController.columnNum,
-            viewMode: listviewController.viewMode,
-            selected: selector.selected,
-            lastSelected: selector.lastSelected,
-            updateSelect: selector.update
-        })
+        if(data.value !== null && selector.selected.value.length > 0) {
+            if(viewMode.value === "grid") {
+                preview.show({
+                    preview: "image", 
+                    type: "listview", 
+                    listview: listview,
+                    paginationData: paginationData.data,
+                    columnNum: listviewController.columnNum,
+                    viewMode: listviewController.viewMode,
+                    selected: selector.selected,
+                    lastSelected: selector.lastSelected,
+                    updateSelect: selector.update
+                })
+            }else{
+                const files = selector.selected.value.map(selectedId => data.value!.images.find(i => i.id === selectedId)?.filePath.original).filter(i => i !== null) as string[]
+                const initIndex = selector.lastSelected.value !== null ? selector.selected.value.indexOf(selector.lastSelected.value) : undefined
+                preview.show({preview: "image", type: "array", files, initIndex})
+            }
+        }
     }
 
     return {tabType, detail, selector, parent, openImagePreview}

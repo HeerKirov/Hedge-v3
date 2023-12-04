@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, useCssModule } from "vue"
 import { Icon } from "@/components/universal"
+import { BadgeDefinition } from "./definition"
 
 const props = defineProps<{
     icon: string
     label: string
-    badge: number | null
+    badge: number | BadgeDefinition | BadgeDefinition[] | null
     checked?: "selected" | "sub-selected" | null
     disabled?: boolean
     hasSub?: boolean
@@ -22,6 +23,18 @@ const clickCaret = (e: MouseEvent) => {
     e.stopPropagation()
 }
 
+const badges = computed(() => {
+    if(props.badge === null) {
+        return []
+    }else if(typeof props.badge === "number") {
+        return [{count: props.badge, type: "std" as const}]
+    }else if(props.badge instanceof Array) {
+        return props.badge
+    }else{
+        return [props.badge]
+    }
+})
+
 const style = useCssModule()
 
 const divClass = computed(() => [
@@ -35,9 +48,7 @@ const divClass = computed(() => [
     <button :class="divClass" @click="$emit('click')">
         <Icon :icon="icon"/>
         <span class="ml-2">{{label}}</span>
-        <span v-if="badge !== null && badge !== undefined" :class="$style.badge">
-            {{ badge }}
-        </span>
+        <span v-for="badge in badges" :class="[$style.badge, $style[badge.type]]">{{ badge.count }}</span>
         <span v-if="hasSub" :class="$style.caret" @click="clickCaret">
             <Icon :icon="subOpen ? 'caret-down' : 'caret-right'"/>
         </span>
@@ -90,7 +101,10 @@ const divClass = computed(() => [
             color: $light-mode-secondary-text-color
     
     .badge
-        background-color: rgba(#000000, 0.08)
+        &.std
+            background-color: rgba(#000000, 0.08)
+        &.danger
+            background-color: rgba($light-mode-danger, 0.3)
 
 @media (prefers-color-scheme: dark)
     .general
@@ -122,10 +136,13 @@ const divClass = computed(() => [
 
     .badge
         background-color: rgba(#000000, 0.3)
+        &.danger
+            color: $dark-mode-danger
 
 .badge
     float: right
     padding: 2px 6px
+    margin-left: 2px
     border-radius: $radius-size-std
     font-weight: 700
 

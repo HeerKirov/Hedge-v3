@@ -5,7 +5,7 @@ import { Book, BookQueryFilter, DetailBook } from "@/functions/http-client/api/b
 import { flatResponse } from "@/functions/http-client"
 import { useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
 import { useMessageBox } from "@/modules/message-box"
-import { useRouterNavigator } from "@/modules/router"
+import { useRouterNavigator, useRouterParamEvent } from "@/modules/router"
 import { useViewStack } from "@/components-module/view-stack"
 import { useDialogService } from "@/components-module/dialog"
 import { useListViewContext } from "@/services/base/list-view-context"
@@ -23,6 +23,18 @@ export const [installBookContext, useBookContext] = installation(function () {
     const operators = useOperators()
 
     installVirtualViewNavigation()
+
+    useRouterParamEvent("MainBook", params => {
+        if(params.tagName || params.authorName || params.topicName) {
+            //监听router event。对于meta tag，将其简单地转换为DSL的一部分。
+            //FUTURE 当然这其实是有问题的，对于topic/tag，还应该使用地址去限制它们。
+            querySchema.queryInputText.value = [
+                params.tagName ? `$\`${params.tagName}\`` : undefined,
+                params.topicName ? `#\`${params.topicName}\`` : undefined,
+                params.authorName ? `@\`${params.authorName}\`` : undefined
+            ].filter(i => i !== undefined).join(" ")
+        }
+    })
 
     return {listview, querySchema, listviewController, selector, paneState, operators}
 })

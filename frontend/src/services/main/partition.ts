@@ -285,7 +285,7 @@ export function useDetailIllustContext() {
     })
     const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector, navigation})
 
-    watch(listviewController.collectionMode, collectionMode => listview.queryFilter.value.type = collectionMode ? "COLLECTION" : "IMAGE", {immediate: true})
+    watch(listviewController.collectionMode, collectionMode => listview.queryFilter.value.type = typeof collectionMode === "boolean" ? (collectionMode ? "COLLECTION" : "IMAGE") : collectionMode, {immediate: true})
     watch(querySchema.query, query => listview.queryFilter.value.query = query, {immediate: true})
     watch(path, path => listview.queryFilter.value.partition = path ?? undefined, {immediate: true})
 

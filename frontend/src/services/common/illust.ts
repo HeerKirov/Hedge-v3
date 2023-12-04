@@ -4,7 +4,7 @@ import {
     PaginationDataView, QueryListview, AllSlice, ListIndexSlice, SingletonSlice,
     usePostFetchHelper, usePostPathFetchHelper, useFetchHelper, QueryInstance, createMappedQueryInstance
 } from "@/functions/fetch"
-import { DraggingIllust, CommonIllust, Illust, IllustQueryFilter } from "@/functions/http-client/api/illust"
+import { DraggingIllust, CommonIllust, Illust, IllustQueryFilter, BatchUpdateAction } from "@/functions/http-client/api/illust"
 import { QueryRes } from "@/functions/http-client/api/util-query"
 import { Folder } from "@/functions/http-client/api/folder"
 import { Book } from "@/functions/http-client/api/book"
@@ -131,6 +131,10 @@ export interface ImageDatasetOperators<T extends CommonIllust> {
      */
     modifyFavorite(illust: T, favorite: boolean): void
     /**
+     * 批量更改时间相关属性。
+     */
+    batchUpdateTimeSeries(illust: T, action: BatchUpdateAction): void
+    /**
      * 创建集合。选用的items列表是已选择项加上当前目标项。
      * 如果选择的项中存在集合，或存在已属于其他集合的图像，那么打开一个对话框以供判别。
      * - forceDialog: 无论有没有冲突，都打开对话框。
@@ -226,7 +230,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     const preview = usePreviewService()
     const { paginationData, listview, listviewController, navigation, selector, dataDrop: dataDropOptions, createCollection: createCollectionOptions } = options
 
-    const fetchIllustUpdate = usePostPathFetchHelper(client => client.illust.update)
+    const fetchIllustBatchUpdate = usePostFetchHelper(client => client.illust.batchUpdate)
     const fetchIllustDelete = usePostFetchHelper(client => client.illust.delete)
     const fetchCollectionCreate = useFetchHelper(client => client.illust.collection.create)
     const fetchImageRelatedUpdate = usePostPathFetchHelper(client => client.illust.image.relatedItems.update)
@@ -347,7 +351,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
                 selector.update([illust.id], illust.id)
             }
         }
-        preview.show({
+        if(selector.selected.value.length > 0) preview.show({
             preview: "image", 
             type: "listview", 
             listview: listview,
@@ -362,9 +366,13 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
 
     const modifyFavorite = async (illust: T, favorite: boolean) => {
         const items = getEffectedItems(illust)
-        for (const itemId of items) {
-            fetchIllustUpdate(itemId, { favorite }).finally()
-        }
+        await fetchIllustBatchUpdate({target: items, favorite})
+    }
+
+    const batchUpdateTimeSeries = async (illust: T, action: BatchUpdateAction) => {
+        const items = getEffectedItems(illust)
+        await fetchIllustBatchUpdate({target: items, action})
+        toast.toast("批量编辑完成", "info", "已完成所选项目的更改。")
     }
 
     const createCollection = (illust: T) => {
@@ -494,7 +502,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     const stagingPostCount = homepageState ? computed(() => homepageState.data.value?.stagingPostCount ?? 0) : shallowRef(0)
 
     return {
-        openDetailByClick, openDetailByEnter, openCollectionDetail, openInNewWindow, openPreviewBySpace, modifyFavorite,
+        openDetailByClick, openDetailByEnter, openCollectionDetail, openInNewWindow, openPreviewBySpace, modifyFavorite, batchUpdateTimeSeries,
         createCollection, splitToGenerateNewCollection, createBook, editAssociate, addToFolder, 
         cloneImage, exportItem, findSimilarOfImage, addToStagingPost, popStagingPost, stagingPostCount,
         deleteItem, removeItemFromCollection, removeItemFromBook, removeItemFromFolder, getEffectedItems, dataDrop

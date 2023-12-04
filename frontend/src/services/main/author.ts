@@ -212,7 +212,7 @@ export function useAuthorDetailPanel() {
 
     const { data: exampleData } = useFetchEndpoint({
         path: paneState.detailPath,
-        get: client => async (author: number) => mapResponse(await client.illust.list({limit: 10, author, type: "IMAGE", order: "-orderTime"}), r => r.result)
+        get: client => async (author: number) => mapResponse(await client.illust.list({limit: 10, author, type: "COLLECTION", order: "-orderTime"}), r => r.result)
     })
 
     const editor = useAuthorDetailPanelEditor(data, setData)

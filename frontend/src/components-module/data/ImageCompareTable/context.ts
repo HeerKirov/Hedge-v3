@@ -11,10 +11,10 @@ import { useMessageBox } from "@/modules/message-box"
 import { useDroppable } from "@/modules/drag"
 import { arrays } from "@/utils/primitives"
 import { LocalDate, LocalDateTime } from "@/utils/datetime"
-import { SourceDataPath } from "@/functions/http-client/api/all"
+import { FilePath, SourceDataPath } from "@/functions/http-client/api/all"
 
 export interface ImageData {
-    filePath: string | null
+    filePath: FilePath | null
     metadata: {
         id: number
         extension: string
@@ -76,7 +76,7 @@ function useImageData(initIndex: number | null) {
                     ok: true,
                     status: 200,
                     data: <ImageData>{
-                        filePath: metadata.data.filePath.thumbnail,
+                        filePath: metadata.data.filePath,
                         metadata: {
                             id: metadata.data.id,
                             extension: metadata.data.extension,

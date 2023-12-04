@@ -198,7 +198,7 @@ export function useTopicDetailPanel() {
 
     const { data: exampleData } = useFetchEndpoint({
         path: paneState.detailPath,
-        get: client => async (topic: number) => mapResponse(await client.illust.list({limit: 10, topic, type: "IMAGE", order: "-orderTime"}), r => r.result)
+        get: client => async (topic: number) => mapResponse(await client.illust.list({limit: 10, topic, type: "COLLECTION", order: "-orderTime"}), r => r.result)
     })
 
     const childrenMode = useLocalStorage<"tree" | "list">("topic/detail-panel/children-view-mode", "tree")

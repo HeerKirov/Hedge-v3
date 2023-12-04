@@ -12,11 +12,16 @@ export interface MenuItemDefinition {
     id: string
     icon: string
     label: string
-    badge?: number | null | undefined
+    badge?: number | BadgeDefinition | BadgeDefinition[] | null | undefined
     submenu?: SubMenuItemDefinition[]
 }
 
 export interface SubMenuItemDefinition {
     id: string
     label: string
+}
+
+export interface BadgeDefinition {
+    count: number
+    type: "std" | "danger"
 }

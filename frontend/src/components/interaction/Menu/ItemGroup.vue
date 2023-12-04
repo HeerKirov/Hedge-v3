@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { SubMenuItemDefinition } from "./definition"
+import { BadgeDefinition, SubMenuItemDefinition } from "./definition"
 import { useMenuContext } from "./context"
 import MenuItem from "./MenuItem.vue"
 import MenuSubItem from "./MenuSubItem.vue"
@@ -9,7 +9,7 @@ const props = defineProps<{
     id: string
     icon: string
     label: string
-    badge: number | null
+    badge: number | BadgeDefinition | BadgeDefinition[] | null
     submenu?: SubMenuItemDefinition[]
 }>()
 

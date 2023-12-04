@@ -8,11 +8,11 @@ const {
     paginationData, 
     selector: { selected, lastSelected, update: updateSelect }, 
     listviewController: { fitType, columnNum }, 
-    operators: { allBooks, allCollections, addToCollection, addToBook, markIgnored, deleteItem, cloneImage } 
+    operators: { allBooks, allCollections, addToCollection, addToBook, markIgnored, deleteItem, cloneImage, openPreviewBySpace } 
 } = useFindSimilarDetailPanel()
 
 const menu = useDynamicPopupMenu<CommonIllust>(illust => [
-    {type: "normal", label: "预览"},
+    {type: "normal", label: "预览", click: i => openPreviewBySpace(i)},
     {type: "separator"},
     {type: "checkbox", label: "标记为收藏", checked: illust.favorite},
     {type: "separator"},
@@ -34,5 +34,5 @@ const menu = useDynamicPopupMenu<CommonIllust>(illust => [
     <IllustImageDataset :data="paginationData.data" :query-instance="paginationData.proxy"
                         view-mode="grid" :fit-type="fitType" :column-num="columnNum"
                         :selected="selected" :last-selected="lastSelected" @select="updateSelect"
-                        @data-update="paginationData.dataUpdate" @contextmenu="menu.popup($event)"/>
+                        @data-update="paginationData.dataUpdate" @space="openPreviewBySpace()" @contextmenu="menu.popup($event)"/>
 </template>

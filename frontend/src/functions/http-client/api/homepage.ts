@@ -1,6 +1,7 @@
 import { UsefulColors } from "@/constants/ui"
 import { LocalDate, date } from "@/utils/datetime"
 import { HttpInstance, Response } from ".."
+import { NotFound } from "../exceptions"
 import { SimpleIllust } from "./illust"
 import { TopicType } from "./topic"
 import { AuthorType } from "./author"
@@ -17,6 +18,7 @@ export function createHomepageEndpoint(http: HttpInstance): HomepageEndpoint {
 
 function mapToHomepageInfo(data: any): HomepageInfo {
     return {
+        ready: <boolean>data["ready"],
         date: date.of(<string>data["date"]),
         todayImages: (<any[]>data["todayImages"]).map(data => ({
             id: <number>data["id"],
@@ -50,11 +52,13 @@ export interface HomepageEndpoint {
 
 interface HomepageState {
     importImageCount: number
+    importImageErrorCount: number
     findSimilarCount: number
     stagingPostCount: number
 }
 
 interface HomepageInfo {
+    ready: boolean
     date: LocalDate
     todayImages: Illust[]
     todayBooks: Book[]

@@ -167,7 +167,7 @@ function useOperators(listview: QueryListview<ImportRecord>, paginationData: Pag
                 selector.update([importImage.id], importImage.id)
             }
         }
-        preview.show({
+        if(selector.selected.value.length > 0) preview.show({
             preview: "image", 
             type: "listview", 
             listview: listview,
@@ -232,7 +232,7 @@ export function useImportDetailPane() {
     }
 
     const openImagePreview = () => {
-        preview.show({
+        if(selector.selected.value.length > 0) preview.show({
             preview: "image", 
             type: "listview", 
             listview: listview.listview,

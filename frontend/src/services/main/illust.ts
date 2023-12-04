@@ -142,7 +142,7 @@ export function useIllustDetailPane() {
     })
 
     const openImagePreview = () => {
-        preview.show({
+        if(selector.selected.value.length > 0) preview.show({
             preview: "image", 
             type: "listview", 
             listview: listview.listview,
