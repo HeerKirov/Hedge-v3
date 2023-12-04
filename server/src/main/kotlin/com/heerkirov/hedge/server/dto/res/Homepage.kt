@@ -2,7 +2,8 @@ package com.heerkirov.hedge.server.dto.res
 
 import java.time.LocalDate
 
-data class HomepageRes(val date: LocalDate,
+data class HomepageRes(val ready: Boolean,
+                       val date: LocalDate,
                        val todayImages: List<Illust>,
                        val todayBooks: List<Book>,
                        val todayAuthorAndTopics: List<AuthorOrTopic>,
@@ -18,5 +19,6 @@ data class HomepageRes(val date: LocalDate,
 }
 
 data class HomepageStateRes(val importImageCount: Int,
+                            val importImageErrorCount: Int,
                             val findSimilarCount: Int,
                             val stagingPostCount: Int)

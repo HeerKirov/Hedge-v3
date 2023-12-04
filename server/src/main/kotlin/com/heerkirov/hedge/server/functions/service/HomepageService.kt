@@ -2,63 +2,37 @@ package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
-import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.IllustModelType
+import com.heerkirov.hedge.server.enums.ImportStatus
 import com.heerkirov.hedge.server.functions.manager.StagingPostManager
 import com.heerkirov.hedge.server.model.HomepageRecord
-import com.heerkirov.hedge.server.utils.DateTime.toSystemZonedTime
 import com.heerkirov.hedge.server.utils.business.filePathFrom
-import com.heerkirov.hedge.server.utils.runIf
 import org.ktorm.dsl.*
 import org.ktorm.entity.count
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
-import org.ktorm.schema.ColumnDeclaring
-import org.ktorm.support.sqlite.random
-import java.time.Instant
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
-import kotlin.random.Random
-import kotlin.random.nextInt
 
 class HomepageService(private val appdata: AppDataManager, private val data: DataRepository, private val stagingPostManager: StagingPostManager) {
     fun getHomepageInfo(): HomepageRes {
-        val todayDate = Instant.now()
-            .runIf(appdata.setting.server.timeOffsetHour != null && appdata.setting.server.timeOffsetHour!!!= 0) {
-                this.minus(appdata.setting.server.timeOffsetHour!!.toLong(), ChronoUnit.HOURS)
-            }
-            .toSystemZonedTime().toLocalDate()
+        val currentRecord = data.db.sequenceOf(HomepageRecords).firstOrNull()
 
-        var currentRecord = data.db.sequenceOf(HomepageRecords).firstOrNull()
-        if(currentRecord == null || currentRecord.date < todayDate) {
-            data.db.transaction {
-                currentRecord = data.db.sequenceOf(HomepageRecords).firstOrNull()
-                if(currentRecord == null || currentRecord!!.date < todayDate) {
-                    data.db.deleteAll(HomepageRecords)
-
-                    val content = generateHomepageInfo()
-
-                    data.db.insert(HomepageRecords) {
-                        set(it.date, todayDate)
-                        set(it.content, content)
-                    }
-
-                    currentRecord = HomepageRecord(todayDate, content)
-                }
-            }
+        return if(currentRecord != null) {
+            mapToHomepageRes(currentRecord)
+        }else{
+            HomepageRes(false, LocalDate.now(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
         }
-
-        return mapToHomepageRes(currentRecord!!)
     }
 
     fun getHomepageState(): HomepageStateRes {
-        val importImageCount = data.db.sequenceOf(ImportRecords).count { it.deleted.not() }
+        val importImageCount = data.db.sequenceOf(ImportRecords).count { it.status eq ImportStatus.COMPLETED and it.deleted.not() }
+        val importImageErrorCount = data.db.sequenceOf(ImportRecords).count { it.status eq ImportStatus.ERROR and it.deleted.not() }
         val findSimilarCount = data.db.sequenceOf(FindSimilarResults).count()
         val stagingPostCount = stagingPostManager.count()
 
-        return HomepageStateRes(importImageCount, findSimilarCount, stagingPostCount)
+        return HomepageStateRes(importImageCount, importImageErrorCount, findSimilarCount, stagingPostCount)
     }
 
     private fun mapToHomepageRes(record: HomepageRecord): HomepageRes {
@@ -69,7 +43,7 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
                 .where { (Illusts.id inList record.content.todayImageIds) and (Illusts.type notEq IllustModelType.COLLECTION) }
                 .map { HomepageRes.Illust(it[Illusts.id]!!, filePathFrom(it), it[Illusts.partitionTime]!!) }
                 .associateBy { it.id }
-                .let { record.content.todayImageIds.mapNotNull(it::get) }
+                .let { record.content.todayImageIds.map(it::get) }
         }
 
         val books = if(record.content.todayBookIds.isEmpty()) emptyList() else {
@@ -116,7 +90,7 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
                             .innerJoin(IllustAuthorRelations, IllustAuthorRelations.illustId eq Illusts.id)
                             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
                             .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
-                            .where { (IllustAuthorRelations.authorId eq id) and (Illusts.type notEq IllustModelType.COLLECTION) }
+                            .where { (IllustAuthorRelations.authorId eq id) and (Illusts.type notEq IllustModelType.IMAGE_WITH_PARENT) }
                             .orderBy(Illusts.orderTime.desc())
                             .limit(3)
                             .map { IllustSimpleRes(it[Illusts.id]!!, filePathFrom(it)) }
@@ -129,7 +103,7 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
                             .innerJoin(IllustTopicRelations, IllustTopicRelations.illustId eq Illusts.id)
                             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
                             .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
-                            .where { (IllustTopicRelations.topicId eq id) and (Illusts.type notEq IllustModelType.COLLECTION) }
+                            .where { (IllustTopicRelations.topicId eq id) and (Illusts.type notEq IllustModelType.IMAGE_WITH_PARENT) }
                             .orderBy(Illusts.orderTime.desc())
                             .limit(3)
                             .map { IllustSimpleRes(it[Illusts.id]!!, filePathFrom(it)) }
@@ -145,7 +119,7 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
             val allImages = data.db.from(Illusts)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
                 .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
-                .where { (Illusts.id inList allIds) and (Illusts.type notEq IllustModelType.COLLECTION) }
+                .where { (Illusts.id inList allIds) and (Illusts.type notEq IllustModelType.IMAGE_WITH_PARENT) }
                 .map { IllustSimpleRes(it[Illusts.id]!!, filePathFrom(it)) }
                 .associateBy { it.id }
 
@@ -157,131 +131,12 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
         val recentImages = data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
             .select(Illusts.id, Illusts.partitionTime, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
-            .where { Illusts.type notEq IllustModelType.COLLECTION }
+            .where { Illusts.type notEq IllustModelType.IMAGE_WITH_PARENT }
             .orderBy(Illusts.createTime.desc())
             .limit(20)
             .map { HomepageRes.Illust(it[Illusts.id]!!, filePathFrom(it), it[Illusts.partitionTime]!!) }
 
-        return HomepageRes(record.date, todayImages, books, authorAndTopics, recentImages, historyImages)
+        return HomepageRes(true, record.date, todayImages.filterNotNull(), books, authorAndTopics, recentImages, historyImages)
     }
 
-    private fun generateHomepageInfo(): HomepageRecord.Content {
-        val todayImageIds = run {
-            //共取28项image。
-            //有额外的选取条件，首先随机取4个partition，只在这4个里选；其次不选book member。除非选到最后还空缺。
-            //[4, 8]：fav
-            //[2, 8]: !fav && score!=NULL && score>=8
-            //[0, 8]：!fav && score!=NULL && score>=6 && score<8
-            //剩余：!fav && (score=NULL || score<6)
-            val total = 28
-            val partitions = queryPartition(4, random = true)
-            val typeA = queryImage(Random.nextInt(4..8)) { (it.partitionTime inList partitions) and (it.cachedBookCount greater 0) and it.favorite }
-            val typeB = queryImage(Random.nextInt(2..8)) { (it.partitionTime inList partitions) and (it.cachedBookCount greater 0) and it.favorite.not() and it.score.isNotNull() and (it.score greaterEq 8) }
-            val typeC = queryImage(Random.nextInt(0..8)) { (it.partitionTime inList partitions) and (it.cachedBookCount greater 0) and it.favorite.not() and it.score.isNotNull() and (it.score greaterEq 6) and (it.score less 8) }
-            val typeD = queryImage(total - typeA.size - typeB.size - typeC.size) { it.favorite.not() and (it.score.isNull() or (it.score less 6)) }
-            (typeA + typeB + typeC).shuffled() + typeD
-        }
-
-        val todayBookIds = run {
-            //共取12项book。
-            //[0, 4]：fav
-            //[0, 4]：!fav && score!=NULL && score>=8
-            //[0, 4]：!fav && score!=NULL && score>=6 && score<8
-            //剩余：!fav && (score=NULL || score<6)
-            val total = 12
-            val typeA = queryBook(Random.nextInt(0..4)) { it.favorite }
-            val typeB = queryBook(Random.nextInt(0..4)) { it.favorite.not() and it.score.isNotNull() and (it.score greaterEq 8) }
-            val typeC = queryBook(Random.nextInt(0..4)) { it.favorite.not() and it.score.isNotNull() and (it.score greaterEq 6) and (it.score less 8) }
-            val typeD = queryBook(total - typeA.size - typeB.size - typeC.size) { it.favorite.not() and (it.score less 6 or it.score.isNull()) }
-            (typeA + typeB + typeC).shuffled() + typeD
-        }
-
-        val todayAuthorAndTopicIds = run {
-            //共选取9项。首先随机分配总数，author分配[5, 9]项，剩余的分配给topic。
-            //[N/4, N/2]：fav
-            //[N/4, N/2]: !fav && score!=NULL && score>=5
-            //剩余：!fav && (score=NULL || score<5)
-            val totalAuthor = Random.nextInt(5..9)
-            val authorA = queryAuthor(Random.nextInt((totalAuthor / 4)..(totalAuthor / 2))) { it.favorite }
-            val authorB = queryAuthor(Random.nextInt((totalAuthor / 4)..(totalAuthor / 2))) { it.favorite.not() and it.score.isNotNull() and (it.score greaterEq 5) }
-            val authorC = queryAuthor(totalAuthor - authorA.size - authorA.size) { it.favorite.not() and (it.score less 5 or it.score.isNull()) }
-            val authors = (authorA + authorB + authorC).map { HomepageRecord.AuthorOrTopic("AUTHOR", it) }
-
-            val totalTopic = 9 - authors.size
-            val topicA = queryTopic(Random.nextInt((totalTopic / 4)..(totalTopic / 2))) { it.favorite }
-            val topicB = queryTopic(Random.nextInt((totalTopic / 4)..(totalTopic / 2))) { it.favorite.not() and it.score.isNotNull() and (it.score greaterEq 5) }
-            val topicC = queryTopic(totalTopic - topicA.size - topicB.size) { it.favorite.not() and (it.score less 5 or it.score.isNull()) }
-            val topics = (topicA + topicB + topicC).map { HomepageRecord.AuthorOrTopic("TOPIC", it) }
-
-            //shuffle时，确保一部分author总在最前。
-            if(authors.size >= 3) {
-                authors.subList(0, 3).shuffled() + (authors.subList(3, authors.size) + topics).shuffled()
-            }else{
-                authors.shuffled() + topics.shuffled()
-            }
-        }
-
-        val historyImages = run {
-            //选取最近的8个日期，每个日期取18项image。
-            //[3, 6]：fav
-            //[2, 6]: !fav && score!=NULL && score>=7
-            //[1, 6]：!fav && score!=NULL && score>=5 && score<7
-            //剩余：!fav && (score=NULL || score<6)
-            queryPartition(8).map {  date ->
-                val total = 18
-                val typeA = queryImage(Random.nextInt(3..6)) { (it.partitionTime eq date) and it.favorite }
-                val typeB = queryImage(Random.nextInt(2..6)) { (it.partitionTime eq date) and it.favorite.not() and it.score.isNotNull() and (it.score greaterEq 7) }
-                val typeC = queryImage(Random.nextInt(1..6)) { (it.partitionTime eq date) and it.favorite.not() and it.score.isNotNull() and (it.score greaterEq 5) and (it.score less 7) }
-                val typeD = queryImage(total - typeA.size - typeB.size - typeC.size) { (it.partitionTime eq date) and it.favorite.not() and (it.score less 6 or it.score.isNull()) }
-                HomepageRecord.HistoryImage(date, (typeA + typeB + typeC).shuffled() + typeD)
-            }
-        }
-
-        return HomepageRecord.Content(todayImageIds, todayBookIds, todayAuthorAndTopicIds, historyImages)
-    }
-
-    private inline fun queryImage(limit: Int, condition: (Illusts) -> ColumnDeclaring<Boolean>): List<Int> {
-        return if(limit <= 0) emptyList() else data.db.from(Illusts)
-            .select(Illusts.id)
-            .where { (Illusts.type notEq IllustModelType.COLLECTION) and condition(Illusts) }
-            .orderBy(random().asc())
-            .limit(limit)
-            .map { it[Illusts.id]!! }
-    }
-
-    private inline fun queryBook(limit: Int, condition: (Books) -> ColumnDeclaring<Boolean>): List<Int> {
-        return if(limit <= 0) emptyList() else data.db.from(Books)
-            .select(Books.id)
-            .where { (Books.cachedCount greater 0) and condition(Books) }
-            .orderBy(random().asc())
-            .limit(limit)
-            .map { it[Books.id]!! }
-    }
-
-    private fun queryPartition(limit: Int, random: Boolean = false): List<LocalDate> {
-        return if(limit <= 0) emptyList() else data.db.from(Partitions)
-            .select(Partitions.date)
-            .where { Partitions.cachedCount greater 0 }
-            .orderBy(if(random) random().asc() else Partitions.date.desc())
-            .limit(limit)
-            .map { it[Partitions.date]!! }
-    }
-
-    private inline fun queryAuthor(limit: Int, condition: (Authors) -> ColumnDeclaring<Boolean>): List<Int> {
-        return if(limit <= 0) emptyList() else data.db.from(Authors)
-            .select(Authors.id)
-            .where { (Authors.cachedCount greater 0) and condition(Authors) }
-            .orderBy(random().asc())
-            .limit(limit)
-            .map { it[Authors.id]!! }
-    }
-
-    private inline fun queryTopic(limit: Int, condition: (Topics) -> ColumnDeclaring<Boolean>): List<Int> {
-        return if(limit <= 0) emptyList() else data.db.from(Topics)
-            .select(Topics.id)
-            .where { (Topics.cachedCount greater 0) and condition(Topics) }
-            .orderBy(random().asc())
-            .limit(limit)
-            .map { it[Topics.id]!! }
-    }
 }

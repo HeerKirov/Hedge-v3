@@ -41,9 +41,9 @@ class EventCompositorImpl(private val data: DataRepository,
                     sendAssociateUpdatedEvent(e.illustId)
                 }
             }
-            is ImportCreated, is ImportDeleted,
+            is ImportUpdated, is ImportDeleted,
             is SimilarFinderResultCreated, is SimilarFinderResultDeleted -> {
-                //import/find similar数量变化时，发送homepage state的更新事件
+                //find similar数量变化、import删除、import状态变更时，发送homepage state的更新事件
                 sendHomepageStateChangedEvent()
             }
             is StagingPostChanged -> {
@@ -133,7 +133,7 @@ class EventCompositorImpl(private val data: DataRepository,
     }
 
     private fun sendHomepageStateChangedEvent() {
-        bus.emit(HomepageStateChanged())
+        bus.emit(HomepageStateChanged)
     }
 
     private fun exportTagGlobal() {

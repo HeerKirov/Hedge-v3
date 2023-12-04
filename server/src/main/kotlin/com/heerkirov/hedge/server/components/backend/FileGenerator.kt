@@ -8,6 +8,7 @@ import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.dao.FileCacheRecords
 import com.heerkirov.hedge.server.dao.FileFingerprints
 import com.heerkirov.hedge.server.dao.FileRecords
+import com.heerkirov.hedge.server.dao.TrashedImages
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.enums.FileStatus
@@ -52,7 +53,7 @@ import kotlin.math.absoluteValue
  */
 interface FileGenerator
 
-private const val ARCHIVE_INTERVAL: Long = 1000 * 10
+private const val ARCHIVE_INTERVAL: Long = 1000
 
 class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                         private val appdata: AppDataManager,
@@ -135,7 +136,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             if(appdata.setting.storage.autoCleanCaches) {
                 val intervalDay = appdata.setting.storage.autoCleanCachesIntervalDay
                 Thread.sleep(5000)
-                executeCacheProcess(intervalDay)
+                cleanExpiredCacheFiles(intervalDay)
             }
         }
     }
@@ -159,7 +160,6 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
 
     private fun archiveDaemon() {
         try {
-            //archive线程不需要立刻启动和频繁执行，保持一个稍长的间隔。
             Thread.sleep(ARCHIVE_INTERVAL)
         }catch (e: InterruptedException) {
             return
@@ -323,14 +323,14 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
         }
     }
 
-    private fun executeCacheProcess(intervalDay: Int) {
+    private fun cleanExpiredCacheFiles(intervalDay: Int) {
         val deadline = Instant.now().minus(intervalDay.absoluteValue.toLong(), ChronoUnit.DAYS)
         for (record in data.db.sequenceOf(FileCacheRecords).filter { it.lastAccessTime lessEq deadline }) {
             val cachePath = Path(appdata.storage.cacheDir, record.archiveType.toString(), record.block, record.filename)
             cachePath.deleteIfExists()
         }
         val cnt = data.db.delete(FileCacheRecords) { it.lastAccessTime lessEq deadline }
-        if(cnt > 0) log.info("$cnt cache files is cleaned.")
+        if(cnt > 0) log.info("$cnt cache files have been cleaned.")
     }
 
     private fun processThumbnail(fileRecord: FileRecord, file: File): Tuple5<Long?, Long?, Int, Int, Long?> {

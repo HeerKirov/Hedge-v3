@@ -3,7 +3,7 @@ package com.heerkirov.hedge.server.application
 import com.heerkirov.hedge.server.components.appdata.AppDataManagerImpl
 import com.heerkirov.hedge.server.components.backend.FileGeneratorImpl
 import com.heerkirov.hedge.server.components.backend.ImportProcessorImpl
-import com.heerkirov.hedge.server.components.backend.TrashCleanerImpl
+import com.heerkirov.hedge.server.components.backend.DailyProcessorImpl
 import com.heerkirov.hedge.server.components.backend.exporter.BackendExporterImpl
 import com.heerkirov.hedge.server.components.backend.similar.SimilarFinderImpl
 import com.heerkirov.hedge.server.components.backend.watcher.PathWatcherImpl
@@ -41,8 +41,6 @@ fun runApplication(options: ApplicationOptions) {
         val file = define { FileManager(appdata, repo, bus) }
 
         val services = define {
-            define { FileGeneratorImpl(appStatus, appdata, repo, bus) }
-
             val similarFinder = define { SimilarFinderImpl(appStatus, appdata, repo, bus) }
 
             val queryManager = QueryManager(appdata, repo, bus)
@@ -82,8 +80,9 @@ fun runApplication(options: ApplicationOptions) {
             val trashManager = TrashManager(repo, bus, backendExporter, illustKit, file, bookManager, folderManager, associateManager, partitionManager, sourceManager)
             val illustManager = IllustManager(appdata, repo, bus, illustKit, sourceManager, associateManager, bookManager, folderManager, partitionManager, importManager, trashManager)
 
-            define { TrashCleanerImpl(appStatus, appdata, repo, trashManager) }
             define { EventCompositorImpl(repo, bus, backendExporter) }
+            define { FileGeneratorImpl(appStatus, appdata, repo, bus) }
+            define { DailyProcessorImpl(appStatus, appdata, repo, bus, trashManager) }
             define { ImportProcessorImpl(appdata, repo, bus, similarFinder, illustManager, importMetaManager, sourceManager) }
 
             val homepageService = HomepageService(appdata, repo, stagingPostManager)

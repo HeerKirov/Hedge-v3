@@ -720,16 +720,16 @@ class IllustManager(private val appdata: AppDataManager,
                 if(parentChanged) {
                     set(it.parentId, newParent?.id)
                     set(it.type, if(newParent != null) IllustModelType.IMAGE_WITH_PARENT else IllustModelType.IMAGE)
-                    set(it.exportedScore, if(props.score) { fromIllust.score }else{ toIllust.score } ?: newParent?.score)
-                    set(it.exportedDescription, if(props.description) { fromIllust.description }else{ toIllust.description }.ifEmpty { newParent?.description ?: "" })
+                    set(it.exportedScore, if(props.score) { if(merge) { fromIllust.score ?: toIllust.score }else{ fromIllust.score } }else{ toIllust.score } ?: newParent?.score)
+                    set(it.exportedDescription, if(props.description) { if(merge) { fromIllust.description.ifEmpty { toIllust.description } }else{ fromIllust.description } }else{ toIllust.description }.ifEmpty { newParent?.description ?: "" })
                 }else{
-                    if(props.score) set(it.exportedScore, fromIllust.score)
-                    if(props.description) set(it.exportedDescription, fromIllust.description)
+                    if(props.score) set(it.exportedScore, if(merge) { fromIllust.score ?: toIllust.score }else{ fromIllust.score })
+                    if(props.description) set(it.exportedDescription, if(merge) { fromIllust.description.ifEmpty { toIllust.description } }else{ fromIllust.description })
                 }
-                if(props.favorite) set(it.favorite, fromIllust.favorite)
+                if(props.favorite) set(it.favorite, if(merge) { fromIllust.favorite || toIllust.favorite }else{ fromIllust.favorite })
                 if(props.tagme) set(it.tagme, if(merge) { fromIllust.tagme + toIllust.tagme }else{ fromIllust.tagme })
-                if(props.score) set(it.score, fromIllust.score)
-                if(props.description) set(it.description, fromIllust.description)
+                if(props.score) set(it.score, if(merge) { fromIllust.score ?: toIllust.score }else{ fromIllust.score })
+                if(props.description) set(it.description, if(merge) { fromIllust.description.ifEmpty { toIllust.description } }else{ fromIllust.description })
                 if(props.orderTime) set(it.orderTime, fromIllust.orderTime)
                 if(props.partitionTime && fromIllust.partitionTime != toIllust.partitionTime) {
                     set(it.partitionTime, fromIllust.partitionTime)
@@ -785,7 +785,7 @@ class IllustManager(private val appdata: AppDataManager,
         }
 
         if(props.associate) {
-            associateManager.copyAssociatesFromIllust(toIllust.id, fromIllust.id)
+            associateManager.copyAssociatesFromIllust(toIllust.id, fromIllust.id, merge)
         }
 
         val newBooks = if(props.books) {

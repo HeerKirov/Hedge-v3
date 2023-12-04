@@ -14,9 +14,14 @@ interface AppEvent : BaseBusEvent
 class AppStatusChanged(val status: AppLoadStatus) : BaseBusEventImpl("app/app-status/changed"), AppEvent
 
 /**
+ * 主页的内容已更新。
+ */
+object HomepageInfoUpdated : BaseBusEventImpl("app/homepage/info/updated"), AppEvent
+
+/**
  * 主页的state相关内容发生变化。
  */
-class HomepageStateChanged : BaseBusEventImpl("app/homepage/state/changed"), AppEvent
+object HomepageStateChanged : BaseBusEventImpl("app/homepage/state/changed"), AppEvent
 
 /**
  * 中转站内容发生变化。

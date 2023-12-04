@@ -144,7 +144,7 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, O
     private val filterDeclareMapping = mapOf(
         IllustDialect.id to Illusts.id,
         IllustDialect.favorite to Illusts.favorite,
-        IllustDialect.bookMember to (((Illusts.type notEq IllustModelType.COLLECTION) and (Illusts.cachedBookCount greater 0)) or (((Illusts.type eq IllustModelType.COLLECTION) and (Illusts.cachedBookCount eq Illusts.cachedChildrenCount)))),
+        IllustDialect.bookMember to (Illusts.cachedBookCount greater 0),
         IllustDialect.score to Illusts.exportedScore,
         IllustDialect.partition to Illusts.partitionTime,
         IllustDialect.ordinal to Illusts.orderTime,
