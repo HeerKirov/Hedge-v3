@@ -20,7 +20,11 @@ dependencies {
     val logbackVersion = "1.4.11"
     val junitVersion = "4.13.2"
     val javePlatform = when(System.getProperty("os.name").toLowerCase()) {
-        "mac" -> "nativebin-osxm1"
+        "mac os x" -> if(System.getProperty("os.arch").toLowerCase() == "aarch64") {
+            "nativebin-osxm1"
+        }else{
+            "nativebin-osx64"
+        }
         "linux" -> "nativebin-linux64"
         "win" -> "nativebin-win64"
         else -> "all-deps"

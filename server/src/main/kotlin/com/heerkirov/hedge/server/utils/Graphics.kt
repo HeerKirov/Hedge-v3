@@ -24,6 +24,11 @@ object Graphics {
     const val SAMPLE_RESIZE_AREA = 400 * 400
     private val BACKGROUND_COLOR = Color(245, 245, 245)
 
+    init {
+        //在mac上，调用Graphics组件时，会生成一个愚蠢的dock栏进程。为了隐藏掉这个进程，需要设置此属性
+        System.setProperty("apple.awt.UIElement", "true")
+    }
+
     /**
      * 使用全局通用策略生成缩略图，并获得原始分辨率。
      * 全局策略中，非jpg类型的文件需要转换至jpg文件(视频需要截图)，尺寸超过一定面积的图片需要缩放至适合尺寸。

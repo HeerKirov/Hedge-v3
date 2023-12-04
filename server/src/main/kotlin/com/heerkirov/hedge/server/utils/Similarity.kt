@@ -16,6 +16,11 @@ object Similarity {
     private const val SIMPLE_HASH_PRECISION = 16
     private const val HASH_PRECISION = 32
 
+    init {
+        //在mac上，调用Graphics组件时，会生成一个愚蠢的dock栏进程。为了隐藏掉这个进程，需要设置此属性
+        System.setProperty("apple.awt.UIElement", "true")
+    }
+
     /**
      * 对目标文件执行综合分析，得出多个指纹。
      * @throws IllegalFileExtensionError 不支持的文件类型。
