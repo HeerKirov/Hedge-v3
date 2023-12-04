@@ -1,7 +1,7 @@
 {
   "name": "hedge-v3",
   "productName": "Hedge-v3-development",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "main": "target/main.js",
   "author": "Heer Kirov",
   "license": "MIT",
@@ -9,8 +9,8 @@
     "build": "tsc && node build/common/version.js",
     "start": "electron .",
     "dev": "electron . $(sh args.local.sh)",
-    "install-all": "node build/common/build.js",
-    "install": "node build/common/build.js clean install-app install-client install-frontend install-server"
+    "package-with-build": "node build/common/build.js",
+    "package": "node build/common/build.js clean install-app install-client install-frontend install-server"
   },
   "dependencies": {
     "axios": "^1.4.0",
@@ -19,7 +19,7 @@
     "ws": "^8.13.0"
   },
   "devDependencies": {
-    "@types/node": "^18.11.10",
+    "@types/node": "^20.10.3",
     "@types/unzipper": "^0.10.6",
     "@types/ws": "^8.5.5",
     "electron": "25.6.0",

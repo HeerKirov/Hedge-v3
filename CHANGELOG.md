@@ -1,3 +1,4 @@
+# v0.4.1
 ## Bug Fixes
 * 修复HQL查询中的bookMember过滤器对集合无效的问题。
 * 更新了属性克隆的策略，现在对于score/description/favorite这些属性，merge也将对其有效，已有的值不会被空值覆盖。

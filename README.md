@@ -103,13 +103,13 @@ gradle clean jlinkZip
 
 ## Build & Package
 
-在`client/build`存放有整体打包脚本。进入`client`目录，执行build script自动完成打包。这将完成默认打包流程。打包后的产物位于`dist/Hedge`。
+在`client/build`存放有整体打包脚本。进入`client`目录，执行build script自动完成打包。这将完成默认打包流程。打包后的产物位于`dist`目录。
 ```sh
 cd client
-yarn install
+yarn package
 ```
 
-默认流程不包含编译流程。要想在打包的同时编译所有组件，需要使用`yarn install-all`。此外，也可以在此命令后添加子命令，以自定义要编译和打包的部分。
+默认流程不包含编译流程。要想在打包的同时编译所有组件，需要使用`yarn install-with-build`。此外，也可以在此命令后添加子命令，以自定义要编译和打包的部分。
 ```sh
 clean               # 清空dist目录
 build-client        # 对client项目执行编译
