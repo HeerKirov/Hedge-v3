@@ -71,6 +71,7 @@ function installClient(target) {
     fs.rmSync(path.join(appPath, "node_modules/typescript"), {recursive: true, force: true})
     fs.rmSync(path.join(appPath, "node_modules/electron/dist"), {recursive: true, force: true})
     fs.rmSync(path.join(appPath, "node_modules/@types"), {recursive: true, force: true})
+    fs.rmSync(path.join(appPath, "node_modules/.bin"), {recursive: true, force: true})
 }
 
 function buildFrontend() {

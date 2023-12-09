@@ -73,6 +73,7 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, st
                 preload: path.join(__dirname, 'ipc/preload.js'),
             },
             autoHideMenuBar: true,
+            titleBarStyle: options.platform === "darwin" ? "hiddenInset" : "default",
             backgroundColor: theme.getRuntimeTheme() === "dark" ? "#111417" : "#FFFFFF",
             ...windowBound,
             ...config
@@ -125,7 +126,7 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, st
             return null
         }
         if(settingWindow == null) {
-            settingWindow = newBrowserWindow('/setting', {width: 1080, height: 720})
+            settingWindow = newBrowserWindow('/setting', {width: 1080, height: 720, fullscreenable: false, maximizable: false})
             settingWindow.on("closed", () => {
                 settingWindow = null
             })
@@ -193,7 +194,7 @@ function createWindowBoundManager(storage: StorageManager) {
     function getWindowConfiguration(pathname: string, defaultBound?: {width?: number, height?: number}): BrowserWindowConstructorOptions {
         const bound = bounds[pathname]
         if(bound !== undefined) {
-            return {fullscreen: bound.fullscreen, x: bound.x, y: bound.y, width: bound.width, height: bound.height}
+            return {x: bound.x, y: bound.y, width: bound.width, height: bound.height}
         }else{
             return {width: defaultBound?.width ?? 1280, height: defaultBound?.height ?? 720}
         }

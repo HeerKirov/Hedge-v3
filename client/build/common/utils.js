@@ -13,6 +13,20 @@ function makePackageProduction(packageFile) {
     }
 }
 
+function renderPListFile(source, target, packageFile) {
+    const buf = fs.readFileSync(source)
+    const s = buf.toString("utf-8")
+    const ver = getClientVersion(packageFile)
+    const ss = s.replaceAll("{version}", ver)
+    fs.writeFileSync(target, ss)
+}
+
+function getClientVersion(packageFile) {
+    const s = fs.readFileSync(packageFile, {encoding: 'utf-8'})
+    const json = JSON.parse(s)
+    return json["version"]
+}
+
 function getServerVersion() {
     const c = child.spawnSync("./gradlew", ["printVersion", "-q"], {cwd: "../server"})
     if(c.stdout !== null) {
@@ -22,4 +36,4 @@ function getServerVersion() {
     }
 }
 
-module.exports = {makePackageProduction, getServerVersion}
+module.exports = {makePackageProduction, renderPListFile, getServerVersion}

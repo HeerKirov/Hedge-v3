@@ -48,7 +48,7 @@ function installElectronApp(target) {
     const appPath = path.join(target, APP_NAME)
     child.spawnSync("cp", ["-R", "node_modules/electron/dist/Electron.app", appPath])
     fs.renameSync(path.join(appPath, "Contents/MacOS/Electron"), path.join(appPath, `Contents/MacOS/${APP_BIN_NAME}`))
-    fs.copyFileSync(path.join(__dirname, "files/Info.plist"), path.join(appPath, "Contents/Info.plist"))
+    utils.renderPListFile(path.join(__dirname, "files/Info.template.plist"), path.join(appPath, "Contents/Info.plist"), "package.json")
     fs.copyFileSync(path.join(__dirname, "files", APP_ICN_NAME), path.join(appPath, `Contents/Resources/${APP_ICN_NAME}`))
     fs.rmSync(path.join(appPath, "Contents/Resources/electron.icns"))
     fs.rmSync(path.join(appPath, "Contents/Resources/default_app.asar"))
@@ -72,6 +72,7 @@ function installClient(target) {
     fs.rmSync(path.join(appPath, "node_modules/typescript"), {recursive: true, force: true})
     fs.rmSync(path.join(appPath, "node_modules/electron/dist"), {recursive: true, force: true})
     fs.rmSync(path.join(appPath, "node_modules/@types"), {recursive: true, force: true})
+    fs.rmSync(path.join(appPath, "node_modules/.bin"), {recursive: true, force: true})
 }
 
 function buildFrontend() {
