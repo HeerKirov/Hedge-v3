@@ -8,18 +8,28 @@ import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.ImportStatus
 import com.heerkirov.hedge.server.functions.manager.StagingPostManager
 import com.heerkirov.hedge.server.model.HomepageRecord
+import com.heerkirov.hedge.server.utils.DateTime.toSystemZonedTime
 import com.heerkirov.hedge.server.utils.business.filePathFrom
+import com.heerkirov.hedge.server.utils.runIf
 import org.ktorm.dsl.*
 import org.ktorm.entity.count
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
+import java.time.Instant
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 class HomepageService(private val appdata: AppDataManager, private val data: DataRepository, private val stagingPostManager: StagingPostManager) {
     fun getHomepageInfo(): HomepageRes {
         val currentRecord = data.db.sequenceOf(HomepageRecords).firstOrNull()
 
-        return if(currentRecord != null) {
+        val todayDate = Instant.now()
+            .runIf(appdata.setting.server.timeOffsetHour != null && appdata.setting.server.timeOffsetHour!!!= 0) {
+                this.minus(appdata.setting.server.timeOffsetHour!!.toLong(), ChronoUnit.HOURS)
+            }
+            .toSystemZonedTime().toLocalDate()
+
+        return if(currentRecord != null && currentRecord.date == todayDate) {
             mapToHomepageRes(currentRecord)
         }else{
             HomepageRes(false, LocalDate.now(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
@@ -44,6 +54,7 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
                 .map { HomepageRes.Illust(it[Illusts.id]!!, filePathFrom(it), it[Illusts.partitionTime]!!) }
                 .associateBy { it.id }
                 .let { record.content.todayImageIds.map(it::get) }
+                .filterNotNull()
         }
 
         val books = if(record.content.todayBookIds.isEmpty()) emptyList() else {
@@ -136,7 +147,7 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
             .limit(20)
             .map { HomepageRes.Illust(it[Illusts.id]!!, filePathFrom(it), it[Illusts.partitionTime]!!) }
 
-        return HomepageRes(true, record.date, todayImages.filterNotNull(), books, authorAndTopics, recentImages, historyImages)
+        return HomepageRes(true, record.date, todayImages, books, authorAndTopics, recentImages, historyImages)
     }
 
 }

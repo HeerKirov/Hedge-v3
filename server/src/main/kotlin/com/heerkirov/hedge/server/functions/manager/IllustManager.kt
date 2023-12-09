@@ -248,6 +248,7 @@ class IllustManager(private val appdata: AppDataManager,
             if(illust.parentId != null) processCollectionChildrenChanged(illust.parentId, -1)
 
             bus.emit(IllustDeleted(illust.id, IllustType.IMAGE))
+            if(illust.parentId != null) bus.emit(IllustImagesChanged(illust.parentId, emptyList(), listOf(illust.id)))
         }else{
             val children = data.db.from(Illusts).select(Illusts.id)
                 .where { Illusts.parentId eq illust.id }

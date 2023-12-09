@@ -48,32 +48,33 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
             && (newAuthors.isPresent || authorCount == 0)
             && (newTopics.isPresent || topicCount == 0)
             && (newTags.isPresent || tagCount == 0)){
+
             metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, analyseStatisticCount = false, remainNotExported = true)
             metaManager.deleteMetaTags(thisId, IllustAuthorRelations, Authors, analyseStatisticCount = false, remainNotExported = true)
             metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, analyseStatisticCount = false, remainNotExported = true)
             metaManager.deleteAnnotations(thisId, IllustAnnotationRelations)
+
+            val tagAnnotations = if(newTags.isUndefined) null else
+                metaManager.processMetaTags(thisId, creating, false,
+                    metaTag = Tags,
+                    metaRelations = BookTagRelations,
+                    metaAnnotationRelations = TagAnnotationRelations,
+                    newTagIds = metaManager.validateAndExportTag(newTags.value))
+            val topicAnnotations = if(newTopics.isUndefined) null else
+                metaManager.processMetaTags(thisId, creating, false,
+                    metaTag = Topics,
+                    metaRelations = BookTopicRelations,
+                    metaAnnotationRelations = TopicAnnotationRelations,
+                    newTagIds = metaManager.validateAndExportTopic(newTopics.value))
+            val authorAnnotations = if(newAuthors.isUndefined) null else
+                metaManager.processMetaTags(thisId, creating, false,
+                    metaTag = Authors,
+                    metaRelations = BookAuthorRelations,
+                    metaAnnotationRelations = AuthorAnnotationRelations,
+                    newTagIds = metaManager.validateAndExportAuthor(newAuthors.value))
+
+            processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
         }
-
-        val tagAnnotations = if(newTags.isUndefined) null else
-            metaManager.processMetaTags(thisId, creating, false,
-                metaTag = Tags,
-                metaRelations = BookTagRelations,
-                metaAnnotationRelations = TagAnnotationRelations,
-                newTagIds = metaManager.validateAndExportTag(newTags.value))
-        val topicAnnotations = if(newTopics.isUndefined) null else
-            metaManager.processMetaTags(thisId, creating, false,
-                metaTag = Topics,
-                metaRelations = BookTopicRelations,
-                metaAnnotationRelations = TopicAnnotationRelations,
-                newTagIds = metaManager.validateAndExportTopic(newTopics.value))
-        val authorAnnotations = if(newAuthors.isUndefined) null else
-            metaManager.processMetaTags(thisId, creating, false,
-                metaTag = Authors,
-                metaRelations = BookAuthorRelations,
-                metaAnnotationRelations = AuthorAnnotationRelations,
-                newTagIds = metaManager.validateAndExportAuthor(newAuthors.value))
-
-        processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
     }
 
     /**

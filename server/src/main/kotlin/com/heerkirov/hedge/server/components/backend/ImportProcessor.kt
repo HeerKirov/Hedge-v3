@@ -6,10 +6,12 @@ import com.heerkirov.hedge.server.components.backend.similar.SimilarFinder
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
+import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.dao.ImportRecords
 import com.heerkirov.hedge.server.dto.form.IllustImageCreateForm
 import com.heerkirov.hedge.server.dto.form.SourceDataUpdateForm
 import com.heerkirov.hedge.server.dto.res.SourceDataIdentity
+import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.enums.ImportStatus
 import com.heerkirov.hedge.server.events.*
 import com.heerkirov.hedge.server.exceptions.BusinessException
@@ -36,7 +38,8 @@ import java.time.temporal.ChronoUnit
  */
 interface ImportProcessor : Component
 
-class ImportProcessorImpl(private val appdata: AppDataManager,
+class ImportProcessorImpl(private val appStatus: AppStatusDriver,
+                          private val appdata: AppDataManager,
                           private val data: DataRepository,
                           private val bus: EventBus,
                           private val similarFinder: SimilarFinder,
@@ -53,7 +56,9 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
     }
 
     override fun close() {
-        autoClean()
+        if(appStatus.status == AppLoadStatus.READY) {
+            autoClean()
+        }
     }
 
     private fun autoClean() {

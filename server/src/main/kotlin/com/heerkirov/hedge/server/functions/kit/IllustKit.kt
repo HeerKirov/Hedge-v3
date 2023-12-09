@@ -103,32 +103,33 @@ class IllustKit(private val data: DataRepository,
                 && (newTags.isPresent || tagCount == 0)) {
             //若发现未修改列表数量都为0，已修改至少一项不为0: 此时从"从依赖项获得exportedTag"的状态转向"自己持有tag"的状态，清除所有metaTag
             //tips: 在copyFromChildren为false的情况下，认为是image的更改，要求修改统计计数；否则不予修改
+
             metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, analyseStatisticCount, true)
             metaManager.deleteMetaTags(thisId, IllustAuthorRelations, Authors, analyseStatisticCount, true)
             metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, analyseStatisticCount, true)
             metaManager.deleteAnnotations(thisId, IllustAnnotationRelations)
+
+            val tagAnnotations = if(newTags.isUndefined) null else
+                metaManager.processMetaTags(thisId, creating, analyseStatisticCount,
+                    metaTag = Tags,
+                    metaRelations = IllustTagRelations,
+                    metaAnnotationRelations = TagAnnotationRelations,
+                    newTagIds = metaManager.validateAndExportTag(newTags.value, ignoreError = ignoreNotExist))
+            val topicAnnotations = if(newTopics.isUndefined) null else
+                metaManager.processMetaTags(thisId, creating, analyseStatisticCount,
+                    metaTag = Topics,
+                    metaRelations = IllustTopicRelations,
+                    metaAnnotationRelations = TopicAnnotationRelations,
+                    newTagIds = metaManager.validateAndExportTopic(newTopics.value, ignoreError = ignoreNotExist))
+            val authorAnnotations = if(newAuthors.isUndefined) null else
+                metaManager.processMetaTags(thisId, creating, analyseStatisticCount,
+                    metaTag = Authors,
+                    metaRelations = IllustAuthorRelations,
+                    metaAnnotationRelations = AuthorAnnotationRelations,
+                    newTagIds = metaManager.validateAndExportAuthor(newAuthors.value, ignoreError = ignoreNotExist))
+
+            processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
         }
-
-        val tagAnnotations = if(newTags.isUndefined) null else
-            metaManager.processMetaTags(thisId, creating, analyseStatisticCount,
-                metaTag = Tags,
-                metaRelations = IllustTagRelations,
-                metaAnnotationRelations = TagAnnotationRelations,
-                newTagIds = metaManager.validateAndExportTag(newTags.value, ignoreError = ignoreNotExist))
-        val topicAnnotations = if(newTopics.isUndefined) null else
-            metaManager.processMetaTags(thisId, creating, analyseStatisticCount,
-                metaTag = Topics,
-                metaRelations = IllustTopicRelations,
-                metaAnnotationRelations = TopicAnnotationRelations,
-                newTagIds = metaManager.validateAndExportTopic(newTopics.value, ignoreError = ignoreNotExist))
-        val authorAnnotations = if(newAuthors.isUndefined) null else
-            metaManager.processMetaTags(thisId, creating, analyseStatisticCount,
-                metaTag = Authors,
-                metaRelations = IllustAuthorRelations,
-                metaAnnotationRelations = AuthorAnnotationRelations,
-                newTagIds = metaManager.validateAndExportAuthor(newAuthors.value, ignoreError = ignoreNotExist))
-
-        processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
     }
 
     /**
