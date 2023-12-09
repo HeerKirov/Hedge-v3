@@ -13,10 +13,10 @@ const emit = defineEmits<{
 
 const { assetsUrl } = useAssets()
 
-const { targetFile } = useImagePreviewContext(props.context, () => emit("close"))
+const { targetFile, arrow } = useImagePreviewContext(props.context, () => emit("close"))
 
 </script>
 
 <template>
-    <PlayBoard :src="assetsUrl(targetFile)"/>
+    <PlayBoard :src="assetsUrl(targetFile)" arrow-enabled @arrow="arrow"/>
 </template>

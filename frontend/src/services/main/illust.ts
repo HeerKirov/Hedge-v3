@@ -383,13 +383,6 @@ export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref
                 return mapResponse(await client.illust.collection.relatedItems.get(path, {limit: 9}), d => ({associates: d.associates, collection: null, books: d.books, folders: d.folders}))
             }
         },
-        update: client => (path, form: ImageRelatedUpdateForm) => {
-            if(illustType.value === "IMAGE") {
-                return client.illust.image.relatedItems.update(path, form)
-            }else{
-                return client.illust.collection.relatedItems.update(path, form)
-            }
-        },
         eventFilter: c => event => event.eventType === "entity/illust/related-items/updated" && event.illustId === c.path
     })
 

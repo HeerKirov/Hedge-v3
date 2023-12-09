@@ -16,6 +16,7 @@ const switchSideBar = () => isOpen.value = !isOpen.value
 
 <template>
     <div :class="$style['side-bar']">
+        <div :class="$style['app-region-area']"/>
         <Button :class="$style['collapse-button']" icon="bars" square @click="switchSideBar"/>
         <BottomLayout :class="$style['bottom-layout']">
             <div class="px-1">
@@ -44,7 +45,16 @@ const switchSideBar = () => isOpen.value = !isOpen.value
         background-color: $dark-mode-block-color
         border-right-color: $dark-mode-border-color
 
+.app-region-area
+    -webkit-app-region: drag
+    position: absolute
+    left: 0
+    top: 0
+    width: 100%
+    height: $title-bar-height
+
 .collapse-button
+    -webkit-app-region: none
     position: absolute
     right: $spacing-1
     top: $spacing-1

@@ -5,11 +5,13 @@ import VideoBoard from "./VideoBoard.vue"
 
 const props = defineProps<{
     src: string
+    arrowEnabled?: boolean
     zoomEnabled?: boolean
     zoomValue?: number
 }>()
 
 const emit = defineEmits<{
+    (e: "arrow", direction: "left" | "right"): void
     (e: "update:zoom-enabled", v: boolean): void
 }>()
 
@@ -36,6 +38,6 @@ watch(type, type => emit("update:zoom-enabled", type === "Image"), {immediate: t
 </script>
 
 <template>
-    <ImageBoard v-if="type === 'Image'" :src="src" :zoom-value="zoomValue ?? 100"/>
-    <VideoBoard v-else-if="type === 'Video'" :src="src"/>
+    <ImageBoard v-if="type === 'Image'" :src="src" :arrow-enabled="arrowEnabled ?? false" :zoom-value="zoomValue ?? 100" @arrow="$emit('arrow', $event)"/>
+    <VideoBoard v-else-if="type === 'Video'" :src="src" :arrow-enabled="arrowEnabled ?? false" @arrow="$emit('arrow', $event)"/>
 </template>

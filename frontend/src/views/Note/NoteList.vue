@@ -6,6 +6,9 @@ import { ElementPopupMenu } from "@/components/interaction"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 import { useNoteContext } from "@/services/main/note"
 import { NoteRecord } from "@/functions/http-client/api/note"
+import { useAppEnv } from "@/functions/app"
+
+const { platform } = useAppEnv()
 
 const { paneState, list: { listview: { data, reset }, filter, toggleCompleted, togglePinned, resumeItem, deleteItem } } = useNoteContext()
 
@@ -55,7 +58,7 @@ const { popup } = useDynamicPopupMenu<NoteRecord>(note => note.deleted ? [
 <template>
     <BottomLayout class="fixed">
         <template #top>
-            <MiddleLayout class="p-1">
+            <MiddleLayout :class="['p-1', 'app-region', platform === 'darwin' ? $style['darwin-margin'] : null]">
                 <template #left>
                     <ElementPopupMenu :items="filterMenuItems" position="bottom" v-slot="{ setEl, popup }">
                         <Button :ref="setEl" :icon="FILTER_BUTTON_ICONS[filter]" @click="popup">{{ FILTER_BUTTON_LABELS[filter] }}</Button>
@@ -86,6 +89,10 @@ const { popup } = useDynamicPopupMenu<NoteRecord>(note => note.deleted ? [
 
 <style module lang="sass">
 @import "../../styles/base/size"
+
+.darwin-margin
+    $content-margin-size: calc(($title-bar-height - $element-height-std) / 2)
+    padding-left: #{$content-margin-size + $macos-buttons-width}
 
 .item
     padding: $spacing-2

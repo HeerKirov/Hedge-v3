@@ -74,6 +74,7 @@ const onKeydown = (e: KeyboardEvent) => {
             value.value = (e.target as HTMLInputElement).value
             emit("update:value", value.value)
             emit("enter", keyEvent)
+            e.preventDefault()
         }
     }
 }

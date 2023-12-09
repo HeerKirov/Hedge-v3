@@ -61,6 +61,16 @@ function useListviewMode(ctx: ListviewModeProps, close: () => void) {
         }
     }
 
+    const arrow = (direction: "left" | "right") => {
+        if(idx !== undefined) {
+            if(direction === "left" && idx > 0) {
+                gotoIndex(idx - 1)
+            }else if(direction === "right" && ctx.listview.proxy.syncOperations.count() && idx < ctx.listview.proxy.syncOperations.count()! - 1) {
+                gotoIndex(idx + 1)
+            }
+        }
+    }
+
     watch(ctx.lastSelected, watchRefresh, {immediate: true})
 
     useInterceptedKey(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"], e => {
@@ -87,12 +97,20 @@ function useListviewMode(ctx: ListviewModeProps, close: () => void) {
         }
     })
 
-    return {targetFile}
+    return {targetFile, arrow}
 }
 
 function useArrayMode(ctx: ArrayModeProps, close: () => void) {
     let idx: number = ctx.initIndex ?? 0
     const targetFile = ref<string | null>(ctx.files[idx])
+
+    const arrow = (direction: "left" | "right") => {
+        if(direction === "left" && idx > 0) {
+            targetFile.value = ctx.files[--idx]
+        }else if(direction === "right" && idx < ctx.files.length - 1) {
+            targetFile.value = ctx.files[++idx]
+        }
+    }
 
     useInterceptedKey(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"], e => {
         if((e.key === "ArrowUp" || e.key === "ArrowLeft") && idx > 0) {
@@ -104,7 +122,7 @@ function useArrayMode(ctx: ArrayModeProps, close: () => void) {
         }
     })
 
-    return {targetFile}
+    return {targetFile, arrow}
 }
 
 function getMultipleCtx(ctx: ListviewModeProps): ArrayModeProps {

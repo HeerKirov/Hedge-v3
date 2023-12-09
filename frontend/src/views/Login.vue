@@ -42,6 +42,7 @@ const doLogin = async () => {
 </script>
 
 <template>
+    <div :class="$style['top-bar']"/>
     <div class="fixed center has-text-centered">
         <template v-if="useTouchId">
             <Icon icon="fingerprint" size="3x" fade/>
@@ -53,3 +54,15 @@ const doLogin = async () => {
         </template>
     </div>
 </template>
+
+<style module lang="sass">
+@import "../styles/base/size"
+
+.top-bar
+    -webkit-app-region: drag
+    position: fixed
+    top: 0
+    left: 0
+    right: 0
+    height: $title-bar-height
+</style>

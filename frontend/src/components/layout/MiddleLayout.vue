@@ -25,11 +25,12 @@ import { Flex } from "@/components/layout"
     height: 100%
 
     > .layout-container
+        -webkit-app-region: none
         align-items: center
 
         min-width: 1rem
         &:not(:empty)
-            min-width: 8rem
+            min-width: 4rem
 
         &:first-child
             justify-content: flex-start

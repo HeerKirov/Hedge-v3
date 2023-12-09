@@ -3,6 +3,9 @@ import { Button, Block } from "@/components/universal"
 import { Input } from "@/components/form"
 import { BottomLayout, MiddleLayout } from "@/components/layout"
 import { useNoteDetailContext } from "@/services/main/note"
+import { useAppEnv } from "@/functions/app"
+
+const { platform } = useAppEnv()
 
 const { paneState, form, setTitle, setContent, toggleCompleted, togglePinned, deleteItem } = useNoteDetailContext()
 
@@ -11,7 +14,7 @@ const { paneState, form, setTitle, setContent, toggleCompleted, togglePinned, de
 <template>
     <BottomLayout class="fixed">
         <template #top>
-            <MiddleLayout class="p-1">
+            <MiddleLayout :class="['p-1', 'app-region', platform === 'darwin' ? $style['darwin-margin'] : null]">
                 <template #left>
                     <Button square icon="arrow-left" @click="paneState.closeView"/>
                 </template>
@@ -37,6 +40,10 @@ const { paneState, form, setTitle, setContent, toggleCompleted, togglePinned, de
 <style module lang="sass">
 @import "../../styles/base/size"
 @import "../../styles/base/color"
+
+.darwin-margin
+    $content-margin-size: calc(($title-bar-height - $element-height-std) / 2)
+    padding-left: #{$content-margin-size + $macos-buttons-width}
 
 .block
     padding: $spacing-1

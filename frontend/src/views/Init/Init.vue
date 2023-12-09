@@ -40,6 +40,7 @@ const submitTheme = (theme: NativeTheme) => {
 </script>
 
 <template>
+    <div :class="$style['top-bar']"/>
     <Block :class="[$style.area, 'fixed', 'center', 'p-4']" mode="shadow">
         <WelcomePage v-if="page === 0" @next="page++"/>
         <PasswordPage v-else-if="page === 1" v-bind="data.password" @submit="submitPassword"/>
@@ -50,6 +51,16 @@ const submitTheme = (theme: NativeTheme) => {
 </template>
 
 <style module lang="sass">
+@import "../../styles/base/size"
+
+.top-bar
+    -webkit-app-region: drag
+    position: fixed
+    top: 0
+    left: 0
+    right: 0
+    height: $title-bar-height
+
 .area
     height: 31.25rem
     width: 25rem

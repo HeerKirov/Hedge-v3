@@ -101,6 +101,7 @@ export function useNoteDetailContext() {
     }))
 
     const submit = async () => {
+        console.log("submit")
         if(paneState.mode.value === "create") {
             if(form.value.title || form.value.content) {
                 const res = await createFetch({title: form.value.title, content: form.value.content, status: form.value.pinned ? "PINNED" : form.value.completed ? "COMPLETED" : "GENERAL"})
