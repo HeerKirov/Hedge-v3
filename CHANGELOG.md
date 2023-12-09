@@ -1,3 +1,4 @@
+# v0.4.2
 ## Bug Fixes
 * 修复macOS下窗口无法全屏的问题。
 * 修复在Input内输入Enter按键时，会触发两次update事件的问题。
