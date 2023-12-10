@@ -236,7 +236,7 @@ $margin-x: $spacing-4
         visibility: hidden
     .image
         background-color: $light-mode-block-color
-        @media (color-prefers-scheme: dark) 
+        @media (prefers-color-scheme: dark) 
             background-color: $dark-mode-block-color
     .block, .book
         border-width: 0
