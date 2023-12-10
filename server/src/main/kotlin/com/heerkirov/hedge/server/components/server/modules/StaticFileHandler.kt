@@ -6,6 +6,7 @@ import com.heerkirov.hedge.server.functions.manager.FileManager
 import io.javalin.Javalin
 import io.javalin.http.Context
 import io.javalin.http.HttpStatus
+import io.javalin.http.util.SeekableWriter
 import org.eclipse.jetty.server.handler.ResourceHandler
 
 class StaticFileHandler(private val archive: FileManager) : Routes {
@@ -16,6 +17,7 @@ class StaticFileHandler(private val archive: FileManager) : Routes {
         resourceHandler.resourceBase = "/"
         resourceHandler.isDirAllowed = false
         resourceHandler.isEtags = true
+        SeekableWriter.chunkSize = 1000 * 1000 * 4
     }
 
     override fun handle(javalin: Javalin) {

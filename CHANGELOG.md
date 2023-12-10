@@ -1,3 +1,8 @@
+## Bug Fixes
+* 修复了视频播放时拖动定位响应慢的问题。问题出在默认块太小导致请求太多，因此调整了默认的chunk size。
+## Features
+* 添加使用文件名查询对应的source identity和image id的API。
+
 # v0.4.2
 ## Bug Fixes
 * 修复macOS下窗口无法全屏的问题。
