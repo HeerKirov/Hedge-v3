@@ -38,7 +38,7 @@ class ImportService(private val appdata: AppDataManager,
                     private val fileManager: FileManager,
                     private val illustManager: IllustManager,
                     private val importManager: ImportManager,
-                    private val importMetaManager: ImportMetaManager,
+                    private val sourceAnalyzeManager: SourceAnalyzeManager,
                     private val sourceDataManager: SourceDataManager,
                     private val pathWatcher: PathWatcher) {
     private val orderTranslator = OrderTranslator {
@@ -247,7 +247,7 @@ class ImportService(private val appdata: AppDataManager,
                 val sourceForms = mutableListOf<Pair<SourceDataIdentity, SourceDataUpdateForm>>()
                 for (record in filteredRecords) {
                     val source = try {
-                        importMetaManager.analyseSourceMeta(record.fileName)
+                        sourceAnalyzeManager.analyseSourceMeta(record.fileName)
                     }catch (e: BusinessException) {
                         errors.compute(record.id) { _, info ->
                             ImportRecord.StatusInfo(

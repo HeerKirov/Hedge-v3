@@ -10,6 +10,7 @@ import com.heerkirov.hedge.server.dto.form.SourceDataUpdateForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.exceptions.*
+import com.heerkirov.hedge.server.functions.manager.SourceAnalyzeManager
 import com.heerkirov.hedge.server.functions.manager.SourceDataManager
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.utils.business.collectBulkResult
@@ -23,7 +24,11 @@ import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
 
-class SourceDataService(private val appdata: AppDataManager, private val data: DataRepository, private val sourceManager: SourceDataManager, private val queryManager: QueryManager) {
+class SourceDataService(private val appdata: AppDataManager,
+                        private val data: DataRepository,
+                        private val sourceManager: SourceDataManager,
+                        private val sourceAnalyzeManager: SourceAnalyzeManager,
+                        private val queryManager: QueryManager) {
     private val orderTranslator = OrderTranslator {
         "rowId" to SourceDatas.id
         "sourceId" to SourceDatas.sourceId
@@ -239,5 +244,38 @@ class SourceDataService(private val appdata: AppDataManager, private val data: D
             val collectTime = sourceData?.third
             SourceDataCollectStatus(path, count, diffIdCount, collected, collectStatus, collectTime)
         }
+    }
+
+    /**
+     * 该API调用import文件名解析，将传入的filename解析为对应的source identity以及匹配的image。
+     */
+    fun analyseSourceName(filenames: List<String>): List<SourceDataAnalyseResult> {
+        val ret = mutableListOf<SourceDataAnalyseResult>()
+        for (filename in filenames) {
+            val r = try {
+                sourceAnalyzeManager.analyseSourceMeta(filename)
+            }catch (e: BusinessException) {
+                ret.add(SourceDataAnalyseResult(filename, null, null, e.message!!))
+                continue
+            }
+            val sourceDataPath = if(r != null) r.first else {
+                ret.add(SourceDataAnalyseResult(filename, null, null, null))
+                continue
+            }
+
+            val imageId = data.db.from(Illusts)
+                .select(Illusts.id)
+                .whereWithConditions {
+                    it += Illusts.sourceId eq sourceDataPath.sourceId
+                    it += Illusts.sourceSite eq sourceDataPath.sourceSite
+                    if(sourceDataPath.sourcePart != null) it += Illusts.sourcePart eq sourceDataPath.sourcePart
+                    if(sourceDataPath.sourcePartName != null) it += Illusts.sourcePartName eq sourceDataPath.sourcePartName
+                }
+                .map { it[Illusts.id]!! }
+                .firstOrNull()
+
+            ret.add(SourceDataAnalyseResult(filename, sourceDataPath, imageId, null))
+        }
+        return ret
     }
 }

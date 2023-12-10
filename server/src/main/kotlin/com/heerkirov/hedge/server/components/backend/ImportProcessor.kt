@@ -16,7 +16,7 @@ import com.heerkirov.hedge.server.enums.ImportStatus
 import com.heerkirov.hedge.server.events.*
 import com.heerkirov.hedge.server.exceptions.BusinessException
 import com.heerkirov.hedge.server.functions.manager.IllustManager
-import com.heerkirov.hedge.server.functions.manager.ImportMetaManager
+import com.heerkirov.hedge.server.functions.manager.SourceAnalyzeManager
 import com.heerkirov.hedge.server.functions.manager.SourceDataManager
 import com.heerkirov.hedge.server.library.framework.Component
 import com.heerkirov.hedge.server.model.FindSimilarTask
@@ -44,7 +44,7 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                           private val bus: EventBus,
                           private val similarFinder: SimilarFinder,
                           private val illustManager: IllustManager,
-                          private val importMetaManager: ImportMetaManager,
+                          private val sourceAnalyzeManager: SourceAnalyzeManager,
                           private val sourceDataManager: SourceDataManager) : ImportProcessor {
     init {
         bus.on(arrayOf(FileReady::class, FileProcessError::class)) {
@@ -125,7 +125,7 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
 
             val source = if(setting.import.autoAnalyseSourceData) {
                 try {
-                    importMetaManager.analyseSourceMeta(record.fileName)
+                    sourceAnalyzeManager.analyseSourceMeta(record.fileName)
                 }catch (e: BusinessException) {
                     errors.compute(record.id) { _, info ->
                         ImportRecord.StatusInfo(

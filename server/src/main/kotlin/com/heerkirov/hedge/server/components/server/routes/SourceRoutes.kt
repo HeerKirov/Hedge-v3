@@ -6,6 +6,8 @@ import com.heerkirov.hedge.server.dto.filter.*
 import com.heerkirov.hedge.server.dto.res.SourceDataPath
 import com.heerkirov.hedge.server.dto.res.SourceMappingTargetItem
 import com.heerkirov.hedge.server.dto.res.SourceTagPath
+import com.heerkirov.hedge.server.exceptions.ParamTypeError
+import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.service.SourceDataService
 import com.heerkirov.hedge.server.functions.service.SourceMappingService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
@@ -14,6 +16,7 @@ import com.heerkirov.hedge.server.library.form.queryAsFilter
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
+import io.javalin.http.bodyAsClass
 import io.javalin.http.pathParamAsClass
 
 class SourceRoutes(private val sourceDataService: SourceDataService,
@@ -26,6 +29,7 @@ class SourceRoutes(private val sourceDataService: SourceDataService,
                     post(sourceData::create)
                     post("bulk", sourceData::bulk)
                     post("collect-status", sourceData::collectStatus)
+                    post("analyse-name", sourceData::analyseSourceName)
                     path("{source_site}/{source_id}") {
                         get(sourceData::get)
                         patch(sourceData::update)
@@ -91,6 +95,13 @@ class SourceRoutes(private val sourceDataService: SourceDataService,
         fun collectStatus(ctx: Context) {
             val paths = ctx.bodyAsListForm<SourceDataPath>()
             ctx.json(sourceDataService.getCollectStatus(paths))
+        }
+
+        fun analyseSourceName(ctx: Context) {
+            val filenames = try { ctx.bodyAsClass<List<String>>() } catch (e: Exception) {
+                throw be(ParamTypeError("filenames", e.message ?: "cannot convert to List<String>"))
+            }
+            ctx.json(sourceDataService.analyseSourceName(filenames))
         }
     }
 

@@ -22,6 +22,8 @@ data class SourceDataCollectStatus(val source: SourceDataPath,
                                    val collectStatus: SourceEditStatus?,
                                    val collectTime: Instant?)
 
+data class SourceDataAnalyseResult(val filename: String, val source: SourceDataPath?, val imageId: Int?, val error: String?)
+
 data class SourceDataAdditionalInfoDto(val field: String, val label: String, val value: String)
 
 data class SourceTagDto(val code: String, val type: String, val name: String, val otherName: String?)

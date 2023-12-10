@@ -21,7 +21,7 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
 
-class ImportMetaManager(private val appdata: AppDataManager) {
+class SourceAnalyzeManager(private val appdata: AppDataManager) {
     /**
      * 对一条import记录的内容进行解析，得到source元数据。
      * @throws InvalidRegexError (regex) 执行正则表达式时发生错误，怀疑是表达式或相关参数没写对
