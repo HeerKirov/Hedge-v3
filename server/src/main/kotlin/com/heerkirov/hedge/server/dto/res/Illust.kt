@@ -18,8 +18,6 @@ data class IllustRes(val id: Int, val type: IllustType, val childrenCount: Int?,
 
 data class IllustSimpleRes(val id: Int, val filePath: FilePath)
 
-data class IllustCollectionSimpleRes(val id: Int, val filePath: FilePath, val childrenCount: Int)
-
 data class IllustDetailRes(val id: Int, val type: IllustType, val childrenCount: Int?, val filePath: FilePath,
                            val extension: String, val size: Long, val resolutionWidth: Int, val resolutionHeight: Int, val videoDuration: Long,
                            val topics: List<TopicSimpleRes>, val authors: List<AuthorSimpleRes>, val tags: List<TagSimpleRes>,
@@ -47,8 +45,6 @@ data class IllustParent(val id: Int, val filePath: FilePath, val childrenCount: 
 data class IllustLocationRes(val id: Int, val index: Int, val type: IllustType)
 
 data class PartitionRes(val date: LocalDate, val count: Int)
-
-data class PartitionMonthRes(val year: Int, val month: Int, val dayCount: Int, val count: Int)
 
 fun newIllustRes(it: QueryRowSet): IllustRes {
     val id = it[Illusts.id]!!

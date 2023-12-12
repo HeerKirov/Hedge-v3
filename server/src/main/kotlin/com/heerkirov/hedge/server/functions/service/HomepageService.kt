@@ -8,26 +8,20 @@ import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.ImportStatus
 import com.heerkirov.hedge.server.functions.manager.StagingPostManager
 import com.heerkirov.hedge.server.model.HomepageRecord
-import com.heerkirov.hedge.server.utils.DateTime.toSystemZonedTime
+import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
 import com.heerkirov.hedge.server.utils.business.filePathFrom
-import com.heerkirov.hedge.server.utils.runIf
 import org.ktorm.dsl.*
 import org.ktorm.entity.count
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import java.time.Instant
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
 
 class HomepageService(private val appdata: AppDataManager, private val data: DataRepository, private val stagingPostManager: StagingPostManager) {
     fun getHomepageInfo(): HomepageRes {
         val currentRecord = data.db.sequenceOf(HomepageRecords).firstOrNull()
 
-        val todayDate = Instant.now()
-            .runIf(appdata.setting.server.timeOffsetHour != null && appdata.setting.server.timeOffsetHour!!!= 0) {
-                this.minus(appdata.setting.server.timeOffsetHour!!.toLong(), ChronoUnit.HOURS)
-            }
-            .toSystemZonedTime().toLocalDate()
+        val todayDate = Instant.now().toPartitionDate(appdata.setting.server.timeOffsetHour)
 
         return if(currentRecord != null && currentRecord.date == todayDate) {
             mapToHomepageRes(currentRecord)

@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.utils
 
 import java.time.*
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 /**
  * 提供时间日期相关内容的统一处理。
@@ -27,4 +28,11 @@ object DateTime {
      * 将字符串解析为yyyy-MM-dd的日期格式。
      */
     fun String.parseDate(): LocalDate = LocalDate.parse(this, DATE_FORMAT)
+
+    /**
+     * 使用偏移量(小时)，将orderTime转换为对应的partitionTime。
+     */
+    fun Instant.toPartitionDate(timeOffsetHour: Int?): LocalDate {
+        return this.runIf(timeOffsetHour != null && timeOffsetHour != 0) { this.minus(timeOffsetHour!!.toLong(), ChronoUnit.HOURS) }.toSystemZonedTime().toLocalDate()
+    }
 }

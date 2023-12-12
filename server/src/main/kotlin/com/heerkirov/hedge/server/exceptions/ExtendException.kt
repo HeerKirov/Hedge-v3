@@ -4,13 +4,6 @@ import com.heerkirov.hedge.server.utils.tuples.Tuple3
 import com.heerkirov.hedge.server.utils.tuples.t3
 
 /**
- * content内容解析错误。
- * 抛出位置：
- * - source image 导入时
- */
-class ContentParseError(message: String) : BadRequestException<Nothing?>("CONTENT_PARSE_ERROR", message, null)
-
-/**
  * 当指定导入的文件不可访问时，抛出此异常。
  * 抛出位置：
  * - import从本地导入
@@ -40,13 +33,6 @@ class IllegalFileExtensionError(extension: String) : BadRequestException<String>
  * info: string: 存储路径
  */
 class StorageNotAccessibleError(storageDir: String) : BadRequestException<String>("STORAGE_NOT_ACCESSIBLE", "Storage dir '$storageDir' is not accessible.", storageDir)
-
-/**
- * 当尝试保存一个还未导入完成的文件时，抛出此异常。
- * 抛出位置：
- * - save文件时
- */
-class NotReadyFileError : BadRequestException<Nothing?>("FILE_NOT_READY", "File is not ready.", null)
 
 /**
  * 当parentId出现闭环时，抛出此异常。parentId为自己时也构成闭环。

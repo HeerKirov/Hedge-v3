@@ -1,13 +1,12 @@
 package com.heerkirov.hedge.server.utils
 
 import java.util.*
-import kotlin.collections.HashMap
 
 /**
  * 对迭代内容进行分类计数。
  */
 fun <T> Iterable<T>.duplicateCount(): Map<T, Int> {
-    val map = HashMap<T, Int>()
+    val map = TreeMap<T, Int>()
     for (t in this) {
         map[t] = map.computeIfAbsent(t) { 0 } + 1
     }

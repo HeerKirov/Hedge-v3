@@ -43,7 +43,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
     private fun MigrationRegister<Database>.useSQL(version: String, addonFunc: ((Database) -> Unit)? = null): MigrationRegister<Database> {
         return this.map(version) { db ->
             db.apply {
-                transaction {
+                transactionWithCtx {
                     it.useSQLResource(versionOf(version))
                     addonFunc?.invoke(this)
                 }
@@ -56,7 +56,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
      */
     private fun MigrationRegister<Database>.useSQLTemplate(version: String, generator: () -> Map<String, String>): MigrationRegister<Database> {
         return this.map(version) { db ->
-            db.apply { transaction { it.useSQLResource(versionOf(version), generator()) } }
+            db.apply { transactionWithCtx { it.useSQLResource(versionOf(version), generator()) } }
         }
     }
 

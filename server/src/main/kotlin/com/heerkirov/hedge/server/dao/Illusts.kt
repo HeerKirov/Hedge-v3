@@ -65,16 +65,6 @@ open class Illusts(alias: String?) : BaseTable<Illust>("illust", alias = alias) 
     )
 }
 
-object Partitions : BaseTable<Partition>("partition") {
-    val date = instantDate("date").primaryKey()
-    val cachedCount = int("cached_count")
-
-    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = Partition(
-        date = row[date]!!,
-        cachedCount = row[cachedCount]!!
-    )
-}
-
 object AssociateRelations : BaseTable<AssociateRelation>("associate_relation") {
     val illustId = int("illust_id")
     val relatedIllustId = int("related_illust_id")

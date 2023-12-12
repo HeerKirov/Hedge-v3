@@ -13,7 +13,9 @@ import com.heerkirov.hedge.server.dto.form.SourceDataUpdateForm
 import com.heerkirov.hedge.server.dto.res.SourceDataIdentity
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.enums.ImportStatus
-import com.heerkirov.hedge.server.events.*
+import com.heerkirov.hedge.server.events.FileProcessError
+import com.heerkirov.hedge.server.events.FileReady
+import com.heerkirov.hedge.server.events.ImportUpdated
 import com.heerkirov.hedge.server.exceptions.BusinessException
 import com.heerkirov.hedge.server.functions.manager.IllustManager
 import com.heerkirov.hedge.server.functions.manager.SourceAnalyzeManager
@@ -22,9 +24,8 @@ import com.heerkirov.hedge.server.library.framework.Component
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.model.ImportRecord
-import com.heerkirov.hedge.server.utils.DateTime.toSystemZonedTime
+import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
-import com.heerkirov.hedge.server.utils.runIf
 import org.ktorm.dsl.*
 import org.ktorm.entity.filter
 import org.ktorm.entity.sequenceOf
@@ -117,11 +118,7 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                 ImportOption.TimeType.IMPORT_TIME -> record.importTime
             }
 
-            val partitionTime = orderTime
-                .runIf(setting.server.timeOffsetHour != null && setting.server.timeOffsetHour!!!= 0) {
-                    this.minus(setting.server.timeOffsetHour!!.toLong(), ChronoUnit.HOURS)
-                }
-                .toSystemZonedTime().toLocalDate()
+            val partitionTime = orderTime.toPartitionDate(setting.server.timeOffsetHour)
 
             val source = if(setting.import.autoAnalyseSourceData) {
                 try {

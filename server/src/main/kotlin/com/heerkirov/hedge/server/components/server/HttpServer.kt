@@ -90,7 +90,6 @@ class HttpServerImpl(private val health: Health,
             .handle(IllustRoutes(allServices.illust))
             .handle(BookRoutes(allServices.book))
             .handle(FolderRoutes(allServices.folder))
-            .handle(PartitionRoutes(allServices.partition))
             .handle(ImportRoutes(allServices.import))
             .handle(StagingPostRoutes(allServices.stagingPost))
             .handle(TrashRoutes(allServices.trash))

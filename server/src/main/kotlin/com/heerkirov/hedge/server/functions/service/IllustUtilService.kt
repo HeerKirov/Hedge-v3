@@ -1,9 +1,11 @@
 package com.heerkirov.hedge.server.functions.service
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.IllustModelType
+import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.filterInto
@@ -14,24 +16,35 @@ import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
 import java.time.Instant
 
-class IllustUtilService(private val data: DataRepository) {
+class IllustUtilService(private val appdata: AppDataManager, private val data: DataRepository) {
     /**
-     * 查询一组illust的collection所属情况，列出这些illust已经属于的所有collection。
-     * 这个工具API一般用于创建collection前，对内容列表校验，以提示用户如何创建collection。
+     * 查询一组illust的collection所属情况，列出这些illust已经属于的所有collection，以及按照时间分区划分，来提示是否需要集中时间分区。
+     * 这个工具API一般用于创建collection或向collection添加图像之前，对内容列表校验，以提示用户如何创建collection或添加图像。
      */
     fun getCollectionSituation(illustIds: List<Int>, exampleCount: Int = 5): List<CollectionSituationRes> {
-        //查询所有的illust，不过IMAGE类型不包括在其中，它们跟collection没什么关系
-        val (collectionResult, imageResult) = data.db.sequenceOf(Illusts)
-            .filter { (it.id inList illustIds) and (it.type notEq IllustModelType.IMAGE) }
-            .asKotlinSequence()
-            .filterInto { it.type == IllustModelType.COLLECTION }
+        val illusts = data.db.sequenceOf(Illusts).filter { it.id inList illustIds }.toList()
+        val collectionResult = illusts.filter { it.type == IllustModelType.COLLECTION }
+        val imageWithParentResult = illusts.filter { it.type == IllustModelType.IMAGE_WITH_PARENT }
 
-        //处理images。查询它们所属的collection
         val collectionResultIds = collectionResult.asSequence().map { it.id }.toSet()
-        val imageResultParentIds = imageResult.asSequence().map { it.parentId!! }.filter { it !in collectionResultIds }.toSet()
+        val imageResultParentIds = imageWithParentResult.asSequence().map { it.parentId!! }.filter { it !in collectionResultIds }.toSet()
         val imageParentResult = data.db.sequenceOf(Illusts).filter { (it.id inList imageResultParentIds) and (it.type eq IllustModelType.COLLECTION) }.toList()
 
-        return (collectionResult.asSequence() + imageParentResult.asSequence())
+        val images = illusts.asSequence()
+            .filter { it.type == IllustModelType.IMAGE }.sortedBy { it.orderTime }.toList()
+            .let {
+                val files = data.db.from(Illusts)
+                    .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
+                    .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
+                    .where { (Illusts.id inList it.map(Illust::id)) and (Illusts.type eq IllustModelType.IMAGE) }
+                    .map { row ->
+                        val itemId = row[Illusts.id]!!
+                        val filePath = filePathFrom(row)
+                        IllustSimpleRes(itemId, filePath)
+                    }.associateBy(IllustSimpleRes::id)
+                it.map { i -> i to files[i.id]!! }
+            }
+        val collections = (collectionResult.asSequence() + imageParentResult.asSequence())
             .sortedBy { it.orderTime }
             .map {
                 val examples = data.db.from(Illusts)
@@ -47,13 +60,29 @@ class IllustUtilService(private val data: DataRepository) {
                         IllustSimpleRes(itemId, filePath)
                     }
 
-                val belongs = imageResult
+                val belongs = imageWithParentResult
                     .filter { image -> image.parentId == it.id }
                     .map { image -> image.id }
                     .letIf(it.id in collectionResultIds) { l -> l + it.id }
 
-                CollectionSituationRes(it.id, it.cachedChildrenCount, it.orderTime.toInstant(), examples, belongs)
-            }.toList()
+                it to CollectionSituationRes.Collection(it.id, it.cachedChildrenCount, it.orderTime.toInstant(), examples, belongs)
+            }
+            .toList()
+
+        //启用此选项时，将按时间分区分割结果
+        return if(appdata.setting.meta.centralizeCollection) {
+            (collectionResult.asSequence().map { it.partitionTime } + imageParentResult.asSequence().map { it.partitionTime } + images.asSequence().map { (i, _) -> i.partitionTime })
+                .distinct()
+                .sorted()
+                .map { pt ->
+                    val partitionedImages = images.filter { (i, _) -> i.partitionTime == pt }.map { (_, i) -> i }
+                    val partitionedCollections = collections.filter { (i, _) -> i.partitionTime == pt }.map { (_, c) -> c }
+                    CollectionSituationRes(pt, partitionedCollections, partitionedImages)
+                }
+                .toList()
+        }else{
+            listOf(CollectionSituationRes(null, collections.map { (_, c) -> c }, images.map { (_, i) -> i }))
+        }
     }
 
     /**

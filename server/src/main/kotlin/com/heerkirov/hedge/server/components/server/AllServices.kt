@@ -8,7 +8,6 @@ class AllServices(
     val illust: IllustService,
     val book: BookService,
     val folder: FolderService,
-    val partition: PartitionService,
     val import: ImportService,
     val stagingPost: StagingPostService,
     val trash: TrashService,

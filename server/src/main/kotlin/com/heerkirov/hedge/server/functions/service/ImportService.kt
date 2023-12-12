@@ -18,7 +18,6 @@ import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.manager.*
 import com.heerkirov.hedge.server.model.ImportRecord
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
-import com.heerkirov.hedge.server.utils.DateTime.toSystemZonedTime
 import com.heerkirov.hedge.server.utils.business.filePathOrNullFrom
 import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import com.heerkirov.hedge.server.utils.business.toListResult
@@ -26,11 +25,9 @@ import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.escapeLike
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
-import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.types.optOf
 import org.ktorm.dsl.*
 import java.time.Instant
-import java.time.temporal.ChronoUnit
 
 class ImportService(private val appdata: AppDataManager,
                     private val data: DataRepository,
@@ -296,13 +293,7 @@ class ImportService(private val appdata: AppDataManager,
                         ImportOption.TimeType.IMPORT_TIME -> record.importTime
                     }
 
-                    val partitionTime = orderTime
-                        .runIf(appdata.setting.server.timeOffsetHour != null && appdata.setting.server.timeOffsetHour!!!= 0) {
-                            this.minus(appdata.setting.server.timeOffsetHour!!.toLong(), ChronoUnit.HOURS)
-                        }
-                        .toSystemZonedTime().toLocalDate()
-
-                    IllustBatchUpdateForm(target = listOf(record.imageId!!), partitionTime = optOf(partitionTime), orderTimeBegin = optOf(orderTime), orderTimeEnd = optOf(orderTime))
+                    IllustBatchUpdateForm(target = listOf(record.imageId!!), orderTimeBegin = optOf(orderTime), orderTimeEnd = optOf(orderTime))
                 }
                 forms.forEach { illustManager.bulkUpdate(it) }
             }

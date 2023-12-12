@@ -45,6 +45,8 @@ data class ImportOptionUpdateForm(val autoAnalyseSourceData: Opt<Boolean>,
                                   val watchPathInitialize: Opt<Boolean>)
 
 data class MetaOptionUpdateForm(val autoCleanTagme: Opt<Boolean>,
+                                val bindingPartitionWithOrderTime: Opt<Boolean>,
+                                val centralizeCollection: Opt<Boolean>,
                                 val topicColors: Opt<Map<TagTopicType, String>>,
                                 val authorColors: Opt<Map<TagAuthorType, String>>)
 

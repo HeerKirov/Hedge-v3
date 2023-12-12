@@ -16,7 +16,7 @@ import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
-import com.heerkirov.hedge.server.utils.duplicateCount
+import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.ktorm.first
@@ -31,7 +31,6 @@ import org.ktorm.entity.*
 import org.ktorm.support.sqlite.bulkInsertReturning
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -43,7 +42,6 @@ class IllustManager(private val appdata: AppDataManager,
                     private val associateManager: AssociateManager,
                     private val bookManager: BookManager,
                     private val folderManager: FolderManager,
-                    private val partitionManager: PartitionManager,
                     private val importManager: ImportManager,
                     private val trashManager: TrashManager) {
 
@@ -52,11 +50,6 @@ class IllustManager(private val appdata: AppDataManager,
      */
     fun bulkNewImage(form: Collection<IllustImageCreateForm>): Map<Int, Int> {
         return if(form.isNotEmpty()) {
-            val partitionWithCount = form.map { it.partitionTime }.duplicateCount()
-            for ((partition, count) in partitionWithCount) {
-                partitionManager.addItemInPartition(partition, count)
-            }
-
             val sourceToRowIds = form
                 .mapNotNull { sourceManager.checkSourceSite(it.source?.sourceSite, it.source?.sourceId, it.source?.sourcePart, it.source?.sourcePartName) }
                 .distinct()
@@ -82,7 +75,7 @@ class IllustManager(private val appdata: AppDataManager,
                         set(it.tagme, record.tagme)
                         set(it.exportedDescription, record.description ?: "")
                         set(it.exportedScore, record.score)
-                        set(it.partitionTime, record.partitionTime)
+                        set(it.partitionTime, record.partitionTime ?: record.orderTime.toPartitionDate(appdata.setting.server.timeOffsetHour))
                         set(it.orderTime, record.orderTime.toEpochMilli())
                         set(it.createTime, record.createTime)
                         set(it.updateTime, record.createTime)
@@ -110,10 +103,10 @@ class IllustManager(private val appdata: AppDataManager,
      * 创建新的collection。
      * @throws ResourceNotExist ("images", number[]) 给出的部分images不存在。给出不存在的image id列表
      */
-    fun newCollection(illustIds: List<Int>, formDescription: String, formScore: Int?, formFavorite: Boolean?, formTagme: Illust.Tagme): Int {
+    fun newCollection(illustIds: List<Int>, formDescription: String, formScore: Int?, formFavorite: Boolean?, formTagme: Illust.Tagme, specifyPartitionTime: LocalDate?): Int {
         if(illustIds.isEmpty()) throw be(ParamError("images"))
         val images = unfoldImages(illustIds, sorted = false)
-        val (fileId, scoreFromSub, favorite, partitionTime, orderTime) = kit.getExportedPropsFromList(images)
+        val (fileId, scoreFromSub, favorite, partitionTime, orderTime) = kit.getExportedPropsFromList(images, specifyPartitionTime)
         val (cachedBookIds, cachedFolderIds) = kit.getCachedBookAndFolderFromImages(images)
 
         val createTime = Instant.now()
@@ -148,7 +141,7 @@ class IllustManager(private val appdata: AppDataManager,
             throw RuntimeException("Illust insert failed. generatedKey is $id but queried verify id is $verifyId.")
         }
 
-        updateSubImages(id, images)
+        updateSubImages(id, images, specifyPartitionTime)
 
         if(formFavorite != null) {
             data.db.update(Illusts) {
@@ -167,8 +160,8 @@ class IllustManager(private val appdata: AppDataManager,
     /**
      * 设置一个collection的image列表。
      */
-    fun updateImagesInCollection(collectionId: Int, images: List<Illust>, originScore: Int? = null) {
-        val (fileId, scoreFromSub, favoriteFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(images)
+    fun updateImagesInCollection(collectionId: Int, images: List<Illust>, specifyPartitionTime: LocalDate?, originScore: Int? = null) {
+        val (fileId, scoreFromSub, favoriteFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(images, specifyPartitionTime)
 
         data.db.update(Illusts) {
             where { it.id eq collectionId }
@@ -181,7 +174,7 @@ class IllustManager(private val appdata: AppDataManager,
             set(it.updateTime, Instant.now())
         }
 
-        val oldImageIds = updateSubImages(collectionId, images)
+        val oldImageIds = updateSubImages(collectionId, images, specifyPartitionTime)
 
         kit.refreshAllMeta(collectionId, copyFromChildren = true)
 
@@ -242,8 +235,6 @@ class IllustManager(private val appdata: AppDataManager,
             bookManager.removeItemFromAllBooks(illust.id)
             //从所有folder中移除
             folderManager.removeItemFromAllFolders(illust.id)
-            //关联的partition的计数-1
-            partitionManager.deleteItemInPartition(illust.partitionTime)
             //对parent的导出处理
             if(illust.parentId != null) processCollectionChildrenChanged(illust.parentId, -1)
 
@@ -278,22 +269,8 @@ class IllustManager(private val appdata: AppDataManager,
         }
         if(records.isEmpty()) return
         val (collections, images) = records.filterInto { it.type == IllustModelType.COLLECTION }
-        val collectionIds by lazy { collections.map { it.id } }
+        val collectionIds by lazy { collections.asSequence().map { it.id }.toSet() }
         val childrenOfCollections by lazy { if(collections.isEmpty()) emptyList() else data.db.sequenceOf(Illusts).filter { it.parentId inList collectionIds }.toList() }
-        val orderTimeSeq by lazy {
-            val children = childrenOfCollections.map { Triple(it.id, it.parentId!!, it.orderTime) }
-
-            records.asSequence()
-                .sortedBy { it.orderTime }
-                .flatMap {
-                    if(it.type == IllustModelType.COLLECTION) {
-                        children.filter { (_, parentId, _) -> parentId == it.id }.asSequence().sortedBy { (_, _, t) -> t }
-                    }else{
-                        sequenceOf(Triple(it.id, null, it.orderTime))
-                    }
-                }
-                .toList()
-        }
 
         //favorite
         form.favorite.alsoOpt { favorite ->
@@ -423,27 +400,34 @@ class IllustManager(private val appdata: AppDataManager,
                 where { it.id inList (children.map { (id, _) -> id } + form.target) }
                 set(it.partitionTime, partitionTime)
             }
-
-            for ((_, oldPartitionTime) in children) {
-                partitionManager.updateItemPartition(oldPartitionTime, partitionTime)
-            }
-            for (illust in images) {
-                if(illust.partitionTime != partitionTime) {
-                    partitionManager.updateItemPartition(illust.partitionTime, partitionTime)
-                }
-            }
         }
         form.partitionTime.alsoOpt(::setPartitionTime)
 
         //order time
+        val orderTimeSeq by lazy {
+            val children = childrenOfCollections.map { Triple(it.id, it.parentId, it.orderTime) }
+
+            records.asSequence()
+                .sortedBy { it.orderTime }
+                .flatMap {
+                    if(it.type == IllustModelType.COLLECTION) {
+                        children.filter { (_, parentId, _) -> parentId == it.id }.asSequence().sortedBy { (_, _, t) -> t }
+                    }else{
+                        sequenceOf(Triple(it.id, it.parentId, it.orderTime))
+                    }
+                }
+                .toList()
+        }
         fun setOrderTimeBySeq(newOrderTimeSeq: List<Long>) {
             if(newOrderTimeSeq.size != orderTimeSeq.size) throw RuntimeException("newOrderTimeSeq is not suitable to seq.")
 
             if(orderTimeSeq.isNotEmpty()) {
+                //将orderTime序列的值依次赋值给项目序列中的每一项
                 data.db.batchUpdate(Illusts) {
                     orderTimeSeq.forEachIndexed { i, (id, _, _) ->
                         item {
                             where { it.id eq id }
+                            set(it.partitionTime, newOrderTimeSeq[i].toInstant().toPartitionDate(appdata.setting.server.timeOffsetHour))
                             set(it.orderTime, newOrderTimeSeq[i])
                         }
                     }
@@ -451,17 +435,17 @@ class IllustManager(private val appdata: AppDataManager,
             }
 
             if(collections.isNotEmpty()) {
-                val collectionValues = orderTimeSeq
-                    .zip(newOrderTimeSeq) { (id, p, _), ot -> Triple(id, p, ot) }
+                //根据项目序列和orderTime序列，推算每一个parent collection应获得的orderTime
+                val collectionValues = orderTimeSeq.zip(newOrderTimeSeq) { (id, p, _), ot -> Triple(id, p, ot) }
                     .filter { (_, p, _) -> p != null }
                     .groupBy { (_, p, _) -> p!! }
                     .mapValues { (_, values) -> values.minOf { (_, _, t) -> t } }
-
                 if(collectionValues.isNotEmpty()) {
                     data.db.batchUpdate(Illusts) {
                         for ((id, ot) in collectionValues) {
                             item {
                                 where { it.id eq id }
+                                set(it.partitionTime, ot.toInstant().toPartitionDate(appdata.setting.server.timeOffsetHour))
                                 set(it.orderTime, ot)
                             }
                         }
@@ -514,14 +498,14 @@ class IllustManager(private val appdata: AppDataManager,
 
             setOrderTimeBySeq(values)
         }
+        //insert between instants
         form.orderTimeBegin.alsoOpt { orderTimeBegin -> setOrderTimeByRange(orderTimeBegin, form.orderTimeEnd.unwrapOrNull(), form.orderTimeExclude) }
-
         //insert between illusts
         form.timeInsertBegin.alsoOpt { beginId ->
             if(form.timeInsertEnd.isPresent) {
                 //如果指定了end，将当前所有项插入到指定的两项中间
                 //如果begin端点是集合，那么会选取集合中在end之前的最大的子项的orderTime；如果end端点是集合，那么使用集合的orderTime即可
-                //需要注意的是如果两端点相距过远(>=24h)，则会靠近其中一边，变成下述情况的那种排布方式
+                //需要注意的是如果两端点不在一个时间分区，则会靠近其中一边，变成下述情况的那种排布方式
                 //如果两端点时间一致，则变成第三种情况的排布方式
                 val a = data.db.from(Illusts).select(Illusts.type, Illusts.orderTime)
                     .where { Illusts.id eq beginId }.firstOrNull()
@@ -545,7 +529,7 @@ class IllustManager(private val appdata: AppDataManager,
 
                 val orderTimeBegin: Long
                 val orderTimeEnd: Long
-                if(end - begin >= 1000 * 60 * 60 * 24) {
+                if(end.toInstant().toPartitionDate(appdata.setting.server.timeOffsetHour) != begin.toInstant().toPartitionDate(appdata.setting.server.timeOffsetHour)) {
                     val targetOrderTimes = orderTimeSeq.map { (_, _, ot) -> ot }
                     val max = targetOrderTimes.max()
                     val min = targetOrderTimes.min()
@@ -617,7 +601,7 @@ class IllustManager(private val appdata: AppDataManager,
                 }
                 IllustBatchUpdateForm.Action.SET_ORDER_TIME_MOST -> {
                     //从所有image/children中找出项最多的orderTimeDate，在这个范围内找出最大值和最小值，然后按时间端点设置所有项
-                    val instants = orderTimeSeq.map { (_, _, ot) -> ot to LocalDate.ofInstant(ot.toInstant(), ZoneId.systemDefault()) }
+                    val instants = orderTimeSeq.map { (_, _, ot) -> ot to ot.toInstant().toPartitionDate(appdata.setting.server.timeOffsetHour) }
                     val date = instants.map { (_, d) -> d }.mostCount()
                     val instantsInThisDay = instants.filter { (_, d) -> d == date }.map { (i, _) -> i }
                     val min = instantsInThisDay.min().toInstant()
@@ -734,7 +718,6 @@ class IllustManager(private val appdata: AppDataManager,
                 if(props.orderTime) set(it.orderTime, fromIllust.orderTime)
                 if(props.partitionTime && fromIllust.partitionTime != toIllust.partitionTime) {
                     set(it.partitionTime, fromIllust.partitionTime)
-                    partitionManager.addItemInPartition(fromIllust.partitionTime)
                 }
 
                 if(props.source) {
@@ -865,9 +848,10 @@ class IllustManager(private val appdata: AppDataManager,
     /**
      * 应用images列表，设置images的parent为当前collection，同时处理重导出关系。
      * 对于移入/移除当前集合的项，对其属性进行重导出；对于被移出的旧parent，也对其进行处理。
+     * @throws ResourceNotExist ("specifyPartitionTime", LocalDate) 在指定的时间分区下没有存在的图像
      * @return oldImageIds
      */
-    private fun updateSubImages(collectionId: Int, images: List<Illust>): Set<Int> {
+    private fun updateSubImages(collectionId: Int, images: List<Illust>, specifyPartitionTime: LocalDate?): Set<Int> {
         val imageIds = images.asSequence().map { it.id }.toSet()
         val oldImageIds = data.db.from(Illusts).select(Illusts.id)
             .where { Illusts.parentId eq collectionId }
@@ -888,6 +872,28 @@ class IllustManager(private val appdata: AppDataManager,
             set(it.parentId, collectionId)
             set(it.type, IllustModelType.IMAGE_WITH_PARENT)
         }
+
+        //若开启相关选项，则需要对排序时间做整理。当存在不在指定分区的图像时，将它们集中到指定分区内
+        if(appdata.setting.meta.centralizeCollection && specifyPartitionTime != null) {
+            val (specifiedImages, outsideImages) = images.filterInto { it.partitionTime == specifyPartitionTime }
+            if(outsideImages.isNotEmpty()) {
+                if(specifiedImages.isEmpty()) throw be(ResourceNotExist("specifyPartitionTime", specifyPartitionTime))
+                val min = specifiedImages.minOf { it.orderTime }
+                val max = specifiedImages.maxOf { it.orderTime }
+                val step = (max - min) / (images.size - 1)
+                val values = images.indices.map { index -> min + step * index }
+                data.db.batchUpdate(Illusts) {
+                    images.sortedBy { it.orderTime }.zip(values).forEach { (illust, ot) ->
+                        item {
+                            where { it.id eq illust.id }
+                            set(it.orderTime, ot)
+                            set(it.partitionTime, specifyPartitionTime)
+                        }
+                    }
+                }
+            }
+        }
+
         //这些image有旧的parent，需要对旧parent做重新导出
         val now = Instant.now()
         images.asSequence()
@@ -897,6 +903,7 @@ class IllustManager(private val appdata: AppDataManager,
                 processCollectionChildrenChanged(parentId, -images.size, now)
                 bus.emit(IllustImagesChanged(parentId, emptyList(), images.map { it.id }))
             }
+
         //这些image的collection发生变化，发送事件
         addIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }
         deleteIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }

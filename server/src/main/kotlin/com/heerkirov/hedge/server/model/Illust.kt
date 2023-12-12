@@ -163,19 +163,6 @@ data class IllustTagRelation(val illustId: Int, val tagId: Int, /** 由规则导
 data class IllustTopicRelation(val illustId: Int, val topicId: Int, /** 由规则导出而非用户编写的标签。 */val isExported: Boolean)
 
 /**
- * 时间分区。
- * 这个模型整体是为了冗余而设。
- */
-data class Partition(/**
-                      * 此时间分区的时间。
-                      */
-                     val date: LocalDate,
-                     /**
-                      * [cache field]此时间分区包含的项的总数。
-                      */
-                     val cachedCount: Int = 0)
-
-/**
  * 导入记录。
  */
 data class ImportRecord(val id: Int,

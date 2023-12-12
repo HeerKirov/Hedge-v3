@@ -111,6 +111,8 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
 
         appdata.saveSetting {
             form.autoCleanTagme.alsoOpt { meta.autoCleanTagme = it }
+            form.centralizeCollection.alsoOpt { meta.centralizeCollection = it }
+            form.bindingPartitionWithOrderTime.alsoOpt { meta.bindingPartitionWithOrderTime = it }
             form.topicColors.alsoOpt { meta.topicColors = it }
             form.authorColors.alsoOpt { meta.authorColors = it }
         }

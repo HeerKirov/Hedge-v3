@@ -28,7 +28,6 @@ class TrashManager(private val data: DataRepository,
                    private val bookManager: BookManager,
                    private val folderManager: FolderManager,
                    private val associateManager: AssociateManager,
-                   private val partitionManager: PartitionManager,
                    private val sourceManager: SourceDataManager) {
     /**
      * 将一个指定的图像移入“已删除”。
@@ -153,8 +152,6 @@ class TrashManager(private val data: DataRepository,
                     set(it.createTime, item.createTime)
                     set(it.updateTime, item.updateTime)
                 }
-
-                partitionManager.addItemInPartition(item.partitionTime)
 
                 associateManager.setAssociatesOfIllust(item.imageId, item.metadata.associates)
 

@@ -5,10 +5,7 @@ import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
-import com.heerkirov.hedge.server.dto.filter.IllustLocationFilter
-import com.heerkirov.hedge.server.dto.filter.IllustQueryType
-import com.heerkirov.hedge.server.dto.filter.IllustQueryFilter
-import com.heerkirov.hedge.server.dto.filter.LimitAndOffsetFilter
+import com.heerkirov.hedge.server.dto.filter.*
 import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.IllustModelType
@@ -22,11 +19,11 @@ import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.functions.manager.AssociateManager
 import com.heerkirov.hedge.server.functions.manager.IllustManager
-import com.heerkirov.hedge.server.functions.manager.PartitionManager
 import com.heerkirov.hedge.server.functions.manager.SourceDataManager
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
+import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import com.heerkirov.hedge.server.utils.business.toListResult
@@ -53,7 +50,6 @@ class IllustService(private val appdata: AppDataManager,
                     private val illustManager: IllustManager,
                     private val associateManager: AssociateManager,
                     private val sourceManager: SourceDataManager,
-                    private val partitionManager: PartitionManager,
                     private val queryManager: QueryManager) {
     private val orderTranslator = OrderTranslator {
         "id" to Illusts.id
@@ -96,6 +92,33 @@ class IllustService(private val appdata: AppDataManager,
             .limit(filter.offset, filter.limit)
             .orderBy(orderTranslator, filter.order, schema?.orderConditions, default = descendingOrderItem("orderTime"))
             .toListResult(::newIllustRes)
+    }
+
+    fun listPartitions(filter: PartitionFilter): List<PartitionRes> {
+        val schema = if(filter.query.isNullOrBlank()) null else {
+            queryManager.querySchema(filter.query, QueryManager.Dialect.ILLUST).executePlan ?: return emptyList()
+        }
+
+        return data.db.from(Illusts)
+            .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
+            .let { schema?.joinConditions?.fold(it) { acc, join -> if(join.left) acc.leftJoin(join.table, join.condition) else acc.innerJoin(join.table, join.condition) } ?: it }
+            .select(Illusts.partitionTime, countDistinct(Illusts.id).aliased("count"))
+            .whereWithConditions {
+                it += when(filter.type) {
+                    IllustQueryType.COLLECTION -> (Illusts.type eq IllustModelType.COLLECTION) or (Illusts.type eq IllustModelType.IMAGE)
+                    IllustQueryType.IMAGE -> (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)
+                    IllustQueryType.ONLY_COLLECTION -> Illusts.type eq IllustModelType.COLLECTION
+                    IllustQueryType.ONLY_IMAGE -> Illusts.type eq IllustModelType.IMAGE
+                }
+                if(filter.gte != null) it += Illusts.partitionTime greaterEq filter.gte
+                if(filter.lt != null) it += Illusts.partitionTime less filter.lt
+                if(schema != null && schema.whereConditions.isNotEmpty()) {
+                    it.addAll(schema.whereConditions)
+                }
+            }
+            .groupBy(Illusts.partitionTime)
+            .orderBy(Illusts.partitionTime.asc())
+            .map { PartitionRes(it[Illusts.partitionTime]!!, it.getInt("count")) }
     }
 
     fun findByIds(imageIds: List<Int>): List<IllustRes?> {
@@ -414,7 +437,7 @@ class IllustService(private val appdata: AppDataManager,
     fun createCollection(form: IllustCollectionCreateForm): Int {
         if(form.score != null) kit.validateScore(form.score)
         data.db.transaction {
-            return illustManager.newCollection(form.images, form.description ?: "", form.score, form.favorite, form.tagme)
+            return illustManager.newCollection(form.images, form.description ?: "", form.score, form.favorite, form.tagme, form.specifyPartitionTime)
         }
     }
 
@@ -440,6 +463,9 @@ class IllustService(private val appdata: AppDataManager,
                         if(getInt("count") > 0) getDouble("score").roundToInt() else null
                     }
             }
+            val newPartitionTime = if(form.partitionTime.isPresent) form.partitionTime
+                else if(appdata.setting.meta.bindingPartitionWithOrderTime) form.orderTime.letOpt { it.toPartitionDate(appdata.setting.server.timeOffsetHour) }
+                else undefined()
             val newDescription = form.description.letOpt { it ?: "" }
             if(anyOpt(form.tags, form.authors, form.topics)) {
                 kit.updateMeta(id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromChildren = true)
@@ -453,7 +479,7 @@ class IllustService(private val appdata: AppDataManager,
                 )
             }else undefined()
 
-            if(anyOpt(newTagme, newDescription, form.score, form.favorite, form.partitionTime, form.orderTime)) {
+            if(anyOpt(newTagme, newDescription, form.score, form.favorite, newPartitionTime, form.orderTime)) {
                 data.db.update(Illusts) {
                     where { it.id eq id }
                     newTagme.applyOpt { set(it.tagme, this) }
@@ -464,31 +490,31 @@ class IllustService(private val appdata: AppDataManager,
                     form.score.applyOpt { set(it.score, this) }
                     newExportedScore.applyOpt { set(it.exportedScore, this) }
                     form.favorite.applyOpt { set(it.favorite, this) }
-                    form.partitionTime.applyOpt { set(it.partitionTime, this) }
+                    newPartitionTime.applyOpt { set(it.partitionTime, this) }
                     form.orderTime.applyOpt { set(it.orderTime, this.toEpochMilli()) }
                 }
             }
 
-            if(anyOpt(form.partitionTime, form.orderTime, form.favorite)) {
+            if(anyOpt(newPartitionTime, form.orderTime, form.favorite)) {
                 //这些属性是代理属性，将直接更改其children
                 data.db.update(Illusts) {
                     where { it.parentId eq id }
                     form.favorite.applyOpt { set(it.favorite, this) }
-                    form.partitionTime.applyOpt { set(it.partitionTime, this) }
+                    newPartitionTime.applyOpt { set(it.partitionTime, this) }
                     form.orderTime.applyOpt { set(it.orderTime, this.toEpochMilli()) }
                 }
-                val childrenListUpdated = anyOpt(form.orderTime, form.favorite)
-                val childrenDetailUpdated = childrenListUpdated || anyOpt(form.partitionTime)
-                if(childrenListUpdated || childrenDetailUpdated) {
+
+                val childrenListUpdated = anyOpt(form.orderTime, newPartitionTime, form.favorite)
+                if(childrenListUpdated) {
                     val children = data.db.from(Illusts).select(Illusts.id).where { Illusts.parentId eq id }.map { it[Illusts.id]!! }
                     //tips: 此处并没有设置timeSot/favoriteSot，尽管发生了变更。主要是考虑到设置sot会触发一次children->parent的重导出，比较浪费，而实际场景里此处没有刷新事件可能不太有影响
-                    bus.emit(children.map { IllustUpdated(it, IllustType.IMAGE, listUpdated = childrenListUpdated, detailUpdated = true, timeSot = false, favoriteSot = false) })
+                    bus.emit(children.map { IllustUpdated(it, IllustType.IMAGE, listUpdated = true, detailUpdated = true, timeSot = false, favoriteSot = false) })
                 }
             }
 
             val metaTagSot = anyOpt(form.tags, form.authors, form.topics)
             val listUpdated = anyOpt(form.score, form.favorite, form.orderTime, newTagme)
-            val detailUpdated = listUpdated || metaTagSot || anyOpt(newDescription, form.partitionTime)
+            val detailUpdated = listUpdated || metaTagSot || newDescription.isPresent || newPartitionTime.isPresent
             if(listUpdated || detailUpdated) {
                 bus.emit(IllustUpdated(id, IllustType.COLLECTION, listUpdated = listUpdated, detailUpdated = true, metaTagSot = metaTagSot, scoreSot = form.score.isPresent, descriptionSot = form.description.isPresent))
             }
@@ -515,14 +541,14 @@ class IllustService(private val appdata: AppDataManager,
      * @throws NotFound 请求对象不存在
      * @throws ResourceNotExist ("images", number[]) 给出的部分images不存在。给出不存在的image id列表
      */
-    fun updateCollectionImages(id: Int, imageIds: List<Int>) {
+    fun updateCollectionImages(id: Int, form: IllustCollectionImagesUpdateForm) {
         data.db.transaction {
             val illust = data.db.sequenceOf(Illusts).filter { retrieveCondition(id, IllustType.COLLECTION) }.firstOrNull() ?: throw be(NotFound())
 
-            if(imageIds.isEmpty()) throw be(ParamError("images"))
-            val images = illustManager.unfoldImages(imageIds, sorted = false)
+            if(form.illustIds.isEmpty()) throw be(ParamError("images"))
+            val images = illustManager.unfoldImages(form.illustIds, sorted = false)
 
-            illustManager.updateImagesInCollection(illust.id, images, illust.score)
+            illustManager.updateImagesInCollection(illust.id, images, form.specifyPartitionTime, illust.score)
         }
     }
 
@@ -559,11 +585,12 @@ class IllustService(private val appdata: AppDataManager,
                 )
             }else undefined()
             //处理partition变化
-            form.partitionTime.alsoOpt {
-                if(illust.partitionTime != it) partitionManager.updateItemPartition(illust.partitionTime, it)
-            }
+            val newPartitionTime = if(form.partitionTime.isPresent) form.partitionTime
+                else if(appdata.setting.meta.bindingPartitionWithOrderTime) form.orderTime.letOpt { it.toPartitionDate(appdata.setting.server.timeOffsetHour) }.mapNullable { if(it != illust.partitionTime) it else null }
+                else undefined()
+
             //主体属性更新
-            if(anyOpt(newTagme, newDescription, newExportedDescription, form.score, newExportedScore, form.favorite, form.partitionTime, form.orderTime)) {
+            if(anyOpt(newTagme, newDescription, newExportedDescription, form.score, newExportedScore, form.favorite, newPartitionTime, form.orderTime)) {
                 data.db.update(Illusts) {
                     where { it.id eq id }
                     newTagme.applyOpt { set(it.tagme, this) }
@@ -572,14 +599,14 @@ class IllustService(private val appdata: AppDataManager,
                     form.score.applyOpt { set(it.score, this) }
                     newExportedScore.applyOpt { set(it.exportedScore, this) }
                     form.favorite.applyOpt { set(it.favorite, this) }
-                    form.partitionTime.applyOpt { set(it.partitionTime, this) }
+                    newPartitionTime.applyOpt { set(it.partitionTime, this) }
                     form.orderTime.applyOpt { set(it.orderTime, this.toEpochMilli()) }
                 }
             }
 
             val metaTagSot = anyOpt(form.tags, form.authors, form.topics)
             val listUpdated = anyOpt(form.score, form.favorite, form.orderTime, newTagme)
-            val detailUpdated = listUpdated || metaTagSot || anyOpt(newDescription, form.partitionTime)
+            val detailUpdated = listUpdated || metaTagSot || newDescription.isPresent || newPartitionTime.isPresent
             if(listUpdated || detailUpdated) {
                 bus.emit(IllustUpdated(id, IllustType.IMAGE,
                     listUpdated = listUpdated, detailUpdated = true,
@@ -587,7 +614,7 @@ class IllustService(private val appdata: AppDataManager,
                     scoreSot = form.score.isPresent,
                     descriptionSot = form.description.isPresent,
                     favoriteSot = form.favorite.isPresent,
-                    timeSot = anyOpt(form.orderTime, form.partitionTime)
+                    timeSot = form.orderTime.isPresent || newPartitionTime.isPresent
                 ))
             }
         }

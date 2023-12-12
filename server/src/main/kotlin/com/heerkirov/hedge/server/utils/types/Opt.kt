@@ -49,7 +49,12 @@ class Opt<T> {
     /**
      * 如果值存在，则使用map生成一个新的opt。
      */
-    inline fun <R> map(call: T.() -> R): Opt<R> = if(isPresent) Opt(call(value)) else undefined()
+    inline fun <R> map(call: (T) -> R): Opt<R> = if(isPresent) Opt(call(value)) else undefined()
+
+    /**
+     * 如果值存在，则使用map生成一个新的opt。且如果map的返回值是null，结果将被改写为undefined。
+     */
+    inline fun <R> mapNullable(call: (T) -> R?): Opt<R> = if(isPresent) call(value)?.let { Opt(it) } ?: undefined() else undefined()
 
     /**
      * 如果值存在，计算一个新值。参数使用this传递。

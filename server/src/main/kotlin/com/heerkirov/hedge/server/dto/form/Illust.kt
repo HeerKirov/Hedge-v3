@@ -5,12 +5,12 @@ import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.types.Opt
 import com.heerkirov.hedge.server.utils.types.undefined
-import java.time.LocalDate
 import java.time.Instant
+import java.time.LocalDate
 
 data class IllustImageCreateForm(val importId: Int,
                                  val fileId: Int,
-                                 val partitionTime: LocalDate,
+                                 val partitionTime: LocalDate?,
                                  val orderTime: Instant,
                                  val createTime: Instant,
                                  val source: SourceDataPath? = null,
@@ -23,7 +23,8 @@ data class IllustCollectionCreateForm(val images: List<Int>,
                                       val description: String? = null,
                                       val score: Int? = null,
                                       val favorite: Boolean? = null,
-                                      val tagme: Illust.Tagme = Illust.Tagme.EMPTY)
+                                      val tagme: Illust.Tagme = Illust.Tagme.EMPTY,
+                                      val specifyPartitionTime: LocalDate? = null)
 
 open class IllustUpdateForm(val topics: Opt<List<Int>>, val authors: Opt<List<Int>>, val tags: Opt<List<Int>>,
                             val description: Opt<String?>, val score: Opt<Int?>,
@@ -31,6 +32,8 @@ open class IllustUpdateForm(val topics: Opt<List<Int>>, val authors: Opt<List<In
                             val partitionTime: Opt<LocalDate>, val orderTime: Opt<Instant>)
 
 class IllustCollectionRelatedUpdateForm(val associates: Opt<List<Int>?>)
+
+class IllustCollectionImagesUpdateForm(val illustIds: List<Int>, val specifyPartitionTime: LocalDate? = null)
 
 class IllustImageRelatedUpdateForm(val associates: Opt<List<Int>?>, val collectionId: Opt<Int?>)
 

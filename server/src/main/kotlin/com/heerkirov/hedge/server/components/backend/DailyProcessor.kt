@@ -12,9 +12,8 @@ import com.heerkirov.hedge.server.events.HomepageInfoUpdated
 import com.heerkirov.hedge.server.functions.manager.TrashManager
 import com.heerkirov.hedge.server.library.framework.DaemonThreadComponent
 import com.heerkirov.hedge.server.model.HomepageRecord
-import com.heerkirov.hedge.server.utils.DateTime.toSystemZonedTime
+import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
-import com.heerkirov.hedge.server.utils.runIf
 import org.ktorm.dsl.*
 import org.ktorm.schema.ColumnDeclaring
 import org.ktorm.support.sqlite.random
@@ -68,11 +67,7 @@ class DailyProcessorImpl(private val appStatusDriver: AppStatusDriver,
     }
 
     private fun refreshHomepage() {
-        val todayDate = Instant.now()
-            .runIf(appdata.setting.server.timeOffsetHour != null && appdata.setting.server.timeOffsetHour!!!= 0) {
-                this.minus(appdata.setting.server.timeOffsetHour!!.toLong(), ChronoUnit.HOURS)
-            }
-            .toSystemZonedTime().toLocalDate()
+        val todayDate = Instant.now().toPartitionDate(appdata.setting.server.timeOffsetHour)
 
         val exist = data.db.from(HomepageRecords)
             .select((count(HomepageRecords.date) greater 0).aliased("exist"))
@@ -183,12 +178,13 @@ class DailyProcessorImpl(private val appStatusDriver: AppStatusDriver,
     }
 
     private fun queryPartition(limit: Int, random: Boolean = false): List<LocalDate> {
-        return if(limit <= 0) emptyList() else data.db.from(Partitions)
-            .select(Partitions.date)
-            .where { Partitions.cachedCount greater 0 }
-            .orderBy(if(random) random().asc() else Partitions.date.desc())
+        return if(limit <= 0) emptyList() else data.db.from(Illusts)
+            .select(Illusts.partitionTime)
+            .where { (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.COLLECTION) }
+            .groupBy(Illusts.partitionTime)
+            .orderBy(if(random) random().asc() else Illusts.partitionTime.desc())
             .limit(limit)
-            .map { it[Partitions.date]!! }
+            .map { it[Illusts.partitionTime]!! }
     }
 
     private inline fun queryAuthor(limit: Int, condition: (Authors) -> ColumnDeclaring<Boolean>): List<Int> {

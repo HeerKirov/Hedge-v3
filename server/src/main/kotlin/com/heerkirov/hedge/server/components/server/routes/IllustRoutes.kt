@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.dto.filter.IllustLocationFilter
 import com.heerkirov.hedge.server.exceptions.ParamTypeError
 import com.heerkirov.hedge.server.dto.filter.IllustQueryFilter
 import com.heerkirov.hedge.server.dto.filter.LimitAndOffsetFilter
+import com.heerkirov.hedge.server.dto.filter.PartitionFilter
 import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.IdRes
 import com.heerkirov.hedge.server.enums.IllustType
@@ -24,6 +25,7 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
             path("api") {
                 path("illusts") {
                     get(::list)
+                    get("partitions", ::listPartitions)
                     get("find-location", ::findImageLocation)
                     post("find-by-ids", ::findByIds)
                     post("batch-update", ::batchUpdate)
@@ -78,6 +80,11 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
     private fun list(ctx: Context) {
         val filter = ctx.queryAsFilter<IllustQueryFilter>()
         ctx.json(illustService.list(filter))
+    }
+
+    private fun listPartitions(ctx: Context) {
+        val filter = ctx.queryAsFilter<PartitionFilter>()
+        ctx.json(illustService.listPartitions(filter))
     }
 
     private fun findByIds(ctx: Context) {
@@ -151,10 +158,8 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
 
     private fun updateCollectionImages(ctx: Context) {
         val id = ctx.pathParamAsClass<Int>("id").get()
-        val images = try { ctx.bodyAsClass<List<Int>>() } catch (e: Exception) {
-            throw be(ParamTypeError("images", e.message ?: "cannot convert to List<Int>"))
-        }
-        illustService.updateCollectionImages(id, images)
+        val form = ctx.bodyAsForm<IllustCollectionImagesUpdateForm>()
+        illustService.updateCollectionImages(id, form)
     }
 
     private fun getImage(ctx: Context) {

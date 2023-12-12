@@ -28,6 +28,8 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             ),
             meta = MetaOption(
                 autoCleanTagme = true,
+                centralizeCollection = true,
+                bindingPartitionWithOrderTime = true,
                 topicColors = emptyMap(),
                 authorColors = emptyMap()
             ),
@@ -80,6 +82,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
         register.map("0.2.0", ::modifyAuthorTypes)
         register.map("0.3.0", ::addSourceAnalyseRuleExtraArguments)
         register.map("0.4.0", ::modifyImportAndFindSimilarArguments)
+        register.map("0.5.0", ::modifyMetaAndImportArguments)
     }
 
     /**
@@ -182,6 +185,22 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
                         .upsertField("filterBySourceBook") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
                         .upsertField("filterBySourceRelation") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
             }
+        ).toJsonNode()
+    }
+
+    /**
+     * 在0.5.0版本，在meta新增了centralizeCollection和bindingPartitionWithOrderTime参数。
+     */
+    private fun modifyMetaAndImportArguments(json: JsonNode): JsonNode {
+        return mapOf(
+            "server" to json["server"],
+            "storage" to json["storage"],
+            "meta" to json["meta"].upsertField("centralizeCollection") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() }
+                    .upsertField("bindingPartitionWithOrderTime") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() },
+            "query" to json["query"],
+            "source" to json["source"],
+            "import" to json["import"],
+            "findSimilar" to json["findSimilar"]
         ).toJsonNode()
     }
 }

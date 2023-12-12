@@ -265,11 +265,11 @@ class FindSimilarService(private val data: DataRepository,
                 when (collectionId) {
                     is Int -> {
                         val images = illustManager.unfoldImages(imageIds + listOf(collectionId), sorted = false)
-                        illustManager.updateImagesInCollection(collectionId, images)
+                        illustManager.updateImagesInCollection(collectionId, images, null)
                     }
                     is String -> if(imageIds.isNotEmpty()) {
                         //collectionId可以设置为string，表示会创建新collection，相同字符串的会被创建到同一个collection中
-                        newCollectionIds[collectionId] = illustManager.newCollection(imageIds, "", null, null, Illust.Tagme.EMPTY)
+                        newCollectionIds[collectionId] = illustManager.newCollection(imageIds, "", null, null, Illust.Tagme.EMPTY, null)
                     }
                     else -> throw be(ParamTypeError("config.collectionId", "must be number or string."))
                 }

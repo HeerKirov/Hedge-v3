@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.kit
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.functions.manager.MetaManager
 import com.heerkirov.hedge.server.dao.*
@@ -16,7 +17,8 @@ import java.time.Instant
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
-class IllustKit(private val data: DataRepository,
+class IllustKit(private val appdata: AppDataManager,
+                private val data: DataRepository,
                 private val metaManager: MetaManager) {
     /**
      * 检查score的值，不允许其超出范围。
@@ -336,14 +338,23 @@ class IllustKit(private val data: DataRepository,
 
     /**
      * 从一组images中，获得firstCover导出属性和score导出属性。
+     * 如果开启了相关选项以及指定了specifyPartitionTime，则partitionTime和orderTime将从指定分区内产生。
+     * @throws ResourceNotExist ("specifyPartitionTime", LocalDate) 在指定的时间分区下没有存在的图像
      * @return (fileId, score, favorite, partitionTime, orderTime)
      */
-    fun getExportedPropsFromList(images: List<Illust>): Tuple5<Int, Int?, Boolean, LocalDate, Long> {
+    fun getExportedPropsFromList(images: List<Illust>, specifyPartitionTime: LocalDate?): Tuple5<Int, Int?, Boolean, LocalDate, Long> {
         val fileId = images.minBy { it.orderTime }.fileId
         val score = images.asSequence().mapNotNull { it.score }.average().run { if(isNaN()) null else this }?.roundToInt()
         val favorite = images.any { it.favorite }
-        val partitionTime = images.asSequence().map { it.partitionTime }.groupBy { it }.maxBy { it.value.size }.key
-        val orderTime = images.filter { it.partitionTime == partitionTime }.minOf { it.orderTime }
+        val partitionTime: LocalDate
+        val orderTime: Long
+        if(appdata.setting.meta.centralizeCollection && specifyPartitionTime != null) {
+            partitionTime = specifyPartitionTime
+            orderTime = images.filter { it.partitionTime == specifyPartitionTime }.minOfOrNull { it.orderTime } ?: throw be(ResourceNotExist("specifyPartitionTime", specifyPartitionTime))
+        }else{
+            partitionTime = images.asSequence().map { it.partitionTime }.groupBy { it }.maxBy { it.value.size }.key
+            orderTime = images.filter { it.partitionTime == partitionTime }.minOf { it.orderTime }
+        }
 
         return Tuple5(fileId, score, favorite, partitionTime, orderTime)
     }

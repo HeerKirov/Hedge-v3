@@ -68,7 +68,18 @@ private fun Connection.attach(path: String, name: String) {
  * - 此函数默认使用了level 8的事务级别，以适配SQLite引擎。
  * - 此函数使用了synchronized同步锁，确保全局总是只有单一write调用。为了防止过多的阻塞，纯read的业务不要使用事务。
  */
-inline fun <T> Database.transaction(func: (Transaction) -> T): T {
+inline fun <T> Database.transaction(func: () -> T): T {
+    synchronized(this) {
+        return useTransaction(TransactionIsolation.SERIALIZABLE) { func() }
+    }
+}
+
+/**
+ * 开始一个事务会话。在业务中，任何write操作，都应使用此包装的会话。不要直接使用Database::useTransaction会话。
+ * - 此函数默认使用了level 8的事务级别，以适配SQLite引擎。
+ * - 此函数使用了synchronized同步锁，确保全局总是只有单一write调用。为了防止过多的阻塞，纯read的业务不要使用事务。
+ */
+inline fun <T> Database.transactionWithCtx(func: (Transaction) -> T): T {
     synchronized(this) {
         return useTransaction(TransactionIsolation.SERIALIZABLE, func)
     }
