@@ -52,10 +52,7 @@ defineProps<{
     <tr v-if="values.some(i => !!i)">
         <td>时间</td>
         <td v-for="value in values">
-            <template v-if="value !== null">
-                <PartitionTimeDisplay v-if="value.partitionTime !== null" :partition-time="value.partitionTime"/>
-                <TimeGroupDisplay :create-time="value.createTime" :update-time="value.updateTime" :order-time="value.orderTime"/>
-            </template>
+            <PartitionTimeDisplay v-if="value !== null && value.partitionTime !== null" :partition-time="value.partitionTime" :order-time="value.orderTime" :create-time="value.createTime" :update-time="value.updateTime"/>
         </td>
     </tr>
 </template>

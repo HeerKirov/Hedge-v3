@@ -355,11 +355,13 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
     const setScore = async (score: number | null) => {
         return score === data.value?.score || await setData({score})
     }
-    const setPartitionTime = async (partitionTime: LocalDateTime) => {
-        return partitionTime.timestamp === data.value?.partitionTime?.timestamp || await setData({partitionTime})
-    }
-    const setOrderTime = async (orderTime: LocalDateTime) => {
-        return orderTime.timestamp === data.value?.orderTime?.timestamp || await setData({orderTime})
+    const setTime = async ({ partitionTime, orderTime }: {partitionTime: LocalDateTime, orderTime: LocalDateTime}) => {
+        const partitionTimeSot = partitionTime.timestamp !== data.value?.partitionTime?.timestamp
+        const orderTimeSot = orderTime.timestamp !== data.value?.orderTime?.timestamp
+        return !partitionTimeSot && !orderTimeSot || await setData({
+            partitionTime: partitionTimeSot ? partitionTime : undefined,
+            orderTime: orderTimeSot ? orderTime : undefined
+        })
     }
     const openMetaTagEditor = () => {
         if(path.value !== null) {
@@ -367,7 +369,7 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
         }
     }
 
-    return {data, id: path, setDescription, setScore, setPartitionTime, setOrderTime, openMetaTagEditor}
+    return {data, id: path, setDescription, setScore, setTime, openMetaTagEditor}
 }
 
 export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref<"IMAGE" | "COLLECTION">) {

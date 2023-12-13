@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { BasePane } from "@/components/layout"
 import { ThumbnailImage, Separator, Icon, Starlight } from "@/components/universal"
-import { DescriptionDisplay, TagmeInfo, MetaTagListDisplay, PartitionTimeDisplay, TimeGroupDisplay, SourceInfo } from "@/components-business/form-display"
+import { DescriptionDisplay, TagmeInfo, MetaTagListDisplay, TimeGroupDisplay, SourceInfo } from "@/components-business/form-display"
 import { useTrashDetailPane } from "@/services/main/trash"
 import { datetime } from "@/utils/datetime"
 
@@ -48,8 +48,7 @@ const remain = (remainingTime: number | null) => {
             <DescriptionDisplay v-if="data.description" class="mt-1" :value="data.description"/>
             <MetaTagListDisplay v-if="data.topics.length || data.authors.length || data.tags.length" class="my-1" :topics="data.topics" :authors="data.authors" :tags="data.tags"/>
             <TagmeInfo v-if="data.tagme.length > 0" class="mt-1" :value="data.tagme"/>
-            <PartitionTimeDisplay class="mt-2" :partition-time="data.partitionTime"/>
-            <TimeGroupDisplay :order-time="data.orderTime" :update-time="data.updateTime" :create-time="data.createTime"/>
+            <TimeGroupDisplay class="mt-2" :partition-time="data.partitionTime" :order-time="data.orderTime" :create-time="data.createTime" :update-time="data.updateTime"/>
             <p class="secondary-text">删除时间 {{datetime.toSimpleFormat(data.trashedTime)}}</p>
         </template>
     </BasePane>

@@ -11,7 +11,7 @@ const props = defineProps<{detailId: number}>()
 
 const detailId = toRef(props, "detailId")
 
-const { data, setScore, setDescription, openMetaTagEditor, setPartitionTime, setOrderTime } = useSideBarDetailInfo(detailId)
+const { data, setScore, setDescription, openMetaTagEditor, setTime } = useSideBarDetailInfo(detailId)
 
 </script>
 
@@ -33,21 +33,16 @@ const { data, setScore, setDescription, openMetaTagEditor, setPartitionTime, set
         </FormEditKit>
         <TagmeInfo v-if="data.tagme.length > 0" class="mt-1" :value="data.tagme"/>
         <MetaTagListDisplay class="my-2" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
-        <FileInfoDisplay v-if="data.type === 'IMAGE'" class="mt-3" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>
-        <FormEditKit class="mt-2" :value="data.partitionTime" :set-value="setPartitionTime">
+        <FileInfoDisplay class="mt-3" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>
+        <FormEditKit class="mt-2" :value="{partitionTime: data.partitionTime, orderTime: data.orderTime}" :set-value="setTime">
             <template #default="{ value }">
-                <PartitionTimeDisplay :partition-time="value"/>
+                <PartitionTimeDisplay :partition-time="value.partitionTime" :order-time="value.orderTime" :create-time="data.createTime" :update-time="data.updateTime"/>
             </template>
             <template #edit="{ value, setValue, save }">
-                <DateEditor auto-focus :value="value" @update:value="setValue" @enter="save"/>
-            </template>
-        </FormEditKit>
-        <FormEditKit :value="data.orderTime" :set-value="setOrderTime">
-            <template #default="{ value }">
-                <TimeGroupDisplay :order-time="value" :update-time="data.updateTime" :create-time="data.createTime"/>
-            </template>
-            <template #edit="{ value, setValue, save }">
-                <DateTimeEditor auto-focus :value="value" @update:value="setValue" @enter="save"/>
+                <label class="has-text-info"><Icon class="mr-2" icon="clock"/><b>时间分区</b></label>
+                <DateEditor auto-focus :value="value.partitionTime" @update:value="setValue({partitionTime: $event, orderTime: value.orderTime})" @enter="save"/>
+                <label class="has-text-warning"><Icon class="mr-2" icon="business-time"/><b>排序时间</b></label>
+                <DateTimeEditor auto-focus :value="value.orderTime" @update:value="setValue({partitionTime: value.partitionTime, orderTime: $event})" @enter="save"/>
             </template>
         </FormEditKit>
     </template>

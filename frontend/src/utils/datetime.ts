@@ -165,6 +165,12 @@ export const datetime = {
         return `${year}-${ten(month)}-${ten(day)} ${ten(hours)}:${ten(minutes)}:${ten(seconds)}`
     },
     /**
+     * 转换为HH:mm:ss的字符串格式。
+     */
+    toSimpleFormatOnlyTime({ hours, minutes, seconds }: LocalDateTime): string {
+        return `${ten(hours)}:${ten(minutes)}:${ten(seconds)}`
+    },
+    /**
      * 替换year并生成新的时间。
      * 如果因年份变化引起日期变化(从闰年变到非闰年导致2月29日消失)，那么会缩减到本月最后一天。
      */
