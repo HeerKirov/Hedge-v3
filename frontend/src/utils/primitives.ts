@@ -14,6 +14,20 @@ export const arrays = {
         }
         return result
     },
+    maxBy<T>(arr: T[], by: (ele: T) => any): T | undefined {
+        if(arr.length === 0) return undefined
+        else if(arr.length === 1) return arr[0]
+        let c: any = undefined
+        let cur: T | undefined = undefined
+        for(const i of arr) {
+            const c0 = by(i)
+            if(c === undefined || c0 > c) {
+                c = c0
+                cur = i
+            }
+        }
+        return cur
+    },
     insertGap<T, G>(arr: T[], gap: () => G): (T | G)[] {
         const result: (T | G)[] = []
 

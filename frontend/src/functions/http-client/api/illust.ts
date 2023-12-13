@@ -21,6 +21,10 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
             parseResponse: ({ total, result }: ListResult<any>) => ({total, result: result.map(mapToIllust)}),
             parseQuery: mapFromIllustFilter
         }),
+        listPartitions: http.createQueryRequest("/api/illusts/partitions", "GET", {
+            parseQuery: mapFromPartitionFilter,
+            parseResponse: d => (<any[]>d).map(mapToPartition)
+        }),
         findByIds: http.createDataRequest("/api/illusts/find-by-ids", "POST", {
             parseResponse: (result: (any | null)[]) => result.map(i => i !== null ? mapToIllust(i) : null)
         }),
@@ -35,7 +39,9 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
         }),
         delete: http.createPathRequest(id => `/api/illusts/${id}`, "DELETE"),
         collection: {
-            create: http.createDataRequest("/api/illusts/collection", "POST"),
+            create: http.createDataRequest("/api/illusts/collection", "POST", {
+                parseData: mapFromCollectionCreateForm
+            }),
             get: http.createPathRequest(id => `/api/illusts/collection/${id}`, "GET", {
                 parseResponse: mapToDetailIllust
             }),
@@ -53,7 +59,9 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
                 get: http.createPathQueryRequest(id => `/api/illusts/collection/${id}/images`, "GET", {
                     parseResponse: ({ total, result }: ListResult<any>) => ({total, result: result.map(mapToIllust)}),
                 }),
-                update: http.createPathDataRequest(id => `/api/illusts/collection/${id}/images`, "PUT")
+                update: http.createPathDataRequest(id => `/api/illusts/collection/${id}/images`, "PUT", {
+                    parseData: mapFromCollectionImagesUpdateForm
+                })
             }
         },
         image: {
@@ -124,6 +132,13 @@ function mapToDetailIllust(data: any): DetailIllust {
     }
 }
 
+function mapToPartition(data: any): Partition {
+    return {
+        date: date.of(<string>data["date"]),
+        count: <number>data["count"]
+    }
+}
+
 function mapToCollectionRelatedItems(data: any): CollectionRelatedItems {
     return {
         books: <SimpleBook[]>data["books"],
@@ -138,6 +153,20 @@ function mapToImageRelatedItems(data: any): ImageRelatedItems {
         books: <SimpleBook[]>data["books"],
         folders: <SimpleFolder[]>data["folders"],
         associates: (<any[]>data["associates"]).map(mapToIllust)
+    }
+}
+
+function mapFromCollectionCreateForm(form: CollectionCreateForm): any {
+    return {
+        ...form,
+        specifyPartitionTime: form.specifyPartitionTime !== undefined ? date.toISOString(form.specifyPartitionTime) : undefined
+    }
+}
+
+function mapFromCollectionImagesUpdateForm(form: CollectionImagesUpdateForm): any {
+    return {
+        illustIds: form.illustIds,
+        specifyPartitionTime: form.specifyPartitionTime !== undefined ? date.toISOString(form.specifyPartitionTime) : undefined
     }
 }
 
@@ -165,6 +194,15 @@ function mapFromIllustFilter(data: IllustFilter | IllustLocationFilter) {
     }
 }
 
+function mapFromPartitionFilter(filter: PartitionFilter) {
+    return {
+        gte: filter.gte && date.toISOString(filter.gte),
+        lt: filter.lt && date.toISOString(filter.lt),
+        query: filter.query,
+        type: filter.type
+    }
+}
+
 /**
  * 图库项目。
  */
@@ -173,6 +211,10 @@ export interface IllustEndpoint {
      * 查询图库项目列表。
      */
     list(filter: IllustFilter): Promise<Response<ListResult<Illust>>>
+    /**
+     * 查询分区列表。
+     */
+    listPartitions(filter: PartitionFilter): Promise<Response<Partition[]>>
     /**
      * 根据条件执行高级查询。
      */
@@ -259,7 +301,7 @@ export interface IllustEndpoint {
              * @exception PARAM_REQUIRED ("images") images未提供
              * @exception RESOURCE_NOT_EXIST ("images", id: number[]) image id不存在或者可能是collection，总之不能用
              */
-            update(id: number, imageIds: number[]): Promise<Response<null, IllustExceptions["collection.images.update"]>>
+            update(id: number, form: CollectionImagesUpdateForm): Promise<Response<null, IllustExceptions["collection.images.update"]>>
         }
     }
     /**
@@ -381,6 +423,11 @@ export interface CommonIllust {
  */
 export interface DraggingIllust extends CommonIllust {
     type: IllustType
+}
+
+export interface Partition {
+    date: LocalDate
+    count: number
 }
 
 export interface IllustLocation {
@@ -592,12 +639,17 @@ export interface CollectionCreateForm {
     score?: number
     favorite?: boolean
     tagme?: Tagme[]
+    specifyPartitionTime?: LocalDate
 }
 
 export interface CollectionRelatedUpdateForm {
     associates?: number[]
 }
 
+export interface CollectionImagesUpdateForm {
+    illustIds: number[]
+    specifyPartitionTime?: LocalDate
+}
 
 export interface ImageRelatedUpdateForm extends CollectionRelatedUpdateForm {
     collectionId?: number | null
@@ -699,6 +751,13 @@ export interface IllustQueryFilter {
      * 按author id筛选。
      */
     author?: number
+}
+
+export interface PartitionFilter {
+    gte?: LocalDate
+    lt?: LocalDate
+    query?: string
+    type?: IllustQueryType
 }
 
 export interface IllustLocationFilter extends IllustQueryFilter {

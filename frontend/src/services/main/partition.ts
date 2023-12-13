@@ -1,7 +1,6 @@
-import { ComponentPublicInstance, Ref, computed, onMounted, ref, watch } from "vue"
+import { ComponentPublicInstance, Ref, computed, watch } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
-import { Partition } from "@/functions/http-client/api/partition"
-import { IllustQueryFilter } from "@/functions/http-client/api/illust"
+import { Partition, IllustQueryFilter } from "@/functions/http-client/api/illust"
 import { flatResponse } from "@/functions/http-client"
 import { useFetchReactive } from "@/functions/fetch"
 import { useLocalStorage, useMemoryStorage } from "@/functions/app"
@@ -53,7 +52,7 @@ function usePartitionView(listviewController: IllustViewController, querySchema:
 
 function usePartitionData(listviewController: IllustViewController, query: Ref<string | undefined>) {
     const { data: partitions, refresh } = useFetchReactive({
-        get: client => () => client.partition.list({type: typeof listviewController.collectionMode.value === "boolean" ? (listviewController.collectionMode.value ? "COLLECTION" : "IMAGE") : listviewController.collectionMode.value, query: query.value})
+        get: client => () => client.illust.listPartitions({type: typeof listviewController.collectionMode.value === "boolean" ? (listviewController.collectionMode.value ? "COLLECTION" : "IMAGE") : listviewController.collectionMode.value, query: query.value})
     })
 
     watch([listviewController.collectionMode, query], refresh)

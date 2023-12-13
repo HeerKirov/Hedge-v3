@@ -571,10 +571,10 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
                 const path = unref(dataDropOptions.path)
                 if(path !== null) {
                     if(mode === "ADD") {
-                        const images = await dialog.addIllust.checkExistsInCollection(illusts.map(i => i.id), path)
-                        if(images !== undefined && images.length > 0) {
+                        const resolves = await dialog.addIllust.checkExistsInCollection(illusts.map(i => i.id), path)
+                        if(resolves !== undefined && resolves.illustIds.length > 0) {
                             //在ADD时并不会更改排序，要想在集合中更改排序只能是MOVE操作。这种设计适合只是想将项加入集合而不想重排序的情况。
-                            return await fetchCollectionImagesUpdate(path, [path, ...images])
+                            return await fetchCollectionImagesUpdate(path, {illustIds: [path, ...resolves.illustIds], specifyPartitionTime: resolves.specifyPartitionTime})
                         }
                     }else{
                         return await insertIntoIllusts(insertIndex, illusts, "MOVE")

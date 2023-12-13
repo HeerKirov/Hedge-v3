@@ -13,7 +13,6 @@ import { createTagEndpoint, TagEndpoint } from "./api/tag"
 import { createAuthorEndpoint, AuthorEndpoint } from "./api/author"
 import { createTopicEndpoint, TopicEndpoint } from "./api/topic"
 import { createAnnotationEndpoint, AnnotationEndpoint } from "./api/annotations"
-import { createPartitionEndpoint, PartitionEndpoint } from "./api/partition"
 import { createSourceDataEndpoint, SourceDataEndpoint } from "./api/source-data"
 import { createSourceTagMappingEndpoint, SourceTagMappingEndpoint } from "./api/source-tag-mapping"
 import { createFindSimilarEndpoint, FindSimilarEndpoint } from "./api/find-similar"
@@ -34,7 +33,6 @@ export interface HttpClient {
     setting: SettingEndpoint
     note: NoteEndpoint
     illust: IllustEndpoint
-    partition: PartitionEndpoint
     book: BookEndpoint
     folder: FolderEndpoint
     tag: TagEndpoint
@@ -64,7 +62,6 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
         setting: createSettingEndpoint(http),
         note: createNoteEndpoint(http),
         illust: createIllustEndpoint(http),
-        partition: createPartitionEndpoint(http),
         book: createBookEndpoint(http),
         folder: createFolderEndpoint(http),
         tag: createTagEndpoint(http),

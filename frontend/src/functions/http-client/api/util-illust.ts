@@ -1,7 +1,7 @@
 import { HttpInstance, Response } from ".."
 import { FilePath } from "./all"
 import { SimpleCollection, SimpleIllust } from "./illust"
-import { datetime, LocalDateTime } from "@/utils/datetime"
+import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 
 export function createUtilIllustEndpoint(http: HttpInstance): UtilIllustEndpoint {
     return {
@@ -20,11 +20,15 @@ export function createUtilIllustEndpoint(http: HttpInstance): UtilIllustEndpoint
 
 function mapToCollectionSituation(data: any): CollectionSituation {
     return {
-        id: <number>data["id"],
-        childrenCount: <number>data["childrenCount"],
-        orderTime: datetime.of(<string>data["orderTime"]),
-        childrenExamples: <SimpleIllust[]>data["childrenExamples"],
-        belongs: <number[]>data["belongs"]
+        partitionTime: (<string | null>data["partitionTime"]) !== null ? date.of(data["partitionTime"]) : null,
+        collections: (<any[]>data["collections"]).map(data => ({
+            collectionId: <number>data["collectionId"],
+            childrenCount: <number>data["childrenCount"],
+            orderTime: datetime.of(<string>data["orderTime"]),
+            childrenExamples: <SimpleIllust[]>data["childrenExamples"],
+            belongs: <number[]>data["belongs"]
+        })),
+        images: <SimpleIllust[]>data["images"]
     }
 }
 
@@ -60,10 +64,16 @@ export interface UtilIllustEndpoint {
 }
 
 export interface CollectionSituation {
+    partitionTime: LocalDate | null
+    collections: CollectionSituationNoCol[]
+    images: SimpleIllust[]
+}
+
+export interface CollectionSituationNoCol {
     /**
      * 集合id。
      */
-    id: number
+    collectionId: number
     /**
      * 集合的子项目数量。
      */

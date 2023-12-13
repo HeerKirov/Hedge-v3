@@ -223,6 +223,14 @@ export interface MetaOption {
      */
     autoCleanTagme: boolean
     /**
+     * 当创建新集合或向集合添加新项时，允许指定分区，将不在此分区的项聚集到此分区中。
+     */
+    centralizeCollection: boolean
+    /**
+     * 对orderTime的变更将会自动同步至partitionTime。
+     */
+    bindingPartitionWithOrderTime: boolean
+    /**
      * topic根据type区分的颜色。
      */
     topicColors: {[key in TopicType]: UsefulColors}
