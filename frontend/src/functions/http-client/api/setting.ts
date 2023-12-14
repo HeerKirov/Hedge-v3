@@ -4,6 +4,7 @@ import { AlreadyExists, CascadeResourceExists, NotFound, InvalidRuleIndexError, 
 import { AuthorType } from "./author"
 import { TopicType } from "./topic"
 import { TaskConfig } from "./find-similar"
+import { MetaType } from "./all"
 
 export function createSettingEndpoint(http: HttpInstance): SettingEndpoint {
     return {
@@ -279,6 +280,18 @@ export interface ImportOption {
      * 阻止没有来源信息的项被导入。这有利于保证所有导入项都有来源。
      */
     preventNoneSourceData: boolean
+    /**
+     * 在文件导入时，根据已设置的来源和映射规则，自动映射并添加元数据标签。
+     */
+    autoReflectMetaTag: boolean
+    /**
+     * 启用哪些元数据标签类型的映射。
+     */
+    reflectMetaTagType: MetaType[]
+    /**
+     * 对于那些author和ip/copyright数量较多的对象，将其视为混杂集合，不做映射。
+     */
+    notReflectForMixedSet: boolean
     /**
      * 导入时，自动设定meta tag的tagme。
      */

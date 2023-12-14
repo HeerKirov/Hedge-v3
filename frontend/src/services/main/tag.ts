@@ -288,7 +288,7 @@ export function useTagDetailPane() {
 
     const setMappingSourceTags = async (mappingSourceTags: MappingSourceTag[]) => {
         //由于mapping source tags的编辑模式，需要在提交之前做一次过滤
-        const final: MappingSourceTag[] = mappingSourceTags.filter(t => t.site && t.name && t.code)
+        const final: MappingSourceTag[] = mappingSourceTags.filter(t => t.site && t.code)
 
         return objects.deepEquals(final, data.value?.mappingSourceTags) || await setData({
             mappingSourceTags: patchMappingSourceTagForm(mappingSourceTags, data.value?.mappingSourceTags ?? [])
@@ -375,7 +375,7 @@ function mapCreateFormToHelper(form: TagCreateFormData): TagCreateForm {
         annotations: form.annotations.map(a => a.id),
         description: form.description,
         color: form.color,
-        mappingSourceTags: patchMappingSourceTagForm(form.mappingSourceTags.filter(t => t.site && t.name && t.code), []),
+        mappingSourceTags: patchMappingSourceTagForm(form.mappingSourceTags.filter(t => t.site && t.code), []),
         examples: form.examples.map(e => e.id)
     }
 }

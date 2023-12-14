@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Separator } from "@/components/universal"
 import { CheckBox, Select } from "@/components/form"
+import { MetaType } from "@/functions/http-client/api/all"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
 import { useSettingImport } from "@/services/setting"
 import DBImportSourceRule from "./DBImportSourceRule.vue"
@@ -8,11 +9,17 @@ import DBImportDirectoriesEditor from "./DBImportDirectoriesEditor.vue"
 
 const { data: settingImport } = useSettingImport()
 
+const updateReflectMetaTagTypes = (metaType: MetaType, value: boolean) => {
+    if(value && !settingImport.value!.reflectMetaTagType.includes(metaType)) settingImport.value!.reflectMetaTagType = [...settingImport.value!.reflectMetaTagType, metaType]
+    else if(!value && settingImport.value!.reflectMetaTagType.includes(metaType)) settingImport.value!.reflectMetaTagType = settingImport.value!.reflectMetaTagType.filter(i => i !== metaType)
+}
+
 const timeTypes: {value: OrderTimeType, label: string}[] = [
     {value: "IMPORT_TIME", label: "项目导入时间"},
     {value: "CREATE_TIME", label: "文件创建时间"},
     {value: "UPDATE_TIME", label: "文件修改时间"}
 ]
+
 </script>
 
 <template>
@@ -33,6 +40,23 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
             <label class="label">排序时间方案</label>
             <Select class="mt-1" :items="timeTypes" v-model:value="settingImport.setOrderTimeBy"/>
             <p class="secondary-text">使用选定的属性作为导入项目的排序时间。当选定的属性不存在时，自动选择其他属性。</p>
+        </div>
+        <div class="mt-2">
+            <label class="label">启用导入时标签映射</label>
+            <div class="mt-1">
+                <CheckBox v-model:value="settingImport.autoReflectMetaTag">导入时标签映射</CheckBox>
+                <p class="secondary-text">导入文件时，若来源数据已存在，则会利用现有的标签映射规则，自动为导入项目添加元数据标签。</p>
+            </div>
+            <div class="mt-2">
+                <CheckBox class="mr-2" :disabled="!settingImport.autoReflectMetaTag" :value="settingImport.reflectMetaTagType.includes('TAG')" @update:value="updateReflectMetaTagTypes('TAG', $event)">标签</CheckBox>
+                <CheckBox class="mr-2" :disabled="!settingImport.autoReflectMetaTag" :value="settingImport.reflectMetaTagType.includes('TOPIC')" @update:value="updateReflectMetaTagTypes('TOPIC', $event)">主题</CheckBox>
+                <CheckBox :disabled="!settingImport.autoReflectMetaTag" :value="settingImport.reflectMetaTagType.includes('AUTHOR')" @update:value="updateReflectMetaTagTypes('AUTHOR', $event)">作者</CheckBox>
+                <p class="secondary-text">启用哪些类型的元数据标签。</p>
+            </div>
+            <div class="mt-2">
+                <CheckBox :disabled="!settingImport.autoReflectMetaTag" v-model:value="settingImport.notReflectForMixedSet">不为混合集做映射</CheckBox>
+                <p class="secondary-text">主题、作者标签数量过多的来源不会被映射。</p>
+            </div>
         </div>
         <Separator direction="horizontal" :spacing="2"/>
         <div>

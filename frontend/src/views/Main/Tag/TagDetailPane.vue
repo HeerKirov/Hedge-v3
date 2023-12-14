@@ -82,7 +82,7 @@ const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotation
             <template #default="{ value }">
                 <SourceTagMappingDisplay :value="value" direction="vertical"/>
             </template>
-            <template #edit="{ value, setValue, save }">
+            <template #edit="{ value, setValue }">
                 <SourceTagMappingEditor :value="value" @update:value="setValue" direction="vertical"/>
             </template>
         </FormEditKit>
@@ -92,7 +92,7 @@ const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotation
             <template #default="{ value }">
                 <TagExampleDisplay :value="value"/>
             </template>
-            <template #edit="{ value, setValue, save }">
+            <template #edit="{ value, setValue }">
                 <TagExampleEditor :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
