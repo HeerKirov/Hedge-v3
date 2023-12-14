@@ -67,6 +67,9 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
 
             form.autoAnalyseSourceData.alsoOpt { import.autoAnalyseSourceData = it }
             form.preventNoneSourceData.alsoOpt { import.preventNoneSourceData = it }
+            form.autoReflectMetaTag.alsoOpt { import.autoReflectMetaTag = it }
+            form.reflectMetaTagType.alsoOpt { import.reflectMetaTagType = it }
+            form.notReflectForMixedSet.alsoOpt { import.notReflectForMixedSet = it }
             form.setTagmeOfTag.alsoOpt { import.setTagmeOfTag = it }
             form.setOrderTimeBy.alsoOpt { import.setOrderTimeBy = it }
             form.sourceAnalyseRules.alsoOpt { import.sourceAnalyseRules = it }

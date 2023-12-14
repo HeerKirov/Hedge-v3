@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.components.appdata
 
+import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAuthorType
 import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.model.FindSimilarTask
@@ -161,6 +162,18 @@ data class ImportOption(
      * 阻止没有来源信息的项被导入。这有利于保证所有导入项都有来源。
      */
     var preventNoneSourceData: Boolean,
+    /**
+     * 在文件导入时，根据已设置的来源和映射规则，自动映射并添加元数据标签。
+     */
+    var autoReflectMetaTag: Boolean,
+    /**
+     * 启用哪些元数据标签类型的映射。
+     */
+    var reflectMetaTagType: List<MetaType>,
+    /**
+     * 对于那些author和ip/copyright数量较多的对象，将其视为混杂集合，不做映射。
+     */
+    var notReflectForMixedSet: Boolean,
     /**
      * 在文件导入时，自动设置tag、topic、author、source的tagme。
      */

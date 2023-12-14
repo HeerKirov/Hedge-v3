@@ -31,12 +31,13 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
     }
 
     fun getHomepageState(): HomepageStateRes {
+        val today = Instant.now().toPartitionDate(appdata.setting.server.timeOffsetHour)
         val importImageCount = data.db.sequenceOf(ImportRecords).count { it.status eq ImportStatus.COMPLETED and it.deleted.not() }
         val importImageErrorCount = data.db.sequenceOf(ImportRecords).count { it.status eq ImportStatus.ERROR and it.deleted.not() }
         val findSimilarCount = data.db.sequenceOf(FindSimilarResults).count()
         val stagingPostCount = stagingPostManager.count()
 
-        return HomepageStateRes(importImageCount, importImageErrorCount, findSimilarCount, stagingPostCount)
+        return HomepageStateRes(today, importImageCount, importImageErrorCount, findSimilarCount, stagingPostCount)
     }
 
     private fun mapToHomepageRes(record: HomepageRecord): HomepageRes {

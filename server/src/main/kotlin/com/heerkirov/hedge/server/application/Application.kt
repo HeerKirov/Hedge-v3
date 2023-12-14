@@ -82,7 +82,7 @@ fun runApplication(options: ApplicationOptions) {
             define { EventCompositorImpl(repo, bus, backendExporter) }
             define { FileGeneratorImpl(appStatus, appdata, repo, bus) }
             define { DailyProcessorImpl(appStatus, appdata, repo, bus, trashManager) }
-            define { ImportProcessorImpl(appStatus, appdata, repo, bus, similarFinder, illustManager, sourceAnalyzeManager, sourceManager) }
+            define { ImportProcessorImpl(appStatus, appdata, repo, bus, similarFinder, illustManager, sourceAnalyzeManager, sourceManager, sourceMappingManager) }
 
             val homepageService = HomepageService(appdata, repo, stagingPostManager)
             val illustService = IllustService(appdata, repo, bus, illustKit, illustManager, associateManager, sourceManager, queryManager)

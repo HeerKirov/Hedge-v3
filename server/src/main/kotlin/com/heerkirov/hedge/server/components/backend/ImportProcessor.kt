@@ -8,11 +8,16 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.dao.ImportRecords
+import com.heerkirov.hedge.server.dao.SourceDatas
+import com.heerkirov.hedge.server.dao.SourceTagRelations
+import com.heerkirov.hedge.server.dao.SourceTags
 import com.heerkirov.hedge.server.dto.form.IllustImageCreateForm
 import com.heerkirov.hedge.server.dto.form.SourceDataUpdateForm
-import com.heerkirov.hedge.server.dto.res.SourceDataIdentity
+import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.enums.ImportStatus
+import com.heerkirov.hedge.server.enums.MetaType
+import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.events.FileProcessError
 import com.heerkirov.hedge.server.events.FileReady
 import com.heerkirov.hedge.server.events.ImportUpdated
@@ -20,12 +25,15 @@ import com.heerkirov.hedge.server.exceptions.BusinessException
 import com.heerkirov.hedge.server.functions.manager.IllustManager
 import com.heerkirov.hedge.server.functions.manager.SourceAnalyzeManager
 import com.heerkirov.hedge.server.functions.manager.SourceDataManager
+import com.heerkirov.hedge.server.functions.manager.SourceMappingManager
 import com.heerkirov.hedge.server.library.framework.Component
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.model.ImportRecord
 import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
+import com.heerkirov.hedge.server.utils.letIf
+import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import org.ktorm.dsl.*
 import org.ktorm.entity.filter
 import org.ktorm.entity.sequenceOf
@@ -46,7 +54,8 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                           private val similarFinder: SimilarFinder,
                           private val illustManager: IllustManager,
                           private val sourceAnalyzeManager: SourceAnalyzeManager,
-                          private val sourceDataManager: SourceDataManager) : ImportProcessor {
+                          private val sourceDataManager: SourceDataManager,
+                          private val sourceMappingManager: SourceMappingManager) : ImportProcessor {
     init {
         bus.on(arrayOf(FileReady::class, FileProcessError::class)) {
             it.which {
@@ -110,6 +119,7 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
         val errors = mutableMapOf<Int, ImportRecord.StatusInfo>()
         val oks = mutableListOf<IllustImageCreateForm>()
         val sourceForms = mutableListOf<Pair<SourceDataIdentity, SourceDataUpdateForm>>()
+        val mappingTagCache = mutableMapOf<SourceDataIdentity, Tuple4<List<Int>, List<Int>, List<Int>, Illust.Tagme>?>()
 
         for(record in importRecords) {
             val orderTime = when(setting.import.setOrderTimeBy) {
@@ -150,19 +160,81 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                 }
             }else null
 
-            val tagme = if(setting.import.setTagmeOfTag) {
-                if(source == null || !setting.meta.autoCleanTagme) {
-                    Illust.Tagme.TAG + Illust.Tagme.AUTHOR + Illust.Tagme.TOPIC + Illust.Tagme.SOURCE
-                }else{
-                    Illust.Tagme.TAG + Illust.Tagme.AUTHOR + Illust.Tagme.TOPIC
+            val metaTags = if(setting.import.autoReflectMetaTag && source != null) {
+                mappingTagCache.computeIfAbsent(SourceDataIdentity(source.first.sourceSite, source.first.sourceId)) { (site, sourceId) ->
+                    val sourceDataId = data.db.from(SourceDatas).select(SourceDatas.id)
+                        .where { (SourceDatas.sourceSite eq site) and (SourceDatas.sourceId eq sourceId) }
+                        .firstOrNull()?.get(SourceDatas.id)
+                    if(sourceDataId != null) {
+                        val sourceTags = data.db.from(SourceTags)
+                            .innerJoin(SourceTagRelations, (SourceTags.id eq SourceTagRelations.sourceTagId) and (SourceTagRelations.sourceDataId eq sourceDataId))
+                            .select(SourceTags.type, SourceTags.code)
+                            .map { SourceTagPath(source.first.sourceSite, it[SourceTags.type]!!, it[SourceTags.code]!!) }
+
+                        if(sourceTags.isNotEmpty()) {
+                            val resultTags = mutableListOf<Int>()
+                            val resultTopics = mutableListOf<Int>()
+                            val resultAuthors = mutableListOf<Int>()
+                            val mixedCounter = if(setting.import.notReflectForMixedSet) mutableMapOf<Any, Int>() else null
+                            val typeReflector = if(setting.import.setTagmeOfTag) mutableMapOf<Pair<String, String>, MetaType>() else null
+                            val enableTag = MetaType.TAG in setting.import.reflectMetaTagType
+                            val enableTopic = MetaType.TOPIC in setting.import.reflectMetaTagType
+                            val enableAuthor = MetaType.AUTHOR in setting.import.reflectMetaTagType
+                            val mappingTags = sourceMappingManager.batchQuery(sourceTags)
+                            for (mappingTag in mappingTags) {
+                                for (mapping in mappingTag.mappings) {
+                                    when(mapping.metaType) {
+                                        MetaType.AUTHOR -> if(enableAuthor) {
+                                            mixedCounter?.compute((mapping.metaTag as AuthorSimpleRes).type) { _, v -> if(v != null) v + 1 else 1 }
+                                            resultAuthors.add((mapping.metaTag as AuthorSimpleRes).id)
+                                        }
+                                        MetaType.TOPIC -> if(enableTopic) {
+                                            if(mixedCounter != null && (mapping.metaTag as TopicSimpleRes).type != TagTopicType.CHARACTER) mixedCounter.compute(mapping.metaTag.type) { _, v -> if(v != null) v + 1 else 1 }
+                                            resultTopics.add((mapping.metaTag as TopicSimpleRes).id)
+                                        }
+                                        MetaType.TAG -> if(enableTag) resultTags.add((mapping.metaTag as TagSimpleRes).id)
+                                    }
+                                }
+                                if(typeReflector != null && mappingTag.mappings.isNotEmpty() && mappingTag.mappings.first().metaType in setting.import.reflectMetaTagType) {
+                                    typeReflector[Pair(mappingTag.site, mappingTag.type)] = mappingTag.mappings.first().metaType
+                                }
+                            }
+                            //当计数器监测到AUTHOR/TOPIC(不包括character)中某一类存在至少5个标签时，就认为这是一个混合集，不会输出它
+                            if(mixedCounter == null || !mixedCounter.values.any { it >= 5 }) {
+                                //移除tagme的判定方法：根据存在的映射，可以大致推断某个site.type对应的MetaType类型。
+                                //例如，可以推断ehentai.parody映射到TOPIC.IP类型，ehentai.character映射到TOPIC.CHARACTER类型，ehentai.male/female都映射到TAG类型。
+                                //之后，从MetaType反推，看映射到它的所有site.type类型的来源标签是否都被映射了。如果是的，则可以移除对应的Tagme。
+                                //例如，如果标签parody:A和parody:B都有映射，author:C和author:D只有C有映射，那么TOPIC可以移除，而AUTHOR不行。
+                                var minusTagme: Illust.Tagme = Illust.Tagme.EMPTY
+                                if(typeReflector != null) {
+                                    for ((metaType, sourceTypes) in typeReflector.entries.groupBy({ it.value }) { it.key }) {
+                                        val filteredSourceTags = mappingTags.filter { sourceTypes.any { (site, type) -> site == it.site && type == it.type } }
+                                        if(filteredSourceTags.isNotEmpty() && filteredSourceTags.all { it.mappings.isNotEmpty() }) {
+                                            minusTagme += when(metaType) {
+                                                MetaType.AUTHOR -> Illust.Tagme.AUTHOR
+                                                MetaType.TOPIC -> Illust.Tagme.TOPIC
+                                                MetaType.TAG -> Illust.Tagme.TAG
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Tuple4(resultTags, resultTopics, resultAuthors, minusTagme)
+                            }else null
+                        }else null
+                    }else null
                 }
-            }else{
-                Illust.Tagme.EMPTY
+            }else null
+
+            val tagme = if(!setting.import.setTagmeOfTag) Illust.Tagme.EMPTY else {
+                (Illust.Tagme.TAG + Illust.Tagme.AUTHOR + Illust.Tagme.TOPIC + Illust.Tagme.SOURCE)
+                    .letIf(source != null && setting.meta.autoCleanTagme) { it - Illust.Tagme.SOURCE }
+                    .letIf(metaTags != null) { it - metaTags!!.f4 }
             }
 
             if(source?.second != null) sourceForms.add(SourceDataIdentity(source.first.sourceSite, source.first.sourceId) to source.second!!)
 
-            oks.add(IllustImageCreateForm(record.id, record.fileId, partitionTime, orderTime, record.importTime, tagme = tagme, source = source?.first))
+            oks.add(IllustImageCreateForm(record.id, record.fileId, partitionTime, orderTime, record.importTime, tagme = tagme, source = source?.first, tags = metaTags?.f1, topics = metaTags?.f2, authors = metaTags?.f3))
         }
 
         for ((sourceIdentity, updateForm) in sourceForms) {
@@ -207,8 +279,8 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                 }
             }
 
-            if(appdata.setting.findSimilar.autoFindSimilar) {
-                similarFinder.add(FindSimilarTask.TaskSelectorOfImages(importToImageIds.values.toList()), appdata.setting.findSimilar.autoTaskConf ?: appdata.setting.findSimilar.defaultTaskConf)
+            if(setting.findSimilar.autoFindSimilar) {
+                similarFinder.add(FindSimilarTask.TaskSelectorOfImages(importToImageIds.values.toList()), setting.findSimilar.autoTaskConf ?: setting.findSimilar.defaultTaskConf)
             }
 
             bus.emit(oks.map { ImportUpdated(it.importId, status = ImportStatus.COMPLETED) })

@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.dto.form
 
 import com.heerkirov.hedge.server.components.appdata.ImportOption
 import com.heerkirov.hedge.server.components.appdata.SourceOption
+import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAuthorType
 import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.library.form.Length
@@ -34,6 +35,9 @@ data class SiteBulkForm(@NotBlank @Length(16) val name: String,
 
 data class ImportOptionUpdateForm(val autoAnalyseSourceData: Opt<Boolean>,
                                   val preventNoneSourceData: Opt<Boolean>,
+                                  val autoReflectMetaTag: Opt<Boolean>,
+                                  val reflectMetaTagType: Opt<List<MetaType>>,
+                                  val notReflectForMixedSet: Opt<Boolean>,
                                   val setTagmeOfTag: Opt<Boolean>,
                                   val setTagmeOfSource: Opt<Boolean>,
                                   val setOrderTimeBy: Opt<ImportOption.TimeType>,

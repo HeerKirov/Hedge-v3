@@ -26,6 +26,7 @@ import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import com.heerkirov.hedge.server.utils.types.anyOpt
 import com.heerkirov.hedge.server.utils.types.optOf
+import com.heerkirov.hedge.server.utils.types.optOrUndefined
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.ktorm.support.sqlite.bulkInsertReturning
@@ -48,7 +49,7 @@ class IllustManager(private val appdata: AppDataManager,
     /**
      * 批量创建新的image。
      */
-    fun bulkNewImage(form: Collection<IllustImageCreateForm>): Map<Int, Int> {
+    fun bulkNewImage(form: List<IllustImageCreateForm>): Map<Int, Int> {
         return if(form.isNotEmpty()) {
             val sourceToRowIds = form
                 .mapNotNull { sourceManager.checkSourceSite(it.source?.sourceSite, it.source?.sourceId, it.source?.sourcePart, it.source?.sourcePartName) }
@@ -90,6 +91,13 @@ class IllustManager(private val appdata: AppDataManager,
 
             @Suppress("UNCHECKED_CAST")
             val ids = returningIds as List<Int>
+
+            for (i in form.indices) {
+                val record = form[i]
+                if(!record.tags.isNullOrEmpty() || !record.topics.isNullOrEmpty() || !record.authors.isNullOrEmpty()) {
+                    kit.updateMeta(ids[i], creating = true, newTags = optOrUndefined(record.tags?.ifEmpty { null }), newTopics = optOrUndefined(record.topics?.ifEmpty { null }), newAuthors = optOrUndefined(record.authors?.ifEmpty { null }))
+                }
+            }
 
             bus.emit(ids.map { IllustCreated(it, IllustType.IMAGE) })
 

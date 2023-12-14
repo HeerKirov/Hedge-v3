@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.components.appdata
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.Json.updateField
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
@@ -46,6 +47,9 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             import = ImportOption(
                 autoAnalyseSourceData = false,
                 preventNoneSourceData = false,
+                autoReflectMetaTag = false,
+                reflectMetaTagType = listOf(MetaType.TAG, MetaType.TOPIC, MetaType.AUTHOR),
+                notReflectForMixedSet = false,
                 setTagmeOfTag = true,
                 setOrderTimeBy = ImportOption.TimeType.UPDATE_TIME,
                 sourceAnalyseRules = emptyList(),
@@ -199,7 +203,9 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
                     .upsertField("bindingPartitionWithOrderTime") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() },
             "query" to json["query"],
             "source" to json["source"],
-            "import" to json["import"],
+            "import" to json["import"].upsertField("autoReflectMetaTag") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() }
+                .upsertField("notReflectForMixedSet") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() }
+                .upsertField("reflectMetaTagType") { value -> if(value != null && value.isArray) value else listOf(MetaType.TAG, MetaType.TOPIC, MetaType.AUTHOR).toJsonNode() },
             "findSimilar" to json["findSimilar"]
         ).toJsonNode()
     }

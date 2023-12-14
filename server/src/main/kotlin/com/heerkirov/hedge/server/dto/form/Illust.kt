@@ -17,7 +17,10 @@ data class IllustImageCreateForm(val importId: Int,
                                  val description: String? = null,
                                  val score: Int? = null,
                                  val favorite: Boolean = false,
-                                 val tagme: Illust.Tagme = Illust.Tagme.EMPTY)
+                                 val tagme: Illust.Tagme = Illust.Tagme.EMPTY,
+                                 val tags: List<Int>? = null,
+                                 val topics: List<Int>? = null,
+                                 val authors: List<Int>? = null)
 
 data class IllustCollectionCreateForm(val images: List<Int>,
                                       val description: String? = null,

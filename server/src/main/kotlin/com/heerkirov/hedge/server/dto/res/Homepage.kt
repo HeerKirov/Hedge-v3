@@ -18,7 +18,8 @@ data class HomepageRes(val ready: Boolean,
     data class HistoryImage(val date: LocalDate, val images: List<IllustSimpleRes>)
 }
 
-data class HomepageStateRes(val importImageCount: Int,
+data class HomepageStateRes(val today: LocalDate,
+                            val importImageCount: Int,
                             val importImageErrorCount: Int,
                             val findSimilarCount: Int,
                             val stagingPostCount: Int)
