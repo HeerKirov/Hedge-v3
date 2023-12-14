@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { BadgeDefinition, SubMenuItemDefinition } from "./definition"
+import { MenuBadge, SubMenuItemDefinition } from "./definition"
 import { useMenuContext } from "./context"
 import MenuItem from "./MenuItem.vue"
 import MenuSubItem from "./MenuSubItem.vue"
@@ -9,7 +9,7 @@ const props = defineProps<{
     id: string
     icon: string
     label: string
-    badge: number | BadgeDefinition | BadgeDefinition[] | null
+    badge: MenuBadge
     submenu?: SubMenuItemDefinition[]
 }>()
 
@@ -47,10 +47,6 @@ const clickSubMenuItem = (subId: string) => {
 <template>
     <MenuItem :label="label" :icon="icon" :badge="badge" :checked="menuItemChecked" :has-sub="hasSub" v-model:sub-open="currentSubOpened" @click="clickMenuItem"/>
     <template v-if="currentSubOpened">
-        <MenuSubItem v-for="sub in submenu" :key="sub.id" :label="sub.label" :checked="subMenuItemChecked === sub.id" @click="clickSubMenuItem(sub.id)"/>
+        <MenuSubItem v-for="sub in submenu" :key="sub.id" :label="sub.label" :checked="subMenuItemChecked === sub.id" :badge="sub.badge" @click="clickSubMenuItem(sub.id)"/>
     </template>
 </template>
-
-<style module lang="sass">
-
-</style>

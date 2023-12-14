@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, useCssModule } from "vue"
 import { Icon } from "@/components/universal"
-import { BadgeDefinition } from "./definition"
+import { MenuBadge } from "./definition"
 
 const props = defineProps<{
     icon: string
     label: string
-    badge: number | BadgeDefinition | BadgeDefinition[] | null
+    badge: MenuBadge
     checked?: "selected" | "sub-selected" | null
     disabled?: boolean
     hasSub?: boolean
@@ -24,9 +24,9 @@ const clickCaret = (e: MouseEvent) => {
 }
 
 const badges = computed(() => {
-    if(props.badge === null) {
+    if(props.badge === null || props.badge === undefined) {
         return []
-    }else if(typeof props.badge === "number") {
+    }else if(typeof props.badge === "number" || typeof props.badge === "string") {
         return [{count: props.badge, type: "std" as const}]
     }else if(props.badge instanceof Array) {
         return props.badge
@@ -48,10 +48,10 @@ const divClass = computed(() => [
     <button :class="divClass" @click="$emit('click')">
         <Icon :icon="icon"/>
         <span class="ml-2">{{label}}</span>
-        <span v-for="badge in badges" :class="[$style.badge, $style[badge.type]]">{{ badge.count }}</span>
         <span v-if="hasSub" :class="$style.caret" @click="clickCaret">
             <Icon :icon="subOpen ? 'caret-down' : 'caret-right'"/>
         </span>
+        <span v-for="badge in badges" :class="[$style.badge, $style[badge.type]]">{{ badge.count }}</span>
     </button>
 </template>
 

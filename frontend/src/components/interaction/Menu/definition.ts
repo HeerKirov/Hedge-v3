@@ -1,6 +1,8 @@
 
 export type MenuDefinition = ScopeDefinition | MenuItemDefinition
 
+export type MenuBadge = string | number | BadgeDefinition | BadgeDefinition[] | null | undefined
+
 interface ScopeDefinition {
     type: "scope"
     id: string
@@ -12,13 +14,14 @@ export interface MenuItemDefinition {
     id: string
     icon: string
     label: string
-    badge?: number | BadgeDefinition | BadgeDefinition[] | null | undefined
+    badge?: MenuBadge
     submenu?: SubMenuItemDefinition[]
 }
 
 export interface SubMenuItemDefinition {
     id: string
     label: string
+    badge?: MenuBadge
 }
 
 export interface BadgeDefinition {

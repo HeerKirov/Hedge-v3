@@ -1,6 +1,6 @@
 import { computed, isReactive, isRef, reactive, ref, Ref, unref, watch } from "vue"
 import { LocationQuery, RouteRecordName, useRouter } from "vue-router"
-import { MenuDefinition, SubMenuItemDefinition, BadgeDefinition } from "@/components/interaction"
+import { MenuDefinition, SubMenuItemDefinition, MenuBadge } from "@/components/interaction"
 import { installation, toReactiveArray } from "@/utils/reactivity"
 
 /**
@@ -30,7 +30,7 @@ interface NavMenuItem {
     routeQueryValue?: string
     label: string
     icon: string
-    badge?: Ref<number | BadgeDefinition | BadgeDefinition[] | null | undefined>
+    badge?: Ref<MenuBadge> | MenuBadge
     submenu?: (NavSubMenuItem | NavItemSetup<NavSubMenuItem>)[]
 }
 
@@ -42,6 +42,7 @@ export interface NavSubMenuItem {
     routeQueryName: string
     routeQueryValue: string
     label: string
+    badge?: Ref<MenuBadge> | MenuBadge
 }
 
 export interface NavItemSetup<T> {
@@ -223,7 +224,11 @@ function mapNavMenuItemToMenuDefinition(item: NavMenuItem, submenu?: Ref<SubMenu
  * 将一个nav sub item定义映射为菜单项。
  */
 function mapNavSubMenuItemToMenuDefinition(item: NavSubMenuItem): SubMenuItemDefinition {
-    return {id: `${item.routeQueryName}=${item.routeQueryValue}`, label: item.label}
+    if(item.badge !== undefined) {
+        return reactive({id: `${item.routeQueryName}=${item.routeQueryValue}`, label: item.label, badge: item.badge})
+    }else{
+        return {id: `${item.routeQueryName}=${item.routeQueryValue}`, label: item.label}
+    }
 }
 
 /**

@@ -1,7 +1,6 @@
 import { UsefulColors } from "@/constants/ui"
 import { LocalDate, date } from "@/utils/datetime"
 import { HttpInstance, Response } from ".."
-import { NotFound } from "../exceptions"
 import { SimpleIllust } from "./illust"
 import { TopicType } from "./topic"
 import { AuthorType } from "./author"
@@ -12,7 +11,9 @@ export function createHomepageEndpoint(http: HttpInstance): HomepageEndpoint {
         homepage: http.createRequest("/api/homepage", "GET", {
             parseResponse: mapToHomepageInfo
         }),
-        state: http.createRequest("/api/homepage/state")
+        state: http.createRequest("/api/homepage/state", "GET", {
+            parseResponse: mapToHomepageState
+        })
     }
 }
 
@@ -39,6 +40,13 @@ function mapToHomepageInfo(data: any): HomepageInfo {
     }
 }
 
+function mapToHomepageState(data: any): HomepageState {
+    return {
+        ...data,
+        today: date.of(<string>data["today"])
+    }
+}
+
 export interface HomepageEndpoint {
     /**
      * 获得主页信息。
@@ -51,6 +59,7 @@ export interface HomepageEndpoint {
 }
 
 interface HomepageState {
+    today: LocalDate
     importImageCount: number
     importImageErrorCount: number
     findSimilarCount: number

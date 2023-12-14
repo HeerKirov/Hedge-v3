@@ -1,24 +1,24 @@
 import { reactive, Ref, toRaw, watch } from "vue"
 import { useRoute } from "vue-router"
+import { BadgeDefinition, MenuBadge } from "@/components/interaction"
 import { installation } from "@/utils/reactivity"
 
 export interface NavHistory {
-    histories: Readonly<{[routeName: string]: {id: string, label: string}[]}>
+    histories: Readonly<{[routeName: string]: {id: string, label: string, badge: MenuBadge}[]}>
     excludes: {[routeName: string]: string[]}
-    pushHistory(id: string, label: string): void
-    pushHistory(routeName: string, id: string, label: string): void
+    pushHistory(options: {routeName?: string, id: string, label: string, badge?: MenuBadge}): void
     clearHistory(routeName: string): void
 }
 
 export const [installNavHistory, useNavHistory] = installation(function (maxHistory: number = 5): NavHistory {
     const route = useRoute()
 
-    const histories = reactive<{[routeName: string]: {id: string, label: string}[]}>({})
-    const historiesBySort = <{[routeName: string]: {id: string, label: string}[]}>{}
+    const histories = reactive<{[routeName: string]: {id: string, label: string, badge: MenuBadge}[]}>({})
+    const historiesBySort = <{[routeName: string]: {id: string, label: string, badge: MenuBadge}[]}>{}
     const excludes = reactive<{[routeName: string]: string[]}>({})
 
-    const pushHistory = (a: string, b: string, c?: string) => {
-        const [routeName, id, label] = c !== undefined ? [a, b, c] : [route.name as string, a, b]
+    const pushHistory = (options: {routeName?: string, id: string, label: string, badge?: MenuBadge}) => {
+        const { routeName = route.name as string, id, label, badge } = options 
 
         const history = histories[routeName] || (histories[routeName] = [])
         const historyBySort = historiesBySort[routeName] || (historiesBySort[routeName] = [])
@@ -44,7 +44,7 @@ export const [installNavHistory, useNavHistory] = installation(function (maxHist
             history.splice(idx, 1)
         }
 
-        const newItem = {id, label}
+        const newItem = {id, label, badge}
         history.splice(0, 0, newItem)
         historyBySort.splice(0, 0, newItem)
     }
@@ -71,23 +71,23 @@ export const [installNavHistory, useNavHistory] = installation(function (maxHist
 })
 
 export function useNavHistoryPush<T extends {id: number, name: string}>(watcher: Ref<T | null>): void
-export function useNavHistoryPush<T extends object>(watcher: Ref<T | null>, generator: (d: T) => {id: number | string, name: string}): void
-export function useNavHistoryPush<T extends object>(watcher: Ref<T | null>, generator?: (d: T) => {id: number | string, name: string}) {
+export function useNavHistoryPush<T extends object>(watcher: Ref<T | null>, generator: (d: T) => {id: number | string, name: string, badge?: MenuBadge}): void
+export function useNavHistoryPush<T extends object>(watcher: Ref<T | null>, generator?: (d: T) => {id: number | string, name: string, badge?: MenuBadge}) {
     const { pushHistory } = useNavHistory()
 
     if(generator !== undefined) {
         watch(watcher, d => {
             if(d !== null) {
-                const { id, name } = generator(d)
+                const { id, name, badge } = generator(d)
                 const finalId = typeof id === "number" ? id.toString() : id
-                pushHistory(finalId, name)
+                pushHistory({id: finalId, label: name, badge})
             }
         }, {immediate: true})
     }else{
         watch(watcher, d => {
             if(d !== null) {
-                const { id, name } = d as {id: number, name: string}
-                pushHistory(id.toString(), name)
+                const { id, name, badge } = d as {id: number, name: string, badge?: string | number | BadgeDefinition | BadgeDefinition[]}
+                pushHistory({id: id.toString(), label: name, badge})
             }
         }, {immediate: true})
     }

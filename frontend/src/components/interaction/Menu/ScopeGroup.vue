@@ -27,6 +27,6 @@ const currentScopeOpened = computed({
 <template>
     <MenuScope v-if="!!label" :label="label" @click="currentScopeOpened = !currentScopeOpened"/>
     <template v-if="currentScopeOpened">
-        <ItemGroup v-for="item in items" :key="item.id" :id="item.id" :icon="item.icon" :label="item.label" :badge="item.badge ?? null" :submenu="item.submenu"/>
+        <ItemGroup v-for="item in items" :key="item.id" :id="item.id" :icon="item.icon" :label="item.label" :badge="item.badge" :submenu="item.submenu"/>
     </template>
 </template>

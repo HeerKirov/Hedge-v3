@@ -1,11 +1,12 @@
 import { computed, Ref } from "vue"
 import { GeneratedNavMenuItem, NavItemSetup, NavSubMenuItem } from "./side-nav-menu"
 import { NavHistory } from "./side-nav-history"
+import { MenuBadge } from "@/components/interaction"
 
 
 export function setupSubItemByNavHistory(navHistory: NavHistory, routeName: string, routeQueryName: string): NavItemSetup<NavSubMenuItem> {
-    function mapNavHistoryToMenuItem(i: {id: string, label: string}): NavSubMenuItem {
-        return {routeQueryName, routeQueryValue: i.id, label: i.label}
+    function mapNavHistoryToMenuItem(i: {id: string, label: string, badge: MenuBadge}): NavSubMenuItem {
+        return {routeQueryName, routeQueryValue: i.id, label: i.label, badge: i.badge}
     }
 
     return function () {
@@ -14,8 +15,8 @@ export function setupSubItemByNavHistory(navHistory: NavHistory, routeName: stri
 }
 
 export function setupItemByNavHistory(navHistory: NavHistory, routeName: string, routeQueryName: string, icon: string): NavItemSetup<GeneratedNavMenuItem> {
-    function mapNavHistoryToMenuItem(i: {id: string, label: string}): GeneratedNavMenuItem {
-        return {type: "menu", routeName, routeQueryName, routeQueryValue: i.id, label: i.label, icon}
+    function mapNavHistoryToMenuItem(i: {id: string, label: string, badge: MenuBadge}): GeneratedNavMenuItem {
+        return {type: "menu", routeName, routeQueryName, routeQueryValue: i.id, label: i.label, badge: i.badge, icon}
     }
 
     return function () {

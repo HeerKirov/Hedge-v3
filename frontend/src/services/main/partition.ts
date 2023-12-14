@@ -18,16 +18,20 @@ import { computedEffect, computedWatch, installation } from "@/utils/reactivity"
 import { arrays, numbers } from "@/utils/primitives"
 import { LocalDate, date, getDaysOfMonth } from "@/utils/datetime"
 import { writeClipboard } from "@/modules/others"
+import { useHomepageState } from "@/services/main/homepage"
 
 export const [installPartitionContext, usePartitionContext] = installation(function () {
     const querySchema = useQuerySchema("ILLUST")
     const listviewController = useIllustViewController()
     const partition = usePartitionView(listviewController, querySchema)
     const path = useRouterQueryLocalDate("MainPartition", "detail")
+    const state = useHomepageState()
 
     useNavHistoryPush(path, p => {
-        const d = date.toISOString(p)
-        return {id: d, name: d}
+        const id = date.toISOString(p)
+        const name = `${p.year}年${p.month}月${p.day}日`
+        const today = state.data.value?.today.timestamp === p.timestamp
+        return {id, name, badge: today ? "TODAY" : undefined}
     })
 
     return {partition, querySchema, listviewController, path}

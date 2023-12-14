@@ -1,14 +1,28 @@
 <script setup lang="ts">
 import { computed, useCssModule } from "vue"
+import { MenuBadge } from "./definition"
 
 const props = defineProps<{
     label: string
     checked?: boolean
+    badge: MenuBadge
 }>()
 
 const emit = defineEmits<{
     (e: "click"): void
 }>()
+
+const badges = computed(() => {
+    if(props.badge === null || props.badge === undefined) {
+        return []
+    }else if(typeof props.badge === "number" || typeof props.badge === "string") {
+        return [{count: props.badge, type: "std" as const}]
+    }else if(props.badge instanceof Array) {
+        return props.badge
+    }else{
+        return [props.badge]
+    }
+})
 
 const style = useCssModule()
 
@@ -21,7 +35,8 @@ const divClass = computed(() => [
 
 <template>
     <button :class="divClass" @click="$emit('click')">
-        <span class="no-wrap overflow-hidden">{{label}}</span>
+        <span>{{label}}</span>
+        <span v-for="badge in badges" :class="[$style.badge, $style[badge.type]]">{{ badge.count }}</span>
     </button>
 </template>
 
@@ -32,14 +47,16 @@ const divClass = computed(() => [
 .button
     box-sizing: border-box
     vertical-align: baseline
+    white-space: nowrap
+    overflow: hidden
     border-radius: $radius-size-std
     text-align: left
     margin-top: $spacing-half
-    padding: 0 1em
+    padding: 0 0.5em 0 1em
     height: 30px
     width: 100%
     font-size: $font-size-std
-    > span
+    > span:first-child
         margin-left: calc(1.25em + $spacing-2)
 
 @media (prefers-color-scheme: light)
@@ -62,6 +79,12 @@ const divClass = computed(() => [
             background-color: rgba($light-mode-primary, 0.28)
         &[disabled]
             color: $light-mode-secondary-text-color
+        
+    .badge
+        &.std
+            background-color: rgba(#000000, 0.08)
+        &.danger
+            background-color: rgba($light-mode-danger, 0.3)
 
 @media (prefers-color-scheme: dark)
     .general
@@ -83,4 +106,16 @@ const divClass = computed(() => [
             background-color: rgba($dark-mode-primary, 0.28)
         &[disabled]
             color: $dark-mode-secondary-text-color
+    
+    .badge
+        background-color: rgba(#000000, 0.3)
+        &.danger
+            color: $dark-mode-danger
+
+.badge
+    float: right
+    padding: 2px 6px
+    margin-left: 2px
+    border-radius: $radius-size-std
+    font-weight: 700
 </style>

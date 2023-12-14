@@ -17,7 +17,7 @@ const emit = defineEmits<{
     (e: "update:selected", value: {id: string, subId: string | null} | undefined): void
 }>()
 
-const { selected } = installMenuContext(computed({
+installMenuContext(computed({
     get: () => props.selected,
     set: value => emit("update:selected", value)
 }))
