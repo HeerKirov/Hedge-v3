@@ -93,9 +93,9 @@ class DailyProcessorImpl(private val appStatusDriver: AppStatusDriver,
         val todayImageIds = run {
             //共取28项image。
             //随机取3个partition，每个partition随机取8项，然后在这之外随机取4项；
-            //其次，选取条件是NOT book member, score>=3。如果最后还空缺，则放开条件把空缺补满。
+            //选取条件是NOT book member, score>=3。如果最后还空缺，则放开条件把空缺补上。
             val total = 28
-            val partitions = queryPartition(3, random = true)
+            val partitions = queryPartition(3, random = true) { (it.score greaterEq 3) and (it.cachedBookCount eq 0) }
             val partitionImages = partitions.flatMap { partition -> queryImage(8, onlyImage = true) { (it.partitionTime eq partition) and (it.cachedBookCount eq 0) and (it.score greaterEq 3) } }
             val lacks = queryImage(total - partitionImages.size, onlyImage = true) { it.partitionTime notInList partitions }
             partitionImages + lacks
@@ -103,16 +103,11 @@ class DailyProcessorImpl(private val appStatusDriver: AppStatusDriver,
 
         val todayBookIds = run {
             //共取12项book。
-            //[0, 4]：fav
-            //[0, 4]：!fav && score!=NULL && score>=4
-            //[0, 4]：!fav && score!=NULL && score>=3 && score<4
-            //剩余：!fav && (score=NULL || score<3)
+            //选取条件是score>=3 or fav，如果空缺就放开条件把空缺补上。
             val total = 12
-            val typeA = queryBook(Random.nextInt(0..4)) { it.favorite }
-            val typeB = queryBook(Random.nextInt(0..4)) { it.favorite.not() and it.score.isNotNull() and (it.score greaterEq 4) }
-            val typeC = queryBook(Random.nextInt(0..4)) { it.favorite.not() and it.score.isNotNull() and (it.score greaterEq 3) and (it.score less 4) }
-            val typeD = queryBook(total - typeA.size - typeB.size - typeC.size) { it.favorite.not() and (it.score less 3 or it.score.isNull()) }
-            (typeA + typeB + typeC).shuffled() + typeD
+            val books = queryBook(total) { it.favorite or (it.score greaterEq 3) }
+            val lacks = queryBook(total - books.size) { it.favorite.not() and (it.score.isNull() or (it.score less 3)) }
+            books + lacks
         }
 
         val todayAuthorAndTopicIds = run {
@@ -142,17 +137,12 @@ class DailyProcessorImpl(private val appStatusDriver: AppStatusDriver,
 
         val historyImages = run {
             //选取最近的8个日期，每个日期取18项image。
-            //[3, 6]：fav
-            //[2, 6]: !fav && score!=NULL && score>=4
-            //[1, 6]：!fav && score!=NULL && score>=3 && score<4
-            //剩余：!fav && (score=NULL || score<3)
+            //选取条件是score>=3。如果最后还空缺，则放开条件把空缺补上。
             queryPartition(8).map { date ->
                 val total = 18
-                val typeA = queryImage(Random.nextInt(3..6)) { (it.partitionTime eq date) and it.favorite }
-                val typeB = queryImage(Random.nextInt(2..6)) { (it.partitionTime eq date) and it.favorite.not() and it.score.isNotNull() and (it.score greaterEq 4) }
-                val typeC = queryImage(Random.nextInt(1..6)) { (it.partitionTime eq date) and it.favorite.not() and it.score.isNotNull() and (it.score greaterEq 3) and (it.score less 4) }
-                val typeD = queryImage(total - typeA.size - typeB.size - typeC.size) { (it.partitionTime eq date) and it.favorite.not() and (it.score less 3 or it.score.isNull()) }
-                HomepageRecord.HistoryImage(date, (typeA + typeB + typeC).shuffled() + typeD)
+                val images = queryImage(total) { it.partitionTime eq date and (it.score greaterEq 3) }
+                val lacks = queryImage(total - images.size) { it.partitionTime eq date and (it.score.isNull() or (it.score less 3))}
+                HomepageRecord.HistoryImage(date, images + lacks)
             }
         }
 
@@ -162,7 +152,7 @@ class DailyProcessorImpl(private val appStatusDriver: AppStatusDriver,
     private inline fun queryImage(limit: Int, onlyImage: Boolean = false, condition: (Illusts) -> ColumnDeclaring<Boolean>): List<Int> {
         return if(limit <= 0) emptyList() else data.db.from(Illusts)
             .select(Illusts.id)
-            .where { (Illusts.type notEq if(onlyImage) IllustModelType.COLLECTION else IllustModelType.IMAGE_WITH_PARENT) and condition(Illusts) }
+            .where { if(onlyImage) { (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) }else{ (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.COLLECTION) } and condition(Illusts) }
             .orderBy(random().asc())
             .limit(limit)
             .map { it[Illusts.id]!! }
@@ -177,10 +167,10 @@ class DailyProcessorImpl(private val appStatusDriver: AppStatusDriver,
             .map { it[Books.id]!! }
     }
 
-    private fun queryPartition(limit: Int, random: Boolean = false): List<LocalDate> {
+    private fun queryPartition(limit: Int, random: Boolean = false, condition: ((Illusts) -> ColumnDeclaring<Boolean>)? = null): List<LocalDate> {
         return if(limit <= 0) emptyList() else data.db.from(Illusts)
             .select(Illusts.partitionTime)
-            .where { (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.COLLECTION) }
+            .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.COLLECTION)).let { if(condition != null) it and condition(Illusts) else it } }
             .groupBy(Illusts.partitionTime)
             .orderBy(if(random) random().asc() else Illusts.partitionTime.desc())
             .limit(limit)
