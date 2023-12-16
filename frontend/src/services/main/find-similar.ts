@@ -139,7 +139,8 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
 
     const addToCollection = async (collectionId: number | "new", currentImageId?: number) => {
         const imageIds = getEffectedItems(currentImageId)
-        await resolve({actions: [{type: "ADD_TO_COLLECTION", imageIds, collectionId}], clear: false})
+        const checkForm = await dialog.addIllust.checkExistsInCollection(imageIds, collectionId !== "new" ? collectionId : null, true)
+        if(checkForm !== undefined) await resolve({actions: [{type: "ADD_TO_COLLECTION", imageIds, collectionId, specifyPartitionTime: checkForm.specifyPartitionTime}], clear: false})
     }
 
     const addToBook = async (bookId: number, currentImageId?: number) => {

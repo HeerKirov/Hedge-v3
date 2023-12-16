@@ -9,9 +9,10 @@ import { arrays } from "@/utils/primitives"
 export interface AddIllust {
     /**
      * 对于将一组illust添加到指定的集合做检查。若有图像已存在于其他集合，则弹出对话框要求选择解决方案：将那些图像都加入此集合，还是忽略
+     * 还有一些扩展功能。可以禁止图像存在于其他集合的检查，只检查时间分区；collectionId可以不填，此时做创建集合的检查，且默认禁止其他集合检查
      * @return 若选择忽略，则仅返回没有父集合的项；若选择添加或没有冲突，则返回全部项；若取消对话框，返回undefined
      */
-    checkExistsInCollection(images: number[], collectionId: number): Promise<CollectionImagesUpdateForm | undefined>
+    checkExistsInCollection(images: number[], collectionId: number | null, forbiddenExistCheck?: boolean): Promise<CollectionImagesUpdateForm | undefined>
     /**
      * 对于将一组illust添加到指定的画集做检查。若有图像已存在于此画集，则弹出对话框要求选择解决方案：将那些图像移动到新位置，还是忽略
      * @return 若选择忽略，则仅返回不属于此画集的项；若选择添加或没有冲突，则返回全部项；若取消对话框，返回undefined
@@ -26,7 +27,8 @@ export interface AddIllust {
 
 export interface CaseCollectionProps {
     type: "collection"
-    collectionId: number
+    collectionId: number | null
+    forbiddenExistCheck: boolean
     situations: CollectionSituation[]
     resolve(_: CollectionImagesUpdateForm | undefined): void
     cancel(): void
@@ -60,17 +62,19 @@ export function useAddIllust(push: Push): AddIllust {
     const fetchFolderSituation = useFetchHelper(client => client.illustUtil.getFolderSituation)
 
     return {
-        async checkExistsInCollection(images: number[], collectionId: number): Promise<CollectionImagesUpdateForm | undefined> {
-            const situations = await fetchCollectionSituation([collectionId, ...images])
+        async checkExistsInCollection(images: number[], collectionId: number | null, forbiddenExistCheck?: boolean): Promise<CollectionImagesUpdateForm | undefined> {
+            const situations = await fetchCollectionSituation(collectionId !== null ? [collectionId, ...images] : images)
             if(situations !== undefined) {
-                if(situations.length > 1 || situations.reduce((a, b) => a + b.collections.length, 0) > 1) {
+                if(situations.length > 1 || (!forbiddenExistCheck && collectionId !== null && situations.reduce((a, b) => a + b.collections.length, 0) > 1)) {
                     //当存在多个situations(意味着分属多个时间分区)或存在多个collections(意味着有存在于除自己以外其他集合的图像)，就开启确认对话框
                     return new Promise(resolve => {
                         push({
                             type: "addIllust",
-                            props: {type: "collection", collectionId, situations: situations, resolve, cancel: () => resolve(undefined)}
+                            props: {type: "collection", collectionId, forbiddenExistCheck: forbiddenExistCheck ?? false, situations: situations, resolve, cancel: () => resolve(undefined)}
                         })
                     })
+                }else{
+                    return {illustIds: images, specifyPartitionTime: undefined}
                 }
             }else{
                 return undefined
@@ -118,11 +122,13 @@ export function useAddIllust(push: Push): AddIllust {
 }
 
 export function useAddIllustCollectionContext(p: CaseCollectionProps, close: () => void) {
+    const forbiddenExistCheck = p.forbiddenExistCheck || p.collectionId === null
+
     const situations = p.situations.map(s => ({...s, totalImageCount: s.images.length + s.collections.map(c => c.belongs.length).reduce((a, b) => a + b, 0)}))
 
     const collectionTotalCount = p.situations.reduce((a, b) => a + b.collections.length, 0)
 
-    const selectedPartition = ref<number | null>(situations.length > 1 ? situations.find(s => s.collections.some(c => c.collectionId === p.collectionId))!.partitionTime!.timestamp : null)
+    const selectedPartition = ref<number | null>(situations.length > 1 ? (p.collectionId !== null ? situations.find(s => s.collections.some(c => c.collectionId === p.collectionId)) : arrays.maxBy(situations, s => s.totalImageCount))!.partitionTime!.timestamp : null)
 
     const selectedCollections = ref<Record<number, boolean | undefined>>({})
 
@@ -130,7 +136,7 @@ export function useAddIllustCollectionContext(p: CaseCollectionProps, close: () 
         const illustIds: number[] = []
         for(const s of situations) {
             for(const c of s.collections) {
-                if(c.collectionId !== p.collectionId && selectedCollections.value[c.collectionId] !== false) {
+                if(forbiddenExistCheck || (c.collectionId !== p.collectionId && selectedCollections.value[c.collectionId] !== false)) {
                     illustIds.push(...c.belongs)
                 }
             }
@@ -143,7 +149,7 @@ export function useAddIllustCollectionContext(p: CaseCollectionProps, close: () 
         close()
     }
 
-    return {situations, collectionTotalCount, selectedPartition, selectedCollections, submit}
+    return {situations, collectionTotalCount, selectedPartition, selectedCollections, forbiddenExistCheck, submit}
 }
 
 export function useAddIllustBookFolderContext(p: CaseBookProps | CaseFolderProps, close: () => void): {situations: {ordinal: number | null, id: number, filePath: FilePath}[], chooseIgnore(): void, chooseResolve(): void} {

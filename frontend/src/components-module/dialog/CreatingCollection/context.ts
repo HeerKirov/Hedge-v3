@@ -56,7 +56,11 @@ export function useCreatingCollectionContext(images: Ref<number[]>, preSituation
 
     const situations = computed(() => preSituations.value.map(s => ({...s, totalImageCount: s.images.length + s.collections.map(c => c.belongs.length).reduce((a, b) => a + b, 0)})))
 
-    const selected = ref<{type: "new"} | {type: "collection", id: number} | {type: "partition", ts: number}>(situations.value.length > 1 ? ({type: "partition", ts: arrays.maxBy(situations.value, s => s.totalImageCount)!.partitionTime!.timestamp}) : ({type: "new"}))
+    const selected = ref<{type: "new"} | {type: "collection", id: number} | {type: "partition", ts: number}>(
+        situations.value.length > 1 ? ({type: "partition", ts: arrays.maxBy(situations.value, s => s.totalImageCount)!.partitionTime!.timestamp}) :
+        situations.value[0].collections.length >= 1 ? ({type: "collection", id: arrays.maxBy(situations.value[0].collections, c => c.childrenCount)!.collectionId}) : 
+        ({type: "new"})
+    )
 
     const submit = async () => {
         if(selected.value.type === "partition") {

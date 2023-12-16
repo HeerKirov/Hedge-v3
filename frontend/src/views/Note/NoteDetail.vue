@@ -7,7 +7,7 @@ import { useAppEnv } from "@/functions/app"
 
 const { platform } = useAppEnv()
 
-const { paneState, form, setTitle, setContent, toggleCompleted, togglePinned, deleteItem } = useNoteDetailContext()
+const { paneState, form, setTitle, setContent, submit, toggleCompleted, togglePinned, deleteItem } = useNoteDetailContext()
 
 </script>
 
@@ -28,10 +28,10 @@ const { paneState, form, setTitle, setContent, toggleCompleted, togglePinned, de
             <Block :class="$style.block">
                 <div :class="$style.title">
                     <Button v-if="!form.pinned" round square :mode="form.completed ? 'light' : undefined" :type="form.completed ? 'primary' : 'secondary'" icon="check" @click="toggleCompleted"/>
-                    <Input tabindex="1" size="large" auto-focus :value="form.title" @update:value="setTitle"/>
+                    <Input tabindex="1" size="large" auto-focus :value="form.title" update-on-input @update:value="setTitle" @enter="submit" @change="submit"/>
                     <Button square :type="form.pinned ? 'primary' : 'secondary'" icon="lock" @click="togglePinned"/>
                 </div>
-                <Input :class="$style.content" tabindex="2" type="textarea" :value="form.content" @update:value="setContent"/>
+                <Input :class="$style.content" tabindex="2" type="textarea" :value="form.content" update-on-input @update:value="setContent" @change="submit"/>
             </Block>
         </template>
     </BottomLayout>

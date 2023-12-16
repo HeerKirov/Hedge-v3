@@ -25,7 +25,9 @@ export function createFindSimilarEndpoint(http: HttpInstance): FindSimilarEndpoi
             get: http.createPathRequest(id => `/api/find-similar/results/${id}`, "GET", {
                 parseResponse: mapToDetailResult
             }),
-            resolve: http.createPathDataRequest(id => `/api/find-similar/results/${id}/resolve`, "POST"),
+            resolve: http.createPathDataRequest(id => `/api/find-similar/results/${id}/resolve`, "POST", {
+                parseData: mapFromResolveForm
+            }),
             delete: http.createPathRequest(id => `/api/find-similar/results/${id}`, "DELETE")
         }
     }
@@ -46,6 +48,16 @@ function mapFromForm(data: FindSimilarTaskCreateForm): any {
     return {
         selector: mapFromTaskSelector(data.selector),
         config: data.config
+    }
+}
+
+function mapFromResolveForm(data: FindSimilarResultResolveForm): any {
+    return {
+        clear: data.clear,
+        actions: data.actions.map(action => action.type === "ADD_TO_COLLECTION" && action.specifyPartitionTime !== undefined ? {
+            ...action,
+            specifyPartitionTime: date.toISOString(action.specifyPartitionTime)
+        } : action)
     }
 }
 
@@ -277,6 +289,7 @@ export type FindSimilarResultResolveAction = ({type: "CLONE_IMAGE"} & ImageProps
     type: "ADD_TO_COLLECTION"
     imageIds: number[]
     collectionId: number | string
+    specifyPartitionTime?: LocalDate
 } | {
     type: "ADD_TO_BOOK"
     imageIds: number[]

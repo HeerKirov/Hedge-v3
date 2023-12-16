@@ -1,4 +1,4 @@
-import { computed, ref, watch } from "vue"
+import { computed, onMounted, onUnmounted, ref, watch } from "vue"
 import { useFetchEndpoint, useFetchHelper, useQueryContinuousListView, useRetrieveHelper } from "@/functions/fetch"
 import { NoteRecord, NoteStatus } from "@/functions/http-client/api/note"
 import { useQueryNumber } from "@/modules/router"
@@ -97,8 +97,9 @@ export function useNoteDetailContext() {
         completed: data.value?.status === "COMPLETED" ?? false,
         pinned: data.value?.status === "PINNED" ?? false,
         title: data.value?.title ?? "",
-        content: data.value?.content ?? ""
-    }))
+        content: data.value?.content ?? "",
+        changed: false
+    }))    
 
     const submit = async () => {
         if(paneState.mode.value === "create") {
@@ -118,12 +119,10 @@ export function useNoteDetailContext() {
 
     const setTitle = (title: string) => {
         form.value.title = title
-        submit()
     }
 
     const setContent = (content: string) => {
         form.value.content = content
-        submit()
     }
 
     const togglePinned = () => {
@@ -152,5 +151,8 @@ export function useNoteDetailContext() {
         }
     }
 
-    return {paneState, form, setTitle, setContent, toggleCompleted, togglePinned, deleteItem}
+    onMounted(() => window.addEventListener("beforeunload", submit))
+    onUnmounted(() => window.removeEventListener("beforeunload", submit))
+
+    return {paneState, form, setTitle, setContent, submit, toggleCompleted, togglePinned, deleteItem}
 }
