@@ -1,3 +1,8 @@
+## Bug Fixes
+* 修复了集合详情页图像列表的一个比较刁钻的bug。应该是该bug导致了一些集合详情页的无法刷新、无法选定的奇怪现象。目前暂不能确定bug已全部找完，还有待继续观察。
+  - 在有时进入此页面时，View组件的dataUpdate请求要先于singleton组件的初始化完毕，这导致在数据请求之后queryListview会发生一次FILTER_UPDATED事件，然后触发了一次paginationData的reset，造成记忆的数据范围被重置，但数据会在之后送达，且View组件没有重新提起dataUpdate请求，因此数据范围一直是null，这就造成之后的REFRESH事件无法被响应，也就无法刷新。
+  - 目前的解决方案是：在id有数据之前，不显示View组件，这样View组件的dataUpdate请求一定在singleton组件初始化之后。能解决问题，但并不优雅。
+
 # v0.5.0
 ## Bug Fixes
 * 修复标签的来源标签映射无法正常添加和修改的问题。
