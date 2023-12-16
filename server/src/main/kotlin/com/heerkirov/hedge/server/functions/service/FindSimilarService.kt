@@ -32,6 +32,7 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import java.time.Instant
+import java.time.LocalDate
 import kotlin.math.max
 import kotlin.math.min
 
@@ -155,7 +156,7 @@ class FindSimilarService(private val data: DataRepository,
             }
 
             //actions依次执行。其中对image的collection/book更新会被收集起来批量执行
-            val collectionToImages = mutableMapOf<Any, MutableList<Int>>()
+            val collectionToImages = mutableMapOf<Any, Pair<MutableList<Int>, LocalDate?>>()
             val bookToImages = mutableMapOf<Int, MutableList<Int>>()
             val toBeDeleted = mutableSetOf<Int>()
             val imageClonedCollections = mutableMapOf<Int, MutableList<Int>>()
@@ -172,7 +173,7 @@ class FindSimilarService(private val data: DataRepository,
                         bookIds?.forEach { bookId -> imageCloneBooks.computeIfAbsent(bookId) { mutableListOf() }.add(action.to) }
                     }
                     is FindSimilarResultResolveForm.AddToCollectionResolution -> {
-                        collectionToImages.computeIfAbsent(action.collectionId) { mutableListOf() }.addAll(action.imageIds)
+                        collectionToImages.compute(action.collectionId) { _, v -> v?.also { (l, _) -> l.addAll(action.imageIds) } ?: Pair(mutableListOf<Int>().also { it.addAll(action.imageIds) }, action.specifyPartitionTime) }
                     }
                     is FindSimilarResultResolveForm.AddToBookResolution -> {
                         bookToImages.computeIfAbsent(action.bookId) { mutableListOf() }.addAll(action.imageIds)
@@ -261,15 +262,16 @@ class FindSimilarService(private val data: DataRepository,
             }
 
             val newCollectionIds = mutableMapOf<String, Int>()
-            for ((collectionId, imageIds) in collectionToImages) {
+            for ((collectionId, p) in collectionToImages) {
+                val (imageIds, specifyPartitionTime) = p
                 when (collectionId) {
                     is Int -> {
                         val images = illustManager.unfoldImages(imageIds + listOf(collectionId), sorted = false)
-                        illustManager.updateImagesInCollection(collectionId, images, null)
+                        illustManager.updateImagesInCollection(collectionId, images, specifyPartitionTime)
                     }
                     is String -> if(imageIds.isNotEmpty()) {
                         //collectionId可以设置为string，表示会创建新collection，相同字符串的会被创建到同一个collection中
-                        newCollectionIds[collectionId] = illustManager.newCollection(imageIds, "", null, null, Illust.Tagme.EMPTY, null)
+                        newCollectionIds[collectionId] = illustManager.newCollection(imageIds, "", null, null, Illust.Tagme.EMPTY, specifyPartitionTime)
                     }
                     else -> throw be(ParamTypeError("config.collectionId", "must be number or string."))
                 }
@@ -288,8 +290,8 @@ class FindSimilarService(private val data: DataRepository,
                 val books = (bookToImages.asSequence() + imageCloneBooks.asSequence())
                     .groupBy({ it.key }) { it.value }
                     .mapValues { it.value.asSequence().flatten().distinct().toList() }
-                val collections = (collectionToImages.mapKeys { (k, _) -> if(k is Int) k else newCollectionIds[k as String]!! }.asSequence() + imageClonedCollections.asSequence())
-                    .groupBy({ it.key }) { it.value }
+                val collections = (collectionToImages.map { (k, v) -> (if(k is Int) k else newCollectionIds[k as String]!!) to v.first }.asSequence() + imageClonedCollections.asSequence().map { it.key to it.value })
+                    .groupBy({ it.first }) { it.second }
                     .mapValues { it.value.asSequence().flatten().distinct().toList() }
                 val newRes = computeResultChange(result, collections, books, toBeDeleted, ignoredEdges, ignoredSourceBooks, ignoredSourceDatas)
                 data.db.update(FindSimilarResults) {

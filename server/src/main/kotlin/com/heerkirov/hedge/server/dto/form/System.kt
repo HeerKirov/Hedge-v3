@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.heerkirov.hedge.server.enums.NoteStatus
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.types.Opt
+import java.time.LocalDate
 
 data class HistoryPushForm(val type: String, val id: Int)
 
@@ -29,7 +30,7 @@ data class FindSimilarResultResolveForm(val actions: List<Resolution>, val clear
 
     data class CloneImageResolution(override val from: Int, override val to: Int, val props: ImagePropsCloneForm.Props, val merge: Boolean = false, val deleteFrom: Boolean = false) : ResolutionForTwoImage
 
-    data class AddToCollectionResolution(override val imageIds: List<Int>, val collectionId: Any) : ResolutionForMultipleImage
+    data class AddToCollectionResolution(override val imageIds: List<Int>, val collectionId: Any, val specifyPartitionTime: LocalDate? = null) : ResolutionForMultipleImage
 
     data class AddToBookResolution(override val imageIds: List<Int>, val bookId: Int) : ResolutionForMultipleImage
 
