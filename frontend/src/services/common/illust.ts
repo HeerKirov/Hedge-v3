@@ -24,11 +24,11 @@ export interface ImageDatasetOperatorsOptions<T extends CommonIllust> {
     /**
      * data view.
      */
-    paginationData: PaginationDataView<T>
+    paginationData: PaginationDataView<T, number>
     /**
      * endpoint.
      */
-    listview: QueryListview<T>
+    listview: QueryListview<T, number>
     /**
      * 视图控制器。preview功能需要它们。
      */
@@ -109,7 +109,6 @@ export interface ImageDatasetOperators<T extends CommonIllust> {
     openDetailByClick(illustId: number, openCollection?: boolean): void
     /**
      * 通过选中回车的方式打开详情页。处理方式大致相同，不过没有openCollection模式，且在选中多项时从头开始浏览。
-     * @param illustId
      */
     openDetailByEnter(illustId: number): void
     /**
@@ -118,12 +117,10 @@ export interface ImageDatasetOperators<T extends CommonIllust> {
     openCollectionDetail(illustId: number): void
     /**
      * 在新窗口打开此项目。
-     * @param illust
      */
     openInNewWindow(illust: T): void
     /**
      * 通过选中空格的方式打开预览。未指定参数时，它总是预览最后选中项；指定参数时，则尝试预览指定项。
-     * @param illustId 
      */
     openPreviewBySpace(illust?: T): void
     /**
@@ -181,7 +178,7 @@ export interface ImageDatasetOperators<T extends CommonIllust> {
      */
     addToStagingPost(illust: T): void
     /**
-     * 从暂存区pop所有数据，插入到选择的指定位置。效果相当于dataDrop，因此要求提供dataDtop options参数。
+     * 从暂存区pop所有数据，插入到选择的指定位置。效果相当于dataDrop，因此要求提供dataDrop options参数。
      */
     popStagingPost(illust: T, position?: "before" | "after"): void
     /**
@@ -246,21 +243,21 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
         return selector.selected.value.includes(illust.id) ? selector.selected.value : [illust.id]
     }
 
-    const getSliceInstance = (): QueryInstance<Illust> => {
+    const getSliceInstance = (): QueryInstance<Illust, number> => {
         if(options.mapSlice) {
             return createMappedQueryInstance(listview.instance.value, options.mapSlice)
         }else{
-            return listview.instance.value as unknown as QueryInstance<Illust>
+            return listview.instance.value as unknown as QueryInstance<Illust, number>
         }
     }
 
     const openAll = (illustId: number) => {
-        const currentIndex = paginationData.proxy.syncOperations.find(i => i.id === illustId)
+        const currentIndex = paginationData.proxy.sync.findByKey(illustId)
         if(currentIndex !== undefined) {
-            const slice: AllSlice<Illust> = {type: "ALL", focusIndex: currentIndex, instance: getSliceInstance()}
+            const slice: AllSlice<Illust, number> = {type: "ALL", focusIndex: currentIndex, instance: getSliceInstance()}
             viewStack.openImageView(slice, illustId => {
                 //回调：给出了目标id，回查data的此项，并找到此项现在的位置，导航到此位置
-                const index = paginationData.proxy.syncOperations.find(i => i.id === illustId)
+                const index = paginationData.proxy.sync.findByKey(illustId)
                 if(index !== undefined) {
                     selector.update([illustId], illustId)
                     navigation.navigateTo(index)
@@ -271,12 +268,12 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
 
     const openList = (selected: number[], currentIndex: number) => {
         const indexList = selected
-            .map(selectedId => paginationData.proxy.syncOperations.find(i => i.id === selectedId))
+            .map(selectedId => paginationData.proxy.sync.findByKey(selectedId))
             .filter(index => index !== undefined) as number[]
-        const slice: ListIndexSlice<Illust> = {type: "LIST", indexes: indexList, focusIndex: currentIndex, instance: getSliceInstance()}
+        const slice: ListIndexSlice<Illust, number> = {type: "LIST", indexes: indexList, focusIndex: currentIndex, instance: getSliceInstance()}
         viewStack.openImageView(slice, illustId => {
             //回调：给出了目标id，回查data的此项，并找到此项现在的位置，导航到此位置
-            const index = paginationData.proxy.syncOperations.find(i => i.id === illustId)
+            const index = paginationData.proxy.sync.findByKey(illustId)
             if(index !== undefined) navigation.navigateTo(index)
         })
     }
@@ -284,11 +281,11 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     const openDetailByClick = (illustId: number, openCollection?: boolean) => {
         if(openCollection) {
             //在按下option/alt键时，打开集合
-            const index = paginationData.proxy.syncOperations.find(i => i.id === illustId)
+            const index = paginationData.proxy.sync.findByKey(illustId)
             if(index !== undefined) {
-                const illust = paginationData.proxy.syncOperations.retrieve(index)!
+                const illust = paginationData.proxy.sync.retrieve(index)!
                 if(illust.type === "COLLECTION") {
-                    const slice: SingletonSlice<Illust> = {type: "SINGLETON", index, instance: getSliceInstance()}
+                    const slice: SingletonSlice<Illust, number> = {type: "SINGLETON", index, instance: getSliceInstance()}
                     viewStack.openCollectionView(slice)
                     return
                 }
@@ -320,11 +317,11 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     }
 
     const openCollectionDetail = (illustId: number) => {
-        const currentIndex = paginationData.proxy.syncOperations.find(i => i.id === illustId)
+        const currentIndex = paginationData.proxy.sync.findByKey(illustId)
         if(currentIndex !== undefined) {
-            const illust = paginationData.proxy.syncOperations.retrieve(currentIndex)!
+            const illust = paginationData.proxy.sync.retrieve(currentIndex)!
             if(illust.type === "COLLECTION") {
-                const slice: SingletonSlice<Illust> = {type: "SINGLETON", index: currentIndex, instance: getSliceInstance()}
+                const slice: SingletonSlice<Illust, number> = {type: "SINGLETON", index: currentIndex, instance: getSliceInstance()}
                 viewStack.openCollectionView(slice)
             }else{
                 console.error(`Illust ${illust.id} is not a collection.`)
@@ -453,7 +450,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     }
 
     const popStagingPost = dataDropOptions === undefined ? () => {} : async (illust: T, position: "before" | "after" = "after") => {
-        const idx = paginationData.proxy.syncOperations.find(i => i.id === illust.id)
+        const idx = paginationData.proxy.sync.findByKey(illust.id)
         if(idx !== undefined) {
             const res = await fetchStagingPostListAll({})
             if(res !== undefined) {
@@ -509,7 +506,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     }
 }
 
-function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperatorsOptions<T>["dataDrop"], paginationData: PaginationDataView<T>) {
+function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperatorsOptions<T>["dataDrop"], paginationData: PaginationDataView<T, number>) {
     if(dataDropOptions !== undefined) {
         const dialog = useDialogService()
 
@@ -544,20 +541,20 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
         const insertIntoIllusts = async (insertIndex: number | null, illusts: DraggingIllust[], _: "ADD" | "MOVE"): Promise<boolean> => {
             const target = illusts.map(i => i.id)
             const partitionTime = dataDropOptions.dropInType === "partition" ? unref(dataDropOptions.path) ?? undefined : undefined
-            const finalInsertIndex = insertIndex ?? paginationData.proxy.syncOperations.count()
+            const finalInsertIndex = insertIndex ?? paginationData.proxy.sync.count()
             if(finalInsertIndex === 0) {
-                const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
+                const afterItem = paginationData.proxy.sync.retrieve(finalInsertIndex)!
                 const timeInsertAt = getCurrentOrderDirection() === "asc" ? "behind" : "after"
                 await fetchIllustBatchUpdate({target, timeInsertBegin: afterItem.id, timeInsertAt, orderTimeExclude: true, partitionTime})
                 return true
-            }else if(finalInsertIndex !== null && finalInsertIndex === paginationData.proxy.syncOperations.count()) {
-                const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
+            }else if(finalInsertIndex !== null && finalInsertIndex === paginationData.proxy.sync.count()) {
+                const behindItem = paginationData.proxy.sync.retrieve(finalInsertIndex - 1)!
                 const timeInsertAt = getCurrentOrderDirection() === "asc" ? "after" : "behind"
                 await fetchIllustBatchUpdate({target, timeInsertBegin: behindItem.id, timeInsertAt, orderTimeExclude: true, partitionTime})
                 return true
             }else if(finalInsertIndex !== null) {
-                const behindItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex - 1)!
-                const afterItem = paginationData.proxy.syncOperations.retrieve(finalInsertIndex)!
+                const behindItem = paginationData.proxy.sync.retrieve(finalInsertIndex - 1)!
+                const afterItem = paginationData.proxy.sync.retrieve(finalInsertIndex)!
                 await fetchIllustBatchUpdate({target, timeInsertBegin: behindItem.id, timeInsertEnd: afterItem.id, partitionTime})
                 return true
             }
@@ -621,7 +618,7 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
 
 interface LocateIdOptions<T extends CommonIllust> {
     queryFilter: Ref<IllustQueryFilter>
-    paginationData: PaginationDataView<T>
+    paginationData: PaginationDataView<T, number>
     selector: SelectedState<number>
     navigation: VirtualViewNavigation
 }
@@ -658,8 +655,8 @@ export function useLocateId<T extends CommonIllust>(options: LocateIdOptions<T>)
 
 interface IllustListviewContextOptions {
     listview: {
-        listview: QueryListview<CommonIllust>
-        paginationData: PaginationDataView<CommonIllust>
+        listview: QueryListview<CommonIllust, number>
+        paginationData: PaginationDataView<CommonIllust, number>
     }
     selector: SelectedState<number>
     listviewController: {

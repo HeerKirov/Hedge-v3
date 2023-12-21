@@ -250,13 +250,14 @@ function useListView(path: Ref<number | null>) {
             }
             return await client.folder.images.get(path, {offset, limit, order: "ordinal"})
         },
+        keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/illust/updated", "entity/illust/deleted", "entity/folder/images/changed"],
-            operation({ event, refresh, updateOne, removeOne }) {
+            operation({ event, refresh, updateKey, removeKey }) {
                 if(event.eventType === "entity/illust/updated" && event.listUpdated) {
-                    updateOne(i => i.id === event.illustId)
+                    updateKey(event.illustId)
                 }else if(event.eventType === "entity/illust/deleted") {
-                    removeOne(i => i.id === event.illustId)
+                    removeKey(event.illustId)
                 }else if(event.eventType === "entity/folder/images/changed" && event.folderId === path.value) {
                     refresh()
                 }

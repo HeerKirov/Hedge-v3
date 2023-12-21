@@ -122,13 +122,14 @@ export function useDataContext(close: () => void) {
 
     const listview = useListViewContext({
         request: client => (offset, limit) => client.stagingPost.list({offset, limit}),
+        keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/illust/updated", "entity/illust/deleted", "app/staging-post/changed"],
-            operation({ event, refresh, updateOne, removeOne }) {
+            operation({ event, refresh, updateKey, removeKey }) {
                 if(event.eventType === "entity/illust/updated" && event.illustType === "IMAGE" && event.listUpdated) {
-                    updateOne(i => i.id === event.illustId)
+                    updateKey(event.illustId)
                 }else if(event.eventType === "entity/illust/deleted" && event.illustType === "IMAGE") {
-                    removeOne(i => i.id === event.illustId)
+                    removeKey(event.illustId)
                 }else if(event.eventType === "app/staging-post/changed" && (event.added.length || event.deleted.length)) {
                     refresh()
                 }

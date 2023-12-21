@@ -71,20 +71,21 @@ function useListView(query: Ref<string | undefined>) {
     const listview = useListViewContext({
         defaultFilter: <IllustQueryFilter>{order: "-orderTime", type: "IMAGE"},
         request: client => (offset, limit, filter) => client.illust.list({offset, limit, ...filter}),
+        keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/illust/created", "entity/illust/updated", "entity/illust/deleted", "entity/illust/images/changed"],
-            operation({ event, refresh, updateOne, removeOne }) {
+            operation({ event, refresh, updateKey, removeKey }) {
                 if(event.eventType === "entity/illust/created" || (event.eventType === "entity/illust/updated" && event.timeSot)) {
                     refresh()
                 }else if(event.eventType === "entity/illust/updated" && event.listUpdated) {
-                    updateOne(i => i.id === event.illustId)
+                    updateKey(event.illustId)
                 }else if(event.eventType === "entity/illust/deleted") {
                     if(event.illustType === "COLLECTION") {
                         if(listview.queryFilter.value.type === "COLLECTION") {
                             refresh()
                         }
                     }else{
-                        removeOne(i => i.id === event.illustId)
+                        removeKey(event.illustId)
                     }
                 }else if(event.eventType === "entity/illust/images/changed") {
                     if(listview.queryFilter.value.type === "COLLECTION") {
@@ -158,7 +159,7 @@ export function useIllustDetailPane() {
     return {tabType, detail, selector, parent, openImagePreview}
 }
 
-function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview<CommonIllust>, instance: QueryInstance<CommonIllust>) {
+function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview<CommonIllust, number>, instance: QueryInstance<CommonIllust, number>) {
     const detail = ref<{id: number, type: "IMAGE" | "COLLECTION", filePath: FilePath} | null>(null)
 
     const fetch = useFetchHelper({
@@ -172,9 +173,9 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
 
     watch(path, async path => {
         if(path !== null) {
-            const idx = instance.syncOperations.find(i => i.id === path)
+            const idx = instance.sync.findByKey(path)
             if(idx !== undefined) {
-                const item = instance.syncOperations.retrieve(idx)!
+                const item = instance.sync.retrieve(idx)!
                 detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
             }else{
                 const res = await fetch(path)
@@ -188,9 +189,9 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
     useListeningEvent(listview.modifiedEvent, async e => {
         if(path.value !== null) {
             if(e.type === "FILTER_UPDATED" || e.type === "REFRESH") {
-                const idx = instance.syncOperations.find(i => i.id === path.value)
+                const idx = instance.sync.findByKey(path.value)
                 if(idx !== undefined) {
-                    const item = instance.syncOperations.retrieve(idx)!
+                    const item = instance.sync.retrieve(idx)!
                     detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
                 }else{
                     const res = await fetch(path.value)

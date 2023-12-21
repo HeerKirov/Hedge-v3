@@ -15,7 +15,7 @@ import { MenuItem, usePopupMenu } from "@/modules/popup-menu"
 import { installImageViewContext } from "@/services/view-stack/image"
 
 const props = defineProps<{
-    sliceOrPath: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>
+    sliceOrPath: SliceOrPath<Illust, number, AllSlice<Illust, number> | ListIndexSlice<Illust, number>, number[]>
     modifiedCallback?: (illustId: number) => void
 }>()
 

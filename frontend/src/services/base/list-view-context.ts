@@ -8,24 +8,26 @@ import { useInterceptedKey } from "@/modules/keyboard"
  * 使用ListView的列表相关上下文。提供：ListView、PaginationDataView、Filter。如果有需要，还包括Selector、QuerySchema。
  * 同时，它还注册了CTRL+R快捷键，用于刷新列表。
  */
-interface ListViewContext<T, F> {
-    listview: QueryListview<T>
-    paginationData: PaginationDataView<T>
+interface ListViewContext<T, KEY, F> {
+    listview: QueryListview<T, KEY>
+    paginationData: PaginationDataView<T, KEY>
     queryFilter: Ref<F>
 }
 
-interface ListViewContextOptions<T, F> {
-    request: QueryListviewOptions<T, F, BasicException>["request"]
-    eventFilter?: QueryListviewOptions<T, F, BasicException>["eventFilter"]
+interface ListViewContextOptions<T, KEY, F> {
+    request: QueryListviewOptions<T, KEY, F, BasicException>["request"]
+    eventFilter?: QueryListviewOptions<T, KEY, F, BasicException>["eventFilter"]
+    keyOf: QueryListviewOptions<T, KEY, F, BasicException>["keyOf"]
     defaultFilter?: F
     filter?: Ref<F>
 }
 
-export function useListViewContext<T, F>(options: ListViewContextOptions<T, F>): ListViewContext<T, F> {
+export function useListViewContext<T, KEY, F>(options: ListViewContextOptions<T, KEY, F>): ListViewContext<T, KEY, F> {
     const queryFilter: Ref<F> = options.filter ?? ref(options.defaultFilter ?? {}) as Ref<F>
 
     const listview = useQueryListview({
         filter: queryFilter,
+        keyOf: options.keyOf,
         request: options.request,
         eventFilter: options.eventFilter
     })

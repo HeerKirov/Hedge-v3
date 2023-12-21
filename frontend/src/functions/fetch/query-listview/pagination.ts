@@ -15,7 +15,7 @@ export interface PaginationOptions {
     queryDelay?: number
 }
 
-export interface PaginationDataView<T> {
+export interface PaginationDataView<T, KEY> {
     /**
      * 响应式返回的数据结果。
      */
@@ -32,7 +32,7 @@ export interface PaginationDataView<T> {
     /**
      * 代理instance实例。与query endpoint的代理一致，不过此处的find方法会自动使用data的值作为优化项。
      */
-    proxy: QueryInstance<T>
+    proxy: QueryInstance<T, KEY>
 }
 
 export interface PaginationData<T> {
@@ -40,7 +40,7 @@ export interface PaginationData<T> {
     result: T[]
 }
 
-export function usePaginationDataView<T>(queryListview: QueryListview<T>, options?: PaginationOptions): PaginationDataView<T> {
+export function usePaginationDataView<T, KEY>(queryListview: QueryListview<T, KEY>, options?: PaginationOptions): PaginationDataView<T, KEY> {
     const queryDelay = options?.queryDelay ?? 250
 
     const data: PaginationData<T> = shallowReactive({
@@ -65,7 +65,7 @@ export function usePaginationDataView<T>(queryListview: QueryListview<T>, option
             //如果数据已完全加载，则直接更新到data
             const result = await queryListview.proxy.queryRange(offset, limit)
             if(queryId >= currentQueryId) {
-                data.metrics = { total: queryListview.proxy.syncOperations.count()!, offset, limit: result.length }
+                data.metrics = { total: queryListview.proxy.sync.count()!, offset, limit: result.length }
                 data.result = result
             }
         }else{
@@ -89,11 +89,11 @@ export function usePaginationDataView<T>(queryListview: QueryListview<T>, option
                     }
                 }
                 if(queryId >= currentQueryId) {
-                    data.metrics = { total: queryListview.proxy.syncOperations.count()!, offset: currentCache.offset, limit: result.length }
+                    data.metrics = { total: queryListview.proxy.sync.count()!, offset: currentCache.offset, limit: result.length }
                     data.result = result
                 }
                 cacheTimer = null
-            }, queryListview.proxy.syncOperations.count() === null ? 0 : queryDelay)
+            }, queryListview.proxy.sync.count() === null ? 0 : queryDelay)
         }
     }
 
@@ -132,16 +132,16 @@ export function usePaginationDataView<T>(queryListview: QueryListview<T>, option
     return {data, dataUpdate, reset, proxy}
 }
 
-function useOptimizedProxy<T>(proxy: QueryInstance<T>, data: PaginationData<T>): QueryInstance<T> {
+function useOptimizedProxy<T, KEY>(proxy: QueryInstance<T, KEY>, data: PaginationData<T>): QueryInstance<T, KEY> {
     return {
         ...proxy,
-        syncOperations: {
-            ...proxy.syncOperations,
+        sync: {
+            ...proxy.sync,
             find(condition, priorityRange) {
                 if(priorityRange === undefined) {
-                    return proxy.syncOperations.find(condition, [data.metrics.offset, data.metrics.offset + data.metrics.limit])
+                    return proxy.sync.find(condition, [data.metrics.offset, data.metrics.offset + data.metrics.limit])
                 }else{
-                    return proxy.syncOperations.find(condition, priorityRange)
+                    return proxy.sync.find(condition, priorityRange)
                 }
             }
         }

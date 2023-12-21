@@ -27,6 +27,7 @@ function useListView() {
     return useListViewContext({
         defaultFilter: <TrashQueryFilter>{order: "-trashedTime"},
         request: client => (offset, limit, filter) => client.trash.list({offset, limit, ...filter}),
+        keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/trashed-image/created", "entity/trashed-image/processed"],
             operation({ event, refresh, removeOne: remove }) {

@@ -33,15 +33,16 @@ function useListView() {
     return useListViewContext({
         defaultFilter: <TopicQueryFilter>{order: "-updateTime"},
         request: client => (offset, limit, filter) => client.topic.list({offset, limit, ...filter}),
+        keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/meta-tag/created", "entity/meta-tag/updated", "entity/meta-tag/deleted"],
-            operation({ event, refresh, updateOne, removeOne }) {
+            operation({ event, refresh, updateKey, removeKey }) {
                 if(event.eventType === "entity/meta-tag/created" && event.metaType === "TOPIC") {
                     refresh()
                 }else if(event.eventType === "entity/meta-tag/updated" && event.metaType === "TOPIC") {
-                    updateOne(i => i.id === event.metaId)
+                    updateKey(event.metaId)
                 }else if(event.eventType === "entity/meta-tag/deleted" && event.metaType === "TOPIC") {
-                    removeOne(i => i.id === event.metaId)
+                    removeKey(event.metaId)
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.topic.get(a.id))))
@@ -49,7 +50,7 @@ function useListView() {
     })
 }
 
-function useOperators(paneState: DetailViewState<number, Partial<DetailTopic>>, listview: QueryListview<Topic>) {
+function useOperators(paneState: DetailViewState<number, Partial<DetailTopic>>, listview: QueryListview<Topic, number>) {
     const toast = useToast()
     const message = useMessageBox()
     const navigator = useRouterNavigator()
@@ -62,17 +63,17 @@ function useOperators(paneState: DetailViewState<number, Partial<DetailTopic>>, 
     const fetchFindSimilarTaskCreate = usePostFetchHelper(client => client.findSimilar.task.create)
 
     const createByTemplate = (topic: Topic) => {
-        const idx = listview.proxy.syncOperations.find(a => a.id === topic.id)
+        const idx = listview.proxy.sync.findByKey(topic.id)
         if(idx != undefined) {
-            const topic = listview.proxy.syncOperations.retrieve(idx)
+            const topic = listview.proxy.sync.retrieve(idx)
             paneState.openCreateView(topic)
         }
     }
 
     const createChildOfTemplate = (topic: Topic) => {
-        const idx = listview.proxy.syncOperations.find(a => a.id === topic.id)
+        const idx = listview.proxy.sync.findByKey(topic.id)
         if(idx != undefined) {
-            const topic = listview.proxy.syncOperations.retrieve(idx)
+            const topic = listview.proxy.sync.retrieve(idx)
             if(topic !== undefined) {
                 paneState.openCreateView({
                     parents: [{

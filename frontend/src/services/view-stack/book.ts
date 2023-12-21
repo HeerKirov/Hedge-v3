@@ -13,7 +13,7 @@ import { useIllustViewController } from "@/services/base/view-controller"
 import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
 import { installation } from "@/utils/reactivity"
 
-export const [installBookViewContext, useBookViewContext] = installation(function (data: SliceOrPath<Book, SingletonSlice<Book>, number>) {
+export const [installBookViewContext, useBookViewContext] = installation(function (data: SliceOrPath<Book, number, SingletonSlice<Book, number>, number>) {
     const target = useTarget(data)
     const listview = useListView(target.id)
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
@@ -32,7 +32,7 @@ export const [installBookViewContext, useBookViewContext] = installation(functio
     return {target, listview, selector, paneState, listviewController, operators}
 })
 
-function useId(data: SliceOrPath<Book, SingletonSlice<Book>, number>): Ref<number | null> {
+function useId(data: SliceOrPath<Book, number, SingletonSlice<Book, number>, number>): Ref<number | null> {
     if(data.type === "slice") {
         const view = useSingletonDataView(data.slice).data
         return computed(() => view.value?.id ?? null)
@@ -41,7 +41,7 @@ function useId(data: SliceOrPath<Book, SingletonSlice<Book>, number>): Ref<numbe
     }
 }
 
-function useTarget(slice: SliceOrPath<Book, SingletonSlice<Book>, number>) {
+function useTarget(slice: SliceOrPath<Book, number, SingletonSlice<Book, number>, number>) {
     const message = useMessageBox()
     const dialog = useDialogService()
     const { isClosable, closeView } = useViewStack()
@@ -102,13 +102,14 @@ function useListView(path: Ref<number | null>) {
             }
             return await client.book.images.get(filter, {offset, limit})
         },
+        keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/illust/updated", "entity/illust/deleted", "entity/book/images/changed"],
-            operation({ event, refresh, updateOne, removeOne }) {
+            operation({ event, refresh, updateKey, removeKey }) {
                 if(event.eventType === "entity/illust/updated" && event.listUpdated) {
-                    updateOne(i => i.id === event.illustId)
+                    updateKey(event.illustId)
                 }else if(event.eventType === "entity/illust/deleted") {
-                    removeOne(i => i.id === event.illustId)
+                    removeKey(event.illustId)
                 }else if(event.eventType === "entity/book/images/changed" && event.bookId === path.value) {
                     refresh()
                 }

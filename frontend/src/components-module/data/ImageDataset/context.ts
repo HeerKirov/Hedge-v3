@@ -9,7 +9,7 @@ import { installation } from "@/utils/reactivity"
 const SELECTED_MAX = 500
 
 interface DatasetContextOptions {
-    queryInstance: QueryInstance<unknown> | undefined
+    queryInstance: QueryInstance<unknown, unknown> | undefined
     data: Ref<PaginationData<unknown>>
     keyOf(item: unknown): number
     selected: Ref<number[]>
@@ -37,7 +37,7 @@ export interface Selector {
 }
 
 interface SelectorOptions<T> {
-    queryInstance: QueryInstance<T> | undefined
+    queryInstance: QueryInstance<T, number> | undefined
     data: Ref<PaginationData<T>>
     selected: Ref<number[]>
     lastSelected: Ref<number | null>
@@ -84,7 +84,7 @@ export const [installDatasetContext, useDatasetContext] = installation(function 
 function useSelector<T>(options: SelectorOptions<T>): Selector {
     const { toast } = useToast()
     const virtualViewNavigation = useVirtualViewNavigation()
-    const { selected, lastSelected, queryInstance, data, columnNum, select: onSelect, keyOf } = options
+    const { selected, lastSelected, queryInstance, columnNum, select: onSelect, keyOf } = options
 
     const select = (index: number, illustId: number) => {
         // 单击一个项时，只选择此项
@@ -168,10 +168,9 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
         }
     }
 
-    async function getShiftSelectItems(queryEndpoint: QueryInstance<T>, selectId: number, lastSelectId: number) {
-        const priorityRange: [number, number] = [data.value.metrics.offset, data.value.metrics.offset + data.value.metrics.limit]
-        const index1 = queryEndpoint.syncOperations.find(i => keyOf(i) === selectId, priorityRange)
-        const index2 = queryEndpoint.syncOperations.find(i => keyOf(i) === lastSelectId, priorityRange)
+    async function getShiftSelectItems(queryEndpoint: QueryInstance<T, number>, selectId: number, lastSelectId: number) {
+        const index1 = queryEndpoint.sync.findByKey(selectId)
+        const index2 = queryEndpoint.sync.findByKey(lastSelectId)
         if(index1 === undefined || index2 === undefined) {
             return null
         }
@@ -182,9 +181,8 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
         }
     }
 
-    async function getArrowSelectItem(queryEndpoint: QueryInstance<T>, lastSelectId: number, offset: number) {
-        const priorityRange: [number, number] = [data.value.metrics.offset, data.value.metrics.offset + data.value.metrics.limit]
-        const lastIndex = queryEndpoint.syncOperations.find(i => keyOf(i) === lastSelectId, priorityRange)
+    async function getArrowSelectItem(queryEndpoint: QueryInstance<T, number>, lastSelectId: number, offset: number) {
+        const lastIndex = queryEndpoint.sync.findByKey(lastSelectId)
         if(lastIndex === undefined) return null
         const index = lastIndex + offset
         const count = await queryEndpoint.count()
@@ -193,7 +191,7 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
         return res === null ? null : {illustId: keyOf(res), index}
     }
 
-    async function getOffsetSelectItem(queryEndpoint: QueryInstance<T>, index: number) {
+    async function getOffsetSelectItem(queryEndpoint: QueryInstance<T, number>, index: number) {
         const res = await queryEndpoint.queryOne(index)
         return res !== null ? keyOf(res) : null
     }
@@ -244,7 +242,7 @@ export function useDragEvents<T extends keyof TypeDefinition, DATA>(options: {
     draggable: boolean
     selected: Ref<number[]>
     byType: T
-    queryInstance: QueryInstance<DATA> | undefined
+    queryInstance: QueryInstance<DATA, number> | undefined
     keyOf: (item: DATA) => number
     dataRef(): Ref<DATA>
     dataMap(item: DATA[]): TypeDefinition[T]
@@ -258,9 +256,9 @@ export function useDragEvents<T extends keyof TypeDefinition, DATA>(options: {
             if(selected.value.includes(keyOf(data.value))) {
                 const d = selected.value.map(illustId => {
                     if(illustId !== keyOf(data.value)) {
-                        const index = queryInstance.syncOperations.find(i => keyOf(i) === illustId)
+                        const index = queryInstance.sync.findByKey(illustId)
                         if(index !== undefined) {
-                            return queryInstance.syncOperations.retrieve(index)!
+                            return queryInstance.sync.retrieve(index)!
                         }else{
                             return null
                         }

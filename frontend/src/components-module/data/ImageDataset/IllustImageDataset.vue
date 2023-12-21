@@ -22,7 +22,7 @@ const props = defineProps<{
     /**
      * 查询实例。选择器模块会用到，被用于自由选取数据。
      */
-    queryInstance?: QueryInstance<CommonIllust>
+    queryInstance?: QueryInstance<CommonIllust, number>
     /**
      * 视图模式，Grid表模式或row行模式。
      */

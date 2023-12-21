@@ -1,8 +1,8 @@
 import { Ref, computed, ref } from "vue"
 import { installVirtualViewNavigation } from "@/components/data"
 import { flatResponse } from "@/functions/http-client"
-import { ImportRecord, ImportQueryFilter, DetailImportRecord } from "@/functions/http-client/api/import"
-import { PaginationDataView, QueryListview, useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
+import { ImportRecord, ImportQueryFilter } from "@/functions/http-client/api/import"
+import { PaginationDataView, QueryListview, useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper } from "@/functions/fetch"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
@@ -95,17 +95,18 @@ function useListView() {
     return useListViewContext({
         defaultFilter: <ImportQueryFilter>{order: "-importTime", deleted: false},
         request: client => (offset, limit, filter) => client.import.list({offset, limit, ...filter}),
+        keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/import/created", "entity/import/updated", "entity/import/deleted", "entity/illust/updated", "entity/illust/deleted"],
-            operation({ event, refresh, updateOne, removeOne }) {
+            operation({ event, refresh, updateKey, updateOne, removeKey }) {
                 if(event.eventType === "entity/import/created") {
                     refresh()
                 }else if(event.eventType === "entity/import/updated") {
-                    updateOne(i => i.id === event.importId)
+                    updateKey(event.importId)
                 }else if((event.eventType === "entity/illust/deleted" && event.illustType === "IMAGE") || (event.eventType === "entity/illust/updated" && event.illustType === "IMAGE" && event.listUpdated)) {
                     updateOne(i => i.illust?.id === event.illustId)
                 }else if(event.eventType === "entity/import/deleted") {
-                    removeOne(i => i.id === event.importId)
+                    removeKey(event.importId)
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.import.get(a.id))))
@@ -113,7 +114,7 @@ function useListView() {
     })
 }
 
-function useOperators(listview: QueryListview<ImportRecord>, paginationData: PaginationDataView<ImportRecord>, queryFilter: Ref<ImportQueryFilter>, selector: SelectedState<number>, listviewController: ImportImageViewController, addFiles: (f: string[]) => void) {
+function useOperators(listview: QueryListview<ImportRecord, number>, paginationData: PaginationDataView<ImportRecord, number>, queryFilter: Ref<ImportQueryFilter>, selector: SelectedState<number>, listviewController: ImportImageViewController, addFiles: (f: string[]) => void) {
     const toast = useToast()
     const message = useMessageBox()
     const preview = usePreviewService()

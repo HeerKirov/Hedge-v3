@@ -148,7 +148,8 @@ function useExporterPreview(data: ExternalExporterProps) {
         }).data
 
         const listview = useQueryListview({
-            request: client => (offset, limit, _) => client.book.images.get(bookId, {offset, limit})
+            request: client => (offset, limit, _) => client.book.images.get(bookId, {offset, limit}),
+            keyOf: item => item.id
         })
 
         const paginationData = usePaginationDataView(listview)

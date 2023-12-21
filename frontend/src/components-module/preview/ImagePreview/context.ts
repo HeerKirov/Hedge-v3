@@ -8,7 +8,7 @@ export type ImageProps = ServiceBaseType<"image"> & (ListviewModeProps | ArrayMo
 
 interface ListviewModeProps {
     type: "listview"
-    listview: QueryListview<{id: number, filePath: NullableFilePath | null}>
+    listview: QueryListview<{id: number, filePath: NullableFilePath | null}, number>
     paginationData: PaginationData<unknown>
     columnNum?: Readonly<Ref<number>>
     viewMode?: Readonly<Ref<"grid" | "row">>
@@ -40,17 +40,17 @@ function useListviewMode(ctx: ListviewModeProps, close: () => void) {
     const targetFile = ref<string | null>(null)
 
     const gotoIndex = (newIdx: number) => {
-        const ret = ctx.listview.proxy.syncOperations.retrieve(newIdx)
+        const ret = ctx.listview.proxy.sync.retrieve(newIdx)
         if(ret !== undefined) {
             ctx.updateSelect([ret.id], ret.id)
         }
     }
 
     const watchRefresh = (selectedId: number | null) => {
-        if(ctx.lastSelected.value !== null) {
-            idx = ctx.listview.proxy.syncOperations.find(i => i.id === selectedId, [ctx.paginationData.metrics.offset, ctx.paginationData.metrics.offset + ctx.paginationData.metrics.limit])
+        if(selectedId !== null) {
+            idx = ctx.listview.proxy.sync.findByKey(selectedId)
             if(idx !== undefined) {
-                const item = ctx.listview.proxy.syncOperations.retrieve(idx)!
+                const item = ctx.listview.proxy.sync.retrieve(idx)!
                 targetFile.value = item.filePath?.original ?? null
             }else{
                 targetFile.value = null
@@ -65,7 +65,7 @@ function useListviewMode(ctx: ListviewModeProps, close: () => void) {
         if(idx !== undefined) {
             if(direction === "left" && idx > 0) {
                 gotoIndex(idx - 1)
-            }else if(direction === "right" && ctx.listview.proxy.syncOperations.count() && idx < ctx.listview.proxy.syncOperations.count()! - 1) {
+            }else if(direction === "right" && ctx.listview.proxy.sync.count() && idx < ctx.listview.proxy.sync.count()! - 1) {
                 gotoIndex(idx + 1)
             }
         }
@@ -83,13 +83,13 @@ function useListviewMode(ctx: ListviewModeProps, close: () => void) {
                 }
             }else if(e.key === "ArrowLeft" && idx > 0) {
                 gotoIndex(idx - 1)
-            }else if(e.key === "ArrowDown" && ctx.listview.proxy.syncOperations.count() && idx < ctx.listview.proxy.syncOperations.count()! - 1) {
+            }else if(e.key === "ArrowDown" && ctx.listview.proxy.sync.count() && idx < ctx.listview.proxy.sync.count()! - 1) {
                 if(ctx.viewMode?.value === "grid" && ctx.columnNum?.value) {
-                    if(idx + ctx.columnNum.value <= ctx.listview.proxy.syncOperations.count()! - 1) gotoIndex(idx + ctx.columnNum.value)
+                    if(idx + ctx.columnNum.value <= ctx.listview.proxy.sync.count()! - 1) gotoIndex(idx + ctx.columnNum.value)
                 }else{
                     gotoIndex(idx + 1)
                 }
-            }else if(e.key === "ArrowRight" && ctx.listview.proxy.syncOperations.count() && idx < ctx.listview.proxy.syncOperations.count()! - 1) {
+            }else if(e.key === "ArrowRight" && ctx.listview.proxy.sync.count() && idx < ctx.listview.proxy.sync.count()! - 1) {
                 gotoIndex(idx + 1)
             }else if(e.key === "Space") {
                 close()
@@ -134,9 +134,9 @@ function getMultipleCtx(ctx: ListviewModeProps): ArrayModeProps {
         initIndex = undefined
     }
     const files = ctx.selected.value.map(id => {
-        const idx = ctx.listview.proxy.syncOperations.find(i => i.id === id, [ctx.paginationData.metrics.offset, ctx.paginationData.metrics.offset + ctx.paginationData.metrics.limit])
+        const idx = ctx.listview.proxy.sync.findByKey(id)
         if(idx !== undefined) {
-            const item = ctx.listview.proxy.syncOperations.retrieve(idx)!
+            const item = ctx.listview.proxy.sync.retrieve(idx)!
             return item.filePath?.original ?? null
         }else{
             return null

@@ -13,7 +13,7 @@ import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 import { installCollectionViewContext } from "@/services/view-stack/collection"
 
 const props = defineProps<{
-    sliceOrPath: SliceOrPath<Illust, SingletonSlice<Illust>, number>
+    sliceOrPath: SliceOrPath<Illust, number, SingletonSlice<Illust, number>, number>
 }>()
 
 const {

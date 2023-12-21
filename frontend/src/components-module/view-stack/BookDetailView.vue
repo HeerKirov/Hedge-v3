@@ -13,7 +13,7 @@ import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 import { installBookViewContext } from "@/services/view-stack/book"
 
 const props = defineProps<{
-    sliceOrPath: SliceOrPath<Book, SingletonSlice<Book>, number>
+    sliceOrPath: SliceOrPath<Book, number, SingletonSlice<Book, number>, number>
 }>()
 
 const {

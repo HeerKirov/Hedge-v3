@@ -26,15 +26,16 @@ function useListView() {
     const list = useListViewContext({
         defaultFilter: <AnnotationQueryFilter>{type: "TOPIC", order: "-createTime"},
         request: client => (offset, limit, filter) => client.annotation.list({offset, limit, ...filter}),
+        keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/annotation/created", "entity/annotation/updated", "entity/annotation/deleted"],
-            operation({ event, refresh, updateOne, removeOne }) {
+            operation({ event, refresh, updateKey, removeKey }) {
                 if(event.eventType === "entity/annotation/created" && event.type === list.queryFilter.value.type) {
                     refresh()
                 }else if(event.eventType === "entity/annotation/updated" && event.type === list.queryFilter.value.type) {
-                    updateOne(i => i.id === event.annotationId)
+                    updateKey(event.annotationId)
                 }else if(event.eventType === "entity/annotation/deleted" && event.type === list.queryFilter.value.type) {
-                    removeOne(i => i.id === event.annotationId)
+                    removeKey(event.annotationId)
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.annotation.get(a.id))))
@@ -44,7 +45,7 @@ function useListView() {
     return list
 }
 
-function useOperators(paneState: DetailViewState<number, Partial<Annotation>>, listview: QueryListview<Annotation>) {
+function useOperators(paneState: DetailViewState<number, Partial<Annotation>>, listview: QueryListview<Annotation, number>) {
     const message = useMessageBox()
 
     const retrieveHelper = useRetrieveHelper({
@@ -52,9 +53,9 @@ function useOperators(paneState: DetailViewState<number, Partial<Annotation>>, l
     })
 
     const createByTemplate = (id: number) => {
-        const idx = listview.proxy.syncOperations.find(a => a.id === id)
+        const idx = listview.proxy.sync.findByKey(id)
         if(idx != undefined) {
-            const annotation = listview.proxy.syncOperations.retrieve(idx)
+            const annotation = listview.proxy.sync.retrieve(idx)
             paneState.openCreateView(annotation)
         }
     }

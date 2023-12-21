@@ -6,28 +6,28 @@ import { ModifiedEvent, QueryInstance } from "./query-instance"
 // 切片指从Query Instance中切取的一部分。它是一个静态数据结构，用于传递这种“一部分”的信息。
 // 借助切片，可以生成切片视图。
 
-export type Slice<T> = AllSlice<T> | ListIndexSlice<T> | SingletonSlice<T>
+export type Slice<T, KEY> = AllSlice<T, KEY> | ListIndexSlice<T, KEY> | SingletonSlice<T, KEY>
 
-export interface AllSlice<T> {
-    instance: QueryInstance<T>
+export interface AllSlice<T, KEY> {
+    instance: QueryInstance<T, KEY>
     type: "ALL"
     focusIndex: number | null
 }
 
-export interface ListIndexSlice<T> {
-    instance: QueryInstance<T>
+export interface ListIndexSlice<T, KEY> {
+    instance: QueryInstance<T, KEY>
     type: "LIST"
     indexes: number[]
     focusIndex: number | null
 }
 
-export interface SingletonSlice<T> {
-    instance: QueryInstance<T>
+export interface SingletonSlice<T, KEY> {
+    instance: QueryInstance<T, KEY>
     type: "SINGLETON"
     index: number
 }
 
-export type SliceOrPath<T, S extends Slice<T>, P extends (number[] | number)> = {
+export type SliceOrPath<T, KEY, S extends Slice<T, KEY>, P extends (number[] | number)> = {
     type: "slice"
     slice: S
 } | {
@@ -40,7 +40,7 @@ export type SliceOrPath<T, S extends Slice<T>, P extends (number[] | number)> = 
  * 创建一个query instance，它是目标instance的mapped proxy。
  * 这是一个切片的协助工具，用来在切片之前将queryInstance映射到需要的数据类型。
  */
-export function createMappedQueryInstance<T, R>(instance: QueryInstance<T>, mapper: (item: T) => R): QueryInstance<R> {
+export function createMappedQueryInstance<T, R, KEY>(instance: QueryInstance<T, KEY>, mapper: (item: T) => R): QueryInstance<R, KEY> {
     return {
         async queryOne(index: number): Promise<R | null> {
             const ret = await instance.queryOne(index)
@@ -54,10 +54,13 @@ export function createMappedQueryInstance<T, R>(instance: QueryInstance<T>, mapp
         },
         count: instance.count,
         isRangeLoaded: instance.isRangeLoaded,
-        syncOperations: {
-            count: instance.syncOperations.count,
+        sync: {
+            count: instance.sync.count,
             find() {
                 throw new Error("Sync operation Find is not supported in mapped query instance.")
+            },
+            findByKey() {
+                throw new Error("Sync operation FindByKey is not supported in mapped query instance.")
             },
             retrieve() {
                 throw new Error("Sync operation Retrieve is not supported in mapped query instance.")
@@ -67,22 +70,22 @@ export function createMappedQueryInstance<T, R>(instance: QueryInstance<T>, mapp
             },
             remove() {
                 throw new Error("Sync operation Remove is not supported in mapped query instance.")
-            },
-            modifiedEvent: createMapProxyEmitter({
-                mount: instance.syncOperations.modifiedEvent.addEventListener,
-                unmount: instance.syncOperations.modifiedEvent.removeEventListener,
-                map: from => (from.type === "MODIFY" ? {
-                    type: "MODIFY",
-                    index: from.index,
-                    value: mapper(from.value),
-                    oldValue: mapper(from.oldValue)
-                } : {
-                    type: "REMOVE",
-                    index: from.index,
-                    oldValue: mapper(from.oldValue)
-                })
+            }
+        },
+        modifiedEvent: createMapProxyEmitter({
+            mount: instance.modifiedEvent.addEventListener,
+            unmount: instance.modifiedEvent.removeEventListener,
+            map: from => (from.type === "MODIFY" ? {
+                type: "MODIFY",
+                index: from.index,
+                value: mapper(from.value),
+                oldValue: mapper(from.oldValue)
+            } : {
+                type: "REMOVE",
+                index: from.index,
+                oldValue: mapper(from.oldValue)
             })
-        }
+        })
     }
 }
 
@@ -111,7 +114,7 @@ export interface SingletonDataView<T> {
     data: Readonly<Ref<T | null>>
 }
 
-export function useSliceDataView<T>(slice: AllSlice<T> | ListIndexSlice<T>, focusIndex?: number): SliceDataView<T> {
+export function useSliceDataView<T, KEY>(slice: AllSlice<T, KEY> | ListIndexSlice<T, KEY>, focusIndex?: number): SliceDataView<T> {
     if(slice.type === "ALL") {
         const data: Ref<T | null> = ref(null)
         const count: Ref<number | null> = ref(null)
@@ -160,8 +163,8 @@ export function useSliceDataView<T>(slice: AllSlice<T> | ListIndexSlice<T>, focu
             }
         })
 
-        onMounted(() => slice.instance.syncOperations.modifiedEvent.addEventListener(receivedEvent))
-        onUnmounted(() => slice.instance.syncOperations.modifiedEvent.removeEventListener(receivedEvent))
+        onMounted(() => slice.instance.modifiedEvent.addEventListener(receivedEvent))
+        onUnmounted(() => slice.instance.modifiedEvent.removeEventListener(receivedEvent))
 
         return {data, count, currentIndex}
     }else{ //LIST
@@ -218,14 +221,14 @@ export function useSliceDataView<T>(slice: AllSlice<T> | ListIndexSlice<T>, focu
 
         onBeforeMount(async () => data.value = await slice.instance.queryOne(indexes[currentIndex.value]))
 
-        onMounted(() => slice.instance.syncOperations.modifiedEvent.addEventListener(receivedEvent))
-        onUnmounted(() => slice.instance.syncOperations.modifiedEvent.removeEventListener(receivedEvent))
+        onMounted(() => slice.instance.modifiedEvent.addEventListener(receivedEvent))
+        onUnmounted(() => slice.instance.modifiedEvent.removeEventListener(receivedEvent))
 
         return {data, count, currentIndex}
     }
 }
 
-export function useSingletonDataView<T>(slice: SingletonSlice<T>): SingletonDataView<T> {
+export function useSingletonDataView<T, KEY>(slice: SingletonSlice<T, KEY>): SingletonDataView<T> {
     let index: number | null = slice.index
 
     const data: Ref<T | null> = ref(null)
@@ -253,8 +256,8 @@ export function useSingletonDataView<T>(slice: SingletonSlice<T>): SingletonData
         }
     })
 
-    onMounted(() => slice.instance.syncOperations.modifiedEvent.addEventListener(receivedEvent))
-    onUnmounted(() => slice.instance.syncOperations.modifiedEvent.removeEventListener(receivedEvent))
+    onMounted(() => slice.instance.modifiedEvent.addEventListener(receivedEvent))
+    onUnmounted(() => slice.instance.modifiedEvent.removeEventListener(receivedEvent))
 
     return {data}
 }

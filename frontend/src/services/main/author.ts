@@ -35,15 +35,16 @@ function useListView() {
     return useListViewContext({
         defaultFilter: <AuthorQueryFilter>{order: "-updateTime"},
         request: client => (offset, limit, filter) => client.author.list({offset, limit, ...filter}),
+        keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/meta-tag/created", "entity/meta-tag/updated", "entity/meta-tag/deleted"],
-            operation({ event, refresh, updateOne, removeOne }) {
+            operation({ event, refresh, updateKey, removeKey }) {
                 if(event.eventType === "entity/meta-tag/created" && event.metaType === "AUTHOR") {
                     refresh()
                 }else if(event.eventType === "entity/meta-tag/updated" && event.metaType === "AUTHOR") {
-                    updateOne(i => i.id === event.metaId)
+                    updateKey(event.metaId)
                 }else if(event.eventType === "entity/meta-tag/deleted" && event.metaType === "AUTHOR") {
-                    removeOne(i => i.id === event.metaId)
+                    removeKey(event.metaId)
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.author.get(a.id))))
@@ -51,7 +52,7 @@ function useListView() {
     })
 }
 
-function useOperators(paneState: DetailViewState<number, Partial<DetailAuthor>>, listview: QueryListview<Author>) {
+function useOperators(paneState: DetailViewState<number, Partial<DetailAuthor>>, listview: QueryListview<Author, number>) {
     const toast = useToast()
     const message = useMessageBox()
     const navigator = useRouterNavigator()
@@ -64,9 +65,9 @@ function useOperators(paneState: DetailViewState<number, Partial<DetailAuthor>>,
     const fetchFindSimilarTaskCreate = usePostFetchHelper(client => client.findSimilar.task.create)
 
     const createByTemplate = (author: Author) => {
-        const idx = listview.proxy.syncOperations.find(a => a.id === author.id)
+        const idx = listview.proxy.sync.findByKey(author.id)
         if(idx != undefined) {
-            const author = listview.proxy.syncOperations.retrieve(idx)
+            const author = listview.proxy.sync.retrieve(idx)
             paneState.openCreateView(author)
         }
     }

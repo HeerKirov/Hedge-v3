@@ -9,7 +9,7 @@ import { toRef } from "@/utils/reactivity"
 export interface IllustViewController {
     fitType: Ref<"cover" | "contain">
     columnNum: Ref<number>
-    collectionMode: Ref<IllustQueryType>
+    collectionMode: Ref<IllustQueryType | boolean>
     viewMode: Ref<"row" | "grid">
     editableLockOn: Ref<boolean>
 }
@@ -41,7 +41,7 @@ export interface BookViewController {
 
 export function useIllustViewController(queryFilterIllustType?: Ref<IllustQueryType>): IllustViewController {
     const storage = useLocalStorage<{
-        fitType: "cover" | "contain", columnNum: number, collectionMode: IllustQueryType, viewMode: "row" | "grid", editableLockOn: boolean
+        fitType: "cover" | "contain", columnNum: number, collectionMode: IllustQueryType | boolean, viewMode: "row" | "grid", editableLockOn: boolean
     }>("illust/list/view-controller", () => ({
         fitType: "cover", columnNum: 8, collectionMode: "COLLECTION", viewMode: "grid", editableLockOn: false
     }), true)

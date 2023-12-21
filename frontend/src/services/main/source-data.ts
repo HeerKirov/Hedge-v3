@@ -28,15 +28,16 @@ function useListView(query: Ref<string | undefined>) {
     const listview = useListViewContext({
         defaultFilter: <SourceDataQueryFilter>{order: "-updateTime"},
         request: client => (offset, limit, filter) => client.sourceData.list({offset, limit, ...filter}),
+        keyOf: item => `${item.sourceSite}-${item.sourceId}` as const,
         eventFilter: {
             filter: ["entity/source-data/created", "entity/source-data/updated", "entity/source-data/deleted"],
-            operation({ event, refresh, updateOne, removeOne }) {
+            operation({ event, refresh, updateKey, removeKey }) {
                 if(event.eventType === "entity/source-data/created") {
                     refresh()
                 }else if(event.eventType === "entity/source-data/updated") {
-                    updateOne(i => i.sourceSite === event.site && i.sourceId === event.sourceId)
+                    updateKey(`${event.site}-${event.sourceId}`)
                 }else if(event.eventType === "entity/source-data/deleted") {
-                    removeOne(i => i.sourceSite === event.site && i.sourceId === event.sourceId)
+                    removeKey(`${event.site}-${event.sourceId}`)
                 }
             },
             request: client => async items => {

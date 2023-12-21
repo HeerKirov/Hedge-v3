@@ -17,7 +17,7 @@ import { useRouterNavigator } from "@/modules/router"
 import { openLocalFile, openLocalFileInFolder } from "@/modules/others"
 import { installation, toRef } from "@/utils/reactivity"
 
-export const [installImageViewContext, useImageViewContext] = installation(function (data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>, modifiedCallback?: (illustId: number) => void) {
+export const [installImageViewContext, useImageViewContext] = installation(function (data: SliceOrPath<Illust, number, AllSlice<Illust, number> | ListIndexSlice<Illust, number>, number[]>, modifiedCallback?: (illustId: number) => void) {
     const slice = useSlice(data)
     const subSlice = useSubSlice(slice)
     const navigator = useNavigator(slice, subSlice)
@@ -32,7 +32,7 @@ export const [installImageViewContext, useImageViewContext] = installation(funct
     return {navigator, target, operators, sideBar, playBoard}
 })
 
-function useSlice(data: SliceOrPath<Illust, AllSlice<Illust> | ListIndexSlice<Illust>, number[]>): SliceDataView<Illust> {
+function useSlice(data: SliceOrPath<Illust, number, AllSlice<Illust, number> | ListIndexSlice<Illust, number>, number[]>): SliceDataView<Illust> {
     if(data.type === "slice") {
         return useSliceDataView(data.slice)
     }else{

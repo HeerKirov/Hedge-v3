@@ -1,11 +1,11 @@
-import { computed, ref, Ref } from "vue"
+import { ref, Ref } from "vue"
 import { QueryListview } from "@/functions/fetch"
 import { useListeningEvent } from "@/utils/emitter"
 
 /**
  * 为列表提供选择器相关上下文，包括一组选择项与最后选择项。
  */
-export interface SelectedState<T> {
+export interface SelectedState<T extends string | number> {
     selected: Readonly<Ref<T[]>>
     lastSelected: Readonly<Ref<T | null>>
     update(selected: T[], lastSelected: T | null): void
@@ -16,18 +16,18 @@ export interface SelectedState<T> {
 /**
  * 为列表提供选择器相关上下文，包括单一选择项。
  */
-export interface SingleSelectedState<T> {
+export interface SingleSelectedState<T extends string | number> {
     selected: Readonly<Ref<T | null>>
     set(selected: T | null): void
     clear(): void
 }
 
-interface SelectedStateOptions<T, ITEM> {
-    queryListview?: QueryListview<ITEM>
+interface SelectedStateOptions<T extends string | number, ITEM> {
+    queryListview?: QueryListview<ITEM, T>
     keyOf(item: ITEM): T
 }
 
-export function useSelectedState<T, ITEM = undefined>(options?: SelectedStateOptions<T, ITEM>): SelectedState<T> {
+export function useSelectedState<T extends string | number, ITEM = undefined>(options?: SelectedStateOptions<T, ITEM>): SelectedState<T> {
     const selected = ref([]) as Ref<T[]>
     const lastSelected = ref(null) as Ref<T | null>
 
@@ -63,7 +63,7 @@ export function useSelectedState<T, ITEM = undefined>(options?: SelectedStateOpt
     return {selected, lastSelected, update, remove, clear}
 }
 
-export function useSingleSelectedState<T, ITEM = undefined>(options?: SelectedStateOptions<T, ITEM>): SingleSelectedState<T> {
+export function useSingleSelectedState<T extends string | number, ITEM = undefined>(options?: SelectedStateOptions<T, ITEM>): SingleSelectedState<T> {
     const selected = ref(null) as Ref<T | null>
 
     if(options?.queryListview) {

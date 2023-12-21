@@ -18,7 +18,7 @@ import { installIllustListviewContext, useImageDatasetOperators } from "@/servic
 import { useSettingSite } from "@/services/setting"
 import { computedEffect, installation, toRef } from "@/utils/reactivity"
 
-export const [installCollectionViewContext, useCollectionViewContext] = installation(function (data: SliceOrPath<Illust, SingletonSlice<Illust>, number>) {
+export const [installCollectionViewContext, useCollectionViewContext] = installation(function (data: SliceOrPath<Illust, number, SingletonSlice<Illust, number>, number>) {
     const singleton = useSingleton(data)
     const target = useTarget(singleton)
     const listview = useListView(target.id)
@@ -44,7 +44,7 @@ export const [installCollectionViewContext, useCollectionViewContext] = installa
     return {target, sideBar, listview, selector, paneState, listviewController, operators}
 })
 
-function useSingleton(data: SliceOrPath<Illust, SingletonSlice<Illust>, number>) {
+function useSingleton(data: SliceOrPath<Illust, number, SingletonSlice<Illust, number>, number>) {
     if(data.type === "slice") {
         return useSingletonDataView(data.slice)
     }else{
@@ -89,15 +89,16 @@ function useListView(path: Ref<number | null>) {
             }
             return await client.illust.collection.images.get(filter, {offset, limit})
         },
+        keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/illust/updated", "entity/illust/deleted", "entity/illust/images/changed"],
-            operation({ event, refresh, updateOne, removeOne }) {
+            operation({ event, refresh, updateKey, removeKey }) {
                 if((event.eventType === "entity/illust/images/changed" && event.illustId === path.value) || (event.eventType === "entity/illust/updated" && event.illustType === "IMAGE" && event.timeSot)) {
                     refresh()
                 }else if(event.eventType === "entity/illust/updated" && event.listUpdated && event.illustType === "IMAGE") {
-                    updateOne(i => i.id === event.illustId)
+                    updateKey(event.illustId)
                 }else if(event.eventType === "entity/illust/deleted") {
-                    removeOne(i => i.id === event.illustId)
+                    removeKey(event.illustId)
                 }
             },
             request: client => async items => mapResponse(await client.illust.findByIds(items.map(i => i.id)), r => r.map(i => i !== null ? i : undefined))

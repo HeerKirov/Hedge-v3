@@ -40,6 +40,7 @@ export function useFindSimilarTaskExplorer(push: Push): FindSimilarTaskExplorer 
 export function useTaskListData() {
     const listview = useQueryListview({
         request: client => (offset, limit, _) => client.findSimilar.task.list({offset, limit, order: "+recordTime"}),
+        keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/find-similar-result/created"],
             operation(context) {

@@ -82,7 +82,10 @@ function usePartitionData(listviewController: IllustViewController, query: Ref<s
     const total = computedWatch(partitionMonths, partitionMonths => {
         if(partitionMonths !== undefined) {
             let count = 0, day = 0
-            for(const pm of partitionMonths) count += pm.count, day += pm.days.length
+            for(const pm of partitionMonths) {
+                count += pm.count
+                day += pm.days.length
+            }
             return {count, day}
         }
         return {count: 0, day: 0}
@@ -311,20 +314,21 @@ function useListView() {
     const listview = useListViewContext({
         defaultFilter: <IllustQueryFilter>{order: "orderTime", type: "IMAGE"},
         request: client => (offset, limit, filter) => client.illust.list({offset, limit, ...filter}),
+        keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/illust/created", "entity/illust/updated", "entity/illust/deleted", "entity/illust/images/changed"],
-            operation({ event, refresh, updateOne, removeOne }) {
+            operation({ event, refresh, updateKey, removeKey }) {
                 if(event.eventType === "entity/illust/created" || (event.eventType === "entity/illust/updated" && event.timeSot)) {
                     refresh()
                 }else if(event.eventType === "entity/illust/updated" && event.listUpdated) {
-                    updateOne(i => i.id === event.illustId)
+                    updateKey(event.illustId)
                 }else if(event.eventType === "entity/illust/deleted") {
                     if(event.illustType === "COLLECTION") {
                         if(listview.queryFilter.value.type === "COLLECTION") {
                             refresh()
                         }
                     }else{
-                        removeOne(i => i.id === event.illustId)
+                        removeKey(event.illustId)
                     }
                 }else if(event.eventType === "entity/illust/images/changed") {
                     if(listview.queryFilter.value.type === "COLLECTION") {

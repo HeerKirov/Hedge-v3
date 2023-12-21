@@ -8,14 +8,18 @@ import { ErrorHandler } from "../install"
 // 一个instance代表查询条件固定情况下的一组列表查询，在内部以segment的形式分段查询并缓存数据。
 // instance本身不是composition AP，且不耦合fetch manager。
 
-export interface QueryInstanceOptions<T, E extends BasicException> extends QueryArguments<E> {
+export interface QueryInstanceOptions<T, KEY, E extends BasicException> extends QueryArguments<T, KEY, E> {
     /**
      * 通过此函数回调数据源的查询结果。因为实例与查询条件一一对应，此函数应闭包查询条件，其查询参数只能分页。
      */
     request(offset: number, limit: number): Promise<Response<ListResult<T>, E>>
 }
 
-export interface QueryArguments<E extends BasicException> {
+export interface QueryArguments<T, KEY, E extends BasicException> {
+    /**
+     * 取得一个项的唯一key。
+     */
+    keyOf(item: T): KEY
     /**
      * 查询中发生错误时，提交给此函数捕获。
      */
@@ -26,7 +30,7 @@ export interface QueryArguments<E extends BasicException> {
     segmentSize?: number
 }
 
-export interface QueryInstance<T> {
+export interface QueryInstance<T, KEY> {
     /**
      * 查询指定单条数据。
      * 优先从缓存取数据，如果没有缓存，则会立刻加载segment。
@@ -56,10 +60,14 @@ export interface QueryInstance<T> {
     /**
      * 对已存在的数据执行的操作。全部都是同步操作，支持同步查询以及同步修改，但这并不是实际修改，只是在修改缓存数据。
      */
-    syncOperations: SyncOperations<T>
+    sync: SyncOperations<T, KEY>
+    /**
+     * 变化事件。发生任意数据变更时，发送事件通知。
+     */
+    modifiedEvent: Emitter<ModifiedEvent<T>>
 }
 
-export interface SyncOperations<T> {
+export interface SyncOperations<T, KEY> {
     /**
      * 获得数据总量。只有在至少执行了一次查询后，才能获得总量，否则将返回null。
      */
@@ -70,7 +78,12 @@ export interface SyncOperations<T> {
      * @param priorityRange 指定一个offset或指定[start, end)范围作为优先查找范围。查询会从这个范围开始向两侧逐步扩张直到匹配目标。
      * @return 返回项的index，也就是offset。没有查找到指定项就会返回undefined。
      */
-    find(condition: (data: T) => boolean, priorityRange?: number | [number, number]): number | undefined
+    find(condition:  (data: T) => boolean, priorityRange?: number | [number, number]): number | undefined
+    /**
+     * 根据key查找指定的项。它只会在已经加载的项中查找。
+     * @return 返回项的index，也就是offset。没有查找到指定项就会返回undefined。
+     */
+    findByKey(key: KEY): number | undefined
     /**
      * 查找指定位置处的项。如果项不存在，或者未加载，则返回undefined。
      */
@@ -86,16 +99,12 @@ export interface SyncOperations<T> {
      * @return 是否成功删除
      */
     remove(index: number): boolean
-    /**
-     * 变化事件。发生任意数据变更时，发送事件通知。
-     */
-    modifiedEvent: Emitter<ModifiedEvent<T>>
 }
 
-export function createQueryInstance<T, E extends BasicException>(options: QueryInstanceOptions<T, E>): QueryInstance<T> {
+export function createQueryInstance<T, KEY, E extends BasicException>(options: QueryInstanceOptions<T, KEY, E>): QueryInstance<T, KEY> {
     const segmentSize = options.segmentSize ?? 100
 
-    const datasource = createDatasource(options.request, options.handleError)
+    const datasource = createDatasource(options)
 
     const segments = createSegments(datasource, segmentSize)
 
@@ -125,7 +134,7 @@ export function createQueryInstance<T, E extends BasicException>(options: QueryI
         isRangeLoaded(offset: number, limit: number): LoadedStatus {
             return segments.isDataLoaded(offset, limit)
         },
-        syncOperations: {
+        sync: {
             count(): number | null {
                 return datasource.data.total
             },
@@ -181,6 +190,10 @@ export function createQueryInstance<T, E extends BasicException>(options: QueryI
                 }
                 return undefined
             },
+            findByKey(key: KEY): number | undefined {
+                const ret = datasource.map.get(key)
+                return ret !== undefined ? ret[0] : undefined
+            },
             retrieve(index: number): T | undefined {
                 if(index >= 0 && datasource.data.total != null && index < datasource.data.total) {
                     return datasource.data.buffer[index]
@@ -217,13 +230,22 @@ export function createQueryInstance<T, E extends BasicException>(options: QueryI
                     //移除数据项
                     const [oldValue] = datasource.data.buffer.splice(index, 1)
                     datasource.data.total -= 1
+                    //调整map缓存的索引值
+                    for(let i = index; i < datasource.data.total; ++i) {
+                        const item = datasource.data.buffer[i]
+                        if(item !== undefined) {
+                            const key = options.keyOf(item)
+                            const cache = datasource.map.get(key)
+                            if(cache === undefined || cache[0] !== i) datasource.map.set(key, [i, item])
+                        }
+                    }
                     modifiedEvent.emit({type: "REMOVE", index, oldValue})
                     return true
                 }
                 return false
-            },
-            modifiedEvent
-        }
+            }
+        },
+        modifiedEvent
     }
 }
 
@@ -350,15 +372,19 @@ function createSegments({ data, pull }: ReturnType<typeof createDatasource>, seg
     return {getSegments, loadData, isDataLoaded}
 }
 
-function createDatasource<T, E extends BasicException>(request: QueryInstanceOptions<T, E>["request"], handleError: QueryInstanceOptions<T, E>["handleError"]) {
+function createDatasource<T, KEY, E extends BasicException>({ request, keyOf, handleError }: QueryInstanceOptions<T, KEY, E>) {
     const data = <{buffer: T[], total: number | null}>{buffer: [], total: null}
+    const map = new Map<KEY, [number, T]>()
 
     const pull = async (offset: number, limit: number): Promise<boolean> => {
         const res = await request(offset, limit)
         if(res.ok) {
             data.total = res.data.total
             for(let i = 0; i < res.data.result.length; ++i) {
-                data.buffer[offset + i] = res.data.result[i]
+                const item = res.data.result[i]
+                const key = keyOf(item)
+                data.buffer[offset + i] = item
+                map.set(key, [i, item])
             }
             return true
         }else{
@@ -367,7 +393,7 @@ function createDatasource<T, E extends BasicException>(request: QueryInstanceOpt
         }
     }
 
-    return {data, pull}
+    return {data, map, pull}
 }
 
 export enum LoadedStatus {

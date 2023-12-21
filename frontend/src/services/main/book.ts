@@ -43,15 +43,16 @@ function useListView(query: Ref<string | undefined>) {
     const listview = useListViewContext({
         defaultFilter: <BookQueryFilter>{order: "-updateTime"},
         request: client => (offset, limit, filter) => client.book.list({offset, limit, ...filter}),
+        keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/book/created", "entity/book/updated", "entity/book/deleted", "entity/book/images/changed"],
-            operation({ event, refresh, updateOne, removeOne }) {
+            operation({ event, refresh, updateKey, removeKey }) {
                 if(event.eventType === "entity/book/created") {
                     refresh()
                 }else if((event.eventType === "entity/book/updated" && event.listUpdated) || event.eventType === "entity/book/images/changed") {
-                    updateOne(i => i.id === event.bookId)
+                    updateKey(event.bookId)
                 }else if(event.eventType === "entity/book/deleted") {
-                    removeOne(i => i.id === event.bookId)
+                    removeKey(event.bookId)
                 }
             },
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.book.get(a.id))))
