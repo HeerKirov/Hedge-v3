@@ -13,7 +13,7 @@ import { installBookContext } from "@/services/main/book"
 import BookGridItem from "./BookGridItem.vue"
 
 const {
-    listview: { paginationData },
+    listview: { paginationData: { data, state, setState, navigateTo } },
     listviewController: { columnNum },
     querySchema,
     operators,
@@ -54,7 +54,7 @@ const menu = useDynamicPopupMenu<Book>(book => [
                 <QueryNotificationBadge class="ml-1" :schema="querySchema.schema.value" @click="querySchema.expanded.value = true"/>
 
                 <template #right>
-                    <DataRouter/>
+                    <DataRouter :state="state" @navigate="navigateTo"/>
                     <ColumnNumButton class="mr-1" v-model:value="columnNum"/>
                     <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
                         <Button :ref="setEl" square icon="ellipsis-v" @click="popup"/>
@@ -68,10 +68,9 @@ const menu = useDynamicPopupMenu<Book>(book => [
         </template>
 
         <PaneLayout :show-pane="paneState.visible.value">
-            <VirtualGridView :style="bookGridStyle" :column-count="columnNum" :padding="{top: 1, bottom: 4, left: 4, right: 4}"
-                             :min-update-delta="1" :buffer-size="5" :aspect-ratio="0.6"
-                             @update="paginationData.dataUpdate" v-bind="paginationData.data.metrics">
-                <BookGridItem v-for="item in paginationData.data.result" :key="item.id" :item="item" 
+            <VirtualGridView :style="bookGridStyle" :column-count="columnNum" :padding="{top: 1, bottom: 4, left: 4, right: 4}" :aspect-ratio="0.6"
+                             @update:state="setState" :metrics="data.metrics" :state="state">
+                <BookGridItem v-for="item in data.items" :key="item.id" :item="item"
                               :selected="selector.selected.value === item.id"
                               @click="selector.set($event.id)" 
                               @dblclick="operators.openBookView($event)"

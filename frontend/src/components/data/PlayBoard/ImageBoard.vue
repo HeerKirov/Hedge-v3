@@ -10,7 +10,7 @@ const props = defineProps<{
     zoomValue: number
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
     (e: "arrow", direction: "left" | "right"): void
 }>()
 

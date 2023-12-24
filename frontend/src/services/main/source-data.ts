@@ -1,5 +1,4 @@
 import { Ref, computed, watch } from "vue"
-import { installVirtualViewNavigation } from "@/components/data"
 import { useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import { SourceDataIdentity, SourceDataQueryFilter, SourceEditStatus } from "@/functions/http-client/api/source-data"
@@ -18,7 +17,6 @@ export const [installSourceDataContext, useSourceDataContext] = installation(fun
     const listview = useListView(querySchema.query)
     const operators = useOperators(paneState)
 
-    installVirtualViewNavigation()
     useSettingSite()
 
     return {listview, operators, paneState, querySchema}

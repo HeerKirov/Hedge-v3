@@ -10,7 +10,7 @@ import { useInterceptedKey } from "@/modules/keyboard"
  */
 interface ListViewContext<T, KEY, F> {
     listview: QueryListview<T, KEY>
-    paginationData: PaginationDataView<T, KEY>
+    paginationData: PaginationDataView<T>
     queryFilter: Ref<F>
 }
 
@@ -32,7 +32,7 @@ export function useListViewContext<T, KEY, F>(options: ListViewContextOptions<T,
         eventFilter: options.eventFilter
     })
 
-    const paginationData = usePaginationDataView(listview)
+    const paginationData = usePaginationDataView({listview, bufferPercent: 0.2})
     
     useInterceptedKey("Meta+KeyR", listview.refresh)
 

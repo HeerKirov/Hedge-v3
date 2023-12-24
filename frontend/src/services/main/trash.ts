@@ -1,5 +1,4 @@
 import { computed } from "vue"
-import { installVirtualViewNavigation } from "@/components/data"
 import { flatResponse } from "@/functions/http-client"
 import { TrashQueryFilter } from "@/functions/http-client/api/trash"
 import { useFetchEndpoint, usePostFetchHelper } from "@/functions/fetch"
@@ -17,8 +16,6 @@ export const [installTrashContext, useTrashContext] = installation(function() {
     const paneState = useSelectedPaneState("trashed-image")
     const listviewController = useTrashedImageViewController()
     const operators = useOperators(selector)
-
-    installVirtualViewNavigation()
 
     return {paneState, listview, listviewController, selector, operators}
 })

@@ -1,5 +1,4 @@
 import { readonly, Ref, ref, watch } from "vue"
-import { installVirtualViewNavigation } from "@/components/data"
 import { useLocalStorage } from "@/functions/app"
 import { useCreatingHelper, useFetchEndpoint, useRetrieveHelper, ErrorHandler, QueryListview, usePostFetchHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
@@ -23,8 +22,6 @@ export const [installTopicContext, useTopicContext] = installation(function () {
     const listview = useListView()
 
     const operators = useOperators(paneState, listview.listview)
-
-    installVirtualViewNavigation()
 
     return {paneState, listview, operators}
 })

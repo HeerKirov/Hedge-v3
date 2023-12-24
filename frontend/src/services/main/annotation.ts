@@ -1,5 +1,4 @@
 import { computedWatchMutable, installation } from "@/utils/reactivity"
-import { installVirtualViewNavigation } from "@/components/data"
 import { flatResponse } from "@/functions/http-client"
 import { Annotation, AnnotationCreateForm, AnnotationQueryFilter, AnnotationTarget } from "@/functions/http-client/api/annotations"
 import { QueryListview, useCreatingHelper, useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
@@ -16,8 +15,6 @@ export const [installAnnotationContext, useAnnotationContext] = installation(fun
     const listview = useListView()
 
     const operators = useOperators(paneState, listview.listview)
-
-    installVirtualViewNavigation()
 
     return {paneState, listview, operators}
 })

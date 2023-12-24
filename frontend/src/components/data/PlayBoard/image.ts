@@ -18,7 +18,7 @@ export function useImagePosition(zoomValue: Ref<number>) {
     onElementResize(viewRef, rect => {
         //view的值变化/初始化。触发container重算。
         view.value = {width: rect.width, height: rect.height}
-    })
+    }, {immediate: true})
 
     const imageLoadedEvent = async (e: Event) => {
         //图像加载完成，用natural属性计算其aspect

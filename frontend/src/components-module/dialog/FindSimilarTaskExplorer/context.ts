@@ -49,7 +49,7 @@ export function useTaskListData() {
         }
     })
 
-    const paginationData = usePaginationDataView(listview)
+    const paginationData = usePaginationDataView({listview, bufferPercent: 0.2})
 
     return {listview, paginationData}
 }

@@ -1,4 +1,3 @@
-import { installVirtualViewNavigation } from "@/components/data"
 import { mapResponse } from "@/functions/http-client"
 import { usePostFetchHelper } from "@/functions/fetch"
 import { useListViewContext } from "@/services/base/list-view-context"
@@ -15,12 +14,10 @@ export function useStagingPostContext() {
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("staging-post")
     const listviewController = useIllustViewController()
-    const navigation = installVirtualViewNavigation()
     const selfOperators = useOperators(selector)
     const operators = useImageDatasetOperators({
-        paginationData: listview.paginationData,
-        listview: listview.listview,
-        listviewController, selector, navigation
+        listview: listview.listview, paginationData: listview.paginationData,
+        listviewController, selector
     })
 
     installIllustListviewContext({listview, selector, listviewController})

@@ -12,7 +12,6 @@ import { useHomepageState } from "@/services/main/homepage"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { toRef, toRefNullable } from "@/utils/reactivity"
 import { onOutsideClick } from "@/utils/sensors"
-import { installVirtualViewNavigation } from "@/components/data"
 
 export function useButtonContext() {
     const route = useRoute()
@@ -117,8 +116,6 @@ export function useDataContext(close: () => void) {
     const dialog = useDialogService()
     const fetchListAll = useFetchHelper(client => client.stagingPost.list)
     const fetchUpdate = usePostFetchHelper(client => client.stagingPost.update)
-
-    installVirtualViewNavigation()
 
     const listview = useListViewContext({
         request: client => (offset, limit) => client.stagingPost.list({offset, limit}),

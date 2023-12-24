@@ -13,7 +13,6 @@ import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useIllustViewController } from "@/services/base/view-controller"
-import { installVirtualViewNavigation } from "@/components/data"
 import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
 import { useFolderTableSearch } from "@/services/common/folder"
 import { installation } from "@/utils/reactivity"
@@ -228,11 +227,9 @@ export function useFolderDetailPanel() {
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust")
     const listviewController = useIllustViewController()
-    const navigation = installVirtualViewNavigation()
     const operators = useImageDatasetOperators({
-        paginationData: listview.paginationData,
-        listview: listview.listview,
-        listviewController, selector, navigation,
+        listview: listview.listview, paginationData: listview.paginationData,
+        listviewController, selector,
         dataDrop: {dropInType: "folder", path: viewState.detailPath}
     })
 

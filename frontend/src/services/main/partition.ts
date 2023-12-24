@@ -1,5 +1,4 @@
 import { ComponentPublicInstance, Ref, computed, watch } from "vue"
-import { installVirtualViewNavigation } from "@/components/data"
 import { Partition, IllustQueryFilter } from "@/functions/http-client/api/illust"
 import { flatResponse } from "@/functions/http-client"
 import { useFetchReactive } from "@/functions/fetch"
@@ -282,14 +281,12 @@ export function useDetailIllustContext() {
     const listview = useListView()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust")
-    const navigation = installVirtualViewNavigation()
     const operators = useImageDatasetOperators({
-        paginationData: listview.paginationData,
-        listview: listview.listview,
-        listviewController, selector, navigation,
+        listview: listview.listview, paginationData: listview.paginationData,
+        listviewController, selector,
         dataDrop: {dropInType: "partition", path, querySchema: querySchema.schema, queryFilter: listview.queryFilter}
     })
-    const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector, navigation})
+    const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector})
 
     watch(listviewController.collectionMode, collectionMode => listview.queryFilter.value.type = typeof collectionMode === "boolean" ? (collectionMode ? "COLLECTION" : "IMAGE") : collectionMode, {immediate: true})
     watch(querySchema.query, query => listview.queryFilter.value.query = query, {immediate: true})

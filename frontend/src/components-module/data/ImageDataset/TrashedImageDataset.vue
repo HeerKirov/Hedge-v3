@@ -4,7 +4,7 @@ import { Icon } from "@/components/universal"
 import { Flex, FlexItem } from "@/components/layout"
 import { SourceInfo, FileInfoDisplay } from "@/components-business/form-display"
 import { useAssets } from "@/functions/app"
-import { PaginationData, QueryInstance } from "@/functions/fetch"
+import { PaginationData, PaginationViewState, QueryInstance } from "@/functions/fetch"
 import { TrashedImage } from "@/functions/http-client/api/trash"
 import { toRef } from "@/utils/reactivity"
 import { installDatasetContext, isVideoExtension } from "./context"
@@ -17,6 +17,10 @@ const props = defineProps<{
      * 分页数据。
      */
     data: PaginationData<TrashedImage>
+    /**
+     * 视口状态。
+     */
+    state: PaginationViewState | null
     /**
      * 查询实例。选择器模块会用到，被用于自由选取数据。
      */
@@ -51,7 +55,11 @@ const emit = defineEmits<{
     /**
      * 发送“需要数据更新”的请求。
      */
-    (e: "data-update", offset: number, limit: number): void
+    (e: "update:state", offset: number, limit: number): void
+    /**
+     * 发送navigate事件。
+     */
+    (e: "navigate", offset: number): void
     /**
      * 更改选择项。
      */
@@ -77,6 +85,7 @@ const emit = defineEmits<{
 const keyOf = (item: TrashedImage) => item.id
 
 const data = toRef(props, "data")
+const state = toRef(props, "state")
 const columnNum = computed(() => props.viewMode === "grid" ? (props.columnNum ?? 3) : undefined)
 const selected = computed(() => props.selected ?? [])
 const lastSelected = computed(() => props.lastSelected ?? null)
@@ -87,11 +96,12 @@ const style = computed(() => ({"--var-fit-type": props.fitType ?? "cover"}))
 
 installDatasetContext({
     queryInstance: props.queryInstance,
-    data, keyOf, columnNum,
+    data, state, keyOf, columnNum,
     selected, lastSelected,
     draggable: ref(false), droppable: ref(false),
     dragAndDropType: "illusts",
-    dataUpdate: (_, __) => emit("data-update", _, __),
+    updateState: (_, __) => emit("update:state", _, __),
+    navigate: (_) => emit("navigate", _),
     select: (_, __) => emit("select", _, __),
     rightClick: (_) => emit("contextmenu", _ as TrashedImage),
     dblClick: (_, __) => emit("dblclick", _, __),

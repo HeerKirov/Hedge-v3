@@ -11,7 +11,7 @@ const emit = defineEmits<{
     (e: "close"): void
 }>()
 
-const { listview: { paginationData }, clear, createCollection, createBook, addToFolder, openDetailView } = useDataContext(() => emit("close"))
+const { listview: { listview, paginationData: { data, state, setState, navigateTo } }, clear, createCollection, createBook, addToFolder, openDetailView } = useDataContext(() => emit("close"))
 
 const ellipsisMenuItems = <MenuItem<undefined>[]>[
     {type: "normal", label: "创建为图像集合", click: createCollection},
@@ -29,23 +29,22 @@ const ellipsisMenuItems = <MenuItem<undefined>[]>[
             <MiddleLayout class="px-1 mt-1 mb-1 is-element-height-std">
                 <template #left>
                     <span class="is-font-size-large ml-2">暂存区</span>
-                    <DataRouter v-if="paginationData.data.metrics.total"/>
+                    <DataRouter v-if="state" :state="state" @navigate="navigateTo"/>
                 </template>
                 <template #right>
-                    <Button icon="maximize" :disabled="!paginationData.data.metrics.total" @click="openDetailView">详细</Button>
+                    <Button icon="maximize" :disabled="!state" @click="openDetailView">详细</Button>
                     <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
-                        <Button :ref="setEl" square icon="ellipsis-v" :disabled="!paginationData.data.metrics.total" @click="popup"/>
+                        <Button :ref="setEl" square icon="ellipsis-v" :disabled="!state" @click="popup"/>
                     </ElementPopupMenu>
                 </template>
             </MiddleLayout>
             <Separator direction="horizontal"/>
         </template>
 
-        <div v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" class="has-text-centered secondary-text">
+        <div v-if="state && state.total <= 0" class="has-text-centered secondary-text">
             <i>暂存区为空</i>
         </div>
         <StagingPostDataset v-else view-mode="grid" fit-type="cover" :column-num="6" draggable
-                            :data="paginationData.data" :query-instance="paginationData.proxy"
-                            @data-update="paginationData.dataUpdate"/>
+                            :data="data" :state="state" :query-instance="listview.proxy" @update:state="setState" @navigate="navigateTo"/>
     </BottomLayout>
 </template>

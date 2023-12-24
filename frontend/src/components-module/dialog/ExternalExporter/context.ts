@@ -3,7 +3,6 @@ import { IllustType, SimpleIllust } from "@/functions/http-client/api/illust"
 import { useFetchHelper, useFetchReactive, usePaginationDataView, useQueryListview } from "@/functions/fetch"
 import { FilePath } from "@/functions/http-client/api/all"
 import { useLocalStorage } from "@/functions/app"
-import { useVirtualViewNavigation } from "@/components/data"
 import { useMessageBox } from "@/modules/message-box"
 import { dialogManager } from "@/modules/dialog"
 import { useToast } from "@/modules/toast"
@@ -152,9 +151,7 @@ function useExporterPreview(data: ExternalExporterProps) {
             keyOf: item => item.id
         })
 
-        const paginationData = usePaginationDataView(listview)
-
-        useVirtualViewNavigation()
+        const paginationData = usePaginationDataView({listview, bufferPercent: 0.2})
         
         return {type: "BOOK", packagable: shallowRef(true), book, paginationData} as const
     }

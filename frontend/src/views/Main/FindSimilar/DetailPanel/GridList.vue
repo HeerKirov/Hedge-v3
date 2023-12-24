@@ -4,8 +4,9 @@ import { CommonIllust } from "@/functions/http-client/api/illust"
 import { useDynamicPopupMenu } from "@/modules/popup-menu"
 import { useFindSimilarDetailPanel } from "@/services/main/find-similar"
 
-const { 
-    paginationData, 
+const {
+    listview,
+    paginationData: { data, state, setState, navigateTo },
     selector: { selected, lastSelected, update: updateSelect }, 
     listviewController: { fitType, columnNum }, 
     operators: { allBooks, allCollections, addToCollection, addToBook, markIgnored, deleteItem, cloneImage, openPreviewBySpace } 
@@ -31,8 +32,8 @@ const menu = useDynamicPopupMenu<CommonIllust>(illust => [
 </script>
 
 <template>
-    <IllustImageDataset :data="paginationData.data" :query-instance="paginationData.proxy"
+    <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy"
                         view-mode="grid" :fit-type="fitType" :column-num="columnNum"
                         :selected="selected" :last-selected="lastSelected" @select="updateSelect"
-                        @data-update="paginationData.dataUpdate" @space="openPreviewBySpace()" @contextmenu="menu.popup($event)"/>
+                        @update:state="setState" @navigate="navigateTo" @space="openPreviewBySpace()" @contextmenu="menu.popup($event)"/>
 </template>

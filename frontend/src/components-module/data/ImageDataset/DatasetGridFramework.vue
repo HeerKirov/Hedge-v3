@@ -15,7 +15,7 @@ defineSlots<{
     default(props: {item: T, index: number, selected: boolean, thumbType: "thumbnail" | "sample"}): any
 }>()
 
-const { data, dataUpdate, keyOf, summaryDropEvents } = useDatasetContext()
+const { data, state, updateState, keyOf, summaryDropEvents } = useDatasetContext()
 
 const style = computed(() => ({
     "--var-column-num": props.columnNum
@@ -25,7 +25,7 @@ const viewRef = ref<ComponentPublicInstance>()
 
 const viewElement = computed(() => viewRef.value?.$el)
 
-const viewRect = useElementRect(viewElement)
+const viewRect = useElementRect(viewElement, {immediate: true})
 
 const viewWidth = computedWatch(viewRect, viewRect => viewRect? Math.floor(viewRect.width / 10) * 10 : undefined)
 
@@ -34,10 +34,9 @@ const thumbType = computedEffect(() => viewWidth.value !== undefined ? (viewWidt
 </script>
 
 <template>
-    <VirtualGridView ref="viewRef" class="w-100 h-100" :style="style" v-bind="{...data.metrics, ...summaryDropEvents}" @update="dataUpdate"
-                     :column-count="columnNum" :buffer-size="5" :min-update-delta="1"
-                     :padding="{top: 1, bottom: 1, left: 2, right: 2}">
-        <DatasetGridItem v-for="(item, idx) in data.result" :key="keyOf(item)" :item="item" :index="data.metrics.offset + idx" v-slot="{ selected }">
+    <VirtualGridView ref="viewRef" class="w-100 h-100" :style="style" v-bind="summaryDropEvents" :state="state" :metrics="data.metrics" @update:state="updateState"
+                     :column-count="columnNum" :padding="{top: 1, bottom: 1, left: 2, right: 2}">
+        <DatasetGridItem v-for="(item, idx) in data.items" :key="keyOf(item)" :item="item" :index="data.metrics.offset + idx" v-slot="{ selected }">
             <slot :item="item as T" :index="data.metrics.offset + idx" :selected="selected" :thumbType="thumbType"/>
         </DatasetGridItem>
     </VirtualGridView>

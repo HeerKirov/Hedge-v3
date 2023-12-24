@@ -1,5 +1,4 @@
 import { readonly, Ref, ref, watch } from "vue"
-import { installVirtualViewNavigation } from "@/components/data"
 import { useLocalStorage } from "@/functions/app"
 import { ErrorHandler, QueryListview, useCreatingHelper, useFetchEndpoint, useFetchHelper, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
@@ -25,8 +24,6 @@ export const [installAuthorContext, useAuthorContext] = installation(function ()
     const operators = useOperators(paneState, listview.listview)
 
     const thumbnailLoadingCache = useListThumbnailLoadingCache()
-
-    installVirtualViewNavigation()
 
     return {paneState, listview, operators, thumbnailLoadingCache}
 })

@@ -12,7 +12,7 @@ import AuthorListPanelItem from "./AuthorListPanelItem.vue"
 
 const {
     paneState,
-    listview: { queryFilter, paginationData },
+    listview: { queryFilter, paginationData: { data, state, setState, navigateTo } },
     operators: { toggleFavorite, createByTemplate, deleteItem, findSimilarOfAuthor, openIllustsOfAuthor }
 } = useAuthorContext()
 
@@ -83,18 +83,17 @@ const popupMenu = usePopupMenu<Author>([
                 <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="queryFilter"/>
 
                 <template #right>
-                    <DataRouter/>
+                    <DataRouter :state="state" @navigate="navigateTo"/>
                     <Button icon="plus" square @click="paneState.openCreateView()"/>
                 </template>
             </MiddleLayout>
         </template>
 
-        <VirtualRowView :row-height="80" :padding="6" :buffer-size="8" v-bind="paginationData.data.metrics" @update="paginationData.dataUpdate">
-            <AuthorListPanelItem v-for="item in paginationData.data.result" :key="item.id"
-                                :item="item"
-                                @update:favorite="toggleFavorite(item, $event)"
-                                @click="paneState.openDetailView(item.id)"
-                                @contextmenu="popupMenu.popup(item)"/>
+        <VirtualRowView :row-height="80" :padding="6" :metrics="data.metrics" :state="state" @update:state="setState">
+            <AuthorListPanelItem v-for="item in data.items" :key="item.id" :item="item"
+                                 @update:favorite="toggleFavorite(item, $event)"
+                                 @click="paneState.openDetailView(item.id)"
+                                 @contextmenu="popupMenu.popup(item)"/>
         </VirtualRowView>
     </TopBarLayout>
 </template>

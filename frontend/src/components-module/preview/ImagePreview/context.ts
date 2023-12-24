@@ -1,5 +1,5 @@
 import { Ref, ref, watch } from "vue"
-import { PaginationData, QueryListview } from "@/functions/fetch"
+import { QueryListview } from "@/functions/fetch"
 import { NullableFilePath } from "@/functions/http-client/api/all"
 import { ServiceBaseType } from "../context"
 import { useInterceptedKey } from "@/modules/keyboard"
@@ -9,7 +9,6 @@ export type ImageProps = ServiceBaseType<"image"> & (ListviewModeProps | ArrayMo
 interface ListviewModeProps {
     type: "listview"
     listview: QueryListview<{id: number, filePath: NullableFilePath | null}, number>
-    paginationData: PaginationData<unknown>
     columnNum?: Readonly<Ref<number>>
     viewMode?: Readonly<Ref<"grid" | "row">>
     selected: Readonly<Ref<number[]>>

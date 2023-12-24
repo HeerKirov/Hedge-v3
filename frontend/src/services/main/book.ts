@@ -1,6 +1,5 @@
 import { Ref, watch } from "vue"
 import { installation } from "@/utils/reactivity"
-import { installVirtualViewNavigation } from "@/components/data"
 import { Book, BookQueryFilter, DetailBook } from "@/functions/http-client/api/book"
 import { flatResponse } from "@/functions/http-client"
 import { useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
@@ -21,8 +20,6 @@ export const [installBookContext, useBookContext] = installation(function () {
     const selector = useSingleSelectedState({queryListview: listview.listview, keyOf: i => i.id})
     const paneState = useSelectedPaneState("book")
     const operators = useOperators()
-
-    installVirtualViewNavigation()
 
     useRouterParamEvent("MainBook", params => {
         if(params.tagName || params.authorName || params.topicName) {

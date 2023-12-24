@@ -19,7 +19,7 @@ const props = defineProps<{
 const {
     target: { id, data, deleteItem, toggleFavorite },
     sideBar: { tabType },
-    listview: { paginationData },
+    listview: { listview, paginationData: { data: paginationData, state, setState, navigateTo } },
     listviewController: { viewMode, fitType, columnNum, editableLockOn },
     selector: { selected, lastSelected, update: updateSelect },
     paneState,
@@ -116,7 +116,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
                         <Button square icon="heart" :type="data?.favorite ? 'danger' : 'secondary'" @click="toggleFavorite"/>
                         <Button square :mode="editableLockOn ? 'filled' : undefined" :type="editableLockOn ? 'danger' : undefined" :icon="editableLockOn ? 'lock-open' : 'lock'" @click="editableLockOn = !editableLockOn"/>
                         <Separator/>
-                        <DataRouter/>
+                        <DataRouter :state="state" @navigate="navigateTo"/>
                         <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
                         <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
                         <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
@@ -127,10 +127,10 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
             </template>
 
             <PaneLayout :show-pane="paneState.visible.value">
-                <IllustImageDataset v-if="id !== null" :data="paginationData.data" :query-instance="paginationData.proxy"
+                <IllustImageDataset v-if="id !== null" :data="paginationData" :state="state" :query-instance="listview.proxy"
                                     :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
                                     :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                                    @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
+                                    @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
                                     @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
                                     @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
 

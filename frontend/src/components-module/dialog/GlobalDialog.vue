@@ -25,7 +25,7 @@ const innerRef = ref<ComponentPublicInstance>()
 
 const innerElement = computed<HTMLElement>(() => innerRef.value?.$el)
 
-const innerElementRect = useElementRect(innerElement)
+const innerElementRect = useElementRect(innerElement, {immediate: true})
 
 const innerElementHeight = computed(() => innerElementRect.value?.height)
 

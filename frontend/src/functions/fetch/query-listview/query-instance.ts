@@ -128,7 +128,7 @@ export function createQueryInstance<T, KEY, E extends BasicException>(options: Q
             return result
         },
         async count() {
-            const ok = await segments.loadData(0, 1)
+            const ok = await segments.loadData(0, segmentSize)
             return ok ? datasource.data.total! : 0
         },
         isRangeLoaded(offset: number, limit: number): LoadedStatus {
@@ -384,7 +384,7 @@ function createDatasource<T, KEY, E extends BasicException>({ request, keyOf, ha
                 const item = res.data.result[i]
                 const key = keyOf(item)
                 data.buffer[offset + i] = item
-                map.set(key, [i, item])
+                map.set(key, [offset + i, item])
             }
             return true
         }else{

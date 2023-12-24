@@ -2,7 +2,6 @@ import { computed, Ref, ref } from "vue"
 import { Book } from "@/functions/http-client/api/book"
 import { flatResponse } from "@/functions/http-client"
 import { SingletonSlice, SliceOrPath, useFetchEndpoint, useSingletonDataView } from "@/functions/fetch"
-import { installVirtualViewNavigation } from "@/components/data"
 import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
 import { useMessageBox } from "@/modules/message-box"
@@ -19,11 +18,9 @@ export const [installBookViewContext, useBookViewContext] = installation(functio
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust")
     const listviewController = useIllustViewController()
-    const navigation = installVirtualViewNavigation()
     const operators = useImageDatasetOperators({
-        paginationData: listview.paginationData,
-        listview: listview.listview,
-        listviewController, selector, navigation,
+        listview: listview.listview, paginationData: listview.paginationData,
+        listviewController, selector,
         dataDrop: {dropInType: "book", path: target.id}
     })
 

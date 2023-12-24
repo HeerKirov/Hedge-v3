@@ -1,8 +1,7 @@
 import { computed, reactive, ref, Ref, watch } from "vue"
-import { installVirtualViewNavigation } from "@/components/data"
 import { useLocalStorage } from "@/functions/app"
 import { mapResponse } from "@/functions/http-client"
-import { QueryInstance, QueryListview, useFetchEndpoint, useFetchHelper, usePostFetchHelper, usePostPathFetchHelper } from "@/functions/fetch"
+import { QueryListview, useFetchEndpoint, useFetchHelper, usePostFetchHelper, usePostPathFetchHelper } from "@/functions/fetch"
 import { CommonIllust, IllustQueryFilter, Tagme } from "@/functions/http-client/api/illust"
 import { FilePath, SourceDataPath } from "@/functions/http-client/api/all"
 import { SimpleBook } from "@/functions/http-client/api/book"
@@ -33,14 +32,12 @@ export const [installIllustContext, useIllustContext] = installation(function ()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust")
     const listviewController = useIllustViewController(toRef(listview.queryFilter, "type"))
-    const navigation = installVirtualViewNavigation()
     const operators = useImageDatasetOperators({
-        paginationData: listview.paginationData,
-        listview: listview.listview, 
-        listviewController, selector, navigation,
+        listview: listview.listview, paginationData: listview.paginationData,
+        listviewController, selector,
         dataDrop: {dropInType: "illust", querySchema: querySchema.schema, queryFilter: listview.queryFilter}
     })
-    const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector, navigation})
+    const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector})
 
     installIllustListviewContext({listview, selector, listviewController})
 
@@ -125,7 +122,7 @@ export function useIllustDetailPane() {
 
     const path = computed(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
 
-    const detail = useIllustDetailPaneId(path, listview.listview, listview.paginationData.proxy)
+    const detail = useIllustDetailPaneId(path, listview.listview)
 
     const parent = computed(() => {
         if(book !== undefined && book.value !== null) {
@@ -147,7 +144,6 @@ export function useIllustDetailPane() {
             preview: "image", 
             type: "listview", 
             listview: listview.listview,
-            paginationData: listview.paginationData.data,
             columnNum: listviewController.columnNum,
             viewMode: listviewController.viewMode,
             selected: selector.selected,
@@ -159,7 +155,7 @@ export function useIllustDetailPane() {
     return {tabType, detail, selector, parent, openImagePreview}
 }
 
-function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview<CommonIllust, number>, instance: QueryInstance<CommonIllust, number>) {
+function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview<CommonIllust, number>) {
     const detail = ref<{id: number, type: "IMAGE" | "COLLECTION", filePath: FilePath} | null>(null)
 
     const fetch = useFetchHelper({
@@ -173,9 +169,9 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
 
     watch(path, async path => {
         if(path !== null) {
-            const idx = instance.sync.findByKey(path)
+            const idx = listview.proxy.sync.findByKey(path)
             if(idx !== undefined) {
-                const item = instance.sync.retrieve(idx)!
+                const item = listview.proxy.sync.retrieve(idx)!
                 detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
             }else{
                 const res = await fetch(path)
@@ -189,9 +185,9 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
     useListeningEvent(listview.modifiedEvent, async e => {
         if(path.value !== null) {
             if(e.type === "FILTER_UPDATED" || e.type === "REFRESH") {
-                const idx = instance.sync.findByKey(path.value)
+                const idx = listview.proxy.sync.findByKey(path.value)
                 if(idx !== undefined) {
-                    const item = instance.sync.retrieve(idx)!
+                    const item = listview.proxy.sync.retrieve(idx)!
                     detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
                 }else{
                     const res = await fetch(path.value)

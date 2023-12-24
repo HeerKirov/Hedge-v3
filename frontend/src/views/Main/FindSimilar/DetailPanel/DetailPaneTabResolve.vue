@@ -3,7 +3,7 @@ import { ElementPopupMenu } from "@/components/interaction"
 import { Separator, Icon, Button } from "@/components/universal"
 import { useDetailPaneTabResolve, useFindSimilarDetailPanel } from "@/services/main/find-similar"
 import { MenuItem } from "@/modules/popup-menu"
-import { numbers } from "@/utils/primitives";
+import { numbers } from "@/utils/primitives"
 
 const { selector: { selected }, operators: { allBooks, allCollections, addToBook, addToCollection, markIgnored, cloneImage, deleteItem } } = useFindSimilarDetailPanel()
 

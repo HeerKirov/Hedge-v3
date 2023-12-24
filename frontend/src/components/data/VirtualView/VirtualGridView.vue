@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue"
-import { ProposeData, useVirtualViewContext } from "./context"
-import { numbers } from "@/utils/primitives"
+import { computed, toRef, watch } from "vue"
+import { computedEffect } from "@/utils/reactivity"
+import { useListeningEvent } from "@/utils/emitter"
+import { useVirtualViewContext } from "./context"
 
 // == Virtual Grid View 虚拟滚动网格组件 ==
 // 虚拟滚动组件，且按照Grid网格的排布模式计算滚动。虚拟滚动要求每个网格单元的长宽比固定、网格列数确定，剩下的会自动计算。
@@ -14,10 +15,6 @@ const props = withDefaults(defineProps<{
      */
     padding?: {top?: number, bottom?: number, left?: number, right?: number} | number
     /**
-     * 位于可视范围外的缓冲区行数。
-     */
-    bufferSize?: number
-    /**
      * Grid的列数。
      */
     columnCount?: number
@@ -26,165 +23,101 @@ const props = withDefaults(defineProps<{
      */
     aspectRatio?: number
     /**
-     * 数据项的总项数。设置为undefined会被认为是需要加载数据。
+     * 当前提供的数据的内容。
      */
-    total?: number
+    metrics?: {offset: number, limit: number}
     /**
-     * 当前提供的数据项的limit。
+     * 当前虚拟视图的滚动位置。
      */
-    limit?: number
-    /**
-     * 当前提供的数据项的offset。
-     */
-    offset?: number
-    /**
-     * 最小更新变化阈值，单位是行。当limit和offset的变化值小于此阈值时，将不会发出事件。
-     */
-    minUpdateDelta: number
+    state?: {total: number, offset: number, limit: number} | null
 }>(), {
     padding: 0,
-    bufferSize: 0,
     columnCount: 3,
-    aspectRatio: 1,
-    minUpdateDelta: 0
+    aspectRatio: 1
 })
 
 const emit = defineEmits<{
-    (e: "update", offset: number, limit: number): void
+    (e: "update:state", offset: number, limit: number): void
 }>()
 
-const { propose, actual, padding, bindDiv, scrollTo, setViewState, watchViewNavigation } = useVirtualViewContext({
-    props: {
-        padding() { return props.padding },
-        buffer() { return buffer.value }
-    },
-    onRefresh() {
-        lastDataRequired.offset = undefined
-        lastDataRequired.limit = undefined
-    }
-})
+const metrics = toRef(props, "metrics")
+const state = toRef(props, "state")
 
-const DEFAULT_CONTENT_WIDTH = 1000
-const buffer = computed(() => props.bufferSize * (propose.value.contentWidth ?? DEFAULT_CONTENT_WIDTH) / props.columnCount / props.aspectRatio)
+const { scrollState, navigateEvent, bindDiv } = useVirtualViewContext(props.padding)
 
-//上层事件: 将total设置有效值会刷新view state的值
-watch(() => props.total, (total, oldTotal) => {
-    if(total != undefined && oldTotal !== total) {
-        updateViewState(propose.value, total, props.columnCount)
-    }
-})
+//每行的高度，由单元格的宽度计算得来
+const unitHeight = computed(() => (scrollState.value.contentWidth ?? window.innerWidth) / props.columnCount / props.aspectRatio)
+//由于数据可能不是直接对齐行首的，因此需要计算前置空缺数量，然后补上
+const prefixCount = computedEffect(() => (metrics.value?.offset ?? 0) % props.columnCount)
+//前置空缺div的CSS。宽度要保留一点，因为在宽度快速变化时，实时布局立即生效，在一个异步事件后才进行js计算，这会导致出现闪烁
+const prefixDivStyle = computed(() => prefixCount.value > 0 ? {width: `${prefixCount.value * unitHeight.value * 0.95}px`, height: `${unitHeight.value}px`} : undefined)
 
-//上层事件: propose发生变化时，有一系列复杂的预期行为。如果宽度变化/列数变化，将重新计算滚动位置；其他变化会重新计算view，以及发送update事件
-const lastDataRequired: {offset?: number, limit?: number} = {}
-watch(() => [propose.value, props.columnCount] as [ProposeData, number], ([propose, columnCount], [oldPropose, oldColumnCount]) => {
-    if(propose.contentWidth != undefined) {
-        //如果contentWidth或columnCount发生变化，意味着scroll可能发生偏移。因此需要计算scrollTop的预期值，并判断偏移是否发生
-        if(oldPropose.contentWidth != undefined && (propose.contentWidth !== oldPropose.contentWidth || columnCount !== oldColumnCount)) {
-            const oldUnitWidth = oldPropose.contentWidth / oldColumnCount, oldUnitHeight = oldUnitWidth / props.aspectRatio
-            //根据可视区域的顶端计算上次首行的行数。四舍五入使首行被计算为"超过一半在可视区域内的行"
-            const oldFirstItemRow = Math.round((oldPropose.scrollTop - padding.top) / oldUnitHeight)
-            const oldItemOffset = oldFirstItemRow * oldColumnCount
-            //计算上次首行相对于可视区域上界的偏移量
-            const oldFirstItemRowOffset = oldFirstItemRow * oldUnitHeight - (oldPropose.scrollTop - padding.top)
-
-            //接下来依据偏移量反推新的scrollTop预期值
-            const unitWidth = propose.contentWidth / columnCount, unitHeight = unitWidth / props.aspectRatio
-            const expectedFirstItemRow = Math.floor(oldItemOffset / columnCount)
-            const expectedScrollTop = numbers.between(0, unitHeight * expectedFirstItemRow - oldFirstItemRowOffset + padding.top, propose.scrollHeight)
-
-            if(expectedScrollTop !== propose.scrollTop) {
-                //预期偏移与实际偏移不一致，因此需要调整scroll并拦截后续事件
-                scrollTo(expectedScrollTop)
-                return
-            }
-        }
-
-        //计算请求数据的limit和offset是否有变，并发出事件
-        if(lastDataRequired.offset == undefined || lastDataRequired.limit == undefined
-            || propose.offsetTop !== oldPropose.offsetTop
-            || propose.offsetHeight !== oldPropose.offsetHeight
-            || propose.contentWidth !== oldPropose.contentWidth) {
-            const unitWidth = propose.contentWidth / columnCount, unitHeight = unitWidth / props.aspectRatio
-
-            const offset = Math.floor(propose.offsetTop / unitHeight) * columnCount
-            const limit = Math.ceil((propose.offsetTop + propose.offsetHeight) / unitHeight) * columnCount - offset
-
-            const minUpdateDelta = props.minUpdateDelta * columnCount
-            if(lastDataRequired.offset == undefined || lastDataRequired.limit == undefined
-                || Math.abs(lastDataRequired.offset - offset) >= minUpdateDelta
-                || Math.abs(lastDataRequired.limit - limit) >= minUpdateDelta) {
-                lastDataRequired.offset = offset
-                lastDataRequired.limit = limit
-                emit("update", offset, limit)
-            }
-        }
-
-        //计算作为导航的view的值
-        if(propose.scrollTop !== oldPropose.scrollTop || propose.scrollHeight !== oldPropose.scrollHeight) {
-            updateViewState(propose, props.total, columnCount)
+//scroll滚动位置发生变化时，计算为state属性，并通过事件上报
+watch(() => [scrollState.value.top, scrollState.value.height], ([top, height]) => {
+    if(top !== null && height !== null) {
+        const offset = Math.floor(top / unitHeight.value)
+        const limit = Math.ceil(height / unitHeight.value)
+        if(!state.value || offset !== Math.floor(state.value.offset / props.columnCount) || limit !== Math.ceil((state.value.limit + state.value.offset) / props.columnCount) - Math.floor(state.value.offset / props.columnCount)) {
+            emit("update:state", offset * props.columnCount, limit * props.columnCount)
         }
     }
 })
 
-const firstOffsetStyle = ref<{width: string, height: string}>()
-
-//外部事件: 属性重设时，根据data actual重新计算actual
-watch(() => [props, propose.value.contentWidth] as [typeof props, number | undefined], ([props, contentWidth]) => {
-    if(contentWidth != undefined && props.total != undefined && props.offset != undefined && props.limit != undefined) {
-        const unitWidth = contentWidth / props.columnCount, unitHeight = unitWidth / props.aspectRatio
-        //首行前要空出的unit的数量
-        const beginOffsetUnit = props.offset % props.columnCount
-        const firstOffset = beginOffsetUnit * unitWidth
-
-        const totalHeight = Math.ceil(props.total / props.columnCount) * unitHeight
-        const actualOffsetTop = Math.floor((props.offset - beginOffsetUnit) / props.columnCount) * unitHeight
-        const actualOffsetHeight = Math.ceil((props.limit + beginOffsetUnit) / props.columnCount) * unitHeight
-
-        firstOffsetStyle.value = {width: `${firstOffset}px`, height: '1px'}
-        actual.value = {totalHeight, top: actualOffsetTop, height: actualOffsetHeight}
-    }else{
-        firstOffsetStyle.value = undefined
-        if(actual.value.totalHeight != undefined || actual.value.top !== 0 || actual.value.height !== 0) {
-            actual.value = {totalHeight: undefined, top: 0, height: 0}
-        }
+//上层的metrics属性，计算为本层的数据区域填充值
+watch(metrics, metrics => {
+    if(metrics) {
+        const offset = Math.floor(metrics.offset / props.columnCount), limit = Math.ceil((metrics.offset + metrics.limit) / props.columnCount) - offset
+        scrollState.value.actualTop = offset * unitHeight.value
+        scrollState.value.actualHeight = limit * unitHeight.value
     }
 }, {deep: true})
 
-//外部事件: 外部指定了滚动位置，指定方式是指定item offset
-watchViewNavigation(itemOffset => {
-    if(propose.value.contentWidth != undefined) {
-        const unitWidth = propose.value.contentWidth / props.columnCount, unitHeight = unitWidth / props.aspectRatio
-        const expectedRow = Math.floor(itemOffset / props.columnCount)
-        return [expectedRow * unitHeight, unitHeight]
+//上层的state属性，计算为本层的scroll滚动位置，并对照实际视口大小修正state
+watch(state, state => {
+    if(state) {
+        //计算数据区域的总高度
+        scrollState.value.totalHeight = Math.ceil(state.total / props.columnCount) * unitHeight.value
+        //计算按行计数的offset和limit
+        const offset = Math.floor(state.offset / props.columnCount) //, limit = Math.ceil((state.offset + state.limit) / props.columnCount) - offset
+        if(scrollState.value.top === null || offset !== Math.floor(scrollState.value.top / unitHeight.value)) scrollState.value.top = offset * unitHeight.value
+        // 不应该在此处设置height，它应当始终由组件内部根据高度获得，否则有可能固定到一个错误的limit上无法变更
+        // if(scrollState.value.height === null || limit !== Math.ceil(scrollState.value.height / unitHeight.value)) scrollState.value.height = limit * unitHeight.value
     }
-    return undefined
+}, {deep: true, immediate: true})
+
+//监听并处理导航事件
+useListeningEvent(navigateEvent, offset => {
+    const row = Math.floor(offset / props.columnCount)
+    if(state.value && scrollState.value.top !== null && scrollState.value.height !== null) {
+        //计算出此时完全在视口范围内的行的上下限
+        const innerFirst = Math.ceil(scrollState.value.top / unitHeight.value), innerLast = Math.floor((scrollState.value.top + scrollState.value.height) / unitHeight.value)
+        if(row < innerFirst) {
+            scrollState.value.top = row * unitHeight.value
+        }else if(row >= innerLast) {
+            scrollState.value.top = (row + 1) * unitHeight.value - scrollState.value.height
+        }
+    }
 })
 
-//功能: 更新view state的值
-function updateViewState(propose: ProposeData, total: number | undefined, columnCount: number) {
-    if(propose.contentWidth != undefined && propose.contentHeight != undefined && total != undefined) {
-        const unitWidth = propose.contentWidth / columnCount, unitHeight = unitWidth / props.aspectRatio
-
-        //根据可视区域的顶端计算当前首行的行数。四舍五入使首行被计算为"超过一半在可视区域内的行"
-        const firstItemRow = Math.round((propose.scrollTop - padding.top) / unitHeight)
-        const itemOffset = firstItemRow * columnCount
-        //同样的方法计算当前尾行的行数
-        const lastItemRow = Math.round((propose.scrollTop + propose.contentHeight + padding.bottom) / unitHeight)
-        const lastItemOffset = Math.min(total, lastItemRow * props.columnCount)
-        //最后计算出item limit
-        const itemLimit = lastItemOffset - itemOffset
-
-        setViewState(itemOffset, itemLimit, total)
-    }else if(total == undefined) {
-        setViewState(0, 0, undefined)
+//本层的额外事件：列数或行高发生变化，此时将重新计算视口位置，保持之前在视口中心的一行的单元格继续位于视口中心
+watch(() => [props.columnCount, unitHeight.value], ([columnCount, unitHeight]) => {
+    if(state.value && scrollState.value.top !== null && scrollState.value.height !== null) {
+        //根据state计算之前的视口中心的一格的索引值
+        const centerIndex = Math.round(state.value.offset)
+        //计算此格当前的行，进一步计算新的scrollTop滚动量。如果新滚动量距离当前滚动量超过了一行的偏移值，就更新滚动值
+        const scrollTop = Math.ceil(centerIndex / columnCount) * unitHeight
+        if(Math.abs(scrollState.value.top - scrollTop) > unitHeight) {
+            scrollState.value.top = scrollTop
+        }
     }
-}
+})
 
 </script>
 
 <template>
     <div v-bind="bindDiv()">
         <div :class="$style.content">
+            <div v-if="prefixCount > 0" :style="prefixDivStyle"/>
             <slot/>
         </div>
     </div>
@@ -195,4 +128,5 @@ function updateViewState(propose: ProposeData, total: number | undefined, column
     display: flex
     flex-flow: wrap
     justify-content: flex-start
+    align-content: flex-start
 </style>

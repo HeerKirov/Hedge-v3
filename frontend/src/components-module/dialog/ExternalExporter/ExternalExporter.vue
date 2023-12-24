@@ -79,13 +79,13 @@ const onDragstart = async (e: DragEvent, item: SimpleIllust) => {
                             <div class="is-font-size-large">{{ preview.book.value.title }}</div>
                         </FlexItem>
                         <FlexItem>
-                            <DataRouter/>
+                            <DataRouter :state="preview.paginationData.state.value" @navigate="preview.paginationData.navigateTo($event)"/>
                         </FlexItem>
                     </Flex>
                 </Block>
                 <VirtualGridView :column-count="7" :buffer-size="3" :min-update-delta="1"
-                                 v-bind="preview.paginationData.data.metrics" @update="preview.paginationData.dataUpdate">
-                    <div v-for="item in preview.paginationData.data.result" :class="$style['book-image']">
+                                 :metrics="preview.paginationData.data.value.metrics" :state="preview.paginationData.state.value" @update:state="preview.paginationData.setState">
+                    <div v-for="item in preview.paginationData.data.value.items" :key="item.id" :class="$style['book-image']">
                         <div :class="$style.content">
                             <img :src="assetsUrl(item.filePath.sample)" @dragstart="onDragstart($event, item)"/>
                         </div>

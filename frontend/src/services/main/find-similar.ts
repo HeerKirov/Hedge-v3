@@ -1,52 +1,33 @@
 import * as echarts from "echarts/core"
-import {GraphChart, GraphSeriesOption} from "echarts/charts"
-import {CanvasRenderer} from "echarts/renderers"
-import {TooltipComponent, TooltipComponentOption} from "echarts/components"
-import {computed, onBeforeUnmount, onMounted, ref, Ref, shallowRef, watch} from "vue"
-import {installVirtualViewNavigation} from "@/components/data"
-import {usePreviewService} from "@/components-module/preview"
-import {useDialogService} from "@/components-module/dialog"
-import {
-    PaginationDataView,
-    QueryInstance,
-    QueryListview,
-    useFetchEndpoint,
-    useFetchHelper,
-    usePaginationDataView,
-    usePathFetchHelper,
-    usePostPathFetchHelper,
-    useQueryListview
-} from "@/functions/fetch"
-import {
-    FindSimilarDetailResult,
-    FindSimilarResult,
-    FindSimilarResultDetailImage,
-    FindSimilarResultResolveAction,
-    FindSimilarResultResolveForm,
-    SimilarityRelationCoverage
-} from "@/functions/http-client/api/find-similar"
-import {FilePath} from "@/functions/http-client/api/all"
-import {CommonIllust} from "@/functions/http-client/api/illust"
-import {flatResponse} from "@/functions/http-client"
-import {platform} from "@/functions/ipc-client"
-import {useAssets, useLocalStorage} from "@/functions/app"
-import {useMessageBox} from "@/modules/message-box"
-import {useInterceptedKey} from "@/modules/keyboard"
-import {useDetailViewState} from "@/services/base/detail-view-state"
-import {useListViewContext} from "@/services/base/list-view-context"
-import {IllustViewController, useIllustViewController} from "@/services/base/view-controller"
-import {SelectedState, useSelectedState} from "@/services/base/selected-state"
-import {useSettingSite} from "@/services/setting"
-import {installation, toRef} from "@/utils/reactivity"
-import {arrays, numbers} from "@/utils/primitives"
-import {useListeningEvent} from "@/utils/emitter"
-import {onElementResize} from "@/utils/sensors"
+import { GraphChart, GraphSeriesOption } from "echarts/charts"
+import { CanvasRenderer } from "echarts/renderers"
+import { TooltipComponent, TooltipComponentOption } from "echarts/components"
+import { computed, onBeforeUnmount, onMounted, ref, Ref, shallowRef, watch } from "vue"
+import { usePreviewService } from "@/components-module/preview"
+import { useDialogService } from "@/components-module/dialog"
+import { QueryListview, useFetchEndpoint, useFetchHelper, usePaginationDataView, usePathFetchHelper, usePostPathFetchHelper, useQueryListview } from "@/functions/fetch"
+import { FindSimilarDetailResult, FindSimilarResult, FindSimilarResultDetailImage, FindSimilarResultResolveAction, FindSimilarResultResolveForm, SimilarityRelationCoverage } from "@/functions/http-client/api/find-similar"
+import { FilePath } from "@/functions/http-client/api/all"
+import { CommonIllust } from "@/functions/http-client/api/illust"
+import { flatResponse } from "@/functions/http-client"
+import { platform } from "@/functions/ipc-client"
+import { useAssets, useLocalStorage } from "@/functions/app"
+import { useMessageBox } from "@/modules/message-box"
+import { useInterceptedKey } from "@/modules/keyboard"
+import { useDetailViewState } from "@/services/base/detail-view-state"
+import { useListViewContext } from "@/services/base/list-view-context"
+import { IllustViewController, useIllustViewController } from "@/services/base/view-controller"
+import { SelectedState, useSelectedState } from "@/services/base/selected-state"
+import { useSettingSite } from "@/services/setting"
+import { installation, toRef } from "@/utils/reactivity"
+import { arrays, numbers } from "@/utils/primitives"
+import { useListeningEvent } from "@/utils/emitter"
+import { onElementResize } from "@/utils/sensors"
 
 export const [installFindSimilarContext, useFindSimilarContext] = installation(function () {
     const paneState = useDetailViewState<number>()
     const listview = useListView()
 
-    installVirtualViewNavigation()
     useSettingSite()
 
     return {paneState, listview}
@@ -113,11 +94,11 @@ export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = instal
 
     watch(data, () => listview.refresh())
 
-    const paginationData = usePaginationDataView(listview)
+    const paginationData = usePaginationDataView({listview, bufferPercent: 0.2})
 
     const selector = useSelectedState({queryListview: listview, keyOf: item => item.id})
 
-    const operators = useOperators(data, selector, listviewController, listview, paginationData, resolve, clear)
+    const operators = useOperators(data, selector, listviewController, listview, resolve, clear)
 
     return {data, listview, paginationData, selector, listviewController, viewMode, operators}
 })
@@ -126,7 +107,6 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
                       selector: SelectedState<number>, 
                       listviewController: IllustViewController, 
                       listview: QueryListview<FindSimilarResultDetailImage, number>,
-                      paginationData: PaginationDataView<FindSimilarResultDetailImage, number>,
                       resolve: (f: FindSimilarResultResolveForm) => Promise<boolean>, 
                       clear: () => Promise<boolean>) {
     const message = useMessageBox()
@@ -220,7 +200,6 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
             preview: "image", 
             type: "listview", 
             listview: listview,
-            paginationData: paginationData.data,
             columnNum: listviewController.columnNum,
             viewMode: gridMode,
             selected: selector.selected,
@@ -492,7 +471,7 @@ export function useGraphView({ menu }: {menu: (i: FindSimilarResultDetailImage) 
 
 export function useDetailPane() {
     const preview = usePreviewService()
-    const { data, listview, paginationData, selector, listviewController, viewMode } = useFindSimilarDetailPanel()
+    const { data, listview, selector, listviewController, viewMode } = useFindSimilarDetailPanel()
 
     const storage = useLocalStorage<{tabType: "info" | "source" | "related", multiple: "action" | "resolve" | false}>("find-similar/detail/pane", () => ({tabType: "info", multiple: "resolve"}), true)
 
@@ -513,7 +492,7 @@ export function useDetailPane() {
 
     const path = computed(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
 
-    const detail = useIllustDetailPaneId(path, listview, paginationData.proxy)
+    const detail = useIllustDetailPaneId(path, listview)
 
     useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Digit3", "Meta+Digit4", "Meta+Digit5"], e => {
         if(e.key === "Digit1") tabType.value = "info"
@@ -530,7 +509,6 @@ export function useDetailPane() {
                     preview: "image", 
                     type: "listview", 
                     listview: listview,
-                    paginationData: paginationData.data,
                     columnNum: listviewController.columnNum,
                     viewMode: listviewController.viewMode,
                     selected: selector.selected,
@@ -548,7 +526,7 @@ export function useDetailPane() {
     return {tabType, detail, selector, parent, openImagePreview}
 }
 
-function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview<CommonIllust, number>, instance: QueryInstance<CommonIllust, number>) {
+function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview<CommonIllust, number>) {
     const detail = ref<{id: number, type: "IMAGE" | "COLLECTION", filePath: FilePath} | null>(null)
 
     const fetch = useFetchHelper({
@@ -562,9 +540,9 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
 
     watch(path, async path => {
         if(path !== null) {
-            const idx = instance.sync.findByKey(path)
+            const idx = listview.proxy.sync.findByKey(path)
             if(idx !== undefined) {
-                const item = instance.sync.retrieve(idx)!
+                const item = listview.proxy.sync.retrieve(idx)!
                 detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
             }else{
                 const res = await fetch(path)
@@ -578,9 +556,9 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
     useListeningEvent(listview.modifiedEvent, async e => {
         if(path.value !== null) {
             if(e.type === "FILTER_UPDATED" || e.type === "REFRESH") {
-                const idx = instance.sync.findByKey(path.value)
+                const idx = listview.proxy.sync.findByKey(path.value)
                 if(idx !== undefined) {
-                    const item = instance.sync.retrieve(idx)!
+                    const item = listview.proxy.sync.retrieve(idx)!
                     detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
                 }else{
                     const res = await fetch(path.value)

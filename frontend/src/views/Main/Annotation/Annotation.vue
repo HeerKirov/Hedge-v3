@@ -13,7 +13,7 @@ import AnnotationListItem from "./AnnotationListItem.vue"
 import AnnotationDetailPane from "./AnnotationDetailPane.vue"
 import AnnotationCreatePane from "./AnnotationCreatePane.vue"
 
-const { paneState, listview: { queryFilter, paginationData }, operators } = installAnnotationContext()
+const { paneState, listview: { queryFilter, paginationData: { data, state, setState, navigateTo } }, operators } = installAnnotationContext()
 
 const filterMetaTypeOptions = META_TYPES.map(type => ({value: type, label: META_TYPE_NAMES[type], icon: META_TYPE_ICONS[type]}))
 
@@ -63,7 +63,7 @@ const popupMenu = usePopupMenu([
                 <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="queryFilter"/>
 
                 <template #right>
-                    <DataRouter/>
+                    <DataRouter :state="state" @navigate="navigateTo"/>
                     <Button icon="plus" square @click="paneState.openCreateView()"/>
                 </template>
             </MiddleLayout>
@@ -76,8 +76,8 @@ const popupMenu = usePopupMenu([
                     <AnnotationCreatePane v-else-if="paneState.mode.value === 'create'"/>
                 </BasePane>
             </template>
-            <VirtualRowView :row-height="40" :padding="6" :buffer-size="10" v-bind="paginationData.data.metrics" @update="paginationData.dataUpdate">
-                <AnnotationListItem v-for="item in paginationData.data.result" :key="item.id"
+            <VirtualRowView :row-height="40" :padding="6" :metrics="data.metrics" :state="state" @update:state="setState">
+                <AnnotationListItem v-for="item in data.items" :key="item.id"
                                     :item="item" :selected="paneState.detailPath.value === item.id"
                                     @click="paneState.openDetailView(item.id)"
                                     @contextmenu="popupMenu.popup(item.id)"/>

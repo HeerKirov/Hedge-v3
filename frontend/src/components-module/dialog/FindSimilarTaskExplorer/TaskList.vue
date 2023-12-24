@@ -10,9 +10,9 @@ defineOptions({
     inheritAttrs: false
 })
 
-const { paginationData } = useTaskListData()
+const { paginationData: { data, state, setState } } = useTaskListData()
 
-const SLEECTOR_TYPE_NAMES: Record<TaskSelector["type"], string> = {
+const SELECTOR_TYPE_NAMES: Record<TaskSelector["type"], string> = {
     "image": "图像",
     "book": "画集",
     "author": "作者",
@@ -25,17 +25,17 @@ const SLEECTOR_TYPE_NAMES: Record<TaskSelector["type"], string> = {
 
 <template>
     <p class="mt-2 pl-1 is-font-size-large">相似项查找 任务队列</p>
-    <div v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" class="absolute center has-text-centered has-text-secondary">
+    <div v-if="state !== null && state.total <= 0" class="absolute center has-text-centered has-text-secondary">
         <i>队列中无查找任务</i>
     </div>
-    <VirtualRowView v-else :row-height="80" :padding="6" :buffer-size="8" v-bind="paginationData.data.metrics" @update="paginationData.dataUpdate">
-        <div v-for="item in paginationData.data.result" :key="item.id" :class="$style.item">
+    <VirtualRowView v-else :row-height="80" :padding="6" :buffer-size="8" :metrics="data.metrics" :state="state" @update:state="setState">
+        <div v-for="item in data.items" :key="item.id" :class="$style.item">
             <Flex>
                 <FlexItem :width="10">
                     {{ item.id }}
                 </FlexItem>
                 <FlexItem :width="50">
-                    <Icon icon="filter"/>选择器: {{ SLEECTOR_TYPE_NAMES[item.selector.type] }}
+                    <Icon icon="filter"/>选择器: {{ SELECTOR_TYPE_NAMES[item.selector.type] }}
                 </FlexItem>
                 <FlexItem :width="40">
                     <div>

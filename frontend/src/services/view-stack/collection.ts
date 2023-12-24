@@ -6,7 +6,6 @@ import {
     useFetchEndpoint, useSingletonDataView, usePostPathFetchHelper, usePostFetchHelper, useFetchEvent 
 } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
-import { installVirtualViewNavigation } from "@/components/data"
 import { useViewStack } from "@/components-module/view-stack"
 import { useMessageBox } from "@/modules/message-box"
 import { useInterceptedKey } from "@/modules/keyboard"
@@ -25,11 +24,9 @@ export const [installCollectionViewContext, useCollectionViewContext] = installa
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust")
     const listviewController = useIllustViewController()
-    const navigation = installVirtualViewNavigation()
     const operators = useImageDatasetOperators({
-        paginationData: listview.paginationData,
-        listview: listview.listview,
-        listviewController, selector, navigation,
+        listview: listview.listview, paginationData: listview.paginationData,
+        listviewController, selector,
         dataDrop: {dropInType: "collection", path: target.id}
     })
 

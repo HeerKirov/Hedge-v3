@@ -12,7 +12,7 @@ import { StagingPostImage } from "@/functions/http-client/api/staging-post"
 
 const { 
     paneState,
-    listview: { paginationData },
+    listview: { listview, paginationData: { data, state, setState, navigateTo } },
     selector: { selected, lastSelected, update: updateSelect },
     listviewController: { viewMode, fitType, columnNum },
     operators
@@ -58,7 +58,7 @@ const menu = useDynamicPopupMenu<StagingPostImage>(illust => [
                     <span class="ml-2 is-font-size-large">暂存区</span>
                 </template>
                 <template #right>
-                    <DataRouter/>
+                    <DataRouter :state="state" @navigate="navigateTo"/>
                     <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
                     <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
                     <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
@@ -69,13 +69,13 @@ const menu = useDynamicPopupMenu<StagingPostImage>(illust => [
         </template>
 
         <PaneLayout :show-pane="paneState.visible.value">
-            <div v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" class="h-100 has-text-centered">
+            <div v-if="state !== null && state.total <= 0" class="h-100 has-text-centered">
                 <p class="secondary-text"><i>暂存区为空</i></p>
             </div>
-            <StagingPostDataset v-else :data="paginationData.data" :query-instance="paginationData.proxy"
+            <StagingPostDataset v-else :data="data" :state="state" :query-instance="listview.proxy"
                                 :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable droppable
                                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"
+                                @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event)"
                                 @dblclick="(i, s) => operators.openDetailByClick(i, s)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
                                 @drop="operators.dropToAdd"/>
 

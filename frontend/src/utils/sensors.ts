@@ -5,10 +5,15 @@ import { sleep } from "@/utils/process"
  * 提供一个observer，监视一个Element的Resize事件。
  * @param elementRef 引用此Element的ref
  * @param event 事件
+ * @param options immediate: 挂载时立刻触发回调
  */
-export function onElementResize(elementRef: Ref<HTMLElement | undefined>, event: (rect: DOMRect) => void) {
+export function onElementResize(elementRef: Ref<HTMLElement | undefined>, event: (rect: DOMRect, element: HTMLElement) => void, options?: {immediate?: boolean}) {
     let element: HTMLElement | undefined = undefined
-    const observer = new ResizeObserver(entries => event(entries[0].contentRect))
+    let skipFirst = options?.immediate ?? false
+    const observer = new ResizeObserver(entries => {
+        if(skipFirst) event(entries[0].contentRect, element!)
+        else skipFirst = true
+    })
 
     onMounted(() => {
         if(elementRef.value) observer.observe(element = elementRef.value)
@@ -180,7 +185,7 @@ export function useWindowSize() {
 /**
  * 获得元素尺寸和方位的响应式数据。
  */
-export function useElementRect(elementRef: Ref<HTMLElement | undefined>) {
+export function useElementRect(elementRef: Ref<HTMLElement | undefined>, options?: {immediate?: boolean}) {
     const rect = ref<DOMRect>()
 
     onMounted(() => {
@@ -195,7 +200,7 @@ export function useElementRect(elementRef: Ref<HTMLElement | undefined>) {
 
     onElementResize(elementRef, value => {
         rect.value = value
-    })
+    }, options)
 
     return rect
 }

@@ -12,7 +12,7 @@ import { MenuItem, usePopupMenu } from "@/modules/popup-menu"
 
 const { 
     paneState,
-    listview: { paginationData },
+    listview: { listview, paginationData: { data, state, setState, navigateTo } },
     selector: { selected, lastSelected, update: updateSelect },
     listviewController: { viewMode, fitType, columnNum },
     operators: { deleteItem, restoreItem }
@@ -40,7 +40,7 @@ const menu = usePopupMenu<TrashedImage>(() => [
         <template #top-bar>
             <MiddleLayout>
                 <template #right>
-                    <DataRouter/>
+                    <DataRouter :state="state" @navigate="navigateTo"/>
                     <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
                     <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
                     <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
@@ -51,13 +51,13 @@ const menu = usePopupMenu<TrashedImage>(() => [
         </template>
 
         <PaneLayout :show-pane="paneState.visible.value">
-            <div v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" class="h-100 has-text-centered">
+            <div v-if="state !== null && state.total <= 0" class="h-100 has-text-centered">
                 <p class="secondary-text"><i>没有任何暂存的已删除项目</i></p>
             </div>
-            <TrashedImageDataset v-else :data="paginationData.data" :query-instance="paginationData.proxy"
+            <TrashedImageDataset v-else :data="data" :state="state" :query-instance="listview.proxy"
                                 :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
                                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)"/>
+                                @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event)"/>
 
             <template #pane>
                 <TrashedDetailPane @close="paneState.visible.value = false"/>

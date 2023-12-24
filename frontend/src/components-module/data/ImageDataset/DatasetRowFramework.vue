@@ -13,7 +13,7 @@ defineSlots<{
     default(props: {item: T, index: number, selected: boolean}): any
 }>()
 
-const { data, dataUpdate, keyOf, summaryDropEvents } = useDatasetContext()
+const { data, state, updateState, keyOf, summaryDropEvents } = useDatasetContext()
 
 const style = computed(() => ({
     "--var-row-height": `${props.rowHeight}px`
@@ -22,9 +22,8 @@ const style = computed(() => ({
 </script>
 
 <template>
-    <VirtualRowView class="w-100 h-100" :style="style" v-bind="{...data.metrics, ...summaryDropEvents}" @update="dataUpdate"
-                     :row-height="rowHeight" :buffer-size="6" :min-update-delta="3">
-        <DatasetRowItem v-for="(item, idx) in data.result" :key="keyOf(item)" :item="item" :index="data.metrics.offset + idx" v-slot="{ selected }">
+    <VirtualRowView class="w-100 h-100" :style="style" v-bind="summaryDropEvents" :state="state" :metrics="data.metrics" @update:state="updateState" :row-height="rowHeight">
+        <DatasetRowItem v-for="(item, idx) in data.items" :key="keyOf(item)" :item="item" :index="data.metrics.offset + idx" v-slot="{ selected }">
             <slot :item="item as T" :index="data.metrics.offset + idx" :selected="selected"/>
         </DatasetRowItem>
     </VirtualRowView>

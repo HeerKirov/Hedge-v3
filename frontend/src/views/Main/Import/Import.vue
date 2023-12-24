@@ -16,7 +16,7 @@ const {
     paneState,
     importService: { progress, progressing },
     watcher: { state, setState, paths },
-    listview: { paginationData },
+    listview: { listview, paginationData },
     listviewController: { viewMode, fitType, columnNum },
     selector: { selected, lastSelected, update: updateSelect },
     operators: { historyMode, openDialog, deleteItem, openImagePreview, analyseSource, analyseTime, retry, clear }
@@ -57,7 +57,7 @@ const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
                     <FileWatcher v-if="state?.isOpen" class="ml-1" :paths="paths" :statistic-count="state.statisticCount" :errors="state.errors" @stop="setState(false)"/>
                 </template>
                 <template #right>
-                    <DataRouter/>
+                    <DataRouter :state="paginationData.state.value" @navigate="paginationData.navigateTo"/>
                     <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
                     <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
                     <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
@@ -70,13 +70,13 @@ const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
         <PaneLayout :show-pane="paneState.visible.value">
             <!-- FUTURE: Import页面有一个空白页面。然而由于设计缺陷，对DataRouter的写操作是在dataset内完成的。-->
             <!-- 这会导致导航栏的数值无法清零。现在只能通过hidden妥协。 -->
-            <!-- 然而如果只是visibility: hidden，还会继续踩另一个坑，contentWidth会被变成0，最终而导致算出的offset是Infinty。所以只能用透明度0妥协。 -->
+            <!-- 然而如果只是visibility: hidden，还会继续踩另一个坑，contentWidth会被变成0，最终而导致算出的offset是Infinity。所以只能用透明度0妥协。 -->
             <!-- 要想完美解决这个问题，只能等虚拟视图的响应结构重构了。 -->
-            <ImportImageDataset :class="{[$style.hidden]: paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0}"
-                :data="paginationData.data" :query-instance="paginationData.proxy" :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
+            <ImportImageDataset :class="{[$style.hidden]: paginationData.state.value !== null && paginationData.state.value.total <= 0}"
+                :data="paginationData.data.value" :state="paginationData.state.value" :query-instance="listview.proxy" :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event)" @space="openImagePreview()"/>
-            <ImportEmpty v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" :class="$style.empty"/>
+                @update:state="paginationData.setState" @navigate="paginationData.navigateTo($event)" @select="updateSelect" @contextmenu="menu.popup($event)" @space="openImagePreview()"/>
+            <ImportEmpty v-if="paginationData.state.value !== null && paginationData.state.value.total <= 0" :class="$style.empty"/>
 
             <template #pane>
                 <ImportDetailPane @close="paneState.visible.value = false"/>

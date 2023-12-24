@@ -13,7 +13,7 @@ import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 const {
     path,
     paneState,
-    listview: { paginationData },
+    listview: { listview, paginationData: { data, state, setState, navigateTo } },
     listviewController: { viewMode, fitType, columnNum, collectionMode, editableLockOn },
     selector: { selected, lastSelected, update: updateSelect },
     querySchema,
@@ -82,7 +82,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
                 <template #right>
                     <Button square :mode="editableLockOn ? 'filled' : undefined" :type="editableLockOn ? 'danger' : undefined" :icon="editableLockOn ? 'lock-open' : 'lock'" @click="editableLockOn = !editableLockOn"/>
                     <Separator/>
-                    <DataRouter/>
+                    <DataRouter :state="state" @navigate="navigateTo"/>
                     <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
                     <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
                     <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
@@ -97,10 +97,10 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
         </template>
 
         <PaneLayout :show-pane="paneState.visible.value">
-            <IllustImageDataset :data="paginationData.data" :query-instance="paginationData.proxy"
+            <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy"
                                 :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
                                 :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                                @data-update="paginationData.dataUpdate" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
+                                @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
                                 @dblclick="(i, s) => operators.openDetailByClick(i, s)"
                                 @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
                                 @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>

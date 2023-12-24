@@ -12,7 +12,7 @@ import TopicListPanelItem from "./TopicListPanelItem.vue"
 
 const {
     paneState,
-    listview: { queryFilter, paginationData },
+    listview: { queryFilter, paginationData: { data, state, setState, navigateTo } },
     operators: { toggleFavorite, deleteItem, createByTemplate, createChildOfTemplate, findSimilarOfTopic, openIllustsOfTopic }
 } = useTopicContext()
 
@@ -100,15 +100,14 @@ const popupMenu = usePopupMenu<Topic>([
                 <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="queryFilter"/>
 
                 <template #right>
-                    <DataRouter/>
+                    <DataRouter :state="state" @navigate="navigateTo"/>
                     <Button icon="plus" square @click="paneState.openCreateView()"/>
                 </template>
             </MiddleLayout>
         </template>
 
-        <VirtualRowView :row-height="44" :padding="6" :buffer-size="10" v-bind="paginationData.data.metrics" @update="paginationData.dataUpdate">
-            <TopicListPanelItem v-for="item in paginationData.data.result" :key="item.id"
-                                :item="item"
+        <VirtualRowView :row-height="44" :padding="6" :buffer-size="10" :metrics="data.metrics" :state="state" @update:state="setState">
+            <TopicListPanelItem v-for="item in data.items" :key="item.id" :item="item"
                                 @update:favorite="toggleFavorite(item, $event)"
                                 @click="paneState.openDetailView(item.id)"
                                 @contextmenu="popupMenu.popup(item)"/>

@@ -1,8 +1,7 @@
 import { Ref, computed, ref } from "vue"
-import { installVirtualViewNavigation } from "@/components/data"
 import { flatResponse } from "@/functions/http-client"
 import { ImportRecord, ImportQueryFilter } from "@/functions/http-client/api/import"
-import { PaginationDataView, QueryListview, useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper } from "@/functions/fetch"
+import { QueryListview, useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper } from "@/functions/fetch"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
@@ -24,10 +23,9 @@ export const [installImportContext, useImportContext] = installation(function ()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("import-image")
     const listviewController = useImportImageViewController()
-    const operators = useOperators(listview.listview, listview.paginationData, listview.queryFilter, selector, listviewController, importService.addFiles)
+    const operators = useOperators(listview.listview, listview.queryFilter, selector, listviewController, importService.addFiles)
 
     useDroppingFileListener(importService.addFiles)
-    installVirtualViewNavigation()
     useSettingSite()
 
     return {paneState, watcher, importService, listview, selector, listviewController, operators}
@@ -114,7 +112,7 @@ function useListView() {
     })
 }
 
-function useOperators(listview: QueryListview<ImportRecord, number>, paginationData: PaginationDataView<ImportRecord, number>, queryFilter: Ref<ImportQueryFilter>, selector: SelectedState<number>, listviewController: ImportImageViewController, addFiles: (f: string[]) => void) {
+function useOperators(listview: QueryListview<ImportRecord, number>, queryFilter: Ref<ImportQueryFilter>, selector: SelectedState<number>, listviewController: ImportImageViewController, addFiles: (f: string[]) => void) {
     const toast = useToast()
     const message = useMessageBox()
     const preview = usePreviewService()
@@ -172,7 +170,6 @@ function useOperators(listview: QueryListview<ImportRecord, number>, paginationD
             preview: "image", 
             type: "listview", 
             listview: listview,
-            paginationData: paginationData.data,
             columnNum: listviewController.columnNum,
             viewMode: listviewController.viewMode,
             selected: selector.selected,
@@ -195,7 +192,7 @@ function useOperators(listview: QueryListview<ImportRecord, number>, paginationD
 
     const clear = async () => {
         if(await message.showYesNoMessage("warn", "确定要清除所有记录吗？", historyMode.value ? "历史记录将被彻底删除。" : "已被删除的记录短期内可在历史记录中查看。相关的图库项目不会被删除。")) {
-            batchFetch({clearCompleted: !historyMode.value, deleteDeleted: historyMode.value})
+            batchFetch({clearCompleted: !historyMode.value, deleteDeleted: historyMode.value}).finally()
         }
     }
 
@@ -237,7 +234,6 @@ export function useImportDetailPane() {
             preview: "image", 
             type: "listview", 
             listview: listview.listview,
-            paginationData: listview.paginationData.data,
             columnNum: listviewController.columnNum,
             viewMode: listviewController.viewMode,
             selected: selector.selected,

@@ -1,6 +1,5 @@
 import { computed, ref, Ref } from "vue"
-import { PaginationData, QueryInstance } from "@/functions/fetch"
-import { useVirtualViewNavigation } from "@/components/data"
+import { PaginationData, QueryInstance, PaginationViewState } from "@/functions/fetch"
 import { useToast } from "@/modules/toast"
 import { useInterceptedKey } from "@/modules/keyboard"
 import { TypeDefinition, useDraggable, useDroppable } from "@/modules/drag"
@@ -11,6 +10,7 @@ const SELECTED_MAX = 500
 interface DatasetContextOptions {
     queryInstance: QueryInstance<unknown, unknown> | undefined
     data: Ref<PaginationData<unknown>>
+    state: Ref<PaginationViewState | null>
     keyOf(item: unknown): number
     selected: Ref<number[]>
     lastSelected: Ref<number | null>
@@ -18,7 +18,8 @@ interface DatasetContextOptions {
     draggable: Ref<boolean>
     droppable: Ref<boolean>
     dragAndDropType: keyof TypeDefinition
-    dataUpdate(offset: number, limit: number): void
+    updateState(offset: number, limit: number): void
+    navigate(offset: number): void
     select(selected: number[], lastSelected: number | null): void
     rightClick(i: unknown): void
     dblClick(id: number, shift: boolean): void
@@ -39,10 +40,12 @@ export interface Selector {
 interface SelectorOptions<T> {
     queryInstance: QueryInstance<T, number> | undefined
     data: Ref<PaginationData<T>>
+    state: Ref<PaginationViewState | null>
     selected: Ref<number[]>
     lastSelected: Ref<number | null>
     columnNum: Ref<number | undefined>
     keyOf: (item: T) => number
+    navigate(offset: number): void
     select(selected: number[], lastSelected: number | null): void
 }
 
@@ -52,11 +55,13 @@ export const [installDatasetContext, useDatasetContext] = installation(function 
     const selector = useSelector({
         queryInstance: options.queryInstance,
         data: options.data,
+        state: options.state,
         selected: options.selected,
         lastSelected: options.lastSelected,
         columnNum: options.columnNum,
         keyOf: options.keyOf,
-        select: options.select
+        select: options.select,
+        navigate: options.navigate
     })
 
     const summaryDropEvents = useSummaryDropEvents({
@@ -70,9 +75,10 @@ export const [installDatasetContext, useDatasetContext] = installation(function 
 
     return {
         data: options.data,
+        state: options.state,
         queryInstance: options.queryInstance,
         keyOf: options.keyOf,
-        dataUpdate: options.dataUpdate,
+        updateState: options.updateState,
         summaryDropEvents,
         selector,
         drag: {draggable: options.draggable, droppable: options.droppable, draggingFromLocal, dropData: options.dropData, byType: options.dragAndDropType},
@@ -83,8 +89,7 @@ export const [installDatasetContext, useDatasetContext] = installation(function 
 
 function useSelector<T>(options: SelectorOptions<T>): Selector {
     const { toast } = useToast()
-    const virtualViewNavigation = useVirtualViewNavigation()
-    const { selected, lastSelected, queryInstance, columnNum, select: onSelect, keyOf } = options
+    const { state, selected, lastSelected, queryInstance, columnNum, select: onSelect, keyOf, navigate } = options
 
     const select = (index: number, illustId: number) => {
         // 单击一个项时，只选择此项
@@ -139,11 +144,11 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
         if(queryInstance !== undefined) {
             if(lastSelected.value === null) {
                 //在未选择任何选项时，根据scrollView得知当前显示范围内的上下界，并作为选择项
-                const index = arrow === "ArrowLeft" || arrow === "ArrowUp" ? (virtualViewNavigation.state.itemOffset + virtualViewNavigation.state.itemLimit - 1) : virtualViewNavigation.state.itemOffset
+                const index = state.value !== null ? (arrow === "ArrowLeft" || arrow === "ArrowUp" ? (state.value.offset + state.value.limit - 1) : state.value.offset) : 0
                 const illustId = await getOffsetSelectItem(queryInstance, index)
                 if(illustId !== null) {
                     onSelect([illustId], illustId)
-                    virtualViewNavigation.navigateTo(index)
+                    navigate(index)
                 }
             }else{
                 const offset = getMoveOffset(arrow)
@@ -153,7 +158,7 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
                         await shiftSelect(result.index, result.illustId)
                     }else{
                         onSelect([result.illustId], result.illustId)
-                        virtualViewNavigation.navigateTo(result.index)
+                        navigate(result.index)
                     }
                 }
             }

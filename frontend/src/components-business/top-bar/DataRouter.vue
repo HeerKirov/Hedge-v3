@@ -2,26 +2,27 @@
 import { ref } from "vue"
 import { Tag } from "@/components/universal"
 import { NumberInput } from "@/components/form"
-import { useVirtualViewNavigation } from "@/components/data"
 
-const navigation = useVirtualViewNavigation()
+const props = defineProps<{
+    state: {total: number, offset: number, limit: number} | null
+}>()
+
+const emit = defineEmits<{
+    (e: "navigate", offset: number): void
+}>()
 
 const editMode = ref(false)
 const editValue = ref(1)
 
 const edit = () => {
-    editValue.value = navigation.state.itemOffset + 1
+    editValue.value = (props.state?.offset ?? 0) + 1
     editMode.value = true
 }
 
-const updateValue = (v: number) => {
-    const offset = v - 1
-    const navigateValue = offset < 0 ? 0 : navigation.state.itemTotal != undefined && offset >= navigation.state.itemTotal ? navigation.state.itemTotal - 1 : offset
-    navigation.navigateTo(navigateValue)
-    editValue.value = navigateValue + 1
-}
-
-const close = () => {
+const submit = () => {
+    const offset = editValue.value - 1
+    const navigateValue = offset < 0 ? 0 : props.state !== null && offset >= props.state.total ? props.state.total - 1 : offset
+    emit("navigate", navigateValue)
     editMode.value = false
 }
 
@@ -29,11 +30,11 @@ const close = () => {
 
 <template>
     <div :class="$style.root">
-        <NumberInput v-if="editMode" size="small" width="half" :min="1" :value="editValue" auto-focus @update:value="updateValue" @blur="close"/>
-        <Tag v-else-if="navigation.state.itemTotal" class="is-cursor-text" @click="edit">{{navigation.state.itemOffset + 1}}-{{navigation.state.itemOffset + navigation.state.itemLimit}}</Tag>
+        <NumberInput v-if="editMode" size="small" width="half" :min="1" v-model:value="editValue" auto-focus @enter="editMode = false" @blur="submit"/>
+        <Tag v-else-if="state !== null" class="is-cursor-text" @click="edit">{{state.offset + 1}}-{{state.offset + state.limit < state.total ? state.offset + state.limit : state.total}}</Tag>
         <Tag v-else>0-0</Tag>
         <span class="mx-1">/</span>
-        <Tag>{{navigation.state.itemTotal ?? 0}}</Tag>
+        <Tag>{{state?.total ?? 0}}</Tag>
     </div>
 </template>
 

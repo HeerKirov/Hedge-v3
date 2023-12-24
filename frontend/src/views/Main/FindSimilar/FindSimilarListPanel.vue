@@ -9,7 +9,7 @@ import { MenuItem } from "@/modules/popup-menu"
 import { useFindSimilarContext } from "@/services/main/find-similar"
 import FindSimilarListPanelItem from "./FindSimilarListPanelItem.vue"
 
-const { listview: { paginationData }, paneState } = useFindSimilarContext()
+const { listview: { paginationData: { data, state, setState, navigateTo } }, paneState } = useFindSimilarContext()
 
 const { findSimilarTaskExplorer } = useDialogService()
 
@@ -26,7 +26,7 @@ const ellipsisMenu = <MenuItem<undefined>[]>[
         <template #top-bar>
             <MiddleLayout>
                 <template #right>
-                    <DataRouter/>
+                    <DataRouter :state="state" @navigate="navigateTo"/>
                     <ElementPopupMenu :items="ellipsisMenu" position="bottom" align="left" v-slot="{ popup, setEl }">
                         <Button :ref="setEl" square icon="ellipsis-v" @click="popup"/>
                     </ElementPopupMenu>
@@ -34,7 +34,7 @@ const ellipsisMenu = <MenuItem<undefined>[]>[
             </MiddleLayout>
         </template>
 
-        <div v-if="paginationData.data.metrics.total !== undefined && paginationData.data.metrics.total <= 0" class="h-100 has-text-centered">
+        <div v-if="state !== null && state.total <= 0" class="h-100 has-text-centered">
                 <p class="secondary-text"><i>未发现任何查找结果</i></p>
                 <p class="mt-2 secondary-text">
                     <a @click="findSimilarTaskExplorer.create()"><Icon icon="plus"/>手动新建查找任务</a>
@@ -42,8 +42,8 @@ const ellipsisMenu = <MenuItem<undefined>[]>[
                     <a @click="findSimilarTaskExplorer.list()"><Icon icon="list"/>查看查找任务队列</a>
                 </p>
             </div>
-        <VirtualRowView v-else :row-height="90" :padding="6" :buffer-size="8" v-bind="paginationData.data.metrics" @update="paginationData.dataUpdate">
-            <FindSimilarListPanelItem v-for="item in paginationData.data.result" :key="item.id" :item="item" @click="paneState.openDetailView(item.id)"/>
+        <VirtualRowView v-else :row-height="90" :padding="6" :buffer-size="8" :metrics="data.metrics" :state="state" @update:state="setState">
+            <FindSimilarListPanelItem v-for="item in data.items" :key="item.id" :item="item" @click="paneState.openDetailView(item.id)"/>
         </VirtualRowView>
     </TopBarLayout>
 </template>
