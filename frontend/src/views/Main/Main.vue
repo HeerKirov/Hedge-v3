@@ -4,9 +4,12 @@ import { installDialogService, GlobalDialog } from "@/components-module/dialog"
 import { installCalloutService, GlobalCallout } from "@/components-module/callout"
 import { installPreviewService, GlobalPreview } from "@/components-module/preview"
 import { installViewStack, ViewStack } from "@/components-module/view-stack"
+import { installBrowserView } from "@/modules/browser"
 import { installHomepageState } from "@/services/main/homepage"
-import MainRootView from "./MainRootView.vue"
+import MainRootView from "./NewMainRootView.vue"
+import routes from "./routes"
 
+installBrowserView({routes})
 installDialogService()
 installCalloutService()
 installPreviewService()

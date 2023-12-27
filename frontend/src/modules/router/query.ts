@@ -1,31 +1,24 @@
 import { computed, ref, Ref, watch } from "vue"
-import { LocationQueryValue, useRoute, useRouter } from "vue-router"
 import { date, LocalDate } from "@/utils/datetime"
+import { useActivateTabRoute } from "@/modules/browser"
 import { RouteName, RouteParameter } from "./definitions"
 
 /**
  * 从route中获取query参数。query参数被直接转化为可读写的Ref。
  */
 export function useRouterQuery<N extends RouteName, Q extends keyof RouteParameter[N]["query"], P extends RouteParameter[N]["query"][Q]>(routerName: N, queryName: Q, encode: (d: P) => string, decode: (param: string) => P | null): Ref<P | null> {
-    const router = useRouter()
-    const route = useRoute()
+    const { route } = useActivateTabRoute()
 
     const data: Ref<P | null> = ref(null)
 
     function setNewData(value: P | null) {
         data.value = value
-        router.push({
-            name: route.name!,
-            query: {
-                ...route.query,
-                [queryName]: value != null ? encode(value) : null
-            }
-        }).finally()
+        route.value.query[queryName as string] = value != null ? encode(value) : null
     }
 
     function calcNewData(): P | null {
-        if(routerName === null || route.name === routerName) {
-            const v = <LocationQueryValue>route.query[queryName]
+        if(routerName === null || route.value.routeName === routerName) {
+            const v = route.value.query[queryName as string]
             if(v) {
                 return decode(v)
             }
@@ -33,7 +26,7 @@ export function useRouterQuery<N extends RouteName, Q extends keyof RouteParamet
         return null
     }
 
-    watch(() => <[typeof route.name, typeof route.query[string]]>[route.name, route.query[queryName]], () => {
+    watch(() => [route.value.routeName, route.value.query[queryName as string]] as const, () => {
         const newData = calcNewData()
         if(newData !== data.value) data.value = newData
     }, {immediate: true, deep: true})

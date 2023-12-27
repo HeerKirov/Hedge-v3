@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { computed } from "vue"
 import { Button } from "@/components/universal"
 import { BottomLayout } from "@/components/layout"
+import { useAppEnv, useFullscreen } from "@/functions/app"
 import { useSideLayoutState } from "./context"
 
 // == Side Bar 侧边栏内容布局 ==
@@ -10,16 +12,26 @@ import { useSideLayoutState } from "./context"
 
 const { isOpen } = useSideLayoutState()
 
+const { platform } = useAppEnv()
+
+const fullscreen = useFullscreen()
+
+const hasDarwinButton = computed(() => platform === "darwin" && !isOpen.value && !fullscreen.value)
+
 const switchSideBar = () => isOpen.value = !isOpen.value
 
 </script>
 
 <template>
     <div :class="$style['side-bar']">
-        <div :class="$style['app-region-area']"/>
-        <Button :class="$style['collapse-button']" icon="bars" square @click="switchSideBar"/>
+        <div :class="$style['app-region-area']">
+            <div :class="{[$style['top-bar']]: true, [$style['has-darwin-button']]: hasDarwinButton}">
+                <slot name="top-bar"/>
+                <Button class="no-app-region" icon="bars" square @click="switchSideBar"/>
+            </div>
+        </div>
         <BottomLayout :class="$style['bottom-layout']">
-            <div class="px-1">
+            <div class="px-2 py-1">
                 <slot/>
             </div>
             <template #bottom>
@@ -34,6 +46,8 @@ const switchSideBar = () => isOpen.value = !isOpen.value
 <style module lang="sass">
 @import "../../../styles/base/color"
 @import "../../../styles/base/size"
+
+$content-margin-size: calc(($title-bar-height - $element-height-std) / 2)
 
 .side-bar
     position: relative
@@ -52,12 +66,22 @@ const switchSideBar = () => isOpen.value = !isOpen.value
     top: 0
     width: 100%
     height: $title-bar-height
+    border-bottom: solid 1px $light-mode-border-color
+    @media (prefers-color-scheme: dark)
+        border-bottom-color: $dark-mode-border-color
 
-.collapse-button
-    -webkit-app-region: none
+.top-bar
     position: absolute
-    right: $spacing-1
-    top: $spacing-1
+    display: flex
+    flex-wrap: nowrap
+    justify-content: flex-end
+    top: $content-margin-size
+    left: $content-margin-size
+    right: $content-margin-size
+    height: $element-height-std
+    //macOS平台的内容区域布局。左侧留出红绿灯的宽度
+    &.has-darwin-button
+        left: $macos-buttons-width
 
 .bottom-layout
     position: absolute

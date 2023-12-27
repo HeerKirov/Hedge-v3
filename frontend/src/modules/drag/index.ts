@@ -78,7 +78,7 @@ function useDroppableInternal<T extends keyof TypeDefinition>(event: (data: Type
             if(e.dataTransfer) {
                 e.preventDefault()
                 //阻止向上传递事件，以避免存在上下叠加的dropEvents时，误触上层的drop事件
-                //TODO 移除了stopPropagation参数，将阻止传递改为了无条件的。这个改动可能对除了Grid列表之外的一般拖动有影响，观察一下是否有影响
+                //tips: 移除了stopPropagation参数，将阻止传递改为了无条件的
                 e.stopImmediatePropagation()
                 e.stopPropagation()
 

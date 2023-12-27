@@ -23,7 +23,7 @@ watch(state, async () => {
         const navigated = receiveRoute()
         //最后，默认跳转到main home首页
         if(!navigated) {
-            await router.push({name: "MainHome"})
+            await router.push({name: "Main"})
         }
     }
 }, {immediate: true})

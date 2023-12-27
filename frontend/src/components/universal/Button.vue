@@ -8,7 +8,7 @@ const props = defineProps<{
     endIcon?: string
     mode?: "transparent" | "light" | "filled"
     type?: Colors
-    size?: "std" | "small" | "large"
+    size?: "std" | "tiny" | "small" | "large"
     square?: boolean
     round?: boolean
     disabled?: boolean
@@ -57,6 +57,12 @@ const buttonClass = computed(() => [
         right: calc(math.div($element-height-small, 2) - 0.5rem)
         top: calc(math.div($element-height-small, 2) - 0.5rem + 1px)
 
+.is-size-tiny
+    font-size: $font-size-tiny
+    height: $element-height-tiny
+    line-height: $element-height-tiny
+    &.square
+        width: $element-height-tiny
 .is-size-small
     font-size: $font-size-small
     height: $element-height-small

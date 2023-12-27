@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router"
 import { Block, Icon } from "@/components/universal"
-import { TopBarLayout } from "@/components/layout"
 import { useAssets } from "@/functions/app"
 import { useHomepageContext } from "@/services/main/homepage"
 import { windowManager } from "@/modules/window"
@@ -21,78 +20,76 @@ const router = useRouter()
 </script>
 
 <template>
-    <TopBarLayout>
-        <div v-if="loading || !data?.ready" :class="[$style.root, $style.loading]">
+    <div v-if="loading || !data?.ready" :class="[$style.root, $style.loading]">
+        <label :class="$style.header">随便看看</label>
+        <div :class="$style['primary-scroll-area']">
+            <div v-for="() in 28" :class="$style.image"/>
+            <div class="h-100"/>
+            <Block v-for="() in 3" :class="$style.block">
+                <div :class="$style['example-area']"/>
+            </Block>
+        </div>
+        <label :class="$style.header">画集推荐</label>
+        <div :class="$style['book-scroll-area']">
+            <Block v-for="() in 6" :class="$style.book"/>
+        </div>
+        <label :class="$style.header">最近添加</label>
+        <div :class="$style['secondary-scroll-area']">
+            <div v-for="() in 8" :class="$style.image"/>
+        </div>
+    </div>
+    <div v-else-if="data && (data.todayImages.length || data.todayAuthorAndTopics.length || data.todayBooks.length || data.recentImages.length || data.historyImages.length)" :class="$style.root">
+        <template v-if="data.todayImages.length > 0 || data.todayAuthorAndTopics.length > 0">
             <label :class="$style.header">随便看看</label>
             <div :class="$style['primary-scroll-area']">
-                <div v-for="_ in 28" :class="$style.image"/>
+                <img v-for="i in data.todayImages" :class="$style.image" :src="assetsUrl(i.filePath.thumbnail)" @click="openIllustOfPartition(i.partitionTime, i.id)"/>
                 <div class="h-100"/>
-                <Block v-for="_ in 3" :class="$style.block">
-                    <div :class="$style['example-area']"/>
+                <Block v-for="i in data.todayAuthorAndTopics" :class="$style.block">
+                    <div :class="[$style['title-area'], `has-text-${i.color}`]" @click="openAuthorOrTopic(i.metaType, i.name)">
+                        <Icon class="mr-1" :icon="i.metaType === 'AUTHOR' ? AUTHOR_TYPE_ICONS[i.type] : TOPIC_TYPE_ICONS[i.type]"/>{{ i.name }}
+                    </div>
+                    <div :class="$style['example-area']">
+                        <img v-for="j in i.images" :class="$style.example" :src="assetsUrl(j.filePath.thumbnail)" @click="openIllustOfAuthorOrTopic(i.metaType, i.name, j.id)"/>
+                        <template v-if="i.images.length < 3">
+                            <div v-for="() in (3 - i.images.length)" :class="$style['empty-example']"/>
+                        </template>
+                    </div>
                 </Block>
             </div>
+        </template>
+        <template v-if="data.todayBooks.length">
             <label :class="$style.header">画集推荐</label>
             <div :class="$style['book-scroll-area']">
-                <Block v-for="_ in 6" :class="$style.book"/>
+                <Block v-for="b in data.todayBooks" :class="$style.book">
+                    <img :class="$style.img" :src="assetsUrl(b.filePath?.thumbnail)" @click="openBook(b.id)"/>
+                    <Icon v-if="b.favorite" :class="$style.fav" icon="heart"/>
+                    <div :class="$style.info">
+                        <span v-if="b.imageCount > 0" class="float-right">(<b>{{ b.imageCount }}</b>)</span>
+                        <span v-else class="float-right has-text-secondary">(空)</span>
+                        <span v-if="b.title" class="selectable is-cursor-pointer" @click="openBook(b.id)">{{ b.title }}</span>
+                        <span v-else class="is-cursor-pointer" @click="openBook(b.id)"><Icon class="mr-2" icon="id-card"/><span class="selectable">{{ b.id }}</span></span>
+                    </div>
+                </Block>
             </div>
+        </template>
+        <template v-if="data.recentImages.length">
             <label :class="$style.header">最近添加</label>
             <div :class="$style['secondary-scroll-area']">
-                <div v-for="_ in 8" :class="$style.image"/>
+                <img v-for="i in data.recentImages" :class="$style.image" :src="assetsUrl(i.filePath.thumbnail)" @click="openIllustOfPartition(i.partitionTime, i.id)"/>
             </div>
-        </div>
-        <div v-else-if="data && (data.todayImages.length || data.todayAuthorAndTopics.length || data.todayBooks.length || data.recentImages.length || data.historyImages.length)" :class="$style.root">
-            <template v-if="data.todayImages.length > 0 || data.todayAuthorAndTopics.length > 0">
-                <label :class="$style.header">随便看看</label>
-                <div :class="$style['primary-scroll-area']">
-                    <img v-for="i in data.todayImages" :class="$style.image" :src="assetsUrl(i.filePath.thumbnail)" @click="openIllustOfPartition(i.partitionTime, i.id)"/>
-                    <div class="h-100"/>
-                    <Block v-for="i in data.todayAuthorAndTopics" :class="$style.block">
-                        <div :class="[$style['title-area'], `has-text-${i.color}`]" @click="openAuthorOrTopic(i.metaType, i.name)">
-                            <Icon class="mr-1" :icon="i.metaType === 'AUTHOR' ? AUTHOR_TYPE_ICONS[i.type] : TOPIC_TYPE_ICONS[i.type]"/>{{ i.name }}
-                        </div>
-                        <div :class="$style['example-area']">
-                            <img v-for="j in i.images" :class="$style.example" :src="assetsUrl(j.filePath.thumbnail)" @click="openIllustOfAuthorOrTopic(i.metaType, i.name, j.id)"/>
-                            <template v-if="i.images.length < 3">
-                                <div v-for="_ in (3 - i.images.length)" :class="$style['empty-example']"/>
-                            </template>
-                        </div>
-                    </Block>
-                </div>
-            </template>
-            <template v-if="data.todayBooks.length">
-                <label :class="$style.header">画集推荐</label>
-                <div :class="$style['book-scroll-area']">
-                    <Block v-for="b in data.todayBooks" :class="$style.book">
-                        <img :class="$style.img" :src="assetsUrl(b.filePath?.thumbnail)" @click="openBook(b.id)"/>
-                        <Icon v-if="b.favorite" :class="$style.fav" icon="heart"/>
-                        <div :class="$style.info">
-                            <span v-if="b.imageCount > 0" class="float-right">(<b>{{ b.imageCount }}</b>)</span>
-                            <span v-else class="float-right has-text-secondary">(空)</span>
-                            <span v-if="b.title" class="selectable is-cursor-pointer" @click="openBook(b.id)">{{ b.title }}</span>
-                            <span v-else class="is-cursor-pointer" @click="openBook(b.id)"><Icon class="mr-2" icon="id-card"/><span class="selectable">{{ b.id }}</span></span>
-                        </div>
-                    </Block>
-                </div>
-            </template>
-            <template v-if="data.recentImages.length">
-                <label :class="$style.header">最近添加</label>
-                <div :class="$style['secondary-scroll-area']">
-                    <img v-for="i in data.recentImages" :class="$style.image" :src="assetsUrl(i.filePath.thumbnail)" @click="openIllustOfPartition(i.partitionTime, i.id)"/>
-                </div>
-            </template>
-            <template v-for="h in data.historyImages">
-                <label :class="[$style.header, 'is-cursor-pointer']" @click="openPartition(h.date)">{{ h.date.year }}年{{ h.date.month }}月{{ h.date.day }}日</label>
-                <div :class="$style['secondary-scroll-area']">
-                    <img v-for="i in h.images" :class="$style.image" :src="assetsUrl(i.filePath.thumbnail)" @click="openIllustOfPartition(h.date, i.id)"/>
-                </div>
-            </template>
-        </div>
-        <div v-else class="absolute center has-text-centered pb-6">
-            <p class="pl-4 mb-4 is-font-size-large">现在没有任何内容…</p>
-            <p class="mb-1"><a @click="router.push({name: 'MainImport'})"><Icon icon="plus-square"/>导入文件</a></p>
-            <p><a @click="windowManager.openGuide"><Icon icon="circle-question-regular"/>查看向导</a></p>
-        </div>
-    </TopBarLayout>
+        </template>
+        <template v-for="h in data.historyImages">
+            <label :class="[$style.header, 'is-cursor-pointer']" @click="openPartition(h.date)">{{ h.date.year }}年{{ h.date.month }}月{{ h.date.day }}日</label>
+            <div :class="$style['secondary-scroll-area']">
+                <img v-for="i in h.images" :class="$style.image" :src="assetsUrl(i.filePath.thumbnail)" @click="openIllustOfPartition(h.date, i.id)"/>
+            </div>
+        </template>
+    </div>
+    <div v-else class="absolute center has-text-centered pb-6">
+        <p class="pl-4 mb-4 is-font-size-large">现在没有任何内容…</p>
+        <p class="mb-1"><a @click="router.push({name: 'MainImport'})"><Icon icon="plus-square"/>导入文件</a></p>
+        <p><a @click="windowManager.openGuide"><Icon icon="circle-question-regular"/>查看向导</a></p>
+    </div>
 </template>
 
 <style module lang="sass">

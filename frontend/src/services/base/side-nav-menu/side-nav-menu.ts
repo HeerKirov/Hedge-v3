@@ -1,7 +1,9 @@
 import { computed, isReactive, isRef, reactive, ref, Ref, unref, watch } from "vue"
-import { LocationQuery, RouteRecordName, useRouter } from "vue-router"
 import { MenuDefinition, SubMenuItemDefinition, MenuBadge } from "@/components/interaction"
 import { installation, toReactiveArray } from "@/utils/reactivity"
+import { useActivateTabRoute } from "@/modules/browser"
+
+//TODO setting也用这个，所以vue-router的支持还得加回来
 
 /**
  * 侧边导航菜单栏功能服务。它提供一组快捷API将侧边栏的Menu作为导航功能使用，并支持动态生成一些菜单项。
@@ -50,7 +52,7 @@ export interface NavItemSetup<T> {
 }
 
 export const [installNavMenu, useNavMenu] = installation(function (options: SideNavMenuOptions): SideNavMenu {
-    const router = useRouter()
+    const router = useActivateTabRoute()
 
     const groups = generateMenuDefinitionGroups(options.menuItems)
 
@@ -58,9 +60,9 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
 
     const innerMenuSelected = ref<{id: string, subId: string | null}>()
 
-    watch([router.currentRoute, menuItems], ([route, menuItems]) => {
+    watch(() => [router.route.value, menuItems.value] as const, ([route, menuItems]) => {
         //route变化时，根据route，查找当前应该选中的项。
-        const { name: routeName, query: routeQuery } = route
+        const { routeName, query: routeQuery } = route
         const hasQuery = Object.keys(routeQuery).length > 0
 
         let newSelected: {id: string, subId: string | null} | undefined = undefined
@@ -107,9 +109,9 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
             if(selected !== undefined) {
                 const param = analyseRouteParamFromSelected(selected)
                 if(param.routeQueryName !== null) {
-                    router.push({name: param.routeName, query: {[param.routeQueryName]: param.routeQueryValue}}).finally()
+                    router.routePush({routeName: param.routeName, query: {[param.routeQueryName]: param.routeQueryValue}})
                 }else{
-                    router.push({name: param.routeName}).finally()
+                    router.routePush({routeName: param.routeName})
                 }
             }
         }
@@ -254,10 +256,10 @@ function analyseRouteParamFromSelected(selected: {id: string, subId: string | nu
  * @param routeName route.nane
  * @param routeQuery route.query
  */
-function matchSelectedWithRoute(param: {routeName: string, routeQueryName: null, routeQueryValue: null} | {routeName: string, routeQueryName: string, routeQueryValue: string}, routeName: RouteRecordName | null | undefined, routeQuery: LocationQuery): boolean {
+function matchSelectedWithRoute(param: {routeName: string, routeQueryName: null, routeQueryValue: null} | {routeName: string, routeQueryName: string, routeQueryValue: string}, routeName: string, routeQuery: Record<string, any> | undefined): boolean {
     if(param.routeName === routeName) {
         if(param.routeQueryName !== null) {
-            if(routeQuery[param.routeQueryName] === param.routeQueryValue) {
+            if(routeQuery?.[param.routeQueryName] === param.routeQueryValue) {
                 return true
             }
         }else{

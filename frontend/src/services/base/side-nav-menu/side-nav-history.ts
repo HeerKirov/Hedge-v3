@@ -1,6 +1,6 @@
 import { reactive, Ref, toRaw, watch } from "vue"
-import { useRoute } from "vue-router"
 import { BadgeDefinition, MenuBadge } from "@/components/interaction"
+import { useActivateTabRoute } from "@/modules/browser"
 import { installation } from "@/utils/reactivity"
 
 export interface NavHistory {
@@ -11,14 +11,14 @@ export interface NavHistory {
 }
 
 export const [installNavHistory, useNavHistory] = installation(function (maxHistory: number = 5): NavHistory {
-    const route = useRoute()
+    const route = useActivateTabRoute()
 
     const histories = reactive<{[routeName: string]: {id: string, label: string, badge: MenuBadge}[]}>({})
     const historiesBySort = <{[routeName: string]: {id: string, label: string, badge: MenuBadge}[]}>{}
     const excludes = reactive<{[routeName: string]: string[]}>({})
 
     const pushHistory = (options: {routeName?: string, id: string, label: string, badge?: MenuBadge}) => {
-        const { routeName = route.name as string, id, label, badge } = options 
+        const { routeName = route.route.value.routeName, id, label, badge } = options
 
         const history = histories[routeName] || (histories[routeName] = [])
         const historyBySort = historiesBySort[routeName] || (historiesBySort[routeName] = [])
