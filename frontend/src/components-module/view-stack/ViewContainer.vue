@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { provide } from "vue"
-import { useInterception } from "@/modules/keyboard"
+import { installGlobalKeyStack, useInterception } from "@/modules/keyboard"
 import { eachViewInjection } from "./context"
 import { StackViewInfo } from "./definition"
 import ImageDetailView from "./ImageDetailView.vue"
@@ -14,6 +14,9 @@ const props = defineProps<{
 }>()
 
 provide(eachViewInjection, {stackIndex: props.stackIndex})
+
+//使用独立的事件栈
+installGlobalKeyStack()
 
 //截断按键事件继续向前传播，使按键事件只能作用在最新的视图上
 useInterception()

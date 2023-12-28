@@ -1,5 +1,6 @@
 import { ref, Ref, watch } from "vue"
 import { remoteIpcClient } from "@/functions/ipc-client"
+import { useCurrentTab } from "@/modules/browser"
 import { installation } from "@/utils/reactivity"
 
 export function useLocalStorage<T>(bucketName: string): Ref<T | null>
@@ -17,62 +18,26 @@ export function useLocalStorage<T>(bucketName: string, defaultValue: () => T, de
 export function useLocalStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): Ref<T | null> {
     const storageName = `com.heerkirov.hedge.v3(${remoteIpcClient.setting.channel.getCurrent()})${bucketName}`
 
-    if(defaultValue === undefined) {
-        const data: Ref<T | null> = ref(null)
+    const data: Ref<T | null> = ref(null)
 
-        const initValue = window.localStorage.getItem(storageName)
-        if(initValue !== null) {
-            data.value = JSON.parse(initValue)
-        }
-
-        watch(data, value => {
-            if(value !== null) {
-                window.localStorage.setItem(storageName, JSON.stringify(value))
-            }else{
-                window.localStorage.removeItem(storageName)
-            }
-        }, {deep: true})
-
-        return data
+    const initValue = window.localStorage.getItem(storageName)
+    if(initValue !== null) {
+        data.value = JSON.parse(initValue)
     }else if(defaultFunction && defaultValue instanceof Function) {
-        const data: Ref<T | null> = ref(null)
-
-        const initValue = window.localStorage.getItem(storageName)
-        if(initValue !== null) {
-            data.value = JSON.parse(initValue)
-        }else{
-            data.value = defaultValue()
-        }
-
-        watch(data, value => {
-            if(value !== null) {
-                window.localStorage.setItem(storageName, JSON.stringify(value))
-            }else{
-                window.localStorage.removeItem(storageName)
-            }
-        }, {deep: true})
-
-        return data as Ref<T>
-    }else{
-        const data: Ref<T | null> = ref(null)
-
-        const initValue = window.localStorage.getItem(storageName)
-        if(initValue !== null) {
-            data.value = JSON.parse(initValue)
-        }else{
-            data.value = defaultValue as T
-        }
-
-        watch(data, value => {
-            if(value !== null) {
-                window.localStorage.setItem(storageName, JSON.stringify(value))
-            }else{
-                window.localStorage.removeItem(storageName)
-            }
-        }, {deep: true})
-
-        return data as Ref<T>
+        data.value = defaultValue()
+    }else if(defaultValue !== undefined) {
+        data.value = defaultValue as T
     }
+
+    watch(data, value => {
+        if(value !== null) {
+            window.localStorage.setItem(storageName, JSON.stringify(value))
+        }else{
+            window.localStorage.removeItem(storageName)
+        }
+    }, {deep: true})
+
+    return data
 }
 
 export function useSessionStorage<T>(bucketName: string): Ref<T | null>
@@ -83,62 +48,26 @@ export function useSessionStorage<T>(bucketName: string, defaultValue: () => T, 
  * 引用一个session storage存储器。它的特点是只存活到窗口关闭为止。
  */
 export function useSessionStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): Ref<T | null> {
-    if(defaultValue === undefined) {
-        const data: Ref<T | null> = ref(null)
+    const data: Ref<T | null> = ref(null)
 
-        const initValue = window.sessionStorage.getItem(bucketName)
-        if(initValue !== null) {
-            data.value = JSON.parse(initValue)
-        }
-
-        watch(data, value => {
-            if(value !== null) {
-                window.sessionStorage.setItem(bucketName, JSON.stringify(value))
-            }else{
-                window.sessionStorage.removeItem(bucketName)
-            }
-        }, {deep: true})
-
-        return data
+    const initValue = window.sessionStorage.getItem(bucketName)
+    if(initValue !== null) {
+        data.value = JSON.parse(initValue)
     }else if(defaultFunction && defaultValue instanceof Function) {
-        const data: Ref<T | null> = ref(null)
-
-        const initValue = window.sessionStorage.getItem(bucketName)
-        if(initValue !== null) {
-            data.value = JSON.parse(initValue)
-        }else{
-            data.value = defaultValue()
-        }
-
-        watch(data, value => {
-            if(value !== null) {
-                window.sessionStorage.setItem(bucketName, JSON.stringify(value))
-            }else{
-                window.sessionStorage.removeItem(bucketName)
-            }
-        }, {deep: true})
-
-        return data as Ref<T>
-    }else{
-        const data: Ref<T | null> = ref(null)
-
-        const initValue = window.sessionStorage.getItem(bucketName)
-        if(initValue !== null) {
-            data.value = JSON.parse(initValue)
-        }else{
-            data.value = defaultValue as T
-        }
-
-        watch(data, value => {
-            if(value !== null) {
-                window.sessionStorage.setItem(bucketName, JSON.stringify(value))
-            }else{
-                window.sessionStorage.removeItem(bucketName)
-            }
-        }, {deep: true})
-
-        return data as Ref<T>
+        data.value = defaultValue()
+    }else if(defaultValue !== undefined) {
+        data.value = defaultValue as T
     }
+
+    watch(data, value => {
+        if(value !== null) {
+            window.sessionStorage.setItem(bucketName, JSON.stringify(value))
+        }else{
+            window.sessionStorage.removeItem(bucketName)
+        }
+    }, {deep: true})
+
+    return data
 }
 
 export function useMemoryStorage<T>(bucketName: string): Ref<T | null>
@@ -150,62 +79,96 @@ export function useMemoryStorage<T>(bucketName: string, defaultValue: () => T, d
  */
 export function useMemoryStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): Ref<T | null> {
     const { memory } = useMemoryStorageManager()
-    if(defaultValue === undefined) {
-        const data: Ref<T | null> = ref(null)
 
-        const initValue = memory.get(bucketName)
-        if(initValue !== undefined) {
-            data.value = initValue as T
-        }
+    const data: Ref<T | null> = ref(null)
 
-        watch(data, value => {
-            if(value !== null) {
-                memory.set(bucketName, value)
-            }else{
-                memory.delete(bucketName)
-            }
-        }, {deep: true})
-
-        return data
+    const initValue = memory.get(bucketName)
+    if(initValue !== undefined) {
+        data.value = initValue as T
     }else if(defaultFunction && defaultValue instanceof Function) {
-        const data: Ref<T | null> = ref(null)
-
-        const initValue = memory.get(bucketName)
-        if(initValue !== undefined) {
-            data.value = initValue as T
-        }else{
-            data.value = defaultValue()
-        }
-
-        watch(data, value => {
-            if(value !== null) {
-                memory.set(bucketName, value)
-            }else{
-                memory.delete(bucketName)
-            }
-        }, {deep: true})
-
-        return data as Ref<T>
-    }else{
-        const data: Ref<T | null> = ref(null)
-
-        const initValue = memory.get(bucketName)
-        if(initValue !== undefined) {
-            data.value = initValue as T
-        }else{
-            data.value = defaultValue as T
-        }
-
-        watch(data, value => {
-            if(value !== null) {
-                memory.set(bucketName, value)
-            }else{
-                memory.delete(bucketName)
-            }
-        }, {deep: true})
-
-        return data as Ref<T>
+        data.value = defaultValue()
+    }else if(defaultValue !== undefined) {
+        data.value = defaultValue as T
     }
+
+    watch(data, value => {
+        if(value !== null) {
+            memory.set(bucketName, value)
+        }else{
+            memory.delete(bucketName)
+        }
+    }, {deep: true})
+
+    return data
+}
+
+export function useTabStorage<T>(bucketName: string): Ref<T | null>
+export function useTabStorage<T>(bucketName: string, defaultValue: T): Ref<T>
+export function useTabStorage<T>(bucketName: string, defaultValue: () => T, defaultFunction: true): Ref<T>
+
+/**
+ * 引用一个tab storage存储器。它使用页面的共享内存实现，也就是每个页面进程使用单独的storage，并在同一页面的历史记录之间共享。
+ * 如果不属于任何页面，则它等价于useMemoryStorage。
+ */
+export function useTabStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): Ref<T | null> {
+    const currentTab = useCurrentTab()
+    if(currentTab === undefined) return useMemoryStorage(bucketName, defaultValue as any, defaultFunction as any)
+    const memory = currentTab.view.value.memoryStorage
+
+    const data: Ref<T | null> = ref(null)
+
+    const initValue = memory[bucketName]
+    if(initValue !== undefined) {
+        data.value = initValue as T
+    }else if(defaultFunction && defaultValue instanceof Function) {
+        data.value = defaultValue()
+    }else if(defaultValue !== undefined) {
+        data.value = defaultValue as T
+    }
+
+    watch(data, value => {
+        if(value !== null) {
+            memory[bucketName] = value
+        }else{
+            delete memory[bucketName]
+        }
+    }, {deep: true})
+
+    return data
+}
+
+export function useRouteStorage<T>(bucketName: string): Ref<T | null>
+export function useRouteStorage<T>(bucketName: string, defaultValue: T): Ref<T>
+export function useRouteStorage<T>(bucketName: string, defaultValue: () => T, defaultFunction: true): Ref<T>
+
+/**
+ * 引用一个route storage存储器。它使用路由的存储空间实现，也就是每次路由都拥有单独的storage，适合用于为页面记录那些需要在历史记录中恢复的信息。
+ */
+export function useRouteStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): Ref<T | null> {
+    const currentTab = useCurrentTab()
+    if(currentTab === undefined) return useMemoryStorage(bucketName, defaultValue as any, defaultFunction as any)
+    const memory = currentTab.view.value.storage
+
+    const data: Ref<T | null> = ref(null)
+
+    const initValue = memory[bucketName]
+    if(initValue !== undefined) {
+        data.value = initValue as T
+    }else if(defaultFunction && defaultValue instanceof Function) {
+        data.value = defaultValue()
+    }else if(defaultValue !== undefined) {
+        data.value = defaultValue as T
+    }
+
+    watch(data, value => {
+        if(value !== null) {
+            memory[bucketName] = value
+        }else{
+            delete memory[bucketName]
+        }
+    }, {deep: true})
+
+    return data
 }
 
 const [installMemoryStorageManager, useMemoryStorageManager] = installation(function () {

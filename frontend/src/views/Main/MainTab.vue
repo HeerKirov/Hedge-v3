@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { toRef } from "vue"
 import { installCurrentTab, BrowserStackView } from "@/modules/browser"
+import MainTabHistory from "./MainTabHistory.vue"
 
 const props = defineProps<{
     view: BrowserStackView
@@ -14,12 +15,11 @@ installCurrentTab(toRef(props, "index"))
 
 <template>
     <div :class="{[$style.tab]: true, [$style.active]: active}">
-        <div v-for="s in view.stacks" :key="s.historyId" :class="$style.stack"><component :is="s.component"/></div>
+        <MainTabHistory v-for="(s, i) in view.stacks" :key="s.historyId" :stack="s" :active="active && i === view.stacks.length - 1"/>
     </div>
 </template>
 
 <style module lang="sass">
-
 .tab
     position: absolute
     left: 0
@@ -28,12 +28,4 @@ installCurrentTab(toRef(props, "index"))
     height: 100%
     &:not(.active)
         visibility: hidden
-    > .stack
-        position: absolute
-        left: 0
-        top: 0
-        width: 100%
-        height: 100%
-        &:not(:last-child)
-            visibility: hidden
 </style>

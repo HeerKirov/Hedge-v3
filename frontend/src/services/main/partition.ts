@@ -2,7 +2,7 @@ import { ComponentPublicInstance, Ref, computed, watch } from "vue"
 import { Partition, IllustQueryFilter } from "@/functions/http-client/api/illust"
 import { flatResponse } from "@/functions/http-client"
 import { useFetchReactive } from "@/functions/fetch"
-import { useLocalStorage, useMemoryStorage } from "@/functions/app"
+import { useLocalStorage, useTabStorage } from "@/functions/app"
 import { useRouterParamEvent, useRouterQueryLocalDate } from "@/modules/router"
 import { useInterceptedKey } from "@/modules/keyboard"
 import { useNavHistoryPush } from "@/services/base/side-nav-menu"
@@ -38,7 +38,7 @@ export const [installPartitionContext, usePartitionContext] = installation(funct
 
 function usePartitionView(listviewController: IllustViewController, querySchema: QuerySchemaContext) {
     const viewMode = useLocalStorage<"calendar" | "timeline">("partition/list/view-mode", "calendar")
-    const calendarDate = useMemoryStorage<YearAndMonth>("partition/list/calendar-date")
+    const calendarDate = useTabStorage<YearAndMonth>("partition/list/calendar-date")
 
     const { partitionMonths, partitions, total, maxCount, maxCountOfMonth } = usePartitionData(listviewController, querySchema.query)
     const operators = usePartitionOperators(partitions, querySchema.queryInputText)

@@ -1,5 +1,6 @@
-export type { BrowserViewOptions, BrowserDocument, BrowserRoute, BrowserStackView, BrowserTabs, Tab } from "./definition"
+export type { BrowserViewOptions, BrowserDocument, BrowserRoute, BrowserStackView, BrowserTabs, Tab, InternalTab } from "./definition"
 export { installBrowserView, installCurrentTab, useBrowserStackViews, useBrowserTabs, useActivateTabRoute, useTabRoute, useCurrentTab, useDocument } from "./api"
+export { useParam, usePath, useInitializer } from "./router"
 
 /*
  * == Browser模块 ==

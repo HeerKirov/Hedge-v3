@@ -7,7 +7,7 @@ import { useDroppable } from "@/modules/drag"
 import { UsefulColors } from "@/constants/ui"
 import { objects } from "@/utils/primitives"
 import { sleep } from "@/utils/process"
-import { useMemoryStorage } from "@/functions/app"
+import { useTabStorage } from "@/functions/app"
 
 interface TagTreeContextOptions {
     data: Ref<TagTreeNode[] | undefined>
@@ -305,7 +305,7 @@ function useIndexedData(requestedData: Ref<TagTreeNode[] | undefined>) {
 }
 
 function useExpandedState(indexedData: Ref<{[key: number]: IndexedTag}>) {
-    const expandedState = useMemoryStorage<{[key: number]: boolean}>("tag-tree/expanded-state", {})
+    const expandedState = useTabStorage<{[key: number]: boolean}>("tag-tree/expanded-state", {})
 
     const get = (key: number): boolean => expandedState.value[key] ?? false
 

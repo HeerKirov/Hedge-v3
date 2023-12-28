@@ -5,8 +5,6 @@ import { useDynamicPopupMenu } from "@/modules/popup-menu"
 
 const { tabs, newTab, activeTab, moveTab, closeTab, duplicateTab } = useBrowserTabs()
 
-
-
 const menu = useDynamicPopupMenu<Tab>(tab => [
     {type: "normal", label: "将标签页前移", enabled: tab.index > 0, click: tab => moveTab({index: tab.index, toIndex: tab.index - 1})},
     {type: "normal", label: "将标签页后移", enabled: tab.index < tabs.value.length - 1, click: tab => moveTab({index: tab.index, toIndex: tab.index + 1})},

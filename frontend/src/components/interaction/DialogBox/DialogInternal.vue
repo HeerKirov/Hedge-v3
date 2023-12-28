@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue"
-import { useInterceptedKey } from "@/modules/keyboard"
+import {installGlobalKeyStack, useInterceptedKey} from "@/modules/keyboard"
 
 const props = defineProps<{
     position?: "absolute" | "fixed"
@@ -21,12 +21,14 @@ const click = (e: MouseEvent) => {
     }
 }
 
+const stack = installGlobalKeyStack()
+
 useInterceptedKey("Escape", () => {
     //拦截所有按键，并响应ESC按键
     if(props.closeOnEscape) {
         emit("close")
     }
-}, {interceptAll: true})
+}, {interceptAll: true}, stack)
 
 onBeforeMount(() => {
     //挂载dialog时，添加一个额外的小动作，使当前正在聚焦的元素失去焦点，以避免造成“焦点在input等元素上造成快捷键失灵”的问题
@@ -53,5 +55,4 @@ onBeforeMount(() => {
     left: 50%
     top: 50%
     transform: translate(-50%, -50%)
-
 </style>

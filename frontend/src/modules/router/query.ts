@@ -13,12 +13,12 @@ export function useRouterQuery<N extends RouteName, Q extends keyof RouteParamet
 
     function setNewData(value: P | null) {
         data.value = value
-        route.value.query[queryName as string] = value != null ? encode(value) : null
+        route.value.params[queryName as string] = value != null ? encode(value) : null
     }
 
     function calcNewData(): P | null {
         if(routerName === null || route.value.routeName === routerName) {
-            const v = route.value.query[queryName as string]
+            const v = route.value.params[queryName as string]
             if(v) {
                 return decode(v)
             }
@@ -26,7 +26,7 @@ export function useRouterQuery<N extends RouteName, Q extends keyof RouteParamet
         return null
     }
 
-    watch(() => [route.value.routeName, route.value.query[queryName as string]] as const, () => {
+    watch(() => [route.value.routeName, route.value.params[queryName as string]] as const, () => {
         const newData = calcNewData()
         if(newData !== data.value) data.value = newData
     }, {immediate: true, deep: true})

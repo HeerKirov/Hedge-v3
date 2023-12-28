@@ -62,7 +62,7 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
 
     watch(() => [router.route.value, menuItems.value] as const, ([route, menuItems]) => {
         //route变化时，根据route，查找当前应该选中的项。
-        const { routeName, query: routeQuery } = route
+        const { routeName, params: routeQuery } = route
         const hasQuery = Object.keys(routeQuery).length > 0
 
         let newSelected: {id: string, subId: string | null} | undefined = undefined
@@ -109,7 +109,7 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
             if(selected !== undefined) {
                 const param = analyseRouteParamFromSelected(selected)
                 if(param.routeQueryName !== null) {
-                    router.routePush({routeName: param.routeName, query: {[param.routeQueryName]: param.routeQueryValue}})
+                    router.routePush({routeName: param.routeName, params: {[param.routeQueryName]: param.routeQueryValue}})
                 }else{
                     router.routePush({routeName: param.routeName})
                 }

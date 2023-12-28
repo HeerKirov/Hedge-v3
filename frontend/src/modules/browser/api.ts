@@ -1,18 +1,23 @@
 import { Component, computed, DefineComponent, markRaw, onBeforeMount, Ref, ref, watch } from "vue"
-import { computedAsync, installation } from "@/utils/reactivity"
+import { useRoute } from "vue-router"
+import { windowManager } from "@/modules/window"
 import { arrays, objects } from "@/utils/primitives"
+import { installation, installationNullable } from "@/utils/reactivity"
 import {
     BrowserDocument, BrowserRoute, BrowserStackView, BrowserTabs, BrowserViewOptions,
     InternalTab, NewRoute, Route, RouteDefinition, Tab
 } from "./definition"
 
-
 export const [installBrowserView, useBrowserView] = installation(function (options: BrowserViewOptions) {
+    const vueRoute = useRoute()
+
     const defaultRouteDefinition = options.routes[0]
     const routeMaps = arrays.toTupleMap(options.routes, route => [route.routeName, route])
     const componentCaches: Record<string, Component | DefineComponent> = {}
+    const historyMax = 5
 
-    const views = ref<InternalTab[]>([]), activeIndex = ref(0)
+    const views = ref<InternalTab[]>([])
+    const activeIndex = ref(0)
     let nextTabIdVal = 1, nextHistoryIdVal = 1
 
     function nextTabId(): number {
@@ -24,7 +29,12 @@ export const [installBrowserView, useBrowserView] = installation(function (optio
     }
 
     function getRouteDefinition(routeName?: string): RouteDefinition {
-        return routeName !== undefined ? routeMaps[routeName] : defaultRouteDefinition
+        if(routeName !== undefined) {
+            const ret = routeMaps[routeName]
+            if(ret === undefined) throw new Error(`routeName ${routeName} is not defined.`)
+            return ret
+        }
+        return defaultRouteDefinition
     }
 
     function getComponentOrNull(routeName: string) : Component | DefineComponent | null {
@@ -37,15 +47,29 @@ export const [installBrowserView, useBrowserView] = installation(function (optio
     }
 
     onBeforeMount(() => {
-        const routeDef = getRouteDefinition()
-        const route: Route = {routeName: routeDef.routeName, path: undefined, query: {}, params: {}}
-        views.value.push({id: nextTabId(), historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, memoryStorage: {}, histories: [], forwards: []})
+        const routeName = (vueRoute.query["routeName"] || undefined) as string | undefined
+        if(routeName) {
+            const path = vueRoute.query["path"] ? JSON.parse(window.atob(vueRoute.query["path"] as string)) : undefined
+            const params = vueRoute.query["params"] ? JSON.parse(window.atob(vueRoute.query["params"] as string)) : undefined
+            const initializer = vueRoute.query["initializer"] ? JSON.parse(window.atob(vueRoute.query["initializer"] as string)) : undefined
+
+            const routeDef = getRouteDefinition(routeName)
+            const route: Route = {routeName: routeDef.routeName, path, params, initializer}
+
+            console.log("received route", routeName, route)
+            views.value.push({id: nextTabId(), historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, memoryStorage: {}, histories: [], forwards: []})
+        }else{
+            const routeDef = getRouteDefinition()
+            const route: Route = {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
+
+            views.value.push({id: nextTabId(), historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, memoryStorage: {}, histories: [], forwards: []})
+        }
     })
 
-    return {views, activeIndex, nextTabId, nextHistoryId, getRouteDefinition, loadComponent, getComponentOrNull}
+    return {views, activeIndex, historyMax, nextTabId, nextHistoryId, getRouteDefinition, loadComponent, getComponentOrNull}
 })
 
-export const [installCurrentTab, useCurrentTab] = installation(function (index: Ref<number>) {
+export const [installCurrentTab, useCurrentTab] = installationNullable(function (index: Ref<number>) {
     const { views } = useBrowserView()
 
     const view = ref<InternalTab>(views.value[index.value])
@@ -58,14 +82,16 @@ export const [installCurrentTab, useCurrentTab] = installation(function (index: 
 export function useBrowserStackViews() {
     const { views, activeIndex, loadComponent, getComponentOrNull } = useBrowserView()
 
-    const stackViews = computedAsync([], async () => {
+    const stackViews = ref<BrowserStackView[]>([])
+
+    watch(views, async () => {
         const ret: BrowserStackView[] = []
         for (const v of views.value) {
             const component = await loadComponent(v.route.routeName)
-            ret.push({id: v.id, stacks: [...v.histories.map(h => ({historyId: h.historyId, component})), {historyId: v.historyId, component: getComponentOrNull(v.route.routeName)!}]})
+            ret.push({id: v.id, stacks: [...v.histories.map(h => ({historyId: h.historyId, component: getComponentOrNull(h.route.routeName)!})), {historyId: v.historyId, component}]})
         }
-        return ret
-    })
+        stackViews.value = ret
+    }, {deep: true, immediate: true})
 
     return {stackViews, activeIndex}
 }
@@ -77,7 +103,7 @@ export function useBrowserTabs(): BrowserTabs {
 
     function newTab(args?: NewRoute) {
         const routeDef = getRouteDefinition(args?.routeName)
-        const route: Route = args !== undefined ? {routeName: args.routeName, path: args.path, query: args.query ?? {}, params: args.params ?? {}} : {routeName: routeDef.routeName, path: undefined, query: {}, params: {}}
+        const route: Route = args !== undefined ? {routeName: args.routeName, path: args.path, params: args.params ?? {}, initializer: args.initializer ?? {}} : {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
         views.value.push({id: nextTabId(), historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, memoryStorage: {}, histories: [], forwards: []})
         activeIndex.value = views.value.length - 1
     }
@@ -113,7 +139,7 @@ export function useBrowserTabs(): BrowserTabs {
         if(index >= 0 && index < tabs.value.length) {
             views.value.splice(index, 1)
             if(views.value.length <= 0) {
-                //TODO close window
+                window.close()
             }else if(index < activeIndex.value || (index === activeIndex.value && activeIndex.value > 0)) {
                 activeIndex.value -= 1
             }
@@ -121,14 +147,22 @@ export function useBrowserTabs(): BrowserTabs {
     }
 
     function newWindow(args?: Route) {
-        //TODO new window
+        const routeDef = getRouteDefinition(args?.routeName)
+        const route: Route = args !== undefined ? {routeName: args.routeName, path: args.path, params: args.params ?? {}, initializer: args.initializer ?? {}} : {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
+        const path = route.path !== undefined ? encodeURIComponent(window.btoa(JSON.stringify(route.path))) : ""
+        const params = route.params !== undefined ? encodeURIComponent(window.btoa(JSON.stringify(route.params))) : ""
+        const initializer = route.initializer !== undefined ? encodeURIComponent(window.btoa(JSON.stringify(route.initializer))) : ""
+        windowManager.newWindow(`/main?routeName=${route.routeName}` +
+            `&path=${path}` +
+            `&params=${params}` +
+            `&initializer=${initializer}`)
     }
 
     return {tabs, activeTab, newTab, moveTab, closeTab, duplicateTab, newWindow}
 }
 
 export function useBrowserRoute(view: Ref<InternalTab>): BrowserRoute {
-    const { getRouteDefinition, nextHistoryId } = useBrowserView()
+    const { getRouteDefinition, nextHistoryId, historyMax } = useBrowserView()
 
     const route = computed(() => view.value.route)
 
@@ -138,24 +172,26 @@ export function useBrowserRoute(view: Ref<InternalTab>): BrowserRoute {
 
     function routePush(route: NewRoute) {
         const routeDef = getRouteDefinition(route.routeName)
-        view.value.histories.push({historyId: view.value.historyId, title: view.value.title, route: {...view.value.route, params: {}}, storage: view.value.storage})
+        view.value.histories.push({historyId: view.value.historyId, title: view.value.title, route: {...view.value.route, initializer: {}}, storage: view.value.storage})
+        if(view.value.histories.length > historyMax) view.value.histories.shift()
         view.value.historyId = nextHistoryId()
         view.value.title = routeDef.defaultTitle ?? null
-        view.value.route = {routeName: route.routeName, path: route.path, query: route.query ?? {}, params: route.params ?? {}}
+        view.value.route = {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}}
         view.value.storage = {}
     }
 
     function routeReplace(route: NewRoute) {
         const routeDef = getRouteDefinition(route.routeName)
         view.value.title = routeDef.defaultTitle ?? null
-        view.value.route = {routeName: route.routeName, path: route.path, query: route.query ?? {}, params: route.params ?? {}}
+        view.value.route = {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}}
         view.value.storage = {}
     }
 
     function routeBack() {
         if(view.value.histories.length > 0) {
             const [history] = view.value.histories.splice(view.value.histories.length - 1, 1)
-            view.value.forwards.push({historyId: view.value.historyId, title: view.value.title, route: {...view.value.route, params: {}}, storage: view.value.storage})
+            view.value.forwards.push({historyId: view.value.historyId, title: view.value.title, route: {...view.value.route, initializer: {}}, storage: view.value.storage})
+            if(view.value.forwards.length > historyMax) view.value.forwards.shift()
             view.value.historyId = history.historyId
             view.value.title = history.title
             view.value.route = history.route
@@ -166,7 +202,8 @@ export function useBrowserRoute(view: Ref<InternalTab>): BrowserRoute {
     function routeForward() {
         if(view.value.forwards.length > 0) {
             const [forward] = view.value.forwards.splice(view.value.forwards.length - 1, 1)
-            view.value.histories.push({historyId: view.value.historyId, title: view.value.title, route: {...view.value.route, params: {}}, storage: view.value.storage})
+            view.value.histories.push({historyId: view.value.historyId, title: view.value.title, route: {...view.value.route, initializer: {}}, storage: view.value.storage})
+            if(view.value.histories.length > historyMax) view.value.histories.shift()
             view.value.historyId = forward.historyId
             view.value.title = forward.title
             view.value.route = forward.route
@@ -188,7 +225,7 @@ export function useActivateTabRoute(): BrowserRoute {
 }
 
 export function useTabRoute(): BrowserRoute {
-    const { view } = useCurrentTab()
+    const { view } = useCurrentTab()!
     return useBrowserRoute(view)
 }
 

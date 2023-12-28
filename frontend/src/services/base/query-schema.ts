@@ -1,7 +1,7 @@
 import { ref, Ref, watch } from "vue"
 import { Dialect, QueryRes } from "@/functions/http-client/api/util-query"
 import { useFetchHelper } from "@/functions/fetch"
-import { useMemoryStorage } from "@/functions/app"
+import { useTabStorage } from "@/functions/app"
 import { useToast } from "@/modules/toast"
 
 export interface QuerySchemaContext {
@@ -27,8 +27,8 @@ export function useQuerySchema(dialect: Dialect): QuerySchemaContext {
     const toast = useToast()
     const fetch = useFetchHelper(client => client.queryUtil.querySchema)
 
-    const query = useMemoryStorage<string | undefined>(`query-schema/${dialect}/query`, undefined)
-    const schema = useMemoryStorage<QueryRes>(`query-schema/${dialect}/schema`)
+    const query = useTabStorage<string | undefined>(`query-schema/${dialect}/query`, undefined)
+    const schema = useTabStorage<QueryRes>(`query-schema/${dialect}/schema`)
 
     const queryInputText = ref<string | undefined>(query.value)
     const expanded = ref<boolean>(false)

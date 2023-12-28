@@ -8,7 +8,7 @@ import { windowManager } from "@/modules/window"
 import { useActivateTabRoute } from "@/modules/browser"
 import { useFetchReactive } from "@/functions/fetch"
 import { useHomepageState } from "@/services/main/homepage"
-import { installNavHistory, installNavMenu, setupItemByNavHistory, setupItemByRef, setupSubItemByNavHistory } from "@/services/base/side-nav-menu"
+import { useNavHistory, installNavMenu, setupItemByNavHistory, setupItemByRef, setupSubItemByNavHistory } from "@/services/base/side-nav-menu"
 
 const { histories, forwards, routeBack, routeForward } = useActivateTabRoute()
 
@@ -33,7 +33,7 @@ const { data: pins } = useFetchReactive({
     eventFilter: "entity/folder/pin/changed"
 })
 
-const navHistory = installNavHistory()
+const navHistory = useNavHistory()
 
 watch(pins, pins => navHistory.excludes["MainFolder"] = pins?.map(i => i.id.toString()) ?? [])
 

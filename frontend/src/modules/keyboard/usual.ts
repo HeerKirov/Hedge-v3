@@ -1,4 +1,4 @@
-import { createKeyEventValidator, createPrimitiveKeyEventValidator, KeyEvent } from "@/modules/keyboard/event"
+import { createKeyEventValidator, createPrimitiveKeyEventValidator } from "@/modules/keyboard/event"
 
 export const USUAL_KEY_VALIDATORS = {
     "Enter": createKeyEventValidator("Enter"),

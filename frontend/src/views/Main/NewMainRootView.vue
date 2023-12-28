@@ -3,6 +3,7 @@ import { computed, } from "vue"
 import { TopBarLayout, SideLayout } from "@/components/layout"
 import { useViewStack } from "@/components-module/view-stack"
 import { useBrowserStackViews } from "@/modules/browser"
+import { installNavHistory } from "@/services/base/side-nav-menu"
 import MainSideBar from "./MainSideBar.vue"
 import MainTopBar from "./MainTopBar.vue"
 import MainTab from "./MainTab.vue"
@@ -12,6 +13,8 @@ const { stackViews, activeIndex } = useBrowserStackViews()
 const viewStack = useViewStack()
 
 const stackExists = computed(() => viewStack.size() > 0)
+
+installNavHistory()
 
 </script>
 

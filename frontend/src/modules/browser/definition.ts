@@ -137,11 +137,11 @@ export interface Route {
     /**
      * 提供给目标路由的query参数。这些参数是持久性的状态。
      */
-    query: Record<string, any>
+    params: Record<string, any>
     /**
      * 提供给目标路由的params参数。这些参数不是持久性的状态值，它们只会在路由到页面后被一次性提供给侦听器，不会在历史记录中保留。
      */
-    params: Record<string, any>
+    initializer: Record<string, any>
 }
 
 export type NewRoute = Partial<Route> & { routeName: string }

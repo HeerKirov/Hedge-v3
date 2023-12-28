@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import { Icon } from "@/components/universal"
-import { useMemoryStorage } from "@/functions/app"
+import { useTabStorage } from "@/functions/app"
 import { usePopupMenu } from "@/modules/popup-menu"
-import { useRouterNavigator } from "@/modules/router"
+import { useBrowserTabs } from "@/modules/browser"
 import { LocalDate, LocalDateTime, datetime } from "@/utils/datetime"
 
 const props = defineProps<{
@@ -13,9 +13,9 @@ const props = defineProps<{
     updateTime?: LocalDateTime
 }>()
 
-const navigator = useRouterNavigator()
+const browserTabs = useBrowserTabs()
 
-const isOpened = useMemoryStorage<boolean>("partition-time-display/switch", false)
+const isOpened = useTabStorage<boolean>("partition-time-display/switch", false)
 
 const dateText = computed(() => `${props.partitionTime.year}年${props.partitionTime.month}月${props.partitionTime.day}日`)
 
@@ -25,9 +25,9 @@ const timeText = computed(() => props.orderTime !== undefined ? datetime.toSimpl
 
 const orderTimeText = computed(() => props.orderTime !== undefined ? `${props.orderTime.year}年${props.orderTime.month}月${props.orderTime.day}日 ${timeText.value}` : null)
 
-const openPartition = () => navigator.goto({routeName: "MainPartition", query: {detail: props.partitionTime}})
+const openPartition = () => browserTabs.goto({routeName: "Partition", query: {detail: props.partitionTime}})
 
-const openPartitionInNewWindow = () => navigator.newWindow({routeName: "MainPartition", query: {detail: props.partitionTime}})
+const openPartitionInNewWindow = () => browserTabs.newWindow({routeName: "Partition", path: props.partitionTime})
 
 const collapse = () => {
     if(props.createTime !== undefined || props.updateTime !== undefined || (offset.value && (offset.value > 1 || offset.value < -1))) {
