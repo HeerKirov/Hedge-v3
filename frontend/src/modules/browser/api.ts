@@ -4,7 +4,7 @@ import { windowManager } from "@/modules/window"
 import { arrays, objects } from "@/utils/primitives"
 import { installation, installationNullable } from "@/utils/reactivity"
 import {
-    BrowserDocument, BrowserRoute, BrowserStackView, BrowserTabs, BrowserViewOptions,
+    BrowserDocument, BrowserRoute, BrowserTabStack, BrowserTabs, BrowserViewOptions, InternalPage,
     InternalTab, NewRoute, Route, RouteDefinition, Tab
 } from "./definition"
 
@@ -56,7 +56,6 @@ export const [installBrowserView, useBrowserView] = installation(function (optio
             const routeDef = getRouteDefinition(routeName)
             const route: Route = {routeName: routeDef.routeName, path, params, initializer}
 
-            console.log("received route", routeName, route)
             views.value.push({id: nextTabId(), historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, memoryStorage: {}, histories: [], forwards: []})
         }else{
             const routeDef = getRouteDefinition()
@@ -69,31 +68,43 @@ export const [installBrowserView, useBrowserView] = installation(function (optio
     return {views, activeIndex, historyMax, nextTabId, nextHistoryId, getRouteDefinition, loadComponent, getComponentOrNull}
 })
 
-export const [installCurrentTab, useCurrentTab] = installationNullable(function (index: Ref<number>) {
-    const { views } = useBrowserView()
+export const [installCurrentTab, useCurrentTab] = installationNullable(function (props: {id: number, historyId: number}) {
+    const { views, activeIndex } = useBrowserView()
 
-    const view = ref<InternalTab>(views.value[index.value])
+    const view = ref<InternalTab>(views.value.find(v => v.id === props.id)!)
 
-    watch([views, index], ([views, index]) => view.value = views[index], {deep: true})
+    const page = ref<InternalPage>(view.value.historyId === props.historyId ? view.value : (view.value.histories.find(p => p.historyId === props.historyId) ?? view.value.forwards.find(p => p.historyId === props.historyId)!!))
 
-    return {index, view}
+    const active = computed(() => view.value.historyId === props.historyId && views.value.findIndex(v => v.id === props.id) === activeIndex.value)
+
+    watch(() => [views.value, props.id] as const, ([views, id]) => {
+        const ret = views.find(v => v.id === id)
+        if(ret !== undefined) view.value = ret
+    }, {deep: true})
+
+    watch(() => [view.value, props.historyId] as const, ([view, historyId]) => {
+        const ret = view.historyId === historyId ? view : (view.histories.find(p => p.historyId === historyId) ?? view.forwards.find(p => p.historyId === historyId))
+        if(ret !== undefined) page.value = ret
+    }, {deep: true})
+
+    return {view, page, active}
 })
 
-export function useBrowserStackViews() {
+export function useBrowserTabStacks() {
     const { views, activeIndex, loadComponent, getComponentOrNull } = useBrowserView()
 
-    const stackViews = ref<BrowserStackView[]>([])
+    const tabStacks = ref<BrowserTabStack[]>([])
 
     watch(views, async () => {
-        const ret: BrowserStackView[] = []
+        const ret: BrowserTabStack[] = []
         for (const v of views.value) {
             const component = await loadComponent(v.route.routeName)
             ret.push({id: v.id, stacks: [...v.histories.map(h => ({historyId: h.historyId, component: getComponentOrNull(h.route.routeName)!})), {historyId: v.historyId, component}]})
         }
-        stackViews.value = ret
+        tabStacks.value = ret
     }, {deep: true, immediate: true})
 
-    return {stackViews, activeIndex}
+    return {tabStacks, activeIndex}
 }
 
 export function useBrowserTabs(): BrowserTabs {
@@ -161,10 +172,10 @@ export function useBrowserTabs(): BrowserTabs {
     return {tabs, activeTab, newTab, moveTab, closeTab, duplicateTab, newWindow}
 }
 
-export function useBrowserRoute(view: Ref<InternalTab>): BrowserRoute {
+export function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): BrowserRoute {
     const { getRouteDefinition, nextHistoryId, historyMax } = useBrowserView()
 
-    const route = computed(() => view.value.route)
+    const route = computed(() => page?.value.route ?? view.value.route)
 
     const histories = computed(() => view.value.histories)
 
@@ -225,19 +236,16 @@ export function useActivateTabRoute(): BrowserRoute {
 }
 
 export function useTabRoute(): BrowserRoute {
-    const { view } = useCurrentTab()!
-    return useBrowserRoute(view)
+    const { view, page } = useCurrentTab()!
+    return useBrowserRoute(view, page)
 }
 
 export function useDocument(): BrowserDocument {
-    const { views, activeIndex } = useBrowserView()
+    const { page } = useCurrentTab()!
 
     const title = computed({
-        get: () => views.value[activeIndex.value]?.title ?? "",
-        set: value => {
-            const view = views.value[activeIndex.value]
-            if(view) views.value[activeIndex.value].title = value
-        }
+        get: () => page.value.title,
+        set: value => page.value.title = value
     })
 
     return {title}

@@ -2,15 +2,15 @@ import { computedWatchMutable, installation } from "@/utils/reactivity"
 import { flatResponse } from "@/functions/http-client"
 import { Annotation, AnnotationCreateForm, AnnotationQueryFilter, AnnotationTarget } from "@/functions/http-client/api/annotations"
 import { QueryListview, useCreatingHelper, useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
+import { useParam } from "@/modules/browser"
 import { useMessageBox } from "@/modules/message-box"
-import { useRouterQueryNumber } from "@/modules/router"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { DetailViewState, useRouterViewState } from "@/services/base/detail-view-state"
 import { checkTagName } from "@/utils/validation"
 import { objects } from "@/utils/primitives"
 
 export const [installAnnotationContext, useAnnotationContext] = installation(function () {
-    const paneState = useRouterViewState<number, Partial<Annotation>>(useRouterQueryNumber("MainAnnotation", "detail"))
+    const paneState = useRouterViewState<number, Partial<Annotation>>(useParam("detail"))
 
     const listview = useListView()
 

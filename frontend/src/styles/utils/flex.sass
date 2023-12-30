@@ -1,0 +1,27 @@
+
+.flex
+  display: flex
+
+  &.no-wrap
+    flex-wrap: nowrap
+  &.wrap
+    flex-wrap: wrap
+
+  &.row
+    flex-direction: row
+  &.column
+    flex-direction: column
+
+.flex-item
+  &.no-grow-shrink
+    flex: 0 0 auto
+
+  &.no-grow
+    flex: 0 1 auto
+
+  &.no-shrink
+    flex: 1 0 auto
+
+  @for $i from 1 through 100
+    &.w-#{$i}
+      width: 1% * $i

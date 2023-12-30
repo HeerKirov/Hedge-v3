@@ -2,13 +2,13 @@
 import { computed, } from "vue"
 import { TopBarLayout, SideLayout } from "@/components/layout"
 import { useViewStack } from "@/components-module/view-stack"
-import { useBrowserStackViews } from "@/modules/browser"
+import { useBrowserTabStacks } from "@/modules/browser"
 import { installNavHistory } from "@/services/base/side-nav-menu"
 import MainSideBar from "./MainSideBar.vue"
 import MainTopBar from "./MainTopBar.vue"
 import MainTab from "./MainTab.vue"
 
-const { stackViews, activeIndex } = useBrowserStackViews()
+const { tabStacks, activeIndex } = useBrowserTabStacks()
 
 const viewStack = useViewStack()
 
@@ -26,11 +26,7 @@ installNavHistory()
                     <MainTopBar/>
                 </template>
 
-                <template #expand>
-
-                </template>
-
-                <MainTab v-for="(view, index) in stackViews" :key="view.id" :view="view" :active="activeIndex === index" :index="index"/>
+                <MainTab v-for="(view, index) in tabStacks" :key="view.id" :view="view" :active="activeIndex === index" :index="index"/>
             </TopBarLayout>
         </template>
 

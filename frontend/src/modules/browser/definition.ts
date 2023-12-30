@@ -1,6 +1,5 @@
 import { Component, DefineComponent, Ref } from "vue"
 
-
 export interface BrowserViewOptions {
     /**
      * 定义所有页面的路由信息。
@@ -59,7 +58,7 @@ export interface BrowserTabs {
 
 export interface BrowserRoute {
     /**
-     * 当前页面的当前路由信息。
+     * 当前页面的当前路由信息。是页面的路由信息而不是标签页的，因此在Page内使用时，它将是当前page的路由信息。
      */
     route: Readonly<Ref<Route>>
     /**
@@ -92,7 +91,7 @@ export interface BrowserDocument {
     /**
      * 当前标签页的标题。这是一个可更改的选项，可以由标签页内部动态地更改它。
      */
-    title: Ref<string>
+    title: Ref<string | null>
 }
 
 export interface HistoryRecord {
@@ -146,18 +145,21 @@ export interface Route {
 
 export type NewRoute = Partial<Route> & { routeName: string }
 
-export interface InternalTab {
+export interface InternalTab extends InternalPage {
     id: number
+    memoryStorage: Record<string, any>
+    histories: InternalPage[]
+    forwards: InternalPage[]
+}
+
+export interface InternalPage {
     historyId: number
     title: string | null
     route: Route
     storage: Record<string, any>
-    memoryStorage: Record<string, any>
-    histories: {historyId: number, title: string | null, route: Route, storage: Record<string, any>}[]
-    forwards: {historyId: number, title: string | null, route: Route, storage: Record<string, any>}[]
 }
 
-export interface BrowserStackView {
+export interface BrowserTabStack {
     id: number
     stacks: {historyId: number, component: Component | DefineComponent}[]
 }

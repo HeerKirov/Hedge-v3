@@ -1,9 +1,8 @@
 import { computed, isReactive, isRef, reactive, ref, Ref, unref, watch } from "vue"
+import { Router } from "vue-router"
 import { MenuDefinition, SubMenuItemDefinition, MenuBadge } from "@/components/interaction"
 import { installation, toReactiveArray } from "@/utils/reactivity"
-import { useActivateTabRoute } from "@/modules/browser"
-
-//TODO setting也用这个，所以vue-router的支持还得加回来
+import { BrowserRoute, NewRoute } from "@/modules/browser"
 
 /**
  * 侧边导航菜单栏功能服务。它提供一组快捷API将侧边栏的Menu作为导航功能使用，并支持动态生成一些菜单项。
@@ -14,6 +13,7 @@ export interface SideNavMenu {
 }
 
 interface SideNavMenuOptions {
+    router: Router | BrowserRoute
     menuItems: NavItem[]
 }
 
@@ -52,7 +52,7 @@ export interface NavItemSetup<T> {
 }
 
 export const [installNavMenu, useNavMenu] = installation(function (options: SideNavMenuOptions): SideNavMenu {
-    const router = useActivateTabRoute()
+    const router = compatibleWithRouter(options.router)
 
     const groups = generateMenuDefinitionGroups(options.menuItems)
 
@@ -119,6 +119,18 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
 
     return {menuItems, menuSelected}
 })
+
+function compatibleWithRouter(router: Router | BrowserRoute): {route: Readonly<Ref<{routeName: string, params: Record<string, any>}>>, routePush(route: NewRoute): void} {
+    if((router as Router).currentRoute !== undefined) {
+        const vueRouter = router as Router
+        return {
+            route: computed(() => ({routeName: vueRouter.currentRoute.value.name as string, params: vueRouter.currentRoute.value.query})),
+            routePush: route => vueRouter.push({name: route.routeName, query: route.params})
+        }
+    }else{
+        return router as BrowserRoute
+    }
+}
 
 /**
  * 将nav item的定义转换成成组的菜单项定义。

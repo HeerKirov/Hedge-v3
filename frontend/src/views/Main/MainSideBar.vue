@@ -10,7 +10,9 @@ import { useFetchReactive } from "@/functions/fetch"
 import { useHomepageState } from "@/services/main/homepage"
 import { useNavHistory, installNavMenu, setupItemByNavHistory, setupItemByRef, setupSubItemByNavHistory } from "@/services/base/side-nav-menu"
 
-const { histories, forwards, routeBack, routeForward } = useActivateTabRoute()
+const router = useActivateTabRoute()
+
+const { histories, forwards, routeBack, routeForward } = router
 
 const { data: homepageState } = useHomepageState()
 
@@ -38,6 +40,7 @@ const navHistory = useNavHistory()
 watch(pins, pins => navHistory.excludes["MainFolder"] = pins?.map(i => i.id.toString()) ?? [])
 
 const { menuItems, menuSelected } = installNavMenu({
+    router,
     menuItems: [
         {type: "menu", routeName: "Home", label: "主页", icon: "house"},
         {type: "scope", scopeName: "main", label: "浏览"},
@@ -63,7 +66,7 @@ const { menuItems, menuSelected } = installNavMenu({
 </script>
 
 <template>
-    <SideBar>
+    <SideBar :scrollable="false">
         <template #top-bar>
             <template v-if="histories.length > 0 || forwards.length > 0">
                 <Button :class="{'no-app-region': true, 'opacity-50': histories.length <= 0}" square icon="arrow-left" :disabled="histories.length <= 0" @click="routeBack"/>
@@ -71,7 +74,9 @@ const { menuItems, menuSelected } = installNavMenu({
             </template>
         </template>
 
-        <Menu :items="menuItems" v-model:selected="menuSelected"/>
+        <div id="side-bar" :class="$style['side-bar-area']">
+            <div :class="$style['std-menu']"><Menu :items="menuItems" v-model:selected="menuSelected"/></div>
+        </div>
 
         <template #bottom>
             <Flex>
@@ -88,3 +93,20 @@ const { menuItems, menuSelected } = installNavMenu({
         </template>
     </SideBar>
 </template>
+
+<style module lang="sass">
+@import "../../styles/base/size"
+
+.side-bar-area
+    position: absolute
+    left: 0
+    top: 0
+    width: 100%
+    height: 100%
+    .std-menu
+        height: 100%
+        padding: $spacing-1 $spacing-2
+        overflow-y: auto
+        &:not(:last-child)
+            visibility: hidden
+</style>

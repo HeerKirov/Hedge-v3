@@ -1,21 +1,22 @@
 <script setup lang="ts">
-import {toRef, watch} from "vue"
-import { BrowserStackView } from "@/modules/browser"
+import type { Component, DefineComponent } from "vue"
+import { installCurrentTab } from "@/modules/browser"
 import { installGlobalKeyStack } from "@/modules/keyboard"
 
 const props = defineProps<{
-    stack: BrowserStackView["stacks"][number]
-    active: boolean
+    id: number
+    historyId: number
+    component: Component | DefineComponent
 }>()
 
-installGlobalKeyStack(toRef(props, "active"))
+const { active } = installCurrentTab(props)
 
-watch(() => props.stack.component, c => console.log("component changed", c))
+installGlobalKeyStack(active)
 
 </script>
 
 <template>
-    <div :class="$style.stack"><component :is="stack.component"/></div>
+    <div :class="$style.stack"><component :is="component"/></div>
 </template>
 
 <style module lang="sass">

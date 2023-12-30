@@ -29,12 +29,10 @@ const mouseUp = (e: MouseEvent, tab: Tab) => {
                 <span class="no-wrap overflow-ellipsis">{{ tab.title ?? "无标题" }}</span>
                 <Button v-if="tab.active" :class="$style.close" size="tiny" square icon="close" @click.stop="closeTab({index: tab.index})"/>
             </Block>
-            <Separator :class="$style.separator"/>
+            <Separator/>
         </template>
         <Button :class="[$style['new-tab-button'], 'no-app-region']" size="small" square icon="plus" @click="newTab()"/>
-        <div id="top-bar" :class="$style['extra-area']">
-
-        </div>
+        <div id="top-bar" :class="$style['extra-area']"/>
     </div>
 </template>
 
@@ -80,16 +78,15 @@ const mouseUp = (e: MouseEvent, tab: Tab) => {
             font-size: $font-size-small
             flex: 0 0 auto
 
-    > .separator
-        flex: 0 0 auto
-        align-self: center
-
     > .new-tab-button
         flex: 0 0 auto
         align-self: center
 
     > .extra-area
         flex: 1 0 auto
+        display: flex
+        flex-wrap: nowrap
+        justify-content: flex-end
         > *
             -webkit-app-region: none
 </style>

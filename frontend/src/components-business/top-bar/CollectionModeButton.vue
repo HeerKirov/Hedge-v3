@@ -4,6 +4,10 @@ import { ElementPopupMenu } from "@/components/interaction"
 import { IllustQueryType } from "@/functions/http-client/api/illust"
 import { MenuItem } from "@/modules/popup-menu"
 
+defineOptions({
+    inheritAttrs: false
+})
+
 const props = defineProps<{
     value?: IllustQueryType | boolean
 }>()
@@ -27,6 +31,6 @@ const menuItems = () => <MenuItem<undefined>[]>[
 
 <template>
     <ElementPopupMenu :items="menuItems" position="bottom" v-slot="{ setEl, popup }">
-        <Button :ref="setEl" square :icon="value === 'COLLECTION' ? 'images' : value === 'IMAGE' ? 'image' : value === 'ONLY_COLLECTION' ? 'face-meh-blank' : 'face-meh-blank-regular'" @click="toggle" @contextmenu="popup"/>
+        <Button :ref="setEl" v-bind="$attrs" class="flex-item no-grow-shrink" square :icon="value === 'COLLECTION' ? 'images' : value === 'IMAGE' ? 'image' : value === 'ONLY_COLLECTION' ? 'face-meh-blank' : 'face-meh-blank-regular'" @click="toggle" @contextmenu="popup"/>
     </ElementPopupMenu>
 </template>

@@ -19,6 +19,7 @@ defineProps<{
 .separator.is-direction-vertical
     width: 0
     flex: 0 0 auto
+    align-self: center
     display: inline-block
     box-sizing: border-box
     vertical-align: middle

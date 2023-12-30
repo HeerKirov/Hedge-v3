@@ -42,7 +42,8 @@ const submit = () => {
 @import "../../styles/base/size"
 
 .root
-    margin: 0 $spacing-3
+    margin: 0 $spacing-2
     display: flex
     align-items: center
+    flex: 0 0 auto
 </style>

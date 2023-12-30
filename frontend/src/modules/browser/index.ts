@@ -1,5 +1,5 @@
-export type { BrowserViewOptions, BrowserDocument, BrowserRoute, BrowserStackView, BrowserTabs, Tab, InternalTab } from "./definition"
-export { installBrowserView, installCurrentTab, useBrowserStackViews, useBrowserTabs, useActivateTabRoute, useTabRoute, useCurrentTab, useDocument } from "./api"
+export type { BrowserViewOptions, BrowserDocument, BrowserRoute, BrowserTabStack, BrowserTabs, Tab, InternalTab, NewRoute } from "./definition"
+export { installBrowserView, installCurrentTab, useBrowserTabStacks, useBrowserTabs, useActivateTabRoute, useTabRoute, useCurrentTab, useDocument } from "./api"
 export { useParam, usePath, useInitializer } from "./router"
 
 /*

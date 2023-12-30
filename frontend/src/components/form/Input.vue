@@ -1,6 +1,14 @@
 <script setup lang="ts">
-import { ComponentPublicInstance, computed, ref, useCssModule, watch, onMounted } from "vue"
-import { KeyEvent, KeyPress, toKeyEvent, useInterceptedKey, useKeyDeclaration, USUAL_PRIMITIVE_KEY_VALIDATORS } from "@/modules/keyboard"
+import { ComponentPublicInstance, computed, onMounted, ref, useCssModule, watch } from "vue"
+import {
+    createPrimitiveKeyEventValidator,
+    KeyEvent,
+    KeyPress,
+    toKeyEvent,
+    useInterceptedKey,
+    useKeyDeclaration,
+    USUAL_PRIMITIVE_KEY_VALIDATORS
+} from "@/modules/keyboard"
 
 const props = defineProps<{
     /**
@@ -39,6 +47,10 @@ const props = defineProps<{
      * 按下此快捷键时，聚焦到此文本框。
      */
     focusOnKeypress?: KeyPress
+    /**
+     * 按下此按键时，从文本框失焦。
+     */
+    blurOnKeypress?: KeyPress
 }>()
 
 const emit = defineEmits<{
@@ -58,6 +70,8 @@ const onUpdate = (e: InputEvent) => {
 
 //按键事件处理
 const keyDeclaration = useKeyDeclaration()
+//失焦事件
+const blurKeyDeclaration = createPrimitiveKeyEventValidator(props.blurOnKeypress)
 
 //对于Enter按键，有一个快捷事件作响应
 
@@ -75,6 +89,8 @@ const onKeydown = (e: KeyboardEvent) => {
             emit("update:value", value.value)
             emit("enter", keyEvent)
             e.preventDefault()
+        }else if(blurKeyDeclaration(e)) {
+            (e.target as HTMLInputElement).blur()
         }
     }
 }
@@ -95,8 +111,7 @@ if(props.autoFocus) onMounted(() => inputRef?.focus())
 
 //挂载ref回调
 const mountedCallback = (props.focusOnKeypress || props.autoFocus || undefined) && async function(el: Element | ComponentPublicInstance | null) {
-    const ref = (el as HTMLInputElement | null)
-    inputRef = ref
+    inputRef = (el as HTMLInputElement | null)
 }
 
 const events = {[props.updateOnInput ? "onInput" : "onChange"]: onUpdate, onKeydown, onCompositionstart, onCompositionend}

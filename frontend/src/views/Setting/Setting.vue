@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRouter } from "vue-router"
 import { Menu } from "@/components/interaction"
 import { Container, SideLayout, SideBar, TopBarLayout, installSideLayoutState } from "@/components/layout"
 import { installNavMenu } from "@/services/base/side-nav-menu"
@@ -6,6 +7,7 @@ import { installNavMenu } from "@/services/base/side-nav-menu"
 installSideLayoutState()
 
 const { menuItems, menuSelected } = installNavMenu({
+    router: useRouter(),
     menuItems: [
         {type: "scope", scopeName: "app", label: "应用程序"},
         {type: "menu", routeName: "SettingAppGeneral", label: "通用", icon: "cloud-sun"},

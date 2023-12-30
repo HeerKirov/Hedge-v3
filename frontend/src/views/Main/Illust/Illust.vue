@@ -4,11 +4,14 @@ import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { IllustImageDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
-import { TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
-import { DataRouter, FitTypeButton, ColumnNumButton, SearchInput, QueryNotificationBadge, QueryResult, CollectionModeButton } from "@/components-business/top-bar"
+import { PaneLayout } from "@/components/layout"
+import { DataRouter, FitTypeButton, ColumnNumButton, QueryNotificationBadge, CollectionModeButton } from "@/components-business/top-bar"
 import { Illust } from "@/functions/http-client/api/illust"
 import { installIllustContext } from "@/services/main/illust"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
+import BrowserTeleport from "@/components/logical/BrowserTeleport.vue";
+import SearchBox from "@/components-business/top-bar/SearchBox.vue";
+import LockOnButton from "@/components-business/top-bar/LockOnButton.vue";
 
 const {
     paneState,
@@ -66,42 +69,32 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
 </script>
 
 <template>
-    <TopBarLayout v-model:expanded="querySchema.expanded.value">
-        <template #top-bar>
-            <MiddleLayout>
-                <CollectionModeButton class="mr-1" v-model:value="collectionMode"/>
-                <SearchInput placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value"/>
-                <QueryNotificationBadge class="ml-1" :schema="querySchema.schema.value" @click="querySchema.expanded.value = true"/>
+    <BrowserTeleport to="top-bar">
+        <CollectionModeButton class="mr-1" v-model:value="collectionMode"/>
+        <SearchBox placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value"/>
+        <QueryNotificationBadge class="ml-1" :schema="querySchema.schema.value" @click="querySchema.expanded.value = true"/>
+        <Separator/>
+        <LockOnButton v-model:value="editableLockOn"/>
+        <DataRouter :state="state" @navigate="navigateTo"/>
+        <FitTypeButton v-if="viewMode === 'grid'" v-model:value="fitType"/>
+        <ColumnNumButton v-if="viewMode === 'grid'" v-model:value="columnNum"/>
+        <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
+            <Button :ref="setEl" class="flex-item no-grow-shrink" square icon="ellipsis-v" @click="popup"/>
+        </ElementPopupMenu>
+        <!-- TODO <QueryResult :schema="querySchema.schema.value"/> -->
+    </BrowserTeleport>
 
-                <template #right>
-                    <Button square :mode="editableLockOn ? 'filled' : undefined" :type="editableLockOn ? 'danger' : undefined" :icon="editableLockOn ? 'lock-open' : 'lock'" @click="editableLockOn = !editableLockOn"/>
-                    <Separator/>
-                    <DataRouter :state="state" @navigate="navigateTo"/>
-                    <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
-                    <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
-                    <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
-                        <Button :ref="setEl" square icon="ellipsis-v" @click="popup"/>
-                    </ElementPopupMenu>
-                </template>
-            </MiddleLayout>
+    <PaneLayout :show-pane="paneState.visible.value">
+        <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy"
+                            :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
+                            :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
+                            @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
+                            @dblclick="(i, s) => operators.openDetailByClick(i, s)"
+                            @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
+                            @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
+
+        <template #pane>
+            <IllustDetailPane @close="paneState.visible.value = false"/>
         </template>
-
-        <template #expand>
-            <QueryResult :schema="querySchema.schema.value"/>
-        </template>
-
-        <PaneLayout :show-pane="paneState.visible.value">
-            <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy"
-                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
-                                :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                                @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
-                                @dblclick="(i, s) => operators.openDetailByClick(i, s)"
-                                @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
-                                @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
-
-            <template #pane>
-                <IllustDetailPane @close="paneState.visible.value = false"/>
-            </template>
-        </PaneLayout>
-    </TopBarLayout>
+    </PaneLayout>
 </template>

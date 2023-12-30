@@ -46,7 +46,7 @@ const { context, close } = useInternalService()
         opacity: 0
 
 .root-container
-    width: 90vw
+    width: 80vw
     height: 90vh
     border-width: 3px
 </style>

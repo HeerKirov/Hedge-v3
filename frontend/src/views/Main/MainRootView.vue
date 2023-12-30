@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from "vue"
+import { useRouter } from "vue-router"
 import { SideLayout, SideBar, Flex, FlexItem } from "@/components/layout"
 import { Button, Separator } from "@/components/universal"
 import { Menu } from "@/components/interaction"
@@ -40,6 +41,7 @@ const navHistory = installNavHistory()
 watch(pins, pins => navHistory.excludes["MainFolder"] = pins?.map(i => i.id.toString()) ?? [])
 
 const { menuItems, menuSelected } = installNavMenu({
+    router: useRouter(),
     menuItems: [
         {type: "menu", routeName: "MainHome", label: "主页", icon: "house"},
         {type: "scope", scopeName: "main", label: "浏览"},

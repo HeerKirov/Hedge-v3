@@ -1,21 +1,17 @@
 <script setup lang="ts">
-import { toRef } from "vue"
-import { installCurrentTab, BrowserStackView } from "@/modules/browser"
+import { BrowserTabStack } from "@/modules/browser"
 import MainTabHistory from "./MainTabHistory.vue"
 
-const props = defineProps<{
-    view: BrowserStackView
+defineProps<{
+    view: BrowserTabStack
     active: boolean
-    index: number
 }>()
-
-installCurrentTab(toRef(props, "index"))
 
 </script>
 
 <template>
     <div :class="{[$style.tab]: true, [$style.active]: active}">
-        <MainTabHistory v-for="(s, i) in view.stacks" :key="s.historyId" :stack="s" :active="active && i === view.stacks.length - 1"/>
+        <MainTabHistory v-for="s in view.stacks" :key="s.historyId" :id="view.id" :history-id="s.historyId" :component="s.component"/>
     </div>
 </template>
 

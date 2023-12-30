@@ -6,7 +6,7 @@ export function useParam<P>(paramName: string): Ref<P | null> {
 
     const data: Ref<P | null> = ref(null)
 
-    watch(() => route.value.params[paramName], newData => { if(newData !== data.value) data.value = newData }, {immediate: true, deep: true})
+    watch(() => route.value.params[paramName], (newData = null) => {if(newData !== data.value) data.value = newData}, {immediate: true, deep: true})
 
     return computed({
         get: () => data.value,

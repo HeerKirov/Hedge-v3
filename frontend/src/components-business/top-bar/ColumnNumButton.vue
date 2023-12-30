@@ -36,10 +36,6 @@ const menuItems = computed(() => arrays.newArray(props.max - props.min + 1, i =>
 
 <template>
     <ElementPopupMenu :items="menuItems" position="bottom" v-slot="{ setEl, popup }">
-        <Button v-bind="$attrs" :ref="setEl" icon="columns" @click="popup">{{value}}</Button>
+        <Button v-bind="$attrs" :ref="setEl" class="flex-item no-grow-shrink px-3" icon="columns" @click="popup">{{value}}</Button>
     </ElementPopupMenu>
 </template>
-
-<style module lang="sass">
-
-</style>

@@ -16,5 +16,5 @@ const click = () => emit("update:value", props.value === "cover" ? "contain" : "
 </script>
 
 <template>
-    <Button square :icon="value === 'cover' ? 'compress' : 'compress-arrows-alt'" @click="click"/>
+    <Button class="flex-item no-grow-shrink" square :icon="value === 'cover' ? 'compress' : 'compress-arrows-alt'" @click="click"/>
 </template>

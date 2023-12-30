@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Button } from "@/components/universal"
 import { VirtualRowView } from "@/components/data"
-import { TopBarLayout, PaneLayout, BasePane, MiddleLayout } from "@/components/layout"
+import { PaneLayout, BasePane } from "@/components/layout"
+import { BrowserTeleport } from "@/components/logical"
 import { SearchInput, AttachFilter, SelectButton, DataRouter, AttachTemplate } from "@/components-business/top-bar"
 import {
     ANNOTATION_TARGET_TYPE_ICONS, ANNOTATION_TARGET_TYPE_NAMES, ANNOTATION_TARGET_TYPES,
@@ -55,33 +56,26 @@ const popupMenu = usePopupMenu([
 </script>
 
 <template>
-    <TopBarLayout>
-        <template #top-bar>
-            <MiddleLayout>
-                <SelectButton :items="filterMetaTypeOptions" v-model:value="queryFilter.type"/>
-                <SearchInput class="ml-1" placeholder="在此处搜索" v-model:value="queryFilter.query"/>
-                <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="queryFilter"/>
+    <BrowserTeleport to="top-bar">
+        <SelectButton :items="filterMetaTypeOptions" v-model:value="queryFilter.type"/>
+        <SearchInput class="ml-1" placeholder="在此处搜索" v-model:value="queryFilter.query"/>
+        <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="queryFilter"/>
 
-                <template #right>
-                    <DataRouter :state="state" @navigate="navigateTo"/>
-                    <Button icon="plus" square @click="paneState.openCreateView()"/>
-                </template>
-            </MiddleLayout>
+        <DataRouter :state="state" @navigate="navigateTo"/>
+        <Button icon="plus" square @click="paneState.openCreateView()"/>
+    </BrowserTeleport>
+    <PaneLayout :show-pane="paneState.opened.value">
+        <template #pane>
+            <BasePane @close="paneState.closeView()">
+                <AnnotationDetailPane v-if="paneState.mode.value === 'detail'"/>
+                <AnnotationCreatePane v-else-if="paneState.mode.value === 'create'"/>
+            </BasePane>
         </template>
-
-        <PaneLayout :show-pane="paneState.opened.value">
-            <template #pane>
-                <BasePane @close="paneState.closeView()">
-                    <AnnotationDetailPane v-if="paneState.mode.value === 'detail'"/>
-                    <AnnotationCreatePane v-else-if="paneState.mode.value === 'create'"/>
-                </BasePane>
-            </template>
-            <VirtualRowView :row-height="40" :padding="6" :metrics="data.metrics" :state="state" @update:state="setState">
-                <AnnotationListItem v-for="item in data.items" :key="item.id"
-                                    :item="item" :selected="paneState.detailPath.value === item.id"
-                                    @click="paneState.openDetailView(item.id)"
-                                    @contextmenu="popupMenu.popup(item.id)"/>
-            </VirtualRowView>
-        </PaneLayout>
-    </TopBarLayout>
+        <VirtualRowView :row-height="40" :padding="6" :metrics="data.metrics" :state="state" @update:state="setState">
+            <AnnotationListItem v-for="item in data.items" :key="item.id"
+                                :item="item" :selected="paneState.detailPath.value === item.id"
+                                @click="paneState.openDetailView(item.id)"
+                                @contextmenu="popupMenu.popup(item.id)"/>
+        </VirtualRowView>
+    </PaneLayout>
 </template>
