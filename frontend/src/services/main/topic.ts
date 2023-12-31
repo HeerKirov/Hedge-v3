@@ -5,26 +5,22 @@ import { flatResponse, mapResponse } from "@/functions/http-client"
 import { DetailTopic, ParentTopic, Topic, TopicCreateForm, TopicUpdateForm, TopicExceptions, TopicQueryFilter, TopicType } from "@/functions/http-client/api/topic"
 import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
-import { DetailViewState, useRouterViewState } from "@/services/base/detail-view-state"
 import { useNavHistoryPush } from "@/services/base/side-nav-menu"
 import { useListViewContext } from "@/services/base/list-view-context"
-import { useRouterNavigator, useRouterQueryNumber } from "@/modules/router"
+import { useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
 import { useMessageBox } from "@/modules/message-box"
 import { useToast } from "@/modules/toast"
 import { checkTagName } from "@/utils/validation"
 import { patchMappingSourceTagForm } from "@/utils/translation"
-import { computedWatchMutable, installation } from "@/utils/reactivity"
 import { objects } from "@/utils/primitives"
 
-export const [installTopicContext, useTopicContext] = installation(function () {
-    const paneState = useRouterViewState<number, Partial<DetailTopic>>(useRouterQueryNumber("MainTopic", "detail"))
-
+export function useTopicContext() {
     const listview = useListView()
 
-    const operators = useOperators(paneState, listview.listview)
+    const operators = useOperators(listview.listview)
 
-    return {paneState, listview, operators}
-})
+    return {listview, operators}
+}
 
 function useListView() {
     return useListViewContext({
@@ -47,10 +43,10 @@ function useListView() {
     })
 }
 
-function useOperators(paneState: DetailViewState<number, Partial<DetailTopic>>, listview: QueryListview<Topic, number>) {
+function useOperators(listview: QueryListview<Topic, number>) {
     const toast = useToast()
     const message = useMessageBox()
-    const navigator = useRouterNavigator()
+    const router = useTabRoute()
 
     const retrieveHelper = useRetrieveHelper({
         update: client => client.topic.update,
@@ -59,11 +55,15 @@ function useOperators(paneState: DetailViewState<number, Partial<DetailTopic>>, 
 
     const fetchFindSimilarTaskCreate = usePostFetchHelper(client => client.findSimilar.task.create)
 
+    const openCreateView = () => router.routePush({routeName: "TopicCreate"})
+
+    const openDetailView = (authorId: number) => router.routePush({routeName: "TopicDetail", path: authorId})
+
     const createByTemplate = (topic: Topic) => {
         const idx = listview.proxy.sync.findByKey(topic.id)
         if(idx != undefined) {
             const topic = listview.proxy.sync.retrieve(idx)
-            paneState.openCreateView(topic)
+            router.routePush({routeName: "TopicCreate", initializer: {createTemplate: topic}})
         }
     }
 
@@ -72,13 +72,18 @@ function useOperators(paneState: DetailViewState<number, Partial<DetailTopic>>, 
         if(idx != undefined) {
             const topic = listview.proxy.sync.retrieve(idx)
             if(topic !== undefined) {
-                paneState.openCreateView({
-                    parents: [{
-                        id: topic.id,
-                        name: topic.name,
-                        type: topic.type,
-                        color: topic.color
-                    }]
+                router.routePush({
+                    routeName: "TopicCreate",
+                    initializer: {
+                        createTemplate: {
+                            parents: [{
+                                id: topic.id,
+                                name: topic.name,
+                                type: topic.type,
+                                color: topic.color
+                            }]
+                        }
+                    }
                 })
             }
         }
@@ -86,9 +91,7 @@ function useOperators(paneState: DetailViewState<number, Partial<DetailTopic>>, 
 
     const deleteItem = async (topic: Topic) => {
         if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
-            if(await retrieveHelper.deleteData(topic.id)) {
-                if(paneState.detailPath.value === topic.id) paneState.closeView()
-            }
+            await retrieveHelper.deleteData(topic.id)
         }
     }
 
@@ -102,18 +105,18 @@ function useOperators(paneState: DetailViewState<number, Partial<DetailTopic>>, 
     }
 
     const openIllustsOfTopic = (topic: Topic) => {
-        navigator.goto({routeName: "MainIllust", params: {topicName: topic.name}})
+        router.routePush({routeName: "Illust", params: {topicName: topic.name}})
     }
 
-    return {createByTemplate, createChildOfTemplate, deleteItem, toggleFavorite, findSimilarOfTopic, openIllustsOfTopic}
+    return {openCreateView, openDetailView, createByTemplate, createChildOfTemplate, deleteItem, toggleFavorite, findSimilarOfTopic, openIllustsOfTopic}
 }
 
 export function useTopicCreatePanel() {
+    const router = useTabRoute()
     const message = useMessageBox()
-    const { paneState } = useTopicContext()
     const cacheStorage = useLocalStorage<{cacheType: TopicType}>("topic/create-panel", {cacheType: "IP"})
 
-    const form = computedWatchMutable(paneState.createTemplate, () => mapTemplateToCreateForm(paneState.createTemplate.value, cacheStorage.value.cacheType))
+    const form = ref(mapTemplateToCreateForm(null, cacheStorage.value.cacheType))
 
     const setProperty = <T extends keyof TopicCreateFormData>(key: T, value: TopicCreateFormData[T]) => {
         form.value[key] = value
@@ -164,7 +167,7 @@ export function useTopicCreatePanel() {
             }
         },
         afterCreate(result) {
-            paneState.openDetailView(result.id)
+            router.routePush({routeName: "TopicDetail", path: result.id})
         }
     })
 
@@ -174,28 +177,32 @@ export function useTopicCreatePanel() {
         }
     })
 
+    useInitializer(params => {if(params.createTemplate) form.value = mapTemplateToCreateForm(params.createTemplate, cacheStorage.value.cacheType)})
+
     return {form, setProperty, submit}
 }
 
 export function useTopicDetailPanel() {
+    const router = useTabRoute()
     const message = useMessageBox()
-    const { paneState } = useTopicContext()
+
+    const path = usePath<number>()
 
     const { data, setData, deleteData } = useFetchEndpoint({
-        path: paneState.detailPath,
+        path,
         get: client => client.topic.get,
         update: client => client.topic.update,
         delete: client => client.topic.delete,
         eventFilter: c => event => (event.eventType === "entity/meta-tag/updated" || event.eventType === "entity/meta-tag/deleted") && event.metaType === "TOPIC" && event.metaId === c.path,
         afterRetrieve(path, data) {
             if(path !== null && data === null) {
-                paneState.closeView()
+                router.routeBack()
             }
         }
     })
 
     const { data: exampleData } = useFetchEndpoint({
-        path: paneState.detailPath,
+        path,
         get: client => async (topic: number) => mapResponse(await client.illust.list({limit: 10, topic, type: "COLLECTION", order: "-orderTime"}), r => r.result)
     })
 
@@ -211,34 +218,45 @@ export function useTopicDetailPanel() {
 
     const createByTemplate = () => {
         if(data.value !== null) {
-            paneState.openCreateView(data.value)
+            router.routePush({routeName: "TopicCreate", initializer: {createTemplate: data.value}})
         }
     }
 
     const createChildOfTemplate = () => {
         if(data.value !== null) {
-            paneState.openCreateView({
-                parents: [{
-                    id: data.value.id,
-                    name: data.value.name,
-                    type: data.value.type,
-                    color: data.value.color
-                }]
+            router.routePush({
+                routeName: "TopicCreate",
+                initializer: {
+                    createTemplate: {
+                        parents: [{
+                            id: data.value.id,
+                            name: data.value.name,
+                            type: data.value.type,
+                            color: data.value.color
+                        }]
+                    }
+                }
             })
         }
+    }
+
+    const openTopicDetail = (authorId: number) => {
+        router.routePush({routeName: "AuthorDetail", path: authorId})
     }
 
     const deleteItem = async () => {
         if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
             if(await deleteData()) {
-                paneState.closeView()
+                router.routeBack()
             }
         }
     }
 
     useNavHistoryPush(data)
 
-    return {data, childrenMode, exampleData, editor, operators: {toggleFavorite, createByTemplate, createChildOfTemplate, deleteItem}}
+    useDocumentTitle(data)
+
+    return {data, childrenMode, exampleData, editor, operators: {toggleFavorite, createByTemplate, createChildOfTemplate, openTopicDetail, deleteItem}}
 }
 
 function useTopicDetailPanelEditor(data: Readonly<Ref<DetailTopic | null>>, setData: (form: TopicUpdateForm, handle: ErrorHandler<TopicExceptions["update"]>) => Promise<boolean>) {

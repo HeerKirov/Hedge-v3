@@ -17,6 +17,11 @@ export default <RouteDefinition[]>[
         component: () => import("./Partition/Partition.vue")
     },
     {
+        routeName: "PartitionDetail",
+        defaultTitle: "时间分区详情",
+        component: () => import("./Partition/PartitionDetail.vue")
+    },
+    {
         routeName: "Book",
         defaultTitle: "画集",
         component: () => import("./Book/Book.vue")
@@ -24,12 +29,32 @@ export default <RouteDefinition[]>[
     {
         routeName: "Author",
         defaultTitle: "作者",
-        component: () => import("./Author/Author.vue")
+        component: () => import("./Author/AuthorList.vue")
+    },
+    {
+        routeName: "AuthorCreate",
+        defaultTitle: "新建作者",
+        component: () => import("./Author/AuthorCreate.vue")
+    },
+    {
+        routeName: "AuthorDetail",
+        defaultTitle: "作者详情",
+        component: () => import("./Author/AuthorDetail.vue")
     },
     {
         routeName: "Topic",
         defaultTitle: "主题",
-        component: () => import("./Topic/Topic.vue")
+        component: () => import("./Topic/TopicList.vue")
+    },
+    {
+        routeName: "TopicCreate",
+        defaultTitle: "新建主题",
+        component: () => import("./Topic/TopicCreate.vue")
+    },
+    {
+        routeName: "TopicDetail",
+        defaultTitle: "主题详情",
+        component: () => import("./Topic/TopicDetail.vue")
     },
     {
         routeName: "Tag",
@@ -54,7 +79,12 @@ export default <RouteDefinition[]>[
     {
         routeName: "FindSimilar",
         defaultTitle: "相似项目",
-        component: () => import("./FindSimilar/FindSimilar.vue")
+        component: () => import("./FindSimilar/FindSimilarList.vue")
+    },
+    {
+        routeName: "FindSimilarDetail",
+        defaultTitle: "相似项详情",
+        component: () => import("./FindSimilar/FindSimilarDetail.vue")
     },
     {
         routeName: "Trash",
@@ -69,6 +99,11 @@ export default <RouteDefinition[]>[
     {
         routeName: "Folder",
         defaultTitle: "目录",
-        component: () => import("./Folder/Folder.vue")
+        component: () => import("./Folder/FolderList.vue")
+    },
+    {
+        routeName: "FolderDetail",
+        defaultTitle: "目录详情",
+        component: () => import("./Folder/FolderDetail.vue")
     }
 ]

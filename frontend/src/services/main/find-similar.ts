@@ -12,9 +12,9 @@ import { CommonIllust } from "@/functions/http-client/api/illust"
 import { flatResponse } from "@/functions/http-client"
 import { platform } from "@/functions/ipc-client"
 import { useAssets, useLocalStorage } from "@/functions/app"
+import { useDocumentTitle, usePath, useTabRoute } from "@/modules/browser"
 import { useMessageBox } from "@/modules/message-box"
 import { useInterceptedKey } from "@/modules/keyboard"
-import { useDetailViewState } from "@/services/base/detail-view-state"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { IllustViewController, useIllustViewController } from "@/services/base/view-controller"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
@@ -24,14 +24,17 @@ import { arrays, numbers } from "@/utils/primitives"
 import { useListeningEvent } from "@/utils/emitter"
 import { onElementResize } from "@/utils/sensors"
 
-export const [installFindSimilarContext, useFindSimilarContext] = installation(function () {
-    const paneState = useDetailViewState<number>()
+export function useFindSimilarContext() {
+    const router = useTabRoute()
+
     const listview = useListView()
 
     useSettingSite()
 
-    return {paneState, listview}
-})
+    const openDetailView = (id: number) => router.routePush({routeName: "FindSimilarDetail", path: id})
+
+    return {listview, openDetailView}
+}
 
 function useListView() {
     return useListViewContext({
@@ -65,8 +68,9 @@ export function useFindSimilarItemContext(item: FindSimilarResult) {
 }
 
 export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = installation(function () {
-    
-    const { paneState } = useFindSimilarContext()
+    const router = useTabRoute()
+
+    const path = usePath<number>()
 
     const storage = useLocalStorage<{viewMode: "grid" | "graph" | "compare"}>("find-similar/detail", () => ({viewMode: "graph"}), true)
 
@@ -75,14 +79,14 @@ export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = instal
     const listviewController = useIllustViewController()
 
     const { data, setData: resolve, deleteData: clear } = useFetchEndpoint({
-        path: paneState.detailPath,
+        path,
         get: client => client.findSimilar.result.get,
         update: client => client.findSimilar.result.resolve,
         delete: client => client.findSimilar.result.delete,
         eventFilter: c => event => (event.eventType === "entity/find-similar-result/updated" || event.eventType === "entity/find-similar-result/deleted") && c.path === event.resultId,
         afterRetrieve(path, data) {
             if(path !== null && data === null) {
-                paneState.closeView()
+                router.routeBack()
             }
         }
     })
@@ -99,6 +103,8 @@ export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = instal
     const selector = useSelectedState({queryListview: listview, keyOf: item => item.id})
 
     const operators = useOperators(data, selector, listviewController, listview, resolve, clear)
+
+    useDocumentTitle(() => viewMode.value === "graph" ? "相似关系图" : viewMode.value === "grid" ? "相似项列表" : "相似项对比")
 
     return {data, listview, paginationData, selector, listviewController, viewMode, operators}
 })

@@ -1,4 +1,4 @@
-import { computed, ref, Ref, watch } from "vue"
+import { computed, onMounted, ref, Ref, watch } from "vue"
 import { useTabRoute } from "./api"
 
 export function useParam<P>(paramName: string): Ref<P | null> {
@@ -33,13 +33,15 @@ export function usePath<P>(): Ref<P> {
     })
 }
 
-export function useInitializer(callback: (params: Record<string, any>) => void) {
+export function useInitializer(callback: (params: Record<string, any>) => void, option?: {mounted?: boolean}) {
     const { route } = useTabRoute()
 
-    watch(() => route.value.initializer, e => {
+    const startWatch = () => watch(() => route.value.initializer, e => {
         if(Object.keys(e).length > 0) {
             callback(e)
             route.value.initializer = {}
         }
     }, {immediate: true})
+
+    if(option?.mounted) { onMounted(startWatch) }else{ startWatch() }
 }

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Button } from "@/components/universal"
+import { Button, Separator } from "@/components/universal"
 import { VirtualRowView } from "@/components/data"
 import { PaneLayout, BasePane } from "@/components/layout"
 import { BrowserTeleport } from "@/components/logical"
-import { SearchInput, AttachFilter, SelectButton, DataRouter, AttachTemplate } from "@/components-business/top-bar"
+import { SearchBox, AttachFilter, SelectButton, DataRouter, AttachTemplate } from "@/components-business/top-bar"
 import {
     ANNOTATION_TARGET_TYPE_ICONS, ANNOTATION_TARGET_TYPE_NAMES, ANNOTATION_TARGET_TYPES,
     META_TYPE_ICONS, META_TYPE_NAMES, META_TYPES
@@ -58,12 +58,13 @@ const popupMenu = usePopupMenu([
 <template>
     <BrowserTeleport to="top-bar">
         <SelectButton :items="filterMetaTypeOptions" v-model:value="queryFilter.type"/>
-        <SearchInput class="ml-1" placeholder="在此处搜索" v-model:value="queryFilter.query"/>
+        <SearchBox class="ml-1" placeholder="在此处搜索" v-model:value="queryFilter.query"/>
         <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="queryFilter"/>
-
+        <Separator/>
         <DataRouter :state="state" @navigate="navigateTo"/>
-        <Button icon="plus" square @click="paneState.openCreateView()"/>
+        <Button class="flex-item no-grow-shrink" icon="plus" square @click="paneState.openCreateView()"/>
     </BrowserTeleport>
+
     <PaneLayout :show-pane="paneState.opened.value">
         <template #pane>
             <BasePane @close="paneState.closeView()">

@@ -3,9 +3,10 @@ import { useRoute } from "vue-router"
 import { windowManager } from "@/modules/window"
 import { arrays, objects } from "@/utils/primitives"
 import { installation, installationNullable } from "@/utils/reactivity"
+import { useListeningEvent, useRefEmitter } from "@/utils/emitter"
 import {
     BrowserDocument, BrowserRoute, BrowserTabStack, BrowserTabs, BrowserViewOptions, InternalPage,
-    InternalTab, NewRoute, Route, RouteDefinition, Tab
+    InternalTab, NewRoute, Route, RouteDefinition, Tab, BrowserTabEvent
 } from "./definition"
 
 export const [installBrowserView, useBrowserView] = installation(function (options: BrowserViewOptions) {
@@ -16,8 +17,7 @@ export const [installBrowserView, useBrowserView] = installation(function (optio
     const componentCaches: Record<string, Component | DefineComponent> = {}
     const historyMax = 5
 
-    const views = ref<InternalTab[]>([])
-    const activeIndex = ref(0)
+    const views = ref<InternalTab[]>([]), activeIndex = ref(0), event = useRefEmitter<BrowserTabEvent>()
     let nextTabIdVal = 1, nextHistoryIdVal = 1
 
     function nextTabId(): number {
@@ -65,7 +65,7 @@ export const [installBrowserView, useBrowserView] = installation(function (optio
         }
     })
 
-    return {views, activeIndex, historyMax, nextTabId, nextHistoryId, getRouteDefinition, loadComponent, getComponentOrNull}
+    return {views, activeIndex, historyMax, event, nextTabId, nextHistoryId, getRouteDefinition, loadComponent, getComponentOrNull}
 })
 
 export const [installCurrentTab, useCurrentTab] = installationNullable(function (props: {id: number, historyId: number}) {
@@ -99,7 +99,8 @@ export function useBrowserTabStacks() {
         const ret: BrowserTabStack[] = []
         for (const v of views.value) {
             const component = await loadComponent(v.route.routeName)
-            ret.push({id: v.id, stacks: [...v.histories.map(h => ({historyId: h.historyId, component: getComponentOrNull(h.route.routeName)!})), {historyId: v.historyId, component}]})
+            //...v.histories.map(h => ({historyId: h.historyId, component: getComponentOrNull(h.route.routeName)!}))
+            ret.push({id: v.id, stacks: [{historyId: v.historyId, component}]})
         }
         tabStacks.value = ret
     }, {deep: true, immediate: true})
@@ -108,7 +109,7 @@ export function useBrowserTabStacks() {
 }
 
 export function useBrowserTabs(): BrowserTabs {
-    const { views, activeIndex, getRouteDefinition, nextTabId, nextHistoryId } = useBrowserView()
+    const { views, activeIndex, getRouteDefinition, nextTabId, nextHistoryId, event } = useBrowserView()
 
     const tabs = computed<Tab[]>(() => views.value.map(({ id, title }, index) => ({id, index, title, active: activeIndex.value === index})))
 
@@ -117,6 +118,7 @@ export function useBrowserTabs(): BrowserTabs {
         const route: Route = args !== undefined ? {routeName: args.routeName, path: args.path, params: args.params ?? {}, initializer: args.initializer ?? {}} : {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
         views.value.push({id: nextTabId(), historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, memoryStorage: {}, histories: [], forwards: []})
         activeIndex.value = views.value.length - 1
+        event.emit({type: "TabCreated"})
     }
 
     function duplicateTab(args: {id?: number, index?: number}) {
@@ -125,6 +127,7 @@ export function useBrowserTabs(): BrowserTabs {
         if(viewIndex >= 0 && view !== undefined) {
             views.value.splice(viewIndex + 1, 0, {...objects.deepCopy(view), id: nextTabId()})
             activeIndex.value = viewIndex + 1
+            event.emit({type: "TabCreated"})
         }
     }
 
@@ -154,6 +157,7 @@ export function useBrowserTabs(): BrowserTabs {
             }else if(index < activeIndex.value || (index === activeIndex.value && activeIndex.value > 0)) {
                 activeIndex.value -= 1
             }
+            event.emit({type: "TabClosed"})
         }
     }
 
@@ -173,7 +177,7 @@ export function useBrowserTabs(): BrowserTabs {
 }
 
 export function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): BrowserRoute {
-    const { getRouteDefinition, nextHistoryId, historyMax } = useBrowserView()
+    const { getRouteDefinition, nextHistoryId, historyMax, event } = useBrowserView()
 
     const route = computed(() => page?.value.route ?? view.value.route)
 
@@ -183,12 +187,14 @@ export function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>
 
     function routePush(route: NewRoute) {
         const routeDef = getRouteDefinition(route.routeName)
+        view.value.forwards.splice(0, view.value.forwards.length)
         view.value.histories.push({historyId: view.value.historyId, title: view.value.title, route: {...view.value.route, initializer: {}}, storage: view.value.storage})
         if(view.value.histories.length > historyMax) view.value.histories.shift()
         view.value.historyId = nextHistoryId()
         view.value.title = routeDef.defaultTitle ?? null
         view.value.route = {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}}
         view.value.storage = {}
+        event.emit({type: "Routed"})
     }
 
     function routeReplace(route: NewRoute) {
@@ -196,6 +202,7 @@ export function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>
         view.value.title = routeDef.defaultTitle ?? null
         view.value.route = {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}}
         view.value.storage = {}
+        event.emit({type: "Routed"})
     }
 
     function routeBack() {
@@ -207,6 +214,7 @@ export function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>
             view.value.title = history.title
             view.value.route = history.route
             view.value.storage = history.storage
+            event.emit({type: "Routed"})
         }
     }
 
@@ -219,6 +227,7 @@ export function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>
             view.value.title = forward.title
             view.value.route = forward.route
             view.value.storage = forward.storage
+            event.emit({type: "Routed"})
         }
     }
 
@@ -236,8 +245,12 @@ export function useActivateTabRoute(): BrowserRoute {
 }
 
 export function useTabRoute(): BrowserRoute {
-    const { view, page } = useCurrentTab()!
-    return useBrowserRoute(view, page)
+    const tab = useCurrentTab()
+    if(tab) {
+        return useBrowserRoute(tab.view, tab.page)
+    }else{
+        return useActivateTabRoute()
+    }
 }
 
 export function useDocument(): BrowserDocument {
@@ -249,4 +262,22 @@ export function useDocument(): BrowserDocument {
     })
 
     return {title}
+}
+
+export function useDocumentTitle(titleChanged: Ref<string | {name: string} | null | undefined> | (() => (string | {name: string} | null | undefined))) {
+    const document = useDocument()
+    watch(titleChanged, tc => {
+        if(tc !== null && tc !== undefined) {
+            if(typeof tc === "string") {
+                document.title.value = tc
+            }else if(typeof tc === "object") {
+                document.title.value = tc.name
+            }
+        }
+    }, {immediate: true})
+}
+
+export function useBrowserEvent(arg: (e: BrowserTabEvent) => void) {
+    const { event } = useBrowserView()
+    useListeningEvent(event, arg)
 }

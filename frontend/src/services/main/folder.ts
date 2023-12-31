@@ -7,8 +7,8 @@ import {
 import { useLocalStorage } from "@/functions/app"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import { useMessageBox } from "@/modules/message-box"
-import { useRouterNavigator, useRouterQueryNumber } from "@/modules/router"
-import { DetailViewState, useDetailViewState, useRouterViewState } from "@/services/base/detail-view-state"
+import { useBrowserTabs, useDocumentTitle, usePath, useTabRoute } from "@/modules/browser"
+import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
@@ -18,19 +18,17 @@ import { useFolderTableSearch } from "@/services/common/folder"
 import { installation } from "@/utils/reactivity"
 
 export const [installFolderContext, useFolderContext] = installation(function () {
-    const viewState = useRouterViewState<number>(useRouterQueryNumber("MainFolder", "detail"))
-
     const paneState = useDetailViewState<number>()
 
     const listview = useFolderListview()
 
-    const operators = useOperators(listview.data, paneState, viewState)
+    const operators = useOperators(listview.data, paneState)
 
     const search = useFolderTableSearch(listview.data)
 
     const editableLockOn = useLocalStorage("folder/list/editable", false)
 
-    return {viewState, paneState, listview, operators, search, editableLockOn}
+    return {paneState, listview, operators, search, editableLockOn}
 })
 
 function useFolderListview() {
@@ -42,9 +40,10 @@ function useFolderListview() {
     return {loading, data, refresh}
 }
 
-function useOperators(data: Ref<FolderTreeNode[] | undefined>, paneState: DetailViewState<number>, viewState: DetailViewState<number>) {
+function useOperators(data: Ref<FolderTreeNode[] | undefined>, paneState: DetailViewState<number>) {
+    const browserTabs = useBrowserTabs()
+    const router = useTabRoute()
     const message = useMessageBox()
-    const navigator = useRouterNavigator()
 
     const helper = useRetrieveHelper({
         update: client => client.folder.update,
@@ -100,9 +99,9 @@ function useOperators(data: Ref<FolderTreeNode[] | undefined>, paneState: Detail
 
     const openDetail = (folder: FolderTreeNode, _: number | null, __: number, newWindow: boolean) => {
         if(newWindow) {
-            navigator.newWindow({routeName: "MainFolder", query: {detail: folder.id}})
+            browserTabs.newWindow({routeName: "FolderDetail", path: folder.id})
         }else{
-            viewState.openDetailView(folder.id)
+            router.routePush({routeName: "FolderDetail", path: folder.id})
         }
     }
 
@@ -137,9 +136,10 @@ function useOperators(data: Ref<FolderTreeNode[] | undefined>, paneState: Detail
     return {openCreatePosition, createItem, moveItem, deleteItem, setPinned, createPosition, openDetail}
 }
 
-export function useFolderDetailPane() {
+export function useFolderPane() {
+    const router = useTabRoute()
     const message = useMessageBox()
-    const { paneState, viewState } = useFolderContext()
+    const { paneState } = useFolderContext()
 
     const { data, setData } = useFetchEndpoint({
         path: paneState.detailPath,
@@ -191,7 +191,7 @@ export function useFolderDetailPane() {
 
     const openDetail = () => {
         if(paneState.detailPath.value !== null) {
-            viewState.openDetailView(paneState.detailPath.value)
+            router.routePush({routeName: "FolderDetail", path: paneState.detailPath.value})
         }
     }
 
@@ -199,18 +199,20 @@ export function useFolderDetailPane() {
 }
 
 export function useFolderDetailPanel() {
+    const router = useTabRoute()
     const message = useMessageBox()
-    const { viewState } = useFolderContext()
+
+    const path = usePath<number>()
 
     const { data, deleteData } = useFetchEndpoint({
-        path: viewState.detailPath,
+        path,
         get: client => client.folder.get,
         update: client => client.folder.update,
         delete: client => client.folder.delete,
         eventFilter: c => event => (event.eventType === "entity/folder/updated" || event.eventType === "entity/folder/deleted") && event.folderId === c.path,
         afterRetrieve(path, data) {
             if(path !== null && data === null) {
-                viewState.closeView()
+                router.routeBack()
             }
         }
     })
@@ -218,24 +220,26 @@ export function useFolderDetailPanel() {
     const deleteItem = async () => {
         if(await message.showYesNoMessage("warn", "确定要删除此目录吗？", "此操作不可撤回。")) {
             if(await deleteData()) {
-                viewState.closeView()
+                router.routeBack()
             }
         }
     }
 
-    const listview = useListView(viewState.detailPath)
+    const listview = useListView(path)
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust")
     const listviewController = useIllustViewController()
     const operators = useImageDatasetOperators({
         listview: listview.listview, paginationData: listview.paginationData,
         listviewController, selector,
-        dataDrop: {dropInType: "folder", path: viewState.detailPath}
+        dataDrop: {dropInType: "folder", path}
     })
 
     installIllustListviewContext({listview, selector, listviewController, folder: data})
 
-    return {data, listview, selector, viewState, paneState, listviewController, operators, deleteItem}
+    useDocumentTitle(() => data.value?.title)
+
+    return {data, listview, selector, paneState, listviewController, operators, deleteItem}
 }
 
 function useListView(path: Ref<number | null>) {

@@ -3,13 +3,11 @@ import { installAppService } from "@/functions/app"
 import { installFetchManager } from "@/functions/fetch"
 import { installDocumentManager } from "@/modules/document"
 import { installGlobalKeyManager } from "@/modules/keyboard"
-import { installRouterManager } from "@/modules/router"
 import { installMessageBoxManager } from "@/modules/message-box"
 import { installToastManager } from "@/modules/toast"
 import { MessageBoxModule, ToastModule } from "@/components-module/module"
 
 installDocumentManager()
-installRouterManager()
 installGlobalKeyManager()
 installMessageBoxManager()
 const { handleError, handleException } = installToastManager()

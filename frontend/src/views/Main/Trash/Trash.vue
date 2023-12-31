@@ -2,7 +2,8 @@
 import { computed } from "vue"
 import { Button } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
-import { TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
+import { BrowserTeleport } from "@/components/logical"
+import { PaneLayout } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
 import { TrashedImageDataset } from "@/components-module/data"
 import { TrashedDetailPane } from "@/components-module/common"
@@ -36,32 +37,26 @@ const menu = usePopupMenu<TrashedImage>(() => [
 </script>
 
 <template>
-    <TopBarLayout>
-        <template #top-bar>
-            <MiddleLayout>
-                <template #right>
-                    <DataRouter :state="state" @navigate="navigateTo"/>
-                    <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
-                    <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
-                    <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
-                        <Button :ref="setEl" square icon="ellipsis-v" @click="popup"/>
-                    </ElementPopupMenu>
-                </template>
-            </MiddleLayout>
+    <BrowserTeleport to="top-bar">
+        <DataRouter :state="state" @navigate="navigateTo"/>
+        <FitTypeButton v-if="viewMode === 'grid'" v-model:value="fitType"/>
+        <ColumnNumButton v-if="viewMode === 'grid'" v-model:value="columnNum"/>
+        <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
+            <Button class="flex-item no-grow-shrink" :ref="setEl" square icon="ellipsis-v" @click="popup"/>
+        </ElementPopupMenu>
+    </BrowserTeleport>
+
+    <PaneLayout :show-pane="paneState.visible.value">
+        <div v-if="state !== null && state.total <= 0" class="h-100 has-text-centered">
+            <p class="secondary-text"><i>没有任何暂存的已删除项目</i></p>
+        </div>
+        <TrashedImageDataset v-else :data="data" :state="state" :query-instance="listview.proxy"
+                             :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
+                             :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
+                             @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event)"/>
+
+        <template #pane>
+            <TrashedDetailPane @close="paneState.visible.value = false"/>
         </template>
-
-        <PaneLayout :show-pane="paneState.visible.value">
-            <div v-if="state !== null && state.total <= 0" class="h-100 has-text-centered">
-                <p class="secondary-text"><i>没有任何暂存的已删除项目</i></p>
-            </div>
-            <TrashedImageDataset v-else :data="data" :state="state" :query-instance="listview.proxy"
-                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
-                                :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                                @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event)"/>
-
-            <template #pane>
-                <TrashedDetailPane @close="paneState.visible.value = false"/>
-            </template>
-        </PaneLayout>
-    </TopBarLayout>
+    </PaneLayout>
 </template>

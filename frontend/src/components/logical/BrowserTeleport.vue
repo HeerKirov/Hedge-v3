@@ -10,7 +10,7 @@ const { active } = useCurrentTab()!
 </script>
 
 <template>
-    <teleport :disabled="!active" :to="`#${to}`">
+    <teleport v-if="active" :to="`#${to}`">
         <slot/>
     </teleport>
 </template>

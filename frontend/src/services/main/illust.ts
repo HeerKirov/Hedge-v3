@@ -11,9 +11,9 @@ import { useViewStack } from "@/components-module/view-stack"
 import { usePreviewService } from "@/components-module/preview"
 import { useDialogService } from "@/components-module/dialog"
 import { useToast } from "@/modules/toast"
-import { useRouterNavigator, useRouterParamEvent } from "@/modules/router"
 import { useInterceptedKey } from "@/modules/keyboard"
 import { useMessageBox } from "@/modules/message-box"
+import { useBrowserTabs, useInitializer } from "@/modules/browser"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
@@ -43,7 +43,7 @@ export const [installIllustContext, useIllustContext] = installation(function ()
 
     useSettingSite()
 
-    useRouterParamEvent("MainIllust", params => {
+    useInitializer(params => {
         if(params.tagName || params.authorName || params.topicName || params.source) {
             //监听router event。只监听Illust的，Partition没有。对于meta tag，将其简单地转换为DSL的一部分。
             //FUTURE 当然这其实是有问题的，对于topic/tag，还应该使用地址去限制它们。
@@ -371,7 +371,7 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
 
 export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref<"IMAGE" | "COLLECTION">) {
     const viewStack = useViewStack()
-    const navigator = useRouterNavigator()
+    const browserTabs = useBrowserTabs()
     const dialog = useDialogService()
     const { data } = useFetchEndpoint({
         path,
@@ -409,7 +409,7 @@ export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref
     }
 
     const openFolderInNewWindow = (folder: SimpleFolder) => {
-        navigator.newWindow({routeName: "MainFolder", query: {detail: folder.id}})
+        browserTabs.newWindow({routeName: "MainFolder", params: {detail: folder.id}})
     }
 
     return {data, openRelatedBook, openRelatedCollection, openAssociate, openAssociateInNewView, openFolderInNewWindow}

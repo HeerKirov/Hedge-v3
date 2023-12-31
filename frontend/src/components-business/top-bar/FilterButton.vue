@@ -24,6 +24,7 @@ defineProps<{
 @import "../../styles/base/size"
 
 .filter-button
+    flex: 0 0 auto
     border-bottom: solid 1px $light-mode-border-color
     @media (prefers-color-scheme: dark)
         border-bottom-color: $dark-mode-border-color

@@ -3,8 +3,9 @@ import { Partition, IllustQueryFilter } from "@/functions/http-client/api/illust
 import { flatResponse } from "@/functions/http-client"
 import { useFetchReactive } from "@/functions/fetch"
 import { useLocalStorage, useTabStorage } from "@/functions/app"
-import { useRouterParamEvent, useRouterQueryLocalDate } from "@/modules/router"
+import { useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
 import { useInterceptedKey } from "@/modules/keyboard"
+import { writeClipboard } from "@/modules/others"
 import { useNavHistoryPush } from "@/services/base/side-nav-menu"
 import { QuerySchemaContext, useQuerySchema } from "@/services/base/query-schema"
 import { IllustViewController, useIllustViewController } from "@/services/base/view-controller"
@@ -13,27 +14,22 @@ import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { installIllustListviewContext, useImageDatasetOperators, useLocateId } from "@/services/common/illust"
 import { useSettingSite } from "@/services/setting"
-import { computedEffect, computedWatch, installation } from "@/utils/reactivity"
-import { arrays, numbers } from "@/utils/primitives"
-import { LocalDate, date, getDaysOfMonth } from "@/utils/datetime"
-import { writeClipboard } from "@/modules/others"
 import { useHomepageState } from "@/services/main/homepage"
+import { computedEffect, computedWatch, installation } from "@/utils/reactivity"
+import { LocalDate, date, getDaysOfMonth } from "@/utils/datetime"
+import { arrays, numbers } from "@/utils/primitives"
 
-export const [installPartitionContext, usePartitionContext] = installation(function () {
+export const [installPartitionContext, usePartitionContext] = installation(function() {
+    const router = useTabRoute()
     const querySchema = useQuerySchema("ILLUST")
     const listviewController = useIllustViewController()
     const partition = usePartitionView(listviewController, querySchema)
-    const path = useRouterQueryLocalDate("MainPartition", "detail")
-    const state = useHomepageState()
 
-    useNavHistoryPush(path, p => {
-        const id = date.toISOString(p)
-        const name = `${p.year}年${p.month}月${p.day}日`
-        const today = state.data.value?.today.timestamp === p.timestamp
-        return {id, name, badge: today ? "TODAY" : undefined}
-    })
+    const openDetail = (date: LocalDate) => router.routePush({routeName: "PartitionDetail", path: date})
 
-    return {partition, querySchema, listviewController, path}
+    useDocumentTitle(() => partition.viewMode.value === "calendar" ? "日历" : "时间线")
+
+    return {partition, querySchema, listviewController, openDetail}
 })
 
 function usePartitionView(listviewController: IllustViewController, querySchema: QuerySchemaContext) {
@@ -127,7 +123,7 @@ export function useCalendarContext() {
     const today = date.now()
     const WEEKDAY_SPACE_COUNT = [6, 0, 1, 2, 3, 4, 5]
 
-    const { partition: { calendarDate, partitionMonths, maxCount }, path } = usePartitionContext()
+    const { partition: { calendarDate, partitionMonths, maxCount }, openDetail } = usePartitionContext()
 
     const days = computedWatch(calendarDate, calendarDate => {
         if(calendarDate !== null) {
@@ -164,14 +160,14 @@ export function useCalendarContext() {
     })
 
     const openPartition = (item: {day: number, count: number | null}) => {
-        if(calendarDate.value !== null && item.count) path.value = date.ofDate(calendarDate.value.year, calendarDate.value.month, item.day)
+        if(calendarDate.value !== null && item.count) openDetail(date.ofDate(calendarDate.value.year, calendarDate.value.month, item.day))
     }
 
     return {items, openPartition, calendarDate}
 }
 
 export function useTimelineContext() {
-    const { partition: { calendarDate, partitions, partitionMonths, maxCount, maxCountOfMonth, operators }, path } = usePartitionContext()
+    const { partition: { calendarDate, partitions, partitionMonths, maxCount, maxCountOfMonth, operators }, openDetail } = usePartitionContext()
 
     const months = computed(() => partitionMonths.value?.map(pm => ({year: pm.year, month: pm.month, uniqueKey: pm.year * 12 + pm.month, dayCount: pm.days.length, count: pm.count, width: numbers.round2decimal(pm.count * 100 / maxCountOfMonth.value), level: Math.ceil(pm.count * 10 / maxCountOfMonth.value)})) ?? [])
 
@@ -246,7 +242,7 @@ export function useTimelineContext() {
         if(calendarDate.value === null || calendarDate.value.year !== date.year || calendarDate.value.month !== date.month) {
             selectMonth({year: date.year, month: date.month})
         }
-        path.value = date
+        openDetail(date)
     }
 
     const setTimelineRef = (el: Element | ComponentPublicInstance | null) => {
@@ -277,7 +273,10 @@ export function useTimelineContext() {
 }
 
 export function useDetailIllustContext() {
-    const { querySchema, listviewController, path } = usePartitionContext()
+    const path = usePath<LocalDate>()
+    const querySchema = useQuerySchema("ILLUST")
+    const listviewController = useIllustViewController()
+
     const listview = useListView()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust")
@@ -287,6 +286,7 @@ export function useDetailIllustContext() {
         dataDrop: {dropInType: "partition", path, querySchema: querySchema.schema, queryFilter: listview.queryFilter}
     })
     const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector})
+    const state = useHomepageState()
 
     watch(listviewController.collectionMode, collectionMode => listview.queryFilter.value.type = typeof collectionMode === "boolean" ? (collectionMode ? "COLLECTION" : "IMAGE") : collectionMode, {immediate: true})
     watch(querySchema.query, query => listview.queryFilter.value.query = query, {immediate: true})
@@ -296,13 +296,22 @@ export function useDetailIllustContext() {
 
     useSettingSite()
 
-    useRouterParamEvent("MainPartition", params => {
+    useInitializer(params => {
         if(params.locateId !== undefined && querySchema.queryInputText.value) {
             //若提供了Locate，则应该清空现有的查询条件
             querySchema.queryInputText.value = undefined
         }
         locateId.catchLocateId(params.locateId)
     })
+
+    useNavHistoryPush(path, p => {
+        const id = date.toISOString(p)
+        const name = `${p.year}年${p.month}月${p.day}日`
+        const today = state.data.value?.today.timestamp === p.timestamp
+        return {id, name, badge: today ? "TODAY" : undefined}
+    })
+
+    useDocumentTitle(() => `${path.value.year}年${path.value.month}月${path.value.day}日`)
 
     return {path, listview, selector, paneState, operators, querySchema, listviewController}
 }

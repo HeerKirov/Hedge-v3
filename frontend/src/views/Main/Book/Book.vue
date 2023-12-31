@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Button } from "@/components/universal"
+import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { VirtualGridView } from "@/components/data"
-import { TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
-import { DataRouter, ColumnNumButton, SearchInput, QueryNotificationBadge, QueryResult } from "@/components-business/top-bar"
+import { PaneLayout } from "@/components/layout"
+import { BrowserTeleport } from "@/components/logical"
+import { DataRouter, ColumnNumButton, SearchBox } from "@/components-business/top-bar"
 import { BookDetailPane } from "@/components-module/common"
 import { Book } from "@/functions/http-client/api/book"
 import { useDialogService } from "@/components-module/dialog"
@@ -47,40 +48,28 @@ const menu = useDynamicPopupMenu<Book>(book => [
 </script>
 
 <template>
-    <TopBarLayout v-model:expanded="querySchema.expanded.value">
-        <template #top-bar>
-            <MiddleLayout>
-                <SearchInput placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value"/>
-                <QueryNotificationBadge class="ml-1" :schema="querySchema.schema.value" @click="querySchema.expanded.value = true"/>
+    <BrowserTeleport to="top-bar">
+        <SearchBox placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value" :schema="querySchema.schema.value"/>
+        <Separator/>
+        <DataRouter :state="state" @navigate="navigateTo"/>
+        <ColumnNumButton v-model:value="columnNum"/>
+        <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
+            <Button class="flex-item no-grow-shrink" :ref="setEl" square icon="ellipsis-v" @click="popup"/>
+        </ElementPopupMenu>
+    </BrowserTeleport>
 
-                <template #right>
-                    <DataRouter :state="state" @navigate="navigateTo"/>
-                    <ColumnNumButton class="mr-1" v-model:value="columnNum"/>
-                    <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
-                        <Button :ref="setEl" square icon="ellipsis-v" @click="popup"/>
-                    </ElementPopupMenu>
-                </template>
-            </MiddleLayout>
+    <PaneLayout :show-pane="paneState.visible.value">
+        <VirtualGridView :style="bookGridStyle" :column-count="columnNum" :padding="{top: 1, bottom: 4, left: 4, right: 4}" :aspect-ratio="0.6"
+                         @update:state="setState" :metrics="data.metrics" :state="state">
+            <BookGridItem v-for="item in data.items" :key="item.id" :item="item"
+                          :selected="selector.selected.value === item.id"
+                          @click="selector.set($event.id)"
+                          @dblclick="operators.openBookView($event)"
+                          @contextmenu="menu.popup(item)"/>
+        </VirtualGridView>
+
+        <template #pane>
+            <BookDetailPane @close="paneState.visible.value = false"/>
         </template>
-
-        <template #expand>
-            <QueryResult :schema="querySchema.schema.value"/>
-        </template>
-
-        <PaneLayout :show-pane="paneState.visible.value">
-            <VirtualGridView :style="bookGridStyle" :column-count="columnNum" :padding="{top: 1, bottom: 4, left: 4, right: 4}" :aspect-ratio="0.6"
-                             @update:state="setState" :metrics="data.metrics" :state="state">
-                <BookGridItem v-for="item in data.items" :key="item.id" :item="item"
-                              :selected="selector.selected.value === item.id"
-                              @click="selector.set($event.id)" 
-                              @dblclick="operators.openBookView($event)"
-                              @contextmenu="menu.popup(item)"/>
-            </VirtualGridView>
-            
-            <template #pane>
-                <BookDetailPane @close="paneState.visible.value = false"/>
-            </template>
-        </PaneLayout>
-
-    </TopBarLayout>
+    </PaneLayout>
 </template>

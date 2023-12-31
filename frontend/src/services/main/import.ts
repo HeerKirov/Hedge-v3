@@ -8,11 +8,11 @@ import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { ImportImageViewController, useImportImageViewController } from "@/services/base/view-controller"
 import { useSettingImport, useSettingSite } from "@/services/setting"
 import { usePreviewService } from "@/components-module/preview"
+import { useDocumentTitle, useTabRoute } from "@/modules/browser"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useDroppingFileListener } from "@/modules/drag"
 import { dialogManager } from "@/modules/dialog"
-import { useRouterNavigator } from "@/modules/router"
 import { installation } from "@/utils/reactivity"
 import { strings } from "@/utils/primitives"
 
@@ -27,6 +27,7 @@ export const [installImportContext, useImportContext] = installation(function ()
 
     useDroppingFileListener(importService.addFiles)
     useSettingSite()
+    useDocumentTitle(() => operators.historyMode.value ? "导入历史" : "导入")
 
     return {paneState, watcher, importService, listview, selector, listviewController, operators}
 })
@@ -202,7 +203,7 @@ function useOperators(listview: QueryListview<ImportRecord, number>, queryFilter
 export function useImportDetailPane() {
     const message = useMessageBox()
     const preview = usePreviewService()
-    const navigator = useRouterNavigator()
+    const router = useTabRoute()
     const { listview, listviewController, selector } = useImportContext()
 
     const path = computed(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
@@ -225,7 +226,7 @@ export function useImportDetailPane() {
 
     const gotoIllust = () => {
         if(data.value?.illust) {
-            navigator.goto({routeName: "MainPartition", query: {detail: data.value.illust.partitionTime}, params: {locateId: data.value.illust.id}})
+            router.routePush({routeName: "PartitionDetail", path: data.value.illust.partitionTime, initializer: {locateId: data.value.illust.id}})
         }
     }
 

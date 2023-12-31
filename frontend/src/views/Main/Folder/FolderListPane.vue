@@ -3,9 +3,9 @@ import { Icon, GridImages } from "@/components/universal"
 import { Input } from "@/components/form"
 import { FormEditKit } from "@/components/interaction"
 import { TimeGroupDisplay } from "@/components-business/form-display"
-import { useFolderDetailPane } from "@/services/main/folder"
+import { useFolderPane } from "@/services/main/folder"
 
-const { data, exampleThumbnailFiles, setTitle, openDetail } = useFolderDetailPane()
+const { data, exampleThumbnailFiles, setTitle, openDetail } = useFolderPane()
 
 </script>
 

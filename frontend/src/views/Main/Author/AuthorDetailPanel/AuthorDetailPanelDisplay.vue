@@ -6,7 +6,7 @@ import { DescriptionDisplay, RelatedAnnotationDisplay, SourceTagMappingDisplay }
 import { DetailAuthor } from "@/functions/http-client/api/author"
 import { Illust } from "@/functions/http-client/api/illust"
 import { AUTHOR_TYPE_ICONS, AUTHOR_TYPE_NAMES } from "@/constants/entity"
-import { useRouterNavigator } from "@/modules/router"
+import { useTabRoute } from "@/modules/browser"
 
 const props = defineProps<{
     data: DetailAuthor
@@ -17,13 +17,13 @@ defineEmits<{
     (e: "click:author", authorId: number): void
 }>()
 
-const navigator = useRouterNavigator()
+const router = useTabRoute()
 
 const otherNameText = computed(() => props.data.otherNames.length > 0 ? props.data.otherNames.join(" / ") : null)
 
 const exampleImages = computed(() => props.examples?.map(ex => ex.filePath.sample) ?? [])
 
-const more = () => navigator.goto({routeName: "MainIllust", params: {authorName: props.data.name}})
+const more = () => router.routePush({routeName: "Illust", initializer: {authorName: props.data.name}})
 
 </script>
 

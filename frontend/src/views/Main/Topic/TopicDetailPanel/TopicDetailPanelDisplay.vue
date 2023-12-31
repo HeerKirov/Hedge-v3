@@ -7,7 +7,7 @@ import { DescriptionDisplay, RelatedAnnotationDisplay, SourceTagMappingDisplay }
 import { Illust } from "@/functions/http-client/api/illust"
 import { DetailTopic } from "@/functions/http-client/api/topic"
 import { TOPIC_TYPE_ICONS, TOPIC_TYPE_NAMES } from "@/constants/entity"
-import { useRouterNavigator } from "@/modules/router"
+import { useTabRoute } from "@/modules/browser"
 import ChildrenTreeMode from "./ChildrenTreeMode.vue"
 import ChildrenListMode from "./ChildrenListMode.vue"
 
@@ -22,13 +22,13 @@ defineEmits<{
     (e: "click:topic", topicId: number): void
 }>()
 
-const navigator = useRouterNavigator()
+const router = useTabRoute()
 
 const otherNameText = computed(() => props.data.otherNames.length > 0 ? props.data.otherNames.join(" / ") : null)
 
 const exampleImages = computed(() => props.examples?.map(ex => ex.filePath.sample) ?? [])
 
-const more = () => navigator.goto({routeName: "MainIllust", params: {topicName: props.data.name}})
+const more = () => router.routePush({routeName: "Illust", initializer: {topicName: props.data.name}})
 
 </script>
 
@@ -83,7 +83,3 @@ const more = () => navigator.goto({routeName: "MainIllust", params: {topicName: 
         <a class="float-right" @click="more">在图库搜索"{{data.name}}"的全部项目<Icon class="ml-1" icon="angle-double-right"/></a>
     </template>
 </template>
-
-<style module lang="sass">
-
-</style>

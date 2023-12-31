@@ -5,27 +5,24 @@ import { flatResponse, mapResponse } from "@/functions/http-client"
 import { Author, DetailAuthor, AuthorCreateForm, AuthorUpdateForm, AuthorExceptions, AuthorQueryFilter, AuthorType } from "@/functions/http-client/api/author"
 import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
-import { DetailViewState, useRouterViewState } from "@/services/base/detail-view-state"
 import { useNavHistoryPush } from "@/services/base/side-nav-menu"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useMessageBox } from "@/modules/message-box"
 import { useToast } from "@/modules/toast"
-import { useRouterNavigator, useRouterQueryNumber } from "@/modules/router"
+import { useInitializer, usePath, useTabRoute, useDocumentTitle } from "@/modules/browser"
 import { checkTagName } from "@/utils/validation"
 import { patchMappingSourceTagForm } from "@/utils/translation"
-import { computedWatchMutable, installation } from "@/utils/reactivity"
+import { installation } from "@/utils/reactivity"
 import { objects } from "@/utils/primitives"
 
 export const [installAuthorContext, useAuthorContext] = installation(function () {
-    const paneState = useRouterViewState<number, Partial<DetailAuthor>>(useRouterQueryNumber("MainAuthor", "detail"))
-
     const listview = useListView()
 
-    const operators = useOperators(paneState, listview.listview)
+    const operators = useOperators(listview.listview)
 
     const thumbnailLoadingCache = useListThumbnailLoadingCache()
 
-    return {paneState, listview, operators, thumbnailLoadingCache}
+    return {listview, operators, thumbnailLoadingCache}
 })
 
 function useListView() {
@@ -49,10 +46,10 @@ function useListView() {
     })
 }
 
-function useOperators(paneState: DetailViewState<number, Partial<DetailAuthor>>, listview: QueryListview<Author, number>) {
+function useOperators(listview: QueryListview<Author, number>) {
     const toast = useToast()
     const message = useMessageBox()
-    const navigator = useRouterNavigator()
+    const router = useTabRoute()
 
     const retrieveHelper = useRetrieveHelper({
         update: client => client.author.update,
@@ -61,19 +58,21 @@ function useOperators(paneState: DetailViewState<number, Partial<DetailAuthor>>,
 
     const fetchFindSimilarTaskCreate = usePostFetchHelper(client => client.findSimilar.task.create)
 
+    const openCreateView = () => router.routePush({routeName: "AuthorCreate"})
+
+    const openDetailView = (authorId: number) => router.routePush({routeName: "AuthorDetail", path: authorId})
+
     const createByTemplate = (author: Author) => {
         const idx = listview.proxy.sync.findByKey(author.id)
         if(idx != undefined) {
             const author = listview.proxy.sync.retrieve(idx)
-            paneState.openCreateView(author)
+            router.routePush({routeName: "AuthorCreate", initializer: {createTemplate: author}})
         }
     }
 
     const deleteItem = async (author: Author) => {
         if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
-            if(await retrieveHelper.deleteData(author.id)) {
-                if(paneState.detailPath.value === author.id) paneState.closeView()
-            }
+            await retrieveHelper.deleteData(author.id)
         }
     }
 
@@ -87,10 +86,10 @@ function useOperators(paneState: DetailViewState<number, Partial<DetailAuthor>>,
     }
 
     const openIllustsOfAuthor = (author: Author) => {
-        navigator.goto({routeName: "MainIllust", params: {authorName: author.name}})
+        router.routePush({routeName: "Illust", params: {authorName: author.name}})
     }
 
-    return {createByTemplate, deleteItem, toggleFavorite, findSimilarOfAuthor, openIllustsOfAuthor}
+    return {openCreateView, openDetailView, createByTemplate, deleteItem, toggleFavorite, findSimilarOfAuthor, openIllustsOfAuthor}
 }
 
 function useListThumbnailLoadingCache() {
@@ -129,11 +128,11 @@ export function useListThumbnail(authorId: Ref<number>) {
 }
 
 export function useAuthorCreatePanel() {
+    const router = useTabRoute()
     const message = useMessageBox()
-    const { paneState } = useAuthorContext()
     const cacheStorage = useLocalStorage<{cacheType: AuthorType}>("author/create-panel", {cacheType: "ARTIST"})
 
-    const form = computedWatchMutable(paneState.createTemplate, () => mapTemplateToCreateForm(paneState.createTemplate.value, cacheStorage.value.cacheType))
+    const form = ref(mapTemplateToCreateForm(null, cacheStorage.value.cacheType))
 
     const setProperty = <T extends keyof AuthorCreateFormData>(key: T, value: AuthorCreateFormData[T]) => {
         form.value[key] = value
@@ -178,7 +177,7 @@ export function useAuthorCreatePanel() {
             }
         },
         afterCreate(result) {
-            paneState.openDetailView(result.id)
+            router.routePush({routeName: "AuthorDetail", path: result.id})
         }
     })
 
@@ -188,28 +187,32 @@ export function useAuthorCreatePanel() {
         }
     })
 
+    useInitializer(params => {if(params.createTemplate) form.value = mapTemplateToCreateForm(params.createTemplate, cacheStorage.value.cacheType)})
+
     return {form, setProperty, submit}
 }
 
 export function useAuthorDetailPanel() {
+    const router = useTabRoute()
     const message = useMessageBox()
-    const { paneState } = useAuthorContext()
+
+    const path = usePath<number>()
 
     const { data, setData, deleteData } = useFetchEndpoint({
-        path: paneState.detailPath,
+        path,
         get: client => client.author.get,
         update: client => client.author.update,
         delete: client => client.author.delete,
         eventFilter: c => event => (event.eventType === "entity/meta-tag/updated" || event.eventType === "entity/meta-tag/deleted") && event.metaType === "AUTHOR" && event.metaId === c.path,
         afterRetrieve(path, data) {
             if(path !== null && data === null) {
-                paneState.closeView()
+                router.routeBack()
             }
         }
     })
 
     const { data: exampleData } = useFetchEndpoint({
-        path: paneState.detailPath,
+        path,
         get: client => async (author: number) => mapResponse(await client.illust.list({limit: 10, author, type: "COLLECTION", order: "-orderTime"}), r => r.result)
     })
 
@@ -223,21 +226,27 @@ export function useAuthorDetailPanel() {
 
     const createByTemplate = () => {
         if(data.value !== null) {
-            paneState.openCreateView(data.value)
+            router.routePush({routeName: "AuthorCreate", initializer: {createTemplate: data.value}})
         }
+    }
+
+    const openAuthorDetail = (authorId: number) => {
+        router.routePush({routeName: "AuthorDetail", path: authorId})
     }
 
     const deleteItem = async () => {
         if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
             if(await deleteData()) {
-                paneState.closeView()
+                router.routeBack()
             }
         }
     }
 
     useNavHistoryPush(data)
 
-    return {data, exampleData, editor, operators: {toggleFavorite, createByTemplate, deleteItem}}
+    useDocumentTitle(data)
+
+    return {data, exampleData, editor, operators: {toggleFavorite, createByTemplate, openAuthorDetail, deleteItem}}
 }
 
 function useAuthorDetailPanelEditor(data: Readonly<Ref<DetailAuthor | null>>, setData: (form: AuthorUpdateForm, handle: ErrorHandler<AuthorExceptions["update"]>) => Promise<boolean>) {

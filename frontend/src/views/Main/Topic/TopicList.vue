@@ -1,19 +1,18 @@
 <script setup lang="ts">
-import { Button } from "@/components/universal"
+import { Button, Separator } from "@/components/universal"
 import { VirtualRowView } from "@/components/data"
-import { TopBarLayout, MiddleLayout } from "@/components/layout"
-import { SearchInput, DataRouter, AttachFilter, AttachTemplate } from "@/components-business/top-bar"
+import { BrowserTeleport } from "@/components/logical"
+import { DataRouter, AttachFilter, AttachTemplate, SearchBox } from "@/components-business/top-bar"
 import { Annotation } from "@/functions/http-client/api/annotations"
 import { DetailTopic, Topic } from "@/functions/http-client/api/topic"
 import { TOPIC_TYPE_ICONS, TOPIC_TYPE_NAMES, TOPIC_TYPES_WITHOUT_UNKNOWN } from "@/constants/entity"
 import { useTopicContext } from "@/services/main/topic"
 import { usePopupMenu } from "@/modules/popup-menu"
-import TopicListPanelItem from "./TopicListPanelItem.vue"
+import TopicListItem from "./TopicListItem.vue"
 
 const {
-    paneState,
     listview: { queryFilter, paginationData: { data, state, setState, navigateTo } },
-    operators: { toggleFavorite, deleteItem, createByTemplate, createChildOfTemplate, findSimilarOfTopic, openIllustsOfTopic }
+    operators: { openCreateView, openDetailView, toggleFavorite, deleteItem, createByTemplate, createChildOfTemplate, findSimilarOfTopic, openIllustsOfTopic }
 } = useTopicContext()
 
 const attachFilterTemplates: AttachTemplate[] = [
@@ -79,7 +78,7 @@ const attachFilterTemplates: AttachTemplate[] = [
 ]
 
 const popupMenu = usePopupMenu<Topic>([
-    {type: "normal", label: "查看详情", click: t => paneState.openDetailView(t.id)},
+    {type: "normal", label: "查看详情", click: t => openDetailView(t.id)},
     {type: "separator"},
     {type: "normal", label: "以此为父主题新建", click: createChildOfTemplate},
     {type: "normal", label: "以此为模板新建", click: createByTemplate},
@@ -93,24 +92,18 @@ const popupMenu = usePopupMenu<Topic>([
 </script>
 
 <template>
-    <TopBarLayout>
-        <template #top-bar>
-            <MiddleLayout>
-                <SearchInput placeholder="在此处搜索" v-model:value="queryFilter.query"/>
-                <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="queryFilter"/>
+    <BrowserTeleport to="top-bar">
+        <SearchBox placeholder="在此处搜索" v-model:value="queryFilter.query"/>
+        <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="queryFilter"/>
+        <Separator/>
+        <DataRouter :state="state" @navigate="navigateTo"/>
+        <Button class="flex-item no-grow-shrink" icon="plus" square @click="openCreateView"/>
+    </BrowserTeleport>
 
-                <template #right>
-                    <DataRouter :state="state" @navigate="navigateTo"/>
-                    <Button icon="plus" square @click="paneState.openCreateView()"/>
-                </template>
-            </MiddleLayout>
-        </template>
-
-        <VirtualRowView :row-height="44" :padding="6" :buffer-size="10" :metrics="data.metrics" :state="state" @update:state="setState">
-            <TopicListPanelItem v-for="item in data.items" :key="item.id" :item="item"
-                                @update:favorite="toggleFavorite(item, $event)"
-                                @click="paneState.openDetailView(item.id)"
-                                @contextmenu="popupMenu.popup(item)"/>
-        </VirtualRowView>
-    </TopBarLayout>
+    <VirtualRowView :row-height="44" :padding="6" :buffer-size="10" :metrics="data.metrics" :state="state" @update:state="setState">
+        <TopicListItem v-for="item in data.items" :key="item.id" :item="item"
+                       @update:favorite="toggleFavorite(item, $event)"
+                       @click="openDetailView(item.id)"
+                       @contextmenu="popupMenu.popup(item)"/>
+    </VirtualRowView>
 </template>

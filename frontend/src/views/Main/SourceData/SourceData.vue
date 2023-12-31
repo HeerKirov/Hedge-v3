@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Button } from "@/components/universal"
+import { Button, Separator } from "@/components/universal"
+import { PaneLayout } from "@/components/layout"
 import { VirtualRowView } from "@/components/data"
-import { TopBarLayout, PaneLayout, MiddleLayout } from "@/components/layout"
-import { SearchInput, DataRouter, QueryNotificationBadge, QueryResult } from "@/components-business/top-bar"
+import { BrowserTeleport } from "@/components/logical"
+import { SearchBox, DataRouter } from "@/components-business/top-bar"
 import { useDialogService } from "@/components-module/dialog"
 import { usePopupMenu } from "@/modules/popup-menu"
 import { installSourceDataContext } from "@/services/main/source-data"
@@ -27,34 +28,23 @@ const popupMenu = usePopupMenu([
 </script>
 
 <template>
-    <TopBarLayout v-model:expanded="querySchema.expanded.value">
-        <template #top-bar>
-            <MiddleLayout>
-                <SearchInput placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value"/>
-                <QueryNotificationBadge class="ml-1" :schema="querySchema.schema.value" @click="querySchema.expanded.value = true"/>
+    <BrowserTeleport to="top-bar">
+        <SearchBox placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value" :schema="querySchema.schema.value"/>
+        <separator/>
+        <DataRouter :state="state" @navigate="navigateTo"/>
+        <Button class="flex-item no-grow-shrink" icon="plus" square @click="sourceDataEditor.create()"/>
+    </BrowserTeleport>
 
-                <template #right>
-                    <DataRouter :state="state" @navigate="navigateTo"/>
-                    <Button icon="plus" square @click="sourceDataEditor.create()"/>
-                </template>
-            </MiddleLayout>
+    <PaneLayout :show-pane="paneState.opened.value">
+        <template #pane>
+            <SourceDataDetailPane v-if="paneState.mode.value === 'detail'" @close="paneState.closeView()"/>
         </template>
 
-        <template #expand>
-            <QueryResult :schema="querySchema.schema.value"/>
-        </template>
-
-        <PaneLayout :show-pane="paneState.opened.value">
-            <template #pane>
-                <SourceDataDetailPane v-if="paneState.mode.value === 'detail'" @close="paneState.closeView()"/>
-            </template>
-
-            <VirtualRowView :row-height="40" :padding="6" :metrics="data.metrics" :state="state" @update:state="setState">
-                <SourceDataListItem v-for="i in resultWithKey" :key="i.key" :item="i.item"
-                                    :selected="paneState.detailPath.value?.sourceId === i.identity.sourceId && paneState.detailPath.value?.sourceSite === i.identity.sourceSite"
-                                    @click="paneState.openDetailView(i.identity)"
-                                    @contextmenu="popupMenu.popup(i.identity)"/>
-            </VirtualRowView>
-        </PaneLayout>
-    </TopBarLayout>
+        <VirtualRowView :row-height="40" :padding="6" :metrics="data.metrics" :state="state" @update:state="setState">
+            <SourceDataListItem v-for="i in resultWithKey" :key="i.key" :item="i.item"
+                                :selected="paneState.detailPath.value?.sourceId === i.identity.sourceId && paneState.detailPath.value?.sourceSite === i.identity.sourceSite"
+                                @click="paneState.openDetailView(i.identity)"
+                                @contextmenu="popupMenu.popup(i.identity)"/>
+        </VirtualRowView>
+    </PaneLayout>
 </template>

@@ -163,3 +163,11 @@ export interface BrowserTabStack {
     id: number
     stacks: {historyId: number, component: Component | DefineComponent}[]
 }
+
+export type BrowserTabEvent = {
+    type: "TabCreated"
+} | {
+    type: "TabClosed"
+} | {
+    type: "Routed"
+}

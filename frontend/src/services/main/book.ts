@@ -4,7 +4,7 @@ import { Book, BookQueryFilter, DetailBook } from "@/functions/http-client/api/b
 import { flatResponse } from "@/functions/http-client"
 import { useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
 import { useMessageBox } from "@/modules/message-box"
-import { useRouterNavigator, useRouterParamEvent } from "@/modules/router"
+import { useBrowserTabs, useInitializer } from "@/modules/browser"
 import { useViewStack } from "@/components-module/view-stack"
 import { useDialogService } from "@/components-module/dialog"
 import { useListViewContext } from "@/services/base/list-view-context"
@@ -21,7 +21,7 @@ export const [installBookContext, useBookContext] = installation(function () {
     const paneState = useSelectedPaneState("book")
     const operators = useOperators()
 
-    useRouterParamEvent("MainBook", params => {
+    useInitializer(params => {
         if(params.tagName || params.authorName || params.topicName) {
             //监听router event。对于meta tag，将其简单地转换为DSL的一部分。
             //FUTURE 当然这其实是有问题的，对于topic/tag，还应该使用地址去限制它们。
@@ -64,7 +64,7 @@ function useListView(query: Ref<string | undefined>) {
 function useOperators() {
     const messageBox = useMessageBox()
     const viewStack = useViewStack()
-    const navigator = useRouterNavigator()
+    const browserTabs = useBrowserTabs()
     const dialog = useDialogService()
 
     const retrieveHelper = useRetrieveHelper({
@@ -77,7 +77,7 @@ function useOperators() {
     }
 
     const openInNewWindow = (book: Book) => {
-        navigator.newPreviewWindow({type: "book", bookId: book.id})
+        browserTabs.newWindow({routeName: "BookDetail", path: book.id})
     }
 
     const exportItem = (book: Book) => {

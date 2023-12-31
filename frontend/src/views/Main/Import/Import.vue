@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Button } from "@/components/universal"
+import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
-import { TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
+import { BrowserTeleport } from "@/components/logical"
+import { PaneLayout } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton, FileWatcher } from "@/components-business/top-bar"
 import { ImportDetailPane } from "@/components-module/common"
 import { ImportImageDataset } from "@/components-module/data"
@@ -48,41 +49,34 @@ const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
 </script>
 
 <template>
-    <TopBarLayout>
-        <template #top-bar>
-            <MiddleLayout>
-                <template #left>
-                    <span v-if="historyMode" class="ml-2 is-font-size-large">历史记录</span>
-                    <Button v-else type="success" icon="file" @click="openDialog">添加文件</Button>
-                    <FileWatcher v-if="state?.isOpen" class="ml-1" :paths="paths" :statistic-count="state.statisticCount" :errors="state.errors" @stop="setState(false)"/>
-                </template>
-                <template #right>
-                    <DataRouter :state="paginationData.state.value" @navigate="paginationData.navigateTo"/>
-                    <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
-                    <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
-                    <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
-                        <Button :ref="setEl" square icon="ellipsis-v" @click="popup"/>
-                    </ElementPopupMenu>
-                </template>
-            </MiddleLayout>
+    <BrowserTeleport to="top-bar">
+        <Button v-if="!historyMode" type="success" icon="file" @click="openDialog">添加文件</Button>
+        <FileWatcher v-if="state?.isOpen" class="ml-1" :paths="paths" :statistic-count="state.statisticCount" :errors="state.errors" @stop="setState(false)"/>
+        <Separator/>
+        <DataRouter :state="paginationData.state.value" @navigate="paginationData.navigateTo"/>
+        <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
+        <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
+        <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
+            <Button class="flex-item no-grow-shrink" :ref="setEl" square icon="ellipsis-v" @click="popup"/>
+        </ElementPopupMenu>
+    </BrowserTeleport>
+
+    <PaneLayout :show-pane="paneState.visible.value">
+        <!-- FUTURE: Import页面有一个空白页面。然而由于设计缺陷，对DataRouter的写操作是在dataset内完成的。-->
+        <!-- 这会导致导航栏的数值无法清零。现在只能通过hidden妥协。 -->
+        <!-- 然而如果只是visibility: hidden，还会继续踩另一个坑，contentWidth会被变成0，最终而导致算出的offset是Infinity。所以只能用透明度0妥协。 -->
+        <!-- 要想完美解决这个问题，只能等虚拟视图的响应结构重构了。 -->
+        <ImportImageDataset :class="{[$style.hidden]: paginationData.state.value !== null && paginationData.state.value.total <= 0}"
+                            :data="paginationData.data.value" :state="paginationData.state.value" :query-instance="listview.proxy" :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
+                            :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
+                            @update:state="paginationData.setState" @navigate="paginationData.navigateTo($event)" @select="updateSelect" @contextmenu="menu.popup($event)" @space="openImagePreview()"/>
+        <ImportEmpty v-if="paginationData.state.value !== null && paginationData.state.value.total <= 0" :class="$style.empty"/>
+
+        <template #pane>
+            <ImportDetailPane @close="paneState.visible.value = false"/>
         </template>
+    </PaneLayout>
 
-        <PaneLayout :show-pane="paneState.visible.value">
-            <!-- FUTURE: Import页面有一个空白页面。然而由于设计缺陷，对DataRouter的写操作是在dataset内完成的。-->
-            <!-- 这会导致导航栏的数值无法清零。现在只能通过hidden妥协。 -->
-            <!-- 然而如果只是visibility: hidden，还会继续踩另一个坑，contentWidth会被变成0，最终而导致算出的offset是Infinity。所以只能用透明度0妥协。 -->
-            <!-- 要想完美解决这个问题，只能等虚拟视图的响应结构重构了。 -->
-            <ImportImageDataset :class="{[$style.hidden]: paginationData.state.value !== null && paginationData.state.value.total <= 0}"
-                :data="paginationData.data.value" :state="paginationData.state.value" :query-instance="listview.proxy" :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
-                :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                @update:state="paginationData.setState" @navigate="paginationData.navigateTo($event)" @select="updateSelect" @contextmenu="menu.popup($event)" @space="openImagePreview()"/>
-            <ImportEmpty v-if="paginationData.state.value !== null && paginationData.state.value.total <= 0" :class="$style.empty"/>
-
-            <template #pane>
-                <ImportDetailPane @close="paneState.visible.value = false"/>
-            </template>
-        </PaneLayout>
-    </TopBarLayout>
     <ImportDialog :progress="progress" :progressing="progressing"/>
 </template>
 

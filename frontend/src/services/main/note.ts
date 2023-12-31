@@ -1,7 +1,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from "vue"
 import { useFetchEndpoint, useFetchHelper, useQueryContinuousListView, useRetrieveHelper } from "@/functions/fetch"
 import { NoteRecord, NoteStatus } from "@/functions/http-client/api/note"
-import { useQueryNumber } from "@/modules/router"
+import { useQueryNumber } from "@/utils/router"
 import { useMessageBox } from "@/modules/message-box"
 import { useRouterViewState } from "@/services/base/detail-view-state"
 import { computedWatchMutable, installation } from "@/utils/reactivity"

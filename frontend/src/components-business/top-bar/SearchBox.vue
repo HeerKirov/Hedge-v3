@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from "vue"
 import { Input } from "@/components/form"
-import { Button } from "@/components/universal"
+import { Button, Icon } from "@/components/universal"
+import { ElementPopupCallout } from "@/components/interaction"
+import { QueryResult } from "@/components-business/top-bar"
+import { QueryRes } from "@/functions/http-client/api/util-query"
 import { createKeyEventValidator, KeyEvent, useInterceptedKey, USUAL_KEY_VALIDATORS } from "@/modules/keyboard"
 import { computedMutable } from "@/utils/reactivity"
 
@@ -10,6 +13,7 @@ const props = defineProps<{
     placeholder?: string
     enableDropButton?: boolean
     activeDropButton?: boolean
+    schema?: QueryRes | null
 }>()
 
 const emit = defineEmits<{
@@ -56,26 +60,40 @@ useInterceptedKey("Meta+KeyE", () => {
 </script>
 
 <template>
-    <div :class="{[$style['search-box']]: true, [$style['has-value']]: !!value}">
-        <Input
-            :class="{[$style.input]: true, [$style.active]: active, [$style.focus]: activeDropButton, [$style['has-text']]: enableDropButton}"
-            :placeholder="placeholder" v-model:value="textValue" update-on-input
-            focus-on-keypress="Meta+KeyF" blur-on-keypress="Escape"
-            @keypress="keypress" @focus="focus" @blur="blur"
-        />
-        <Button
-            v-if="enableDropButton"
-            :class="$style['clear-button']"
-            icon="close" size="tiny" square
-            @click="clear"
-        />
-        <Button
-            v-if="enableDropButton"
-            :class="$style['dropdown-button']"
-            :icon="activeDropButton ? 'caret-up' : 'caret-down'" size="tiny" square
-            @click="toggleDropButton"
-        />
-    </div>
+    <ElementPopupCallout :visible="activeDropButton" @update:visible="$emit('update:activeDropButton', $event)">
+        <div :class="{[$style['search-box']]: true, [$style['has-value']]: !!value}">
+            <Input
+                :class="{[$style.input]: true, [$style.active]: active, [$style.focus]: activeDropButton, [$style['has-value']]: enableDropButton, [$style['has-warning']]: enableDropButton && schema && (schema.warnings.length || schema.errors.length)}"
+                :placeholder="placeholder" v-model:value="textValue" update-on-input
+                focus-on-keypress="Meta+KeyF" blur-on-keypress="Escape"
+                @keypress="keypress" @focus="focus" @blur="blur"
+            />
+            <Button
+                v-if="enableDropButton"
+                :class="$style['clear-button']"
+                icon="close" size="tiny" square
+                @click="clear"
+            />
+            <Button
+                v-if="enableDropButton && schema && (schema.warnings.length || schema.errors.length)"
+                :class="$style['warning-button']" size="tiny"
+                @click="toggleDropButton">
+                <Icon class="has-text-danger" icon="exclamation-triangle"/>
+                <span class="mr-1">{{schema.errors.length ?? 0}}</span>
+                <Icon class="has-text-warning" icon="exclamation-triangle"/>
+                <span class="mr-1">{{schema.warnings.length ?? 0}}</span>
+            </Button>
+            <Button
+                v-else-if="enableDropButton"
+                :class="$style['dropdown-button']"
+                :icon="activeDropButton ? 'caret-up' : 'caret-down'" size="tiny" square
+                @click="toggleDropButton"
+            />
+        </div>
+        <template #popup>
+            <QueryResult :class="$style.popup" :schema="schema ?? null"/>
+        </template>
+    </ElementPopupCallout>
 </template>
 
 <style module lang="sass">
@@ -83,7 +101,7 @@ useInterceptedKey("Meta+KeyE", () => {
 @import "../../styles/base/color"
 
 $collapse-width: 140px
-$expand-width: 240px
+$expand-width: 260px
 
 .search-box
     position: relative
@@ -105,26 +123,36 @@ $expand-width: 240px
         position: absolute
         border-radius: $radius-size-large
         transition: width 0.1s ease-in-out
+        padding-left: $spacing-2
         right: 0
         &:focus,
         &.focus
             background-color: mix($light-mode-block-color, #000000, 96%)
             @media (prefers-color-scheme: dark)
                 background-color: mix($dark-mode-block-color, #000000, 65%)
-        &.has-text
-            padding-right: #{calc($element-height-std - ($element-height-std - $element-height-tiny) / 2)}
+        &.has-value
+            padding-right: #{calc($element-height-std + $element-height-tiny - ($element-height-std - $element-height-tiny) / 2)}
+        &.has-warning
+            padding-right: #{calc($element-height-std + 50px - ($element-height-std - $element-height-tiny) / 2)}
 
     .clear-button
         position: absolute
         font-size: $font-size-small
         right: #{calc(($element-height-std - $element-height-tiny) / 2 + 1px)}
-        top: #{($element-height-std - $element-height-tiny) / 2}
+        top: #{calc(($element-height-std - $element-height-tiny) / 2)}
         > svg
             transform: translateY(1px)
 
-    .dropdown-button
+    .dropdown-button, .warning-button
         position: absolute
-        $gap: #{calc(($element-height-std - $element-height-small) / 2 + 1px)}
-        right: $gap
-        top: $gap
+        right: #{calc(($element-height-std - $element-height-tiny) / 2 + $element-height-tiny + 1px)}
+        top: #{calc(($element-height-std - $element-height-tiny) / 2)}
+
+    .warning-button
+        width: 50px
+        padding: 0
+
+.popup
+    width: $expand-width
+    padding-bottom: $spacing-2
 </style>

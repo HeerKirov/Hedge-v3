@@ -13,7 +13,6 @@ import { useViewStack } from "@/components-module/view-stack"
 import { useGlobalKey, useInterceptedKey } from "@/modules/keyboard"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
-import { useRouterNavigator } from "@/modules/router"
 import { openLocalFile, openLocalFileInFolder } from "@/modules/others"
 import { installation, toRef } from "@/utils/reactivity"
 
@@ -179,7 +178,6 @@ function useOperators(data: Ref<Illust | null>, id: Ref<number | null>) {
     const toast = useToast()
     const message = useMessageBox()
     const dialog = useDialogService()
-    const navigator = useRouterNavigator()
     const { assetsLocal } = useAssets()
 
     const fetchSetData = usePostPathFetchHelper(client => client.illust.image.update)
@@ -199,7 +197,8 @@ function useOperators(data: Ref<Illust | null>, id: Ref<number | null>) {
     }
 
     const openInNewWindow = () => {
-        navigator.newPreviewWindow({type: "image", imageIds: [id.value!]})
+        //TODO 从image preview模块打开预览窗口
+        //navigator.newPreviewWindow({type: "image", imageIds: [id.value!]})
     }
 
     const editMetaTag = () => {

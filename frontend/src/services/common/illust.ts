@@ -12,7 +12,7 @@ import { SelectedState } from "@/services/base/selected-state"
 import { useHomepageState } from "@/services/main/homepage"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
-import { useRouterNavigator } from "@/modules/router"
+import { useBrowserTabs } from "@/modules/browser"
 import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
 import { usePreviewService } from "@/components-module/preview"
@@ -216,7 +216,7 @@ export interface ImageDatasetOperators<T extends CommonIllust> {
 export function useImageDatasetOperators<T extends CommonIllust>(options: ImageDatasetOperatorsOptions<T>): ImageDatasetOperators<T> {
     const toast = useToast()
     const message = useMessageBox()
-    const navigator = useRouterNavigator()
+    const browserTabs = useBrowserTabs()
     const dialog = useDialogService()
     const viewStack = useViewStack()
     const preview = usePreviewService()
@@ -326,11 +326,12 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
 
     const openInNewWindow = (illust: T) => {
         if(illust.type === "COLLECTION") {
-            navigator.newPreviewWindow({type: "collection", collectionId: illust.id})
+            browserTabs.newWindow({routeName: "CollectionDetail", path: illust.id})
         }else{
             const imageIds = getEffectedItems(illust)
             const currentIndex = imageIds.indexOf(illust.id)
-            navigator.newPreviewWindow({type: "image", imageIds, currentIndex})
+            //TODO 从image preview模块打开新预览窗口
+            //navigator.newPreviewWindow({type: "image", imageIds, currentIndex})
         }
     }
 

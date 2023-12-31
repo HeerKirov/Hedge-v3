@@ -1,7 +1,6 @@
 import { inject, InjectionKey, ref, Ref } from "vue"
 import { installation } from "@/utils/reactivity"
 import { generateOperations, StackViewInfo } from "./definition"
-import { useRouteChangeMonitor } from "@/modules/router"
 
 interface StacksContext<INFO> {
     stacks: Ref<INFO[]>
@@ -35,10 +34,11 @@ export const [installViewStackContext, useViewStackContext] = installation(funct
         hasRootView: ref(false)
     }
 
-    useRouteChangeMonitor(() => {
-        //路由发生变化时，清空栈区
-        stacksContext.stacks.value.splice(0, stacksContext.stacks.value.length)
-    })
+    //TODO 无法在这里use，因为install在同一级
+    // useBrowserEvent(() => {
+    //     //路由发生变化时，清空栈区
+    //     stacksContext.stacks.value.splice(0, stacksContext.stacks.value.length)
+    // })
 
     return stacksContext
 })

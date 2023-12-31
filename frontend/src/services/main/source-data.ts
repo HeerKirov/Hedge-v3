@@ -7,8 +7,8 @@ import { useDialogService } from "@/components-module/dialog"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useQuerySchema } from "@/services/base/query-schema"
 import { useSettingSite } from "@/services/setting"
+import { useTabRoute } from "@/modules/browser"
 import { useMessageBox } from "@/modules/message-box"
-import { useRouterNavigator } from "@/modules/router"
 import { installation } from "@/utils/reactivity"
 
 export const [installSourceDataContext, useSourceDataContext] = installation(function () {
@@ -77,7 +77,7 @@ function useOperators(paneState: DetailViewState<SourceDataIdentity>) {
 
 export function useSourceDataDetailPane() {
     const dialog = useDialogService()
-    const navigator = useRouterNavigator()
+    const router = useTabRoute()
     const { paneState } = useSourceDataContext()
 
     const { data, setData } = useFetchEndpoint({
@@ -109,7 +109,7 @@ export function useSourceDataDetailPane() {
 
     const gotoIllust = () => {
         if(data.value !== null) {
-            navigator.goto({routeName: "MainIllust", params: {source: {site: data.value.sourceSite, id: data.value.sourceId}}})
+            router.routePush({routeName: "Illust", initializer: {source: {site: data.value.sourceSite, id: data.value.sourceId}}})
         }
     }
 

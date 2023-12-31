@@ -3,11 +3,9 @@ import { computed, watch } from "vue"
 import { useRouter } from "vue-router"
 import { Icon } from "@/components/universal"
 import { useAppState } from "@/functions/app"
-import { useNewWindowRouteReceiver } from "@/modules/router"
 
 const router = useRouter()
 const { state } = useAppState()
-const { receiveRoute } = useNewWindowRouteReceiver()
 
 const loading = computed(() => state.value === "LOADING" || state.value === "LOADING_RESOURCE" || state.value === "LOADING_SERVER")
 
@@ -19,12 +17,7 @@ watch(state, async () => {
         //如果处于未登录的状态，跳转到login
         await router.push({name: "Login"})
     }else if(state.value === "READY") {
-        //已经加载的状态，则首先查看是否存在route navigator参数
-        const navigated = receiveRoute()
-        //最后，默认跳转到main home首页
-        if(!navigated) {
-            await router.push({name: "Main"})
-        }
+        await router.push({name: "Main"})
     }
 }, {immediate: true})
 

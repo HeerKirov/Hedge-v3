@@ -2,16 +2,14 @@
 import { computed } from "vue"
 import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
+import { BrowserTeleport } from "@/components/logical"
+import { PaneLayout } from "@/components/layout"
 import { IllustImageDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
-import { PaneLayout } from "@/components/layout"
-import { DataRouter, FitTypeButton, ColumnNumButton, QueryNotificationBadge, CollectionModeButton } from "@/components-business/top-bar"
+import { SearchBox, LockOnButton, DataRouter, FitTypeButton, ColumnNumButton, QueryNotificationBadge, CollectionModeButton } from "@/components-business/top-bar"
 import { Illust } from "@/functions/http-client/api/illust"
 import { installIllustContext } from "@/services/main/illust"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
-import BrowserTeleport from "@/components/logical/BrowserTeleport.vue";
-import SearchBox from "@/components-business/top-bar/SearchBox.vue";
-import LockOnButton from "@/components-business/top-bar/LockOnButton.vue";
 
 const {
     paneState,
@@ -71,7 +69,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
 <template>
     <BrowserTeleport to="top-bar">
         <CollectionModeButton class="mr-1" v-model:value="collectionMode"/>
-        <SearchBox placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value"/>
+        <SearchBox placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value" :schema="querySchema.schema.value"/>
         <QueryNotificationBadge class="ml-1" :schema="querySchema.schema.value" @click="querySchema.expanded.value = true"/>
         <Separator/>
         <LockOnButton v-model:value="editableLockOn"/>
@@ -81,7 +79,6 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
         <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
             <Button :ref="setEl" class="flex-item no-grow-shrink" square icon="ellipsis-v" @click="popup"/>
         </ElementPopupMenu>
-        <!-- TODO <QueryResult :schema="querySchema.schema.value"/> -->
     </BrowserTeleport>
 
     <PaneLayout :show-pane="paneState.visible.value">

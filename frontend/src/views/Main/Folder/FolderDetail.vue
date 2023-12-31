@@ -2,8 +2,9 @@
 import { computed } from "vue"
 import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
-import { TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
-import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
+import { BrowserTeleport } from "@/components/logical"
+import { PaneLayout } from "@/components/layout"
+import { DataRouter, FitTypeButton, ColumnNumButton, LockOnButton } from "@/components-business/top-bar"
 import { IllustImageDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
 import { FolderImage } from "@/functions/http-client/api/folder"
@@ -11,7 +12,7 @@ import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 import { useFolderDetailPanel } from "@/services/main/folder"
 
 const {
-    data, deleteItem, viewState,
+    data, deleteItem,
     listview: { listview, paginationData: { data: paginationData, state, setState, navigateTo } },
     listviewController: { viewMode, fitType, columnNum, editableLockOn },
     selector: { selected, lastSelected, update: updateSelect },
@@ -60,38 +61,27 @@ const menu = useDynamicPopupMenu<FolderImage>(folderImage => [
 </script>
 
 <template>
-    <TopBarLayout>
-        <template #top-bar>
-            <MiddleLayout>
-                <template #left>
-                    <Button square icon="angle-left" @click="viewState.closeView()"/>
-                    <span v-if="data !== null" class="ml-2 is-font-size-large">{{data.title}}</span>
-                </template>
+    <BrowserTeleport to="top-bar">
+        <LockOnButton v-model:value="editableLockOn"/>
+        <Separator/>
+        <DataRouter :state="state" @navigate="navigateTo"/>
+        <FitTypeButton v-if="viewMode === 'grid'" v-model:value="fitType"/>
+        <ColumnNumButton v-if="viewMode === 'grid'" v-model:value="columnNum"/>
+        <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
+            <Button :ref="setEl" class="flex-item no-grow-shrink" square icon="ellipsis-v" @click="popup"/>
+        </ElementPopupMenu>
+    </BrowserTeleport>
 
-                <template #right>
-                    <Button square :mode="editableLockOn ? 'filled' : undefined" :type="editableLockOn ? 'danger' : undefined" :icon="editableLockOn ? 'lock-open' : 'lock'" @click="editableLockOn = !editableLockOn"/>
-                    <Separator/>
-                    <DataRouter :state="state" @navigate="navigateTo"/>
-                    <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
-                    <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
-                    <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
-                        <Button :ref="setEl" square icon="ellipsis-v" @click="popup"/>
-                    </ElementPopupMenu>
-                </template>
-            </MiddleLayout>
+    <PaneLayout :show-pane="paneState.visible.value">
+        <IllustImageDataset :data="paginationData" :state="state" :query-instance="listview.proxy"
+                            :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
+                            :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
+                            @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event as FolderImage)"
+                            @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
+                            @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
+
+        <template #pane>
+            <IllustDetailPane @close="paneState.visible.value = false"/>
         </template>
-
-        <PaneLayout :show-pane="paneState.visible.value">
-            <IllustImageDataset :data="paginationData" :state="state" :query-instance="listview.proxy"
-                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
-                                :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                                @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event as FolderImage)"
-                                @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
-                                @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
-
-            <template #pane>
-                <IllustDetailPane @close="paneState.visible.value = false"/>
-            </template>
-        </PaneLayout>
-    </TopBarLayout>
+    </PaneLayout>
 </template>

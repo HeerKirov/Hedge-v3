@@ -1,22 +1,22 @@
 import { computed, watch } from "vue"
 import { useCreatingHelper, useFetchEndpoint, useFetchHelper, useFetchReactive, useRetrieveHelper } from "@/functions/fetch"
-import { DetailViewState, useRouterViewState } from "@/services/base/detail-view-state"
+import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
 import { TagAddressType, TagCreateForm, TagGroupType, TagLink } from "@/functions/http-client/api/tag"
 import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { SimpleIllust } from "@/functions/http-client/api/illust"
 import { useLocalStorage } from "@/functions/app"
 import { useMessageBox } from "@/modules/message-box"
-import { useRouterQueryNumber } from "@/modules/router"
 import { UsefulColors } from "@/constants/ui"
 import { useTagTreeSearch } from "@/services/common/tag"
 import { computedAsync, computedWatchMutable, installation } from "@/utils/reactivity"
 import { patchMappingSourceTagForm } from "@/utils/translation"
 import { checkTagName } from "@/utils/validation"
 import { objects } from "@/utils/primitives"
+import { useInitializer } from "@/modules/browser";
 
 export const [installTagContext, useTagContext] = installation(function () {
-    const paneState = useRouterViewState<number, TagCreateTemplate>(useRouterQueryNumber("MainTag", "detail"))
+    const paneState = useDetailViewState<number, TagCreateTemplate>()
 
     const listview = useTagListView()
 
@@ -25,6 +25,14 @@ export const [installTagContext, useTagContext] = installation(function () {
     const editableLockOn = useLocalStorage("tag/list/editable", false)
 
     const search = useTagTreeSearch(listview.data)
+
+    useInitializer(params => {
+        if(params.tagId) {
+            search.jumpTo(params.tagId)
+            search.searchText.value = params.detail
+            paneState.openDetailView(params.tagId)
+        }
+    }, {mounted: true})
 
     return {paneState, listview, operators, editableLockOn, search}
 })

@@ -15,12 +15,8 @@ defineEmits<{
 </script>
 
 <template>
-    <span v-if="total > 0" class="px-2 no-wrap">{{current + 1}} / {{total}}</span>
-    <span v-else class="px-2 no-wrap has-text-danger">无结果</span>
-    <Button square :size="size" icon="arrow-up" :disabled="total <= 0" @click="$emit('prev')"/>
-    <Button square :size="size" icon="arrow-down" :disabled="total <= 0" @click="$emit('next')"/>
+    <span v-if="total > 0" class="flex-item align-center no-grow-shrink px-2 no-wrap">{{current + 1}} / {{total}}</span>
+    <span v-else class="flex-item align-center no-grow-shrink px-2 no-wrap has-text-danger">无结果</span>
+    <Button class="flex-item no-grow-shrink" square :size="size" icon="arrow-up" :disabled="total <= 0" @click="$emit('prev')"/>
+    <Button class="flex-item no-grow-shrink" square :size="size" icon="arrow-down" :disabled="total <= 0" @click="$emit('next')"/>
 </template>
-
-<style module lang="sass">
-
-</style>

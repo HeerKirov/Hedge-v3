@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { Button } from "@/components/universal"
+import { Button, Separator } from "@/components/universal"
 import { VirtualRowView } from "@/components/data"
-import { TopBarLayout, MiddleLayout } from "@/components/layout"
-import { SearchInput, DataRouter, AttachFilter, AttachTemplate } from "@/components-business/top-bar"
+import { BrowserTeleport } from "@/components/logical"
+import { SearchBox, DataRouter, AttachFilter, AttachTemplate } from "@/components-business/top-bar"
 import { Author } from "@/functions/http-client/api/author"
 import { Annotation } from "@/functions/http-client/api/annotations"
 import { AUTHOR_TYPE_ICONS, AUTHOR_TYPE_NAMES, AUTHOR_TYPES_WITHOUT_UNKNOWN } from "@/constants/entity"
-import { useAuthorContext } from "@/services/main/author"
+import { installAuthorContext } from "@/services/main/author"
 import { usePopupMenu } from "@/modules/popup-menu"
-import AuthorListPanelItem from "./AuthorListPanelItem.vue"
+import AuthorListItem from "./AuthorListItem.vue"
 
 const {
-    paneState,
     listview: { queryFilter, paginationData: { data, state, setState, navigateTo } },
-    operators: { toggleFavorite, createByTemplate, deleteItem, findSimilarOfAuthor, openIllustsOfAuthor }
-} = useAuthorContext()
+    operators: { openCreateView, openDetailView, toggleFavorite, createByTemplate, deleteItem, findSimilarOfAuthor, openIllustsOfAuthor }
+} = installAuthorContext()
 
 const attachFilterTemplates: AttachTemplate[] = [
     {
@@ -63,7 +62,7 @@ const attachFilterTemplates: AttachTemplate[] = [
 ]
 
 const popupMenu = usePopupMenu<Author>([
-    {type: "normal", label: "查看详情", click: a => paneState.openDetailView(a.id)},
+    {type: "normal", label: "查看详情", click: a => openDetailView(a.id)},
     {type: "separator"},
     {type: "normal", label: "以此为模板新建", click: createByTemplate},
     {type: "separator"},
@@ -76,24 +75,18 @@ const popupMenu = usePopupMenu<Author>([
 </script>
 
 <template>
-    <TopBarLayout>
-        <template #top-bar>
-            <MiddleLayout>
-                <SearchInput placeholder="在此处搜索" v-model:value="queryFilter.query"/>
-                <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="queryFilter"/>
+    <BrowserTeleport to="top-bar">
+        <SearchBox placeholder="在此处搜索" v-model:value="queryFilter.query"/>
+        <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="queryFilter"/>
+        <Separator/>
+        <DataRouter :state="state" @navigate="navigateTo"/>
+        <Button class="flex-item no-grow-shrink" icon="plus" square @click="openCreateView"/>
+    </BrowserTeleport>
 
-                <template #right>
-                    <DataRouter :state="state" @navigate="navigateTo"/>
-                    <Button icon="plus" square @click="paneState.openCreateView()"/>
-                </template>
-            </MiddleLayout>
-        </template>
-
-        <VirtualRowView :row-height="80" :padding="6" :metrics="data.metrics" :state="state" @update:state="setState">
-            <AuthorListPanelItem v-for="item in data.items" :key="item.id" :item="item"
-                                 @update:favorite="toggleFavorite(item, $event)"
-                                 @click="paneState.openDetailView(item.id)"
-                                 @contextmenu="popupMenu.popup(item)"/>
-        </VirtualRowView>
-    </TopBarLayout>
+    <VirtualRowView :row-height="80" :padding="6" :metrics="data.metrics" :state="state" @update:state="setState">
+        <AuthorListItem v-for="item in data.items" :key="item.id" :item="item"
+                        @update:favorite="toggleFavorite(item, $event)"
+                        @click="openDetailView(item.id)"
+                        @contextmenu="popupMenu.popup(item)"/>
+    </VirtualRowView>
 </template>

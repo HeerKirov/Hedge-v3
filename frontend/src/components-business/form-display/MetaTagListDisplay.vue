@@ -6,7 +6,7 @@ import { SimpleMetaTagElement } from "@/components-business/element"
 import { useCalloutService } from "@/components-module/callout"
 import { MetaTagTypes, MetaTagTypeValue, MetaTagValues, SimpleAuthor, SimpleTag, SimpleTopic } from "@/functions/http-client/api/all"
 import { usePopupMenu } from "@/modules/popup-menu"
-import { useRouterNavigator } from "@/modules/router"
+import { useBrowserTabs, useTabRoute } from "@/modules/browser"
 import { writeClipboard } from "@/modules/others"
 import { computedEffect } from "@/utils/reactivity"
 
@@ -20,7 +20,8 @@ const props = defineProps<{
 
 const callout = useCalloutService()
 
-const navigator = useRouterNavigator()
+const browserTabs = useBrowserTabs()
+const router = useTabRoute()
 
 const expand = ref(false)
 
@@ -31,24 +32,24 @@ const shouldCollapse = computed(() => props.max !== undefined && (props.tags.len
 const exported = computedEffect(() => props.tags.every(t => t.isExported) && props.topics.every(t => t.isExported) && props.authors.every(t => t.isExported))
 
 const openMetaTagDetail = ({ type, value }: MetaTagTypeValue) => {
-    if(type === "tag") navigator.goto({routeName: "MainTag", query: {detail: value.id}})
-    else if(type === "topic") navigator.goto({routeName: "MainTopic", query: {detail: value.id}})
-    else if(type === "author") navigator.goto({routeName: "MainAuthor", query: {detail: value.id}})
+    if(type === "tag") router.routePush({routeName: "Tag", initializer: {tagId: value.id}})
+    else if(type === "topic") router.routePush({routeName: "Topic", path: value.id})
+    else if(type === "author") router.routePush({routeName: "Author", path: value.id})
 }
 const openMetaTagDetailInNewWindow = ({ type, value }: MetaTagTypeValue) => {
-    if(type === "tag") navigator.newWindow({routeName: "MainTag", query: {detail: value.id}})
-    else if(type === "topic") navigator.newWindow({routeName: "MainTopic", query: {detail: value.id}})
-    else if(type === "author") navigator.newWindow({routeName: "MainAuthor", query: {detail: value.id}})
+    if(type === "tag") browserTabs.newWindow({routeName: "Tag", initializer: {tagId: value.id}})
+    else if(type === "topic") browserTabs.newWindow({routeName: "Topic", path: value.id})
+    else if(type === "author") browserTabs.newWindow({routeName: "Author", path: value.id})
 }
 const searchInIllusts = ({ type, value }: MetaTagTypeValue) => {
-    if(type === "tag") navigator.goto({routeName: "MainIllust", params: {tagName: value.name}})
-    else if(type === "topic") navigator.goto({routeName: "MainIllust", params: {topicName: value.name}})
-    else if(type === "author") navigator.goto({routeName: "MainIllust", params: {authorName: value.name}})
+    if(type === "tag") router.routePush({routeName: "Illust", initializer: {tagName: value.name}})
+    else if(type === "topic") router.routePush({routeName: "Illust", initializer: {topicName: value.name}})
+    else if(type === "author") router.routePush({routeName: "Illust", initializer: {authorName: value.name}})
 }
 const searchInBooks = ({ type, value }: MetaTagTypeValue) => {
-    if(type === "tag") navigator.goto({routeName: "MainBook", params: {tagName: value.name}})
-    else if(type === "topic") navigator.goto({routeName: "MainBook", params: {topicName: value.name}})
-    else if(type === "author") navigator.goto({routeName: "MainBook", params: {authorName: value.name}})
+    if(type === "tag") router.routePush({routeName: "Book", initializer: {tagName: value.name}})
+    else if(type === "topic") router.routePush({routeName: "Book", initializer: {topicName: value.name}})
+    else if(type === "author") router.routePush({routeName: "Book", initializer: {authorName: value.name}})
 }
 const copyMetaTagName = ({ value }: MetaTagTypeValue) => writeClipboard(value.name)
 

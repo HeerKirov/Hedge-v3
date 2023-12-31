@@ -70,5 +70,5 @@ export function useTagTreeSearch(data: Ref<TagTreeNode[] | undefined>) {
         }
     })
 
-    return {searchText, searchInfo, tagTreeRef, next, prev}
+    return {searchText, searchInfo, tagTreeRef, next, prev, jumpTo}
 }

@@ -110,7 +110,7 @@ const { hover, ...hoverEvents } = useMouseHover()
                 <div :class="$style.examples">
                     <img v-for="file in thumbnailFiles" :key="file" :class="$style.example" :src="assetsUrl(file)" alt="example img"/>
                     <template v-if="thumbnailFiles.length < 3">
-                        <div v-for="_ in (3 - thumbnailFiles.length)" :class="$style['empty-example']"/>
+                        <div v-for="() in (3 - thumbnailFiles.length)" :class="$style['empty-example']"/>
                     </template>
                 </div>
             </FlexItem>

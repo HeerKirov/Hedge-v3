@@ -2,7 +2,8 @@
 import { computed } from "vue"
 import { Button } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
-import { TopBarLayout, MiddleLayout, PaneLayout } from "@/components/layout"
+import { BrowserTeleport } from "@/components/logical"
+import { PaneLayout } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
 import { StagingPostDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
@@ -51,37 +52,28 @@ const menu = useDynamicPopupMenu<StagingPostImage>(illust => [
 </script>
 
 <template>
-    <TopBarLayout>
-        <template #top-bar>
-            <MiddleLayout>
-                <template #left>
-                    <span class="ml-2 is-font-size-large">暂存区</span>
-                </template>
-                <template #right>
-                    <DataRouter :state="state" @navigate="navigateTo"/>
-                    <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
-                    <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
-                    <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
-                        <Button :ref="setEl" square icon="ellipsis-v" @click="popup"/>
-                    </ElementPopupMenu>
-                </template>
-            </MiddleLayout>
+    <BrowserTeleport to="top-bar">
+        <DataRouter :state="state" @navigate="navigateTo"/>
+        <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
+        <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
+        <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
+            <Button :ref="setEl" class="flex-item no-grow-shrink" square icon="ellipsis-v" @click="popup"/>
+        </ElementPopupMenu>
+    </BrowserTeleport>
+
+    <PaneLayout :show-pane="paneState.visible.value">
+        <div v-if="state !== null && state.total <= 0" class="h-100 has-text-centered">
+            <p class="secondary-text"><i>暂存区为空</i></p>
+        </div>
+        <StagingPostDataset v-else :data="data" :state="state" :query-instance="listview.proxy"
+                            :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable droppable
+                            :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
+                            @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event)"
+                            @dblclick="(i, s) => operators.openDetailByClick(i, s)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
+                            @drop="operators.dropToAdd"/>
+
+        <template #pane>
+            <IllustDetailPane @close="paneState.visible.value = false"/>
         </template>
-
-        <PaneLayout :show-pane="paneState.visible.value">
-            <div v-if="state !== null && state.total <= 0" class="h-100 has-text-centered">
-                <p class="secondary-text"><i>暂存区为空</i></p>
-            </div>
-            <StagingPostDataset v-else :data="data" :state="state" :query-instance="listview.proxy"
-                                :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable droppable
-                                :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                                @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event)"
-                                @dblclick="(i, s) => operators.openDetailByClick(i, s)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
-                                @drop="operators.dropToAdd"/>
-
-            <template #pane>
-                <IllustDetailPane @close="paneState.visible.value = false"/>
-            </template>
-        </PaneLayout>
-    </TopBarLayout>
+    </PaneLayout>
 </template>

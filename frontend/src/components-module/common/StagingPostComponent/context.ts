@@ -6,7 +6,7 @@ import { mapResponse } from "@/functions/http-client"
 import { useToast } from "@/modules/toast"
 import { useDroppable } from "@/modules/drag"
 import { useMessageBox } from "@/modules/message-box"
-import { useRouterNavigator } from "@/modules/router"
+import { useBrowserTabs } from "@/modules/browser"
 import { useDialogService } from "@/components-module/dialog"
 import { useHomepageState } from "@/services/main/homepage"
 import { useListViewContext } from "@/services/base/list-view-context"
@@ -111,7 +111,7 @@ export function useCalloutContext() {
 }
 
 export function useDataContext(close: () => void) {
-    const navigator = useRouterNavigator()
+    const browserTabs = useBrowserTabs()
     const toast = useToast()
     const dialog = useDialogService()
     const fetchListAll = useFetchHelper(client => client.stagingPost.list)
@@ -171,7 +171,7 @@ export function useDataContext(close: () => void) {
     }
 
     const openDetailView = () => {
-        navigator.goto("MainStagingPost")
+        browserTabs.newTab({routeName: "StagingPost"})
         close()
     }
     
