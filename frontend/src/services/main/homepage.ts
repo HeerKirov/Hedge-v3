@@ -1,4 +1,3 @@
-import { useViewStack } from "@/components-module/view-stack"
 import { useFetchReactive } from "@/functions/fetch"
 import { useTabRoute } from "@/modules/browser"
 import { LocalDate } from "@/utils/datetime"
@@ -6,7 +5,6 @@ import { optionalInstallation } from "@/utils/reactivity"
 
 export function useHomepageContext() {
     const router = useTabRoute()
-    const viewStack = useViewStack()
     const { data, loading } = useFetchReactive({
         get: client => client.homepage.homepage,
         eventFilter: "app/homepage/info/updated"
@@ -29,7 +27,7 @@ export function useHomepageContext() {
     }
 
     const openBook = (bookId: number) => {
-        viewStack.openBookView(bookId)
+        router.routePush({routeName: "BookDetail", path: bookId})
     }
 
     return {data, loading, openPartition, openIllustOfPartition, openBook, openAuthorOrTopic, openIllustOfAuthorOrTopic}

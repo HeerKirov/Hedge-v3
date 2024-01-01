@@ -13,7 +13,7 @@ import { useDialogService } from "@/components-module/dialog"
 import { useToast } from "@/modules/toast"
 import { useInterceptedKey } from "@/modules/keyboard"
 import { useMessageBox } from "@/modules/message-box"
-import { useBrowserTabs, useInitializer } from "@/modules/browser"
+import { useBrowserTabs, useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
@@ -22,13 +22,13 @@ import { useQuerySchema } from "@/services/base/query-schema"
 import { useSettingSite } from "@/services/setting"
 import { installIllustListviewContext, useIllustListviewContext, useImageDatasetOperators, useLocateId } from "@/services/common/illust"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
-import { installation, toRef } from "@/utils/reactivity"
-import { useListeningEvent } from "@/utils/emitter"
 import { objects } from "@/utils/primitives"
+import { useListeningEvent } from "@/utils/emitter"
+import { toRef } from "@/utils/reactivity"
 
-export const [installIllustContext, useIllustContext] = installation(function () {
+export function useIllustContext() {
     const querySchema = useQuerySchema("ILLUST")
-    const listview = useListView(querySchema.query)
+    const listview = useIllustListView(querySchema.query)
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust")
     const listviewController = useIllustViewController(toRef(listview.queryFilter, "type"))
@@ -62,9 +62,9 @@ export const [installIllustContext, useIllustContext] = installation(function ()
     })
 
     return {paneState, listview, selector, listviewController, querySchema, operators}
-})
+}
 
-function useListView(query: Ref<string | undefined>) {
+function useIllustListView(query: Ref<string | undefined>) {
     const listview = useListViewContext({
         defaultFilter: <IllustQueryFilter>{order: "-orderTime", type: "IMAGE"},
         request: client => (offset, limit, filter) => client.illust.list({offset, limit, ...filter}),
@@ -97,6 +97,97 @@ function useListView(query: Ref<string | undefined>) {
     watch(query, query => listview.queryFilter.value.query = query, {immediate: true})
 
     return listview
+}
+
+export function useCollectionContext() {
+    const path = usePath<number>()
+    const target = useCollectionTarget(path)
+    const listview = useCollectionListView(path)
+    const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
+    const paneState = useSelectedPaneState("illust")
+    const listviewController = useIllustViewController()
+    const operators = useImageDatasetOperators({
+        listview: listview.listview, paginationData: listview.paginationData,
+        listviewController, selector,
+        dataDrop: {dropInType: "collection", path}
+    })
+
+    const sideBar = useCollectionSideBarContext()
+
+    installIllustListviewContext({listview, selector, listviewController})
+
+    useSettingSite()
+
+    useDocumentTitle(() => `集合${path.value}`)
+
+    return {target, sideBar, listview, selector, paneState, listviewController, operators}
+}
+
+function useCollectionTarget(path: Ref<number>) {
+    const router = useTabRoute()
+    const message = useMessageBox()
+
+    const { data, setData, deleteData } = useFetchEndpoint({
+        path,
+        get: client => client.illust.collection.get,
+        update: client => client.illust.collection.update,
+        delete: client => client.illust.collection.delete,
+        eventFilter: c => event => (event.eventType === "entity/illust/updated" || event.eventType === "entity/illust/deleted") && event.illustId === c.path,
+        afterDelete: () => router.routeClose()
+    })
+    const toggleFavorite = () => {
+        if(data.value !== null) {
+            setData({favorite: !data.value.favorite}).finally()
+        }
+    }
+
+    const deleteItem = async () => {
+        if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
+            await deleteData()
+        }
+    }
+
+    return {path, data, toggleFavorite, deleteItem}
+}
+
+function useCollectionListView(path: Ref<number | null>) {
+    return useListViewContext({
+        filter: path,
+        request: client => async (offset, limit, filter) => {
+            if(filter === null) {
+                return {ok: true, status: 200, data: {total: 0, result: []}}
+            }
+            return await client.illust.collection.images.get(filter, {offset, limit})
+        },
+        keyOf: item => item.id,
+        eventFilter: {
+            filter: ["entity/illust/updated", "entity/illust/deleted", "entity/illust/images/changed"],
+            operation({ event, refresh, updateKey, removeKey }) {
+                if((event.eventType === "entity/illust/images/changed" && event.illustId === path.value) || (event.eventType === "entity/illust/updated" && event.illustType === "IMAGE" && event.timeSot)) {
+                    refresh()
+                }else if(event.eventType === "entity/illust/updated" && event.listUpdated && event.illustType === "IMAGE") {
+                    updateKey(event.illustId)
+                }else if(event.eventType === "entity/illust/deleted") {
+                    removeKey(event.illustId)
+                }
+            },
+            request: client => async items => mapResponse(await client.illust.findByIds(items.map(i => i.id)), r => r.map(i => i !== null ? i : undefined))
+        }
+    })
+}
+
+function useCollectionSideBarContext() {
+    const storage = useLocalStorage<{tabType: "info"| "related"}>("collection-detail-view/side-bar", () => ({tabType: "info"}), true)
+
+    const tabType = toRef(storage, "tabType")
+
+    //由于Meta+N快捷键可能被Illust列表的侧边栏占用，因此此处提供了一个Meta+Shift+N的快捷键
+    useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Shift+Digit1", "Meta+Shift+Digit2"], e => {
+        if(e.key === "Digit1") tabType.value = "info"
+        else if(e.key === "Digit2") tabType.value = "related"
+    })
+
+    return {tabType}
 }
 
 export function useIllustDetailPane() {
@@ -372,6 +463,7 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
 export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref<"IMAGE" | "COLLECTION">) {
     const viewStack = useViewStack()
     const browserTabs = useBrowserTabs()
+    const router = useTabRoute()
     const dialog = useDialogService()
     const { data } = useFetchEndpoint({
         path,
@@ -386,13 +478,13 @@ export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref
     })
 
     const openRelatedBook = (book: SimpleBook) => {
-        viewStack.openBookView(book.id)
+        router.routePush({routeName: "BookDetail", path: book.id})
     }
 
     const openRelatedCollection = () => {
         const id = data.value?.collection?.id
         if(id !== undefined) {
-            viewStack.openCollectionView(id)
+            router.routePush({routeName: "CollectionDetail", path: id})
         }
     }
 

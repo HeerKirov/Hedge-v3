@@ -85,6 +85,11 @@ export interface BrowserRoute {
      * 前进一条历史记录。
      */
     routeForward(): void
+    /**
+     * 关闭当前page。这会后退到后一条历史记录，且不会留下前进记录。如果已经没有了历史记录，则关闭当前标签页。
+     * 如果当前page不是正在显示的page，那么它的行为和back会不同，将删除历史记录中的page，不去动当前page。
+     */
+    routeClose(): void
 }
 
 export interface BrowserDocument {
@@ -132,7 +137,7 @@ export interface Route {
     /**
      * 如果目标路由带有path参数，则用此参数指定。
      */
-    path: any | undefined
+    path: unknown | undefined
     /**
      * 提供给目标路由的query参数。这些参数是持久性的状态。
      */

@@ -8,7 +8,7 @@ import { windowManager } from "@/modules/window"
 import { useActivateTabRoute } from "@/modules/browser"
 import { useFetchReactive } from "@/functions/fetch"
 import { useHomepageState } from "@/services/main/homepage"
-import { useNavHistory, installNavMenu, setupItemByNavHistory, setupItemByRef, setupSubItemByNavHistory } from "@/services/base/side-nav-menu"
+import { useNavigationRecords, installNavMenu, setupItemByNavHistory, setupItemByRef, setupSubItemByNavHistory } from "@/services/base/side-nav-menu"
 
 const router = useActivateTabRoute()
 
@@ -35,21 +35,21 @@ const { data: pins } = useFetchReactive({
     eventFilter: "entity/folder/pin/changed"
 })
 
-const navHistory = useNavHistory()
+watch(pins, pins => navigationRecords.excludes["FolderDetail"] = pins?.map(i => i.id.toString()) ?? [])
 
-watch(pins, pins => navHistory.excludes["MainFolder"] = pins?.map(i => i.id.toString()) ?? [])
+const navigationRecords = useNavigationRecords()
 
 const { menuItems, menuSelected } = installNavMenu({
-    router,
+    router, navigationRecords,
     menuItems: [
         {type: "menu", routeName: "Home", label: "主页", icon: "house"},
         {type: "scope", scopeName: "main", label: "浏览"},
         {type: "menu", routeName: "Illust", label: "图库", icon: "search"},
-        {type: "menu", routeName: "Partition", label: "分区", icon: "calendar-alt", submenu: [setupSubItemByNavHistory(navHistory, "MainPartition", "detail")] },
-        {type: "menu", routeName: "Book", label: "画集", icon: "clone"},
+        {type: "menu", routeName: "Partition", label: "分区", icon: "calendar-alt", submenu: [setupSubItemByNavHistory(navigationRecords, "PartitionDetail")] },
+        {type: "menu", routeName: "Book", label: "画集", icon: "clone", submenu: [setupSubItemByNavHistory(navigationRecords, "BookDetail")] },
         {type: "scope", scopeName: "meta", label: "元数据"},
-        {type: "menu", routeName: "Author", label: "作者", icon: "user-tag", submenu: [setupSubItemByNavHistory(navHistory, "MainAuthor", "detail")] },
-        {type: "menu", routeName: "Topic", label: "主题", icon: "hashtag", submenu: [setupSubItemByNavHistory(navHistory, "MainTopic", "detail")] },
+        {type: "menu", routeName: "Author", label: "作者", icon: "user-tag", submenu: [setupSubItemByNavHistory(navigationRecords, "AuthorDetail")] },
+        {type: "menu", routeName: "Topic", label: "主题", icon: "hashtag", submenu: [setupSubItemByNavHistory(navigationRecords, "TopicDetail")] },
         {type: "menu", routeName: "Tag", label: "标签", icon: "tag"},
         {type: "menu", routeName: "Annotation", label: "注解", icon: "code"},
         {type: "menu", routeName: "SourceData", label: "来源数据", icon: "file-invoice"},
@@ -59,8 +59,8 @@ const { menuItems, menuSelected } = installNavMenu({
         {type: "menu", routeName: "Trash", label: "已删除", icon: "trash-can"},
         {type: "scope", scopeName: "folder", label: "目录"},
         {type: "menu", routeName: "Folder", label: "所有目录", icon: "archive"},
-        setupItemByRef(pins, "Folder", "detail", "thumbtack", t => ({routeQueryValue: `${t.id}`, label: t.address.join("/")})),
-        setupItemByNavHistory(navHistory, "Folder", "detail", "folder")
+        setupItemByRef(pins, "FolderDetail", "thumbtack", t => ({routePathValue: `${t.id}`, label: t.address.join("/")})),
+        setupItemByNavHistory(navigationRecords, "FolderDetail", "folder")
     ]
 })
 </script>
@@ -108,5 +108,5 @@ const { menuItems, menuSelected } = installNavMenu({
         padding: $spacing-1 $spacing-2
         overflow-y: auto
         &:not(:last-child)
-            visibility: hidden
+            display: none
 </style>

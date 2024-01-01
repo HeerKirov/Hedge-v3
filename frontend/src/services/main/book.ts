@@ -4,14 +4,15 @@ import { Book, BookQueryFilter, DetailBook } from "@/functions/http-client/api/b
 import { flatResponse } from "@/functions/http-client"
 import { useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
 import { useMessageBox } from "@/modules/message-box"
-import { useBrowserTabs, useInitializer } from "@/modules/browser"
-import { useViewStack } from "@/components-module/view-stack"
+import { useBrowserTabs, useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
 import { useDialogService } from "@/components-module/dialog"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useQuerySchema } from "@/services/base/query-schema"
-import { useBookViewController } from "@/services/base/view-controller"
+import { useBookViewController, useIllustViewController } from "@/services/base/view-controller"
+import { useNavigationItem } from "@/services/base/side-nav-menu"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
-import { useSingleSelectedState } from "@/services/base/selected-state"
+import { useSelectedState, useSingleSelectedState } from "@/services/base/selected-state"
+import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
 
 export const [installBookContext, useBookContext] = installation(function () {
     const querySchema = useQuerySchema("BOOK")
@@ -63,7 +64,7 @@ function useListView(query: Ref<string | undefined>) {
 
 function useOperators() {
     const messageBox = useMessageBox()
-    const viewStack = useViewStack()
+    const router = useTabRoute()
     const browserTabs = useBrowserTabs()
     const dialog = useDialogService()
 
@@ -73,7 +74,7 @@ function useOperators() {
     })
 
     const openBookView = (book: Book) => {
-        viewStack.openBookView(book.id)
+        router.routePush({routeName: "BookDetail", path: book.id})
     }
 
     const openInNewWindow = (book: Book) => {
@@ -96,6 +97,98 @@ function useOperators() {
 
     return {switchFavorite, deleteItem, openBookView, openInNewWindow, exportItem}
 }
+
+export function useBookDetailContext() {
+    const path = usePath<number>()
+    const target = useBookDetailTarget(path)
+    const listview = useBookDetailListView(path)
+    const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
+    const paneState = useSelectedPaneState("illust")
+    const listviewController = useIllustViewController()
+    const operators = useImageDatasetOperators({
+        listview: listview.listview, paginationData: listview.paginationData,
+        listviewController, selector,
+        dataDrop: {dropInType: "book", path}
+    })
+
+    installIllustListviewContext({listview, selector, listviewController, book: target.data})
+
+    useNavigationItem(target.data)
+
+    useDocumentTitle(target.data)
+
+    return {target, listview, selector, paneState, listviewController, operators}
+}
+
+function useBookDetailTarget(path: Ref<number>) {
+    const router = useTabRoute()
+    const message = useMessageBox()
+    const dialog = useDialogService()
+
+    const { data, setData, deleteData } = useFetchEndpoint({
+        path,
+        get: client => client.book.get,
+        update: client => client.book.update,
+        delete: client => client.book.delete,
+        eventFilter: c => event => (event.eventType === "entity/book/updated" || event.eventType === "entity/book/deleted") && event.bookId === c.path,
+        afterDelete: () => router.routeClose()
+    })
+
+    const toggleFavorite = () => {
+        setData({favorite: !data.value?.favorite}).finally()
+    }
+
+    const setTitle = async (title: string) => {
+        return title === data.value?.title || await setData({ title })
+    }
+
+    const setDescription = async (description: string) => {
+        return description === data.value?.description || await setData({ description })
+    }
+
+    const setScore = async (score: number | null) => {
+        return score === data.value?.score || await setData({ score })
+    }
+
+    const deleteItem = async () => {
+        if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
+            await deleteData()
+        }
+    }
+
+    const openMetaTagEditor = () => {
+        dialog.metaTagEditor.editIdentity({type: "BOOK", id: path.value})
+    }
+
+    return {path, data, toggleFavorite, setTitle, setDescription, setScore, deleteItem, openMetaTagEditor}
+}
+
+function useBookDetailListView(path: Ref<number>) {
+    return useListViewContext({
+        filter: path,
+        request: client => async (offset, limit, filter) => {
+            if(filter === null) {
+                return {ok: true, status: 200, data: {total: 0, result: []}}
+            }
+            return await client.book.images.get(filter, {offset, limit})
+        },
+        keyOf: item => item.id,
+        eventFilter: {
+            filter: ["entity/illust/updated", "entity/illust/deleted", "entity/book/images/changed"],
+            operation({ event, refresh, updateKey, removeKey }) {
+                if(event.eventType === "entity/illust/updated" && event.listUpdated) {
+                    updateKey(event.illustId)
+                }else if(event.eventType === "entity/illust/deleted") {
+                    removeKey(event.illustId)
+                }else if(event.eventType === "entity/book/images/changed" && event.bookId === path.value) {
+                    refresh()
+                }
+            },
+            request: client => async items => flatResponse(await Promise.all(items.map(a => client.illust.get(a.id))))
+        }
+    })
+}
+
 
 export function useBookDetailPane() {
     const { selector } = useBookContext()

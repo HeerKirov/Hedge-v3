@@ -5,7 +5,7 @@ import { flatResponse, mapResponse } from "@/functions/http-client"
 import { Author, DetailAuthor, AuthorCreateForm, AuthorUpdateForm, AuthorExceptions, AuthorQueryFilter, AuthorType } from "@/functions/http-client/api/author"
 import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
-import { useNavHistoryPush } from "@/services/base/side-nav-menu"
+import { useNavigationItem } from "@/services/base/side-nav-menu"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useMessageBox } from "@/modules/message-box"
 import { useToast } from "@/modules/toast"
@@ -206,7 +206,7 @@ export function useAuthorDetailPanel() {
         eventFilter: c => event => (event.eventType === "entity/meta-tag/updated" || event.eventType === "entity/meta-tag/deleted") && event.metaType === "AUTHOR" && event.metaId === c.path,
         afterRetrieve(path, data) {
             if(path !== null && data === null) {
-                router.routeBack()
+                router.routeClose()
             }
         }
     })
@@ -237,12 +237,12 @@ export function useAuthorDetailPanel() {
     const deleteItem = async () => {
         if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
             if(await deleteData()) {
-                router.routeBack()
+                router.routeClose()
             }
         }
     }
 
-    useNavHistoryPush(data)
+    useNavigationItem(data)
 
     useDocumentTitle(data)
 

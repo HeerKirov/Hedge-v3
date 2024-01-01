@@ -177,7 +177,7 @@ export function useBrowserTabs(): BrowserTabs {
 }
 
 export function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): BrowserRoute {
-    const { getRouteDefinition, nextHistoryId, historyMax, event } = useBrowserView()
+    const { views, activeIndex, getRouteDefinition, nextHistoryId, historyMax, event } = useBrowserView()
 
     const route = computed(() => page?.value.route ?? view.value.route)
 
@@ -231,7 +231,32 @@ export function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>
         }
     }
 
-    return {route, histories, forwards, routePush, routeReplace, routeBack, routeForward}
+    function routeClose() {
+        if(page !== undefined && page.value.historyId !== view.value.historyId) {
+            const index = view.value.histories.findIndex(p => p.historyId === page.value.historyId)
+            if(index >= 0) view.value.histories.splice(index, 1)
+        }else if(view.value.histories.length > 0) {
+            const [history] = view.value.histories.splice(view.value.histories.length - 1, 1)
+            view.value.historyId = history.historyId
+            view.value.title = history.title
+            view.value.route = history.route
+            view.value.storage = history.storage
+            event.emit({type: "Routed"})
+        }else{
+            const index = views.value.findIndex(v => v.id === view.value.id)
+            if(index >= 0) {
+                views.value.splice(index, 1)
+                if(views.value.length <= 0) {
+                    window.close()
+                }else if(index < activeIndex.value || (index === activeIndex.value && activeIndex.value > 0)) {
+                    activeIndex.value -= 1
+                }
+                event.emit({type: "TabClosed"})
+            }
+        }
+    }
+
+    return {route, histories, forwards, routePush, routeReplace, routeBack, routeForward, routeClose}
 }
 
 export function useActivateTabRoute(): BrowserRoute {
@@ -264,14 +289,14 @@ export function useDocument(): BrowserDocument {
     return {title}
 }
 
-export function useDocumentTitle(titleChanged: Ref<string | {name: string} | null | undefined> | (() => (string | {name: string} | null | undefined))) {
+export function useDocumentTitle(titleChanged: Ref<string | {name: string} | {title: string} | null | undefined> | (() => (string | {name: string} | {title: string} | null | undefined))) {
     const document = useDocument()
     watch(titleChanged, tc => {
         if(tc !== null && tc !== undefined) {
             if(typeof tc === "string") {
                 document.title.value = tc
             }else if(typeof tc === "object") {
-                document.title.value = tc.name
+                document.title.value = (tc as {name: string}).name ?? (tc as {title: string}).title
             }
         }
     }, {immediate: true})

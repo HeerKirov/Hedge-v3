@@ -86,7 +86,7 @@ export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = instal
         eventFilter: c => event => (event.eventType === "entity/find-similar-result/updated" || event.eventType === "entity/find-similar-result/deleted") && c.path === event.resultId,
         afterRetrieve(path, data) {
             if(path !== null && data === null) {
-                router.routeBack()
+                router.routeClose()
             }
         }
     })

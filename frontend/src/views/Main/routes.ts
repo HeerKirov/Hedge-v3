@@ -12,6 +12,11 @@ export default <RouteDefinition[]>[
         component: () => import("./Illust/Illust.vue")
     },
     {
+        routeName: "CollectionDetail",
+        defaultTitle: "集合",
+        component: () => import("./Illust/CollectionDetail.vue")
+    },
+    {
         routeName: "Partition",
         defaultTitle: "时间分区",
         component: () => import("./Partition/Partition.vue")
@@ -25,6 +30,11 @@ export default <RouteDefinition[]>[
         routeName: "Book",
         defaultTitle: "画集",
         component: () => import("./Book/Book.vue")
+    },
+    {
+        routeName: "BookDetail",
+        defaultTitle: "画集详情",
+        component: () => import("./Book/BookDetail.vue")
     },
     {
         routeName: "Author",

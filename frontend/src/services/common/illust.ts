@@ -1,6 +1,6 @@
 import { Ref, computed, ref, shallowRef, unref, watch } from "vue"
 import {
-    PaginationDataView, QueryListview, AllSlice, ListIndexSlice, SingletonSlice,
+    PaginationDataView, QueryListview, AllSlice, ListIndexSlice,
     usePostFetchHelper, usePostPathFetchHelper, useFetchHelper, QueryInstance, createMappedQueryInstance
 } from "@/functions/fetch"
 import { DraggingIllust, CommonIllust, Illust, IllustQueryFilter, BatchUpdateAction } from "@/functions/http-client/api/illust"
@@ -12,7 +12,7 @@ import { SelectedState } from "@/services/base/selected-state"
 import { useHomepageState } from "@/services/main/homepage"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
-import { useBrowserTabs } from "@/modules/browser"
+import { useBrowserTabs, useTabRoute } from "@/modules/browser"
 import { useDialogService } from "@/components-module/dialog"
 import { useViewStack } from "@/components-module/view-stack"
 import { usePreviewService } from "@/components-module/preview"
@@ -217,6 +217,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     const toast = useToast()
     const message = useMessageBox()
     const browserTabs = useBrowserTabs()
+    const router = useTabRoute()
     const dialog = useDialogService()
     const viewStack = useViewStack()
     const preview = usePreviewService()
@@ -280,8 +281,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
             if(index !== undefined) {
                 const illust = listview.proxy.sync.retrieve(index)!
                 if(illust.type === "COLLECTION") {
-                    const slice: SingletonSlice<Illust, number> = {type: "SINGLETON", index, instance: getSliceInstance()}
-                    viewStack.openCollectionView(slice)
+                    router.routePush({routeName: "CollectionDetail", path: illustId})
                     return
                 }
             }
@@ -316,8 +316,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
         if(currentIndex !== undefined) {
             const illust = listview.proxy.sync.retrieve(currentIndex)!
             if(illust.type === "COLLECTION") {
-                const slice: SingletonSlice<Illust, number> = {type: "SINGLETON", index: currentIndex, instance: getSliceInstance()}
-                viewStack.openCollectionView(slice)
+                router.routePush({routeName: "CollectionDetail", path: illustId})
             }else{
                 console.error(`Illust ${illust.id} is not a collection.`)
             }
@@ -382,7 +381,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
             const res = await fetchCollectionCreate({images})
             if(res !== undefined) {
                 //创建成功后打开新集合的详情页面
-                viewStack.openCollectionView(res.id)
+                router.routePush({routeName: "CollectionDetail", path: res.id})
             }
         }
     }

@@ -16,6 +16,7 @@ import { useIllustViewController } from "@/services/base/view-controller"
 import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
 import { useFolderTableSearch } from "@/services/common/folder"
 import { installation } from "@/utils/reactivity"
+import { useNavigationItem } from "@/services/base/side-nav-menu";
 
 export const [installFolderContext, useFolderContext] = installation(function () {
     const paneState = useDetailViewState<number>()
@@ -212,7 +213,7 @@ export function useFolderDetailPanel() {
         eventFilter: c => event => (event.eventType === "entity/folder/updated" || event.eventType === "entity/folder/deleted") && event.folderId === c.path,
         afterRetrieve(path, data) {
             if(path !== null && data === null) {
-                router.routeBack()
+                router.routeClose()
             }
         }
     })
@@ -220,7 +221,7 @@ export function useFolderDetailPanel() {
     const deleteItem = async () => {
         if(await message.showYesNoMessage("warn", "确定要删除此目录吗？", "此操作不可撤回。")) {
             if(await deleteData()) {
-                router.routeBack()
+                router.routeClose()
             }
         }
     }
@@ -237,7 +238,9 @@ export function useFolderDetailPanel() {
 
     installIllustListviewContext({listview, selector, listviewController, folder: data})
 
-    useDocumentTitle(() => data.value?.title)
+    useNavigationItem(() => data.value !== null ? [...data.value.parentAddress, data.value.title].join("/") : null)
+
+    useDocumentTitle(data)
 
     return {data, listview, selector, paneState, listviewController, operators, deleteItem}
 }

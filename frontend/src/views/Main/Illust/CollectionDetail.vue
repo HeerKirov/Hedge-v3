@@ -1,24 +1,30 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Button, Separator } from "@/components/universal"
+import { Button, OptionButtons, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { BrowserTeleport } from "@/components/logical"
-import { PaneLayout } from "@/components/layout"
+import { BottomLayout, PaneLayout } from "@/components/layout"
 import { IllustImageDataset } from "@/components-module/data"
-import { IllustDetailPane } from "@/components-module/common"
-import { SearchBox, LockOnButton, DataRouter, FitTypeButton, ColumnNumButton, QueryNotificationBadge, CollectionModeButton } from "@/components-business/top-bar"
+import { IllustDetailPane, IllustTabDetailInfo, IllustTabRelatedItems } from "@/components-module/common"
+import { LockOnButton, DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
 import { Illust } from "@/functions/http-client/api/illust"
-import { useIllustContext } from "@/services/main/illust"
+import { useCollectionContext } from "@/services/main/illust"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 
 const {
-    paneState,
-    listview: { listview, paginationData: { data, state, setState, navigateTo } },
-    listviewController: { viewMode, fitType, columnNum, collectionMode, editableLockOn },
+    target: { path, data, deleteItem, toggleFavorite },
+    sideBar: { tabType },
+    listview: { listview, paginationData: { data: paginationData, state, setState, navigateTo } },
+    listviewController: { viewMode, fitType, columnNum, editableLockOn },
     selector: { selected, lastSelected, update: updateSelect },
-    querySchema,
+    paneState,
     operators
-} = useIllustContext()
+} = useCollectionContext()
+
+const sideBarButtonItems = [
+    {value: "info", label: "项目信息", icon: "info"},
+    {value: "related", label: "相关项目", icon: "dice-d6"}
+]
 
 const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
@@ -26,12 +32,13 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "解除编辑锁定", checked: editableLockOn.value, click: () => editableLockOn.value = !editableLockOn.value},
     {type: "separator"},
     {type: "radio", checked: viewMode.value === "row", label: "列表模式", click: () => viewMode.value = "row"},
-    {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"}
+    {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"},
+    {type: "separator"},
+    {type: "normal", label: "删除此集合", click: deleteItem}
 ])
 
 const menu = useDynamicPopupMenu<Illust>(illust => [
     {type: "normal", label: "打开", click: i => operators.openDetailByClick(i.id)},
-    (illust.type === "COLLECTION" || null) && {type: "normal", label: "查看集合详情", click: i => operators.openCollectionDetail(i.id)},
     {type: "normal", label: illust.type === "COLLECTION" ? "在新窗口中打开集合" : "在新窗口中打开", click: operators.openInNewWindow},
     {type: "separator"},
     {type: "normal", label: "预览", click: operators.openPreviewBySpace},
@@ -40,37 +47,39 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
     {type: "checkbox", label: "标记为收藏", checked: illust.favorite, click: i => operators.modifyFavorite(i, !i.favorite)},
     {type: "separator"},
     {type: "normal", label: "暂存", click: operators.addToStagingPost},
+    operators.stagingPostCount.value > 0
+        ? {type: "normal", label: `将暂存的${operators.stagingPostCount.value}项添加到此处`, click: operators.popStagingPost}
+        : {type: "normal", label: "将暂存的项添加到此处", enabled: false},
     {type: "separator"},
-    {type: "normal", label: "创建图像集合", click: operators.createCollection},
+    {type: "normal", label: "拆分至新集合", click: operators.splitToGenerateNewCollection},
     {type: "normal", label: "创建画集…", click: operators.createBook},
     {type: "normal", label: "编辑关联组", click: operators.editAssociate},
     {type: "normal", label: "添加到目录…", click: operators.addToFolder},
     {type: "normal", label: "克隆图像属性…", click: operators.cloneImage},
     {type: "separator"},
     {type: "submenu", label: "快捷排序", enabled: selected.value.length > 1, submenu: [
-        {type: "normal", label: "将时间分区集中在最多的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_MOST")},
-        {type: "normal", label: "将时间分区设为最早的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_EARLIEST")},
-        {type: "normal", label: "将时间分区设为最晚的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_LATEST")},
-        {type: "separator"},
-        {type: "normal", label: "将排序时间集中在最多的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_MOST")},
-        {type: "normal", label: "倒置排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_REVERSE")},
-        {type: "normal", label: "均匀分布排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_UNIFORMLY")},
-        {type: "separator"},
-        {type: "normal", label: "按来源ID顺序重设排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_BY_SOURCE_ID")},
-    ]},
+            {type: "normal", label: "将时间分区集中在最多的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_MOST")},
+            {type: "normal", label: "将时间分区设为最早的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_EARLIEST")},
+            {type: "normal", label: "将时间分区设为最晚的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_LATEST")},
+            {type: "separator"},
+            {type: "normal", label: "将排序时间集中在最多的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_MOST")},
+            {type: "normal", label: "倒置排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_REVERSE")},
+            {type: "normal", label: "均匀分布排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_UNIFORMLY")},
+            {type: "separator"},
+            {type: "normal", label: "按来源ID顺序重设排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_BY_SOURCE_ID")},
+        ]},
     {type: "normal", label: "查找相似项", click: operators.findSimilarOfImage},
     {type: "normal", label: "导出", click: operators.exportItem},
     {type: "separator"},
-    {type: "normal", label: illust.type === "COLLECTION" ? "删除集合项目" : "删除项目", click: operators.deleteItem}
+    {type: "normal", label: "删除项目", click: operators.deleteItem},
+    {type: "normal", label: "从集合移除此项目", click: operators.removeItemFromCollection}
 ])
 
 </script>
 
 <template>
     <BrowserTeleport to="top-bar">
-        <CollectionModeButton class="mr-1" v-model:value="collectionMode"/>
-        <SearchBox placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value" :schema="querySchema.schema.value"/>
-        <QueryNotificationBadge class="ml-1" :schema="querySchema.schema.value" @click="querySchema.expanded.value = true"/>
+        <Button class="flex-item no-grow-shrink" square icon="heart" :type="data?.favorite ? 'danger' : 'secondary'" @click="toggleFavorite"/>
         <Separator/>
         <LockOnButton v-model:value="editableLockOn"/>
         <DataRouter :state="state" @navigate="navigateTo"/>
@@ -81,13 +90,25 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
         </ElementPopupMenu>
     </BrowserTeleport>
 
+    <BrowserTeleport to="side-bar">
+        <BottomLayout container-class="p-2 pl-3" bottom-class="p-1">
+            <KeepAlive>
+                <IllustTabDetailInfo v-if="tabType === 'info'" :detail-id="path"/>
+                <IllustTabRelatedItems v-else-if="tabType === 'related'" :detail-id="path" type="COLLECTION"/>
+            </KeepAlive>
+
+            <template #bottom>
+                <OptionButtons :items="sideBarButtonItems" v-model:value="tabType"/>
+            </template>
+        </BottomLayout>
+    </BrowserTeleport>
+
     <PaneLayout :show-pane="paneState.visible.value">
-        <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy"
+        <IllustImageDataset :data="paginationData" :state="state" :query-instance="listview.proxy"
                             :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
                             :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                             @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
-                            @dblclick="(i, s) => operators.openDetailByClick(i, s)"
-                            @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
+                            @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
                             @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
 
         <template #pane>

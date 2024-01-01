@@ -20,9 +20,9 @@ export function useParam<P>(paramName: string): Ref<P | null> {
 export function usePath<P>(): Ref<P> {
     const { route } = useTabRoute()
 
-    const data: Ref<P> = ref(route.value.path)
+    const data: Ref<P> = ref(route.value.path as any)
 
-    watch(() => route.value.path, newPath => { if(newPath !== data.value) data.value = newPath }, {immediate: true, deep: true})
+    watch(() => route.value.path, newPath => { if(newPath !== data.value) data.value = newPath as P }, {immediate: true, deep: true})
 
     return computed({
         get: () => data.value,

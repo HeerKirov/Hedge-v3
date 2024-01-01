@@ -6,7 +6,7 @@ import { useLocalStorage, useTabStorage } from "@/functions/app"
 import { useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
 import { useInterceptedKey } from "@/modules/keyboard"
 import { writeClipboard } from "@/modules/others"
-import { useNavHistoryPush } from "@/services/base/side-nav-menu"
+import { useNavigationItem } from "@/services/base/side-nav-menu"
 import { QuerySchemaContext, useQuerySchema } from "@/services/base/query-schema"
 import { IllustViewController, useIllustViewController } from "@/services/base/view-controller"
 import { useListViewContext } from "@/services/base/list-view-context"
@@ -304,11 +304,10 @@ export function useDetailIllustContext() {
         locateId.catchLocateId(params.locateId)
     })
 
-    useNavHistoryPush(path, p => {
-        const id = date.toISOString(p)
-        const name = `${p.year}年${p.month}月${p.day}日`
-        const today = state.data.value?.today.timestamp === p.timestamp
-        return {id, name, badge: today ? "TODAY" : undefined}
+    useNavigationItem(() => {
+        const name = `${path.value.year}年${path.value.month}月${path.value.day}日`
+        const today = state.data.value?.today.timestamp === path.value.timestamp
+        return {name, badge: today ? "TODAY" : undefined}
     })
 
     useDocumentTitle(() => `${path.value.year}年${path.value.month}月${path.value.day}日`)

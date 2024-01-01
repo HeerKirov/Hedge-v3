@@ -6,7 +6,7 @@ import { installPreviewService, GlobalPreview } from "@/components-module/previe
 import { installViewStack, ViewStack } from "@/components-module/view-stack"
 import { installBrowserView } from "@/modules/browser"
 import { installHomepageState } from "@/services/main/homepage"
-import MainRootView from "./NewMainRootView.vue"
+import MainRootView from "./MainRootView.vue"
 import routes from "./routes"
 
 installBrowserView({routes})
