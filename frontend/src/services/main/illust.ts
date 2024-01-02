@@ -7,7 +7,7 @@ import { FilePath, SourceDataPath } from "@/functions/http-client/api/all"
 import { SimpleBook } from "@/functions/http-client/api/book"
 import { SimpleFolder } from "@/functions/http-client/api/folder"
 import { SourceEditStatus } from "@/functions/http-client/api/source-data"
-import { useViewStack } from "@/components-module/view-stack"
+import { useStackedView } from "@/components-module/stackedview"
 import { usePreviewService } from "@/components-module/preview"
 import { useDialogService } from "@/components-module/dialog"
 import { useToast } from "@/modules/toast"
@@ -461,7 +461,7 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
 }
 
 export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref<"IMAGE" | "COLLECTION">) {
-    const viewStack = useViewStack()
+    const viewStack = useStackedView()
     const browserTabs = useBrowserTabs()
     const router = useTabRoute()
     const dialog = useDialogService()

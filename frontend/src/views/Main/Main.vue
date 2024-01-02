@@ -3,7 +3,7 @@ import { installSideLayoutState } from "@/components/layout"
 import { installDialogService, GlobalDialog } from "@/components-module/dialog"
 import { installCalloutService, GlobalCallout } from "@/components-module/callout"
 import { installPreviewService, GlobalPreview } from "@/components-module/preview"
-import { installViewStack, ViewStack } from "@/components-module/view-stack"
+import { installStackedView, StackedView } from "@/components-module/stackedview"
 import { installBrowserView } from "@/modules/browser"
 import { installHomepageState } from "@/services/main/homepage"
 import MainRootView from "./MainRootView.vue"
@@ -14,14 +14,14 @@ installDialogService()
 installCalloutService()
 installPreviewService()
 installSideLayoutState()
-installViewStack()
+installStackedView()
 installHomepageState()
 
 </script>
 
 <template>
     <MainRootView/>
-    <ViewStack/>
+    <StackedView/>
     <GlobalDialog/>
     <GlobalCallout/>
     <GlobalPreview/>

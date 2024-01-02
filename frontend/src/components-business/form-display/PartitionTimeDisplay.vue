@@ -3,7 +3,7 @@ import { computed } from "vue"
 import { Icon } from "@/components/universal"
 import { useTabStorage } from "@/functions/app"
 import { usePopupMenu } from "@/modules/popup-menu"
-import { useBrowserTabs } from "@/modules/browser"
+import { isBrowserEnvironment, useBrowserTabs, useTabRoute } from "@/modules/browser"
 import { LocalDate, LocalDateTime, datetime } from "@/utils/datetime"
 
 const props = defineProps<{
@@ -13,7 +13,9 @@ const props = defineProps<{
     updateTime?: LocalDateTime
 }>()
 
-const browserTabs = useBrowserTabs()
+const hasBrowser = isBrowserEnvironment()
+const browserTabs = hasBrowser ? useBrowserTabs() : undefined
+const router = hasBrowser ? useTabRoute() : undefined
 
 const isOpened = useTabStorage<boolean>("partition-time-display/switch", false)
 
@@ -25,9 +27,9 @@ const timeText = computed(() => props.orderTime !== undefined ? datetime.toSimpl
 
 const orderTimeText = computed(() => props.orderTime !== undefined ? `${props.orderTime.year}年${props.orderTime.month}月${props.orderTime.day}日 ${timeText.value}` : null)
 
-const openPartition = () => browserTabs.goto({routeName: "Partition", query: {detail: props.partitionTime}})
+const openPartition = () => router!.routePush({routeName: "Partition", path: props.partitionTime})
 
-const openPartitionInNewWindow = () => browserTabs.newWindow({routeName: "Partition", path: props.partitionTime})
+const openPartitionInNewWindow = () => browserTabs!.newWindow({routeName: "Partition", path: props.partitionTime})
 
 const collapse = () => {
     if(props.createTime !== undefined || props.updateTime !== undefined || (offset.value && (offset.value > 1 || offset.value < -1))) {
@@ -37,9 +39,11 @@ const collapse = () => {
 
 const menu = usePopupMenu(() => [
     {type: "normal", "label": isOpened.value ? "折叠时间属性" : "展开时间属性", click: collapse},
-    {type: "separator"},
-    {type: "normal", "label": "查看时间分区", click: openPartition},
-    {type: "normal", "label": "在新窗口中打开时间分区", click: openPartitionInNewWindow}
+    ...(hasBrowser ? [
+        {type: "separator"},
+        {type: "normal", "label": "查看时间分区", click: openPartition},
+        {type: "normal", "label": "在新窗口中打开时间分区", click: openPartitionInNewWindow}
+    ] as const : [])
 ])
 
 </script>

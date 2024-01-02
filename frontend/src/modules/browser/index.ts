@@ -1,5 +1,5 @@
 export type { BrowserViewOptions, BrowserDocument, BrowserRoute, BrowserTabStack, BrowserTabs, Tab, InternalTab, NewRoute, RouteDefinition } from "./definition"
-export { installBrowserView, installCurrentTab, useBrowserTabStacks, useBrowserTabs, useActivateTabRoute, useTabRoute, useCurrentTab, useDocument, useDocumentTitle, useBrowserEvent } from "./api"
+export { installBrowserView, installCurrentTab, isBrowserEnvironment, useBrowserTabStacks, useBrowserTabs, useActivateTabRoute, useTabRoute, useCurrentTab, useDocumentTitle, useBrowserEvent } from "./api"
 export { useParam, usePath, useInitializer } from "./router"
 
 /*

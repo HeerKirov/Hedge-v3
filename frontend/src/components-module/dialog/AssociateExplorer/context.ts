@@ -1,17 +1,18 @@
-import { computed, ref, Ref, watchEffect } from "vue"
-import { useFetchEndpoint, useFetchHelper, usePostFetchHelper, usePostPathFetchHelper } from "@/functions/fetch"
+import { ref, Ref, watchEffect } from "vue"
+import { useStackedView } from "@/components-module/stackedview"
+import { useFetchEndpoint, useFetchHelper, usePostPathFetchHelper } from "@/functions/fetch"
 import { Illust, SimpleIllust } from "@/functions/http-client/api/illust"
-import { useToast } from "@/modules/toast"
 import { useDroppable } from "@/modules/drag"
-import { computedAsync, computedMutable, toRef } from "@/utils/reactivity"
+import { computedAsync, toRef } from "@/utils/reactivity"
 import { Push } from "../context"
-import { useViewStack } from "@/components-module/view-stack"
 
 export interface AssociateExplorer {
     /**
      * 打开编辑关联组的面板。
+     * @param illustId
      * @param addIds 将这些项作为追加项，添加到当前项的关联组中。
      * @param mode 追加的模式，仅追加新项，或覆盖已有项。
+     * @param onSucceed
      */
     editAssociate(illustId: number, addIds?: number[], mode?: "append" | "override", onSucceed?: () => void): void
     /**
@@ -49,7 +50,7 @@ export function useAssociateExplorer(push: Push): AssociateExplorer {
 }
 
 export function useAssociateViewData(path: Ref<number>, close: () => void) {
-    const viewStack = useViewStack()
+    const viewStack = useStackedView()
     
     const { data } = useFetchEndpoint({
         path,

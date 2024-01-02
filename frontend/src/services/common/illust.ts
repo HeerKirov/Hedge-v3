@@ -14,7 +14,7 @@ import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useBrowserTabs, useTabRoute } from "@/modules/browser"
 import { useDialogService } from "@/components-module/dialog"
-import { useViewStack } from "@/components-module/view-stack"
+import { useStackedView } from "@/components-module/stackedview"
 import { usePreviewService } from "@/components-module/preview"
 import { installation } from "@/utils/reactivity"
 import { LocalDate } from "@/utils/datetime"
@@ -219,7 +219,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     const browserTabs = useBrowserTabs()
     const router = useTabRoute()
     const dialog = useDialogService()
-    const viewStack = useViewStack()
+    const stackedView = useStackedView()
     const preview = usePreviewService()
     const { listview, listviewController, paginationData, selector, dataDrop: dataDropOptions, createCollection: createCollectionOptions } = options
 
@@ -251,7 +251,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
         const currentIndex = listview.proxy.sync.findByKey(illustId)
         if(currentIndex !== undefined) {
             const slice: AllSlice<Illust, number> = {type: "ALL", focusIndex: currentIndex, instance: getSliceInstance()}
-            viewStack.openImageView(slice, illustId => {
+            stackedView.openImageView(slice, illustId => {
                 //回调：给出了目标id，回查data的此项，并找到此项现在的位置，导航到此位置
                 const index = listview.proxy.sync.findByKey(illustId)
                 if(index !== undefined) {
@@ -267,7 +267,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
             .map(selectedId => listview.proxy.sync.findByKey(selectedId))
             .filter(index => index !== undefined) as number[]
         const slice: ListIndexSlice<Illust, number> = {type: "LIST", indexes: indexList, focusIndex: currentIndex, instance: getSliceInstance()}
-        viewStack.openImageView(slice, illustId => {
+        stackedView.openImageView(slice, illustId => {
             //回调：给出了目标id，回查data的此项，并找到此项现在的位置，导航到此位置
             const index = listview.proxy.sync.findByKey(illustId)
             if(index !== undefined) paginationData.navigateTo(index)
@@ -329,8 +329,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
         }else{
             const imageIds = getEffectedItems(illust)
             const currentIndex = imageIds.indexOf(illust.id)
-            //TODO 从image preview模块打开新预览窗口
-            //navigator.newPreviewWindow({type: "image", imageIds, currentIndex})
+            stackedView.openImageViewInNewWindow({imageIds, focusIndex: currentIndex})
         }
     }
 

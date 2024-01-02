@@ -1,19 +1,11 @@
 <script setup lang="ts">
-import { provide } from "vue"
 import { installGlobalKeyStack, useInterception } from "@/modules/keyboard"
-import { eachViewInjection } from "./context"
-import { StackViewInfo } from "./definition"
-import ImageDetailView from "./ImageDetailView.vue"
-import CollectionDetailView from "./CollectionDetailView.vue"
-import BookDetailView from "./BookDetailView.vue"
+import { StackViewInfo } from "./context"
+import ImageDetailView from "./ImageView.vue"
 
-const props = defineProps<{
+defineProps<{
     stackViewInfo: StackViewInfo
-    stackIndex: number
-    hidden?: boolean
 }>()
-
-provide(eachViewInjection, {stackIndex: props.stackIndex})
 
 //使用独立的事件栈
 installGlobalKeyStack()
@@ -24,10 +16,8 @@ useInterception()
 </script>
 
 <template>
-    <div :class="{[$style.container]: true, [$style.hidden]: hidden}">
+    <div :class="$style.container">
         <ImageDetailView v-if="stackViewInfo.type === 'image'" :slice-or-path="stackViewInfo.sliceOrPath" :modified-callback="stackViewInfo.modifiedCallback"/>
-        <CollectionDetailView v-else-if="stackViewInfo.type === 'collection'" :slice-or-path="stackViewInfo.sliceOrPath"/>
-        <BookDetailView v-else-if="stackViewInfo.type === 'book'" :slice-or-path="stackViewInfo.sliceOrPath"/>
     </div>
 </template>
 
@@ -43,8 +33,4 @@ useInterception()
     background-color: $light-mode-background-color
     @media (prefers-color-scheme: dark)
         background-color: $dark-mode-background-color
-
-    &.hidden
-        visibility: hidden
-        transition: visibility 0.15s
 </style>

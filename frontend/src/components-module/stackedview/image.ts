@@ -9,14 +9,14 @@ import {
 } from "@/functions/fetch"
 import { useAssets, useLocalStorage } from "@/functions/app"
 import { useDialogService } from "@/components-module/dialog"
-import { useViewStack } from "@/components-module/view-stack"
 import { useGlobalKey, useInterceptedKey } from "@/modules/keyboard"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { openLocalFile, openLocalFileInFolder } from "@/modules/others"
-import { installation, toRef } from "@/utils/reactivity"
+import { toRef } from "@/utils/reactivity"
+import { useStackedView } from "./context"
 
-export const [installImageViewContext, useImageViewContext] = installation(function (data: SliceOrPath<Illust, number, AllSlice<Illust, number> | ListIndexSlice<Illust, number>, number[]>, modifiedCallback?: (illustId: number) => void) {
+export function useImageViewContext(data: SliceOrPath<Illust, number, AllSlice<Illust, number> | ListIndexSlice<Illust, number>, number[]>, modifiedCallback?: (illustId: number) => void) {
     const slice = useSlice(data)
     const subSlice = useSubSlice(slice)
     const navigator = useNavigator(slice, subSlice)
@@ -29,7 +29,7 @@ export const [installImageViewContext, useImageViewContext] = installation(funct
     const playBoard = usePlayBoardContext()
 
     return {navigator, target, operators, sideBar, playBoard}
-})
+}
 
 function useSlice(data: SliceOrPath<Illust, number, AllSlice<Illust, number> | ListIndexSlice<Illust, number>, number[]>): SliceDataView<Illust> {
     if(data.type === "slice") {
@@ -178,6 +178,7 @@ function useOperators(data: Ref<Illust | null>, id: Ref<number | null>) {
     const toast = useToast()
     const message = useMessageBox()
     const dialog = useDialogService()
+    const stackedView = useStackedView()
     const { assetsLocal } = useAssets()
 
     const fetchSetData = usePostPathFetchHelper(client => client.illust.image.update)
@@ -197,8 +198,7 @@ function useOperators(data: Ref<Illust | null>, id: Ref<number | null>) {
     }
 
     const openInNewWindow = () => {
-        //TODO 从image preview模块打开预览窗口
-        //navigator.newPreviewWindow({type: "image", imageIds: [id.value!]})
+        stackedView.openImageViewInNewWindow({imageIds: [id.value!]})
     }
 
     const editMetaTag = () => {
@@ -295,11 +295,11 @@ function useRecentFolders(id: Ref<number | null>) {
 }
 
 function useViewStackCallback(slice: SliceDataView<Illust>, modifiedCallback?: (illustId: number) => void) {
-    const { isClosable, closeView } = useViewStack()
+    const { isRootView, closeView } = useStackedView()
 
     //列表清空时，自动关闭视图
     watch(slice.count, cnt => {
-        if(cnt !== null && cnt <= 0 && isClosable()) {
+        if(cnt !== null && cnt <= 0 && !isRootView) {
             closeView()
         }
     })

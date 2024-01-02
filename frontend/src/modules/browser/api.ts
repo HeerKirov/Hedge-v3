@@ -9,7 +9,7 @@ import {
     InternalTab, NewRoute, Route, RouteDefinition, Tab, BrowserTabEvent
 } from "./definition"
 
-export const [installBrowserView, useBrowserView] = installation(function (options: BrowserViewOptions) {
+export const [installBrowserView, useBrowserView] = installationNullable(function (options: BrowserViewOptions) {
     const vueRoute = useRoute()
 
     const defaultRouteDefinition = options.routes[0]
@@ -69,7 +69,7 @@ export const [installBrowserView, useBrowserView] = installation(function (optio
 })
 
 export const [installCurrentTab, useCurrentTab] = installationNullable(function (props: {id: number, historyId: number}) {
-    const { views, activeIndex } = useBrowserView()
+    const { views, activeIndex } = useBrowserView()!
 
     const view = ref<InternalTab>(views.value.find(v => v.id === props.id)!)
 
@@ -90,8 +90,13 @@ export const [installCurrentTab, useCurrentTab] = installationNullable(function 
     return {view, page, active}
 })
 
+export function isBrowserEnvironment() {
+    const view = useBrowserView()
+    return view !== undefined
+}
+
 export function useBrowserTabStacks() {
-    const { views, activeIndex, loadComponent, getComponentOrNull } = useBrowserView()
+    const { views, activeIndex, loadComponent, getComponentOrNull } = useBrowserView()!
 
     const tabStacks = ref<BrowserTabStack[]>([])
 
@@ -109,7 +114,7 @@ export function useBrowserTabStacks() {
 }
 
 export function useBrowserTabs(): BrowserTabs {
-    const { views, activeIndex, getRouteDefinition, nextTabId, nextHistoryId, event } = useBrowserView()
+    const { views, activeIndex, getRouteDefinition, nextTabId, nextHistoryId, event } = useBrowserView()!
 
     const tabs = computed<Tab[]>(() => views.value.map(({ id, title }, index) => ({id, index, title, active: activeIndex.value === index})))
 
@@ -176,8 +181,8 @@ export function useBrowserTabs(): BrowserTabs {
     return {tabs, activeTab, newTab, moveTab, closeTab, duplicateTab, newWindow}
 }
 
-export function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): BrowserRoute {
-    const { views, activeIndex, getRouteDefinition, nextHistoryId, historyMax, event } = useBrowserView()
+function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): BrowserRoute {
+    const { views, activeIndex, getRouteDefinition, nextHistoryId, historyMax, event } = useBrowserView()!
 
     const route = computed(() => page?.value.route ?? view.value.route)
 
@@ -260,7 +265,7 @@ export function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>
 }
 
 export function useActivateTabRoute(): BrowserRoute {
-    const { views, activeIndex } = useBrowserView()
+    const { views, activeIndex } = useBrowserView()!
 
     const view = ref<InternalTab>(views.value[activeIndex.value])
 
@@ -278,7 +283,7 @@ export function useTabRoute(): BrowserRoute {
     }
 }
 
-export function useDocument(): BrowserDocument {
+function useDocument(): BrowserDocument {
     const { page } = useCurrentTab()!
 
     const title = computed({
@@ -303,6 +308,6 @@ export function useDocumentTitle(titleChanged: Ref<string | {name: string} | {ti
 }
 
 export function useBrowserEvent(arg: (e: BrowserTabEvent) => void) {
-    const { event } = useBrowserView()
+    const { event } = useBrowserView()!
     useListeningEvent(event, arg)
 }

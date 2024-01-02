@@ -7,12 +7,12 @@ import { Button, Separator, OptionButtons } from "@/components/universal"
 import { SideLayout, SideBar, TopBarCollapseLayout, MiddleLayout, Flex, FlexItem } from "@/components/layout"
 import { IllustTabDetailInfo, IllustTabRelatedItems, IllustTabSourceData } from "@/components-module/common"
 import { ZoomController } from "@/components-business/top-bar"
-import { ViewStackBackButton } from "@/components-module/view-stack"
 import { useAssets } from "@/functions/app"
 import { Illust } from "@/functions/http-client/api/illust"
 import { AllSlice, ListIndexSlice, SliceOrPath } from "@/functions/fetch"
 import { MenuItem, usePopupMenu } from "@/modules/popup-menu"
-import { installImageViewContext } from "@/services/view-stack/image"
+import { useImageViewContext } from "@/components-module/stackedview/image"
+import BackButton from "./BackButton.vue"
 
 const props = defineProps<{
     sliceOrPath: SliceOrPath<Illust, number, AllSlice<Illust, number> | ListIndexSlice<Illust, number>, number[]>
@@ -28,7 +28,7 @@ const {
         toggleFavorite, deleteItem, openInNewWindow, openInLocalFolder, openInLocalPreference,
         editMetaTag, editSourceData, editAssociate, addToFolder, addToStagingPost, exportItem, recentFolders 
     },
-} = installImageViewContext(props.sliceOrPath, props.modifiedCallback)
+} = useImageViewContext(props.sliceOrPath, props.modifiedCallback)
 
 const { assetsUrl } = useAssets()
 
@@ -93,7 +93,7 @@ const popupMenu = usePopupMenu(computed(() => [
             <template #top-bar>
                 <MiddleLayout>
                     <template #left>
-                        <ViewStackBackButton/>
+                        <BackButton/>
                     </template>
 
                     <Button square icon="angle-left" @click="prev"/>

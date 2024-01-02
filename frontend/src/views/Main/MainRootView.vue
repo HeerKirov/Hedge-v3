@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, } from "vue"
 import { TopBarLayout, SideLayout } from "@/components/layout"
-import { useViewStack } from "@/components-module/view-stack"
+import { useStackedView } from "@/components-module/stackedview"
 import { useBrowserTabStacks } from "@/modules/browser"
 import { installNavigationRecords } from "@/services/base/side-nav-menu"
 import MainSideBar from "./MainSideBar.vue"
@@ -10,9 +10,9 @@ import MainTab from "./MainTab.vue"
 
 const { tabStacks, activeIndex } = useBrowserTabStacks()
 
-const viewStack = useViewStack()
+const stackedView = useStackedView()
 
-const stackExists = computed(() => viewStack.size() > 0)
+const stackExists = computed(() => stackedView.current.value !== null)
 
 installNavigationRecords()
 

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { Button } from "@/components/universal"
-import { useViewStack } from "@/components-module/view-stack"
 import { useInterceptedKey } from "@/modules/keyboard"
+import { useStackedView } from "./context"
 
-const { closeView, isClosable } = useViewStack()
+const { isRootView, closeView } = useStackedView()
 
 useInterceptedKey(["Escape", "Backspace"], closeView)
 
 </script>
 
 <template>
-    <Button v-if="isClosable()" square icon="arrow-left" @click="closeView"/>
+    <Button v-if="!isRootView" square icon="arrow-left" @click="closeView"/>
 </template>
