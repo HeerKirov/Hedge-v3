@@ -32,6 +32,7 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
 const menu = useDynamicPopupMenu<Illust>(illust => [
     {type: "normal", label: "打开", click: i => operators.openDetailByClick(i.id)},
     (illust.type === "COLLECTION" || null) && {type: "normal", label: "查看集合详情", click: i => operators.openCollectionDetail(i.id)},
+    (illust.type === "COLLECTION" || null) && {type: "normal", label: "在新标签页打开集合", click: i => operators.openCollectionDetail(i.id, "newTab")},
     {type: "normal", label: illust.type === "COLLECTION" ? "在新窗口中打开集合" : "在新窗口中打开", click: operators.openInNewWindow},
     {type: "separator"},
     {type: "normal", label: "预览", click: operators.openPreviewBySpace},

@@ -500,11 +500,15 @@ export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref
         }
     }
 
+    const openFolderInNewTab = (folder: SimpleFolder) => {
+        browserTabs.newTab({routeName: "MainFolder", params: {detail: folder.id}})
+    }
+
     const openFolderInNewWindow = (folder: SimpleFolder) => {
         browserTabs.newWindow({routeName: "MainFolder", params: {detail: folder.id}})
     }
 
-    return {data, openRelatedBook, openRelatedCollection, openAssociate, openAssociateInNewView, openFolderInNewWindow}
+    return {data, openRelatedBook, openRelatedCollection, openAssociate, openAssociateInNewView, openFolderInNewTab, openFolderInNewWindow}
 }
 
 export function useSideBarSourceData(path: Ref<number | null>) {

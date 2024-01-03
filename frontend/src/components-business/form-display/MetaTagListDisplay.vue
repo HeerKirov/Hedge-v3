@@ -36,6 +36,11 @@ const openMetaTagDetail = ({ type, value }: MetaTagTypeValue) => {
     else if(type === "topic") router!.routePush({routeName: "TopicDetail", path: value.id})
     else if(type === "author") router!.routePush({routeName: "AuthorDetail", path: value.id})
 }
+const openMetaTagDetailInNewTab = ({ type, value }: MetaTagTypeValue) => {
+    if(type === "tag") browserTabs!.newTab({routeName: "Tag", initializer: {tagId: value.id}})
+    else if(type === "topic") browserTabs!.newTab({routeName: "TopicDetail", path: value.id})
+    else if(type === "author") browserTabs!.newTab({routeName: "AuthorDetail", path: value.id})
+}
 const openMetaTagDetailInNewWindow = ({ type, value }: MetaTagTypeValue) => {
     if(type === "tag") browserTabs!.newWindow({routeName: "Tag", initializer: {tagId: value.id}})
     else if(type === "topic") browserTabs!.newWindow({routeName: "TopicDetail", path: value.id})
@@ -60,6 +65,7 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues) => {
 const menu = usePopupMenu<MetaTagTypeValue>([
     ...(hasBrowser ? [
         {type: "normal", "label": "查看标签详情", click: openMetaTagDetail},
+        {type: "normal", "label": "在新标签页中打开标签详情", click: openMetaTagDetailInNewTab},
         {type: "normal", "label": "在新窗口中打开标签详情", click: openMetaTagDetailInNewWindow},
         {type: "separator"},
         {type: "normal", "label": "在图库中搜索", click: searchInIllusts},

@@ -127,15 +127,6 @@ export interface ImportStatusInfo {
     messages: string[] | null
 }
 
-export interface SaveError {
-    importId: number
-    fileNotReady: boolean
-    notExistedCollectionId: number | null
-    notExistedCloneImageId: number | null
-    notExistedBookIds: number[] | null
-    notExistedFolderIds: number[] | null
-}
-
 export interface SourcePreference {
     title: string | null
     description: string | null
@@ -193,11 +184,6 @@ export interface DetailImportRecord extends ImportRecord {
         tags: RelatedSimpleTag[]
         description: string
     } | null
-}
-
-export interface ImportSaveResponse {
-    total: number
-    errors: SaveError[]
 }
 
 export interface ImportWatcherResponse {

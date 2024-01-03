@@ -34,6 +34,7 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
 
 const menu = useDynamicPopupMenu<Book>(book => [
     {type: "normal", label: "打开", click: operators.openBookView},
+    {type: "normal", label: "在新标签页中打开", click: operators.openInNewTab},
     {type: "normal", label: "在新窗口中打开", click: operators.openInNewWindow},
     {type: "separator"},
     {type: "checkbox", checked: paneState.visible.value, label: "在侧边栏预览", click: () => paneState.visible.value = !paneState.visible.value},

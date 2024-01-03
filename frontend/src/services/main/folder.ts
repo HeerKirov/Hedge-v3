@@ -13,10 +13,10 @@ import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useIllustViewController } from "@/services/base/view-controller"
+import { useNavigationItem } from "@/services/base/side-nav-menu"
 import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
 import { useFolderTableSearch } from "@/services/common/folder"
 import { installation } from "@/utils/reactivity"
-import { useNavigationItem } from "@/services/base/side-nav-menu";
 
 export const [installFolderContext, useFolderContext] = installation(function () {
     const paneState = useRouteStorageViewState<number>()
@@ -98,9 +98,11 @@ function useOperators(data: Ref<FolderTreeNode[] | undefined>, paneState: Detail
         }
     }
 
-    const openDetail = (folder: FolderTreeNode, _: number | null, __: number, newWindow: boolean) => {
-        if(newWindow) {
+    const openDetail = (folder: FolderTreeNode, _: number | null, __: number, at: "newTab" | "newWindow" | undefined) => {
+        if(at === "newWindow") {
             browserTabs.newWindow({routeName: "FolderDetail", path: folder.id})
+        }else if(at === "newTab") {
+            browserTabs.newTab({routeName: "FolderDetail", path: folder.id})
         }else{
             router.routePush({routeName: "FolderDetail", path: folder.id})
         }

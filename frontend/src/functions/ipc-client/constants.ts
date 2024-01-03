@@ -1,4 +1,4 @@
-import { Platform, NativeTheme, ServerStaticInfo } from "./constants-model"
+import { Platform, NativeTheme, ServerStaticInfo, TabControlEvent } from "./constants-model"
 import { ServerServiceStatus, ServerConnectionStatus, ServerConnectionInfo, WsToastResult } from "./constants-model"
 import { AppInitializeForm, AppState, InitializeState, LoginForm } from "./constants-model"
 import { Emitter } from "@/utils/emitter"
@@ -40,6 +40,9 @@ export interface IpcClient {
         }
     }
     remote: {
+        tabs: {
+            controlEvent: Emitter<TabControlEvent>
+        }
         fullscreen: {
             get(): boolean
             set(value: boolean): void

@@ -29,6 +29,8 @@ const orderTimeText = computed(() => props.orderTime !== undefined ? `${props.or
 
 const openPartition = () => router!.routePush({routeName: "Partition", path: props.partitionTime})
 
+const openPartitionInNewTab = () => browserTabs!.newTab({routeName: "Partition", path: props.partitionTime})
+
 const openPartitionInNewWindow = () => browserTabs!.newWindow({routeName: "Partition", path: props.partitionTime})
 
 const collapse = () => {
@@ -42,6 +44,7 @@ const menu = usePopupMenu(() => [
     ...(hasBrowser ? [
         {type: "separator"},
         {type: "normal", "label": "查看时间分区", click: openPartition},
+        {type: "normal", "label": "在新标签页中打开时间分区", click: openPartitionInNewTab},
         {type: "normal", "label": "在新窗口中打开时间分区", click: openPartitionInNewWindow}
     ] as const : [])
 ])

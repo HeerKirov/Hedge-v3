@@ -1,9 +1,10 @@
 import { Component, computed, DefineComponent, markRaw, onBeforeMount, Ref, ref, watch } from "vue"
 import { useRoute } from "vue-router"
+import { useApplicationMenuTabs } from "@/functions/app/app-menu"
 import { windowManager } from "@/modules/window"
 import { arrays, objects } from "@/utils/primitives"
 import { installationNullable } from "@/utils/reactivity"
-import { useListeningEvent, useRefEmitter } from "@/utils/emitter"
+import { SendRefEmitter, useListeningEvent, useRefEmitter } from "@/utils/emitter"
 import {
     BrowserDocument, BrowserRoute, BrowserTabStack, BrowserTabs, BrowserViewOptions, InternalPage,
     InternalTab, NewRoute, Route, RouteDefinition, Tab, BrowserTabEvent
@@ -87,8 +88,114 @@ export const [installBrowserView, useBrowserView] = installationNullable(functio
         }
     })
 
-    return {views, activeIndex, historyMax, event, nextTabId, nextHistoryId, matchStacks, getRouteDefinition, loadComponent, getComponentOrNull}
+    const browserTabs = installBrowserTabs(views, activeIndex, getRouteDefinition, nextTabId, nextHistoryId, historyMax, event)
+
+    return {views, activeIndex, historyMax, event, nextTabId, nextHistoryId, matchStacks, getRouteDefinition, loadComponent, getComponentOrNull, browserTabs}
 })
+
+function installBrowserTabs(views: Ref<InternalTab[]>, activeIndex: Ref<number>, getRouteDefinition: (routeName?: string) => RouteDefinition, nextTabId: () => number, nextHistoryId: () => number, historyMax: number, event: SendRefEmitter<BrowserTabEvent>): BrowserTabs {
+    const tabs = computed<Tab[]>(() => views.value.map(({ id, current: { title } }, index) => ({id, index, title, active: activeIndex.value === index})))
+
+    function newTab(args?: NewRoute) {
+        const routeDef = getRouteDefinition(args?.routeName)
+        const route: Route = args !== undefined ? {routeName: args.routeName, path: args.path, params: args.params ?? {}, initializer: args.initializer ?? {}} : {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
+        const id = nextTabId()
+        views.value.push({id, memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}}, histories: [], forwards: []})
+        activeIndex.value = views.value.length - 1
+        event.emit({type: "TabCreated", id})
+    }
+
+    function duplicateTab(args?: {id?: number, index?: number}) {
+        const viewIndex = args?.index !== undefined ? args.index : args?.id !== undefined ? views.value.findIndex(v => v.id === args.id) : activeIndex.value
+        const view = views.value[viewIndex]
+        if(viewIndex >= 0 && view !== undefined) {
+            const id = nextTabId()
+            views.value.splice(viewIndex + 1, 0, {...objects.deepCopy(view), id})
+            activeIndex.value = viewIndex + 1
+            event.emit({type: "TabCreated", id})
+        }
+    }
+
+    function activeTab(index: number) {
+        if(index >= 0 && index < views.value.length) {
+            activeIndex.value = index
+            event.emit({type: "TabActiveChanged", id: views.value[index].id})
+        }
+    }
+
+    function nextTab() {
+        activeTab(activeIndex.value < views.value.length - 1 ? activeIndex.value + 1 : 0)
+    }
+
+    function prevTab() {
+        activeTab(activeIndex.value > 0 ? activeIndex.value - 1 : views.value.length - 1)
+    }
+
+    function moveTab(args: {id?: number, index?: number, toIndex: number}) {
+        const index = args.index !== undefined ? args.index : args.id !== undefined ? views.value.findIndex(v => v.id === args.id) : activeIndex.value
+        if(index >= 0 && index < tabs.value.length && args.toIndex >= 0 && args.toIndex <= tabs.value.length && index !== args.toIndex) {
+            if(args.toIndex > index) {
+                views.value = [...views.value.slice(0, index), ...views.value.slice(index + 1, args.toIndex + 1), views.value[index], ...views.value.slice(args.toIndex + 1)]
+                activeIndex.value = args.toIndex
+            }else{
+                views.value = [...views.value.slice(0, args.toIndex), views.value[index], ...views.value.slice(args.toIndex, index), ...views.value.slice(index + 1)]
+                activeIndex.value = args.toIndex
+            }
+            event.emit({type: "TabMoved", id: views.value[activeIndex.value].id})
+        }
+    }
+
+    function closeTab(args?: {id?: number, index?: number}) {
+        const index = args?.index !== undefined ? args.index : args?.id !== undefined ? views.value.findIndex(v => v.id === args.id) : activeIndex.value
+        if(index >= 0 && index < tabs.value.length) {
+            const [view] = views.value.splice(index, 1)
+            if(views.value.length <= 0) {
+                window.close()
+            }else if(index < activeIndex.value || (index === activeIndex.value && activeIndex.value > 0)) {
+                activeIndex.value -= 1
+            }
+            event.emit({type: "TabClosed", id: view.id})
+        }
+    }
+
+    function newWindow(args?: Route) {
+        const routeDef = getRouteDefinition(args?.routeName)
+        const route: Route = args !== undefined ? {routeName: args.routeName, path: args.path, params: args.params ?? {}, initializer: args.initializer ?? {}} : {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
+        const path = route.path !== undefined ? encodeURIComponent(window.btoa(JSON.stringify(route.path))) : ""
+        const params = route.params !== undefined ? encodeURIComponent(window.btoa(JSON.stringify(route.params))) : ""
+        const initializer = route.initializer !== undefined ? encodeURIComponent(window.btoa(JSON.stringify(route.initializer))) : ""
+        windowManager.newWindow(`/main?routeName=${route.routeName}` +
+            `&path=${path}` +
+            `&params=${params}` +
+            `&initializer=${initializer}`)
+    }
+
+    function routeBack() {
+        const view = {value: views.value[activeIndex.value]}
+        if(view.value.histories.length > 0) {
+            const [history] = view.value.histories.splice(view.value.histories.length - 1, 1)
+            view.value.forwards.push(view.value.current)
+            if(view.value.forwards.length > historyMax) view.value.forwards.shift()
+            view.value.current = history
+            event.emit({type: "Routed", operation: "Back", id: view.value.id, historyId: view.value.current.historyId})
+        }
+    }
+
+    function routeForward() {
+        const view = {value: views.value[activeIndex.value]}
+        if(view.value.forwards.length > 0) {
+            const [forward] = view.value.forwards.splice(view.value.forwards.length - 1, 1)
+            view.value.histories.push(view.value.current)
+            if(view.value.histories.length > historyMax) view.value.histories.shift()
+            view.value.current = forward
+            event.emit({type: "Routed", operation: "Forward", id: view.value.id, historyId: view.value.current.historyId})
+        }
+    }
+
+    useApplicationMenuTabs({newTab, duplicateTab, closeTab, nextTab, prevTab, routeBack, routeForward})
+
+    return {tabs, activeTab, newTab, moveTab, closeTab, duplicateTab, newWindow}
+}
 
 export const [installCurrentTab, useCurrentTab] = installationNullable(function (props: {id: number, historyId: number}) {
     const { views, activeIndex, event } = useBrowserView()!
@@ -132,77 +239,7 @@ export function useBrowserTabStacks() {
 }
 
 export function useBrowserTabs(): BrowserTabs {
-    const { views, activeIndex, getRouteDefinition, nextTabId, nextHistoryId, event } = useBrowserView()!
-
-    const tabs = computed<Tab[]>(() => views.value.map(({ id, current: { title } }, index) => ({id, index, title, active: activeIndex.value === index})))
-
-    function newTab(args?: NewRoute) {
-        const routeDef = getRouteDefinition(args?.routeName)
-        const route: Route = args !== undefined ? {routeName: args.routeName, path: args.path, params: args.params ?? {}, initializer: args.initializer ?? {}} : {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
-        const id = nextTabId()
-        views.value.push({id, memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}}, histories: [], forwards: []})
-        activeIndex.value = views.value.length - 1
-        event.emit({type: "TabCreated", id})
-    }
-
-    function duplicateTab(args: {id?: number, index?: number}) {
-        const viewIndex = args.index !== undefined ? args.index : args.id !== undefined ? views.value.findIndex(v => v.id === args.id) : -1
-        const view = views.value[viewIndex]
-        if(viewIndex >= 0 && view !== undefined) {
-            const id = nextTabId()
-            views.value.splice(viewIndex + 1, 0, {...objects.deepCopy(view), id})
-            activeIndex.value = viewIndex + 1
-            event.emit({type: "TabCreated", id})
-        }
-    }
-
-    function activeTab(index: number) {
-        if(index >= 0 && index < views.value.length) {
-            activeIndex.value = index
-            event.emit({type: "TabActiveChanged", id: views.value[index].id})
-        }
-    }
-
-    function moveTab(args: {id?: number, index?: number, toIndex: number}) {
-        const index = args.index !== undefined ? args.index : args.id !== undefined ? views.value.findIndex(v => v.id === args.id) : -1
-        if(index >= 0 && index < tabs.value.length && args.toIndex >= 0 && args.toIndex <= tabs.value.length && index !== args.toIndex) {
-            if(args.toIndex > index) {
-                views.value = [...views.value.slice(0, index), ...views.value.slice(index + 1, args.toIndex + 1), views.value[index], ...views.value.slice(args.toIndex + 1)]
-                activeIndex.value = args.toIndex
-            }else{
-                views.value = [...views.value.slice(0, args.toIndex), views.value[index], ...views.value.slice(args.toIndex, index), ...views.value.slice(index + 1)]
-                activeIndex.value = args.toIndex
-            }
-            event.emit({type: "TabMoved", id: views.value[activeIndex.value].id})
-        }
-    }
-
-    function closeTab(args: {id?: number, index?: number}) {
-        const index = args.index !== undefined ? args.index : args.id !== undefined ? views.value.findIndex(v => v.id === args.id) : -1
-        if(index >= 0 && index < tabs.value.length) {
-            const [view] = views.value.splice(index, 1)
-            if(views.value.length <= 0) {
-                window.close()
-            }else if(index < activeIndex.value || (index === activeIndex.value && activeIndex.value > 0)) {
-                activeIndex.value -= 1
-            }
-            event.emit({type: "TabClosed", id: view.id})
-        }
-    }
-
-    function newWindow(args?: Route) {
-        const routeDef = getRouteDefinition(args?.routeName)
-        const route: Route = args !== undefined ? {routeName: args.routeName, path: args.path, params: args.params ?? {}, initializer: args.initializer ?? {}} : {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
-        const path = route.path !== undefined ? encodeURIComponent(window.btoa(JSON.stringify(route.path))) : ""
-        const params = route.params !== undefined ? encodeURIComponent(window.btoa(JSON.stringify(route.params))) : ""
-        const initializer = route.initializer !== undefined ? encodeURIComponent(window.btoa(JSON.stringify(route.initializer))) : ""
-        windowManager.newWindow(`/main?routeName=${route.routeName}` +
-            `&path=${path}` +
-            `&params=${params}` +
-            `&initializer=${initializer}`)
-    }
-
-    return {tabs, activeTab, newTab, moveTab, closeTab, duplicateTab, newWindow}
+    return useBrowserView()!.browserTabs
 }
 
 function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): BrowserRoute {

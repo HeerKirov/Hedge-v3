@@ -16,7 +16,7 @@ export interface SideNavMenu {
 
 interface SideNavMenuOptions {
     router: Router | BrowserRoute
-    navigationRecords: NavigationRecords
+    navigationRecords?: NavigationRecords
     menuItems: NavItem[]
 }
 
@@ -113,7 +113,7 @@ export const [installNavMenu, useNavMenu] = installation(function (options: Side
                     //TODO: 将navRecords直接注入到navMenu来解决问题。但实现方式不太美观。
                     //      这么做产生了一个未在流程中说明的外部依赖，所有的path参数今后只能从navRecords中取值了。
                     //      这不是一种好的编码方式，因此以后也要重构这个模块。
-                    const path = options.navigationRecords.records[param.routeName]?.find(i => i.id === param.routePathKey)?.path ?? param.routePathKey
+                    const path = options.navigationRecords?.records[param.routeName]?.find(i => i.id === param.routePathKey)?.path ?? param.routePathKey
                     router.routePush({routeName: param.routeName, path})
                 }else{
                     router.routePush({routeName: param.routeName})

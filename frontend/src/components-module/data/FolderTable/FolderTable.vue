@@ -37,7 +37,7 @@ const emit = defineEmits<{
     (e: "update:selected", folderId: number | null): void
     (e: "update:createPosition", position: {parentId: number | null, ordinal: number} | undefined): void
     (e: "update:pinned", folder: FolderTreeNode, pin: boolean): void
-    (e: "enter", folder: FolderTreeNode, parentId: number | null, ordinal: number, newWindow: boolean): void
+    (e: "enter", folder: FolderTreeNode, parentId: number | null, ordinal: number, at: "newTab" | "newWindow" | undefined): void
     (e: "create", v: FolderCreateForm): void
     (e: "move", folder: FolderTreeNode, moveToParentId: number | null | undefined, moveToOrdinal: number): void
     (e: "delete", folder: FolderTreeNode, parentId: number | null, ordinal: number): void

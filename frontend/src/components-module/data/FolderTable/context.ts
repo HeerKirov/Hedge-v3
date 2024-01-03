@@ -18,7 +18,7 @@ interface FolderTreeContextOptions {
         updateCreatePosition(position: {parentId: number | null, ordinal: number} | undefined): void
         updateSelected(folderId: number | null): void
         updatePinned(folder: FolderTreeNode, pin: boolean): void
-        enter(folder: FolderTreeNode, parentId: number | null, ordinal: number, newWindow: boolean): void
+        enter(folder: FolderTreeNode, parentId: number | null, ordinal: number, at: "newTab" | "newWindow" | undefined): void
         create(form: FolderCreateForm): void
         move(folder: FolderTreeNode, moveToParentId: number | null | undefined, moveToOrdinal: number): void
         delete(folder: FolderTreeNode, parentId: number | null, ordinal: number): void
@@ -361,11 +361,15 @@ function useMenu(options: FolderTreeContextOptions, indexedData: Ref<{[key: numb
 
     const openDetail = (folder: FolderTreeNode) => {
         const indexedInfo = indexedData.value[folder.id]
-        if(indexedInfo) options.emit.enter(folder, indexedInfo.parentId, indexedInfo.ordinal, false)
+        if(indexedInfo) options.emit.enter(folder, indexedInfo.parentId, indexedInfo.ordinal, undefined)
+    }
+    const openDetailInNewTab = (folder: FolderTreeNode) => {
+        const indexedInfo = indexedData.value[folder.id]
+        if(indexedInfo) options.emit.enter(folder, indexedInfo.parentId, indexedInfo.ordinal, "newTab")
     }
     const openDetailInNewWindow = (folder: FolderTreeNode) => {
         const indexedInfo = indexedData.value[folder.id]
-        if(indexedInfo) options.emit.enter(folder, indexedInfo.parentId, indexedInfo.ordinal, true)
+        if(indexedInfo) options.emit.enter(folder, indexedInfo.parentId, indexedInfo.ordinal, "newWindow")
     }
 
     const togglePinned = (folder: FolderTreeNode) => {
@@ -409,6 +413,7 @@ function useMenu(options: FolderTreeContextOptions, indexedData: Ref<{[key: numb
     const menu = useDynamicPopupMenu<FolderTreeNode>(folder => [
         ...(folder.type === "FOLDER" ? [
             {type: "normal", label: "查看目录内容", click: openDetail},
+            {type: "normal", label: "在新标签页查看目录内容", click: openDetailInNewTab},
             {type: "normal", label: "在新窗口查看目录内容", click: openDetailInNewWindow},
             {type: "separator"},
             {type: "normal", label: folder.pinned ? "取消固定到侧边栏" : "固定到侧边栏", click: togglePinned}

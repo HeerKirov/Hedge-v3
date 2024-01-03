@@ -109,7 +109,7 @@ export interface ImageDatasetOperators<T extends CommonIllust> {
     /**
      * 直接打开集合详情页。
      */
-    openCollectionDetail(illustId: number): void
+    openCollectionDetail(illustId: number, at?: "newTab"): void
     /**
      * 在新窗口打开此项目。
      */
@@ -311,12 +311,16 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
         }
     }
 
-    const openCollectionDetail = (illustId: number) => {
+    const openCollectionDetail = (illustId: number, at: "newTab" | undefined) => {
         const currentIndex = listview.proxy.sync.findByKey(illustId)
         if(currentIndex !== undefined) {
             const illust = listview.proxy.sync.retrieve(currentIndex)!
             if(illust.type === "COLLECTION") {
-                router.routePush({routeName: "CollectionDetail", path: illustId})
+                if(at === "newTab") {
+                    browserTabs.newTab({routeName: "CollectionDetail", path: illustId})
+                }else{
+                    router.routePush({routeName: "CollectionDetail", path: illustId})
+                }
             }else{
                 console.error(`Illust ${illust.id} is not a collection.`)
             }

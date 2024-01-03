@@ -63,3 +63,5 @@ export interface LoginForm {
 export type NativeTheme = "system" | "light" | "dark"
 
 export type Platform = "win32" | "darwin" | "linux"
+
+export type TabControlEvent = "NEW_TAB" | "CLONE_TAB" | "PREV_TAB" | "NEXT_TAB" | "CLOSE_TAB" | "ROUTE_BACK" | "ROUTE_FORWARD"

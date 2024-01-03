@@ -37,7 +37,7 @@ const click = () => {
 const dblclick = () => {
     const indexed = indexedData.indexedData.value[props.row.id]
     if(indexed) {
-        emit.enter(props.row, indexed.parentId, indexed.ordinal, false)
+        emit.enter(props.row, indexed.parentId, indexed.ordinal, undefined)
     }
 }
 

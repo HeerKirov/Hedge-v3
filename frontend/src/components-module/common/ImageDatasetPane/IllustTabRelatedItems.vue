@@ -11,11 +11,12 @@ const props = defineProps<{detailId: number, type: "IMAGE" | "COLLECTION"}>()
 const detailId = toRef(props, "detailId")
 const illustType = toRef(props, "type")
 
-const { data, openRelatedCollection, openRelatedBook, openAssociate, openAssociateInNewView, openFolderInNewWindow } = useSideBarRelatedItems(detailId, illustType)
+const { data, openRelatedCollection, openRelatedBook, openAssociate, openAssociateInNewView, openFolderInNewTab, openFolderInNewWindow } = useSideBarRelatedItems(detailId, illustType)
 
 const { assetsUrl } = useAssets()
 
 const folderPopupMenu = usePopupMenu<SimpleFolder>([
+    {type: "normal", label: "在新标签页打开此文件夹", click: openFolderInNewTab},
     {type: "normal", label: "在新窗口打开此文件夹", click: openFolderInNewWindow}
 ])
 

@@ -77,6 +77,10 @@ function useOperators() {
         router.routePush({routeName: "BookDetail", path: book.id})
     }
 
+    const openInNewTab = (book: Book) => {
+        browserTabs.newTab({routeName: "BookDetail", path: book.id})
+    }
+
     const openInNewWindow = (book: Book) => {
         browserTabs.newWindow({routeName: "BookDetail", path: book.id})
     }
@@ -95,7 +99,7 @@ function useOperators() {
         }
     }
 
-    return {switchFavorite, deleteItem, openBookView, openInNewWindow, exportItem}
+    return {switchFavorite, deleteItem, openBookView, openInNewTab, openInNewWindow, exportItem}
 }
 
 export function useBookDetailContext() {
