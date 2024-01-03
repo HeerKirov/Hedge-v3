@@ -83,6 +83,11 @@ function createRemoteIpcClient(): IpcClient {
             }
         },
         remote: {
+            tabs: {
+                controlEvent: createProxyEmitter(emit => {
+                    ipcRenderer.on("/remote/tabs/control", (_, arg) => emit(arg))
+                })
+            },
             fullscreen: {
                 get() {
                     return ipcRenderer.sendSync("/remote/fullscreen")
@@ -147,7 +152,7 @@ function createRemoteIpcClient(): IpcClient {
                     ipcRenderer.send("/remote/shell/open-path-in-folder", url)
                 },
                 startDragFile(thumbnail, filepath) {
-                    ipcRenderer.send("/remote/shell/start-drag-file", thumbnail, filepath)
+                    ipcRenderer.send("/remote/shell/start-drag-file", {thumbnail, filepath})
                 },
             }
         }

@@ -35,7 +35,7 @@ export function request<T>(config: AxiosRequestConfig): Promise<Response<T>> {
     })
 }
 
-type Response<T> = ResponseOk<T> | ResponseError | ResponseConnectionError
+export type Response<T> = ResponseOk<T> | ResponseError | ResponseConnectionError
 
 interface ResponseOk<T> {
     ok: true

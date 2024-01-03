@@ -2,11 +2,12 @@ import path from "path"
 import { openSync } from "fs"
 import { kill as killProcess } from "process"
 import { spawn } from "child_process"
+import { AxiosRequestConfig } from "axios"
 import { DATA_FILE, RESOURCE_FILE } from "../../constants/file"
 import { sleep } from "../../utils/process"
 import { createEmitter, Emitter } from "../../utils/emitter"
 import { readFile } from "../../utils/fs"
-import { request, Ws } from "../../utils/request"
+import { request, Ws, Response } from "../../utils/request"
 import {
     AppInitializeForm,
     ServerConnectionStatus,
@@ -85,6 +86,12 @@ interface ServiceManager {
      * @param form
      */
     appInitialize(form: AppInitializeForm): Promise<void>
+
+    /**
+     * 向服务器发送一个请求。
+     * @param config
+     */
+    request<T>(config: AxiosRequestConfig): Promise<Response<T>>
 
     /**
      * 加载状态发生改变的事件。
@@ -382,6 +389,12 @@ function createServiceManager(connectionManager: ConnectionManager): ServiceMana
         }
     }
 
+    async function requestToServer<T>(config: AxiosRequestConfig): Promise<Response<T>> {
+        const token = connectionManager.connectionInfo()!.token
+        const host = connectionManager.connectionInfo()!.host
+        return request({...config, baseURL: `http://${host}`, headers: {'Authorization': `Bearer ${token}`}})
+    }
+
     connectionManager.statusChangedEvent.addEventListener(({ status, info, appLoadStatus  }) => {
         if(status === "OPEN" && info !== null) {
             //connection可用时，主动请求一次状态
@@ -407,7 +420,8 @@ function createServiceManager(connectionManager: ConnectionManager): ServiceMana
     return {
         status,
         statusChangedEvent,
-        appInitialize
+        appInitialize,
+        request: requestToServer
     }
 }
 

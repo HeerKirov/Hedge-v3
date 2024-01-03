@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, ipcMain, Menu, MessageBoxOptions, OpenDialogOptions, shell } from "electron"
+import { BrowserWindow, dialog, ipcMain, IpcMainEvent, IpcMainInvokeEvent, Menu, MessageBoxOptions, OpenDialogOptions, shell } from "electron"
 import { sleep } from "../../utils/process"
 import { Emitter } from "../../utils/emitter"
 import { MenuTemplate, MenuTemplateInIpc } from "./constants"
@@ -8,27 +8,28 @@ import { ServerManager } from "../../components/server"
 import { StateManager } from "../../components/state"
 import { ThemeManager } from "../theme"
 import { WindowManager } from "../window"
+import { MenuManager } from "../menu"
 import { createIpcClientImpl, IpcRemoteOptions } from "./impl"
 
 
 /**
  * 异步的、有返回的请求。
  */
-function ipcHandle<T, R>(channel: string, invoke: (f: T) => Promise<R>) {
-    ipcMain.handle(channel, (event, args) => invoke(args))
+function ipcHandle<T, R>(channel: string, invoke: (f: T, e: IpcMainInvokeEvent) => Promise<R>) {
+    ipcMain.handle(channel, (event, args) => invoke(args, event))
 }
 
 /**
  * 同步的、有返回的请求。
  */
-function ipcHandleSync<T, R>(channel: string, invoke: (f: T) => R) {
+function ipcHandleSync<T, R>(channel: string, invoke: (f: T, e: IpcMainEvent) => R) {
     ipcMain.on(channel, (event, args) => {
-        event.returnValue = invoke(args)
+        event.returnValue = invoke(args, event)
     })
 }
 
 /**
- * 从客户端主动发送的ipc通信。
+ * 从客户端主动发送的ipc通信。发送到所有正在运行的窗口。
  */
 function ipcEvent<T>(channel: string, emitter: Emitter<T>) {
     emitter.addEventListener(e => {
@@ -39,9 +40,19 @@ function ipcEvent<T>(channel: string, emitter: Emitter<T>) {
 }
 
 /**
+ * 从客户端主动发送的ipc通信。发送到当前聚焦的窗口。
+ */
+function ipcEventFocus<T>(channel: string, emitter: Emitter<T>) {
+    emitter.addEventListener(e => {
+        const window = BrowserWindow.getFocusedWindow()
+        if(window !== null) window.webContents.send(channel, e)
+    })
+}
+
+/**
  * 注册全局的IPC远程事件实现。
  */
-export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: Channel, server: ServerManager, state: StateManager, theme: ThemeManager, window: WindowManager, options: IpcRemoteOptions) {
+export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: Channel, server: ServerManager, state: StateManager, theme: ThemeManager, menu: MenuManager, window: WindowManager, options: IpcRemoteOptions) {
     const impl = createIpcClientImpl(appdata, channel, server, state, theme, window, options)
 
     ipcHandleSync("/app/env", impl.app.env)
@@ -65,22 +76,13 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
     ipcHandleSync("/setting/channel/current", impl.setting.channel.getCurrent)
     ipcHandleSync("/setting/channel/toggle", impl.setting.channel.toggle)
 
-    ipcMain.on("/remote/fullscreen", (e) => {
-        e.returnValue = BrowserWindow.fromWebContents(e.sender)!.isFullScreen()
-    })
-    ipcMain.on("/remote/fullscreen/set", (e, value: boolean) => {
-        BrowserWindow.fromWebContents(e.sender)!.setFullScreen(value)
-    })
-    ipcMain.handle("/remote/dialog/open-dialog", async (e, value: OpenDialogOptions) => {
-        return await dialog.showOpenDialog(BrowserWindow.fromWebContents(e.sender)!, value)
-    })
-    ipcMain.handle("/remote/dialog/show-message", async (e, value: MessageBoxOptions) => {
-        return await dialog.showMessageBox(BrowserWindow.fromWebContents(e.sender)!, value)
-    })
-    ipcMain.on("/remote/dialog/show-error", (e, { title, message }: {title: string, message: string}) => {
-        dialog.showErrorBox(title, message)
-    })
-    ipcMain.on("/remote/menu/popup", async (e, { requestId, items, options }: {requestId: number, items: MenuTemplateInIpc[], options?: { x: number; y: number }}) => {
+    ipcEventFocus("/remote/tabs/control", menu.tabs.controlEvent)
+    ipcHandleSync("/remote/fullscreen", (_, e) => BrowserWindow.fromWebContents(e.sender)!.isFullScreen())
+    ipcHandleSync("/remote/fullscreen/set", (value: boolean, e) => { BrowserWindow.fromWebContents(e.sender)!.setFullScreen(value) })
+    ipcHandle("/remote/dialog/open-dialog", (value: OpenDialogOptions, e) => dialog.showOpenDialog(BrowserWindow.fromWebContents(e.sender)!, value))
+    ipcHandle("/remote/dialog/show-message", (value: MessageBoxOptions, e) => dialog.showMessageBox(BrowserWindow.fromWebContents(e.sender)!, value))
+    ipcHandleSync("/remote/dialog/show-error", ({ title, message }: {title: string, message: string}) => { dialog.showErrorBox(title, message) })
+    ipcHandleSync("/remote/menu/popup", ({ requestId, items, options }: {requestId: number, items: MenuTemplateInIpc[], options?: { x: number; y: number }}, e) => {
         let clicked = false
 
         function mapItem(item: MenuTemplateInIpc): MenuTemplate {
@@ -114,16 +116,10 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
         const window = BrowserWindow.fromWebContents(e.sender)!
         menu.popup({window, ...(options || {})})
     })
-    ipcMain.on("/remote/shell/open-external", (e, url: string) => {
-        shell.openExternal(url).catch(reason => dialog.showErrorBox("打开链接时发生错误", reason))
-    })
-    ipcMain.on("/remote/shell/open-path", (e, url: string) => {
-        shell.openPath(url).catch(reason => dialog.showErrorBox("打开链接时发生错误", reason))
-    })
-    ipcMain.on("/remote/shell/open-path-in-folder", (e, url: string) => {
-        shell.showItemInFolder(url)
-    })
-    ipcMain.on("/remote/shell/start-drag-file", (e, thumbnail: string, filepath: string | string[]) => {
+    ipcHandleSync("/remote/shell/open-external", (url: string) => { shell.openExternal(url).catch(reason => dialog.showErrorBox("打开链接时发生错误", reason)) })
+    ipcHandleSync("/remote/shell/open-path", (url: string) => { shell.openPath(url).catch(reason => dialog.showErrorBox("打开链接时发生错误", reason)) })
+    ipcHandleSync("/remote/shell/open-path-in-folder", (url: string) => { shell.showItemInFolder(url) })
+    ipcHandleSync("/remote/shell/start-drag-file", ({ thumbnail, filepath }: {thumbnail: string, filepath: string | string[]}, e) => {
         if(typeof filepath === "string") {
             e.sender.startDrag({file: filepath, icon: thumbnail})
         }else{

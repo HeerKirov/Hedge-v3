@@ -7,7 +7,7 @@ export interface Emitter<T> {
 
 type EmitterEvent<T> = (arg: T) => void
 
-interface SendEmitter<T> extends Emitter<T> {
+export interface SendEmitter<T> extends Emitter<T> {
     emit(arg: T): void
 }
 

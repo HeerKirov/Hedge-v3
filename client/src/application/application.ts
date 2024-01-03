@@ -8,7 +8,7 @@ import { createStorageManager } from "../components/storage"
 import { panic } from "../exceptions"
 import { getNodePlatform, promiseAll } from "../utils/process"
 import { registerGlobalIpcRemoteEvents } from "./ipc"
-import { registerAppMenu, registerDockMenu } from "./menu"
+import { createMenuManager } from "./menu"
 import { registerAppEvents } from "./event"
 import { createThemeManager } from "./theme"
 import { createWindowManager } from "./window"
@@ -85,14 +85,14 @@ export async function createApplication(options?: AppOptions) {
 
         const windowManager = createWindowManager(stateManager, themeManager, storageManager, {platform, debug: options?.debug && {frontendFromFolder: options.debug.frontendFromFolder, frontendFromURL: options.debug.frontendFromURL}})
 
+        const menuManager = createMenuManager(serverManager, windowManager, platform)
+
         registerAppEvents(windowManager, serverManager, platform)
-        registerGlobalIpcRemoteEvents(appDataDriver, channelManager, serverManager, stateManager, themeManager, windowManager, {debugMode, userDataPath, platform})
+        registerGlobalIpcRemoteEvents(appDataDriver, channelManager, serverManager, stateManager, themeManager, menuManager, windowManager, {debugMode, userDataPath, platform})
 
         await promiseAll(appDataDriver.load(), resourceManager.load(), app.whenReady())
 
-        registerAppMenu(windowManager, platform)
-        registerDockMenu(windowManager, platform)
-
+        menuManager.load()
         themeManager.load()
         stateManager.load()
         windowManager.load()

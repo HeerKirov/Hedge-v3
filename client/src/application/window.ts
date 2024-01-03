@@ -74,6 +74,7 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, st
             },
             autoHideMenuBar: true,
             titleBarStyle: options.platform === "darwin" ? "hiddenInset" : "default",
+            trafficLightPosition: options.platform === "darwin" ? {x: 12, y: 13} : undefined,
             backgroundColor: theme.getRuntimeTheme() === "dark" ? "#111417" : "#FFFFFF",
             ...windowBound,
             ...config
@@ -188,7 +189,7 @@ function createWindowBoundManager(storage: StorageManager) {
         const idx = hashURL.indexOf("?")
         const p = idx >= 0 ? hashURL.substring(0, idx) : hashURL
         const p2 = p.startsWith("/") ? p.substring(1) : p
-        return p2 || "__default__"
+        return p2 === "setting" || p2 === "guide" || p2 === "note" || p2 === "preview" ? p2 : "__default__"
     }
 
     function getWindowConfiguration(pathname: string, defaultBound?: {width?: number, height?: number}): BrowserWindowConstructorOptions {
@@ -204,15 +205,14 @@ function createWindowBoundManager(storage: StorageManager) {
         const bound = bounds[pathname]
         if(bound !== undefined) {
             win.setBounds({})
-            if(bound.fullscreen) win.setFullScreen(true)
-            else if(bound.maximized) win.maximize()
+            if(bound.maximized) win.maximize()
         }
 
         win.on("close", () => {
             if(storage.isEnabled()) {
                 const current = bounds[pathname]
-                const newBound = {fullscreen: win.isFullScreen(), maximized: win.isMaximized(), ...win.getNormalBounds()}
-                if(current === undefined || newBound.fullscreen !== current.fullscreen || newBound.maximized !== current.maximized || newBound.x !== current.x || newBound.y !== current.y || newBound.width !== current.width || newBound.height !== current.height) {
+                const newBound = {maximized: win.isMaximized(), ...win.getNormalBounds()}
+                if(current === undefined || newBound.maximized !== current.maximized || newBound.x !== current.x || newBound.y !== current.y || newBound.width !== current.width || newBound.height !== current.height) {
                     bounds[pathname] = newBound
                     storage.set("window", bounds).finally()
                 }
@@ -224,7 +224,6 @@ function createWindowBoundManager(storage: StorageManager) {
 }
 
 interface WindowBound {
-    fullscreen: boolean
     maximized: boolean
     x: number
     y: number
