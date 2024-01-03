@@ -8,7 +8,7 @@ import { useLocalStorage } from "@/functions/app"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import { useMessageBox } from "@/modules/message-box"
 import { useBrowserTabs, useDocumentTitle, usePath, useTabRoute } from "@/modules/browser"
-import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
+import { DetailViewState, useRouteStorageViewState } from "@/services/base/detail-view-state"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
@@ -19,7 +19,7 @@ import { installation } from "@/utils/reactivity"
 import { useNavigationItem } from "@/services/base/side-nav-menu";
 
 export const [installFolderContext, useFolderContext] = installation(function () {
-    const paneState = useDetailViewState<number>()
+    const paneState = useRouteStorageViewState<number>()
 
     const listview = useFolderListview()
 

@@ -78,10 +78,11 @@ watch(state, state => {
         //计算数据区域的总高度
         scrollState.value.totalHeight = Math.ceil(state.total / props.columnCount) * unitHeight.value
         //计算按行计数的offset和limit
-        const offset = Math.floor(state.offset / props.columnCount) //, limit = Math.ceil((state.offset + state.limit) / props.columnCount) - offset
+        const offset = Math.floor(state.offset / props.columnCount) , limit = Math.ceil((state.offset + state.limit) / props.columnCount) - offset
         if(scrollState.value.top === null || offset !== Math.floor(scrollState.value.top / unitHeight.value)) scrollState.value.top = offset * unitHeight.value
-        // 不应该在此处设置height，它应当始终由组件内部根据高度获得，否则有可能固定到一个错误的limit上无法变更
-        // if(scrollState.value.height === null || limit !== Math.ceil(scrollState.value.height / unitHeight.value)) scrollState.value.height = limit * unitHeight.value
+        // 仅应该当height为null时，才能此处设置height，因为这种情况下需要以state作为初始值初始化滚动状态。
+        // 其余情况下，它应当始终由组件内部根据高度获得，否则有可能固定到一个错误的limit上无法变更
+        if(scrollState.value.height === null) scrollState.value.height = limit * unitHeight.value
     }
 }, {deep: true, immediate: true})
 

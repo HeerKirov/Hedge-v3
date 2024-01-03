@@ -69,8 +69,8 @@ export function usePaginationDataView<T>(options: PaginationOptions<T>): Paginat
     const navigation = useVirtualViewNavigation()
 
     if(options.storage !== undefined) {
-        state.value = options.storage.value
-        watch(state, state => {options.storage!.value = state}, {deep: true})
+        if(options.storage.value !== null) state.value = options.storage.value
+        watch(state, state => options.storage!.value = state, {deep: true})
     }
 
     let currentQueryId = 0

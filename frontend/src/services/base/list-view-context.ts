@@ -1,6 +1,7 @@
 import { ref, Ref } from "vue"
-import { PaginationDataView, QueryListview, usePaginationDataView, useQueryListview } from "@/functions/fetch"
+import { PaginationDataView, PaginationViewState, QueryListview, usePaginationDataView, useQueryListview } from "@/functions/fetch"
 import { QueryListviewOptions } from "@/functions/fetch/query-listview/query-listview"
+import { useRouteStorage } from "@/functions/app"
 import { BasicException } from "@/functions/http-client/exceptions"
 import { useInterceptedKey } from "@/modules/keyboard"
 
@@ -23,6 +24,8 @@ interface ListViewContextOptions<T, KEY, F> {
 }
 
 export function useListViewContext<T, KEY, F>(options: ListViewContextOptions<T, KEY, F>): ListViewContext<T, KEY, F> {
+    const storage = useRouteStorage<PaginationViewState>("list-view/pagination-data")
+
     const queryFilter: Ref<F> = options.filter ?? ref(options.defaultFilter ?? {}) as Ref<F>
 
     const listview = useQueryListview({
@@ -32,7 +35,7 @@ export function useListViewContext<T, KEY, F>(options: ListViewContextOptions<T,
         eventFilter: options.eventFilter
     })
 
-    const paginationData = usePaginationDataView({listview, bufferPercent: 0.2})
+    const paginationData = usePaginationDataView({listview, storage, bufferPercent: 0.2})
     
     useInterceptedKey("Meta+KeyR", listview.refresh)
 

@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, Ref, shallowRef, watch } from "vue"
+import { onBeforeMount, onMounted, onUnmounted, Ref, shallowRef, watch } from "vue"
 import { AllEvents, WsEventConditions, WsEventResult } from "@/functions/ws-client"
 import { BasicException } from "@/functions/http-client/exceptions"
 import { HttpClient, Response, ListResult } from "@/functions/http-client"
@@ -127,11 +127,11 @@ export function useQueryListview<T, KEY, K = undefined, E extends BasicException
 
     const generation: Ref<number> = shallowRef(1)
 
-    if(options.filter !== undefined) watch(options.filter, filter => {
+    if(options.filter !== undefined) onBeforeMount(() => watch(options.filter!, filter => {
         instance.value = createInstance(filter)
         generation.value += 1
         modifiedEvent.emit({type: "FILTER_UPDATED", newInstance: instance.value, generation: generation.value})
-    }, {deep: true})
+    }, {deep: true}))
 
     const refresh = () => {
         instance.value = createInstance(options.filter?.value)

@@ -63,8 +63,9 @@ watch(state, state => {
     if(state) {
         scrollState.value.totalHeight = state.total * props.rowHeight
         if(scrollState.value.top === null || state.offset !== Math.floor(scrollState.value.top / props.rowHeight)) scrollState.value.top = state.offset * props.rowHeight
-        // 不应该在此处设置height，它应当始终由组件内部根据高度获得，否则有可能固定到一个错误的limit上无法变更
-        // if(scrollState.value.height === null || state.limit !== Math.ceil(scrollState.value.height / props.rowHeight)) scrollState.value.height = state.limit * props.rowHeight
+        // 仅应该当height为null时，才能此处设置height，因为这种情况下需要以state作为初始值初始化滚动状态。
+        // 其余情况下，它应当始终由组件内部根据高度获得，否则有可能固定到一个错误的limit上无法变更
+        if(scrollState.value.height === null) scrollState.value.height = state.limit * props.rowHeight
     }
 }, {deep: true, immediate: true})
 

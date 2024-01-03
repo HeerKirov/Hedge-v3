@@ -1,6 +1,7 @@
 import { ref, Ref } from "vue"
 import { QueryListview } from "@/functions/fetch"
 import { useListeningEvent } from "@/utils/emitter"
+import { useRouteStorage } from "@/functions/app";
 
 /**
  * 为列表提供选择器相关上下文，包括一组选择项与最后选择项。
@@ -28,8 +29,8 @@ interface SelectedStateOptions<T extends string | number, ITEM> {
 }
 
 export function useSelectedState<T extends string | number, ITEM = undefined>(options?: SelectedStateOptions<T, ITEM>): SelectedState<T> {
-    const selected = ref([]) as Ref<T[]>
-    const lastSelected = ref(null) as Ref<T | null>
+    const selected = useRouteStorage<T[]>("selector/selected", [])
+    const lastSelected = useRouteStorage<T | null>("selector/last-selected")
 
     if(options?.queryListview) {
         useListeningEvent(options.queryListview.modifiedEvent, e => {

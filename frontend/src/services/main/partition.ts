@@ -2,7 +2,7 @@ import { ComponentPublicInstance, Ref, computed, watch } from "vue"
 import { Partition, IllustQueryFilter } from "@/functions/http-client/api/illust"
 import { flatResponse } from "@/functions/http-client"
 import { useFetchReactive } from "@/functions/fetch"
-import { useLocalStorage, useTabStorage } from "@/functions/app"
+import { useLocalStorage, useRouteStorage } from "@/functions/app"
 import { useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
 import { useInterceptedKey } from "@/modules/keyboard"
 import { writeClipboard } from "@/modules/others"
@@ -34,7 +34,7 @@ export const [installPartitionContext, usePartitionContext] = installation(funct
 
 function usePartitionView(listviewController: IllustViewController, querySchema: QuerySchemaContext) {
     const viewMode = useLocalStorage<"calendar" | "timeline">("partition/list/view-mode", "calendar")
-    const calendarDate = useTabStorage<YearAndMonth>("partition/list/calendar-date")
+    const calendarDate = useRouteStorage<YearAndMonth>("partition/list/calendar-date")
 
     const { partitionMonths, partitions, total, maxCount, maxCountOfMonth } = usePartitionData(listviewController, querySchema.query)
     const operators = usePartitionOperators(partitions, querySchema.queryInputText)
@@ -216,7 +216,7 @@ export function useTimelineContext() {
                 for(let i = partitionMonths.value.indexOf(calendarDateMonths.value) - 1; i >= 0; --i) {
                     const pm = partitionMonths.value[i]
                     if(getPositionOfMonth(pm.days) === 0) {
-                        selectMonth(pm)
+                        selectMonth(pm).finally()
                         break
                     }
                 }
@@ -224,7 +224,7 @@ export function useTimelineContext() {
                 for(let i = partitionMonths.value.indexOf(calendarDateMonths.value) + 1; i < partitionMonths.value.length; ++i) {
                     const pm = partitionMonths.value[i]
                     if(getPositionOfMonth(pm.days) === 0) {
-                        selectMonth(pm)
+                        selectMonth(pm).finally()
                         break
                     }
                 }
@@ -240,7 +240,7 @@ export function useTimelineContext() {
 
     const openPartition = (date: LocalDate) => {
         if(calendarDate.value === null || calendarDate.value.year !== date.year || calendarDate.value.month !== date.month) {
-            selectMonth({year: date.year, month: date.month})
+            selectMonth({year: date.year, month: date.month}).finally()
         }
         openDetail(date)
     }

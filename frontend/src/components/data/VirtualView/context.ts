@@ -30,9 +30,11 @@ export function useVirtualViewContext(optionPadding: Padding | number) {
 
     //底层事件：挂载，初始化
     onMounted(() => {
-        if(scrollDivRef.value !== undefined && (scrollState.value.top === null || scrollState.value.height === null)) {
-            scrollState.value.top = scrollDivRef.value.scrollTop
-            scrollState.value.height = scrollDivRef.value.clientHeight
+        if(scrollDivRef.value !== undefined) {
+            if(scrollState.value.top === null || scrollState.value.height === null) {
+                scrollState.value.top = scrollDivRef.value.scrollTop
+                scrollState.value.height = scrollDivRef.value.clientHeight
+            }
             scrollState.value.contentWidth = scrollDivRef.value.clientWidth - padding.left - padding.right
         }
 

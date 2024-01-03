@@ -2,7 +2,7 @@ import { Component, computed, DefineComponent, markRaw, onBeforeMount, Ref, ref,
 import { useRoute } from "vue-router"
 import { windowManager } from "@/modules/window"
 import { arrays, objects } from "@/utils/primitives"
-import { installation, installationNullable } from "@/utils/reactivity"
+import { installationNullable } from "@/utils/reactivity"
 import { useListeningEvent, useRefEmitter } from "@/utils/emitter"
 import {
     BrowserDocument, BrowserRoute, BrowserTabStack, BrowserTabs, BrowserViewOptions, InternalPage,

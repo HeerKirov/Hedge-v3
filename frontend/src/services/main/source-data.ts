@@ -2,7 +2,7 @@ import { Ref, computed, watch } from "vue"
 import { useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import { SourceDataIdentity, SourceDataQueryFilter, SourceEditStatus } from "@/functions/http-client/api/source-data"
-import { DetailViewState, useDetailViewState } from "@/services/base/detail-view-state"
+import { DetailViewState, useRouteStorageViewState } from "@/services/base/detail-view-state"
 import { useDialogService } from "@/components-module/dialog"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useQuerySchema } from "@/services/base/query-schema"
@@ -12,7 +12,7 @@ import { useMessageBox } from "@/modules/message-box"
 import { installation } from "@/utils/reactivity"
 
 export const [installSourceDataContext, useSourceDataContext] = installation(function () {
-    const paneState = useDetailViewState<SourceDataIdentity>()
+    const paneState = useRouteStorageViewState<SourceDataIdentity>()
     const querySchema = useQuerySchema("SOURCE_DATA")
     const listview = useListView(querySchema.query)
     const operators = useOperators(paneState)
