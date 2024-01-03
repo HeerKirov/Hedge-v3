@@ -28,6 +28,28 @@ export const [installBrowserView, useBrowserView] = installationNullable(functio
         return nextHistoryIdVal++
     }
 
+    function matchStacks(tab: InternalTab): InternalPage[] {
+        //tips: 此算法还存在一个小瑕疵。有可能在后台装载那些已经被卸载的page，造成不必要的加载。
+        //例如，假设[A B]是个可残留的序列，而我们依次打开A、B、C页面，然后依次返回。
+        //于是，[A B]状态下，这两个页面都如期缓存；[A B C]状态下，只有C打开，A、B不会留下；
+        //然而当关闭C时，[A B]状态又一次符合了缓存条件，于是它们都被打开。但实际上它们是被全新打开的page，并没有之前的缓存状态。
+        //这种行为并不符合此功能的设计预期，它根本没有尽到缓存的作用。
+        //如果要改善这种行为，就应该在计算时将之前的tab stack内容也纳入输入条件，这样可以得知哪些page之前是打开的、有残留价值。
+        if(!options.stackDefinitions?.length || tab.histories.length <= 0) return []
+        const ret: InternalPage[] = []
+        let filtered = options.stackDefinitions.filter(d => d[d.length - 1] === tab.current.route.routeName)
+        let step = 2
+        for(let i = tab.histories.length - 1; i >= 0; --i) {
+            const nextFiltered = filtered.filter(d => d.length >= step && d[d.length - step] === tab.histories[i].route.routeName)
+            if(nextFiltered.length > 0) {
+                filtered = nextFiltered
+                step += 1
+                ret.unshift(tab.histories[i])
+            }
+        }
+        return ret
+    }
+
     function getRouteDefinition(routeName?: string): RouteDefinition {
         if(routeName !== undefined) {
             const ret = routeMaps[routeName]
@@ -56,36 +78,28 @@ export const [installBrowserView, useBrowserView] = installationNullable(functio
             const routeDef = getRouteDefinition(routeName)
             const route: Route = {routeName: routeDef.routeName, path, params, initializer}
 
-            views.value.push({id: nextTabId(), historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, memoryStorage: {}, histories: [], forwards: []})
+            views.value.push({id: nextTabId(), memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}}, histories: [], forwards: []})
         }else{
             const routeDef = getRouteDefinition()
             const route: Route = {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
 
-            views.value.push({id: nextTabId(), historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, memoryStorage: {}, histories: [], forwards: []})
+            views.value.push({id: nextTabId(), memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}}, histories: [], forwards: []})
         }
     })
 
-    return {views, activeIndex, historyMax, event, nextTabId, nextHistoryId, getRouteDefinition, loadComponent, getComponentOrNull}
+    return {views, activeIndex, historyMax, event, nextTabId, nextHistoryId, matchStacks, getRouteDefinition, loadComponent, getComponentOrNull}
 })
 
 export const [installCurrentTab, useCurrentTab] = installationNullable(function (props: {id: number, historyId: number}) {
-    const { views, activeIndex } = useBrowserView()!
+    const { views, activeIndex, event } = useBrowserView()!
 
     const view = ref<InternalTab>(views.value.find(v => v.id === props.id)!)
 
-    const page = ref<InternalPage>(view.value.historyId === props.historyId ? view.value : (view.value.histories.find(p => p.historyId === props.historyId) ?? view.value.forwards.find(p => p.historyId === props.historyId)!!))
+    const page = ref<InternalPage>(view.value.current.historyId === props.historyId ? view.value.current : (view.value.histories.find(p => p.historyId === props.historyId) ?? view.value.forwards.find(p => p.historyId === props.historyId)!!))
 
-    const active = computed(() => view.value.historyId === props.historyId && views.value.findIndex(v => v.id === props.id) === activeIndex.value)
+    const active = ref(view.value.current.historyId === props.historyId && views.value.findIndex(v => v.id === props.id) === activeIndex.value)
 
-    watch(() => [views.value, props.id] as const, ([views, id]) => {
-        const ret = views.find(v => v.id === id)
-        if(ret !== undefined) view.value = ret
-    }, {deep: true})
-
-    watch(() => [view.value, props.historyId] as const, ([view, historyId]) => {
-        const ret = view.historyId === historyId ? view : (view.histories.find(p => p.historyId === historyId) ?? view.forwards.find(p => p.historyId === historyId))
-        if(ret !== undefined) page.value = ret
-    }, {deep: true})
+    useListeningEvent(event, () => active.value = view.value.current.historyId === props.historyId && views.value.findIndex(v => v.id === props.id) === activeIndex.value)
 
     return {view, page, active}
 })
@@ -96,19 +110,23 @@ export function isBrowserEnvironment() {
 }
 
 export function useBrowserTabStacks() {
-    const { views, activeIndex, loadComponent, getComponentOrNull } = useBrowserView()!
+    const { views, activeIndex, event, matchStacks, loadComponent, getComponentOrNull } = useBrowserView()!
 
     const tabStacks = ref<BrowserTabStack[]>([])
 
-    watch(views, async () => {
+    const generateTabStacks = async () => {
         const ret: BrowserTabStack[] = []
         for (const v of views.value) {
-            const component = await loadComponent(v.route.routeName)
-            //...v.histories.map(h => ({historyId: h.historyId, component: getComponentOrNull(h.route.routeName)!}))
-            ret.push({id: v.id, stacks: [{historyId: v.historyId, component}]})
+            const component = await loadComponent(v.current.route.routeName)
+            const s = matchStacks(v).map(h => ({historyId: h.historyId, component: getComponentOrNull(h.route.routeName)!}))
+            ret.push({id: v.id, stacks: [...s, {historyId: v.current.historyId, component}]})
         }
         tabStacks.value = ret
-    }, {deep: true, immediate: true})
+    }
+
+    useListeningEvent(event, e => { if(e.type !== "TabActiveChanged") generateTabStacks().finally() })
+
+    onBeforeMount(generateTabStacks)
 
     return {tabStacks, activeIndex}
 }
@@ -116,28 +134,33 @@ export function useBrowserTabStacks() {
 export function useBrowserTabs(): BrowserTabs {
     const { views, activeIndex, getRouteDefinition, nextTabId, nextHistoryId, event } = useBrowserView()!
 
-    const tabs = computed<Tab[]>(() => views.value.map(({ id, title }, index) => ({id, index, title, active: activeIndex.value === index})))
+    const tabs = computed<Tab[]>(() => views.value.map(({ id, current: { title } }, index) => ({id, index, title, active: activeIndex.value === index})))
 
     function newTab(args?: NewRoute) {
         const routeDef = getRouteDefinition(args?.routeName)
         const route: Route = args !== undefined ? {routeName: args.routeName, path: args.path, params: args.params ?? {}, initializer: args.initializer ?? {}} : {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
-        views.value.push({id: nextTabId(), historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, memoryStorage: {}, histories: [], forwards: []})
+        const id = nextTabId()
+        views.value.push({id, memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}}, histories: [], forwards: []})
         activeIndex.value = views.value.length - 1
-        event.emit({type: "TabCreated"})
+        event.emit({type: "TabCreated", id})
     }
 
     function duplicateTab(args: {id?: number, index?: number}) {
         const viewIndex = args.index !== undefined ? args.index : args.id !== undefined ? views.value.findIndex(v => v.id === args.id) : -1
         const view = views.value[viewIndex]
         if(viewIndex >= 0 && view !== undefined) {
-            views.value.splice(viewIndex + 1, 0, {...objects.deepCopy(view), id: nextTabId()})
+            const id = nextTabId()
+            views.value.splice(viewIndex + 1, 0, {...objects.deepCopy(view), id})
             activeIndex.value = viewIndex + 1
-            event.emit({type: "TabCreated"})
+            event.emit({type: "TabCreated", id})
         }
     }
 
     function activeTab(index: number) {
-        if(index >= 0 && index < views.value.length) activeIndex.value = index
+        if(index >= 0 && index < views.value.length) {
+            activeIndex.value = index
+            event.emit({type: "TabActiveChanged", id: views.value[index].id})
+        }
     }
 
     function moveTab(args: {id?: number, index?: number, toIndex: number}) {
@@ -150,19 +173,20 @@ export function useBrowserTabs(): BrowserTabs {
                 views.value = [...views.value.slice(0, args.toIndex), views.value[index], ...views.value.slice(args.toIndex, index), ...views.value.slice(index + 1)]
                 activeIndex.value = args.toIndex
             }
+            event.emit({type: "TabMoved", id: views.value[activeIndex.value].id})
         }
     }
 
     function closeTab(args: {id?: number, index?: number}) {
         const index = args.index !== undefined ? args.index : args.id !== undefined ? views.value.findIndex(v => v.id === args.id) : -1
         if(index >= 0 && index < tabs.value.length) {
-            views.value.splice(index, 1)
+            const [view] = views.value.splice(index, 1)
             if(views.value.length <= 0) {
                 window.close()
             }else if(index < activeIndex.value || (index === activeIndex.value && activeIndex.value > 0)) {
                 activeIndex.value -= 1
             }
-            event.emit({type: "TabClosed"})
+            event.emit({type: "TabClosed", id: view.id})
         }
     }
 
@@ -184,7 +208,7 @@ export function useBrowserTabs(): BrowserTabs {
 function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): BrowserRoute {
     const { views, activeIndex, getRouteDefinition, nextHistoryId, historyMax, event } = useBrowserView()!
 
-    const route = computed(() => page?.value.route ?? view.value.route)
+    const route = computed(() => page?.value.route ?? view.value.current.route)
 
     const histories = computed(() => view.value.histories)
 
@@ -193,70 +217,67 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
     function routePush(route: NewRoute) {
         const routeDef = getRouteDefinition(route.routeName)
         view.value.forwards.splice(0, view.value.forwards.length)
-        view.value.histories.push({historyId: view.value.historyId, title: view.value.title, route: {...view.value.route, initializer: {}}, storage: view.value.storage})
+        view.value.histories.push(view.value.current)
         if(view.value.histories.length > historyMax) view.value.histories.shift()
-        view.value.historyId = nextHistoryId()
-        view.value.title = routeDef.defaultTitle ?? null
-        view.value.route = {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}}
-        view.value.storage = {}
-        event.emit({type: "Routed"})
+        view.value.current = {
+            historyId: nextHistoryId(),
+            title: routeDef.defaultTitle ?? null,
+            route: {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}},
+            storage: {}
+        }
+        event.emit({type: "Routed", operation: "Push", id: view.value.id, historyId: view.value.current.historyId})
     }
 
     function routeReplace(route: NewRoute) {
         const routeDef = getRouteDefinition(route.routeName)
-        view.value.title = routeDef.defaultTitle ?? null
-        view.value.route = {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}}
-        view.value.storage = {}
-        event.emit({type: "Routed"})
+        view.value.current = {
+            historyId: view.value.current.historyId,
+            title: routeDef.defaultTitle ?? null,
+            route: {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}},
+            storage: {}
+        }
+        event.emit({type: "Routed", operation: "Replace", id: view.value.id, historyId: view.value.current.historyId})
     }
 
     function routeBack() {
         if(view.value.histories.length > 0) {
             const [history] = view.value.histories.splice(view.value.histories.length - 1, 1)
-            view.value.forwards.push({historyId: view.value.historyId, title: view.value.title, route: {...view.value.route, initializer: {}}, storage: view.value.storage})
+            view.value.forwards.push(view.value.current)
             if(view.value.forwards.length > historyMax) view.value.forwards.shift()
-            view.value.historyId = history.historyId
-            view.value.title = history.title
-            view.value.route = history.route
-            view.value.storage = history.storage
-            event.emit({type: "Routed"})
+            view.value.current = history
+            event.emit({type: "Routed", operation: "Back", id: view.value.id, historyId: view.value.current.historyId})
         }
     }
 
     function routeForward() {
         if(view.value.forwards.length > 0) {
             const [forward] = view.value.forwards.splice(view.value.forwards.length - 1, 1)
-            view.value.histories.push({historyId: view.value.historyId, title: view.value.title, route: {...view.value.route, initializer: {}}, storage: view.value.storage})
+            view.value.histories.push(view.value.current)
             if(view.value.histories.length > historyMax) view.value.histories.shift()
-            view.value.historyId = forward.historyId
-            view.value.title = forward.title
-            view.value.route = forward.route
-            view.value.storage = forward.storage
-            event.emit({type: "Routed"})
+            view.value.current = forward
+            event.emit({type: "Routed", operation: "Forward", id: view.value.id, historyId: view.value.current.historyId})
         }
     }
 
     function routeClose() {
-        if(page !== undefined && page.value.historyId !== view.value.historyId) {
+        if(page !== undefined && page.value.historyId !== view.value.current.historyId) {
             const index = view.value.histories.findIndex(p => p.historyId === page.value.historyId)
             if(index >= 0) view.value.histories.splice(index, 1)
+            event.emit({type: "Routed", operation: "Close", id: view.value.id, historyId: view.value.current.historyId})
         }else if(view.value.histories.length > 0) {
             const [history] = view.value.histories.splice(view.value.histories.length - 1, 1)
-            view.value.historyId = history.historyId
-            view.value.title = history.title
-            view.value.route = history.route
-            view.value.storage = history.storage
-            event.emit({type: "Routed"})
+            view.value.current = history
+            event.emit({type: "Routed", operation: "Close", id: view.value.id, historyId: view.value.current.historyId})
         }else{
             const index = views.value.findIndex(v => v.id === view.value.id)
             if(index >= 0) {
-                views.value.splice(index, 1)
+                const [view] = views.value.splice(index, 1)
                 if(views.value.length <= 0) {
                     window.close()
                 }else if(index < activeIndex.value || (index === activeIndex.value && activeIndex.value > 0)) {
                     activeIndex.value -= 1
                 }
-                event.emit({type: "TabClosed"})
+                event.emit({type: "TabClosed", id: view.id})
             }
         }
     }
@@ -265,11 +286,15 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
 }
 
 export function useActivateTabRoute(): BrowserRoute {
-    const { views, activeIndex } = useBrowserView()!
+    const { views, activeIndex, event } = useBrowserView()!
 
     const view = ref<InternalTab>(views.value[activeIndex.value])
 
-    watch([views, activeIndex], ([views, index]) => view.value = views[index], {deep: true})
+    useListeningEvent(event, e => {
+        if(e.type === "TabActiveChanged" || e.type === "TabCreated" || e.type === "TabMoved" || e.type === "TabClosed") {
+            view.value = views.value[activeIndex.value]
+        }
+    })
 
     return useBrowserRoute(view)
 }

@@ -1,4 +1,4 @@
-import { ref, Ref } from "vue"
+import { Ref } from "vue"
 import { PaginationDataView, PaginationViewState, QueryListview, usePaginationDataView, useQueryListview } from "@/functions/fetch"
 import { QueryListviewOptions } from "@/functions/fetch/query-listview/query-listview"
 import { useRouteStorage } from "@/functions/app"
@@ -26,7 +26,7 @@ interface ListViewContextOptions<T, KEY, F> {
 export function useListViewContext<T, KEY, F>(options: ListViewContextOptions<T, KEY, F>): ListViewContext<T, KEY, F> {
     const storage = useRouteStorage<PaginationViewState>("list-view/pagination-data")
 
-    const queryFilter: Ref<F> = options.filter ?? ref(options.defaultFilter ?? {}) as Ref<F>
+    const queryFilter: Ref<F> = options.filter ?? useRouteStorage("list-view/query-filter", () => options.defaultFilter, true) as Ref<F>
 
     const listview = useQueryListview({
         filter: queryFilter,

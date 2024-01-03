@@ -5,6 +5,10 @@ export interface BrowserViewOptions {
      * 定义所有页面的路由信息。
      */
     routes: RouteDefinition[]
+    /**
+     * 定义所有栈缓存模式。
+     */
+    stackDefinitions?: string[][]
 }
 
 export interface RouteDefinition {
@@ -150,9 +154,10 @@ export interface Route {
 
 export type NewRoute = Partial<Route> & { routeName: string }
 
-export interface InternalTab extends InternalPage {
+export interface InternalTab {
     id: number
     memoryStorage: Record<string, any>
+    current: InternalPage
     histories: InternalPage[]
     forwards: InternalPage[]
 }
@@ -170,9 +175,11 @@ export interface BrowserTabStack {
 }
 
 export type BrowserTabEvent = {
-    type: "TabCreated"
-} | {
-    type: "TabClosed"
+    type: "TabCreated" | "TabClosed" | "TabMoved" | "TabActiveChanged"
+    id: number
 } | {
     type: "Routed"
+    operation: "Push" | "Replace" | "Back" | "Forward" | "Close"
+    id: number
+    historyId: number
 }

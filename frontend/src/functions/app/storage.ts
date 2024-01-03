@@ -126,6 +126,15 @@ export function useTabStorage<T>(bucketName: string, defaultValue?: T | (() => T
         data.value = defaultValue as T
     }
 
+    watch(currentTab.active, active => {
+        if(active) {
+            const initValue = memory[bucketName]
+            if(initValue !== undefined) {
+                data.value = initValue as T
+            }
+        }
+    })
+
     watch(data, value => {
         if(value !== null) {
             memory[bucketName] = value
@@ -143,11 +152,12 @@ export function useRouteStorage<T>(bucketName: string, defaultValue: () => T, de
 
 /**
  * 引用一个route storage存储器。它使用路由的存储空间实现，也就是每次路由都拥有单独的storage，适合用于为页面记录那些需要在历史记录中恢复的信息。
+ * 如果不属于任何页面，则它等价于useMemoryStorage。
  */
 export function useRouteStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): Ref<T | null> {
     const currentTab = useCurrentTab()
     if(currentTab === undefined) return useMemoryStorage(bucketName, defaultValue as any, defaultFunction as any)
-    const memory = currentTab.view.value.storage
+    const memory = currentTab.page.value.storage
 
     const data: Ref<T | null> = ref(null)
 

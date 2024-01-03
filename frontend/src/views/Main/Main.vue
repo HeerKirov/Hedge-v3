@@ -9,7 +9,7 @@ import { installHomepageState } from "@/services/main/homepage"
 import MainRootView from "./MainRootView.vue"
 import routes from "./routes"
 
-installBrowserView({routes})
+installBrowserView({...routes})
 installDialogService()
 installCalloutService()
 installPreviewService()
