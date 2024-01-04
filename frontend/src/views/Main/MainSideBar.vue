@@ -26,7 +26,7 @@ const importCountBadge = computed(() => {
     }else if(homepageState.value.importImageCount <= 0) {
         return {count: homepageState.value.importImageErrorCount, type: "danger" as const}
     }else{
-        return [{count: homepageState.value.importImageErrorCount, type: "danger" as const}, {count: homepageState.value.importImageCount, type: "std" as const}]
+        return [{count: homepageState.value.importImageCount, type: "std" as const}, {count: homepageState.value.importImageErrorCount, type: "danger" as const}]
     }
 })
 

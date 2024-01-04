@@ -2,6 +2,7 @@ import { HttpInstance, Response } from "../instance"
 import { NotFound, ResourceNotExist } from "../exceptions"
 import { FilePath, IdResponse, LimitAndOffsetFilter, ListResult, OrderList, SourceDataPath, SourceTagPath } from "./all"
 import { CommonIllust, ImagePropsCloneForm } from "./illust"
+import { SimpleBook } from "./book"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 
 export function createFindSimilarEndpoint(http: HttpInstance): FindSimilarEndpoint {
@@ -232,6 +233,7 @@ export interface FindSimilarResultDetailImage extends CommonIllust {
     score: number | null
     source: SourceDataPath | null
     parentId: number | null
+    books: SimpleBook[]
 }
 
 export interface SimilarityRelationEdge {

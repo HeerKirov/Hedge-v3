@@ -54,7 +54,7 @@ const menu = usePopupMenu(() => [
 <template>
     <div :class="$style.root" @contextmenu="menu.popup()">
         <p>
-            <Icon :icon="offset !== null && offset <= 1 && offset >= -1 && !isOpened ? 'business-time' : 'clock'"/>
+            <Icon class="ml-half" :icon="offset !== null && offset <= 1 && offset >= -1 && !isOpened ? 'business-time' : 'clock'"/>
             <b class="ml-2 mr-1">{{ dateText }}</b>
             <span v-if="offset && offset <= 1 && offset >= -1 && !isOpened" class="has-text-danger mr-1">({{ offset > 0 ? '+' : '-' }}{{ offset > 0 ? offset : -offset }})</span>
             <span v-if="timeText && (!offset || (offset <= 1 && offset >= -1)) && !isOpened">{{ timeText }}</span>

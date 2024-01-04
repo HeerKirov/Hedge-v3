@@ -5,10 +5,11 @@ import { TooltipComponent, TooltipComponentOption } from "echarts/components"
 import { computed, onBeforeUnmount, onMounted, ref, Ref, shallowRef, watch } from "vue"
 import { usePreviewService } from "@/components-module/preview"
 import { useDialogService } from "@/components-module/dialog"
-import { QueryListview, useFetchEndpoint, useFetchHelper, usePaginationDataView, usePathFetchHelper, usePostPathFetchHelper, useQueryListview } from "@/functions/fetch"
+import { QueryListview, useFetchEndpoint, useFetchHelper, usePaginationDataView, usePathFetchHelper, usePostFetchHelper, usePostPathFetchHelper, useQueryListview } from "@/functions/fetch"
 import { FindSimilarDetailResult, FindSimilarResult, FindSimilarResultDetailImage, FindSimilarResultResolveAction, FindSimilarResultResolveForm, SimilarityRelationCoverage } from "@/functions/http-client/api/find-similar"
 import { FilePath } from "@/functions/http-client/api/all"
 import { CommonIllust } from "@/functions/http-client/api/illust"
+import { SimpleBook } from "@/functions/http-client/api/book"
 import { flatResponse } from "@/functions/http-client"
 import { platform } from "@/functions/ipc-client"
 import { useAssets, useLocalStorage } from "@/functions/app"
@@ -120,6 +121,8 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
     const preview = usePreviewService()
     const gridMode = shallowRef<"grid">("grid")
 
+    const fetchStagingPostUpdate = usePostFetchHelper(client => client.stagingPost.update)
+
     const allCollections = computed(() => {
         if(data.value !== null) {
             const ret = new Set<number>()
@@ -131,15 +134,26 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
 
     const allBooks = computed(() => {
         if(data.value !== null) {
-            const ret = new Set<number>()
-            data.value.coverages.forEach(c => c.info.type === "BOOK" && ret.add(c.info.bookId))
-            return [...ret.values()].sort()
+            const set = new Set<number>()
+            const ret: SimpleBook[] = []
+            data.value.images.forEach(i => i.books.forEach(b => {
+                if(!set.has(b.id)) {
+                    set.add(b.id)
+                    ret.push(b)
+                }
+            }))
+            return ret.sort((a, b) => a.id - b.id)
         }
         return []
     })
 
     const getEffectedItems = (currentImageId?: number) => {
         return currentImageId === undefined || selector.selected.value.includes(currentImageId) ? selector.selected.value : [currentImageId]
+    }
+
+    const addToStagingPost = async (illust: CommonIllust) => {
+        const images = getEffectedItems(illust.id)
+        await fetchStagingPostUpdate({action: "ADD", images})
     }
 
     const addToCollection = async (collectionId: number | "new", currentImageId?: number) => {
@@ -214,7 +228,7 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
         })
     }
 
-    return {allCollections, allBooks, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, complete, openPreviewBySpace}
+    return {allCollections, allBooks, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, complete, openPreviewBySpace}
 }
 
 export function useGraphView({ menu }: {menu: (i: FindSimilarResultDetailImage) => void}) {

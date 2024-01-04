@@ -87,7 +87,7 @@ export function usePaginationDataView<T>(options: PaginationOptions<T>): Paginat
         if(state.value === null) return
         //根据当前的视口状态state计算应该获取数据的范围offset&limit
         const offset = Math.max(state.value.offset - Math.round(state.value.limit * bufferPercent), 0)
-        const limit = Math.min(offset + state.value.limit + Math.round(state.value.limit * bufferPercent * 2), state.value.total || Infinity) - offset
+        const limit = Math.min(offset + state.value.limit + Math.round(state.value.limit * bufferPercent * 2), listview.proxy.sync.count() || Infinity) - offset
         //本次查询的防乱序序号
         const queryId = ++currentQueryId
         //每次调用此方法都会清空上次的缓冲区

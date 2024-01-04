@@ -22,7 +22,7 @@ const paneButtonItems = computedEffect(() => [
     <BasePane :show-close-button="false">
         <template #title>
             <p class="mt-2 ml-2">
-                <div v-if="selected.length > 1">已选择<b>{{selected.length}}</b>项</div>
+                <span v-if="selected.length > 1">已选择<b>{{selected.length}}</b>项</span>
                 <i v-else-if="selected.length <= 0" class="has-text-secondary">未选择任何项</i>
             </p>
         </template>

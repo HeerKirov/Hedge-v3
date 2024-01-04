@@ -46,12 +46,12 @@ const divClass = computed(() => [
 
 <template>
     <button :class="divClass" @click="$emit('click')">
-        <Icon :icon="icon"/>
-        <span class="ml-2">{{label}}</span>
+        <Icon class="flex-item no-grow-shrink" :icon="icon"/>
+        <span class="ml-2 flex-item w-100">{{label}}</span>
+        <span v-for="badge in badges" :class="[$style.badge, $style[badge.type]]">{{ badge.count }}</span>
         <span v-if="hasSub" :class="$style.caret" @click="clickCaret">
             <Icon :icon="subOpen ? 'caret-down' : 'caret-right'"/>
         </span>
-        <span v-for="badge in badges" :class="[$style.badge, $style[badge.type]]">{{ badge.count }}</span>
     </button>
 </template>
 
@@ -61,7 +61,9 @@ const divClass = computed(() => [
 
 .button
     box-sizing: border-box
-    vertical-align: baseline
+    display: flex
+    align-items: center
+    justify-content: stretch
     white-space: nowrap
     overflow: hidden
     border-radius: $radius-size-std
@@ -140,13 +142,13 @@ const divClass = computed(() => [
             color: $dark-mode-danger
 
 .badge
-    float: right
+    flex: 0 0 auto
     padding: 2px 6px
     margin-left: 2px
     border-radius: $radius-size-std
     font-weight: 700
 
 .caret
-    float: right
-    transform: translate(3px, 2px)
+    flex: 0 0 auto
+    transform: translate(3px, 0px)
 </style>

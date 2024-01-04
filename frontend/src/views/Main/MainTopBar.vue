@@ -14,6 +14,27 @@ const menu = useDynamicPopupMenu<Tab>(tab => [
     {type: "normal", label: "关闭标签页", click: tab => closeTab({index: tab.index})}
 ])
 
+let dragTimer: {timer: NodeJS.Timer, tabId: number} | undefined
+
+const dragEnter = (tab: Tab) => {
+    if(dragTimer?.tabId === tab.id) return
+    if(dragTimer !== undefined) clearTimeout(dragTimer.timer)
+    dragTimer = {
+        tabId: tab.id,
+        timer: setTimeout(() => {
+            activeTab(tab.index)
+            dragTimer = undefined
+        }, 1000)
+    }
+}
+
+const dragLeave = () => {
+    if(dragTimer !== undefined) {
+        clearTimeout(dragTimer.timer)
+        dragTimer = undefined
+    }
+}
+
 const mouseUp = (e: MouseEvent, tab: Tab) => {
     if(e.button === 1) {
         closeTab({index: tab.index})
@@ -28,6 +49,7 @@ const mouseUp = (e: MouseEvent, tab: Tab) => {
             <Block :class="[{[$style.active]: tab.active}, $style.tab, 'no-app-region']" @click="activeTab(tab.index)" @mouseup="mouseUp($event, tab)" @contextmenu="menu.popup(tab)">
                 <span class="no-wrap overflow-ellipsis">{{ tab.title ?? "无标题" }}</span>
                 <Button v-if="tab.active" :class="$style.close" size="tiny" square icon="close" @click.stop="closeTab({index: tab.index})"/>
+                <div v-else :class="$style['drop-area']" @dragenter="dragEnter(tab)" @dragleave="dragLeave"/>
             </Block>
             <Separator/>
         </template>
@@ -47,6 +69,7 @@ const mouseUp = (e: MouseEvent, tab: Tab) => {
 
     > .tab
         flex: 0 1 auto
+        position: relative
         display: flex
         flex-wrap: nowrap
         align-items: center
@@ -77,6 +100,13 @@ const mouseUp = (e: MouseEvent, tab: Tab) => {
         > .close
             font-size: $font-size-small
             flex: 0 0 auto
+
+        > .drop-area
+            position: absolute
+            top: 0
+            left: 0
+            right: 0
+            bottom: 0
 
     > .new-tab-button
         flex: 0 0 auto

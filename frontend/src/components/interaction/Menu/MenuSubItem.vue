@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, useCssModule } from "vue"
+import { computed } from "vue"
 import { MenuBadge } from "./definition"
 
 const props = defineProps<{
@@ -8,7 +8,7 @@ const props = defineProps<{
     badge: MenuBadge
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
     (e: "click"): void
 }>()
 
@@ -24,18 +24,11 @@ const badges = computed(() => {
     }
 })
 
-const style = useCssModule()
-
-const divClass = computed(() => [
-   style.button,
-   props.checked ? style.checked : style.general
-])
-
 </script>
 
 <template>
-    <button :class="divClass" @click="$emit('click')">
-        <span>{{label}}</span>
+    <button :class="[$style.button, checked ? $style.checked : $style.general]" @click="$emit('click')">
+        <span class="flex-item w-100">{{label}}</span>
         <span v-for="badge in badges" :class="[$style.badge, $style[badge.type]]">{{ badge.count }}</span>
     </button>
 </template>
@@ -46,7 +39,9 @@ const divClass = computed(() => [
 
 .button
     box-sizing: border-box
-    vertical-align: baseline
+    display: flex
+    align-items: center
+    justify-content: stretch
     white-space: nowrap
     overflow: hidden
     border-radius: $radius-size-std
@@ -113,7 +108,7 @@ const divClass = computed(() => [
             color: $dark-mode-danger
 
 .badge
-    float: right
+    flex: 0 0 auto
     padding: 2px 6px
     margin-left: 2px
     border-radius: $radius-size-std

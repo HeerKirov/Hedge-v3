@@ -9,11 +9,12 @@ const {
     paginationData: { data, state, setState, navigateTo },
     selector: { selected, lastSelected, update: updateSelect }, 
     listviewController: { fitType, columnNum }, 
-    operators: { allBooks, allCollections, addToCollection, addToBook, markIgnored, deleteItem, cloneImage, openPreviewBySpace } 
+    operators: { allBooks, allCollections, addToStagingPost, addToCollection, addToBook, markIgnored, deleteItem, cloneImage, openPreviewBySpace }
 } = useFindSimilarDetailPanel()
 
 const menu = useDynamicPopupMenu<CommonIllust>(illust => [
     {type: "normal", label: "预览", click: i => openPreviewBySpace(i)},
+    {type: "normal", label: "暂存", click: i => addToStagingPost(i)},
     {type: "separator"},
     {type: "checkbox", label: "标记为收藏", checked: illust.favorite},
     {type: "separator"},
@@ -22,7 +23,7 @@ const menu = useDynamicPopupMenu<CommonIllust>(illust => [
         ...(allCollections.value.length > 0 ? [{type: "separator"} as const] : []),
         {type: "normal", label: "创建新集合", click: () => addToCollection("new", illust.id)}
     ]},
-    {type: "submenu", label: "加入画集", enabled: allBooks.value.length > 0, submenu: allBooks.value.map(id => ({type: "normal", label: `画集:${id}`, click: () => addToBook(id, illust.id)} as const))},
+    {type: "submenu", label: "加入画集", enabled: allBooks.value.length > 0, submenu: allBooks.value.map(b => ({type: "normal", label: b.title, click: () => addToBook(b.id, illust.id)} as const))},
     {type: "normal", label: "克隆图像属性…", click: () => cloneImage(illust.id)},
     {type: "normal", label: "添加忽略标记", click: () => markIgnored(illust.id)},
     {type: "separator"},

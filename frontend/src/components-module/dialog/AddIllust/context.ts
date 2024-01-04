@@ -124,7 +124,7 @@ export function useAddIllust(push: Push): AddIllust {
 export function useAddIllustCollectionContext(p: CaseCollectionProps, close: () => void) {
     const forbiddenExistCheck = p.forbiddenExistCheck || p.collectionId === null
 
-    const situations = p.situations.map(s => ({...s, totalImageCount: s.images.length + s.collections.map(c => c.belongs.length).reduce((a, b) => a + b, 0)}))
+    const situations = p.situations.map(s => ({...s, totalImageCount: s.images.length + s.collections.map(c => c.belongs.includes(c.collectionId) ? c.childrenCount : c.belongs.length).reduce((a, b) => a + b, 0)}))
 
     const collectionTotalCount = p.situations.reduce((a, b) => a + b.collections.length, 0)
 

@@ -54,7 +54,7 @@ export function useCreatingCollectionContext(images: Ref<number[]>, preSituation
     const fetchCreate = useFetchHelper({request: client => client.illust.collection.create, handleErrorInRequest: toast.handleException})
     const fetchUpdate = usePostPathFetchHelper({request: client => client.illust.collection.images.update, handleErrorInRequest: toast.handleException})
 
-    const situations = computed(() => preSituations.value.map(s => ({...s, totalImageCount: s.images.length + s.collections.map(c => c.belongs.length).reduce((a, b) => a + b, 0)})))
+    const situations = computed(() => preSituations.value.map(s => ({...s, totalImageCount: s.images.length + s.collections.map(c => c.belongs.includes(c.collectionId) ? c.childrenCount : c.belongs.length).reduce((a, b) => a + b, 0)})))
 
     const selected = ref<{type: "new"} | {type: "collection", id: number} | {type: "partition", ts: number}>(
         situations.value.length > 1 ? ({type: "partition", ts: arrays.maxBy(situations.value, s => s.totalImageCount)!.partitionTime!.timestamp}) :

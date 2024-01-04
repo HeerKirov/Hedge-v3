@@ -3,11 +3,12 @@ import { FindSimilarResultDetailImage } from "@/functions/http-client/api/find-s
 import { useFindSimilarDetailPanel, useGraphView } from "@/services/main/find-similar"
 import { useDynamicPopupMenu } from "@/modules/popup-menu"
 
-const { operators: { allBooks, allCollections, addToCollection, addToBook, markIgnored, cloneImage, deleteItem } } = useFindSimilarDetailPanel()
+const { operators: { allBooks, allCollections, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem } } = useFindSimilarDetailPanel()
 
 const { chartDom } = useGraphView({
     menu: useDynamicPopupMenu<FindSimilarResultDetailImage>(illust => [
         {type: "normal", label: "预览"},
+        {type: "normal", label: "暂存", click: i => addToStagingPost(i)},
         {type: "separator"},
         {type: "checkbox", label: "标记为收藏", checked: illust.favorite},
         {type: "separator"},
@@ -16,7 +17,7 @@ const { chartDom } = useGraphView({
             ...(allCollections.value.length > 0 ? [{type: "separator"} as const] : []),
             {type: "normal", label: "创建新集合", click: () => addToCollection("new", illust.id)}
         ]},
-        {type: "submenu", label: "加入画集", enabled: allBooks.value.length > 0, submenu: allBooks.value.map(id => ({type: "normal", label: `画集:${id}`, click: () => addToBook(id, illust.id)} as const))},
+        {type: "submenu", label: "加入画集", enabled: allBooks.value.length > 0, submenu: allBooks.value.map(b => ({type: "normal", label: b.title, click: () => addToBook(b.id, illust.id)} as const))},
         {type: "normal", label: "克隆图像属性…", click: () => cloneImage(illust.id)},
         {type: "normal", label: "添加忽略标记", click: () => markIgnored(illust.id)},
         {type: "separator"},

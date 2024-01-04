@@ -2,7 +2,7 @@
 import { toRef } from "vue"
 import { FormEditKit } from "@/components/interaction"
 import { Separator, Icon } from "@/components/universal"
-import { TagmeInfo, DescriptionDisplay, PartitionTimeDisplay, TimeGroupDisplay, MetaTagListDisplay, FileInfoDisplay } from "@/components-business/form-display"
+import { TagmeInfo, DescriptionDisplay, PartitionTimeDisplay, MetaTagListDisplay, FileInfoDisplay } from "@/components-business/form-display"
 import { DateEditor, DateTimeEditor, ScoreEditor } from "@/components-business/form-editor"
 import { DescriptionEditor } from "@/components-business/form-editor"
 import { useSideBarDetailInfo } from "@/services/main/illust"
@@ -39,9 +39,9 @@ const { data, setScore, setDescription, openMetaTagEditor, setTime } = useSideBa
                 <PartitionTimeDisplay :partition-time="value.partitionTime" :order-time="value.orderTime" :create-time="data.createTime" :update-time="data.updateTime"/>
             </template>
             <template #edit="{ value, setValue, save }">
-                <label class="has-text-info"><Icon class="mr-2" icon="clock"/><b>时间分区</b></label>
+                <label><Icon class="mr-2" icon="clock"/><b>时间分区</b></label>
                 <DateEditor auto-focus :value="value.partitionTime" @update:value="setValue({partitionTime: $event, orderTime: value.orderTime})" @enter="save"/>
-                <label class="has-text-warning"><Icon class="mr-2" icon="business-time"/><b>排序时间</b></label>
+                <label><Icon class="mr-2" icon="business-time"/><b>排序时间</b></label>
                 <DateTimeEditor auto-focus :value="value.orderTime" @update:value="setValue({partitionTime: value.partitionTime, orderTime: $event})" @enter="save"/>
             </template>
         </FormEditKit>

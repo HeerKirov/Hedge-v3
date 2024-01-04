@@ -35,7 +35,9 @@ const closeByOutside = () => {
 
 <template>
     <transition :enter-active-class="enterActiveClass" :leave-active-class="leaveActiveClass" :enter-from-class="enterFromClass" :leave-to-class="leaveToClass">
-        <div v-if="visible" :class="[$style.background, backgroundClass, position === 'absolute' ? $style['absolute'] : undefined]" @click="closeByOutside"/>
+        <div v-if="visible" :class="[$style.background, backgroundClass, position === 'absolute' ? $style['absolute'] : undefined]" @click="closeByOutside">
+            <div :class="$style['top-bar-region']"/>
+        </div>
     </transition>
     <transition :enter-active-class="enterActiveClass" :leave-active-class="leaveActiveClass" :enter-from-class="enterFromClass" :leave-to-class="leaveToClass">
         <DialogInternal v-if="visible" v-bind="$attrs" :class="dialogClass" :position="position" :close-on-escape="closeOnEscape" :intercept-event="interceptEvent" @close="close">
@@ -45,6 +47,8 @@ const closeByOutside = () => {
 </template>
 
 <style module lang="sass">
+@import "../../../styles/base/size"
+
 .background
     z-index: 90
     position: fixed
@@ -54,4 +58,12 @@ const closeByOutside = () => {
     height: 100%
     left: 0
     top: 0
+
+    .top-bar-region
+        position: absolute
+        width: 100%
+        height: $title-bar-height
+        left: 0
+        top: 0
+        -webkit-app-region: none
 </style>

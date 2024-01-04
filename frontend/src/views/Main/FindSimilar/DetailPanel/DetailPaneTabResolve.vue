@@ -9,7 +9,7 @@ const { selector: { selected }, operators: { allBooks, allCollections, addToBook
 
 const { existedRelations } = useDetailPaneTabResolve()
 
-const addToBookMenuItems = () => <MenuItem<undefined>[]>allBooks.value.map(id => ({type: "normal", label: `画集:${id}`, click: () => addToBook(id)}))
+const addToBookMenuItems = () => <MenuItem<undefined>[]>allBooks.value.map(b => ({type: "normal", label: b.title, click: () => addToBook(b.id)}))
 
 const addToCollectionMenuItems = () => <MenuItem<undefined>[]>[
     ...allCollections.value.map(id => ({type: "normal", label: `集合:${id}`, click: () => addToCollection(id)})),
