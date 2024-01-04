@@ -29,8 +29,7 @@ import com.heerkirov.hedge.server.utils.mapEachTwo
 import com.heerkirov.hedge.server.utils.tuples.Tuple6
 import com.heerkirov.hedge.server.utils.types.descendingOrderItem
 import org.ktorm.dsl.*
-import org.ktorm.entity.firstOrNull
-import org.ktorm.entity.sequenceOf
+import org.ktorm.entity.*
 import java.time.Instant
 import java.time.LocalDate
 import kotlin.math.max
@@ -109,6 +108,15 @@ class FindSimilarService(private val data: DataRepository,
     fun getResult(id: Int): FindSimilarResultDetailRes {
         val result = data.db.sequenceOf(FindSimilarResults).firstOrNull { it.id eq id } ?: throw be(NotFound())
 
+        val imageToBooks = data.db.sequenceOf(BookImageRelations)
+            .filter { it.imageId inList result.imageIds }
+            .groupBy { it.imageId }
+
+        val bookTitles = data.db.from(Books)
+            .select(Books.id, Books.title)
+            .where { Books.id inList imageToBooks.values.asSequence().flatten().map { it.bookId }.distinct().toList() }
+            .associateBy({ it[Books.id]!! }) { it[Books.title]!! }
+
         val images = data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
             .select(Illusts.id, Illusts.favorite, Illusts.score, Illusts.orderTime, Illusts.parentId,
@@ -124,7 +132,8 @@ class FindSimilarService(private val data: DataRepository,
                 val favorite = it[Illusts.favorite]!!
                 val orderTime = it[Illusts.orderTime]!!.toInstant()
                 val source = sourcePathOf(it)
-                FindSimilarDetailResultImage(illustId, filePath, parentId, favorite, score, orderTime, source)
+                val books = imageToBooks[illustId]?.map { r -> BookSimpleRes(r.bookId, bookTitles[r.bookId] ?: "", null) } ?: emptyList()
+                FindSimilarDetailResultImage(illustId, filePath, parentId, favorite, score, orderTime, source, books)
             }
 
         return FindSimilarResultDetailRes(result.id, result.category, result.summaryType, images, result.edges, result.coverages, result.resolved, result.recordTime)

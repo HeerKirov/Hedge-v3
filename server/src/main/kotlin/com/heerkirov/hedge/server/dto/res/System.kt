@@ -24,6 +24,6 @@ data class FindSimilarResultDetailRes(val id: Int,
 
 data class FindSimilarResultImage(val id: Int, val filePath: NullableFilePath?)
 
-data class FindSimilarDetailResultImage(val id: Int, val filePath: FilePath, val parentId: Int?, val favorite: Boolean, val score: Int?, val orderTime: Instant, val source: SourceDataPath?)
+data class FindSimilarDetailResultImage(val id: Int, val filePath: FilePath, val parentId: Int?, val favorite: Boolean, val score: Int?, val orderTime: Instant, val source: SourceDataPath?, val books: List<BookSimpleRes>)
 
 fun newFindSimilarTaskRes(task: FindSimilarTask) = FindSimilarTaskRes(task.id, task.selector, task.config, task.recordTime)
