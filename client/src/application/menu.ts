@@ -1,4 +1,4 @@
-import { app, Menu, shell } from "electron"
+import { app, BrowserWindow, Menu, shell } from "electron"
 import { WindowManager } from "./window"
 import { ServerManager } from "../components/server"
 import { Platform } from "../utils/process"
@@ -7,9 +7,12 @@ import { createEmitter, Emitter, SendEmitter } from "../utils/emitter"
 export interface MenuManager {
     load(): void
     tabs: {
+        updateState(winId: number, state: UpdateStateOptions): void
         controlEvent: Emitter<TabControlEvent>
     }
 }
+
+export interface UpdateStateOptions { enabled: boolean }
 
 export type TabControlEvent = "NEW_TAB" | "CLONE_TAB" | "PREV_TAB" | "NEXT_TAB" | "CLOSE_TAB" | "ROUTE_BACK" | "ROUTE_FORWARD"
 
@@ -24,6 +27,8 @@ export function createMenuManager(server: ServerManager, windowManager: WindowMa
 
     const menu = registerAppMenu(windowManager, tabControlEvent, generalEvent, isDarwin)
 
+    const tabs = registerTabModule(windowManager, tabControlEvent, menu)
+
     registerImportModule(server, menu, generalEvent)
 
     return {
@@ -31,6 +36,7 @@ export function createMenuManager(server: ServerManager, windowManager: WindowMa
             registerDockMenu(windowManager, isDarwin)
         },
         tabs: {
+            updateState: tabs.updateState,
             controlEvent: tabControlEvent
         }
     }
@@ -87,16 +93,15 @@ function registerAppMenu(windowManager: WindowManager, tabControlEvent: SendEmit
         },
         {
             label: "标签页",
-            id: "TAB",
             submenu: [
-                {label: "选择上一个标签页", accelerator: "Ctrl+Shift+Tab", click() { tabControlEvent.emit("PREV_TAB") }},
-                {label: "选择下一个标签页", accelerator: "Ctrl+Tab", click() { tabControlEvent.emit("NEXT_TAB") }},
-                {label: "复制标签页", click() { tabControlEvent.emit("CLONE_TAB") }},
-                {label: "新建标签页", accelerator: isDarwin ? "Command+T" : "Ctrl+T", click() { tabControlEvent.emit("NEW_TAB") }},
+                {label: "选择上一个标签页", id: "TAB_PREV", enabled: false, accelerator: "Ctrl+Shift+Tab", click() { tabControlEvent.emit("PREV_TAB") }},
+                {label: "选择下一个标签页", id: "TAB_NEXT", enabled: false, accelerator: "Ctrl+Tab", click() { tabControlEvent.emit("NEXT_TAB") }},
+                {label: "复制标签页", id: "TAB_CLONE", enabled: false, click() { tabControlEvent.emit("CLONE_TAB") }},
+                {label: "新建标签页", id: "TAB_NEW", enabled: false, accelerator: isDarwin ? "Command+T" : "Ctrl+T", click() { tabControlEvent.emit("NEW_TAB") }},
                 {label: "关闭标签页", accelerator: isDarwin ? "Command+W" : "Ctrl+W", click() { tabControlEvent.emit("CLOSE_TAB") }},
                 {type: "separator"},
-                {label: "后退", accelerator: isDarwin ? "Command+Left" : "Ctrl+Left", click() { tabControlEvent.emit("ROUTE_BACK") }},
-                {label: "前进", accelerator: isDarwin ? "Command+Right" : "Ctrl+Right", click() { tabControlEvent.emit("ROUTE_FORWARD") }}
+                {label: "后退", id: "TAB_BACK", enabled: false, accelerator: isDarwin ? "Command+Left" : "Ctrl+Left", click() { tabControlEvent.emit("ROUTE_BACK") }},
+                {label: "前进", id: "TAB_FORWARD", enabled: false, accelerator: isDarwin ? "Command+Right" : "Ctrl+Right", click() { tabControlEvent.emit("ROUTE_FORWARD") }}
             ]
         },
         {
@@ -105,7 +110,7 @@ function registerAppMenu(windowManager: WindowManager, tabControlEvent: SendEmit
             submenu: [
                 {label: "最小化", role: "minimize"},
                 {label: "缩放", role: "zoom"},
-                {label: "关闭窗口", role: "close", accelerator: isDarwin ? "Command+Shift+W" : "Ctrl+Shift+W"},
+                {label: "关闭窗口", visible: false, role: "close", accelerator: isDarwin ? "Command+Shift+W" : "Ctrl+Shift+W"},
                 {type: "separator"},
                 {label: "新建窗口", accelerator: isDarwin ? "Command+N" : "Ctrl+N", click() { windowManager.createWindow() }}
             ]
@@ -132,6 +137,51 @@ function registerDockMenu(windowManager: WindowManager, isDarwin: boolean) {
             {label: "新建窗口", click() { windowManager.createWindow() }}
         ]))
     }
+}
+
+function registerTabModule(windowManager: WindowManager, tabControlEvent: Emitter<TabControlEvent>, menu: Menu) {
+    const enabledWindows = new Set<number>()
+    let focusWinId: number | null = null
+
+    tabControlEvent.addEventListener(e => {
+        if(e === "CLOSE_TAB") {
+            const win = BrowserWindow.getFocusedWindow()
+            if(win !== null && !enabledWindows.has(win.id)) {
+                win.close()
+            }
+        }
+    })
+
+    windowManager.windowEvent.addEventListener(e => {
+        if(e.type === "CLOSED") {
+            enabledWindows.delete(e.windowId)
+            if(e.windowId === focusWinId) apply(false)
+        }else if(e.type === "FOCUS") {
+            focusWinId = e.windowId
+            apply(enabledWindows.has(focusWinId))
+        }
+    })
+
+    function updateState(winId: number, state: UpdateStateOptions) {
+        if(!state.enabled) {
+            enabledWindows.delete(winId)
+            if(winId === focusWinId) apply(false)
+        }else if(!enabledWindows.has(winId)) {
+            enabledWindows.add(winId)
+            if(winId === focusWinId) apply(true)
+        }
+    }
+
+    function apply(enabled: boolean) {
+        menu.getMenuItemById("TAB_PREV")!.enabled = enabled
+        menu.getMenuItemById("TAB_NEXT")!.enabled = enabled
+        menu.getMenuItemById("TAB_CLONE")!.enabled = enabled
+        menu.getMenuItemById("TAB_NEW")!.enabled = enabled
+        menu.getMenuItemById("TAB_BACK")!.enabled = enabled
+        menu.getMenuItemById("TAB_FORWARD")!.enabled = enabled
+    }
+
+    return {updateState}
 }
 
 function registerImportModule(server: ServerManager, menu: Menu, generalEvent: SendEmitter<GeneralEvent>) {

@@ -2,7 +2,7 @@ import { Platform } from "../../utils/process"
 import { ServerServiceStatus, ServerConnectionStatus, ServerConnectionInfo, WsToastResult, ServerStaticInfo } from "../../components/server/model"
 import { AppInitializeForm, AppState, InitializeState, LoginForm } from "../../components/state/model"
 import { NativeTheme } from "../../components/appdata/model"
-import { TabControlEvent } from "../menu"
+import { TabControlEvent, UpdateStateOptions } from "../menu"
 import { Emitter } from "../../utils/emitter"
 
 /**
@@ -43,6 +43,7 @@ export interface IpcClient {
     }
     remote: {
         tabs: {
+            updateState(state: UpdateStateOptions): void
             controlEvent: Emitter<TabControlEvent>
         }
         fullscreen: {

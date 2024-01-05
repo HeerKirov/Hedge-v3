@@ -4,6 +4,7 @@ import { Platform } from "../utils/process"
 import { StateManager } from "../components/state"
 import { StorageManager } from "../components/storage"
 import { APP_FILE, RESOURCE_FILE } from "../constants/file"
+import { createEmitter, Emitter } from "../utils/emitter"
 import { registerWindowIpcRemoteEvent } from "./ipc"
 import { ThemeManager } from "./theme"
 
@@ -36,6 +37,10 @@ export interface WindowManager {
      * 获得全部窗口列表。
      */
     getAllWindows(): BrowserWindow[]
+    /**
+     * 窗口变化的某些事件。
+     */
+    windowEvent: Emitter<WindowEvent>
 }
 
 export interface WindowManagerOptions {
@@ -46,6 +51,11 @@ export interface WindowManagerOptions {
     }
 }
 
+export interface WindowEvent {
+    type: "FOCUS" | "CLOSED"
+    windowId: number
+}
+
 export function createWindowManager(state: StateManager, theme: ThemeManager, storage: StorageManager, options: WindowManagerOptions): WindowManager {
     let ready = false
     let noteWindow: BrowserWindow | null = null
@@ -54,6 +64,7 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, st
 
     const icon = createNativeIcon(options.platform, !!options.debug)
     const boundManager = createWindowBoundManager(storage)
+    const windowEvent = createEmitter<WindowEvent>()
 
     function newBrowserWindow(hashURL: string, configure: BrowserWindowConstructorOptions = {}): BrowserWindow {
         const pathname = boundManager.getPathname(hashURL)
@@ -85,6 +96,9 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, st
                 win.webContents.openDevTools()
             })
         }
+
+        win.on("focus", () => windowEvent.emit({type: "FOCUS", windowId: win.id}))
+        win.on("closed", () => windowEvent.emit({type: "CLOSED", windowId: win.id}))
 
         boundManager.register(win, pathname)
 
@@ -173,7 +187,8 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, st
         openNoteWindow,
         openGuideWindow,
         openSettingWindow,
-        getAllWindows: BrowserWindow.getAllWindows
+        getAllWindows: BrowserWindow.getAllWindows,
+        windowEvent
     }
 }
 

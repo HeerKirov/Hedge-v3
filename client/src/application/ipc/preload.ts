@@ -84,6 +84,9 @@ function createRemoteIpcClient(): IpcClient {
         },
         remote: {
             tabs: {
+                updateState(state) {
+                    ipcRenderer.send("/remote/tabs/update-state", state)
+                },
                 controlEvent: createProxyEmitter(emit => {
                     ipcRenderer.on("/remote/tabs/control", (_, arg) => emit(arg))
                 })

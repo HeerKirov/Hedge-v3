@@ -8,7 +8,7 @@ import { ServerManager } from "../../components/server"
 import { StateManager } from "../../components/state"
 import { ThemeManager } from "../theme"
 import { WindowManager } from "../window"
-import { MenuManager } from "../menu"
+import { MenuManager, UpdateStateOptions } from "../menu"
 import { createIpcClientImpl, IpcRemoteOptions } from "./impl"
 
 
@@ -77,6 +77,7 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
     ipcHandleSync("/setting/channel/toggle", impl.setting.channel.toggle)
 
     ipcEventFocus("/remote/tabs/control", menu.tabs.controlEvent)
+    ipcHandleSync("/remote/tabs/update-state", (value: UpdateStateOptions, e) => menu.tabs.updateState(BrowserWindow.fromWebContents(e.sender)!.id, value))
     ipcHandleSync("/remote/fullscreen", (_, e) => BrowserWindow.fromWebContents(e.sender)!.isFullScreen())
     ipcHandleSync("/remote/fullscreen/set", (value: boolean, e) => { BrowserWindow.fromWebContents(e.sender)!.setFullScreen(value) })
     ipcHandle("/remote/dialog/open-dialog", (value: OpenDialogOptions, e) => dialog.showOpenDialog(BrowserWindow.fromWebContents(e.sender)!, value))
