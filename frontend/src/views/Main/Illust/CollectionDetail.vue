@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from "vue"
 import { Button, OptionButtons, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { BrowserTeleport } from "@/components/logical"
@@ -26,7 +25,7 @@ const sideBarButtonItems = [
     {value: "related", label: "相关项目", icon: "dice-d6"}
 ]
 
-const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
+const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "checkbox", label: "解除编辑锁定", checked: editableLockOn.value, click: () => editableLockOn.value = !editableLockOn.value},
@@ -34,8 +33,12 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "radio", checked: viewMode.value === "row", label: "列表模式", click: () => viewMode.value = "row"},
     {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"},
     {type: "separator"},
+    {type: "submenu", label: "更改图像", enabled: selected.value.length > 0, submenu: [
+        {type: "normal", label: "图像格式转换", click: () => operators.fileEdit(undefined, "convertFormat")},
+    ]},
+    {type: "separator"},
     {type: "normal", label: "删除此集合", click: deleteItem}
-])
+]
 
 const menu = useDynamicPopupMenu<Illust>(illust => [
     {type: "normal", label: "打开", click: i => operators.openDetailByClick(i.id)},
@@ -58,16 +61,16 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
     {type: "normal", label: "克隆图像属性…", click: operators.cloneImage},
     {type: "separator"},
     {type: "submenu", label: "快捷排序", enabled: selected.value.length > 1, submenu: [
-            {type: "normal", label: "将时间分区集中在最多的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_MOST")},
-            {type: "normal", label: "将时间分区设为最早的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_EARLIEST")},
-            {type: "normal", label: "将时间分区设为最晚的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_LATEST")},
-            {type: "separator"},
-            {type: "normal", label: "将排序时间集中在最多的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_MOST")},
-            {type: "normal", label: "倒置排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_REVERSE")},
-            {type: "normal", label: "均匀分布排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_UNIFORMLY")},
-            {type: "separator"},
-            {type: "normal", label: "按来源ID顺序重设排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_BY_SOURCE_ID")},
-        ]},
+        {type: "normal", label: "将时间分区集中在最多的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_MOST")},
+        {type: "normal", label: "将时间分区设为最早的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_EARLIEST")},
+        {type: "normal", label: "将时间分区设为最晚的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_LATEST")},
+        {type: "separator"},
+        {type: "normal", label: "将排序时间集中在最多的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_MOST")},
+        {type: "normal", label: "倒置排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_REVERSE")},
+        {type: "normal", label: "均匀分布排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_UNIFORMLY")},
+        {type: "separator"},
+        {type: "normal", label: "按来源ID顺序重设排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_BY_SOURCE_ID")},
+    ]},
     {type: "normal", label: "查找相似项", click: operators.findSimilarOfImage},
     {type: "normal", label: "导出", click: operators.exportItem},
     {type: "separator"},

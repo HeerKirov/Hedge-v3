@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from "vue"
 import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { BrowserTeleport } from "@/components/logical"
@@ -20,14 +19,14 @@ const {
     operators
 } = useDetailIllustContext()
 
-const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
+const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "checkbox", label: "解除编辑锁定", checked: editableLockOn.value, click: () => editableLockOn.value = !editableLockOn.value},
     {type: "separator"},
     {type: "radio", checked: viewMode.value === "row", label: "列表模式", click: () => viewMode.value = "row"},
     {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"}
-])
+]
 
 const menu = useDynamicPopupMenu<Illust>(illust => [
     {type: "normal", label: "打开", click: i => operators.openDetailByClick(i.id)},

@@ -293,6 +293,14 @@ export interface ImportOption {
      */
     notReflectForMixedSet: boolean
     /**
+     * 在文件导入时，自动对那些特定格式的、容量较大的图像进行格式转换，以在不损失质量的前提下减少其大小。
+     */
+    autoConvertFormat: boolean
+    /**
+     * PNG类型的自动转换阈值大小
+     */
+    autoConvertPNGThresholdSizeMB: number
+    /**
      * 导入时，自动设定meta tag的tagme。
      */
     setTagmeOfTag: boolean

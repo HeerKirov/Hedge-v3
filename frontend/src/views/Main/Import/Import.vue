@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from "vue"
 import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { BrowserTeleport } from "@/components/logical"
@@ -23,7 +22,7 @@ const {
     operators: { historyMode, openDialog, deleteItem, openImagePreview, analyseSource, analyseTime, retry, clear }
 } = installImportContext()
 
-const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
+const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "radio", checked: viewMode.value === "row", label: "列表模式", click: () => viewMode.value = "row"},
@@ -33,7 +32,7 @@ const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
     {type: "separator"},
     {type: "normal", label: historyMode.value ? "查看现存记录" : "查看历史记录", checked: historyMode.value, click: () => historyMode.value = !historyMode.value},
     {type: "normal", label: historyMode.value ? "清理所有历史记录" : "清理已完成的记录", click: clear},
-])
+]
 
 const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
     {type: "normal", label: "预览", click: openImagePreview},

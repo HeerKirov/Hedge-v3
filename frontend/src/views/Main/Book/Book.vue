@@ -26,11 +26,11 @@ const { creatingBook } = useDialogService()
 
 const bookGridStyle = computed(() => ({"--column-num": columnNum.value}))
 
-const ellipsisMenuItems = computed(() => <MenuItem<undefined>[]>[
+const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "normal", label: "新建画集", click: creatingBook.createBook}
-])
+]
 
 const menu = useDynamicPopupMenu<Book>(book => [
     {type: "normal", label: "打开", click: operators.openBookView},

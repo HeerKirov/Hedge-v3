@@ -10,6 +10,7 @@ import { CloneImage, CloneImageProps, useCloneImage } from "./CloneImage/context
 import { FindSimilarTaskExplorer, FindSimilarTaskExplorerProps, useFindSimilarTaskExplorer } from "./FindSimilarTaskExplorer/context"
 import { AssociateExplorer, AssociateExplorerProps, useAssociateExplorer } from "./AssociateExplorer/context"
 import { ExternalExporter, ExternalExporterProps, useExternalExporter } from "./ExternalExporter/context"
+import { FileEditor, FileEditorProps, useFileEditor } from "./FileEditor/context"
 
 export type {
     SourceDataEditorProps,
@@ -21,7 +22,8 @@ export type {
     CloneImageProps,
     FindSimilarTaskExplorerProps,
     AssociateExplorerProps,
-    ExternalExporterProps
+    ExternalExporterProps,
+    FileEditorProps
 }
 
 export interface DialogService {
@@ -35,6 +37,7 @@ export interface DialogService {
     findSimilarTaskExplorer: FindSimilarTaskExplorer
     associateExplorer: AssociateExplorer
     externalExporter: ExternalExporter
+    fileEditor: FileEditor
 }
 
 type ServiceContext
@@ -48,6 +51,7 @@ type ServiceContext
     | { type: "findSimilarTaskExplorer", props: FindSimilarTaskExplorerProps }
     | { type: "associateExplorer", props: AssociateExplorerProps }
     | { type: "externalExporter", props: ExternalExporterProps }
+    | { type: "fileEditor", props: FileEditorProps }
 
 export type Push = (nc: ServiceContext) => void
 
@@ -86,6 +90,7 @@ export const [installInternalService, useInternalService] = installation(functio
     const findSimilarTaskExplorer = useFindSimilarTaskExplorer(push)
     const associateExplorer = useAssociateExplorer(push)
     const externalExporter = useExternalExporter(push)
+    const fileEditor = useFileEditor(push)
 
     return {
         context,
@@ -100,7 +105,8 @@ export const [installInternalService, useInternalService] = installation(functio
         cloneImage,
         findSimilarTaskExplorer,
         associateExplorer,
-        externalExporter
+        externalExporter,
+        fileEditor
     }
 })
 

@@ -14,7 +14,6 @@ import { useMessageBox } from "@/modules/message-box"
 import { useDroppingFileListener } from "@/modules/drag"
 import { dialogManager } from "@/modules/dialog"
 import { installation } from "@/utils/reactivity"
-import { strings } from "@/utils/primitives"
 
 export const [installImportContext, useImportContext] = installation(function () {
     const importService = useImportService()
@@ -38,7 +37,6 @@ function useImportService() {
 
     const progress = ref({value: 0, max: 0})
     const progressing = computed(() => progress.value.max > 0)
-    const warningList: {id: number, filepath: string, warningMessage: string[]}[] = []
 
     const addFiles = async (files: string[]) => {
         progress.value.max += files.length
@@ -59,14 +57,6 @@ function useImportService() {
         if(progress.value.value >= progress.value.max) {
             progress.value.max = 0
             progress.value.value = 0
-
-            if(warningList.length) {
-                const message = warningList.length > 3
-                    ? `超过${warningList.length}个文件来源信息分析失败。可能是因为正则表达式内容错误。`
-                    : `文件${warningList.map(({ filepath }) => strings.lastPathOf(filepath)).join(", ")}的来源信息分析失败：\n${warningList.flatMap(({ warningMessage }) => warningMessage).join("\n")}`
-                toast.toast("来源信息分析失败", "warning", message)
-                warningList.splice(0, warningList.length)
-            }
         }
     }
 

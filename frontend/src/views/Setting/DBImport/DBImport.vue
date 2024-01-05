@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Separator } from "@/components/universal"
-import { CheckBox, Select } from "@/components/form"
+import { CheckBox, NumberInput, Select } from "@/components/form"
 import { MetaType } from "@/functions/http-client/api/all"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
 import { useSettingImport } from "@/services/setting"
@@ -38,11 +38,11 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
         </div>
         <div class="mt-2">
             <label class="label">排序时间方案</label>
-            <Select class="mt-1" :items="timeTypes" v-model:value="settingImport.setOrderTimeBy"/>
+            <Select class="mt-1" size="small" :items="timeTypes" v-model:value="settingImport.setOrderTimeBy"/>
             <p class="secondary-text">使用选定的属性作为导入项目的排序时间。当选定的属性不存在时，自动选择其他属性。</p>
         </div>
         <div class="mt-2">
-            <label class="label">启用导入时标签映射</label>
+            <label class="label">标签映射</label>
             <div class="mt-1">
                 <CheckBox v-model:value="settingImport.autoReflectMetaTag">导入时标签映射</CheckBox>
                 <p class="secondary-text">导入文件时，若来源数据已存在，则会利用现有的标签映射规则，自动为导入项目添加元数据标签。</p>
@@ -56,6 +56,14 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
             <div class="mt-2">
                 <CheckBox :disabled="!settingImport.autoReflectMetaTag" v-model:value="settingImport.notReflectForMixedSet">不为混合集做映射</CheckBox>
                 <p class="secondary-text">主题、作者标签数量过多的来源不会被映射。</p>
+            </div>
+        </div>
+        <div class="mt-2">
+            <label class="label">文件处理</label>
+            <div class="mt-1">
+                <CheckBox v-model:value="settingImport.autoConvertFormat">自动将较大的无损文件转换至有损类型</CheckBox>
+                <p class="secondary-text">导入文件时，对于容量较大的无损格式文件，自动将其转换为有损格式文件，以在几乎不影响质量的前提下减少容量。</p>
+                <p class="mt-1 is-line-height-small">PNG格式转换阈值：<NumberInput size="small" width="half" :disabled="!settingImport.autoConvertFormat" v-model:value="settingImport.autoConvertPNGThresholdSizeMB" :min="0"/>MiB</p>
             </div>
         </div>
         <Separator direction="horizontal" :spacing="2"/>
