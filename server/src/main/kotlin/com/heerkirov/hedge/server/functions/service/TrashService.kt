@@ -11,6 +11,7 @@ import com.heerkirov.hedge.server.exceptions.NotFound
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.manager.TrashManager
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
+import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import com.heerkirov.hedge.server.utils.business.toListResult
@@ -18,7 +19,7 @@ import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import org.ktorm.dsl.*
-import java.time.Instant
+import java.time.*
 import java.time.temporal.ChronoUnit
 import kotlin.math.absoluteValue
 
@@ -30,7 +31,12 @@ class TrashService(private val appdata: AppDataManager, private val data: DataRe
     }
 
     fun list(filter: TrashFilter): ListResult<TrashedImageRes> {
-        val deadline = if(appdata.setting.storage.autoCleanTrashes) Instant.now().minus(appdata.setting.storage.autoCleanTrashesIntervalDay.absoluteValue.toLong(), ChronoUnit.DAYS).toEpochMilli() else null
+        val deadline = if(appdata.setting.storage.autoCleanTrashes) {
+            Instant.now()
+                .toPartitionDate(appdata.setting.server.timeOffsetHour)
+                .minus(appdata.setting.storage.autoCleanTrashesIntervalDay.absoluteValue.toLong(), ChronoUnit.DAYS)
+                .let { LocalDateTime.of(it, LocalTime.MIN).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() }
+        }else null
 
         return data.db.from(TrashedImages)
             .innerJoin(FileRecords, FileRecords.id eq TrashedImages.fileId)
@@ -71,8 +77,13 @@ class TrashService(private val appdata: AppDataManager, private val data: DataRe
         val metadata = row[TrashedImages.metadata]!!
         val parentId = row[TrashedImages.parentId]
         val trashedTime = row[TrashedImages.trashedTime]!!
-        val deadline = if(appdata.setting.storage.autoCleanTrashes) Instant.now().minus(appdata.setting.storage.autoCleanTrashesIntervalDay.absoluteValue.toLong(), ChronoUnit.DAYS).toEpochMilli() else null
-        val remainingTime = if(deadline != null) trashedTime.toEpochMilli() - deadline else null
+        val remainingTime = if(appdata.setting.storage.autoCleanTrashes) {
+            Instant.now()
+                .toPartitionDate(appdata.setting.server.timeOffsetHour)
+                .minus(appdata.setting.storage.autoCleanTrashesIntervalDay.absoluteValue.toLong(), ChronoUnit.DAYS)
+                .let { LocalDateTime.of(it, LocalTime.MIN).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() }
+                .let { trashedTime.toEpochMilli() - it }
+        }else null
 
         val authorColors = appdata.setting.meta.authorColors
         val topicColors = appdata.setting.meta.topicColors

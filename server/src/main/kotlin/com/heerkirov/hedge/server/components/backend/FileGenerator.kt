@@ -52,7 +52,7 @@ import kotlin.math.absoluteValue
  */
 interface FileGenerator
 
-private const val ARCHIVE_INTERVAL: Long = 1000
+private const val ARCHIVE_INTERVAL: Long = 2000
 
 class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                         private val appdata: AppDataManager,

@@ -18,8 +18,7 @@ import org.ktorm.dsl.*
 import org.ktorm.schema.ColumnDeclaring
 import org.ktorm.support.sqlite.random
 import org.slf4j.LoggerFactory
-import java.time.Instant
-import java.time.LocalDate
+import java.time.*
 import java.time.temporal.ChronoUnit
 import kotlin.math.absoluteValue
 import kotlin.random.Random
@@ -48,11 +47,12 @@ class DailyProcessorImpl(private val appStatusDriver: AppStatusDriver,
 
     private fun cleanTrashedImages() {
         if(appdata.setting.storage.autoCleanTrashes) {
-            val intervalDay = appdata.setting.storage.autoCleanTrashesIntervalDay
-            Thread.sleep(5000)
+            Thread.sleep(1000)
 
-            val now = Instant.now()
-            val deadline = now.minus(intervalDay.absoluteValue.toLong(), ChronoUnit.DAYS)
+            val deadline = Instant.now()
+                .toPartitionDate(appdata.setting.server.timeOffsetHour)
+                .minus(appdata.setting.storage.autoCleanTrashesIntervalDay.absoluteValue.toLong(), ChronoUnit.DAYS)
+                .let { LocalDateTime.of(it, LocalTime.MIN).atZone(ZoneId.systemDefault()).toInstant() }
             val imageIds = data.db.from(TrashedImages)
                 .select(TrashedImages.imageId)
                 .where { TrashedImages.trashedTime lessEq deadline }

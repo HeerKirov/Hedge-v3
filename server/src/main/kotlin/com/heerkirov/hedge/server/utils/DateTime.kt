@@ -22,7 +22,7 @@ object DateTime {
     /**
      * 将时刻转换为带有时区的时间，且使用的时区为当前系统时区。
      */
-    fun Instant.toSystemZonedTime(): ZonedDateTime = this.atZone(ZoneId.systemDefault())
+    private fun Instant.toSystemZonedTime(): ZonedDateTime = this.atZone(ZoneId.systemDefault())
 
     /**
      * 将字符串解析为yyyy-MM-dd的日期格式。
