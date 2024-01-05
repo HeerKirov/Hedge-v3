@@ -54,7 +54,7 @@ fun runApplication(options: ApplicationOptions) {
             val sourceDataService = SourceDataService(appdata, repo, sourceManager, sourceAnalyzeManager, queryManager)
             val sourceMappingService = SourceMappingService(repo, sourceMappingManager)
 
-            val importManager = ImportManager(repo, bus, file)
+            val importManager = ImportManager(appdata, repo, bus, file)
 
             val pathWatcher = define { PathWatcherImpl(appStatus, appdata, bus, importManager) }
 
@@ -101,6 +101,7 @@ fun runApplication(options: ApplicationOptions) {
             val pickerUtilService = PickerUtilService(appdata, repo, historyRecordManager)
             val illustUtilService = IllustUtilService(appdata, repo)
             val exportUtilService = ExportUtilService(appdata, repo, file)
+            val fileUtilService = FileUtilService(repo, file, bus)
 
             val noteService = NoteService(repo, bus)
             val serviceService = ServiceService(appdata)
@@ -128,7 +129,8 @@ fun runApplication(options: ApplicationOptions) {
                 exportUtilService,
                 metaUtilService,
                 illustUtilService,
-                pickerUtilService
+                pickerUtilService,
+                fileUtilService
             )
         }
 

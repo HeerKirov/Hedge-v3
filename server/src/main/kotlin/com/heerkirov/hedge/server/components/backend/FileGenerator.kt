@@ -8,7 +8,6 @@ import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.dao.FileCacheRecords
 import com.heerkirov.hedge.server.dao.FileFingerprints
 import com.heerkirov.hedge.server.dao.FileRecords
-import com.heerkirov.hedge.server.dao.TrashedImages
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.enums.FileStatus
@@ -335,9 +334,9 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
 
     private fun processThumbnail(fileRecord: FileRecord, file: File): Tuple5<Long?, Long?, Int, Int, Long?> {
         //生成thumbnail。当file为除jpg外的其他格式，或file尺寸高于阈值时，会生成thumbnail。
-        val (thumbnailTempFile, resolutionWidth, resolutionHeight, videoDuration) = Graphics.process(file, Graphics.THUMBNAIL_RESIZE_AREA)
+        val (thumbnailTempFile, resolutionWidth, resolutionHeight, videoDuration) = Graphics.generateThumbnail(file, Graphics.THUMBNAIL_RESIZE_AREA)
         //生成sample。由于传入必定是jpg格式，当file尺寸高于阈值时，会生成thumbnail。
-        val (sampleTempFile, _, _, _) = Graphics.process(thumbnailTempFile ?: file, Graphics.SAMPLE_RESIZE_AREA)
+        val (sampleTempFile, _, _, _) = Graphics.generateThumbnail(thumbnailTempFile ?: file, Graphics.SAMPLE_RESIZE_AREA)
 
         //实际上，当尺寸小于sample且类型为jpg时，可以只生成thumbnail而不生成sample。
         //此时，需要把thumbnail当作sample去处理。即，sample总是优先于thumbnail。

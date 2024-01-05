@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
+import kotlin.io.path.deleteIfExists
 
 class FileManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus): StatefulComponent, DaemonThreadComponent {
     private val extensions = arrayOf("jpeg", "jpg", "png", "gif", "mp4", "webm")
@@ -150,6 +151,53 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
         }
 
         nextBlock.delSizeAndCount(file.block, file.size)
+    }
+
+    /**
+     * 转换一个文件的类型，生成新的文件。
+     * 这将生成一个新的文件放置在{block}目录下，并等待归档功能将其合并到zip压缩包内。同时会清除此文件的cache缓存。
+     * 这不会修改FileRecord中的任何属性(除了extension)，也不会重新生成缩略图。
+     */
+    fun convertFileFormat(fileId: Int, targetFormat: String) {
+        if(!appdata.storage.accessible) throw be(StorageNotAccessibleError(appdata.storage.storageDir))
+
+        val extension = validateExtension(targetFormat)
+
+        val file = data.db.sequenceOf(FileRecords).firstOrNull { it.id eq fileId } ?: return
+
+        if(file.extension == extension) return
+
+        val src = load(ArchiveType.ORIGINAL, file.block, "${file.id}.${file.extension}")?.toFile() ?: return
+
+        val target = Graphics.convertFormat(src, extension)
+
+        if(target != null) {
+            val size = target.length()
+            //将新文件移动到dir目录的位置
+            val targetPath = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), file.block, "${file.id}.$extension")
+            try {
+                targetPath.parent.toFile().mkdirs()
+                Files.move(target.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING)
+            }catch (e: Exception) {
+                target.deleteIfExists()
+                throw e
+            }
+
+            //删除旧文件的缓存
+            val cachePath = Path(appdata.storage.cacheDir, ArchiveType.ORIGINAL.toString(), file.block, "${file.id}.${file.extension}")
+            cachePath.deleteIfExists()
+
+            //如果旧文件仍位于dir目录，则将其也删除
+            val oldPath = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), file.block, "${file.id}.${file.extension}")
+            oldPath.deleteIfExists()
+
+            data.db.update(FileRecords) {
+                where { it.id eq file.id }
+                set(it.size, size)
+                set(it.extension, extension)
+                set(it.updateTime, Instant.now())
+            }
+        }
     }
 
     /**

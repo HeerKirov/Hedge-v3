@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.manager
 
+import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
@@ -26,7 +27,8 @@ import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.Instant
 
-class ImportManager(private val data: DataRepository,
+class ImportManager(private val appdata: AppDataManager,
+                    private val data: DataRepository,
                     private val bus: EventBus,
                     private val fileManager: FileManager) {
     /**
@@ -43,6 +45,8 @@ class ImportManager(private val data: DataRepository,
         val fileUpdateTime = file.lastModified().toInstant()
         val fileName = file.name
         val filePath = file.absoluteFile.parent
+        val fileExtension = file.extension
+        val fileSize = file.length()
 
         val fileId = data.db.transaction {
             fileManager.newFile(file, fileName, mobileImport)
@@ -50,6 +54,14 @@ class ImportManager(private val data: DataRepository,
             fileManager.undoFile(file, it, mobileImport)
         }.alsoReturns {
             bus.emit(FileCreated(it))
+        }
+
+        if(appdata.setting.import.autoConvertFormat) {
+            when(fileExtension.lowercase()) {
+                "png" -> if(fileSize >= appdata.setting.import.autoConvertPNGThresholdSizeMB * 1024 * 1024) {
+                    fileManager.convertFileFormat(fileId, "jpg")
+                }
+            }
         }
 
         data.db.transaction {
@@ -67,6 +79,7 @@ class ImportManager(private val data: DataRepository,
         }.also { file ->
             Files.copy(content, file.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
+        val fileSize = file.length()
 
         val fileId = data.db.transaction {
             fileManager.newFile(file, filename)
@@ -74,6 +87,14 @@ class ImportManager(private val data: DataRepository,
             fileManager.undoFile(file, fileId)
         }.alsoReturns {
             bus.emit(FileCreated(it))
+        }
+
+        if(appdata.setting.import.autoConvertFormat) {
+            when(extension.lowercase()) {
+                "png" -> if(fileSize >= appdata.setting.import.autoConvertPNGThresholdSizeMB * 1024 * 1024) {
+                    fileManager.convertFileFormat(fileId, "jpg")
+                }
+            }
         }
 
         data.db.transaction {

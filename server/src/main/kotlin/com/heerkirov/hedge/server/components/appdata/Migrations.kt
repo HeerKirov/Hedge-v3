@@ -50,6 +50,8 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
                 autoReflectMetaTag = false,
                 reflectMetaTagType = listOf(MetaType.TAG, MetaType.TOPIC, MetaType.AUTHOR),
                 notReflectForMixedSet = false,
+                autoConvertFormat = false,
+                autoConvertPNGThresholdSizeMB = 10,
                 setTagmeOfTag = true,
                 setOrderTimeBy = ImportOption.TimeType.UPDATE_TIME,
                 sourceAnalyseRules = emptyList(),
@@ -87,6 +89,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
         register.map("0.3.0", ::addSourceAnalyseRuleExtraArguments)
         register.map("0.4.0", ::modifyImportAndFindSimilarArguments)
         register.map("0.5.0", ::modifyMetaAndImportArguments)
+        register.map("0.6.0", ::addImportConvertArguments)
     }
 
     /**
@@ -206,6 +209,23 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             "import" to json["import"].upsertField("autoReflectMetaTag") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() }
                 .upsertField("notReflectForMixedSet") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() }
                 .upsertField("reflectMetaTagType") { value -> if(value != null && value.isArray) value else listOf(MetaType.TAG, MetaType.TOPIC, MetaType.AUTHOR).toJsonNode() },
+            "findSimilar" to json["findSimilar"]
+        ).toJsonNode()
+    }
+
+    /**
+     * 在0.6.0版本，在import新增了用于自动convert的参数。
+     */
+    private fun addImportConvertArguments(json: JsonNode): JsonNode {
+        return mapOf(
+            "server" to json["server"],
+            "storage" to json["storage"],
+            "meta" to json["meta"],
+            "query" to json["query"],
+            "source" to json["source"],
+            "import" to json["import"]
+                .upsertField("autoConvertFormat") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
+                .upsertField("autoConvertPNGThresholdSizeMB") { value -> if(value != null && value.isNumber) value else 10.toJsonNode() },
             "findSimilar" to json["findSimilar"]
         ).toJsonNode()
     }

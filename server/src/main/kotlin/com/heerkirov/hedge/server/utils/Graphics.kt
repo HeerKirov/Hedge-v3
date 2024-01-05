@@ -35,7 +35,7 @@ object Graphics {
      * @return 缩略图文件的临时文件File。如果返回null，表示按照全局策略不需要生成缩略图。
      * @throws IllegalFileExtensionError 不支持的扩展名
      */
-    fun process(src: File, resizeArea: Int): ProcessResult {
+    fun generateThumbnail(src: File, resizeArea: Int): ThumbnailResult {
         return when (src.extension.lowercase()) {
             "jpeg", "jpg" -> {
                 val (resolutionWidth, resolutionHeight) = getImageDimension(src)
@@ -50,9 +50,9 @@ object Graphics {
                         output.delete()
                         throw e
                     }
-                    ProcessResult(output, resolutionWidth, resolutionHeight, null)
+                    ThumbnailResult(output, resolutionWidth, resolutionHeight, null)
                 }else{
-                    ProcessResult(null, resolutionWidth, resolutionHeight, null)
+                    ThumbnailResult(null, resolutionWidth, resolutionHeight, null)
                 }
             }
             "png", "gif" -> {
@@ -72,7 +72,7 @@ object Graphics {
                     output.delete()
                     throw e
                 }
-                ProcessResult(output, resolutionWidth, resolutionHeight, null)
+                ThumbnailResult(output, resolutionWidth, resolutionHeight, null)
             }
             "mp4", "webm" -> {
                 val media = MultimediaObject(src)
@@ -98,9 +98,31 @@ object Graphics {
                     throw RuntimeException("File $src render thumbnail failed. Final file not exist.")
                 }
 
-                ProcessResult(output, resolutionWidth, resolutionHeight, videoDuration)
+                ThumbnailResult(output, resolutionWidth, resolutionHeight, videoDuration)
             }
             else -> throw be(IllegalFileExtensionError(src.extension))
+        }
+    }
+
+    /**
+     * 将原文件的格式转换为目标格式。目前仅支持PNG、JPEG的转换。
+     */
+    fun convertFormat(src: File, outputFormat: String): File? {
+        return when(src.extension.lowercase()) {
+            "jpg", "jpeg", "png" -> {
+                val (resolutionWidth, resolutionHeight) = getImageDimension(src)
+                val source = Thumbnails.of(src).outputFormat(outputFormat)
+                val output = Fs.temp(outputFormat)
+                try {
+                    if(outputFormat.equals("jpg", ignoreCase = true)) source.outputQuality(0.92)
+                    source.scale(1.0).addFilter(Canvas(resolutionWidth, resolutionHeight, Positions.CENTER, BACKGROUND_COLOR)).toFile(output)
+                }catch (e: Throwable) {
+                    output.delete()
+                    throw e
+                }
+                output
+            }
+            else -> null
         }
     }
 
@@ -128,5 +150,5 @@ object Graphics {
         return Pair(bufferedImage.width, bufferedImage.height)
     }
 
-    data class ProcessResult(val thumbnailFile: File?, val resolutionWidth: Int, val resolutionHeight: Int, val videoDuration: Long?)
+    data class ThumbnailResult(val thumbnailFile: File?, val resolutionWidth: Int, val resolutionHeight: Int, val videoDuration: Long?)
 }

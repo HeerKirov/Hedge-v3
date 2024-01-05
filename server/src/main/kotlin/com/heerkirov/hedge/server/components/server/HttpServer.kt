@@ -86,6 +86,7 @@ class HttpServerImpl(private val health: Health,
             .handle(UtilIllustRoutes(allServices.illustUtil))
             .handle(UtilPickerRoutes(allServices.pickerUtil))
             .handle(UtilExportRoutes(allServices.exportUtil))
+            .handle(UtilFileRoutes(allServices.fileUtil))
             .handle(FindSimilarRoutes(allServices.findSimilar))
             .handle(IllustRoutes(allServices.illust))
             .handle(BookRoutes(allServices.book))

@@ -25,5 +25,6 @@ class AllServices(
     val exportUtil: ExportUtilService,
     val metaUtil: MetaUtilService,
     val illustUtil: IllustUtilService,
-    val pickerUtil: PickerUtilService
+    val pickerUtil: PickerUtilService,
+    val fileUtil: FileUtilService
 ) : Component

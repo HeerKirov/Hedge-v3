@@ -70,6 +70,8 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
             form.autoReflectMetaTag.alsoOpt { import.autoReflectMetaTag = it }
             form.reflectMetaTagType.alsoOpt { import.reflectMetaTagType = it }
             form.notReflectForMixedSet.alsoOpt { import.notReflectForMixedSet = it }
+            form.autoConvertFormat.alsoOpt { import.autoConvertFormat = it }
+            form.autoConvertPNGThresholdSizeMB.alsoOpt { import.autoConvertPNGThresholdSizeMB = it }
             form.setTagmeOfTag.alsoOpt { import.setTagmeOfTag = it }
             form.setOrderTimeBy.alsoOpt { import.setOrderTimeBy = it }
             form.sourceAnalyseRules.alsoOpt { import.sourceAnalyseRules = it }

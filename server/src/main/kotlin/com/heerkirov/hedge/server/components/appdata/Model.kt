@@ -175,6 +175,14 @@ data class ImportOption(
      */
     var notReflectForMixedSet: Boolean,
     /**
+     * 在文件导入时，自动对那些特定格式的、容量较大的图像进行格式转换，以在不损失质量的前提下减少其大小。
+     */
+    var autoConvertFormat: Boolean,
+    /**
+     * PNG类型的自动转换阈值大小。
+     */
+    var autoConvertPNGThresholdSizeMB: Long,
+    /**
      * 在文件导入时，自动设置tag、topic、author、source的tagme。
      */
     var setTagmeOfTag: Boolean,
