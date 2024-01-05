@@ -24,7 +24,13 @@ export function useApplicationMenuTabs(options: ApplicationMenuTabsOptions) {
         else if(e === "ROUTE_FORWARD") options.routeForward?.()
     }
 
-    onMounted(() => remoteIpcClient.remote.tabs.controlEvent.addEventListener(receiveEvent))
+    onMounted(() => {
+        remoteIpcClient.remote.tabs.updateState({enabled: true})
+        remoteIpcClient.remote.tabs.controlEvent.addEventListener(receiveEvent)
+    })
 
-    onUnmounted(() => remoteIpcClient.remote.tabs.controlEvent.removeEventListener(receiveEvent))
+    onUnmounted(() => {
+        remoteIpcClient.remote.tabs.updateState({enabled: false})
+        remoteIpcClient.remote.tabs.controlEvent.removeEventListener(receiveEvent)
+    })
 }

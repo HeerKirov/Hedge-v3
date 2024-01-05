@@ -1,4 +1,4 @@
-import { Platform, NativeTheme, ServerStaticInfo, TabControlEvent } from "./constants-model"
+import { Platform, NativeTheme, ServerStaticInfo, TabControlEvent, UpdateStateOptions } from "./constants-model"
 import { ServerServiceStatus, ServerConnectionStatus, ServerConnectionInfo, WsToastResult } from "./constants-model"
 import { AppInitializeForm, AppState, InitializeState, LoginForm } from "./constants-model"
 import { Emitter } from "@/utils/emitter"
@@ -41,6 +41,7 @@ export interface IpcClient {
     }
     remote: {
         tabs: {
+            updateState(state: UpdateStateOptions): void
             controlEvent: Emitter<TabControlEvent>
         }
         fullscreen: {
