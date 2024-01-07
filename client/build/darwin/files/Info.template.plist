@@ -16,6 +16,19 @@
 	<string>Hedge</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>None</string>
+			<key>CFBundleURLName</key>
+			<string>com.heerkirov.hedge-v3.url-types.hedge</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>hedge</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleShortVersionString</key>
 	<string>{version}</string>
 	<key>CFBundleVersion</key>

@@ -1,3 +1,4 @@
+import process from "process"
 import { createApplication } from "./application/application"
 import { createParameters } from "./utils/parameters"
 

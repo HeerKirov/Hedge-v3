@@ -14,7 +14,8 @@ export interface MenuManager {
 
 export interface UpdateStateOptions { enabled: boolean }
 
-export type TabControlEvent = "NEW_TAB" | "CLONE_TAB" | "PREV_TAB" | "NEXT_TAB" | "CLOSE_TAB" | "ROUTE_BACK" | "ROUTE_FORWARD"
+export type TabControlEvent = {type: "CLONE_TAB" | "PREV_TAB" | "NEXT_TAB" | "CLOSE_TAB" | "ROUTE_BACK" | "ROUTE_FORWARD"}
+    | {type: "NEW_TAB", routeName?: string, path?: string, params?: string, initializer?: string}
 
 type GeneralEvent = {type: "TOGGLE_AUTO_IMPORT", value: boolean}
 
@@ -94,14 +95,14 @@ function registerAppMenu(windowManager: WindowManager, tabControlEvent: SendEmit
         {
             label: "标签页",
             submenu: [
-                {label: "选择上一个标签页", id: "TAB_PREV", enabled: false, accelerator: "Ctrl+Shift+Tab", click() { tabControlEvent.emit("PREV_TAB") }},
-                {label: "选择下一个标签页", id: "TAB_NEXT", enabled: false, accelerator: "Ctrl+Tab", click() { tabControlEvent.emit("NEXT_TAB") }},
-                {label: "复制标签页", id: "TAB_CLONE", enabled: false, click() { tabControlEvent.emit("CLONE_TAB") }},
-                {label: "新建标签页", id: "TAB_NEW", enabled: false, accelerator: isDarwin ? "Command+T" : "Ctrl+T", click() { tabControlEvent.emit("NEW_TAB") }},
-                {label: "关闭标签页", accelerator: isDarwin ? "Command+W" : "Ctrl+W", click() { tabControlEvent.emit("CLOSE_TAB") }},
+                {label: "选择上一个标签页", id: "TAB_PREV", enabled: false, accelerator: "Ctrl+Shift+Tab", click() { tabControlEvent.emit({type: "PREV_TAB"}) }},
+                {label: "选择下一个标签页", id: "TAB_NEXT", enabled: false, accelerator: "Ctrl+Tab", click() { tabControlEvent.emit({type: "NEXT_TAB"}) }},
+                {label: "复制标签页", id: "TAB_CLONE", enabled: false, click() { tabControlEvent.emit({type: "CLONE_TAB"}) }},
+                {label: "新建标签页", id: "TAB_NEW", enabled: false, accelerator: isDarwin ? "Command+T" : "Ctrl+T", click() { tabControlEvent.emit({type: "NEW_TAB"}) }},
+                {label: "关闭标签页", accelerator: isDarwin ? "Command+W" : "Ctrl+W", click() { tabControlEvent.emit({type: "CLOSE_TAB"}) }},
                 {type: "separator"},
-                {label: "后退", id: "TAB_BACK", enabled: false, accelerator: isDarwin ? "Command+Left" : "Ctrl+Left", click() { tabControlEvent.emit("ROUTE_BACK") }},
-                {label: "前进", id: "TAB_FORWARD", enabled: false, accelerator: isDarwin ? "Command+Right" : "Ctrl+Right", click() { tabControlEvent.emit("ROUTE_FORWARD") }}
+                {label: "后退", id: "TAB_BACK", enabled: false, accelerator: isDarwin ? "Command+Left" : "Ctrl+Left", click() { tabControlEvent.emit({type: "ROUTE_BACK"}) }},
+                {label: "前进", id: "TAB_FORWARD", enabled: false, accelerator: isDarwin ? "Command+Right" : "Ctrl+Right", click() { tabControlEvent.emit({type: "ROUTE_FORWARD"}) }}
             ]
         },
         {
@@ -144,7 +145,7 @@ function registerTabModule(windowManager: WindowManager, tabControlEvent: Emitte
     let focusWinId: number | null = null
 
     tabControlEvent.addEventListener(e => {
-        if(e === "CLOSE_TAB") {
+        if(e.type === "CLOSE_TAB") {
             const win = BrowserWindow.getFocusedWindow()
             if(win !== null && !enabledWindows.has(win.id)) {
                 win.close()
@@ -158,6 +159,7 @@ function registerTabModule(windowManager: WindowManager, tabControlEvent: Emitte
             if(e.windowId === focusWinId) apply(false)
         }else if(e.type === "FOCUS") {
             focusWinId = e.windowId
+            console.log(BrowserWindow.getFocusedWindow()!.webContents.getURL())
             apply(enabledWindows.has(focusWinId))
         }
     })

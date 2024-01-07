@@ -12,6 +12,7 @@ import { createMenuManager } from "./menu"
 import { registerAppEvents } from "./event"
 import { createThemeManager } from "./theme"
 import { createWindowManager } from "./window"
+import { registerProtocol } from "./protocol"
 
 
 /**
@@ -87,6 +88,7 @@ export async function createApplication(options?: AppOptions) {
 
         const menuManager = createMenuManager(serverManager, windowManager, platform)
 
+        registerProtocol(windowManager)
         registerAppEvents(windowManager, serverManager, platform)
         registerGlobalIpcRemoteEvents(appDataDriver, channelManager, serverManager, stateManager, themeManager, menuManager, windowManager, {debugMode, userDataPath, platform})
 

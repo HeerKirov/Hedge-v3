@@ -5,7 +5,14 @@ export const maps = {
             ret.push(trans(k, m[k]))
         }
         return ret
-    }
+    },
+    parse<K extends number | string | symbol, V>(arr: [K, V][]): Record<K, V> {
+        const ret: Record<K, V> = {} as Record<K, V>
+        for(const [k, v] of arr) {
+            ret[k] = v
+        }
+        return ret
+    },
 }
 
 export const arrays = {
