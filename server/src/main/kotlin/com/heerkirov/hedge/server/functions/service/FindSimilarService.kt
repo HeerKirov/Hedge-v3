@@ -1,8 +1,6 @@
 package com.heerkirov.hedge.server.functions.service
 
-import com.heerkirov.hedge.server.components.backend.similar.SimilarFinder
-import com.heerkirov.hedge.server.components.backend.similar.getSimilarityCategory
-import com.heerkirov.hedge.server.components.backend.similar.getSummaryType
+import com.heerkirov.hedge.server.components.backend.similar.*
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
@@ -21,15 +19,22 @@ import com.heerkirov.hedge.server.model.FindSimilarIgnored
 import com.heerkirov.hedge.server.model.FindSimilarResult
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
+import com.heerkirov.hedge.server.utils.Fs
+import com.heerkirov.hedge.server.utils.Similarity
 import com.heerkirov.hedge.server.utils.business.*
+import com.heerkirov.hedge.server.utils.deleteIfExists
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.ktorm.orderBy
 import com.heerkirov.hedge.server.utils.mapEachTwo
+import com.heerkirov.hedge.server.utils.tools.defer
 import com.heerkirov.hedge.server.utils.tuples.Tuple6
 import com.heerkirov.hedge.server.utils.types.descendingOrderItem
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
+import java.io.InputStream
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.time.Instant
 import java.time.LocalDate
 import kotlin.math.max
@@ -119,7 +124,7 @@ class FindSimilarService(private val data: DataRepository,
 
         val images = data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
-            .select(Illusts.id, Illusts.favorite, Illusts.score, Illusts.orderTime, Illusts.parentId,
+            .select(Illusts.id, Illusts.favorite, Illusts.score, Illusts.partitionTime, Illusts.orderTime, Illusts.parentId,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList result.imageIds }
@@ -130,10 +135,11 @@ class FindSimilarService(private val data: DataRepository,
                 val parentId = it[Illusts.parentId]
                 val score = it[Illusts.score]
                 val favorite = it[Illusts.favorite]!!
+                val partitionTime = it[Illusts.partitionTime]!!
                 val orderTime = it[Illusts.orderTime]!!.toInstant()
                 val source = sourcePathOf(it)
                 val books = imageToBooks[illustId]?.map { r -> BookSimpleRes(r.bookId, bookTitles[r.bookId] ?: "", null) } ?: emptyList()
-                FindSimilarDetailResultImage(illustId, filePath, parentId, favorite, score, orderTime, source, books)
+                FindSimilarDetailResultImage(illustId, filePath, parentId, favorite, score, partitionTime, orderTime, source, books)
             }
 
         return FindSimilarResultDetailRes(result.id, result.category, result.summaryType, images, result.edges, result.coverages, result.resolved, result.recordTime)
@@ -326,6 +332,61 @@ class FindSimilarService(private val data: DataRepository,
 
             bus.emit(SimilarFinderResultDeleted(id))
         }
+    }
+
+    fun createQuickFindForIllusts(illustIds: List<Int>): Int {
+        val images = illustManager.unfoldImages(illustIds).map { it.id }
+        return finder.addQuickFind(QuickFindSelectorOfIllusts(images))
+    }
+
+    fun createQuickFindForUpload(content: InputStream, extension: String, authors: List<Int>, topics: List<Int>): Int = defer {
+        val file = Fs.temp(extension).applyDefer {
+            deleteIfExists()
+        }.also { file ->
+            Files.copy(content, file.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        }
+
+        val similarity = Similarity.process(file)
+        val fingerprint = Fingerprint(similarity.pHashSimple, similarity.dHashSimple, similarity.pHash, similarity.dHash)
+
+        finder.addQuickFind(QuickFindSelectorOfFingerprint(fingerprint, authors, topics))
+    }
+
+    fun getQuickFind(id: Int): QuickFindRes {
+        val r = finder.getQuickFind(id) ?: throw be(NotFound())
+
+        val images = if(r.succeed && r.imageIds.isNotEmpty()) {
+            val imageToBooks = data.db.sequenceOf(BookImageRelations)
+                .filter { it.imageId inList r.imageIds }
+                .groupBy { it.imageId }
+
+            val bookTitles = data.db.from(Books)
+                .select(Books.id, Books.title)
+                .where { Books.id inList imageToBooks.values.asSequence().flatten().map { it.bookId }.distinct().toList() }
+                .associateBy({ it[Books.id]!! }) { it[Books.title]!! }
+
+            data.db.from(Illusts)
+                .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
+                .select(Illusts.id, Illusts.favorite, Illusts.score, Illusts.partitionTime, Illusts.orderTime, Illusts.parentId,
+                    Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
+                    FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
+                .where { Illusts.id inList r.imageIds }
+                .orderBy(Illusts.orderTime.asc())
+                .map {
+                    val filePath = filePathFrom(it)
+                    val illustId = it[Illusts.id]!!
+                    val parentId = it[Illusts.parentId]
+                    val score = it[Illusts.score]
+                    val favorite = it[Illusts.favorite]!!
+                    val partitionTime = it[Illusts.partitionTime]!!
+                    val orderTime = it[Illusts.orderTime]!!.toInstant()
+                    val source = sourcePathOf(it)
+                    val books = imageToBooks[illustId]?.map { r -> BookSimpleRes(r.bookId, bookTitles[r.bookId] ?: "", null) } ?: emptyList()
+                    FindSimilarDetailResultImage(illustId, filePath, parentId, favorite, score, partitionTime, orderTime, source, books)
+                }
+        }else emptyList()
+
+        return QuickFindRes(r.id, r.succeed, images)
     }
 
     private fun computeResultChange(result: FindSimilarResult,

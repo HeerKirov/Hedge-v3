@@ -6,12 +6,18 @@ import com.heerkirov.hedge.server.dto.filter.LimitAndOffsetFilter
 import com.heerkirov.hedge.server.dto.form.FindSimilarResultResolveForm
 import com.heerkirov.hedge.server.dto.form.FindSimilarTaskCreateForm
 import com.heerkirov.hedge.server.dto.res.IdRes
+import com.heerkirov.hedge.server.exceptions.ParamRequired
+import com.heerkirov.hedge.server.exceptions.ParamTypeError
+import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.service.FindSimilarService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
 import com.heerkirov.hedge.server.library.form.queryAsFilter
+import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.http.Context
+import io.javalin.http.bodyAsClass
+import io.javalin.http.formParamAsClass
 import io.javalin.http.pathParamAsClass
 
 class FindSimilarRoutes(private val findSimilarService: FindSimilarService) : Routes {
@@ -33,6 +39,11 @@ class FindSimilarRoutes(private val findSimilarService: FindSimilarService) : Ro
                         post("resolve", ::resolveResult)
                         delete(::deleteResultDetail)
                     }
+                }
+                path("quick-find") {
+                    post("new", ::createQuickFindForIllusts)
+                    post("upload", ::createQuickFindForUpload)
+                    get("{id}", ::getQuickFind)
                 }
             }
         }
@@ -80,5 +91,32 @@ class FindSimilarRoutes(private val findSimilarService: FindSimilarService) : Ro
         val id = ctx.pathParamAsClass<Int>("id").get()
         findSimilarService.deleteResult(id)
         ctx.status(204)
+    }
+
+    private fun createQuickFindForIllusts(ctx: Context) {
+        val illustIds = try { ctx.bodyAsClass<List<Int>>() } catch (e: Exception) {
+            throw be(ParamTypeError("illustIds", e.message ?: "cannot convert to List<Int>"))
+        }
+        val id = findSimilarService.createQuickFindForIllusts(illustIds)
+        ctx.json(IdRes(id)).status(201)
+    }
+
+    private fun createQuickFindForUpload(ctx: Context) {
+        val form = ctx.uploadedFile("file") ?: throw be(ParamRequired("file"))
+        val authorStr = ctx.formParamAsClass<String>("authors").allowNullable().get()
+        val topicStr = ctx.formParamAsClass<String>("topics").allowNullable().get()
+        val authors = if(authorStr == null) { emptyList() } else try { authorStr.parseJSONObject<List<Int>>() }catch (e: Exception) {
+            throw be(ParamTypeError("authors", e.message ?: "cannot convert to List<Int>"))
+        }
+        val topics = if(topicStr == null) { emptyList() } else try { topicStr.parseJSONObject<List<Int>>() }catch (e: Exception) {
+            throw be(ParamTypeError("authors", e.message ?: "cannot convert to List<Int>"))
+        }
+        val id = findSimilarService.createQuickFindForUpload(form.content(), form.extension().trimStart('.'), authors, topics)
+        ctx.json(IdRes(id)).status(201)
+    }
+
+    private fun getQuickFind(ctx: Context) {
+        val id = ctx.pathParamAsClass<Int>("id").get()
+        ctx.json(findSimilarService.getQuickFind(id))
     }
 }

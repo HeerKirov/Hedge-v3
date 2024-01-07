@@ -29,6 +29,11 @@ object HomepageStateChanged : BaseBusEventImpl("app/homepage/state/changed"), Ap
 data class StagingPostChanged(val added: List<Int>, val moved: List<Int>, val deleted: List<Int>) : BaseBusEventImpl("app/staging-post/changed"), AppEvent
 
 /**
+ * 速查项的状态发生变化。
+ */
+data class QuickFindChanged(val id: Int) : BaseBusEventImpl("app/quick-find/changed"), AppEvent
+
+/**
  * PathWatcher状态发生变化。
  */
 data class PathWatcherStatusChanged(val isOpen: Boolean, val statisticCount: Int, val errors: List<PathWatcherError>) : BaseBusEventImpl("app/path-watcher/status-changed"), AppEvent

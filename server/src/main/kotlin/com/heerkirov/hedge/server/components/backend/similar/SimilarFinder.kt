@@ -30,10 +30,17 @@ interface SimilarFinder {
     fun add(selector: FindSimilarTask.TaskSelector, config: FindSimilarTask.TaskConfig? = null): Int
 
     fun delete(id: Int)
+
+    fun addQuickFind(selector: QuickFindSelector): Int
+
+    fun getQuickFind(id: Int): QuickFinderResult?
+
+    fun castQuickFindToTask(id: Int): Int?
 }
 
 class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val appdata: AppDataManager, private val data: DataRepository, bus: EventBus) : SimilarFinder, StatefulComponent {
     private val workerThread = SimilarFinderWorkThread(data, bus)
+    private val quickFinder = QuickFinder(data, bus)
 
     init {
         bus.on(IllustDeleted::class, ::processIgnoredDeleted)
@@ -65,6 +72,43 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val appd
         if(data.db.delete(FindSimilarTasks) { it.id eq id } <= 0) {
             throw be(NotFound())
         }
+    }
+
+    override fun addQuickFind(selector: QuickFindSelector): Int {
+        synchronized(quickFinder) {
+            val r = QuickFinderResult(++quickFinder.nextId, selector, false, emptyList())
+            quickFinder.memories.add(r)
+            if(quickFinder.memories.size >= 100) {
+                for(i in 0..(quickFinder.memories.size - 100)) {
+                    val rm = quickFinder.memories.removeFirst()
+                    quickFinder.list.remove(rm.id)
+                }
+            }
+            quickFinder.list[r.id] = r
+            quickFinder.queue.add(r)
+            quickFinder.start()
+            return r.id
+        }
+    }
+
+    override fun getQuickFind(id: Int): QuickFinderResult? {
+        return quickFinder.list[id]
+    }
+
+    override fun castQuickFindToTask(id: Int): Int? {
+        val r = quickFinder.list[id]
+        if(r != null && r.succeed && r.imageIds.isNotEmpty()) {
+            val selector = FindSimilarTask.TaskSelectorOfImages(r.imageIds)
+            val config = FindSimilarTask.TaskConfig(
+                findBySimilarity = true, filterInCurrentScope = true,
+                findBySourceIdentity = false, findBySourcePart = false, findBySourceRelation = false, findBySourceBook = false,
+                filterBySourcePart = false, filterByAuthor = false, filterByTopic = false, filterByPartition = false,
+                filterBySourceBook = false, filterBySourceRelation = false, filterBySourceTagType = emptyList()
+            )
+
+            return add(selector, config)
+        }
+        return null
     }
 
     private fun processIgnoredDeleted(events: PackagedBusEvent) {

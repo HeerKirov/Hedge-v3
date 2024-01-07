@@ -3,6 +3,7 @@ package com.heerkirov.hedge.server.dto.res
 import com.heerkirov.hedge.server.model.FindSimilarResult
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import java.time.Instant
+import java.time.LocalDate
 
 data class FindSimilarTaskRes(val id: Int, val selector: FindSimilarTask.TaskSelector, val config: FindSimilarTask.TaskConfig?, val recordTime: Instant)
 
@@ -24,6 +25,8 @@ data class FindSimilarResultDetailRes(val id: Int,
 
 data class FindSimilarResultImage(val id: Int, val filePath: NullableFilePath?)
 
-data class FindSimilarDetailResultImage(val id: Int, val filePath: FilePath, val parentId: Int?, val favorite: Boolean, val score: Int?, val orderTime: Instant, val source: SourceDataPath?, val books: List<BookSimpleRes>)
+data class FindSimilarDetailResultImage(val id: Int, val filePath: FilePath, val parentId: Int?, val favorite: Boolean, val score: Int?, val partitionTime: LocalDate, val orderTime: Instant, val source: SourceDataPath?, val books: List<BookSimpleRes>)
+
+data class QuickFindRes(val id: Int, val succeed: Boolean, val result: List<FindSimilarDetailResultImage>)
 
 fun newFindSimilarTaskRes(task: FindSimilarTask) = FindSimilarTaskRes(task.id, task.selector, task.config, task.recordTime)
