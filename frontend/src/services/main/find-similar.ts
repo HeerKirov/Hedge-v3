@@ -6,7 +6,7 @@ import { computed, onBeforeUnmount, onMounted, ref, Ref, shallowRef, watch } fro
 import { usePreviewService } from "@/components-module/preview"
 import { useDialogService } from "@/components-module/dialog"
 import { QueryListview, useFetchEndpoint, useFetchHelper, usePaginationDataView, usePathFetchHelper, usePostFetchHelper, usePostPathFetchHelper, useQueryListview } from "@/functions/fetch"
-import { FindSimilarDetailResult, FindSimilarResult, FindSimilarResultDetailImage, FindSimilarResultResolveAction, FindSimilarResultResolveForm, SimilarityRelationCoverage } from "@/functions/http-client/api/find-similar"
+import { FindSimilarDetailResult, FindSimilarResult, FindSimilarResultDetailImage, FindSimilarResultResolveAction, FindSimilarResultResolveForm, QuickFindResult, SimilarityRelationCoverage } from "@/functions/http-client/api/find-similar"
 import { FilePath } from "@/functions/http-client/api/all"
 import { CommonIllust } from "@/functions/http-client/api/illust"
 import { SimpleBook } from "@/functions/http-client/api/book"
@@ -19,6 +19,8 @@ import { useInterceptedKey } from "@/modules/keyboard"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { IllustViewController, useIllustViewController } from "@/services/base/view-controller"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
+import { useSelectedPaneState } from "@/services/base/selected-pane-state"
+import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
 import { useSettingSite } from "@/services/setting"
 import { installation, toRef } from "@/utils/reactivity"
 import { arrays, numbers } from "@/utils/primitives"
@@ -66,6 +68,45 @@ export function useFindSimilarItemContext(item: FindSimilarResult) {
     const deleteIt = () => fetchDelete(item.id, undefined)
 
     return {ignoreIt, deleteIt}
+}
+
+export function useQuickFindContext() {
+    const path = usePath<number>()
+    const listview = useQuickFindListView(path)
+    const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
+    const paneState = useSelectedPaneState("illust")
+    const listviewController = useIllustViewController()
+    const operators = useImageDatasetOperators({listview: listview.listview, paginationData: listview.paginationData, listviewController, selector})
+
+    installIllustListviewContext({listview, selector, listviewController})
+
+    useSettingSite()
+
+    return {paneState, listview, selector, listviewController, operators}
+}
+
+function useQuickFindListView(path: Ref<number>) {
+    const { data } = useFetchEndpoint({
+        path,
+        get: client => client.findSimilar.quickFind.get,
+        eventFilter: c => event => {
+            if(event.eventType === "app/quick-find/changed" && event.id === c.path) {
+                return true
+            }else if((event.eventType === "entity/illust/updated" || event.eventType === "entity/illust/deleted") && c.data?.result.some(i => i.id === event.illustId)) {
+                return true
+            }
+            return false
+        }
+    })
+
+    const listview = useListViewContext<CommonIllust, number, QuickFindResult | null>({
+        request: () => async (offset, limit, _) => data.value !== null ? ({ok: true, status: 200, data: {total: data.value.result.length, result: data.value.result.slice(offset, offset + limit)} }) : ({ok: true, status: 200, data: {total: 0, result: []}}),
+        keyOf: item => item.id
+    })
+
+    watch(data, listview.listview.refresh)
+
+    return {...listview, data}
 }
 
 export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = installation(function () {

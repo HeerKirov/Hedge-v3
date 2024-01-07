@@ -1,9 +1,16 @@
-import { ref, watch } from "vue"
-import { useCreatingHelper, usePaginationDataView, useQueryListview } from "@/functions/fetch"
+import { onMounted, ref, watch } from "vue"
+import {
+    useCreatingHelper,
+    useFetchEndpoint,
+    useFetchHelper,
+    usePaginationDataView,
+    useQueryListview
+} from "@/functions/fetch"
 import { TaskConfig, TaskSelector } from "@/functions/http-client/api/find-similar"
 import { useSettingFindSimilar } from "@/services/setting"
 import { useToast } from "@/modules/toast"
 import { Push } from "../context"
+import { useBrowserTabs } from "@/modules/browser";
 
 export interface FindSimilarTaskExplorer {
     /**
@@ -14,10 +21,17 @@ export interface FindSimilarTaskExplorer {
      * 打开队列列表面板。
      */
     list(): void
+    /**
+     * 发起一次速查。
+     */
+    quickFind(illusts: number[]): void
 }
 
 export type FindSimilarTaskExplorerProps = {
     mode: "create" | "list"
+} | {
+    mode: "quickFind"
+    illusts: number[]
 }
 
 export function useFindSimilarTaskExplorer(push: Push): FindSimilarTaskExplorer {
@@ -34,7 +48,40 @@ export function useFindSimilarTaskExplorer(push: Push): FindSimilarTaskExplorer 
                 props: {mode: "list"}
             })
         },
+        quickFind(illusts: number[]) {
+            push({
+                type: "findSimilarTaskExplorer",
+                props: {mode: "quickFind", illusts}
+            })
+        }
     }
+}
+
+export function useQuickFindData(illusts: number[], close: () => void) {
+    const browserTabs = useBrowserTabs()
+    const fetchCreate = useFetchHelper(client => client.findSimilar.quickFind.create)
+
+    const path = ref<number | null>(null)
+
+    const { data } = useFetchEndpoint({
+        path,
+        get: client => client.findSimilar.quickFind.get,
+        eventFilter: c => event => event.eventType === "app/quick-find/changed" && event.id === c.path
+    })
+
+    onMounted(async () => {
+        const res = await fetchCreate(illusts)
+        if(res !== undefined) path.value = res.id
+    })
+
+    const openInNewTab = () => {
+        browserTabs.newTab({routeName: "QuickFindDetail", path: path.value})
+        close()
+    }
+
+    const openInNewWindow = () => browserTabs.newWindow({routeName: "QuickFindDetail", path: path.value})
+
+    return {path, data, openInNewTab, openInNewWindow}
 }
 
 export function useTaskListData() {

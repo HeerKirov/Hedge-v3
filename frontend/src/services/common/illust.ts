@@ -235,7 +235,6 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     const fetchFolderImagesPartialUpdate = usePostPathFetchHelper(client => client.folder.images.partialUpdate)
     const fetchStagingPostListAll = useFetchHelper(client => client.stagingPost.list)
     const fetchStagingPostUpdate = usePostFetchHelper(client => client.stagingPost.update)
-    const fetchFindSimilarTaskCreate = usePostFetchHelper(client => client.findSimilar.task.create)
 
     const homepageState = dataDropOptions === undefined ? null : useHomepageState()
 
@@ -465,8 +464,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
 
     const findSimilarOfImage = async (illust: T) => {
         const imageIds = getEffectedItems(illust)
-        await fetchFindSimilarTaskCreate({selector: {type: "image", imageIds}})
-        toast.toast("已创建", "success", "相似项查找任务已创建完成。")
+        dialog.findSimilarTaskExplorer.quickFind(imageIds)
     }
 
     const fileEdit = async (illust: T | undefined, action: "convertFormat") => {

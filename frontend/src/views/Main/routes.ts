@@ -98,6 +98,11 @@ export default {
             component: () => import("./FindSimilar/FindSimilarDetail.vue")
         },
         {
+            routeName: "QuickFindDetail",
+            defaultTitle: "快速查找",
+            component: () => import("./FindSimilar/QuickFindDetail.vue")
+        },
+        {
             routeName: "Trash",
             defaultTitle: "已删除",
             component: () => import("./Trash/Trash.vue")

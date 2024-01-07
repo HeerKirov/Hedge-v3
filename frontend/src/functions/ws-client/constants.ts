@@ -11,7 +11,7 @@ export type AllEventTypes = AllEvents["eventType"]
 
 export type AllEvents = AppEvents | EntityEvents | SettingEvents
 
-type AppEvents = AppStatusChanged | HomepageInfoUpdated | HomepageStateChanged | StagingPostChanged | PathWatcherStatusChanged
+type AppEvents = AppStatusChanged | HomepageInfoUpdated | HomepageStateChanged | QuickFindChanged | StagingPostChanged | PathWatcherStatusChanged
 
 type EntityEvents
     = AnnotationCreated | AnnotationUpdated | AnnotationDeleted
@@ -37,6 +37,8 @@ export interface HomepageInfoUpdated extends BaseWsEvent<"app/homepage/info/upda
 export interface HomepageStateChanged extends BaseWsEvent<"app/homepage/state/changed"> { }
 
 export interface StagingPostChanged extends BaseWsEvent<"app/staging-post/changed"> { added: number[], moved: number[], deleted: number[] }
+
+export interface QuickFindChanged extends BaseWsEvent<"app/quick-find/changed"> { id: number }
 
 export interface PathWatcherStatusChanged extends BaseWsEvent<"app/path-watcher/status-changed"> { isOpen: boolean, statisticCount: number, errors: PathWatcherError[] }
 

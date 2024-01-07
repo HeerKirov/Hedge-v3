@@ -161,6 +161,7 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
     if(options.eventFilter) {
         const context: EventFilterContext<PATH, MODEL> = {path: path.value, data: data.value}
         watch(path, path => context.path = path, {flush: "sync"})
+        watch(data, data => context.data = data, {flush: "sync"})
 
         const emitter = wsClient.on(options.eventFilter(context))
 

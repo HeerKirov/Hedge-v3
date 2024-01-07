@@ -30,6 +30,12 @@ export function createFindSimilarEndpoint(http: HttpInstance): FindSimilarEndpoi
                 parseData: mapFromResolveForm
             }),
             delete: http.createPathRequest(id => `/api/find-similar/results/${id}`, "DELETE")
+        },
+        quickFind: {
+            create: http.createDataRequest("/api/find-similar/quick-find/new", "POST"),
+            get: http.createPathRequest(id => `/api/find-similar/quick-find/${id}`, "GET", {
+                parseResponse: mapToQuickFindResult
+            })
         }
     }
 }
@@ -100,12 +106,25 @@ function mapToDetailResult(data: any): FindSimilarDetailResult {
         summaryType: <SimilaritySummaryType[]>data["summaryType"],
         images: (<any[]>data["images"]).map(img => ({
             ...img,
+            partitionTime: date.of(<string>img["partitionTime"]),
             orderTime: datetime.of(<string>img["orderTime"])
         })),
         edges: <SimilarityRelationEdge[]>data["edges"],
         coverages: <SimilarityRelationCoverage[]>data["coverages"],
         resolved: <boolean>data["resolved"],
         recordTime: datetime.of(<string>data["recordTime"])
+    }
+}
+
+function mapToQuickFindResult(data: any): QuickFindResult {
+    return {
+        id: <number>data["id"],
+        succeed: <boolean>data["succeed"],
+        result: (<any[]>data["result"]).map(img => ({
+            ...img,
+            partitionTime: date.of(<string>img["partitionTime"]),
+            orderTime: datetime.of(<string>img["orderTime"])
+        }))
     }
 }
 
@@ -155,6 +174,19 @@ export interface FindSimilarEndpoint {
          * @param id
          */
         delete(id: number): Promise<Response<NotFound>>
+    }
+    /**
+     * 速查。
+     */
+    quickFind: {
+        /**
+         * 用illust列表新建一个速查。
+         */
+        create(illusts: number[]): Promise<Response<IdResponse>>
+        /**
+         * 查询速查结果。
+         */
+        get(id: number): Promise<Response<QuickFindResult, NotFound>>
     }
 }
 
@@ -220,6 +252,12 @@ export interface FindSimilarDetailResult extends FindSimilarResult {
     coverages: SimilarityRelationCoverage[]
 }
 
+export interface QuickFindResult {
+    id: number
+    succeed: boolean
+    result: FindSimilarResultDetailImage[]
+}
+
 export interface FindSimilarResultImage {
     id: number
     filePath: FilePath | null
@@ -232,6 +270,7 @@ export interface FindSimilarResultDetailImage extends CommonIllust {
     orderTime: LocalDateTime
     score: number | null
     source: SourceDataPath | null
+    partitionTime: LocalDate
     parentId: number | null
     books: SimpleBook[]
 }

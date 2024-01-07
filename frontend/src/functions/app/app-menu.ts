@@ -3,7 +3,7 @@ import { remoteIpcClient } from "@/functions/ipc-client"
 import { TabControlEvent } from "@/functions/ipc-client/constants-model"
 
 interface ApplicationMenuTabsOptions {
-    newTab?(): void
+    newTab?(route?: {routeName: string, path?: unknown, params?: Record<string, any>, initializer?: Record<string, any>}): void
     closeTab?(): void
     duplicateTab?(): void
     nextTab?(): void
@@ -15,13 +15,21 @@ interface ApplicationMenuTabsOptions {
 
 export function useApplicationMenuTabs(options: ApplicationMenuTabsOptions) {
     const receiveEvent = (e: TabControlEvent) => {
-        if(e === "NEW_TAB") options.newTab?.()
-        else if(e === "CLOSE_TAB") options.closeTab?.()
-        else if(e === "CLONE_TAB") options.duplicateTab?.()
-        else if(e === "PREV_TAB") options.prevTab?.()
-        else if(e === "NEXT_TAB") options.nextTab?.()
-        else if(e === "ROUTE_BACK") options.routeBack?.()
-        else if(e === "ROUTE_FORWARD") options.routeForward?.()
+        if(e.type === "NEW_TAB") {
+            const newRoute = e.routeName !== undefined ? {
+                routeName: e.routeName,
+                path: e.path !== undefined ? JSON.parse(window.atob(e.path)) : undefined,
+                params: e.params ? JSON.parse(window.atob(e.params)) : undefined,
+                initializer: e.initializer ? JSON.parse(window.atob(e.initializer)) : undefined
+            } : undefined
+            options.newTab?.(newRoute)
+        }
+        else if(e.type === "CLOSE_TAB") options.closeTab?.()
+        else if(e.type === "CLONE_TAB") options.duplicateTab?.()
+        else if(e.type === "PREV_TAB") options.prevTab?.()
+        else if(e.type === "NEXT_TAB") options.nextTab?.()
+        else if(e.type === "ROUTE_BACK") options.routeBack?.()
+        else if(e.type === "ROUTE_FORWARD") options.routeForward?.()
     }
 
     onMounted(() => {
