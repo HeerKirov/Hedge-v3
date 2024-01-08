@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.model
 
+import com.heerkirov.hedge.server.dto.res.SourceDataPath
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.enums.IllustModelType
@@ -222,7 +223,9 @@ data class ImportRecord(val id: Int,
                           val fingerprintError: Boolean? = null,
                           val sourceAnalyseError: Boolean? = null,
                           val sourceAnalyseNone: Boolean? = null,
-                          val messages: List<String>? = null)
+                          val messages: List<String>? = null,
+                          val retryAndAllowNoSource: Boolean? = null,
+                          val retryWithManualSource: SourceDataPath? = null)
 }
 
 /**

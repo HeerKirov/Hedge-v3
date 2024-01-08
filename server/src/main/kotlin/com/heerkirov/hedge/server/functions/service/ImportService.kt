@@ -228,9 +228,13 @@ class ImportService(private val appdata: AppDataManager,
             if(form.retry) {
                 //重试操作仅对PROCESSING/ERROR状态的项有效
                 val filteredRecords = records.filter { it.status != ImportStatus.COMPLETED && !it.deleted }
+                val statusInfo = if(!form.retryAndAllowNoSource && form.retryWithManualSource == null) null else {
+                    ImportRecord.StatusInfo(retryAndAllowNoSource = form.retryAndAllowNoSource, retryWithManualSource = form.retryWithManualSource)
+                }
                 data.db.update(ImportRecords) {
                     where { it.id inList filteredRecords.map(ImportRecord::id) }
                     set(it.status, ImportStatus.PROCESSING)
+                    if(statusInfo != null) set(it.statusInfo, statusInfo)
                 }
 
                 //该操作的实现方式是发送FileCreated事件，该事件会触发FileGenerator的执行过程
@@ -287,7 +291,8 @@ class ImportService(private val appdata: AppDataManager,
                 //对COMPLETED状态的项重新生成其时间。
                 val filteredRecords = records.filter { it.status == ImportStatus.COMPLETED && it.imageId != null }
                 val forms = filteredRecords.map { record ->
-                    val orderTime = when(appdata.setting.import.setOrderTimeBy) {
+                    //可以在form中指定一种时间类型，若不指定就使用设置中默认的类型
+                    val orderTime = when(form.analyseTimeBy ?: appdata.setting.import.setOrderTimeBy) {
                         ImportOption.TimeType.CREATE_TIME -> record.fileCreateTime ?: record.importTime
                         ImportOption.TimeType.UPDATE_TIME -> record.fileUpdateTime ?: record.importTime
                         ImportOption.TimeType.IMPORT_TIME -> record.importTime

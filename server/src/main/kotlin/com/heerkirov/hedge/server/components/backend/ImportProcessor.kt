@@ -130,7 +130,9 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
 
             val partitionTime = orderTime.toPartitionDate(setting.server.timeOffsetHour)
 
-            val source = if(setting.import.autoAnalyseSourceData) {
+            val source = if(record.statusInfo?.retryWithManualSource != null) {
+                Pair(record.statusInfo.retryWithManualSource, null)
+            }else if(setting.import.autoAnalyseSourceData) {
                 try {
                     sourceAnalyzeManager.analyseSourceMeta(record.fileName)
                 }catch (e: BusinessException) {
@@ -144,7 +146,7 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                         )
                     }
                     continue
-                } ?: if(setting.import.preventNoneSourceData) {
+                } ?: if(record.statusInfo?.retryAndAllowNoSource != true && setting.import.preventNoneSourceData) {
                     errors.compute(record.id) { _, info ->
                         ImportRecord.StatusInfo(
                             thumbnailError = info?.thumbnailError,
