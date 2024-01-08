@@ -159,3 +159,8 @@ fun String.toAlphabetLowercase(): String {
         this
     }
 }
+
+/**
+ * 一个简单的包装类。由于没有重新实现equals和hashCode，任意两个实例之间都是不等价的。因此它用于将那些可能等价的类型包装成唯一的。
+ */
+class OC<T>(val value: T)

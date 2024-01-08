@@ -7,6 +7,7 @@ import com.heerkirov.hedge.server.dao.FindSimilarResults
 import com.heerkirov.hedge.server.events.SimilarFinderResultCreated
 import com.heerkirov.hedge.server.events.SimilarFinderResultUpdated
 import com.heerkirov.hedge.server.model.FindSimilarResult
+import com.heerkirov.hedge.server.utils.OC
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
@@ -14,7 +15,7 @@ import java.time.Instant
 import java.util.*
 
 class RecordBuilder(private val data: DataRepository, private val bus: EventBus) {
-    private val components = mutableSetOf<Map<Int, GraphVertex>>()
+    private val components = mutableSetOf<Component>()
 
     /**
      * 载入一个图，进行处理，将此图拆分为数个连通分量，随后生成记录。
@@ -26,6 +27,7 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
                 traverse(vertex, graph, accessedVertices)
             }
         }
+        mergeComponents(graph)
     }
 
     /**
@@ -94,7 +96,79 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
                 }
             }
 
-            components.add(component)
+            components.add(OC(component))
+        }
+    }
+
+    /**
+     * 合并连通分量。
+     */
+    private fun mergeComponents(graph: Map<Int, GraphVertex>) {
+        //要合并的分量组
+        val groupedComponents = mutableListOf<Pair<MutableSet<Component>, MutableSet<GraphCoverage>>>()
+        //筛选出所有Collection/Book类型的Coverage
+        val commonCoverages = graph.values.flatMap { it.coverages }.filter { it.type is FindSimilarResult.BookCoverage || it.type is FindSimilarResult.CollectionCoverage }.toSet()
+        //搜索这些coverage所在的连通分量。当一个coverage的vertices分属至少2个不同的分量时，就应该将这些分量合并
+        for (commonCoverage in commonCoverages) {
+            val containedComponents = commonCoverage.vertices.mapNotNull { v -> components.find { component -> component.value.keys.contains(v.key) } }.toSet()
+            if(containedComponents.size > 1) {
+                val newGroup = mutableSetOf<Component>()
+                val newCommon = mutableSetOf<GraphCoverage>()
+                newGroup.addAll(containedComponents)
+                newCommon.add(commonCoverage)
+                for (containedComponent in containedComponents) {
+                    val group = groupedComponents.find { (group, _) -> containedComponent in group }
+                    if(group != null) {
+                        newGroup.addAll(group.first)
+                        newCommon.addAll(group.second)
+                        groupedComponents.remove(group)
+                    }
+                }
+                groupedComponents.add(Pair(newGroup, newCommon))
+            }
+        }
+
+        //依次合并每个分量组
+        for (groupedComponent in groupedComponents) {
+            val newComponent = mutableMapOf<Int, GraphVertex>()
+            for (component in groupedComponent.first) {
+                newComponent.putAll(component.value)
+                components.remove(component)
+            }
+            components.add(OC(newComponent))
+
+            //在一个分量组内，合并coverages节点
+            val groupedCoverages = groupedComponent.first
+                .flatMap { it.value.values }
+                .flatMap { it.coverages }
+                .filter { it.type is FindSimilarResult.BookCoverage || it.type is FindSimilarResult.CollectionCoverage }
+                .groupBy { it.type }
+                .mapValues { (type, coverages) ->
+                    //对于type相同的coverage，将其合并为一个新的coverage
+                    if(coverages.size > 1) {
+                        val newCoverage = GraphCoverage(coverages.flatMap { it.vertices }.toMutableSet(), type, coverages.any { it.ignored })
+                        for (coverage in coverages) {
+                            for (vertex in coverage.vertices) {
+                                vertex.coverages.remove(coverage)
+                                vertex.coverages.add(newCoverage)
+                            }
+                        }
+                        newCoverage
+                    }else{
+                        coverages.first()
+                    }
+                }
+
+            //如果该分量组的公共coverage不存在，则补充这个coverage，以及从原始图中补充公共coverage与各节点的关系
+            for (commonCoverage in groupedComponent.second) {
+                if(commonCoverage.type !in groupedCoverages) {
+                    val vertices = commonCoverage.vertices.mapNotNull { newComponent[it.key] }
+                    val newCoverage = GraphCoverage(vertices.toMutableSet(), commonCoverage.type, commonCoverage.ignored)
+                    for (graphVertex in vertices) {
+                        graphVertex.coverages.add(newCoverage)
+                    }
+                }
+            }
         }
     }
 
@@ -111,17 +185,17 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
                 //在component.keys数量较大时，会触发SQLite的parser stack overflow。
                 //为解决这个问题，一次连接的OR条件不能太多。(测试的最多数量是88)
                 //在这里使用10条为一组，拆分成多条查询。
-                val existResult = component.keys.asSequence().chunked(10)
+                val existResult = component.value.keys.asSequence().chunked(10)
                     .map { li -> li.map { "%|$it|%" }.map { FindSimilarResults.imageIds like it }.reduce { a, b -> a or b } }
                     .map { condition -> data.db.sequenceOf(FindSimilarResults).firstOrNull { condition } }
                     .filterNotNull()
                     .firstOrNull()
 
                 if(existResult != null) {
-                    val recordId = generateRecordToExist(component, existResult)
+                    val recordId = generateRecordToExist(component.value, existResult)
                     updated.add(recordId)
                 }else{
-                    generateNewRecord(component)
+                    generateNewRecord(component.value)
                     createNum += 1
                 }
             }
@@ -180,7 +254,7 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
     }
 
     /**
-     * 生成一条新的记录。
+     * 生成一条新记录。
      */
     private fun generateNewRecord(component: Map<Int, GraphVertex>) {
         val images = component.keys.toList()
@@ -209,3 +283,5 @@ class RecordBuilder(private val data: DataRepository, private val bus: EventBus)
         }
     }
 }
+
+typealias Component = OC<Map<Int, GraphVertex>>
