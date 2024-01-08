@@ -9,6 +9,7 @@ import { ImagePropsCloneForm, Tagme } from "./illust"
 import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
 import { RelatedSimpleTag } from "./tag"
+import { OrderTimeType } from "@/functions/http-client/api/setting";
 
 export function createImportEndpoint(http: HttpInstance): ImportEndpoint {
     return {
@@ -205,7 +206,10 @@ export interface ImportBatchForm {
     target?: number[]
     analyseSource?: boolean
     analyseTime?: boolean
+    analyseTimeBy?: OrderTimeType
     retry?: boolean
+    retryAndAllowNoSource?: boolean
+    retryWithManualSource?: SourceDataPath
     clearCompleted?: boolean
     delete?: boolean
     deleteDeleted?: boolean

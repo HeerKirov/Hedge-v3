@@ -62,7 +62,7 @@ const updatePartName = (v: string | undefined) => {
 
 <template>
     <div>
-        <SourceSiteSelectBox :value="site" @update:value="updateSite"/>
+        <SourceSiteSelectBox size="small" :value="site" @update:value="updateSite"/>
         <Flex v-if="site !== null" class="mt-1 w-100" :width="100" :spacing="1">
             <FlexItem :width="45">
                 <Input size="small" update-on-input auto-focus placeholder="来源ID" :value="source?.sourceId.toString()" @update:value="updateId" @enter="$emit('enter')"/>

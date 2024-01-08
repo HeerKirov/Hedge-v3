@@ -687,6 +687,7 @@ export interface IllustBatchUpdateForm {
     tags?: number[]
     topics?: number[]
     authors?: number[]
+    tagOverride?: boolean
     tagme?: Tagme[]
     partitionTime?: LocalDate
     orderTimeBegin?: LocalDateTime

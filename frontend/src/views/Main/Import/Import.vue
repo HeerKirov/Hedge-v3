@@ -38,9 +38,18 @@ const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
     {type: "normal", label: "预览", click: openImagePreview},
     {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
-    {type: "normal", label: "从导入项重新加载来源", enabled: importRecord.illust !== null && importRecord.status === "COMPLETED", click: analyseSource},
-    {type: "normal", label: "从导入项重新生成时间", enabled: importRecord.illust !== null && importRecord.status === "COMPLETED", click: analyseTime},
-    {type: "normal", label: "重试失败的导入项", enabled: !historyMode.value && importRecord.status === "ERROR", click: retry},
+    {type: "submenu", label: "重新生成时间", enabled: importRecord.illust !== null && importRecord.status === "COMPLETED", submenu: [
+        {type: "normal", label: "根据默认时间", click: analyseTime},
+        {type: "separator"},
+        {type: "normal", label: "根据创建时间", click: () => analyseTime(importRecord, "CREATE_TIME")},
+        {type: "normal", label: "根据修改时间", click: () => analyseTime(importRecord, "UPDATE_TIME")},
+        {type: "normal", label: "根据导入时间", click: () => analyseTime(importRecord, "IMPORT_TIME")}
+    ]},
+    {type: "normal", label: "重新加载来源", enabled: importRecord.illust !== null && importRecord.status === "COMPLETED", click: analyseSource},
+    ...(!historyMode.value && importRecord.status === "ERROR" ? [
+        {type: "normal", label: "重试", click: retry} as const,
+        {type: "normal", label: "重试并允许无来源", click: () => retry(importRecord, true)} as const
+    ] : []),
     {type: "separator"},
     {type: "normal", label: historyMode.value ? "彻底删除导入记录" : "删除导入记录", click: i => deleteItem(i.id)},
 ])

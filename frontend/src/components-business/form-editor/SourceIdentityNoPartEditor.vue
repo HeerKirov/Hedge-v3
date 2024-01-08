@@ -19,7 +19,7 @@ const updateId = (v: string | undefined) => emit("update", {sourceSite: props.so
 
 <template>
     <div>
-        <SourceSiteSelectBox :value="sourceSite" @update:value="updateSite"/>
-        <Input v-if="sourceSite" class="ml-1" width="three-quarter" update-on-input placeholder="来源ID" :value="sourceId?.toString()" @update:value="updateId"/>
+        <SourceSiteSelectBox size="small" :value="sourceSite" @update:value="updateSite"/>
+        <Input v-if="sourceSite" class="ml-1" size="small" width="three-quarter" update-on-input placeholder="来源ID" :value="sourceId?.toString()" @update:value="updateId"/>
     </div>
 </template>

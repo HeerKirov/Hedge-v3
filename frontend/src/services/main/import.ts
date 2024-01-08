@@ -14,6 +14,8 @@ import { useMessageBox } from "@/modules/message-box"
 import { useDroppingFileListener } from "@/modules/drag"
 import { dialogManager } from "@/modules/dialog"
 import { installation } from "@/utils/reactivity"
+import { OrderTimeType } from "@/functions/http-client/api/setting";
+import { SourceDataPath } from "@/functions/http-client/api/all";
 
 export const [installImportContext, useImportContext] = installation(function () {
     const importService = useImportService()
@@ -174,12 +176,12 @@ function useOperators(listview: QueryListview<ImportRecord, number>, queryFilter
         if(res !== undefined) toast.toast("已重新生成", "success", "已从导入记录重新生成项目的来源属性。")
     }
 
-    const analyseTime = async (importImage: ImportRecord) => {
-        const res = await batchFetch({target: getEffectedItems(importImage.id), analyseTime: true})
+    const analyseTime = async (importImage: ImportRecord, timeType?: OrderTimeType) => {
+        const res = await batchFetch({target: getEffectedItems(importImage.id), analyseTime: true, analyseTimeBy: timeType})
         if(res !== undefined) toast.toast("已重新生成", "success", "已从导入记录重新生成项目的时间属性。")
     }
 
-    const retry = (importImage: ImportRecord) => batchFetch({target: getEffectedItems(importImage.id), retry: true})
+    const retry = (importImage: ImportRecord, noneSourceData?: boolean) => batchFetch({target: getEffectedItems(importImage.id), retry: true, retryAndAllowNoSource: noneSourceData})
 
     const clear = async () => {
         if(await message.showYesNoMessage("warn", "确定要清除所有记录吗？", historyMode.value ? "历史记录将被彻底删除。" : "已被删除的记录短期内可在历史记录中查看。相关的图库项目不会被删除。")) {
@@ -191,10 +193,12 @@ function useOperators(listview: QueryListview<ImportRecord, number>, queryFilter
 }
 
 export function useImportDetailPane() {
+    const toast = useToast()
     const message = useMessageBox()
     const preview = usePreviewService()
     const router = useTabRoute()
     const { listview, listviewController, selector } = useImportContext()
+    const batchFetch = usePostFetchHelper(client => client.import.batch)
 
     const path = computed(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
 
@@ -203,6 +207,15 @@ export function useImportDetailPane() {
         get: client => client.import.get,
         eventFilter: c => event => ((event.eventType === "entity/import/updated" || event.eventType === "entity/import/deleted") && event.importId === c.path) || ((event.eventType === "entity/illust/deleted" || event.eventType === "entity/illust/updated") && event.illustType === "IMAGE" && event.illustId === c.data?.illust?.id)
     })
+
+    const analyseTime = async (timeType?: OrderTimeType) => {
+        const res = await batchFetch({target: [path.value], analyseTime: true, analyseTimeBy: timeType})
+        if(res !== undefined) toast.toast("已重新生成", "success", "已从导入记录重新生成项目的时间属性。")
+    }
+
+    const retryAllowNoSource = () => batchFetch({target: [path.value], retry: true, retryAndAllowNoSource: true})
+
+    const retryWithSource = (sourceData: SourceDataPath) => batchFetch({target: [path.value], retry: true, retryWithManualSource: sourceData})
 
     const showStatusInfoMessage = (type: "thumbnailError" | "fingerprintError" | "sourceAnalyseError" | "sourceAnalyseNone") => {
         const info = type === "thumbnailError" ? "缩略图生成失败"
@@ -233,5 +246,5 @@ export function useImportDetailPane() {
         })
     }
 
-    return {path, data, selector, gotoIllust, showStatusInfoMessage, openImagePreview}
+    return {path, data, selector, gotoIllust, showStatusInfoMessage, openImagePreview, analyseTime, retryAllowNoSource, retryWithSource}
 }
