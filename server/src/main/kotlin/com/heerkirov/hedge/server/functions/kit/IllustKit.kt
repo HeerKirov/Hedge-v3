@@ -99,17 +99,18 @@ class IllustKit(private val appdata: AppDataManager,
                 //从children拷贝全部metaTag
                 copyAllMetaFromChildren(thisId)
             }
-        }else if(((newTags.isPresent && tagCount > 0) || (newAuthors.isPresent && authorCount > 0) || (newTopics.isPresent && topicCount > 0)) //这行表示存在任意一项是已修改的
-                && (newAuthors.isPresent || authorCount == 0) //这行表示，要么列表数量是0，要么它是已修改的项，也就满足下面的"未修改的列表数量都是0"
+        }else if(newTags.isPresent || newAuthors.isPresent || newTopics.isPresent) {
+            //存在任意一项已修改
+            if((newAuthors.isPresent || authorCount == 0) //这行表示，要么列表数量是0，要么它是已修改的项，也就满足下面的"未修改的列表数量都是0"
                 && (newTopics.isPresent || topicCount == 0)
                 && (newTags.isPresent || tagCount == 0)) {
-            //若发现未修改列表数量都为0，已修改至少一项不为0: 此时从"从依赖项获得exportedTag"的状态转向"自己持有tag"的状态，清除所有metaTag
-            //tips: 在copyFromChildren为false的情况下，认为是image的更改，要求修改统计计数；否则不予修改
-
-            metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, analyseStatisticCount, true)
-            metaManager.deleteMetaTags(thisId, IllustAuthorRelations, Authors, analyseStatisticCount, true)
-            metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, analyseStatisticCount, true)
-            metaManager.deleteAnnotations(thisId, IllustAnnotationRelations)
+                //若发现未修改列表数量都为0，已修改至少一项不为0: 此时从"从依赖项获得exportedTag"的状态转向"自己持有tag"的状态，清除所有metaTag
+                //tips: 在copyFromChildren为false的情况下，认为是image的更改，要求修改统计计数；否则不予修改
+                metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, analyseStatisticCount, true)
+                metaManager.deleteMetaTags(thisId, IllustAuthorRelations, Authors, analyseStatisticCount, true)
+                metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, analyseStatisticCount, true)
+                metaManager.deleteAnnotations(thisId, IllustAnnotationRelations)
+            }
 
             val tagAnnotations = if(newTags.isUndefined) null else
                 metaManager.processMetaTags(thisId, creating, analyseStatisticCount,

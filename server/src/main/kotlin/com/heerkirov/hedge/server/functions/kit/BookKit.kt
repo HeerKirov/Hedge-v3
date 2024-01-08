@@ -44,15 +44,18 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
             metaManager.deleteAnnotations(thisId, BookAnnotationRelations)
             //从children拷贝全部notExported的metaTag，然后做导出
             copyAllMetaFromImages(thisId)
-        }else if(((newTags.isPresent && tagCount > 0) || (newAuthors.isPresent && authorCount > 0) || (newTopics.isPresent && topicCount > 0))
-            && (newAuthors.isPresent || authorCount == 0)
-            && (newTopics.isPresent || topicCount == 0)
-            && (newTags.isPresent || tagCount == 0)){
-
-            metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, analyseStatisticCount = false, remainNotExported = true)
-            metaManager.deleteMetaTags(thisId, IllustAuthorRelations, Authors, analyseStatisticCount = false, remainNotExported = true)
-            metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, analyseStatisticCount = false, remainNotExported = true)
-            metaManager.deleteAnnotations(thisId, IllustAnnotationRelations)
+        }else if(newTags.isPresent || newAuthors.isPresent || newTopics.isPresent){
+            //存在任意一项已修改
+            if((newAuthors.isPresent || authorCount == 0)
+                && (newTopics.isPresent || topicCount == 0)
+                && (newTags.isPresent || tagCount == 0)) {
+                //若发现未修改列表数量都为0，已修改至少一项不为0: 此时从"从依赖项获得exportedTag"的状态转向"自己持有tag"的状态，清除所有metaTag
+                //tips: 不修改统计计数
+                metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, analyseStatisticCount = false, remainNotExported = true)
+                metaManager.deleteMetaTags(thisId, IllustAuthorRelations, Authors, analyseStatisticCount = false, remainNotExported = true)
+                metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, analyseStatisticCount = false, remainNotExported = true)
+                metaManager.deleteAnnotations(thisId, IllustAnnotationRelations)
+            }
 
             val tagAnnotations = if(newTags.isUndefined) null else
                 metaManager.processMetaTags(thisId, creating, false,
