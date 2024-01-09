@@ -86,7 +86,7 @@ function useOperators(listview: QueryListview<Author, number>) {
     }
 
     const openIllustsOfAuthor = (author: Author) => {
-        router.routePush({routeName: "Illust", params: {authorName: author.name}})
+        router.routePush({routeName: "Illust", initializer: {authorName: author.name}})
     }
 
     return {openCreateView, openDetailView, createByTemplate, deleteItem, toggleFavorite, findSimilarOfAuthor, openIllustsOfAuthor}

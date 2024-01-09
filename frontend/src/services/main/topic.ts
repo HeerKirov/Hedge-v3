@@ -105,7 +105,7 @@ function useOperators(listview: QueryListview<Topic, number>) {
     }
 
     const openIllustsOfTopic = (topic: Topic) => {
-        router.routePush({routeName: "Illust", params: {topicName: topic.name}})
+        router.routePush({routeName: "Illust", initializer: {topicName: topic.name}})
     }
 
     return {openCreateView, openDetailView, createByTemplate, createChildOfTemplate, deleteItem, toggleFavorite, findSimilarOfTopic, openIllustsOfTopic}

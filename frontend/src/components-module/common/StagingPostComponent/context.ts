@@ -1,12 +1,11 @@
 import { ComponentPublicInstance, computed, onUnmounted, ref } from "vue"
-import { useRoute } from "vue-router"
 import { useLocalStorage } from "@/functions/app"
 import { useFetchHelper, usePostFetchHelper } from "@/functions/fetch"
 import { mapResponse } from "@/functions/http-client"
 import { useToast } from "@/modules/toast"
 import { useDroppable } from "@/modules/drag"
 import { useMessageBox } from "@/modules/message-box"
-import { useBrowserTabs } from "@/modules/browser"
+import { isBrowserEnvironment, useActivateTabRoute, useBrowserTabs } from "@/modules/browser"
 import { useDialogService } from "@/components-module/dialog"
 import { useHomepageState } from "@/services/main/homepage"
 import { useListViewContext } from "@/services/base/list-view-context"
@@ -14,7 +13,7 @@ import { toRef, toRefNullable } from "@/utils/reactivity"
 import { onOutsideClick } from "@/utils/sensors"
 
 export function useButtonContext() {
-    const route = useRoute()
+    const route = isBrowserEnvironment() ? useActivateTabRoute() : undefined
     const message = useMessageBox()
     const { data: homepageState } = useHomepageState()
 
@@ -34,7 +33,7 @@ export function useButtonContext() {
     
     const { dragover: _, ...dropEvents } = useDroppable("illusts", illusts => fetchUpdate({action: "ADD", images: illusts.map(i => i.id)}))
 
-    const active = computed(() => route.name === "MainStagingPost")
+    const active = computed(() => route?.route.value.routeName === "StagingPost")
 
     const visible = ref(false)
 
@@ -111,11 +110,13 @@ export function useCalloutContext() {
 }
 
 export function useDataContext(close: () => void) {
-    const browserTabs = useBrowserTabs()
+    const browserTabs = isBrowserEnvironment() ? useBrowserTabs() : undefined
     const toast = useToast()
     const dialog = useDialogService()
     const fetchListAll = useFetchHelper(client => client.stagingPost.list)
     const fetchUpdate = usePostFetchHelper(client => client.stagingPost.update)
+
+    const isBrowserEnv = browserTabs !== undefined
 
     const listview = useListViewContext({
         request: client => (offset, limit) => client.stagingPost.list({offset, limit}),
@@ -171,9 +172,9 @@ export function useDataContext(close: () => void) {
     }
 
     const openDetailView = () => {
-        browserTabs.newTab({routeName: "StagingPost"})
+        browserTabs?.newTab({routeName: "StagingPost"})
         close()
     }
     
-    return {listview, createCollection, createBook, addToFolder, clear, openDetailView}
+    return {listview, isBrowserEnv, createCollection, createBook, addToFolder, clear, openDetailView}
 }

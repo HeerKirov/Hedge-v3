@@ -14,7 +14,7 @@ const props = defineProps<{
     item: Author
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
     (e: "click"): void
     (e: "update:favorite", favorite: boolean): void
 }>()

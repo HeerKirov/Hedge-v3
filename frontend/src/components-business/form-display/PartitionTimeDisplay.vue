@@ -27,11 +27,11 @@ const timeText = computed(() => props.orderTime !== undefined ? datetime.toSimpl
 
 const orderTimeText = computed(() => props.orderTime !== undefined ? `${props.orderTime.year}年${props.orderTime.month}月${props.orderTime.day}日 ${timeText.value}` : null)
 
-const openPartition = () => router!.routePush({routeName: "Partition", path: props.partitionTime})
+const openPartition = () => router!.routePush({routeName: "PartitionDetail", path: props.partitionTime})
 
-const openPartitionInNewTab = () => browserTabs!.newTab({routeName: "Partition", path: props.partitionTime})
+const openPartitionInNewTab = () => browserTabs!.newTab({routeName: "PartitionDetail", path: props.partitionTime})
 
-const openPartitionInNewWindow = () => browserTabs!.newWindow({routeName: "Partition", path: props.partitionTime})
+const openPartitionInNewWindow = () => browserTabs!.newWindow({routeName: "PartitionDetail", path: props.partitionTime})
 
 const collapse = () => {
     if(props.createTime !== undefined || props.updateTime !== undefined || (offset.value && (offset.value > 1 || offset.value < -1))) {

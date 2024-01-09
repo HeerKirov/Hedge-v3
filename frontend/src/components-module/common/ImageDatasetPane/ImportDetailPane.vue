@@ -21,6 +21,7 @@ const sourceDataPathEditor = ref<SourceDataPath | null>(null)
 const saveSourceDataPath = async () => {
     if(sourceDataPathEditor.value !== null && await retryWithSource(sourceDataPathEditor.value)) {
         sourceDataEditorSwitch.value = false
+        sourceDataPathEditor.value = null
     }
 }
 

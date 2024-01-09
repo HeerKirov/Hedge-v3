@@ -135,7 +135,9 @@ function useBookDetailTarget(path: Ref<number>) {
         update: client => client.book.update,
         delete: client => client.book.delete,
         eventFilter: c => event => (event.eventType === "entity/book/updated" || event.eventType === "entity/book/deleted") && event.bookId === c.path,
-        afterDelete: () => router.routeClose()
+        afterRetrieve: (path, data) => {
+            if(path !== null && data === null) router.routeClose()
+        }
     })
 
     const toggleFavorite = () => {

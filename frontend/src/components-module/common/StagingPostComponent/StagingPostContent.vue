@@ -11,7 +11,7 @@ const emit = defineEmits<{
     (e: "close"): void
 }>()
 
-const { listview: { listview, paginationData: { data, state, setState, navigateTo } }, clear, createCollection, createBook, addToFolder, openDetailView } = useDataContext(() => emit("close"))
+const { listview: { listview, paginationData: { data, state, setState, navigateTo } }, isBrowserEnv, clear, createCollection, createBook, addToFolder, openDetailView } = useDataContext(() => emit("close"))
 
 const ellipsisMenuItems = <MenuItem<undefined>[]>[
     {type: "normal", label: "创建为图像集合", click: createCollection},
@@ -32,7 +32,7 @@ const ellipsisMenuItems = <MenuItem<undefined>[]>[
                     <DataRouter v-if="state" :state="state" @navigate="navigateTo"/>
                 </template>
                 <template #right>
-                    <Button icon="maximize" :disabled="!state" @click="openDetailView">详细</Button>
+                    <Button v-if="isBrowserEnv" icon="maximize" :disabled="!state" @click="openDetailView">详细</Button>
                     <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
                         <Button :ref="setEl" square icon="ellipsis-v" :disabled="!state" @click="popup"/>
                     </ElementPopupMenu>

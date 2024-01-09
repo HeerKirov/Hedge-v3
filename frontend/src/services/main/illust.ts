@@ -133,7 +133,9 @@ function useCollectionTarget(path: Ref<number>) {
         update: client => client.illust.collection.update,
         delete: client => client.illust.collection.delete,
         eventFilter: c => event => (event.eventType === "entity/illust/updated" || event.eventType === "entity/illust/deleted") && event.illustId === c.path,
-        afterDelete: () => router.routeClose()
+        afterRetrieve: (path, data) => {
+            if(path !== null && data === null) router.routeClose()
+        }
     })
     const toggleFavorite = () => {
         if(data.value !== null) {
