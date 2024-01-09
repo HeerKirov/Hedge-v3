@@ -159,7 +159,6 @@ function registerTabModule(windowManager: WindowManager, tabControlEvent: Emitte
             if(e.windowId === focusWinId) apply(false)
         }else if(e.type === "FOCUS") {
             focusWinId = e.windowId
-            console.log(BrowserWindow.getFocusedWindow()!.webContents.getURL())
             apply(enabledWindows.has(focusWinId))
         }
     })
