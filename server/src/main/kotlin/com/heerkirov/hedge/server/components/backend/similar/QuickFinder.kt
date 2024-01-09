@@ -6,6 +6,7 @@ import com.heerkirov.hedge.server.dao.FileFingerprints
 import com.heerkirov.hedge.server.dao.IllustAuthorRelations
 import com.heerkirov.hedge.server.dao.IllustTopicRelations
 import com.heerkirov.hedge.server.dao.Illusts
+import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.events.QuickFindChanged
 import com.heerkirov.hedge.server.utils.Similarity
 import com.heerkirov.hedge.server.utils.tools.ControlledLoopThread
@@ -86,14 +87,14 @@ class QuickFinder(private val data: DataRepository, private val bus: EventBus) :
                 .innerJoin(FileFingerprints, FileFingerprints.fileId eq Illusts.fileId)
                 .innerJoin(IllustAuthorRelations, IllustAuthorRelations.illustId eq Illusts.id)
                 .select(Illusts.id, FileFingerprints.dHash, FileFingerprints.pHash, FileFingerprints.pHashSimple, FileFingerprints.dHashSimple)
-                .where { IllustAuthorRelations.authorId inList authors }
+                .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (IllustAuthorRelations.authorId inList authors) }
                 .map { Pair(it[Illusts.id]!!, Fingerprint(it[FileFingerprints.pHashSimple]!!, it[FileFingerprints.dHashSimple]!!, it[FileFingerprints.pHash]!!, it[FileFingerprints.dHash]!!)) })
 
             if(topics.isNotEmpty()) yieldAll(data.db.from(Illusts)
                 .innerJoin(FileFingerprints, FileFingerprints.fileId eq Illusts.fileId)
                 .innerJoin(IllustTopicRelations, IllustTopicRelations.illustId eq Illusts.id)
                 .select(Illusts.id, FileFingerprints.dHash, FileFingerprints.pHash, FileFingerprints.pHashSimple, FileFingerprints.dHashSimple)
-                .where { IllustTopicRelations.topicId inList topics }
+                .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (IllustTopicRelations.topicId inList topics) }
                 .map { Pair(it[Illusts.id]!!, Fingerprint(it[FileFingerprints.pHashSimple]!!, it[FileFingerprints.dHashSimple]!!, it[FileFingerprints.pHash]!!, it[FileFingerprints.dHash]!!)) })
         }
     }
