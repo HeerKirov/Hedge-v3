@@ -14,24 +14,43 @@ const menu = useDynamicPopupMenu<Tab>(tab => [
     {type: "normal", label: "关闭标签页", click: tab => closeTab({index: tab.index})}
 ])
 
-let dragTimer: {timer: NodeJS.Timer, tabId: number} | undefined
+let dragTab: Tab | undefined
+let dragTimer: NodeJS.Timer | undefined
+let dragDistance: {lastX: number, lastY: number, distance: number} | undefined
+
+const dragComplete = () => {
+    if(dragTab !== undefined) activeTab(dragTab.index)
+    dragTab = undefined
+    dragTimer = undefined
+    dragDistance = undefined
+}
 
 const dragEnter = (tab: Tab) => {
-    if(dragTimer?.tabId === tab.id) return
-    if(dragTimer !== undefined) clearTimeout(dragTimer.timer)
-    dragTimer = {
-        tabId: tab.id,
-        timer: setTimeout(() => {
-            activeTab(tab.index)
-            dragTimer = undefined
-        }, 1000)
-    }
+    if(dragTab?.id === tab.id) return
+    if(dragTimer !== undefined) clearTimeout(dragTimer)
+    dragTab = tab
+    dragTimer = setTimeout(dragComplete, 750)
+    dragDistance = undefined
 }
 
 const dragLeave = () => {
-    if(dragTimer !== undefined) {
-        clearTimeout(dragTimer.timer)
-        dragTimer = undefined
+    if(dragTimer !== undefined) clearTimeout(dragTimer)
+    dragTab = undefined
+    dragTimer = undefined
+    dragDistance = undefined
+}
+
+const dragOver = (e: DragEvent) => {
+    if(dragDistance === undefined) {
+        dragDistance = {lastX: e.x, lastY: e.y, distance: 0}
+    }else{
+        dragDistance.distance += Math.sqrt((e.x - dragDistance.lastX) ** 2 + (e.y - dragDistance.lastY) ** 2)
+        if(dragDistance.distance >= 200) {
+            dragComplete()
+        }else{
+            dragDistance.lastX = e.x
+            dragDistance.lastY = e.y
+        }
     }
 }
 
@@ -49,7 +68,7 @@ const mouseUp = (e: MouseEvent, tab: Tab) => {
             <Block :class="[{[$style.active]: tab.active}, $style.tab, 'no-app-region']" @click="activeTab(tab.index)" @mouseup="mouseUp($event, tab)" @contextmenu="menu.popup(tab)">
                 <span class="no-wrap overflow-ellipsis">{{ tab.title ?? "无标题" }}</span>
                 <Button v-if="tab.active" :class="$style.close" size="tiny" square icon="close" @click.stop="closeTab({index: tab.index})"/>
-                <div v-else :class="$style['drop-area']" @dragenter="dragEnter(tab)" @dragleave="dragLeave"/>
+                <div v-else :class="$style['drop-area']" @dragenter="dragEnter(tab)" @dragleave="dragLeave" @dragover="dragOver"/>
             </Block>
             <Separator/>
         </template>
