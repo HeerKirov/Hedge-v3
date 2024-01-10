@@ -33,9 +33,10 @@ class MetaManager(private val data: DataRepository) {
      * @throws ConflictingGroupMembersError 发现标签冲突组。此方法会直接把冲突组问题作为异常抛出，而不是继续在参数里传递
      */
     fun validateAndExportTag(tagIds: List<Int>, ignoreError: Boolean = false): List<Pair<Int, Boolean>> {
-        val tags = data.db.sequenceOf(Tags).filter { it.id inList tagIds }.toList()
-        if(!ignoreError && tags.size < tagIds.size) {
-            throw be(ResourceNotExist("tags", tagIds.toSet() - tags.asSequence().map { it.id }.toSet()))
+        val set = tagIds.toSet()
+        val tags = data.db.sequenceOf(Tags).filter { it.id inList set }.toList()
+        if(!ignoreError && tags.size < set.size) {
+            throw be(ResourceNotExist("tags", set - tags.asSequence().map { it.id }.toSet()))
         }
         if(!ignoreError) tags.filter { it.type != TagAddressType.TAG }.run {
             //只允许设定类型为TAG的标签，不允许地址段。
@@ -60,9 +61,10 @@ class MetaManager(private val data: DataRepository) {
      * @throws ResourceNotExist ("topics", number[]) 部分topics资源不存在。给出不存在的topic id列表
      */
     fun validateAndExportTopic(topicIds: List<Int>, ignoreError: Boolean = false): List<Pair<Int, Boolean>> {
-        val topics = data.db.sequenceOf(Topics).filter { it.id inList topicIds }.toList()
-        if(!ignoreError && topics.size < topicIds.size) {
-            throw be(ResourceNotExist("topics", topicIds.toSet() - topics.asSequence().map { it.id }.toSet()))
+        val set = topicIds.toSet()
+        val topics = data.db.sequenceOf(Topics).filter { it.id inList set }.toList()
+        if(!ignoreError && topics.size < set.size) {
+            throw be(ResourceNotExist("topics", set - topics.asSequence().map { it.id }.toSet()))
         }
 
         return exportTopic(topics)
@@ -75,9 +77,10 @@ class MetaManager(private val data: DataRepository) {
      * @throws ResourceNotExist ("authors", number[]) 部分authors资源不存在。给出不存在的author id列表
      */
     fun validateAndExportAuthor(authors: List<Int>, ignoreError: Boolean = false): List<Pair<Int, Boolean>> {
-        val ids = data.db.from(Authors).select(Authors.id).where { Authors.id inList authors }.map { it[Authors.id]!! }
-        if(!ignoreError && ids.size < authors.size) {
-            throw be(ResourceNotExist("authors", authors.toSet() - ids.toSet()))
+        val set = authors.toSet()
+        val ids = data.db.from(Authors).select(Authors.id).where { Authors.id inList set }.map { it[Authors.id]!! }
+        if(!ignoreError && ids.size < set.size) {
+            throw be(ResourceNotExist("authors", set - ids.toSet()))
         }
 
         //author类型的标签没有导出机制，因此直接返回结果。

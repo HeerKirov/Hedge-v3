@@ -312,7 +312,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                         log.warn("Fingerprint generating failed because file ${file.absolutePath} not exists.")
                         bus.emit(FileProcessError(fileId, "FINGERPRINT", "Fingerprint generating failed because file ${file.absolutePath} not exists."))
                     }
-                }else if(fileRecord.fingerStatus == FingerprintStatus.READY) {
+                }else if(fileRecord.fingerStatus != FingerprintStatus.NOT_READY) {
                     bus.emit(FileReady(fileId))
                 }
             }

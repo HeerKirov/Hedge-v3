@@ -174,9 +174,9 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                             .map { SourceTagPath(source.first.sourceSite, it[SourceTags.type]!!, it[SourceTags.code]!!) }
 
                         if(sourceTags.isNotEmpty()) {
-                            val resultTags = mutableListOf<Int>()
-                            val resultTopics = mutableListOf<Int>()
-                            val resultAuthors = mutableListOf<Int>()
+                            val resultTags = mutableSetOf<Int>()
+                            val resultTopics = mutableSetOf<Int>()
+                            val resultAuthors = mutableSetOf<Int>()
                             val mixedCounter = if(setting.import.notReflectForMixedSet) mutableMapOf<Any, Int>() else null
                             val typeReflector = if(setting.import.setTagmeOfTag) mutableMapOf<Pair<String, String>, MetaType>() else null
                             val enableTag = MetaType.TAG in setting.import.reflectMetaTagType
@@ -221,7 +221,7 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                                     }
                                 }
 
-                                Tuple4(resultTags, resultTopics, resultAuthors, minusTagme)
+                                Tuple4(resultTags.toList(), resultTopics.toList(), resultAuthors.toList(), minusTagme)
                             }else null
                         }else null
                     }else null
