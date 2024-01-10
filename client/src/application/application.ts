@@ -88,7 +88,7 @@ export async function createApplication(options?: AppOptions) {
 
         const menuManager = createMenuManager(serverManager, windowManager, platform)
 
-        registerProtocol(windowManager)
+        registerProtocol(stateManager, windowManager)
         registerAppEvents(windowManager, serverManager, platform)
         registerGlobalIpcRemoteEvents(appDataDriver, channelManager, serverManager, stateManager, themeManager, menuManager, windowManager, {debugMode, userDataPath, platform})
 
