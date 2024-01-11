@@ -22,8 +22,7 @@ watch(state, async () => {
 }, {immediate: true})
 
 const loadingMessage: Record<string, string> = {
-    "LOADING_RESOURCE": "正在更新…",
-    "LOADING_SERVER": "正在启动服务…"
+    "LOADING_RESOURCE": "正在更新…"
 }
 
 </script>
@@ -31,6 +30,6 @@ const loadingMessage: Record<string, string> = {
 <template>
     <div v-if="loading" class="fixed center has-text-centered">
         <Icon icon="circle-notch" size="3x" spin/>
-        <p class="mt-4">{{loadingMessage[state] ?? ""}}</p>
     </div>
+    <p v-if="loading" class="fixed bottom mb-4">{{loadingMessage[state] ?? ""}}</p>
 </template>

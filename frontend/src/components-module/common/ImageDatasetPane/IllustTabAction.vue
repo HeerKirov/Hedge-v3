@@ -14,10 +14,10 @@ const props = defineProps<{
 
 const { selected, parent } = toRefs(props)
 
-const { actives, form, editMetaTag, setScore, setDescription, setTagme, submitOrderTimeRange, submitPartitionTime, partitionTimeAction, orderTimeAction, ordinalAction } = useSideBarAction(selected, parent)
+const { actives, form, editMetaTag, setScore, setDescription, setTagme, editOrderTimeRange, editPartitionTime, submitOrderTimeRange, submitPartitionTime, partitionTimeAction, orderTimeAction, ordinalAction } = useSideBarAction(selected, parent)
 
 const partitionTimeEllipsisMenuItems = <MenuItem<undefined>[]>[
-    {type: "normal", label: "设置日期…", click: () => actives.partitionTime = !actives.partitionTime},
+    {type: "normal", label: "设置日期…", click: editPartitionTime},
     {type: "separator"},
     {type: "normal", label: "集中在分布最多的那天", click: () => partitionTimeAction("MOST")},
     {type: "normal", label: "设为最早的那天", click: () => partitionTimeAction("EARLIEST")},
@@ -27,7 +27,7 @@ const partitionTimeEllipsisMenuItems = <MenuItem<undefined>[]>[
 ]
 
 const orderTimeEllipsisMenuItems = () => <MenuItem<undefined>[]>[
-    {type: "normal", label: "设置时间范围…", click: () => actives.orderTime = !actives.orderTime},
+    {type: "normal", label: "设置时间范围…", click: editOrderTimeRange},
     {type: "separator"},
     {type: "normal", label: "集中在分布最多的那天", click: () => orderTimeAction("MOST")},
     {type: "normal", label: "倒置排序时间", click: () => orderTimeAction("REVERSE")},
@@ -77,11 +77,11 @@ const ordinalEllipsisMenuItems = <MenuItem<undefined>[]>[
     <ElementPopupMenu :items="partitionTimeEllipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
         <Button :ref="setEl" class="w-100 has-text-left" size="small" icon="calendar-alt" end-icon="ellipsis-v" @click="popup">设置时间分区</Button>
     </ElementPopupMenu>
-    <DateEditor v-if="actives.partitionTime" class="mb-1" auto-focus v-model:value="form.partitionTime" @enter="submitPartitionTime"/>
+    <DateEditor v-if="actives.partitionTime && form.partitionTime" class="mb-1" auto-focus v-model:value="form.partitionTime" @enter="submitPartitionTime"/>
     <ElementPopupMenu :items="orderTimeEllipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
         <Button :ref="setEl" class="w-100 has-text-left" size="small" icon="business-time" end-icon="ellipsis-v" @click="popup">设置排序时间</Button>
     </ElementPopupMenu>
-    <div v-if="actives.orderTime" class="mb-1">
+    <div v-if="actives.orderTime && form.orderTime" class="mb-1">
         <label class="label is-font-size-small">起始时间</label>
         <DateTimeEditor auto-focus v-model:value="form.orderTime.begin" @enter="submitOrderTimeRange"/>
         <label class="label is-font-size-small">末尾时间</label>

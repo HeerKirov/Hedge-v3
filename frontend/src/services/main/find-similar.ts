@@ -146,6 +146,8 @@ export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = instal
 
     const operators = useOperators(data, selector, listviewController, listview, resolve, clear)
 
+    installIllustListviewContext({listview: {listview}, selector, listviewController})
+
     useDocumentTitle(() => viewMode.value === "graph" ? "相似关系图" : viewMode.value === "grid" ? "相似项列表" : "相似项对比")
 
     return {data, listview, paginationData, selector, listviewController, viewMode, operators}

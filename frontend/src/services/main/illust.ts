@@ -22,7 +22,7 @@ import { useQuerySchema } from "@/services/base/query-schema"
 import { useSettingSite } from "@/services/setting"
 import { installIllustListviewContext, useIllustListviewContext, useImageDatasetOperators, useLocateId } from "@/services/common/illust"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
-import { objects } from "@/utils/primitives"
+import { arrays, objects } from "@/utils/primitives"
 import { useListeningEvent } from "@/utils/emitter"
 import { toRef } from "@/utils/reactivity"
 
@@ -301,6 +301,8 @@ export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "bo
     const toast = useToast()
     const { metaTagEditor } = useDialogService()
 
+    const { listview: { listview } } = useIllustListviewContext()
+
     const batchFetch = usePostFetchHelper({
         request: httpClient => httpClient.illust.batchUpdate,
         afterRequest: () => toast.toast("批量编辑完成", "info", "已完成所选项目的更改。")
@@ -320,20 +322,17 @@ export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "bo
         score: number | null,
         description: string,
         tagme: Tagme[],
-        partitionTime: LocalDate,
+        partitionTime: LocalDate | null,
         orderTime: {
             begin: LocalDateTime,
             end: LocalDateTime
-        }
+        } | null
     }>({
         score: null,
         description: "",
         tagme: [],
-        partitionTime: date.now(),
-        orderTime: {
-            begin: datetime.now(),
-            end: datetime.now()
-        }
+        partitionTime: null,
+        orderTime: null
     })
 
     watch(selected, () => {
@@ -342,6 +341,8 @@ export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "bo
         if(form.score !== null) form.score = null
         if(form.description) form.description = ""
         if(form.tagme.length) form.tagme = []
+        if(form.partitionTime) form.partitionTime = null
+        if(form.orderTime) form.orderTime = null
     })
 
     const editMetaTag = async () => {
@@ -379,14 +380,50 @@ export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "bo
         return true
     }
 
+    const editPartitionTime = () => {
+        if(!actives.partitionTime && !form.partitionTime) {
+            const counter: Record<number, { value: LocalDate, count: number }> = {}
+            for(const selectedId of selected.value) {
+                const idx = listview.proxy.sync.findByKey(selectedId)
+                if(idx !== undefined) {
+                    const ord = listview.proxy.sync.retrieve(idx)!.orderTime
+                    const cur = date.ofDate(ord.year, ord.month, ord.day)
+                    const c = counter[cur.timestamp] ?? (counter[cur.timestamp] = {value: cur, count: 0})
+                    c.count += 1
+                }
+            }
+            form.partitionTime = arrays.maxBy(Object.values(counter), v => v.count)?.value ?? date.now()
+        }
+        actives.partitionTime = !actives.partitionTime
+    }
+
+    const editOrderTimeRange = () => {
+        if(!actives.orderTime && !form.orderTime) {
+            let min: LocalDateTime | undefined = undefined, max: LocalDateTime | undefined = undefined
+            for(const selectedId of selected.value) {
+                const idx = listview.proxy.sync.findByKey(selectedId)
+                if(idx !== undefined) {
+                    const cur = listview.proxy.sync.retrieve(idx)!.orderTime
+                    if(min === undefined || cur.timestamp < min.timestamp) min = cur
+                    if(max === undefined || cur.timestamp > max.timestamp) max = cur
+                }
+            }
+            form.orderTime = {
+                begin: min ?? datetime.now(),
+                end: max ?? datetime.now()
+            }
+        }
+        actives.orderTime = !actives.orderTime
+    }
+
     const submitPartitionTime = async () => {
-        if(actives.partitionTime && await batchFetch({target: selected.value, partitionTime: form.partitionTime})) {
+        if(actives.partitionTime && form.partitionTime && await batchFetch({target: selected.value, partitionTime: form.partitionTime})) {
             actives.partitionTime = false
         }
     }
 
     const submitOrderTimeRange = async () => {
-        if(actives.orderTime && await batchFetch({target: selected.value, orderTimeBegin: form.orderTime.begin, orderTimeEnd: form.orderTime.end})) {
+        if(actives.orderTime && form.orderTime && await batchFetch({target: selected.value, orderTimeBegin: form.orderTime.begin, orderTimeEnd: form.orderTime.end})) {
             actives.orderTime = false
         }
     }
@@ -427,7 +464,7 @@ export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "bo
         }
     }
 
-    return {actives, form, setScore, setDescription, setTagme, editMetaTag, submitPartitionTime, submitOrderTimeRange, partitionTimeAction, orderTimeAction, ordinalAction}
+    return {actives, form, setScore, setDescription, setTagme, editMetaTag, editPartitionTime, editOrderTimeRange, submitPartitionTime, submitOrderTimeRange, partitionTimeAction, orderTimeAction, ordinalAction}
 }
 
 export function useSideBarDetailInfo(path: Ref<number | null>) {
