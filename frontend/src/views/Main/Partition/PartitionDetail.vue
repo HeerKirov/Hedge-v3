@@ -25,7 +25,11 @@ const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "解除编辑锁定", checked: editableLockOn.value, click: () => editableLockOn.value = !editableLockOn.value},
     {type: "separator"},
     {type: "radio", checked: viewMode.value === "row", label: "列表模式", click: () => viewMode.value = "row"},
-    {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"}
+    {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"},
+    {type: "separator"},
+    {type: "submenu", label: "更改图像", enabled: selected.value.length > 0, submenu: [
+        {type: "normal", label: "图像格式转换", click: () => operators.fileEdit(undefined, "convertFormat")},
+    ]},
 ]
 
 const menu = useDynamicPopupMenu<Illust>(illust => [

@@ -70,15 +70,10 @@ const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
     </BrowserTeleport>
 
     <PaneLayout :show-pane="paneState.visible.value">
-        <!-- FUTURE: Import页面有一个空白页面。然而由于设计缺陷，对DataRouter的写操作是在dataset内完成的。-->
-        <!-- 这会导致导航栏的数值无法清零。现在只能通过hidden妥协。 -->
-        <!-- 然而如果只是visibility: hidden，还会继续踩另一个坑，contentWidth会被变成0，最终而导致算出的offset是Infinity。所以只能用透明度0妥协。 -->
-        <!-- 要想完美解决这个问题，只能等虚拟视图的响应结构重构了。 -->
-        <ImportImageDataset :class="{[$style.hidden]: paginationData.state.value !== null && paginationData.state.value.total <= 0}"
-                            :data="paginationData.data.value" :state="paginationData.state.value" :query-instance="listview.proxy" :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
+        <ImportEmpty v-if="paginationData.data.value.metrics && paginationData.state.value?.total === 0" :class="$style.empty"/>
+        <ImportImageDataset v-else :data="paginationData.data.value" :state="paginationData.state.value" :query-instance="listview.proxy" :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
                             :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                             @update:state="paginationData.setState" @navigate="paginationData.navigateTo($event)" @select="updateSelect" @contextmenu="menu.popup($event)" @space="openImagePreview()"/>
-        <ImportEmpty v-if="paginationData.state.value !== null && paginationData.state.value.total <= 0" :class="$style.empty"/>
 
         <template #pane>
             <ImportDetailPane @close="paneState.visible.value = false"/>
@@ -89,10 +84,6 @@ const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
 </template>
 
 <style module lang="sass">
-.hidden
-    opacity: 0
-    position: absolute
-
 .empty
     height: 100%
     width: 100%

@@ -43,7 +43,7 @@ const { scrollState, navigateEvent, bindDiv } = useVirtualViewContext(props.padd
 watch(() => [scrollState.value.top, scrollState.value.height], ([top, height]) => {
     if(top !== null && height !== null) {
         const offset = Math.floor(top / props.rowHeight)
-        const limit = Math.ceil(height / props.rowHeight)
+        const limit = Math.ceil((top + height) / props.rowHeight) - offset
         if(!state.value || offset !== state.value.offset || limit !== state.value.limit) {
             emit("update:state", offset, limit)
         }

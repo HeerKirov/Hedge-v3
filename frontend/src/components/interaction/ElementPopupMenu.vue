@@ -18,17 +18,19 @@ const items = typeof props.items === "function" ? props.items : toRef(props, "it
 
 const options = {position: props.position, align: props.align, offsetX: props.offsetX, offsetY: props.offsetY}
 
-const { popup, element } = useElementPopupMenu(items, options)
+const menu = useElementPopupMenu(items, options)
 
 const setEl = (el: ComponentPublicInstance | Element | null | undefined) => {
     if(el instanceof Element) {
-        element.value = el
+        menu.element.value = el
     }else if(el === null || el === undefined) {
-        element.value = undefined
+        menu.element.value = undefined
     }else{
-        element.value = el.$el
+        menu.element.value = el.$el
     }
 }
+
+const popup = () => menu.popup()
 
 </script>
 

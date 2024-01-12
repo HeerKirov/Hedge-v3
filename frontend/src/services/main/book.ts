@@ -13,6 +13,8 @@ import { useNavigationItem } from "@/services/base/side-nav-menu"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useSelectedState, useSingleSelectedState } from "@/services/base/selected-state"
 import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
+import { arrays } from "@/utils/primitives";
+import { datetime } from "@/utils/datetime";
 
 export const [installBookContext, useBookContext] = installation(function () {
     const querySchema = useQuerySchema("BOOK")
@@ -38,9 +40,12 @@ export const [installBookContext, useBookContext] = installation(function () {
 })
 
 function useListView(query: Ref<string | undefined>) {
+    const mockData = arrays.newArray<Book>(100, i => ({id: i, title: `Book ${i}`, imageCount: i % 5, filePath: null, score: null, favorite: false, createTime: datetime.now(), updateTime: datetime.now()}))
+
     const listview = useListViewContext({
         defaultFilter: <BookQueryFilter>{order: "-updateTime"},
-        request: client => (offset, limit, filter) => client.book.list({offset, limit, ...filter}),
+        request: client => async (offset, limit, filter) => ({ok: true, status: 200, data: {total: mockData.length, result: mockData.slice(offset, offset + limit)}}),
+        // request: client => (offset, limit, filter) => client.book.list({offset, limit, ...filter}),
         keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/book/created", "entity/book/updated", "entity/book/deleted", "entity/book/images/changed"],
