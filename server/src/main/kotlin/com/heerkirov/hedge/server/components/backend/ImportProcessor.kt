@@ -268,7 +268,18 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
         }
 
         if(oks.isNotEmpty()) {
-            val importToImageIds = illustManager.bulkNewImage(oks)
+            val importToImageIds = try {
+                illustManager.bulkNewImage(oks)
+            }catch (e: Exception) {
+                val statusInfo = ImportRecord.StatusInfo(messages = if(e.message != null) listOf(e.message!!) else null)
+                data.db.update(ImportRecords) {
+                    where { it.id inList oks.map { f -> f.importId } }
+                    set(it.status, ImportStatus.ERROR)
+                    set(it.statusInfo, statusInfo)
+                }
+                bus.emit(oks.map { ImportUpdated(it.importId, status = ImportStatus.ERROR) })
+                return
+            }
 
             data.db.batchUpdate(ImportRecords) {
                 for ((importId, imageId) in importToImageIds) {

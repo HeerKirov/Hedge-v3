@@ -229,6 +229,7 @@ class ImportService(private val appdata: AppDataManager,
                 //重试操作仅对PROCESSING/ERROR状态的项有效
                 val filteredRecords = records.filter { it.status != ImportStatus.COMPLETED && !it.deleted }
                 val statusInfo = if(!form.retryAndAllowNoSource && form.retryWithManualSource == null) null else {
+                    if(form.retryWithManualSource != null) sourceDataManager.checkSourceSite(form.retryWithManualSource.sourceSite, form.retryWithManualSource.sourceId, form.retryWithManualSource.sourcePart, form.retryWithManualSource.sourcePartName)
                     ImportRecord.StatusInfo(retryAndAllowNoSource = form.retryAndAllowNoSource, retryWithManualSource = form.retryWithManualSource)
                 }
                 data.db.update(ImportRecords) {

@@ -49,6 +49,11 @@ class DailyProcessorImpl(private val appStatusDriver: AppStatusDriver,
         if(appdata.setting.storage.autoCleanTrashes) {
             Thread.sleep(1000)
 
+            if(!appdata.storage.accessible) {
+                log.warn("cleanTrashedImages not executed, because storage dir is not accessible.")
+                return
+            }
+
             val deadline = Instant.now()
                 .toPartitionDate(appdata.setting.server.timeOffsetHour)
                 .minus(appdata.setting.storage.autoCleanTrashesIntervalDay.absoluteValue.toLong(), ChronoUnit.DAYS)
