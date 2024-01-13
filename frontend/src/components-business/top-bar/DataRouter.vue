@@ -31,7 +31,7 @@ const submit = () => {
 <template>
     <div :class="$style.root">
         <NumberInput v-if="editMode" size="small" width="half" :min="1" v-model:value="editValue" auto-focus @enter="editMode = false" @blur="submit"/>
-        <Tag v-else-if="state !== null" class="is-cursor-text" @click="edit">{{state.offset + 1}}-{{state.offset + state.limit < state.total ? state.offset + state.limit : state.total}}</Tag>
+        <Tag v-else-if="state !== null && state.total > 0" class="is-cursor-text" @click="edit">{{state.offset + 1}}-{{state.offset + state.limit < state.total ? state.offset + state.limit : state.total}}</Tag>
         <Tag v-else>0-0</Tag>
         <span class="mx-1">/</span>
         <Tag>{{state?.total ?? 0}}</Tag>
