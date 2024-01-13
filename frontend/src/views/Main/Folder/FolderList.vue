@@ -40,17 +40,23 @@ const updateSelected = (folderId: number | null) => {
             </BasePane>
         </template>
 
-        <Block :class="$style['table-block']">
-            <FolderTable v-if="!loading && (data?.length || createPosition)" ref="folderTableRef" :folders="data" editable :droppable="editableLockOn" v-model:create-position="createPosition"
-                         :selected="paneState.detailPath.value ?? undefined"
-                         @update:selected="updateSelected" @update:pinned="setPinned"
-                         @create="createItem" @move="moveItem" @delete="deleteItem" @enter="openDetail"/>
-            <Button v-else-if="!loading" size="small" type="success" icon="plus" @click="openCreatePosition">创建第一个节点或目录</Button>
-        </Block>
+        <div :class="$style.root">
+            <Block :class="$style['table-block']">
+                <FolderTable v-if="!loading && (data?.length || createPosition)" ref="folderTableRef" :folders="data" editable :droppable="editableLockOn" v-model:create-position="createPosition"
+                             :selected="paneState.detailPath.value ?? undefined"
+                             @update:selected="updateSelected" @update:pinned="setPinned"
+                             @create="createItem" @move="moveItem" @delete="deleteItem" @enter="openDetail"/>
+                <Button v-else-if="!loading" size="small" type="success" icon="plus" @click="openCreatePosition">创建第一个节点或目录</Button>
+            </Block>
+        </div>
     </PaneLayout>
 </template>
 
 <style module lang="sass">
+.root
+    overflow-y: auto
+    height: 100%
+    width: 100%
 .table-block
     margin: 0.375rem
     padding: 0.5rem
