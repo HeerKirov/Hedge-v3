@@ -2,6 +2,9 @@
 import { Block, Button, Separator } from "@/components/universal"
 import { Tab, useBrowserTabs } from "@/modules/browser"
 import { useDynamicPopupMenu } from "@/modules/popup-menu"
+import { useDarwinWindowed } from "@/functions/app"
+
+const hasDarwinBorder = useDarwinWindowed()
 
 const { tabs, newTab, activeTab, moveTab, closeTab, duplicateTab } = useBrowserTabs()
 
@@ -73,7 +76,7 @@ const mouseUp = (e: MouseEvent, tab: Tab) => {
             <Separator/>
         </template>
         <Button :class="[$style['new-tab-button'], 'no-app-region']" size="small" square icon="plus" @click="newTab()"/>
-        <div id="top-bar" :class="$style['extra-area']"/>
+        <div id="top-bar" :class="[{[$style['darwin-border-area']]: hasDarwinBorder}, $style['extra-area']]"/>
     </div>
 </template>
 
@@ -138,4 +141,6 @@ const mouseUp = (e: MouseEvent, tab: Tab) => {
         justify-content: flex-end
         > *
             -webkit-app-region: none
+        &.darwin-border-area > button:last-child
+            border-top-right-radius: $radius-size-very-large
 </style>

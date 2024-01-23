@@ -39,7 +39,7 @@ const paneButtonItems = computedEffect(() => [
         </KeepAlive>
 
         <template #bottom>
-            <OptionButtons :items="paneButtonItems" v-model:value="tabType"/>
+            <OptionButtons :items="paneButtonItems" v-model:value="tabType" enable-darwin-border/>
         </template>
     </BasePane>
 </template>

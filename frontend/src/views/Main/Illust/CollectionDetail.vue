@@ -101,7 +101,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
             </KeepAlive>
 
             <template #bottom>
-                <OptionButtons :items="sideBarButtonItems" v-model:value="tabType"/>
+                <OptionButtons :items="sideBarButtonItems" v-model:value="tabType" enable-darwin-border/>
             </template>
         </BottomLayout>
     </BrowserTeleport>

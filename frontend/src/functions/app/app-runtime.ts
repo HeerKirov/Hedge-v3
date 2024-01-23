@@ -2,6 +2,7 @@ import { computed, onMounted, ref, toRaw, watch } from "vue"
 import { remoteIpcClient } from "@/functions/ipc-client"
 import { AppearanceSetting } from "@/functions/ipc-client/constants"
 import { installation } from "@/utils/reactivity"
+import { useAppEnv } from "./app-base"
 
 export const [installFullscreen, useFullscreen] = installation(function () {
     const fullscreen = ref(remoteIpcClient.remote.fullscreen.get())
@@ -29,4 +30,13 @@ export function useAppearance() {
     }, {deep: true})
 
     return appearance
+}
+
+
+export function useDarwinWindowed() {
+    const { platform } = useAppEnv()
+
+    const fullscreen = useFullscreen()
+
+    return computed(() => platform === "darwin" && !fullscreen.value)
 }

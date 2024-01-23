@@ -6,6 +6,7 @@ import { Flex, FlexItem, SideBar } from "@/components/layout"
 import { StagingPostButton } from "@/components-module/common"
 import { windowManager } from "@/modules/window"
 import { useActivateTabRoute } from "@/modules/browser"
+import { useDarwinWindowed } from "@/functions/app"
 import { useFetchReactive } from "@/functions/fetch"
 import { useHomepageState } from "@/services/main/homepage"
 import { useNavigationRecords, installNavMenu, setupItemByNavHistory, setupItemByRef, setupSubItemByNavHistory } from "@/services/base/side-nav-menu"
@@ -63,6 +64,9 @@ const { menuItems, menuSelected } = installNavMenu({
         setupItemByNavHistory(navigationRecords, "FolderDetail", "folder")
     ]
 })
+
+const hasDarwinBorder = useDarwinWindowed()
+
 </script>
 
 <template>
@@ -80,7 +84,7 @@ const { menuItems, menuSelected } = installNavMenu({
 
         <template #bottom>
             <Flex>
-                <Button square icon="gear" @click="windowManager.openSetting"/>
+                <Button :class="{[$style['darwin-border-button']]: hasDarwinBorder}" square icon="gear" @click="windowManager.openSetting"/>
                 <Button class="ml-1" square icon="circle-question-regular" @click="windowManager.openGuide"/>
                 <Button class="ml-1" square icon="note-sticky" @click="windowManager.openNote"/>
                 <FlexItem :shrink="0">
@@ -109,4 +113,7 @@ const { menuItems, menuSelected } = installNavMenu({
         overflow-y: auto
         &:not(:last-child)
             display: none
+
+.darwin-border-button
+    border-bottom-left-radius: $radius-size-very-large
 </style>

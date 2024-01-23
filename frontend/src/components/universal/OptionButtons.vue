@@ -2,18 +2,22 @@
 import { Button } from "@/components/universal"
 import { Flex } from "@/components/layout"
 import { Colors } from "@/constants/ui"
+import { useDarwinWindowed } from "@/functions/app"
 
-defineProps<{
+const props = defineProps<{
     items: {value: T, label: string, icon: string, visible?: boolean}[]
     value?: T
     mode?: "transparent" | "light" | "filled"
     type?: Colors
     size?: "std" | "small" | "large"
+    enableDarwinBorder?: boolean
 }>()
 
 defineEmits<{
     (e: "update:value", v: T): void
 }>()
+
+const hasDarwinBorder = props.enableDarwinBorder ? useDarwinWindowed() : undefined
 
 </script>
 
@@ -23,7 +27,7 @@ defineEmits<{
             <Button v-if="item.visible === undefined || item.visible"
                     :icon="item.icon" :size="size"
                     :style="{width: value === item.value ? '100%' : undefined, 'flex-shrink': value === item.value ? undefined : 0}"
-                    :class="value === item.value ? 'px-2 no-wrap overflow-ellipsis' : ''"
+                    :class="{'px-2 no-wrap overflow-ellipsis': value === item.value, [$style['darwin-border-button']]: hasDarwinBorder}"
                     :mode="mode && value === item.value ? mode : undefined"
                     :type="type && value === item.value ? type : undefined"
                     :square="value !== item.value"
@@ -33,3 +37,10 @@ defineEmits<{
         </template>
     </Flex>
 </template>
+
+<style module lang="sass">
+@import "../../styles/base/size"
+
+.darwin-border-button:last-child
+    border-bottom-right-radius: $radius-size-very-large
+</style>
