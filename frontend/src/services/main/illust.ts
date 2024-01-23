@@ -53,6 +53,10 @@ export function useIllustContext() {
                 params.authorName ? `@\`${params.authorName}\`` : undefined,
                 params.source ? `^SITE:${params.source.site} ^ID:${params.source.id}` : undefined
             ].filter(i => i !== undefined).join(" ")
+
+            //对于source，需要将collectionMode转为IMAGE，否则有可能看不到搜索结果
+            if(params.source) listviewController.collectionMode.value = "IMAGE"
+
         }else if(params.locateId !== undefined && querySchema.queryInputText.value) {
             //若提供了Locate，则应该清空现有的查询条件，除非上面也提供了别的查询条件
             querySchema.queryInputText.value = undefined
@@ -491,8 +495,8 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
         })
     }
     const openMetaTagEditor = () => {
-        if(path.value !== null) {
-            dialog.metaTagEditor.editIdentity({type: "IMAGE", id: path.value})
+        if(data.value !== null) {
+            dialog.metaTagEditor.editIdentity({type: data.value.type, id: data.value.id})
         }
     }
 

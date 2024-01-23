@@ -52,7 +52,7 @@ export function useVirtualViewContext(optionPadding: Padding | number) {
         return ({
             height: `${scrollState.value.actualHeight.toFixed(3)}px`,
             paddingTop: `${scrollState.value.actualTop.toFixed(3)}px`,
-            paddingBottom: `${((scrollState.value.totalHeight ?? 0) - scrollState.value.actualTop - scrollState.value.actualHeight).toFixed(3)}px`
+            paddingBottom: scrollState.value.totalHeight && scrollState.value.height && scrollState.value.totalHeight >= scrollState.value.height ? `${(scrollState.value.totalHeight - scrollState.value.actualTop - scrollState.value.actualHeight).toFixed(3)}px` : "0px"
         })
     })
 

@@ -67,7 +67,7 @@ const { hover, ...hoverEvents } = useMouseHover()
 <template>
     <Block :class="$style.item" v-bind="hoverEvents">
         <Flex horizontal="stretch" align="center">
-            <FlexItem :width="65">
+            <FlexItem :width="55">
                 <div @click="$emit('click')">
                     <Icon :class="{[`has-text-${item.color}`]: !!item.color, 'mr-1': true}" :icon="TOPIC_TYPE_ICONS[item.type]"/>
                     <span :class="{[`has-text-${item.color}`]: !!item.color}" draggable="true" v-bind="dragEvents">{{item.name}}</span>
@@ -84,7 +84,7 @@ const { hover, ...hoverEvents } = useMouseHover()
                     <Icon v-else-if="hover" class="has-text-secondary" icon="heart" @click="$emit('update:favorite', true)"/>
                 </div>
             </FlexItem>
-            <FlexItem :width="35">
+            <FlexItem :width="45">
                 <div>
                     <AnnotationElement v-for="a in actualKeywordsAndAnnotations.annotations" :key="a.id" :value="a" class="mr-1"/>
                     <Tag v-for="k in actualKeywordsAndAnnotations.keywords" class="mr-1" color="secondary">{{k}}</Tag>
@@ -125,6 +125,6 @@ const { hover, ...hoverEvents } = useMouseHover()
             width: 40px
             text-align: right
         > .count
-            width: 32px
+            width: 50px
             text-align: right
 </style>

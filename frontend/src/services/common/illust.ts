@@ -542,10 +542,22 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
             return "asc"
         }
 
-        const insertIntoIllusts = async (insertIndex: number | null, illusts: DraggingIllust[], _: "ADD" | "MOVE"): Promise<boolean> => {
+        const checkOptimize = (insertIndex: number, illustIds: number[]): boolean => {
+            const findByKeys = illustIds.map(listview.proxy.sync.findByKey)
+            //如果有的项找不到，那么跳过此检查步骤，直接返回
+            if(findByKeys.some(i => i === undefined)) return false
+            const indexes = (findByKeys as number[]).sort()
+            //由于indexes已排序，因此当indexes[-1] - indexes[0] + 1不大于indexes.len时，可判定indexes连续。当连续或只有1项时，继续之后的检查
+            if(!(indexes.length <= 1 || indexes[indexes.length - 1] - indexes[0] + 1 <= indexes.length)) return false
+            //若insertIndex位于indexes序列之间或者首尾，则应当优化掉此次事件
+            return insertIndex >= indexes[0] && insertIndex <= indexes[indexes.length - 1] + 1
+        }
+
+        const insertIntoIllusts = async (insertIndex: number | null, illusts: DraggingIllust[], mode: "ADD" | "MOVE"): Promise<boolean> => {
             const target = illusts.map(i => i.id)
-            const partitionTime = dataDropOptions.dropInType === "partition" ? unref(dataDropOptions.path) ?? undefined : undefined
             const finalInsertIndex = insertIndex ?? listview.proxy.sync.count()
+            if(mode === "MOVE" && finalInsertIndex !== null && checkOptimize(finalInsertIndex, target)) return false
+            const partitionTime = dataDropOptions.dropInType === "partition" ? unref(dataDropOptions.path) ?? undefined : undefined
             if(finalInsertIndex === 0) {
                 const afterItem = listview.proxy.sync.retrieve(finalInsertIndex)!
                 const timeInsertAt = getCurrentOrderDirection() === "asc" ? "behind" : "after"
@@ -593,8 +605,10 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
                             return await fetchBookImagesPartialUpdate(path, {action: "ADD", images, ordinal: insertIndex})
                         }
                     }else if(illusts.length > 0) {
-                        //移动操作直接调用API即可，不需要检查
-                        return await fetchBookImagesPartialUpdate(path, {action: "MOVE", images: illusts.map(i => i.id), ordinal: insertIndex})
+                        //移动操作直接调用API即可
+                        const target = illusts.map(i => i.id)
+                        if(mode === "MOVE" && insertIndex !== null && checkOptimize(insertIndex, target)) return false
+                        return await fetchBookImagesPartialUpdate(path, {action: "MOVE", images: target, ordinal: insertIndex})
                     }
                 }
                 return false
@@ -609,8 +623,10 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
                             return await fetchFolderImagesPartialUpdate(path, {action: "ADD", images, ordinal: insertIndex})
                         }
                     }else if(illusts.length > 0) {
-                        //移动操作直接调用API即可，不需要检查
-                        return await fetchFolderImagesPartialUpdate(path, {action: "MOVE", images: illusts.map(i => i.id), ordinal: insertIndex})
+                        //移动操作直接调用API即可
+                        const target = illusts.map(i => i.id)
+                        if(mode === "MOVE" && insertIndex !== null && checkOptimize(insertIndex, target)) return false
+                        return await fetchFolderImagesPartialUpdate(path, {action: "MOVE", images: target, ordinal: insertIndex})
                     }
                 }
                 return false

@@ -7,7 +7,7 @@ import { useDialogService } from "@/components-module/dialog"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useQuerySchema } from "@/services/base/query-schema"
 import { useSettingSite } from "@/services/setting"
-import { useTabRoute } from "@/modules/browser"
+import { useBrowserTabs, useTabRoute } from "@/modules/browser"
 import { useMessageBox } from "@/modules/message-box"
 import { installation } from "@/utils/reactivity"
 
@@ -78,6 +78,7 @@ function useOperators(paneState: DetailViewState<SourceDataIdentity>) {
 export function useSourceDataDetailPane() {
     const dialog = useDialogService()
     const router = useTabRoute()
+    const browserTabs = useBrowserTabs()
     const { paneState } = useSourceDataContext()
 
     const { data, setData } = useFetchEndpoint({
@@ -107,9 +108,15 @@ export function useSourceDataDetailPane() {
         }
     }
 
-    const gotoIllust = () => {
+    const gotoIllust = (at?: "newTab" | "newWindow") => {
         if(data.value !== null) {
-            router.routePush({routeName: "Illust", initializer: {source: {site: data.value.sourceSite, id: data.value.sourceId}}})
+            if(at === "newTab") {
+                browserTabs.newTab({routeName: "Illust", initializer: {source: {site: data.value.sourceSite, id: data.value.sourceId}}})
+            }else if(at === "newWindow") {
+                browserTabs.newWindow({routeName: "Illust", initializer: {source: {site: data.value.sourceSite, id: data.value.sourceId}}})
+            }else{
+                router.routePush({routeName: "Illust", initializer: {source: {site: data.value.sourceSite, id: data.value.sourceId}}})
+            }
         }
     }
 

@@ -5,7 +5,7 @@ import { BrowserTeleport } from "@/components/logical"
 import { PaneLayout } from "@/components/layout"
 import { IllustImageDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
-import { SearchBox, LockOnButton, DataRouter, FitTypeButton, ColumnNumButton, QueryNotificationBadge, CollectionModeButton } from "@/components-business/top-bar"
+import { SearchBox, LockOnButton, DataRouter, FitTypeButton, ColumnNumButton, CollectionModeButton } from "@/components-business/top-bar"
 import { Illust } from "@/functions/http-client/api/illust"
 import { useIllustContext } from "@/services/main/illust"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
@@ -74,7 +74,6 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
     <BrowserTeleport to="top-bar">
         <CollectionModeButton class="mr-1" v-model:value="collectionMode"/>
         <SearchBox placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value" :schema="querySchema.schema.value"/>
-        <QueryNotificationBadge class="ml-1" :schema="querySchema.schema.value" @click="querySchema.expanded.value = true"/>
         <Separator/>
         <LockOnButton v-model:value="editableLockOn"/>
         <DataRouter :state="state" @navigate="navigateTo"/>

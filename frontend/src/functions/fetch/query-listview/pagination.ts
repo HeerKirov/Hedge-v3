@@ -135,9 +135,11 @@ export function usePaginationDataView<T>(options: PaginationOptions<T>): Paginat
     }
 
     const reset = () => {
-        if(state.value !== null) {
-            state.value = {offset: 0, limit: state.value.limit, total: Math.max(state.value.total, state.value.limit)}
-        }
+        //将state的offset设为0
+        if(state.value !== null) state.value = {offset: 0, limit: state.value.limit, total: state.value.total}
+        //在此处立即清空了现有数据
+        data.value = {metrics: {offset: 0, limit: 0}, items: []}
+        //重新请求数据
         dataUpdate().finally()
     }
 

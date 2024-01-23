@@ -12,11 +12,10 @@ import ZoomController from "./ZoomController.vue"
 import SearchInput from "./SearchInput.vue"
 import SearchBox from "./SearchBox.vue"
 import SearchResultInfo from "./SearchResultInfo.vue"
-import QueryNotificationBadge from "./Query/QueryNotificationBadge.vue"
 import QueryResult from "./Query/QueryResult.vue"
 import FileWatcher from "./FileWatcher.vue"
 
-export { QueryNotificationBadge, QueryResult }
+export { QueryResult }
 export { SearchBox, SearchInput, SearchResultInfo }
 export { AttachFilter }
 export { FilterButton, SelectButton, ToggleButton, FitTypeButton, ColumnNumButton, CollectionModeButton, LockOnButton }

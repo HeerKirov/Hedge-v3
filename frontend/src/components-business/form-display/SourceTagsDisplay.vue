@@ -3,7 +3,7 @@ import { computed } from "vue"
 import { SourceTag } from "@/functions/http-client/api/source-data"
 import { SourceTagElement } from "@/components-business/element"
 import { useSettingSite } from "@/services/setting"
-import { usePopupMenu } from "@/modules/popup-menu"
+import { useDynamicPopupMenu } from "@/modules/popup-menu"
 import { writeClipboard } from "@/modules/others"
 
 const props = defineProps<{
@@ -26,12 +26,10 @@ const groupedTags = computed(() => {
     }
 })
 
-const copySourceTagCode = ({ code }: SourceTag) => writeClipboard(code)
-const copySourceTagName = ({ name }: SourceTag) => writeClipboard(name)
-
-const menu = usePopupMenu<SourceTag>([
-    {type: "normal", "label": "复制此标签的标识编码", click: copySourceTagCode},
-    {type: "normal", "label": "复制此标签的显示名称", click: copySourceTagName},
+const menu = useDynamicPopupMenu<SourceTag>(st => [
+    {type: "normal", "label": `复制"${st.code}"到剪贴板`, click: () => writeClipboard(st.code)},
+    ...(st.name !== st.code ? [{type: "normal", "label": `复制"${st.name}"到剪贴板`, click: () => writeClipboard(st.name)} as const] : []),
+    ...(st.otherName && st.otherName !== st.code && st.otherName !== st.name ? [{type: "normal", "label": `复制"${st.otherName}"到剪贴板`, click: () => writeClipboard(st.otherName!)} as const] : []),
 ])
 
 </script>

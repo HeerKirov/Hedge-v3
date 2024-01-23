@@ -65,6 +65,11 @@ export const [installEditorContext, useEditorContext] = installation(function (c
         tabDBType: "author"
     }), true)
 
+    if(context.identity.value?.type !== "IMAGE" && storage.value.tab === "source") {
+        //当位于不能使用source的identity中时，将其切换至db
+        storage.value.tab = "db"
+    }
+
     const typeFilter = toRef(storage, "typeFilter")
     const tab = toRef(storage, "tab")
     const tabDBType = toRef(storage, "tabDBType")

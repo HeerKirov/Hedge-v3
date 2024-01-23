@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ThumbnailImage, Icon, Separator } from "@/components/universal"
-import { FormEditKit } from "@/components/interaction"
+import { FormEditKit, ElementPopupMenu } from "@/components/interaction"
 import { BasePane } from "@/components/layout"
 import {
     SourceInfo, TitleDisplay, DescriptionDisplay, TimeGroupDisplay, SourceAdditionalInfoDisplay,
@@ -8,12 +8,18 @@ import {
 } from "@/components-business/form-display"
 import { SourceEditStatusEditor } from "@/components-business/form-editor"
 import { useSourceDataDetailPane } from "@/services/main/source-data"
+import { MenuItem } from "@/modules/popup-menu"
 
 defineEmits<{
     (e: "close"): void
 }>()
 
 const { data, sourceDataPath, relatedImages, setSourceEditStatus, gotoIllust, openEditDialog } = useSourceDataDetailPane()
+
+const gotoIllustMenu = <MenuItem<undefined>[]>[
+    {type: "normal", label: "在新标签页打开", click: () => gotoIllust("newTab")},
+    {type: "normal", label: "在新窗口打开", click: () => gotoIllust("newWindow")},
+]
 
 </script>
 
@@ -22,10 +28,12 @@ const { data, sourceDataPath, relatedImages, setSourceEditStatus, gotoIllust, op
         <template #top>
             <ThumbnailImage :file="relatedImages?.length ? relatedImages[0].filePath.thumbnail : null" :aspect="1"/>
             <p class="w-100 has-text-right">
-                <a v-if="relatedImages?.length" class="no-wrap" @click="gotoIllust">
-                    {{relatedImages.length > 1 ? `在图库查看全部的${relatedImages.length}个项目` : '在图库查看此项目'}}
-                    <Icon icon="angle-double-right"/>
-                </a>
+                <ElementPopupMenu v-if="relatedImages?.length" position="bottom" :offset-y="5" :items="gotoIllustMenu" v-slot="{ setEl, popup }">
+                    <a :ref="setEl" class="no-wrap" @click="gotoIllust()" @contextmenu="popup">
+                        {{relatedImages.length > 1 ? `在图库查看全部的${relatedImages.length}个项目` : '在图库查看此项目'}}
+                        <Icon icon="angle-double-right"/>
+                    </a>
+                </ElementPopupMenu>
                 <i v-else class="no-wrap secondary-text">没有与此关联的图库项目</i>
             </p>
         </template>

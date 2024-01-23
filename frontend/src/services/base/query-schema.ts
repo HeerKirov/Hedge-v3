@@ -33,13 +33,17 @@ export function useQuerySchema(dialect: Dialect): QuerySchemaContext {
     const queryInputText = ref<string | undefined>(query.value)
     const expanded = ref<boolean>(false)
 
+    watch(query, query => {
+        if(query !== queryInputText.value) queryInputText.value = query
+    })
+
     watch(queryInputText, async queryInputText => {
         const text = queryInputText?.trim()
         if(!text) {
             expanded.value = false
             query.value = undefined
             schema.value = null
-        }else{
+        }else if(text !== query.value) {
             const res = await fetch({dialect, text}, toast.handleException)
             if(res !== undefined) {
                 schema.value = res
