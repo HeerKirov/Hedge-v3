@@ -164,7 +164,7 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
      * book的annotations导出则是根据导出的meta tag，重新导出annotations。
      */
     private fun copyAllMetaFromImages(thisId: Int) {
-        fun <IR : EntityMetaRelationTable<*>, AR:EntityMetaRelationTable<*>> copyOneMeta(imageTagRelations: IR, bookTagRelations: AR): List<Int> {
+        fun <IR : EntityMetaRelationTable<*>, AR:EntityMetaRelationTable<*>> copyOneMeta(imageTagRelations: IR, bookTagRelations: AR, conditionRate: Double): List<Int> {
             val metaTags = data.db.from(BookImageRelations)
                 .innerJoin(Illusts, BookImageRelations.imageId eq Illusts.id)
                 .innerJoin(imageTagRelations, imageTagRelations.entityId() eq Illusts.id)
@@ -173,8 +173,8 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
                 .groupBy(imageTagRelations.metaId())
                 .map { it[imageTagRelations.metaId()]!! to it.getInt("count") }
             if(metaTags.isNotEmpty()) {
-                //临界阈值是30%，即出现频数超过最大频数的这个比率的标签会被选入。
-                val conditionCount = (metaTags.maxOf { (_, count) -> count } * 0.3).toInt()
+                //存在一个临界阈值，仅当出现频数超过最大频数的这个比率时，标签才会被选入。
+                val conditionCount = (metaTags.maxOf { (_, count) -> count } * conditionRate).toInt()
                 val selectedTags = metaTags.filter { (_, count) -> count >= conditionCount }.map { (id, _) -> id }
                 if(selectedTags.isNotEmpty()) {
                     data.db.batchInsert(bookTagRelations) {
@@ -213,9 +213,10 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
             }
         }
 
-        val tagIds = copyOneMeta(IllustTagRelations, BookTagRelations)
-        val authorIds = copyOneMeta(IllustAuthorRelations, BookAuthorRelations)
-        val topicIds = copyOneMeta(IllustTopicRelations, BookTopicRelations)
+        //tag的临界阈值是30%，而author/topic的是10%
+        val tagIds = copyOneMeta(IllustTagRelations, BookTagRelations, 0.3)
+        val authorIds = copyOneMeta(IllustAuthorRelations, BookAuthorRelations, 0.1)
+        val topicIds = copyOneMeta(IllustTopicRelations, BookTopicRelations, 0.1)
 
         copyAnnotationOfMeta(tagIds, authorIds, topicIds)
     }

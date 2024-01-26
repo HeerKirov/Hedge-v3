@@ -14,10 +14,7 @@ import com.heerkirov.hedge.server.dao.SourceTags
 import com.heerkirov.hedge.server.dto.form.IllustImageCreateForm
 import com.heerkirov.hedge.server.dto.form.SourceDataUpdateForm
 import com.heerkirov.hedge.server.dto.res.*
-import com.heerkirov.hedge.server.enums.AppLoadStatus
-import com.heerkirov.hedge.server.enums.ImportStatus
-import com.heerkirov.hedge.server.enums.MetaType
-import com.heerkirov.hedge.server.enums.TagTopicType
+import com.heerkirov.hedge.server.enums.*
 import com.heerkirov.hedge.server.events.FileProcessError
 import com.heerkirov.hedge.server.events.FileReady
 import com.heerkirov.hedge.server.events.ImportUpdated
@@ -178,7 +175,7 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                             val resultTopics = mutableSetOf<Int>()
                             val resultAuthors = mutableSetOf<Int>()
                             val mixedCounter = if(setting.import.notReflectForMixedSet) mutableMapOf<Any, Int>() else null
-                            val typeReflector = if(setting.import.setTagmeOfTag) mutableMapOf<Pair<String, String>, MetaType>() else null
+                            val typeReflector = if(setting.import.setTagmeOfTag || setting.import.notReflectForMixedSet) mutableMapOf<String, Pair<MetaType, Any>>() else null
                             val enableTag = MetaType.TAG in setting.import.reflectMetaTagType
                             val enableTopic = MetaType.TOPIC in setting.import.reflectMetaTagType
                             val enableAuthor = MetaType.AUTHOR in setting.import.reflectMetaTagType
@@ -198,31 +195,52 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                                     }
                                 }
                                 if(typeReflector != null && mappingTag.mappings.isNotEmpty() && mappingTag.mappings.first().metaType in setting.import.reflectMetaTagType) {
-                                    typeReflector[Pair(mappingTag.site, mappingTag.type)] = mappingTag.mappings.first().metaType
+                                    val first = mappingTag.mappings.first()
+                                    val metaTagType = when(first.metaTag) {
+                                        is AuthorSimpleRes -> first.metaTag.type
+                                        is TopicSimpleRes -> first.metaTag.type
+                                        is TagSimpleRes -> MetaType.TAG
+                                        else -> throw UnsupportedOperationException()
+                                    }
+                                    typeReflector[mappingTag.type] = first.metaType to metaTagType
                                 }
                             }
-                            //当计数器监测到AUTHOR/TOPIC(不包括character)中某一类存在至少5个标签时，就认为这是一个混合集，不会输出它
-                            if(mixedCounter == null || !mixedCounter.values.any { it >= 5 }) {
-                                //移除tagme的判定方法：根据存在的映射，可以大致推断某个site.type对应的MetaType类型。
-                                //例如，可以推断ehentai.parody映射到TOPIC.IP类型，ehentai.character映射到TOPIC.CHARACTER类型，ehentai.male/female都映射到TAG类型。
-                                //之后，从MetaType反推，看映射到它的所有site.type类型的来源标签是否都被映射了。如果是的，则可以移除对应的Tagme。
-                                //例如，如果标签parody:A和parody:B都有映射，author:C和author:D只有C有映射，那么TOPIC可以移除，而AUTHOR不行。
-                                var minusTagme: Illust.Tagme = Illust.Tagme.EMPTY
-                                if(typeReflector != null) {
-                                    for ((metaType, sourceTypes) in typeReflector.entries.groupBy({ it.value }) { it.key }) {
-                                        val filteredSourceTags = mappingTags.filter { sourceTypes.any { (site, type) -> site == it.site && type == it.type } }
-                                        if(filteredSourceTags.isNotEmpty() && filteredSourceTags.all { it.mappings.isNotEmpty() }) {
-                                            minusTagme += when(metaType) {
-                                                MetaType.AUTHOR -> Illust.Tagme.AUTHOR
-                                                MetaType.TOPIC -> Illust.Tagme.TOPIC
-                                                MetaType.TAG -> Illust.Tagme.TAG
-                                            }
+
+                            //根据typeReflector反推每种tagType对应的sourceTagType，然后统计sourceTag数量。(这么做是因为映射可能是不全面的，因此需要取原始标签数量，才能确认是不是混合集)
+                            //当计数器监测到IP/COPYRIGHT数量>=2，或CHARACTER数量>=5，或AUTHOR数量>=2时，会将其认定为混合集。此时，使TOPIC或AUTHOR类型的标签全部不输出。
+                            val authors: List<Int>?
+                            val topics: List<Int>?
+                            if(typeReflector != null && setting.import.notReflectForMixedSet) {
+                                val counts = typeReflector.entries
+                                    .filter { (_, v) -> v.second is TagAuthorType || v.second is TagTopicType }
+                                    .groupBy({ (_, v) -> v.second }) { (k, _) -> k }
+                                    .mapValues { (_, sourceTagTypes) -> sourceTags.count { it.sourceTagType in sourceTagTypes } }
+                                authors = if(counts.filterKeys { it is TagAuthorType }.values.any { it >= 2 }) null else resultAuthors.toList()
+                                topics = if(counts.getOrDefault(TagTopicType.CHARACTER, 0) >= 5 || counts.filterKeys { it is TagTopicType && it != TagTopicType.CHARACTER }.values.any { it >= 2 }) null else resultTopics.toList()
+                            }else{
+                                authors = resultAuthors.toList()
+                                topics = resultTopics.toList()
+                            }
+
+                            //移除tagme的判定方法：根据存在的映射，可以大致推断某个site.type对应的MetaType类型。
+                            //例如，可以推断ehentai.parody映射到TOPIC.IP类型，ehentai.character映射到TOPIC.CHARACTER类型，ehentai.male/female都映射到TAG类型。
+                            //之后，从MetaType反推，看映射到它的所有site.type类型的来源标签是否都被映射了。如果是的，则可以移除对应的Tagme。
+                            //例如，如果标签parody:A和parody:B都有映射，author:C和author:D只有C有映射，那么TOPIC可以移除，而AUTHOR不行。
+                            var minusTagme: Illust.Tagme = Illust.Tagme.EMPTY
+                            if(typeReflector != null && setting.import.setTagmeOfTag) {
+                                for ((metaType, sourceTypes) in typeReflector.entries.groupBy({ it.value }) { it.key }) {
+                                    val filteredSourceTags = mappingTags.filter { sourceTypes.any { type -> type == it.type } }
+                                    if(filteredSourceTags.isNotEmpty() && filteredSourceTags.all { it.mappings.isNotEmpty() }) {
+                                        when(metaType.first) {
+                                            MetaType.AUTHOR -> if(authors != null) minusTagme += Illust.Tagme.AUTHOR
+                                            MetaType.TOPIC -> if(topics != null) minusTagme += Illust.Tagme.TOPIC
+                                            MetaType.TAG -> minusTagme +=  Illust.Tagme.TAG
                                         }
                                     }
                                 }
+                            }
 
-                                Tuple4(resultTags.toList(), resultTopics.toList(), resultAuthors.toList(), minusTagme)
-                            }else null
+                            if(minusTagme == Illust.Tagme.EMPTY && authors.isNullOrEmpty() && topics.isNullOrEmpty() && resultTags.isEmpty()) null else Tuple4(resultTags.toList(), topics ?: emptyList(), authors ?: emptyList(), minusTagme)
                         }else null
                     }else null
                 }

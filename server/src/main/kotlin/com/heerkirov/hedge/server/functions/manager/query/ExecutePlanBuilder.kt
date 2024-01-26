@@ -1,7 +1,6 @@
 package com.heerkirov.hedge.server.functions.manager.query
 
 import com.heerkirov.hedge.server.dao.*
-import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.TagAddressType
 import com.heerkirov.hedge.server.library.compiler.semantic.dialect.BookDialect
 import com.heerkirov.hedge.server.library.compiler.semantic.dialect.IllustDialect
@@ -510,7 +509,7 @@ class AuthorExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder {
             if(it.precise) {
                 Authors.name eq it.value
             }else{
-                Authors.name like MetaParserUtil.mapMatchToSqlLike(it.value)
+                (Authors.name like MetaParserUtil.mapMatchToSqlLike(it.value)) or (Authors.otherNames like MetaParserUtil.mapMatchToSqlLike(it.value))
             }
         }.reduce { a, b -> a or b }.let {
             if(exclude) it.not() else it
@@ -569,7 +568,7 @@ class TopicExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder {
             if(it.precise) {
                 Topics.name eq it.value
             }else{
-                Topics.name like MetaParserUtil.mapMatchToSqlLike(it.value)
+                (Topics.name like MetaParserUtil.mapMatchToSqlLike(it.value)) or (Topics.otherNames like MetaParserUtil.mapMatchToSqlLike(it.value))
             }
         }.reduce { a, b -> a or b }.let {
             if(exclude) it.not() else it

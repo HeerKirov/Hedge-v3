@@ -61,10 +61,7 @@ object Translator {
                 }else{
                     ElementItem(element.exclude, when (element) {
                         is NameElementForMeta -> element.items.map { ElementString(it.value, it.precise) }.also { executeBuilder.mapNameElement(it, element.exclude) }
-                        is AnnotationElementForMeta -> mapAnnotationElementForMeta(element, queryer, collector, options).also { joinDepth += 1 }.also { executeBuilder.mapAnnotationElement(
-                            it,
-                            element.exclude
-                        ) }
+                        is AnnotationElementForMeta -> mapAnnotationElementForMeta(element, queryer, collector, options).also { joinDepth += 1 }.also { executeBuilder.mapAnnotationElement(it, element.exclude) }
                         is SourceTagElement -> mapSourceTagElement(element, queryer, collector, options).also { joinDepth += 1 }.also { executeBuilder.mapSourceTagElement(it, element.exclude) }
                         is TagElement -> {
                             val (r, t) = mapTagElement(element, queryer, collector, options)
