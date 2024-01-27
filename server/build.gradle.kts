@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.heerkirov.hedge"
-version = "0.6.2"
+version = "0.6.3"
 
 dependencies {
     val kotlinVersion = "1.9.10"
