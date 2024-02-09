@@ -69,6 +69,31 @@ class QueryManager(private val appdata: AppDataManager, private val data: DataRe
         }
     }
 
+    /**
+     * 在指定的方言下分析查询语句。
+     */
+    fun forecast(text: String, cursorIndex: Int?, dialect: Dialect): VisualForecast? {
+        val lexicalResult = LexicalAnalyzer.parse(text, options)
+        if (lexicalResult.result.isNullOrEmpty()) {
+            return null
+        }
+        val grammarResult = GrammarAnalyzer.parse(lexicalResult.result)
+        if (grammarResult.result == null) {
+            return null
+        }
+        val forecastResult = SemanticAnalyzer.forecast(
+            grammarResult.result, cursorIndex ?: text.length, when (dialect) {
+                Dialect.ILLUST -> IllustDialect::class
+                Dialect.BOOK -> BookDialect::class
+                Dialect.AUTHOR, Dialect.TOPIC -> AuthorAndTopicDialect::class
+                Dialect.ANNOTATION -> AnnotationDialect::class
+                Dialect.SOURCE_DATA -> SourceDataDialect::class
+            }
+        ) ?: return null
+
+        return Translator.forecast(forecastResult, queryer)
+    }
+
     private fun flushCacheByEvent(events: PackagedBusEvent) {
         events.which {
             all<MetaTagEntityEvent> { events ->

@@ -89,6 +89,39 @@ object Translator {
     }
 
     /**
+     * 执行预测。
+     */
+    fun forecast(forecast: Forecast, queryer: Queryer): VisualForecast {
+        return when(forecast) {
+            is ForecastFilter -> {
+                val suggestions = forecast.enums.filter { item -> item.any { it.startsWith(forecast.item) } }.map { VisualForecastSuggestion(it.first(), if(it.size > 1) it.subList(1, it.size) else emptyList()) }
+                VisualForecast("filter", forecast.item, suggestions, forecast.beginIndex, forecast.endIndex, forecast.fieldName)
+            }
+            is ForecastOrder -> {
+                val suggestions = forecast.enums.filter { item -> item.any { it.startsWith(forecast.item) } }.map { VisualForecastSuggestion(it.first(), if(it.size > 1) it.subList(1, it.size) else emptyList()) }
+                VisualForecast("order", forecast.item, suggestions, forecast.beginIndex, forecast.endIndex)
+            }
+            is ForecastMetaTagElement -> {
+                val suggestions = when(forecast.type) {
+                    "tag" -> queryer.forecastTag(forecast.address).map { VisualForecastSuggestion(it.name, it.otherNames) }
+                    "topic" -> queryer.forecastTopic(forecast.address).map { VisualForecastSuggestion(it.name, it.otherNames) }
+                    "author" -> queryer.forecastAuthor(forecast.address).map { VisualForecastSuggestion(it.name, it.otherNames) }
+                    else -> throw UnsupportedOperationException("Unsupported type ${forecast.type}.")
+                }
+                VisualForecast(forecast.type, forecast.address.last().value, suggestions, forecast.beginIndex, forecast.endIndex)
+            }
+            is ForecastSourceTagElement -> {
+                val suggestions = queryer.forecastSourceTag(forecast.items).map { VisualForecastSuggestion(it.name, if((it.displayName != null && it.displayName != it.name) || it.otherName != null) { listOfNotNull(if (it.displayName != it.name) it.displayName else null, it.otherName) } else emptyList()) }
+                VisualForecast("source-tag", forecast.items.last().value, suggestions, forecast.beginIndex, forecast.endIndex)
+            }
+            is ForecastAnnotationElement -> {
+                val suggestions = queryer.forecastAnnotation(forecast.item, forecast.metaType, forecast.isForMeta).map { VisualForecastSuggestion(it.name, emptyList()) }
+                VisualForecast("annotation", forecast.item.value, suggestions, forecast.beginIndex, forecast.endIndex)
+            }
+        }
+    }
+
+    /**
      * 处理一个AnnotationElement的翻译。
      */
     private fun mapAnnotationElement(element: AnnotationElement, queryer: Queryer, collector: ErrorCollector<TranslatorError<*>>, options: TranslatorOptions?): List<ElementAnnotation> {

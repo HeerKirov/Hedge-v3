@@ -27,6 +27,29 @@ class EquableField<V>(override val key: String, override val alias: Array<out St
         }
     }
 
+    override fun forecast(subject: StrList, family: Family?, predicative: Predicative?, cursorIndex: Int): Forecast? {
+        return if(strTypeParser is EnumTypeParser<*> && predicative != null && cursorIndex >= predicative.beginIndex && cursorIndex <= predicative.endIndex) {
+            when(predicative) {
+                is StrList -> if(predicative.items.size == 1 && cursorIndex >= predicative.items.first().beginIndex && cursorIndex <= predicative.items.first().endIndex) {
+                    ForecastFilter(predicative.items.first().value, key, strTypeParser.enums(), predicative.items.first().beginIndex, predicative.items.first().endIndex)
+                }else{
+                    null
+                }
+                is Col -> {
+                    val item = predicative.items.firstOrNull { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex }
+                    if(item != null) {
+                        ForecastFilter(item.value, key, strTypeParser.enums(), item.beginIndex, item.endIndex)
+                    }else{
+                        null
+                    }
+                }
+                else -> null
+            }
+        }else{
+            null
+        }
+    }
+
     private fun processStrList(strList: StrList): EqualFilter<V> {
         if(strList.items.size > 1) semanticError(ValueCannotBeAddress(strList.beginIndex, strList.endIndex))
         val filterValue = strTypeParser.parse(strList.items.first())
@@ -69,6 +92,8 @@ class ComparableField<V>(override val key: String, override val alias: Array<out
             else -> throw RuntimeException("Unsupported family symbol '${family.value}'.")
         }
     }
+
+    override fun forecast(subject: StrList, family: Family?, predicative: Predicative?, cursorIndex: Int) = null
 
     private fun processStrList(strList: StrList): EqualFilter<V> {
         if(strList.items.size > 1) semanticError(ValueCannotBeAddress(strList.beginIndex, strList.endIndex))
@@ -124,6 +149,8 @@ class MatchableField<V>(override val key: String, override val alias: Array<out 
         }
     }
 
+    override fun forecast(subject: StrList, family: Family?, predicative: Predicative?, cursorIndex: Int) = null
+
     private fun processStrList(strList: StrList): Filter<V> {
         if(strList.items.size > 1) semanticError(ValueCannotBeAddress(strList.beginIndex, strList.endIndex))
         val filterValue = strTypeParser.parse(strList.items.first())
@@ -159,6 +186,8 @@ class FlagField(override val key: String, override val alias: Array<out String>)
         if(family != null || predicative != null) semanticError(FilterValueNotRequired(key, subject.beginIndex, predicative?.endIndex ?: family!!.endIndex))
         return FlagFilter(this)
     }
+
+    override fun forecast(subject: StrList, family: Family?, predicative: Predicative?, cursorIndex: Int) = null
 }
 
 /**
@@ -188,6 +217,8 @@ class ComplexComparableField<V>(override val key: String, override val alias: Ar
             else -> throw RuntimeException("Unsupported family symbol '${family.value}'.")
         }
     }
+
+    override fun forecast(subject: StrList, family: Family?, predicative: Predicative?, cursorIndex: Int) = null
 
     private fun processStrList(strList: StrList): Sequence<Filter<V>> {
         if(strList.items.size > 1) semanticError(ValueCannotBeAddress(strList.beginIndex, strList.endIndex))
@@ -304,6 +335,8 @@ class NumberPatternField(override val key: String, override val alias: Array<out
         }
     }
 
+    override fun forecast(subject: StrList, family: Family?, predicative: Predicative?, cursorIndex: Int) = null
+
     private fun processStrList(strList: StrList): Sequence<Filter<FilterPatternNumberValue>> {
         if(strList.items.size > 1) semanticError(ValueCannotBeAddress(strList.beginIndex, strList.endIndex))
         return sequenceOf(when (val result = PatternNumberParser.parse(strList.items.first())) {
@@ -386,6 +419,29 @@ class CompositionField<V>(override val key: String, override val alias: Array<ou
             }
             ">", "<", ">=", "<=", "~", "~+", "~-" -> semanticError(UnsupportedFilterRelationSymbol(key, family.value, family.beginIndex, family.endIndex))
             else -> throw RuntimeException("Unsupported family symbol '${family.value}'.")
+        }
+    }
+
+    override fun forecast(subject: StrList, family: Family?, predicative: Predicative?, cursorIndex: Int): Forecast? {
+        return if(strTypeParser is EnumTypeParser<*> && predicative != null && cursorIndex >= predicative.beginIndex && cursorIndex <= predicative.endIndex) {
+            when(predicative) {
+                is StrList -> if(predicative.items.size == 1 && cursorIndex >= predicative.items.first().beginIndex && cursorIndex <= predicative.items.first().endIndex) {
+                    ForecastFilter(predicative.items.first().value, key, strTypeParser.enums(), predicative.items.first().beginIndex, predicative.items.first().endIndex)
+                }else{
+                    null
+                }
+                is Col -> {
+                    val item = predicative.items.firstOrNull { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex }
+                    if(item != null) {
+                        ForecastFilter(item.value, key, strTypeParser.enums(), item.beginIndex, item.endIndex)
+                    }else{
+                        null
+                    }
+                }
+                else -> null
+            }
+        }else{
+            null
         }
     }
 

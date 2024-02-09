@@ -3,6 +3,10 @@ package com.heerkirov.hedge.server.library.compiler.semantic.framework
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.*
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Annotation
 import com.heerkirov.hedge.server.library.compiler.semantic.*
+import com.heerkirov.hedge.server.library.compiler.semantic.plan.Forecast
+import com.heerkirov.hedge.server.library.compiler.semantic.plan.ForecastAnnotationElement
+import com.heerkirov.hedge.server.library.compiler.semantic.plan.ForecastMetaTagElement
+import com.heerkirov.hedge.server.library.compiler.semantic.plan.ForecastSourceTagElement
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.*
 import com.heerkirov.hedge.server.library.compiler.semantic.utils.semanticError
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Element as SemanticElement
@@ -44,6 +48,44 @@ object MetaTagElementField : ElementFieldByElement() {
             }
         }
         return tagElement
+    }
+
+    override fun forecast(element: SemanticElement, minus: Boolean, cursorIndex: Int): Forecast? {
+        val (subject, _, predicative) = element.items.firstOrNull { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex } ?: return null
+        if(subject !is StrList) return null
+        //仅当显式标识了prefix时，预测才会生效
+        val metaType = when (element.prefix?.value ?: return null) {
+            "@" -> MetaType.AUTHOR
+            "#" -> MetaType.TOPIC
+            "$" -> MetaType.TAG
+            else -> throw RuntimeException("Unsupported element prefix ${element.prefix.value}.")
+        }
+        return if(cursorIndex >= subject.beginIndex && cursorIndex <= subject.endIndex) {
+            val idx = subject.items.indexOfFirst { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex }
+            if(idx < 0) null else ForecastMetaTagElement(subject.items.subList(0, idx + 1).map(::mapStrToMetaString), metaType.name.lowercase(), subject.items[idx].beginIndex, subject.items[idx].endIndex)
+        }else if(predicative != null && cursorIndex >= predicative.beginIndex && cursorIndex <= predicative.endIndex) {
+            val subjectAddress = subject.items.map(::mapStrToMetaString)
+            when(predicative) {
+                is StrList -> {
+                    val item = predicative.items.firstOrNull { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex } ?: return null
+                    ForecastMetaTagElement(subjectAddress + mapStrToMetaString(item), metaType.name.lowercase(), item.beginIndex, item.endIndex)
+                }
+                is Range -> if(cursorIndex >= predicative.from.beginIndex && cursorIndex <= predicative.from.endIndex) {
+                    ForecastMetaTagElement(subjectAddress + mapStrToMetaString(predicative.from), metaType.name.lowercase(), predicative.from.beginIndex, predicative.from.endIndex)
+                }else if(cursorIndex >= predicative.to.beginIndex && cursorIndex <= predicative.to.endIndex) {
+                    ForecastMetaTagElement(subjectAddress + mapStrToMetaString(predicative.to), metaType.name.lowercase(), predicative.to.beginIndex, predicative.to.endIndex)
+                }else{
+                    null
+                }
+                is Col -> {
+                    val item = predicative.items.firstOrNull { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex } ?: return null
+                    ForecastMetaTagElement(subjectAddress + mapStrToMetaString(item), metaType.name.lowercase(), item.beginIndex, item.endIndex)
+                }
+                else -> null
+            }
+        }else{
+            null
+        }
     }
 
     /**
@@ -168,6 +210,12 @@ object AnnotationElementField : ElementFieldByAnnotation() {
         return AnnotationElement(items, metaType, minus)
     }
 
+    override fun forecast(annotation: Annotation, minus: Boolean, cursorIndex: Int): Forecast? {
+        val metaType = annotation.prefix?.let(::mapPrefixToMetaType)
+        val item = annotation.items.firstOrNull { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex } ?: return null
+        return ForecastAnnotationElement(mapStrToMetaString(item), metaType, false, item.beginIndex, item.endIndex)
+    }
+
     private fun mapPrefixToMetaType(symbol: Symbol): MetaType {
         return when (symbol.value) {
             "@" -> MetaType.AUTHOR
@@ -195,6 +243,27 @@ class SourceTagElementField(override val forSourceFlag: Boolean) : ElementFieldB
         if(element.prefix != null) semanticError(ElementPrefixNotRequired(itemName, element.beginIndex, element.endIndex))
         val items = element.items.map(::mapSfpToMetaValue).map(::SimpleMetaValue)
         return SourceTagElement(items, minus)
+    }
+
+    override fun forecast(element: SemanticElement, minus: Boolean, cursorIndex: Int): Forecast? {
+        val sfp = element.items.firstOrNull { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex } ?: return null
+
+        return if(sfp.subject is StrList && cursorIndex >= sfp.subject.beginIndex && cursorIndex <= sfp.subject.endIndex) {
+            val idx = sfp.subject.items.indexOfFirst { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex }
+            val subject = sfp.subject.items.subList(0, idx + 1).map { MetaString(it.value, it.type == Str.Type.BACKTICKS) }
+            ForecastSourceTagElement(subject, sfp.subject.items[idx].beginIndex, sfp.subject.items[idx].endIndex)
+        }else if(sfp.predicative is StrList && cursorIndex >= sfp.predicative.beginIndex && cursorIndex <= sfp.predicative.endIndex) {
+            val subject = if(sfp.subject is StrList) sfp.subject.items.map { MetaString(it.value, it.type == Str.Type.BACKTICKS) } else emptyList()
+            val idx = sfp.predicative.items.indexOfFirst { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex }
+            if(idx >= 0) {
+                val predicative = sfp.predicative.items.subList(0, idx + 1).map { MetaString(it.value, it.type == Str.Type.BACKTICKS) }
+                ForecastSourceTagElement(subject + predicative, sfp.predicative.items[idx].beginIndex, sfp.predicative.items[idx].endIndex)
+            }else{
+                null
+            }
+        }else{
+            null
+        }
     }
 
     /**
@@ -239,6 +308,11 @@ object NameFilterElementField : ElementFieldByElement() {
         return NameElementForMeta(items, minus)
     }
 
+    override fun forecast(element: SemanticElement, minus: Boolean, cursorIndex: Int): Forecast? {
+        //对于name，不进行任何预测
+        return null
+    }
+
     /**
      * 将主系表结构转换为MetaString。
      */
@@ -260,6 +334,11 @@ object MetaAnnotationElementField : ElementFieldByAnnotation() {
         if(annotation.prefix != null) semanticError(ElementPrefixNotRequired(itemName, annotation.beginIndex, annotation.endIndex))
         val items = annotation.items.map(::mapStrToMetaString)
         return AnnotationElementForMeta(items, minus)
+    }
+
+    override fun forecast(annotation: Annotation, minus: Boolean, cursorIndex: Int): Forecast? {
+        val item = annotation.items.firstOrNull { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex } ?: return null
+        return ForecastAnnotationElement(mapStrToMetaString(item), null, true, item.beginIndex, item.endIndex)
     }
 
     /**

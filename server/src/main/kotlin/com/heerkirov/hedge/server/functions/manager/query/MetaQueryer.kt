@@ -181,7 +181,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
                     .filter { childrenValues.any { metaString -> parser.isNameEqualOrMatch(metaString, it) } } //children按照values做任一匹配
             }
             is SequentialMetaValueOfRange -> {
-                //组匹配，且使用集合选择组员
+                //组匹配，且使用范围选择组员
                 if(metaValue.tag.any { it.value.isBlank() }) {
                     //元素内容为空时抛出空警告并直接返回
                     collector.warning(BlankElement())
@@ -270,7 +270,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
                     }
             }
             else -> throw RuntimeException("Unsupported metaValue type ${metaValue::class.simpleName}.")
-        }.map { ElementTag(it.id, it.name, it.type, it.color, if(it.type == TagAddressType.VIRTUAL_ADDR) findRealTags(it.id) else null) }.toList().also {
+        }.map { ElementTag(it.id, it.name, it.otherNames, it.type, it.color, if(it.type == TagAddressType.VIRTUAL_ADDR) findRealTags(it.id) else null) }.toList().also {
             if(it.isEmpty()) {
                 //查询结果为空时抛出无匹配警告
                 collector.warning(ElementMatchesNone(metaValue.revertToQueryString()))
@@ -285,26 +285,6 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
             return emptyList()
         }
 
-        fun isAddressMatches(topicId: Int?, address: MetaAddress, nextAddr: Int): Boolean {
-            //对address的处理方法：当address为A.B.C...M.N时，首先查找所有name match N的entity。
-            //随后对于每一个entity，根据其parentId向上查找其所有父标签。当找到一个父标签满足一个地址段M时，就将要匹配的地址段向前推1(L, K, J, ..., C, B, A)。
-            //如果address的每一节都被匹配，那么此entity符合条件；如果parent前推到了root依然没有匹配掉所有的address，那么不符合条件。
-            return when {
-                nextAddr < 0 -> true
-                topicId == null -> false
-                else -> {
-                    val topic = topicItemsPool.computeIfAbsent(topicId) {
-                        data.db.from(Topics).select(Topics.id, Topics.name, Topics.otherNames, Topics.parentId, Topics.type)
-                            .where { Topics.id eq topicId }
-                            .limit(0, 1)
-                            .first()
-                            .let { TopicItem(it[Topics.id]!!, it[Topics.name]!!, it[Topics.otherNames]!!, it[Topics.parentId], it[Topics.type]!!) }
-                    }
-                    isAddressMatches(topic.parentId, address, if(parser.isNameEqualOrMatch(address[nextAddr], topic)) { nextAddr - 1 }else{ nextAddr })
-                }
-            }
-        }
-
         return topicCacheMap.computeIfAbsent(metaValue.value) { address ->
             val lastAddr = address.last()
             val topics = data.db.from(Topics).select(Topics.id, Topics.name, Topics.otherNames, Topics.parentId, Topics.type)
@@ -314,12 +294,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
 
             topicItemsPool.putAll(topics.map { it.id to it })
 
-            val colors = appdata.setting.meta.topicColors
-
-            topics.asSequence()
-                .filter { isAddressMatches(it.parentId, address, address.size - 2) }
-                .map { ElementTopic(it.id, it.name, colors[it.type]) }
-                .toList()
+            validateTopics(topics, address)
         }.also {
             if(it.isEmpty()) {
                 //查询结果为空时抛出无匹配警告
@@ -337,10 +312,10 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
         return authorCacheMap.computeIfAbsent(metaValue.singleValue) { metaString ->
             val colors = appdata.setting.meta.authorColors
 
-            data.db.from(Authors).select(Authors.id, Authors.name, Authors.type)
+            data.db.from(Authors).select(Authors.id, Authors.name, Authors.type, Authors.otherNames)
                 .where { parser.compileNameString(metaString, Authors) }
                 .limit(0, queryLimit)
-                .map { ElementAuthor(it[Authors.id]!!, it[Authors.name]!!, colors[it[Authors.type]!!]) }
+                .map { ElementAuthor(it[Authors.id]!!, it[Authors.name]!!, it[Authors.otherNames]!!, colors[it[Authors.type]!!]) }
         }.also {
             if(it.isEmpty()) {
                 //查询结果为空时抛出无匹配警告
@@ -358,11 +333,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
         return annotationCacheMap.computeIfAbsent(annotationKeyOf(metaString, metaType)) {
             data.db.from(Annotations).select()
                 .whereWithConditions {
-                    it += if(metaString.precise) {
-                        Annotations.name eq metaString.value
-                    } else {
-                        Annotations.name like parser.mapMatchToSqlLike(metaString.value)
-                    }
+                    it += parser.compileNameString(metaString, Annotations)
                     if(metaType != null) {
                         it += Annotations.type eq MetaParserUtil.translateMetaType(metaType)
                     }
@@ -402,10 +373,10 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
                 1 -> parser.compileNameString(address.last(), SourceTags)
                 else -> return@computeIfAbsent emptyList()
             }
-            data.db.from(SourceTags).select(SourceTags.id, SourceTags.name)
+            data.db.from(SourceTags).select(SourceTags.id, SourceTags.name, SourceTags.code, SourceTags.otherName)
                 .where { where }
                 .limit(0, queryLimit)
-                .map { ElementSourceTag(it[SourceTags.id]!!, it[SourceTags.name]!!) }
+                .map { ElementSourceTag(it[SourceTags.id]!!, it[SourceTags.code]!!, it[SourceTags.name], it[SourceTags.otherName]) }
         }.also {
             if(it.isEmpty()) {
                 //查询结果为空时抛出无匹配警告
@@ -424,6 +395,134 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
         if(topics.size <= 1) return topics
         val ids = topics.map { it.id }.toMutableSet()
         return topics.filter { topic -> flatFindParent(topic.id, topicItemsPool, ids) }
+    }
+
+    override fun forecastTag(metaAddress: MetaAddress): List<ElementTag> {
+        if(metaAddress.any { it.value.isBlank() }) return emptyList()
+
+        /**
+         * 判断标签是否能匹配address。
+         */
+        fun isAddressMatches(tagId: Int?, address: MetaAddress, nextAddr: Int): Boolean {
+            //对address的处理方法：当address为A.B.C...M.N时，首先查找所有name match N的entity。
+            //随后对于每一个entity，根据其parentId向上查找其所有父标签。当找到一个父标签满足一个地址段M时，就将要匹配的地址段向前推1(L, K, J, ..., C, B, A)。
+            //如果address的每一节都被匹配，那么此entity符合条件；如果parent前推到了root依然没有匹配掉所有的address，那么不符合条件。
+            return when {
+                nextAddr < 0 -> true
+                tagId == null -> false
+                else -> {
+                    val tag = tagItemsPool.computeIfAbsent(tagId) {
+                        data.db.from(Tags).select(Tags.id, Tags.name, Tags.otherNames, Tags.parentId, Tags.type, Tags.isGroup, Tags.color)
+                            .where { Tags.id eq tagId }
+                            .limit(0, 1)
+                            .first()
+                            .let { TagItem(it[Tags.id]!!, it[Tags.name]!!, it[Tags.otherNames]!!, it[Tags.parentId], it[Tags.type]!!, it[Tags.isGroup]!!, it[Tags.color]) }
+                    }
+                    isAddressMatches(tag.parentId, address, if(parser.isNameEqualOrMatch(address[nextAddr], tag)) { nextAddr - 1 }else{ nextAddr })
+                }
+            }
+        }
+
+        return data.db.from(Tags)
+            .select(Tags.id, Tags.name, Tags.otherNames, Tags.parentId, Tags.type, Tags.isGroup, Tags.color)
+            .where { parser.forecastNameString(metaAddress.last(), Tags) }
+            .limit(0, queryLimit)
+            .map { TagItem(it[Tags.id]!!, it[Tags.name]!!, it[Tags.otherNames]!!, it[Tags.parentId], it[Tags.type]!!, it[Tags.isGroup]!!, it[Tags.color]) }
+            .asSequence()
+            .filter { isAddressMatches(it.parentId, metaAddress, metaAddress.size - 2) }
+            .map { ElementTag(it.id, it.name, it.otherNames, it.type, it.color,  null) }
+            .toList()
+    }
+
+    override fun forecastTopic(metaAddress: MetaAddress): List<ElementTopic> {
+        if(metaAddress.any { it.value.isBlank() }) return emptyList()
+
+        val lastAddr = metaAddress.last()
+        val topics = data.db.from(Topics).select(Topics.id, Topics.name, Topics.otherNames, Topics.parentId, Topics.type)
+            .where { parser.forecastNameString(lastAddr, Topics) }
+            .limit(0, queryLimit)
+            .map { TopicItem(it[Topics.id]!!, it[Topics.name]!!, it[Topics.otherNames]!!, it[Topics.parentId], it[Topics.type]!!) }
+
+        return validateTopics(topics, metaAddress)
+    }
+
+    override fun forecastAuthor(metaAddress: MetaAddress): List<ElementAuthor> {
+        if(metaAddress.isEmpty() || metaAddress.first().value.isBlank()) return emptyList()
+
+        val colors = appdata.setting.meta.authorColors
+
+        return data.db.from(Authors).select(Authors.id, Authors.name, Authors.type, Authors.otherNames)
+            .where { parser.forecastNameString(metaAddress.first(), Authors) }
+            .limit(0, queryLimit)
+            .map { ElementAuthor(it[Authors.id]!!, it[Authors.name]!!, it[Authors.otherNames]!!, colors[it[Authors.type]!!]) }
+    }
+
+    override fun forecastAnnotation(metaString: MetaString, metaType: MetaType?, isForMeta: Boolean): List<ElementAnnotation> {
+        if(metaString.value.isBlank()) return emptyList()
+
+        return data.db.from(Annotations).select()
+            .whereWithConditions {
+                it += parser.forecastNameString(metaString, Annotations)
+                if(metaType != null) {
+                    it += Annotations.type eq MetaParserUtil.translateMetaType(metaType)
+                }
+            }
+            .limit(0, queryLimit)
+            .map { Annotations.createEntity(it) }
+            .let { annotations ->
+                if(annotations.isEmpty()) {
+                    emptyList()
+                }else if(!isForMeta) {
+                    annotations.filter { it.canBeExported }.map { ElementAnnotation(it.id, it.name, it.type) }
+                }else{
+                    annotations.map { ElementAnnotation(it.id, it.name, it.type) }
+                }
+            }
+    }
+
+    override fun forecastSourceTag(metaAddress: MetaAddress): List<ElementSourceTag> {
+        if(metaAddress.any { it.value.isBlank() }) return emptyList()
+
+        val where = when(metaAddress.size) {
+            3 -> parser.forecastNameString(metaAddress.last(), SourceTags) and (SourceTags.site eq metaAddress.first().value) and (SourceTags.type eq metaAddress[1].value)
+            2 -> parser.forecastNameString(metaAddress.last(), SourceTags) and (SourceTags.site eq metaAddress.first().value)
+            1 -> parser.forecastNameString(metaAddress.last(), SourceTags)
+            else -> return emptyList()
+        }
+
+        return data.db.from(SourceTags).select(SourceTags.id, SourceTags.name, SourceTags.code, SourceTags.otherName)
+            .where { where }
+            .limit(0, queryLimit)
+            .map { ElementSourceTag(it[SourceTags.id]!!, it[SourceTags.code]!!, it[SourceTags.name], it[SourceTags.otherName]) }
+    }
+
+    private fun validateTopics(topics: List<TopicItem>, address: MetaAddress): List<ElementTopic> {
+        fun isAddressMatches(topicId: Int?, address: MetaAddress, nextAddr: Int): Boolean {
+            //对address的处理方法：当address为A.B.C...M.N时，首先查找所有name match N的entity。
+            //随后对于每一个entity，根据其parentId向上查找其所有父标签。当找到一个父标签满足一个地址段M时，就将要匹配的地址段向前推1(L, K, J, ..., C, B, A)。
+            //如果address的每一节都被匹配，那么此entity符合条件；如果parent前推到了root依然没有匹配掉所有的address，那么不符合条件。
+            return when {
+                nextAddr < 0 -> true
+                topicId == null -> false
+                else -> {
+                    val topic = topicItemsPool.computeIfAbsent(topicId) {
+                        data.db.from(Topics).select(Topics.id, Topics.name, Topics.otherNames, Topics.parentId, Topics.type)
+                            .where { Topics.id eq topicId }
+                            .limit(0, 1)
+                            .first()
+                            .let { TopicItem(it[Topics.id]!!, it[Topics.name]!!, it[Topics.otherNames]!!, it[Topics.parentId], it[Topics.type]!!) }
+                    }
+                    isAddressMatches(topic.parentId, address, if(parser.isNameEqualOrMatch(address[nextAddr], topic)) { nextAddr - 1 }else{ nextAddr })
+                }
+            }
+        }
+
+        val colors = appdata.setting.meta.topicColors
+
+        return topics.asSequence()
+            .filter { isAddressMatches(it.parentId, address, address.size - 2) }
+            .map { ElementTopic(it.id, it.name, it.otherNames, colors[it.type]) }
+            .toList()
     }
 
     private tailrec fun flatFindParent(tid: Int, pool: CacheMap<Int, out ItemInterfaceWithParent>, idRecords: MutableSet<Int>): Boolean {

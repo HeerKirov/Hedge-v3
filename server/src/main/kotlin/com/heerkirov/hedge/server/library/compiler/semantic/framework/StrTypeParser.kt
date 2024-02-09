@@ -17,6 +17,13 @@ interface StrTypeParser<R> {
 }
 
 /**
+ * enum类型到filterValue的转换器。添加了一个函数用于列出枚举值。
+ */
+interface EnumTypeParser<R> : StrTypeParser<R> {
+    fun enums(): Collection<List<String>>
+}
+
+/**
  * 字符串转换器。
  * 实际上没有转换。
  */
@@ -28,14 +35,19 @@ object StringParser : StrTypeParser<FilterStringValue> {
  * 枚举转换器。
  * 无视大小写对枚举值做配对。配对使用枚举值的alias属性。
  */
-class EnumParser<E : Enum<E>>(clazz: KClass<E>, enumAlias: List<AliasDefinition<E, String>>) : StrTypeParser<FilterEnumValue<E>> {
-    private val expected = enumAlias.flatMap { it.alias }.map { it.lowercase() }
+class EnumParser<E : Enum<E>>(clazz: KClass<E>, enumAlias: List<AliasDefinition<E, String>>) : EnumTypeParser<FilterEnumValue<E>> {
+    private val enums = enumAlias.map { it.alias.map(String::lowercase) }
+    private val expected = enums.flatten()
     private val valueMap = enumAlias.asSequence().flatMap { (k, v) -> v.asSequence().map { it.lowercase() to k } }.toMap()
     private val typeName = clazz.simpleName!!
 
     override fun parse(str: Str): FilterEnumValue<E> {
         val value = valueMap[str.value] ?: semanticError(EnumTypeCastError(str.value, typeName, expected, str.beginIndex, str.endIndex))
         return FilterEnumValueImpl(value)
+    }
+
+    override fun enums(): Collection<List<String>> {
+        return enums
     }
 }
 

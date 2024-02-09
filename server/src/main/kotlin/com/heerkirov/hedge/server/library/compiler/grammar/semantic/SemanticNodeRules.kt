@@ -1,7 +1,5 @@
 package com.heerkirov.hedge.server.library.compiler.grammar.semantic
 
-import com.heerkirov.hedge.server.library.compiler.utils.ErrorCollector
-import com.heerkirov.hedge.server.library.compiler.utils.GrammarError
 
 class SemanticNodeRules {
     @ForExpression("SEQUENCE -> SEQUENCE_ITEM")
@@ -62,8 +60,8 @@ class SemanticNodeRules {
         return Annotation(null, items.toList(), begin.beginIndex, end.endIndex)
     }
 
-    @ForExpression("ANNOTATION -> [ ELEMENT_PREFIX ANNOTATION_ITEM ]", injectErrorCollector = true)
-    fun eval13(begin: Symbol, symbol: Symbol, items: MutList<Str>, end: Symbol , collector: ErrorCollector<GrammarError<*>>): Annotation {
+    @ForExpression("ANNOTATION -> [ ELEMENT_PREFIX ANNOTATION_ITEM ]")
+    fun eval13(begin: Symbol, symbol: Symbol, items: MutList<Str>, end: Symbol): Annotation {
         return Annotation(symbol, items.toList(), begin.beginIndex, end.endIndex)
     }
 
@@ -225,8 +223,8 @@ class SemanticNodeRules {
         return SortItem(str, false, 0, str.beginIndex, str.endIndex)
     }
 
-    @ForExpression("SORT_ITEM -> ^ str", args = [1])
-    fun eval56(str: Str): SortItem {
-        return SortItem(str, true, 0, str.beginIndex, str.endIndex)
+    @ForExpression("SORT_ITEM -> ^ str")
+    fun eval56(symbol: Symbol, str: Str): SortItem {
+        return SortItem(str, true, 0, symbol.beginIndex, str.endIndex)
     }
 }

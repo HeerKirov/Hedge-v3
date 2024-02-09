@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Element as S
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Family
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Predicative
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.StrList
+import com.heerkirov.hedge.server.library.compiler.semantic.plan.Forecast
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.*
 
 
@@ -21,6 +22,11 @@ interface GeneratedByIdentify<R : Any> {
      * 从此关键字指示的SFP生成结果。结果为null时，表示丢弃此结果。
      */
     fun generate(subject: StrList, family: Family?, predicative: Predicative?): R?
+
+    /**
+     * 从关键字指示的SFP尝试进行光标位置的预测。
+     */
+    fun forecast(subject: StrList, family: Family?, predicative: Predicative?, cursorIndex: Int): Forecast?
 }
 
 /**
@@ -35,6 +41,10 @@ interface GeneratedByElement<R : Any> {
      * 从一整个元素构造结果。
      */
     fun generate(element: SemanticElement, minus: Boolean): R
+    /**
+     * 从元素进行光标位置的预测。
+     */
+    fun forecast(element: SemanticElement, minus: Boolean, cursorIndex: Int): Forecast?
 }
 
 /**
@@ -45,6 +55,11 @@ interface GeneratedByAnnotation<R : Any> {
      * 从一整个注解构造结果。
      */
     fun generate(annotation: Annotation, minus: Boolean): R
+
+    /**
+     * 从注解进行光标位置的预测。
+     */
+    fun forecast(annotation: Annotation, minus: Boolean, cursorIndex: Int): Forecast?
 }
 
 /**

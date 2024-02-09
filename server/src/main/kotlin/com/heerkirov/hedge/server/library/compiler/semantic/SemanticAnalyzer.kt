@@ -4,6 +4,7 @@ import com.heerkirov.hedge.server.library.compiler.grammar.semantic.*
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Annotation as SemanticAnnotation
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Element as SemanticElement
 import com.heerkirov.hedge.server.library.compiler.semantic.dialect.*
+import com.heerkirov.hedge.server.library.compiler.semantic.plan.Forecast
 import com.heerkirov.hedge.server.library.compiler.semantic.framework.*
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.*
 import com.heerkirov.hedge.server.library.compiler.semantic.utils.ThrowsSemanticError
@@ -125,6 +126,69 @@ object SemanticAnalyzer {
     }
 
     /**
+     * 执行语义简要分析和光标处语义类型的识别，以用于分析预测。
+     */
+    fun forecast(root: SemanticRoot, cursorIndex: Int, dialectClazz: KClass<out QueryDialect<*>>): Forecast? {
+        val dialect = dialects[dialectClazz] ?: throw RuntimeException("Unregister dialect ${dialectClazz.simpleName}.")
+
+        val sequenceItem = root.items.firstOrNull { cursorIndex >= it.body.beginIndex && cursorIndex <= it.body.endIndex } ?: return null
+
+        when(sequenceItem.body) {
+            is SemanticElement -> {
+                val whetherIsIdentifies = try {
+                    sequenceItem.body.items.map { whetherIsIdentifyAndMapToAlias(dialect, it.subject, sequenceItem.body.prefix, sequenceItem.source) }
+                }catch (e: ThrowsSemanticError) {
+                    return null
+                }
+
+                if(whetherIsIdentifies.all { it != null }) {
+                    if(dialect.orderGenerator != null && whetherIsIdentifies.any { it == "order" }) {
+                        if(whetherIsIdentifies.size != 1 || sequenceItem.minus) {
+                            return null
+                        }
+
+                        val (subject, family, predicative) = sequenceItem.body.items.first()
+                        return try {
+                            dialect.orderGenerator.forecast(subject as StrList, family, predicative, cursorIndex)
+                        }catch (e: ThrowsSemanticError) {
+                            null
+                        }
+                    }else{
+                        whetherIsIdentifies.zip(sequenceItem.body.items).forEach { (alias, sfp) ->
+                            val generator = dialect.identifyGenerators[alias] ?: throw RuntimeException("Generator of $alias is not found in map.")
+                            val (subject, family, predicative) = sfp
+                            return try {
+                                generator.forecast(subject as StrList, family, predicative, cursorIndex)
+                            }catch (e: ThrowsSemanticError) {
+                                null
+                            }
+                        }
+                        return null
+                    }
+                }else if(whetherIsIdentifies.all { it == null }) {
+                    //所有的项都不是关键字项目，进入元素处理流程
+                    val generator = if(sequenceItem.source) dialect.sourceElementGenerator else dialect.elementGenerator
+                    return try {
+                        generator.forecast(sequenceItem.body, sequenceItem.minus, cursorIndex)
+                    }catch (e: ThrowsSemanticError) {
+                        null
+                    }
+                }else{
+                    return null
+                }
+            }
+            is SemanticAnnotation -> {
+                return try {
+                    dialect.annotationElementGenerator.forecast(sequenceItem.body, sequenceItem.minus, cursorIndex)
+                }catch (e: ThrowsSemanticError) {
+                    null
+                }
+            }
+            else -> return null
+        }
+    }
+
+    /**
      * 根据目标Subject判断目标SFP是否符合一个关键字项目的定义。如果是，返回这个关键字的alias，否则返回null。
      * 如果一个项没有类型前缀(@#$)，地址长度为1，使用受限字符串书写，且位于关键字列表，就初步将其判定为关键字项目。
      * 随后校对此项的source(^)符号。
@@ -202,6 +266,8 @@ object SemanticAnalyzer {
         override val itemName = "unknown"
         override val forSourceFlag = false
         override fun generate(element: SemanticElement, minus: Boolean) = semanticError(UnsupportedSemanticStructure(UnsupportedSemanticStructure.SemanticType.ELEMENT, element.beginIndex, element.endIndex))
+
+        override fun forecast(element: SemanticElement, minus: Boolean, cursorIndex: Int) = null
     }
 
     /**
@@ -211,6 +277,8 @@ object SemanticAnalyzer {
         override val itemName = "unknown"
         override val forSourceFlag = false
         override fun generate(element: SemanticElement, minus: Boolean) = semanticError(UnsupportedSemanticStructure(UnsupportedSemanticStructure.SemanticType.ELEMENT_WITH_SOURCE, element.beginIndex, element.endIndex))
+
+        override fun forecast(element: SemanticElement, minus: Boolean, cursorIndex: Int) = null
     }
 
     /**
@@ -219,5 +287,7 @@ object SemanticAnalyzer {
     object DefaultAnnotationElementField : ElementFieldByAnnotation() {
         override val itemName = "unknown"
         override fun generate(annotation: SemanticAnnotation, minus: Boolean) = semanticError(UnsupportedSemanticStructure(UnsupportedSemanticStructure.SemanticType.ANNOTATION, annotation.beginIndex, annotation.endIndex))
+
+        override fun forecast(annotation: SemanticAnnotation, minus: Boolean, cursorIndex: Int) = null
     }
 }

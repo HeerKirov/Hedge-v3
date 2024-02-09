@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.functions.manager.query
 
+import com.heerkirov.hedge.server.dao.Annotations
 import com.heerkirov.hedge.server.dao.MetaTagTable
 import com.heerkirov.hedge.server.dao.SourceTags
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.MetaString
@@ -7,6 +8,7 @@ import com.heerkirov.hedge.server.library.compiler.semantic.plan.MetaType
 import com.heerkirov.hedge.server.utils.ktorm.escapeLike
 import com.heerkirov.hedge.server.enums.MetaType as CommonMetaType
 import org.ktorm.dsl.eq
+import org.ktorm.dsl.like
 import org.ktorm.dsl.or
 import org.ktorm.expression.BinaryExpression
 import java.util.concurrent.ConcurrentHashMap
@@ -25,6 +27,17 @@ internal object MetaParserUtil {
     }
 
     /**
+     * 将metaString的值编译为对annotation的等价或比较操作。
+     */
+    fun compileNameString(metaString: MetaString, annotation: Annotations): BinaryExpression<Boolean> {
+        return if(metaString.precise) {
+            annotation.name eq metaString.value
+        }else{
+            Annotations.name like mapMatchToSqlLike(metaString.value)
+        }
+    }
+
+    /**
      * 将metaString的值编译为对sourceTag的等价或比较操作。
      */
     fun compileNameString(metaString: MetaString, metaTag: SourceTags): BinaryExpression<Boolean> {
@@ -32,6 +45,41 @@ internal object MetaParserUtil {
             metaTag.code eq metaString.value
         }else{
             val value = mapMatchToSqlLike(metaString.value)
+            (metaTag.code escapeLike value) or (metaTag.name escapeLike value) or (metaTag.otherName escapeLike value)
+        }
+    }
+
+    /**
+     * 将metaString的值编译为对指定种类metaTag的等价或比较操作。
+     */
+    fun forecastNameString(metaString: MetaString, metaTag: MetaTagTable<*>): BinaryExpression<Boolean> {
+        return if(metaString.precise) {
+            metaTag.name like '%' + mapMatchToSqlLike(metaString.value, escape = false) + '%'
+        }else{
+            val value = '%' + mapMatchToSqlLike(metaString.value) + '%'
+            (metaTag.name escapeLike value) or (metaTag.otherNames escapeLike value)
+        }
+    }
+
+    /**
+     * 将metaString的值编译为对annotation的等价或比较操作。该函数用于预测查询。
+     */
+    fun forecastNameString(metaString: MetaString, annotation: Annotations): BinaryExpression<Boolean> {
+        return if(metaString.precise) {
+            annotation.name like '%' + mapMatchToSqlLike(metaString.value, escape = false) + '%'
+        } else {
+            annotation.name like '%' + mapMatchToSqlLike(metaString.value) + '%'
+        }
+    }
+
+    /**
+     * 将metaString的值编译为对sourceTag的等价或比较操作。
+     */
+    fun forecastNameString(metaString: MetaString, metaTag: SourceTags): BinaryExpression<Boolean> {
+        return if(metaString.precise) {
+            metaTag.code like '%' + mapMatchToSqlLike(metaString.value, escape = false) + '%'
+        }else{
+            val value = '%' + mapMatchToSqlLike(metaString.value) + '%'
             (metaTag.code escapeLike value) or (metaTag.name escapeLike value) or (metaTag.otherName escapeLike value)
         }
     }
@@ -51,9 +99,11 @@ internal object MetaParserUtil {
     /**
      * 将HQL的match字符串翻译至符合sql like标准的格式，并转义需要防备的字符。
      */
-    fun mapMatchToSqlLike(matchString: String): String {
-        return sqlLikeMap.computeIfAbsent(matchString) {
-            escapeSqlLike(escapeSqlSpecial(it))
+    fun mapMatchToSqlLike(matchString: String, escape: Boolean = true): String {
+        return if(escape) {
+            sqlLikeMap.computeIfAbsent(matchString) { escapeSqlLike(escapeSqlSpecial(it)) }
+        }else{
+            escapeSqlSpecial(matchString)
         }
     }
 
@@ -68,7 +118,7 @@ internal object MetaParserUtil {
      * 执行sql like转义，将HQL中的查询符号转义到sql like。
      */
     private fun escapeSqlLike(string: String): String {
-        return '%' + string.replace('*', '%').replace('?', '_') + '%'
+        return string.replace('*', '%').replace('?', '_')
     }
 
     /**

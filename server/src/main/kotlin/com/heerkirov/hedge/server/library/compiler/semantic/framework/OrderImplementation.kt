@@ -7,6 +7,8 @@ import com.heerkirov.hedge.server.library.compiler.grammar.semantic.StrList
 import com.heerkirov.hedge.server.library.compiler.semantic.InvalidOrderItem
 import com.heerkirov.hedge.server.library.compiler.semantic.OrderValueMustBeSortList
 import com.heerkirov.hedge.server.library.compiler.semantic.OrderValueRequired
+import com.heerkirov.hedge.server.library.compiler.semantic.plan.Forecast
+import com.heerkirov.hedge.server.library.compiler.semantic.plan.ForecastOrder
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.Order
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.Orders
 import com.heerkirov.hedge.server.library.compiler.semantic.utils.*
@@ -21,9 +23,13 @@ class OrderDefinition<T : Enum<T>>(items: List<AliasDefinition<T, Alias>>) : Ord
      */
     private val defaultDesc = false
     /**
+     * 逐项列出枚举值。
+     */
+    private val enums = items.map { it.alias.map { s -> s.toString().lowercase() } }
+    /**
      * 期望值列表。
      */
-    private val expected: List<String> = items.asSequence().map { it.alias }.flatten().map { it.toString().lowercase() }.toList()
+    private val expected: List<String> = enums.flatten()
     /**
      * 从[^]name映射到对应的项。
      */
@@ -51,6 +57,25 @@ class OrderDefinition<T : Enum<T>>(items: List<AliasDefinition<T, Alias>>) : Ord
             }
             is SortList -> predicative.items.map { Order(mapOrderItem(it.value.value, it.source, it.beginIndex, it.endIndex), mapDirectionDesc(it.direction)) }
             else -> semanticError(OrderValueMustBeSortList(subject.beginIndex, predicative.endIndex))
+        }
+    }
+
+    override fun forecast(subject: StrList, family: Family?, predicative: Predicative?, cursorIndex: Int): Forecast? {
+        return if(predicative != null && cursorIndex >= predicative.beginIndex && cursorIndex <= predicative.endIndex) {
+            when(predicative) {
+                is StrList -> if(predicative.items.size == 1) {
+                    ForecastOrder(predicative.items.first().value, enums, predicative.items.first().beginIndex, predicative.items.first().endIndex)
+                }else{
+                    null
+                }
+                is SortList -> {
+                    val item = predicative.items.firstOrNull { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex } ?: return null
+                    ForecastOrder(item.value.value, enums, if(item.direction != 0) item.beginIndex + 1 else item.beginIndex, item.endIndex)
+                }
+                else -> null
+            }
+        }else{
+            null
         }
     }
 

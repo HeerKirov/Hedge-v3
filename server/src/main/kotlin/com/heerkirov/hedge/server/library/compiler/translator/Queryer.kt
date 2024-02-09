@@ -22,4 +22,14 @@ interface Queryer {
     fun flatUnionTag(tags: List<ElementTag>): List<ElementTag> = tags
 
     fun flatUnionTopic(topics: List<ElementTopic>): List<ElementTopic> = topics
+
+    fun forecastTag(metaAddress: MetaAddress): List<ElementTag>
+
+    fun forecastTopic(metaAddress: MetaAddress): List<ElementTopic>
+
+    fun forecastAuthor(metaAddress: MetaAddress): List<ElementAuthor>
+
+    fun forecastAnnotation(metaString: MetaString, metaType: MetaType?, isForMeta: Boolean): List<ElementAnnotation>
+
+    fun forecastSourceTag(metaAddress: MetaAddress): List<ElementSourceTag>
 }

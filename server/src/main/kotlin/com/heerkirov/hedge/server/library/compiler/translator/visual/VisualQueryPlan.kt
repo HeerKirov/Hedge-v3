@@ -57,7 +57,7 @@ sealed interface ElementMeta : ElementValue {
     val name: String
 }
 
-data class ElementSourceTag(override val id: Int, override val name: String) : ElementMeta {
+data class ElementSourceTag(override val id: Int, override val name: String, val displayName: String?, val otherName: String?) : ElementMeta {
     override val type: String get() = "source-tag"
 }
 
@@ -65,15 +65,15 @@ data class ElementAnnotation(override val id: Int, override val name: String, va
     override val type: String get() = "annotation"
 }
 
-data class ElementTopic(override val id: Int, override val name: String, val color: String?) : ElementMeta {
+data class ElementTopic(override val id: Int, override val name: String, val otherNames: List<String>, val color: String?) : ElementMeta {
     override val type: String get() = "topic"
 }
 
-data class ElementAuthor(override val id: Int, override val name: String, val color: String?) : ElementMeta {
+data class ElementAuthor(override val id: Int, override val name: String, val otherNames: List<String>, val color: String?) : ElementMeta {
     override val type: String get() = "author"
 }
 
-data class ElementTag(override val id: Int, override val name: String, val tagType: TagAddressType, val color: String?, val realTags: List<RealTag>?) : ElementMeta {
+data class ElementTag(override val id: Int, override val name: String, val otherNames: List<String>, val tagType: TagAddressType, val color: String?, val realTags: List<RealTag>?) : ElementMeta {
     override val type: String get() = "tag"
 
     data class RealTag(val id: Int, val name: String, val tagType: TagAddressType)
