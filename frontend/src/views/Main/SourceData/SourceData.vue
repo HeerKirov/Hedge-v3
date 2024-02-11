@@ -29,7 +29,7 @@ const popupMenu = usePopupMenu([
 
 <template>
     <BrowserTeleport to="top-bar">
-        <SearchBox placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value" :schema="querySchema.schema.value"/>
+        <SearchBox placeholder="在此处搜索" dialect="SOURCE_DATA" v-model:value="querySchema.queryInputText.value" :schema="querySchema.schema.value"/>
         <separator/>
         <DataRouter :state="state" @navigate="navigateTo"/>
         <Button class="flex-item no-grow-shrink" icon="plus" square @click="sourceDataEditor.create()"/>

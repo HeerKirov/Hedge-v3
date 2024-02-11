@@ -10,9 +10,7 @@ defineProps<{
 </script>
 
 <template>
-    <Block class="p-1 mt-1" :color="type">
-        [{{e.code}}]
-        <b v-if="e.happenPosition">({{e.happenPosition.begin}}, {{e.happenPosition.end ?? e.happenPosition.begin}})</b>
-        : {{e.message}}
+    <Block class="p-1 mt-1 is-font-size-small" :color="type">
+        [{{e.code}}]<b v-if="e.happenPosition">({{e.happenPosition.begin}}, {{e.happenPosition.end ?? e.happenPosition.begin}})</b>: {{e.message}}
     </Block>
 </template>

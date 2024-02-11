@@ -73,7 +73,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
 <template>
     <BrowserTeleport to="top-bar">
         <CollectionModeButton class="mr-1" v-model:value="collectionMode"/>
-        <SearchBox placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value" :schema="querySchema.schema.value"/>
+        <SearchBox placeholder="在此处搜索" dialect="ILLUST" v-model:value="querySchema.queryInputText.value" :schema="querySchema.schema.value"/>
         <Separator/>
         <LockOnButton v-model:value="editableLockOn"/>
         <DataRouter :state="state" @navigate="navigateTo"/>

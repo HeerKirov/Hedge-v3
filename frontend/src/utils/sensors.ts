@@ -184,22 +184,15 @@ export function useWindowSize() {
 
 /**
  * 获得元素尺寸和方位的响应式数据。
+ * @param elementRef
+ * @param options immediate: 挂载时立刻获得数据；fixed: 获得元素的fixed绝对定位位置
  */
-export function useElementRect(elementRef: Ref<HTMLElement | undefined>, options?: {immediate?: boolean}) {
+export function useElementRect(elementRef: Ref<HTMLElement | undefined>, options?: {immediate?: boolean, fixed?: boolean}) {
     const rect = ref<DOMRect>()
 
-    onMounted(() => {
-        if(elementRef.value) {
-            rect.value = elementRef.value.getBoundingClientRect()
-        }
-    })
-
-    watch(elementRef, ele => {
-        rect.value = ele?.getBoundingClientRect()
-    })
-
-    onElementResize(elementRef, value => {
-        rect.value = value
+    onElementResize(elementRef, (value, element) => {
+        rect.value = options?.fixed ? element.getBoundingClientRect()  : value
+        console.log("useElementRect resize", rect.value)
     }, options)
 
     return rect

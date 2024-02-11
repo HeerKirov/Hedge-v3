@@ -83,14 +83,16 @@ const onKeydown = (e: KeyboardEvent) => {
     if(!composition) {
         const keyEvent = toKeyEvent(e)
         emit("keypress", keyEvent)
-        //在input中按下Enter时，会直接触发update:value事件，然后触发一个enter事件用于快速处理。
-        if(props.type !== "textarea" && USUAL_PRIMITIVE_KEY_VALIDATORS.Enter(e)) {
-            value.value = (e.target as HTMLInputElement).value
-            emit("update:value", value.value)
-            emit("enter", keyEvent)
-            e.preventDefault()
-        }else if(blurKeyDeclaration(e)) {
-            (e.target as HTMLInputElement).blur()
+        if(!e.defaultPrevented) {
+            //在input中按下Enter时，会直接触发update:value事件，然后触发一个enter事件用于快速处理。
+            if(props.type !== "textarea" && USUAL_PRIMITIVE_KEY_VALIDATORS.Enter(e)) {
+                value.value = (e.target as HTMLInputElement).value
+                emit("update:value", value.value)
+                emit("enter", keyEvent)
+                e.preventDefault()
+            }else if(blurKeyDeclaration(e)) {
+                (e.target as HTMLInputElement).blur()
+            }
         }
     }
 }

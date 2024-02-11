@@ -50,7 +50,7 @@ const menu = useDynamicPopupMenu<Book>(book => [
 
 <template>
     <BrowserTeleport to="top-bar">
-        <SearchBox placeholder="在此处搜索" v-model:value="querySchema.queryInputText.value" :enable-drop-button="!!querySchema.query.value" v-model:active-drop-button="querySchema.expanded.value" :schema="querySchema.schema.value"/>
+        <SearchBox placeholder="在此处搜索" dialect="BOOK" v-model:value="querySchema.queryInputText.value" :schema="querySchema.schema.value"/>
         <Separator/>
         <DataRouter :state="state" @navigate="navigateTo"/>
         <ColumnNumButton v-model:value="columnNum"/>

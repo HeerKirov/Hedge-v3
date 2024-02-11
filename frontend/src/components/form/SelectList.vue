@@ -13,6 +13,10 @@ const emit = defineEmits<{
     (e: "click", v: T, index: number): void
 }>()
 
+defineSlots<{
+    default(props: {index: number, value: T, label: string, selected: boolean, click: (e: MouseEvent) => void}): any
+}>()
+
 const select = (e: MouseEvent, v: T, idx: number) => {
     emit("update:value", v)
     emit("update:index", idx)

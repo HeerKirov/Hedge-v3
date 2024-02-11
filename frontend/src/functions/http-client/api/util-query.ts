@@ -5,12 +5,14 @@ import { MetaType } from "./all"
 
 export function createUtilQueryEndpoint(http: HttpInstance): UtilQueryEndpoint {
     return {
-        querySchema: http.createDataRequest("/api/utils/query/schema", "POST")
+        querySchema: http.createDataRequest("/api/utils/query/schema", "POST"),
+        queryForecast: http.createDataRequest("/api/utils/query/forecast", "POST"),
     }
 }
 
 export interface UtilQueryEndpoint {
     querySchema(form: QueryForm): Promise<Response<QueryRes>>
+    queryForecast(form: ForecastForm): Promise<Response<ForecastRes>>
 }
 
 export type Dialect = "ILLUST" | "BOOK" | "SOURCE_DATA" | "TOPIC" | "AUTHOR" | "ANNOTATION"
@@ -40,17 +42,42 @@ export type ElementGroup
 export interface ElementItem<V> { exclude: boolean, unionItems: V[] }
 export type ElementValue = ElementString | ElementSourceTag | ElementAnnotation | ElementTopic | ElementAuthor | ElementTag
 interface ElementString { type: undefined, value: string, precise: boolean }
-export interface ElementSourceTag { type: "source-tag", id: number, name: string }
+export interface ElementSourceTag { type: "source-tag", id: number, name: string, displayName: string | null, otherName: string | null }
 export interface ElementAnnotation { type: "annotation", id: number, name: string, annotationType: MetaType }
-export interface ElementTopic { type: "topic", id: number, name: string, color: UsefulColors | null }
-export interface ElementAuthor { type: "author", id: number, name: string, color: UsefulColors | null }
-export interface ElementTag { type: "tag", id: number, name: string, tagType: TagAddressType, color: UsefulColors | null, realTags: { id: number, name: string, tagType: TagAddressType }[] }
+export interface ElementTopic { type: "topic", id: number, name: string, otherNames: string[], color: UsefulColors | null }
+export interface ElementAuthor { type: "author", id: number, name: string, otherNames: string[], color: UsefulColors | null }
+export interface ElementTag { type: "tag", id: number, name: string, tagType: TagAddressType, otherNames: string[], color: UsefulColors | null, realTags: { id: number, name: string, tagType: TagAddressType }[] }
 
 export interface FilterGroup { exclude: boolean, fields: FilterOfOneField[] }
 export interface FilterOfOneField { name: string, values: FilterValue[] }
 export type FilterValue = { type: "equal", value: string | number }
     | { type: "match", value: string | number }
     | { type: "range", begin: string | number | null, end: string | number | null, includeBegin: boolean, includeEnd: boolean }
+
+//=== 预测功能 ===
+
+export interface ForecastForm {
+    text: string
+    cursorIndex: number | null
+    dialect: Dialect
+}
+
+export type ForecastRes = {
+    succeed: false
+    forecast: null
+} | {
+    succeed: true
+    forecast: VisualForecast
+}
+
+export interface VisualForecast {
+    type: "source-tag" | "annotation" | "tag" | "topic" | "author" | "filter" | "order"
+    context: string
+    suggestions: {name: string, aliases: string[]}[]
+    beginIndex: number
+    endIndex: number
+    fieldName: string | null
+}
 
 //=== 编译错误和警告 ===
 
