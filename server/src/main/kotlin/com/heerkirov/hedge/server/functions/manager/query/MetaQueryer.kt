@@ -287,10 +287,10 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
 
         return topicCacheMap.computeIfAbsent(metaValue.value) { address ->
             val lastAddr = address.last()
-            val topics = data.db.from(Topics).select(Topics.id, Topics.name, Topics.otherNames, Topics.parentId, Topics.type)
+            val topics = data.db.from(Topics).select(Topics.id, Topics.name, Topics.otherNames, Topics.parentId, Topics.parentRootId, Topics.type)
                 .where { parser.compileNameString(lastAddr, Topics) }
                 .limit(0, queryLimit)
-                .map { TopicItem(it[Topics.id]!!, it[Topics.name]!!, it[Topics.otherNames]!!, it[Topics.parentId], it[Topics.type]!!) }
+                .map { TopicItem(it[Topics.id]!!, it[Topics.name]!!, it[Topics.otherNames]!!, it[Topics.parentId], it[Topics.parentRootId], it[Topics.type]!!) }
 
             topicItemsPool.putAll(topics.map { it.id to it })
 
@@ -315,7 +315,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
             data.db.from(Authors).select(Authors.id, Authors.name, Authors.type, Authors.otherNames)
                 .where { parser.compileNameString(metaString, Authors) }
                 .limit(0, queryLimit)
-                .map { ElementAuthor(it[Authors.id]!!, it[Authors.name]!!, it[Authors.otherNames]!!, colors[it[Authors.type]!!]) }
+                .map { ElementAuthor(it[Authors.id]!!, it[Authors.name]!!, it[Authors.otherNames]!!, it[Authors.type]!!, colors[it[Authors.type]!!]) }
         }.also {
             if(it.isEmpty()) {
                 //查询结果为空时抛出无匹配警告
@@ -431,10 +431,10 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
         if(metaAddress.any { it.value.isBlank() }) return emptyList()
 
         val lastAddr = metaAddress.last()
-        val topics = data.db.from(Topics).select(Topics.id, Topics.name, Topics.otherNames, Topics.parentId, Topics.type)
+        val topics = data.db.from(Topics).select(Topics.id, Topics.name, Topics.otherNames, Topics.parentId, Topics.parentRootId, Topics.type)
             .where { parser.forecastNameString(lastAddr, Topics) }
             .limit(0, queryLimit)
-            .map { TopicItem(it[Topics.id]!!, it[Topics.name]!!, it[Topics.otherNames]!!, it[Topics.parentId], it[Topics.type]!!) }
+            .map { TopicItem(it[Topics.id]!!, it[Topics.name]!!, it[Topics.otherNames]!!, it[Topics.parentId], it[Topics.parentRootId], it[Topics.type]!!) }
 
         return validateTopics(topics, metaAddress)
     }
@@ -447,7 +447,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
         return data.db.from(Authors).select(Authors.id, Authors.name, Authors.type, Authors.otherNames)
             .where { parser.forecastNameString(metaAddress.first(), Authors) }
             .limit(0, queryLimit)
-            .map { ElementAuthor(it[Authors.id]!!, it[Authors.name]!!, it[Authors.otherNames]!!, colors[it[Authors.type]!!]) }
+            .map { ElementAuthor(it[Authors.id]!!, it[Authors.name]!!, it[Authors.otherNames]!!, it[Authors.type]!!, colors[it[Authors.type]!!]) }
     }
 
     override fun forecastAnnotation(metaString: MetaString, metaType: MetaType?, isForMeta: Boolean): List<ElementAnnotation> {
@@ -483,6 +483,16 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
     }
 
     private fun validateTopics(topics: List<TopicItem>, address: MetaAddress): List<ElementTopic> {
+        fun getTopic(topicId: Int): TopicItem {
+            return topicItemsPool.computeIfAbsent(topicId) {
+                data.db.from(Topics).select(Topics.id, Topics.name, Topics.otherNames, Topics.parentId, Topics.parentRootId, Topics.type)
+                    .where { Topics.id eq topicId }
+                    .limit(0, 1)
+                    .first()
+                    .let { TopicItem(it[Topics.id]!!, it[Topics.name]!!, it[Topics.otherNames]!!, it[Topics.parentId], it[Topics.parentRootId], it[Topics.type]!!) }
+            }
+        }
+
         fun isAddressMatches(topicId: Int?, address: MetaAddress, nextAddr: Int): Boolean {
             //对address的处理方法：当address为A.B.C...M.N时，首先查找所有name match N的entity。
             //随后对于每一个entity，根据其parentId向上查找其所有父标签。当找到一个父标签满足一个地址段M时，就将要匹配的地址段向前推1(L, K, J, ..., C, B, A)。
@@ -491,13 +501,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
                 nextAddr < 0 -> true
                 topicId == null -> false
                 else -> {
-                    val topic = topicItemsPool.computeIfAbsent(topicId) {
-                        data.db.from(Topics).select(Topics.id, Topics.name, Topics.otherNames, Topics.parentId, Topics.type)
-                            .where { Topics.id eq topicId }
-                            .limit(0, 1)
-                            .first()
-                            .let { TopicItem(it[Topics.id]!!, it[Topics.name]!!, it[Topics.otherNames]!!, it[Topics.parentId], it[Topics.type]!!) }
-                    }
+                    val topic = getTopic(topicId)
                     isAddressMatches(topic.parentId, address, if(parser.isNameEqualOrMatch(address[nextAddr], topic)) { nextAddr - 1 }else{ nextAddr })
                 }
             }
@@ -507,7 +511,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
 
         return topics.asSequence()
             .filter { isAddressMatches(it.parentId, address, address.size - 2) }
-            .map { ElementTopic(it.id, it.name, it.otherNames, colors[it.type]) }
+            .map { ElementTopic(it.id, it.name, it.otherNames, it.type, colors[it.type], it.parentRootId?.let(::getTopic)?.let { p -> ElementTopic.ParentRootTopic(p.id, p.name, p.type) }) }
             .toList()
     }
 
@@ -600,7 +604,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
         val parentId: Int?
     }
 
-    private data class TopicItem(override val id: Int, override val name: String, override val otherNames: List<String>, override val parentId: Int?, val type: TagTopicType) : ItemInterfaceWithParent
+    private data class TopicItem(override val id: Int, override val name: String, override val otherNames: List<String>, override val parentId: Int?, val parentRootId: Int?, val type: TagTopicType) : ItemInterfaceWithParent
 
     private data class TagItem(override val id: Int, override val name: String, override val otherNames: List<String>, override val parentId: Int?, val type: TagAddressType, val isGroup: TagGroupType, val color: String?) : ItemInterfaceWithParent
 

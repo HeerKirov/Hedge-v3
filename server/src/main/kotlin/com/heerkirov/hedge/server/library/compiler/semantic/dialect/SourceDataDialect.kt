@@ -5,7 +5,7 @@ import com.heerkirov.hedge.server.library.compiler.semantic.framework.*
 
 object SourceDataDialect : QueryDialect<SourceDataDialect.SortItem> {
     override val sort = sortListOf<SortItem> {
-        item(SortItem.SOURCE_SITE, "source-site", "src", "site", "s")
+        item(SortItem.SOURCE_SITE, "source-site", "src", "site")
         item(SortItem.SOURCE_ID, "source-id", "id")
     }
     override val elements: Array<out ElementFieldDefinition> = arrayOf(SourceTagElementField(false))

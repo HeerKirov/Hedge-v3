@@ -94,28 +94,28 @@ object Translator {
     fun forecast(forecast: Forecast, queryer: Queryer): VisualForecast {
         return when(forecast) {
             is ForecastFilter -> {
-                val suggestions = forecast.enums.filter { item -> item.any { it.contains(forecast.item, ignoreCase = true) } }.map { VisualForecastSuggestion(it.first(), if(it.size > 1) it.subList(1, it.size) else emptyList()) }
+                val suggestions = forecast.enums.filter { item -> item.any { it.contains(forecast.item, ignoreCase = true) } }.map { VisualForecastSuggestion(it.first(), if(it.size > 1) it.subList(1, it.size) else emptyList(), emptyList()) }
                 VisualForecast("filter", forecast.item, suggestions, forecast.beginIndex, forecast.endIndex, forecast.fieldName)
             }
             is ForecastSort -> {
-                val suggestions = forecast.enums.filter { item -> item.any { it.contains(forecast.item, ignoreCase = true) } }.map { VisualForecastSuggestion(it.first(), if(it.size > 1) it.subList(1, it.size) else emptyList()) }
+                val suggestions = forecast.enums.filter { item -> item.any { it.contains(forecast.item, ignoreCase = true) } }.map { VisualForecastSuggestion(it.first(), if(it.size > 1) it.subList(1, it.size) else emptyList(), emptyList()) }
                 VisualForecast("sort", forecast.item, suggestions, forecast.beginIndex, forecast.endIndex)
             }
             is ForecastMetaTagElement -> {
                 val suggestions = when(forecast.type) {
-                    "tag" -> queryer.forecastTag(forecast.address).map { VisualForecastSuggestion(it.name, it.otherNames) }
-                    "topic" -> queryer.forecastTopic(forecast.address).map { VisualForecastSuggestion(it.name, it.otherNames) }
-                    "author" -> queryer.forecastAuthor(forecast.address).map { VisualForecastSuggestion(it.name, it.otherNames) }
+                    "tag" -> queryer.forecastTag(forecast.address).map { VisualForecastSuggestion(it.name, it.otherNames, emptyList()) }
+                    "topic" -> queryer.forecastTopic(forecast.address).map { VisualForecastSuggestion(it.name, it.otherNames, listOfNotNull(it.parentRoot?.name)) }
+                    "author" -> queryer.forecastAuthor(forecast.address).map { VisualForecastSuggestion(it.name, it.otherNames, emptyList()) }
                     else -> throw UnsupportedOperationException("Unsupported type ${forecast.type}.")
                 }
                 VisualForecast(forecast.type, forecast.address.last().value, suggestions, forecast.beginIndex, forecast.endIndex)
             }
             is ForecastSourceTagElement -> {
-                val suggestions = queryer.forecastSourceTag(forecast.items).map { VisualForecastSuggestion(it.name, if(it.code != it.name || it.otherName != null) { listOfNotNull(if(it.code != it.name) it.code else null, it.otherName) } else emptyList()) }
+                val suggestions = queryer.forecastSourceTag(forecast.items).map { VisualForecastSuggestion(it.name, if(it.code != it.name || it.otherName != null) { listOfNotNull(if(it.code != it.name) it.code else null, it.otherName) } else emptyList(), listOf(it.site)) }
                 VisualForecast("source-tag", forecast.items.last().value, suggestions, forecast.beginIndex, forecast.endIndex)
             }
             is ForecastAnnotationElement -> {
-                val suggestions = queryer.forecastAnnotation(forecast.item, forecast.metaType, forecast.isForMeta).map { VisualForecastSuggestion(it.name, emptyList()) }
+                val suggestions = queryer.forecastAnnotation(forecast.item, forecast.metaType, forecast.isForMeta).map { VisualForecastSuggestion(it.name, emptyList(), emptyList()) }
                 VisualForecast("annotation", forecast.item.value, suggestions, forecast.beginIndex, forecast.endIndex)
             }
         }

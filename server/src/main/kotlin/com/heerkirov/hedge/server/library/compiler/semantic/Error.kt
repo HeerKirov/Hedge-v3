@@ -90,46 +90,46 @@ class UnsupportedElementRelationSymbol(itemName: String, symbol: String, beginIn
 /**
  * 排序项目需要有关系和值。[begin, end)应标记关键字的subject。
  */
-class SortValueRequired(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3011, "Sort: relation and value is required.", range(beginIndex, endIndex))
+class SortValueRequired(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3012, "Sort: relation and value is required.", range(beginIndex, endIndex))
 
 /**
  * 排序项目的关系和值必须是:排序列表。[begin, end)应标记项目的sfp。
  */
-class SortValueMustBeSortList(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3012, "Sort: relation and value must be sort list.", range(beginIndex, endIndex))
+class SortValueMustBeSortList(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3013, "Sort: relation and value must be sort list.", range(beginIndex, endIndex))
 
 /**
  * 值不是正确的排序列表项。[begin, end)应标记项目的sfp。
  */
-class InvalidSortItem(invalidItem: String, expected: List<String>, beginIndex: Int, endIndex: Int) : SemanticError<InvalidSortItem.Info>(3013, "Sort: item '$invalidItem' is invalid. Expected $expected.", range(beginIndex, endIndex), Info(invalidItem, expected)) {
+class InvalidSortItem(invalidItem: String, expected: List<String>, beginIndex: Int, endIndex: Int) : SemanticError<InvalidSortItem.Info>(3014, "Sort: item '$invalidItem' is invalid. Expected $expected.", range(beginIndex, endIndex), Info(invalidItem, expected)) {
     class Info(val value: String, val expected: List<String>)
 }
 
 /**
  * 排序项是独立而特别的：它不能被排除(-)，不能标记为来源项(^)，也不能和任何项用或(|)连接。[begin, end)标记整个body。
  */
-class SortIsIndependent(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3014, "Sort item is independent: it cannot be exclude, source, or be connected with or(|).", range(beginIndex, endIndex))
+class SortIsIndependent(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3015, "Sort item is independent: it cannot be exclude, source, or be connected with or(|).", range(beginIndex, endIndex))
 
 /**
  * 出现了重复的排序项。后一次出现的项会被忽略。[begin, end)标记这个sort项。
  */
-class DuplicatedSortItem(duplicatedItem: String, beginIndex: Int, endIndex: Int) : SemanticError<String>(3015, "Sort: item '$duplicatedItem' is duplicated.", range(beginIndex, endIndex), info = duplicatedItem)
+class DuplicatedSortItem(duplicatedItem: String, beginIndex: Int, endIndex: Int) : SemanticError<String>(3016, "Sort: item '$duplicatedItem' is duplicated.", range(beginIndex, endIndex), info = duplicatedItem)
 
 //== 值类型相关 ==
 
 /**
  * 值不能写成meta tag地址段的形式(a.b.c)，只能是一项string。[begin, end)应标记地址段strList。
  */
-class ValueCannotBeAddress(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3016, "Value cannot be a tag address.", range(beginIndex, endIndex))
+class ValueCannotBeAddress(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3017, "Value cannot be a tag address.", range(beginIndex, endIndex))
 
 /**
  * 值在比较运算或区间中不能写成模糊匹配项。[begin, end)应标记值。
  */
-class ValueCannotBePatternInComparison(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3017, "Value in comparison relation or range cannot be pattern.", range(beginIndex, endIndex))
+class ValueCannotBePatternInComparison(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3018, "Value in comparison relation or range cannot be pattern.", range(beginIndex, endIndex))
 
 /**
  * 类型转换错误：str无法转换为目标类型的值。[begin, end)应标记值。
  */
-class TypeCastError(value: String, type: Type, beginIndex: Int, endIndex: Int) : SemanticError<TypeCastError.Info>(3018, "Type cast error: '$value' cannot be cast to type $type.", range(beginIndex, endIndex), Info(value, type)) {
+class TypeCastError(value: String, type: Type, beginIndex: Int, endIndex: Int) : SemanticError<TypeCastError.Info>(3019, "Type cast error: '$value' cannot be cast to type $type.", range(beginIndex, endIndex), Info(value, type)) {
     class Info(val value: String, val type: Type)
     enum class Type { NUMBER, SIZE, DATE }
 }
@@ -137,7 +137,7 @@ class TypeCastError(value: String, type: Type, beginIndex: Int, endIndex: Int) :
 /**
  * 类型转换错误：str无法转换为目标枚举类型的值。[begin, end)应标记值。
  */
-class EnumTypeCastError(value: String, type: String, expected: List<String>, beginIndex: Int, endIndex: Int) : SemanticError<EnumTypeCastError.Info>(3019, "Type cast error: '$value' cannot be cast to enum type $type. Expected $expected.", range(beginIndex, endIndex), Info(value, type, expected)) {
+class EnumTypeCastError(value: String, type: String, expected: List<String>, beginIndex: Int, endIndex: Int) : SemanticError<EnumTypeCastError.Info>(3020, "Type cast error: '$value' cannot be cast to enum type $type. Expected $expected.", range(beginIndex, endIndex), Info(value, type, expected)) {
     class Info(val value: String, val type: String, val expected: List<String>)
 }
 
@@ -146,26 +146,26 @@ class EnumTypeCastError(value: String, type: String, expected: List<String>, beg
 /**
  * 当前方言不支持这个种类的语义。[begin, end)标记整个element。
  */
-class UnsupportedSemanticStructure(type: SemanticType, beginIndex: Int, endIndex: Int) : SemanticError<UnsupportedSemanticStructure.SemanticType>(3020, "Unsupported semantic structure $type.", range(beginIndex, endIndex), type) {
+class UnsupportedSemanticStructure(type: SemanticType, beginIndex: Int, endIndex: Int) : SemanticError<UnsupportedSemanticStructure.SemanticType>(3021, "Unsupported semantic structure $type.", range(beginIndex, endIndex), type) {
     enum class SemanticType { ELEMENT, ELEMENT_WITH_SOURCE, ANNOTATION }
 }
 
 /**
  * 元素和关键字项不能在同一个合取项中混写。[begin, end)标记整个element。
  */
-class IdentifiesAndElementsCannotBeMixed(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3021, "Identifies and elements cannot be mixed in one conjunct.", range(beginIndex, endIndex))
+class IdentifiesAndElementsCannotBeMixed(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3022, "Identifies and elements cannot be mixed in one conjunct.", range(beginIndex, endIndex))
 
 /**
  * 这一个关键字是不能带sourceFlag(^)的，它没有source对应的项。[begin, end)标记subject。
  */
-class ThisIdentifyCannotHaveSourceFlag(key: String, beginIndex: Int, endIndex: Int) : SemanticError<String>(3022, "Identify $key cannot have source flag.", range(beginIndex, endIndex), key)
+class ThisIdentifyCannotHaveSourceFlag(key: String, beginIndex: Int, endIndex: Int) : SemanticError<String>(3023, "Identify $key cannot have source flag.", range(beginIndex, endIndex), key)
 
 /**
  * 这一个关键字是必须带sourceFlag(^)的，它没有非source对应的项。[begin, end)标记subject。
  */
-class ThisIdentifyMustHaveSourceFlag(key: String, beginIndex: Int, endIndex: Int) : SemanticError<String>(3023, "Identify $key must have source flag.", range(beginIndex, endIndex), key)
+class ThisIdentifyMustHaveSourceFlag(key: String, beginIndex: Int, endIndex: Int) : SemanticError<String>(3024, "Identify $key must have source flag.", range(beginIndex, endIndex), key)
 
 /**
  * 注解类项目是不能标记为from source(^)的。[begin, end)标记整个body。
  */
-class AnnotationCannotHaveSourceFlag(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3024, "Annotation cannot have source flag.", range(beginIndex, endIndex))
+class AnnotationCannotHaveSourceFlag(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3025, "Annotation cannot have source flag.", range(beginIndex, endIndex))

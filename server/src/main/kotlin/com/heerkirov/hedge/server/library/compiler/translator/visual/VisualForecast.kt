@@ -10,4 +10,4 @@ data class VisualForecast(
     val fieldName: String? = null,
 )
 
-data class VisualForecastSuggestion(val name: String, val aliases: List<String>)
+data class VisualForecastSuggestion(val name: String, val aliases: List<String>, val address: List<String>?)

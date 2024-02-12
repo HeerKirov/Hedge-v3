@@ -2,6 +2,8 @@ package com.heerkirov.hedge.server.library.compiler.translator.visual
 
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAddressType
+import com.heerkirov.hedge.server.enums.TagAuthorType
+import com.heerkirov.hedge.server.enums.TagTopicType
 
 data class VisualQueryPlan(
     val sorts: List<String>,
@@ -65,11 +67,13 @@ data class ElementAnnotation(override val id: Int, override val name: String, va
     override val type: String get() = "annotation"
 }
 
-data class ElementTopic(override val id: Int, override val name: String, val otherNames: List<String>, val color: String?) : ElementMeta {
+data class ElementTopic(override val id: Int, override val name: String, val otherNames: List<String>, val tagType: TagTopicType, val color: String?, val parentRoot: ParentRootTopic?) : ElementMeta {
     override val type: String get() = "topic"
+
+    data class ParentRootTopic(val id: Int, val name: String, val tagType: TagTopicType)
 }
 
-data class ElementAuthor(override val id: Int, override val name: String, val otherNames: List<String>, val color: String?) : ElementMeta {
+data class ElementAuthor(override val id: Int, override val name: String, val otherNames: List<String>, val tagType: TagAuthorType, val color: String?) : ElementMeta {
     override val type: String get() = "author"
 }
 
