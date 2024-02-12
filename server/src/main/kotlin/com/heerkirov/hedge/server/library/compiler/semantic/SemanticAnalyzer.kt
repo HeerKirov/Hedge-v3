@@ -30,8 +30,8 @@ object SemanticAnalyzer {
         val collector = ErrorCollector<SemanticError<*>>()
         val elements = mutableListOf<Element<*>>()
         val filters = mutableListOf<UnionFilters>()
-        val orders = mutableListOf<Order<*>>()
-        val orderKeySet = mutableSetOf<Enum<*>>()
+        val sorts = mutableListOf<Sort<*>>()
+        val sortKeySet = mutableSetOf<Enum<*>>()
         //遍历整个root
         for (sequenceItem in root.items) {
             //每个sequenceItem是一个合取项
@@ -47,23 +47,23 @@ object SemanticAnalyzer {
                     when {
                         whetherIsIdentifies.all { it != null } -> {
                             //所有的项都是关键字项目，进入关键字处理流程
-                            if(dialect.orderGenerator != null && whetherIsIdentifies.any { it == "order" }) {
-                                //存在order项，进入order处理流程
-                                //order项不能标记为-, 或被or(|)连接
+                            if(dialect.sortGenerator != null && whetherIsIdentifies.any { it == "sort" }) {
+                                //存在sort项，进入sort处理流程
+                                //sort项不能标记为-, 或被or(|)连接
                                 if(whetherIsIdentifies.size != 1 || sequenceItem.minus) {
-                                    collector.error(OrderIsIndependent(sequenceItem.beginIndex, sequenceItem.endIndex))
+                                    collector.error(SortIsIndependent(sequenceItem.beginIndex, sequenceItem.endIndex))
                                     continue
                                 }
                                 val (subject, family, predicative) = sequenceItem.body.items.first()
                                 try {
-                                    val result = dialect.orderGenerator.generate(subject as StrList, family, predicative)
+                                    val result = dialect.sortGenerator.generate(subject as StrList, family, predicative)
                                     if(result != null) {
-                                        for (order in result) {
-                                            if(order.value in orderKeySet) {
-                                                collector.warning(DuplicatedOrderItem(order.value.name, sequenceItem.body.beginIndex, sequenceItem.body.endIndex))
+                                        for (sort in result) {
+                                            if(sort.value in sortKeySet) {
+                                                collector.warning(DuplicatedSortItem(sort.value.name, sequenceItem.body.beginIndex, sequenceItem.body.endIndex))
                                             }else{
-                                                orders.add(order)
-                                                orderKeySet.add(order.value)
+                                                sorts.add(sort)
+                                                sortKeySet.add(sort.value)
                                             }
                                         }
                                     }
@@ -122,7 +122,7 @@ object SemanticAnalyzer {
             }
         }
 
-        return AnalysisResult(if(collector.hasErrors) null else QueryPlan(orders, filters, elements), warnings = collector.warnings, errors = collector.errors)
+        return AnalysisResult(if(collector.hasErrors) null else QueryPlan(sorts, filters, elements), warnings = collector.warnings, errors = collector.errors)
     }
 
     /**
@@ -142,14 +142,14 @@ object SemanticAnalyzer {
                 }
 
                 if(whetherIsIdentifies.all { it != null }) {
-                    if(dialect.orderGenerator != null && whetherIsIdentifies.any { it == "order" }) {
+                    if(dialect.sortGenerator != null && whetherIsIdentifies.any { it == "sort" }) {
                         if(whetherIsIdentifies.size != 1 || sequenceItem.minus) {
                             return null
                         }
 
                         val (subject, family, predicative) = sequenceItem.body.items.first()
                         return try {
-                            dialect.orderGenerator.forecast(subject as StrList, family, predicative, cursorIndex)
+                            dialect.sortGenerator.forecast(subject as StrList, family, predicative, cursorIndex)
                         }catch (e: ThrowsSemanticError) {
                             null
                         }
@@ -197,10 +197,10 @@ object SemanticAnalyzer {
         if(subject !is StrList) throw RuntimeException("Unsupported subject type ${subject::class.simpleName}.")
         if(prefix == null && subject.items.size == 1 && subject.items.first().type == Str.Type.RESTRICTED) {
             val aliasName = subject.items.first().value.lowercase()
-            if (aliasName == "order") {
-                //发现order项
+            if (dialect.sortGenerator != null && aliasName in dialect.sortGenerator.alias) {
+                //发现sort项
                 if(sourceFlag) semanticError(ThisIdentifyCannotHaveSourceFlag(aliasName, subject.beginIndex, subject.endIndex))
-                return "order"
+                return "sort"
             }else if(aliasName in dialect.identifies) {
                 //在关键字列表中发现此项，就判定为关键字。
                 val alias = aliasToString(aliasName, sourceFlag)
@@ -237,7 +237,7 @@ object SemanticAnalyzer {
          * 此方言对identify的生成方案。key是toString后的alias，value是生成器。
          */
         val identifyGenerators: Map<String, FilterFieldByIdentify<*>> = dialect::class.memberProperties.asSequence()
-            .filter { it.name != "order" && it.name != "elements" }
+            .filter { it.name != "sort" && it.name != "elements" }
             .filter { !it.returnType.isMarkedNullable && it.returnType.classifier == FilterFieldDefinition::class }
             .map { it.call(dialect) as FilterFieldDefinition<*> }
             .map { it.cast<FilterFieldDefinition<*>, FilterFieldByIdentify<*>>() }
@@ -250,9 +250,9 @@ object SemanticAnalyzer {
         val identifies = identifyGenerators.keys.asSequence().map { if(it.startsWith("^")) it.substring(1) else it }.toSet()
 
         /**
-         * 此方言对order的生成方案。
+         * 此方言对sort的生成方案。
          */
-        val orderGenerator: OrderFieldByIdentify<O>? = dialect.order?.cast()
+        val sortGenerator: SortFieldByIdentify<O>? = dialect.sort?.cast()
 
         private inline fun <T : Any, reified R : T> T.cast(): R {
             return if(this is R) this else throw ClassCastException("${this::class.simpleName} cannot be cast to ${R::class.simpleName}.")

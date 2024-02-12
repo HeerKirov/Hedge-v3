@@ -20,6 +20,6 @@ class QueryService(private val queryManager: QueryManager) {
      */
     fun queryForecast(text: String, cursorIndex: Int?, dialect: QueryManager.Dialect): QueryForecastRes {
         val analysis = queryManager.forecast(text, cursorIndex, dialect)
-        return QueryForecastRes(true, analysis)
+        return QueryForecastRes(analysis != null, analysis)
     }
 }

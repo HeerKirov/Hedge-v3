@@ -2,15 +2,14 @@ package com.heerkirov.hedge.server.library.compiler.translator
 
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.Filter
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.FilterValue
-import com.heerkirov.hedge.server.library.compiler.semantic.plan.MetaType
-import com.heerkirov.hedge.server.library.compiler.semantic.plan.Order
+import com.heerkirov.hedge.server.library.compiler.semantic.plan.Sort
 import com.heerkirov.hedge.server.library.compiler.translator.visual.*
 
 /**
  * 执行计划翻译器。
  */
 interface ExecuteBuilder {
-    fun mapOrders(orders: List<Order<*>>) {
+    fun mapSorts(sorts: List<Sort<*>>) {
         throw UnsupportedOperationException("Unsupported.")
     }
 

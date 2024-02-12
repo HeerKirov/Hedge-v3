@@ -2,13 +2,13 @@ package com.heerkirov.hedge.server.library.compiler.semantic.dialect
 
 import com.heerkirov.hedge.server.library.compiler.semantic.framework.*
 
-object BookDialect : QueryDialect<BookDialect.BookOrderItem> {
-    override val order = orderListOf<BookOrderItem> {
-        item(BookOrderItem.ID, "id")
-        item(BookOrderItem.SCORE, "score", "s")
-        item(BookOrderItem.IMAGE_COUNT, "image-count", "count")
-        item(BookOrderItem.CREATE_TIME, "create-time", "create", "ct")
-        item(BookOrderItem.UPDATE_TIME, "update-time", "update", "ut")
+object BookDialect : QueryDialect<BookDialect.BookSortItem> {
+    override val sort = sortListOf<BookSortItem> {
+        item(BookSortItem.ID, "id")
+        item(BookSortItem.SCORE, "score", "s")
+        item(BookSortItem.IMAGE_COUNT, "image-count", "count")
+        item(BookSortItem.CREATE_TIME, "create-time", "create", "ct")
+        item(BookSortItem.UPDATE_TIME, "update-time", "update", "ut")
     }
     override val elements: Array<out ElementFieldDefinition> = arrayOf(MetaTagElementField, AnnotationElementField)
 
@@ -21,7 +21,7 @@ object BookDialect : QueryDialect<BookDialect.BookOrderItem> {
     val title = patternStringField("TITLE", "title")
     val description = patternStringField("DESCRIPTION", "description", "desc")
 
-    enum class BookOrderItem {
+    enum class BookSortItem {
         ID, SCORE, IMAGE_COUNT, CREATE_TIME, UPDATE_TIME
     }
 }

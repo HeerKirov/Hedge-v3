@@ -1,3 +1,16 @@
+## Features
+* 对搜索框进行了一系列更新。
+  - 添加了输入预测功能。现在，当输入Tag/Topic/Author(有前缀)、输入Annotation或SourceTag、输入排序项或枚举值时，将根据当前输入的内容预测当前项的值，并展开下拉列表供选择。
+  - 搜索框的样式进行了更新，且展开query schema的状态被合并到了搜索框激活状态中。
+* 对HQL查询语言进行了一系列更新。
+  - 与上述的输入预测功能对应的是，现在Element不再进行模糊匹配，也就是`A`仅匹配全名为`A`的项，想要模糊匹配必须显式给出`*`匹配符，如`*A*`。_Topic/Author/Annotation Dialect的名称搜索不受此影响。_
+  - Illust Dialect: score添加了新别名`s`，与之对应的是SourceData Dialect的site移除了别名`s`；
+  - Illust Dialect: ordinal已重命名为`order-time`(包括别名)，排序字段也做了此重命名；
+  - Illust Dialect: extension已重命名为文件类型`file-type`(保留原名称作为别名)，支持枚举其可选值，使JPEG/JPG等价，以及添加了VIDEO/IMAGE作为类型别名；
+  - Illust Dialect: 添加了新filter `source-title`；
+  - SourceTag Element现在允许site/type进行模糊匹配，例如`p.c.A`可以匹配到`pixiv.character.A`了。
+  - 排序字段order已重命名为`sort`(包括别名)。
+
 # v0.6.3
 ## Bug Fixes
 * 修复了在历史记录之间导航时，若修改查询条件，则查询条件能正确同步到其他历史页面，但文本不能正确显示在查搜索框内的问题。

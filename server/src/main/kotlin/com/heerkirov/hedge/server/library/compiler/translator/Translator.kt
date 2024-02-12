@@ -21,9 +21,9 @@ object Translator {
     fun parse(queryPlan: QueryPlan, queryer: Queryer, executeBuilder: ExecuteBuilder, options: TranslatorOptions? = null): AnalysisResult<VisualQueryPlan, TranslatorError<*>> {
         val collector = ErrorCollector<TranslatorError<*>>()
 
-        //翻译order部分
-        val visualOrderList = queryPlan.orders.map(::mapOrderItem)
-        if(queryPlan.orders.isNotEmpty()) executeBuilder.mapOrders(queryPlan.orders)
+        //翻译sort部分
+        val visualSortList = queryPlan.sorts.map(::mapSortItem)
+        if(queryPlan.sorts.isNotEmpty()) executeBuilder.mapSorts(queryPlan.sorts)
 
         //翻译filter部分
         val visualFilters = queryPlan.filters.map { unionFilters ->
@@ -84,7 +84,7 @@ object Translator {
         return if(collector.hasErrors) {
             AnalysisResult(null, warnings = collector.warnings, errors = collector.errors)
         }else{
-            AnalysisResult(VisualQueryPlan(visualOrderList, visualElements, visualFilters), warnings = collector.warnings)
+            AnalysisResult(VisualQueryPlan(visualSortList, visualElements, visualFilters), warnings = collector.warnings)
         }
     }
 
@@ -94,12 +94,12 @@ object Translator {
     fun forecast(forecast: Forecast, queryer: Queryer): VisualForecast {
         return when(forecast) {
             is ForecastFilter -> {
-                val suggestions = forecast.enums.filter { item -> item.any { it.startsWith(forecast.item) } }.map { VisualForecastSuggestion(it.first(), if(it.size > 1) it.subList(1, it.size) else emptyList()) }
+                val suggestions = forecast.enums.filter { item -> item.any { it.contains(forecast.item, ignoreCase = true) } }.map { VisualForecastSuggestion(it.first(), if(it.size > 1) it.subList(1, it.size) else emptyList()) }
                 VisualForecast("filter", forecast.item, suggestions, forecast.beginIndex, forecast.endIndex, forecast.fieldName)
             }
-            is ForecastOrder -> {
-                val suggestions = forecast.enums.filter { item -> item.any { it.startsWith(forecast.item) } }.map { VisualForecastSuggestion(it.first(), if(it.size > 1) it.subList(1, it.size) else emptyList()) }
-                VisualForecast("order", forecast.item, suggestions, forecast.beginIndex, forecast.endIndex)
+            is ForecastSort -> {
+                val suggestions = forecast.enums.filter { item -> item.any { it.contains(forecast.item, ignoreCase = true) } }.map { VisualForecastSuggestion(it.first(), if(it.size > 1) it.subList(1, it.size) else emptyList()) }
+                VisualForecast("sort", forecast.item, suggestions, forecast.beginIndex, forecast.endIndex)
             }
             is ForecastMetaTagElement -> {
                 val suggestions = when(forecast.type) {
@@ -111,7 +111,7 @@ object Translator {
                 VisualForecast(forecast.type, forecast.address.last().value, suggestions, forecast.beginIndex, forecast.endIndex)
             }
             is ForecastSourceTagElement -> {
-                val suggestions = queryer.forecastSourceTag(forecast.items).map { VisualForecastSuggestion(it.name, if((it.displayName != null && it.displayName != it.name) || it.otherName != null) { listOfNotNull(if (it.displayName != it.name) it.displayName else null, it.otherName) } else emptyList()) }
+                val suggestions = queryer.forecastSourceTag(forecast.items).map { VisualForecastSuggestion(it.name, if(it.code != it.name || it.otherName != null) { listOfNotNull(if(it.code != it.name) it.code else null, it.otherName) } else emptyList()) }
                 VisualForecast("source-tag", forecast.items.last().value, suggestions, forecast.beginIndex, forecast.endIndex)
             }
             is ForecastAnnotationElement -> {
@@ -187,9 +187,9 @@ object Translator {
     }
 
     /**
-     * 将一个semantic order项翻译为可视化项。
+     * 将一个semantic sort项翻译为可视化项。
      */
-    private fun mapOrderItem(order: Order<*>): String {
-        return "${if(order.isAscending()) "+" else "-"}${order.value}"
+    private fun mapSortItem(sort: Sort<*>): String {
+        return "${if(sort.isAscending()) "+" else "-"}${sort.value}"
     }
 }

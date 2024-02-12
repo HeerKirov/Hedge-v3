@@ -3,14 +3,14 @@ package com.heerkirov.hedge.server.library.compiler.semantic.dialect
 import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.library.compiler.semantic.framework.*
 
-object SourceDataDialect : QueryDialect<SourceDataDialect.OrderItem> {
-    override val order = orderListOf<OrderItem> {
-        item(OrderItem.SOURCE_SITE, "source-site", "src", "site", "s")
-        item(OrderItem.SOURCE_ID, "source-id", "id")
+object SourceDataDialect : QueryDialect<SourceDataDialect.SortItem> {
+    override val sort = sortListOf<SortItem> {
+        item(SortItem.SOURCE_SITE, "source-site", "src", "site", "s")
+        item(SortItem.SOURCE_ID, "source-id", "id")
     }
     override val elements: Array<out ElementFieldDefinition> = arrayOf(SourceTagElementField(false))
 
-    val sourceSite = stringField("SOURCE_SITE", "source", "src", "site", "s")
+    val sourceSite = stringField("SOURCE_SITE", "source", "src", "site")
     val sourceId = patternNumberField("SOURCE_ID", "source-id", "id")
     val title = patternStringField("TITLE", "title")
     val description = patternStringField("DESCRIPTION", "description", "desc")
@@ -22,7 +22,7 @@ object SourceDataDialect : QueryDialect<SourceDataDialect.OrderItem> {
         }
     }
 
-    enum class OrderItem {
+    enum class SortItem {
         SOURCE_SITE, SOURCE_ID
     }
 }

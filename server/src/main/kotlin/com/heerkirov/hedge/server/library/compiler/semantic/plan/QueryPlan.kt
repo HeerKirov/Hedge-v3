@@ -5,9 +5,9 @@ package com.heerkirov.hedge.server.library.compiler.semantic.plan
  */
 data class QueryPlan(
     /**
-     * 排序计划。由order关键字导出的排序指令。
+     * 排序计划。由sort关键字导出的排序指令。
      */
-    val orders: Orders,
+    val sorts: Sorts,
     /**
      * 过滤器。由特定关键字导出的过滤指令。
      */
@@ -18,6 +18,6 @@ data class QueryPlan(
     val elements: Elements
 ) {
     override fun toString(): String {
-        return "{\n\torders=[${orders.joinToString(", ")}]\n\tfilters=[${filters.joinToString(",\n\t\t", "\n\t\t", "\n\t")}]\n\telements=[${elements.joinToString(",\n\t\t", "\n\t\t", "\n\t")}]\n}"
+        return "{\n\tsorts=[${sorts.joinToString(", ")}]\n\tfilters=[${filters.joinToString(",\n\t\t", "\n\t\t", "\n\t")}]\n\telements=[${elements.joinToString(",\n\t\t", "\n\t\t", "\n\t")}]\n}"
     }
 }

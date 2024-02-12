@@ -4,7 +4,7 @@ import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAddressType
 
 data class VisualQueryPlan(
-    val orders: List<String>,
+    val sorts: List<String>,
     val elements: List<Element<*>>,
     val filters: List<FilterItem>
 )
@@ -57,7 +57,7 @@ sealed interface ElementMeta : ElementValue {
     val name: String
 }
 
-data class ElementSourceTag(override val id: Int, override val name: String, val displayName: String?, val otherName: String?) : ElementMeta {
+data class ElementSourceTag(override val id: Int, val site: String, val sourceTagType: String, override val name: String, val code: String, val otherName: String?) : ElementMeta {
     override val type: String get() = "source-tag"
 }
 

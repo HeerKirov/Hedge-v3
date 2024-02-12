@@ -31,15 +31,15 @@ interface ExecutePlanBuilder : ExecuteBuilder {
     fun build(): ExecutePlan
 }
 
-interface OrderByColumn<ORDER> : ExecuteBuilder {
-    fun getOrderDeclareMapping(order: ORDER): ColumnDefinition
+interface SortByColumn<SORT> : ExecuteBuilder {
+    fun getSortDeclareMapping(sort: SORT): ColumnDefinition
 
-    fun setOrders(orders: List<OrderByExpression>)
+    fun setOrderBy(orderByExpressions: List<OrderByExpression>)
 
-    override fun mapOrders(orders: List<Order<*>>) {
-        setOrders(orders.flatMap {
+    override fun mapSorts(sorts: List<Sort<*>>) {
+        setOrderBy(sorts.flatMap {
             @Suppress("UNCHECKED_CAST")
-            val definition = getOrderDeclareMapping(it.value as ORDER)
+            val definition = getSortDeclareMapping(it.value as SORT)
             if(definition.nullsLast) {
                 listOf(definition.column.isNotNull().desc(), if(it.isAscending()) definition.column.asc() else definition.column.desc())
             }else{
@@ -56,7 +56,9 @@ interface FilterByColumn : ExecuteBuilder {
 
     fun addWhereCondition(whereCondition: ColumnDeclaring<Boolean>)
 
-    fun mapFilterSpecial(field: FilterFieldDefinition<*>, value: Any): Any
+    fun mapFilterSpecial(field: FilterFieldDefinition<*>, value: Any): Any {
+        return value
+    }
 
     fun mapCompositionFilterSpecial(field: FilterFieldDefinition<*>, column: ColumnDeclaring<*>, values: Collection<Any>): ColumnDeclaring<Boolean> {
         throw RuntimeException("Implemented composition field ${field.key}.")
@@ -68,30 +70,25 @@ interface FilterByColumn : ExecuteBuilder {
                 val column = getFilterDeclareMapping(filter.field)
                 @Suppress("UNCHECKED_CAST")
                 when (filter) {
-                    is EqualFilter<*> -> if (filter.values.size == 1) {
-                        (column as ColumnDeclaring<Any>) eq mapFilterSpecial(filter.field, filter.values.first().equalValue)
-                    } else {
-                        (column as ColumnDeclaring<Any>) inList filter.values.map { mapFilterSpecial(filter.field, it.equalValue) }
+                    is EqualFilter<*> -> {
+                        val c = (column as ColumnDeclaring<Any>)
+                        val values = filter.values.map { mapFilterSpecial(filter.field, it.equalValue) }
+                        if (values.size == 1) { c eq values.first() } else { c inList values }
                     }
-                    is MatchFilter<*> -> filter.values.map { column escapeLike MetaParserUtil.mapMatchToSqlLike(mapFilterSpecial(filter.field, it.matchValue) as String) }.reduce { a, b -> a or b }
                     is RangeFilter<*> -> {
+                        val c = (column as ColumnDeclaring<Comparable<Any>>)
                         val conditions = ArrayList<ScalarExpression<Boolean>>(2)
                         if (filter.begin != null) {
-                            conditions.add(if (filter.includeBegin) {
-                                (column as ColumnDeclaring<Comparable<Any>>) greaterEq mapFilterSpecial(filter.field, filter.begin.compareValue) as Comparable<Any>
-                            } else {
-                                (column as ColumnDeclaring<Comparable<Any>>) greater mapFilterSpecial(filter.field, filter.begin.compareValue) as Comparable<Any>
-                            })
+                            val v = mapFilterSpecial(filter.field, filter.begin.compareValue) as Comparable<Any>
+                            conditions.add(if (filter.includeBegin) { c greaterEq v } else { c greater v })
                         }
                         if (filter.end != null) {
-                            conditions.add(if (filter.includeEnd) {
-                                (column as ColumnDeclaring<Comparable<Any>>) lessEq mapFilterSpecial(filter.field, filter.end.compareValue) as Comparable<Any>
-                            } else {
-                                (column as ColumnDeclaring<Comparable<Any>>) less mapFilterSpecial(filter.field, filter.end.compareValue) as Comparable<Any>
-                            })
+                            val v = mapFilterSpecial(filter.field, filter.end.compareValue) as Comparable<Any>
+                            conditions.add(if (filter.includeEnd) { c lessEq v } else { c less v })
                         }
                         conditions.reduce { a, b -> a and b }
                     }
+                    is MatchFilter<*> -> filter.values.map { column escapeLike MetaParserUtil.compileMatchFilter(mapFilterSpecial(filter.field, it.matchValue) as String) }.reduce { a, b -> a or b }
                     is CompositionFilter<*> -> mapCompositionFilterSpecial(filter.field, column, filter.values.map { it.equalValue })
                     is FlagFilter -> column as ColumnDeclaring<Boolean>
                     else -> throw RuntimeException("Unsupported filter type ${filter::class.simpleName}.")
@@ -105,7 +102,7 @@ data class ExecutePlan(val whereConditions: List<ColumnDeclaring<Boolean>>, val 
     data class Join(val table: BaseTable<*>, val condition: ColumnDeclaring<Boolean>, val left: Boolean = false)
 }
 
-class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, OrderByColumn<IllustDialect.IllustOrderItem>, FilterByColumn {
+class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, SortByColumn<IllustDialect.IllustSortItem>, FilterByColumn {
     private val orders: MutableList<OrderByExpression> = ArrayList()
     private val wheres: MutableList<ColumnDeclaring<Boolean>> = ArrayList()
     private val joins: MutableList<ExecutePlan.Join> = ArrayList()
@@ -130,14 +127,14 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, O
     private val excludeSourceTags: MutableCollection<Int> = mutableSetOf()
 
     private val orderDeclareMapping = mapOf(
-        IllustDialect.IllustOrderItem.ID to OrderByColumn.ColumnDefinition(Illusts.id),
-        IllustDialect.IllustOrderItem.SCORE to OrderByColumn.ColumnDefinition(Illusts.score, nullsLast = true),
-        IllustDialect.IllustOrderItem.ORDINAL to OrderByColumn.ColumnDefinition(Illusts.orderTime),
-        IllustDialect.IllustOrderItem.PARTITION to OrderByColumn.ColumnDefinition(Illusts.partitionTime),
-        IllustDialect.IllustOrderItem.CREATE_TIME to OrderByColumn.ColumnDefinition(Illusts.createTime),
-        IllustDialect.IllustOrderItem.UPDATE_TIME to OrderByColumn.ColumnDefinition(Illusts.updateTime),
-        IllustDialect.IllustOrderItem.SOURCE_ID to OrderByColumn.ColumnDefinition(Illusts.sourceId, nullsLast = true),
-        IllustDialect.IllustOrderItem.SOURCE_SITE to OrderByColumn.ColumnDefinition(Illusts.sourceSite, nullsLast = true)
+        IllustDialect.IllustSortItem.ID to SortByColumn.ColumnDefinition(Illusts.id),
+        IllustDialect.IllustSortItem.SCORE to SortByColumn.ColumnDefinition(Illusts.score, nullsLast = true),
+        IllustDialect.IllustSortItem.ORDER_TIME to SortByColumn.ColumnDefinition(Illusts.orderTime),
+        IllustDialect.IllustSortItem.PARTITION to SortByColumn.ColumnDefinition(Illusts.partitionTime),
+        IllustDialect.IllustSortItem.CREATE_TIME to SortByColumn.ColumnDefinition(Illusts.createTime),
+        IllustDialect.IllustSortItem.UPDATE_TIME to SortByColumn.ColumnDefinition(Illusts.updateTime),
+        IllustDialect.IllustSortItem.SOURCE_ID to SortByColumn.ColumnDefinition(Illusts.sourceId, nullsLast = true),
+        IllustDialect.IllustSortItem.SOURCE_SITE to SortByColumn.ColumnDefinition(Illusts.sourceSite, nullsLast = true)
     )
 
     private val filterDeclareMapping = mapOf(
@@ -146,33 +143,32 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, O
         IllustDialect.bookMember to (Illusts.cachedBookCount greater 0),
         IllustDialect.score to Illusts.exportedScore,
         IllustDialect.partition to Illusts.partitionTime,
-        IllustDialect.ordinal to Illusts.orderTime,
+        IllustDialect.orderTime to Illusts.orderTime,
         IllustDialect.createTime to Illusts.createTime,
         IllustDialect.updateTime to Illusts.updateTime,
         IllustDialect.description to Illusts.exportedDescription,
-        IllustDialect.extension to FileRecords.extension,
+        IllustDialect.fileType to FileRecords.extension,
         IllustDialect.filesize to FileRecords.size,
         IllustDialect.sourceId to Illusts.sourceId,
         IllustDialect.sourcePage to Illusts.sourcePart,
         IllustDialect.sourcePageName to Illusts.sourcePartName,
         IllustDialect.sourceSite to Illusts.sourceSite,
+        IllustDialect.sourceTitle to SourceDatas.title,
         IllustDialect.sourceDescription to SourceDatas.description,
         IllustDialect.tagme to Illusts.tagme
     )
 
-    override fun getOrderDeclareMapping(order: IllustDialect.IllustOrderItem): OrderByColumn.ColumnDefinition {
-        return orderDeclareMapping[order]!!
+    override fun getSortDeclareMapping(sort: IllustDialect.IllustSortItem): SortByColumn.ColumnDefinition {
+        return orderDeclareMapping[sort]!!
     }
 
     override fun getFilterDeclareMapping(field: FilterFieldDefinition<*>): ColumnDeclaring<*> {
-        if(field == IllustDialect.sourceDescription) {
-            joinSourceImage = true
-        }
+        if(field == IllustDialect.sourceDescription || field == IllustDialect.sourceTitle) joinSourceImage = true
         return filterDeclareMapping[field]!!
     }
 
-    override fun setOrders(orders: List<OrderByExpression>) {
-        this.orders.addAll(orders)
+    override fun setOrderBy(orderByExpressions: List<OrderByExpression>) {
+        orders.addAll(orderByExpressions)
     }
 
     override fun addWhereCondition(whereCondition: ColumnDeclaring<Boolean>) {
@@ -181,7 +177,7 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, O
 
     override fun mapFilterSpecial(field: FilterFieldDefinition<*>, value: Any): Any {
         return when (field) {
-            IllustDialect.ordinal -> (value as LocalDate).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            IllustDialect.orderTime -> (value as LocalDate).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             IllustDialect.createTime, IllustDialect.updateTime -> (value as LocalDate).atStartOfDay(ZoneId.systemDefault()).toInstant()
             else -> value
         }
@@ -189,13 +185,26 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, O
 
     override fun mapCompositionFilterSpecial(field: FilterFieldDefinition<*>, column: ColumnDeclaring<*>, values: Collection<Any>): ColumnDeclaring<Boolean> {
         return when (field) {
+            IllustDialect.fileType -> {
+                val extensions = values.flatMap {
+                    when(it as String) {
+                        "VIDEO" -> listOf("mp4", "webm")
+                        "IMAGE" -> listOf("jpeg", "jpg", "png", "gif")
+                        "JPEG" -> listOf("jpeg", "jpg")
+                        else -> listOf(it.lowercase())
+                    }
+                }.distinct()
+                @Suppress("UNCHECKED_CAST")
+                (column as ColumnDeclaring<String>) inList extensions
+            }
             IllustDialect.tagme -> {
                 val tagme = if(values.isEmpty()) Illust.Tagme.baseElements.unionComposition() else values.map {
-                    when (it as IllustDialect.Tagme) {
-                        IllustDialect.Tagme.AUTHOR -> Illust.Tagme.AUTHOR
-                        IllustDialect.Tagme.TOPIC -> Illust.Tagme.TOPIC
-                        IllustDialect.Tagme.TAG -> Illust.Tagme.TAG
-                        IllustDialect.Tagme.SOURCE -> Illust.Tagme.SOURCE
+                    when (it as String) {
+                        "AUTHOR" -> Illust.Tagme.AUTHOR
+                        "TOPIC" -> Illust.Tagme.TOPIC
+                        "TAG" -> Illust.Tagme.TAG
+                        "SOURCE" -> Illust.Tagme.SOURCE
+                        else -> throw RuntimeException("Illegal IllustDialect Tagme value '$it'.")
                     }
                 }.unionComposition()
                 @Suppress("UNCHECKED_CAST")
@@ -328,7 +337,7 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, O
     }
 }
 
-class BookExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, OrderByColumn<BookDialect.BookOrderItem>, FilterByColumn {
+class BookExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, SortByColumn<BookDialect.BookSortItem>, FilterByColumn {
     private val orders: MutableList<OrderByExpression> = ArrayList()
     private val wheres: MutableList<ColumnDeclaring<Boolean>> = ArrayList()
     private val joins: MutableList<ExecutePlan.Join> = ArrayList()
@@ -349,11 +358,11 @@ class BookExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, Ord
     private val excludeAnnotations: MutableCollection<Int> = mutableSetOf()
 
     private val orderDeclareMapping = mapOf(
-        BookDialect.BookOrderItem.ID to OrderByColumn.ColumnDefinition(Books.id),
-        BookDialect.BookOrderItem.SCORE to OrderByColumn.ColumnDefinition(Books.score, nullsLast = true),
-        BookDialect.BookOrderItem.IMAGE_COUNT to OrderByColumn.ColumnDefinition(Books.cachedCount),
-        BookDialect.BookOrderItem.CREATE_TIME to OrderByColumn.ColumnDefinition(Books.createTime),
-        BookDialect.BookOrderItem.UPDATE_TIME to OrderByColumn.ColumnDefinition(Books.updateTime),
+        BookDialect.BookSortItem.ID to SortByColumn.ColumnDefinition(Books.id),
+        BookDialect.BookSortItem.SCORE to SortByColumn.ColumnDefinition(Books.score, nullsLast = true),
+        BookDialect.BookSortItem.IMAGE_COUNT to SortByColumn.ColumnDefinition(Books.cachedCount),
+        BookDialect.BookSortItem.CREATE_TIME to SortByColumn.ColumnDefinition(Books.createTime),
+        BookDialect.BookSortItem.UPDATE_TIME to SortByColumn.ColumnDefinition(Books.updateTime),
     )
 
     private val filterDeclareMapping = mapOf(
@@ -367,16 +376,16 @@ class BookExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, Ord
         BookDialect.description to Books.description,
     )
 
-    override fun getOrderDeclareMapping(order: BookDialect.BookOrderItem): OrderByColumn.ColumnDefinition {
-        return orderDeclareMapping[order]!!
+    override fun getSortDeclareMapping(sort: BookDialect.BookSortItem): SortByColumn.ColumnDefinition {
+        return orderDeclareMapping[sort]!!
     }
 
     override fun getFilterDeclareMapping(field: FilterFieldDefinition<*>): Column<*> {
         return filterDeclareMapping[field]!!
     }
 
-    override fun setOrders(orders: List<OrderByExpression>) {
-        this.orders.addAll(orders)
+    override fun setOrderBy(orderByExpressions: List<OrderByExpression>) {
+        this.orders.addAll(orderByExpressions)
     }
 
     override fun addWhereCondition(whereCondition: ColumnDeclaring<Boolean>) {
@@ -509,7 +518,7 @@ class AuthorExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder {
             if(it.precise) {
                 Authors.name eq it.value
             }else{
-                (Authors.name like MetaParserUtil.mapMatchToSqlLike(it.value)) or (Authors.otherNames like MetaParserUtil.mapMatchToSqlLike(it.value))
+                (Authors.name like MetaParserUtil.compileMatchFilter(it.value)) or (Authors.otherNames like MetaParserUtil.compileMatchFilter(it.value))
             }
         }.reduce { a, b -> a or b }.let {
             if(exclude) it.not() else it
@@ -568,7 +577,7 @@ class TopicExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder {
             if(it.precise) {
                 Topics.name eq it.value
             }else{
-                (Topics.name like MetaParserUtil.mapMatchToSqlLike(it.value)) or (Topics.otherNames like MetaParserUtil.mapMatchToSqlLike(it.value))
+                (Topics.name like MetaParserUtil.compileMatchFilter(it.value)) or (Topics.otherNames like MetaParserUtil.compileMatchFilter(it.value))
             }
         }.reduce { a, b -> a or b }.let {
             if(exclude) it.not() else it
@@ -614,7 +623,7 @@ class AnnotationExecutePlanBuilder : ExecutePlanBuilder {
             if(it.precise) {
                 Annotations.name eq it.value
             }else{
-                Annotations.name like MetaParserUtil.mapMatchToSqlLike(it.value)
+                Annotations.name like MetaParserUtil.compileMatchFilter(it.value)
             }
         }.reduce { a, b -> a or b }.let {
             if(exclude) it.not() else it
@@ -626,7 +635,7 @@ class AnnotationExecutePlanBuilder : ExecutePlanBuilder {
     }
 }
 
-class SourceDataExecutePlanBuilder(private val db: Database): ExecutePlanBuilder, OrderByColumn<SourceDataDialect.OrderItem>, FilterByColumn {
+class SourceDataExecutePlanBuilder(private val db: Database): ExecutePlanBuilder, SortByColumn<SourceDataDialect.SortItem>, FilterByColumn {
     private val orders: MutableList<OrderByExpression> = ArrayList()
     private val wheres: MutableList<ColumnDeclaring<Boolean>> = ArrayList()
     private val joins: MutableList<ExecutePlan.Join> = ArrayList()
@@ -644,8 +653,8 @@ class SourceDataExecutePlanBuilder(private val db: Database): ExecutePlanBuilder
     private val excludeSourceTags: MutableCollection<Int> = mutableSetOf()
 
     private val orderDeclareMapping = mapOf(
-        SourceDataDialect.OrderItem.SOURCE_ID to OrderByColumn.ColumnDefinition(SourceDatas.sourceId),
-        SourceDataDialect.OrderItem.SOURCE_SITE to OrderByColumn.ColumnDefinition(SourceDatas.sourceSite)
+        SourceDataDialect.SortItem.SOURCE_ID to SortByColumn.ColumnDefinition(SourceDatas.sourceId),
+        SourceDataDialect.SortItem.SOURCE_SITE to SortByColumn.ColumnDefinition(SourceDatas.sourceSite)
     )
 
     private val filterDeclareMapping = mapOf(
@@ -656,24 +665,20 @@ class SourceDataExecutePlanBuilder(private val db: Database): ExecutePlanBuilder
         SourceDataDialect.status to SourceDatas.status
     )
 
-    override fun getOrderDeclareMapping(order: SourceDataDialect.OrderItem): OrderByColumn.ColumnDefinition {
-        return orderDeclareMapping[order]!!
+    override fun getSortDeclareMapping(sort: SourceDataDialect.SortItem): SortByColumn.ColumnDefinition {
+        return orderDeclareMapping[sort]!!
     }
 
     override fun getFilterDeclareMapping(field: FilterFieldDefinition<*>): Column<*> {
         return filterDeclareMapping[field]!!
     }
 
-    override fun setOrders(orders: List<OrderByExpression>) {
-        this.orders.addAll(orders)
+    override fun setOrderBy(orderByExpressions: List<OrderByExpression>) {
+        this.orders.addAll(orderByExpressions)
     }
 
     override fun addWhereCondition(whereCondition: ColumnDeclaring<Boolean>) {
         wheres.add(whereCondition)
-    }
-
-    override fun mapFilterSpecial(field: FilterFieldDefinition<*>, value: Any): Any {
-        return value
     }
 
     override fun mapSourceTagElement(unionItems: List<ElementSourceTag>, exclude: Boolean) {

@@ -92,7 +92,7 @@ interface ElementFieldDefinition {
 /**
  * 排序列表的生成器定义。
  */
-interface OrderFieldDefinition<E : Enum<E>>
+interface SortFieldDefinition<E : Enum<E>>
 
 
 /**
@@ -113,6 +113,6 @@ abstract class ElementFieldByAnnotation : ElementFieldDefinition, GeneratedByAnn
 /**
  * 从关键字指示的项生成Filter。
  */
-abstract class OrderFieldByIdentify<E : Enum<E>> : OrderFieldDefinition<E>, GeneratedByIdentify<Orders> {
-    override val alias: Array<out String> = arrayOf("order")
+abstract class SortFieldByIdentify<E : Enum<E>> : SortFieldDefinition<E>, GeneratedByIdentify<Sorts> {
+    override val alias: Array<out String> = arrayOf("sort", "so", "o")
 }

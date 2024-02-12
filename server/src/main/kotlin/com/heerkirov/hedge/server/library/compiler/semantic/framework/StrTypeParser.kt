@@ -32,6 +32,25 @@ object StringParser : StrTypeParser<FilterStringValue> {
 }
 
 /**
+ * 字符串类型的枚举转换器。其枚举值使用字符串列出。
+ * 无视大小写对枚举值做配对。配对使用枚举值的alias属性。
+ */
+class StringEnumParser(private val typeName: String, enumAlias: List<AliasDefinition<String, String>>) : EnumTypeParser<FilterStringValue> {
+    private val enums = enumAlias.map { it.alias.map(String::lowercase) }
+    private val expected = enums.flatten()
+    private val valueMap = enumAlias.asSequence().flatMap { (k, v) -> v.asSequence().map { it.lowercase() to k } }.toMap()
+
+    override fun parse(str: Str): FilterStringValue {
+        val value = valueMap[str.value] ?: semanticError(EnumTypeCastError(str.value, typeName, expected, str.beginIndex, str.endIndex))
+        return FilterStringValueImpl(value)
+    }
+
+    override fun enums(): Collection<List<String>> {
+        return enums
+    }
+}
+
+/**
  * 枚举转换器。
  * 无视大小写对枚举值做配对。配对使用枚举值的alias属性。
  */

@@ -366,17 +366,10 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
             return emptyList()
         }
         return sourceTagCacheMap.computeIfAbsent(metaString.value) { address ->
-            //在长度为2时，address被认为是site:name；长度为3时，被认为是site.type:name；高于这个长度，则被认为是非法值
-            val where = when(address.size) {
-                3 -> parser.compileNameString(address.last(), SourceTags) and (SourceTags.site eq address.first().value) and (SourceTags.type eq address[1].value)
-                2 -> parser.compileNameString(address.last(), SourceTags) and (SourceTags.site eq address.first().value)
-                1 -> parser.compileNameString(address.last(), SourceTags)
-                else -> return@computeIfAbsent emptyList()
-            }
-            data.db.from(SourceTags).select(SourceTags.id, SourceTags.name, SourceTags.code, SourceTags.otherName)
-                .where { where }
+            data.db.from(SourceTags).select(SourceTags.id, SourceTags.site, SourceTags.type, SourceTags.name, SourceTags.code, SourceTags.otherName)
+                .where { parser.compileNameString(address, SourceTags) }
                 .limit(0, queryLimit)
-                .map { ElementSourceTag(it[SourceTags.id]!!, it[SourceTags.code]!!, it[SourceTags.name], it[SourceTags.otherName]) }
+                .map { ElementSourceTag(it[SourceTags.id]!!, it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.name]!!, it[SourceTags.code]!!, it[SourceTags.otherName]) }
         }.also {
             if(it.isEmpty()) {
                 //查询结果为空时抛出无匹配警告
@@ -483,17 +476,10 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
     override fun forecastSourceTag(metaAddress: MetaAddress): List<ElementSourceTag> {
         if(metaAddress.any { it.value.isBlank() }) return emptyList()
 
-        val where = when(metaAddress.size) {
-            3 -> parser.forecastNameString(metaAddress.last(), SourceTags) and (SourceTags.site eq metaAddress.first().value) and (SourceTags.type eq metaAddress[1].value)
-            2 -> parser.forecastNameString(metaAddress.last(), SourceTags) and (SourceTags.site eq metaAddress.first().value)
-            1 -> parser.forecastNameString(metaAddress.last(), SourceTags)
-            else -> return emptyList()
-        }
-
-        return data.db.from(SourceTags).select(SourceTags.id, SourceTags.name, SourceTags.code, SourceTags.otherName)
-            .where { where }
+        return data.db.from(SourceTags).select(SourceTags.id, SourceTags.site, SourceTags.type, SourceTags.name, SourceTags.code, SourceTags.otherName)
+            .where { parser.forecastNameString(metaAddress, SourceTags) }
             .limit(0, queryLimit)
-            .map { ElementSourceTag(it[SourceTags.id]!!, it[SourceTags.code]!!, it[SourceTags.name], it[SourceTags.otherName]) }
+            .map { ElementSourceTag(it[SourceTags.id]!!, it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.name]!!, it[SourceTags.code]!!, it[SourceTags.otherName]) }
     }
 
     private fun validateTopics(topics: List<TopicItem>, address: MetaAddress): List<ElementTopic> {

@@ -3,9 +3,11 @@ package com.heerkirov.hedge.server.functions.manager.query
 import com.heerkirov.hedge.server.dao.Annotations
 import com.heerkirov.hedge.server.dao.MetaTagTable
 import com.heerkirov.hedge.server.dao.SourceTags
+import com.heerkirov.hedge.server.library.compiler.semantic.plan.MetaAddress
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.MetaString
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.MetaType
 import com.heerkirov.hedge.server.utils.ktorm.escapeLike
+import org.ktorm.dsl.and
 import com.heerkirov.hedge.server.enums.MetaType as CommonMetaType
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.like
@@ -22,7 +24,7 @@ internal object MetaParserUtil {
             metaTag.name eq metaString.value
         }else{
             val value = mapMatchToSqlLike(metaString.value)
-            (metaTag.name escapeLike value) or (metaTag.otherNames escapeLike value)
+            (metaTag.name escapeLike value) or (metaTag.otherNames escapeLike "%|$value|%")
         }
     }
 
@@ -40,12 +42,32 @@ internal object MetaParserUtil {
     /**
      * 将metaString的值编译为对sourceTag的等价或比较操作。
      */
-    fun compileNameString(metaString: MetaString, metaTag: SourceTags): BinaryExpression<Boolean> {
-        return if(metaString.precise) {
-            metaTag.code eq metaString.value
+    fun compileNameString(metaAddress: MetaAddress, metaTag: SourceTags): BinaryExpression<Boolean> {
+        val tag = if(metaAddress.last().precise) {
+            (metaTag.code eq metaAddress.last().value) or (metaTag.name eq metaAddress.last().value)
         }else{
-            val value = mapMatchToSqlLike(metaString.value)
+            val value = mapMatchToSqlLike(metaAddress.last().value)
             (metaTag.code escapeLike value) or (metaTag.name escapeLike value) or (metaTag.otherName escapeLike value)
+        }
+
+        val site = if(metaAddress.size < 2) null else if(metaAddress.first().precise) {
+            SourceTags.site eq metaAddress.first().value
+        }else{
+            SourceTags.site like '%' + mapMatchToSqlLike(metaAddress.first().value, escape = false) + '%'
+        }
+
+        val type = if(metaAddress.size < 3) null else if(metaAddress[1].precise) {
+            SourceTags.type eq metaAddress[1].value
+        }else{
+            SourceTags.type like '%' + mapMatchToSqlLike(metaAddress[1].value, escape = false) + '%'
+        }
+
+        //在长度为2时，address被认为是site:name；长度为3时，被认为是site.type:name；高于这个长度，则被认为是非法值
+        return when(metaAddress.size) {
+            3 -> tag and site!! and type!!
+            2 -> tag and site!!
+            1 -> tag
+            else -> throw RuntimeException("SourceTag address has illegal length.")
         }
     }
 
@@ -75,12 +97,31 @@ internal object MetaParserUtil {
     /**
      * 将metaString的值编译为对sourceTag的等价或比较操作。
      */
-    fun forecastNameString(metaString: MetaString, metaTag: SourceTags): BinaryExpression<Boolean> {
-        return if(metaString.precise) {
-            metaTag.code like '%' + mapMatchToSqlLike(metaString.value, escape = false) + '%'
+    fun forecastNameString(metaAddress: MetaAddress, sourceTag: SourceTags): BinaryExpression<Boolean> {
+        val tag = if(metaAddress.last().precise) {
+            sourceTag.code like '%' + mapMatchToSqlLike(metaAddress.last().value, escape = false) + '%'
         }else{
-            val value = '%' + mapMatchToSqlLike(metaString.value) + '%'
-            (metaTag.code escapeLike value) or (metaTag.name escapeLike value) or (metaTag.otherName escapeLike value)
+            val value = '%' + mapMatchToSqlLike(metaAddress.last().value) + '%'
+            (sourceTag.code escapeLike value) or (sourceTag.name escapeLike value) or (sourceTag.otherName escapeLike value)
+        }
+
+        val site = if(metaAddress.size < 2) null else if(metaAddress.first().precise) {
+            SourceTags.site eq metaAddress.first().value
+        }else{
+            SourceTags.site like '%' + mapMatchToSqlLike(metaAddress.first().value, escape = false) + '%'
+        }
+
+        val type = if(metaAddress.size < 3) null else if(metaAddress[1].precise) {
+            SourceTags.type eq metaAddress[1].value
+        }else{
+            SourceTags.type like '%' + mapMatchToSqlLike(metaAddress[1].value, escape = false) + '%'
+        }
+
+        return when(metaAddress.size) {
+            3 -> tag and site!! and type!!
+            2 -> tag and site!!
+            1 -> tag
+            else -> throw RuntimeException("SourceTag address has illegal length.")
         }
     }
 
@@ -97,9 +138,16 @@ internal object MetaParserUtil {
     }
 
     /**
+     * 将match filter的字符串翻译至符合sql like标准的格式，添加首尾的%%使其可以模糊匹配，并转义需要防备的字符。
+     */
+    fun compileMatchFilter(matchString: String): String {
+        return '%' + escapeSqlLike(escapeSqlSpecial(matchString)) + '%'
+    }
+
+    /**
      * 将HQL的match字符串翻译至符合sql like标准的格式，并转义需要防备的字符。
      */
-    fun mapMatchToSqlLike(matchString: String, escape: Boolean = true): String {
+    private fun mapMatchToSqlLike(matchString: String, escape: Boolean = true): String {
         return if(escape) {
             sqlLikeMap.computeIfAbsent(matchString) { escapeSqlLike(escapeSqlSpecial(it)) }
         }else{

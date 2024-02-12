@@ -398,13 +398,17 @@ class NumberPatternField(override val key: String, override val alias: Array<out
 }
 
 /**
- * 处理等价和集合运算，专门适用于composition类型。
+ * 一种更加复杂的Enum Equable类型，它的最终值将作为collection整体生成。
  */
-class CompositionField<V>(override val key: String, override val alias: Array<out String>, private val strTypeParser: StrTypeParser<V>) : FilterFieldByIdentify<V>() where V: EquableValue<*> {
+class CompositionField<V>(override val key: String, override val alias: Array<out String>, private val allowFlagMode: Boolean, private val strTypeParser: StrTypeParser<V>) : FilterFieldByIdentify<V>() where V: EquableValue<*> {
     override fun generate(subject: StrList, family: Family?, predicative: Predicative?): CompositionFilter<V>? {
         if(family == null && predicative == null) {
-            //可以忽略关系和值，从而只获得一个空集合
-            return CompositionFilter(this, emptyList())
+            if(allowFlagMode) {
+                //开启allowFlagMode后，可以忽略关系和值，从而只获得一个空集合
+                return CompositionFilter(this, emptyList())
+            }else{
+                semanticError(FilterValueRequired(key, subject.beginIndex, subject.endIndex))
+            }
         }else if(family == null || predicative == null) {
             semanticError(FilterValueRequired(key, subject.beginIndex, predicative?.endIndex ?: family?.endIndex ?: subject.endIndex))
         }
@@ -509,4 +513,4 @@ inline fun <reified E : Enum<E>> enumField(key: String, vararg alias: String, bl
 /**
  * 枚举型composition关键字项。
  */
-inline fun <reified E : Enum<E>> compositionField(key: String, vararg alias: String, block: AliasBuilder<E, String>.() -> Unit): FilterFieldDefinition<FilterEnumValue<E>> = CompositionField(key, alias, EnumParser(E::class, buildAlias(block)))
+inline fun compositionField(key: String, vararg alias: String, allowFlagMode: Boolean = false, block: AliasBuilder<String, String>.() -> Unit): FilterFieldDefinition<FilterStringValue> = CompositionField(key, alias, allowFlagMode, StringEnumParser(key, buildAlias(block)))

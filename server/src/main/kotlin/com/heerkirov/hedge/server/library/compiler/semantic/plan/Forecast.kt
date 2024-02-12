@@ -20,8 +20,8 @@ data class ForecastSourceTagElement(val items: MetaAddress, override val beginIn
     override val type get() = "source-tag"
 }
 
-data class ForecastOrder(val item: String, val enums: Collection<List<String>>, override val beginIndex: Int, override val endIndex: Int) : Forecast {
-    override val type get() = "order"
+data class ForecastSort(val item: String, val enums: Collection<List<String>>, override val beginIndex: Int, override val endIndex: Int) : Forecast {
+    override val type get() = "sort"
 }
 
 data class ForecastFilter(val item: String, val fieldName: String, val enums: Collection<List<String>>, override val beginIndex: Int, override val endIndex: Int) : Forecast {
