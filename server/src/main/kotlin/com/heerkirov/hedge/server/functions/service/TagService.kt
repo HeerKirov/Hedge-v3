@@ -425,7 +425,7 @@ class TagService(private val data: DataRepository,
                                 form.mappingSourceTags.unwrapOrNull()
                             ))
                         }else{
-                            val formOrdinal = if(record.ordinal != index) optOf(index) else undefined()
+                            val formOrdinal = if(parentId != null && record.ordinal != index) optOf(index) else undefined()
                             update(record.id, TagUpdateForm(form.rename, form.otherNames, formOrdinal, undefined(), form.type, form.group, undefined(), form.annotations, form.description, form.color, undefined(), form.mappingSourceTags))
                             record.id
                         }

@@ -10,14 +10,14 @@ import org.ktorm.dsl.QueryRowSet
 import org.ktorm.schema.*
 
 object HistoryRecords : BaseTable<HistoryRecord>("history_record", schema = "system_db") {
-    val sequenceId = long("sequence_id")
-    val type = enum("type", typeRef<HistoryRecord.SystemHistoryRecordType>())
+    val type = enum("type", typeRef<HistoryRecord.HistoryType>())
+    val channel = varchar("channel")
     val key = varchar("key")
     val recordTime = long("record_time")
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = HistoryRecord(
-        sequenceId = row[sequenceId]!!,
         type = row[type]!!,
+        channel = row[channel]!!,
         key = row[key]!!,
         recordTime = row[recordTime]!!
     )

@@ -6,13 +6,13 @@ import java.time.Instant
 import java.time.LocalDate
 
 data class HistoryRecord(/**
-                          * 根据类型隔离的序列ID。
-                          */
-                         val sequenceId: Long,
-                         /**
                           * 存储类型。
                           */
-                         val type: SystemHistoryRecordType,
+                         val type: HistoryType,
+                         /**
+                          * 隔离频道。
+                          */
+                         val channel: String,
                          /**
                           * 目标标识。
                           */
@@ -21,14 +21,19 @@ data class HistoryRecord(/**
                           * 记录时间。
                           */
                          val recordTime: Long) {
-    enum class SystemHistoryRecordType {
-        META_EDITOR_TAG,
-        META_EDITOR_TOPIC,
-        META_EDITOR_AUTHOR,
-        USED_FOLDER,
-        USED_TOPIC,
-        USED_AUTHOR,
-        USED_ANNOTATION,
+    enum class HistoryType {
+        /**
+         * 在metaTagEditor中使用过的(TAG, TOPIC, AUTHOR)。
+         */
+        META_EDITOR,
+        /**
+         * 在选取器中选取过的(FOLDER, TOPIC, AUTHOR, ANNOTATION)。
+         */
+        PICKER,
+        /**
+         * 在搜索框查询中使用过的查询语句(...dialect)。
+         */
+        QUERY
     }
 }
 

@@ -32,7 +32,6 @@ class MetaUtilService(private val appdata: AppDataManager,
                       private val metaManager: MetaManager,
                       private val historyRecordManager: HistoryRecordManager) {
     private val limitMetaTagCount = 20
-    private val limitMetaCount = 10
     private val identityMaxStorageCount = 10
     private val identityHistory: LinkedList<MetaUtilIdentity> = LinkedList()
 
@@ -200,23 +199,7 @@ class MetaUtilService(private val appdata: AppDataManager,
      * 查看最近使用过的metaTag的列表。
      */
     fun getHistoryMetaRecent(): MetaUtilRes {
-        val metas = mapOf(
-            MetaType.TAG to historyRecordManager.getRecent(HistoryRecord.SystemHistoryRecordType.META_EDITOR_TAG, limitMetaTagCount).map { it.toInt() },
-            MetaType.TOPIC to historyRecordManager.getRecent(HistoryRecord.SystemHistoryRecordType.META_EDITOR_TOPIC, limitMetaCount).map { it.toInt() },
-            MetaType.AUTHOR to historyRecordManager.getRecent(HistoryRecord.SystemHistoryRecordType.META_EDITOR_AUTHOR, limitMetaCount).map { it.toInt() }
-        )
-        return mapMetasToEntities(metas)
-    }
-
-    /**
-     * 查看最近一段时间统计的metaTag最高频率使用的列表。
-     */
-    fun getHistoryMetaFrequent(): MetaUtilRes {
-        val metas = mapOf(
-            MetaType.TAG to historyRecordManager.getFrequent(HistoryRecord.SystemHistoryRecordType.META_EDITOR_TAG, limitMetaTagCount).map { (it, _) -> it.toInt() },
-            MetaType.TOPIC to historyRecordManager.getFrequent(HistoryRecord.SystemHistoryRecordType.META_EDITOR_TOPIC, limitMetaCount).map { (it, _) -> it.toInt() },
-            MetaType.AUTHOR to historyRecordManager.getFrequent(HistoryRecord.SystemHistoryRecordType.META_EDITOR_AUTHOR, limitMetaCount).map { (it, _) -> it.toInt() }
-        )
+        val metas = MetaType.entries.associateWith { historyRecordManager.getHistory(HistoryRecord.HistoryType.META_EDITOR, it.name, limitMetaTagCount).map(String::toInt) }
         return mapMetasToEntities(metas)
     }
 
@@ -225,13 +208,7 @@ class MetaUtilService(private val appdata: AppDataManager,
      */
     fun pushHistoryMeta(form: MetaUtilMetaForm) {
         data.db.transaction {
-            form.metas.forEach { (type, id) ->
-                historyRecordManager.push(when (type) {
-                    MetaType.TAG -> HistoryRecord.SystemHistoryRecordType.META_EDITOR_TAG
-                    MetaType.TOPIC -> HistoryRecord.SystemHistoryRecordType.META_EDITOR_TOPIC
-                    MetaType.AUTHOR -> HistoryRecord.SystemHistoryRecordType.META_EDITOR_AUTHOR
-                }, id.toString())
-            }
+            form.metas.forEach { (type, id) -> historyRecordManager.push(HistoryRecord.HistoryType.META_EDITOR, type.toString(), id.toString()) }
         }
     }
 
@@ -239,9 +216,7 @@ class MetaUtilService(private val appdata: AppDataManager,
      * 清空所有metaTag历史记录。
      */
     fun deleteAllHistoryMeta() {
-        historyRecordManager.clear(HistoryRecord.SystemHistoryRecordType.META_EDITOR_TAG)
-        historyRecordManager.clear(HistoryRecord.SystemHistoryRecordType.META_EDITOR_TOPIC)
-        historyRecordManager.clear(HistoryRecord.SystemHistoryRecordType.META_EDITOR_AUTHOR)
+        historyRecordManager.clear(HistoryRecord.HistoryType.META_EDITOR)
     }
 
     /**

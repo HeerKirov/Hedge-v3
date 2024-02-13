@@ -25,8 +25,7 @@ class UtilMetaRoutes(private val metaUtilService: MetaUtilService) : Routes {
                         post(::pushHistoryIdentity)
                     }
                     path("meta-tags") {
-                        get("recent", ::getHistoryMetaRecent)
-                        get("frequent", ::getHistoryMetaFrequent)
+                        get(::getHistoryMetaRecent)
                         post(::pushHistoryMeta)
                         delete(::deleteAllHistoryMeta)
                     }
@@ -62,10 +61,6 @@ class UtilMetaRoutes(private val metaUtilService: MetaUtilService) : Routes {
 
     private fun getHistoryMetaRecent(ctx: Context) {
         ctx.json(metaUtilService.getHistoryMetaRecent())
-    }
-
-    private fun getHistoryMetaFrequent(ctx: Context) {
-        ctx.json(metaUtilService.getHistoryMetaFrequent())
     }
 
     private fun pushHistoryMeta(ctx: Context) {

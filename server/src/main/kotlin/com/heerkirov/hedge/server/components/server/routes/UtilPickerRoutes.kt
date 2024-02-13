@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.components.server.routes
 
 import com.heerkirov.hedge.server.components.server.Routes
 import com.heerkirov.hedge.server.dto.form.HistoryPushForm
+import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.functions.service.PickerUtilService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
 import io.javalin.Javalin
@@ -15,7 +16,7 @@ class UtilPickerRoutes(private val pickerUtilService: PickerUtilService) : Route
                 get("folders", ::getRecentFolders)
                 get("topics", ::getRecentTopics)
                 get("authors", ::getRecentAuthors)
-                get("annotations", ::getRecentAnnotations)
+                get("annotations/{type}", ::getRecentAnnotations)
                 post(::push)
             }
         }
@@ -34,7 +35,8 @@ class UtilPickerRoutes(private val pickerUtilService: PickerUtilService) : Route
     }
 
     private fun getRecentAnnotations(ctx: Context) {
-        ctx.json(pickerUtilService.getRecentAnnotations())
+        val type = MetaType.valueOf(ctx.pathParam("type").uppercase())
+        ctx.json(pickerUtilService.getRecentAnnotations(type))
     }
 
     private fun push(ctx: Context) {

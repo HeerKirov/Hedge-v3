@@ -10,6 +10,9 @@
   - Illust Dialect: 添加了新filter `source-title`；
   - SourceTag Element现在允许site/type进行模糊匹配，例如`p.c.A`可以匹配到`pixiv.character.A`了。
   - 排序字段order已重命名为`sort`(包括别名)。
+## Optimizes
+* 调整了tag bulk API，那些位于顶层的tag，现在会无视其顺序，只有children中的tag才会保持排序。该调整会影响CLI中apply的表现。
+* 调整了提取器历史记录的存取方式，现在通过提取器选取注解时，将仅列出当前类型下的历史注解，不会再列出其他类型的注解了。_由于记录模式已重新设计，过去的历史记录已丢失。_
 
 # v0.6.3
 ## Bug Fixes

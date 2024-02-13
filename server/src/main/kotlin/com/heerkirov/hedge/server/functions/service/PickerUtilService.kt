@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
+import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.Annotations
 import com.heerkirov.hedge.server.dao.Authors
 import com.heerkirov.hedge.server.dao.Folders
@@ -9,6 +10,7 @@ import com.heerkirov.hedge.server.dao.Topics
 import com.heerkirov.hedge.server.dto.form.HistoryPushForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.FolderType
+import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.exceptions.ParamError
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.manager.HistoryRecordManager
@@ -20,9 +22,10 @@ import org.ktorm.entity.sequenceOf
 
 class PickerUtilService(private val appdata: AppDataManager, private val data: DataRepository, private val historyRecordManager: HistoryRecordManager) {
     private val limitCount = 20
+    private val channels = listOf("FOLDER", "TOPIC", "AUTHOR", "ANNOTATION:${MetaType.TAG}", "ANNOTATION:${MetaType.TOPIC}", "ANNOTATION:${MetaType.AUTHOR}")
 
     fun getRecentFolders(): List<FolderSimpleRes> {
-        val folderIds = historyRecordManager.getRecent(HistoryRecord.SystemHistoryRecordType.USED_FOLDER, limitCount).map { it.toInt() }
+        val folderIds = historyRecordManager.getHistory(HistoryRecord.HistoryType.PICKER, "FOLDER", limitCount).map { it.toInt() }
         val result = data.db.from(Folders).select(Folders.id, Folders.title, Folders.parentAddress, Folders.type)
             .where { Folders.id inList folderIds and (Folders.type notEq FolderType.NODE) }
             .associate {
@@ -33,7 +36,7 @@ class PickerUtilService(private val appdata: AppDataManager, private val data: D
     }
 
     fun getRecentTopics(): List<TopicSimpleRes> {
-        val topicIds = historyRecordManager.getRecent(HistoryRecord.SystemHistoryRecordType.USED_TOPIC, limitCount).map { it.toInt() }
+        val topicIds = historyRecordManager.getHistory(HistoryRecord.HistoryType.PICKER, "TOPIC", limitCount).map { it.toInt() }
         val topicColors = appdata.setting.meta.topicColors
         val result = data.db.from(Topics)
             .select(Topics.id, Topics.name, Topics.type)
@@ -48,7 +51,7 @@ class PickerUtilService(private val appdata: AppDataManager, private val data: D
     }
 
     fun getRecentAuthors(): List<AuthorSimpleRes> {
-        val authorIds = historyRecordManager.getRecent(HistoryRecord.SystemHistoryRecordType.USED_AUTHOR, limitCount).map { it.toInt() }
+        val authorIds = historyRecordManager.getHistory(HistoryRecord.HistoryType.PICKER, "AUTHOR", limitCount).map { it.toInt() }
         val authorColors = appdata.setting.meta.authorColors
         val result = data.db.from(Authors)
             .select(Authors.id, Authors.name, Authors.type)
@@ -62,19 +65,18 @@ class PickerUtilService(private val appdata: AppDataManager, private val data: D
         return authorIds.mapNotNull(result::get)
     }
 
-    fun getRecentAnnotations(): List<AnnotationRes> {
-        val annotationIds = historyRecordManager.getRecent(HistoryRecord.SystemHistoryRecordType.USED_ANNOTATION, limitCount).map { it.toInt() }
+    fun getRecentAnnotations(annotationType: MetaType): List<AnnotationRes> {
+        val annotationIds = historyRecordManager.getHistory(HistoryRecord.HistoryType.PICKER, "ANNOTATION:$annotationType", limitCount).map { it.toInt() }
         val result = data.db.sequenceOf(Annotations).filter { it.id inList annotationIds }.associate { it.id to newAnnotationRes(it) }
         return annotationIds.mapNotNull(result::get)
     }
 
     fun pushUsedHistory(form: HistoryPushForm) {
-        when (form.type.lowercase()) {
-            "folder" -> historyRecordManager.push(HistoryRecord.SystemHistoryRecordType.USED_FOLDER, form.id.toString())
-            "topic" -> historyRecordManager.push(HistoryRecord.SystemHistoryRecordType.USED_TOPIC, form.id.toString())
-            "author" -> historyRecordManager.push(HistoryRecord.SystemHistoryRecordType.USED_AUTHOR, form.id.toString())
-            "annotation" -> historyRecordManager.push(HistoryRecord.SystemHistoryRecordType.USED_ANNOTATION, form.id.toString())
-            else -> be(ParamError("type"))
+        val channel = form.type.uppercase()
+        if(channel !in channels) be(ParamError("type"))
+
+        data.db.transaction {
+            historyRecordManager.push(HistoryRecord.HistoryType.PICKER, channel, form.id.toString())
         }
     }
 }

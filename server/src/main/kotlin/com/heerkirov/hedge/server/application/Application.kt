@@ -43,8 +43,9 @@ fun runApplication(options: ApplicationOptions) {
         val services = define {
             val similarFinder = define { SimilarFinderImpl(appStatus, appdata, repo, bus) }
 
+            val historyRecordManager = HistoryRecordManager(repo)
             val queryManager = QueryManager(appdata, repo, bus)
-            val queryService = QueryService(queryManager)
+            val queryService = QueryService(repo, queryManager, historyRecordManager)
 
             val sourceAnalyzeManager = SourceAnalyzeManager(appdata)
             val sourceTagManager = SourceTagManager(appdata, repo, bus)
@@ -61,7 +62,6 @@ fun runApplication(options: ApplicationOptions) {
             val annotationKit = AnnotationKit(repo)
             val annotationManager = AnnotationManager(repo)
 
-            val historyRecordManager = HistoryRecordManager(repo)
             val authorKit = AuthorKit(repo, annotationManager)
             val topicKit = TopicKit(repo, annotationManager)
             val tagKit = TagKit(repo, annotationManager)
