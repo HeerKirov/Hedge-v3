@@ -1,18 +1,32 @@
 import { UsefulColors } from "@/constants/ui"
 import { HttpInstance, Response } from ".."
 import { TagAddressType } from "./tag"
+import { TopicType } from "./topic"
+import { AuthorType } from "./author"
 import { MetaType } from "./all"
 
 export function createUtilQueryEndpoint(http: HttpInstance): UtilQueryEndpoint {
     return {
         querySchema: http.createDataRequest("/api/utils/query/schema", "POST"),
         queryForecast: http.createDataRequest("/api/utils/query/forecast", "POST"),
+        history: {
+            get: http.createPathRequest(dialect => `/api/utils/query/history/${dialect}`),
+            push: http.createPathDataRequest(dialect => `/api/utils/query/history/${dialect}`, "POST", {
+                parseData: text => ({text})
+            }),
+            clear: http.createPathRequest(dialect => `/api/utils/query/history/${dialect}`, "DELETE"),
+        }
     }
 }
 
 export interface UtilQueryEndpoint {
     querySchema(form: QueryForm): Promise<Response<QueryRes>>
     queryForecast(form: ForecastForm): Promise<Response<ForecastRes>>
+    history: {
+        get(dialect: Dialect): Promise<Response<string[]>>
+        push(dialect: Dialect, text: string): Promise<Response<string[]>>
+        clear(dialect: Dialect): Promise<Response<null>>
+    }
 }
 
 export type Dialect = "ILLUST" | "BOOK" | "SOURCE_DATA" | "TOPIC" | "AUTHOR" | "ANNOTATION"
@@ -29,7 +43,7 @@ export interface QueryRes {
 }
 
 export interface QueryPlan {
-    orders: string[]
+    sorts: string[]
     elements: ElementGroup[]
     filters: FilterGroup[]
 }
@@ -42,10 +56,10 @@ export type ElementGroup
 export interface ElementItem<V> { exclude: boolean, unionItems: V[] }
 export type ElementValue = ElementString | ElementSourceTag | ElementAnnotation | ElementTopic | ElementAuthor | ElementTag
 interface ElementString { type: undefined, value: string, precise: boolean }
-export interface ElementSourceTag { type: "source-tag", id: number, name: string, displayName: string | null, otherName: string | null }
+export interface ElementSourceTag { type: "source-tag", id: number, name: string, code: string, otherName: string | null, site: string, sourceTagType: string }
 export interface ElementAnnotation { type: "annotation", id: number, name: string, annotationType: MetaType }
-export interface ElementTopic { type: "topic", id: number, name: string, otherNames: string[], color: UsefulColors | null }
-export interface ElementAuthor { type: "author", id: number, name: string, otherNames: string[], color: UsefulColors | null }
+export interface ElementTopic { type: "topic", id: number, name: string, otherNames: string[], tagType: TopicType, color: UsefulColors | null }
+export interface ElementAuthor { type: "author", id: number, name: string, otherNames: string[], tagType: AuthorType, color: UsefulColors | null }
 export interface ElementTag { type: "tag", id: number, name: string, tagType: TagAddressType, otherNames: string[], color: UsefulColors | null, realTags: { id: number, name: string, tagType: TagAddressType }[] }
 
 export interface FilterGroup { exclude: boolean, fields: FilterOfOneField[] }
@@ -71,9 +85,9 @@ export type ForecastRes = {
 }
 
 export interface VisualForecast {
-    type: "source-tag" | "annotation" | "tag" | "topic" | "author" | "filter" | "order"
+    type: "source-tag" | "annotation" | "tag" | "topic" | "author" | "filter" | "sort"
     context: string
-    suggestions: {name: string, aliases: string[]}[]
+    suggestions: {name: string, aliases: string[], address: string[] | null}[]
     beginIndex: number
     endIndex: number
     fieldName: string | null
@@ -97,11 +111,12 @@ export type CompileError = NormalCharacterEscaped
     | ElementValueNotRequired
     | UnsupportedElementValueType
     | UnsupportedElementValueTypeOfRelation
-    | OrderValueRequired
-    | OrderValueMustBeSortList
-    | InvalidOrderItem
-    | OrderIsIndependent
-    | DuplicatedOrderItem
+    | UnsupportedElementRelationSymbol
+    | SortValueRequired
+    | SortValueMustBeSortList
+    | InvalidSortItem
+    | SortIsIndependent
+    | DuplicatedSortItem
     | ValueCannotBeAddress
     | ValueCannotBePatternInComparison
     | TypeCastError
@@ -242,58 +257,64 @@ type UnsupportedElementValueType = CompileErrorTemplate<3009, {key: string, valu
  */
 type UnsupportedElementValueTypeOfRelation = CompileErrorTemplate<3010, {key: string, valueType: ValueType, symbol: string}>
 
+/**
+ * 此元素项目不支持这个种类的关系运算。[begin, end)应标记predicative。
+ * info: key: element类型名称; valueType: 指出不支持的类型结构; symbol: 指出当前的运算符号
+ */
+type UnsupportedElementRelationSymbol = CompileErrorTemplate<3011, {key: string, symbol: string}>
+
 //==== 排序项目 ====
 
 /**
  * 排序项目需要有关系和值。[begin, end)应标记关键字的subject。
  */
-type OrderValueRequired = CompileErrorTemplate<3011, null>
+type SortValueRequired = CompileErrorTemplate<3012, null>
 
 /**
  * 排序项目的关系和值必须是:排序列表。[begin, end)应标记项目的sfp。
  */
-type OrderValueMustBeSortList = CompileErrorTemplate<3012, null>
+type SortValueMustBeSortList = CompileErrorTemplate<3013, null>
 
 /**
  * 值不是正确的排序列表项。[begin, end)应标记项目的sfp。
  * info: value: 错误的列表项; expected: 给出正确可用的排序项列表。
  */
-type InvalidOrderItem = CompileErrorTemplate<3013, {value: string, expected: string[]}>
+type InvalidSortItem = CompileErrorTemplate<3014, {value: string, expected: string[]}>
 
 /**
  * 排序项是独立而特别的：它不能被排除(-)，不能标记为来源项(^)，也不能和任何项用或(|)连接。[begin, end)标记整个body。
  */
-type OrderIsIndependent = CompileErrorTemplate<3014, null>
+type SortIsIndependent = CompileErrorTemplate<3015, null>
 
 /**
- * 在排序项列表中出现了重复的排序项。后一次出现的项会被忽略。[begin, end)标记这个order项。
+ * 在排序项列表中出现了重复的排序项。后一次出现的项会被忽略。[begin, end)标记这个sort项。
  * info: 这个被忽略的排序项。
  */
-type DuplicatedOrderItem = CompileErrorTemplate<3015, string>
+type DuplicatedSortItem = CompileErrorTemplate<3016, string>
 
 //==== 值类型相关 ====
 
 /**
  * 值不能写成meta tag地址段的形式(a.b.c)，只能是一项string。[begin, end)应标记地址段strList。
  */
-type ValueCannotBeAddress = CompileErrorTemplate<3016, null>
+type ValueCannotBeAddress = CompileErrorTemplate<3017, null>
 
 /**
  * 值在比较运算或区间中不能写成模糊匹配项。[begin, end)应标记值。
  */
-type ValueCannotBePatternInComparison = CompileErrorTemplate<3017, null>
+type ValueCannotBePatternInComparison = CompileErrorTemplate<3018, null>
 
 /**
  * 类型转换错误：str无法转换为目标类型的值。[begin, end)应标记值。
  * info: value: 值的内容; type: 想要的转换目标类型
  */
-type TypeCastError = CompileErrorTemplate<3018, {value: string, type: "NUMBER" | "SIZE" | "DATE"}>
+type TypeCastError = CompileErrorTemplate<3019, {value: string, type: "NUMBER" | "SIZE" | "DATE"}>
 
 /**
  * 类型转换错误：str无法转换为目标枚举类型的值。[begin, end)应标记值。
  * info: value: 值的内容; type: 枚举类型名称; expected: 给出可用的枚举值列表
  */
-type EnumTypeCastError = CompileErrorTemplate<3019, {value: string, type: string, expected: string[]}>
+type EnumTypeCastError = CompileErrorTemplate<3020, {value: string, type: string, expected: string[]}>
 
 //==== 构造语义相关 ====
 
@@ -301,29 +322,29 @@ type EnumTypeCastError = CompileErrorTemplate<3019, {value: string, type: string
  * 当前方言不支持这个种类的语义。[begin, end)标记整个element。
  * info: 语义类型名称
  */
-type UnsupportedSemanticStructure = CompileErrorTemplate<3020, "ELEMENT" | "ELEMENT_WITH_SOURCE" | "ANNOTATION">
+type UnsupportedSemanticStructure = CompileErrorTemplate<3021, "ELEMENT" | "ELEMENT_WITH_SOURCE" | "ANNOTATION">
 
 /**
  * 元素和关键字项不能在同一个合取项中混写。[begin, end)标记整个element。
  */
-type IdentifiesAndElementsCannotBeMixed = CompileErrorTemplate<3021, null>
+type IdentifiesAndElementsCannotBeMixed = CompileErrorTemplate<3022, null>
 
 /**
  * 这一个关键字是不能带sourceFlag(^)的，它没有source对应的项。[begin, end)标记subject。
  * info: 关键字名称
  */
-type ThisIdentifyCannotHaveSourceFlag = CompileErrorTemplate<3022, string>
+type ThisIdentifyCannotHaveSourceFlag = CompileErrorTemplate<3023, string>
 
 /**
  * 这一个关键字是必须带sourceFlag(^)的，它没有非source对应的项。[begin, end)标记subject。
  * info: 关键字名称
  */
-type ThisIdentifyMustHaveSourceFlag = CompileErrorTemplate<3023, string>
+type ThisIdentifyMustHaveSourceFlag = CompileErrorTemplate<3024, string>
 
 /**
  * 注解类项目是不能标记为from source(^)的。[begin, end)标记整个body。
  */
-type AnnotationCannotHaveSourceFlag = CompileErrorTemplate<3024, null>
+type AnnotationCannotHaveSourceFlag = CompileErrorTemplate<3025, null>
 
 //=== 执行计划翻译 ===
 

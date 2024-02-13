@@ -21,7 +21,7 @@ const props = defineProps<{
      */
     color?: Colors
     /**
-     * 是否可拖曳。开启后，注解可以被拖曳，完成拖曳响应。
+     * 是否可拖曳。开启后可以被拖曳，完成拖曳响应。
      */
     draggable?: boolean
     /**

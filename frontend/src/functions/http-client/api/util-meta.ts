@@ -17,8 +17,7 @@ export function createUtilMetaEndpoint(http: HttpInstance): UtilMetaEndpoint {
                 push: http.createDataRequest("/api/utils/meta-editor/history/identities", "POST"),
             },
             metaTags: {
-                recent: http.createRequest("/api/utils/meta-editor/history/meta-tags/recent"),
-                frequent: http.createRequest("/api/utils/meta-editor/history/meta-tags/frequent"),
+                list: http.createRequest("/api/utils/meta-editor/history/meta-tags"),
                 push: http.createDataRequest("/api/utils/meta-editor/history/meta-tags", "POST", {
                     parseData: (metas: MetaUtilMetaForm[]) => ({metas})
                 }),
@@ -71,11 +70,7 @@ export interface UtilMetaEndpoint {
             /**
              * 列出最近使用过的标签。按时间降序。每类不同的标签单独计数。
              */
-            recent(): Promise<Response<MetaUtilResult>>
-            /**
-             * 列出最近使用过的标签中最常用的那些。按使用频率排序。每类不同的标签单独计数。
-             */
-            frequent(): Promise<Response<MetaUtilResult>>
+            list(): Promise<Response<MetaUtilResult>>
             /**
              * 发送一条使用记录到服务器。
              */

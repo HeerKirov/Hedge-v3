@@ -429,14 +429,12 @@ export function useRecentData() {
 
     const fetchHistoryIdentities = useFetchHelper(client => client.metaUtil.history.identities.list)
     const fetchHistoryIdentitiesGet = useFetchHelper(client => client.metaUtil.history.identities.get)
-    const fetchFrequent = useFetchHelper(client => client.metaUtil.history.metaTags.frequent)
-    const fetchRecent = useFetchHelper(client => client.metaUtil.history.metaTags.recent)
+    const fetchRecent = useFetchHelper(client => client.metaUtil.history.metaTags.list)
 
     const selectList = ref([
-        {label: "元数据标签使用历史", value: "recent"},
-        {label: "经常使用的元数据标签", value: "frequent"}
+        {label: "元数据标签使用历史", value: "recent"}
     ])
-    const selected = ref<"frequent" | "recent" | `${IdentityType}-${number}`>("recent")
+    const selected = ref<"recent" | `${IdentityType}-${number}`>("recent")
     const selectedMetaTags = ref<MetaUtilResult>({authors: [], topics: [], tags: []})
 
     onBeforeMount(async () => {
@@ -451,11 +449,7 @@ export function useRecentData() {
     })
 
     watch(selected, async () => {
-        if(selected.value === "frequent") {
-            const res = await fetchFrequent({})
-            if(res !== undefined) selectedMetaTags.value = res
-            else selectedMetaTags.value = {authors: [], topics: [], tags: []}
-        }else if(selected.value === "recent") {
+        if(selected.value === "recent") {
             const res = await fetchRecent({})
             if(res !== undefined) selectedMetaTags.value = res
             else selectedMetaTags.value = {authors: [], topics: [], tags: []}

@@ -1,7 +1,7 @@
 import { HttpInstance, Response } from ".."
 import { SimpleFolder } from "./folder"
 import { Annotation } from "./annotations"
-import { SimpleAuthor, SimpleTopic } from "./all"
+import { MetaType, SimpleAuthor, SimpleTopic } from "./all"
 
 export function createUtilSearchEndpoint(http: HttpInstance): UtilSearchEndpoint {
     return {
@@ -9,7 +9,7 @@ export function createUtilSearchEndpoint(http: HttpInstance): UtilSearchEndpoint
             folders: http.createRequest("/api/utils/picker/history/folders"),
             topics: http.createRequest("/api/utils/picker/history/topics"),
             authors: http.createRequest("/api/utils/picker/history/authors"),
-            annotations: http.createRequest("/api/utils/picker/history/annotations"),
+            annotations: http.createPathRequest(type => `/api/utils/picker/history/annotations/${type}`),
             push: http.createDataRequest("/api/utils/picker/history", "POST")
         }
     }
@@ -38,7 +38,7 @@ export interface UtilSearchEndpoint {
         /**
          * annotation的最近使用记录。
          */
-        annotations(): Promise<Response<Annotation[]>>
+        annotations(metaType: MetaType): Promise<Response<Annotation[]>>
         /**
          * 添加最近使用记录。
          */

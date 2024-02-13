@@ -192,7 +192,6 @@ export function useElementRect(elementRef: Ref<HTMLElement | undefined>, options
 
     onElementResize(elementRef, (value, element) => {
         rect.value = options?.fixed ? element.getBoundingClientRect()  : value
-        console.log("useElementRect resize", rect.value)
     }, options)
 
     return rect

@@ -38,7 +38,7 @@ const clear = () => {
 <template>
     <div :class="$style.select" @click="clear">
         <template v-if="!!$slots.default">
-            <slot v-for="(item, idx) in items"
+            <slot v-for="(item, idx) in items" 
                 :key="`${item.value}`"
                 :index="idx"
                 :value="item.value"

@@ -1,7 +1,10 @@
 ## Features
 * 对搜索框进行了一系列更新。
   - 添加了输入预测功能。现在，当输入Tag/Topic/Author(有前缀)、输入Annotation或SourceTag、输入排序项或枚举值时，将根据当前输入的内容预测当前项的值，并展开下拉列表供选择。
-  - 搜索框的样式进行了更新，且展开query schema的状态被合并到了搜索框激活状态中。
+  - 添加了历史记录功能。当应用查询时，当前查询语句会被记录；当搜索框无任何文本时，会展开下拉列表供选择历史查询。
+  - 搜索框的样式进行了更新，且展开Query Schema的状态被合并到了搜索框激活状态中。
+  - Query Schema: 来源标签现已携带其site名称；元数据标签现已携带图标，且点击可打开预览浮窗。
+  - Query Schema: 警告和错误信息已翻译为中文。
 * 对HQL查询语言进行了一系列更新。
   - 与上述的输入预测功能对应的是，现在Element不再进行模糊匹配，也就是`A`仅匹配全名为`A`的项，想要模糊匹配必须显式给出`*`匹配符，如`*A*`。_Topic/Author/Annotation Dialect的名称搜索不受此影响。_
   - Illust Dialect: score添加了新别名`s`，与之对应的是SourceData Dialect的site移除了别名`s`；
@@ -10,6 +13,7 @@
   - Illust Dialect: 添加了新filter `source-title`；
   - SourceTag Element现在允许site/type进行模糊匹配，例如`p.c.A`可以匹配到`pixiv.character.A`了。
   - 排序字段order已重命名为`sort`(包括别名)。
+* 元数据标签编辑器中“按使用频率查看最近使用的标签”功能已移除。
 ## Optimizes
 * 调整了tag bulk API，那些位于顶层的tag，现在会无视其顺序，只有children中的tag才会保持排序。该调整会影响CLI中apply的表现。
 * 调整了提取器历史记录的存取方式，现在通过提取器选取注解时，将仅列出当前类型下的历史注解，不会再列出其他类型的注解了。_由于记录模式已重新设计，过去的历史记录已丢失。_

@@ -10,10 +10,6 @@ export interface QuerySchemaContext {
      */
     queryInputText: Ref<string | undefined>
     /**
-     * 扩展区域的开关。
-     */
-    expanded: Ref<boolean>
-    /**
      * 最终输出的query结果。将它用于最终查询参数。
      */
     query: Ref<string | undefined>
@@ -31,7 +27,6 @@ export function useQuerySchema(dialect: Dialect): QuerySchemaContext {
     const schema = useTabStorage<QueryRes>(`query-schema/${dialect}/schema`)
 
     const queryInputText = ref<string | undefined>(query.value)
-    const expanded = ref<boolean>(false)
 
     watch(query, query => {
         if(query !== queryInputText.value) queryInputText.value = query
@@ -40,7 +35,6 @@ export function useQuerySchema(dialect: Dialect): QuerySchemaContext {
     watch(queryInputText, async queryInputText => {
         const text = queryInputText?.trim()
         if(!text) {
-            expanded.value = false
             query.value = undefined
             schema.value = null
         }else if(text !== query.value) {
@@ -48,10 +42,9 @@ export function useQuerySchema(dialect: Dialect): QuerySchemaContext {
             if(res !== undefined) {
                 schema.value = res
                 query.value = text
-                expanded.value = expanded.value || !!res.errors.length
             }
         }
     })
 
-    return {queryInputText, expanded, query, schema}
+    return {queryInputText, query, schema}
 }

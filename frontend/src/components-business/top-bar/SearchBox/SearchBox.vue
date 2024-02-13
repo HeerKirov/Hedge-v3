@@ -5,10 +5,12 @@ import { Button, Icon } from "@/components/universal"
 import { ElementPopupCallout } from "@/components/interaction"
 import { QueryResult } from "@/components-business/top-bar"
 import { Dialect, QueryRes } from "@/functions/http-client/api/util-query"
-import { KeyEvent, USUAL_KEY_VALIDATORS } from "@/modules/keyboard"
+import { usePostPathFetchHelper } from "@/functions/fetch"
+import { createKeyEventValidator, KeyEvent, USUAL_KEY_VALIDATORS } from "@/modules/keyboard"
 import { computedEffect, computedMutable } from "@/utils/reactivity"
 import { useForecast } from "./context"
 import SearchBoxSuggestions from "./SearchBoxSuggestions.vue"
+import SearchBoxHistories from "./SearchBoxHistories.vue"
 
 const props = defineProps<{
     value?: string
@@ -22,53 +24,84 @@ const emit = defineEmits<{
     (e: "enter", newValue: boolean): void
 }>()
 
+const fetchPushHistory = usePostPathFetchHelper(client => client.queryUtil.history.push)
+
 const inputRef = ref<ComponentPublicInstance>()
 
 const suggestionRef = ref<InstanceType<typeof SearchBoxSuggestions>>()
+const historyRef = ref<InstanceType<typeof SearchBoxHistories>>()
 
 const textValue = computedMutable(() => props.value)
 
-const hasValue = computedEffect(() => props.value || textValue.value)
+const hasValue = computedEffect(() => !!(props.value || textValue.value))
 
 const active = ref(false)
 
 const showSchema = ref(false)
 
+const showHistory = ref(true)
+
 watch(active, a => { if(a) showSchema.value = true })
-watch(() => props.schema, s => { if(s && s.errors.length) showSchema.value = true })
+watch(() => props.schema, s => { if(s && (s.errors.length || s.warnings.length)) showSchema.value = true })
+watch(textValue, (t, o) => { if(!showHistory.value && o && !t) showHistory.value = true })
 
 const { startForecastTimer, stopForecastTimer, forecast, pickSuggestion } = useForecast(inputRef, textValue, props.dialect)
 
+const updateValue = (newValue: string) => {
+    textValue.value = newValue
+    emit("update:value", newValue)
+    emit("enter", newValue !== props.value)
+    if(props.dialect !== undefined && newValue !== props.value) {
+        fetchPushHistory(props.dialect, newValue).finally()
+    }
+}
+
+const focusKey = createKeyEventValidator("Meta+KeyF")
+
 const keypress = (e: KeyEvent) => {
     if(USUAL_KEY_VALIDATORS["Escape"](e)) {
-        if(forecast.value && suggestionRef.value) {
+        if(suggestionRef.value) {
+            stopForecastTimer()
+            e.preventDefault()
+        }else if(historyRef.value) {
+            showHistory.value = false
             e.preventDefault()
         }else{
             if(active.value) active.value = false
+            stopForecastTimer()
         }
-        stopForecastTimer()
+        
     }else if(USUAL_KEY_VALIDATORS["Enter"](e)) {
-        if(forecast.value && suggestionRef.value) {
+        if(suggestionRef.value) {
             suggestionRef.value.enter()
+            e.preventDefault()
+        }else if(!textValue.value && props.dialect !== undefined && historyRef.value) {
+            historyRef.value.enter()
             e.preventDefault()
         }else{
             const newValue = textValue.value ?? ""
-            emit("update:value", newValue)
-            emit("enter", newValue !== props.value)
+            updateValue(newValue)
             stopForecastTimer()
         }
     }else if(USUAL_KEY_VALIDATORS["ArrowUp"](e)) {
-        if(forecast.value && suggestionRef.value) {
+        if(suggestionRef.value) {
             suggestionRef.value.prev()
+        }else if(!textValue.value && props.dialect !== undefined && historyRef.value) {
+            historyRef.value.prev()
         }
         e.preventDefault()
     }else if(USUAL_KEY_VALIDATORS["ArrowDown"](e)) {
-        if(forecast.value && suggestionRef.value) {
+        if(suggestionRef.value) {
             suggestionRef.value.next()
+        }else if(!textValue.value && props.dialect !== undefined && historyRef.value) {
+            historyRef.value.next()
         }
         e.preventDefault()
     }else if(USUAL_KEY_VALIDATORS["ArrowLeft"](e) || USUAL_KEY_VALIDATORS["ArrowRight"](e)) {
         stopForecastTimer()
+    }else if(focusKey(e)) {
+        //按下Meta+F时，若schema隐藏，使其重新显示
+        if(active.value && !showSchema.value) showSchema.value = true
     }
 }
 
@@ -125,6 +158,11 @@ const input = (e: InputEvent) => {
      */
 }
 
+const click = () => {
+    //点击文本框时，若schema隐藏，使其重新显示
+    if(!showSchema.value) showSchema.value = true
+}
+
 const clear = () => {
     if(props.value) {
         emit("update:value", "")
@@ -144,7 +182,7 @@ const clear = () => {
                 :placeholder="placeholder" v-model:value="textValue" update-on-input
                 focus-on-keypress="Meta+KeyF" blur-on-keypress="Escape"
                 @keypress="keypress" @focus="focus" @blur="blur" @input="input"
-                @compositionend="compositionEnd"
+                @compositionend="compositionEnd" @click="click"
             />
             <Button
                 v-if="hasValue"
@@ -161,6 +199,7 @@ const clear = () => {
         </div>
         <template #popup>
             <SearchBoxSuggestions v-if="forecast" ref="suggestionRef" :class="$style.popup" :forecast="forecast" @pick="pickSuggestion"/>
+            <SearchBoxHistories v-else-if="showHistory && !textValue && dialect !== undefined" ref="historyRef" :class="$style.popup" :dialect="dialect" @pick="updateValue"/>
             <QueryResult v-else-if="showSchema && schema" :class="$style.popup" :schema="schema"/>
         </template>
     </ElementPopupCallout>

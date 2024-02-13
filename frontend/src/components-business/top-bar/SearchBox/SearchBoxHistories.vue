@@ -1,21 +1,31 @@
 <script setup lang="ts">
-import { computed, ref } from "vue"
+import { computed, ref, toRef } from "vue"
 import { SelectList } from "@/components/form"
-import { VisualForecast } from "@/functions/http-client/api/util-query"
+import { Dialect } from "@/functions/http-client/api/util-query"
+import { useFetchEndpoint } from "@/functions/fetch"
+import { usePopupMenu } from "@/modules/popup-menu";
 
 const props = defineProps<{
-    forecast: VisualForecast
+    dialect: Dialect
 }>()
 
 const emit = defineEmits<{
-    (e: "pick", item: VisualForecast["suggestions"][number]): void
+    (e: "pick", text: string): void
 }>()
+
+const { data, deleteData: clear } = useFetchEndpoint({
+    path: toRef(props, "dialect"), 
+    get: client => client.queryUtil.history.get,
+    delete: client => client.queryUtil.history.clear
+})
 
 const selectedIndex = ref<number>()
 
-const items = computed(() => props.forecast.suggestions.map(s => ({label: s.name, value: s})))
+const items = computed(() => data.value?.map(s => ({label: s, value: s})) ?? [])
 
-const selectListClick = (value: VisualForecast["suggestions"][number]) => emit("pick", value)
+const selectListClick = (value: string) => emit("pick", value)
+
+const menu = usePopupMenu([{type: "normal", label: "清除历史记录", click: clear}])
 
 defineExpose({
     next() {
@@ -46,11 +56,9 @@ defineExpose({
 </script>
 
 <template>
-    <SelectList :items="items" v-model:index="selectedIndex" @click="selectListClick" v-slot="{ value, selected, click }">
+    <SelectList v-if="items.length > 0" :items="items" v-model:index="selectedIndex" @click="selectListClick" @contextmenu="menu.popup()" v-slot="{ value, selected, click }">
         <div :class="{[$style['select-list-item']]: true, [$style.selected]: selected}" @click="click">
-            {{value.name}}
-            <span v-if="value.aliases.length" class="secondary-text">({{value.aliases.join("/")}})</span>
-            <span v-if="value.address?.length" class="secondary-text float-right">[{{value.address.join("/")}}]</span>
+            {{value}}
         </div>
     </SelectList>
 </template>

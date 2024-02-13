@@ -74,9 +74,9 @@ const { menuItems, menuSelected, component, title } = useMarkdownDocument({
         margin: $spacing-1 0
         padding: $spacing-1
         border-radius: $radius-size-std
-        background-color: $light-mode-border-color
+        background-color: mix($light-mode-background-color, $light-mode-secondary, 90%)
         @media (prefers-color-scheme: dark)
-            background-color: $dark-mode-border-color
+            background-color: mix($dark-mode-background-color, $dark-mode-secondary, 90%)
         > code
             padding: 0
     blockquote

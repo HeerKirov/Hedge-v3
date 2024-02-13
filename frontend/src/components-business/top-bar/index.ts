@@ -9,14 +9,13 @@ import ColumnNumButton from "./ColumnNumButton.vue"
 import CollectionModeButton from "./CollectionModeButton.vue"
 import DataRouter from "./DataRouter.vue"
 import ZoomController from "./ZoomController.vue"
-import SearchInput from "./SearchInput.vue"
 import SearchBox from "./SearchBox/SearchBox.vue"
 import SearchResultInfo from "./SearchResultInfo.vue"
 import QueryResult from "@/components-business/top-bar/QuerySchema/QueryResult.vue"
 import FileWatcher from "./FileWatcher.vue"
 
 export { QueryResult }
-export { SearchBox, SearchInput, SearchResultInfo }
+export { SearchBox, SearchResultInfo }
 export { AttachFilter }
 export { FilterButton, SelectButton, ToggleButton, FitTypeButton, ColumnNumButton, CollectionModeButton, LockOnButton }
 export { DataRouter, ZoomController, FileWatcher }

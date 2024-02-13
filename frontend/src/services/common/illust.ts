@@ -521,9 +521,9 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
 
         const getCurrentOrderDirection = (): "asc" | "desc" => {
             if(dataDropOptions.dropInType === "illust" || dataDropOptions.dropInType === "partition") {
-                if(dataDropOptions.querySchema.value?.queryPlan?.orders.length) {
-                    //如果存在query schema查询计划，优先从中提取有关orderTime的排序信息。orderTime的排序字段名是ORDINAL，视情况在前面添加+/-
-                    const ordinalOrderValue = dataDropOptions.querySchema.value.queryPlan.orders.find(i => i.endsWith("ORDINAL"))
+                if(dataDropOptions.querySchema.value?.queryPlan?.sorts.length) {
+                    //如果存在query schema查询计划，优先从中提取有关orderTime的排序信息，视情况在前面添加+/-
+                    const ordinalOrderValue = dataDropOptions.querySchema.value.queryPlan.sorts.find(i => i.endsWith("ORDER_TIME"))
                     if(ordinalOrderValue) {
                         return ordinalOrderValue.startsWith("-") ? "desc" : "asc"
                     }

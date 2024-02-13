@@ -18,7 +18,7 @@
     根据评分。运算对象为number。
 * **分区时间**: `partition`, `pt`  
     根据分区时间。运算对象为date。
-* **排序时间**: `ordinal`, `ord`  
+* **排序时间**: `order-time`, `order`, `ot`  
     根据排序时间。运算对象为date。
 * **创建时间**: `create-time`, `create`, `ct`  
     根据创建时间。运算对象为date。
@@ -26,8 +26,8 @@
     根据修改时间。运算对象为date。
 * **描述**: `description`, `desc`  
     根据描述。运算对象为string。
-* **扩展名**: `extension`, `ext`  
-    根据扩展名。运算对象为extractString。
+* **文件类型**: `file-type`, `type`, `extension`, `ext`  
+    根据文件类型。可以使用扩展名(`jpeg`与`jpg`是等价的)，或使用`video`, `image`(`img`)获取视频、图像类型。
 * **文件大小**: `filesize`, `size`  
     根据文件大小。运算对象为size。
 * **来源ID**: `source-id`, `^id`  
@@ -38,6 +38,8 @@
     根据来源分页页名。运算对象为extractString。
 * **来源站点**: `source-site`, `^site`  
     根据来源站点。运算对象为extractString。
+* **来源标题**: `source-title`, `^title`  
+  根据来源数据标题。运算对象为string。
 * **来源描述**: `source-description`, `^description`, `source-desc`, `^desc`  
     根据来源数据描述。运算对象为string。
 * **Tagme**: `tagme`  
@@ -46,8 +48,8 @@
 可用排序项:
 * **ID**: `id`
 * **评分**: `score`, `s`
-* **排序时间**: `ordinal`, `ord`
 * **分区时间**: `partition`, `pt`
+* **排序时间**: `order-time`, `order`, `ot`
 * **创建时间**: `create-time`, `create`, `ct`
 * **修改时间**: `update-time`, `update`, `ut`
 * **来源ID**: `source-id`, `^id`
@@ -90,7 +92,7 @@
 * **元数据标签**: 支持通过一般标签语法`A`查询来源标签。
 
 可用关键字:
-* **来源站点**: `source-site`, `src`, `site`, `s`  
+* **来源站点**: `source-site`, `src`, `site`
     根据来源站点。运算对象为extractString。
 * **来源ID**: `source-id`, `id`  
     根据来源ID。运算对象为patternNumber。
@@ -103,15 +105,15 @@
 
 可用排序项:
 * **来源ID**: `source-id`, `id`
-* **来源站点**: `source-site`, `src`, `site`, `s`
+* **来源站点**: `source-site`, `src`, `site`
 
 ## 主题/作者
 
 支持元素:
-* **元数据标签**: 支持通过一般标签语法`A`查询名称。
+* **元数据标签**: 支持通过一般标签语法`A`模糊查询名称。
 * **注解**: 支持通过注解语法`[A]`查询注解。
 
 ## 注解
 
 支持元素:
-* **元数据标签**: 支持通过一般标签语法`A`查询名称。
+* **元数据标签**: 支持通过一般标签语法`A`模糊查询名称。
