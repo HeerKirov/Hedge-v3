@@ -73,7 +73,8 @@ const { elementRefs } = installTagTreeContext({
 })
 
 defineExpose({
-    jumpTo: elementRefs.jumpTo
+    jumpTo: elementRefs.jumpTo,
+    cancelSelect: elementRefs.cancelSelect
 })
 
 </script>

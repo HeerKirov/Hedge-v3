@@ -10,7 +10,7 @@ import { BatchQueryResult, SourceMappingTargetDetail } from "@/functions/http-cl
 import { useFetchHelper, useFetchReactive, usePostFetchHelper, usePostPathFetchHelper, useQueryContinuousListView } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
 import { useToast } from "@/modules/toast"
-import { useInterceptedKey } from "@/modules/keyboard"
+import { KeyEvent, useInterceptedKey, USUAL_KEY_VALIDATORS } from "@/modules/keyboard"
 import { useMessageBox } from "@/modules/message-box"
 import { useTagTreeSearch } from "@/services/common/tag"
 import { installation, toRef } from "@/utils/reactivity"
@@ -521,7 +521,11 @@ export function useSuggestionData() {
 }
 
 export function useDatabaseData() {
-    const { tabDBType } = useEditorContext()
+    const { tabDBType, form: { add } } = useEditorContext()
+
+    const selectedIndex = ref<number | null>(null)
+
+    const searchText = ref("")
 
     const authorSearchText = ref("")
 
@@ -582,6 +586,78 @@ export function useDatabaseData() {
 
     watch(topicSearchText, topicReset)
 
+    watch(tabDBType, t => {
+        searchText.value = t === "author" ? authorSearchText.value : t === "topic" ? topicSearchText.value : tagSearch.searchText.value
+        selectedIndex.value = null
+    })
+
+    const inputKeypress = (e: KeyEvent) => {
+        if(USUAL_KEY_VALIDATORS["ArrowUp"](e)) {
+            if(tabDBType.value === "author") {
+                if(selectedIndex.value === null || selectedIndex.value === 0) selectedIndex.value = authorData.value.result.length - 1
+                else selectedIndex.value -= 1
+            }else if(tabDBType.value === "topic") {
+                if(selectedIndex.value === null || selectedIndex.value === 0) selectedIndex.value = topicData.value.result.length - 1
+                else selectedIndex.value -= 1
+            }else if(tabDBType.value === "tag") {
+                tagSearch.prev()
+            }
+            e.preventDefault()
+        }else if(USUAL_KEY_VALIDATORS["ArrowDown"](e)) {
+            if(tabDBType.value === "author") {
+                if(selectedIndex.value === null || selectedIndex.value >= authorData.value.result.length - 1) selectedIndex.value = 0
+                else selectedIndex.value += 1
+            }else if(tabDBType.value === "topic") {
+                if(selectedIndex.value === null || selectedIndex.value >= topicData.value.result.length - 1) selectedIndex.value = 0
+                else selectedIndex.value += 1
+            }else if(tabDBType.value === "tag") {
+                tagSearch.next()
+            }
+            e.preventDefault()
+        }else if(USUAL_KEY_VALIDATORS["Enter"](e)) {
+            const currentText = tabDBType.value === "author" ? authorSearchText.value : tabDBType.value === "topic" ? topicSearchText.value : tagSearch.searchText.value
+            if(currentText !== searchText.value) {
+                if(tabDBType.value === "author") {
+                    authorSearchText.value = searchText.value
+                    selectedIndex.value = searchText.value ? 0 : null
+                }else if(tabDBType.value === "topic") {
+                    topicSearchText.value = searchText.value
+                    selectedIndex.value = searchText.value ? 0 : null
+                }else{
+                    tagSearch.searchText.value = searchText.value
+                }
+            }else{
+                if(tabDBType.value === "author") {
+                    if(selectedIndex.value !== null) {
+                        const cur = authorData.value.result[selectedIndex.value]
+                        add("author", {id: cur.id, name: cur.name, type: cur.type, color: cur.color})
+                        searchText.value = ""
+                        authorSearchText.value = ""
+                        selectedIndex.value = null
+                    }else{
+                        selectedIndex.value = 0
+                    }
+                }else if(tabDBType.value === "topic") {
+                    if(selectedIndex.value !== null) {
+                        const cur = topicData.value.result[selectedIndex.value]
+                        add("topic", {id: cur.id, name: cur.name, type: cur.type, color: cur.color})
+                        searchText.value = ""
+                        topicSearchText.value = ""
+                        selectedIndex.value = null
+                    }else{
+                        selectedIndex.value = 0
+                    }
+                }else if(tabDBType.value === "tag") {
+                    const cur = tagSearch.getCurrent()
+                    if(cur !== null) add("tag", {id: cur.id, name: cur.name, color: cur.color})
+                    searchText.value = ""
+                    tagSearch.searchText.value = ""
+                }
+            }
+            e.preventDefault()
+        }
+    }
+
     const refresh = () => {
         if(tabDBType.value === "author") {
             authorReset()
@@ -592,7 +668,7 @@ export function useDatabaseData() {
         }
     }
 
-    return {tabDBType, authorData, topicData, tagData, authorShowMore, topicShowMore, authorNext, topicNext, authorSearchText, topicSearchText, tagSearch, refresh}
+    return {tabDBType, authorData, topicData, tagData, authorShowMore, topicShowMore, authorNext, topicNext, tagSearch, searchText, selectedIndex, inputKeypress, refresh}
 }
 
 export function useSourceDeriveData() {

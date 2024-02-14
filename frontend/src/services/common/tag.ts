@@ -20,6 +20,14 @@ export function useTagTreeSearch(data: Ref<TagTreeNode[] | undefined>) {
         if(tagTreeRef.value) tagTreeRef.value.jumpTo(id)
     }
 
+    const getCurrent = (): TagTreeNode | null => {
+        if(searchResult.value !== null && searchInfo.value !== null) {
+            if(tagTreeRef.value) tagTreeRef.value.cancelSelect()
+            return searchResult.value[searchInfo.value.current]
+        }
+        return null
+    }
+
     const next = () => {
         if(searchResult.value?.length && searchInfo.value) {
             if(searchInfo.value.current < searchInfo.value.total - 1) {
@@ -70,5 +78,5 @@ export function useTagTreeSearch(data: Ref<TagTreeNode[] | undefined>) {
         }
     })
 
-    return {searchText, searchInfo, tagTreeRef, next, prev, jumpTo}
+    return {searchText, searchInfo, tagTreeRef, next, prev, jumpTo, getCurrent}
 }

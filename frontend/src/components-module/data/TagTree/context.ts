@@ -372,6 +372,10 @@ function useElementRefs(expandedState: ReturnType<typeof useExpandedState>) {
             }
             jumpTarget.value = tagId
         },
+        cancelSelect() {
+          jumpTarget.value = null
+            targetKey = null
+        },
         async setElement(key: number, el: Element | ComponentPublicInstance | null | undefined) {
             if(el) {
                 elements[key] = el
