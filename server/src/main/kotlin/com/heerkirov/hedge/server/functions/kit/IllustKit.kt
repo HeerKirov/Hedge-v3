@@ -136,6 +136,54 @@ class IllustKit(private val appdata: AppDataManager,
     }
 
     /**
+     * 从现有列表中移除指定的tags/topics/authors，然后重新处理导出并应用更改。
+     */
+    fun removeMeta(thisId: Int, removeTags: List<Int>, removeTopics: List<Int>, removeAuthors: List<Int>, copyFromParent: Int? = null, copyFromChildren: Boolean = false, ignoreNotExist: Boolean = false) {
+        if(removeTags.isNotEmpty() || removeTopics.isNotEmpty() || removeAuthors.isNotEmpty()) {
+            val existTags = metaManager.getNotExportMetaTags(thisId, IllustTagRelations, Tags).map { it.id }
+            val existTopics = metaManager.getNotExportMetaTags(thisId, IllustTopicRelations, Topics).map { it.id }
+            val existAuthors = metaManager.getNotExportMetaTags(thisId, IllustAuthorRelations, Authors).map { it.id }
+
+            if(removeTags.any { it in existTags } || removeTopics.any { it in existTopics } || removeAuthors.any { it in existAuthors }) {
+                val newTags = existTags - removeTags.toSet()
+                val newTopics = existTopics - removeTopics.toSet()
+                val newAuthors = existAuthors - removeAuthors.toSet()
+
+                if(newTags.isEmpty() && newTopics.isEmpty() && newAuthors.isEmpty()) {
+                    if(existTags.isNotEmpty()) metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, !copyFromChildren)
+                    if(existAuthors.isNotEmpty()) metaManager.deleteMetaTags(thisId, IllustAuthorRelations, Authors, !copyFromChildren)
+                    if(existTopics.isNotEmpty()) metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, !copyFromChildren)
+                    metaManager.deleteAnnotations(thisId, IllustAnnotationRelations)
+
+                    if(copyFromParent != null) {
+                        if(anyNotExportedMetaExists(copyFromParent)) copyAllMetaFromParent(thisId, copyFromParent)
+                    }else if (copyFromChildren) {
+                        copyAllMetaFromChildren(thisId)
+                    }
+                }else{
+                    val tagAnnotations = metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !copyFromChildren,
+                            metaTag = Tags,
+                            metaRelations = IllustTagRelations,
+                            metaAnnotationRelations = TagAnnotationRelations,
+                            newTagIds = metaManager.validateAndExportTag(newTags, ignoreError = ignoreNotExist))
+                    val topicAnnotations = metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !copyFromChildren,
+                            metaTag = Topics,
+                            metaRelations = IllustTopicRelations,
+                            metaAnnotationRelations = TopicAnnotationRelations,
+                            newTagIds = metaManager.validateAndExportTopic(newTopics, ignoreError = ignoreNotExist))
+                    val authorAnnotations = metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !copyFromChildren,
+                            metaTag = Authors,
+                            metaRelations = IllustAuthorRelations,
+                            metaAnnotationRelations = AuthorAnnotationRelations,
+                            newTagIds = metaManager.validateAndExportAuthor(newAuthors, ignoreError = ignoreNotExist))
+
+                    processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
+                }
+            }
+        }
+    }
+
+    /**
      * 在没有改变主体的meta tag的情况下，重新导出meta tag。用于当关联客体发生变更时更新。
      * @param forceUpdate 默认情况下，如果主体有自己的meta tags，则不会更新。开启此选项，在这种情况下强制更新。
      */

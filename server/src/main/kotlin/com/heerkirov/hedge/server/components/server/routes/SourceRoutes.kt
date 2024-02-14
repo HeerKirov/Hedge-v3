@@ -39,6 +39,7 @@ class SourceRoutes(private val sourceDataService: SourceDataService,
                 }
                 path("source-tag-mappings") {
                     post("batch-query", sourceTagMappings::batchQuery)
+                    post("batch-query-by-illusts", sourceTagMappings::batchQueryByIllusts)
                     path("{source_site}/{source_tag_type}/{source_tag_code}") {
                         get(sourceTagMappings::get)
                         put(sourceTagMappings::update)
@@ -109,6 +110,13 @@ class SourceRoutes(private val sourceDataService: SourceDataService,
         fun batchQuery(ctx: Context) {
             val form = ctx.bodyAsListForm<SourceTagPath>()
             ctx.json(sourceMappingService.batchQuery(form))
+        }
+
+        fun batchQueryByIllusts(ctx: Context) {
+            val illustIds = try { ctx.bodyAsClass<List<Int>>() } catch (e: Exception) {
+                throw be(ParamTypeError("illustIds", e.message ?: "cannot convert to List<Int>"))
+            }
+            ctx.json(sourceMappingService.batchQueryByIllusts(illustIds))
         }
 
         fun get(ctx: Context) {

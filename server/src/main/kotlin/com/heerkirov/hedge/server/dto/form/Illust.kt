@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.dto.form
 
 import com.heerkirov.hedge.server.dto.res.SourceDataPath
+import com.heerkirov.hedge.server.dto.res.SourceTagPath
 import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.types.Opt
@@ -53,7 +54,8 @@ class IllustBatchUpdateForm(val target: List<Int>,
                             val tags: Opt<List<Int>> = undefined(),
                             val topics: Opt<List<Int>> = undefined(),
                             val authors: Opt<List<Int>> = undefined(),
-                            val tagOverride: Boolean = false,
+                            val mappingSourceTags: Opt<List<SourceTagPath>> = undefined(),
+                            val tagUpdateMode: TagUpdateMode = TagUpdateMode.APPEND,
                             val tagme: Opt<Illust.Tagme> = undefined(),
                             val timeInsertBegin: Opt<Int> = undefined(),
                             val timeInsertEnd: Opt<Int> = undefined(),
@@ -76,6 +78,10 @@ class IllustBatchUpdateForm(val target: List<Int>,
         SET_ORDER_TIME_BY_SOURCE_ID,
         SET_ORDER_TIME_BY_BOOK_ORDINAL,
         SET_ORDER_TIME_BY_FOLDER_ORDINAL,
+    }
+
+    enum class TagUpdateMode {
+        APPEND, OVERRIDE, REMOVE
     }
 }
 

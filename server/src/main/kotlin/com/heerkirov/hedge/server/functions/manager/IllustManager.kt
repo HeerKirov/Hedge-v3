@@ -7,8 +7,7 @@ import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.form.IllustBatchUpdateForm
 import com.heerkirov.hedge.server.dto.form.IllustImageCreateForm
 import com.heerkirov.hedge.server.dto.form.ImagePropsCloneForm
-import com.heerkirov.hedge.server.dto.res.SourceDataIdentity
-import com.heerkirov.hedge.server.dto.res.SourceDataPath
+import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.events.*
@@ -40,6 +39,7 @@ class IllustManager(private val appdata: AppDataManager,
                     private val bus: EventBus,
                     private val kit: IllustKit,
                     private val sourceManager: SourceDataManager,
+                    private val sourceMappingManager: SourceMappingManager,
                     private val associateManager: AssociateManager,
                     private val bookManager: BookManager,
                     private val folderManager: FolderManager,
@@ -369,20 +369,40 @@ class IllustManager(private val appdata: AppDataManager,
         }
 
         //meta tag
-        if(anyOpt(form.tags, form.topics, form.authors)) {
+        if(anyOpt(form.tags, form.topics, form.authors, form.mappingSourceTags)) {
+            val mappings = form.mappingSourceTags.unwrapOrNull()?.let { sourceMappingManager.batchQuery(it) }?.associateBy { SourceTagPath(it.site, it.type, it.code) }
+
             //由于meta tag的更新实在复杂，不必在这里搞batch优化了，就挨个处理就好了
             for (illust in images) {
-                if(form.tagOverride) {
-                    kit.updateMeta(illust.id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromParent = illust.parentId)
+                val (tags, topics, authors) = if(mappings != null && illust.sourceDataId != null) {
+                    //提取标签映射。查询sourceData对应的全部sourceTag，然后从mappings中取存在的那部分，最后按类别分类并与表单参数合并
+                    val sourceTags = data.db.from(SourceTags)
+                        .innerJoin(SourceTagRelations, (SourceTags.id eq SourceTagRelations.sourceTagId) and (SourceTagRelations.sourceDataId eq illust.sourceDataId))
+                        .select(SourceTags.site, SourceTags.type, SourceTags.code)
+                        .map { SourceTagPath(it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.code]!!) }
+                    val sourceTagMappings = sourceTags.mapNotNull { mappings[it] }.flatMap { it.mappings }.map { it.metaTag }
+                    val mappedTags = sourceTagMappings.filterIsInstance<TagSimpleRes>().map { it.id }
+                    val mappedTopics = sourceTagMappings.filterIsInstance<TopicSimpleRes>().map { it.id }
+                    val mappedAuthors = sourceTagMappings.filterIsInstance<AuthorSimpleRes>().map { it.id }
+                    val tags = if(mappedTags.isNotEmpty()) optOf((form.tags.unwrapOr { emptyList() } + mappedTags).distinct()) else form.tags
+                    val topics = if(mappedTopics.isNotEmpty()) optOf((form.topics.unwrapOr { emptyList() } + mappedTopics).distinct()) else form.topics
+                    val authors = if(mappedAuthors.isNotEmpty()) optOf((form.authors.unwrapOr { emptyList() } + mappedAuthors).distinct()) else form.authors
+                    Triple(tags, topics, authors)
                 }else{
-                    kit.appendMeta(illust.id, appendTags = form.tags.unwrapOr { emptyList() }, appendAuthors = form.authors.unwrapOr { emptyList() }, appendTopics = form.topics.unwrapOr { emptyList() }, isCollection = false)
+                    Triple(form.tags, form.topics, form.authors)
+                }
+
+                when (form.tagUpdateMode) {
+                    IllustBatchUpdateForm.TagUpdateMode.OVERRIDE -> kit.updateMeta(illust.id, newTags = tags, newAuthors = authors, newTopics = topics, copyFromParent = illust.parentId)
+                    IllustBatchUpdateForm.TagUpdateMode.APPEND -> kit.appendMeta(illust.id, appendTags = tags.unwrapOr { emptyList() }, appendAuthors = authors.unwrapOr { emptyList() }, appendTopics = topics.unwrapOr { emptyList() }, isCollection = false)
+                    IllustBatchUpdateForm.TagUpdateMode.REMOVE -> kit.removeMeta(illust.id, removeTags = tags.unwrapOr { emptyList() }, removeAuthors = authors.unwrapOr { emptyList() }, removeTopics = topics.unwrapOr { emptyList() }, copyFromParent = illust.parentId)
                 }
             }
             for (illust in collections) {
-                if(form.tagOverride) {
-                    kit.updateMeta(illust.id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromChildren = true)
-                }else{
-                    kit.appendMeta(illust.id, appendTags = form.tags.unwrapOr { emptyList() }, appendAuthors = form.authors.unwrapOr { emptyList() }, appendTopics = form.topics.unwrapOr { emptyList() }, isCollection = true)
+                when (form.tagUpdateMode) {
+                    IllustBatchUpdateForm.TagUpdateMode.OVERRIDE -> kit.updateMeta(illust.id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromChildren = true)
+                    IllustBatchUpdateForm.TagUpdateMode.APPEND -> kit.appendMeta(illust.id, appendTags = form.tags.unwrapOr { emptyList() }, appendAuthors = form.authors.unwrapOr { emptyList() }, appendTopics = form.topics.unwrapOr { emptyList() }, isCollection = true)
+                    IllustBatchUpdateForm.TagUpdateMode.REMOVE -> kit.removeMeta(illust.id, removeTags = form.tags.unwrapOr { emptyList() }, removeAuthors = form.authors.unwrapOr { emptyList() }, removeTopics = form.topics.unwrapOr { emptyList() }, copyFromChildren = true)
                 }
             }
         }

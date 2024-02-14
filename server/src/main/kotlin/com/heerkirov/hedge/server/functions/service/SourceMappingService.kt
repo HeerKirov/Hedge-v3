@@ -2,14 +2,31 @@ package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
+import com.heerkirov.hedge.server.dao.Illusts
+import com.heerkirov.hedge.server.dao.SourceTagRelations
+import com.heerkirov.hedge.server.dao.SourceTags
 import com.heerkirov.hedge.server.dto.res.SourceMappingBatchQueryResult
 import com.heerkirov.hedge.server.dto.res.SourceMappingTargetItem
 import com.heerkirov.hedge.server.dto.res.SourceMappingTargetItemDetail
 import com.heerkirov.hedge.server.dto.res.SourceTagPath
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.functions.manager.SourceMappingManager
+import org.ktorm.dsl.*
 
 class SourceMappingService(private val data: DataRepository, private val sourceMappingManager: SourceMappingManager) {
+
+    fun batchQueryByIllusts(illustIds: List<Int>): List<SourceMappingBatchQueryResult> {
+        val sourceTags = data.db.from(Illusts)
+            .innerJoin(SourceTagRelations, SourceTagRelations.sourceDataId eq Illusts.sourceDataId)
+            .innerJoin(SourceTags, SourceTags.id eq SourceTagRelations.sourceTagId)
+            .select(SourceTags.site, SourceTags.type, SourceTags.code)
+            .where { (Illusts.id inList illustIds) and (Illusts.sourceDataId.isNotNull()) }
+            .groupBy(SourceTags.id)
+            .map { SourceTagPath(it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.code]!!) }
+
+        return sourceMappingManager.batchQuery(sourceTags)
+    }
+
     fun batchQuery(tags: List<SourceTagPath>): List<SourceMappingBatchQueryResult> {
         return sourceMappingManager.batchQuery(tags)
     }
