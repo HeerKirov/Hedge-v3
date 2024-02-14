@@ -13,7 +13,7 @@ import { SimpleBook } from "@/functions/http-client/api/book"
 import { flatResponse } from "@/functions/http-client"
 import { platform } from "@/functions/ipc-client"
 import { useAssets, useLocalStorage } from "@/functions/app"
-import { useDocumentTitle, usePath, useTabRoute } from "@/modules/browser"
+import { useBrowserTabs, useDocumentTitle, usePath, useTabRoute } from "@/modules/browser"
 import { useMessageBox } from "@/modules/message-box"
 import { useInterceptedKey } from "@/modules/keyboard"
 import { useListViewContext } from "@/services/base/list-view-context"
@@ -26,6 +26,7 @@ import { installation, toRef } from "@/utils/reactivity"
 import { arrays, numbers } from "@/utils/primitives"
 import { useListeningEvent } from "@/utils/emitter"
 import { onElementResize } from "@/utils/sensors"
+import { LocalDate } from "@/utils/datetime"
 
 export function useFindSimilarContext() {
     const router = useTabRoute()
@@ -77,12 +78,13 @@ export function useQuickFindContext() {
     const paneState = useSelectedPaneState("illust")
     const listviewController = useIllustViewController()
     const operators = useImageDatasetOperators({listview: listview.listview, paginationData: listview.paginationData, listviewController, selector})
+    const selfOperators = useQuickFindOperators()
 
     installIllustListviewContext({listview, selector, listviewController})
 
     useSettingSite()
 
-    return {paneState, listview, selector, listviewController, operators}
+    return {paneState, listview, selector, listviewController, operators: {...operators, ...selfOperators}}
 }
 
 function useQuickFindListView(path: Ref<number>) {
@@ -107,6 +109,24 @@ function useQuickFindListView(path: Ref<number>) {
     watch(data, listview.listview.refresh)
 
     return {...listview, data}
+}
+
+function useQuickFindOperators() {
+    const router = useTabRoute()
+    const browserTabs = useBrowserTabs()
+
+    const fetch = useFetchHelper(client => client.illust.get)
+
+    const openImageInPartition = async (currentImageId: number, at?: "NEW_TAB" | "NEW_WINDOW") => {
+        const res = await fetch(currentImageId)
+        if(res !== undefined) {
+            if(at === "NEW_TAB") browserTabs.newTab({routeName: "PartitionDetail", path: res.partitionTime, initializer: {locateId: currentImageId}})
+            else if(at === "NEW_WINDOW") browserTabs.newWindow({routeName: "PartitionDetail", path: res.partitionTime, initializer: {locateId: currentImageId}})
+            else router.routePush({routeName: "PartitionDetail", path: res.partitionTime, initializer: {locateId: currentImageId}})
+        }
+    }
+
+    return {openImageInPartition}
 }
 
 export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = installation(function () {
@@ -159,6 +179,8 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
                       listview: QueryListview<FindSimilarResultDetailImage, number>,
                       resolve: (f: FindSimilarResultResolveForm) => Promise<boolean>, 
                       clear: () => Promise<boolean>) {
+    const router = useTabRoute()
+    const browserTabs = useBrowserTabs()
     const message = useMessageBox()
     const dialog = useDialogService()
     const preview = usePreviewService()
@@ -271,7 +293,13 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
         })
     }
 
-    return {allCollections, allBooks, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, complete, openPreviewBySpace}
+    const openImageInPartition = async (currentImageId: number, partitionTime: LocalDate, at?: "NEW_TAB" | "NEW_WINDOW") => {
+        if(at === "NEW_TAB") browserTabs.newTab({routeName: "PartitionDetail", path: partitionTime, initializer: {locateId: currentImageId}})
+        else if(at === "NEW_WINDOW") browserTabs.newWindow({routeName: "PartitionDetail", path: partitionTime, initializer: {locateId: currentImageId}})
+        else router.routePush({routeName: "PartitionDetail", path: partitionTime, initializer: {locateId: currentImageId}})
+    }
+
+    return {allCollections, allBooks, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, complete, openPreviewBySpace, openImageInPartition}
 }
 
 export function useGraphView({ menu }: {menu: (i: FindSimilarResultDetailImage) => void}) {

@@ -3,7 +3,7 @@ import { Partition, IllustQueryFilter } from "@/functions/http-client/api/illust
 import { flatResponse } from "@/functions/http-client"
 import { useFetchReactive } from "@/functions/fetch"
 import { useLocalStorage, useRouteStorage } from "@/functions/app"
-import { useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
+import { useBrowserTabs, useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
 import { useInterceptedKey } from "@/modules/keyboard"
 import { writeClipboard } from "@/modules/others"
 import { useNavigationItem } from "@/services/base/side-nav-menu"
@@ -26,6 +26,12 @@ export const [installPartitionContext, usePartitionContext] = installation(funct
     const partition = usePartitionView(listviewController, querySchema)
 
     const openDetail = (date: LocalDate) => router.routePush({routeName: "PartitionDetail", path: date})
+
+    useInitializer(params => {
+        if(params.query) {
+            querySchema.queryInputText.value = params.query
+        }
+    })
 
     useDocumentTitle(() => partition.viewMode.value === "calendar" ? "日历" : "时间线")
 
@@ -123,7 +129,8 @@ export function useCalendarContext() {
     const today = date.now()
     const WEEKDAY_SPACE_COUNT = [6, 0, 1, 2, 3, 4, 5]
 
-    const { partition: { calendarDate, partitionMonths, maxCount }, openDetail } = usePartitionContext()
+    const browserTabs = useBrowserTabs()
+    const { querySchema, partition: { calendarDate, partitionMonths, maxCount }, openDetail } = usePartitionContext()
 
     const days = computedWatch(calendarDate, calendarDate => {
         if(calendarDate !== null) {
@@ -159,15 +166,21 @@ export function useCalendarContext() {
         })
     })
 
-    const openPartition = (item: {day: number, count: number | null}) => {
-        if(calendarDate.value !== null && item.count) openDetail(date.ofDate(calendarDate.value.year, calendarDate.value.month, item.day))
+    const openPartition = (item: {day: number, count: number | null}, at?: "NEW_TAB" | "NEW_WINDOW") => {
+        if(calendarDate.value !== null && item.count) {
+            const path = date.ofDate(calendarDate.value.year, calendarDate.value.month, item.day)
+            if(at === "NEW_TAB") browserTabs.newTab({routeName: "PartitionDetail", path, initializer: {query: querySchema.query.value}})
+            else if(at === "NEW_WINDOW") browserTabs.newWindow({routeName: "PartitionDetail", path, initializer: {query: querySchema.query.value}})
+            else openDetail(path)
+        }
     }
 
     return {items, openPartition, calendarDate}
 }
 
 export function useTimelineContext() {
-    const { partition: { calendarDate, partitions, partitionMonths, maxCount, maxCountOfMonth, operators }, openDetail } = usePartitionContext()
+    const browserTabs = useBrowserTabs()
+    const { querySchema, partition: { calendarDate, partitions, partitionMonths, maxCount, maxCountOfMonth, operators }, openDetail } = usePartitionContext()
 
     const months = computed(() => partitionMonths.value?.map(pm => ({year: pm.year, month: pm.month, uniqueKey: pm.year * 12 + pm.month, dayCount: pm.days.length, count: pm.count, width: numbers.round2decimal(pm.count * 100 / maxCountOfMonth.value), level: Math.ceil(pm.count * 10 / maxCountOfMonth.value)})) ?? [])
 
@@ -238,11 +251,15 @@ export function useTimelineContext() {
         }
     }
 
-    const openPartition = (date: LocalDate) => {
-        if(calendarDate.value === null || calendarDate.value.year !== date.year || calendarDate.value.month !== date.month) {
-            selectMonth({year: date.year, month: date.month}).finally()
+    const openPartition = (date: LocalDate, at?: "NEW_TAB" | "NEW_WINDOW") => {
+        if(at === "NEW_TAB") browserTabs.newTab({routeName: "PartitionDetail", path: date, initializer: {query: querySchema.query.value}})
+        else if(at === "NEW_WINDOW") browserTabs.newWindow({routeName: "PartitionDetail", path: date, initializer: {query: querySchema.query.value}})
+        else {
+            if(calendarDate.value === null || calendarDate.value.year !== date.year || calendarDate.value.month !== date.month) {
+                selectMonth({year: date.year, month: date.month}).finally()
+            }
+            openDetail(date)
         }
-        openDetail(date)
     }
 
     const setTimelineRef = (el: Element | ComponentPublicInstance | null) => {
@@ -297,7 +314,9 @@ export function useDetailIllustContext() {
     useSettingSite()
 
     useInitializer(params => {
-        if(params.locateId !== undefined && querySchema.queryInputText.value) {
+        if(params.query) {
+            querySchema.queryInputText.value = params.query
+        }else if(params.locateId !== undefined && querySchema.queryInputText.value) {
             //若提供了Locate，则应该清空现有的查询条件
             querySchema.queryInputText.value = undefined
         }

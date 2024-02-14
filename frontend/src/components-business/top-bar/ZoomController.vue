@@ -81,6 +81,7 @@ useInterceptedKey(["Meta+Minus", "Meta+Equal", "Meta+Digit0"], e => {
         display: inline-block
 
 .zoom-bar
+    -webkit-app-region: none
     position: absolute
     top: -1px
     right: -1px

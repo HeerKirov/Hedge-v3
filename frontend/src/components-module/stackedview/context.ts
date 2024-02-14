@@ -16,7 +16,7 @@ export const [installStackedView, useStackedView] = installation(function (optio
 
     const current = ref<StackViewInfo | null>(null)
 
-    const operations = generateOperations(current)
+    const operations = generateOperations(current, isRootView)
 
     if(isRootView) {
         const route = useRoute()
@@ -31,7 +31,7 @@ export const [installStackedView, useStackedView] = installation(function (optio
     return {current, isRootView, ...operations}
 })
 
-function generateOperations(current: Ref<StackViewInfo | null>) {
+function generateOperations(current: Ref<StackViewInfo | null>, isRootView: boolean) {
     return {
         openImageView(slice: AllSlice<Illust, number> | ListIndexSlice<Illust, number> | number[] | {imageIds: number[], focusIndex?: number}, modifiedCallback?: (illustId: number) => void) {
             const sliceOrPath: SliceOrPath<Illust, number, AllSlice<Illust, number> | ListIndexSlice<Illust, number>, number[]>
@@ -49,7 +49,7 @@ function generateOperations(current: Ref<StackViewInfo | null>) {
             windowManager.newWindow(`/preview?imageIds=${encodedImageIds}&focusIndex=${encodedFocusIndex}`)
         },
         closeView() {
-            current.value = null
+            if(!isRootView) current.value = null
         }
     }
 }

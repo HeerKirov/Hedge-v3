@@ -3,12 +3,15 @@ import { FindSimilarResultDetailImage } from "@/functions/http-client/api/find-s
 import { useFindSimilarDetailPanel, useGraphView } from "@/services/main/find-similar"
 import { useDynamicPopupMenu } from "@/modules/popup-menu"
 
-const { operators: { allBooks, allCollections, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem } } = useFindSimilarDetailPanel()
+const { operators: { allBooks, allCollections, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, openImageInPartition } } = useFindSimilarDetailPanel()
 
 const { chartDom } = useGraphView({
     menu: useDynamicPopupMenu<FindSimilarResultDetailImage>(illust => [
         {type: "normal", label: "预览"},
         {type: "normal", label: "暂存", click: i => addToStagingPost(i)},
+        {type: "separator"},
+        {type: "normal", label: "在时间分区显示", click: i => openImageInPartition(i.id, i.partitionTime)},
+        {type: "normal", label: "在新标签页的时间分区显示", click: i => openImageInPartition(i.id, i.partitionTime, "NEW_TAB")},
         {type: "separator"},
         {type: "checkbox", label: "标记为收藏", checked: illust.favorite},
         {type: "separator"},

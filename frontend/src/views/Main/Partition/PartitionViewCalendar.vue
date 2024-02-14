@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { Block } from "@/components/universal"
 import { useCalendarContext } from "@/services/main/partition"
+import { usePopupMenu } from "@/modules/popup-menu"
 import CalendarRouter from "./CalendarRouter.vue"
 
 const { items, calendarDate, openPartition } = useCalendarContext()
 
 const WEEKDAY_NAMES = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const
+
+const menu = usePopupMenu<{day: number, count: number | null}>(() => [
+    {type: "normal", label: "打开", click: i => openPartition(i)},
+    {type: "normal", label: "在新标签页打开", click: i => openPartition(i, "NEW_TAB")},
+    {type: "normal", label: "在新窗口打开", click: i => openPartition(i, "NEW_WINDOW")},
+])
 
 </script>
 
@@ -17,7 +24,7 @@ const WEEKDAY_NAMES = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const
         </Block>
         <div :class="$style.body">
             <div v-for="item in items" :class="$style.col">
-                <Block v-if="item !== null" :class="{[$style.hoverable]: !!item.level, [$style[`lv-${item.level}`]]: !!item.level}" @click="openPartition(item)">
+                <Block v-if="item !== null" :class="{[$style.hoverable]: !!item.level, [$style[`lv-${item.level}`]]: !!item.level}" @click="openPartition(item)" @contextmenu="menu.popup(item)">
                     <b :class="{'has-text-underline': item.today}">{{item.day}}</b>
                     <p v-if="item.count" :class="$style.count">{{item.count}}项</p>
                 </Block>

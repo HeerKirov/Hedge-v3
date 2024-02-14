@@ -2,10 +2,15 @@
 import { Block, Icon } from "@/components/universal"
 import { usePopupMenu } from "@/modules/popup-menu"
 import { useTimelineContext } from "@/services/main/partition"
+import { LocalDate } from "@/utils/datetime"
 
 const { months, days, calendarDate, setTimelineRef, setDayRef, setMonthRef, selectMonth, scrollEvent, openPartition, operators } = useTimelineContext()
 
-const menu = usePopupMenu([
+const menu = usePopupMenu<{date: LocalDate}>(() => [
+    {type: "normal", label: "打开", click: i => openPartition(i.date)},
+    {type: "normal", label: "在新标签页打开", click: i => openPartition(i.date, "NEW_TAB")},
+    {type: "normal", label: "在新窗口打开", click: i => openPartition(i.date, "NEW_WINDOW")},
+    {type: "separator"},
     {type: "normal", label: "拷贝所有日期列表", click: operators.copyDateList},
     {type: "normal", label: "添加所有日期作为查询条件", click: operators.addDateListToQueryText},
 ])
@@ -14,8 +19,15 @@ const menu = usePopupMenu([
 
 <template>
     <div :class="$style.timeline">
-        <div :ref="setTimelineRef" :class="[$style['left-column'], $style['timeline-list']]" @scroll="scrollEvent" @contextmenu="menu.popup()">
-            <Block v-for="p in days" v-memo="[days, calendarDate?.year === p.date.year && calendarDate.month === p.date.month]" :ref="el => setDayRef(p.date.timestamp, el)" :key="p.date.timestamp" :class="[$style.item, $style[`lv-${p.level}`]]" :color="calendarDate?.year === p.date.year && calendarDate.month === p.date.month ? 'primary' : undefined" @click="openPartition(p.date)">
+        <div :ref="setTimelineRef" :class="[$style['left-column'], $style['timeline-list']]" @scroll="scrollEvent">
+            <Block v-for="p in days"
+                   v-memo="[days, calendarDate?.year === p.date.year && calendarDate.month === p.date.month]"
+                   :ref="el => setDayRef(p.date.timestamp, el)"
+                   :key="p.date.timestamp"
+                   :class="[$style.item, $style[`lv-${p.level}`]]"
+                   :color="calendarDate?.year === p.date.year && calendarDate.month === p.date.month ? 'primary' : undefined"
+                   @click="openPartition(p.date)"
+                   @contextmenu="menu.popup(p)">
                 <div :class="$style.processor" :style="`width: ${p.width}%`"/>
                 <span :class="$style.content">
                     <Icon class="mr-2" icon="th-list"/>

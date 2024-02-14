@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IllustImageDataset } from "@/components-module/data"
-import { CommonIllust } from "@/functions/http-client/api/illust"
+import { FindSimilarResultDetailImage } from "@/functions/http-client/api/find-similar"
 import { useDynamicPopupMenu } from "@/modules/popup-menu"
 import { useFindSimilarDetailPanel } from "@/services/main/find-similar"
 
@@ -9,12 +9,15 @@ const {
     paginationData: { data, state, setState, navigateTo },
     selector: { selected, lastSelected, update: updateSelect }, 
     listviewController: { fitType, columnNum }, 
-    operators: { allBooks, allCollections, addToStagingPost, addToCollection, addToBook, markIgnored, deleteItem, cloneImage, openPreviewBySpace }
+    operators: { allBooks, allCollections, addToStagingPost, addToCollection, addToBook, markIgnored, deleteItem, cloneImage, openPreviewBySpace, openImageInPartition }
 } = useFindSimilarDetailPanel()
 
-const menu = useDynamicPopupMenu<CommonIllust>(illust => [
+const menu = useDynamicPopupMenu<FindSimilarResultDetailImage>(illust => [
     {type: "normal", label: "预览", click: i => openPreviewBySpace(i)},
     {type: "normal", label: "暂存", click: i => addToStagingPost(i)},
+    {type: "separator"},
+    {type: "normal", label: "在时间分区显示", click: i => openImageInPartition(i.id, i.partitionTime)},
+    {type: "normal", label: "在新标签页的时间分区显示", click: i => openImageInPartition(i.id, i.partitionTime, "NEW_TAB")},
     {type: "separator"},
     {type: "checkbox", label: "标记为收藏", checked: illust.favorite},
     {type: "separator"},
@@ -36,5 +39,5 @@ const menu = useDynamicPopupMenu<CommonIllust>(illust => [
     <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy"
                         view-mode="grid" :fit-type="fitType" :column-num="columnNum"
                         :selected="selected" :last-selected="lastSelected" @select="updateSelect"
-                        @update:state="setState" @navigate="navigateTo" @space="openPreviewBySpace()" @contextmenu="menu.popup($event)"/>
+                        @update:state="setState" @navigate="navigateTo" @space="openPreviewBySpace()" @contextmenu="menu.popup($event as FindSimilarResultDetailImage)"/>
 </template>

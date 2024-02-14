@@ -44,7 +44,9 @@ export function useIllustContext() {
     useSettingSite()
 
     useInitializer(params => {
-        if(params.tagName || params.authorName || params.topicName || params.source) {
+        if(params.query) {
+            querySchema.queryInputText.value = params.query
+        }else if(params.tagName || params.authorName || params.topicName || params.source) {
             //监听router event。只监听Illust的，Partition没有。对于meta tag，将其简单地转换为DSL的一部分。
             //FUTURE 当然这其实是有问题的，对于topic/tag，还应该使用地址去限制它们。
             querySchema.queryInputText.value = [
