@@ -1,13 +1,15 @@
-import { Ref } from "vue"
+import { Ref, shallowRef } from "vue"
 import { Response } from "@/functions/http-client"
 import { ConflictingGroupMembersError, NotFound, ResourceNotExist, ResourceNotSuitable } from "@/functions/http-client/exceptions"
 import { MetaUtilIdentity } from "@/functions/http-client/api/util-meta"
 import { RelatedSimpleTopic } from "@/functions/http-client/api/topic"
 import { RelatedSimpleAuthor } from "@/functions/http-client/api/author"
 import { RelatedSimpleTag } from "@/functions/http-client/api/tag"
+import { SourceTagPath } from "@/functions/http-client/api/all"
 import { Tagme } from "@/functions/http-client/api/illust"
-import { useFetchEndpoint } from "@/functions/fetch"
+import { useFetchEndpoint, usePostFetchHelper } from "@/functions/fetch"
 import { useMessageBox } from "@/modules/message-box"
+import { toRef } from "@/utils/reactivity"
 import { Push } from "../context"
 
 export interface MetaTagEditor {
@@ -18,7 +20,7 @@ export interface MetaTagEditor {
     /**
      * 打开面板，对指定的内容列表进行编辑，并返回编辑后的结果列表。如果取消编辑，则返回undefined。
      */
-    edit(data: CommonData, options?: EditOptions): Promise<CommonData | undefined>
+    editBatch(illustIds: number[], updateMode?: "APPEND" | "OVERRIDE" | "REMOVE", onUpdated?: () => void): void
 }
 
 export type MetaTagEditorProps = {
@@ -26,16 +28,13 @@ export type MetaTagEditorProps = {
     identity: MetaUtilIdentity
     onUpdated?(): void
 } | {
-    mode: "custom"
-    data: CommonData
-    allowTagme?: boolean
-    resolve(_: CommonData | undefined): void
-    cancel(): void
+    mode: "batch"
+    identity: BatchIdentity
+    updateMode?: "APPEND" | "OVERRIDE" | "REMOVE"
+    onUpdated?(): void
 }
 
-interface EditOptions {
-    allowTagme?: boolean
-}
+export type BatchIdentity = {type: "ILLUST_LIST", illustIds: number[]}
 
 export interface CommonData {
     tags: RelatedSimpleTag[]
@@ -48,6 +47,7 @@ export interface CommonForm {
     tags?: number[]
     topics?: number[]
     authors?: number[]
+    mappings?: SourceTagPath[]
     tagme?: Tagme[]
 }
 
@@ -61,50 +61,81 @@ export function useMetaTagEditor(push: Push): MetaTagEditor {
                 props: {mode: "identity", identity, onUpdated}
             })
         },
-        edit(data: CommonData, options?: EditOptions): Promise<CommonData | undefined> {
-            return new Promise<CommonData | undefined>(resolve => {
-                push({
-                    type: "metaTagEditor",
-                    props: {mode: "custom", data, resolve, allowTagme: options?.allowTagme, cancel: () => resolve(undefined)}
-                })
+        editBatch(illustIds, updateMode, onUpdated) {
+            push({
+                type: "metaTagEditor",
+                props: {mode: "batch", identity: {type: "ILLUST_LIST", illustIds}, updateMode, onUpdated}
             })
         }
     }
 }
 
-export function useIdentityModeData(identity: Ref<MetaUtilIdentity>, updated: () => void) {
+export function useMetaTagEditorData(props: Ref<MetaTagEditorProps>, updated: () => void) {
     const message = useMessageBox()
+    const identity = toRef(props, "identity")
 
-    const { data, setData } = useFetchEndpoint({
-        path: identity,
-        get: client => ({ type, id }): Promise<Response<CommonData, NotFound>> => {
-            return type === "IMAGE" || type === "COLLECTION"
-                ? client.illust.get(id)
-                : client.book.get(id)
-        },
-        update: client => async ({ type, id }, form: CommonForm): Promise<Response<null, CommonException>> => {
-            return type === "IMAGE" || type === "COLLECTION"
-                ? await client.illust.update(id, form)
-                : await client.book.update(id, form)
-        },
-        afterUpdate: updated
-    })
-
-    const setValue = async (form: CommonForm): Promise<boolean> => {
-        return await setData(form, e => {
-            if(e.code === "NOT_EXIST") {
-                const [type, list] = e.info
-                const typeName = type === "tags" ? "标签" : type === "topics" ? "主题" : "作者"
-                message.showOkMessage("error", `选择的部分${typeName}不存在。`, `错误项: ${list}`)
-            }else if(e.code === "NOT_SUITABLE") {
-                message.showOkMessage("prompt", "选择的部分标签不适用。", "请参阅下方的约束提示修改内容。")
-            }else if(e.code === "CONFLICTING_GROUP_MEMBERS") {
-                message.showOkMessage("prompt", "选择的部分标签存在强制组冲突。", "请参阅下方的约束提示修改内容。")
-            }else{
-                return e
-            }
+    if(props.value.mode === "identity") {
+        const { data, setData } = useFetchEndpoint({
+            path: identity as Ref<MetaUtilIdentity>,
+            get: client => ({ type, id }): Promise<Response<CommonData, NotFound>> => {
+                return type === "IMAGE" || type === "COLLECTION"
+                    ? client.illust.get(id)
+                    : client.book.get(id)
+            },
+            update: client => async ({ type, id }, form: CommonForm): Promise<Response<null, CommonException>> => {
+                return type === "IMAGE" || type === "COLLECTION"
+                    ? await client.illust.update(id, form)
+                    : await client.book.update(id, form)
+            },
+            afterUpdate: updated
         })
-    }
 
-    return {data, setValue}
+        const setValue = async (form: CommonForm): Promise<boolean> => {
+            return await setData(form, e => {
+                if(e.code === "NOT_EXIST") {
+                    const [type, list] = e.info
+                    const typeName = type === "tags" ? "标签" : type === "topics" ? "主题" : "作者"
+                    message.showOkMessage("error", `选择的部分${typeName}不存在。`, `错误项: ${list}`)
+                }else if(e.code === "NOT_SUITABLE") {
+                    message.showOkMessage("prompt", "选择的部分标签不适用。", "请参阅下方的约束提示修改内容。")
+                }else if(e.code === "CONFLICTING_GROUP_MEMBERS") {
+                    message.showOkMessage("prompt", "选择的部分标签存在强制组冲突。", "请参阅下方的约束提示修改内容。")
+                }else{
+                    return e
+                }
+            })
+        }
+
+        return {data, identity, setValue}
+    }else if(props.value.mode === "batch") {
+        const target = props.value.identity.illustIds
+        const data = shallowRef<CommonData | null>(null)
+
+        const fetch = usePostFetchHelper({
+            request: client => client.illust.batchUpdate,
+            handleErrorInRequest(e) {
+                if(e.code === "NOT_EXIST") {
+                    const [type, list] = e.info
+                    const typeName = type === "tags" ? "标签" : type === "topics" ? "主题" : "作者"
+                    message.showOkMessage("error", `选择的部分${typeName}不存在。`, `错误项: ${list}`)
+                }else if(e.code === "NOT_SUITABLE") {
+                    message.showOkMessage("prompt", "选择的部分标签不适用。", "请参阅下方的约束提示修改内容。")
+                }else if(e.code === "CONFLICTING_GROUP_MEMBERS") {
+                    message.showOkMessage("prompt", "选择的部分标签存在强制组冲突。", "请参阅下方的约束提示修改内容。")
+                }else{
+                    return e
+                }
+            },
+        })
+
+        const setValue = async (form: CommonForm): Promise<boolean> => {
+            const ok = await fetch({target, tags: form.tags, topics: form.topics, authors: form.authors, mappingSourceTags: form.mappings})
+            if(ok) updated()
+            return ok
+        }
+
+        return {data, identity, setValue}
+    }else{
+        throw new Error(`Unsupported props ${props.value}.`)
+    }
 }

@@ -3,10 +3,9 @@ import { computed } from "vue"
 import { RelatedSimpleTag } from "@/functions/http-client/api/tag"
 import { RelatedSimpleTopic } from "@/functions/http-client/api/topic"
 import { RelatedSimpleAuthor } from "@/functions/http-client/api/author"
-import { MetaUtilIdentity } from "@/functions/http-client/api/util-meta"
 import { Tagme } from "@/functions/http-client/api/illust"
 import { useDroppable } from "@/modules/drag"
-import { installEditorContext, SetValue, UpdateDataForm } from "./context"
+import { installEditorContext, MetaTagEditorIdentity, SetValue, UpdateDataForm } from "./context"
 import TopArea from "./TopArea.vue"
 import LeftColumn from "./LeftColumn.vue"
 import RightColumn from "./RightColumn.vue"
@@ -16,7 +15,7 @@ const props = defineProps<{
     topics: RelatedSimpleTopic[]
     authors: RelatedSimpleAuthor[]
     tagme?: Tagme[]
-    identity?: MetaUtilIdentity | null
+    identity?: MetaTagEditorIdentity | null
     setValue?: SetValue
     allowTagme?: boolean
 }>()

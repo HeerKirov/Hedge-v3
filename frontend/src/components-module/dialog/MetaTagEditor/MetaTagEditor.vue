@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { CommonData, MetaTagEditorProps } from "./context"
-import IdentityMode from "./IdentityMode.vue"
-import OnlyEditorMode from "./OnlyEditorMode.vue"
+import { toRef } from "vue"
+import { MetaTagSummaryEditor } from "@/components-module/data"
+import { MetaTagEditorProps, useMetaTagEditorData } from "./context"
 
 const props = defineProps<{
     p: MetaTagEditorProps
@@ -12,24 +12,18 @@ const emit = defineEmits<{
 }>()
 
 const updated = () => {
-    if(props.p.mode === "identity") {
-        props.p.onUpdated?.()
-        emit("close")
-    }
+    props.p.onUpdated?.()
+    emit("close")
 }
 
-const resolve = (data: CommonData | undefined) => {
-    if(props.p.mode === "custom") {
-        props.p.resolve(data)
-        emit("close")
-    }
-}
+const p = toRef(props, "p")
+
+const { data, identity, setValue } = useMetaTagEditorData(p, updated)
 
 </script>
 
 <template>
-    <IdentityMode v-if="p.mode === 'identity'" :class="$style.root" :identity="p.identity" @updated="updated"/>
-    <OnlyEditorMode v-else :class="$style.root" :data="p.data" :allow-tagme="p.allowTagme" @resolve="resolve"/>
+    <MetaTagSummaryEditor :class="$style.root" :identity="identity" :topics="data?.topics ?? []" :tags="data?.tags ?? []" :authors="data?.authors ?? []" :tagme="data?.tagme" :set-value="setValue" :allow-tagme="identity.type === 'IMAGE'"/>
 </template>
 
 <style module lang="sass">

@@ -2,7 +2,7 @@
 import { useEditorContext, useSourceDeriveData } from "./context"
 import MappingTagCheckList from "./MappingTagCheckList.vue"
 
-const { typeFilter, form: { addAll } } = useEditorContext()
+const { typeFilter, identity, form: { addAll } } = useEditorContext()
 const { derives, updateSourceTagMapping } = useSourceDeriveData()
 
 </script>
@@ -11,6 +11,7 @@ const { derives, updateSourceTagMapping } = useSourceDeriveData()
     <MappingTagCheckList :tag-filter="typeFilter.tag"
                          :author-filter="typeFilter.author"
                          :topic-filter="typeFilter.topic"
+                         :primitive-mode="identity?.type === 'ILLUST_LIST'"
                          :mappings="derives" @add="addAll"
                          @update:source-tag-mapping="updateSourceTagMapping"/>
 </template>

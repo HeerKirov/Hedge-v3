@@ -4,7 +4,7 @@ import { Tagme } from "@/functions/http-client/api/illust"
 import { RelatedSimpleTopic, SimpleTopic } from "@/functions/http-client/api/topic"
 import { RelatedSimpleAuthor, SimpleAuthor } from "@/functions/http-client/api/author"
 import { RelatedSimpleTag, SimpleTag } from "@/functions/http-client/api/tag"
-import { IdentityType, MetaTagTypeValue, MetaType } from "@/functions/http-client/api/all"
+import { IdentityType, MetaTagTypeValue, MetaType, SourceTagPath } from "@/functions/http-client/api/all"
 import { MetaUtilIdentity, MetaUtilResult, MetaUtilValidation } from "@/functions/http-client/api/util-meta"
 import { BatchQueryResult, SourceMappingTargetDetail } from "@/functions/http-client/api/source-tag-mapping"
 import { useFetchHelper, useFetchReactive, usePostFetchHelper, usePostPathFetchHelper, useQueryContinuousListView } from "@/functions/fetch"
@@ -19,10 +19,15 @@ import { objects } from "@/utils/primitives"
 
 export type SetValue = (form: SetDataForm) => Promise<boolean>
 
+export type BatchIdentity = {type: "ILLUST_LIST", illustIds: number[]}
+
+export type MetaTagEditorIdentity = MetaUtilIdentity | BatchIdentity
+
 export interface SetDataForm {
     topics?: number[]
     authors?: number[]
     tags?: number[]
+    mappings?: SourceTagPath[]
     tagme?: Tagme[]
 }
 
@@ -30,6 +35,7 @@ export interface UpdateDataForm {
     topics?: RelatedSimpleTopic[]
     authors?: RelatedSimpleAuthor[]
     tags?: RelatedSimpleTag[]
+    mappings?: BatchQueryResult[]
     tagme?: Tagme[]
 }
 
@@ -47,7 +53,7 @@ interface MetaTagReflection {
 }
 
 interface InstallEditorContext {
-    identity: Ref<MetaUtilIdentity | null>
+    identity: Ref<MetaTagEditorIdentity | null>
     data: Readonly<Ref<Data>>
     setValue?: SetValue
     updateValue(form: UpdateDataForm): void
@@ -65,7 +71,7 @@ export const [installEditorContext, useEditorContext] = installation(function (c
         tabDBType: "author"
     }), true)
 
-    if(context.identity.value?.type !== "IMAGE" && storage.value.tab === "source") {
+    if(context.identity.value?.type !== "IMAGE" && context.identity.value?.type !== "ILLUST_LIST" && storage.value.tab === "source") {
         //当位于不能使用source的identity中时，将其切换至db
         storage.value.tab = "db"
     }
@@ -87,11 +93,12 @@ function useFormData(context: InstallEditorContext) {
     const tags = ref<SimpleTag[]>([])
     const topics = ref<SimpleTopic[]>([])
     const authors = ref<SimpleAuthor[]>([])
+    const mappings = ref<BatchQueryResult[]>([])
     const tagme = ref<Tagme[]>([])
-    const changed = reactive({tag: false, topic: false, author: false, tagme: false})
+    const changed = reactive({tag: false, topic: false, author: false, mapping: false, tagme: false})
 
     const submittable = computed(() =>
-        (changed.tag || changed.topic || changed.author || changed.tagme) &&
+        (changed.tag || changed.topic || changed.author || changed.tagme || changed.mapping) &&
         (validation.validationResults.value == undefined || (!validation.validationResults.value.forceConflictingMembers.length && !validation.validationResults.value.notSuitable.length)))
 
     const history = useDataHistory(tags, topics, authors, context.data)
@@ -102,10 +109,12 @@ function useFormData(context: InstallEditorContext) {
         topics.value = d?.topics?.filter(t => !t.isExported) ?? []
         authors.value = d?.authors?.filter(t => !t.isExported) ?? []
         tagme.value = d?.tagme ?? []
+        mappings.value = []
         changed.tag = false
         changed.topic = false
         changed.author = false
         changed.tagme = false
+        changed.mapping = false
     }, {immediate: true})
 
     const setTagme = (value: Tagme[]) => {
@@ -138,7 +147,7 @@ function useFormData(context: InstallEditorContext) {
         }
     }
 
-    function addAll(records: MetaTagTypeValue[]) {
+    function addAll(records: (MetaTagTypeValue | {type: "mapping", mapping: BatchQueryResult})[]) {
         const finalRecords: MetaTagTypeValue[] = []
         for(const record of records) {
             if(record.type === "tag") {
@@ -162,6 +171,12 @@ function useFormData(context: InstallEditorContext) {
                     finalRecords.push(record)
                 }
                 changed.topic = true
+            }else if(record.type === "mapping") {
+                const mapping = record.mapping
+                if(!mappings.value.find(i => i.site === mapping.site && i.type === mapping.type && i.code === mapping.code)) {
+                    mappings.value.push(mapping)
+                }
+                changed.mapping = true
             }
         }
         if(finalRecords.length) {
@@ -169,7 +184,7 @@ function useFormData(context: InstallEditorContext) {
         }
     }
 
-    const removeAt = (type: keyof MetaTagReflection, index: number) => {
+    const removeAt = (type: keyof MetaTagReflection | "mapping", index: number) => {
         if(type === "tag") {
             const [tag] = tags.value.splice(index, 1)
             history.addRecord({type: "tag", value: tag, action: "remove", index})
@@ -182,6 +197,8 @@ function useFormData(context: InstallEditorContext) {
             const [author] = authors.value.splice(index, 1)
             history.addRecord({type: "author", value: author, action: "remove", index})
             changed.author = true
+        }else if(type === "mapping") {
+            mappings.value.splice(index, 1)
         }
     }
 
@@ -194,13 +211,14 @@ function useFormData(context: InstallEditorContext) {
                     tags: changed.tag ? tags.value.map(i => i.id) : undefined,
                     topics: changed.topic ? topics.value.map(i => i.id) : undefined,
                     authors: changed.author ? authors.value.map(i => i.id) : undefined,
+                    mappings: changed.mapping ? mappings.value.map(i => ({sourceSite: i.site, sourceTagType: i.type, sourceTagCode: i.code})) : undefined,
                     tagme: changed.tagme ? tagme.value : undefined
                 })
 
                 if(ok) {
                     //发送编辑器历史记录所需的统计数据
                     const identity = context.identity.value
-                    if(identity !== null) postIdentityHistory(identity, toast.handleException).finally()
+                    if(identity !== null && isSingleIdentity(identity)) postIdentityHistory(identity, toast.handleException).finally()
                     //将编辑器撤销栈里的内容发送到标签使用记录
                     const metaTags = metaChangedHistory.map(({ type, value }) => ({type: type.toUpperCase() as MetaType, id: value.id}))
                     postMetaTagHistory(metaTags, toast.handleException).finally()
@@ -213,6 +231,7 @@ function useFormData(context: InstallEditorContext) {
                 tags: changed.tag ? tags.value.map(i => ({...i, isExported: false})) : undefined,
                 topics: changed.topic ? topics.value.map(i => ({...i, isExported: false})) : undefined,
                 authors: changed.author ? authors.value.map(i => ({...i, isExported: false})) : undefined,
+                mappings: changed.mapping ? mappings.value : undefined,
                 tagme: changed.tagme ? tagme.value : undefined
             })
 
@@ -220,9 +239,9 @@ function useFormData(context: InstallEditorContext) {
         }
     }
 
-    useInterceptedKey("Meta+Enter", submit)
+    useInterceptedKey("Meta+KeyS", submit)
 
-    return {tags, topics, authors, tagme, setTagme, add, addAll, removeAt, submittable, submit, validation, history}
+    return {tags, topics, authors, tagme, mappings, setTagme, add, addAll, removeAt, submittable, submit, validation, history}
 }
 
 function useFormValidation(tags: Ref<SimpleTag[]>, topics: Ref<SimpleTopic[]>, authors: Ref<SimpleAuthor[]>, data: Ref<Data>) {
@@ -473,7 +492,7 @@ export function useSuggestionData() {
     const suggestions = ref<{topics: SimpleTopic[], authors: SimpleAuthor[], tags: SimpleTag[]}[]>([])
 
     watch(identity, async (identity, old) => {
-        if(identity !== null) {
+        if(identity !== null && isSingleIdentity(identity)) {
             //确认首次执行，或identity实质未变
             if(old === undefined || !objects.deepEquals(identity, old)) {
                 const res = await fetchSuggest(identity)
@@ -591,6 +610,11 @@ export function useSourceDeriveData() {
         handleErrorInRequest: toast.handleException
     })
 
+    const fetchBatchSourceTagMapping = useFetchHelper({
+        request: client => client.sourceTagMapping.batchQueryByIllusts,
+        handleErrorInRequest: toast.handleException
+    })
+
     const fetchSourceTagMappingUpdate = usePostPathFetchHelper({
         request: client => client.sourceTagMapping.update,
         handleErrorInRequest(e) {
@@ -618,28 +642,38 @@ export function useSourceDeriveData() {
     const derives = ref<BatchQueryResult[]>([])
 
     const loadDerives = async () => {
-        const sourceDataRes = await fetchSourceData(identity.value!.id)
-        if(sourceDataRes === undefined) {
+        if(isSingleIdentity(identity.value!)) {
+            const sourceDataRes = await fetchSourceData(identity.value!.id)
+            if(sourceDataRes === undefined) {
+                sourceSite.value = null
+                derives.value = []
+                return
+            }
+            if(sourceDataRes.source === null || !sourceDataRes.tags?.length) {
+                sourceSite.value = null
+                derives.value = []
+                return
+            }
+            const res = await fetchSourceTagMappingQuery(sourceDataRes.tags.map(i => ({sourceSite: sourceDataRes.source.sourceSite, sourceTagType: i.type, sourceTagCode: i.code})))
+            if(res === undefined) {
+                derives.value = []
+                return
+            }
+            sourceSite.value = sourceDataRes.source.sourceSite
+            derives.value = sortDerives(res)
+        }else{
+            const res = await fetchBatchSourceTagMapping(identity.value!.illustIds)
+            if(res === undefined) {
+                derives.value = []
+                return
+            }
             sourceSite.value = null
-            derives.value = []
-            return
+            derives.value = sortDerives(res)
         }
-        if(sourceDataRes.source === null || !sourceDataRes.tags?.length) {
-            sourceSite.value = null
-            derives.value = []
-            return
-        }
-        const res = await fetchSourceTagMappingQuery(sourceDataRes.tags.map(i => ({sourceSite: sourceDataRes.source.sourceSite, sourceTagType: i.type, sourceTagCode: i.code})))
-        if(res === undefined) {
-            derives.value = []
-            return
-        }
-        sourceSite.value = sourceDataRes.source.sourceSite
-        derives.value = sortDerives(res)
     }
 
     watch(identity, async (identity, old) => {
-        if(identity !== null && identity.type === "IMAGE") {
+        if(identity !== null && (identity.type === "IMAGE" || identity.type === "ILLUST_LIST")) {
             //确认首次执行，或identity实质未变
             if(old === undefined || !objects.deepEquals(identity, old)) {
                 await loadDerives()
@@ -698,4 +732,8 @@ export function useSourceDeriveData() {
     }
 
     return {sourceSite, derives, updateSourceTagMapping}
+}
+
+function isSingleIdentity(identity: MetaTagEditorIdentity): identity is MetaUtilIdentity {
+    return identity.type === "IMAGE" || identity.type === "COLLECTION" || identity.type === "BOOK"
 }

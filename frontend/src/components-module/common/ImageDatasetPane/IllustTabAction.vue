@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { toRefs } from "vue"
 import { Icon, Button, Separator, Starlight } from "@/components/universal"
+import { Flex, FlexItem } from "@/components/layout"
 import { DescriptionDisplay, TagmeInfo } from "@/components-business/form-display"
 import { TagmeEditor, DescriptionEditor, DateEditor, DateTimeEditor } from "@/components-business/form-editor"
 import { useSideBarAction } from "@/services/main/illust"
@@ -15,6 +16,11 @@ const props = defineProps<{
 const { selected, parent } = toRefs(props)
 
 const { actives, form, editMetaTag, setScore, setDescription, setTagme, editOrderTimeRange, editPartitionTime, submitOrderTimeRange, submitPartitionTime, partitionTimeAction, orderTimeAction, ordinalAction } = useSideBarAction(selected, parent)
+
+const metaTagMenuItems = <MenuItem<undefined>[]>[
+    {type: "normal", label: "覆盖原有标签…", click: () => editMetaTag("OVERRIDE")},
+    {type: "normal", label: "移除选定标签…", click: () => editMetaTag("REMOVE")},
+]
 
 const partitionTimeEllipsisMenuItems = <MenuItem<undefined>[]>[
     {type: "normal", label: "设置日期…", click: editPartitionTime},
@@ -73,7 +79,14 @@ const ordinalEllipsisMenuItems = <MenuItem<undefined>[]>[
             <TagmeEditor class="mt-1" :value="value" @update:value="setValue"/>
         </template>
     </FormEditKit>
-    <Button class="mt-1 w-100 has-text-left" size="small" icon="tag" @click="editMetaTag">添加标签…</Button>
+    <Flex class="mt-1">
+        <Button class="w-100 has-text-left" size="small" icon="tag" @click="editMetaTag('APPEND')">添加标签…</Button>
+        <FlexItem :shrink="0" :grow="0">
+            <ElementPopupMenu :items="metaTagMenuItems" position="bottom" align="center" v-slot="{ popup, setEl, attrs }">
+                <Button :ref="setEl" v-bind="attrs" square size="small" icon="ellipsis-v" @click="popup"/>
+            </ElementPopupMenu>
+        </FlexItem>
+    </Flex>
     <ElementPopupMenu :items="partitionTimeEllipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
         <Button :ref="setEl" class="w-100 has-text-left" size="small" icon="calendar-alt" end-icon="ellipsis-v" @click="popup">设置时间分区</Button>
     </ElementPopupMenu>

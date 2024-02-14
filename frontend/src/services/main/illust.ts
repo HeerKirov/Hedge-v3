@@ -349,16 +349,8 @@ export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "bo
         if(form.orderTime) form.orderTime = null
     })
 
-    const editMetaTag = async () => {
-        const res = await metaTagEditor.edit({tags: [], topics: [], authors: []}, {allowTagme: false})
-        if(res !== undefined) {
-            await batchFetch({
-                target: selected.value,
-                tags: res.tags.map(i => i.id),
-                topics: res.topics.map(i => i.id),
-                authors: res.authors.map(i => i.id)
-            })
-        }
+    const editMetaTag = async (updateMode: "APPEND" | "OVERRIDE" | "REMOVE") => {
+        metaTagEditor.editBatch(selected.value, updateMode, () => toast.toast("批量编辑完成", "info", "已完成标签的更改。"))
     }
 
     const setScore = (score: number | null) => {

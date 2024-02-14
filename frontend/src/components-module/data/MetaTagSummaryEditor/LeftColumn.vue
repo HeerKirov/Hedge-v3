@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Icon, Tag, Button } from "@/components/universal"
 import { BottomLayout } from "@/components/layout"
-import { SimpleMetaTagElement } from "@/components-business/element"
+import { SimpleMetaTagElement, SourceTagElement } from "@/components-business/element"
 import { useCalloutService } from "@/components-module/callout"
 import { MetaTagTypes, MetaTagValues } from "@/functions/http-client/api/all"
 import { useEditorContext } from "./context"
@@ -10,7 +10,7 @@ const {
     typeFilter,
     form: {
         submit, submittable, removeAt,
-        tags, topics, authors,
+        tags, topics, authors, mappings,
         validation: { exportedResults, validationResults },
         history: { canRedo, canUndo, undo, redo }
     }
@@ -47,6 +47,13 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues) => {
                         <Tag class="ml-half" line-style="none" :color="tag.color" icon="close" clickable @click="removeAt('tag', idx)"/>
                     </template>
                 </SimpleMetaTagElement>
+            </template>
+            <template v-if="mappings.length > 0">
+                <i class="label mt-3">生效的来源推导</i>
+                <div v-for="(m, idx) in mappings" :key="`${m.site}/${m.type}/${m.code}`">
+                    <SourceTagElement :site="m.site" :value="m.sourceTag"/>
+                    <Tag class="ml-half" line-style="none" icon="close" clickable @click="removeAt('mapping', idx)"/>
+                </div>
             </template>
             <template v-if="exportedResults.tags.length > 0 || exportedResults.topics.length > 0 || exportedResults.authors.length > 0">
                 <i class="label mt-3">已导出</i>

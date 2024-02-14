@@ -4,10 +4,9 @@ import {
     ConflictingGroupMembersError,
     NotFound, ParamError,
     ParamNotRequired, ParamRequired,
-    ResourceNotExist,
-    ResourceNotSuitable
+    ResourceNotExist, ResourceNotSuitable
 } from "../exceptions"
-import { FilePath, IdResponse, LimitAndOffsetFilter, LimitFilter, ListResult, OrderList, SourceDataPath } from "./all"
+import { FilePath, IdResponse, LimitAndOffsetFilter, LimitFilter, ListResult, OrderList, SourceDataPath, SourceTagPath } from "./all"
 import { SimpleBook } from "./book"
 import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
@@ -687,7 +686,8 @@ export interface IllustBatchUpdateForm {
     tags?: number[]
     topics?: number[]
     authors?: number[]
-    tagOverride?: boolean
+    mappingSourceTags?: SourceTagPath[]
+    tagUpdateMode?: "APPEND" | "OVERRIDE" | "REMOVE"
     tagme?: Tagme[]
     partitionTime?: LocalDate
     orderTimeBegin?: LocalDateTime

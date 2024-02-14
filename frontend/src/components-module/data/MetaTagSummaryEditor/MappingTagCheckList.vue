@@ -7,13 +7,14 @@ import MappingTagCheckListItem from "./MappingTagCheckListItem.vue"
 
 const props = defineProps<{
     mappings: BatchQueryResult[]
+    primitiveMode: boolean
     tagFilter: boolean
     topicFilter: boolean
     authorFilter: boolean
 }>()
 
 const emit = defineEmits<{
-    (e: "add", value: MetaTagTypeValue[]): void
+    (e: "add", value: (MetaTagTypeValue | {type: "mapping", mapping: BatchQueryResult})[]): void
     (e: "update:sourceTagMapping", sourceTagType: string, sourceTagCode: string, items: SourceMappingTargetDetail[]): void
 }>()
 
@@ -24,14 +25,14 @@ const selectAll = () => {
 }
 
 const selectNone = () => {
-    for (const { type, code } of props.mappings) {
-        selected.value[`${type}/${code}`] = false
+    for (const { site, type, code } of props.mappings) {
+        selected.value[`${site}/${type}/${code}`] = false
     }
 }
 
 const selectReverse = () => {
-    for (const { type, code } of props.mappings) {
-        const key = `${type}/${code}`
+    for (const { site, type, code } of props.mappings) {
+        const key = `${site}/${type}/${code}`
         if(selected.value[key] as boolean | undefined === false) {
             delete selected.value[key]
         }else{
@@ -41,10 +42,14 @@ const selectReverse = () => {
 }
 
 const addAll = () => {
-    const addList: MetaTagTypeValue[] = []
-    for (const { type, code, mappings } of props.mappings) {
-        if(selected.value[`${type}/${code}`] as boolean | undefined !== false) {
-            for (const meta of mappings) {
+    const addList: (MetaTagTypeValue | {type: "mapping", mapping: BatchQueryResult})[] = []
+    for (const item of props.mappings) {
+        if(selected.value[`${item.site}/${item.type}/${item.code}`] as boolean | undefined !== false) {
+            if(props.primitiveMode) {
+                if(item.mappings.length > 0) {
+                    addList.push({type: "mapping", mapping: item})
+                }
+            }else for (const meta of item.mappings) {
                 if(meta.metaType === "AUTHOR") {
                     if(props.authorFilter) {
                         addList.push({type: "author", value: meta.metaTag})

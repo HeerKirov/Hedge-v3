@@ -16,7 +16,7 @@ const { identity, tab } = useEditorContext()
         <Button :type="tab === 'db' ? 'primary' : undefined" icon="database" @click="tab = 'db'">数据库</Button>
         <Button :type="tab === 'recent' ? 'primary' : undefined" icon="history" @click="tab = 'recent'">最近使用</Button>
         <Button :type="tab === 'suggest' ? 'primary' : undefined" icon="adjust" @click="tab = 'suggest'">相关推荐</Button>
-        <Button v-if="identity?.type === 'IMAGE'" :type="tab === 'source' ? 'primary' : undefined" icon="file-invoice" @click="tab = 'source'">来源推导</Button>
+        <Button v-if="identity?.type === 'IMAGE' || identity?.type === 'ILLUST_LIST'" :type="tab === 'source' ? 'primary' : undefined" icon="file-invoice" @click="tab = 'source'">来源推导</Button>
     </Group>
     <RightColumnDatabase v-if="tab === 'db'"/>
     <RightColumnRecent v-else-if="tab === 'recent'"/>
