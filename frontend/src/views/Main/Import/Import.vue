@@ -6,6 +6,7 @@ import { PaneLayout } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton, FileWatcher } from "@/components-business/top-bar"
 import { ImportDetailPane } from "@/components-module/common"
 import { ImportImageDataset } from "@/components-module/data"
+import { EmbedPreview } from "@/components-module/preview"
 import { ImportRecord } from "@/functions/http-client/api/import"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 import { installImportContext } from "@/services/main/import"
@@ -74,7 +75,7 @@ const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
         <ImportImageDataset v-else :data="paginationData.data.value" :state="paginationData.state.value" :query-instance="listview.proxy" :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
                             :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                             @update:state="paginationData.setState" @navigate="paginationData.navigateTo($event)" @select="updateSelect" @contextmenu="menu.popup($event)" @space="openImagePreview()"/>
-
+        <EmbedPreview/>
         <template #pane>
             <ImportDetailPane @close="paneState.visible.value = false"/>
         </template>

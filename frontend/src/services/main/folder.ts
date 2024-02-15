@@ -234,7 +234,7 @@ export function useFolderDetailPanel() {
     const listviewController = useIllustViewController()
     const operators = useImageDatasetOperators({
         listview: listview.listview, paginationData: listview.paginationData,
-        listviewController, selector,
+        listviewController, selector, embedPreview: "auto",
         dataDrop: {dropInType: "folder", path}
     })
 

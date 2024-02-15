@@ -299,7 +299,7 @@ export function useDetailIllustContext() {
     const paneState = useSelectedPaneState("illust")
     const operators = useImageDatasetOperators({
         listview: listview.listview, paginationData: listview.paginationData,
-        listviewController, selector,
+        listviewController, selector, embedPreview: "auto",
         dataDrop: {dropInType: "partition", path, querySchema: querySchema.schema, queryFilter: listview.queryFilter}
     })
     const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector})

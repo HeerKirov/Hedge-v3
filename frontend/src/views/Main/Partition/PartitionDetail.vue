@@ -6,6 +6,7 @@ import { IllustImageDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
 import { PaneLayout } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton, CollectionModeButton, SearchBox, LockOnButton } from "@/components-business/top-bar"
+import { EmbedPreview } from "@/components-module/preview"
 import { Illust } from "@/functions/http-client/api/illust"
 import { useDetailIllustContext } from "@/services/main/partition"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
@@ -92,7 +93,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
                             @dblclick="(i, s) => operators.openDetailByClick(i, s)"
                             @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
                             @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
-
+        <EmbedPreview/>
         <template #pane>
             <IllustDetailPane @close="paneState.visible.value = false"/>
         </template>

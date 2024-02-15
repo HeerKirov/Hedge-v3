@@ -34,7 +34,7 @@ export function useIllustContext() {
     const listviewController = useIllustViewController(toRef(listview.queryFilter, "type"))
     const operators = useImageDatasetOperators({
         listview: listview.listview, paginationData: listview.paginationData,
-        listviewController, selector,
+        listviewController, selector, embedPreview: "auto",
         dataDrop: {dropInType: "illust", querySchema: querySchema.schema, queryFilter: listview.queryFilter}
     })
     const locateId = useLocateId({queryFilter: listview.queryFilter, paginationData: listview.paginationData, selector})
@@ -114,7 +114,7 @@ export function useCollectionContext() {
     const listviewController = useIllustViewController()
     const operators = useImageDatasetOperators({
         listview: listview.listview, paginationData: listview.paginationData,
-        listviewController, selector,
+        listviewController, selector, embedPreview: "auto",
         dataDrop: {dropInType: "collection", path}
     })
 

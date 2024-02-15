@@ -3,6 +3,7 @@ import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { BrowserTeleport } from "@/components/logical"
 import { BottomLayout, PaneLayout } from "@/components/layout"
+import { EmbedPreview } from "@/components-module/preview"
 import { IllustImageDataset } from "@/components-module/data"
 import { BookTabDetailInfo, IllustDetailPane } from "@/components-module/common"
 import { LockOnButton, DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
@@ -85,7 +86,7 @@ const menu = useDynamicPopupMenu<BookImage>(bookImage => [
                             @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event as BookImage)"
                             @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
                             @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
-
+        <EmbedPreview/>
         <template #pane>
             <IllustDetailPane @close="paneState.visible.value = false"/>
         </template>

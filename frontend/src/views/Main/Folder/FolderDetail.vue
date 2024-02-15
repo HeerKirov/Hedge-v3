@@ -6,6 +6,7 @@ import { PaneLayout } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton, LockOnButton } from "@/components-business/top-bar"
 import { IllustImageDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
+import { EmbedPreview } from "@/components-module/preview"
 import { FolderImage } from "@/functions/http-client/api/folder"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 import { useFolderDetailPanel } from "@/services/main/folder"
@@ -78,7 +79,7 @@ const menu = useDynamicPopupMenu<FolderImage>(folderImage => [
                             @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event as FolderImage)"
                             @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
                             @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
-
+        <EmbedPreview/>
         <template #pane>
             <IllustDetailPane @close="paneState.visible.value = false"/>
         </template>

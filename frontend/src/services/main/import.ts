@@ -7,7 +7,7 @@ import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { ImportImageViewController, useImportImageViewController } from "@/services/base/view-controller"
 import { useSettingImport, useSettingSite } from "@/services/setting"
-import { usePreviewService } from "@/components-module/preview"
+import { installEmbedPreviewService, usePreviewService } from "@/components-module/preview"
 import { useDocumentTitle, useTabRoute } from "@/modules/browser"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
@@ -108,7 +108,7 @@ function useListView() {
 function useOperators(listview: QueryListview<ImportRecord, number>, queryFilter: Ref<ImportQueryFilter>, selector: SelectedState<number>, listviewController: ImportImageViewController, addFiles: (f: string[]) => void) {
     const toast = useToast()
     const message = useMessageBox()
-    const preview = usePreviewService()
+    const preview = installEmbedPreviewService()
     const batchFetch = useFetchHelper(client => client.import.batch)
 
     const historyMode = computed({

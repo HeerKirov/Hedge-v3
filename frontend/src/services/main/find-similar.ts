@@ -3,7 +3,7 @@ import { GraphChart, GraphSeriesOption } from "echarts/charts"
 import { CanvasRenderer } from "echarts/renderers"
 import { TooltipComponent, TooltipComponentOption } from "echarts/components"
 import { computed, onBeforeUnmount, onMounted, ref, Ref, shallowRef, watch } from "vue"
-import { usePreviewService } from "@/components-module/preview"
+import { installEmbedPreviewService, usePreviewService } from "@/components-module/preview"
 import { useDialogService } from "@/components-module/dialog"
 import { QueryListview, useFetchEndpoint, useFetchHelper, usePaginationDataView, usePathFetchHelper, usePostFetchHelper, usePostPathFetchHelper, useQueryListview } from "@/functions/fetch"
 import { FindSimilarDetailResult, FindSimilarResult, FindSimilarResultDetailImage, FindSimilarResultResolveAction, FindSimilarResultResolveForm, QuickFindResult, SimilarityRelationCoverage } from "@/functions/http-client/api/find-similar"
@@ -77,7 +77,7 @@ export function useQuickFindContext() {
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust")
     const listviewController = useIllustViewController()
-    const operators = useImageDatasetOperators({listview: listview.listview, paginationData: listview.paginationData, listviewController, selector})
+    const operators = useImageDatasetOperators({listview: listview.listview, paginationData: listview.paginationData, listviewController, selector, embedPreview: "auto"})
     const selfOperators = useQuickFindOperators()
 
     installIllustListviewContext({listview, selector, listviewController})
@@ -183,7 +183,7 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
     const browserTabs = useBrowserTabs()
     const message = useMessageBox()
     const dialog = useDialogService()
-    const preview = usePreviewService()
+    const preview = installEmbedPreviewService()
     const gridMode = shallowRef<"grid">("grid")
 
     const fetchStagingPostUpdate = usePostFetchHelper(client => client.stagingPost.update)

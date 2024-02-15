@@ -2,6 +2,7 @@
 import { Button, Separator } from "@/components/universal"
 import { BrowserTeleport } from "@/components/logical"
 import { PaneLayout } from "@/components/layout"
+import { EmbedPreview } from "@/components-module/preview"
 import { ColumnNumButton, FitTypeButton } from "@/components-business/top-bar"
 import { installFindSimilarDetailPanel } from "@/services/main/find-similar"
 import CompareTable from "./DetailPanel/CompareTable.vue"
@@ -35,6 +36,7 @@ const { data, viewMode, listviewController, operators: { complete } } = installF
                 <GraphView/>
             </div>
             <GridList v-else/>
+            <EmbedPreview/>
             <template #pane>
                 <DetailPane/>
             </template>

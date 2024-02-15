@@ -5,6 +5,7 @@ import { BrowserTeleport } from "@/components/logical"
 import { PaneLayout } from "@/components/layout"
 import { IllustImageDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
+import { EmbedPreview } from "@/components-module/preview"
 import { SearchBox, LockOnButton, DataRouter, FitTypeButton, ColumnNumButton, CollectionModeButton } from "@/components-business/top-bar"
 import { Illust } from "@/functions/http-client/api/illust"
 import { useIllustContext } from "@/services/main/illust"
@@ -92,7 +93,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
                             @dblclick="(i, s) => operators.openDetailByClick(i, s)"
                             @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
                             @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
-
+        <EmbedPreview/>
         <template #pane>
             <IllustDetailPane @close="paneState.visible.value = false"/>
         </template>

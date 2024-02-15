@@ -6,6 +6,7 @@ import { PaneLayout } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
 import { StagingPostDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
+import { EmbedPreview } from "@/components-module/preview"
 import { useStagingPostContext } from "@/services/main/staging-post"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 import { StagingPostImage } from "@/functions/http-client/api/staging-post"
@@ -70,7 +71,7 @@ const menu = useDynamicPopupMenu<StagingPostImage>(illust => [
                             @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event)"
                             @dblclick="(i, s) => operators.openDetailByClick(i, s)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
                             @drop="operators.dropToAdd"/>
-
+        <EmbedPreview/>
         <template #pane>
             <IllustDetailPane @close="paneState.visible.value = false"/>
         </template>

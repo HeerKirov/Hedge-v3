@@ -16,7 +16,7 @@ export function useStagingPostContext() {
     const listviewController = useIllustViewController()
     const selfOperators = useOperators(selector)
     const operators = useImageDatasetOperators({
-        listview: listview.listview, paginationData: listview.paginationData,
+        listview: listview.listview, paginationData: listview.paginationData, embedPreview: "auto",
         listviewController, selector
     })
 

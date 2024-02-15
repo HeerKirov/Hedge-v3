@@ -15,7 +15,7 @@ import { useMessageBox } from "@/modules/message-box"
 import { useBrowserTabs, useTabRoute } from "@/modules/browser"
 import { useDialogService } from "@/components-module/dialog"
 import { useStackedView } from "@/components-module/stackedview"
-import { usePreviewService } from "@/components-module/preview"
+import { installEmbedPreviewService, PreviewService, usePreviewService } from "@/components-module/preview"
 import { installation } from "@/utils/reactivity"
 import { LocalDate } from "@/utils/datetime"
 
@@ -93,6 +93,10 @@ export interface ImageDatasetOperatorsOptions<T extends CommonIllust> {
          */
         path: number | Ref<number | null>
     }
+    /**
+     * 注入嵌入式的PreviewService。此服务会在SPACE激活预览的功能中用到。若传入auto，则自动注入一个PreviewService。
+     */
+    embedPreview?: PreviewService | "auto"
 }
 
 export interface ImageDatasetOperators<T extends CommonIllust> {
@@ -224,7 +228,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     const router = useTabRoute()
     const dialog = useDialogService()
     const stackedView = useStackedView()
-    const preview = usePreviewService()
+    const preview = options.embedPreview === "auto" ? installEmbedPreviewService() : options.embedPreview ?? usePreviewService()
     const { listview, listviewController, paginationData, selector, dataDrop: dataDropOptions, createCollection: createCollectionOptions } = options
 
     const fetchIllustBatchUpdate = usePostFetchHelper(client => client.illust.batchUpdate)
