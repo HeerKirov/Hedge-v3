@@ -2,9 +2,10 @@ import { reactive } from "vue"
 import { installation } from "@/utils/reactivity"
 
 export interface MessageBoxManager {
-    showMessage(options: MessageBoxOptions): Promise<string>
+    showMessage(options: MessageBoxOptions): Promise<{action: string, checks: string[]}>
     showOkMessage(type: MessageBoxType, message: string, detailMessage?: string): void
     showYesNoMessage(type: MessageBoxType, message: string, detailMessage?: string): Promise<boolean>
+    showCheckBoxMessage(type: MessageBoxType, message: string, detailMessage: string | undefined, checks: MessageBoxCheckBox[]): Promise<{ok: boolean, checks: string[]}>
 }
 
 export interface MessageBoxOptions {
@@ -12,6 +13,7 @@ export interface MessageBoxOptions {
     message: string
     detailMessage?: string
     buttons: MessageBoxButton[]
+    checks?: MessageBoxCheckBox[]
     enter?: string
     esc?: string
 }
@@ -23,20 +25,26 @@ export interface MessageBoxButton {
     icon?: string
 }
 
+export interface MessageBoxCheckBox {
+    key: string
+    name?: string
+    defaultValue?: boolean
+}
+
 interface MessageBoxConsumer extends MessageBoxManager {
     messageTasks: MessageTask[]
 }
 
 export interface MessageTask {
     options: MessageBoxOptions
-    resolve(ret: string): void
+    resolve(ret: {action: string, checks: string[]}): void
 }
 
 export const [installMessageBoxManager, useMessageBoxManager] = installation(function () {
     const messageTasks = reactive<MessageTask[]>([])
 
-    const showMessage = (options: MessageBoxOptions): Promise<string> => {
-        return new Promise<string>(resolve => {
+    const showMessage = (options: MessageBoxOptions): Promise<{action: string, checks: string[]}> => {
+        return new Promise<{action: string, checks: string[]}>(resolve => {
             messageTasks.push({options, resolve})
         })
     }
@@ -59,10 +67,22 @@ export const [installMessageBoxManager, useMessageBoxManager] = installation(fun
             enter: "yes",
             esc: "no"
         })
-        return res === "yes"
+        return res.action === "yes"
+    }
+    const showCheckBoxMessage = async (type: MessageBoxType, message: string, detailMessage: string | undefined, checks: MessageBoxCheckBox[]): Promise<{ok: boolean, checks: string[]}> => {
+        const res = await showMessage({
+            title: STD_TITLES[type],
+            message,
+            detailMessage,
+            buttons: [type === "warn" ? DangerYesButton : YesButton, NoButton],
+            checks,
+            enter: "yes",
+            esc: "no"
+        })
+        return {ok: res.action === "yes", checks: res.checks}
     }
 
-    return <MessageBoxConsumer>{messageTasks, showMessage, showOkMessage, showYesNoMessage}
+    return <MessageBoxConsumer>{messageTasks, showMessage, showOkMessage, showYesNoMessage, showCheckBoxMessage}
 })
 
 export const useMessageBox: () => MessageBoxManager = useMessageBoxManager

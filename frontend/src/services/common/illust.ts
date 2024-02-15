@@ -228,7 +228,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     const { listview, listviewController, paginationData, selector, dataDrop: dataDropOptions, createCollection: createCollectionOptions } = options
 
     const fetchIllustBatchUpdate = usePostFetchHelper(client => client.illust.batchUpdate)
-    const fetchIllustDelete = usePostFetchHelper(client => client.illust.delete)
+    const fetchIllustDelete = usePostPathFetchHelper(client => client.illust.delete)
     const fetchCollectionCreate = useFetchHelper(client => client.illust.collection.create)
     const fetchImageRelatedUpdate = usePostPathFetchHelper(client => client.illust.image.relatedItems.update)
     const fetchBookImagesPartialUpdate = usePostPathFetchHelper(client => client.book.images.partialUpdate)
@@ -409,22 +409,21 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     }
 
     const deleteItem = async (illust: T) => {
-        if(selector.selected.value.length === 0 || !selector.selected.value.includes(illust.id)) {
+        if(selector.selected.value.length === 0 || !selector.selected.value.includes(illust.id) || (selector.selected.value.length === 1 && selector.selected.value.includes(illust.id))) {
             if(illust.type === "COLLECTION") {
-                if(await message.showYesNoMessage("warn", "确定要删除此集合吗？集合内的图像不会被删除。", "此操作不可撤回。")) {
-                    await fetchIllustDelete(illust.id)
-                }
+                const res = await message.showCheckBoxMessage("warn", "确定要删除此集合吗？集合内的图像不会被删除。", "此操作不可撤回。", [{key: "CHILDREN", name: "删除集合内图像"}, {key: "SHIFT", name: "彻底删除图像"}])
+                if(res.ok) await fetchIllustDelete(illust.id, {deleteCompletely: res.checks.includes("SHIFT"), deleteCollectionChildren: res.checks.includes("CHILDREN")})
             }else{
-                if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "被删除的项将放入「已删除」归档。")) {
-                    await fetchIllustDelete(illust.id)
-                }
+                const res = await message.showCheckBoxMessage("warn", "确定要删除此项吗？", "被删除的项将放入「已删除」归档。", [{key: "SHIFT", name: "彻底删除图像"}])
+                if(res.ok) await fetchIllustDelete(illust.id, {deleteCompletely: res.checks.includes("SHIFT")})
             }
         }else{
             const items = getEffectedItems(illust)
-            if(await message.showYesNoMessage("warn", `确定要删除${items.length}个已选择项吗？`, "集合内的图像不会被删除。被删除的项将放入「已删除」归档。")) {
-                for (const id of items) {
-                    fetchIllustDelete(id).finally()
-                }
+            const res = await message.showCheckBoxMessage("warn", `确定要删除${items.length}个已选择项吗？`, "集合内的图像不会被删除。被删除的项将放入「已删除」归档。", [{key: "CHILDREN", name: "删除集合内图像"}, {key: "SHIFT", name: "彻底删除图像"}])
+            if(res.ok) {
+                const deleteCompletely = res.checks.includes("SHIFT")
+                const deleteCollectionChildren = res.checks.includes("CHILDREN")
+                for (const id of items) await fetchIllustDelete(id, {deleteCompletely, deleteCollectionChildren}).finally()
             }
         }
     }

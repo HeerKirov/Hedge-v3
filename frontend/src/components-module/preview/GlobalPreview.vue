@@ -33,6 +33,7 @@ const { context, close } = useInternalService()
     &.transition-enter-from,
     &.transition-leave-to
         opacity: 0
+        pointer-events: none
 
 .dialog
     &.transition-enter-active

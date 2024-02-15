@@ -33,6 +33,7 @@ export const [installInternalService, useInternalService] = installation(functio
     return {show, close, context}
 })
 
+export const installEmbedPreviewService: () => PreviewService = installInternalService
 export const installPreviewService: () => PreviewService = installInternalService
 export const usePreviewService: () => PreviewService = useInternalService
 

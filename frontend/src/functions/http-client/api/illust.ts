@@ -36,7 +36,7 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
         update: http.createPathDataRequest(id => `/api/illusts/${id}`, "PATCH", {
             parseData: mapFromImageUpdateForm
         }),
-        delete: http.createPathRequest(id => `/api/illusts/${id}`, "DELETE"),
+        delete: http.createPathQueryRequest(id => `/api/illusts/${id}`, "DELETE"),
         collection: {
             create: http.createDataRequest("/api/illusts/collection", "POST", {
                 parseData: mapFromCollectionCreateForm
@@ -47,7 +47,7 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
             update: http.createPathDataRequest(id => `/api/illusts/collection/${id}`, "PATCH", {
                 parseData: mapFromImageUpdateForm
             }),
-            delete: http.createPathRequest(id => `/api/illusts/collection/${id}`, "DELETE"),
+            delete: http.createPathQueryRequest(id => `/api/illusts/collection/${id}`, "DELETE"),
             relatedItems: {
                 get: http.createPathQueryRequest(id => `/api/illusts/collection/${id}/related-items`, "GET", {
                     parseResponse: mapToCollectionRelatedItems
@@ -70,7 +70,7 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
             update: http.createPathDataRequest(id => `/api/illusts/image/${id}`, "PATCH", {
                 parseData: mapFromImageUpdateForm
             }),
-            delete: http.createPathRequest(id => `/api/illusts/image/${id}`, "DELETE"),
+            delete: http.createPathQueryRequest(id => `/api/illusts/image/${id}`, "DELETE"),
             relatedItems: {
                 get: http.createPathQueryRequest(id => `/api/illusts/image/${id}/related-items`, "GET", {
                     parseResponse: mapToImageRelatedItems
@@ -240,7 +240,7 @@ export interface IllustEndpoint {
      * 删除项目。
      * @exception NOT_FOUND
      */
-    delete(id: number): Promise<Response<null, NotFound>>
+    delete(id: number, options?: IllustDeleteOptions): Promise<Response<null, NotFound>>
     /**
      * collection类型的项的操作API。collection是image的集合，不能为空，空集合会自动删除。每个image只能从属一个集合。
      */
@@ -270,7 +270,7 @@ export interface IllustEndpoint {
          * 删除collection。
          * @exception NOT_FOUND
          */
-        delete(id: number): Promise<Response<null, NotFound>>
+        delete(id: number, options?: IllustDeleteOptions): Promise<Response<null, NotFound>>
         /**
          * collection的关联内容。只有关联组。
          */
@@ -325,7 +325,7 @@ export interface IllustEndpoint {
          * 删除image。
          * @exception NOT_FOUND
          */
-        delete(id: number): Promise<Response<null, NotFound>>
+        delete(id: number, options?: IllustDeleteOptions): Promise<Response<null, NotFound>>
         /**
          * image的关联内容。包括关联组、所属画集、所属集合。
          */
@@ -766,4 +766,9 @@ export interface IllustLocationFilter extends IllustQueryFilter {
      * 要查询的image。
      */
     imageId: number
+}
+
+export interface IllustDeleteOptions {
+    deleteCompletely?: boolean
+    deleteCollectionChildren?: boolean
 }

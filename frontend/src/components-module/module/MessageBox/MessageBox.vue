@@ -16,18 +16,18 @@ function refreshTask() {
 }
 watch(() => messageTasks, refreshTask, {deep: true})
 
-const click = (action: string) => {
+const click = (action: string, checks: string[]) => {
     if(task.value) {
         const resolve = task.value?.resolve
         task.value = undefined
-        resolve(action)
+        resolve({action, checks})
         refreshTask()
     }
 }
 
 const close = () => {
     if(task.value?.options.esc) {
-        click(task.value.options.esc)
+        click(task.value.options.esc, [])
     }
 }
 </script>
@@ -39,6 +39,7 @@ const close = () => {
             :message="task!.options.message"
             :detail-message="task!.options.detailMessage"
             :buttons="task!.options.buttons"
+            :checks="task!.options.checks"
             :enter="task!.options.enter"
             @click="click"
         />
