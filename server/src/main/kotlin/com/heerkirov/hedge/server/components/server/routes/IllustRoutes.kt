@@ -1,11 +1,8 @@
 package com.heerkirov.hedge.server.components.server.routes
 
 import com.heerkirov.hedge.server.components.server.Routes
-import com.heerkirov.hedge.server.dto.filter.IllustLocationFilter
+import com.heerkirov.hedge.server.dto.filter.*
 import com.heerkirov.hedge.server.exceptions.ParamTypeError
-import com.heerkirov.hedge.server.dto.filter.IllustQueryFilter
-import com.heerkirov.hedge.server.dto.filter.LimitAndOffsetFilter
-import com.heerkirov.hedge.server.dto.filter.PartitionFilter
 import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.IdRes
 import com.heerkirov.hedge.server.enums.IllustType
@@ -112,7 +109,8 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
 
     private fun delete(ctx: Context) {
         val id = ctx.pathParamAsClass<Int>("id").get()
-        illustService.delete(id)
+        val options = ctx.queryAsFilter<IllustDeleteOptions>()
+        illustService.delete(id, options)
         ctx.status(204)
     }
 
@@ -135,7 +133,8 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
 
     private fun deleteCollection(ctx: Context) {
         val id = ctx.pathParamAsClass<Int>("id").get()
-        illustService.delete(id, IllustType.COLLECTION)
+        val options = ctx.queryAsFilter<IllustDeleteOptions>()
+        illustService.delete(id, options, IllustType.COLLECTION)
         ctx.status(204)
     }
 
@@ -175,7 +174,8 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
 
     private fun deleteImage(ctx: Context) {
         val id = ctx.pathParamAsClass<Int>("id").get()
-        illustService.delete(id, IllustType.IMAGE)
+        val options = ctx.queryAsFilter<IllustDeleteOptions>()
+        illustService.delete(id, options, IllustType.IMAGE)
         ctx.status(204)
     }
 

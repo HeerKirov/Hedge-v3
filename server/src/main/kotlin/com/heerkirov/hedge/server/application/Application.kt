@@ -77,7 +77,7 @@ fun runApplication(options: ApplicationOptions) {
             val bookManager = BookManager(repo, bus, bookKit)
             val folderManager = FolderManager(repo, bus, folderKit)
             val trashManager = TrashManager(repo, bus, backendExporter, illustKit, file, bookManager, folderManager, associateManager, sourceManager)
-            val illustManager = IllustManager(appdata, repo, bus, illustKit, sourceManager, sourceMappingManager, associateManager, bookManager, folderManager, importManager, trashManager)
+            val illustManager = IllustManager(appdata, repo, bus, illustKit, file, sourceManager, sourceMappingManager, associateManager, bookManager, folderManager, importManager, trashManager)
 
             define { EventCompositorImpl(repo, bus, backendExporter) }
             define { FileGeneratorImpl(appStatus, appdata, repo, bus) }

@@ -36,6 +36,8 @@ data class IllustLocationFilter(@Search val query: String?,
                                 val favorite: Boolean? = null,
                                 val imageId: Int)
 
+data class IllustDeleteOptions(val deleteCollectionChildren: Boolean? = null, val deleteCompletely: Boolean? = null)
+
 data class BookQueryFilter(@Limit val limit: Int,
                             @Offset val offset: Int,
                             @Search val query: String?,

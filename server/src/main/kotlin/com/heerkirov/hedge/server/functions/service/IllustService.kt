@@ -709,7 +709,7 @@ class IllustService(private val appdata: AppDataManager,
     /**
      * @throws NotFound 请求对象不存在
      */
-    fun delete(id: Int, type: IllustType? = null) {
+    fun delete(id: Int, options: IllustDeleteOptions, type: IllustType? = null) {
         data.db.transaction {
             val illust = data.db.from(Illusts).select()
                 .where { retrieveCondition(id, type) }
@@ -717,7 +717,7 @@ class IllustService(private val appdata: AppDataManager,
                 ?.let { Illusts.createEntity(it) }
                 ?: throw be(NotFound())
 
-            illustManager.delete(illust)
+            illustManager.delete(illust, deleteCollectionChildren = options.deleteCollectionChildren ?: false, deleteCompletely = options.deleteCompletely ?: false)
         }
     }
 

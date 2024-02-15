@@ -38,6 +38,7 @@ class IllustManager(private val appdata: AppDataManager,
                     private val data: DataRepository,
                     private val bus: EventBus,
                     private val kit: IllustKit,
+                    private val fileManager: FileManager,
                     private val sourceManager: SourceDataManager,
                     private val sourceMappingManager: SourceMappingManager,
                     private val associateManager: AssociateManager,
@@ -222,8 +223,9 @@ class IllustManager(private val appdata: AppDataManager,
     /**
      * 删除项目。对于collection，它将被直接删除；对于image，它将接trash调用，送入已删除列表。
      */
-    fun delete(illust: Illust) {
-        if(illust.type != IllustModelType.COLLECTION) {
+    fun delete(illust: Illust, deleteCompletely: Boolean = false, deleteCollectionChildren: Boolean = false, innerCalled: Boolean = false) {
+        //对于IMAGE，将其移入Trash。不过在开启了deleteCompletely时不这么做
+        if(illust.type != IllustModelType.COLLECTION && !deleteCompletely) {
             trashManager.trashImage(illust)
         }
 
@@ -244,22 +246,34 @@ class IllustManager(private val appdata: AppDataManager,
             //从所有folder中移除
             folderManager.removeItemFromAllFolders(illust.id)
             //对parent的导出处理
-            if(illust.parentId != null) processCollectionChildrenChanged(illust.parentId, -1)
+            if(illust.parentId != null && !innerCalled) processCollectionChildrenChanged(illust.parentId, -1)
+            //如果开启了deleteCompletely，那么现在就要删除File
+            if(deleteCompletely) fileManager.deleteFile(illust.fileId)
 
             bus.emit(IllustDeleted(illust.id, IllustType.IMAGE))
-            if(illust.parentId != null) bus.emit(IllustImagesChanged(illust.parentId, emptyList(), listOf(illust.id)))
+            if(illust.parentId != null && !innerCalled) bus.emit(IllustImagesChanged(illust.parentId, emptyList(), listOf(illust.id)))
         }else{
-            val children = data.db.from(Illusts).select(Illusts.id)
-                .where { Illusts.parentId eq illust.id }
-                .map { it[Illusts.id]!! }
-            data.db.update(Illusts) {
-                where { it.parentId eq illust.id }
-                set(it.parentId, null)
-                set(it.type, IllustModelType.IMAGE)
+            //如果开启了deleteCollectionChildren，那么将删除其子项。删除子项的操作也响应deleteCompletely参数
+            if(deleteCollectionChildren) {
+                data.db.from(Illusts).select()
+                    .where { Illusts.parentId eq illust.id }
+                    .map { Illusts.createEntity(it) }
+                    .forEach { delete(it, deleteCompletely = deleteCompletely, innerCalled = true) }
+            }else{
+                val children = data.db.from(Illusts).select(Illusts.id)
+                    .where { Illusts.parentId eq illust.id }
+                    .map { it[Illusts.id]!! }
+
+                data.db.update(Illusts) {
+                    where { it.parentId eq illust.id }
+                    set(it.parentId, null)
+                    set(it.type, IllustModelType.IMAGE)
+                }
+
+                children.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }
             }
 
             bus.emit(IllustDeleted(illust.id, IllustType.COLLECTION))
-            children.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }
         }
     }
 
