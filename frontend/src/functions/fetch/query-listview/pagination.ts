@@ -79,7 +79,7 @@ export function usePaginationDataView<T>(options: PaginationOptions<T>): Paginat
     }
 
     let currentQueryId = 0
-    let cacheTimer: NodeJS.Timer | null = null
+    let cacheTimer: NodeJS.Timeout | null = null
 
     const setState = (offset: number, limit: number) => {
         if(state.value?.offset !== offset || state.value?.limit !== limit) {

@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import { ComponentPublicInstance, computed, onMounted, ref, useCssModule, watch } from "vue"
-import {
-    createPrimitiveKeyEventValidator,
-    KeyEvent,
-    KeyPress,
-    toKeyEvent,
-    useInterceptedKey,
-    useKeyDeclaration,
-    USUAL_PRIMITIVE_KEY_VALIDATORS
-} from "@/modules/keyboard"
+import { createPrimitiveKeyEventValidator, KeyEvent, KeyPress, toKeyEvent, useInterceptedKey, useKeyDeclaration, USUAL_PRIMITIVE_KEY_VALIDATORS } from "@/modules/keyboard"
 
 const props = defineProps<{
     /**

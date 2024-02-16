@@ -14,7 +14,7 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-    default(props: {index: number, value: T, label: string, selected: boolean, click: (e: MouseEvent) => void}): any
+    default(props: {key: string, index: number, value: T, label: string, selected: boolean, click: (e: MouseEvent) => void}): any
 }>()
 
 const select = (e: MouseEvent, v: T, idx: number) => {

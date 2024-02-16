@@ -18,7 +18,7 @@ const emit = defineEmits<{
 const setValue = (field: string, value: any) => emit("update:value", {...(props.value ?? {}), [field]: value})
 
 const clear = () => {
-    const value = {...props.value} ?? {}
+    const value = {...props.value}
     if(props.templates) {
         for(const template of props.templates) {
             if(template.type === "order") {

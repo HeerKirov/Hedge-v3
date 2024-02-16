@@ -112,7 +112,7 @@ if(props.allowClickOutside) {
 
 <template>
     <div ref="divRef" :class="{'is-cursor-text': !editMode}" @click="click" @dblclick="doubleClick">
-        <slot v-if="editMode" name="edit" :value="editValue" :setValue="setEditValue" :save="save"/>
+        <slot v-if="editMode" name="edit" :value="editValue!" :setValue="setEditValue" :save="save"/>
         <slot v-else :value="displayValue" :edit="edit"/>
     </div>
 </template>

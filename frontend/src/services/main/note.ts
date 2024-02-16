@@ -93,13 +93,13 @@ export function useNoteDetailContext() {
         delete: client => client.note.delete
     })
 
-    const form = computedWatchMutable(data, () => ({
-        completed: data.value?.status === "COMPLETED" ?? false,
-        pinned: data.value?.status === "PINNED" ?? false,
-        title: data.value?.title ?? "",
-        content: data.value?.content ?? "",
+    const form = computedWatchMutable(data, () => data.value !== null ? {
+        completed: data.value.status === "COMPLETED",
+        pinned: data.value.status === "PINNED",
+        title: data.value.title,
+        content: data.value.content,
         changed: false
-    }))    
+    } : {completed: false, pinned: false, title: "", content: "", changed: false})
 
     const submit = async () => {
         if(paneState.mode.value === "create") {

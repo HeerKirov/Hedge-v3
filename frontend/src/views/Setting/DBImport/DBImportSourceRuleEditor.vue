@@ -26,9 +26,9 @@ const site = computed(() => content.value.site ? sites.value?.find(s => s.name =
 
 const siteSelectItems = computed(() => sites.value?.map(s => ({label: s.title, value: s.name})) ?? [])
 
-const hasPart = computed(() => site.value?.partMode !== "NO" ?? false)
+const hasPart = computed(() => site.value !== null ? site.value.partMode !== "NO" : false)
 
-const hasPartName = computed(() => site.value?.partMode === "PAGE_WITH_NAME" ?? false)
+const hasPartName = computed(() => site.value !== null ? site.value.partMode === "PAGE_WITH_NAME" : false)
 
 const extraTargetItems: {label: string, value: SourceAnalyseRuleExtraTarget}[] = [
     {label: "标题", value: "TITLE"},

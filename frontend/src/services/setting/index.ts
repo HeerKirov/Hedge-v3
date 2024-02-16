@@ -44,7 +44,7 @@ export function useSettingConnectionInfo() {
         return null
     })
 
-    let timer: NodeJS.Timer | null = null
+    let timer: NodeJS.Timeout | null = null
 
     onMounted(() => {
         timer = setInterval(() => {

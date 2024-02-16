@@ -18,7 +18,7 @@ const menu = useDynamicPopupMenu<Tab>(tab => [
 ])
 
 let dragTab: Tab | undefined
-let dragTimer: NodeJS.Timer | undefined
+let dragTimer: NodeJS.Timeout | undefined
 let dragDistance: {lastX: number, lastY: number, distance: number} | undefined
 
 const dragComplete = () => {

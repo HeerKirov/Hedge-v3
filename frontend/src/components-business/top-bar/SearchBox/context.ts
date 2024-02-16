@@ -3,7 +3,7 @@ import { useFetchHelper } from "@/functions/fetch"
 import { Dialect, VisualForecast } from "@/functions/http-client/api/util-query"
 
 export function useForecast(inputRef: Ref<ComponentPublicInstance | undefined>, textValue: Ref<string | undefined>, dialect: Dialect | undefined) {
-    let timer: NodeJS.Timer | null = null
+    let timer: NodeJS.Timeout | null = null
 
     const fetch = useFetchHelper(client => client.queryUtil.queryForecast)
 
