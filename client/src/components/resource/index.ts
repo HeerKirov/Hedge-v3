@@ -1,7 +1,7 @@
 import path from "path"
 import { arrays } from "../../utils/types"
-import { unzip, rename, chmod, rmdir, readFile, writeFile } from "../../utils/fs"
-import { DATA_FILE, APP_FILE, RESOURCE_FILE } from "../../constants/file"
+import { unzip, rename, rmdir, readFile, writeFile } from "../../utils/fs"
+import { DATA_FILE, APP_FILE } from "../../constants/file"
 import { ClientException } from "../../exceptions"
 import { Version, VersionLock, VersionStatus, VersionStatusSet } from "./model"
 import { RESOURCE_VERSION } from "./version"
@@ -136,11 +136,6 @@ function createProductionResourceManager(options: ResourceManagerOptions): Resou
         //image.zip解压后的文件是/image目录，因此采取将其解压到根目录然后重命名的方法。
         await unzip(options.debug?.serverFromResource || path.join(options.appPath, APP_FILE.SERVER_ZIP), options.userDataPath)
         await rename(originDest, dest)
-        //通过unzipper解压后，可执行信息丢失，需要重新添加。
-        await chmod(path.join(dest, RESOURCE_FILE.SERVER.BIN), "755")
-        await chmod(path.join(dest, "bin/java"), "755")
-        await chmod(path.join(dest, "bin/keytool"), "755")
-        await chmod(path.join(dest, "lib/jspawnhelper"), "755")
         version.server = {lastUpdateTime: new Date(), currentVersion: version.server?.latestVersion ?? RESOURCE_VERSION.server}
     }
 

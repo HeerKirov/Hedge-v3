@@ -1,14 +1,9 @@
-import nodeFs, { Dirent, Mode } from "fs"
+import { Dirent, Mode } from "fs"
 import nodeFsPromises from "fs/promises"
-import unzipper from "unzipper"
-import { spawn } from "child_process"
+import compressing from "compressing"
 
 export function writeFile<T>(file: string, data: T): Promise<void> {
     return nodeFsPromises.writeFile(file, JSON.stringify(data), {encoding: "utf-8"})
-}
-
-export function appendFileText(file: string, data: string): Promise<void> {
-    return nodeFsPromises.writeFile(file, data, {encoding: "utf-8"})
 }
 
 export async function readFile<T>(file: string): Promise<T | null> {
@@ -50,26 +45,8 @@ export async function rmdir(path: string): Promise<void> {
     await nodeFsPromises.rm(path, {recursive: true, force: true})
 }
 
-export function cpR(src: string, dest: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const s = spawn("cp", ["-r", src, dest])
-        s.on('close', code => {
-            if(code === 0) {
-                resolve()
-            }else{
-                reject(new Error("cp -r throws an error."))
-            }
-        })
-    })
-}
-
 export function unzip(src: string, dest: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-        nodeFs.createReadStream(src)
-            .pipe(unzipper.Extract({path: dest}))
-            .on('close', resolve)
-            .on('error', reject)
-    })
+    return compressing.zip.uncompress(src, dest)
 }
 
 export function rename(src: string, dest: string): Promise<void> {
