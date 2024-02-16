@@ -33,6 +33,7 @@ export interface Selector {
     appendSelect(index: number, illustId: number): void
     shiftSelect(index: number, illustId: number): Promise<void>
     moveSelect(arrow: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", shift: boolean): Promise<void>
+    multiSelect(fromId: number, toId: number): void
     selected: Ref<number[]>
     lastSelected: Ref<number | null>
 }
@@ -91,12 +92,12 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
     const { toast } = useToast()
     const { state, selected, lastSelected, queryInstance, columnNum, select: onSelect, keyOf, navigate } = options
 
-    const select = (index: number, illustId: number) => {
+    const select = (_: number, illustId: number) => {
         // 单击一个项时，只选择此项
         onSelect([illustId], illustId)
     }
 
-    const appendSelect = (index: number, illustId: number) => {
+    const appendSelect = (_: number, illustId: number) => {
         // 按住CTRL/CMD单击一个项时，如果没有选择此项，则将此项加入选择列表；否则将此项从选择列表移除
         const find = selected.value.findIndex(i => i === illustId)
         if(find >= 0) {
@@ -110,7 +111,7 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
         }
     }
 
-    const shiftSelect = async (index: number, illustId: number) => {
+    const shiftSelect = async (_: number, illustId: number) => {
         // 按住SHIFT单击一个项时，
         // - 如果没有last selected(等价于没有选择项)，则选择此项；
         // - 如果last selected不是自己，那么将从自己到last selected之间的所有项加入选择列表；否则无动作
@@ -136,6 +137,33 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
                     return
                 }
                 onSelect(ret, illustId)
+            }
+        }
+    }
+
+    const multiSelect = async (fromIllustId: number, toIllustId: number) => {
+        //将from到to的连续illusts全部加入选择项
+        if(fromIllustId !== toIllustId) {
+            if(queryInstance !== undefined) {
+                const result = await getShiftSelectItems(queryInstance, toIllustId, fromIllustId)
+                if(result === null) {
+                    toast("选择失败", "warning", "内部错误: 无法正确获取选择项。")
+                    return
+                }
+
+                const ret: number[] = []
+                for(const id of selected.value) {
+                    if(!result.includes(id)) {
+                        ret.push(id)
+                    }
+                }
+                ret.push(...result)
+
+                if(ret.length > SELECTED_MAX) {
+                    toast("选择上限", "warning", `选择的数量超过上限: 最多可选择${SELECTED_MAX}项。`)
+                    return
+                }
+                onSelect(ret, toIllustId)
             }
         }
     }
@@ -201,7 +229,7 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
         return res !== null ? keyOf(res) : null
     }
 
-    return {select, appendSelect, shiftSelect, moveSelect, lastSelected, selected}
+    return {select, appendSelect, shiftSelect, moveSelect, multiSelect, lastSelected, selected}
 }
 
 function useKeyboardEvents({ moveSelect, lastSelected }: Selector, enter: (illustId: number) => void, space: (illustId: number) => void) {
@@ -288,6 +316,7 @@ export function useDropEvents<T extends keyof TypeDefinition>(options: {
     byType: T
     indexRef(): Ref<number>
     onDrop?(insertIndex: number | null, illusts: TypeDefinition[T], mode: "ADD" | "MOVE"): void
+    elseProcess?(dt: DataTransfer): void
 }) {
     const { droppable, draggingFromLocal, byType, onDrop, indexRef } = options
 
@@ -297,16 +326,58 @@ export function useDropEvents<T extends keyof TypeDefinition>(options: {
         if(droppable.value) {
             onDrop!(index.value, illusts, draggingFromLocal.value ? "MOVE" : "ADD")
         }
-    }, {stopPropagation: true})
+    }, {elseProcess: options.elseProcess})
     const { dragover: rightDragover, ...rightDropEvents } = useDroppable(byType, illusts => {
         if(droppable.value) {
             onDrop!(index.value + 1, illusts, draggingFromLocal.value ? "MOVE" : "ADD")
         }
-    }, {stopPropagation: true})
+    }, {elseProcess: options.elseProcess})
     const isLeftDragover = computed(() => leftDragover.value && droppable.value)
     const isRightDragover = computed(() => rightDragover.value && droppable.value)
 
     return {isLeftDragover, isRightDragover, leftDropEvents, rightDropEvents}
+}
+
+export function useCheckBoxEvents<DATA>(options: {selector: Selector, keyOf: (i: DATA) => number, dataRef: Ref<DATA>, indexRef: Ref<number>}) {
+
+    const isMouseOver = ref(false)
+
+    const onMouseenter = () => { isMouseOver.value = true }
+
+    const onMouseleave = () => { isMouseOver.value = false }
+
+    const onDragstart = (e: DragEvent) => {
+        if(e.dataTransfer) {
+            e.dataTransfer.setData("dateset-select-box", JSON.stringify({index: options.indexRef.value, key: options.keyOf(options.dataRef.value)}))
+        }
+        e.stopPropagation()
+    }
+
+    const onDragend = (e: DragEvent) => {
+        if(e.dataTransfer) {
+            e.dataTransfer.clearData("dateset-select-box")
+        }
+        e.stopPropagation()
+    }
+
+    const onClick = (e: MouseEvent) => {
+        options.selector.appendSelect(options.indexRef.value, options.keyOf(options.dataRef.value))
+        e.stopPropagation()
+    }
+
+    const onDblclick = (e: MouseEvent) => {
+        e.stopPropagation()
+    }
+
+    const checkboxDrop = (dt: DataTransfer) => {
+        const d = dt.getData("dateset-select-box")
+        if(d) {
+            const begin: {index: number, key: number} = JSON.parse(d)
+            options.selector.multiSelect(begin.key, options.keyOf(options.dataRef.value))
+        }
+    }
+
+    return {isMouseOver, checkboxDrop, onMouseenter, onMouseleave, onClick, onDblclick, onDragstart, onDragend, draggable: true}
 }
 
 export function isVideoExtension(extension: string): boolean {

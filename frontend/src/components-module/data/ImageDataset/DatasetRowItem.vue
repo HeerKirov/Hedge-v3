@@ -2,23 +2,29 @@
 import { computed } from "vue"
 import { platform } from "@/functions/ipc-client"
 import { toRef } from "@/utils/reactivity"
-import { useDatasetContext, useDragEvents, useDropEvents } from "./context"
+import { useCheckBoxEvents, useDatasetContext, useDragEvents, useDropEvents } from "./context"
+import { Icon } from "@/components/universal";
 
 const props = defineProps<{
     item: unknown
     index: number
 }>()
 
+const dataRef = toRef(props, "item")
+const indexRef = toRef(props, "index")
+
 const { queryInstance, selector, keyOf, dblClick: emitDblClick, rightClick: emitRightClick, drag } = useDatasetContext()
 
 const currentSelected = computed(() => selector.selected.value.find(i => i === keyOf(props.item)) !== undefined)
+
+const { isMouseOver, checkboxDrop, ...checkboxEvents } = useCheckBoxEvents({selector, keyOf, dataRef, indexRef})
 
 const dragEvents = useDragEvents({
     queryInstance, keyOf,
     draggable: drag.draggable.value,
     selected: selector.selected,
     byType: drag.byType,
-    dataRef: () => toRef(props, "item"),
+    dataRef: () => dataRef,
     dataMap: images => (images as any)
 })
 
@@ -26,8 +32,9 @@ const { isLeftDragover, isRightDragover, leftDropEvents, rightDropEvents } = use
     droppable: drag.droppable,
     draggingFromLocal: drag.draggingFromLocal,
     byType: drag.byType,
-    indexRef: () => toRef(props, "index"),
-    onDrop: drag.dropData
+    indexRef: () => indexRef,
+    onDrop: drag.dropData,
+    elseProcess: checkboxDrop
 })
 
 const click = (e: MouseEvent) => {
@@ -58,13 +65,18 @@ const rightClick = () => {
         <slot :selected="currentSelected"/>
         <div v-if="isLeftDragover" :class="$style['left-drop-tooltip']"/>
         <div v-if="isRightDragover" :class="$style['right-drop-tooltip']"/>
-        <div :class="$style['left-touch']" v-bind="leftDropEvents"/>
         <div :class="$style['right-touch']" v-bind="rightDropEvents"/>
+        <div :class="$style['left-touch']" v-bind="leftDropEvents">
+            <div :class="{[$style.checkbox]: true, 'opacity': !isMouseOver}" v-bind="checkboxEvents">
+                <Icon icon="plus"/>
+            </div>
+        </div>
     </div>
 </template>
 
 <style module lang="sass">
 @import "../../../styles/base/color"
+@import "../../../styles/base/size"
 
 .item
     position: relative
@@ -118,4 +130,20 @@ const rightClick = () => {
         bottom: -3px
         height: 5px
         background-color: rgba(127, 127, 127, 0.6)
+
+    //点选器
+    .checkbox
+        position: absolute
+        left: 4px
+        top: 1px
+        width: 30px
+        height: 30px
+        padding: 2px
+        color: $dark-mode-text-color
+        border-radius: $radius-size-std
+        border: solid 1px $dark-mode-text-color
+        filter: drop-shadow(0 0 1px $dark-mode-background-color)
+        > svg
+            width: 24px
+            height: 24px
 </style>

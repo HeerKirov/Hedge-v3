@@ -10,7 +10,7 @@ import { BatchQueryResult, SourceMappingTargetDetail } from "@/functions/http-cl
 import { useFetchHelper, useFetchReactive, usePostFetchHelper, usePostPathFetchHelper, useQueryContinuousListView } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
 import { useToast } from "@/modules/toast"
-import { KeyEvent, useInterceptedKey, USUAL_KEY_VALIDATORS } from "@/modules/keyboard"
+import { installKeyDeclaration, KeyEvent, useInterceptedKey, USUAL_KEY_VALIDATORS } from "@/modules/keyboard"
 import { useMessageBox } from "@/modules/message-box"
 import { useTagTreeSearch } from "@/services/common/tag"
 import { installation, toRef } from "@/utils/reactivity"
@@ -240,6 +240,7 @@ function useFormData(context: InstallEditorContext) {
     }
 
     useInterceptedKey("Meta+KeyS", submit)
+    installKeyDeclaration("Meta+KeyS")
 
     return {tags, topics, authors, tagme, mappings, setTagme, add, addAll, removeAt, submittable, submit, validation, history}
 }

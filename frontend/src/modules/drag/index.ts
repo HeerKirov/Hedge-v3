@@ -48,7 +48,7 @@ interface Droppable {
 }
 
 interface DroppableOptions {
-    stopPropagation?: boolean
+    elseProcess?(dt: DataTransfer): void
 }
 
 /**
@@ -96,13 +96,15 @@ function useDroppableInternal<T extends keyof TypeDefinition>(event: (data: Type
                 const type = <T>e.dataTransfer.getData("type")
                 if(!type) {
                     //可能发过来的并不是droppable的东西
+                    options?.elseProcess?.(e.dataTransfer)
                     return
                 }
                 let data: any
                 try {
                     data = JSON.parse(e.dataTransfer?.getData("data"))
-                }catch (e) {
+                }catch (error) {
                     //可能发过来的并不是droppable的东西
+                    options?.elseProcess?.(e.dataTransfer)
                     return
                 }
 

@@ -90,7 +90,7 @@ export const [installKeyDeclaration, useKeyDeclaration] = installation(function 
         return { declaredKeys: keys, validator: createKeyEventValidator(keys), primitiveValidator: createPrimitiveKeyEventValidator(keys) }
     }
 }, () => ({
-    keys: [],
+    declaredKeys: [],
     validator: () => false,
     primitiveValidator: () => false
 }))
