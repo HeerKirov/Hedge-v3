@@ -2,12 +2,13 @@
 import { Button, Separator, Tag } from "@/components/universal"
 import { BrowserTeleport } from "@/components/logical"
 import { CollectionModeButton, SearchBox } from "@/components-business/top-bar"
+import { LoadingScreen } from "@/components-module/common"
 import { installPartitionContext } from "@/services/main/partition"
 import PartitionViewCalendar from "./PartitionViewCalendar.vue"
 import PartitionViewTimeline from "./PartitionViewTimeline.vue"
 
 const {
-    partition: { viewMode, total },
+    partition: { viewMode, total, loading },
     querySchema, listviewController: { collectionMode }
 } = installPartitionContext()
 
@@ -29,4 +30,5 @@ const {
 
     <PartitionViewCalendar v-if="viewMode === 'calendar'"/>
     <PartitionViewTimeline v-else/>
+    <LoadingScreen :loading="loading"/>
 </template>

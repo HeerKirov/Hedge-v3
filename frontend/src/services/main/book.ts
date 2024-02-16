@@ -1,4 +1,4 @@
-import { Ref, watch } from "vue"
+import { computed, Ref, watch } from "vue"
 import { installation } from "@/utils/reactivity"
 import { Book, BookQueryFilter, DetailBook } from "@/functions/http-client/api/book"
 import { flatResponse } from "@/functions/http-client"
@@ -7,7 +7,7 @@ import { useMessageBox } from "@/modules/message-box"
 import { useBrowserTabs, useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
 import { useDialogService } from "@/components-module/dialog"
 import { useListViewContext } from "@/services/base/list-view-context"
-import { useQuerySchema } from "@/services/base/query-schema"
+import { QuerySchemaContext, useQuerySchema } from "@/services/base/query-schema"
 import { useBookViewController, useIllustViewController } from "@/services/base/view-controller"
 import { useNavigationItem } from "@/services/base/side-nav-menu"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
@@ -16,7 +16,7 @@ import { installIllustListviewContext, useImageDatasetOperators } from "@/servic
 
 export const [installBookContext, useBookContext] = installation(function () {
     const querySchema = useQuerySchema("BOOK")
-    const listview = useListView(querySchema.query)
+    const listview = useListView(querySchema)
     const listviewController = useBookViewController()
     const selector = useSingleSelectedState({queryListview: listview.listview, keyOf: i => i.id})
     const paneState = useSelectedPaneState("book")
@@ -37,7 +37,7 @@ export const [installBookContext, useBookContext] = installation(function () {
     return {listview, querySchema, listviewController, selector, paneState, operators}
 })
 
-function useListView(query: Ref<string | undefined>) {
+function useListView(querySchema: QuerySchemaContext) {
     const listview = useListViewContext({
         defaultFilter: <BookQueryFilter>{order: "-updateTime"},
         request: client => (offset, limit, filter) => client.book.list({offset, limit, ...filter}),
@@ -57,9 +57,14 @@ function useListView(query: Ref<string | undefined>) {
         }
     })
 
-    watch(query, query => listview.queryFilter.value.query = query, {immediate: true})
+    const status = computed(() => ({
+        loading: listview.paginationData.status.value.loading || querySchema.status.value.loading,
+        timeCost: (listview.paginationData.status.value.timeCost ?? 0) + (querySchema.status.value.timeCost ?? 0)
+    }))
 
-    return listview
+    watch(querySchema.query, query => listview.queryFilter.value.query = query, {immediate: true})
+
+    return {...listview, status}
 }
 
 function useOperators() {

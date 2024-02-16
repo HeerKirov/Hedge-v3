@@ -1,11 +1,11 @@
-import { Ref, computed, watch } from "vue"
+import { computed, watch } from "vue"
 import { useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import { SourceDataIdentity, SourceDataQueryFilter, SourceEditStatus } from "@/functions/http-client/api/source-data"
 import { DetailViewState, useRouteStorageViewState } from "@/services/base/detail-view-state"
 import { useDialogService } from "@/components-module/dialog"
 import { useListViewContext } from "@/services/base/list-view-context"
-import { useQuerySchema } from "@/services/base/query-schema"
+import { QuerySchemaContext, useQuerySchema } from "@/services/base/query-schema"
 import { useSettingSite } from "@/services/setting"
 import { useBrowserTabs, useTabRoute } from "@/modules/browser"
 import { useMessageBox } from "@/modules/message-box"
@@ -14,7 +14,7 @@ import { installation } from "@/utils/reactivity"
 export const [installSourceDataContext, useSourceDataContext] = installation(function () {
     const paneState = useRouteStorageViewState<SourceDataIdentity>()
     const querySchema = useQuerySchema("SOURCE_DATA")
-    const listview = useListView(querySchema.query)
+    const listview = useListView(querySchema)
     const operators = useOperators(paneState)
 
     useSettingSite()
@@ -22,7 +22,7 @@ export const [installSourceDataContext, useSourceDataContext] = installation(fun
     return {listview, operators, paneState, querySchema}
 })
 
-function useListView(query: Ref<string | undefined>) {
+function useListView(querySchema: QuerySchemaContext) {
     const listview = useListViewContext({
         defaultFilter: <SourceDataQueryFilter>{order: "-updateTime"},
         request: client => (offset, limit, filter) => client.sourceData.list({offset, limit, ...filter}),
@@ -52,9 +52,14 @@ function useListView(query: Ref<string | undefined>) {
         }
     })
 
-    watch(query, query => listview.queryFilter.value.query = query, {immediate: true})
+    const status = computed(() => ({
+        loading: listview.paginationData.status.value.loading || querySchema.status.value.loading,
+        timeCost: (listview.paginationData.status.value.timeCost ?? 0) + (querySchema.status.value.timeCost ?? 0)
+    }))
 
-    return listview
+    watch(querySchema.query, query => listview.queryFilter.value.query = query, {immediate: true})
+
+    return {...listview, status}
 }
 
 function useOperators(paneState: DetailViewState<SourceDataIdentity>) {

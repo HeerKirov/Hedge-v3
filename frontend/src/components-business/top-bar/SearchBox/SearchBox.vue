@@ -11,16 +11,18 @@ import { computedEffect, computedMutable } from "@/utils/reactivity"
 import { useForecast } from "./context"
 import SearchBoxSuggestions from "./SearchBoxSuggestions.vue"
 import SearchBoxHistories from "./SearchBoxHistories.vue"
+import TimeCostDiv from "@/components-business/top-bar/SearchBox/TimeCostDiv.vue";
 
 const props = defineProps<{
     value?: string
     placeholder?: string
     schema?: QueryRes | null
+    timeCost?: number | null
     dialect?: Dialect
 }>()
 
 const emit = defineEmits<{
-    (e: "update:value", search: string): void
+    (e: "update:value", search: string | undefined): void
     (e: "enter", newValue: boolean): void
 }>()
 
@@ -47,11 +49,11 @@ watch(textValue, (t, o) => { if(!showHistory.value && o && !t) showHistory.value
 
 const { startForecastTimer, stopForecastTimer, forecast, pickSuggestion } = useForecast(inputRef, textValue, props.dialect)
 
-const updateValue = (newValue: string) => {
+const updateValue = (newValue: string | undefined) => {
     textValue.value = newValue
     emit("update:value", newValue)
     emit("enter", newValue !== props.value)
-    if(props.dialect !== undefined && newValue !== props.value) {
+    if(props.dialect !== undefined && newValue !== props.value && newValue) {
         fetchPushHistory(props.dialect, newValue).finally()
     }
 }
@@ -76,11 +78,14 @@ const keypress = (e: KeyEvent) => {
             suggestionRef.value.enter()
             e.preventDefault()
         }else if(!textValue.value && props.dialect !== undefined && historyRef.value) {
-            historyRef.value.enter()
-            e.preventDefault()
+            if(historyRef.value.enter()) {
+                e.preventDefault()
+            }else{
+                updateValue(textValue.value || undefined)
+                stopForecastTimer()
+            }
         }else{
-            const newValue = textValue.value ?? ""
-            updateValue(newValue)
+            updateValue(textValue.value || undefined)
             stopForecastTimer()
         }
     }else if(USUAL_KEY_VALIDATORS["ArrowUp"](e)) {
@@ -199,8 +204,11 @@ const clear = () => {
         </div>
         <template #popup>
             <SearchBoxSuggestions v-if="forecast" ref="suggestionRef" :class="$style.popup" :forecast="forecast" @pick="pickSuggestion"/>
-            <SearchBoxHistories v-else-if="showHistory && !textValue && dialect !== undefined" ref="historyRef" :class="$style.popup" :dialect="dialect" @pick="updateValue"/>
-            <QueryResult v-else-if="showSchema && schema" :class="$style.popup" :schema="schema"/>
+            <SearchBoxHistories v-else-if="showHistory && !textValue && dialect !== undefined" ref="historyRef" :class="$style.popup" :dialect="dialect" :time-cost="timeCost" @pick="updateValue"/>
+            <template v-else-if="showSchema && schema">
+                <QueryResult :class="$style.popup" :schema="schema"/>
+                <TimeCostDiv :class="$style.popup" :time-cost="timeCost"/>
+            </template>
         </template>
     </ElementPopupCallout>
 </template>

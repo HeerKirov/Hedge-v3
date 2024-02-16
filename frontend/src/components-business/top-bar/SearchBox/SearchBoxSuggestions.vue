@@ -46,7 +46,7 @@ defineExpose({
 </script>
 
 <template>
-    <SelectList :items="items" v-model:index="selectedIndex" @click="selectListClick" v-slot="{ value, selected, click }">
+    <SelectList v-bind="$attrs" :items="items" v-model:index="selectedIndex" @click="selectListClick" v-slot="{ value, selected, click }">
         <div :class="{[$style['select-list-item']]: true, [$style.selected]: selected}" @click="click">
             {{value.name}}
             <span v-if="value.aliases.length" class="secondary-text">({{value.aliases.join("/")}})</span>

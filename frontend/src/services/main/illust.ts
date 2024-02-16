@@ -18,7 +18,7 @@ import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useIllustViewController } from "@/services/base/view-controller"
-import { useQuerySchema } from "@/services/base/query-schema"
+import { QuerySchemaContext, useQuerySchema } from "@/services/base/query-schema"
 import { useSettingSite } from "@/services/setting"
 import { installIllustListviewContext, useIllustListviewContext, useImageDatasetOperators, useLocateId } from "@/services/common/illust"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
@@ -28,7 +28,7 @@ import { toRef } from "@/utils/reactivity"
 
 export function useIllustContext() {
     const querySchema = useQuerySchema("ILLUST")
-    const listview = useIllustListView(querySchema.query)
+    const listview = useIllustListView(querySchema)
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust")
     const listviewController = useIllustViewController(toRef(listview.queryFilter, "type"))
@@ -70,7 +70,7 @@ export function useIllustContext() {
     return {paneState, listview, selector, listviewController, querySchema, operators}
 }
 
-function useIllustListView(query: Ref<string | undefined>) {
+function useIllustListView(querySchema: QuerySchemaContext) {
     const listview = useListViewContext({
         defaultFilter: <IllustQueryFilter>{order: "-orderTime", type: "IMAGE"},
         request: client => (offset, limit, filter) => client.illust.list({offset, limit, ...filter}),
@@ -100,9 +100,14 @@ function useIllustListView(query: Ref<string | undefined>) {
         }
     })
 
-    watch(query, query => listview.queryFilter.value.query = query, {immediate: true})
+    const status = computed(() => ({
+        loading: listview.paginationData.status.value.loading || querySchema.status.value.loading,
+        timeCost: (listview.paginationData.status.value.timeCost ?? 0) + (querySchema.status.value.timeCost ?? 0)
+    }))
 
-    return listview
+    watch(querySchema.query, query => listview.queryFilter.value.query = query, {immediate: true})
+
+    return {...listview, status}
 }
 
 export function useCollectionContext() {

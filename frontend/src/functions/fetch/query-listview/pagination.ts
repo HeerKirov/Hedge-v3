@@ -1,4 +1,4 @@
-import { onMounted, Ref, shallowRef, watch } from "vue"
+import { onMounted, ref, Ref, shallowRef, watch } from "vue"
 import { useVirtualViewNavigation } from "@/components/data"
 import { useListeningEvent } from "@/utils/emitter"
 import { QueryListview } from "./query-listview"
@@ -39,6 +39,10 @@ export interface PaginationDataView<T> {
      */
     state: Readonly<Ref<PaginationViewState | null>>
     /**
+     * 本次查询初次加载的加载状态信息。
+     */
+    status: Readonly<Ref<{loading: boolean, timeCost: number | null}>>
+    /**
      * 要求虚拟视图导航到指定offset的滚动位置上。
      */
     navigateTo(offset: number): void
@@ -64,6 +68,7 @@ export interface PaginationViewState {
 export function usePaginationDataView<T>(options: PaginationOptions<T>): PaginationDataView<T> {
     const { listview, bufferPercent = 0, queryDelay = 250 } = options
 
+    const status: Ref<{loading: boolean, timeCost: number | null}> = ref({loading: false, timeCost: null})
     const data: Ref<PaginationData<T>> = shallowRef({metrics: {offset: 0, limit: 0}, items: []})
     const state: Ref<PaginationViewState | null> = shallowRef(null)
     const navigation = useVirtualViewNavigation()
@@ -85,9 +90,15 @@ export function usePaginationDataView<T>(options: PaginationOptions<T>): Paginat
 
     const dataUpdate = async () => {
         if(state.value === null) return
+        const listviewCount = listview.proxy.sync.count()
+        let firstTimeLoadTimestamp: number | null = null
+        if(listviewCount === null) {
+            status.value = {loading: true, timeCost: null}
+            firstTimeLoadTimestamp = Date.now()
+        }
         //根据当前的视口状态state计算应该获取数据的范围offset&limit
         const offset = Math.max(state.value.offset - Math.round(state.value.limit * bufferPercent), 0)
-        const limit = Math.min(offset + state.value.limit + Math.round(state.value.limit * bufferPercent * 2), listview.proxy.sync.count() || Infinity) - offset
+        const limit = Math.min(offset + state.value.limit + Math.round(state.value.limit * bufferPercent * 2), listviewCount || Infinity) - offset
         //本次查询的防乱序序号
         const queryId = ++currentQueryId
         //每次调用此方法都会清空上次的缓冲区
@@ -102,6 +113,7 @@ export function usePaginationDataView<T>(options: PaginationOptions<T>): Paginat
                     state.value = {total: listview.proxy.sync.count()!, offset: state.value.offset, limit: state.value.limit}
                 }
                 data.value = {metrics: {offset, limit: result.length}, items: result}
+                if(firstTimeLoadTimestamp !== null) status.value = {loading: false, timeCost: Date.now() - firstTimeLoadTimestamp}
             }
         }else{
             //如果未完全加载，那么将本次请求放到缓冲区，并重置倒计时
@@ -128,6 +140,7 @@ export function usePaginationDataView<T>(options: PaginationOptions<T>): Paginat
                         state.value = {total: listview.proxy.sync.count()!, offset: state.value?.offset ?? 0, limit: state.value?.limit ?? 0}
                     }
                     data.value = {metrics: {offset: currentCache.offset, limit: result.length}, items: result}
+                    if(firstTimeLoadTimestamp !== null) status.value = {loading: false, timeCost: Date.now() - firstTimeLoadTimestamp}
                 }
                 cacheTimer = null
             }, listview.proxy.sync.count() === null ? 0 : queryDelay)
@@ -165,5 +178,5 @@ export function usePaginationDataView<T>(options: PaginationOptions<T>): Paginat
         }
     })
 
-    return {data, state, setState, reset, navigateTo: navigation.navigateEvent.emit}
+    return {data, state, status, setState, reset, navigateTo: navigation.navigateEvent.emit}
 }

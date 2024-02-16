@@ -6,7 +6,7 @@ import { VirtualGridView } from "@/components/data"
 import { PaneLayout } from "@/components/layout"
 import { BrowserTeleport } from "@/components/logical"
 import { DataRouter, ColumnNumButton, SearchBox } from "@/components-business/top-bar"
-import { BookDetailPane } from "@/components-module/common"
+import { BookDetailPane, LoadingScreen } from "@/components-module/common"
 import { Book } from "@/functions/http-client/api/book"
 import { useDialogService } from "@/components-module/dialog"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
@@ -14,7 +14,7 @@ import { installBookContext } from "@/services/main/book"
 import BookGridItem from "./BookGridItem.vue"
 
 const {
-    listview: { paginationData: { data, state, setState, navigateTo } },
+    listview: { paginationData: { data, state, setState, navigateTo }, status },
     listviewController: { columnNum },
     querySchema,
     operators,
@@ -50,7 +50,7 @@ const menu = useDynamicPopupMenu<Book>(book => [
 
 <template>
     <BrowserTeleport to="top-bar">
-        <SearchBox placeholder="在此处搜索" dialect="BOOK" v-model:value="querySchema.queryInputText.value" :schema="querySchema.schema.value"/>
+        <SearchBox placeholder="在此处搜索" dialect="BOOK" v-model:value="querySchema.queryInputText.value" :schema="querySchema.schema.value" :time-cost="status.timeCost"/>
         <Separator/>
         <DataRouter :state="state" @navigate="navigateTo"/>
         <ColumnNumButton v-model:value="columnNum"/>
@@ -68,6 +68,7 @@ const menu = useDynamicPopupMenu<Book>(book => [
                           @dblclick="operators.openBookView($event)"
                           @contextmenu="menu.popup(item)"/>
         </VirtualGridView>
+        <LoadingScreen/>
 
         <template #pane>
             <BookDetailPane @close="paneState.visible.value = false"/>

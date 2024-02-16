@@ -42,7 +42,7 @@ function usePartitionView(listviewController: IllustViewController, querySchema:
     const viewMode = useLocalStorage<"calendar" | "timeline">("partition/list/view-mode", "calendar")
     const calendarDate = useRouteStorage<YearAndMonth>("partition/list/calendar-date")
 
-    const { partitionMonths, partitions, total, maxCount, maxCountOfMonth } = usePartitionData(listviewController, querySchema.query)
+    const { partitionMonths, partitions, total, maxCount, maxCountOfMonth, loading } = usePartitionData(listviewController, querySchema.query)
     const operators = usePartitionOperators(partitions, querySchema.queryInputText)
 
     watch(partitionMonths, months => {
@@ -52,11 +52,11 @@ function usePartitionView(listviewController: IllustViewController, querySchema:
         }
     })
 
-    return {partitions, partitionMonths, total, maxCount, maxCountOfMonth, viewMode, calendarDate, operators}
+    return {loading, partitions, partitionMonths, total, maxCount, maxCountOfMonth, viewMode, calendarDate, operators}
 }
 
 function usePartitionData(listviewController: IllustViewController, query: Ref<string | undefined>) {
-    const { data: partitions, refresh } = useFetchReactive({
+    const { data: partitions, refresh, loading } = useFetchReactive({
         get: client => () => client.illust.listPartitions({type: typeof listviewController.collectionMode.value === "boolean" ? (listviewController.collectionMode.value ? "COLLECTION" : "IMAGE") : listviewController.collectionMode.value, query: query.value})
     })
 
@@ -104,7 +104,7 @@ function usePartitionData(listviewController: IllustViewController, query: Ref<s
         return maxCount
     })
 
-    return {partitions, partitionMonths, total, maxCount, maxCountOfMonth}
+    return {loading, partitions, partitionMonths, total, maxCount, maxCountOfMonth}
 }
 
 function usePartitionOperators(partitions: Ref<Partition[] | undefined>, queryText: Ref<string | undefined>) {
@@ -294,7 +294,7 @@ export function useDetailIllustContext() {
     const querySchema = useQuerySchema("ILLUST")
     const listviewController = useIllustViewController()
 
-    const listview = useListView()
+    const listview = useListView(querySchema)
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("illust")
     const operators = useImageDatasetOperators({
@@ -306,7 +306,6 @@ export function useDetailIllustContext() {
     const state = useHomepageState()
 
     watch(listviewController.collectionMode, collectionMode => listview.queryFilter.value.type = typeof collectionMode === "boolean" ? (collectionMode ? "COLLECTION" : "IMAGE") : collectionMode, {immediate: true})
-    watch(querySchema.query, query => listview.queryFilter.value.query = query, {immediate: true})
     watch(path, path => listview.queryFilter.value.partition = path ?? undefined, {immediate: true})
 
     installIllustListviewContext({listview, selector, listviewController})
@@ -334,7 +333,7 @@ export function useDetailIllustContext() {
     return {path, listview, selector, paneState, operators, querySchema, listviewController}
 }
 
-function useListView() {
+function useListView(querySchema: QuerySchemaContext) {
     const listview = useListViewContext({
         defaultFilter: <IllustQueryFilter>{order: "orderTime", type: "IMAGE"},
         request: client => (offset, limit, filter) => client.illust.list({offset, limit, ...filter}),
@@ -363,7 +362,15 @@ function useListView() {
             request: client => async items => flatResponse(await Promise.all(items.map(a => client.illust.get(a.id))))
         }
     })
-    return listview
+
+    const status = computed(() => ({
+        loading: listview.paginationData.status.value.loading || querySchema.status.value.loading,
+        timeCost: (listview.paginationData.status.value.timeCost ?? 0) + (querySchema.status.value.timeCost ?? 0)
+    }))
+
+    watch(querySchema.query, query => listview.queryFilter.value.query = query, {immediate: true})
+
+    return {...listview, status}
 }
 
 interface YearAndMonth {

@@ -4,7 +4,7 @@ import { ElementPopupMenu } from "@/components/interaction"
 import { BrowserTeleport } from "@/components/logical"
 import { PaneLayout } from "@/components/layout"
 import { IllustImageDataset } from "@/components-module/data"
-import { IllustDetailPane } from "@/components-module/common"
+import { IllustDetailPane, LoadingScreen } from "@/components-module/common"
 import { EmbedPreview } from "@/components-module/preview"
 import { SearchBox, LockOnButton, DataRouter, FitTypeButton, ColumnNumButton, CollectionModeButton } from "@/components-business/top-bar"
 import { Illust } from "@/functions/http-client/api/illust"
@@ -13,7 +13,7 @@ import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 
 const {
     paneState,
-    listview: { listview, paginationData: { data, state, setState, navigateTo } },
+    listview: { listview, paginationData: { data, state, setState, navigateTo }, status },
     listviewController: { viewMode, fitType, columnNum, collectionMode, editableLockOn },
     selector: { selected, lastSelected, update: updateSelect },
     querySchema,
@@ -74,7 +74,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
 <template>
     <BrowserTeleport to="top-bar">
         <CollectionModeButton class="mr-1" v-model:value="collectionMode"/>
-        <SearchBox placeholder="在此处搜索" dialect="ILLUST" v-model:value="querySchema.queryInputText.value" :schema="querySchema.schema.value"/>
+        <SearchBox placeholder="在此处搜索" dialect="ILLUST" v-model:value="querySchema.queryInputText.value" :schema="querySchema.schema.value" :time-cost="status.timeCost"/>
         <Separator/>
         <LockOnButton v-model:value="editableLockOn"/>
         <DataRouter :state="state" @navigate="navigateTo"/>
@@ -94,6 +94,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
                             @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
                             @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
         <EmbedPreview/>
+        <LoadingScreen :loading="status.loading"/>
         <template #pane>
             <IllustDetailPane @close="paneState.visible.value = false"/>
         </template>

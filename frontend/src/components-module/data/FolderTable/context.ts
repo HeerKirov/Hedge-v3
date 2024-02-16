@@ -490,7 +490,7 @@ export function useFolderDroppable(row: Ref<FolderTreeNode>, indent: Ref<number>
                 move(folder.id, info.parentId, info.ordinal)
             }
         }
-    }, {stopPropagation: true})
+    })
 
     const { dragover: bottomDragover, ...bottomDropEvents } = useDroppable("folder", folder => {
         if(droppable.value) {
@@ -503,7 +503,7 @@ export function useFolderDroppable(row: Ref<FolderTreeNode>, indent: Ref<number>
                 }
             }
         }
-    }, {stopPropagation: true})
+    })
 
     const gapState = computed(() => {
         if(droppable.value) {
