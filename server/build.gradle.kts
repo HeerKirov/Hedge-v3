@@ -1,6 +1,6 @@
 plugins {
     application
-    kotlin("jvm").version("1.9.10")
+    kotlin("jvm").version("1.9.22")
     id("com.github.johnrengelman.shadow").version("4.0.3")
     id("org.beryx.jlink").version("2.26.0")
 }
@@ -9,15 +9,15 @@ group = "com.heerkirov.hedge"
 version = "0.6.3"
 
 dependencies {
-    val kotlinVersion = "1.9.10"
-    val javalinVersion = "5.6.3"
+    val kotlinVersion = "1.9.22"
+    val javalinVersion = "6.0.1"
     val ktormVersion = "3.6.0"
-    val sqliteVersion = "3.42.0.0"
-    val jacksonVersion = "2.15.2"
+    val sqliteVersion = "3.45.1.0"
+    val jacksonVersion = "2.16.1"
     val thumbnailatorVersion = "0.4.20"
-    val twelvemonkeysVersion = "3.9.4"
-    val javeVersion = "3.3.1"
-    val logbackVersion = "1.4.11"
+    val twelvemonkeysVersion = "3.10.1"
+    val javeVersion = "3.4.0"
+    val logbackVersion = "1.4.14"
     val junitVersion = "4.13.2"
     val javePlatform = when(System.getProperty("os.name").toLowerCase()) {
         "mac os x" -> if(System.getProperty("os.arch").toLowerCase() == "aarch64") {

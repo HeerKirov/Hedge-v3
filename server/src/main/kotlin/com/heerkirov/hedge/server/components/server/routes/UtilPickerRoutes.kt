@@ -5,13 +5,13 @@ import com.heerkirov.hedge.server.dto.form.HistoryPushForm
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.functions.service.PickerUtilService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
-import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 
 class UtilPickerRoutes(private val pickerUtilService: PickerUtilService) : Routes {
-    override fun handle(javalin: Javalin) {
-        javalin.routes {
+    override fun handle(javalin: JavalinConfig) {
+        javalin.router.apiBuilder {
             path("api/utils/picker/history") {
                 get("folders", ::getRecentFolders)
                 get("topics", ::getRecentTopics)

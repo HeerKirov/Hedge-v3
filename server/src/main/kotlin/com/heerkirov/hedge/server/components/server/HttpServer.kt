@@ -14,7 +14,9 @@ import com.heerkirov.hedge.server.utils.Json
 import com.heerkirov.hedge.server.utils.Net
 import com.heerkirov.hedge.server.utils.Token
 import io.javalin.Javalin
+import io.javalin.config.JavalinConfig
 import io.javalin.json.JavalinJackson
+import io.javalin.plugin.bundled.CorsPlugin
 import java.net.BindException
 import java.time.Duration
 
@@ -54,51 +56,53 @@ class HttpServerImpl(private val health: Health,
     private var server: Javalin? = null
 
     override fun load() {
-        val aspect = Aspect(appStatus)
-        val authentication = Authentication(token, appdata)
-        val staticFileHandler = StaticFileHandler(archive)
-        val errorHandler = ErrorHandler()
-
         server = Javalin
             .create {
                 it.showJavalinBanner = false
                 it.http.maxRequestSize = 1024 * 1024 * 64 //最大64MB的request body限制
-                it.jetty.wsFactoryConfig { ws ->
+                it.jetty.modifyWebSocketServletFactory { ws ->
                     ws.idleTimeout = Duration.ofSeconds(60)
                 }
-                it.plugins.enableCors { cors ->
-                    cors.add { config ->
-                        config.anyHost()
-                        config.allowCredentials = true
+                it.registerPlugin(CorsPlugin { plugin ->
+                    plugin.addRule { rule ->
+                        rule.anyHost()
+                        rule.allowCredentials = true
                     }
-                }
+                })
                 it.jsonMapper(JavalinJackson(Json.objectMapper()))
+                it.handle(
+                    AppRoutes(lifetime, appStatus, appdata),
+                    ServiceRoutes(allServices.service),
+                    SettingRoutes(allServices.setting),
+                    HomepageRoutes(allServices.homepage),
+                    NoteRoutes(allServices.note),
+                    UtilQueryRoutes(allServices.queryService),
+                    UtilMetaRoutes(allServices.metaUtil),
+                    UtilIllustRoutes(allServices.illustUtil),
+                    UtilPickerRoutes(allServices.pickerUtil),
+                    UtilExportRoutes(allServices.exportUtil),
+                    UtilFileRoutes(allServices.fileUtil),
+                    FindSimilarRoutes(allServices.findSimilar),
+                    IllustRoutes(allServices.illust),
+                    BookRoutes(allServices.book),
+                    FolderRoutes(allServices.folder),
+                    ImportRoutes(allServices.import),
+                    StagingPostRoutes(allServices.stagingPost),
+                    TrashRoutes(allServices.trash),
+                    MetaTagRoutes(allServices.tag),
+                    MetaTopicRoutes(allServices.topic),
+                    MetaAuthorRoutes(allServices.author),
+                    MetaAnnotationRoutes(allServices.annotation),
+                    SourceRoutes(allServices.sourceData, allServices.sourceMapping)
+                )
             }
-            .handle(aspect, authentication, staticFileHandler, errorHandler)
-            .handle(WsRoutes(lifetime, eventBus))
-            .handle(AppRoutes(lifetime, appStatus, appdata))
-            .handle(ServiceRoutes(allServices.service))
-            .handle(SettingRoutes(allServices.setting))
-            .handle(HomepageRoutes(allServices.homepage))
-            .handle(NoteRoutes(allServices.note))
-            .handle(UtilQueryRoutes(allServices.queryService))
-            .handle(UtilMetaRoutes(allServices.metaUtil))
-            .handle(UtilIllustRoutes(allServices.illustUtil))
-            .handle(UtilPickerRoutes(allServices.pickerUtil))
-            .handle(UtilExportRoutes(allServices.exportUtil))
-            .handle(UtilFileRoutes(allServices.fileUtil))
-            .handle(FindSimilarRoutes(allServices.findSimilar))
-            .handle(IllustRoutes(allServices.illust))
-            .handle(BookRoutes(allServices.book))
-            .handle(FolderRoutes(allServices.folder))
-            .handle(ImportRoutes(allServices.import))
-            .handle(StagingPostRoutes(allServices.stagingPost))
-            .handle(TrashRoutes(allServices.trash))
-            .handle(MetaTagRoutes(allServices.tag))
-            .handle(MetaTopicRoutes(allServices.topic))
-            .handle(MetaAuthorRoutes(allServices.author))
-            .handle(MetaAnnotationRoutes(allServices.annotation))
-            .handle(SourceRoutes(allServices.sourceData, allServices.sourceMapping))
+            .handle(
+                Aspect(appStatus),
+                Authentication(token, appdata),
+                StaticFileHandler(archive),
+                ErrorHandler(),
+                WsRoutes(lifetime, eventBus)
+            )
             .bind()
     }
 
@@ -134,7 +138,14 @@ class HttpServerImpl(private val health: Health,
     }
 }
 
-private fun Javalin.handle(vararg endpoints: Routes): Javalin {
+private fun JavalinConfig.handle(vararg endpoints: Routes): JavalinConfig {
+    for (endpoint in endpoints) {
+        endpoint.handle(this)
+    }
+    return this
+}
+
+private fun Javalin.handle(vararg endpoints: Modules): Javalin {
     for (endpoint in endpoints) {
         endpoint.handle(this)
     }
@@ -142,6 +153,10 @@ private fun Javalin.handle(vararg endpoints: Routes): Javalin {
 }
 
 interface Routes {
+    fun handle(javalin: JavalinConfig)
+}
+
+interface Modules {
     fun handle(javalin: Javalin)
 }
 

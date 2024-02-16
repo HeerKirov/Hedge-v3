@@ -12,15 +12,15 @@ import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.service.BookService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
 import com.heerkirov.hedge.server.library.form.queryAsFilter
-import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import io.javalin.http.bodyAsClass
 import io.javalin.http.pathParamAsClass
 
 class BookRoutes(private val bookService: BookService) : Routes {
-    override fun handle(javalin: Javalin) {
-        javalin.routes {
+    override fun handle(javalin: JavalinConfig) {
+        javalin.router.apiBuilder {
             path("api/books") {
                 get(::list)
                 post(::create)

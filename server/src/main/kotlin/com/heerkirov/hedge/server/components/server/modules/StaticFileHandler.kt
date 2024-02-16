@@ -1,7 +1,7 @@
 package com.heerkirov.hedge.server.components.server.modules
 
+import com.heerkirov.hedge.server.components.server.Modules
 import com.heerkirov.hedge.server.enums.ArchiveType
-import com.heerkirov.hedge.server.components.server.Routes
 import com.heerkirov.hedge.server.functions.manager.FileManager
 import io.javalin.Javalin
 import io.javalin.http.Context
@@ -9,7 +9,7 @@ import io.javalin.http.HttpStatus
 import io.javalin.http.util.SeekableWriter
 import org.eclipse.jetty.server.handler.ResourceHandler
 
-class StaticFileHandler(private val archive: FileManager) : Routes {
+class StaticFileHandler(private val archive: FileManager) : Modules {
     private val prefix = "/archives"
     private val resourceHandler = ResourceHandler()
 

@@ -9,14 +9,14 @@ import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.exceptions.Reject
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.library.form.bodyAsForm
-import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 
 
 class AppRoutes(private val lifetime: Lifetime, private val appStatus: AppStatusDriver, private val appdata: AppDataManager) : Routes {
-    override fun handle(javalin: Javalin) {
-        javalin.routes {
+    override fun handle(javalin: JavalinConfig) {
+        javalin.router.apiBuilder {
             path("app") {
                 get("health", ::health)
                 post("initialize", ::initialize)

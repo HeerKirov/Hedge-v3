@@ -37,34 +37,34 @@ class WsConsumer(ctx: (WsConsumer.() -> Unit)? = null) : Consumer<WsConfig> {
 
     private fun onConnectEvent(ctx: WsConnectContext) {
         connections.add(ctx)
-        whenConnectConsumers.forEach { it(ctx.sessionId) }
-        log.info("connection ${ctx.sessionId} established.")
+        whenConnectConsumers.forEach { it(ctx.sessionId()) }
+        log.info("connection ${ctx.sessionId()} established.")
 
         pingThread.start()
     }
 
     private fun onCloseEvent(ctx: WsCloseContext) {
         connections.remove(ctx)
-        whenCloseConsumers.forEach { it(ctx.sessionId) }
-        log.info("connection ${ctx.sessionId} closed.")
+        whenCloseConsumers.forEach { it(ctx.sessionId()) }
+        log.info("connection ${ctx.sessionId()} closed.")
 
         if(connections.isEmpty()) pingThread.stop()
     }
 
     private fun onErrorEvent(ctx: WsErrorContext) {
         connections.remove(ctx)
-        whenCloseConsumers.forEach { it(ctx.sessionId) }
+        whenCloseConsumers.forEach { it(ctx.sessionId()) }
         val e = ctx.error()
         if(e !is ClosedChannelException) {
-            log.info("connection ${ctx.sessionId} error: ${ctx.error()}")
+            log.info("connection ${ctx.sessionId()} error: ${ctx.error()}")
         }
 
         if(connections.isEmpty()) pingThread.stop()
     }
 
     private fun onMessageEvent(ctx: WsMessageContext) {
-        whenReceiveMessageConsumers.forEach { it(ctx.sessionId, ctx.message()) }
-        log.info("connection ${ctx.sessionId} message: ${ctx.message()}")
+        whenReceiveMessageConsumers.forEach { it(ctx.sessionId(), ctx.message()) }
+        log.info("connection ${ctx.sessionId()} message: ${ctx.message()}")
     }
 
     /**

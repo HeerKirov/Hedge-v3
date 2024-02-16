@@ -1,6 +1,6 @@
 package com.heerkirov.hedge.server.components.server.modules
 
-import com.heerkirov.hedge.server.components.server.Routes
+import com.heerkirov.hedge.server.components.server.Modules
 import com.heerkirov.hedge.server.dto.res.ErrorResult
 import com.heerkirov.hedge.server.dto.res.WsResult
 import com.heerkirov.hedge.server.exceptions.BusinessException
@@ -9,7 +9,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.Exception
 
-class ErrorHandler : Routes {
+class ErrorHandler : Modules {
     private val log: Logger = LoggerFactory.getLogger(ErrorHandler::class.java)
 
     override fun handle(javalin: Javalin) {

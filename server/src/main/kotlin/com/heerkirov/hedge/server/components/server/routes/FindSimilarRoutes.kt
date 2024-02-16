@@ -13,16 +13,16 @@ import com.heerkirov.hedge.server.functions.service.FindSimilarService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
 import com.heerkirov.hedge.server.library.form.queryAsFilter
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
-import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import io.javalin.http.bodyAsClass
 import io.javalin.http.formParamAsClass
 import io.javalin.http.pathParamAsClass
 
 class FindSimilarRoutes(private val findSimilarService: FindSimilarService) : Routes {
-    override fun handle(javalin: Javalin) {
-        javalin.routes {
+    override fun handle(javalin: JavalinConfig) {
+        javalin.router.apiBuilder {
             path("api/find-similar") {
                 path("tasks") {
                     get(::getTaskList)

@@ -9,14 +9,14 @@ import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.service.ImportService
-import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import io.javalin.http.pathParamAsClass
 
 class ImportRoutes(private val importService: ImportService) : Routes {
-    override fun handle(javalin: Javalin) {
-        javalin.routes {
+    override fun handle(javalin: JavalinConfig) {
+        javalin.router.apiBuilder {
             path("api/imports") {
                 get(::list)
                 post("import", ::import)

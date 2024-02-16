@@ -5,18 +5,17 @@ import com.heerkirov.hedge.server.dto.filter.NoteFilter
 import com.heerkirov.hedge.server.dto.form.NoteCreateForm
 import com.heerkirov.hedge.server.dto.form.NoteUpdateForm
 import com.heerkirov.hedge.server.dto.res.IdRes
-import com.heerkirov.hedge.server.functions.service.HomepageService
 import com.heerkirov.hedge.server.functions.service.NoteService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
 import com.heerkirov.hedge.server.library.form.queryAsFilter
-import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import io.javalin.http.pathParamAsClass
 
 class NoteRoutes(private val service: NoteService) : Routes {
-    override fun handle(javalin: Javalin) {
-        javalin.routes {
+    override fun handle(javalin: JavalinConfig) {
+        javalin.router.apiBuilder {
             path("api/notes") {
                 get(::list)
                 post(::create)

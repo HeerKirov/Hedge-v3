@@ -7,14 +7,14 @@ import com.heerkirov.hedge.server.exceptions.ParamTypeError
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.service.ExportUtilService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
-import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import io.javalin.http.bodyAsClass
 
 class UtilExportRoutes(private val exportUtilService: ExportUtilService) : Routes {
-    override fun handle(javalin: Javalin) {
-        javalin.routes {
+    override fun handle(javalin: JavalinConfig) {
+        javalin.router.apiBuilder {
             path("api/utils/export") {
                 post("illust-situation", ::getExpandedIllusts)
                 post("execute-export", ::executeExport)

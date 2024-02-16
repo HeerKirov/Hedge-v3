@@ -6,15 +6,15 @@ import com.heerkirov.hedge.server.exceptions.ParamTypeError
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.service.TrashService
 import com.heerkirov.hedge.server.library.form.queryAsFilter
-import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import io.javalin.http.pathParamAsClass
 import io.javalin.http.bodyAsClass
 
 class TrashRoutes(private val trashService: TrashService) : Routes {
-    override fun handle(javalin: Javalin) {
-        javalin.routes {
+    override fun handle(javalin: JavalinConfig) {
+        javalin.router.apiBuilder {
             path("api/trashes") {
                 get(::list)
                 get("{id}", ::retrieve)

@@ -7,13 +7,13 @@ import com.heerkirov.hedge.server.dto.form.TextAnalyseForm
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.functions.service.QueryService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
-import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 
 class UtilQueryRoutes(private val queryService: QueryService) : Routes {
-    override fun handle(javalin: Javalin) {
-        javalin.routes {
+    override fun handle(javalin: JavalinConfig) {
+        javalin.router.apiBuilder {
             path("api/utils/query") {
                 post("schema", ::schema)
                 post("forecast", ::forecast)

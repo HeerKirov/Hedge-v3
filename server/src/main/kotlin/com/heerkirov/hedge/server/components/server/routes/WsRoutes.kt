@@ -1,16 +1,16 @@
 package com.heerkirov.hedge.server.components.server.routes
 
 import com.heerkirov.hedge.server.components.bus.EventBus
-import com.heerkirov.hedge.server.components.server.Routes
 import com.heerkirov.hedge.server.components.server.WsConsumer
 import com.heerkirov.hedge.server.components.lifetime.Lifetime
+import com.heerkirov.hedge.server.components.server.Modules
 import com.heerkirov.hedge.server.dto.res.WsResult
 import com.heerkirov.hedge.server.events.InternalServerEvent
 import com.heerkirov.hedge.server.events.PackagedBusEvent
 import com.heerkirov.hedge.server.events.WsBusEvent
 import io.javalin.Javalin
 
-class WsRoutes(private val lifetime: Lifetime, private val bus: EventBus) : Routes {
+class WsRoutes(private val lifetime: Lifetime, private val bus: EventBus) : Modules {
     private val limit = 1000
 
     override fun handle(javalin: Javalin) {

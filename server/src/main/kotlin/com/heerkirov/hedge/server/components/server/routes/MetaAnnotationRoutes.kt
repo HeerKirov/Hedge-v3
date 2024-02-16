@@ -8,14 +8,14 @@ import com.heerkirov.hedge.server.library.form.bodyAsForm
 import com.heerkirov.hedge.server.library.form.queryAsFilter
 import com.heerkirov.hedge.server.dto.res.IdRes
 import com.heerkirov.hedge.server.functions.service.AnnotationService
-import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import io.javalin.http.pathParamAsClass
 
 class MetaAnnotationRoutes(private val annotationService: AnnotationService) : Routes {
-    override fun handle(javalin: Javalin) {
-        javalin.routes {
+    override fun handle(javalin: JavalinConfig) {
+        javalin.router.apiBuilder {
             path("api/annotations") {
                 get(::list)
                 post(::create)

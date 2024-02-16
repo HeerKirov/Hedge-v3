@@ -7,14 +7,14 @@ import com.heerkirov.hedge.server.dto.form.MetaUtilValidateForm
 import com.heerkirov.hedge.server.enums.IdentityType
 import com.heerkirov.hedge.server.functions.service.MetaUtilService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
-import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import io.javalin.http.pathParamAsClass
 
 class UtilMetaRoutes(private val metaUtilService: MetaUtilService) : Routes {
-    override fun handle(javalin: Javalin) {
-        javalin.routes {
+    override fun handle(javalin: JavalinConfig) {
+        javalin.router.apiBuilder {
             path("api/utils/meta-editor") {
                 post("validate", ::validate)
                 post("suggest", ::suggest)

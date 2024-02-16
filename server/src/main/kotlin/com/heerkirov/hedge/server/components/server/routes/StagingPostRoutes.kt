@@ -6,13 +6,13 @@ import com.heerkirov.hedge.server.dto.form.StagingPostUpdateForm
 import com.heerkirov.hedge.server.functions.service.StagingPostService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
 import com.heerkirov.hedge.server.library.form.queryAsFilter
-import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 
 class StagingPostRoutes(private val stagingPostService: StagingPostService) : Routes {
-    override fun handle(javalin: Javalin) {
-        javalin.routes {
+    override fun handle(javalin: JavalinConfig) {
+        javalin.router.apiBuilder {
             path("api/staging-post") {
                 get(::list)
                 patch(::update)

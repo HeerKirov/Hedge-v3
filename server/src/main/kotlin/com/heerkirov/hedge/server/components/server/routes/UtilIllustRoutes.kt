@@ -6,14 +6,14 @@ import com.heerkirov.hedge.server.dto.form.FolderSituationForm
 import com.heerkirov.hedge.server.dto.form.IllustIdForm
 import com.heerkirov.hedge.server.functions.service.IllustUtilService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
-import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.path
 import io.javalin.apibuilder.ApiBuilder.post
+import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 
 class UtilIllustRoutes(private val illustUtilService: IllustUtilService) : Routes {
-    override fun handle(javalin: Javalin) {
-        javalin.routes {
+    override fun handle(javalin: JavalinConfig) {
+        javalin.router.apiBuilder {
             path("api/utils/illust") {
                 post("collection-situation", ::getCollectionSituation)
                 post("image-situation", ::getImageSituation)

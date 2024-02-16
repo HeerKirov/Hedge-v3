@@ -10,14 +10,14 @@ import com.heerkirov.hedge.server.dto.form.AuthorUpdateForm
 import com.heerkirov.hedge.server.dto.res.IdRes
 import com.heerkirov.hedge.server.functions.service.AuthorService
 import com.heerkirov.hedge.server.library.form.bodyAsListForm
-import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 import io.javalin.http.pathParamAsClass
 
 class MetaAuthorRoutes(private val authorService: AuthorService) : Routes {
-    override fun handle(javalin: Javalin) {
-        javalin.routes {
+    override fun handle(javalin: JavalinConfig) {
+        javalin.router.apiBuilder {
             path("api/authors") {
                 get(::list)
                 post(::create)
