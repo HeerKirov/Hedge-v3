@@ -2,29 +2,37 @@
 import { computed } from "vue"
 import { Button } from "@/components/universal"
 import { useAppEnv, useFullscreen } from "@/functions/app"
-import { useSideLayoutState } from "./context"
 
 // == Top Bar 通用顶栏内容布局 ==
 // 适配SideLayout的顶栏内容布局，在主要内容区域中隔出顶栏区域。
 // 此区域最左侧有一个collapse按钮，且只会在侧边栏关闭时显示。其余区域则是自动适应大小和边距的内容区。
 // 主要内容放入slot#default。
 
-const { platform } = useAppEnv()
+const props = withDefaults(defineProps<{
+    isSideOpen?: boolean
+    showSideCollapseButton?: boolean
+}>(), {
+    showSideCollapseButton: true
+})
 
-const { isOpen } = useSideLayoutState()
+defineEmits<{
+    (e: "update:isSideOpen", isSideOpen: boolean): void
+}>()
+
+const { platform } = useAppEnv()
 
 const fullscreen = useFullscreen()
 
-const hasDarwinButton = computed(() => platform === "darwin" && !isOpen.value && !fullscreen.value)
+const hasDarwinButton = computed(() => platform === "darwin" && !props.isSideOpen && !fullscreen.value)
 
 </script>
 
 <template>
     <div :class="[{[$style['has-darwin-button']]: hasDarwinButton}, $style['top-bar']]">
-        <transition :enter-from-class="$style['transition-enter-from']" :leave-to-class="$style['transition-leave-to']" :enter-active-class="$style['transition-enter-active']" :leave-active-class="$style['transition-leave-active']">
-            <Button v-if="!isOpen" :class="$style['collapse-button']" square icon="bars" @click="isOpen = true"/>
+        <transition v-if="showSideCollapseButton" :enter-from-class="$style['transition-enter-from']" :leave-to-class="$style['transition-leave-to']" :enter-active-class="$style['transition-enter-active']" :leave-active-class="$style['transition-leave-active']">
+            <Button v-if="!isSideOpen" :class="$style['collapse-button']" square icon="bars" @click="$emit('update:isSideOpen', true)"/>
         </transition>
-        <div :class="[{[$style['has-cl-button']]: !isOpen}, $style.content]">
+        <div :class="[{[$style['has-cl-button']]: !isSideOpen && showSideCollapseButton}, $style.content]">
             <slot/>
         </div>
     </div>

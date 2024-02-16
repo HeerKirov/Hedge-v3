@@ -45,15 +45,19 @@ const paneStyle = computed<CSSProperties>(() => ({
         <div :class="$style['content']" :style="contentStyle">
             <slot/>
         </div>
-        <div v-if="showPane" :class="$style['pane']" :style="paneStyle">
-            <slot name="pane"/>
-        </div>
+        <transition :enter-from-class="$style['transition-enter-from']" :leave-to-class="$style['transition-leave-to']" :enter-active-class="$style['transition-enter-active']" :leave-active-class="$style['transition-leave-active']">
+            <div v-if="showPane" :class="$style['pane']" :style="paneStyle">
+                <slot name="pane"/>
+            </div>
+        </transition>
         <div v-if="showPane" :class="$style['resize-area']" :style="contentStyle" @mousedown="resizeAreaMouseDown"/>
     </div>
 </template>
 
 <style module lang="sass">
 @import "../../../styles/base/color"
+
+$transaction-time: 0.25s
 
 .pane-layout
     > .pane
@@ -65,12 +69,20 @@ const paneStyle = computed<CSSProperties>(() => ({
         @media (prefers-color-scheme: dark)
             background-color: $dark-mode-background-color
 
+        &.transition-enter-active,
+        &.transition-leave-active
+            transition: transform $transaction-time ease
+        &.transition-enter-from,
+        &.transition-leave-to
+            transform: translateX(100%)
+
     > .content
         position: absolute
         top: 0
         bottom: 0
         left: 0
         min-width: 24rem
+        transition: right $transaction-time ease
 
     > .resize-area
         position: absolute

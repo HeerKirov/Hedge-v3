@@ -26,7 +26,7 @@ defineEmits<{
                   :bottom-class="$style['bottom-content']">
         <template #gap>
             <Button v-if="showCloseButton" :class="$style['close-button']" icon="close" square @click="$emit('close')"/>
-            <div v-if="!!$slots.title" :class="$style['title']">
+            <div v-if="!!$slots.title" :class="{[$style['title']]: true, [$style['full-width']]: !showCloseButton}">
                 <slot name="title"/>
             </div>
         </template>
@@ -66,6 +66,8 @@ defineEmits<{
         left: $spacing-1
         right: calc(#{$spacing-1 * 2} + #{$element-height-std})
         height: $element-height-std
+        &.full-width
+            right: $spacing-1
 
     > .top-content
         box-sizing: border-box

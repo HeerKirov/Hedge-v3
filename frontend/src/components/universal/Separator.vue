@@ -3,7 +3,7 @@
 defineProps<{
     size?: "small" | "std" | "large"
     direction?: "horizontal" | "vertical"
-    spacing?: number
+    spacing?: number | "half"
 }>()
 
 </script>

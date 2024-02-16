@@ -10,5 +10,5 @@ useInterceptedKey(["Escape", "Backspace"], closeView)
 </script>
 
 <template>
-    <Button v-if="!isRootView" square icon="arrow-left" @click="closeView"/>
+    <Button v-if="!isRootView" icon="close" @click="closeView">关闭视图</Button>
 </template>
