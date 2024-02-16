@@ -51,7 +51,7 @@ function registerAppMenu(windowManager: WindowManager, tabControlEvent: SendEmit
             submenu: [
                 {label: "关于Hedge", role: "about"},
                 {type: "separator"},
-                {label: "便签", accelerator: isDarwin ? "Command+Y" : "Ctrl+Y", click() { windowManager.openNoteWindow() }},
+                {label: "便签", accelerator: isDarwin ? "Command+U" : "Ctrl+U", click() { windowManager.openNoteWindow() }},
                 {label: "偏好设置", accelerator: isDarwin ? "Command+," : "Ctrl+,", click() { windowManager.openSettingWindow() }},
                 {type: "separator"},
                 {label: "启用自动导入", id: "AUTO_IMPORT", type: "checkbox", accelerator: isDarwin ? "Command+Shift+O" : "Ctrl+Shift+O", click(e) { generalEvent.emit({type: "TOGGLE_AUTO_IMPORT", value: e.checked}) }},
