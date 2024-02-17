@@ -39,7 +39,7 @@ class HistoryRecordManager(private val data: DataRepository) {
 
         val list = records[Identity(type, channel)] ?: return emptyList()
 
-        return if(limit != null && list.size > limit) list.reversed().subList(0, limit) else list.reversed()
+        return if(limit != null && list.size > limit) list.reversed().toList().subList(0, limit) else list.reversed().toList()
     }
 
     fun push(type: HistoryRecord.HistoryType, channel: String, key: String) {

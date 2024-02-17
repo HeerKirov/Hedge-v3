@@ -1,8 +1,7 @@
 plugins {
     application
     kotlin("jvm").version("1.9.22")
-    id("com.github.johnrengelman.shadow").version("4.0.3")
-    id("org.beryx.jlink").version("2.26.0")
+    id("org.beryx.jlink").version("3.0.1")
 }
 
 group = "com.heerkirov.hedge"
@@ -19,8 +18,8 @@ dependencies {
     val javeVersion = "3.4.0"
     val logbackVersion = "1.4.14"
     val junitVersion = "4.13.2"
-    val javePlatform = when(System.getProperty("os.name").toLowerCase()) {
-        "mac os x" -> if(System.getProperty("os.arch").toLowerCase() == "aarch64") {
+    val javePlatform = when(System.getProperty("os.name").lowercase()) {
+        "mac os x" -> if(System.getProperty("os.arch").lowercase() == "aarch64") {
             "nativebin-osxm1"
         }else{
             "nativebin-osx64"
@@ -50,21 +49,19 @@ dependencies {
     testImplementation(group = "junit", name = "junit", version = junitVersion)                                 //测试
 }
 
-val javaVersion = "17"
+val javaVersion = "21"
 val projectMainModule = "com.heerkirov.hedge.server"
 val projectMainClass = "com.heerkirov.hedge.server.ApplicationKt"
 val projectBinaryName = "hedge-v3-server"
 
 application {
-    @Suppress("DEPRECATION")
-    mainClassName = "${projectMainModule}/${projectMainClass}"
     mainClass.set(projectMainClass)
     mainModule.set(projectMainModule)
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 repositories {
@@ -84,6 +81,7 @@ tasks {
         doFirst {
             options.compilerArgs = listOf("--module-path", classpath.asPath)
         }
+        dependsOn(processResources)
     }
     compileKotlin {
         kotlinOptions.jvmTarget = javaVersion
@@ -91,14 +89,6 @@ tasks {
     }
     compileTestKotlin {
         kotlinOptions.jvmTarget = javaVersion
-    }
-
-    shadowJar {
-        manifestContentCharset = "utf-8"
-        setMetadataCharset("utf-8")
-        manifest {
-            attributes(mapOf("Main-Class" to projectMainClass))
-        }
     }
 }
 
@@ -124,8 +114,11 @@ jlink {
          * because module com.heerkirov.hedge.merged.module does not read module org.slf4j
          * 错误原因是jave模块包含在merged模块内无法访问slf4j模块。
          * 解决方案来自 https://github.com/beryx/badass-jlink-plugin/issues/127
+         *
+         * UPDATE:
+         * 已更新jlink插件版本、Java版本。更新之后需要移除此参数了。
          */
-        requires("org.slf4j")
+        //requires("org.slf4j")
     }
     /* 如果去掉这一条，则会在启动时报告错误：
      * java.lang.LayerInstantiationException: Package kotlin in both module kotlin.stdlib and module com.heerkirov.hedge.merged.module
