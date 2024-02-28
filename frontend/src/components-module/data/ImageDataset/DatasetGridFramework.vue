@@ -27,7 +27,7 @@ const viewElement = computed(() => viewRef.value?.$el)
 
 const viewRect = useElementRect(viewElement, {immediate: true})
 
-const viewWidth = computedWatch(viewRect, viewRect => viewRect? Math.floor(viewRect.width / 10) * 10 : undefined)
+const viewWidth = computedWatch(viewRect, viewRect => viewRect ? Math.floor(viewRect.width / 10) * 10 : undefined)
 
 const thumbType = computedEffect(() => viewWidth.value !== undefined ? (viewWidth.value / props.columnNum >= 150 ? "thumbnail" : "sample") : "sample")
 

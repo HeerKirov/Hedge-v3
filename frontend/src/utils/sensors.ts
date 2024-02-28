@@ -7,7 +7,7 @@ import { sleep } from "@/utils/process"
  * @param event 事件
  * @param options immediate: 挂载时立刻触发回调
  */
-export function onElementResize(elementRef: Ref<HTMLElement | undefined>, event: (rect: DOMRect, element: HTMLElement) => void, options?: {immediate?: boolean}) {
+export function onElementResize<NULLABLE extends Readonly<boolean> = false>(elementRef: Ref<HTMLElement | undefined>, event: (rect: NULLABLE extends true ? DOMRect | undefined : DOMRect, element: NULLABLE extends true ? HTMLElement | undefined : HTMLElement) => void, options?: {immediate?: boolean, nullable?: NULLABLE}) {
     let element: HTMLElement | undefined = undefined
     let skipFirst = options?.immediate ?? false
     const observer = new ResizeObserver(entries => {
@@ -20,12 +20,16 @@ export function onElementResize(elementRef: Ref<HTMLElement | undefined>, event:
     })
 
     onUnmounted(() => {
-        if(element) observer.unobserve(element)
+        if(element) {
+            observer.unobserve(element)
+            if(options?.nullable) event(undefined as any, undefined as any)
+        }
     })
 
     watch(elementRef, v => {
         if(element) observer.unobserve(element)
         if((element = v) != undefined) observer.observe(element)
+        else if(options?.nullable) event(undefined as any, undefined as any)
     })
 }
 
@@ -191,8 +195,8 @@ export function useElementRect(elementRef: Ref<HTMLElement | undefined>, options
     const rect = ref<DOMRect>()
 
     onElementResize(elementRef, (value, element) => {
-        rect.value = options?.fixed ? element.getBoundingClientRect()  : value
-    }, options)
+        rect.value = options?.fixed ? element?.getBoundingClientRect() : value
+    }, {nullable: true, ...options})
 
     return rect
 }

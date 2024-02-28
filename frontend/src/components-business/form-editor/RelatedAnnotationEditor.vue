@@ -26,7 +26,7 @@ const searchProps = {
     autoFocus: true,
     query: (client: HttpClient) => (offset: number, limit: number, search: string) => client.annotation.list({offset, limit, query: search, type: props.metaType, target: props.target}),
     historyList: (client: HttpClient) => (_: number) => client.searchUtil.history.annotations(props.metaType),
-    historyPush: (client: HttpClient) => (item: Annotation) => client.searchUtil.history.push({type: "ANNOTATION", id: item.id}),
+    historyPush: (client: HttpClient) => (item: Annotation) => client.searchUtil.history.push({type: `ANNOTATION:${item.type}`, id: item.id}),
     mapOption: (item: Annotation) => ({label: item.name, value: `${item.id}`}),
     onPick: (item: Annotation) => {
         if(!props.value.some(i => i.id === item.id)) {

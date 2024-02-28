@@ -57,7 +57,7 @@ function useOperators(listview: QueryListview<Topic, number>) {
 
     const openCreateView = () => router.routePush({routeName: "TopicCreate"})
 
-    const openDetailView = (authorId: number) => router.routePush({routeName: "TopicDetail", path: authorId})
+    const openDetailView = (topicId: number) => router.routePush({routeName: "TopicDetail", path: topicId})
 
     const createByTemplate = (topic: Topic) => {
         const idx = listview.proxy.sync.findByKey(topic.id)
@@ -240,8 +240,8 @@ export function useTopicDetailPanel() {
         }
     }
 
-    const openTopicDetail = (authorId: number) => {
-        router.routePush({routeName: "AuthorDetail", path: authorId})
+    const openTopicDetail = (topicId: number) => {
+        router.routePush({routeName: "TopicDetail", path: topicId})
     }
 
     const deleteItem = async () => {

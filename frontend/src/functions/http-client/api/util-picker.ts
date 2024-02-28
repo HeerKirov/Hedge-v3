@@ -47,7 +47,7 @@ export interface UtilSearchEndpoint {
 }
 
 interface HistoryPushForm {
-    type: "FOLDER" | "TOPIC" | "AUTHOR" | "ANNOTATION"
+    type: "FOLDER" | "TOPIC" | "AUTHOR" | `ANNOTATION:${MetaType}`
     id: number
 }
 

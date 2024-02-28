@@ -57,7 +57,7 @@ const attachFilterTemplates: AttachTemplate[] = [
         mapQueryOne: (item: Annotation) => ({label: item.name, value: item.id}),
         history: {
             list: client => (_: number) => client.searchUtil.history.annotations("TOPIC"),
-            push: client => item => client.searchUtil.history.push({type: "ANNOTATION", id: item.value as number}),
+            push: client => item => client.searchUtil.history.push({type: "ANNOTATION:TOPIC", id: item.value as number}),
             mapList: (item: Annotation) => ({label: item.name, value: item.id})
         },
         displayStyle: "annotation"

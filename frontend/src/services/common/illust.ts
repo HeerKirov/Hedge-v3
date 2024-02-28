@@ -427,7 +427,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
             if(res.ok) {
                 const deleteCompletely = res.checks.includes("SHIFT")
                 const deleteCollectionChildren = res.checks.includes("CHILDREN")
-                for (const id of items) await fetchIllustDelete(id, {deleteCompletely, deleteCollectionChildren}).finally()
+                for (const id of items) fetchIllustDelete(id, {deleteCompletely, deleteCollectionChildren}).finally()
             }
         }
     }

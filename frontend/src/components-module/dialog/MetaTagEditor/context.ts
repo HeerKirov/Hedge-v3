@@ -109,6 +109,7 @@ export function useMetaTagEditorData(props: Ref<MetaTagEditorProps>, updated: ()
         return {data, identity, setValue}
     }else if(props.value.mode === "batch") {
         const target = props.value.identity.illustIds
+        const tagUpdateMode = props.value.updateMode
         const data = shallowRef<CommonData | null>(null)
 
         const fetch = usePostFetchHelper({
@@ -129,7 +130,7 @@ export function useMetaTagEditorData(props: Ref<MetaTagEditorProps>, updated: ()
         })
 
         const setValue = async (form: CommonForm): Promise<boolean> => {
-            const ok = await fetch({target, tags: form.tags, topics: form.topics, authors: form.authors, mappingSourceTags: form.mappings})
+            const ok = await fetch({target, tags: form.tags, topics: form.topics, authors: form.authors, mappingSourceTags: form.mappings, tagUpdateMode})
             if(ok) updated()
             return ok
         }
