@@ -1,3 +1,6 @@
+## Bug Fixes
+* 修复了server构建过程的一个错误，该问题导致FFMPEG模块无法被调用。
+
 # v0.7.0
 ## Bug Fixes
 * 修复了zoomController区域会被识别为app拖拽区域的问题。

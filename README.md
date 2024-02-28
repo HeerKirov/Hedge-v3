@@ -96,9 +96,9 @@ gradle
 --permanent             # 强制永不自动退出，用于开发
 ```
 
-使用jlinkZip命令编译。编译后的产物位于`server/build/image.zip`。
+使用jlink命令编译，使用zip命令打包。打包后的产物为`server/build/image.zip`。
 ```sh
-gradle clean jlinkZip
+gradle clean jlink zip
 ```
 
 ## Build & Package

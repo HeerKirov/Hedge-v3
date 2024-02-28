@@ -132,3 +132,16 @@ task("printVersion") {
         println(project.version)
     }
 }
+
+tasks.register<Zip>("zip") {
+    /* 在gradle更新后，jlinkZip产生了一个bug，从zip解压得到的程序在运行时无法使用Process相关API(不确定是否还有其他的)。
+     * 发现手动压缩后的压缩包能够正常使用，因此编写此task，手动添加一个额外的zip步骤。
+     */
+    archiveFileName.set("image.zip")
+    destinationDirectory.set(project.file("${project.rootDir}/build"))
+    from(project.file("${project.rootDir}/build/image")) {
+        into("image")
+    }
+}
+
+tasks.getByName("zip").dependsOn("jlink")
