@@ -377,7 +377,7 @@ export interface IllustEndpoint {
     /**
      * 批量更新元数据。
      */
-    batchUpdate(form: IllustBatchUpdateForm): Promise<Response<null, IllustExceptions["image.update"]>>
+    batchUpdate(form: IllustBatchUpdateForm): Promise<Response<null, IllustExceptions["batch.update"]>>
     /**
      * 将一个图像的属性和关系克隆到另一个图像。
      */
@@ -391,6 +391,7 @@ export interface IllustExceptions {
     "image.update": NotFound | ResourceNotExist<"topics" | "authors" | "tags", number[]> | ResourceNotSuitable<"tags", number[]> | ConflictingGroupMembersError
     "image.relatedItems.update": NotFound | ResourceNotExist<"collectionId" | "associateId", number>
     "image.sourceData.update": NotFound | ResourceNotExist<"site", string> | ResourceNotExist<"additionalInfo", string> | ResourceNotExist<"sourceTagType", string[]> | ParamNotRequired | ParamRequired | ParamError
+    "batch.update": NotFound | ResourceNotExist<"topics" | "authors" | "tags" | "target" | "timeInsertBegin" | "timeInsertEnd", number[]> | ResourceNotSuitable<"tags" | "target", number[]> | ConflictingGroupMembersError
 }
 
 export type IllustType = "COLLECTION" | "IMAGE"

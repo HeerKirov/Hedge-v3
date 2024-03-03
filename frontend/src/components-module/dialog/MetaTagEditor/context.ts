@@ -117,16 +117,18 @@ export function useMetaTagEditorData(props: Ref<MetaTagEditorProps>, updated: ()
             handleErrorInRequest(e) {
                 if(e.code === "NOT_EXIST") {
                     const [type, list] = e.info
-                    const typeName = type === "tags" ? "标签" : type === "topics" ? "主题" : "作者"
+                    const typeName = type === "tags" ? "标签" : type === "topics" ? "主题" : type === "authors" ? "作者" : "图库项目"
                     message.showOkMessage("error", `选择的部分${typeName}不存在。`, `错误项: ${list}`)
                 }else if(e.code === "NOT_SUITABLE") {
-                    message.showOkMessage("prompt", "选择的部分标签不适用。", "请参阅下方的约束提示修改内容。")
+                    const [type, _] = e.info
+                    if(type === "tags") message.showOkMessage("prompt", "选择的部分标签不适用。", "请参阅下方的约束提示修改内容。")
+                    else if(type === "target") message.showOkMessage("prompt", "选择的部分图库项目不适用。", "不能同时编辑集合与它的子项。")
                 }else if(e.code === "CONFLICTING_GROUP_MEMBERS") {
                     message.showOkMessage("prompt", "选择的部分标签存在强制组冲突。", "请参阅下方的约束提示修改内容。")
                 }else{
                     return e
                 }
-            },
+            }
         })
 
         const setValue = async (form: CommonForm): Promise<boolean> => {

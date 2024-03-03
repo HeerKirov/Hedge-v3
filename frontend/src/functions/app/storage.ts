@@ -37,6 +37,19 @@ export function useLocalStorage<T>(bucketName: string, defaultValue?: T | (() =>
         }
     }, {deep: true})
 
+    const currentTab = useCurrentTab()
+    if(currentTab !== undefined) watch(currentTab.active, active => {
+        if(active) {
+            const initValue = window.localStorage.getItem(storageName)
+            if(initValue !== null) {
+                const value = JSON.parse(initValue)
+                if(value !== undefined && value !== data.value) {
+                    data.value = value as T
+                }
+            }
+        }
+    })
+
     return data
 }
 

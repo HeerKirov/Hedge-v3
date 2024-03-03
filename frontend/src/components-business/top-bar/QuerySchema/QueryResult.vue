@@ -11,7 +11,7 @@ defineProps<{
 </script>
 
 <template>
-    <div v-if="schema" class="p-1">
+    <div v-if="schema" class="p-1 is-overflow-x-auto is-scrollbar-hidden">
         <QueryResultPlan v-if="schema.queryPlan !== null" :plan="schema.queryPlan"/>
         <Separator direction="horizontal" v-if="schema.queryPlan !== null && (schema.errors.length || schema.warnings.length)"/>
         <QueryResultCompileError v-for="e in schema.errors" :e="e" type="danger"/>

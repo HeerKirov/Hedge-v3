@@ -9,7 +9,7 @@ import { useEditorContext } from "./context"
 const {
     typeFilter,
     form: {
-        submit, submittable, removeAt,
+        submit, submittable, submitting, removeAt,
         tags, topics, authors, mappings,
         validation: { exportedResults, validationResults },
         history: { canRedo, canUndo, undo, redo }
@@ -91,12 +91,8 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues) => {
             <div class="mt-1 mr-4 mb-4 ml-1">
                 <Button :type="canUndo ? 'primary' : undefined" :disabled="!canUndo" icon="undo" @click="undo">撤销</Button>
                 <Button :type="canRedo ? 'primary' : undefined" :disabled="!canRedo" icon="redo" @click="redo">重做</Button>
-                <Button class="float-right" mode="filled" type="primary" :disabled="!submittable" icon="save" @click="submit">保存</Button>
+                <Button class="float-right" mode="filled" type="primary" :disabled="!submittable || submitting" :icon="submitting ? 'circle-notch' : 'save'" :icon-spin="submitting" @click="submit">保存</Button>
             </div>
         </template>
     </BottomLayout>
 </template>
-
-<style module lang="sass">
-
-</style>

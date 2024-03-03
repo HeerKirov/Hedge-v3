@@ -5,6 +5,7 @@ import { Colors } from "@/constants/ui"
 
 const props = defineProps<{
     icon?: string
+    iconSpin?: boolean
     endIcon?: string
     mode?: "transparent" | "light" | "filled"
     type?: Colors
@@ -29,7 +30,7 @@ const buttonClass = computed(() => [
 
 <template>
     <button :class="buttonClass" :disabled="disabled">
-        <Icon v-if="icon" :class="$style.icon" :icon="icon"/>
+        <Icon v-if="icon" :class="$style.icon" :icon="icon" :spin="iconSpin"/>
         <slot/>
         <Icon v-if="endIcon" :class="$style['end-icon']" :icon="endIcon"/>
     </button>

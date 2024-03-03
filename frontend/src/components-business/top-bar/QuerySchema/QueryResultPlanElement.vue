@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Flex } from "@/components/layout"
 import { ElementGroup, ElementValue } from "@/functions/http-client/api/util-query"
 import { QUERY_ELEMENT_TYPES } from "@/constants/translate"
 import { useCalloutService } from "@/components-module/callout"
@@ -20,16 +19,16 @@ const click = (e: MouseEvent, value: ElementValue) => {
 </script>
 
 <template>
-    <Flex>
+    <div class="flex no-wrap">
         <div :class="$style['element-type']"><b>{{QUERY_ELEMENT_TYPES[elementGroup.type]}}</b></div>
-        <div>
+        <div class="flex-item w-100 flex wrap">
             <template v-for="(intersectItem, idx) in elementGroup.intersectItems">
                 <b v-if="idx > 0" class="ml-half mr-1">&</b>
                 <b v-if="intersectItem.exclude" class="mr-half">-</b>
                 <QueryResultPlanElementValue v-for="unionItem in intersectItem.unionItems" class="mr-half mb-half" :value="unionItem as ElementValue" @click="click($event, unionItem as ElementValue)"/>
             </template>
         </div>
-    </Flex>
+    </div>
 </template>
 
 <style module lang="sass">

@@ -100,6 +100,7 @@ function useFormData(context: InstallEditorContext) {
     const submittable = computed(() =>
         (changed.tag || changed.topic || changed.author || changed.tagme || changed.mapping) &&
         (validation.validationResults.value == undefined || (!validation.validationResults.value.forceConflictingMembers.length && !validation.validationResults.value.notSuitable.length)))
+    const submitting = ref(false)
 
     const history = useDataHistory(tags, topics, authors, context.data)
     const validation = useFormValidation(tags, topics, authors, context.data)
@@ -207,6 +208,8 @@ function useFormData(context: InstallEditorContext) {
             //在提交更改之前就记录下变化统计数据，因为在提交更改后，历史记录栈会被清空
             const metaChangedHistory = history.getHistoryRecords()
             if(context.setValue) {
+                submitting.value = true
+
                 const ok = await context.setValue({
                     tags: changed.tag ? tags.value.map(i => i.id) : undefined,
                     topics: changed.topic ? topics.value.map(i => i.id) : undefined,
@@ -225,6 +228,7 @@ function useFormData(context: InstallEditorContext) {
                     //保存成功
                     context.close()
                 }
+                submitting.value = false
             }
 
             context.updateValue({
@@ -242,7 +246,7 @@ function useFormData(context: InstallEditorContext) {
     useInterceptedKey("Meta+KeyS", submit)
     installKeyDeclaration("Meta+KeyS")
 
-    return {tags, topics, authors, tagme, mappings, setTagme, add, addAll, removeAt, submittable, submit, validation, history}
+    return {tags, topics, authors, tagme, mappings, setTagme, add, addAll, removeAt, submittable, submitting, submit, validation, history}
 }
 
 function useFormValidation(tags: Ref<SimpleTag[]>, topics: Ref<SimpleTopic[]>, authors: Ref<SimpleAuthor[]>, data: Ref<Data>) {

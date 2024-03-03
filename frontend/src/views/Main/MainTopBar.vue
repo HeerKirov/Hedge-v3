@@ -32,7 +32,7 @@ const dragEnter = (tab: Tab) => {
     if(dragTab?.id === tab.id) return
     if(dragTimer !== undefined) clearTimeout(dragTimer)
     dragTab = tab
-    dragTimer = setTimeout(dragComplete, 750)
+    dragTimer = setTimeout(dragComplete, 300)
     dragDistance = undefined
 }
 
