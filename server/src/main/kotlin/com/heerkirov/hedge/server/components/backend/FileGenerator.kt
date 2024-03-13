@@ -437,12 +437,18 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                 }
                 if(dir != null) {
                     for (file in dir.listFiles()!!) {
-                        val fileId = file.nameWithoutExtension.toInt()
-                        if(fileId !in toBeDeleted) {
-                            zos.putFile(file)
-                            addedFromDirCount += 1
-                        }else{
-                            deletedInDirCount += 1
+                        if(!file.name.startsWith(".")) {
+                            try {
+                                val fileId = file.nameWithoutExtension.toInt()
+                                if(fileId !in toBeDeleted) {
+                                    zos.putFile(file)
+                                    addedFromDirCount += 1
+                                }else{
+                                    deletedInDirCount += 1
+                                }
+                            }catch (e: NumberFormatException) {
+                                log.error("Filename cast error.", e)
+                            }
                         }
                     }
                 }

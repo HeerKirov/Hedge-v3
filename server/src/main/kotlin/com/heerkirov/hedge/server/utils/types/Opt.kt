@@ -92,6 +92,20 @@ class Opt<T> {
         if(isPresent) value.call()
         return this
     }
+
+    /**
+     * 如果值存在且满足指定条件，就返回true，否则返回false。
+     */
+    inline fun isPresentAnd(condition: (T) -> Boolean): Boolean {
+        return isPresent && condition(value)
+    }
+
+    /**
+     * 如果值存在但不满足指定条件，就返回undefined，否则返回原值。
+     */
+    inline fun isPresentThen(condition: (T) -> Boolean): Opt<T> {
+        return if(isPresent && !condition(value)) undefined() else this
+    }
 }
 
 val undefinedRef = Opt<Any?>()

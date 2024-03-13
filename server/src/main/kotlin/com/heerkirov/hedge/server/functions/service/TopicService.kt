@@ -17,6 +17,7 @@ import com.heerkirov.hedge.server.events.MetaTagCreated
 import com.heerkirov.hedge.server.events.MetaTagDeleted
 import com.heerkirov.hedge.server.events.MetaTagUpdated
 import com.heerkirov.hedge.server.exceptions.*
+import com.heerkirov.hedge.server.model.Topic
 import com.heerkirov.hedge.server.utils.business.collectBulkResult
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
@@ -160,13 +161,15 @@ class TopicService(private val appdata: AppDataManager,
         data.db.transaction {
             val record = data.db.sequenceOf(Topics).firstOrNull { it.id eq id } ?: throw be(NotFound())
 
-            val newParentId = if(form.parentId.isPresent || form.type.isPresent) {
+            val newType = form.type.isPresentThen { it != record.type }.alsoOpt { type -> kit.checkChildrenType(id, type) }
+
+            val newParentId = if(form.parentId.isPresentAnd { it != record.parentId } || newType.isPresent) {
                 val parentId = form.parentId.unwrapOr { record.parentId }
-                if(parentId != null) optOf(kit.validateParent(parentId, form.type.unwrapOr { record.type }, id))
+                if(parentId != null) optOf(kit.validateParent(parentId, newType.unwrapOr { record.type }, id))
                 else optOf(Tuple2(null, null))
             }else undefined()
 
-            val newName = if(form.name.isPresent || newParentId.isPresent || form.type.isPresent) {
+            val newName = if(form.name.isPresentAnd { it != record.name } || newParentId.isPresent || newType.isPresent) {
                 //name/parentId/type变化时，需要重新校验名称重复
                 val name = form.name.unwrapOr { record.name }
                 val parentRootId = if(newParentId.isPresent) newParentId.unwrap { f2 } else record.parentRootId
@@ -175,16 +178,18 @@ class TopicService(private val appdata: AppDataManager,
                 //校验通过。只有在name确实变化时，才提交一个opt以更改值
                 if(form.name.isPresent) optOf(validatedName) else undefined()
             }else undefined()
-            val newOtherNames = form.otherNames.letOpt { kit.validateOtherNames(it) }
-            val newKeywords = form.keywords.letOpt { kit.validateKeywords(it) }
+            val newOtherNames = form.otherNames.isPresentThen { (it ?: emptyList()) != record.otherNames }.letOpt { kit.validateOtherNames(it) }
+            val newKeywords = form.keywords.isPresentThen { (it ?: emptyList()) != record.keywords }.letOpt { kit.validateKeywords(it) }
+            val newDescription = form.description.isPresentThen { it != record.description }
+            val newFavorite = form.favorite.isPresentThen { it != record.favorite }
+            val newScore = form.score.isPresentThen { it != record.score }
 
-            val newAnnotations = form.annotations.letOpt { kit.validateAnnotations(it, form.type.unwrapOr { record.type }) }
+            val newAnnotations = form.annotations.letOpt { kit.validateAnnotations(it, newType.unwrapOr { record.type }) }
+                .isPresentThen { kit.processAnnotations(id, it.asSequence().map(Topic.CachedAnnotation::id).toSet()) }
 
-            form.type.letOpt { type -> kit.checkChildrenType(id, type) }
+            val sourceTagMappingSot = form.mappingSourceTags.letOpt { sourceMappingManager.update(MetaType.TOPIC, id, it ?: emptyList()) }.unwrapOr { false }
 
-            form.mappingSourceTags.letOpt { sourceMappingManager.update(MetaType.TOPIC, id, it ?: emptyList()) }
-
-            if(anyOpt(newName, newOtherNames, newKeywords, newParentId, form.type, form.description, form.favorite, form.score, newAnnotations)) {
+            if(anyOpt(newName, newOtherNames, newKeywords, newParentId, newType, newDescription, newFavorite, newScore, newAnnotations)) {
                 data.db.update(Topics) {
                     where { it.id eq id }
                     newName.applyOpt { set(it.name, this) }
@@ -194,28 +199,24 @@ class TopicService(private val appdata: AppDataManager,
                         set(it.parentRootId, this.f2)
                     }
                     newKeywords.applyOpt { set(it.keywords, this) }
-                    form.type.applyOpt { set(it.type, this) }
-                    form.description.applyOpt { set(it.description, this) }
-                    form.favorite.applyOpt { set(it.favorite, this) }
-                    form.score.applyOpt { set(it.score, this) }
+                    newType.applyOpt { set(it.type, this) }
+                    newDescription.applyOpt { set(it.description, this) }
+                    newFavorite.applyOpt { set(it.favorite, this) }
+                    newScore.applyOpt { set(it.score, this) }
                     newAnnotations.applyOpt { set(it.cachedAnnotations, this) }
                 }
             }
 
-            newAnnotations.letOpt { annotations -> kit.processAnnotations(id, annotations.asSequence().map { it.id }.toSet()) }
-
-            if((newParentId.isPresent && newParentId.value.f1 != record.parentId) || (form.type.isPresent && form.type.value != record.type)) {
+            if(newParentId.isPresent || newType.isPresent) {
                 //当parent/type变化时，需要重新导出所有children的parentRootId
-                kit.exportChildren(id, form.type.unwrapOr { record.type }, form.parentId.unwrapOr { record.parentId })
+                kit.exportChildren(id, newType.unwrapOr { record.type }, newParentId.map { it.f1 }.unwrapOr { record.parentId })
             }
 
             val parentSot = newParentId.isPresent && newParentId.value.f1 != record.parentId
-            val annotationSot = newAnnotations.isPresent
-            val sourceTagMappingSot = form.mappingSourceTags.isPresent
-            val listUpdated = anyOpt(newName, newOtherNames, newKeywords, form.type, form.favorite, form.score)
-            val detailUpdated = listUpdated || parentSot || annotationSot || sourceTagMappingSot || form.description.isPresent
+            val listUpdated = anyOpt(newName, newOtherNames, newKeywords, newType, newFavorite, newScore)
+            val detailUpdated = listUpdated || parentSot || newAnnotations.isPresent || sourceTagMappingSot || newDescription.isPresent
             if(listUpdated || detailUpdated) {
-                bus.emit(MetaTagUpdated(id, MetaType.TOPIC, listUpdated = listUpdated, detailUpdated = true, annotationSot = annotationSot, sourceTagMappingSot = sourceTagMappingSot, parentSot = parentSot))
+                bus.emit(MetaTagUpdated(id, MetaType.TOPIC, listUpdated = listUpdated, detailUpdated = true, annotationSot = newAnnotations.isPresent, sourceTagMappingSot = sourceTagMappingSot, parentSot = parentSot))
             }
         }
     }

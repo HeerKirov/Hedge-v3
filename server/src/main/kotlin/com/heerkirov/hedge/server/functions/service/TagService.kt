@@ -213,10 +213,13 @@ class TagService(private val data: DataRepository,
         data.db.transaction {
             val record = data.db.sequenceOf(Tags).firstOrNull { it.id eq id } ?: throw be(NotFound())
 
-            val newName = form.name.letOpt { kit.validateName(it) }
-            val newOtherNames = form.otherNames.letOpt { kit.validateOtherNames(it) }
-            val newLinks = form.links.runOpt { kit.validateLinks(this) }
-            val newExamples = form.examples.runOpt { kit.validateExamples(this) }
+            val newName = form.name.isPresentThen { it != record.name }.letOpt { kit.validateName(it) }
+            val newOtherNames = form.otherNames.isPresentThen { (it ?: emptyList()) != record.otherNames }.letOpt { kit.validateOtherNames(it) }
+            val newLinks = form.links.isPresentThen { it?.ifEmpty { null } != record.links?.ifEmpty { null } }.runOpt { kit.validateLinks(this) }
+            val newExamples = form.examples.isPresentThen { it?.ifEmpty { null } != record.examples?.ifEmpty { null } }.runOpt { kit.validateExamples(this) }
+            val newDescription = form.description.isPresentThen { it != record.description }
+            val newType = form.type.isPresentThen { it != record.type }
+            val newGroup = form.group.isPresentThen { it != record.isGroup }
 
             val (newParentId, newOrdinal) = if(form.parentId.isPresent && form.parentId.value != record.parentId) {
                 //parentId发生了变化
@@ -310,10 +313,10 @@ class TagService(private val data: DataRepository,
                 }
             }
 
-            applyIf(form.type.isPresent || form.name.isPresent || form.parentId.isPresent) {
+            applyIf(newType.isPresent || newName.isPresent || newParentId.isPresent) {
                 //type/name/parentId的变化会触发重名检查
                 val name = newName.unwrapOr { record.name }
-                val type = form.type.unwrapOr { record.type }
+                val type = newType.unwrapOr { record.type }
                 val parentId = newParentId.unwrapOr { record.parentId }
                 //检查标签重名
                 //addr类型的标签在相同的parent下重名
@@ -330,9 +333,9 @@ class TagService(private val data: DataRepository,
                 }
             }
 
-            form.annotations.letOpt { newAnnotations -> kit.processAnnotations(id, newAnnotations) }
+            val annotationSot = form.annotations.isPresentAnd { newAnnotations -> kit.processAnnotations(id, newAnnotations) }
 
-            form.mappingSourceTags.letOpt { sourceMappingManager.update(MetaType.TAG, id, it ?: emptyList()) }
+            val sourceTagMappingSot = form.mappingSourceTags.letOpt { sourceMappingManager.update(MetaType.TAG, id, it ?: emptyList()) }.unwrapOr { false }
 
             newColor.letOpt { color ->
                 fun recursionUpdateColor(parentId: Int) {
@@ -345,15 +348,15 @@ class TagService(private val data: DataRepository,
                 recursionUpdateColor(id)
             }
 
-            if(anyOpt(newName, newOtherNames, form.type, form.description, form.group, newLinks, newExamples, newParentId, newOrdinal, newColor)) {
+            if(anyOpt(newName, newOtherNames, newDescription, newType, newGroup, newLinks, newExamples, newParentId, newOrdinal, newColor)) {
                 data.db.update(Tags) {
                     where { it.id eq id }
 
                     newName.applyOpt { set(it.name, this) }
                     newOtherNames.applyOpt { set(it.otherNames, this) }
-                    form.type.applyOpt { set(it.type, this) }
-                    form.description.applyOpt { set(it.description, this) }
-                    form.group.applyOpt { set(it.isGroup, this) }
+                    newType.applyOpt { set(it.type, this) }
+                    newDescription.applyOpt { set(it.description, this) }
+                    newGroup.applyOpt { set(it.isGroup, this) }
                     newLinks.applyOpt { set(it.links, this) }
                     newExamples.applyOpt { set(it.examples, this) }
                     newParentId.applyOpt { set(it.parentId, this) }
@@ -363,10 +366,8 @@ class TagService(private val data: DataRepository,
             }
 
             val parentSot = anyOpt(newParentId, newOrdinal)
-            val annotationSot = form.annotations.isPresent
-            val sourceTagMappingSot = form.mappingSourceTags.isPresent
-            val listUpdated = anyOpt(newName, newColor, form.type, form.group)
-            val detailUpdated = listUpdated || parentSot || annotationSot || sourceTagMappingSot || anyOpt(newOtherNames, form.description, newLinks, newExamples)
+            val listUpdated = anyOpt(newName, newColor, newType, newGroup)
+            val detailUpdated = listUpdated || parentSot || annotationSot || sourceTagMappingSot || anyOpt(newOtherNames, newDescription, newLinks, newExamples)
             if(listUpdated || detailUpdated) {
                 bus.emit(MetaTagUpdated(id, MetaType.TAG, listUpdated = listUpdated, detailUpdated = true, annotationSot = annotationSot, parentSot = parentSot, sourceTagMappingSot = sourceTagMappingSot))
             }

@@ -213,10 +213,10 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
             }
         }
 
-        //tag的临界阈值是30%，而author/topic的是10%
+        //tag的临界阈值是30%，而author/topic的是5%
         val tagIds = copyOneMeta(IllustTagRelations, BookTagRelations, 0.3)
-        val authorIds = copyOneMeta(IllustAuthorRelations, BookAuthorRelations, 0.1)
-        val topicIds = copyOneMeta(IllustTopicRelations, BookTopicRelations, 0.1)
+        val authorIds = copyOneMeta(IllustAuthorRelations, BookAuthorRelations, 0.05)
+        val topicIds = copyOneMeta(IllustTopicRelations, BookTopicRelations, 0.05)
 
         copyAnnotationOfMeta(tagIds, authorIds, topicIds)
     }

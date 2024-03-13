@@ -73,7 +73,7 @@ class PickerUtilService(private val appdata: AppDataManager, private val data: D
 
     fun pushUsedHistory(form: HistoryPushForm) {
         val channel = form.type.uppercase()
-        if(channel !in channels) be(ParamError("type"))
+        if(channel !in channels) throw be(ParamError("type"))
 
         data.db.transaction {
             historyRecordManager.push(HistoryRecord.HistoryType.PICKER, channel, form.id.toString())

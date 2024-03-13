@@ -89,7 +89,7 @@ class TagKit(private val data: DataRepository, private val annotationManager: An
      * @throws ResourceNotExist ("annotations", number[]) 有annotation不存在时，抛出此异常。给出不存在的annotation id列表
      * @throws ResourceNotSuitable ("annotations", number[]) 指定target类型且有元素不满足此类型时，抛出此异常。给出不适用的annotation id列表
      */
-    fun processAnnotations(thisId: Int, newAnnotations: List<Any>?, creating: Boolean = false) {
+    fun processAnnotations(thisId: Int, newAnnotations: List<Any>?, creating: Boolean = false): Boolean {
         val annotationIds = if(newAnnotations != null) annotationManager.analyseAnnotationParam(newAnnotations, Annotation.AnnotationTarget.TAG) else emptyMap()
         val oldAnnotationIds = if(creating) emptySet() else {
             data.db.from(TagAnnotationRelations).select(TagAnnotationRelations.annotationId)
@@ -111,6 +111,8 @@ class TagKit(private val data: DataRepository, private val annotationManager: An
                 }
             }
         }
+
+        return deleteIds.isNotEmpty() || addIds.isNotEmpty()
     }
 
     /**

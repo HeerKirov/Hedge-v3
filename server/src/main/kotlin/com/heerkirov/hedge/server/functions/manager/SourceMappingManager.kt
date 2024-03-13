@@ -113,7 +113,7 @@ class SourceMappingManager(private val appdata: AppDataManager, private val data
      * @throws ResourceNotExist ("site", string) 给出的site不存在
      * @throws ResourceNotExist ("sourceTagType", string[]) 列出的tagType不存在
      */
-    fun update(metaType: MetaType, metaId: Int, mappings: List<MappingSourceTagForm>) {
+    fun update(metaType: MetaType, metaId: Int, mappings: List<MappingSourceTagForm>): Boolean {
         //查询meta tag确定存在
         if(!when (metaType) {
             MetaType.TAG -> data.db.sequenceOf(Tags).any { it.id eq metaId }
@@ -152,12 +152,15 @@ class SourceMappingManager(private val appdata: AppDataManager, private val data
         val deleted = old.keys - current
         if(deleted.isNotEmpty()) data.db.delete(SourceTagMappings) { it.id inList deleted.map { i -> old[i]!! } }
 
-        if(added.isNotEmpty() || deleted.isNotEmpty()) {
+        return if(added.isNotEmpty() || deleted.isNotEmpty()) {
             val effectedSourceTagIds = added.map { (_, sourceTagId) -> sourceTagId } + deleted.map { (_, sourceTagId) -> sourceTagId }
             val effectedSourceTags = data.db.sequenceOf(SourceTags).filter { it.id inList effectedSourceTagIds }
             for (effectedSourceTag in effectedSourceTags) {
                 bus.emit(SourceTagMappingUpdated(effectedSourceTag.site, effectedSourceTag.type, effectedSourceTag.code))
             }
+            true
+        }else{
+            false
         }
     }
 

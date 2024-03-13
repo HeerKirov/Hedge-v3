@@ -100,7 +100,7 @@ fun runApplication(options: ApplicationOptions) {
             val metaUtilService = MetaUtilService(appdata, repo, metaUtilKit, metaManager, historyRecordManager)
             val pickerUtilService = PickerUtilService(appdata, repo, historyRecordManager)
             val illustUtilService = IllustUtilService(appdata, repo)
-            val exportUtilService = ExportUtilService(appdata, repo, file)
+            val exportUtilService = ExportUtilService(repo, file)
             val fileUtilService = FileUtilService(repo, file, bus)
 
             val noteService = NoteService(repo, bus)

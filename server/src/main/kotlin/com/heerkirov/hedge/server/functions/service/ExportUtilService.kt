@@ -1,6 +1,5 @@
 package com.heerkirov.hedge.server.functions.service
 
-import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.BookImageRelations
@@ -25,7 +24,7 @@ import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
 import kotlin.io.path.copyTo
 
-class ExportUtilService(private val appdata: AppDataManager, private val data: DataRepository, private val archive: FileManager) {
+class ExportUtilService(private val data: DataRepository, private val archive: FileManager) {
     /**
      * 根据给出的illusts列表，扩展为完整的images列表，并附带file信息。
      */
@@ -35,7 +34,7 @@ class ExportUtilService(private val appdata: AppDataManager, private val data: D
         val rows = data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
             .select(Illusts.id, Illusts.type, Illusts.parentId, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
-            .where { ((Illusts.type eq IllustModelType.IMAGE) and (Illusts.id inList illustIds)) or ((Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) and (Illusts.parentId inList illustIds)) }
+            .where { (((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.id inList illustIds)) or ((Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) and (Illusts.parentId inList illustIds)) }
             .map {
                 val filePath = filePathFrom(it)
                 Row(it[Illusts.id]!!, it[Illusts.parentId] ?: -1, filePath)

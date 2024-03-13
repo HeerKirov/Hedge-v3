@@ -208,7 +208,7 @@ class TopicKit(private val data: DataRepository, private val annotationManager: 
     /**
      * 将annotations的全量表和旧值解析为adds和deletes，并执行增删。
      */
-    fun processAnnotations(thisId: Int, annotationIds: Set<Int>, creating: Boolean = false) {
+    fun processAnnotations(thisId: Int, annotationIds: Set<Int>, creating: Boolean = false): Boolean {
         val oldAnnotationIds = if(creating) emptySet() else {
             data.db.from(TopicAnnotationRelations).select(TopicAnnotationRelations.annotationId)
                 .where { TopicAnnotationRelations.topicId eq thisId }
@@ -229,6 +229,8 @@ class TopicKit(private val data: DataRepository, private val annotationManager: 
                 }
             }
         }
+
+        return deleteIds.isNotEmpty() || addIds.isNotEmpty()
     }
 
     /**

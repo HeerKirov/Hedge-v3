@@ -22,6 +22,7 @@ import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.AuthorKit
 import com.heerkirov.hedge.server.functions.manager.SourceMappingManager
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
+import com.heerkirov.hedge.server.model.Author
 import com.heerkirov.hedge.server.utils.business.collectBulkResult
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
@@ -149,36 +150,37 @@ class AuthorService(private val appdata: AppDataManager,
         data.db.transaction {
             val record = data.db.sequenceOf(Authors).firstOrNull { it.id eq id } ?: throw be(NotFound())
 
-            val newName = form.name.letOpt { kit.validateName(it, id) }
-            val newOtherNames = form.otherNames.letOpt { kit.validateOtherNames(it) }
-            val newKeywords = form.keywords.letOpt { kit.validateKeywords(it) }
+            val newType = form.type.isPresentThen { it != record.type }
+            val newName = form.name.isPresentThen { it != record.name }.letOpt { kit.validateName(it, id) }
+            val newOtherNames = form.otherNames.isPresentThen { (it ?: emptyList()) != record.otherNames }.letOpt { kit.validateOtherNames(it) }
+            val newKeywords = form.keywords.isPresentThen { (it ?: emptyList()) != record.keywords }.letOpt { kit.validateKeywords(it) }
+            val newDescription = form.description.isPresentThen { it != record.description }
+            val newFavorite = form.favorite.isPresentThen { it != record.favorite }
+            val newScore = form.score.isPresentThen { it != record.score }
 
-            val newAnnotations = form.annotations.letOpt { kit.validateAnnotations(it, form.type.unwrapOr { record.type }) }
+            val newAnnotations = form.annotations.letOpt { kit.validateAnnotations(it, newType.unwrapOr { record.type }) }
+                .isPresentThen { kit.processAnnotations(id, it.asSequence().map(Author.CachedAnnotation::id).toSet()) }
 
-            form.mappingSourceTags.letOpt { sourceMappingManager.update(MetaType.AUTHOR, id, it ?: emptyList()) }
+            val sourceTagMappingSot = form.mappingSourceTags.letOpt { sourceMappingManager.update(MetaType.AUTHOR, id, it ?: emptyList()) }.unwrapOr { false }
 
-            if(anyOpt(newName, newOtherNames, newKeywords, form.type, form.description, form.favorite, form.score, newAnnotations)) {
+            if(anyOpt(newName, newOtherNames, newKeywords, newType, newDescription, newFavorite, newScore, newAnnotations)) {
                 data.db.update(Authors) {
                     where { it.id eq id }
                     newName.applyOpt { set(it.name, this) }
                     newOtherNames.applyOpt { set(it.otherNames, this) }
                     newKeywords.applyOpt { set(it.keywords, this) }
-                    form.type.applyOpt { set(it.type, this) }
-                    form.description.applyOpt { set(it.description, this) }
-                    form.favorite.applyOpt { set(it.favorite, this) }
-                    form.score.applyOpt { set(it.score, this) }
+                    newType.applyOpt { set(it.type, this) }
+                    newDescription.applyOpt { set(it.description, this) }
+                    newFavorite.applyOpt { set(it.favorite, this) }
+                    newScore.applyOpt { set(it.score, this) }
                     newAnnotations.applyOpt { set(it.cachedAnnotations, this) }
                 }
             }
 
-            newAnnotations.letOpt { annotations -> kit.processAnnotations(id, annotations.asSequence().map { it.id }.toSet()) }
-
-            val annotationSot = newAnnotations.isPresent
-            val sourceTagMappingSot = form.mappingSourceTags.isPresent
-            val listUpdated = anyOpt(newName, newOtherNames, newKeywords, form.type, form.favorite, form.score)
-            val detailUpdated = listUpdated || annotationSot || sourceTagMappingSot || form.description.isPresent
+            val listUpdated = anyOpt(newName, newOtherNames, newKeywords, newType, newFavorite, newScore)
+            val detailUpdated = listUpdated || newAnnotations.isPresent || sourceTagMappingSot || newDescription.isPresent
             if(listUpdated || detailUpdated) {
-                bus.emit(MetaTagUpdated(id, MetaType.AUTHOR, listUpdated = listUpdated, detailUpdated = true, annotationSot = annotationSot, sourceTagMappingSot = sourceTagMappingSot, parentSot = false))
+                bus.emit(MetaTagUpdated(id, MetaType.AUTHOR, listUpdated = listUpdated, detailUpdated = true, annotationSot = newAnnotations.isPresent, sourceTagMappingSot = sourceTagMappingSot, parentSot = false))
             }
         }
     }

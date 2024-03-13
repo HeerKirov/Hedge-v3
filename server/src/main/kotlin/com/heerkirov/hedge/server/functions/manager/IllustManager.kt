@@ -383,7 +383,8 @@ class IllustManager(private val appdata: AppDataManager,
         }
 
         //meta tag
-        if(anyOpt(form.tags, form.topics, form.authors, form.mappingSourceTags)) {
+        val metaTagSots = mutableListOf<Tuple4<Illust, Boolean, Boolean, Boolean>>()
+        val metaTagAllSot = if(anyOpt(form.tags, form.topics, form.authors, form.mappingSourceTags)) {
             val mappings = form.mappingSourceTags.unwrapOrNull()?.let { sourceMappingManager.batchQuery(it) }?.associateBy { SourceTagPath(it.site, it.type, it.code) }
 
             //由于meta tag的更新实在复杂，不必在这里搞batch优化了，就挨个处理就好了
@@ -411,6 +412,13 @@ class IllustManager(private val appdata: AppDataManager,
                     IllustBatchUpdateForm.TagUpdateMode.APPEND -> kit.appendMeta(illust.id, appendTags = tags.unwrapOr { emptyList() }, appendAuthors = authors.unwrapOr { emptyList() }, appendTopics = topics.unwrapOr { emptyList() }, isCollection = false)
                     IllustBatchUpdateForm.TagUpdateMode.REMOVE -> kit.removeMeta(illust.id, removeTags = tags.unwrapOr { emptyList() }, removeAuthors = authors.unwrapOr { emptyList() }, removeTopics = topics.unwrapOr { emptyList() }, copyFromParent = illust.parentId)
                 }
+
+                metaTagSots.add(if (form.tagUpdateMode == IllustBatchUpdateForm.TagUpdateMode.OVERRIDE) {
+                    Tuple4(illust, tags.isPresent, topics.isPresent, authors.isPresent)
+                }else{
+                    Tuple4(illust, tags.isPresentAnd { it.isNotEmpty() }, topics.isPresentAnd { it.isNotEmpty() }, authors.isPresentAnd { it.isNotEmpty() })
+                })
+
             }
             for (illust in collections) {
                 when (form.tagUpdateMode) {
@@ -419,7 +427,9 @@ class IllustManager(private val appdata: AppDataManager,
                     IllustBatchUpdateForm.TagUpdateMode.REMOVE -> kit.removeMeta(illust.id, removeTags = form.tags.unwrapOr { emptyList() }, removeAuthors = form.authors.unwrapOr { emptyList() }, removeTopics = form.topics.unwrapOr { emptyList() }, copyFromChildren = true)
                 }
             }
-        }
+            //mappings为null的情况下，metaTag的编辑一定对全部项有效，因此开启metaTagAllSot操作
+            mappings == null
+        }else false
 
         //tagme
         if(form.tagme.isPresent) {
@@ -427,15 +437,38 @@ class IllustManager(private val appdata: AppDataManager,
                 where { it.id inList form.target }
                 set(it.tagme, form.tagme.value)
             }
-        }else if(appdata.setting.meta.autoCleanTagme && anyOpt(form.tags, form.authors, form.topics)) {
-            data.db.batchUpdate(Illusts) {
-                for (record in records) {
-                    item {
-                        where { it.id eq record.id }
-                        set(it.tagme, record.tagme
-                            .runIf(form.tags.isPresent && form.tags.value.isNotEmpty()) { this - Illust.Tagme.TAG }
-                            .runIf(form.authors.isPresent && form.authors.value.isNotEmpty()) { this - Illust.Tagme.AUTHOR }
-                            .runIf(form.topics.isPresent && form.topics.value.isNotEmpty()) { this - Illust.Tagme.TOPIC })
+        }else if(appdata.setting.meta.autoCleanTagme && anyOpt(form.tags, form.topics, form.authors, form.mappingSourceTags)) {
+            if(metaTagAllSot) {
+                data.db.batchUpdate(Illusts) {
+                    for (record in records) {
+                        item {
+                            where { it.id eq record.id }
+                            set(it.tagme, record.tagme
+                                .runIf(form.tags.isPresentAnd(List<*>::isNotEmpty)) { this - Illust.Tagme.TAG }
+                                .runIf(form.authors.isPresentAnd(List<*>::isNotEmpty)) { this - Illust.Tagme.AUTHOR }
+                                .runIf(form.topics.isPresentAnd(List<*>::isNotEmpty)) { this - Illust.Tagme.TOPIC })
+                        }
+                    }
+                }
+            }else{
+                data.db.batchUpdate(Illusts) {
+                    for ((record, tagSot, topicSot, authorSot) in metaTagSots) {
+                        item {
+                            where { it.id eq record.id }
+                            set(it.tagme, record.tagme
+                                .runIf(tagSot) { this - Illust.Tagme.TAG }
+                                .runIf(authorSot) { this - Illust.Tagme.AUTHOR }
+                                .runIf(topicSot) { this - Illust.Tagme.TOPIC })
+                        }
+                    }
+                    for (record in collections) {
+                        item {
+                            where { it.id eq record.id }
+                            set(it.tagme, record.tagme
+                                .runIf(form.tags.isPresentAnd(List<*>::isNotEmpty)) { this - Illust.Tagme.TAG }
+                                .runIf(form.authors.isPresentAnd(List<*>::isNotEmpty)) { this - Illust.Tagme.AUTHOR }
+                                .runIf(form.topics.isPresentAnd(List<*>::isNotEmpty)) { this - Illust.Tagme.TOPIC })
+                        }
                     }
                 }
             }
@@ -705,7 +738,35 @@ class IllustManager(private val appdata: AppDataManager,
         val timeSot = anyOpt(form.partitionTime, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
         val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
         val detailUpdated = listUpdated || metaTagSot || anyOpt(form.description, form.partitionTime)
-        if(listUpdated || detailUpdated) {
+        if((metaTagSot || form.mappingSourceTags.isPresent) && !metaTagAllSot) {
+            for ((record, tagSot, topicSot, authorSot) in metaTagSots) {
+                val thisMetaTagSot = tagSot || topicSot || authorSot
+                val thisDetailUpdated = listUpdated || thisMetaTagSot || anyOpt(form.description, form.partitionTime)
+                if(listUpdated || thisDetailUpdated) {
+                    bus.emit(IllustUpdated(record.id, record.type.toIllustType(),
+                        listUpdated = listUpdated,
+                        detailUpdated = true,
+                        metaTagSot = thisMetaTagSot,
+                        scoreSot = form.score.isPresent,
+                        descriptionSot = form.description.isPresent,
+                        favoriteSot = form.favorite.isPresent,
+                        timeSot = timeSot))
+                }
+            }
+            if(listUpdated || detailUpdated) {
+                for (record in collections) {
+                    bus.emit(IllustUpdated(record.id, record.type.toIllustType(),
+                        listUpdated = listUpdated,
+                        detailUpdated = true,
+                        metaTagSot = metaTagSot,
+                        scoreSot = form.score.isPresent,
+                        descriptionSot = form.description.isPresent,
+                        favoriteSot = form.favorite.isPresent,
+                        timeSot = timeSot))
+                }
+            }
+        }else{
+            if(listUpdated || detailUpdated) {
                 for (record in records) {
                     //tips: 此处使用了偷懒的手法。并没有对受partition/orderTime变更影响的children进行处理
                     bus.emit(IllustUpdated(record.id, record.type.toIllustType(),
@@ -718,6 +779,7 @@ class IllustManager(private val appdata: AppDataManager,
                         timeSot = timeSot))
                 }
             }
+        }
     }
 
     /**
