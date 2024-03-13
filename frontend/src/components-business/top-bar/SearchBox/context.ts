@@ -42,7 +42,7 @@ export function useForecast(inputRef: Ref<ComponentPublicInstance | undefined>, 
             const newValue = input.value.substring(0, forecast.value.beginIndex) + replaced + input.value.substring(forecast.value.endIndex)
             input.value = newValue
             textValue.value = newValue
-            input.selectionStart = input.selectionEnd = forecast.value.beginIndex + item.name.length
+            input.selectionStart = input.selectionEnd = forecast.value.beginIndex + replaced.length
             forecast.value = null
         }
     }

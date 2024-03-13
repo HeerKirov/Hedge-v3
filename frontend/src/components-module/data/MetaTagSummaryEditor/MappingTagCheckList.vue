@@ -86,14 +86,14 @@ const updateMappings = (sourceTagType: string, sourceTagCode: string, mappings: 
     <div class="p-4 is-overflow-y-auto h-100">
         <table>
             <tbody>
-                <MappingTagCheckListItem v-for="item in mappings" :key="`${item.type}/${item.code}`"
+                <MappingTagCheckListItem v-for="item in mappings" :key="`${item.site}/${item.type}/${item.code}`"
                                          :author-filter="authorFilter"
                                          :topic-filter="topicFilter"
                                          :tag-filter="tagFilter"
                                          :mappings="item.mappings"
                                          :source-tag="item.sourceTag"
-                                         :selected="selected[`${item.type}/${item.code}`] ?? true"
-                                         @update:selected="selected[`${item.type}/${item.code}`] = $event"
+                                         :selected="selected[`${item.site}/${item.type}/${item.code}`] ?? true"
+                                         @update:selected="selected[`${item.site}/${item.type}/${item.code}`] = $event"
                                          @update:mappings="updateMappings(item.type, item.code, $event)"
                                          @dblclick:one="addOne"/>
             </tbody>

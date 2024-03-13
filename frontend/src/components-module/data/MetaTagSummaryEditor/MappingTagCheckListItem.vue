@@ -104,7 +104,7 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues, enabled:
 <template>
     <tr>
         <td>
-            <CheckBox :disabled="mappings.length <= 0" :value="selected" @update:value="$emit('update:selected', $event)"/>
+            <CheckBox :disabled="mappings.length <= 0" :value="mappings.length > 0 && selected" @update:value="$emit('update:selected', $event)"/>
         </td>
         <td @contextmenu="sourceTagMenu.popup()">
             <SourceTagElement :value="sourceTag"/>
