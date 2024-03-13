@@ -90,7 +90,7 @@ function installFrontend(target) {
 
 function buildServer() {
     console.log("build server...")
-    child.spawnSync("./gradlew", ["clean", "jlinkZip"], {cwd: "../server", stdio: "ignore"})
+    child.spawnSync("./gradlew", ["clean", "jlink", "zip"], {cwd: "../server", stdio: "ignore"})
 }
 
 function installServer(target) {

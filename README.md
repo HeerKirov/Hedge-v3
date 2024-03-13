@@ -16,7 +16,7 @@ Supported platform: Linux, macOS
 
 ### Client
 
-* `Node >= 18.11.10`
+* `Node >= 20.11.19`
 * `Electron`
 * `Typescript`
 
@@ -52,7 +52,7 @@ yarn dev
 
 ### Frontend
 
-* `Node >= 16.11.56`
+* `Node >= 20.11.19`
 * `Vite`
 * `Vue 3.x`
 * `Typescript`
@@ -76,8 +76,8 @@ yarn build
 
 ### Server
 
-* `Gradle >= 7.5`
-* `Java >= 17`
+* `Gradle >= 8.6`
+* `Java >= 21`
 * `Kotlin`
 * `Javalin`
 * `Ktorm`
