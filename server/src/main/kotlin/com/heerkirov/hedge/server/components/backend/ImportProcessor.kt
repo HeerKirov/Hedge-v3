@@ -207,7 +207,7 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                             }
 
                             //根据typeReflector反推每种tagType对应的sourceTagType，然后统计sourceTag数量。(这么做是因为映射可能是不全面的，因此需要取原始标签数量，才能确认是不是混合集)
-                            //当计数器监测到IP/COPYRIGHT数量>=2，或CHARACTER数量>=5，或AUTHOR数量>=2时，会将其认定为混合集。此时，使TOPIC或AUTHOR类型的标签全部不输出。
+                            //当计数器监测到IP/COPYRIGHT数量>=2，或CHARACTER数量>=5，或AUTHOR数量>=3时，会将其认定为混合集。此时，使TOPIC或AUTHOR类型的标签全部不输出。
                             val authors: List<Int>?
                             val topics: List<Int>?
                             if(typeReflector != null && setting.import.notReflectForMixedSet) {
@@ -215,7 +215,7 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                                     .filter { (_, v) -> v.second is TagAuthorType || v.second is TagTopicType }
                                     .groupBy({ (_, v) -> v.second }) { (k, _) -> k }
                                     .mapValues { (_, sourceTagTypes) -> sourceTags.count { it.sourceTagType in sourceTagTypes } }
-                                authors = if(counts.filterKeys { it is TagAuthorType }.values.any { it >= 2 }) null else resultAuthors.toList()
+                                authors = if(counts.filterKeys { it is TagAuthorType }.values.any { it >= 3 }) null else resultAuthors.toList()
                                 topics = if(counts.getOrDefault(TagTopicType.CHARACTER, 0) >= 5 || counts.filterKeys { it is TagTopicType && it != TagTopicType.CHARACTER }.values.any { it >= 2 }) null else resultTopics.toList()
                             }else{
                                 authors = resultAuthors.toList()

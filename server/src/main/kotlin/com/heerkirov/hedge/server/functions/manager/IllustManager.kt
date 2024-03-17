@@ -17,7 +17,6 @@ import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
 import com.heerkirov.hedge.server.utils.filterInto
-import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.mostCount
@@ -162,6 +161,7 @@ class IllustManager(private val appdata: AppDataManager,
         kit.refreshAllMeta(id, copyFromChildren = true)
 
         bus.emit(IllustCreated(id, IllustType.COLLECTION))
+        images.forEach { bus.emit(IllustRelatedItemsUpdated(it.id, IllustType.IMAGE, collectionSot = true)) }
 
         return id
     }
@@ -187,8 +187,9 @@ class IllustManager(private val appdata: AppDataManager,
 
         kit.refreshAllMeta(collectionId, copyFromChildren = true)
 
-        val added = images.map { it.id } - oldImageIds
-        val deleted = (oldImageIds - images.map { it.id }.toSet()).toList()
+        val imageIds = images.map { it.id }.toSet()
+        val added = (imageIds - oldImageIds).toList()
+        val deleted = (oldImageIds - imageIds).toList()
         bus.emit(IllustImagesChanged(collectionId, added, deleted))
         added.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }
         deleted.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }
@@ -964,10 +965,11 @@ class IllustManager(private val appdata: AppDataManager,
      * @return oldImageIds
      */
     private fun updateSubImages(collectionId: Int, images: List<Illust>, specifyPartitionTime: LocalDate?): Set<Int> {
-        val imageIds = images.asSequence().map { it.id }.toSet()
+        val imageIds = images.map { it.id }.toSet()
         val oldImageIds = data.db.from(Illusts).select(Illusts.id)
             .where { Illusts.parentId eq collectionId }
-            .asSequence().map { it[Illusts.id]!! }.toSet()
+            .map { it[Illusts.id]!! }
+            .toSet()
 
         //处理移出项，修改它们的type/parentId，并视情况执行重新导出
         val deleteIds = oldImageIds - imageIds
@@ -1015,10 +1017,6 @@ class IllustManager(private val appdata: AppDataManager,
                 processCollectionChildrenChanged(parentId, -images.size, now)
                 bus.emit(IllustImagesChanged(parentId, emptyList(), images.map { it.id }))
             }
-
-        //这些image的collection发生变化，发送事件
-        addIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }
-        deleteIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }
 
         return oldImageIds
     }

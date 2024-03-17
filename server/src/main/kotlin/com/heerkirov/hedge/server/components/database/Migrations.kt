@@ -24,6 +24,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         register.useSQL("0.4.0")
         register.useSQL("0.5.0")
         register.useSQL("0.7.0")
+        register.useSQL("0.7.2")
     }
 
     /**
