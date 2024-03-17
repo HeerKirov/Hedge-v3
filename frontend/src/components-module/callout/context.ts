@@ -1,7 +1,6 @@
 import { Ref, ref } from "vue"
 import { Rect, Position } from "@/components/interaction"
 import { installation } from "@/utils/reactivity"
-import { sleep } from "@/utils/process"
 import { MetaTagProps } from "./MetaTagCallout/context"
 
 export const SERVICE_CONF: Record<ServiceContext["callout"] | "default", ServiceConf> = {
@@ -24,22 +23,30 @@ interface InternalCalloutService extends CalloutService {
 export const [installInternalService, useInternalService] = installation(function (): InternalCalloutService {
     const context = ref<ServiceContext | null>(null)
 
-    let awaitOpen = false
+    let lastTime: number = 0
+    let oneClickTimer: NodeJS.Timeout | null = null
 
-    const show = async (newCtx: ServiceContext) => {
-        //tips: 点击按钮时，由于事件传导顺序，close会被open先触发，因此使open延迟生效
-        //使用一个标记，在标记生效期间告知close事件，接下来有新的open，因此不必close。这样可以抹消点击后的闪烁
-        awaitOpen = true
-        await sleep(1)
-        awaitOpen = false
-        context.value = newCtx
-    }
-
-    const close = () => {
-        if(!awaitOpen) {
-            context.value = null
+    const show = (newCtx: ServiceContext) => {
+        if(oneClickTimer !== null) {
+            clearTimeout(oneClickTimer)
+            oneClickTimer = null
+        }else{
+            const now = Date.now()
+            //这里的时间是要加上第一次缓冲的时间，因为lastTime是从首次点击开始计算的
+            if(now - lastTime < 250) {
+                context.value = null
+                lastTime = Date.now()
+            }else{
+                lastTime = Date.now()
+                oneClickTimer = setTimeout(() => {
+                    oneClickTimer = null
+                    context.value = newCtx
+                }, 150)
+            }
         }
     }
+
+    const close = () => { context.value = null }
 
     return {context, show, close}
 })
