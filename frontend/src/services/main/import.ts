@@ -1,6 +1,8 @@
 import { Ref, computed, ref } from "vue"
 import { flatResponse } from "@/functions/http-client"
 import { ImportRecord, ImportQueryFilter } from "@/functions/http-client/api/import"
+import { OrderTimeType } from "@/functions/http-client/api/setting"
+import { SourceDataPath } from "@/functions/http-client/api/all"
 import { QueryListview, useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper } from "@/functions/fetch"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
@@ -8,14 +10,12 @@ import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { ImportImageViewController, useImportImageViewController } from "@/services/base/view-controller"
 import { useSettingImport, useSettingSite } from "@/services/setting"
 import { installEmbedPreviewService, usePreviewService } from "@/components-module/preview"
-import { useDocumentTitle, useTabRoute } from "@/modules/browser"
+import { useBrowserTabs, useDocumentTitle, useTabRoute } from "@/modules/browser"
 import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
 import { useDroppingFileListener } from "@/modules/drag"
 import { dialogManager } from "@/modules/dialog"
 import { installation } from "@/utils/reactivity"
-import { OrderTimeType } from "@/functions/http-client/api/setting";
-import { SourceDataPath } from "@/functions/http-client/api/all";
 
 export const [installImportContext, useImportContext] = installation(function () {
     const importService = useImportService()
@@ -108,6 +108,8 @@ function useListView() {
 function useOperators(listview: QueryListview<ImportRecord, number>, queryFilter: Ref<ImportQueryFilter>, selector: SelectedState<number>, listviewController: ImportImageViewController, addFiles: (f: string[]) => void) {
     const toast = useToast()
     const message = useMessageBox()
+    const router = useTabRoute()
+    const browserTabs = useBrowserTabs()
     const preview = installEmbedPreviewService()
     const batchFetch = useFetchHelper(client => client.import.batch)
 
@@ -118,6 +120,14 @@ function useOperators(listview: QueryListview<ImportRecord, number>, queryFilter
 
     const getEffectedItems = (id: number): number[] => {
         return selector.selected.value.includes(id) ? selector.selected.value : [id]
+    }
+
+    const openImageInPartition = async (importRecord: ImportRecord, at?: "NEW_TAB" | "NEW_WINDOW") => {
+        if(importRecord.illust !== null) {
+            if(at === "NEW_TAB") browserTabs.newTab({routeName: "PartitionDetail", path: importRecord.illust.partitionTime, initializer: {locateId: importRecord.illust.id}})
+            else if(at === "NEW_WINDOW") browserTabs.newWindow({routeName: "PartitionDetail", path: importRecord.illust.partitionTime, initializer: {locateId: importRecord.illust.id}})
+            else router.routePush({routeName: "PartitionDetail", path: importRecord.illust.partitionTime, initializer: {locateId: importRecord.illust.id}})
+        }
     }
 
     const deleteItem = async (id: number) => {
@@ -189,7 +199,7 @@ function useOperators(listview: QueryListview<ImportRecord, number>, queryFilter
         }
     }
 
-    return {historyMode, openDialog, deleteItem, openImagePreview, analyseSource, analyseTime, retry, clear}
+    return {historyMode, openDialog, deleteItem, openImageInPartition, openImagePreview, analyseSource, analyseTime, retry, clear}
 }
 
 export function useImportDetailPane() {

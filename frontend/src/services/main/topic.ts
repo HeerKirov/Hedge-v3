@@ -167,7 +167,7 @@ export function useTopicCreatePanel() {
             }
         },
         afterCreate(result) {
-            router.routePush({routeName: "TopicDetail", path: result.id})
+            router.routeReplace({routeName: "TopicDetail", path: result.id})
         }
     })
 

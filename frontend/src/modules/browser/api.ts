@@ -268,7 +268,7 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
     function routeReplace(route: NewRoute) {
         const routeDef = getRouteDefinition(route.routeName)
         view.value.current = {
-            historyId: view.value.current.historyId,
+            historyId: nextHistoryId(),
             title: routeDef.defaultTitle ?? null,
             route: {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}},
             storage: {}

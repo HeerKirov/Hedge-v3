@@ -20,7 +20,7 @@ const {
     listview: { listview, paginationData },
     listviewController: { viewMode, fitType, columnNum },
     selector: { selected, lastSelected, update: updateSelect },
-    operators: { historyMode, openDialog, deleteItem, openImagePreview, analyseSource, analyseTime, retry, clear }
+    operators: { historyMode, openDialog, deleteItem, openImagePreview, openImageInPartition, analyseSource, analyseTime, retry, clear }
 } = installImportContext()
 
 const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
@@ -38,6 +38,8 @@ const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
 const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
     {type: "normal", label: "预览", click: openImagePreview},
     {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "separator"},
+    {type: "normal", label: "在时间分区显示", enabled: importRecord.illust !== null, click: openImageInPartition},
     {type: "separator"},
     {type: "submenu", label: "重新生成时间", enabled: importRecord.illust !== null && importRecord.status === "COMPLETED", submenu: [
         {type: "normal", label: "根据默认时间", click: analyseTime},

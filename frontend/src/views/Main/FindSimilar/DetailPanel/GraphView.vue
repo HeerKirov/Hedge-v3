@@ -3,7 +3,7 @@ import { FindSimilarResultDetailImage } from "@/functions/http-client/api/find-s
 import { useFindSimilarDetailPanel, useGraphView } from "@/services/main/find-similar"
 import { useDynamicPopupMenu } from "@/modules/popup-menu"
 
-const { operators: { allBooks, allCollections, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, openImageInPartition } } = useFindSimilarDetailPanel()
+const { operators: { allBooks, allCollections, modifyFavorite, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, openImageInPartition } } = useFindSimilarDetailPanel()
 
 const { chartDom } = useGraphView({
     menu: useDynamicPopupMenu<FindSimilarResultDetailImage>(illust => [
@@ -13,7 +13,7 @@ const { chartDom } = useGraphView({
         {type: "normal", label: "在时间分区显示", click: i => openImageInPartition(i.id, i.partitionTime)},
         {type: "normal", label: "在新标签页的时间分区显示", click: i => openImageInPartition(i.id, i.partitionTime, "NEW_TAB")},
         {type: "separator"},
-        {type: "checkbox", label: "标记为收藏", checked: illust.favorite},
+        {type: "checkbox", label: "标记为收藏", checked: illust.favorite, click: i => modifyFavorite(i, !i.favorite)},
         {type: "separator"},
         {type: "submenu", label: "加入集合", submenu: [
             ...allCollections.value.map(id => ({type: "normal", label: `集合:${id}`, click: () => addToCollection(id, illust.id) } as const)),

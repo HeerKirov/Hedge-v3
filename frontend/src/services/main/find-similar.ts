@@ -145,7 +145,7 @@ export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = instal
         get: client => client.findSimilar.result.get,
         update: client => client.findSimilar.result.resolve,
         delete: client => client.findSimilar.result.delete,
-        eventFilter: c => event => (event.eventType === "entity/find-similar-result/updated" || event.eventType === "entity/find-similar-result/deleted") && c.path === event.resultId,
+        eventFilter: c => event => ((event.eventType === "entity/find-similar-result/updated" || event.eventType === "entity/find-similar-result/deleted") && c.path === event.resultId) || (event.eventType === "entity/illust/updated" && event.illustType === "IMAGE" && event.listUpdated && !!c.data?.images?.some(i => i.id === event.illustId)),
         afterRetrieve(path, data) {
             if(path !== null && data === null) {
                 router.routeClose()
@@ -187,6 +187,7 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
     const gridMode = shallowRef<"grid">("grid")
 
     const fetchStagingPostUpdate = usePostFetchHelper(client => client.stagingPost.update)
+    const fetchIllustBatchUpdate = usePostFetchHelper(client => client.illust.batchUpdate)
 
     const allCollections = computed(() => {
         if(data.value !== null) {
@@ -214,6 +215,11 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
 
     const getEffectedItems = (currentImageId?: number) => {
         return currentImageId === undefined || selector.selected.value.includes(currentImageId) ? selector.selected.value : [currentImageId]
+    }
+
+    const modifyFavorite = async (illust: CommonIllust, favorite: boolean) => {
+        const items = getEffectedItems(illust.id)
+        await fetchIllustBatchUpdate({target: items, favorite})
     }
 
     const addToStagingPost = async (illust: CommonIllust) => {
@@ -299,7 +305,7 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
         else router.routePush({routeName: "PartitionDetail", path: partitionTime, initializer: {locateId: currentImageId}})
     }
 
-    return {allCollections, allBooks, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, complete, openPreviewBySpace, openImageInPartition}
+    return {allCollections, allBooks, modifyFavorite, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, complete, openPreviewBySpace, openImageInPartition}
 }
 
 export function useGraphView({ menu }: {menu: (i: FindSimilarResultDetailImage) => void}) {

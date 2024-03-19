@@ -177,7 +177,7 @@ export function useAuthorCreatePanel() {
             }
         },
         afterCreate(result) {
-            router.routePush({routeName: "AuthorDetail", path: result.id})
+            router.routeReplace({routeName: "AuthorDetail", path: result.id})
         }
     })
 
