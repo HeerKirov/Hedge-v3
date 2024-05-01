@@ -117,13 +117,13 @@ data class TrashedImageCreated(override val imageId: Int) : BaseBusEventImpl("en
 
 data class TrashedImageProcessed(val imageIds: List<Int>, val restored: Boolean) : BaseBusEventImpl("entity/trashed-image/processed"), EntityEvent
 
-interface SourceDataEntityEvent : EntityEvent { val site: String; val sourceId: Long }
+interface SourceDataEntityEvent : EntityEvent { val site: String; val sourceId: String }
 
-data class SourceDataCreated(override val site: String, override val sourceId: Long, val sourceDataId: Int) : BaseBusEventImpl("entity/source-data/created"), SourceDataEntityEvent
+data class SourceDataCreated(override val site: String, override val sourceId: String, val sourceDataId: Int) : BaseBusEventImpl("entity/source-data/created"), SourceDataEntityEvent
 
-data class SourceDataUpdated(override val site: String, override val sourceId: Long, val sourceDataId: Int) : BaseBusEventImpl("entity/source-data/updated"), SourceDataEntityEvent
+data class SourceDataUpdated(override val site: String, override val sourceId: String, val sourceDataId: Int) : BaseBusEventImpl("entity/source-data/updated"), SourceDataEntityEvent
 
-data class SourceDataDeleted(override val site: String, override val sourceId: Long) : BaseBusEventImpl("entity/source-data/deleted"), SourceDataEntityEvent
+data class SourceDataDeleted(override val site: String, override val sourceId: String) : BaseBusEventImpl("entity/source-data/deleted"), SourceDataEntityEvent
 
 data class SourceBookUpdated(val site: String, val sourceBookCode: String) : BaseBusEventImpl("entity/source-book/updated"), EntityEvent
 

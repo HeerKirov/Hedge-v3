@@ -13,7 +13,7 @@ import com.heerkirov.hedge.server.functions.manager.TrashManager
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
 import com.heerkirov.hedge.server.utils.business.filePathFrom
-import com.heerkirov.hedge.server.utils.business.sourcePathOf
+import com.heerkirov.hedge.server.utils.business.sourcePathOfNullable
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
@@ -50,7 +50,7 @@ class TrashService(private val appdata: AppDataManager, private val data: DataRe
             .limit(filter.offset, filter.limit)
             .toListResult {
                 val filePath = filePathFrom(it)
-                val source = sourcePathOf(it[TrashedImages.sourceSite], it[TrashedImages.sourceId], it[TrashedImages.sourcePart], it[TrashedImages.sourcePartName])
+                val source = sourcePathOfNullable(it[TrashedImages.sourceSite], it[TrashedImages.sourceId], it[TrashedImages.sourcePart], it[TrashedImages.sourcePartName])
                 val trashedTime = it[TrashedImages.trashedTime]!!
                 val remainingTime = if(deadline != null) trashedTime.toEpochMilli() - deadline else null
                 TrashedImageRes(
@@ -68,7 +68,7 @@ class TrashService(private val appdata: AppDataManager, private val data: DataRe
             .firstOrNull() ?: throw be(NotFound())
 
         val filePath = filePathFrom(row)
-        val source = sourcePathOf(row[TrashedImages.sourceSite], row[TrashedImages.sourceId], row[TrashedImages.sourcePart], row[TrashedImages.sourcePartName])
+        val source = sourcePathOfNullable(row[TrashedImages.sourceSite], row[TrashedImages.sourceId], row[TrashedImages.sourcePart], row[TrashedImages.sourcePartName])
         val extension = row[FileRecords.extension]!!
         val size = row[FileRecords.size]!!
         val resolutionWidth = row[FileRecords.resolutionWidth]!!

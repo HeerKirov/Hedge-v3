@@ -262,6 +262,7 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                 title = updateForm.title, description = updateForm.description, tags = updateForm.tags,
                 books = updateForm.books, relations = updateForm.relations, links = updateForm.links,
                 additionalInfo = updateForm.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
+                publishTime = updateForm.publishTime,
                 status = updateForm.status, allowUpdate = true, appendUpdate = true)
         }
 

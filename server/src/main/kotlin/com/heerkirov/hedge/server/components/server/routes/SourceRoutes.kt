@@ -69,26 +69,26 @@ class SourceRoutes(private val sourceDataService: SourceDataService,
 
         fun get(ctx: Context) {
             val sourceSite = ctx.pathParamAsClass<String>("source_site").get()
-            val sourceId = ctx.pathParamAsClass<Long>("source_id").get()
+            val sourceId = ctx.pathParamAsClass<String>("source_id").get()
             ctx.json(sourceDataService.get(sourceSite, sourceId))
         }
 
         fun getRelatedImages(ctx: Context) {
             val sourceSite = ctx.pathParamAsClass<String>("source_site").get()
-            val sourceId = ctx.pathParamAsClass<Long>("source_id").get()
+            val sourceId = ctx.pathParamAsClass<String>("source_id").get()
             ctx.json(sourceDataService.getRelatedImages(sourceSite, sourceId))
         }
 
         fun update(ctx: Context) {
             val sourceSite = ctx.pathParamAsClass<String>("source_site").get()
-            val sourceId = ctx.pathParamAsClass<Long>("source_id").get()
+            val sourceId = ctx.pathParamAsClass<String>("source_id").get()
             val form = ctx.bodyAsForm<SourceDataUpdateForm>()
             sourceDataService.update(sourceSite, sourceId, form)
         }
 
         fun delete(ctx: Context) {
             val sourceSite = ctx.pathParamAsClass<String>("source_site").get()
-            val sourceId = ctx.pathParamAsClass<Long>("source_id").get()
+            val sourceId = ctx.pathParamAsClass<String>("source_id").get()
             sourceDataService.delete(sourceSite, sourceId)
             ctx.status(204)
         }

@@ -139,6 +139,7 @@ class TrashManager(private val data: DataRepository,
                     set(it.sourceDataId, newSourceDataId)
                     set(it.sourceSite, item.sourceSite)
                     set(it.sourceId, item.sourceId)
+                    set(it.sortableSourceId, item.sourceId?.toLongOrNull())
                     set(it.sourcePart, item.sourcePart)
                     set(it.sourcePartName, item.sourcePartName)
                     set(it.description, item.description)

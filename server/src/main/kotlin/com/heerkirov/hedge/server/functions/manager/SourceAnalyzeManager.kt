@@ -39,7 +39,7 @@ class SourceAnalyzeManager(private val appdata: AppDataManager) {
     /**
      * @throws InvalidRegexError (regex) 执行正则表达式时发生错误，怀疑是表达式或相关参数没写对
      */
-    private fun analyseOneRule(rule: ImportOption.SourceAnalyseRule, filename: String?): Tuple4<Long, Int?, String?, SourceDataUpdateForm?>? {
+    private fun analyseOneRule(rule: ImportOption.SourceAnalyseRule, filename: String?): Tuple4<String, Int?, String?, SourceDataUpdateForm?>? {
         if(filename == null) return null
         try {
             val text = getFilenameWithoutExtension(filename)
@@ -48,7 +48,7 @@ class SourceAnalyzeManager(private val appdata: AppDataManager) {
             val matcher = pattern.matcher(text)
             if(!matcher.find()) return null
 
-            val id = matcher.groupOfIt(rule.idGroup, rule.regex)?.toLong() ?: throw be(InvalidRegexError(rule.regex, "group '${rule.idGroup}' not matched in regex."))
+            val id = matcher.groupOfIt(rule.idGroup, rule.regex) ?: throw be(InvalidRegexError(rule.regex, "group '${rule.idGroup}' not matched in regex."))
             val part = if(rule.partGroup != null) { matcher.groupOfIt(rule.partGroup, rule.regex)?.toInt() ?: throw be(InvalidRegexError(rule.regex, "group '${rule.partGroup}' not matched in regex.")) }else null
             val partName = if(rule.partNameGroup != null) { matcher.groupOfIt(rule.partNameGroup, rule.regex) }else null
             val form = if(rule.extras.isNullOrEmpty()) null else {
@@ -57,7 +57,7 @@ class SourceAnalyzeManager(private val appdata: AppDataManager) {
                 val additionalInfo: MutableMap<String, String> = mutableMapOf()
                 val tags: MutableList<SourceTagForm> = mutableListOf()
                 val books: MutableList<SourceBookForm> = mutableListOf()
-                val relations: MutableList<Long> = mutableListOf()
+                val relations: MutableList<String> = mutableListOf()
 
                 for(extra in rule.extras) {
                     val result = matcher.groupOfIt(extra.group, rule.regex)
@@ -69,7 +69,7 @@ class SourceAnalyzeManager(private val appdata: AppDataManager) {
                         ImportOption.SourceAnalyseRuleExtraTarget.ADDITIONAL_INFO -> additionalInfo[extra.additionalInfoField!!] = result
                         ImportOption.SourceAnalyseRuleExtraTarget.TAG -> tags.add(SourceTagForm(extra.tagType!!, result, undefined(), undefined()))
                         ImportOption.SourceAnalyseRuleExtraTarget.BOOK -> books.add(SourceBookForm(result, undefined(), undefined()))
-                        ImportOption.SourceAnalyseRuleExtraTarget.RELATION -> relations.add(result.toLong())
+                        ImportOption.SourceAnalyseRuleExtraTarget.RELATION -> relations.add(result)
                     }
                 }
 
@@ -81,6 +81,7 @@ class SourceAnalyzeManager(private val appdata: AppDataManager) {
                         books = if(books.isNotEmpty()) optOf(books) else undefined(),
                         relations = if(relations.isNotEmpty()) optOf(relations) else undefined(),
                         additionalInfo = if(additionalInfo.isNotEmpty()) optOf(additionalInfo.entries.map { SourceDataAdditionalInfoForm(it.key, it.value) }) else undefined(),
+                        publishTime = undefined(),
                         links = undefined(),
                         status = undefined()
                     )

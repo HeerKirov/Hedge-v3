@@ -110,7 +110,7 @@ class BookManager(private val data: DataRepository,
             "SOURCE_ID" -> data.db.from(Illusts)
                 .select(Illusts.id)
                 .where { Illusts.id inList imageIds }
-                .orderBy(Illusts.sourceSite.isNull().asc(), Illusts.sourceSite.asc(), Illusts.sourceId.asc(), Illusts.sourcePart.isNull().asc(), Illusts.sourcePart.asc())
+                .orderBy(Illusts.sourceSite.isNull().asc(), Illusts.sourceSite.asc(), Illusts.sortableSourceId.asc(), Illusts.sourcePart.isNull().asc(), Illusts.sourcePart.asc())
                 .map { it[Illusts.id]!! }
             else -> throw RuntimeException("sort type $by is not supported.")
         }

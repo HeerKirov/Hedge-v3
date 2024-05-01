@@ -14,6 +14,7 @@ import com.heerkirov.hedge.server.events.SourceDataDeleted
 import com.heerkirov.hedge.server.events.SourceDataUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.model.SourceData
+import com.heerkirov.hedge.server.utils.business.checkSourceId
 import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.types.Opt
@@ -36,12 +37,12 @@ class SourceDataManager(private val appdata: AppDataManager,
      * @return 如果给出的值是null，那么返回null，否则，返回一个tuple，用于后续工具链处理。
      * @throws ResourceNotExist ("site", string) 给出的source不存在
      */
-    fun checkSourceSite(sourceSite: String?, sourceId: Long?, sourcePart: Int?, sourcePartName: String?): SourceDataIdentity? {
+    fun checkSourceSite(sourceSite: String?, sourceId: String?, sourcePart: Int?, sourcePartName: String?): SourceDataIdentity? {
         return if(sourceSite != null) {
             val site = appdata.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
 
-            if(sourceId == null) throw be(ParamRequired("sourceId"))
-            else if(sourceId < 0) throw be(ParamError("sourceId"))
+            if(sourceId.isNullOrEmpty()) throw be(ParamRequired("sourceId"))
+            else if(!checkSourceId(sourceId)) throw be(ParamError("sourceId"))
 
             when (site.partMode) {
                 SourceOption.SitePartMode.NO -> {
@@ -70,12 +71,12 @@ class SourceDataManager(private val appdata: AppDataManager,
      * @return 如果给出的值是null，那么返回null，否则，返回一个pair，用于后续工具链处理。
      * @throws ResourceNotExist ("site", string) 给出的source不存在
      */
-    fun checkSourceSite(sourceSite: String?, sourceId: Long?): SourceDataIdentity? {
+    fun checkSourceSite(sourceSite: String?, sourceId: String?): SourceDataIdentity? {
         return if(sourceSite != null) {
             appdata.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
 
-            if(sourceId == null) throw be(ParamRequired("sourceId"))
-            else if(sourceId < 0) throw be(ParamError("sourceId"))
+            if(sourceId.isNullOrEmpty()) throw be(ParamRequired("sourceId"))
+            else if(!checkSourceId(sourceId)) throw be(ParamError("sourceId"))
 
             SourceDataIdentity(sourceSite, sourceId)
         }else{
@@ -106,6 +107,7 @@ class SourceDataManager(private val appdata: AppDataManager,
                     item {
                         set(it.sourceSite, sourceSite)
                         set(it.sourceId, sourceId)
+                        set(it.sortableSourceId, sourceId.toLongOrNull())
                         set(it.title, null)
                         set(it.description, null)
                         set(it.relations, null)
@@ -141,7 +143,7 @@ class SourceDataManager(private val appdata: AppDataManager,
      * @return rowId 返回在sourceImage中实际存储的key。
      * @throws ResourceNotExist ("source", string) 给出的source不存在
      */
-    fun validateAndCreateSourceDataIfNotExist(sourceSite: String, sourceId: Long): Int {
+    fun validateAndCreateSourceDataIfNotExist(sourceSite: String, sourceId: String): Int {
         val sourceDataId = data.db.from(SourceDatas)
             .select(SourceDatas.id)
             .where { (SourceDatas.sourceSite eq sourceSite) and (SourceDatas.sourceId eq sourceId) }
@@ -154,6 +156,7 @@ class SourceDataManager(private val appdata: AppDataManager,
             val id = data.db.insertAndGenerateKey(SourceDatas) {
                 set(it.sourceSite, sourceSite)
                 set(it.sourceId, sourceId)
+                set(it.sortableSourceId, sourceId.toLongOrNull())
                 set(it.title, null)
                 set(it.description, null)
                 set(it.relations, null)
@@ -192,7 +195,7 @@ class SourceDataManager(private val appdata: AppDataManager,
     /**
      * 尝试根据site的规则，自动生成新的links，与表单的links一起返回。
      */
-    private fun generateLinks(sourceSite: String, sourceId: Long, newInfo: Map<String, String>, newLinks: Opt<List<String>>, oldInfo: Map<String, String>?, oldLinks: List<String>?): Opt<List<String>> {
+    private fun generateLinks(sourceSite: String, sourceId: String, newInfo: Map<String, String>, newLinks: Opt<List<String>>, oldInfo: Map<String, String>?, oldLinks: List<String>?): Opt<List<String>> {
         val rules = appdata.setting.source.sites.first { it.name == sourceSite }.sourceLinkGenerateRules
         if(rules.isEmpty()) {
             return newLinks
@@ -215,9 +218,9 @@ class SourceDataManager(private val appdata: AppDataManager,
         }
 
         //根据新info生成links
-        val newGeneratedLinks = generateLinkByParams(sourceId.toString(), newInfo)
+        val newGeneratedLinks = generateLinkByParams(sourceId, newInfo)
         //根据旧info生成links
-        val oldGeneratedLinks = if(!oldInfo.isNullOrEmpty()) generateLinkByParams(sourceId.toString(), oldInfo).toSet() else emptySet()
+        val oldGeneratedLinks = if(!oldInfo.isNullOrEmpty()) generateLinkByParams(sourceId, oldInfo).toSet() else emptySet()
         //需要从links中移除oldGeneratedLinks，再包含newGeneratedLinks
         val plus = newGeneratedLinks - oldGeneratedLinks
         val minus = oldGeneratedLinks - newGeneratedLinks.toSet()
@@ -250,18 +253,19 @@ class SourceDataManager(private val appdata: AppDataManager,
      * @throws NotFound 请求对象不存在 (allowCreate=false时抛出)
      * @throws AlreadyExists 此对象已存在 (allowUpdate=false时抛出)
      */
-    fun createOrUpdateSourceData(sourceSite: String, sourceId: Long,
+    fun createOrUpdateSourceData(sourceSite: String, sourceId: String,
                                  status: Opt<SourceEditStatus>,
                                  title: Opt<String?>,
                                  description: Opt<String?>,
                                  tags: Opt<List<SourceTagForm>>,
                                  books: Opt<List<SourceBookForm>>,
-                                 relations: Opt<List<Long>>,
+                                 relations: Opt<List<String>>,
                                  links: Opt<List<String>>,
                                  additionalInfo: Opt<Map<String, String>>,
+                                 publishTime: Opt<Instant?>,
                                  allowCreate: Boolean = true,
                                  allowUpdate: Boolean = true,
-                                 appendUpdate: Boolean = false): Triple<Int?, String?, Long?> {
+                                 appendUpdate: Boolean = false): Triple<Int?, String?, String?> {
         val sourceData = data.db.sequenceOf(SourceDatas).firstOrNull { (it.sourceSite eq sourceSite) and (it.sourceId eq sourceId) }
         if(sourceData == null) {
             if(!allowCreate) throw be(NotFound())
@@ -280,17 +284,20 @@ class SourceDataManager(private val appdata: AppDataManager,
                     && tags.letOpt { it.isEmpty() }.unwrapOr { true }
                     && books.letOpt { it.isEmpty() }.unwrapOr { true }
                     && relations.letOpt { it.isEmpty() }.unwrapOr { true }
+                    && publishTime.letOpt { it == null }.unwrapOr { true }
             val finalStatus = status.unwrapOr { if(empty) SourceEditStatus.NOT_EDITED else SourceEditStatus.EDITED }
 
             val now = Instant.now()
             val id = data.db.insertAndGenerateKey(SourceDatas) {
                 set(it.sourceSite, sourceSite)
                 set(it.sourceId, sourceId)
+                set(it.sortableSourceId, sourceId.toLongOrNull())
                 set(it.title, title.unwrapOrNull())
                 set(it.description, description.unwrapOrNull())
                 set(it.relations, relations.unwrapOrNull())
                 set(it.links, finalLinks.unwrapOrNull())
                 set(it.additionalInfo, additionalInfo.unwrapOrNull())
+                set(it.publishTime, publishTime.unwrapOrNull())
                 set(it.cachedCount, sourceCount)
                 set(it.empty, empty)
                 set(it.status, finalStatus)
@@ -353,10 +360,11 @@ class SourceDataManager(private val appdata: AppDataManager,
             val empty = title.unwrapOr { sourceData.title }.isNullOrEmpty()
                     && description.unwrapOr { sourceData.description }.isNullOrEmpty()
                     && cachedCount.unwrapOr { sourceData.cachedCount }.let { it.relationCount <= 0 && it.bookCount <= 0 && it.tagCount <= 0 }
+                    && publishTime.unwrapOr { sourceData.publishTime } == null
 
-            val finalStatus = if(status.isPresent) status else if(anyOpt(title, description, tags, books, relations)) optOf(SourceEditStatus.EDITED) else undefined()
+            val finalStatus = if(status.isPresent) status else if(anyOpt(title, description, tags, books, relations, publishTime)) optOf(SourceEditStatus.EDITED) else undefined()
 
-            if(title.isPresent || description.isPresent || relations.isPresent || cachedCount.isPresent || finalLinks.isPresent || additionalInfo.isPresent || finalStatus.isPresent) {
+            if(title.isPresent || description.isPresent || relations.isPresent || cachedCount.isPresent || finalLinks.isPresent || additionalInfo.isPresent || finalStatus.isPresent || publishTime.isPresent) {
                 data.db.update(SourceDatas) {
                     where { it.id eq sourceData.id }
                     title.applyOpt { set(it.title, this) }
@@ -364,6 +372,7 @@ class SourceDataManager(private val appdata: AppDataManager,
                     relations.applyOpt { set(it.relations, this) }
                     finalLinks.applyOpt { set(it.links, this) }
                     additionalInfo.applyOpt { set(it.additionalInfo, this) }
+                    publishTime.applyOpt { set(it.publishTime, this) }
                     cachedCount.applyOpt { set(it.cachedCount, this) }
                     finalStatus.applyOpt { set(it.status, this) }
                     set(it.empty, empty)
@@ -477,10 +486,11 @@ class SourceDataManager(private val appdata: AppDataManager,
             val empty = title.unwrapOr { sourceData.title }.isNullOrEmpty()
                     && description.unwrapOr { sourceData.description }.isNullOrEmpty()
                     && cachedCount.unwrapOr { sourceData.cachedCount }.let { it.relationCount <= 0 && it.bookCount <= 0 && it.tagCount <= 0 }
+                    && publishTime.unwrapOr { sourceData.publishTime } == null
 
-            val finalStatus = if(status.isPresent) status else if(anyOpt(title, description, appendTags, appendBooks, fixedRelations)) optOf(SourceEditStatus.EDITED) else undefined()
+            val finalStatus = if(status.isPresent) status else if(anyOpt(title, description, appendTags, appendBooks, fixedRelations, publishTime)) optOf(SourceEditStatus.EDITED) else undefined()
 
-            if(title.isPresent || description.isPresent || fixedRelations.isPresent || cachedCount.isPresent || finalLinks.isPresent || fixedAdditionalInfo.isPresent || finalStatus.isPresent) {
+            if(title.isPresent || description.isPresent || fixedRelations.isPresent || cachedCount.isPresent || finalLinks.isPresent || fixedAdditionalInfo.isPresent || finalStatus.isPresent || publishTime.isPresent) {
                 data.db.update(SourceDatas) {
                     where { it.id eq sourceData.id }
                     title.applyOpt { set(it.title, this) }
@@ -488,6 +498,7 @@ class SourceDataManager(private val appdata: AppDataManager,
                     fixedRelations.applyOpt { set(it.relations, this) }
                     finalLinks.applyOpt { set(it.links, this) }
                     fixedAdditionalInfo.applyOpt { set(it.additionalInfo, this) }
+                    publishTime.applyOpt { set(it.publishTime, this) }
                     cachedCount.applyOpt { set(it.cachedCount, this) }
                     finalStatus.applyOpt { set(it.status, this) }
                     set(it.empty, empty)
@@ -505,7 +516,7 @@ class SourceDataManager(private val appdata: AppDataManager,
      * 删除source data。清除在illust的缓存。
      * @throws NotFound 请求对象不存在。
      */
-    fun deleteSourceData(sourceSite: String, sourceId: Long) {
+    fun deleteSourceData(sourceSite: String, sourceId: String) {
         val row = data.db.from(SourceDatas).select()
             .where { (SourceDatas.sourceSite eq sourceSite) and (SourceDatas.sourceId eq sourceId) }
             .firstOrNull()
@@ -518,6 +529,7 @@ class SourceDataManager(private val appdata: AppDataManager,
             set(it.sourceDataId, null)
             set(it.sourceSite, null)
             set(it.sourceId, null)
+            set(it.sortableSourceId, null)
             set(it.sourcePart, null)
             set(it.sourcePartName, null)
         }

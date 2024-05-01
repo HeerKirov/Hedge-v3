@@ -12,6 +12,7 @@ import com.heerkirov.hedge.server.library.compiler.translator.ExecuteBuilder
 import com.heerkirov.hedge.server.library.compiler.translator.visual.*
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.composition.unionComposition
+import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.compositionAny
 import com.heerkirov.hedge.server.utils.ktorm.escapeLike
 import com.heerkirov.hedge.server.utils.letIf
@@ -88,7 +89,23 @@ interface FilterByColumn : ExecuteBuilder {
                         }
                         conditions.reduce { a, b -> a and b }
                     }
-                    is MatchFilter<*> -> filter.values.map { column escapeLike MetaParserUtil.compileMatchFilter(mapFilterSpecial(filter.field, it.matchValue) as String) }.reduce { a, b -> a or b }
+                    is MatchFilter<*> -> if(filter.exact) {
+                        //开启exact参数时，使用近似精确模式，所有项使用仅X匹配，且当X不包含任何通配符时退化为equal
+                        val c = (column as ColumnDeclaring<Any>)
+                        val (sp, eq) = filter.values.map { mapFilterSpecial(filter.field, it.matchValue) as String }.filterInto { MetaParserUtil.isAnySqlSpecial(it) }
+                        val matches = sp.map { column escapeLike MetaParserUtil.compileMatchFilter(it, exact = true) }
+                        val equals = if(eq.size == 1) { c eq eq.first() }else if(eq.size > 1) { c inList eq }else{ null }
+                        if(matches.isNotEmpty() && equals != null) {
+                            matches.reduce { a, b -> a or b } or equals
+                        }else if(matches.isNotEmpty()) {
+                            matches.reduce { a, b -> a or b }
+                        }else{
+                            equals ?: throw RuntimeException("Matches and equals are both empty.")
+                        }
+                    }else{
+                        //关闭exact参数时，使用完全模糊模式，即所有项都进行%X%匹配，也不会有任何优化
+                        filter.values.map { column escapeLike MetaParserUtil.compileMatchFilter(mapFilterSpecial(filter.field, it.matchValue) as String) }.reduce { a, b -> a or b }
+                    }
                     is CompositionFilter<*> -> mapCompositionFilterSpecial(filter.field, column, filter.values.map { it.equalValue })
                     is FlagFilter -> column as ColumnDeclaring<Boolean>
                     else -> throw RuntimeException("Unsupported filter type ${filter::class.simpleName}.")
@@ -111,7 +128,7 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, S
     private var alwaysFalseFlag: Boolean = false
 
     //根据某些条件，可能需要额外连接数据表。使用flag来存储这种情况。
-    private var joinSourceImage: Boolean = false
+    private var joinSourceData: Boolean = false
 
     //在连接查询中，如果一层中有复数项，那么需要做去重。
     private var needDistinct: Boolean = false
@@ -133,8 +150,9 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, S
         IllustDialect.IllustSortItem.PARTITION to SortByColumn.ColumnDefinition(Illusts.partitionTime),
         IllustDialect.IllustSortItem.CREATE_TIME to SortByColumn.ColumnDefinition(Illusts.createTime),
         IllustDialect.IllustSortItem.UPDATE_TIME to SortByColumn.ColumnDefinition(Illusts.updateTime),
-        IllustDialect.IllustSortItem.SOURCE_ID to SortByColumn.ColumnDefinition(Illusts.sourceId, nullsLast = true),
-        IllustDialect.IllustSortItem.SOURCE_SITE to SortByColumn.ColumnDefinition(Illusts.sourceSite, nullsLast = true)
+        IllustDialect.IllustSortItem.SOURCE_ID to SortByColumn.ColumnDefinition(Illusts.sortableSourceId, nullsLast = true),
+        IllustDialect.IllustSortItem.SOURCE_SITE to SortByColumn.ColumnDefinition(Illusts.sourceSite, nullsLast = true),
+        IllustDialect.IllustSortItem.SOURCE_PUBLISH_TIME to SortByColumn.ColumnDefinition(SourceDatas.publishTime, nullsLast = true)
     )
 
     private val filterDeclareMapping = mapOf(
@@ -155,15 +173,17 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, S
         IllustDialect.sourceSite to Illusts.sourceSite,
         IllustDialect.sourceTitle to SourceDatas.title,
         IllustDialect.sourceDescription to SourceDatas.description,
+        IllustDialect.sourcePublishTime to SourceDatas.publishTime,
         IllustDialect.tagme to Illusts.tagme
     )
 
     override fun getSortDeclareMapping(sort: IllustDialect.IllustSortItem): SortByColumn.ColumnDefinition {
+        if(sort == IllustDialect.IllustSortItem.SOURCE_PUBLISH_TIME) joinSourceData = true
         return orderDeclareMapping[sort]!!
     }
 
     override fun getFilterDeclareMapping(field: FilterFieldDefinition<*>): ColumnDeclaring<*> {
-        if(field == IllustDialect.sourceDescription || field == IllustDialect.sourceTitle) joinSourceImage = true
+        if(field == IllustDialect.sourceDescription || field == IllustDialect.sourceTitle || field == IllustDialect.sourcePublishTime) joinSourceData = true
         return filterDeclareMapping[field]!!
     }
 
@@ -330,7 +350,7 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, S
                 .innerJoin(SourceTagRelations, SourceTagRelations.sourceDataId eq Illusts.sourceDataId)
                 .select(Illusts.id))
         }
-        if(joinSourceImage) {
+        if(joinSourceData) {
             joins.add(ExecutePlan.Join(SourceDatas, SourceDatas.id eq Illusts.sourceDataId, left = true))
         }
         return ExecutePlan(wheres, joins, orders, needDistinct)
@@ -653,8 +673,9 @@ class SourceDataExecutePlanBuilder(private val db: Database): ExecutePlanBuilder
     private val excludeSourceTags: MutableCollection<Int> = mutableSetOf()
 
     private val orderDeclareMapping = mapOf(
-        SourceDataDialect.SortItem.SOURCE_ID to SortByColumn.ColumnDefinition(SourceDatas.sourceId),
-        SourceDataDialect.SortItem.SOURCE_SITE to SortByColumn.ColumnDefinition(SourceDatas.sourceSite)
+        SourceDataDialect.SortItem.SOURCE_ID to SortByColumn.ColumnDefinition(SourceDatas.sortableSourceId),
+        SourceDataDialect.SortItem.SOURCE_SITE to SortByColumn.ColumnDefinition(SourceDatas.sourceSite),
+        SourceDataDialect.SortItem.PUBLISH_TIME to SortByColumn.ColumnDefinition(SourceDatas.publishTime, nullsLast = true)
     )
 
     private val filterDeclareMapping = mapOf(
@@ -662,6 +683,7 @@ class SourceDataExecutePlanBuilder(private val db: Database): ExecutePlanBuilder
         SourceDataDialect.sourceSite to SourceDatas.sourceSite,
         SourceDataDialect.title to SourceDatas.title,
         SourceDataDialect.description to SourceDatas.description,
+        SourceDataDialect.publishTime to SourceDatas.publishTime,
         SourceDataDialect.status to SourceDatas.status
     )
 

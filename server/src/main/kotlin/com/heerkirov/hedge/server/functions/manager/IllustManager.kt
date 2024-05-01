@@ -68,6 +68,7 @@ class IllustManager(private val appdata: AppDataManager,
                         set(it.sourceDataId, newSourceDataId)
                         set(it.sourceSite, record.source?.sourceSite)
                         set(it.sourceId, record.source?.sourceId)
+                        set(it.sortableSourceId, record.source?.sourceId?.toLongOrNull())
                         set(it.sourcePart, record.source?.sourcePart)
                         set(it.sourcePartName, record.source?.sourcePartName)
                         set(it.description, record.description ?: "")
@@ -130,6 +131,7 @@ class IllustManager(private val appdata: AppDataManager,
             set(it.sourceDataId, null)
             set(it.sourceSite, null)
             set(it.sourceId, null)
+            set(it.sortableSourceId, null)
             set(it.sourcePart, null)
             set(it.sourcePartName, null)
             set(it.description, formDescription)
@@ -213,6 +215,7 @@ class IllustManager(private val appdata: AppDataManager,
             set(it.sourceDataId, rowId)
             set(it.sourceSite, sourceDataPath?.sourceSite)
             set(it.sourceId, sourceDataPath?.sourceId)
+            set(it.sortableSourceId, sourceDataPath?.sourceId?.toLongOrNull())
             set(it.sourcePart, sourceDataPath?.sourcePart)
             set(it.sourcePartName, sourceDataPath?.sourcePartName)
             if(appdata.setting.meta.autoCleanTagme && tagme != null && Illust.Tagme.SOURCE in tagme) set(it.tagme, tagme - Illust.Tagme.SOURCE)
@@ -694,7 +697,7 @@ class IllustManager(private val appdata: AppDataManager,
                 }
                 IllustBatchUpdateForm.Action.SET_ORDER_TIME_BY_SOURCE_ID -> {
                     //将所有image/children按source排序，然后把所有的orderTime取出排序，依次选取
-                    val sortedIds = (images.map { Tuple4(it.id, it.sourceSite, it.sourceId, it.sourcePart) } + childrenOfCollections.map { Tuple4(it.id, it.sourceSite, it.sourceId, it.sourcePart) })
+                    val sortedIds = (images.map { Tuple4(it.id, it.sourceSite, it.sortableSourceId, it.sourcePart) } + childrenOfCollections.map { Tuple4(it.id, it.sourceSite, it.sortableSourceId, it.sourcePart) })
                         .sortedWith(compareBy(Tuple4<Int, String?, Long?, Int?>::f2, Tuple4<Int, String?, Long?, Int?>::f3, Tuple4<Int, String?, Long?, Int?>::f4))
                         .map { it.f1 }
                     val sortedTimes = orderTimeSeq.map { (_, _, ot) -> ot }.sorted()
@@ -836,6 +839,7 @@ class IllustManager(private val appdata: AppDataManager,
                 if(props.source) {
                     set(it.sourceSite, fromIllust.sourceSite)
                     set(it.sourceId, fromIllust.sourceId)
+                    set(it.sortableSourceId, fromIllust.sortableSourceId)
                     set(it.sourcePart, fromIllust.sourcePart)
                     set(it.sourcePartName, fromIllust.sourcePartName)
                     set(it.sourceDataId, fromIllust.sourceDataId)

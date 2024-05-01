@@ -40,7 +40,7 @@ data class FindSimilarResultResolveForm(val actions: List<Resolution>, val clear
 
     data class MarkIgnoredSourceBookResolution(val site: String, val sourceBookCode: String) : Resolution
 
-    data class MarkIgnoredSourceDataResolution(val site: String, val sourceId: Long) : Resolution
+    data class MarkIgnoredSourceDataResolution(val site: String, val sourceId: String) : Resolution
 }
 
 data class NoteCreateForm(val title: String, val content: String? = null, val status: NoteStatus? = null)

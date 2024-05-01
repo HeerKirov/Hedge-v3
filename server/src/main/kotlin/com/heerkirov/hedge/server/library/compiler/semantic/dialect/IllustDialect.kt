@@ -12,6 +12,7 @@ object IllustDialect : QueryDialect<IllustDialect.IllustSortItem> {
         item(IllustSortItem.UPDATE_TIME, "update-time", "update", "ut")
         item(IllustSortItem.SOURCE_ID, "^id", "source-id")
         item(IllustSortItem.SOURCE_SITE, "^site", "source-site")
+        item(IllustSortItem.SOURCE_PUBLISH_TIME, "^publish-time", "source-publish-time", "^publish", "^bt")
     }
     override val elements: Array<out ElementFieldDefinition> = arrayOf(MetaTagElementField, AnnotationElementField, SourceTagElementField(true))
 
@@ -25,12 +26,13 @@ object IllustDialect : QueryDialect<IllustDialect.IllustSortItem> {
     val updateTime = datetimeField("UPDATE_TIME", "update", "update-time", "ut")
     val description = patternStringField("DESCRIPTION", "description", "desc")
     val filesize = sizeField("FILESIZE", "filesize", "size")
-    val sourceId = patternNumberField("SOURCE_ID", "^id", "source-id")
-    val sourcePage = patternNumberField("SOURCE_PAGE", "^page", "source-page")
+    val sourceId = patternStringField("SOURCE_ID", "^id", "source-id", exact = true)
+    val sourcePage = numberField("SOURCE_PAGE", "^page", "source-page")
     val sourcePageName = stringField("SOURCE_PAGE_NAME", "^page-name", "^pn", "source-page-name")
     val sourceSite = stringField("SOURCE_SITE", "^site", "source-site")
     val sourceTitle = patternStringField("SOURCE_TITLE", "^title", "source-title")
     val sourceDescription = patternStringField("SOURCE_DESCRIPTION", "^description", "^desc", "source-description", "source-desc")
+    val sourcePublishTime = datetimeField("SOURCE_PUBLISH_TIME", "^publish-time", "^publish", "source-publish-time", "source-publish", "^bt")
     val fileType = compositionField("FILETYPE", "file-type", "type", "extension", "ext") {
         item("VIDEO", "video")
         item("IMAGE", "image", "img")
@@ -48,6 +50,6 @@ object IllustDialect : QueryDialect<IllustDialect.IllustSortItem> {
     }
 
     enum class IllustSortItem {
-        ID, SCORE, PARTITION, ORDER_TIME, CREATE_TIME, UPDATE_TIME, SOURCE_ID, SOURCE_SITE
+        ID, SCORE, PARTITION, ORDER_TIME, CREATE_TIME, UPDATE_TIME, SOURCE_ID, SOURCE_SITE, SOURCE_PUBLISH_TIME
     }
 }

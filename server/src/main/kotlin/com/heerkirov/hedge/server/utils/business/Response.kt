@@ -10,11 +10,11 @@ import org.ktorm.dsl.Query
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.dsl.map
 
-fun sourcePathOf(sourceSite: String?, sourceId: Long?, sourcePart: Int?, sourcePartName: String?): SourceDataPath? {
+fun sourcePathOfNullable(sourceSite: String?, sourceId: String?, sourcePart: Int?, sourcePartName: String?): SourceDataPath? {
     return if(sourceSite != null && sourceId != null) SourceDataPath(sourceSite, sourceId, sourcePart, sourcePartName) else null
 }
 
-fun sourcePathOf(sourceSite: String, sourceId: Long, sourcePart: Int?, sourcePartName: String?): SourceDataPath {
+fun sourcePathOf(sourceSite: String, sourceId: String, sourcePart: Int?, sourcePartName: String?): SourceDataPath {
     return SourceDataPath(sourceSite, sourceId, sourcePart, sourcePartName)
 }
 

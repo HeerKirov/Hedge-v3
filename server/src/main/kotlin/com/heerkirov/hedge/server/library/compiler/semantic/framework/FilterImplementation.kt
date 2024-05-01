@@ -132,7 +132,7 @@ class ComparableField<V>(override val key: String, override val alias: Array<out
 /**
  * 对关键字项进行标准解析的field。处理等价和匹配运算。根据str的精确性信息区分两者。
  */
-class MatchableField<V>(override val key: String, override val alias: Array<out String>, private val strTypeParser: StrTypeParser<V>) : FilterFieldByIdentify<V>(), GeneratedSequenceByIdentify<Filter<V>> where V: MatchableValue<*>, V: EquableValue<*> {
+class MatchableField<V>(override val key: String, override val alias: Array<out String>, private val exact: Boolean, private val strTypeParser: StrTypeParser<V>) : FilterFieldByIdentify<V>(), GeneratedSequenceByIdentify<Filter<V>> where V: MatchableValue<*>, V: EquableValue<*> {
     override fun generateSeq(subject: StrList, family: Family?, predicative: Predicative?): Sequence<Filter<V>> {
         if(family == null || predicative == null) semanticError(FilterValueRequired(key, subject.beginIndex, subject.endIndex))
 
@@ -157,7 +157,7 @@ class MatchableField<V>(override val key: String, override val alias: Array<out 
         return if(strList.items.first().type == Str.Type.BACKTICKS) {
             EqualFilter(this, listOf(filterValue))
         }else{
-            MatchFilter(this, listOf(filterValue))
+            MatchFilter(this, listOf(filterValue), exact = exact)
         }
     }
 
@@ -168,7 +168,7 @@ class MatchableField<V>(override val key: String, override val alias: Array<out 
         }
         val (precise, match) = col.items.asSequence().map { Pair(it.type == Str.Type.BACKTICKS, strTypeParser.parse(it)) }.partition { (precise, _) -> precise }
         val equalFilter = if(precise.isNotEmpty()) EqualFilter(this, precise.map { (_, s) -> s }) else null
-        val matchFilter = if(match.isNotEmpty()) MatchFilter(this, match.map { (_, s) -> s }) else null
+        val matchFilter = if(match.isNotEmpty()) MatchFilter(this, match.map { (_, s) -> s }, exact = exact) else null
         return when {
             equalFilter != null && matchFilter != null -> sequenceOf(equalFilter, matchFilter)
             equalFilter != null -> sequenceOf(equalFilter)
@@ -342,7 +342,7 @@ class NumberPatternField(override val key: String, override val alias: Array<out
         return sequenceOf(when (val result = PatternNumberParser.parse(strList.items.first())) {
             is StrComplexValue<*> -> {
                 val value = (result as StrComplexValue<FilterPatternNumberValue>).value
-                if(value.isPattern()) MatchFilter(this, listOf(value))
+                if(value.isPattern()) MatchFilter(this, listOf(value), exact = true)
                 else EqualFilter(this, listOf(value))
             }
             is StrComplexRange<*> -> {
@@ -376,7 +376,7 @@ class NumberPatternField(override val key: String, override val alias: Array<out
             val (matchItems, equalItems) = it.partition { v -> v.isPattern() }
             sequence {
                 if(equalItems.isNotEmpty()) yield(EqualFilter(this@NumberPatternField, equalItems))
-                if(matchItems.isNotEmpty()) yield(MatchFilter(this@NumberPatternField, matchItems))
+                if(matchItems.isNotEmpty()) yield(MatchFilter(this@NumberPatternField, matchItems, exact = true))
             }
         } + results.filterIsInstance<StrComplexRange<FilterPatternNumberValue>>().map { RangeFilter(this, it.begin, it.end, includeBegin = true, includeEnd = false) }.asSequence()
     }
@@ -493,7 +493,7 @@ fun sizeField(key: String, vararg alias: String): FilterFieldDefinition<FilterSi
 /**
  * 字符串型关键字项，对精确的字符串进行等价判断，非精确字符串模糊匹配。
  */
-fun patternStringField(key: String, vararg alias: String): FilterFieldDefinition<FilterStringValue> = MatchableField(key, alias, StringParser)
+fun patternStringField(key: String, vararg alias: String, exact: Boolean = false): FilterFieldDefinition<FilterStringValue> = MatchableField(key, alias, exact, StringParser)
 
 /**
  * 字符串型关键字项，对所有字符串进行等价判断。

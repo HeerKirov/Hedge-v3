@@ -120,7 +120,7 @@ data class PartitionFilter(val gte: LocalDate? = null,
 data class SourceDataQueryFilter(@Limit val limit: Int,
                                  @Offset val offset: Int,
                                  @Search val query: String?,
-                                 @Order(options = ["rowId", "sourceId", "site", "createTime", "updateTime"])
+                                 @Order(options = ["rowId", "sourceId", "site", "createTime", "updateTime", "publishTime"])
                                  val order: List<OrderItem>? = null,
                                  val status: List<SourceEditStatus>? = null,
                                  val site: List<String>? = null,

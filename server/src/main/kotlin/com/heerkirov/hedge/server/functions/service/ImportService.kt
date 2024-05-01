@@ -20,6 +20,7 @@ import com.heerkirov.hedge.server.model.ImportRecord
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.business.filePathOrNullFrom
 import com.heerkirov.hedge.server.utils.business.sourcePathOf
+import com.heerkirov.hedge.server.utils.business.sourcePathOfNullable
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.escapeLike
@@ -75,7 +76,7 @@ class ImportService(private val appdata: AppDataManager,
                     val tagme = it[Illusts.tagme]!!
                     val partitionTime = it[Illusts.partitionTime]!!
                     val orderTime = Instant.ofEpochMilli(it[Illusts.orderTime]!!)
-                    val source = sourcePathOf(it[Illusts.sourceSite], it[Illusts.sourceId], it[Illusts.sourcePart], it[Illusts.sourcePartName])
+                    val source = sourcePathOfNullable(it[Illusts.sourceSite], it[Illusts.sourceId], it[Illusts.sourcePart], it[Illusts.sourcePartName])
                     ImportImageRes.ImportIllust(id, score, favorite, tagme, source, partitionTime, orderTime)
                 }
                 ImportImageRes(it[ImportRecords.id]!!, it[ImportRecords.status]!!, filePath, illust, it[ImportRecords.fileName], it[ImportRecords.importTime]!!)
@@ -284,6 +285,7 @@ class ImportService(private val appdata: AppDataManager,
                         title = updateForm.title, description = updateForm.description, tags = updateForm.tags,
                         books = updateForm.books, relations = updateForm.relations, links = updateForm.links,
                         additionalInfo = updateForm.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
+                        publishTime = updateForm.publishTime,
                         status = updateForm.status, allowUpdate = true, appendUpdate = true)
                 }
             }

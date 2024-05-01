@@ -37,7 +37,7 @@ data class EqualFilter<V : EquableValue<*>>(override val field: FilterFieldDefin
 /**
  * 匹配过滤器。此属性必须与目标值按匹配规则模糊匹配。目标值可给出1或多个，满足任一即达成判定条件。
  */
-data class MatchFilter<V : MatchableValue<*>>(override val field: FilterFieldDefinition<V>, val values: Collection<V>) : Filter<V>
+data class MatchFilter<V : MatchableValue<*>>(override val field: FilterFieldDefinition<V>, val values: Collection<V>, val exact: Boolean) : Filter<V>
 
 /**
  * 范围比较过滤器。此属性必须满足给定的begin to end的上下界范围。include参数决定是否包含上下界。

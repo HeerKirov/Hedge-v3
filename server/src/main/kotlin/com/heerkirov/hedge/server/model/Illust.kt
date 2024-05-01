@@ -58,7 +58,11 @@ data class Illust(val id: Int,
                   /**
                    * [cache field]链接的来源网站的图像id。
                    */
-                  val sourceId: Long? = null,
+                  val sourceId: String? = null,
+                  /**
+                   * [cache field]可排序的图像id。
+                   */
+                  val sortableSourceId: Long? = null,
                   /**
                    * 链接的来源网站的二级图像id。有些会有，比如pixiv。
                    */
@@ -247,7 +251,7 @@ data class TrashedImage(val imageId: Int,
                         /**
                          * 链接的来源网站的图像id。
                          */
-                        val sourceId: Long? = null,
+                        val sourceId: String? = null,
                         /**
                          * 链接的来源网站的二级图像id。有些会有，比如pixiv。
                          */

@@ -16,7 +16,11 @@ data class SourceData(val id: Int,
                       /**
                         * 来源网站中的图像id。
                         */
-                      val sourceId: Long,
+                      val sourceId: String,
+                      /**
+                       * 可排序的图像id。
+                       */
+                      val sortableSourceId: Long?,
                       /**
                         * 原数据的标题信息，有些会有，比如pixiv。
                         */
@@ -28,7 +32,7 @@ data class SourceData(val id: Int,
                       /**
                         * 原数据的关系信息。
                         */
-                      val relations: List<Long>? = null,
+                      val relations: List<String>? = null,
                       /**
                        * 此原数据指向的原始链接。
                        */
@@ -37,6 +41,10 @@ data class SourceData(val id: Int,
                        * 原数据的额外追加信息。它的数据条目需要定义，在site中定义。
                        */
                       val additionalInfo: Map<String, String>? = null,
+                      /**
+                       * 此项的发布时间。
+                       */
+                      val publishTime: Instant? = null,
                       /**
                         * 关系信息的数量的缓存。
                         */

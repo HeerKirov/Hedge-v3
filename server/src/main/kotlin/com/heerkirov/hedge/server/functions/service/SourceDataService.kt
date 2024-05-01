@@ -35,6 +35,7 @@ class SourceDataService(private val appdata: AppDataManager,
         "site" to SourceDatas.sourceSite
         "createTime" to SourceDatas.createTime
         "updateTime" to SourceDatas.updateTime
+        "publishTime" to SourceDatas.publishTime
     }
 
     fun list(filter: SourceDataQueryFilter): ListResult<SourceDataRes> {
@@ -49,7 +50,7 @@ class SourceDataService(private val appdata: AppDataManager,
                     .innerJoin(SourceTags, (SourceTags.id eq SourceTagRelations.sourceTagId) and (SourceTags.name eq filter.sourceTag))
             } }
             .let { if(filter.imageId == null) it else it.innerJoin(Illusts, (Illusts.sourceDataId eq SourceDatas.id) and (Illusts.id eq filter.imageId)) }
-            .select(SourceDatas.sourceSite, SourceDatas.sourceId, SourceDatas.cachedCount, SourceDatas.createTime, SourceDatas.updateTime, SourceDatas.empty, SourceDatas.status)
+            .select(SourceDatas.sourceSite, SourceDatas.sourceId, SourceDatas.cachedCount, SourceDatas.createTime, SourceDatas.updateTime, SourceDatas.empty, SourceDatas.publishTime, SourceDatas.status)
             .whereWithConditions {
                 if(!filter.site.isNullOrEmpty()) {
                     it += if(filter.site.size > 1) SourceDatas.sourceSite inList filter.site else SourceDatas.sourceSite eq filter.site.first()
@@ -72,7 +73,8 @@ class SourceDataService(private val appdata: AppDataManager,
                 val status = it[SourceDatas.status]!!
                 val createTime = it[SourceDatas.createTime]!!
                 val updateTime = it[SourceDatas.updateTime]!!
-                SourceDataRes(source, titles.getOrDefault(source, source), sourceId, cachedCount.tagCount, cachedCount.bookCount, cachedCount.relationCount, empty, status, createTime, updateTime)
+                val publishTime = it[SourceDatas.publishTime]
+                SourceDataRes(source, titles.getOrDefault(source, source), sourceId, cachedCount.tagCount, cachedCount.bookCount, cachedCount.relationCount, empty, status, publishTime, createTime, updateTime)
             }
     }
 
@@ -89,6 +91,7 @@ class SourceDataService(private val appdata: AppDataManager,
                 title = form.title, description = form.description, tags = form.tags,
                 books = form.books, relations = form.relations, links = form.links,
                 additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
+                publishTime = form.publishTime,
                 status = form.status, allowUpdate = false)
         }
     }
@@ -106,7 +109,8 @@ class SourceDataService(private val appdata: AppDataManager,
                 sourceManager.createOrUpdateSourceData(form.sourceSite, form.sourceId,
                     title = form.title, description = form.description, status = form.status,
                     tags = form.tags, books = form.books, relations = form.relations, links = form.links,
-                    additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } })
+                    additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
+                    publishTime = form.publishTime)
             }
         }
     }
@@ -114,7 +118,7 @@ class SourceDataService(private val appdata: AppDataManager,
     /**
      * @throws NotFound 请求对象不存在
      */
-    fun get(sourceSite: String, sourceId: Long): SourceDataDetailRes {
+    fun get(sourceSite: String, sourceId: String): SourceDataDetailRes {
         val row = data.db.from(SourceDatas).select()
             .where { (SourceDatas.sourceSite eq sourceSite) and (SourceDatas.sourceId eq sourceId) }
             .firstOrNull()
@@ -123,6 +127,7 @@ class SourceDataService(private val appdata: AppDataManager,
         val sourceRowId = row[SourceDatas.id]!!
         val createTime = row[SourceDatas.createTime]!!
         val updateTime = row[SourceDatas.updateTime]!!
+        val publishTime = row[SourceDatas.publishTime]
         val sourceTags = data.db.from(SourceTags)
             .innerJoin(SourceTagRelations, (SourceTags.id eq SourceTagRelations.sourceTagId) and (SourceTagRelations.sourceDataId eq sourceRowId))
             .select()
@@ -146,11 +151,11 @@ class SourceDataService(private val appdata: AppDataManager,
             sourceTags, sourceBooks,
             row[SourceDatas.relations] ?: emptyList(),
             row[SourceDatas.links] ?: emptyList(),
-            additionalInfo,
+            additionalInfo, publishTime,
             createTime, updateTime)
     }
 
-    fun getRelatedImages(sourceSite: String, sourceId: Long): List<IllustSimpleRes> {
+    fun getRelatedImages(sourceSite: String, sourceId: String): List<IllustSimpleRes> {
         return data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
             .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
@@ -169,13 +174,14 @@ class SourceDataService(private val appdata: AppDataManager,
      * @throws ResourceNotExist ("additionalInfo", field) 存在不合法的字段
      * @throws ResourceNotExist ("sourceTagType", string[]) 列出的tagType不存在
      */
-    fun update(sourceSite: String, sourceId: Long, form: SourceDataUpdateForm) {
+    fun update(sourceSite: String, sourceId: String, form: SourceDataUpdateForm) {
         data.db.transaction {
             sourceManager.checkSourceSite(sourceSite, sourceId)
             sourceManager.createOrUpdateSourceData(sourceSite, sourceId,
                 title = form.title, description = form.description, tags = form.tags,
                 books = form.books, relations = form.relations, links = form.links,
                 additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
+                publishTime = form.publishTime,
                 status = form.status, allowCreate = false)
         }
     }
@@ -183,7 +189,7 @@ class SourceDataService(private val appdata: AppDataManager,
     /**
      * @throws NotFound 请求对象不存在
      */
-    fun delete(sourceSite: String, sourceId: Long) {
+    fun delete(sourceSite: String, sourceId: String) {
         data.db.transaction {
             sourceManager.deleteSourceData(sourceSite, sourceId)
         }

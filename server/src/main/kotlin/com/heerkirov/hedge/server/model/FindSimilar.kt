@@ -181,7 +181,7 @@ data class FindSimilarResult(val id: Int,
     ])
     sealed interface RelationEdgeType
 
-    data class SourceIdentityEqual(val site: String, val sourceId: Long?, val sourcePart: Int?, val sourcePartName: String?) : RelationEdgeType
+    data class SourceIdentityEqual(val site: String, val sourceId: String?, val sourcePart: Int?, val sourcePartName: String?) : RelationEdgeType
 
     data class HighSimilarity(val similarity: Double) : RelationEdgeType
 
@@ -202,7 +202,7 @@ data class FindSimilarResult(val id: Int,
     ])
     sealed interface RelationCoverageType
 
-    data class SourceIdentitySimilarCoverage(val site: String, val sourceId: Long) : RelationCoverageType
+    data class SourceIdentitySimilarCoverage(val site: String, val sourceId: String) : RelationCoverageType
 
     data class SourceBookCoverage(val site: String, val sourceBookCode: String) : RelationCoverageType
 

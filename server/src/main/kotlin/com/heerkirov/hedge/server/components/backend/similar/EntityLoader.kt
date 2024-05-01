@@ -201,7 +201,7 @@ class EntityLoader(private val data: DataRepository, private val config: FindSim
         }
     }
 
-    fun loadBySourceId(site: String, sourceIds: List<Long>, enableFilterBy: Boolean = false): List<EntityInfo> {
+    fun loadBySourceId(site: String, sourceIds: List<String>, enableFilterBy: Boolean = false): List<EntityInfo> {
         return loadBySourceIdCache.computeIfAbsent(Objects.hash(site, sourceIds)) {
             val imageIds = data.db.from(Illusts)
                 .select(Illusts.id)

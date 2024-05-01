@@ -6,7 +6,7 @@ import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.business.filePathFrom
-import com.heerkirov.hedge.server.utils.business.sourcePathOf
+import com.heerkirov.hedge.server.utils.business.sourcePathOfNullable
 import org.ktorm.dsl.QueryRowSet
 import java.time.LocalDate
 import java.time.Instant
@@ -37,8 +37,9 @@ data class IllustImageSourceDataRes(val source: SourceDataPath?, val sourceSiteN
                                     val empty: Boolean, val status: SourceEditStatus,
                                     val title: String?, val description: String?,
                                     val tags: List<SourceTagDto>?, val books: List<SourceBookDto>?,
-                                    val relations: List<Long>?, val links: List<String>?,
-                                    val additionalInfo: List<SourceDataAdditionalInfoDto>?)
+                                    val relations: List<String>?, val links: List<String>?,
+                                    val additionalInfo: List<SourceDataAdditionalInfoDto>?,
+                                    val publishTime: Instant?)
 
 data class IllustParent(val id: Int, val filePath: FilePath, val childrenCount: Int)
 
@@ -54,7 +55,7 @@ fun newIllustRes(it: QueryRowSet): IllustRes {
     val tagme = it[Illusts.tagme]!!
     val orderTime = Instant.ofEpochMilli(it[Illusts.orderTime]!!)
     val childrenCount = it[Illusts.cachedChildrenCount]?.takeIf { type == IllustType.COLLECTION }
-    val source = sourcePathOf(it[Illusts.sourceSite], it[Illusts.sourceId], it[Illusts.sourcePart], it[Illusts.sourcePartName])
+    val source = sourcePathOfNullable(it[Illusts.sourceSite], it[Illusts.sourceId], it[Illusts.sourcePart], it[Illusts.sourcePartName])
     val filePath = filePathFrom(it)
     return IllustRes(id, type, childrenCount, filePath, score, favorite, tagme, source, orderTime)
 }

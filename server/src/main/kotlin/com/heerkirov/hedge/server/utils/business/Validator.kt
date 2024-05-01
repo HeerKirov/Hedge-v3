@@ -37,6 +37,19 @@ fun checkVariableName(name: String): Boolean {
 }
 
 /**
+ * 检查sourceId的命名是否符合要求。
+ * 要求sourceId只能为[A-Za-z0-9]。
+ */
+fun checkSourceId(sourceId: String): Boolean {
+    //不能不包含非空字符
+    if(sourceId.isBlank()) {
+        return false
+    }
+
+    return sourceIdRegex.matcher(sourceId).find()
+}
+
+/**
  * 检查score的范围是否符合要求。
  */
 fun checkScore(score: Int): Boolean {
@@ -45,3 +58,4 @@ fun checkScore(score: Int): Boolean {
 
 private val disableCharacter = arrayOf('\'', '"', '`', '.', '|')
 private val variableRegex = Pattern.compile("^[A-Za-z][A-Za-z0-9_]*$")
+private val sourceIdRegex = Pattern.compile("^[A-Za-z0-9]*$")

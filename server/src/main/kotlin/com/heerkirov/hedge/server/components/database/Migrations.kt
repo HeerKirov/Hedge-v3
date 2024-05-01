@@ -1,8 +1,6 @@
 package com.heerkirov.hedge.server.components.database
 
-import com.heerkirov.hedge.server.dao.BookImageRelations
-import com.heerkirov.hedge.server.dao.FolderImageRelations
-import com.heerkirov.hedge.server.dao.Illusts
+import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.utils.Resources
 import com.heerkirov.hedge.server.utils.SqlDelimiter
@@ -25,6 +23,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         register.useSQL("0.5.0")
         register.useSQL("0.7.0")
         register.useSQL("0.7.2")
+        register.useSQL("0.8.0", ::processSourceIdModify)
     }
 
     /**
@@ -145,6 +144,28 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
             db.update(Illusts) {
                 where { it.id inList needToBeNotFavorite }
                 set(it.favorite, false)
+            }
+        }
+    }
+
+    /**
+     * 由于sourceId的类型发生了变化，有一些数据需要额外的操作来变更。
+     */
+    private fun processSourceIdModify(db: Database) {
+        val sourceDataList = db.from(SourceDatas)
+            .select(SourceDatas.id, SourceDatas.relations)
+            .where { SourceDatas.relations.isNotNull() and (SourceDatas.relations notEq emptyList()) }
+            .map { Pair(it[SourceDatas.id]!!, it[SourceDatas.relations]!!) }
+
+        if(sourceDataList.isNotEmpty()) {
+            db.batchUpdate(SourceDatas) {
+                for ((id, relations) in sourceDataList) {
+                    val translatedRelations = (relations as List<Any>).map { it.toString() }
+                    item {
+                        where { it.id eq id }
+                        set(it.relations, translatedRelations)
+                    }
+                }
             }
         }
     }

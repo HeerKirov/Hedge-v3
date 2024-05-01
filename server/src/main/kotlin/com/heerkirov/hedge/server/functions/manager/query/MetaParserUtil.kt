@@ -140,8 +140,19 @@ internal object MetaParserUtil {
     /**
      * 将match filter的字符串翻译至符合sql like标准的格式，添加首尾的%%使其可以模糊匹配，并转义需要防备的字符。
      */
-    fun compileMatchFilter(matchString: String): String {
-        return '%' + escapeSqlLike(escapeSqlSpecial(matchString)) + '%'
+    fun compileMatchFilter(matchString: String, exact: Boolean = false): String {
+        return if(exact) {
+            escapeSqlLike(escapeSqlSpecial(matchString))
+        }else{
+            '%' + escapeSqlLike(escapeSqlSpecial(matchString)) + '%'
+        }
+    }
+
+    /**
+     * 判断match filter字符串中是否包含任何sql通配符。
+     */
+    fun isAnySqlSpecial(matchString: String): Boolean {
+        return matchString.contains(sqlSpecialRegex)
     }
 
     /**
@@ -210,4 +221,5 @@ internal object MetaParserUtil {
 
     private val sqlLikeReplaceRegex = Regex("""[/"'\[\]%&_()\\]""")
     private val regexPatternReplaceRegex = Regex("""[$()+.\[\\^{|]""")
+    private val sqlSpecialRegex = Regex("""[\\*?]""")
 }

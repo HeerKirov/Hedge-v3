@@ -20,11 +20,6 @@ data class ListResult<T>(val total: Int, val result: List<T>)
 data class IdRes(val id: Int)
 
 /**
- * 返回id与警告信息的简单结构。
- */
-data class IdResWithWarnings(val id: Int, val warnings: List<ErrorResult>)
-
-/**
  * 批量操作返回的数据结构。
  */
 data class BulkResult<I>(val success: Int, val failed: Int, val errors: List<Error<I>>) {
@@ -49,7 +44,7 @@ data class NullableFilePath(val original: String, val thumbnail: String?, val sa
 /**
  * 包含来源数据定位的所有字段的通用结构。
  */
-data class SourceDataPath(val sourceSite: String, val sourceId: Long, val sourcePart: Int?, val sourcePartName: String?)
+data class SourceDataPath(val sourceSite: String, val sourceId: String, val sourcePart: Int?, val sourcePartName: String?)
 
 /**
  * SourceTag定位的通用结构。
