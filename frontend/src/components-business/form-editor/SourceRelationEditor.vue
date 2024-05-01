@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import { ref } from "vue"
 import { Button } from "@/components/universal"
-import { NumberInput } from "@/components/form"
+import { Input } from "@/components/form"
 import { Flex, FlexItem } from "@/components/layout"
 
 const props = defineProps<{
-    value: number[]
+    value: string[]
 }>()
 
 const emit = defineEmits<{
-    (e: "update:value", value: number[]): void
+    (e: "update:value", value: string[]): void
 }>()
 
 const showNewLine = ref(false)
 
-const setValue = (index: number | "create", v: number) => {
+const setValue = (index: number | "create", v: string) => {
     if(index === "create") {
         emit("update:value", [...props.value, v])
         showNewLine.value = false
@@ -33,7 +33,7 @@ const deleteItem = (index: number) => {
     <div class="p-1">
         <Flex v-for="(v, idx) in value" class="mb-1" :spacing="1">
             <FlexItem :width="100">
-                <NumberInput size="small" placeholder="关联项ID" :value="v" @update:value="setValue(idx, $event)"/>
+                <Input size="small" placeholder="关联项ID" :value="v" @update:value="setValue(idx, $event)"/>
             </FlexItem>
             <FlexItem :shrink="0">
                 <Button size="small" square mode="light" type="danger" icon="close" @click="deleteItem(idx)"/>
@@ -41,7 +41,7 @@ const deleteItem = (index: number) => {
         </Flex>
         <Flex v-if="showNewLine" class="mb-1" :spacing="1">
             <FlexItem :width="100">
-                <NumberInput size="small" width="fullwidth" placeholder="关联项ID" @update:value="setValue('create', $event)"/>
+                <Input size="small" width="fullwidth" placeholder="关联项ID" @update:value="setValue('create', $event)"/>
             </FlexItem>
         </Flex>
         <Button class="w-100" size="small" type="success" icon="plus" @click="showNewLine = true">新关联项</Button>

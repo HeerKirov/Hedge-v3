@@ -35,7 +35,7 @@ const updateSite = (v: string | null) => {
 }
 
 const updateId = (v: string | undefined) => {
-    const sourceId = v && !isNaN(parseInt(v)) ? parseInt(v) : null
+    const sourceId = v?.trim() || null
     if(sourceId) {
         if(props.source !== null) {
             emit("update:source", {...props.source, sourceId})
@@ -54,7 +54,7 @@ const updatePart = (v: string | undefined) => {
 
 const updatePartName = (v: string | undefined) => {
     if(props.source !== null) {
-        emit("update:source", {...props.source, sourcePartName: v || null})
+        emit("update:source", {...props.source, sourcePartName: v?.trim() || null})
     }
 }
 
@@ -65,7 +65,7 @@ const updatePartName = (v: string | undefined) => {
         <SourceSiteSelectBox size="small" :value="site" @update:value="updateSite"/>
         <Flex v-if="site !== null" class="mt-1 w-100" :width="100" :spacing="1">
             <FlexItem :width="45">
-                <Input size="small" update-on-input auto-focus placeholder="来源ID" :value="source?.sourceId.toString()" @update:value="updateId" @enter="$emit('enter')"/>
+                <Input size="small" update-on-input auto-focus placeholder="来源ID" :value="source?.sourceId" @update:value="updateId" @enter="$emit('enter')"/>
             </FlexItem>
             <FlexItem v-if="hasPart" :width="20">
                 <Input size="small" update-on-input placeholder="分页" :value="source?.sourcePart?.toString()" @update:value="updatePart" @enter="$emit('enter')"/>

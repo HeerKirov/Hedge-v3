@@ -7,6 +7,7 @@ import { KeyEvent } from "@/modules/keyboard"
 const props = defineProps<{
     value: LocalDateTime
     autoFocus?: boolean
+    singleLine?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -58,8 +59,8 @@ const enterOnSecond = (e: KeyEvent) => {
             <NumberInput size="small" width="one-third" placeholder="月" :min="1" :max="12" :value="value.month" @update:value="setMonth" @enter="enterOnMonth"/>
             /
             <NumberInput size="small" width="one-third" placeholder="日" :min="1" :max="maxDay" :value="value.day" @update:value="setDay" @enter="enterOnDay"/>
-        </div>
-        <div class="is-line-height-std">
+            <span v-if="singleLine" class="mr-1"/>
+            <br v-else/>
             <NumberInput size="small" width="half" placeholder="时" :min="0" :max="23" :auto-focus="autoFocus" :value="value.hours" @update:value="setHour" @enter="enterOnHour"/>
             :
             <NumberInput size="small" width="one-third" placeholder="分" :min="0" :max="59" :value="value.minutes" @update:value="setMinute" @enter="enterOnMinute"/>

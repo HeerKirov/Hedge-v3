@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { Input } from "@/components/form"
+import { CheckBox, Input } from "@/components/form"
 import { Flex, FlexItem } from "@/components/layout"
 import { SourceTagEditor, SourceBookEditor, SourceRelationEditor, SourceLinkEditor, SourceAdditionalInfoEditor } from "@/components-business/form-editor"
 import { SourceAdditionalInfo, SourceBook, SourceTag } from "@/functions/http-client/api/source-data"
+import { datetime, LocalDateTime } from "@/utils/datetime"
+import DateTimeEditor from "./DateTimeEditor.vue"
 
 interface SummaryData {
     title: string
     description: string
     tags: SourceTag[]
     books: SourceBook[]
-    relations: number[]
+    relations: string[]
     links: string[]
     additionalInfo: SourceAdditionalInfo[]
+    publishTime: LocalDateTime | null
 }
 
 const props = defineProps<{
@@ -25,6 +28,14 @@ const emit = defineEmits<{
 
 const set = <K extends keyof SummaryData>(key: K, value: SummaryData[K]) => {
     emit("update:data", {...props.data, [key]: value})
+}
+
+const changePublishTime = (checked: boolean) => {
+    if(checked && props.data.publishTime === null) {
+        emit("update:data", {...props.data, publishTime: datetime.now()})
+    }else if(!checked && props.data.publishTime !== null) {
+        emit("update:data", {...props.data, publishTime: null})
+    }
 }
 
 </script>
@@ -70,4 +81,8 @@ const set = <K extends keyof SummaryData>(key: K, value: SummaryData[K]) => {
             </div>
         </FlexItem>
     </Flex>
+    <div>
+        <label class="label"><CheckBox :value="data.publishTime !== null" @update:value="changePublishTime"/>发布时间</label>
+        <DateTimeEditor v-if="data.publishTime !== null" single-line :value="data.publishTime" @update:value="set('publishTime', $event)"/>
+    </div>
 </template>

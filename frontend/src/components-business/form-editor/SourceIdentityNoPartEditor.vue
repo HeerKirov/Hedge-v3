@@ -4,16 +4,16 @@ import { SourceSiteSelectBox } from "@/components-business/form-editor"
 
 const props = defineProps<{
     sourceSite: string | null
-    sourceId: number | null
+    sourceId: string | null
 }>()
 
 const emit = defineEmits<{
-    (e: "update", identity: {sourceSite: string | null, sourceId: number | null}): void
+    (e: "update", identity: {sourceSite: string | null, sourceId: string | null}): void
 }>()
 
 const updateSite = (v: string | null) => emit("update", {sourceSite: v, sourceId: props.sourceId})
 
-const updateId = (v: string | undefined) => emit("update", {sourceSite: props.sourceSite, sourceId: v ? parseInt(v) : null})
+const updateId = (v: string | undefined) => emit("update", {sourceSite: props.sourceSite, sourceId: v?.trim() || null})
 
 </script>
 

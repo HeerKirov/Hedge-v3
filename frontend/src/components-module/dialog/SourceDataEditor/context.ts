@@ -10,6 +10,7 @@ import { patchSourceBookForm, patchSourceTagForm } from "@/utils/translation"
 import { toRef } from "@/utils/reactivity"
 import { objects } from "@/utils/primitives"
 import { Push } from "../context"
+import { LocalDateTime } from "@/utils/datetime";
 
 export interface SourceDataEditor {
     /**
@@ -28,7 +29,7 @@ export type SourceDataEditorProps = {
 } | {
     mode: "edit"
     sourceSite: string
-    sourceId: number
+    sourceId: string
     onUpdated?(): void
 }
 
@@ -63,7 +64,8 @@ export function useCreateData(completed: () => void) {
             books: [],
             relations: [],
             links: [],
-            additionalInfo: []
+            additionalInfo: [],
+            publishTime: null,
         }
     })
 
@@ -79,7 +81,8 @@ export function useCreateData(completed: () => void) {
                 books: patchSourceBookForm(form.data.books, []),
                 relations: form.data.relations,
                 links: form.data.links,
-                additionalInfo: form.data.additionalInfo
+                additionalInfo: form.data.additionalInfo,
+                publishTime: form.data.publishTime
             }
         },
         create: client => client.sourceData.create,
@@ -140,7 +143,8 @@ export function useEditorData(identity: Ref<SourceDataIdentity>, completed: () =
                 books: !objects.deepEquals(form.value.books, data.value.books) ? patchSourceBookForm(form.value.books, data.value.books) : undefined,
                 relations: !objects.deepEquals(form.value.relations, data.value.relations) ? form.value.relations : undefined,
                 links: !objects.deepEquals(form.value.links, data.value.links) ? form.value.links : undefined,
-                additionalInfo: !objects.deepEquals(form.value.additionalInfo, data.value.additionalInfo) ? form.value.additionalInfo : undefined
+                additionalInfo: !objects.deepEquals(form.value.additionalInfo, data.value.additionalInfo) ? form.value.additionalInfo : undefined,
+                publishTime: !objects.deepEquals(form.value.publishTime, data.value.publishTime) ? form.value.publishTime : undefined
             }
             const r = !Object.values(form).filter(i => i !== undefined).length || await setData(updateForm)
             if(r && completed) completed()
@@ -155,13 +159,14 @@ interface SourceDataUpdateFormData {
     description: string,
     tags: SourceTag[],
     books: SourceBook[],
-    relations: number[],
+    relations: string[],
     links: string[],
     additionalInfo: SourceAdditionalInfo[]
+    publishTime: LocalDateTime | null
 }
 
 interface SourceDataCreateFormData {
-    identity: {sourceSite: string | null, sourceId: number | null}
+    identity: {sourceSite: string | null, sourceId: string | null}
     data: SourceDataUpdateFormData
 }
 
@@ -173,6 +178,7 @@ function mapDataToUpdateForm(data: DetailSourceData): SourceDataUpdateFormData {
         books: data.books,
         relations: data.relations,
         links: data.links,
-        additionalInfo: data.additionalInfo
+        additionalInfo: data.additionalInfo,
+        publishTime: data.publishTime
     }
 }

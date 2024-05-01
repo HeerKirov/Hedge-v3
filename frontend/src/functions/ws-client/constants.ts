@@ -96,11 +96,11 @@ export interface TrashedImageCreated extends BaseWsEvent<"entity/trashed-image/c
 
 export interface TrashedImageProcessed extends BaseWsEvent<"entity/trashed-image/processed"> { imageIds: number[], restore: boolean }
 
-export interface SourceDataCreated extends BaseWsEvent<"entity/source-data/created"> { site: string, sourceId: number }
+export interface SourceDataCreated extends BaseWsEvent<"entity/source-data/created"> { site: string, sourceId: string }
 
-export interface SourceDataUpdated extends BaseWsEvent<"entity/source-data/updated"> { site: string, sourceId: number }
+export interface SourceDataUpdated extends BaseWsEvent<"entity/source-data/updated"> { site: string, sourceId: string }
 
-export interface SourceDataDeleted extends BaseWsEvent<"entity/source-data/deleted"> { site: string, sourceId: number }
+export interface SourceDataDeleted extends BaseWsEvent<"entity/source-data/deleted"> { site: string, sourceId: string }
 
 export interface SourceBookUpdated extends BaseWsEvent<"entity/source-book/updated"> { site: string, sourceBookCode: string }
 

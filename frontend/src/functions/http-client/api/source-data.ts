@@ -10,22 +10,25 @@ export function createSourceDataEndpoint(http: HttpInstance): SourceDataEndpoint
             parseQuery: mapFromSourceDataFilter,
             parseResponse: ({ total, result }: ListResult<any>) => ({total, result: result.map(mapToSourceData)})
         }),
-        create: http.createDataRequest("/api/source-data", "POST"),
+        create: http.createDataRequest("/api/source-data", "POST", {
+            parseData: mapFromSourceDataUpdateForm
+        }),
         bulk: http.createDataRequest("/api/source-data/bulk", "POST"),
         get: http.createPathRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}`, "GET", {
             parseResponse: mapToDetailSourceData
         }),
-        update: http.createPathDataRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}`, "PATCH"),
+        update: http.createPathDataRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}`, "PATCH", {
+            parseData: mapFromSourceDataUpdateForm
+        }),
         delete: http.createPathRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}`, "DELETE"),
-        getRelatedImages: http.createPathRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}/related-images`),
-        getSourceMarks: http.createPathRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}/source-marks`, "GET"),
-        updateSourceMarks: http.createPathDataRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}/source-marks`, "PATCH"),
+        getRelatedImages: http.createPathRequest(({ sourceSite, sourceId }) => `/api/source-data/${encodeURIComponent(sourceSite)}/${encodeURIComponent(sourceId)}/related-images`)
     }
 }
 
 function mapToSourceData(data: any): SourceData {
     return {
         ...data,
+        publishTime: data.publishTime ? datetime.of(<string>data["publishTime"]) : null,
         createTime: datetime.of(<string>data["createTime"]),
         updateTime: datetime.of(<string>data["updateTime"]),
     }
@@ -34,8 +37,16 @@ function mapToSourceData(data: any): SourceData {
 function mapToDetailSourceData(data: any): DetailSourceData {
     return {
         ...data,
+        publishTime: data.publishTime ? datetime.of(<string>data["publishTime"]) : null,
         createTime: datetime.of(<string>data["createTime"]),
         updateTime: datetime.of(<string>data["updateTime"]),
+    }
+}
+
+function mapFromSourceDataUpdateForm(form: SourceDataUpdateForm): any {
+    return {
+        ...form,
+        publishTime: form.publishTime && datetime.toISOString(form.publishTime),
     }
 }
 
@@ -54,19 +65,15 @@ export interface SourceDataEndpoint {
     getRelatedImages(key: SourceDataIdentity): Promise<Response<SimpleIllust[]>>
     update(key: SourceDataIdentity, form: SourceDataUpdateForm): Promise<Response<null, SourceDataExceptions["update"]>>
     delete(key: SourceDataIdentity): Promise<Response<null, NotFound>>
-    getSourceMarks(key: SourceDataIdentity): Promise<Response<SourceMark[], NotFound>>
-    updateSourceMarks(key: SourceDataIdentity, form: SourceMarkPartialForm): Promise<Response<null, NotFound | ResourceNotExist<"related", number>>>
 }
 
-export interface SourceDataIdentity { sourceSite: string, sourceId: number }
+export interface SourceDataIdentity { sourceSite: string, sourceId: string }
 
 export interface SourceDataExceptions {
     "create": ResourceNotExist<"site", string> | ResourceNotExist<"additionalInfo", string> | ResourceNotExist<"sourceTagType", string[]> | AlreadyExists<"SourceData", "sourceId", number>
     "bulk": ResourceNotExist<"site", string> | ResourceNotExist<"additionalInfo", string> | ResourceNotExist<"sourceTagType", string[]>
     "update": ResourceNotExist<"site", string> | ResourceNotExist<"additionalInfo", string> | ResourceNotExist<"sourceTagType", string[]> | NotFound
 }
-
-export type SourceMarkType = "SAME" | "SIMILAR" | "RELATED" | "UNKNOWN"
 
 export type SourceEditStatus = "NOT_EDITED" | "EDITED" | "ERROR" | "IGNORED"
 
@@ -82,7 +89,7 @@ interface BasicSourceData {
     /**
      * source id。
      */
-    sourceId: number
+    sourceId: string
     /**
      * 是否为空。
      */
@@ -91,6 +98,10 @@ interface BasicSourceData {
      * 编辑状态。
      */
     status: SourceEditStatus
+    /**
+     * 发布时间。
+     */
+    publishTime: LocalDateTime | null
     /**
      * 创建时间。
      */
@@ -136,7 +147,7 @@ export interface DetailSourceData extends BasicSourceData {
     /**
      * 相关项。
      */
-    relations: number[]
+    relations: string[]
     /**
      * 相关链接。
      */
@@ -166,28 +177,9 @@ export interface SourceAdditionalInfo {
     value: string
 }
 
-export interface SourceMark {
-    /**
-     * source name。
-     */
-    sourceSite: string
-    /**
-     * source标题。自动从setting取得并填充。
-     */
-    sourceSiteName: string
-    /**
-     * source id。
-     */
-    sourceId: number
-    /**
-     * 手动标记的关系类型。
-     */
-    markType: SourceMarkType
-}
-
 export interface SourceDataCreateForm extends SourceDataUpdateForm {
     sourceSite: string
-    sourceId: number
+    sourceId: string
 }
 
 export interface SourceDataUpdateForm {
@@ -196,9 +188,10 @@ export interface SourceDataUpdateForm {
     description?: string
     tags?: SourceTagForm[]
     books?: SourceBookForm[]
-    relations?: number[]
+    relations?: string[]
     links?: string[]
     additionalInfo?: SourceAdditionalInfoForm[]
+    publishTime?: LocalDateTime | null
 }
 
 export interface SourceTagForm {
@@ -219,13 +212,6 @@ export interface SourceAdditionalInfoForm {
     value: string
 }
 
-export interface SourceMarkPartialForm {
-    action: "UPSERT" | "REMOVE"
-    sourceSite: string
-    sourceId: number
-    markType?: SourceMarkType
-}
-
 export type SourceDataFilter = SourceDataQueryFilter & LimitAndOffsetFilter
 
 export interface SourceDataQueryFilter {
@@ -236,7 +222,7 @@ export interface SourceDataQueryFilter {
     /**
      * 排序字段列表。
      */
-    order?: OrderList<"rowId" | "sourceId" | "site" | "createTime" | "updateTime">
+    order?: OrderList<"rowId" | "sourceId" | "site" | "createTime" | "updateTime" | "publishTime">
     /**
      * 按status类型过滤。
      */

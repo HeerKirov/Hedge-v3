@@ -290,7 +290,7 @@ export interface SimilarityRelationCoverage {
 export type SimilarityRelationEdgeType = {
     type: "SOURCE_IDENTITY_EQUAL"
     site: string
-    sourceId: number | null
+    sourceId: string | null
     sourcePart: number | null
     sourcePartName: string | null
 } | {
@@ -303,7 +303,7 @@ export type SimilarityRelationEdgeType = {
 export type SimilarityRelationCoverageType = {
     type: "SOURCE_IDENTITY_SIMILAR"
     site: string
-    sourceId: number
+    sourceId: string
 } | {
     type: "SOURCE_BOOK"
     site: string
@@ -349,7 +349,7 @@ export type FindSimilarResultResolveAction = ({type: "CLONE_IMAGE"} & ImageProps
 } | {
     type: "MARK_IGNORED_SOURCE_DATA"
     site: string
-    sourceId: number
+    sourceId: string
 }
 
 export interface FindSimilarTaskQueryFilter {

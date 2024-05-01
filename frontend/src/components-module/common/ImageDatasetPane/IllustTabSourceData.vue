@@ -3,8 +3,16 @@ import { toRef } from "vue"
 import { Separator, Icon } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
 import {
-    SourceInfo, SourceEditStatusDisplay, TitleDisplay, DescriptionDisplay,
-    SourceRelationsDisplay, SourceBooksDisplay, SourceTagsDisplay, SourceLinksDisplay, SourceAdditionalInfoDisplay
+    SourceInfo,
+    SourceEditStatusDisplay,
+    TitleDisplay,
+    DescriptionDisplay,
+    SourceRelationsDisplay,
+    SourceBooksDisplay,
+    SourceTagsDisplay,
+    SourceLinksDisplay,
+    SourceAdditionalInfoDisplay,
+    TimeGroupDisplay
 } from "@/components-business/form-display"
 import { SourceIdentityEditor, SourceEditStatusEditor } from "@/components-business/form-editor"
 import { useSideBarSourceData } from "@/services/main/illust"
@@ -46,6 +54,7 @@ const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceData
             <SourceTagsDisplay v-if="data.tags.length" :site="data.source.sourceSite" :value="data.tags" @dblclick="openSourceDataEditor"/>
             <SourceLinksDisplay v-if="data.links.length" :value="data.links" @dblclick="openSourceDataEditor"/>
             <SourceAdditionalInfoDisplay v-if="data.additionalInfo.length" :value="data.additionalInfo" @dblclick="openSourceDataEditor"/>
+            <TimeGroupDisplay v-if="data.publishTime" class="mt-1" :publish-time="data.publishTime"/>
         </template>
     </template>
     <div v-else-if="type === 'COLLECTION'" class="has-text-centered">

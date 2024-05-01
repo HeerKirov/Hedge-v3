@@ -459,21 +459,21 @@ export function useTagDroppable(parentId: Ref<number | null>, ordinal: Ref<numbe
 
     /**
      * 将指定的节点移动到标定的插入位置。
-     * @param sourceId 指定节点的tag id。
+     * @param tagId 指定节点的tag id。
      * @param insertParentId 插入目标节点的id。null表示插入到根列表。
      * @param insertOrdinal 插入目标节点后的排序顺位。null表示默认操作(追加到节点末尾，或者对于相同parent不执行移动)
      */
-    const move = (sourceId: number, insertParentId: number | null, insertOrdinal: number | null) => {
+    const move = (tagId: number, insertParentId: number | null, insertOrdinal: number | null) => {
         //FIXED: 前后端API含义不同问题已修复
 
-        const info = indexedData.indexedData.value[sourceId]
+        const info = indexedData.indexedData.value[tagId]
         if(!info) {
-            console.error(`Error occurred while moving tag ${sourceId}: cannot find indexed info.`)
+            console.error(`Error occurred while moving tag ${tagId}: cannot find indexed info.`)
             return
         }
         const target = getTarget(info.parentId, info.ordinal, insertParentId, insertOrdinal)
 
-        if(target.parentId === info.parentId && target.ordinal === info.ordinal || sourceId === target.parentId) {
+        if(target.parentId === info.parentId && target.ordinal === info.ordinal || tagId === target.parentId) {
             //没有变化，或插入目标是其自身时，跳过操作
             return
         }

@@ -134,7 +134,7 @@ export interface SourcePreference {
     additionalInfo: {[field: string]: string} | null
     tags: {code: string, type: string, name: string | null, otherName: string | null}[] | null
     books: {code: string, title: string | null, otherTitle: string | null}[] | null
-    relations: number[] | null
+    relations: string[] | null
 }
 
 export interface Preference {

@@ -78,8 +78,12 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
                 update: http.createPathDataRequest(id => `/api/illusts/image/${id}/related-items`, "PATCH")
             },
             sourceData: {
-                get: http.createPathRequest(id => `/api/illusts/image/${id}/source-data`, "GET"),
-                update: http.createPathDataRequest(id => `/api/illusts/image/${id}/source-data`, "PATCH")
+                get: http.createPathRequest(id => `/api/illusts/image/${id}/source-data`, "GET", {
+                    parseResponse: mapToImageSourceData
+                }),
+                update: http.createPathDataRequest(id => `/api/illusts/image/${id}/source-data`, "PATCH", {
+                    parseData: mapFromImageSourceDataUpdateForm
+                })
             }
         },
         associate: {
@@ -155,6 +159,13 @@ function mapToImageRelatedItems(data: any): ImageRelatedItems {
     }
 }
 
+function mapToImageSourceData(data: any): ImageSourceData {
+    return {
+        ...data,
+        publishTime: data.publishTime ? datetime.of(<string>data["publishTime"]) : null,
+    }
+}
+
 function mapFromCollectionCreateForm(form: CollectionCreateForm): any {
     return {
         ...form,
@@ -174,6 +185,13 @@ function mapFromImageUpdateForm(form: IllustUpdateForm): any {
         ...form,
         partitionTime: form.partitionTime !== undefined ? date.toISOString(form.partitionTime) : undefined,
         orderTime: form.orderTime !== undefined ? datetime.toISOString(form.orderTime) : undefined
+    }
+}
+
+function mapFromImageSourceDataUpdateForm(form: ImageSourceDataUpdateForm): any {
+    return {
+        ...form,
+        publishTime: form.publishTime !== undefined ? date.toISOString(form.publishTime) : undefined,
     }
 }
 
@@ -610,7 +628,7 @@ export type ImageSourceData = {
     /**
      * 来源数据：关联项的id列表。
      */
-    relations: number[]
+    relations: string[]
     /**
      * 相关链接。
      */
@@ -619,6 +637,10 @@ export type ImageSourceData = {
      * 附加元数据。
      */
     additionalInfo: SourceAdditionalInfo[]
+    /**
+     * 发布时间。
+     */
+    publishTime: LocalDateTime | null
 } | {
     source: null
     sourceTitle: null
@@ -631,6 +653,7 @@ export type ImageSourceData = {
     relations: null
     links: null
     additionalInfo: null
+    publishTime: null
 }
 
 export interface CollectionCreateForm {
@@ -661,10 +684,11 @@ export interface ImageSourceDataUpdateForm {
     description?: string | null
     tags?: SourceTagForm[]
     books?: SourceBookForm[]
-    relations?: number[]
+    relations?: string[]
     links?: string[]
     additionalInfo?: SourceAdditionalInfoForm[]
     status?: SourceEditStatus
+    publishTime?: LocalDateTime
 }
 
 export interface IllustUpdateForm {

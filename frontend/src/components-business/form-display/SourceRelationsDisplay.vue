@@ -2,7 +2,7 @@
 import { Icon } from "@/components/universal"
 
 defineProps<{
-    value?: number[]
+    value?: string[]
 }>()
 
 </script>

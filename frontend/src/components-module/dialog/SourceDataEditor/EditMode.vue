@@ -8,7 +8,7 @@ import { useEditorData } from "./context"
 
 const props = defineProps<{
     sourceSite: string
-    sourceId: number
+    sourceId: string
 }>()
 
 const emit = defineEmits<{

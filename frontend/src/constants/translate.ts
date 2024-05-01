@@ -16,6 +16,7 @@ export const QUERY_FIELD_NAMES: {[key: string]: string} = {
     "CREATE_TIME": "创建时间",
     "UPDATE_TIME": "上次修改",
     "ORDER_TIME": "排序时间",
+    "PUBLISH_TIME": "发布时间",
     "PARTITION": "时间分区",
     "TITLE": "标题",
     "DESCRIPTION": "描述",
@@ -28,6 +29,7 @@ export const QUERY_FIELD_NAMES: {[key: string]: string} = {
     "SOURCE_FROM": "来源站点",
     "SOURCE_TITLE": "来源标题",
     "SOURCE_DESCRIPTION": "来源描述",
+    "SOURCE_PUBLISH_TIME": "来源发布时间",
     "TAGME": "TAGME",
     "STATUS": "状态"
 }
