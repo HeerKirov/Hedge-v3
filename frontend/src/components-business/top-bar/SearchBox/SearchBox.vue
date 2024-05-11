@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ComponentPublicInstance, ref, watch } from "vue"
+import { ComponentPublicInstance, ref, toRef, watch } from "vue"
 import { Input } from "@/components/form"
 import { Button, Icon } from "@/components/universal"
 import { ElementPopupCallout } from "@/components/interaction"
@@ -11,7 +11,7 @@ import { computedEffect, computedMutable } from "@/utils/reactivity"
 import { useForecast } from "./context"
 import SearchBoxSuggestions from "./SearchBoxSuggestions.vue"
 import SearchBoxHistories from "./SearchBoxHistories.vue"
-import TimeCostDiv from "@/components-business/top-bar/SearchBox/TimeCostDiv.vue";
+import TimeCostDiv from "./TimeCostDiv.vue"
 
 const props = defineProps<{
     value?: string
@@ -33,6 +33,8 @@ const inputRef = ref<ComponentPublicInstance>()
 const suggestionRef = ref<InstanceType<typeof SearchBoxSuggestions>>()
 const historyRef = ref<InstanceType<typeof SearchBoxHistories>>()
 
+const schema = toRef(props, "schema")
+
 const textValue = computedMutable(() => props.value)
 
 const hasValue = computedEffect(() => !!(props.value || textValue.value))
@@ -44,8 +46,17 @@ const showSchema = ref(false)
 const showHistory = ref(true)
 
 watch(active, a => { if(a) showSchema.value = true })
-watch(() => props.schema, s => { if(s && (s.errors.length || s.warnings.length)) showSchema.value = true })
 watch(textValue, (t, o) => { if(!showHistory.value && o && !t) showHistory.value = true })
+watch(schema, s => {
+    if(s) {
+        if(s.errors.length || s.warnings.length) {
+            showSchema.value = true
+        }
+        if(!s.errors.length && props.dialect !== undefined && textValue.value) {
+            fetchPushHistory(props.dialect, textValue.value).finally()
+        }
+    }
+})
 
 const { startForecastTimer, stopForecastTimer, forecast, pickSuggestion } = useForecast(inputRef, textValue, props.dialect)
 
@@ -53,9 +64,6 @@ const updateValue = (newValue: string | undefined) => {
     textValue.value = newValue
     emit("update:value", newValue)
     emit("enter", newValue !== props.value)
-    if(props.dialect !== undefined && newValue !== props.value && newValue) {
-        fetchPushHistory(props.dialect, newValue).finally()
-    }
 }
 
 const focusKey = createKeyEventValidator("Meta+KeyF")

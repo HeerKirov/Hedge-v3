@@ -58,7 +58,7 @@ const more = () => router.routePush({routeName: "Illust", initializer: {topicNam
         <template v-if="data.parents.length">
             <label class="label mb-2"><Icon class="mr-1" icon="chess-queen"/>父主题</label>
             <Group>
-                <SimpleMetaTagElement v-for="topic in data.parents" :key="topic.id" type="topic" :value="topic" clickable/>
+                <SimpleMetaTagElement v-for="topic in data.parents" :key="topic.id" type="topic" :value="topic" clickable @click="$emit('click:topic', topic.id)"/>
             </Group>
         </template>
         <template v-if="data.children?.length">

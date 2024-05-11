@@ -125,6 +125,6 @@ const { hover, ...hoverEvents } = useMouseHover()
             width: 40px
             text-align: right
         > .count
-            width: 50px
+            width: 75px
             text-align: right
 </style>

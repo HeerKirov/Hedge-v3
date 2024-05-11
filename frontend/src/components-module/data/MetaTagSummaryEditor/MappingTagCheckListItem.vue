@@ -102,14 +102,14 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues, enabled:
 </script>
 
 <template>
-    <tr>
-        <td>
+    <div class="flex mb-half">
+        <div class="flex-item no-grow-shrink">
             <CheckBox :disabled="mappings.length <= 0" :value="mappings.length > 0 && selected" @update:value="$emit('update:selected', $event)"/>
-        </td>
-        <td @contextmenu="sourceTagMenu.popup()">
-            <SourceTagElement :value="sourceTag"/>
-        </td>
-        <td>
+        </div>
+        <div class="flex-item w-50" @contextmenu="sourceTagMenu.popup()">
+            <SourceTagElement :class="$style['source-tag']" :value="sourceTag"/>
+        </div>
+        <div class="flex-item w-50">
             <Block v-if="editMode" v-bind="dropEvents" class="p-1">
                 <Group class="mt-1">
                     <SimpleMetaTagElement v-for="(item, idx) in editorForm" :key="item.key" :type="item.type" :value="item.value">
@@ -135,6 +135,11 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues, enabled:
                                       @contextmenu="mappingMenu.popup()"/>
             </Group>
             <Tag v-else icon="plus" @click="edit">编辑映射</Tag>
-        </td>
-    </tr>
+        </div>
+    </div>
 </template>
+
+<style module lang="sass">
+.source-tag
+    white-space: normal
+</style>
