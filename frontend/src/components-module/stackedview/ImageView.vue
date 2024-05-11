@@ -120,53 +120,6 @@ const popupMenu = usePopupMenu(computed(() => [
             </BasePane>
         </template>
     </PaneLayout>
-    <!-- <TopBarCollapseLayout :collapsed="collapsed">
-        <template #top-bar>
-            <MiddleLayout>
-                <template #left>
-                    <BackButton/>
-                </template>
-
-                <Button square icon="angle-left" @click="prev"/>
-                <div :class="$style.navigator">
-                    {{metrics.current + 1}} / {{metrics.total}}
-                    <p v-if="subMetrics" class="secondary-text">{{subMetrics.current + 1}} / {{subMetrics.total}}</p>
-                </div>
-                <Button square icon="angle-right" @click="next"/>
-
-                <template #right>
-                    <Button square icon="heart" :type="data?.favorite ? 'danger' : 'secondary'" @click="toggleFavorite"/>
-                    <Separator/>
-                    <ElementPopupMenu :items="externalMenuItems" position="bottom" align="left" v-slot="{ setEl, popup }">
-                        <Button :ref="setEl" square icon="external-link-alt" @click="popup"/>
-                    </ElementPopupMenu>
-                    <Separator/>
-                    <ZoomController :disabled="!zoomEnabled" v-model:value="zoomValue"/>
-                    <Button :class="{[$style['darwin-border-button']]: hasDarwinBorder}" square icon="fa-up-right-and-down-left-from-center" @click="collapsed = !collapsed"/>
-                </template>
-            </MiddleLayout>
-        </template>
-
-        <PaneLayout :show-pane="!collapsed">
-            <PlayBoard v-if="data !== null" :src="assetsUrl(data.filePath.original)" :zoom-value="zoomValue" v-model:zoom-enabled="zoomEnabled" @contextmenu="popupMenu.popup()"/>
-
-            <CollapsedButton v-if="collapsed" :has-darwin-border="hasDarwinBorder" @click:collapsed="collapsed = $event"/>
-
-            <template #pane>
-                <BasePane :show-close-button="false">
-                    <KeepAlive>
-                        <IllustTabDetailInfo v-if="id !== null && tabType === 'info'" :detail-id="id"/>
-                        <IllustTabRelatedItems v-else-if="id !== null && tabType === 'related'" :detail-id="id" type="IMAGE"/>
-                        <IllustTabSourceData v-else-if="id !== null && tabType === 'source'" :detail-id="id" type="IMAGE"/>
-                    </KeepAlive>
-
-                    <template #bottom>
-                        <OptionButtons :items="sideBarButtonItems" v-model:value="tabType" enable-darwin-border/>
-                    </template>
-                </BasePane>
-            </template>
-        </PaneLayout>
-    </TopBarCollapseLayout> -->
 </template>
 
 <style module lang="sass">

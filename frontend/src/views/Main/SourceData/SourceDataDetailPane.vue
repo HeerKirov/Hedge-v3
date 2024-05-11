@@ -57,7 +57,7 @@ const gotoIllustMenu = <MenuItem<undefined>[]>[
             <SourceTagsDisplay v-if="data.tags.length" :site="data.sourceSite" :value="data.tags" @dblclick="openEditDialog"/>
             <SourceLinksDisplay v-if="data.links.length" :value="data.links" @dblclick="openEditDialog"/>
             <SourceAdditionalInfoDisplay v-if="data.additionalInfo.length" :value="data.additionalInfo" @dblclick="openEditDialog"/>
-            <TimeGroupDisplay class="mt-1" :publish-time="data.publishTime" :create-time="data.createTime" :update-time="data.updateTime"/>
+            <TimeGroupDisplay v-if="data.publishTime" class="mt-1" :publish-time="data.publishTime" :create-time="data.createTime" :update-time="data.updateTime"/>
         </template>
     </BasePane>
 </template>
