@@ -219,7 +219,7 @@ internal object MetaParserUtil {
     private val sqlLikeMap = ConcurrentHashMap<String, String>()
     private val regexPatternMap = ConcurrentHashMap<String, Regex>()
 
-    private val sqlLikeReplaceRegex = Regex("""[/"'\[\]%&_()\\]""")
+    private val sqlLikeReplaceRegex = Regex("""[\\*_]""")
     private val regexPatternReplaceRegex = Regex("""[$()+.\[\\^{|]""")
     private val sqlSpecialRegex = Regex("""[\\*?]""")
 }

@@ -226,6 +226,9 @@ class IllustManager(private val appdata: AppDataManager,
 
     /**
      * 删除项目。对于collection，它将被直接删除；对于image，它将接trash调用，送入已删除列表。
+     * @param deleteCompletely 彻底删除。对于image，不送入已删除列表，而是直接删除。
+     * @param deleteCollectionChildren 对于collection，删除它下属的所有image。
+     * @param innerCalled 该方法内部递归调用时使用此参数。方法外部不应当使用。
      */
     fun delete(illust: Illust, deleteCompletely: Boolean = false, deleteCollectionChildren: Boolean = false, innerCalled: Boolean = false) {
         //对于IMAGE，将其移入Trash。不过在开启了deleteCompletely时不这么做
@@ -234,6 +237,21 @@ class IllustManager(private val appdata: AppDataManager,
         }
 
         data.db.delete(Illusts) { it.id eq illust.id }
+        if(illust.type != IllustModelType.COLLECTION) {
+            //对于image，清除其在metaTag中的缓存计数
+            data.db.update(Tags) {
+                where { it.id inList data.db.from(Tags).innerJoin(IllustTagRelations, IllustTagRelations.tagId eq Tags.id).select(Tags.id).where { IllustTagRelations.illustId eq illust.id} }
+                set(it.cachedCount, it.cachedCount minus 1)
+            }
+            data.db.update(Topics) {
+                where { it.id inList data.db.from(Topics).innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id).select(Topics.id).where { IllustTopicRelations.illustId eq illust.id} }
+                set(it.cachedCount, it.cachedCount minus 1)
+            }
+            data.db.update(Authors) {
+                where { it.id inList data.db.from(Authors).innerJoin(IllustAuthorRelations, IllustAuthorRelations.authorId eq Authors.id).select(Authors.id).where { IllustAuthorRelations.illustId eq illust.id} }
+                set(it.cachedCount, it.cachedCount minus 1)
+            }
+        }
         data.db.delete(IllustTagRelations) { it.illustId eq illust.id }
         data.db.delete(IllustAuthorRelations) { it.illustId eq illust.id }
         data.db.delete(IllustTopicRelations) { it.illustId eq illust.id }

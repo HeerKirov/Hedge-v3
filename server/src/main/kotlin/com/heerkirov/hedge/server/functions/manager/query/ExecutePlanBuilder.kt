@@ -538,7 +538,8 @@ class AuthorExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder {
             if(it.precise) {
                 Authors.name eq it.value
             }else{
-                (Authors.name like MetaParserUtil.compileMatchFilter(it.value)) or (Authors.otherNames like MetaParserUtil.compileMatchFilter(it.value))
+                val matchFilter = MetaParserUtil.compileMatchFilter(it.value)
+                (Authors.name like matchFilter) or (Authors.otherNames like matchFilter) or (Authors.keywords like matchFilter)
             }
         }.reduce { a, b -> a or b }.let {
             if(exclude) it.not() else it
@@ -597,7 +598,8 @@ class TopicExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder {
             if(it.precise) {
                 Topics.name eq it.value
             }else{
-                (Topics.name like MetaParserUtil.compileMatchFilter(it.value)) or (Topics.otherNames like MetaParserUtil.compileMatchFilter(it.value))
+                val matchFilter = MetaParserUtil.compileMatchFilter(it.value)
+                (Topics.name like matchFilter) or (Topics.otherNames like matchFilter) or (Topics.keywords like matchFilter)
             }
         }.reduce { a, b -> a or b }.let {
             if(exclude) it.not() else it

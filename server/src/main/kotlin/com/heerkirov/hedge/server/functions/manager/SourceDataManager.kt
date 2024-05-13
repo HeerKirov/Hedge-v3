@@ -284,7 +284,6 @@ class SourceDataManager(private val appdata: AppDataManager,
                     && tags.letOpt { it.isEmpty() }.unwrapOr { true }
                     && books.letOpt { it.isEmpty() }.unwrapOr { true }
                     && relations.letOpt { it.isEmpty() }.unwrapOr { true }
-                    && publishTime.letOpt { it == null }.unwrapOr { true }
             val finalStatus = status.unwrapOr { if(empty) SourceEditStatus.NOT_EDITED else SourceEditStatus.EDITED }
 
             val now = Instant.now()
@@ -360,7 +359,6 @@ class SourceDataManager(private val appdata: AppDataManager,
             val empty = title.unwrapOr { sourceData.title }.isNullOrEmpty()
                     && description.unwrapOr { sourceData.description }.isNullOrEmpty()
                     && cachedCount.unwrapOr { sourceData.cachedCount }.let { it.relationCount <= 0 && it.bookCount <= 0 && it.tagCount <= 0 }
-                    && publishTime.unwrapOr { sourceData.publishTime } == null
 
             val finalStatus = if(status.isPresent) status else if(anyOpt(title, description, tags, books, relations, publishTime)) optOf(SourceEditStatus.EDITED) else undefined()
 
@@ -486,7 +484,6 @@ class SourceDataManager(private val appdata: AppDataManager,
             val empty = title.unwrapOr { sourceData.title }.isNullOrEmpty()
                     && description.unwrapOr { sourceData.description }.isNullOrEmpty()
                     && cachedCount.unwrapOr { sourceData.cachedCount }.let { it.relationCount <= 0 && it.bookCount <= 0 && it.tagCount <= 0 }
-                    && publishTime.unwrapOr { sourceData.publishTime } == null
 
             val finalStatus = if(status.isPresent) status else if(anyOpt(title, description, appendTags, appendBooks, fixedRelations, publishTime)) optOf(SourceEditStatus.EDITED) else undefined()
 
