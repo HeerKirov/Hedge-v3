@@ -174,6 +174,7 @@ class FindSimilarService(private val data: DataRepository,
             val collectionToImages = mutableMapOf<Any, Pair<MutableList<Int>, LocalDate?>>()
             val bookToImages = mutableMapOf<Int, MutableList<Int>>()
             val toBeDeleted = mutableSetOf<Int>()
+            val toBeDeletedCompletely = mutableSetOf<Int>()
             val imageClonedCollections = mutableMapOf<Int, MutableList<Int>>()
             val imageCloneBooks = mutableMapOf<Int, MutableList<Int>>()
             val ignoredEdges = mutableListOf<Pair<Int, Int>>()
@@ -193,7 +194,9 @@ class FindSimilarService(private val data: DataRepository,
                     is FindSimilarResultResolveForm.AddToBookResolution -> {
                         bookToImages.computeIfAbsent(action.bookId) { mutableListOf() }.addAll(action.imageIds)
                     }
-                    is FindSimilarResultResolveForm.DeleteResolution -> {
+                    is FindSimilarResultResolveForm.DeleteResolution -> if(action.deleteCompletely) {
+                        toBeDeletedCompletely.addAll(action.imageIds)
+                    }else{
                         toBeDeleted.addAll(action.imageIds)
                     }
                     is FindSimilarResultResolveForm.MarkIgnoredResolution -> {
@@ -297,6 +300,9 @@ class FindSimilarService(private val data: DataRepository,
             if (toBeDeleted.isNotEmpty()) {
                 illustManager.unfoldImages(toBeDeleted.toList()).forEach(illustManager::delete)
             }
+            if (toBeDeletedCompletely.isNotEmpty()) {
+                illustManager.unfoldImages(toBeDeletedCompletely.toList()).forEach { illustManager.delete(it, deleteCompletely = true) }
+            }
 
             if (form.clear) {
                 data.db.delete(FindSimilarResults) { it.id eq id }
@@ -308,7 +314,7 @@ class FindSimilarService(private val data: DataRepository,
                 val collections = (collectionToImages.map { (k, v) -> (if(k is Int) k else newCollectionIds[k as String]!!) to v.first }.asSequence() + imageClonedCollections.asSequence().map { it.key to it.value })
                     .groupBy({ it.first }) { it.second }
                     .mapValues { it.value.asSequence().flatten().distinct().toList() }
-                val newRes = computeResultChange(result, collections, books, toBeDeleted, ignoredEdges, ignoredSourceBooks, ignoredSourceDatas)
+                val newRes = computeResultChange(result, collections, books, toBeDeleted + toBeDeletedCompletely, ignoredEdges, ignoredSourceBooks, ignoredSourceDatas)
                 data.db.update(FindSimilarResults) {
                     where { it.id eq id }
                     set(it.category, newRes.category)

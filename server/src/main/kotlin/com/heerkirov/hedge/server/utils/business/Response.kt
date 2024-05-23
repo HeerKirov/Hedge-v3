@@ -26,6 +26,8 @@ fun sourcePathOf(row: QueryRowSet): SourceDataPath? {
     return if(source != null && sourceId != null) SourceDataPath(source, sourceId, sourcePart, sourcePartName) else null
 }
 
+val sourcePathComparator = compareBy<SourceDataPath> { it.sourceSite }.thenBy { it.sourceId }.thenBy { it.sourcePart }
+
 inline fun <T, R> ListResult<T>.map(transform: (T) -> R): ListResult<R> {
     return ListResult(this.total, this.result.map(transform))
 }

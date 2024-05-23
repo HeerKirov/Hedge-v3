@@ -1,13 +1,17 @@
 package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
+import com.heerkirov.hedge.server.components.backend.similar.Fingerprint
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
+import com.heerkirov.hedge.server.utils.Similarity
 import com.heerkirov.hedge.server.utils.business.filePathFrom
+import com.heerkirov.hedge.server.utils.business.sourcePathComparator
+import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.letIf
 import org.ktorm.dsl.*
@@ -170,6 +174,104 @@ class IllustUtilService(private val appdata: AppDataManager, private val data: D
             .toMap()
 
         return result.map { FolderSituationRes(it.first, it.second, exists[it.first]) }.letIf(onlyExists) { it.filter { r -> r.ordinal != null } }
+    }
+
+    /**
+     * 对一组illust进行智能整理。整理的基本原则是将相似项划分为一个集合，搭配有一些其他的分组选项使用。
+     * 此方法仅返回分组结果，分组的实施需要手动完成。
+     * @param illustIds 给出image
+     * @param onlyNeighbours 仅有相邻的图像会被划分为一个集合，当图像不相邻时就不会成组了。
+     * @param gatherGroup 分组划分完成后，进行重排序，使同一个组的项聚拢到一起，多个组的排序顺序由这个组中最靠前的项决定。onlyNeighbours开启时，此选项显然无意义。
+     * @param resortInGroup 分组划分完成后，进行重排序，在每个组内按照来源顺序重新组织排序时间。resortAtAll开启时，此选项显然无意义。
+     * @param resortAtAll 分组划分开始之前就进行一次全局重排序，按照来源顺序重新组织排序时间。
+     * @return 多个组，每个组包含多个图像，用以指示哪些图像需要被成组。有些图像还带有orderTime，用以指示需要设置此图像的排序时间。
+     */
+    fun getOrganizationSituation(illustIds: List<Int>, onlyNeighbours: Boolean = false, gatherGroup: Boolean = false, resortInGroup: Boolean = false, resortAtAll: Boolean = false): List<List<OrganizationSituationRes>> {
+        data class Row(val id: Int, val filePath: FilePath, val fingerprint: Fingerprint, val sourceDataPath: SourceDataPath?, val orderTime: Long, var newOrderTime: Long? = null)
+
+        val illusts = data.db.from(Illusts)
+            .innerJoin(FileFingerprints, FileFingerprints.fileId eq Illusts.fileId)
+            .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
+            .select(Illusts.id, Illusts.orderTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
+                FileRecords.id, FileRecords.status, FileRecords.extension, FileRecords.block,
+                FileFingerprints.dHash, FileFingerprints.pHash, FileFingerprints.pHashSimple, FileFingerprints.dHashSimple)
+            .where { Illusts.id inList illustIds }
+            .orderBy(Illusts.orderTime.asc())
+            .map {
+                val filePath = filePathFrom(it)
+                val s = sourcePathOf(it)
+                val f = Fingerprint(it[FileFingerprints.pHashSimple]!!, it[FileFingerprints.dHashSimple]!!, it[FileFingerprints.pHash]!!, it[FileFingerprints.dHash]!!)
+                Row(it[Illusts.id]!!, filePath, f, s, it[Illusts.orderTime]!!)
+            }
+            .letIf(resortAtAll) {
+                it.sortedWith { a, b ->
+                    if(a.sourceDataPath != null && b.sourceDataPath != null) sourcePathComparator.compare(a.sourceDataPath, b.sourceDataPath)
+                    else if(a.sourceDataPath == null && b.sourceDataPath == null) 0
+                    else if(a.sourceDataPath == null) 1
+                    else -1
+                }
+            }
+
+        val groups = mutableListOf<MutableList<Row>>()
+        if(onlyNeighbours) {
+            for (illust in illusts) {
+                if(groups.isEmpty() || Similarity.matchSimilarity(groups.last().last().fingerprint, illust.fingerprint) <= 0) {
+                    groups.add(mutableListOf(illust))
+                }else{
+                    groups.last().add(illust)
+                }
+            }
+        }else{
+            val flag = illusts.indices.map { true }.toMutableList()
+            for(i in illusts.indices) {
+                if(flag[i]) {
+                    flag[i] = false
+                    val illust = illusts[i]
+                    val group = mutableListOf(illust)
+                    for(j in (i + 1) until illusts.size) {
+                        if(flag[j] && Similarity.matchSimilarity(illust.fingerprint, illusts[j].fingerprint) > 0) {
+                            flag[j] = false
+                            group.add(illusts[j])
+                        }
+                    }
+                    groups.add(group)
+                }
+            }
+        }
+
+        val sortedGroups = groups.letIf(resortInGroup && !resortAtAll) {
+            it.map { group ->
+                group.sortedWith { a, b ->
+                    if(a.sourceDataPath != null && b.sourceDataPath != null) sourcePathComparator.compare(a.sourceDataPath, b.sourceDataPath)
+                    else if(a.sourceDataPath == null && b.sourceDataPath == null) 0
+                    else if(a.sourceDataPath == null) 1
+                    else -1
+                }.toMutableList()
+            }.toMutableList()
+        }
+
+        if(gatherGroup && !onlyNeighbours) {
+            val orderTimeSeq = illusts.map { it.orderTime }.sorted().iterator()
+            for (group in sortedGroups) {
+                for (illust in group) {
+                    val ot = orderTimeSeq.next()
+                    if(illust.orderTime != ot) {
+                        illust.newOrderTime = ot
+                    }
+                }
+            }
+        }else{
+            for (group in sortedGroups) {
+                val orderTimeSeq = group.map { it.orderTime }.sorted()
+                for ((illust, ot) in group.zip(orderTimeSeq)) {
+                    if(illust.orderTime != ot) {
+                        illust.newOrderTime = ot
+                    }
+                }
+            }
+        }
+
+        return sortedGroups.map { group -> group.map { OrganizationSituationRes(it.id, it.filePath, it.orderTime.toInstant(), it.newOrderTime?.toInstant()) } }
     }
 
     /**

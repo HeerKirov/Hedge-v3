@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.utils
 
+import com.heerkirov.hedge.server.components.backend.similar.Fingerprint
 import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
 import com.heerkirov.hedge.server.exceptions.be
 import net.coobird.thumbnailator.Thumbnails
@@ -132,6 +133,33 @@ object Similarity {
         val outerProduct = sqrt(vec1.toDouble()) * sqrt(vec2.toDouble())
 
         return innerProduct / outerProduct
+    }
+
+    /**
+     * 使用标准相似度比对流程进行相似度比对，给出综合相似度。
+     * @return 一个介于0和1之间的浮点数，表示相似度。或者0，表示低于相似阈值。
+     */
+    fun matchSimilarity(targetItem: Fingerprint, matched: Fingerprint): Double {
+        //计算simple得分。任意一方有极低的得分，就立刻跳过
+        val pHashSimpleRating = hammingDistance(targetItem.pHashSimple, matched.pHashSimple)
+        if(pHashSimpleRating <= 0.55) return 0.0
+        val dHashSimpleRating = hammingDistance(targetItem.dHashSimple, matched.dHashSimple)
+        if(dHashSimpleRating <= 0.55) return 0.0
+        //否则，检测是否任意一方有极高的得分，或者加权平均分过线
+        if(pHashSimpleRating >= 0.98 || dHashSimpleRating >= 0.95 || pHashSimpleRating * 0.4 + dHashSimpleRating * 0.6 >= 0.8) {
+            //计算长hash得分，比较原理同上
+            val pHashRating = hammingDistance(targetItem.pHash, matched.pHash)
+            if(pHashRating <= 0.55) return 0.0
+            val dHashRating = hammingDistance(targetItem.dHash, matched.dHash)
+            if(dHashRating <= 0.55) return 0.0
+
+            return if(pHashRating >= 0.95) pHashRating
+            else if(dHashRating >= 0.92) dHashRating
+            else if(pHashRating * 0.6 + dHashRating * 0.4 >= 0.76) pHashRating * 0.6 + dHashRating * 0.4
+            else 0.0
+        }else{
+            return 0.0
+        }
     }
 
     /**

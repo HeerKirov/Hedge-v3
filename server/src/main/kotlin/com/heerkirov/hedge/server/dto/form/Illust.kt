@@ -63,6 +63,7 @@ class IllustBatchUpdateForm(val target: List<Int>,
                             val partitionTime: Opt<LocalDate> = undefined(),
                             val orderTimeBegin: Opt<Instant> = undefined(),
                             val orderTimeEnd: Opt<Instant> = undefined(),
+                            val orderTimeList: Opt<List<Instant>> = undefined(),
                             val orderTimeExclude: Boolean = false,
                             val action: Action? = null,
                             val actionBy: Int? = null) {

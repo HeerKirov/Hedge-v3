@@ -4,6 +4,7 @@ import com.heerkirov.hedge.server.components.server.Routes
 import com.heerkirov.hedge.server.dto.form.BookSituationForm
 import com.heerkirov.hedge.server.dto.form.FolderSituationForm
 import com.heerkirov.hedge.server.dto.form.IllustIdForm
+import com.heerkirov.hedge.server.dto.form.OrganizationSituationForm
 import com.heerkirov.hedge.server.functions.service.IllustUtilService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
 import io.javalin.apibuilder.ApiBuilder.path
@@ -19,6 +20,7 @@ class UtilIllustRoutes(private val illustUtilService: IllustUtilService) : Route
                 post("image-situation", ::getImageSituation)
                 post("book-situation", ::getBookSituation)
                 post("folder-situation", ::getFolderSituation)
+                post("organization-situation", ::getOrganizationSituation)
             }
         }
     }
@@ -41,5 +43,10 @@ class UtilIllustRoutes(private val illustUtilService: IllustUtilService) : Route
     private fun getFolderSituation(ctx: Context) {
         val form = ctx.bodyAsForm<FolderSituationForm>()
         ctx.json(illustUtilService.getFolderSituation(form.illustIds, form.folderId, form.onlyExists))
+    }
+
+    private fun getOrganizationSituation(ctx: Context) {
+        val form = ctx.bodyAsForm<OrganizationSituationForm>()
+        ctx.json(illustUtilService.getOrganizationSituation(form.illustIds, form.onlyNeighbours, form.gatherGroup, form.resortInGroup, form.resortAtAll))
     }
 }

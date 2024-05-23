@@ -34,7 +34,7 @@ data class FindSimilarResultResolveForm(val actions: List<Resolution>, val clear
 
     data class AddToBookResolution(override val imageIds: List<Int>, val bookId: Int) : ResolutionForMultipleImage
 
-    data class DeleteResolution(override val imageIds: List<Int>) : ResolutionForMultipleImage
+    data class DeleteResolution(override val imageIds: List<Int>, val deleteCompletely: Boolean = false) : ResolutionForMultipleImage
 
     data class MarkIgnoredResolution(override val from: Int, override val to: Int) : ResolutionForTwoImage
 

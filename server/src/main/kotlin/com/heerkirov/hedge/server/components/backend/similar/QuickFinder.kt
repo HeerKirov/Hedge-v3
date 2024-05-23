@@ -51,7 +51,7 @@ class QuickFinder(private val data: DataRepository, private val bus: EventBus) :
 
         val tasks = taskSequence(authors, topics)
 
-        val imageIds = tasks.filter { (_, f) -> fingerprints.any { matchSimilarity(it, f) } }.map { (id, _) -> id }.toList()
+        val imageIds = tasks.filter { (_, f) -> fingerprints.any { Similarity.matchSimilarity(it, f) > 0 } }.map { (id, _) -> id }.toList()
 
         model.succeed = true
         model.imageIds = imageIds
@@ -97,23 +97,5 @@ class QuickFinder(private val data: DataRepository, private val bus: EventBus) :
                 .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (IllustTopicRelations.topicId inList topics) }
                 .map { Pair(it[Illusts.id]!!, Fingerprint(it[FileFingerprints.pHashSimple]!!, it[FileFingerprints.dHashSimple]!!, it[FileFingerprints.pHash]!!, it[FileFingerprints.dHash]!!)) })
         }
-    }
-
-    private fun matchSimilarity(targetItem: Fingerprint, matched: Fingerprint): Boolean {
-        val pHashSimpleRating = Similarity.hammingDistance(targetItem.pHashSimple, matched.pHashSimple)
-        if(pHashSimpleRating <= 0.55) return false
-        val dHashSimpleRating = Similarity.hammingDistance(targetItem.dHashSimple, matched.dHashSimple)
-        if(dHashSimpleRating <= 0.55) return false
-        //否则，检测是否任意一方有极高的得分，或者加权平均分过线
-        if(pHashSimpleRating >= 0.98 || dHashSimpleRating >= 0.95 || pHashSimpleRating * 0.4 + dHashSimpleRating * 0.6 >= 0.8) {
-            //计算长hash得分，比较原理同上
-            val pHashRating = Similarity.hammingDistance(targetItem.pHash, matched.pHash)
-            if(pHashRating <= 0.55) return false
-            val dHashRating = Similarity.hammingDistance(targetItem.dHash, matched.dHash)
-            if(dHashRating <= 0.55) return false
-
-            return pHashRating >= 0.95 || dHashRating >= 0.92 || pHashRating * 0.6 + dHashRating * 0.4 >= 0.76
-        }
-        return false
     }
 }

@@ -14,3 +14,5 @@ data class ImageSituationRes(val id: Int, val filePath: FilePath, val orderTime:
 data class BookSituationRes(val id: Int, val filePath: FilePath, val ordinal: Int?)
 
 data class FolderSituationRes(val id: Int, val filePath: FilePath, val ordinal: Int?)
+
+data class OrganizationSituationRes(val id: Int, val filePath: FilePath, val orderTime: Instant, val newOrderTime: Instant?)

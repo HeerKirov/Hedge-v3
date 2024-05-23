@@ -603,6 +603,8 @@ class IllustManager(private val appdata: AppDataManager,
 
             setOrderTimeBySeq(values)
         }
+        //insert by list
+        form.orderTimeList.alsoOpt { orderTimeList -> setOrderTimeBySeq(orderTimeList.map { it.toEpochMilli() }) }
         //insert between instants
         form.orderTimeBegin.alsoOpt { orderTimeBegin -> setOrderTimeByRange(orderTimeBegin, form.orderTimeEnd.unwrapOrNull(), form.orderTimeExclude) }
         //insert between illusts
