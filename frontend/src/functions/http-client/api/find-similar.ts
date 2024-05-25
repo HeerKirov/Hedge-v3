@@ -338,6 +338,7 @@ export type FindSimilarResultResolveAction = ({type: "CLONE_IMAGE"} & ImageProps
 } | {
     type: "DELETE"
     imageIds: number[]
+    deleteCompletely?: boolean
 } | {
     type: "MARK_IGNORED"
     from: number

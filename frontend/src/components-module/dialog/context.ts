@@ -11,6 +11,7 @@ import { FindSimilarTaskExplorer, FindSimilarTaskExplorerProps, useFindSimilarTa
 import { AssociateExplorer, AssociateExplorerProps, useAssociateExplorer } from "./AssociateExplorer/context"
 import { ExternalExporter, ExternalExporterProps, useExternalExporter } from "./ExternalExporter/context"
 import { FileEditor, FileEditorProps, useFileEditor } from "./FileEditor/context"
+import { OrganizeIllust, OrganizeIllustProps, useOrganizeIllust } from "./OrganizeIllust/context"
 
 export type {
     SourceDataEditorProps,
@@ -23,7 +24,8 @@ export type {
     FindSimilarTaskExplorerProps,
     AssociateExplorerProps,
     ExternalExporterProps,
-    FileEditorProps
+    FileEditorProps,
+    OrganizeIllustProps,
 }
 
 export interface DialogService {
@@ -38,6 +40,7 @@ export interface DialogService {
     associateExplorer: AssociateExplorer
     externalExporter: ExternalExporter
     fileEditor: FileEditor
+    organizeIllust: OrganizeIllust
 }
 
 type ServiceContext
@@ -52,6 +55,7 @@ type ServiceContext
     | { type: "associateExplorer", props: AssociateExplorerProps }
     | { type: "externalExporter", props: ExternalExporterProps }
     | { type: "fileEditor", props: FileEditorProps }
+    | { type: "organizeIllust", props: OrganizeIllustProps }
 
 export type Push = (nc: ServiceContext) => void
 
@@ -91,6 +95,7 @@ export const [installInternalService, useInternalService] = installation(functio
     const associateExplorer = useAssociateExplorer(push)
     const externalExporter = useExternalExporter(push)
     const fileEditor = useFileEditor(push)
+    const organizeIllust = useOrganizeIllust(push)
 
     return {
         context,
@@ -106,7 +111,8 @@ export const [installInternalService, useInternalService] = installation(functio
         findSimilarTaskExplorer,
         associateExplorer,
         externalExporter,
-        fileEditor
+        fileEditor,
+        organizeIllust,
     }
 })
 

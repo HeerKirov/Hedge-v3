@@ -52,6 +52,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
     {type: "normal", label: "添加到目录…", click: operators.addToFolder},
     {type: "normal", label: "克隆图像属性…", click: operators.cloneImage},
     {type: "separator"},
+    {type: "normal", label: "快捷整理", enabled: selected.value.length > 1, click: operators.organizeOfImage},
     {type: "submenu", label: "快捷排序", enabled: selected.value.length > 1, submenu: [
         {type: "normal", label: "将时间分区集中在最多的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_MOST")},
         {type: "normal", label: "将时间分区设为最早的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_EARLIEST")},

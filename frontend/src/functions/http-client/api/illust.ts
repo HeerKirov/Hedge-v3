@@ -200,7 +200,8 @@ function mapFromIllustBatchUpdateForm(form: IllustBatchUpdateForm): any {
         ...form,
         partitionTime: form.partitionTime !== undefined ? date.toISOString(form.partitionTime) : undefined,
         orderTimeBegin: form.orderTimeBegin !== undefined ? datetime.toISOString(form.orderTimeBegin) : undefined,
-        orderTimeEnd: form.orderTimeEnd !== undefined ? datetime.toISOString(form.orderTimeEnd) : undefined
+        orderTimeEnd: form.orderTimeEnd !== undefined ? datetime.toISOString(form.orderTimeEnd) : undefined,
+        orderTimeList: form.orderTimeList !== undefined ? form.orderTimeList.map(d => datetime.toISOString(d)) : undefined
     }
 }
 
@@ -718,6 +719,7 @@ export interface IllustBatchUpdateForm {
     orderTimeBegin?: LocalDateTime
     orderTimeEnd?: LocalDateTime
     orderTimeExclude?: boolean
+    orderTimeList?: LocalDateTime[]
     timeInsertBegin?: number
     timeInsertEnd?: number
     timeInsertAt?: "behind" | "after"

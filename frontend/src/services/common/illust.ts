@@ -177,6 +177,10 @@ export interface ImageDatasetOperators<T extends CommonIllust> {
      */
     findSimilarOfImage(illust: T): void
     /**
+     * 使用选定的项，提交快捷整理操作。
+     */
+    organizeOfImage(illust: T): void
+    /**
      * 将项目加入暂存区。
      */
     addToStagingPost(illust: T): void
@@ -470,6 +474,11 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
         dialog.findSimilarTaskExplorer.quickFind(imageIds)
     }
 
+    const organizeOfImage = async (illust: T) => {
+        const imageIds = getEffectedItems(illust)
+        dialog.organizeIllust.organize(imageIds)
+    }
+
     const fileEdit = async (illust: T | undefined, action: "convertFormat") => {
         const imageIds = illust !== undefined ? getEffectedItems(illust) : selector.selected.value
         if(imageIds.length > 0 && action === "convertFormat") dialog.fileEditor.convertFormat(imageIds)
@@ -508,7 +517,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     return {
         openDetailByClick, openDetailByEnter, openCollectionDetail, openInNewWindow, openPreviewBySpace, modifyFavorite, batchUpdateTimeSeries,
         createCollection, splitToGenerateNewCollection, createBook, editAssociate, addToFolder, 
-        cloneImage, exportItem, findSimilarOfImage, fileEdit, addToStagingPost, popStagingPost, stagingPostCount,
+        cloneImage, exportItem, findSimilarOfImage, organizeOfImage, fileEdit, addToStagingPost, popStagingPost, stagingPostCount,
         deleteItem, removeItemFromCollection, removeItemFromBook, removeItemFromFolder, getEffectedItems, dataDrop
     }
 }

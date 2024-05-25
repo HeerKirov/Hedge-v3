@@ -6,7 +6,7 @@ import {
     useInternalService,
     SourceDataEditorProps, MetaTagEditorProps, CreatingCollectionProps, CreatingBookProps,
     AddIllustProps, AddToFolderProps, CloneImageProps, FindSimilarTaskExplorerProps, AssociateExplorerProps,
-    ExternalExporterProps, FileEditorProps
+    ExternalExporterProps, FileEditorProps, OrganizeIllustProps
 } from "./context"
 import SourceDataEditor from "./SourceDataEditor/SourceDataEditor.vue"
 import MetaTagEditor from "./MetaTagEditor/MetaTagEditor.vue"
@@ -19,6 +19,7 @@ import FindSimilarTaskExplorer from "./FindSimilarTaskExplorer/FindSimilarTaskEx
 import AssociateExplorer from "./AssociateExplorer/AssociateExplorer.vue"
 import ExternalExporter from "./ExternalExporter/ExternalExporter.vue"
 import FileEditor from "./FileEditor/FileEditor.vue"
+import OrganizeIllust from "./OrganizeIllust/OrganizeIllust.vue"
 
 const { context, close } = useInternalService()
 
@@ -51,6 +52,7 @@ const fixed = computed(() => innerElementHeight.value && innerElementHeight.valu
         <AssociateExplorer v-else-if="context!.type === 'associateExplorer'" ref="innerRef" :p="(context!.props as AssociateExplorerProps)" @close="close"/>
         <ExternalExporter v-else-if="context!.type === 'externalExporter'" ref="innerRef" :p="(context!.props as ExternalExporterProps)" @close="close"/>
         <FileEditor v-else-if="context!.type === 'fileEditor'" ref="innerRef" :p="(context!.props as FileEditorProps)" @close="close"/>
+        <OrganizeIllust v-else-if="context!.type === 'organizeIllust'" ref="innerRef" :p="(context!.props as OrganizeIllustProps)" @close="close"/>
     </DialogBox>
 </template>
 

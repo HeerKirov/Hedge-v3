@@ -267,8 +267,9 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
 
     const deleteItem = async (currentImageId?: number) => {
         const imageIds = getEffectedItems(currentImageId)
-        if(await message.showYesNoMessage("warn", imageIds.length === 1 ? "确定要删除此项吗？" : `确定要删除${imageIds.length}个已选择项吗？`, "被删除的项将放入「已删除」归档。")) {
-            await resolve({actions: [{type: "DELETE", imageIds}], clear: false})
+        const res = await message.showCheckBoxMessage("warn", imageIds.length === 1 ? "确定要删除此项吗？" : `确定要删除${imageIds.length}个已选择项吗？`, "被删除的项将放入「已删除」归档。", [{key: "SHIFT", name: "彻底删除图像"}])
+        if(res.ok) {
+            await resolve({actions: [{type: "DELETE", imageIds, deleteCompletely: res.checks.includes("SHIFT")}], clear: false})
         }
     }
 
