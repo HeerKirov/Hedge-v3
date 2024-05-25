@@ -3,24 +3,27 @@ package com.heerkirov.hedge.server.functions.service
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.backend.similar.Fingerprint
 import com.heerkirov.hedge.server.components.database.DataRepository
+import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
+import com.heerkirov.hedge.server.dto.form.IllustBatchUpdateForm
+import com.heerkirov.hedge.server.dto.form.OrganizationSituationApplyForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.IllustModelType
+import com.heerkirov.hedge.server.functions.manager.IllustManager
 import com.heerkirov.hedge.server.model.Illust
+import com.heerkirov.hedge.server.utils.*
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
-import com.heerkirov.hedge.server.utils.Similarity
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.business.sourcePathComparator
 import com.heerkirov.hedge.server.utils.business.sourcePathOf
-import com.heerkirov.hedge.server.utils.filterInto
-import com.heerkirov.hedge.server.utils.letIf
+import com.heerkirov.hedge.server.utils.types.optOf
 import org.ktorm.dsl.*
 import org.ktorm.entity.filter
 import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
 import java.time.Instant
 
-class IllustUtilService(private val appdata: AppDataManager, private val data: DataRepository) {
+class IllustUtilService(private val appdata: AppDataManager, private val data: DataRepository, private val illustManager: IllustManager) {
     /**
      * 查询一组illust的collection所属情况，列出这些illust已经属于的所有collection，以及按照时间分区划分，来提示是否需要集中时间分区。
      * 这个工具API一般用于创建collection或向collection添加图像之前，对内容列表校验，以提示用户如何创建collection或添加图像。
@@ -272,6 +275,43 @@ class IllustUtilService(private val appdata: AppDataManager, private val data: D
         }
 
         return sortedGroups.map { group -> group.map { OrganizationSituationRes(it.id, it.filePath, it.orderTime.toInstant(), it.newOrderTime?.toInstant()) } }
+    }
+
+    /**
+     * 应用一组智能整理。
+     */
+    fun applyOrganizationSituation(form: OrganizationSituationApplyForm) {
+        data.db.transaction {
+            //首先提取所有newOrderTime，按照旧orderTime排序后提交batch update
+            val newOrderTimeMap = form.groups.flatten().filter { it.newOrderTime != null }.associate { it.id to it.newOrderTime!! }
+            val (newOrderTimeIds, newOrderTimeList) = data.db.from(Illusts)
+                .select(Illusts.id, Illusts.orderTime)
+                .where { Illusts.id inList newOrderTimeMap.keys }
+                .orderBy(Illusts.orderTime.asc())
+                .map { Pair(it[Illusts.id]!!, newOrderTimeMap[it[Illusts.id]]!!) }
+                .unzip()
+            illustManager.bulkUpdate(IllustBatchUpdateForm(target = newOrderTimeIds, orderTimeList = optOf(newOrderTimeList)))
+            //然后按照组，对于每个size>1的组，为其创建新集合
+            for (group in form.groups) {
+                if(group.size > 1) {
+                    val illustIds = group.map { it.id }
+                    val specifyPartitionTime = if(appdata.setting.meta.centralizeCollection) {
+                        //在开启此选项时，需要计算新的partitionTime。若同组的所有illust都在同一个partitionTime下，则不需要此参数；否则，选择数量最多的一个partitionTime
+                        val illusts = data.db.from(Illusts)
+                            .select(Illusts.id, Illusts.orderTime, Illusts.partitionTime)
+                            .where { Illusts.id inList illustIds }
+                            .map { Triple(it[Illusts.id]!!, it[Illusts.orderTime]!!, it[Illusts.partitionTime]!!) }
+                        val count = illusts.map { (_, _, pt) -> pt }.duplicateCount()
+                        if(count.size > 1) {
+                            count.entries.maxBy { it.value }.key
+                        }else{
+                            null
+                        }
+                    }else null
+                    illustManager.newCollection(illustIds, "", null, null, Illust.Tagme.EMPTY, specifyPartitionTime)
+                }
+            }
+        }
     }
 
     /**

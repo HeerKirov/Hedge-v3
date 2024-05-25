@@ -99,7 +99,7 @@ fun runApplication(options: ApplicationOptions) {
             val findSimilarService = FindSimilarService(repo, bus, similarFinder, illustManager, bookManager)
             val metaUtilService = MetaUtilService(appdata, repo, metaUtilKit, metaManager, historyRecordManager)
             val pickerUtilService = PickerUtilService(appdata, repo, historyRecordManager)
-            val illustUtilService = IllustUtilService(appdata, repo)
+            val illustUtilService = IllustUtilService(appdata, repo, illustManager)
             val exportUtilService = ExportUtilService(repo, file)
             val fileUtilService = FileUtilService(repo, file, bus)
 
