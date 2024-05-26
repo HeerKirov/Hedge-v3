@@ -52,7 +52,6 @@ const { menuItems, menuSelected } = installNavMenu({
         {type: "menu", routeName: "Author", label: "作者", icon: "user-tag", submenu: [setupSubItemByNavHistory(navigationRecords, "AuthorDetail")] },
         {type: "menu", routeName: "Topic", label: "主题", icon: "hashtag", submenu: [setupSubItemByNavHistory(navigationRecords, "TopicDetail")] },
         {type: "menu", routeName: "Tag", label: "标签", icon: "tag"},
-        {type: "menu", routeName: "Annotation", label: "注解", icon: "code"},
         {type: "menu", routeName: "SourceData", label: "来源数据", icon: "file-invoice"},
         {type: "scope", scopeName: "tool", label: "工具箱"},
         {type: "menu", routeName: "Import", label: "导入", icon: "plus-square", badge: importCountBadge},

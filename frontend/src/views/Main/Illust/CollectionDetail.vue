@@ -97,7 +97,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
     <BrowserTeleport to="side-bar">
         <BottomLayout container-class="p-2 pl-3" bottom-class="p-1">
             <KeepAlive>
-                <IllustTabDetailInfo v-if="tabType === 'info'" :detail-id="path"/>
+                <IllustTabDetailInfo v-if="tabType === 'info'" :detail-id="path" is-collection-detail/>
                 <IllustTabRelatedItems v-else-if="tabType === 'related'" :detail-id="path" type="COLLECTION"/>
             </KeepAlive>
 

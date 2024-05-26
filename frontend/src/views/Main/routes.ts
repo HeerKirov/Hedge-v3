@@ -73,11 +73,6 @@ export default {
             component: () => import("./Tag/Tag.vue")
         },
         {
-            routeName: "Annotation",
-            defaultTitle: "注解",
-            component: () => import("./Annotation/Annotation.vue")
-        },
-        {
             routeName: "SourceData",
             defaultTitle: "来源数据",
             component: () => import("./SourceData/SourceData.vue")

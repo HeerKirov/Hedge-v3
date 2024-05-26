@@ -5,8 +5,8 @@ import { Flex, FlexItem } from "@/components/layout"
 import { SiteCreateForm, SiteUpdateForm } from "@/functions/http-client/api/setting"
 import { useSettingSite } from "@/services/setting"
 import { computedMutable } from "@/utils/reactivity"
-import DBSourceSiteEditor from "./DBSourceSiteEditor.vue"
-import DBSourceSiteCreator from "./DBSourceSiteCreator.vue"
+import DimSourceSiteEditor from "./SourceSiteEditor.vue"
+import DimSourceSiteCreator from "./SourceSiteCreator.vue"
 
 const { data: sites, createItem, updateItem, deleteItem } = useSettingSite()
 
@@ -46,7 +46,7 @@ const trash = async () => {
             <SelectList :items="selectItems" v-model:value="selectedItem"/>
         </FlexItem>
         <FlexItem :width="65">
-            <DBSourceSiteEditor v-if="selectedSite !== null" 
+            <DimSourceSiteEditor v-if="selectedSite !== null"
                                 :name="selectedSite.name" 
                                 :title="selectedSite.title" 
                                 :part-mode="selectedSite.partMode" 
@@ -55,7 +55,7 @@ const trash = async () => {
                                 :available-types="selectedSite.availableTypes"
                                 :ordinal="selectedIndex!" 
                                 @update="update" @delete="trash"/>
-            <DBSourceSiteCreator v-else-if="selectedItem === '<new>'" @create="create"/>
+            <DimSourceSiteCreator v-else-if="selectedItem === '<new>'" @create="create"/>
         </FlexItem>
     </Flex>
 </template>

@@ -78,6 +78,16 @@ export default <RouteRecordRaw[]>[
                 component: () => import("@/views/Setting/DBFindSimilar/DBFindSimilar.vue")
             },
             {
+                name: "SettingDimAnnotation",
+                path: "dim/annotation",
+                component: () => import("@/views/Setting/DimAnnotation/Annotation.vue")
+            },
+            {
+                name: "SettingDimSource",
+                path: "dim/source",
+                component: () => import("@/views/Setting/DimSource/Source.vue")
+            },
+            {
                 name: "SettingAdvancedServer",
                 path: "advanced/server",
                 component: () => import("@/views/Setting/AdvancedServer/AdvancedServer.vue")

@@ -7,7 +7,10 @@ import { DateEditor, DateTimeEditor, ScoreEditor } from "@/components-business/f
 import { DescriptionEditor } from "@/components-business/form-editor"
 import { useSideBarDetailInfo } from "@/services/main/illust"
 
-const props = defineProps<{detailId: number}>()
+const props = defineProps<{
+    detailId: number
+    isCollectionDetail?: boolean
+}>()
 
 const detailId = toRef(props, "detailId")
 
@@ -33,7 +36,7 @@ const { data, setScore, setDescription, openMetaTagEditor, setTime } = useSideBa
         </FormEditKit>
         <TagmeInfo v-if="data.tagme.length > 0" class="mt-1" :value="data.tagme"/>
         <MetaTagListDisplay class="my-2" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
-        <FileInfoDisplay class="mt-3" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>
+        <FileInfoDisplay v-if="!isCollectionDetail" class="mt-3" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>
         <FormEditKit class="mt-2" :value="{partitionTime: data.partitionTime, orderTime: data.orderTime}" :set-value="setTime">
             <template #default="{ value }">
                 <PartitionTimeDisplay :partition-time="value.partitionTime" :order-time="value.orderTime" :create-time="data.createTime" :update-time="data.updateTime"/>
