@@ -56,7 +56,7 @@ class MetaUtilService(private val appdata: AppDataManager,
             val (forceConflicting, conflicting) = tagExportError?.info?.filterInto { it.force } ?: (emptyList<ConflictingGroupMembersError.ConflictingMembers>() to emptyList())
             conflictingMembers = conflicting
             forceConflictingMembers = forceConflicting
-            exported
+            exported.filter { (t, _) -> t.type == TagAddressType.TAG }
         }else{
             notSuitable = emptyList()
             conflictingMembers = emptyList()
