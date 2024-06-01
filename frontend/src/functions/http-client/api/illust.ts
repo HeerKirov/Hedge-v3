@@ -27,6 +27,9 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
         findByIds: http.createDataRequest("/api/illusts/find-by-ids", "POST", {
             parseResponse: (result: (any | null)[]) => result.map(i => i !== null ? mapToIllust(i) : null)
         }),
+        summaryByIds: http.createDataRequest("/api/illusts/summary-by-ids", "POST", {
+            parseResponse: mapToIllustSummary
+        }),
         findLocation: http.createQueryRequest("/api/illusts/find-location", "GET", {
             parseQuery: mapFromIllustFilter
         }),
@@ -166,6 +169,14 @@ function mapToImageSourceData(data: any): ImageSourceData {
     }
 }
 
+function mapToIllustSummary(data: any): IllustSummary {
+    return {
+        ...data,
+        orderTimeMin: datetime.of(data.orderTimeMin),
+        orderTimeMax: datetime.of(data.orderTimeMax),
+    }
+}
+
 function mapFromCollectionCreateForm(form: CollectionCreateForm): any {
     return {
         ...form,
@@ -234,9 +245,13 @@ export interface IllustEndpoint {
      */
     listPartitions(filter: PartitionFilter): Promise<Response<Partition[]>>
     /**
-     * 根据条件执行高级查询。
+     * 根据id列表查询所有的项。
      */
     findByIds(imageIds: number[]): Promise<Response<(Illust | null)[]>>
+    /**
+     * 根据id列表，查询所有项的概括属性。
+     */
+    summaryByIds(imageIds: number[]): Promise<Response<IllustSummary>>
     /**
      * 查询指定图像在指定查询条件下的列表中的位置下标。
      */
@@ -655,6 +670,21 @@ export type ImageSourceData = {
     links: null
     additionalInfo: null
     publishTime: null
+}
+
+export interface IllustSummary {
+    illustIds: number[]
+    topics: RelatedSimpleTopic[]
+    tags: RelatedSimpleTag[]
+    authors: RelatedSimpleAuthor[]
+    tagme: Tagme
+    description: string
+    favorite: boolean
+    scoreMin: number | null
+    scoreMax: number | null
+    scoreAvg: number | null
+    orderTimeMin: LocalDateTime
+    orderTimeMax: LocalDateTime
 }
 
 export interface CollectionCreateForm {

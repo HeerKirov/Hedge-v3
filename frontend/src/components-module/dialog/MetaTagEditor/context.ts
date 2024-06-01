@@ -1,15 +1,16 @@
-import { Ref, shallowRef } from "vue"
+import { ref, Ref, shallowRef } from "vue"
 import { Response } from "@/functions/http-client"
 import { ConflictingGroupMembersError, NotFound, ResourceNotExist, ResourceNotSuitable } from "@/functions/http-client/exceptions"
 import { MetaUtilIdentity } from "@/functions/http-client/api/util-meta"
 import { RelatedSimpleTopic } from "@/functions/http-client/api/topic"
 import { RelatedSimpleAuthor } from "@/functions/http-client/api/author"
 import { RelatedSimpleTag } from "@/functions/http-client/api/tag"
-import { SourceTagPath } from "@/functions/http-client/api/all"
+import { MetaTagTypes, MetaTagValues, SourceTagPath } from "@/functions/http-client/api/all"
 import { Tagme } from "@/functions/http-client/api/illust"
 import { useFetchEndpoint, usePostFetchHelper } from "@/functions/fetch"
+import { installKeyDeclaration, useInterceptedKey } from "@/modules/keyboard"
 import { useMessageBox } from "@/modules/message-box"
-import { toRef } from "@/utils/reactivity"
+import { computedMutable, toRef } from "@/utils/reactivity"
 import { Push } from "../context"
 
 export interface MetaTagEditor {
@@ -141,4 +142,40 @@ export function useMetaTagEditorData(props: Ref<MetaTagEditorProps>, updated: ()
     }else{
         throw new Error(`Unsupported props ${props.value}.`)
     }
+}
+
+export function useRemoveModeData(illustIds: Ref<number[]>, fetchSave: (form: {tags?: number[], topics?: number[], authors?: number[]}) => Promise<boolean>) {
+    const { data } = useFetchEndpoint({
+        path: illustIds,
+        get: client => client.illust.summaryByIds
+    })
+
+    const form = computedMutable<{key: string, type: MetaTagTypes, value: MetaTagValues, removed: boolean}[]>(() => data.value !== null ? [
+        ...data.value.authors.map(t => ({type: "author" as const, key: `author-${t.id}`, value: t, removed: false})),
+        ...data.value.topics.map(t => ({type: "topic" as const, key: `topic-${t.id}`, value: t, removed: false})),
+        ...data.value.tags.map(t => ({type: "tag" as const, key: `tag-${t.id}`, value: t, removed: false})),
+    ] : [])
+
+    const saveLoading = ref(false)
+
+    const removeAt = (index: number) => {
+        form.value[index].removed = !form.value[index].removed
+    }
+
+    const save = async () => {
+        if(!saveLoading.value) {
+            saveLoading.value = true
+            await fetchSave({
+                tags: form.value.filter(i => i.type === "tag" && i.removed).map(i => i.value.id),
+                topics: form.value.filter(i => i.type === "topic" && i.removed).map(i => i.value.id),
+                authors: form.value.filter(i => i.type === "author" && i.removed).map(i => i.value.id),
+            })
+            saveLoading.value = false
+        }
+    }
+
+    useInterceptedKey("Meta+KeyS", save)
+    installKeyDeclaration("Meta+KeyS")
+
+    return {form, removeAt, save, saveLoading}
 }

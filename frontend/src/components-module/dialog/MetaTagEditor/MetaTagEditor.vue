@@ -2,6 +2,7 @@
 import { toRef } from "vue"
 import { MetaTagSummaryEditor } from "@/components-module/data"
 import { MetaTagEditorProps, useMetaTagEditorData } from "./context"
+import RemoveMode from "./RemoveMode.vue"
 
 const props = defineProps<{
     p: MetaTagEditorProps
@@ -23,7 +24,8 @@ const { data, identity, setValue } = useMetaTagEditorData(p, updated)
 </script>
 
 <template>
-    <MetaTagSummaryEditor :class="$style.root" :identity="identity" :topics="data?.topics ?? []" :tags="data?.tags ?? []" :authors="data?.authors ?? []" :tagme="data?.tagme" :set-value="setValue" :allow-tagme="identity.type === 'IMAGE'"/>
+    <RemoveMode v-if="p.mode === 'batch' && p.updateMode === 'REMOVE'" :illust-ids="p.identity.illustIds" :save="setValue"/>
+    <MetaTagSummaryEditor v-else :class="$style.root" :identity="identity" :topics="data?.topics ?? []" :tags="data?.tags ?? []" :authors="data?.authors ?? []" :tagme="data?.tagme" :set-value="setValue" :allow-tagme="identity.type === 'IMAGE'"/>
 </template>
 
 <style module lang="sass">
