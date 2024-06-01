@@ -28,6 +28,7 @@ import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.*
+import com.heerkirov.hedge.server.utils.mostCount
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.types.Opt
 import com.heerkirov.hedge.server.utils.types.anyOpt
@@ -131,6 +132,68 @@ class IllustService(private val appdata: AppDataManager,
             .map { it[Illusts.id]!! to newIllustRes(it) }
             .toMap()
             .let { r -> imageIds.map { r[it] } }
+    }
+
+    fun summaryByIds(illustIds: List<Int>): IllustSummaryRes {
+        val authorColors = appdata.setting.meta.authorColors
+        val topicColors = appdata.setting.meta.topicColors
+
+        val allRows = data.db.from(Illusts)
+            .select(Illusts.id, Illusts.description, Illusts.tagme)
+            .where { Illusts.id inList illustIds }
+            .map { Triple(it[Illusts.id]!!, it[Illusts.description]!!, it[Illusts.tagme]!!) }
+            .ifEmpty { throw be(ResourceNotExist("images", illustIds)) }
+
+        val aggregatedRow = data.db.from(Illusts)
+            .select(
+                (count(Illusts.favorite eq true) greater 0).aliased("favorite"),
+                min(Illusts.score).aliased("scoreMin"), max(Illusts.score).aliased("scoreMax"), avg(Illusts.score).aliased("scoreAvg"),
+                min(Illusts.orderTime).aliased("orderTimeMin"), max(Illusts.orderTime).aliased("orderTimeMax"))
+            .where { Illusts.id inList illustIds }
+            .first()
+
+        val topics = data.db.from(Topics)
+            .innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id)
+            .select(Topics.id, Topics.name, Topics.type, (count(IllustTopicRelations.isExported.not()) lessEq 0).aliased("isExported"))
+            .where { IllustTopicRelations.illustId inList illustIds }
+            .groupBy(Topics.id)
+            .orderBy(Topics.type.asc(), Topics.id.asc())
+            .map {
+                val topicType = it[Topics.type]!!
+                val color = topicColors[topicType]
+                TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, it.getBoolean("isExported"), color)
+            }
+
+        val authors = data.db.from(Authors)
+            .innerJoin(IllustAuthorRelations, IllustAuthorRelations.authorId eq Authors.id)
+            .select(Authors.id, Authors.name, Authors.type, (count(IllustAuthorRelations.isExported.not()) lessEq 0).aliased("isExported"))
+            .where { IllustAuthorRelations.illustId inList illustIds }
+            .groupBy(Authors.id)
+            .orderBy(Authors.type.asc(), Authors.id.asc())
+            .map {
+                val authorType = it[Authors.type]!!
+                val color = authorColors[authorType]
+                AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, it.getBoolean("isExported"), color)
+            }
+
+        val tags = data.db.from(Tags)
+            .innerJoin(IllustTagRelations, IllustTagRelations.tagId eq Tags.id)
+            .select(Tags.id, Tags.name, Tags.color, (count(IllustTagRelations.isExported.not()) lessEq 0).aliased("isExported"))
+            .where { (IllustTagRelations.illustId inList illustIds) and (Tags.type eq TagAddressType.TAG) }
+            .groupBy(Tags.id)
+            .orderBy(Tags.globalOrdinal.asc())
+            .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], it.getBoolean("isExported")) }
+
+        val description = allRows.map { (_, d, _) -> d }.mostCount()
+        val tagme = allRows.map { (_, _, t) -> t }.reduce { a, b -> a + b }
+        val favorite = aggregatedRow.getBoolean("favorite")
+        val scoreMin = aggregatedRow.getInt("scoreMin")
+        val scoreMax = aggregatedRow.getInt("scoreMax")
+        val scoreAvg = aggregatedRow.getInt("scoreAvg")
+        val orderTimeMin = aggregatedRow.getInstant("orderTimeMin")!!
+        val orderTimeMax = aggregatedRow.getInstant("orderTimeMax")!!
+
+        return IllustSummaryRes(allRows.map { (id, _, _) -> id }, topics, authors, tags, description, favorite, tagme, scoreMin, scoreMax, scoreAvg, orderTimeMin, orderTimeMax)
     }
 
     fun findImageLocation(filter: IllustLocationFilter): IllustLocationRes {

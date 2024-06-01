@@ -41,6 +41,12 @@ data class IllustImageSourceDataRes(val source: SourceDataPath?, val sourceSiteN
                                     val additionalInfo: List<SourceDataAdditionalInfoDto>?,
                                     val publishTime: Instant?)
 
+data class IllustSummaryRes(val illustIds: List<Int>,
+                            val topics: List<TopicSimpleRes>, val authors: List<AuthorSimpleRes>, val tags: List<TagSimpleRes>,
+                            val description: String, val favorite: Boolean, val tagme: Illust.Tagme,
+                            val scoreMin: Int?, val scoreMax: Int?, val scoreAvg: Int?,
+                            val orderTimeMin: Instant, val orderTimeMax: Instant)
+
 data class IllustParent(val id: Int, val filePath: FilePath, val childrenCount: Int)
 
 data class IllustLocationRes(val id: Int, val index: Int, val type: IllustType)

@@ -25,6 +25,7 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
                     get("partitions", ::listPartitions)
                     get("find-location", ::findImageLocation)
                     post("find-by-ids", ::findByIds)
+                    post("summary-by-ids", ::summaryByIds)
                     post("batch-update", ::batchUpdate)
                     post("clone-image-props", ::cloneImageProps)
                     path("{id}") {
@@ -89,6 +90,13 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
             throw be(ParamTypeError("images", e.message ?: "cannot convert to List<Int>"))
         }
         ctx.json(illustService.findByIds(images))
+    }
+
+    private fun summaryByIds(ctx: Context) {
+        val images = try { ctx.bodyAsClass<List<Int>>() } catch (e: Exception) {
+            throw be(ParamTypeError("images", e.message ?: "cannot convert to List<Int>"))
+        }
+        ctx.json(illustService.summaryByIds(images))
     }
 
     private fun findImageLocation(ctx: Context) {
