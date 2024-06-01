@@ -50,9 +50,15 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues) => {
             </template>
             <template v-if="mappings.length > 0">
                 <i class="label mt-3">生效的来源推导</i>
-                <div v-for="(m, idx) in mappings" :key="`${m.site}/${m.type}/${m.code}`">
-                    <SourceTagElement :site="m.site" :value="m.sourceTag"/>
-                    <Tag class="ml-half" line-style="none" icon="close" clickable @click="removeAt('mapping', idx)"/>
+                <div v-for="(m, idx) in mappings" :key="`${m.site}/${m.type}/${m.code}`" class="flex mb-half">
+                    <div class="flex-item w-50">
+                        <SourceTagElement :site="m.site" :value="m.sourceTag"/>
+                        <Tag class="ml-half" line-style="none" icon="close" clickable @click="removeAt('mapping', idx)"/>
+                    </div>
+                    <div class="flex-item w-50">
+                        <SimpleMetaTagElement v-for="item in m.mappings" :key="`${item.metaType}-${item.metaTag.id}`"
+                                              :type="item.metaType.toLowerCase() as MetaTagTypes" :value="item.metaTag"/>
+                    </div>
                 </div>
             </template>
             <template v-if="exportedResults.tags.length > 0 || exportedResults.topics.length > 0 || exportedResults.authors.length > 0">

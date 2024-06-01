@@ -25,6 +25,7 @@ const emit = defineEmits<{
     (e: "update:selected", v: boolean): void
     (e: "update:mappings", v: SourceMappingTargetDetail[]): void
     (e: "dblclick:one", type: MetaTagTypes, value: MetaTagValues): void
+    (e: "dblclick:source"): void
 }>()
 
 const callout = useCalloutService()
@@ -35,6 +36,8 @@ const items = computed(() => props.mappings.map(item => ({
     value: item.metaTag,
     enabled: item.metaType === "AUTHOR" ? props.authorFilter : item.metaType === "TOPIC" ? props.topicFilter : props.tagFilter
 })))
+
+const enabled = computed(() => items.value.length > 0 && items.value.some(i => i.enabled))
 
 const editMode = ref(false)
 
@@ -104,10 +107,10 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues, enabled:
 <template>
     <div class="flex mb-half">
         <div class="flex-item no-grow-shrink">
-            <CheckBox :disabled="mappings.length <= 0" :value="mappings.length > 0 && selected" @update:value="$emit('update:selected', $event)"/>
+            <CheckBox :disabled="!enabled" :value="enabled && selected" @update:value="$emit('update:selected', $event)"/>
         </div>
         <div class="flex-item w-50" @contextmenu="sourceTagMenu.popup()">
-            <SourceTagElement :class="$style['source-tag']" :value="sourceTag"/>
+            <SourceTagElement :class="$style['source-tag']" :value="sourceTag" @dblclick="$emit('dblclick:source')"/>
         </div>
         <div class="flex-item w-50">
             <Block v-if="editMode" v-bind="dropEvents" class="p-1">
@@ -127,7 +130,7 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues, enabled:
                 </Flex>
             </Block>
             <Group v-else-if="items.length > 0" class="mb-m1">
-                <SimpleMetaTagElement v-for="item in items" :key="item.key"
+                <SimpleMetaTagElement v-for="item in items" :key="item.key" :class="{[$style['delete-line']]: !item.enabled}"
                                       :type="item.type" :value="item.value"
                                       :draggable="item.enabled" :color="!item.enabled ? 'secondary' : undefined"
                                       @click="click($event, item.type, item.value, item.enabled)"
@@ -142,4 +145,7 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues, enabled:
 <style module lang="sass">
 .source-tag
     white-space: normal
+
+.delete-line
+    text-decoration: line-through
 </style>

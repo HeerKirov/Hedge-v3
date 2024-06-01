@@ -46,7 +46,7 @@ const addAll = () => {
     for (const item of props.mappings) {
         if(selected.value[`${item.site}/${item.type}/${item.code}`] as boolean | undefined !== false) {
             if(props.primitiveMode) {
-                if(item.mappings.length > 0) {
+                if(item.mappings.length > 0 && item.mappings.some(item => item.metaType === "AUTHOR" ? props.authorFilter : item.metaType === "TOPIC" ? props.topicFilter : props.tagFilter)) {
                     addList.push({type: "mapping", mapping: item})
                 }
             }else for (const meta of item.mappings) {
@@ -76,6 +76,30 @@ const addOne = (type: MetaTagTypes, value: MetaTagValues) => {
     emit("add", [{type, value} as MetaTagTypeValue])
 }
 
+const addSource = (item: BatchQueryResult) => {
+    if(item.mappings.length > 0) {
+        if(props.primitiveMode) {
+            emit("add", [{type: "mapping", mapping: item}])
+        }else for (const meta of item.mappings) {
+            const addList: (MetaTagTypeValue | {type: "mapping", mapping: BatchQueryResult})[] = []
+            if(meta.metaType === "AUTHOR") {
+                if(props.authorFilter) {
+                    addList.push({type: "author", value: meta.metaTag})
+                }
+            }else if(meta.metaType === "TOPIC") {
+                if(props.topicFilter) {
+                    addList.push({type: "topic", value: meta.metaTag})
+                }
+            }else if(meta.metaType === "TAG") {
+                if(props.tagFilter) {
+                    addList.push({type: "tag", value: meta.metaTag})
+                }
+            }
+            if(addList.length) emit("add", addList)
+        }
+    }
+}
+
 const updateMappings = (sourceTagType: string, sourceTagCode: string, mappings: SourceMappingTargetDetail[]) => {
     emit("update:sourceTagMapping", sourceTagType, sourceTagCode, mappings)
 }
@@ -93,7 +117,7 @@ const updateMappings = (sourceTagType: string, sourceTagCode: string, mappings: 
                                  :selected="selected[`${item.site}/${item.type}/${item.code}`] ?? true"
                                  @update:selected="selected[`${item.site}/${item.type}/${item.code}`] = $event"
                                  @update:mappings="updateMappings(item.type, item.code, $event)"
-                                 @dblclick:one="addOne"/>
+                                 @dblclick:one="addOne" @dblclick:source="addSource(item)"/>
     </div>
     <div class="mt-1 mr-4 mb-4 ml-1">
         <Button type="primary" icon="check-square" @click="selectAll">全选</Button>
