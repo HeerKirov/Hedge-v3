@@ -376,7 +376,7 @@ export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "bo
     }
 
     const setTagme = async (tagme: Tagme[]): Promise<boolean> => {
-        if(tagme !== form.tagme) {
+        if(!objects.deepEquals(tagme, form.tagme)) {
             form.tagme = tagme
             return await batchFetch({target: selected.value, tagme})
         }
@@ -485,6 +485,9 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
     const setScore = async (score: number | null) => {
         return score === data.value?.score || await setData({score})
     }
+    const setTagme = async (tagme: Tagme[]) => {
+        return objects.deepEquals(tagme, data.value?.tagme) || await setData({tagme})
+    }
     const setTime = async ({ partitionTime, orderTime }: {partitionTime: LocalDateTime, orderTime: LocalDateTime}) => {
         const partitionTimeSot = partitionTime.timestamp !== data.value?.partitionTime?.timestamp
         const orderTimeSot = orderTime.timestamp !== data.value?.orderTime?.timestamp
@@ -499,7 +502,7 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
         }
     }
 
-    return {data, id: path, setDescription, setScore, setTime, openMetaTagEditor}
+    return {data, id: path, setDescription, setScore, setTime, setTagme, openMetaTagEditor}
 }
 
 export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref<"IMAGE" | "COLLECTION">) {

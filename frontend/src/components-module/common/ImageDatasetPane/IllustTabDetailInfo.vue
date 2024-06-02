@@ -3,7 +3,7 @@ import { toRef } from "vue"
 import { FormEditKit } from "@/components/interaction"
 import { Separator, Icon } from "@/components/universal"
 import { TagmeInfo, DescriptionDisplay, PartitionTimeDisplay, MetaTagListDisplay, FileInfoDisplay } from "@/components-business/form-display"
-import { DateEditor, DateTimeEditor, ScoreEditor } from "@/components-business/form-editor"
+import { DateEditor, DateTimeEditor, ScoreEditor, TagmeEditor } from "@/components-business/form-editor"
 import { DescriptionEditor } from "@/components-business/form-editor"
 import { useSideBarDetailInfo } from "@/services/main/illust"
 
@@ -14,7 +14,7 @@ const props = defineProps<{
 
 const detailId = toRef(props, "detailId")
 
-const { data, setScore, setDescription, openMetaTagEditor, setTime } = useSideBarDetailInfo(detailId)
+const { data, setScore, setDescription, openMetaTagEditor, setTime, setTagme } = useSideBarDetailInfo(detailId)
 
 </script>
 
@@ -34,7 +34,14 @@ const { data, setScore, setDescription, openMetaTagEditor, setTime } = useSideBa
                 <DescriptionEditor :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
-        <TagmeInfo v-if="data.tagme.length > 0" class="mt-1" :value="data.tagme"/>
+        <FormEditKit class="mt-1" :value="data.tagme" :set-value="setTagme">
+            <template #default="{ value }">
+                <TagmeInfo v-if="value.length" :value="value"/>
+            </template>
+            <template #edit="{ value, setValue }">
+                <TagmeEditor :value="value" @update:value="setValue"/>
+            </template>
+        </FormEditKit>
         <MetaTagListDisplay class="my-2" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
         <FileInfoDisplay v-if="!isCollectionDetail" class="mt-3" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>
         <FormEditKit class="mt-2" :value="{partitionTime: data.partitionTime, orderTime: data.orderTime}" :set-value="setTime">
