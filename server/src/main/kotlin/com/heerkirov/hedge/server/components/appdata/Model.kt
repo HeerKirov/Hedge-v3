@@ -76,6 +76,10 @@ data class MetaOption(
      */
     var autoCleanTagme: Boolean,
     /**
+     * 只有character成份会清理TOPIC Tagme。
+     */
+    var onlyCleanTagmeByCharacter: Boolean,
+    /**
      * 对orderTime的变更将会自动同步至partitionTime。
      */
     var bindingPartitionWithOrderTime: Boolean,
@@ -123,7 +127,11 @@ data class SourceOption(
     /**
      * 注册在系统中的原始数据的site列表。此列表与SourceImage的source列值关联。
      */
-    val sites: MutableList<Site>
+    val sites: MutableList<Site>,
+    /**
+     * sourceType对metaType的映射。这是个不可编辑的隐藏项，根据mapping自动推理获得。
+     */
+    val sourceTypeReflect: MutableList<SourceTypeReflect>
 ) {
     data class Site(val name: String,
                     var title: String,
@@ -131,6 +139,8 @@ data class SourceOption(
                     var availableAdditionalInfo: List<AvailableAdditionalInfo>,
                     var sourceLinkGenerateRules: List<String>,
                     var availableTypes: List<String>)
+
+    data class SourceTypeReflect(val site: String, val type: String, val metaType: List<String>)
 
     data class AvailableAdditionalInfo(val field: String, val label: String)
 
@@ -166,6 +176,10 @@ data class ImportOption(
      * 在文件导入时，根据已设置的来源和映射规则，自动映射并添加元数据标签。
      */
     var autoReflectMetaTag: Boolean,
+    /**
+     * 根据推导得到的父标签解决子标签冲突。用于解决character多义映射的情况。这个选项会在“导入自动映射”和“根据来源标签批量设置标签”功能中生效。
+     */
+    var resolveConflictByParent: Boolean,
     /**
      * 启用哪些元数据标签类型的映射。
      */

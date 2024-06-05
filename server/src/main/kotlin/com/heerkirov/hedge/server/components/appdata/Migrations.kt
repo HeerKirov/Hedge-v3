@@ -29,6 +29,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             ),
             meta = MetaOption(
                 autoCleanTagme = true,
+                onlyCleanTagmeByCharacter = true,
                 centralizeCollection = true,
                 bindingPartitionWithOrderTime = true,
                 topicColors = emptyMap(),
@@ -42,12 +43,14 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
                 warningLimitOfIntersectItems = 8
             ),
             source = SourceOption(
-                sites = mutableListOf()
+                sites = mutableListOf(),
+                sourceTypeReflect = mutableListOf()
             ),
             import = ImportOption(
                 autoAnalyseSourceData = false,
                 preventNoneSourceData = false,
                 autoReflectMetaTag = false,
+                resolveConflictByParent = false,
                 reflectMetaTagType = listOf(MetaType.TAG, MetaType.TOPIC, MetaType.AUTHOR),
                 notReflectForMixedSet = false,
                 autoConvertFormat = false,
@@ -90,6 +93,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
         register.map("0.4.0", ::modifyImportAndFindSimilarArguments)
         register.map("0.5.0", ::modifyMetaAndImportArguments)
         register.map("0.6.0", ::addImportConvertArguments)
+        register.map("0.8.0.1", ::addManyArguments)
     }
 
     /**
@@ -226,6 +230,21 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             "import" to json["import"]
                 .upsertField("autoConvertFormat") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() }
                 .upsertField("autoConvertPNGThresholdSizeMB") { value -> if(value != null && value.isNumber) value else 10.toJsonNode() },
+            "findSimilar" to json["findSimilar"]
+        ).toJsonNode()
+    }
+
+    /**
+     * 在0.8.0版本，添加了多种新参数。
+     */
+    private fun addManyArguments(json: JsonNode): JsonNode {
+        return mapOf(
+            "server" to json["server"],
+            "storage" to json["storage"],
+            "meta" to json["meta"].upsertField("onlyCleanTagmeByCharacter") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() },
+            "query" to json["query"],
+            "source" to json["source"].upsertField("sourceTypeReflect") { value -> if(value != null && value.isArray) value else emptyList<SourceOption.SourceTypeReflect>().toJsonNode() },
+            "import" to json["import"].upsertField("resolveConflictByParent") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() },
             "findSimilar" to json["findSimilar"]
         ).toJsonNode()
     }

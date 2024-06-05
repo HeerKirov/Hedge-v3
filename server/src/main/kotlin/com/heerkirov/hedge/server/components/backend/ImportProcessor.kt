@@ -7,10 +7,7 @@ import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
-import com.heerkirov.hedge.server.dao.ImportRecords
-import com.heerkirov.hedge.server.dao.SourceDatas
-import com.heerkirov.hedge.server.dao.SourceTagRelations
-import com.heerkirov.hedge.server.dao.SourceTags
+import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.form.IllustImageCreateForm
 import com.heerkirov.hedge.server.dto.form.SourceDataUpdateForm
 import com.heerkirov.hedge.server.dto.res.*
@@ -180,18 +177,39 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                             val enableTopic = MetaType.TOPIC in setting.import.reflectMetaTagType
                             val enableAuthor = MetaType.AUTHOR in setting.import.reflectMetaTagType
                             val mappingTags = sourceMappingManager.batchQuery(sourceTags)
+                            val resolveConflictParents by lazy { mappingTags.asSequence().flatMap { it.mappings }.map { it.metaTag }.filterIsInstance<TopicSimpleRes>().filter { it.type == TagTopicType.COPYRIGHT || it.type == TagTopicType.IP }.map { it.id }.toSet() }
                             for (mappingTag in mappingTags) {
-                                for (mapping in mappingTag.mappings) {
-                                    when(mapping.metaType) {
-                                        MetaType.AUTHOR -> if(enableAuthor) {
-                                            mixedCounter?.compute((mapping.metaTag as AuthorSimpleRes).type) { _, v -> if(v != null) v + 1 else 1 }
-                                            resultAuthors.add((mapping.metaTag as AuthorSimpleRes).id)
+                                if(mappingTag.mappings.size >= 2 && setting.import.resolveConflictByParent && enableTopic && mappingTag.mappings.all { it.metaTag is TopicSimpleRes && it.metaTag.type == TagTopicType.CHARACTER }) {
+                                    //当一个sourceTag存在至少2个映射目标，目标都是character，且开启了resolveConflictByParent选项时，需要根据父标签限定选择其一
+                                    for (mapping in mappingTag.mappings) {
+                                        val topic = mapping.metaTag as TopicSimpleRes
+                                        var cur: Triple<Int, Int?, Int?>? = null
+                                        do {
+                                            //这里对每一个topic循环查询它的所有parent，当存在任意parent在resolveConflictParents集合内时，此映射有效
+                                            cur = data.db.from(Topics)
+                                                .select(Topics.id, Topics.parentId, Topics.parentRootId)
+                                                .where { Topics.id eq (cur?.second ?: topic.id) }
+                                                .map { Triple(it[Topics.id]!!, it[Topics.parentId], it[Topics.parentRootId]) }
+                                                .firstOrNull()
+                                            if(cur != null && (cur.second in resolveConflictParents || cur.third in resolveConflictParents)) {
+                                                resultTopics.add(topic.id)
+                                                break
+                                            }
+                                        } while (cur?.second != null)
+                                    }
+                                }else{
+                                    for (mapping in mappingTag.mappings) {
+                                        when(mapping.metaType) {
+                                            MetaType.AUTHOR -> if(enableAuthor) {
+                                                mixedCounter?.compute((mapping.metaTag as AuthorSimpleRes).type) { _, v -> if(v != null) v + 1 else 1 }
+                                                resultAuthors.add((mapping.metaTag as AuthorSimpleRes).id)
+                                            }
+                                            MetaType.TOPIC -> if(enableTopic) {
+                                                if(mixedCounter != null && (mapping.metaTag as TopicSimpleRes).type != TagTopicType.CHARACTER) mixedCounter.compute(mapping.metaTag.type) { _, v -> if(v != null) v + 1 else 1 }
+                                                resultTopics.add((mapping.metaTag as TopicSimpleRes).id)
+                                            }
+                                            MetaType.TAG -> if(enableTag) resultTags.add((mapping.metaTag as TagSimpleRes).id)
                                         }
-                                        MetaType.TOPIC -> if(enableTopic) {
-                                            if(mixedCounter != null && (mapping.metaTag as TopicSimpleRes).type != TagTopicType.CHARACTER) mixedCounter.compute(mapping.metaTag.type) { _, v -> if(v != null) v + 1 else 1 }
-                                            resultTopics.add((mapping.metaTag as TopicSimpleRes).id)
-                                        }
-                                        MetaType.TAG -> if(enableTag) resultTags.add((mapping.metaTag as TagSimpleRes).id)
                                     }
                                 }
                                 if(typeReflector != null && mappingTag.mappings.isNotEmpty() && mappingTag.mappings.first().metaType in setting.import.reflectMetaTagType) {

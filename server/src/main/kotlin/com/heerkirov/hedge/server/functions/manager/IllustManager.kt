@@ -10,6 +10,7 @@ import com.heerkirov.hedge.server.dto.form.ImagePropsCloneForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.IllustType
+import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.events.*
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.IllustKit
@@ -19,6 +20,7 @@ import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
 import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
+import com.heerkirov.hedge.server.utils.letIf
 import com.heerkirov.hedge.server.utils.mostCount
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
@@ -417,10 +419,41 @@ class IllustManager(private val appdata: AppDataManager,
                         .innerJoin(SourceTagRelations, (SourceTags.id eq SourceTagRelations.sourceTagId) and (SourceTagRelations.sourceDataId eq illust.sourceDataId))
                         .select(SourceTags.site, SourceTags.type, SourceTags.code)
                         .map { SourceTagPath(it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.code]!!) }
-                    val sourceTagMappings = sourceTags.mapNotNull { mappings[it] }.flatMap { it.mappings }.map { it.metaTag }
-                    val mappedTags = sourceTagMappings.filterIsInstance<TagSimpleRes>().map { it.id }
-                    val mappedTopics = sourceTagMappings.filterIsInstance<TopicSimpleRes>().map { it.id }
-                    val mappedAuthors = sourceTagMappings.filterIsInstance<AuthorSimpleRes>().map { it.id }
+                    val sourceTagMappings = sourceTags.mapNotNull { mappings[it] }
+                    val mappedMetaTags = sourceTagMappings.flatMap { it.mappings }.map { it.metaTag }
+                    val conflictTopics = mutableSetOf<Int>().letIf(appdata.setting.import.resolveConflictByParent) { conflictRet ->
+                        val conflicts = sourceTagMappings.filter { m -> m.mappings.size >= 2 && m.mappings.all { it.metaTag is TopicSimpleRes && it.metaTag.type == TagTopicType.CHARACTER } }
+                        if(conflicts.isNotEmpty()) {
+                            val resolveConflictParents = mappedMetaTags.filterIsInstance<TopicSimpleRes>().filter { it.type == TagTopicType.IP || it.type == TagTopicType.COPYRIGHT }.map { it.id }
+                            for (conflict in conflicts) {
+                                //当一个sourceTag存在至少2个映射目标，目标都是character，且开启了resolveConflictByParent选项时，需要根据父标签限定选择其一
+                                for (mapping in conflict.mappings) {
+                                    val topic = mapping.metaTag as TopicSimpleRes
+                                    var cur: Triple<Int, Int?, Int?>? = null
+                                    var include = false
+                                    do {
+                                        //这里对每一个topic循环查询它的所有parent，当存在任意parent在resolveConflictParents集合内时，此映射有效
+                                        cur = data.db.from(Topics)
+                                            .select(Topics.id, Topics.parentId, Topics.parentRootId)
+                                            .where { Topics.id eq (cur?.second ?: topic.id) }
+                                            .map { Triple(it[Topics.id]!!, it[Topics.parentId], it[Topics.parentRootId]) }
+                                            .firstOrNull()
+                                        if(cur != null && (cur.second in resolveConflictParents || cur.third in resolveConflictParents)) {
+                                            include = true
+                                            break
+                                        }
+                                    } while (cur?.second != null)
+                                    if(!include) conflictRet.add(topic.id)
+                                }
+                            }
+                        }
+                        conflictRet
+                    }
+
+                    val mappedTags = mappedMetaTags.filterIsInstance<TagSimpleRes>().map { it.id }
+                    val mappedTopics = mappedMetaTags.filterIsInstance<TopicSimpleRes>().map { it.id } - conflictTopics
+                    val mappedAuthors = mappedMetaTags.filterIsInstance<AuthorSimpleRes>().map { it.id }
+
                     val tags = if(mappedTags.isNotEmpty()) optOf((form.tags.unwrapOr { emptyList() } + mappedTags).distinct()) else form.tags
                     val topics = if(mappedTopics.isNotEmpty()) optOf((form.topics.unwrapOr { emptyList() } + mappedTopics).distinct()) else form.topics
                     val authors = if(mappedAuthors.isNotEmpty()) optOf((form.authors.unwrapOr { emptyList() } + mappedAuthors).distinct()) else form.authors

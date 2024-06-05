@@ -68,6 +68,7 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
             form.autoAnalyseSourceData.alsoOpt { import.autoAnalyseSourceData = it }
             form.preventNoneSourceData.alsoOpt { import.preventNoneSourceData = it }
             form.autoReflectMetaTag.alsoOpt { import.autoReflectMetaTag = it }
+            form.resolveConflictByParent.alsoOpt { import.resolveConflictByParent = it }
             form.reflectMetaTagType.alsoOpt { import.reflectMetaTagType = it }
             form.notReflectForMixedSet.alsoOpt { import.notReflectForMixedSet = it }
             form.autoConvertFormat.alsoOpt { import.autoConvertFormat = it }
@@ -116,6 +117,7 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
 
         appdata.saveSetting {
             form.autoCleanTagme.alsoOpt { meta.autoCleanTagme = it }
+            form.onlyCleanTagmeByCharacter.alsoOpt { meta.onlyCleanTagmeByCharacter = it }
             form.centralizeCollection.alsoOpt { meta.centralizeCollection = it }
             form.bindingPartitionWithOrderTime.alsoOpt { meta.bindingPartitionWithOrderTime = it }
             form.topicColors.alsoOpt { meta.topicColors = it }
