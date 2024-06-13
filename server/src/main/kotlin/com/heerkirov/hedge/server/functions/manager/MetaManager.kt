@@ -33,6 +33,18 @@ class MetaManager(private val data: DataRepository) {
      * @throws ConflictingGroupMembersError 发现标签冲突组。此方法会直接把冲突组问题作为异常抛出，而不是继续在参数里传递
      */
     fun validateAndExportTag(tagIds: List<Int>, ignoreError: Boolean = false): List<Pair<Int, Boolean>> {
+        return validateAndExportTagModel(tagIds, ignoreError).map { (t, e) -> t.id to e }
+    }
+
+    /**
+     * 该方法使用在设置tag时，对tag进行校验并导出，返回声明式的tag列表。
+     * @param ignoreError 忽略产生的错误，对于缺少/不适用的项，将其跳过。
+     * @return 一组tag。Boolean表示此tag是否为导出tag。
+     * @throws ResourceNotExist ("tags", number[]) 部分tags资源不存在。给出不存在的tag id列表
+     * @throws ResourceNotSuitable ("tags", number[]) 部分tags资源不适用。地址段不适用于此项。给出不适用的tag id列表
+     * @throws ConflictingGroupMembersError 发现标签冲突组。此方法会直接把冲突组问题作为异常抛出，而不是继续在参数里传递
+     */
+    fun validateAndExportTagModel(tagIds: List<Int>, ignoreError: Boolean = false): List<Pair<Tag, Boolean>> {
         val set = tagIds.toSet()
         val tags = data.db.sequenceOf(Tags).filter { it.id inList set }.toList()
         if(!ignoreError && tags.size < set.size) {
@@ -43,7 +55,7 @@ class MetaManager(private val data: DataRepository) {
             if(isNotEmpty()) throw be(ResourceNotSuitable("tags", map { it.id }))
         }
 
-        val (result, e) = exportTag(tags)
+        val (result, e) = exportTagModel(tags)
         if(!ignoreError && e != null) {
             //此方法只检出强制冲突组
             val forceInfo = e.info.filter { it.force }
@@ -61,13 +73,23 @@ class MetaManager(private val data: DataRepository) {
      * @throws ResourceNotExist ("topics", number[]) 部分topics资源不存在。给出不存在的topic id列表
      */
     fun validateAndExportTopic(topicIds: List<Int>, ignoreError: Boolean = false): List<Pair<Int, Boolean>> {
+        return validateAndExportTopicModel(topicIds, ignoreError).map { (t, e) -> t.id to e }
+    }
+
+    /**
+     * 该方法使用在设置topic时，对topic进行校验并导出，返回声明式的topic列表。
+     * @param ignoreError 忽略产生的错误，对于缺少/不适用的项，将其跳过。
+     * @return 一组topic。Int表示topic id，Boolean表示此topic是否为导出tag。
+     * @throws ResourceNotExist ("topics", number[]) 部分topics资源不存在。给出不存在的topic id列表
+     */
+    fun validateAndExportTopicModel(topicIds: List<Int>, ignoreError: Boolean = false): List<Pair<Topic, Boolean>> {
         val set = topicIds.toSet()
         val topics = data.db.sequenceOf(Topics).filter { it.id inList set }.toList()
         if(!ignoreError && topics.size < set.size) {
             throw be(ResourceNotExist("topics", set - topics.asSequence().map { it.id }.toSet()))
         }
 
-        return exportTopic(topics)
+        return exportTopicModel(topics)
     }
 
     /**
@@ -77,14 +99,24 @@ class MetaManager(private val data: DataRepository) {
      * @throws ResourceNotExist ("authors", number[]) 部分authors资源不存在。给出不存在的author id列表
      */
     fun validateAndExportAuthor(authors: List<Int>, ignoreError: Boolean = false): List<Pair<Int, Boolean>> {
+        return validateAndExportAuthorModel(authors, ignoreError).map { (t, e) -> t.id to e }
+    }
+
+    /**
+     * 该方法使用在设置author时，对author进行校验并导出，返回声明式的author列表。
+     * @param ignoreError 忽略产生的错误，对于缺少/不适用的项，将其跳过。
+     * @return 一组author。Int表示tag id，Boolean表示此tag是否为导出tag。
+     * @throws ResourceNotExist ("authors", number[]) 部分authors资源不存在。给出不存在的author id列表
+     */
+    fun validateAndExportAuthorModel(authors: List<Int>, ignoreError: Boolean = false): List<Pair<Author, Boolean>> {
         val set = authors.toSet()
-        val ids = data.db.from(Authors).select(Authors.id).where { Authors.id inList set }.map { it[Authors.id]!! }
-        if(!ignoreError && ids.size < set.size) {
-            throw be(ResourceNotExist("authors", set - ids.toSet()))
+        val result = data.db.from(Authors).select().where { Authors.id inList set }.map { Authors.createEntity(it) }
+        if(!ignoreError && result.size < set.size) {
+            throw be(ResourceNotExist("authors", set - result.map { it }.toSet()))
         }
 
         //author类型的标签没有导出机制，因此直接返回结果。
-        return ids.map { it to false }
+        return result.map { it to false }
     }
 
     /**

@@ -5,10 +5,12 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.functions.manager.MetaManager
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.IllustModelType
+import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.business.checkScore
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
+import com.heerkirov.hedge.server.utils.letIf
 import com.heerkirov.hedge.server.utils.types.Opt
 import org.ktorm.dsl.*
 import org.ktorm.dsl.where
@@ -29,9 +31,10 @@ class IllustKit(private val appdata: AppDataManager,
 
     /**
      * 检验给出的tags/topics/authors的正确性，将其追加到现有列表中，处理导出并应用其更改。
+     * @return 返回一个Tagme用以标示此次更新涉及了对哪些类型的更改，可以直接用于Tagme属性的更新。需要注意它会受到setting中相关选项的影响。
      */
-    fun appendMeta(thisId: Int, appendTags: List<Int>, appendTopics: List<Int>, appendAuthors: List<Int>, isCollection: Boolean = false, ignoreNotExist: Boolean = false) {
-        if(appendTags.isNotEmpty() || appendTopics.isNotEmpty() || appendAuthors.isNotEmpty()) {
+    fun appendMeta(thisId: Int, appendTags: List<Int>, appendTopics: List<Int>, appendAuthors: List<Int>, isCollection: Boolean = false, ignoreNotExist: Boolean = false): Illust.Tagme {
+        return if(appendTags.isNotEmpty() || appendTopics.isNotEmpty() || appendAuthors.isNotEmpty()) {
             //检出每种tag的数量。这个数量指已存在的值中notExported的数量
             val existTags = metaManager.getNotExportMetaTags(thisId, IllustTagRelations, Tags)
             val existTopics = metaManager.getNotExportMetaTags(thisId, IllustTopicRelations, Topics)
@@ -41,26 +44,38 @@ class IllustKit(private val appdata: AppDataManager,
             val newTopics = (appendTopics + existTopics.map { it.id }).distinct()
             val newAuthors = (appendAuthors + existAuthors.map { it.id }).distinct()
 
-            val tagAnnotations = if(newTags.isEmpty()) null else
+            val validatedTags = if(newTags.isEmpty()) emptyList() else metaManager.validateAndExportTagModel(newTags, ignoreError = ignoreNotExist)
+            val validatedTopics = if(newTopics.isEmpty()) emptyList() else metaManager.validateAndExportTopicModel(newTopics, ignoreError = ignoreNotExist)
+            val validatedAuthors = if(newAuthors.isEmpty()) emptyList() else metaManager.validateAndExportAuthorModel(newAuthors, ignoreError = ignoreNotExist)
+
+            val tagAnnotations = if(validatedTags.isEmpty()) null else
                 metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !isCollection,
                     metaTag = Tags,
                     metaRelations = IllustTagRelations,
                     metaAnnotationRelations = TagAnnotationRelations,
-                    newTagIds = metaManager.validateAndExportTag(newTags, ignoreError = ignoreNotExist))
-            val topicAnnotations = if(newTopics.isEmpty()) null else
+                    newTagIds = validatedTags.map { (t, e) -> t.id to e })
+            val topicAnnotations = if(validatedTopics.isEmpty()) null else
                 metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !isCollection,
                     metaTag = Topics,
                     metaRelations = IllustTopicRelations,
                     metaAnnotationRelations = TopicAnnotationRelations,
-                    newTagIds = metaManager.validateAndExportTopic(newTopics, ignoreError = ignoreNotExist))
-            val authorAnnotations = if(newAuthors.isEmpty()) null else
+                    newTagIds = validatedTopics.map { (t, e) -> t.id to e })
+            val authorAnnotations = if(validatedAuthors.isEmpty()) null else
                 metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !isCollection,
                     metaTag = Authors,
                     metaRelations = IllustAuthorRelations,
                     metaAnnotationRelations = AuthorAnnotationRelations,
-                    newTagIds = metaManager.validateAndExportAuthor(newAuthors, ignoreError = ignoreNotExist))
+                    newTagIds = validatedAuthors.map { (t, e) -> t.id to e })
 
             processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
+
+            (Illust.Tagme.EMPTY as Illust.Tagme).letIf(appdata.setting.meta.autoCleanTagme) { r ->
+                r.letIf(validatedTags.any { (_, isExported) -> !isExported }) { it + Illust.Tagme.TAG }
+                    .letIf(validatedAuthors.any { (_, isExported) -> !isExported }) { it + Illust.Tagme.AUTHOR }
+                    .letIf(validatedTopics.any { (t, isExported) -> !isExported && if(appdata.setting.meta.onlyCleanTagmeByCharacter) t.type == TagTopicType.CHARACTER else true }) { it + Illust.Tagme.TOPIC }
+            }
+        }else{
+            Illust.Tagme.EMPTY
         }
     }
 
@@ -74,9 +89,11 @@ class IllustKit(private val appdata: AppDataManager,
      * @throws ResourceNotExist ("tags", number[]) 部分tags资源不存在。给出不存在的tag id列表
      * @throws ResourceNotSuitable ("tags", number[]) 部分tags资源不适用。地址段不适用于此项。给出不适用的tag id列表
      * @throws ConflictingGroupMembersError 发现标签冲突组
+     * @return 返回一个Tagme用以标示此次更新涉及了对哪些类型的更改，可以直接用于Tagme属性的更新。需要注意它会受到setting中相关选项的影响。
      */
     fun updateMeta(thisId: Int, newTags: Opt<List<Int>>, newTopics: Opt<List<Int>>, newAuthors: Opt<List<Int>>,
-                   creating: Boolean = false, copyFromParent: Int? = null, copyFromChildren: Boolean = false, ignoreNotExist: Boolean = false) {
+                   creating: Boolean = false, copyFromParent: Int? = null, copyFromChildren: Boolean = false, ignoreNotExist: Boolean = false): Illust.Tagme {
+
         val analyseStatisticCount = !copyFromChildren
 
         //检出每种tag的数量。这个数量指新设定的值或已存在的值中notExported的数量
@@ -84,7 +101,7 @@ class IllustKit(private val appdata: AppDataManager,
         val topicCount = if(newTopics.isPresent) newTopics.value.size else if(creating) 0 else metaManager.getNotExportedMetaCount(thisId, IllustTopicRelations)
         val authorCount = if(newAuthors.isPresent) newAuthors.value.size else if(creating) 0 else metaManager.getNotExportedMetaCount(thisId, IllustAuthorRelations)
 
-        if(tagCount == 0 && topicCount == 0 && authorCount == 0) {
+        return if(tagCount == 0 && topicCount == 0 && authorCount == 0) {
             //如果发现所有count都是0，意味着这个illust即将被设置为无metaTag。根据业务规则，此时将寻求从parent或children生成它的metaTag。
             //首先清理现在可能还存在的metaTag。用XXX.isPresent作为判断条件，是因为若有新设值为空，那么可能意味着之前有值；而isUndefined时，旧值一定是空，不需要清理
             if(newTags.isPresent) metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, analyseStatisticCount)
@@ -99,6 +116,8 @@ class IllustKit(private val appdata: AppDataManager,
                 //从children拷贝全部metaTag
                 copyAllMetaFromChildren(thisId)
             }
+
+            Illust.Tagme.EMPTY
         }else if(newTags.isPresent || newAuthors.isPresent || newTopics.isPresent) {
             //存在任意一项已修改
             if((newAuthors.isPresent || authorCount == 0) //这行表示，要么列表数量是0，要么它是已修改的项，也就满足下面的"未修改的列表数量都是0"
@@ -111,27 +130,44 @@ class IllustKit(private val appdata: AppDataManager,
                 metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, analyseStatisticCount, true)
                 metaManager.deleteAnnotations(thisId, IllustAnnotationRelations)
             }
+            val validatedTags = newTags.map { metaManager.validateAndExportTagModel(it, ignoreError = ignoreNotExist) }
+            val validatedTopics = newTopics.map { metaManager.validateAndExportTopicModel(it, ignoreError = ignoreNotExist) }
+            val validatedAuthors = newAuthors.map { metaManager.validateAndExportAuthorModel(it, ignoreError = ignoreNotExist) }
 
-            val tagAnnotations = if(newTags.isUndefined) null else
+            val tagAnnotations = validatedTags.map {
                 metaManager.processMetaTags(thisId, creating, analyseStatisticCount,
                     metaTag = Tags,
                     metaRelations = IllustTagRelations,
                     metaAnnotationRelations = TagAnnotationRelations,
-                    newTagIds = metaManager.validateAndExportTag(newTags.value, ignoreError = ignoreNotExist))
-            val topicAnnotations = if(newTopics.isUndefined) null else
+                    newTagIds = it.map { (t, e) -> t.id to e }
+                )
+            }.unwrapOrNull()
+            val topicAnnotations = validatedTopics.map {
                 metaManager.processMetaTags(thisId, creating, analyseStatisticCount,
                     metaTag = Topics,
                     metaRelations = IllustTopicRelations,
                     metaAnnotationRelations = TopicAnnotationRelations,
-                    newTagIds = metaManager.validateAndExportTopic(newTopics.value, ignoreError = ignoreNotExist))
-            val authorAnnotations = if(newAuthors.isUndefined) null else
+                    newTagIds = it.map { (t, e) -> t.id to e }
+                )
+            }.unwrapOrNull()
+            val authorAnnotations = validatedAuthors.map {
                 metaManager.processMetaTags(thisId, creating, analyseStatisticCount,
                     metaTag = Authors,
                     metaRelations = IllustAuthorRelations,
                     metaAnnotationRelations = AuthorAnnotationRelations,
-                    newTagIds = metaManager.validateAndExportAuthor(newAuthors.value, ignoreError = ignoreNotExist))
+                    newTagIds = it.map { (t, e) -> t.id to e }
+                )
+            }.unwrapOrNull()
 
             processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
+
+            (Illust.Tagme.EMPTY as Illust.Tagme).letIf(appdata.setting.meta.autoCleanTagme) { r ->
+                r.letIf(validatedTags.isPresentAnd { it.any { (_, isExported) -> !isExported } }) { it + Illust.Tagme.TAG }
+                .letIf(validatedAuthors.isPresentAnd { it.any { (_, isExported) -> !isExported } }) { it + Illust.Tagme.AUTHOR }
+                .letIf(validatedTopics.isPresentAnd { it.any { (t, isExported) -> !isExported && if(appdata.setting.meta.onlyCleanTagmeByCharacter) t.type == TagTopicType.CHARACTER else true } }) { it + Illust.Tagme.TOPIC }
+            }
+        }else{
+            Illust.Tagme.EMPTY
         }
     }
 

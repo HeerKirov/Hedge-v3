@@ -530,17 +530,11 @@ class IllustService(private val appdata: AppDataManager,
                 else if(appdata.setting.meta.bindingPartitionWithOrderTime) form.orderTime.letOpt { it.toPartitionDate(appdata.setting.server.timeOffsetHour) }
                 else undefined()
             val newDescription = form.description.letOpt { it ?: "" }
-            if(anyOpt(form.tags, form.authors, form.topics)) {
+            val metaResponse = if(anyOpt(form.tags, form.authors, form.topics)) {
                 kit.updateMeta(id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromChildren = true)
-            }
+            }else null
 
-            val newTagme = if(form.tagme.isPresent) form.tagme else if(appdata.setting.meta.autoCleanTagme && anyOpt(form.tags, form.authors, form.topics)) {
-                Opt(illust.tagme
-                    .runIf(form.tags.isPresent) { this - Illust.Tagme.TAG }
-                    .runIf(form.authors.isPresent) { this - Illust.Tagme.AUTHOR }
-                    .runIf(form.topics.isPresent) { this - Illust.Tagme.TOPIC }
-                )
-            }else undefined()
+            val newTagme = if(form.tagme.isPresent) form.tagme else if(metaResponse != null && metaResponse != Illust.Tagme.EMPTY) Opt(illust.tagme - metaResponse) else undefined()
 
             if(anyOpt(newTagme, newDescription, form.score, form.favorite, newPartitionTime, form.orderTime)) {
                 data.db.update(Illusts) {
@@ -636,17 +630,11 @@ class IllustService(private val appdata: AppDataManager,
             val newExportedDescription = newDescription.letOpt { it.ifEmpty { parent?.description ?: "" } }
             val newExportedScore = form.score.letOpt { it ?: parent?.score }
             //处理metaTag导出
-            if(anyOpt(form.tags, form.authors, form.topics)) {
+            val metaResponse = if(anyOpt(form.tags, form.authors, form.topics)) {
                 kit.updateMeta(id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromParent = illust.parentId)
-            }
+            }else null
             //处理tagme变化
-            val newTagme = if(form.tagme.isPresent) form.tagme else if(appdata.setting.meta.autoCleanTagme && anyOpt(form.tags, form.authors, form.topics)) {
-                Opt(illust.tagme
-                    .runIf(form.tags.isPresent) { this - Illust.Tagme.TAG }
-                    .runIf(form.authors.isPresent) { this - Illust.Tagme.AUTHOR }
-                    .runIf(form.topics.isPresent) { this - Illust.Tagme.TOPIC }
-                )
-            }else undefined()
+            val newTagme = if(form.tagme.isPresent) form.tagme else if(metaResponse != null && metaResponse != Illust.Tagme.EMPTY) Opt(illust.tagme - metaResponse) else undefined()
             //处理partition变化
             val newPartitionTime = if(form.partitionTime.isPresent) form.partitionTime
                 else if(appdata.setting.meta.bindingPartitionWithOrderTime) form.orderTime.letOpt { it.toPartitionDate(appdata.setting.server.timeOffsetHour) }.mapNullable { if(it != illust.partitionTime) it else null }

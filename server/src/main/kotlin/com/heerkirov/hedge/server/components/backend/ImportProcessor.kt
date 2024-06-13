@@ -244,6 +244,7 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                             //例如，可以推断ehentai.parody映射到TOPIC.IP类型，ehentai.character映射到TOPIC.CHARACTER类型，ehentai.male/female都映射到TAG类型。
                             //之后，从MetaType反推，看映射到它的所有site.type类型的来源标签是否都被映射了。如果是的，则可以移除对应的Tagme。
                             //例如，如果标签parody:A和parody:B都有映射，author:C和author:D只有C有映射，那么TOPIC可以移除，而AUTHOR不行。
+                            //TODO 根据新的映射表重新编写判定逻辑，同时引入onlyCharacter的额外判定逻辑
                             var minusTagme: Illust.Tagme = Illust.Tagme.EMPTY
                             if(typeReflector != null && setting.import.setTagmeOfTag) {
                                 for ((metaType, sourceTypes) in typeReflector.entries.groupBy({ it.value }) { it.key }) {
@@ -267,7 +268,7 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
             val tagme = if(!setting.import.setTagmeOfTag) Illust.Tagme.EMPTY else {
                 (Illust.Tagme.TAG + Illust.Tagme.AUTHOR + Illust.Tagme.TOPIC + Illust.Tagme.SOURCE)
                     .letIf(source != null && setting.meta.autoCleanTagme) { it - Illust.Tagme.SOURCE }
-                    .letIf(metaTags != null) { it - metaTags!!.f4 }
+                    .letIf(metaTags != null && setting.meta.autoCleanTagme) { it - metaTags!!.f4 }
             }
 
             if(source?.second != null) sourceForms.add(SourceDataIdentity(source.first.sourceSite, source.first.sourceId) to source.second!!)
