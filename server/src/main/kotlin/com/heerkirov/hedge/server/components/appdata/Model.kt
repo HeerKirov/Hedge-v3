@@ -127,11 +127,7 @@ data class SourceOption(
     /**
      * 注册在系统中的原始数据的site列表。此列表与SourceImage的source列值关联。
      */
-    val sites: MutableList<Site>,
-    /**
-     * sourceType对metaType的映射。这是个不可编辑的隐藏项，根据mapping自动推理获得。
-     */
-    val sourceTypeReflect: MutableList<SourceTypeReflect>
+    val sites: MutableList<Site>
 ) {
     data class Site(val name: String,
                     var title: String,
@@ -139,8 +135,6 @@ data class SourceOption(
                     var availableAdditionalInfo: List<AvailableAdditionalInfo>,
                     var sourceLinkGenerateRules: List<String>,
                     var availableTypes: List<String>)
-
-    data class SourceTypeReflect(val site: String, val type: String, val metaType: List<String>)
 
     data class AvailableAdditionalInfo(val field: String, val label: String)
 

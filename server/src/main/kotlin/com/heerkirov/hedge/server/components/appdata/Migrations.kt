@@ -43,8 +43,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
                 warningLimitOfIntersectItems = 8
             ),
             source = SourceOption(
-                sites = mutableListOf(),
-                sourceTypeReflect = mutableListOf()
+                sites = mutableListOf()
             ),
             import = ImportOption(
                 autoAnalyseSourceData = false,
@@ -93,7 +92,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
         register.map("0.4.0", ::modifyImportAndFindSimilarArguments)
         register.map("0.5.0", ::modifyMetaAndImportArguments)
         register.map("0.6.0", ::addImportConvertArguments)
-        register.map("0.8.0.1", ::addManyArguments)
+        register.map("0.8.0", ::addManyArguments)
     }
 
     /**
@@ -243,7 +242,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             "storage" to json["storage"],
             "meta" to json["meta"].upsertField("onlyCleanTagmeByCharacter") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() },
             "query" to json["query"],
-            "source" to json["source"].upsertField("sourceTypeReflect") { value -> if(value != null && value.isArray) value else emptyList<SourceOption.SourceTypeReflect>().toJsonNode() },
+            "source" to json["source"],
             "import" to json["import"].upsertField("resolveConflictByParent") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() },
             "findSimilar" to json["findSimilar"]
         ).toJsonNode()
