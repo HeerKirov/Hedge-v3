@@ -406,7 +406,7 @@ class IllustManager(private val appdata: AppDataManager,
         }
 
         //meta tag
-        val metaTagSots = mutableListOf<Pair<Illust, Illust.Tagme>>()
+        val metaResponses = mutableMapOf<Int, Pair<Illust.Tagme, Illust.Tagme>>()
         if(anyOpt(form.tags, form.topics, form.authors, form.mappingSourceTags)) {
             val mappings = form.mappingSourceTags.unwrapOrNull()?.let { sourceMappingManager.batchQuery(it) }?.associateBy { SourceTagPath(it.site, it.type, it.code) }
 
@@ -470,7 +470,7 @@ class IllustManager(private val appdata: AppDataManager,
                     }
                 }
 
-                metaTagSots.add(illust to metaResponse)
+                if(metaResponse != Illust.Tagme.EMPTY) metaResponses[illust.id] = metaResponse to illust.tagme
             }
             for (illust in collections) {
                 val metaResponse = when (form.tagUpdateMode) {
@@ -481,7 +481,7 @@ class IllustManager(private val appdata: AppDataManager,
                         Illust.Tagme.EMPTY
                     }
                 }
-                metaTagSots.add(illust to metaResponse)
+                if(metaResponse != Illust.Tagme.EMPTY) metaResponses[illust.id] = metaResponse to illust.tagme
             }
         }
 
@@ -491,15 +491,13 @@ class IllustManager(private val appdata: AppDataManager,
                 where { it.id inList form.target }
                 set(it.tagme, form.tagme.value)
             }
-        }else{
-            val sots = metaTagSots.filter { (_, minusTagme) -> minusTagme != Illust.Tagme.EMPTY }
-            if(sots.isNotEmpty()) {
-                data.db.batchUpdate(Illusts) {
-                    for ((record, minusTagme) in metaTagSots) {
-                        item {
-                            where { it.id eq record.id }
-                            set(it.tagme, record.tagme - minusTagme)
-                        }
+        }else if(metaResponses.isNotEmpty()) {
+            data.db.batchUpdate(Illusts) {
+                for ((recordId, pair) in metaResponses) {
+                    val (minusTagme, originTagme) = pair
+                    item {
+                        where { it.id eq recordId }
+                        set(it.tagme, originTagme - minusTagme)
                     }
                 }
             }
@@ -767,24 +765,22 @@ class IllustManager(private val appdata: AppDataManager,
             }
         }
 
-        val metaTagSot = anyOpt(form.tags, form.topics, form.authors)
         val timeSot = anyOpt(form.partitionTime, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
         val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
-        if(metaTagSot || form.mappingSourceTags.isPresent) {
-            for ((record, minusTagme) in metaTagSots) {
-                val thisMetaTagSot = minusTagme != Illust.Tagme.EMPTY
-                val thisDetailUpdated = listUpdated || thisMetaTagSot || anyOpt(form.description, form.partitionTime)
-                if(listUpdated || thisDetailUpdated) {
-                    //tips: 此处使用了偷懒的手法。并没有对受partition/orderTime变更影响的children进行处理
-                    bus.emit(IllustUpdated(record.id, record.type.toIllustType(),
-                        listUpdated = listUpdated,
-                        detailUpdated = true,
-                        metaTagSot = thisMetaTagSot,
-                        scoreSot = form.score.isPresent,
-                        descriptionSot = form.description.isPresent,
-                        favoriteSot = form.favorite.isPresent,
-                        timeSot = timeSot))
-                }
+        for (record in records) {
+            val thisMetaTagSot = metaResponses[record.id]?.first != Illust.Tagme.EMPTY
+            val thisDetailUpdated = listUpdated || thisMetaTagSot || anyOpt(form.description, form.partitionTime)
+            if(listUpdated || thisDetailUpdated) {
+                //tips: 此处使用了偷懒的手法。并没有对受partition/orderTime变更影响的children进行处理
+                bus.emit(IllustUpdated(
+                    record.id, record.type.toIllustType(),
+                    listUpdated = listUpdated,
+                    detailUpdated = true,
+                    metaTagSot = thisMetaTagSot,
+                    scoreSot = form.score.isPresent,
+                    descriptionSot = form.description.isPresent,
+                    favoriteSot = form.favorite.isPresent,
+                    timeSot = timeSot))
             }
         }
     }
