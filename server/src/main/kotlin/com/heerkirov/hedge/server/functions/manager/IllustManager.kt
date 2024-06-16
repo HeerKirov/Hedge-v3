@@ -474,7 +474,7 @@ class IllustManager(private val appdata: AppDataManager,
             }
             for (illust in collections) {
                 val metaResponse = when (form.tagUpdateMode) {
-                    IllustBatchUpdateForm.TagUpdateMode.OVERRIDE -> kit.updateMeta(illust.id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromChildren = true)
+                    IllustBatchUpdateForm.TagUpdateMode.OVERRIDE -> kit.updateMeta(illust.id, newTags = form.tags.elseOr { emptyList() }, newAuthors = form.authors.elseOr { emptyList() }, newTopics = form.topics.elseOr { emptyList() }, copyFromChildren = true)
                     IllustBatchUpdateForm.TagUpdateMode.APPEND -> kit.appendMeta(illust.id, appendTags = form.tags.unwrapOr { emptyList() }, appendAuthors = form.authors.unwrapOr { emptyList() }, appendTopics = form.topics.unwrapOr { emptyList() }, isCollection = true)
                     IllustBatchUpdateForm.TagUpdateMode.REMOVE -> {
                         kit.removeMeta(illust.id, removeTags = form.tags.unwrapOr { emptyList() }, removeAuthors = form.authors.unwrapOr { emptyList() }, removeTopics = form.topics.unwrapOr { emptyList() }, copyFromChildren = true)
