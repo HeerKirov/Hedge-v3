@@ -242,6 +242,7 @@ class IllustUtilService(private val appdata: AppDataManager, private val data: D
             }
         }
 
+        //开启后置组内排序(且没有开全局排序，因为没有意义)时，在每个组内，按照sourcePath对所有项排序
         val sortedGroups = groups.letIf(resortInGroup && !resortAtAll) {
             it.map { group ->
                 group.sortedWith { a, b ->
@@ -254,22 +255,27 @@ class IllustUtilService(private val appdata: AppDataManager, private val data: D
         }
 
         if(gatherGroup && !onlyNeighbours) {
+            //开启了组内聚合(且没有开仅相邻项判定，因为没有意义)时，将orderTime序列依次赋予给所有项。此处的赋予是组依次进行的，这样就会将同组的项分配到相邻的orderTime上
             val orderTimeSeq = illusts.map { it.orderTime }.sorted().iterator()
             for (group in sortedGroups) {
                 for (illust in group) {
                     val ot = orderTimeSeq.next()
-                    if(illust.orderTime != ot) {
-                        illust.newOrderTime = ot
-                    }
+                    illust.newOrderTime = if(ot != illust.orderTime) ot else null
                 }
             }
+        }else if(resortAtAll) {
+            //若开启了全局重排序，那么此处应该将orderTime序列依次赋予所有项，但是赋予是按照经过重排序后的illust顺序进行的
+            val orderTimeSeq = illusts.map { it.orderTime }.sorted().iterator()
+            for(illust in illusts) {
+                val ot = orderTimeSeq.next()
+                illust.newOrderTime = if(ot != illust.orderTime) ot else null
+            }
         }else{
+            //最后，在每个组组内进行排序检查，以应用组内重排序
             for (group in sortedGroups) {
                 val orderTimeSeq = group.map { it.orderTime }.sorted()
                 for ((illust, ot) in group.zip(orderTimeSeq)) {
-                    if(illust.orderTime != ot) {
-                        illust.newOrderTime = ot
-                    }
+                    illust.newOrderTime = if(ot != illust.orderTime) ot else null
                 }
             }
         }
