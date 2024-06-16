@@ -338,9 +338,9 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                 //开启onlyCleanTagmeByCharacter时，就要求必须至少有一个CHARACTER
                 val minusTagme: Illust.Tagme = (Illust.Tagme.EMPTY as Illust.Tagme)
                     .letIf(setting.import.setTagmeOfTag) { tagme ->
-                        tagme.letIf(sourceTypeReflector.getMetaTypeOf(MetaType.TAG, site).let { types -> mappingTags.filter { it.type in types } }.let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }) { it + Illust.Tagme.TAG }
-                            .letIf(sourceTypeReflector.getMetaTypeOf(MetaType.AUTHOR, site).let { types -> mappingTags.filter { it.type in types } }.let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }) { it + Illust.Tagme.AUTHOR }
-                            .letIf(sourceTypeReflector.getMetaTypeOf(MetaType.TOPIC, site)
+                        tagme.letIf(enableTag && sourceTypeReflector.getMetaTypeOf(MetaType.TAG, site).let { types -> mappingTags.filter { it.type in types } }.let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }) { it + Illust.Tagme.TAG }
+                            .letIf(enableAuthor && sourceTypeReflector.getMetaTypeOf(MetaType.AUTHOR, site).let { types -> mappingTags.filter { it.type in types } }.let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }) { it + Illust.Tagme.AUTHOR }
+                            .letIf(enableTopic && sourceTypeReflector.getMetaTypeOf(MetaType.TOPIC, site)
                                 .let { types -> mappingTags.filter { it.type in types } }
                                 .let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } && if(setting.meta.onlyCleanTagmeByCharacter) { it.flatMap { t -> t.mappings }.any { t -> t.metaTag is TopicSimpleRes && t.metaTag.type == TagTopicType.CHARACTER } }else true }
                             ) { it + Illust.Tagme.TOPIC }
