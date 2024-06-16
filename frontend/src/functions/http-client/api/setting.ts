@@ -224,6 +224,10 @@ export interface MetaOption {
      */
     autoCleanTagme: boolean
     /**
+     * 只有character成份会清理TOPIC Tagme。
+     */
+    onlyCleanTagmeByCharacter: boolean
+    /**
      * 当创建新集合或向集合添加新项时，允许指定分区，将不在此分区的项聚集到此分区中。
      */
     centralizeCollection: boolean
@@ -284,6 +288,10 @@ export interface ImportOption {
      * 在文件导入时，根据已设置的来源和映射规则，自动映射并添加元数据标签。
      */
     autoReflectMetaTag: boolean
+    /**
+     * 根据推导得到的父标签解决子标签冲突。用于解决character多义映射的情况。这个选项会在“导入自动映射”和“根据来源标签批量设置标签”功能中生效。
+     */
+    resolveConflictByParent: boolean
     /**
      * 启用哪些元数据标签类型的映射。
      */

@@ -4,7 +4,7 @@ import { ElementPopupMenu } from "@/components/interaction"
 import { BrowserTeleport } from "@/components/logical"
 import { PaneLayout } from "@/components/layout"
 import { DataRouter, FitTypeButton, ColumnNumButton, FileWatcher } from "@/components-business/top-bar"
-import { ImportDetailPane } from "@/components-module/common"
+import { ImportDetailPane, LoadingScreen } from "@/components-module/common"
 import { ImportImageDataset } from "@/components-module/data"
 import { EmbedPreview } from "@/components-module/preview"
 import { ImportRecord } from "@/functions/http-client/api/import"
@@ -73,11 +73,12 @@ const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
     </BrowserTeleport>
 
     <PaneLayout :show-pane="paneState.visible.value">
-        <ImportEmpty v-if="paginationData.data.value.metrics && paginationData.state.value?.total === 0" :class="$style.empty"/>
+        <ImportEmpty v-if="!paginationData.status.value.loading && paginationData.data.value.metrics && paginationData.state.value?.total === 0" :class="$style.empty"/>
         <ImportImageDataset v-else :data="paginationData.data.value" :state="paginationData.state.value" :query-instance="listview.proxy" :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
                             :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                             @update:state="paginationData.setState" @navigate="paginationData.navigateTo($event)" @select="updateSelect" @contextmenu="menu.popup($event)" @space="openImagePreview()"/>
         <EmbedPreview/>
+        <LoadingScreen :loading="paginationData.status.value.loading"/>
         <template #pane>
             <ImportDetailPane @close="paneState.visible.value = false"/>
         </template>

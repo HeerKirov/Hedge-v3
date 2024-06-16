@@ -37,11 +37,10 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
             <p class="secondary-text">导入文件时，自动设置导入项目的Tagme。</p>
         </div>
         <div class="mt-2">
-            <label class="label">排序时间方案</label>
-            <Select class="mt-1" size="small" :items="timeTypes" v-model:value="settingImport.setOrderTimeBy"/>
+            <p class="mt-1 is-line-height-small">排序时间方案：<Select size="small" :items="timeTypes" v-model:value="settingImport.setOrderTimeBy"/></p>
             <p class="secondary-text">使用选定的属性作为导入项目的排序时间。当选定的属性不存在时，自动选择其他属性。</p>
         </div>
-        <div class="mt-2">
+        <div class="mt-4">
             <label class="label">标签映射</label>
             <div class="mt-1">
                 <CheckBox v-model:value="settingImport.autoReflectMetaTag">导入时标签映射</CheckBox>
@@ -51,14 +50,18 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
                 <CheckBox class="mr-2" :disabled="!settingImport.autoReflectMetaTag" :value="settingImport.reflectMetaTagType.includes('TAG')" @update:value="updateReflectMetaTagTypes('TAG', $event)">标签</CheckBox>
                 <CheckBox class="mr-2" :disabled="!settingImport.autoReflectMetaTag" :value="settingImport.reflectMetaTagType.includes('TOPIC')" @update:value="updateReflectMetaTagTypes('TOPIC', $event)">主题</CheckBox>
                 <CheckBox :disabled="!settingImport.autoReflectMetaTag" :value="settingImport.reflectMetaTagType.includes('AUTHOR')" @update:value="updateReflectMetaTagTypes('AUTHOR', $event)">作者</CheckBox>
-                <p class="secondary-text">启用哪些类型的元数据标签。</p>
+                <p class="secondary-text">启用哪些类型的元数据标签映射。</p>
             </div>
             <div class="mt-2">
-                <CheckBox :disabled="!settingImport.autoReflectMetaTag" v-model:value="settingImport.notReflectForMixedSet">不为混合集做映射</CheckBox>
-                <p class="secondary-text">主题、作者标签数量过多的来源不会被映射。</p>
+                <CheckBox :disabled="!settingImport.autoReflectMetaTag" v-model:value="settingImport.notReflectForMixedSet">不映射混合图集</CheckBox>
+                <p class="secondary-text">主题、作者标签数量过多的来源会被视作混合图集，不会进行任何映射。</p>
+            </div>
+            <div class="mt-2">
+                <CheckBox :disabled="!settingImport.autoReflectMetaTag" v-model:value="settingImport.resolveConflictByParent">根据推导得到的父标签解决子标签冲突</CheckBox>
+                <p class="secondary-text">对于映射多个角色标签的来源标签，根据映射得到的其他主题标签限定其中一或多个，以解决一对多映射冲突。</p>
             </div>
         </div>
-        <div class="mt-2">
+        <div class="mt-4">
             <label class="label">文件处理</label>
             <div class="mt-1">
                 <CheckBox v-model:value="settingImport.autoConvertFormat">自动将较大的无损文件转换至有损类型</CheckBox>

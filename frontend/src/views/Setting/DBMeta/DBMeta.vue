@@ -40,6 +40,7 @@ const { data: settingMeta } = useSettingMeta()
         <div class="mt-2">
             <CheckBox v-model:value="settingMeta.autoCleanTagme">自动清理Tagme</CheckBox>
             <p class="secondary-text">更改图库项目时，如果Tagme标记的部分发生变更，则自动去除这部分的Tagme标记。</p>
+            <CheckBox class="ml-4 is-font-size-small" v-model:value="settingMeta.onlyCleanTagmeByCharacter">仅在角色标签变更时清理主题Tagme</CheckBox>
         </div>
     </template>
 </template>

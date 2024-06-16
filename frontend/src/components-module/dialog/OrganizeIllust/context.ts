@@ -46,10 +46,7 @@ export function useOrganizeIllustContext(imageIds: Ref<number[]>, onSucceed: () 
 
     const formAnyChanged = ref(false)
 
-    const reloadData = async () => {
-        formAnyChanged.value = false
-        formStorage.value = {...form.value}
-        loading.value = true
+    const fetchAndSetData = async () => {
         const res = await fetchOrganizationSituation({...form.value, illustIds: imageIds.value})
         if(res !== undefined) {
             const newImages: OrganizationSituationImage[] = []
@@ -69,12 +66,23 @@ export function useOrganizeIllustContext(imageIds: Ref<number[]>, onSucceed: () 
             images.value = newImages
             data.value = res
         }
+    }
+
+    const reloadData = async () => {
+        formAnyChanged.value = false
+        formStorage.value = {...form.value}
+        loading.value = true
+        await fetchAndSetData()
         loading.value = false
     }
 
     const apply = async () => {
         if(data.value !== undefined && !loading.value) {
             loading.value = true
+            if(formAnyChanged.value) {
+                formStorage.value = {...form.value}
+                await fetchAndSetData()
+            }
             const ok = await fetchApplyOrganizationSituation({groups: data.value.map(g => g.map(i => ({id: i.id, newOrderTime: i.newOrderTime})))})
             if(ok) onSucceed()
         }
