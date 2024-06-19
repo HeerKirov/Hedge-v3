@@ -9,7 +9,6 @@ import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.events.HomepageInfoUpdated
-import com.heerkirov.hedge.server.functions.manager.TrashManager
 import com.heerkirov.hedge.server.library.framework.DaemonThreadComponent
 import com.heerkirov.hedge.server.model.HomepageRecord
 import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
@@ -17,57 +16,25 @@ import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import org.ktorm.dsl.*
 import org.ktorm.schema.ColumnDeclaring
 import org.ktorm.support.sqlite.random
-import org.slf4j.LoggerFactory
-import java.time.*
-import java.time.temporal.ChronoUnit
-import kotlin.math.absoluteValue
+import java.time.Instant
+import java.time.LocalDate
 import kotlin.random.Random
 import kotlin.random.nextInt
 
 /**
  * 处理一些每日启动时要处理一次的事务。
  * - 启动时，重新生成主页内容。
- * - 已删除文件的自动清理。根据自动清理间隔，与当前时间间隔超出此日数的项会被清除。
  */
 interface DailyProcessor
 
 class DailyProcessorImpl(private val appStatusDriver: AppStatusDriver,
                          private val appdata: AppDataManager,
                          private val data: DataRepository,
-                         private val bus: EventBus,
-                         private val trashManager: TrashManager) : DailyProcessor, DaemonThreadComponent {
-    private val log = LoggerFactory.getLogger(DailyProcessor::class.java)
+                         private val bus: EventBus) : DailyProcessor, DaemonThreadComponent {
 
     override fun thread() {
         if(appStatusDriver.status == AppLoadStatus.READY) {
             refreshHomepage()
-            cleanTrashedImages()
-        }
-    }
-
-    private fun cleanTrashedImages() {
-        if(appdata.setting.storage.autoCleanTrashes) {
-            Thread.sleep(1000)
-
-            if(!appdata.storage.accessible) {
-                log.warn("cleanTrashedImages not executed, because storage dir is not accessible.")
-                return
-            }
-
-            val deadline = Instant.now()
-                .toPartitionDate(appdata.setting.server.timeOffsetHour)
-                .minus(appdata.setting.storage.autoCleanTrashesIntervalDay.absoluteValue.toLong(), ChronoUnit.DAYS)
-                .let { LocalDateTime.of(it, LocalTime.MIN).atZone(ZoneId.systemDefault()).toInstant() }
-            val imageIds = data.db.from(TrashedImages)
-                .select(TrashedImages.imageId)
-                .where { TrashedImages.trashedTime lessEq deadline }
-                .map { it[TrashedImages.imageId]!! }
-
-            trashManager.deleteTrashedImage(imageIds)
-
-            if(imageIds.isNotEmpty()) {
-                log.info("${imageIds.size} trashed images have been cleared.")
-            }
         }
     }
 

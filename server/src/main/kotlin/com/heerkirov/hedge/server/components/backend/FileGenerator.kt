@@ -8,6 +8,7 @@ import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.dao.FileCacheRecords
 import com.heerkirov.hedge.server.dao.FileFingerprints
 import com.heerkirov.hedge.server.dao.FileRecords
+import com.heerkirov.hedge.server.dao.TrashedImages
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.enums.FileStatus
@@ -15,10 +16,12 @@ import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.events.*
 import com.heerkirov.hedge.server.exceptions.BusinessException
 import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
+import com.heerkirov.hedge.server.functions.manager.TrashManager
 import com.heerkirov.hedge.server.library.framework.DaemonThreadComponent
 import com.heerkirov.hedge.server.library.framework.StatefulComponent
 import com.heerkirov.hedge.server.model.FileRecord
 import com.heerkirov.hedge.server.utils.*
+import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.tools.loopPoolThread
@@ -32,6 +35,9 @@ import java.io.OutputStream
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.LinkedList
 import java.util.zip.CRC32
@@ -49,6 +55,7 @@ import kotlin.math.absoluteValue
  * - 每当触发区块归档事件时，都在后台任务处理区块的归档。
  * - 程序启动时，扫描并清理所有已删除的文件，一并处理归档。
  * - 程序启动时，在后台检测并清理缓存文件。
+ * - 已删除文件的自动清理。根据自动清理间隔，与当前时间间隔超出此日数的项会被清除。
  */
 interface FileGenerator
 
@@ -57,7 +64,8 @@ private const val ARCHIVE_INTERVAL: Long = 2000
 class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                         private val appdata: AppDataManager,
                         private val data: DataRepository,
-                        private val bus: EventBus) : FileGenerator, StatefulComponent, DaemonThreadComponent {
+                        private val bus: EventBus,
+                        private val trashManager: TrashManager) : FileGenerator, StatefulComponent, DaemonThreadComponent {
     private val log = LoggerFactory.getLogger(FileGenerator::class.java)
 
     private val archiveQueue = LinkedList<ArchiveQueueUnit>()
@@ -74,6 +82,9 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
     override fun thread() {
         //使用thread来初始化：初始化是异步进行的
         if(appStatus.status == AppLoadStatus.READY) {
+            Thread.sleep(1000)
+            cleanTrashedImages()
+
             //读取status为NOT_READY的file，准备处理其缩略图
             val thumbnailTasks = data.db.from(FileRecords)
                 .select(FileRecords.id)
@@ -132,11 +143,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                 }
             }
 
-            if(appdata.setting.storage.autoCleanCaches) {
-                val intervalDay = appdata.setting.storage.autoCleanCachesIntervalDay
-                Thread.sleep(5000)
-                cleanExpiredCacheFiles(intervalDay)
-            }
+            cleanExpiredCacheFiles()
         }
     }
 
@@ -322,14 +329,41 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
         }
     }
 
-    private fun cleanExpiredCacheFiles(intervalDay: Int) {
-        val deadline = Instant.now().minus(intervalDay.absoluteValue.toLong(), ChronoUnit.DAYS)
-        for (record in data.db.sequenceOf(FileCacheRecords).filter { it.lastAccessTime lessEq deadline }) {
-            val cachePath = Path(appdata.storage.cacheDir, record.archiveType.toString(), record.block, record.filename)
-            cachePath.deleteIfExists()
+    private fun cleanTrashedImages() {
+        if(appdata.setting.storage.autoCleanTrashes) {
+            if(!appdata.storage.accessible) {
+                log.warn("cleanTrashedImages not executed, because storage dir is not accessible.")
+                return
+            }
+
+            val deadline = Instant.now()
+                .toPartitionDate(appdata.setting.server.timeOffsetHour)
+                .minus(appdata.setting.storage.autoCleanTrashesIntervalDay.absoluteValue.toLong(), ChronoUnit.DAYS)
+                .let { LocalDateTime.of(it, LocalTime.MIN).atZone(ZoneId.systemDefault()).toInstant() }
+            val imageIds = data.db.from(TrashedImages)
+                .select(TrashedImages.imageId)
+                .where { TrashedImages.trashedTime lessEq deadline }
+                .map { it[TrashedImages.imageId]!! }
+
+            trashManager.deleteTrashedImage(imageIds)
+
+            if(imageIds.isNotEmpty()) {
+                log.info("${imageIds.size} trashed images have been cleared.")
+            }
         }
-        val cnt = data.db.delete(FileCacheRecords) { it.lastAccessTime lessEq deadline }
-        if(cnt > 0) log.info("$cnt cache files have been cleaned.")
+    }
+
+    private fun cleanExpiredCacheFiles() {
+        if(appdata.setting.storage.autoCleanCaches) {
+            val intervalDay = appdata.setting.storage.autoCleanCachesIntervalDay
+            val deadline = Instant.now().minus(intervalDay.absoluteValue.toLong(), ChronoUnit.DAYS)
+            for (record in data.db.sequenceOf(FileCacheRecords).filter { it.lastAccessTime lessEq deadline }) {
+                val cachePath = Path(appdata.storage.cacheDir, record.archiveType.toString(), record.block, record.filename)
+                cachePath.deleteIfExists()
+            }
+            val cnt = data.db.delete(FileCacheRecords) { it.lastAccessTime lessEq deadline }
+            if(cnt > 0) log.info("$cnt cache files have been cleaned.")
+        }
     }
 
     private fun processThumbnail(fileRecord: FileRecord, file: File): Tuple5<Long?, Long?, Int, Int, Long?> {
