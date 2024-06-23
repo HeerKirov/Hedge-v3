@@ -1,6 +1,6 @@
 package com.heerkirov.hedge.server.dto.res
 
-import com.heerkirov.hedge.server.components.backend.watcher.PathWatcherError
+import com.heerkirov.hedge.server.components.backend.PathWatcherError
 import com.heerkirov.hedge.server.enums.ImportStatus
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.model.ImportRecord

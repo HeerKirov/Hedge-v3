@@ -1,5 +1,7 @@
 package com.heerkirov.hedge.server.components.backend.exporter
 
+import com.heerkirov.hedge.server.components.backend.BackgroundTaskBus
+import com.heerkirov.hedge.server.components.backend.BackgroundTaskType
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
@@ -12,13 +14,14 @@ import com.heerkirov.hedge.server.library.framework.StatefulComponent
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import com.heerkirov.hedge.server.utils.Json.toJSONString
 import com.heerkirov.hedge.server.utils.tools.ControlledLoopThread
+import com.heerkirov.hedge.server.components.backend.BackgroundTaskCounter
+import com.heerkirov.hedge.server.components.backend.ProgressCounter
 import com.heerkirov.hedge.server.utils.tuples.Tuple3
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.slf4j.LoggerFactory
 import java.lang.IllegalArgumentException
 import java.time.Instant
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
 
 /**
@@ -101,6 +104,7 @@ private val EXPORTER_TYPES = EXPORTER_TYPE_INDEX.mapIndexed { index, kClass -> k
 
 class BackendExporterImpl(private val appStatus: AppStatusDriver,
                           private val bus: EventBus,
+                          private val taskBus: BackgroundTaskBus,
                           private val data: DataRepository,
                           private val illustKit: IllustKit,
                           private val bookKit: BookKit) : BackendExporter, StatefulComponent {
@@ -148,22 +152,33 @@ class BackendExporterImpl(private val appStatus: AppStatusDriver,
         } as ExporterWorker<T>
     }
 
+    private fun <T : ExporterTask> getWorkerType(type: KClass<T>): BackgroundTaskType? {
+        return when(type) {
+            IllustMetadataExporterTask::class -> BackgroundTaskType.EXPORT_ILLUST_METADATA
+            BookMetadataExporterTask::class -> BackgroundTaskType.EXPORT_BOOK_METADATA
+            IllustBookRelationExporterTask::class -> BackgroundTaskType.EXPORT_ILLUST_BOOK_RELATION
+            IllustFolderRelationExporterTask::class -> BackgroundTaskType.EXPORT_ILLUST_FOLDER_RELATION
+            else -> null
+        }
+    }
+
     private fun <T : ExporterTask> getWorkerThread(type: KClass<T>): ExporterWorkerThread<T> {
         synchronized(workerThreads) {
             return if(type in workerThreads) {
                 @Suppress("UNCHECKED_CAST")
                 workerThreads[type] as ExporterWorkerThread<T>
             }else{
-                val worker = ExporterWorkerThread(data, newWorker(type))
-                workerThreads[type] = worker
-                worker
+                val workerType = getWorkerType(type)
+                val counter = if(workerType != null) BackgroundTaskCounter(workerType, taskBus) else ProgressCounter()
+                val thread = ExporterWorkerThread(data, newWorker(type), counter)
+                workerThreads[type] = thread
+                thread
             }
         }
     }
 }
 
-class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository,
-                                             private val worker: ExporterWorker<T>) : ControlledLoopThread() {
+class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository, private val worker: ExporterWorker<T>, private val counter: ProgressCounter) : ControlledLoopThread() {
     private val log = LoggerFactory.getLogger(ExporterWorkerThread::class.java)
 
     @Suppress("UNCHECKED_CAST")
@@ -173,12 +188,9 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository,
 
     @Volatile
     private var _currentKey: String? = null
-    private val _taskCount = AtomicInteger(0)
-    private val _totalTaskCount = AtomicInteger(0)
 
     fun load(initializeTaskCount: Int) {
-        _taskCount.set(initializeTaskCount)
-        _totalTaskCount.set(initializeTaskCount)
+        counter.addTotal(initializeTaskCount)
         if(initializeTaskCount > 0) {
             this.start()
         }
@@ -203,8 +215,7 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository,
                     }
                 }
 
-                _totalTaskCount.addAndGet(finalTasks.size)
-                _taskCount.addAndGet(finalTasks.size)
+                counter.addTotal(finalTasks.size)
             }
         }
 
@@ -226,11 +237,8 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository,
                 if(groupedNewTasks.values.any { it.size > 1 } || groupedDbTasks.isNotEmpty()) {
                     //newTasks存在超过1个相同key，或从数据库中查出的内容不为空，就认为存在需要merge的项，执行merge过程
                     val deleteIds = groupedDbTasks.values.flatten().map { (id, _) -> id }
-                    data.db.delete(ExporterRecords) {
-                        it.id inList deleteIds
-                    }
-                    _totalTaskCount.addAndGet(deleteIds.size)
-                    _taskCount.addAndGet(deleteIds.size)
+                    data.db.delete(ExporterRecords) { it.id inList deleteIds }
+                    counter.addTotal(-deleteIds.size)
 
                     groupedNewTasks.map { (key, newTasks) ->
                         val dbTasks = groupedDbTasks[key]?.map { it.f3 } ?: emptyList()
@@ -260,9 +268,8 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository,
             //锁定thread时，处于对一个model的数据库读写状态，以排斥add指令对相同内容的修改
             val model = data.db.sequenceOf(ExporterRecords).firstOrNull { it.type eq typeIndex }
             if(model == null) {
-                log.info("${_totalTaskCount.get()} ${worker.clazz.simpleName} processed.")
-                _taskCount.set(0)
-                _totalTaskCount.set(0)
+                log.info("${counter.totalCount} ${worker.clazz.simpleName} processed.")
+                counter.reset()
                 this.stop()
                 return
             }
@@ -278,7 +285,7 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository,
             val logTaskName = worker.clazz.simpleName + if(this._currentKey.isNullOrEmpty())  "" else " [${this._currentKey}]"
             log.error("Error occurred in export worker for $logTaskName.", e)
         }
-
+        counter.addCount(1)
         this._currentKey = null
     }
 }

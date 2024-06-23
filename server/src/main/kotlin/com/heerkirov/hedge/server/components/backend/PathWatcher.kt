@@ -1,4 +1,4 @@
-package com.heerkirov.hedge.server.components.backend.watcher
+package com.heerkirov.hedge.server.components.backend
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus

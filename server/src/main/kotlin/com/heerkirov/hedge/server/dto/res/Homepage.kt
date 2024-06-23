@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.dto.res
 
+import com.heerkirov.hedge.server.components.backend.BackgroundTaskType
 import java.time.LocalDate
 
 data class HomepageRes(val ready: Boolean,
@@ -23,3 +24,5 @@ data class HomepageStateRes(val today: LocalDate,
                             val importImageErrorCount: Int,
                             val findSimilarCount: Int,
                             val stagingPostCount: Int)
+
+data class BackgroundTaskRes(val type: BackgroundTaskType, val currentValue: Int, val maxValue: Int)

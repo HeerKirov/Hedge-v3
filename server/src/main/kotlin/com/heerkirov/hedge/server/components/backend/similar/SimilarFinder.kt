@@ -1,6 +1,8 @@
 package com.heerkirov.hedge.server.components.backend.similar
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
+import com.heerkirov.hedge.server.components.backend.BackgroundTaskBus
+import com.heerkirov.hedge.server.components.backend.BackgroundTaskType
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
@@ -17,9 +19,10 @@ import com.heerkirov.hedge.server.library.framework.StatefulComponent
 import com.heerkirov.hedge.server.model.FindSimilarIgnored
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.tools.ControlledLoopThread
+import com.heerkirov.hedge.server.components.backend.BackgroundTaskCounter
 import org.ktorm.dsl.*
+import org.ktorm.entity.count
 import org.ktorm.entity.firstOrNull
-import org.ktorm.entity.isNotEmpty
 import org.ktorm.entity.sequenceOf
 import java.time.Instant
 
@@ -38,8 +41,12 @@ interface SimilarFinder {
     fun castQuickFindToTask(id: Int): Int?
 }
 
-class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val appdata: AppDataManager, private val data: DataRepository, bus: EventBus) : SimilarFinder, StatefulComponent {
-    private val workerThread = SimilarFinderWorkThread(data, bus)
+class SimilarFinderImpl(private val appStatus: AppStatusDriver,
+                        private val appdata: AppDataManager,
+                        private val data: DataRepository,
+                        bus: EventBus, taskBus: BackgroundTaskBus) : SimilarFinder, StatefulComponent {
+    private val counter = BackgroundTaskCounter(BackgroundTaskType.FIND_SIMILARITY, taskBus)
+    private val workerThread = SimilarFinderWorkThread(data, bus, counter)
     private val quickFinder = QuickFinder(data, bus)
 
     init {
@@ -50,7 +57,9 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val appd
 
     override fun load() {
         if(appStatus.status == AppLoadStatus.READY) {
-            if(data.db.sequenceOf(FindSimilarTasks).isNotEmpty()) {
+            val recordCount = data.db.sequenceOf(FindSimilarTasks).count()
+            if(recordCount > 0) {
+                counter.addTotal(recordCount)
                 workerThread.start()
             }
         }
@@ -63,6 +72,8 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val appd
             set(it.recordTime, Instant.now())
         } as Int
 
+        counter.addTotal(1)
+
         workerThread.start()
 
         return id
@@ -71,6 +82,8 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val appd
     override fun delete(id: Int) {
         if(data.db.delete(FindSimilarTasks) { it.id eq id } <= 0) {
             throw be(NotFound())
+        }else{
+            counter.addTotal(-1)
         }
     }
 
@@ -123,11 +136,12 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver, private val appd
     }
 }
 
-class SimilarFinderWorkThread(private val data: DataRepository, private val bus: EventBus) : ControlledLoopThread() {
+class SimilarFinderWorkThread(private val data: DataRepository, private val bus: EventBus, private val counter: BackgroundTaskCounter) : ControlledLoopThread() {
     override fun run() {
         val model = data.db.sequenceOf(FindSimilarTasks).firstOrNull()
         if(model == null) {
             this.stop()
+            counter.reset()
             return
         }
 
@@ -142,5 +156,7 @@ class SimilarFinderWorkThread(private val data: DataRepository, private val bus:
         data.db.transaction {
             data.db.delete(FindSimilarTasks) { it.id eq model.id }
         }
+
+        counter.addCount(1)
     }
 }

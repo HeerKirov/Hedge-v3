@@ -13,6 +13,7 @@ class HomepageRoutes(private val service: HomepageService) : Routes {
             path("api/homepage") {
                 get(::homepage)
                 get("state", ::homepageState)
+                get("background-tasks", ::backgroundTasks)
             }
         }
     }
@@ -23,5 +24,9 @@ class HomepageRoutes(private val service: HomepageService) : Routes {
 
     private fun homepageState(ctx: Context) {
         ctx.json(service.getHomepageState())
+    }
+
+    private fun backgroundTasks(ctx: Context) {
+        ctx.json(service.getBackgroundTasks())
     }
 }

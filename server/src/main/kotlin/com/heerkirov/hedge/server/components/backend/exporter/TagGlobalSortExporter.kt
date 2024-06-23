@@ -9,7 +9,7 @@ import org.ktorm.dsl.eq
 import org.ktorm.entity.sequenceOf
 import kotlin.reflect.KClass
 
-object TagGlobalSortExporterTask : ExporterTask
+data object TagGlobalSortExporterTask : ExporterTask
 
 class TagGlobalSortExporter(private val data: DataRepository): ExporterWorker<TagGlobalSortExporterTask>, MergedProcessWorker<TagGlobalSortExporterTask>, LatencyProcessWorker {
     override val clazz: KClass<TagGlobalSortExporterTask> = TagGlobalSortExporterTask::class

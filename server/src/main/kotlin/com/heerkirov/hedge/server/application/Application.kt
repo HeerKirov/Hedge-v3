@@ -1,12 +1,9 @@
 package com.heerkirov.hedge.server.application
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManagerImpl
-import com.heerkirov.hedge.server.components.backend.FileGeneratorImpl
-import com.heerkirov.hedge.server.components.backend.ImportProcessorImpl
-import com.heerkirov.hedge.server.components.backend.DailyProcessorImpl
+import com.heerkirov.hedge.server.components.backend.*
 import com.heerkirov.hedge.server.components.backend.exporter.BackendExporterImpl
 import com.heerkirov.hedge.server.components.backend.similar.SimilarFinderImpl
-import com.heerkirov.hedge.server.components.backend.watcher.PathWatcherImpl
 import com.heerkirov.hedge.server.components.bus.EventBusImpl
 import com.heerkirov.hedge.server.components.bus.EventCompositorImpl
 import com.heerkirov.hedge.server.components.database.DataRepositoryImpl
@@ -41,7 +38,8 @@ fun runApplication(options: ApplicationOptions) {
         val file = define { FileManager(appdata, repo, bus) }
 
         val services = define {
-            val similarFinder = define { SimilarFinderImpl(appStatus, appdata, repo, bus) }
+            val backgroundTaskBus = BackgroundTaskBus(bus)
+            val similarFinder = define { SimilarFinderImpl(appStatus, appdata, repo, bus, backgroundTaskBus) }
 
             val historyRecordManager = HistoryRecordManager(repo)
             val queryManager = QueryManager(appdata, repo, bus)
@@ -71,7 +69,7 @@ fun runApplication(options: ApplicationOptions) {
             val illustKit = IllustKit(appdata, repo, metaManager)
             val bookKit = BookKit(repo, metaManager)
             val folderKit = FolderKit(repo)
-            val backendExporter = define { BackendExporterImpl(appStatus, bus, repo, illustKit, bookKit) }
+            val backendExporter = define { BackendExporterImpl(appStatus, bus, backgroundTaskBus, repo, illustKit, bookKit) }
             val associateManager = AssociateManager(repo)
             val stagingPostManager = StagingPostManager(repo, bus)
             val bookManager = BookManager(repo, bus, bookKit)
@@ -80,11 +78,11 @@ fun runApplication(options: ApplicationOptions) {
             val illustManager = IllustManager(appdata, repo, bus, illustKit, file, sourceManager, sourceMappingManager, associateManager, bookManager, folderManager, importManager, trashManager)
 
             define { EventCompositorImpl(repo, bus, backendExporter) }
-            define { FileGeneratorImpl(appStatus, appdata, repo, bus) }
-            define { DailyProcessorImpl(appStatus, appdata, repo, bus, trashManager) }
+            define { FileGeneratorImpl(appStatus, appdata, repo, bus, backgroundTaskBus, trashManager) }
+            define { DailyProcessorImpl(appStatus, appdata, repo, bus) }
             define { ImportProcessorImpl(appStatus, appdata, repo, bus, similarFinder, illustManager, sourceAnalyzeManager, sourceManager, sourceMappingManager) }
 
-            val homepageService = HomepageService(appdata, repo, stagingPostManager)
+            val homepageService = HomepageService(appdata, repo, stagingPostManager, backgroundTaskBus)
             val illustService = IllustService(appdata, repo, bus, illustKit, illustManager, associateManager, sourceManager, queryManager)
             val bookService = BookService(appdata, repo, bus, bookKit, bookManager, illustManager, queryManager)
             val folderService = FolderService(repo, bus, folderKit, folderManager, illustManager)

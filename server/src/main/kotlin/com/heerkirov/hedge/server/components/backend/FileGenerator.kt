@@ -64,7 +64,7 @@ private const val ARCHIVE_INTERVAL: Long = 2000
 class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                         private val appdata: AppDataManager,
                         private val data: DataRepository,
-                        private val bus: EventBus,
+                        private val bus: EventBus, taskBus: BackgroundTaskBus,
                         private val trashManager: TrashManager) : FileGenerator, StatefulComponent, DaemonThreadComponent {
     private val log = LoggerFactory.getLogger(FileGenerator::class.java)
 
@@ -72,6 +72,9 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
     private val archiveTask = loopPoolThread(thread = ::archiveDaemon)
     private val thumbnailTask = assignmentTask(thread = ::thumbnailDaemon, poolSize = Runtime.getRuntime().availableProcessors())
     private val fingerprintTask = assignmentTask(thread = ::fingerprintDaemon, poolSize = Runtime.getRuntime().availableProcessors() / 2)
+
+    private val archiveCounter = BackgroundTaskCounter(BackgroundTaskType.FILE_ARCHIVE, taskBus)
+    private val generateCounter = BackgroundTaskCounter(BackgroundTaskType.FILE_GENERATE, taskBus)
 
     override val isIdle: Boolean get() = !thumbnailTask.isAlive && !fingerprintTask.isAlive && !archiveTask.isAlive
 
@@ -93,6 +96,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                 .map { it[FileRecords.id]!! }
             if(thumbnailTasks.isNotEmpty()) {
                 thumbnailTask.addAll(thumbnailTasks)
+                generateCounter.addTotal(thumbnailTasks.size)
             }
 
             //读取fingerStatus为NOT_READY且status不为NOT_READY的file，准备处理其指纹
@@ -103,6 +107,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                 .map { it[FileRecords.id]!! }
             if(fingerprintTasks.isNotEmpty()) {
                 fingerprintTask.addAll(fingerprintTasks)
+                generateCounter.addTotal(fingerprintTasks.size)
             }
 
             //读取deleted为true的file，准备在归档线程中将其删除
@@ -135,11 +140,13 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             }
             if(anyDeletedBlocks.isNotEmpty() || toBeArchivedBlocks.isNotEmpty()) {
                 synchronized(archiveQueue) {
-                    archiveQueue.addAll((anyDeletedBlocks + toBeArchivedBlocks).map { blockName ->
+                    val blocks = anyDeletedBlocks + toBeArchivedBlocks
+                    archiveQueue.addAll(blocks.map { blockName ->
                         val toBeArchived = blockName in toBeArchivedBlocks
                         ArchiveQueueUnit(blockName, toBeArchived)
                     })
                     archiveTask.start()
+                    archiveCounter.addTotal(blocks.size)
                 }
             }
 
@@ -152,14 +159,20 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             all<FileBlockArchived> { events ->
                 synchronized(archiveQueue) {
                     for(event in events) {
-                        archiveQueue.find { it.block == event.block }?.also { it.toBeArchived = true }
-                            ?: archiveQueue.add(ArchiveQueueUnit(event.block, toBeArchived = true))
+                        val existedBlock = archiveQueue.find { it.block == event.block }
+                        if(existedBlock != null) {
+                            existedBlock.toBeArchived = true
+                        }else{
+                            archiveQueue.add(ArchiveQueueUnit(event.block, toBeArchived = true))
+                            archiveCounter.addTotal(1)
+                        }
                     }
                     archiveTask.start()
                 }
             }
             all<FileCreated> { events ->
                 thumbnailTask.addAll(events.map { it.fileId })
+                generateCounter.addTotal(events.size)
             }
         }
     }
@@ -220,6 +233,8 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             }
         } catch (e: Exception) {
             log.error("Error occurred in archive task of block $block.", e)
+        } finally {
+            archiveCounter.addCount(1)
         }
     }
 
@@ -264,6 +279,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
         }catch (e: Exception) {
             log.error("Error occurred in thumbnail task of file $fileId.", e)
             bus.emit(FileProcessError(fileId, "THUMBNAIL", e.message ?: ""))
+            generateCounter.addCount(1)
         }
     }
 
@@ -326,6 +342,8 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
         }catch (e: Exception) {
             log.error("Error occurred in fingerprint task of file $fileId.", e)
             bus.emit(FileProcessError(fileId, "FINGERPRINT", e.message ?: ""))
+        }finally {
+            generateCounter.addCount(1)
         }
     }
 
