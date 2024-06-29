@@ -1,9 +1,10 @@
 import { onMounted, onUnmounted, ref, Ref, toRaw, watch } from "vue"
 import { BasicException } from "@/functions/http-client/exceptions"
 import { HttpClient, Response } from "@/functions/http-client"
-import { WsEventConditions } from "@/functions/ws-client"
+import { WsEventConditions, WsEventResult } from "@/functions/ws-client"
 import { hoard } from "@/utils/process"
 import { useFetchManager } from "./install"
+import { objects } from "@/utils/primitives";
 
 // == Fetch Reactive 响应式端点调用器 ==
 // 专注于处理符合GET/UPDATE模型的简单端点，其MODEL与FORM内容相同。
@@ -20,6 +21,7 @@ interface FetchReactiveOptions<T> {
     get(httpClient: HttpClient): () => Promise<Response<T, BasicException>>
     update?(httpClient: HttpClient): (form: T) => Promise<Response<unknown, BasicException>>
     eventFilter?: WsEventConditions
+    eventUpdater?: (events: WsEventResult[], old: T | undefined) => T
 }
 
 export function useFetchReactive<T>(options: FetchReactiveOptions<T>): FetchReactive<T> {
@@ -57,12 +59,17 @@ export function useFetchReactive<T>(options: FetchReactiveOptions<T>): FetchReac
     if(options.eventFilter) {
         const emitter = wsClient.on(options.eventFilter)
 
-        const hoardedUpdate = hoard({interval: 50, lengthenInterval: 10, maxInterval: 100, async func() {
-            const res = await options.get(httpClient)()
-            if(res.ok) {
-                internalSetData(res.data)
-            }else if(res.exception) {
-                handleException(res.exception)
+        const hoardedUpdate = hoard<WsEventResult>({interval: 50, lengthenInterval: 10, maxInterval: 100, async func(results) {
+            if(options.eventUpdater) {
+                const res = options.eventUpdater(results, objects.deepCopy(data.value))
+                internalSetData(res)
+            }else{
+                const res = await options.get(httpClient)()
+                if(res.ok) {
+                    internalSetData(res.data)
+                }else if(res.exception) {
+                    handleException(res.exception)
+                }
             }
         }})
 

@@ -2,6 +2,7 @@ import ImportDetailPane from "./ImageDatasetPane/ImportDetailPane.vue"
 import IllustDetailPane from "./ImageDatasetPane/IllustDetailPane.vue"
 import TrashedDetailPane from "./ImageDatasetPane/TrashedDetailPane.vue"
 import StagingPostButton from "./StagingPostComponent/StagingPostButton.vue"
+import BackgroundTaskButton from "./BackgroundTaskComponent/BackgroundTaskButton.vue"
 import IllustTabDetailInfo from "./ImageDatasetPane/IllustTabDetailInfo.vue"
 import IllustTabSourceData from "./ImageDatasetPane/IllustTabSourceData.vue"
 import IllustTabRelatedItems from "./ImageDatasetPane/IllustTabRelatedItems.vue"
@@ -12,4 +13,4 @@ import LoadingScreen from "./LoadingScreen.vue"
 
 export { ImportDetailPane, IllustDetailPane, TrashedDetailPane, BookDetailPane }
 export { IllustTabDetailInfo, IllustTabRelatedItems, IllustTabSourceData, IllustTabAction, BookTabDetailInfo }
-export { StagingPostButton, LoadingScreen }
+export { StagingPostButton, BackgroundTaskButton, LoadingScreen }

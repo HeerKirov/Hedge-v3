@@ -1,4 +1,5 @@
 import { ServerServiceStatus } from "@/functions/ipc-client"
+import { BackgroundTaskType } from "@/functions/http-client/api/homepage"
 import { MetaType } from "@/functions/http-client/api/all"
 import { IllustType } from "@/functions/http-client/api/illust"
 import { FolderType } from "@/functions/http-client/api/folder"
@@ -11,7 +12,7 @@ export type AllEventTypes = AllEvents["eventType"]
 
 export type AllEvents = AppEvents | EntityEvents | SettingEvents
 
-type AppEvents = AppStatusChanged | HomepageInfoUpdated | HomepageStateChanged | QuickFindChanged | StagingPostChanged | PathWatcherStatusChanged
+type AppEvents = AppStatusChanged | HomepageInfoUpdated | HomepageStateChanged | QuickFindChanged | StagingPostChanged | PathWatcherStatusChanged | BackgroundTaskChanged
 
 type EntityEvents
     = AnnotationCreated | AnnotationUpdated | AnnotationDeleted
@@ -41,6 +42,8 @@ export interface StagingPostChanged extends BaseWsEvent<"app/staging-post/change
 export interface QuickFindChanged extends BaseWsEvent<"app/quick-find/changed"> { id: number }
 
 export interface PathWatcherStatusChanged extends BaseWsEvent<"app/path-watcher/status-changed"> { isOpen: boolean, statisticCount: number, errors: PathWatcherError[] }
+
+export interface BackgroundTaskChanged extends BaseWsEvent<"app/background-task/changed"> { type: BackgroundTaskType, currentValue: number, maxValue: number }
 
 //== 实体类相关的变更通知 ==
 

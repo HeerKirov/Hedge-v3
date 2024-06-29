@@ -1,4 +1,6 @@
 import { useFetchReactive } from "@/functions/fetch"
+import { mapResponse } from "@/functions/http-client"
+import { BackgroundTask, BackgroundTaskType } from "@/functions/http-client/api/homepage"
 import { useTabRoute } from "@/modules/browser"
 import { LocalDate } from "@/utils/datetime"
 import { optionalInstallation } from "@/utils/reactivity"
@@ -34,10 +36,42 @@ export function useHomepageContext() {
 }
 
 export const [installHomepageState, useHomepageState] = optionalInstallation(function() {
-    const { data, loading } = useFetchReactive({
+    const { data } = useFetchReactive({
         get: client => client.homepage.state,
         eventFilter: "app/homepage/state/changed"
     })
 
-    return {data, loading}
+    const { data: backgroundTasks } = useFetchReactive({
+        get: client => async () => {
+            const res = await client.homepage.backgroundTasks()
+            return mapResponse(res, r => r.filter(t => t.currentValue < t.maxValue))
+        },
+        eventFilter: "app/background-task/changed",
+        eventUpdater(events, old) {
+            const li = old ?? []
+            //将events中的所有变更合并
+            const accessedKey = new Set<BackgroundTaskType>()
+            const filteredEvents: BackgroundTask[] = []
+            for(const { event } of events.toReversed()) {
+                if(event.eventType === "app/background-task/changed") {
+                    if(!accessedKey.has(event.type)) {
+                        accessedKey.add(event.type)
+                        filteredEvents.unshift(event)
+                    }
+                }
+            }
+            for(const task of filteredEvents.toReversed()) {
+                const idx = li.findIndex(i => i.type === task.type)
+                if(idx >= 0) {
+                    li.splice(idx, 1, task)
+                }else{
+                    li.push(task)
+                }
+            }
+            console.log(li)
+            return li
+        },
+    })
+
+    return {data, backgroundTasks}
 })

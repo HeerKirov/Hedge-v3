@@ -3,7 +3,7 @@ import { computed, watch } from "vue"
 import { Menu } from "@/components/interaction"
 import { Button, Separator } from "@/components/universal"
 import { Flex, FlexItem, SideBar } from "@/components/layout"
-import { StagingPostButton } from "@/components-module/common"
+import { BackgroundTaskButton, StagingPostButton } from "@/components-module/common"
 import { windowManager } from "@/modules/window"
 import { useActivateTabRoute } from "@/modules/browser"
 import { useDarwinWindowed } from "@/functions/app"
@@ -86,6 +86,8 @@ const hasDarwinBorder = useDarwinWindowed()
                 <Button :class="{[$style['darwin-border-button']]: hasDarwinBorder}" square icon="gear" @click="windowManager.openSetting"/>
                 <Button class="ml-1" square icon="circle-question-regular" @click="windowManager.openGuide"/>
                 <Button class="ml-1" square icon="note-sticky" @click="windowManager.openNote"/>
+                <BackgroundTaskButton/>
+
                 <FlexItem :shrink="0">
                     <div class="ml-auto">
                         <Separator size="large"/>

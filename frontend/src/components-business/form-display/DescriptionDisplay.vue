@@ -10,7 +10,7 @@ defineProps<{
 
 <template>
     <Block :class="$style.block">
-        <WrappedText v-if="value" class="is-font-size-small selectable" :value="value"/>
+        <WrappedText v-if="value" :class="['selectable', $style.text]" :value="value"/>
         <i v-else class="secondary-text">没有描述。</i>
         <Block v-if="value && exported" :class="[$style.exported, 'has-text-secondary']" mode="transparent">EXPORTED</Block>
     </Block>
@@ -25,6 +25,11 @@ defineProps<{
     overflow: auto
     &::-webkit-scrollbar
         display: none
+
+    .text
+        font-size: $font-size-small
+        &:not(:first-child)
+            margin-top: $spacing-1
 
     .exported
         position: absolute

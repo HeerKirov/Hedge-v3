@@ -13,7 +13,8 @@ export function createHomepageEndpoint(http: HttpInstance): HomepageEndpoint {
         }),
         state: http.createRequest("/api/homepage/state", "GET", {
             parseResponse: mapToHomepageState
-        })
+        }),
+        backgroundTasks: http.createRequest("/api/homepage/background-tasks", "GET")
     }
 }
 
@@ -56,7 +57,20 @@ export interface HomepageEndpoint {
      * 查看主要状态类信息。
      */
     state(): Promise<Response<HomepageState>>
+    /**
+     * 查看后台任务信息。
+     */
+    backgroundTasks(): Promise<Response<BackgroundTask[]>>
 }
+
+export type BackgroundTaskType
+    = "FILE_ARCHIVE"
+    | "FILE_GENERATE"
+    | "FIND_SIMILARITY"
+    | "EXPORT_ILLUST_METADATA"
+    | "EXPORT_BOOK_METADATA"
+    | "EXPORT_ILLUST_BOOK_RELATION"
+    | "EXPORT_ILLUST_FOLDER_RELATION"
 
 interface HomepageState {
     today: LocalDate
@@ -74,6 +88,12 @@ interface HomepageInfo {
     todayAuthorAndTopics: AuthorAndTopic[]
     recentImages: Illust[]
     historyImages: HistoryImage[]
+}
+
+export interface BackgroundTask {
+    type: BackgroundTaskType
+    currentValue: number
+    maxValue: number
 }
 
 type AuthorAndTopic = {
