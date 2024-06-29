@@ -14,7 +14,6 @@ class BackgroundTaskBus(private val bus: EventBus) {
 
     fun eventToast(counter: BackgroundTaskCounter) {
         bus.emit(BackgroundTaskChanged(counter.type, counter.count, counter.totalCount))
-        println("eventToast[${counter.type}] ${counter.count}/${counter.totalCount}")
     }
 }
 

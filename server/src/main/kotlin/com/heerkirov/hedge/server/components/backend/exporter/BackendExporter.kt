@@ -269,7 +269,6 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository, p
             val model = data.db.sequenceOf(ExporterRecords).firstOrNull { it.type eq typeIndex }
             if(model == null) {
                 log.info("${counter.totalCount} ${worker.clazz.simpleName} processed.")
-                counter.reset()
                 this.stop()
                 return
             }

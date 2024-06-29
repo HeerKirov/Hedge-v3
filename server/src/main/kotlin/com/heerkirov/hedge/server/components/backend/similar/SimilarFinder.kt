@@ -141,7 +141,6 @@ class SimilarFinderWorkThread(private val data: DataRepository, private val bus:
         val model = data.db.sequenceOf(FindSimilarTasks).firstOrNull()
         if(model == null) {
             this.stop()
-            counter.reset()
             return
         }
 
