@@ -14,7 +14,8 @@ export function createHomepageEndpoint(http: HttpInstance): HomepageEndpoint {
         state: http.createRequest("/api/homepage/state", "GET", {
             parseResponse: mapToHomepageState
         }),
-        backgroundTasks: http.createRequest("/api/homepage/background-tasks", "GET")
+        backgroundTasks: http.createRequest("/api/homepage/background-tasks", "GET"),
+        cleanCompletedBackgroundTasks: http.createRequest("/api/homepage/background-tasks/clean", "POST"),
     }
 }
 
@@ -61,6 +62,10 @@ export interface HomepageEndpoint {
      * 查看后台任务信息。
      */
     backgroundTasks(): Promise<Response<BackgroundTask[]>>
+    /**
+     * 清理已完成的后台任务项，将其从列表中移除。
+     */
+    cleanCompletedBackgroundTasks(): Promise<Response<undefined>>
 }
 
 export type BackgroundTaskType

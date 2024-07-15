@@ -1,5 +1,6 @@
 import { ComponentPublicInstance, computed, onBeforeUnmount, onUnmounted, ref } from "vue"
 import { useLocalStorage } from "@/functions/app"
+import { usePostFetchHelper } from "@/functions/fetch"
 import { useHomepageState } from "@/services/main/homepage"
 import { toRef } from "@/utils/reactivity"
 import { onOutsideClick } from "@/utils/sensors"
@@ -86,10 +87,13 @@ export function useCalloutContext() {
 export function useDataContext() {
     const { backgroundTasks } = useHomepageState()
 
+    const fetchCleanCompleted = usePostFetchHelper(client => client.homepage.cleanCompletedBackgroundTasks)
+
     onBeforeUnmount(() => {
         //在关闭弹窗时，清理已完成的项
         if(backgroundTasks.value?.length) {
             backgroundTasks.value = backgroundTasks.value.filter(t => t.currentValue < t.maxValue)
+            fetchCleanCompleted(undefined).finally()
         }
     })
 

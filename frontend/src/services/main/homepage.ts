@@ -68,7 +68,6 @@ export const [installHomepageState, useHomepageState] = optionalInstallation(fun
                     li.push(task)
                 }
             }
-            console.log(li)
             return li
         },
     })
