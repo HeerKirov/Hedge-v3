@@ -19,7 +19,6 @@ import com.heerkirov.hedge.server.library.framework.StatefulComponent
 import com.heerkirov.hedge.server.model.FindSimilarIgnored
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.tools.ControlledLoopThread
-import com.heerkirov.hedge.server.components.backend.BackgroundTaskCounter
 import org.ktorm.dsl.*
 import org.ktorm.entity.count
 import org.ktorm.entity.firstOrNull
@@ -45,7 +44,7 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver,
                         private val appdata: AppDataManager,
                         private val data: DataRepository,
                         bus: EventBus, taskBus: BackgroundTaskBus) : SimilarFinder, StatefulComponent {
-    private val counter = BackgroundTaskCounter(BackgroundTaskType.FIND_SIMILARITY, taskBus)
+    private val counter = taskBus.counter(BackgroundTaskType.FIND_SIMILARITY)
     private val workerThread = SimilarFinderWorkThread(data, bus, counter)
     private val quickFinder = QuickFinder(data, bus)
 
@@ -136,7 +135,7 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver,
     }
 }
 
-class SimilarFinderWorkThread(private val data: DataRepository, private val bus: EventBus, private val counter: BackgroundTaskCounter) : ControlledLoopThread() {
+class SimilarFinderWorkThread(private val data: DataRepository, private val bus: EventBus, private val counter: BackgroundTaskBus.Counter) : ControlledLoopThread() {
     override fun run() {
         val model = data.db.sequenceOf(FindSimilarTasks).firstOrNull()
         if(model == null) {

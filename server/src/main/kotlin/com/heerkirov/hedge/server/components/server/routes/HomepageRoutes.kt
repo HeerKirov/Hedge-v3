@@ -2,8 +2,7 @@ package com.heerkirov.hedge.server.components.server.routes
 
 import com.heerkirov.hedge.server.components.server.Routes
 import com.heerkirov.hedge.server.functions.service.HomepageService
-import io.javalin.apibuilder.ApiBuilder.get
-import io.javalin.apibuilder.ApiBuilder.path
+import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 
@@ -14,6 +13,7 @@ class HomepageRoutes(private val service: HomepageService) : Routes {
                 get(::homepage)
                 get("state", ::homepageState)
                 get("background-tasks", ::backgroundTasks)
+                post("background-tasks/clean", ::cleanCompletedBackgroundTask)
             }
         }
     }
@@ -28,5 +28,10 @@ class HomepageRoutes(private val service: HomepageService) : Routes {
 
     private fun backgroundTasks(ctx: Context) {
         ctx.json(service.getBackgroundTasks())
+    }
+
+    private fun cleanCompletedBackgroundTask(ctx: Context) {
+        service.cleanCompletedBackgroundTask()
+        ctx.status(204)
     }
 }

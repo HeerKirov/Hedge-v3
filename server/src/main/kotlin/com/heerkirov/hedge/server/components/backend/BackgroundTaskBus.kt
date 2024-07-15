@@ -6,64 +6,48 @@ import java.util.TreeSet
 import java.util.concurrent.atomic.AtomicInteger
 
 class BackgroundTaskBus(private val bus: EventBus) {
-    val counters = TreeSet<BackgroundTaskCounter>()
+    val counters = TreeSet<Counter>()
 
-    fun register(counter: BackgroundTaskCounter) {
-        counters.add(counter)
-    }
-
-    fun eventToast(counter: BackgroundTaskCounter) {
-        bus.emit(BackgroundTaskChanged(counter.type, counter.count, counter.totalCount))
-    }
-}
-
-open class ProgressCounter {
-    private val _count = AtomicInteger(0)
-    private val _totalCount = AtomicInteger(0)
-
-    val count: Int get() = _count.get()
-    val totalCount: Int get() = _totalCount.get()
-
-    open fun addTotal(addTotalCount: Int) {
-        if(_count.get() >= _totalCount.get()) {
-            _count.set(0)
-            _totalCount.set(addTotalCount)
-        }else{
-            _totalCount.addAndGet(addTotalCount)
+    fun cleanCompleted() {
+        synchronized(counters) {
+            counters.forEach { it.cleanCompleted() }
         }
     }
 
-    open fun addCount(addCount: Int) {
-        _count.addAndGet(addCount)
+    fun counter(type: BackgroundTaskType): Counter {
+        return Counter(type, this).also { counters.add(it) }
     }
 
-    open fun reset() {
-        _count.set(0)
-        _totalCount.set(0)
-    }
-}
-
-class BackgroundTaskCounter(val type: BackgroundTaskType, private val taskBus: BackgroundTaskBus) : ProgressCounter(), Comparable<BackgroundTaskCounter> {
-    init {
-        taskBus.register(this)
+    private fun eventToast(counter: Counter) {
+        bus.emit(BackgroundTaskChanged(counter.type, counter.count, counter.totalCount))
     }
 
-    override fun addTotal(addTotalCount: Int) {
-        super.addTotal(addTotalCount)
-        taskBus.eventToast(this)
-    }
+    inner class Counter(val type: BackgroundTaskType, private val taskBus: BackgroundTaskBus) : Comparable<Counter> {
+        private val _count = AtomicInteger(0)
+        private val _totalCount = AtomicInteger(0)
 
-    override fun addCount(addCount: Int) {
-        super.addCount(addCount)
-        taskBus.eventToast(this)
-    }
+        val count: Int get() = _count.get()
+        val totalCount: Int get() = _totalCount.get()
 
-    override fun reset() {
-        super.reset()
-        taskBus.eventToast(this)
-    }
+        fun addTotal(addTotalCount: Int) {
+            _totalCount.addAndGet(addTotalCount)
+            taskBus.eventToast(this)
+        }
 
-    override fun compareTo(other: BackgroundTaskCounter): Int = type.compareTo(other.type)
+        fun addCount(addCount: Int) {
+            _count.addAndGet(addCount)
+            taskBus.eventToast(this)
+        }
+
+        fun cleanCompleted() {
+            if(count >= totalCount) {
+                _count.set(0)
+                _totalCount.set(0)
+            }
+        }
+
+        override fun compareTo(other: Counter): Int = type.compareTo(other.type)
+    }
 }
 
 enum class BackgroundTaskType {

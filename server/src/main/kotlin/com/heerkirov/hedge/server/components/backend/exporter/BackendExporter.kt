@@ -14,8 +14,6 @@ import com.heerkirov.hedge.server.library.framework.StatefulComponent
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import com.heerkirov.hedge.server.utils.Json.toJSONString
 import com.heerkirov.hedge.server.utils.tools.ControlledLoopThread
-import com.heerkirov.hedge.server.components.backend.BackgroundTaskCounter
-import com.heerkirov.hedge.server.components.backend.ProgressCounter
 import com.heerkirov.hedge.server.utils.tuples.Tuple3
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
@@ -169,7 +167,7 @@ class BackendExporterImpl(private val appStatus: AppStatusDriver,
                 workerThreads[type] as ExporterWorkerThread<T>
             }else{
                 val workerType = getWorkerType(type)
-                val counter = if(workerType != null) BackgroundTaskCounter(workerType, taskBus) else ProgressCounter()
+                val counter = if(workerType != null) taskBus.counter(workerType) else null
                 val thread = ExporterWorkerThread(data, newWorker(type), counter)
                 workerThreads[type] = thread
                 thread
@@ -178,7 +176,7 @@ class BackendExporterImpl(private val appStatus: AppStatusDriver,
     }
 }
 
-class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository, private val worker: ExporterWorker<T>, private val counter: ProgressCounter) : ControlledLoopThread() {
+class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository, private val worker: ExporterWorker<T>, private val counter: BackgroundTaskBus.Counter?) : ControlledLoopThread() {
     private val log = LoggerFactory.getLogger(ExporterWorkerThread::class.java)
 
     @Suppress("UNCHECKED_CAST")
@@ -190,7 +188,7 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository, p
     private var _currentKey: String? = null
 
     fun load(initializeTaskCount: Int) {
-        counter.addTotal(initializeTaskCount)
+        counter?.addTotal(initializeTaskCount)
         if(initializeTaskCount > 0) {
             this.start()
         }
@@ -215,7 +213,7 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository, p
                     }
                 }
 
-                counter.addTotal(finalTasks.size)
+                counter?.addTotal(finalTasks.size)
             }
         }
 
@@ -238,7 +236,7 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository, p
                     //newTasks存在超过1个相同key，或从数据库中查出的内容不为空，就认为存在需要merge的项，执行merge过程
                     val deleteIds = groupedDbTasks.values.flatten().map { (id, _) -> id }
                     data.db.delete(ExporterRecords) { it.id inList deleteIds }
-                    counter.addTotal(-deleteIds.size)
+                    counter?.addTotal(-deleteIds.size)
 
                     groupedNewTasks.map { (key, newTasks) ->
                         val dbTasks = groupedDbTasks[key]?.map { it.f3 } ?: emptyList()
@@ -268,7 +266,6 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository, p
             //锁定thread时，处于对一个model的数据库读写状态，以排斥add指令对相同内容的修改
             val model = data.db.sequenceOf(ExporterRecords).firstOrNull { it.type eq typeIndex }
             if(model == null) {
-                log.info("${counter.totalCount} ${worker.clazz.simpleName} processed.")
                 this.stop()
                 return
             }
@@ -284,7 +281,7 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository, p
             val logTaskName = worker.clazz.simpleName + if(this._currentKey.isNullOrEmpty())  "" else " [${this._currentKey}]"
             log.error("Error occurred in export worker for $logTaskName.", e)
         }
-        counter.addCount(1)
+        counter?.addCount(1)
         this._currentKey = null
     }
 }

@@ -43,6 +43,8 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
 
     fun getBackgroundTasks(): List<BackgroundTaskRes> = backgroundTaskBus.counters.filter { it.totalCount > 0 }.map { BackgroundTaskRes(it.type, it.count, it.totalCount) }
 
+    fun cleanCompletedBackgroundTask() = backgroundTaskBus.cleanCompleted()
+
     private fun mapToHomepageRes(record: HomepageRecord): HomepageRes {
         val todayImages = if(record.content.todayImageIds.isEmpty()) emptyList() else {
             data.db.from(Illusts)

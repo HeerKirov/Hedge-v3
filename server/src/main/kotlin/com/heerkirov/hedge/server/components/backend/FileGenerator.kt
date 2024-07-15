@@ -73,8 +73,8 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
     private val thumbnailTask = assignmentTask(thread = ::thumbnailDaemon, poolSize = Runtime.getRuntime().availableProcessors())
     private val fingerprintTask = assignmentTask(thread = ::fingerprintDaemon, poolSize = Runtime.getRuntime().availableProcessors() / 2)
 
-    private val archiveCounter = BackgroundTaskCounter(BackgroundTaskType.FILE_ARCHIVE, taskBus)
-    private val generateCounter = BackgroundTaskCounter(BackgroundTaskType.FILE_GENERATE, taskBus)
+    private val archiveCounter = taskBus.counter(BackgroundTaskType.FILE_ARCHIVE)
+    private val generateCounter = taskBus.counter(BackgroundTaskType.FILE_GENERATE)
 
     override val isIdle: Boolean get() = !thumbnailTask.isAlive && !fingerprintTask.isAlive && !archiveTask.isAlive
 
