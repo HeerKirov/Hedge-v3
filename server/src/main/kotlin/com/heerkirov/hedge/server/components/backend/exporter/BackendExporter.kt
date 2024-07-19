@@ -10,7 +10,7 @@ import com.heerkirov.hedge.server.dao.ExporterRecords
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.functions.kit.BookKit
 import com.heerkirov.hedge.server.functions.kit.IllustKit
-import com.heerkirov.hedge.server.library.framework.StatefulComponent
+import com.heerkirov.hedge.server.library.framework.Component
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import com.heerkirov.hedge.server.utils.Json.toJSONString
 import com.heerkirov.hedge.server.utils.tools.ControlledLoopThread
@@ -26,7 +26,7 @@ import kotlin.reflect.KClass
  * 后台导出各类属性重新计算任务的组件。用于在更新过程中异步处理大量数据的重新导出。
  * 会将持有的任务持久化到数据库。
  */
-interface BackendExporter {
+interface BackendExporter : Component {
     fun add(tasks: List<ExporterTask>)
 
     fun add(task: ExporterTask) {
@@ -105,10 +105,8 @@ class BackendExporterImpl(private val appStatus: AppStatusDriver,
                           private val taskBus: BackgroundTaskBus,
                           private val data: DataRepository,
                           private val illustKit: IllustKit,
-                          private val bookKit: BookKit) : BackendExporter, StatefulComponent {
+                          private val bookKit: BookKit) : BackendExporter {
     private val workerThreads: MutableMap<KClass<out ExporterTask>, ExporterWorkerThread<*>> = mutableMapOf()
-
-    override val isIdle: Boolean get() = workerThreads.values.none { it.isAlive }
 
     override fun load() {
         if(appStatus.status == AppLoadStatus.READY) {

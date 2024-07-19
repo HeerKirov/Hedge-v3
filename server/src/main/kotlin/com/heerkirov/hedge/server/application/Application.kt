@@ -31,7 +31,7 @@ fun runApplication(options: ApplicationOptions) {
     framework {
         val bus = define { EventBusImpl() }
         val health = define { HealthImpl(options.channelPath) }
-        val lifetime = define { LifetimeImpl(context, lifetimeOptions) }
+        val lifetime = define { LifetimeImpl(lifetimeOptions) }
         val appStatus = define { AppStatusDriverImpl(context, bus, options.channelPath) }
         val appdata = define { AppDataManagerImpl(options.channelPath) }
         val repo = define { DataRepositoryImpl(options.channelPath) }

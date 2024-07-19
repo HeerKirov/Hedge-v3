@@ -7,19 +7,11 @@ import java.io.Closeable
  * 在系统关闭时，执行组件的close方法以关闭资源。
  */
 interface Component : Closeable {
+    /**
+     * 初始化方法。将在开始执行服务流程的最开始调用。该方法是同步调用的。
+     */
     fun load() { }
     override fun close() { }
-}
-
-/**
- * 有状态的组件。特点是可能在自身内部维护状态，表现为其空闲标记。
- * 当存在非空闲的组件时，系统不应该被shutdown。
- */
-interface StatefulComponent : Component {
-    /**
-     * 判断当前组件是否空闲。
-     */
-    val isIdle: Boolean
 }
 
 /**

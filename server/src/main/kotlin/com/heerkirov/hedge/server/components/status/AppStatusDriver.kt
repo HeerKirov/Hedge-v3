@@ -73,7 +73,7 @@ class AppStatusDriverImpl(private val context: FrameworkContext, private val bus
 
     private fun executeMigrate() {
         val versionFileMigrator = VersionFileMigrator(versionLockPath)
-        for (device in context.getComponents().filterIsInstance(ControlledAppStatusDevice::class.java)) {
+        for (device in context.getComponents().filterIsInstance<ControlledAppStatusDevice>()) {
             device.load(versionFileMigrator)
         }
         versionFileMigrator.save()

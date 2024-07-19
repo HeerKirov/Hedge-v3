@@ -18,7 +18,6 @@ import com.heerkirov.hedge.server.exceptions.BusinessException
 import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
 import com.heerkirov.hedge.server.functions.manager.TrashManager
 import com.heerkirov.hedge.server.library.framework.DaemonThreadComponent
-import com.heerkirov.hedge.server.library.framework.StatefulComponent
 import com.heerkirov.hedge.server.model.FileRecord
 import com.heerkirov.hedge.server.utils.*
 import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
@@ -65,7 +64,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                         private val appdata: AppDataManager,
                         private val data: DataRepository,
                         private val bus: EventBus, taskBus: BackgroundTaskBus,
-                        private val trashManager: TrashManager) : FileGenerator, StatefulComponent, DaemonThreadComponent {
+                        private val trashManager: TrashManager) : FileGenerator, DaemonThreadComponent {
     private val log = LoggerFactory.getLogger(FileGenerator::class.java)
 
     private val archiveQueue = LinkedList<ArchiveQueueUnit>()
@@ -75,8 +74,6 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
 
     private val archiveCounter = taskBus.counter(BackgroundTaskType.FILE_ARCHIVE)
     private val generateCounter = taskBus.counter(BackgroundTaskType.FILE_GENERATE)
-
-    override val isIdle: Boolean get() = !thumbnailTask.isAlive && !fingerprintTask.isAlive && !archiveTask.isAlive
 
     init {
         bus.on(arrayOf(FileBlockArchived::class, FileCreated::class), ::receiveEvents)

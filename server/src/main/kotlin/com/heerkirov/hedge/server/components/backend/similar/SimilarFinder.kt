@@ -15,7 +15,7 @@ import com.heerkirov.hedge.server.events.IllustDeleted
 import com.heerkirov.hedge.server.events.PackagedBusEvent
 import com.heerkirov.hedge.server.exceptions.NotFound
 import com.heerkirov.hedge.server.exceptions.be
-import com.heerkirov.hedge.server.library.framework.StatefulComponent
+import com.heerkirov.hedge.server.library.framework.Component
 import com.heerkirov.hedge.server.model.FindSimilarIgnored
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.tools.ControlledLoopThread
@@ -28,7 +28,7 @@ import java.time.Instant
 /**
  * 处理相似项查找的后台任务。它从task表读取任务，并将确切结果写入result表。
  */
-interface SimilarFinder {
+interface SimilarFinder : Component {
     fun add(selector: FindSimilarTask.TaskSelector, config: FindSimilarTask.TaskConfig? = null): Int
 
     fun delete(id: Int)
@@ -43,7 +43,7 @@ interface SimilarFinder {
 class SimilarFinderImpl(private val appStatus: AppStatusDriver,
                         private val appdata: AppDataManager,
                         private val data: DataRepository,
-                        bus: EventBus, taskBus: BackgroundTaskBus) : SimilarFinder, StatefulComponent {
+                        bus: EventBus, taskBus: BackgroundTaskBus) : SimilarFinder {
     private val counter = taskBus.counter(BackgroundTaskType.FIND_SIMILARITY)
     private val workerThread = SimilarFinderWorkThread(data, bus, counter)
     private val quickFinder = QuickFinder(data, bus)
@@ -51,8 +51,6 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver,
     init {
         bus.on(IllustDeleted::class, ::processIgnoredDeleted)
     }
-
-    override val isIdle: Boolean get() = !workerThread.isAlive
 
     override fun load() {
         if(appStatus.status == AppLoadStatus.READY) {

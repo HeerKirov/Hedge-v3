@@ -16,7 +16,6 @@ import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
 import com.heerkirov.hedge.server.exceptions.StorageNotAccessibleError
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.library.framework.DaemonThreadComponent
-import com.heerkirov.hedge.server.library.framework.StatefulComponent
 import com.heerkirov.hedge.server.model.FileCacheRecord
 import com.heerkirov.hedge.server.utils.*
 import com.heerkirov.hedge.server.utils.ktorm.first
@@ -38,14 +37,12 @@ import java.util.zip.ZipFile
 import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
 
-class FileManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus): StatefulComponent, DaemonThreadComponent {
+class FileManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus): DaemonThreadComponent {
     private val extensions = arrayOf("jpeg", "jpg", "png", "gif", "mp4", "webm")
 
     private val nextBlock = NextBlock()
 
     private val cacheRecord = CacheRecord()
-
-    override val isIdle: Boolean get() = cacheRecord.isIdle
 
     override fun thread() = cacheRecord.daemonThread()
 
@@ -397,8 +394,6 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
     private inner class CacheRecord {
         private val lastRecords = ConcurrentHashMap<Int, FileCacheRecord>()
         @Volatile private var cacheRecords = ConcurrentHashMap<Int, Instant>()
-
-        val isIdle get() = cacheRecords.isEmpty()
 
         /**
          * 添加一条对此文件的访问记录。

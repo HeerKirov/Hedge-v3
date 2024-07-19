@@ -19,29 +19,27 @@ class Framework {
 
     private val exceptions: MutableList<Exception> = ArrayList()
 
-    init {
-        log.info("Start hedge server.")
-
-        Runtime.getRuntime().addShutdownHook(thread(name = "shutdown", start = false) {
-            log.info("Shutdown.")
-            components.asReversed().forEach { it.close() }
-        })
-    }
-
     fun <T : Component> addComponent(component: T) {
         components.add(component)
     }
 
     /**
      * 开始执行服务。
-     * 首先调用load方法，将各个组件初始化。
-     * 随后调用线程组件。
      */
     fun start() {
+        log.info("Start hedge server.")
+        //在开始之前，先添加一个关闭钩子，在任意情况下进程即将退出时触发，将依次关闭所有组件
+        Runtime.getRuntime().addShutdownHook(thread(name = "shutdown", start = false) {
+            log.info("Shutdown.")
+            components.asReversed().forEach { it.close() }
+        })
+        //首先依次调用每个组件的load函数，将各个组件同步初始化
         components.forEach { it.load() }
+        //随后在开始主程之前，依次调用所有背景线程组件的thread方法，将这些组件异步启动起来
         components.filterIsInstance<DaemonThreadComponent>().forEach { thread(isDaemon = true) { it.thread() } }
+        //随后，找到主程组件，调用主程的thread方法，进入程序维持期
         components.filterIsInstance<MainThreadComponent>().firstOrNull()?.thread()
-        //最后，发送关闭指令。不沿执行流程自动退出是因为其他组件可能持有非背景线程，这些线程会阻止shutdown的发生。
+        //主程已结束，发送关闭指令。不沿执行流程自动退出是因为其他组件可能持有非背景线程，这些线程会阻止shutdown的发生
         exitProcess(0)
     }
 
