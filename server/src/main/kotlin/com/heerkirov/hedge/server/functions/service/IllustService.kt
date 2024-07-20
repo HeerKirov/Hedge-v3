@@ -41,6 +41,7 @@ import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import org.ktorm.expression.BinaryExpression
 import org.ktorm.expression.SelectExpression
+import org.ktorm.support.sqlite.iif
 import java.time.Instant
 import kotlin.math.roundToInt
 
@@ -154,7 +155,7 @@ class IllustService(private val appdata: AppDataManager,
 
         val topics = data.db.from(Topics)
             .innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id)
-            .select(Topics.id, Topics.name, Topics.type, (count(IllustTopicRelations.isExported.not()) lessEq 0).aliased("isExported"))
+            .select(Topics.id, Topics.name, Topics.type, (sum(iif(IllustTopicRelations.isExported, 0, 1)) lessEq 0).aliased("isExported"))
             .where { IllustTopicRelations.illustId inList illustIds }
             .groupBy(Topics.id)
             .orderBy(Topics.type.asc(), Topics.id.asc())
@@ -166,7 +167,7 @@ class IllustService(private val appdata: AppDataManager,
 
         val authors = data.db.from(Authors)
             .innerJoin(IllustAuthorRelations, IllustAuthorRelations.authorId eq Authors.id)
-            .select(Authors.id, Authors.name, Authors.type, (count(IllustAuthorRelations.isExported.not()) lessEq 0).aliased("isExported"))
+            .select(Authors.id, Authors.name, Authors.type, (sum(iif(IllustAuthorRelations.isExported, 0, 1)) lessEq 0).aliased("isExported"))
             .where { IllustAuthorRelations.illustId inList illustIds }
             .groupBy(Authors.id)
             .orderBy(Authors.type.asc(), Authors.id.asc())
@@ -178,7 +179,7 @@ class IllustService(private val appdata: AppDataManager,
 
         val tags = data.db.from(Tags)
             .innerJoin(IllustTagRelations, IllustTagRelations.tagId eq Tags.id)
-            .select(Tags.id, Tags.name, Tags.color, (count(IllustTagRelations.isExported.not()) lessEq 0).aliased("isExported"))
+            .select(Tags.id, Tags.name, Tags.color, (sum(iif(IllustTagRelations.isExported, 0, 1)) lessEq 0).aliased("isExported"))
             .where { (IllustTagRelations.illustId inList illustIds) and (Tags.type eq TagAddressType.TAG) }
             .groupBy(Tags.id)
             .orderBy(Tags.globalOrdinal.asc())
