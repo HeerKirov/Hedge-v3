@@ -42,12 +42,12 @@ const arrowRightHover = useMouseHover()
     position: absolute
     left: 0
     top: 0
-    bottom: 0
+    bottom: 25%
     width: calc(#{$element-height-large} + #{$spacing-4 * 2})
     > .arrow
         position: absolute
         left: 0
-        top: 50%
+        top: 66.7%
         width: $element-height-large
         height: #{$element-height-large * 2}
         transform: translateY(-50%)
@@ -57,12 +57,12 @@ const arrowRightHover = useMouseHover()
     position: absolute
     right: 0
     top: 0
-    bottom: 0
+    bottom: 25%
     width: calc(#{$element-height-large} + #{$spacing-4 * 2})
     > .arrow
         position: absolute
         right: 0
-        top: 50%
+        top: 66.7%
         width: $element-height-large
         height: #{$element-height-large * 2}
         transform: translateY(-50%)

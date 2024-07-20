@@ -151,9 +151,9 @@ export function useRemoveModeData(illustIds: Ref<number[]>, fetchSave: (form: {t
     })
 
     const form = computedMutable<{key: string, type: MetaTagTypes, value: MetaTagValues, removed: boolean}[]>(() => data.value !== null ? [
-        ...data.value.authors.map(t => ({type: "author" as const, key: `author-${t.id}`, value: t, removed: false})),
-        ...data.value.topics.map(t => ({type: "topic" as const, key: `topic-${t.id}`, value: t, removed: false})),
-        ...data.value.tags.map(t => ({type: "tag" as const, key: `tag-${t.id}`, value: t, removed: false})),
+        ...data.value.authors.filter(t => !t.isExported).map(t => ({type: "author" as const, key: `author-${t.id}`, value: t, removed: false})),
+        ...data.value.topics.filter(t => !t.isExported).map(t => ({type: "topic" as const, key: `topic-${t.id}`, value: t, removed: false})),
+        ...data.value.tags.filter(t => !t.isExported).map(t => ({type: "tag" as const, key: `tag-${t.id}`, value: t, removed: false})),
     ] : [])
 
     const saveLoading = ref(false)

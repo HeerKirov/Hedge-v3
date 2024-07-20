@@ -227,11 +227,12 @@ export function useImportDetailPane() {
 
     const retryWithSource = (sourceData: SourceDataPath) => batchFetch({target: [path.value], retry: true, retryWithManualSource: sourceData})
 
-    const showStatusInfoMessage = (type: "thumbnailError" | "fingerprintError" | "sourceAnalyseError" | "sourceAnalyseNone") => {
+    const showStatusInfoMessage = (type: "thumbnailError" | "fingerprintError" | "sourceAnalyseError" | "sourceAnalyseNone" | "else") => {
         const info = type === "thumbnailError" ? "缩略图生成失败"
             : type === "fingerprintError" ? "指纹生成失败"
             : type === "sourceAnalyseError" ? "来源数据解析失败"
-            : "无来源数据"
+            : type === "sourceAnalyseNone" ? "无来源数据"
+            : "发生内部错误"
         const msg = type === "sourceAnalyseNone" ? "已在偏好设置中开启\"阻止无来源的导入\"选项，因此无法解析获得来源数据的项会被阻止。"
             : data.value?.statusInfo?.messages?.join("\n") ?? ""
         message.showOkMessage("info", info, msg)

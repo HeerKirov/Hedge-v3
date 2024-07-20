@@ -70,6 +70,7 @@ const sourceAnalyseNoneMenu = usePopupMenu([
                 <Block v-if="data.statusInfo.fingerprintError" class="p-half is-font-size-small is-cursor-pointer" mode="light" color="danger" @click="showStatusInfoMessage('fingerprintError')"><Icon icon="exclamation-triangle"/>错误：指纹生成失败。</Block>
                 <Block v-if="data.statusInfo.sourceAnalyseError" class="p-half is-font-size-small is-cursor-pointer" mode="light" color="danger" @click="showStatusInfoMessage('sourceAnalyseError')"><Icon icon="exclamation-triangle"/>错误：来源数据解析失败。</Block>
                 <Block v-if="data.statusInfo.sourceAnalyseNone" class="p-half is-font-size-small is-cursor-pointer" mode="light" color="danger" @click="showStatusInfoMessage('sourceAnalyseNone')" @contextmenu="sourceAnalyseNoneMenu.popup()"><Icon icon="exclamation-triangle"/>错误：无来源数据。</Block>
+                <Block v-if="!data.statusInfo.thumbnailError && !data.statusInfo.fingerprintError && !data.statusInfo.sourceAnalyseError && !data.statusInfo.sourceAnalyseNone && data.statusInfo.messages?.length" class="p-half is-font-size-small is-cursor-pointer" mode="light" color="danger" @click="showStatusInfoMessage('else')"><Icon icon="exclamation-triangle"/>发生内部错误。</Block>
                 <template v-if="sourceDataEditorSwitch">
                     <SourceIdentityEditor class="mt-1" v-model:source="sourceDataPathEditor" @enter="saveSourceDataPath"/>
                     <Button class="mt-1 w-100" type="primary" mode="light" size="small" icon="save" @click="saveSourceDataPath">保存</Button>
