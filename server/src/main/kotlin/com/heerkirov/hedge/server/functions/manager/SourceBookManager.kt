@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.SourceBooks
 import com.heerkirov.hedge.server.dto.form.SourceBookForm
 import com.heerkirov.hedge.server.events.SourceBookUpdated
+import com.heerkirov.hedge.server.utils.toAlphabetLowercase
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 
@@ -15,10 +16,10 @@ class SourceBookManager(private val data: DataRepository, private val bus: Event
      * 不会检验source的合法性，因为假设之前已经手动校验过了。
      */
     fun getAndUpsertSourceBooks(sourceSite: String, books: List<SourceBookForm>): List<Int> {
-        val bookMap = books.associateBy { it.code.lowercase() }
+        val bookMap = books.associateBy { it.code.toAlphabetLowercase() }
 
         val dbBooks = data.db.sequenceOf(SourceBooks).filter { it.site eq sourceSite and (it.code inList bookMap.keys) }.toList()
-        val dbBooksMap = dbBooks.associateBy { it.code.lowercase() }
+        val dbBooksMap = dbBooks.associateBy { it.code.toAlphabetLowercase() }
 
         val minus = bookMap.keys - dbBooksMap.keys
         if(minus.isNotEmpty()) {

@@ -24,6 +24,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         register.useSQL("0.7.0")
         register.useSQL("0.7.2")
         register.useSQL("0.8.0", ::processSourceIdModify)
+        register.useSQL("0.9.0")
     }
 
     /**
