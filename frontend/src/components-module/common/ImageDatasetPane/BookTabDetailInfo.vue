@@ -20,7 +20,7 @@ const { setTitle, setScore, setDescription, openMetaTagEditor } = useSideBarDeta
     <template v-if="!!data">
         <p class="my-1">
             <Icon icon="id-card"/><b class="ml-1 selectable">{{data.id}}</b>
-            <span class="float-right"><Icon class="mr-1" icon="images"/>{{ data.imageCount }}项</span>
+            <span class="float-right"><Icon class="mr-1" icon="images"/>{{ data.imageCount }}个图像</span>
         </p>
         <Separator direction="horizontal"/>
         <FormEditKit class="mt-2" :value="data.title" :set-value="setTitle">

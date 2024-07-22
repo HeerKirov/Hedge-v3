@@ -5,13 +5,13 @@ import { ElementPopupMenu } from "@/components/interaction"
 import { VirtualGridView } from "@/components/data"
 import { PaneLayout } from "@/components/layout"
 import { BrowserTeleport } from "@/components/logical"
+import { BookCard } from "@/components-business/element"
 import { DataRouter, ColumnNumButton, SearchBox } from "@/components-business/top-bar"
 import { BookDetailPane, LoadingScreen } from "@/components-module/common"
 import { Book } from "@/functions/http-client/api/book"
 import { useDialogService } from "@/components-module/dialog"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 import { installBookContext } from "@/services/main/book"
-import BookGridItem from "./BookGridItem.vue"
 
 const {
     listview: { paginationData: { data, state, setState, navigateTo }, status },
@@ -62,11 +62,13 @@ const menu = useDynamicPopupMenu<Book>(book => [
     <PaneLayout :show-pane="paneState.visible.value">
         <VirtualGridView :style="bookGridStyle" :column-count="columnNum" :padding="{top: 1, bottom: 4, left: 4, right: 4}" :aspect-ratio="0.6"
                          @update:state="setState" :metrics="data.metrics" :state="state">
-            <BookGridItem v-for="item in data.items" :key="item.id" :item="item"
+            <div v-for="item in data.items" :key="item.id" :class="$style.item">
+                <BookCard :item="item"
                           :selected="selector.selected.value === item.id"
                           @click="selector.set($event.id)"
                           @dblclick="operators.openBookView($event)"
                           @contextmenu="menu.popup(item)"/>
+            </div>
         </VirtualGridView>
         <LoadingScreen/>
 
@@ -75,3 +77,20 @@ const menu = useDynamicPopupMenu<Book>(book => [
         </template>
     </PaneLayout>
 </template>
+
+<style module lang="sass">
+//book card比例为7:5
+.item
+    position: relative
+    height: 0
+    width: calc(100% / var(--column-num))
+    padding: calc(50% / var(--column-num) * 7 / 5) 0
+
+    > div
+        position: absolute
+        top: 0
+        bottom: 0
+        left: 0
+        right: 0
+        margin: 0.25rem
+</style>

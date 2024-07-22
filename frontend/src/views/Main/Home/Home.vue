@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router"
 import { Block, Icon } from "@/components/universal"
+import { BookCard } from "@/components-business/element"
 import { useAssets } from "@/functions/app"
 import { useHomepageContext } from "@/services/main/homepage"
 import { windowManager } from "@/modules/window"
@@ -60,16 +61,7 @@ const router = useRouter()
         <template v-if="data.todayBooks.length">
             <label :class="$style.header">画集推荐</label>
             <div :class="$style['book-scroll-area']">
-                <Block v-for="b in data.todayBooks" :class="$style.book">
-                    <img :class="$style.img" :src="assetsUrl(b.filePath?.thumbnail)" @click="openBook(b.id)"/>
-                    <Icon v-if="b.favorite" :class="$style.fav" icon="heart"/>
-                    <div :class="$style.info">
-                        <span v-if="b.imageCount > 0" class="float-right">(<b>{{ b.imageCount }}</b>)</span>
-                        <span v-else class="float-right has-text-secondary">(空)</span>
-                        <span v-if="b.title" class="selectable is-cursor-pointer" @click="openBook(b.id)">{{ b.title }}</span>
-                        <span v-else class="is-cursor-pointer" @click="openBook(b.id)"><Icon class="mr-2" icon="id-card"/><span class="selectable">{{ b.id }}</span></span>
-                    </div>
-                </Block>
+                <BookCard v-for="b in data.todayBooks" :class="$style.book" :item="b" @click="openBook(b.id)"/>
             </div>
         </template>
         <template v-if="data.recentImages.length">
@@ -201,30 +193,6 @@ $margin-x: $spacing-4
         position: relative
         width: $book-width
         height: #{$book-width * $book-aspect}
-        overflow: hidden
-        > .img
-            width: 100%
-            height: 80%
-            object-position: center
-            object-fit: cover
-            cursor: pointer
-        > .fav
-            position: absolute
-            right: 0.35rem
-            bottom: calc(0.35rem + 20%)
-            color: $dark-mode-text-color
-            filter: drop-shadow(0 0 1px $dark-mode-background-color)
-        > .info
-            position: absolute
-            bottom: 0
-            left: 0
-            right: 0
-            height: 20%
-            padding: 0.5rem
-            overflow-y: auto
-            box-sizing: border-box
-            &::-webkit-scrollbar
-               display: none
 
 .loading
     overflow-y: hidden
