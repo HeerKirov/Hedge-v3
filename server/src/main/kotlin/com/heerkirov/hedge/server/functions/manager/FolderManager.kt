@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.FolderImageRelations
 import com.heerkirov.hedge.server.dao.Folders
 import com.heerkirov.hedge.server.dao.Illusts
+import com.heerkirov.hedge.server.dao.SourceDatas
 import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.events.FolderImagesChanged
 import com.heerkirov.hedge.server.events.IllustRelatedItemsUpdated
@@ -60,9 +61,10 @@ class FolderManager(private val data: DataRepository, private val bus: EventBus,
                 .orderBy(Illusts.orderTime.asc())
                 .map { it[Illusts.id]!! }
             "SOURCE_ID" -> data.db.from(Illusts)
+                .leftJoin(SourceDatas, SourceDatas.id eq Illusts.sourceDataId)
                 .select(Illusts.id)
                 .where { Illusts.id inList imageIds }
-                .orderBy(Illusts.sourceSite.isNull().asc(), Illusts.sourceSite.asc(), Illusts.sourceId.asc(), Illusts.sourcePart.isNull().asc(), Illusts.sourcePart.asc())
+                .orderBy(Illusts.sourceSite.isNull().asc(), Illusts.sourceSite.asc(), Illusts.sortableSourceId.isNull().asc(), Illusts.sortableSourceId.asc(), SourceDatas.publishTime.isNull().asc(), SourceDatas.publishTime.asc(), Illusts.sourcePart.isNull().asc(), Illusts.sourcePart.asc())
                 .map { it[Illusts.id]!! }
             else -> throw RuntimeException("sort type $by is not supported.")
         }
