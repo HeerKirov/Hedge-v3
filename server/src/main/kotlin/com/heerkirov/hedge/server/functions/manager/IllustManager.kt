@@ -723,10 +723,16 @@ class IllustManager(private val appdata: AppDataManager,
                     setOrderTimeByRange(min, max)
                 }
                 IllustBatchUpdateForm.Action.SET_ORDER_TIME_BY_SOURCE_ID -> {
-                    //将所有image/children按source排序，然后把所有的orderTime取出排序，依次选取
-                    val sortedIds = (images.map { Tuple4(it.id, it.sourceSite, it.sortableSourceId, it.sourcePart) } + childrenOfCollections.map { Tuple4(it.id, it.sourceSite, it.sortableSourceId, it.sourcePart) })
-                        .sortedWith(compareBy(Tuple4<Int, String?, Long?, Int?>::f2, Tuple4<Int, String?, Long?, Int?>::f3, Tuple4<Int, String?, Long?, Int?>::f4))
-                        .map { it.f1 }
+                    //为了按照来源顺序排序，需要首先取出一部分sourceData的数据，包括publishTime
+                    val publishTimeMap = data.db.from(SourceDatas)
+                        .select(SourceDatas.id, SourceDatas.publishTime)
+                        .where { (SourceDatas.id inList (images.mapNotNull { it.sourceDataId } + childrenOfCollections.mapNotNull { it.sourceDataId })) and (SourceDatas.publishTime.isNotNull()) }
+                        .associateBy({ it[SourceDatas.id]!! }) { it[SourceDatas.publishTime]!! }
+                    //将所有image/children按source sortable path排序，然后把所有的orderTime取出排序，依次选取
+                    val sortedIds = (images + childrenOfCollections)
+                        .map { Pair(it.id, if(it.sourceSite == null) null else SourceSortablePath(it.sourceSite, it.sortableSourceId, it.sourcePart, publishTimeMap[it.sourceDataId])) }
+                        .sortedBy { (_, p) -> p }
+                        .map { (id, _) -> id }
                     val sortedTimes = orderTimeSeq.map { (_, _, ot) -> ot }.sorted()
                     val idToTimes = sortedIds.zip(sortedTimes).toMap()
                     val seq = orderTimeSeq.map { (id, _, _) -> idToTimes[id]!! }

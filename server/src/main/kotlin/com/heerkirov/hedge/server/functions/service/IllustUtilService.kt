@@ -14,8 +14,6 @@ import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.*
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.business.filePathFrom
-import com.heerkirov.hedge.server.utils.business.sourcePathComparator
-import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import com.heerkirov.hedge.server.utils.types.optOf
 import org.ktorm.dsl.*
 import org.ktorm.entity.filter
@@ -190,30 +188,25 @@ class IllustUtilService(private val appdata: AppDataManager, private val data: D
      * @return 多个组，每个组包含多个图像，用以指示哪些图像需要被成组。有些图像还带有orderTime，用以指示需要设置此图像的排序时间。
      */
     fun getOrganizationSituation(illustIds: List<Int>, onlyNeighbours: Boolean = false, gatherGroup: Boolean = false, resortInGroup: Boolean = false, resortAtAll: Boolean = false): List<List<OrganizationSituationRes>> {
-        data class Row(val id: Int, val filePath: FilePath, val fingerprint: Fingerprint, val sourceDataPath: SourceDataPath?, val orderTime: Long, var newOrderTime: Long? = null)
+        data class Row(val id: Int, val filePath: FilePath, val fingerprint: Fingerprint, val sourceSortablePath: SourceSortablePath?, val orderTime: Long, var newOrderTime: Long? = null)
 
         val illusts = data.db.from(Illusts)
             .innerJoin(FileFingerprints, FileFingerprints.fileId eq Illusts.fileId)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
-            .select(Illusts.id, Illusts.orderTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
+            .leftJoin(SourceDatas, Illusts.sourceDataId eq SourceDatas.id)
+            .select(Illusts.id, Illusts.orderTime, SourceDatas.publishTime,
+                Illusts.sourceSite, Illusts.sourceId, Illusts.sortableSourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 FileRecords.id, FileRecords.status, FileRecords.extension, FileRecords.block,
                 FileFingerprints.dHash, FileFingerprints.pHash, FileFingerprints.pHashSimple, FileFingerprints.dHashSimple)
             .where { Illusts.id inList illustIds }
             .orderBy(Illusts.orderTime.asc())
             .map {
                 val filePath = filePathFrom(it)
-                val s = sourcePathOf(it)
+                val s = if(it[Illusts.sourceSite] != null && it[Illusts.sourceId] != null) SourceSortablePath(it[Illusts.sourceSite]!!, it[Illusts.sortableSourceId], it[Illusts.sourcePart], it[SourceDatas.publishTime]) else null
                 val f = Fingerprint(it[FileFingerprints.pHashSimple]!!, it[FileFingerprints.dHashSimple]!!, it[FileFingerprints.pHash]!!, it[FileFingerprints.dHash]!!)
                 Row(it[Illusts.id]!!, filePath, f, s, it[Illusts.orderTime]!!)
             }
-            .letIf(resortAtAll) {
-                it.sortedWith { a, b ->
-                    if(a.sourceDataPath != null && b.sourceDataPath != null) sourcePathComparator.compare(a.sourceDataPath, b.sourceDataPath)
-                    else if(a.sourceDataPath == null && b.sourceDataPath == null) 0
-                    else if(a.sourceDataPath == null) 1
-                    else -1
-                }
-            }
+            .letIf(resortAtAll) { it.sortedBy(Row::sourceSortablePath) }
 
         val groups = mutableListOf<MutableList<Row>>()
         if(onlyNeighbours) {
@@ -244,14 +237,7 @@ class IllustUtilService(private val appdata: AppDataManager, private val data: D
 
         //开启后置组内排序(且没有开全局排序，因为没有意义)时，在每个组内，按照sourcePath对所有项排序
         val sortedGroups = groups.letIf(resortInGroup && !resortAtAll) {
-            it.map { group ->
-                group.sortedWith { a, b ->
-                    if(a.sourceDataPath != null && b.sourceDataPath != null) sourcePathComparator.compare(a.sourceDataPath, b.sourceDataPath)
-                    else if(a.sourceDataPath == null && b.sourceDataPath == null) 0
-                    else if(a.sourceDataPath == null) 1
-                    else -1
-                }.toMutableList()
-            }.toMutableList()
+            it.map { group -> group.sortedBy(Row::sourceSortablePath).toMutableList() }.toMutableList()
         }
 
         if(gatherGroup && !onlyNeighbours) {

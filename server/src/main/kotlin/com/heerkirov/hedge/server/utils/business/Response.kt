@@ -1,10 +1,7 @@
 package com.heerkirov.hedge.server.utils.business
 
 import com.heerkirov.hedge.server.dao.Illusts
-import com.heerkirov.hedge.server.dto.res.BulkResult
-import com.heerkirov.hedge.server.dto.res.ErrorResult
-import com.heerkirov.hedge.server.dto.res.ListResult
-import com.heerkirov.hedge.server.dto.res.SourceDataPath
+import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.exceptions.BusinessException
 import org.ktorm.dsl.Query
 import org.ktorm.dsl.QueryRowSet
@@ -25,8 +22,6 @@ fun sourcePathOf(row: QueryRowSet): SourceDataPath? {
     val sourcePartName = row[Illusts.sourcePartName]
     return if(source != null && sourceId != null) SourceDataPath(source, sourceId, sourcePart, sourcePartName) else null
 }
-
-val sourcePathComparator = compareBy<SourceDataPath> { it.sourceSite }.thenBy { it.sourceId }.thenBy { it.sourcePart }
 
 inline fun <T, R> ListResult<T>.map(transform: (T) -> R): ListResult<R> {
     return ListResult(this.total, this.result.map(transform))

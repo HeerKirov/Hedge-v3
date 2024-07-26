@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.dto.res
 
 import com.heerkirov.hedge.server.exceptions.BaseException
+import java.time.Instant
 
 /**
  * 当发生错误时，API返回所使用的通用数据结构。
@@ -45,6 +46,13 @@ data class NullableFilePath(val original: String, val thumbnail: String?, val sa
  * 包含来源数据定位的所有字段的通用结构。
  */
 data class SourceDataPath(val sourceSite: String, val sourceId: String, val sourcePart: Int?, val sourcePartName: String?)
+
+/**
+ * 包含来源数据的所有可排序字段的通用结构。
+ */
+data class SourceSortablePath(val sourceSite: String, val sortableSourceId: Long?, val sourcePart: Int?, val publishTime: Instant?) : Comparable<SourceSortablePath> {
+    override fun compareTo(other: SourceSortablePath): Int = compareValuesBy(this, other, SourceSortablePath::sourceSite, SourceSortablePath::sortableSourceId, SourceSortablePath::publishTime, SourceSortablePath::sourcePart)
+}
 
 /**
  * SourceTag定位的通用结构。
