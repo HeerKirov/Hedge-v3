@@ -36,7 +36,7 @@ const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceData
             </template>
         </FormEditKit>
         <Separator direction="horizontal"/>
-        <FormEditKit class="mb-2" :value="data.status" :set-value="setSourceStatus" save-once-updated>
+        <FormEditKit v-if="!!sourceDataPath" class="mb-2" :value="data.status" :set-value="setSourceStatus" save-once-updated>
             <template #default="{ value }">
                 <a class="float-right" @click="openSourceDataEditor"><Icon icon="edit"/>编辑</a>
                 <SourceEditStatusDisplay :value="value"/>

@@ -62,7 +62,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
         {type: "normal", label: "倒置排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_REVERSE")},
         {type: "normal", label: "均匀分布排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_UNIFORMLY")},
         {type: "separator"},
-        {type: "normal", label: "按来源ID顺序重设排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_BY_SOURCE_ID")},
+        {type: "normal", label: "按来源顺序重设排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_BY_SOURCE_ID")},
     ]},
     {type: "normal", label: "查找相似项", click: operators.findSimilarOfImage},
     {type: "normal", label: "导出", click: operators.exportItem},

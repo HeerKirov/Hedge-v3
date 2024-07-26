@@ -356,14 +356,14 @@ function useDocument(): BrowserDocument {
     return {title}
 }
 
-export function useDocumentTitle(titleChanged: Ref<string | {name: string} | {title: string} | null | undefined> | (() => (string | {name: string} | {title: string} | null | undefined))) {
+export function useDocumentTitle(titleChanged: Ref<string | {name: string} | {title: string} | {id: number} | null | undefined> | (() => (string | {name: string} | {title: string} | {id: number} | null | undefined))) {
     const document = useDocument()
     watch(titleChanged, tc => {
         if(tc !== null && tc !== undefined) {
             if(typeof tc === "string") {
                 document.title.value = tc
             }else if(typeof tc === "object") {
-                document.title.value = (tc as {name: string}).name ?? (tc as {title: string}).title
+                document.title.value = (tc as {name: string}).name || (tc as {title: string}).title || (tc as {id: number}).id.toString()
             }
         }
     }, {immediate: true})

@@ -41,7 +41,7 @@ const orderTimeEllipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "separator"},
     {type: "normal", label: "设为当前时间", click: () => orderTimeAction("NOW")},
     {type: "separator"},
-    {type: "normal", label: "按来源ID顺序重设排序时间", click: () => orderTimeAction("BY_SOURCE_ID")},
+    {type: "normal", label: "按来源顺序重设排序时间", click: () => orderTimeAction("BY_SOURCE_ID")},
     ...(parent?.value ? [{type: "normal", label: `按${parent.value.type === "book" ? "画集" : "目录"}内排序顺序重设排序时间`, click: () => orderTimeAction("BY_ORDINAL")}] : []),
 ]
 
@@ -51,7 +51,7 @@ const ordinalEllipsisMenuItems = <MenuItem<undefined>[]>[
     {type: "normal", label: "倒置排序顺序", click: () => ordinalAction("REVERSE")},
     {type: "separator"},
     {type: "normal", label: "按排序时间顺序重排序", click: () => ordinalAction("SORT_BY_ORDER_TIME")},
-    {type: "normal", label: "按来源ID顺序重排序", click: () => ordinalAction("SORT_BY_SOURCE_ID")},
+    {type: "normal", label: "按来源顺序重排序", click: () => ordinalAction("SORT_BY_SOURCE_ID")},
 ]
 
 </script>

@@ -71,16 +71,16 @@ export const [installNavigationRecords, useNavigationRecords] = installation(fun
     return {records: histories, excludes, setRecord, clearRecord}
 })
 
-export function useNavigationItem(recordChanged: Ref<string | {label: string, badge?: MenuBadge} | {name: string, badge?: MenuBadge} | {title: string, badge?: MenuBadge} | null | undefined> | (() => string | {label: string, badge?: MenuBadge} | {name: string, badge?: MenuBadge} | {title: string, badge?: MenuBadge} | null | undefined)) {
+export function useNavigationItem(recordChanged: Ref<string | {label: string, badge?: MenuBadge} | {name: string, badge?: MenuBadge} | {title: string, badge?: MenuBadge} | {id: number, badge?: MenuBadge} | null | undefined> | (() => string | {label: string, badge?: MenuBadge} | {name: string, badge?: MenuBadge} | {title: string, badge?: MenuBadge} | {id: number, badge?: MenuBadge} | null | undefined)) {
     const router = useTabRoute()
     const { setRecord } = useNavigationRecords()
 
-    function getRecordFromChanged(rc: string | {label: string, badge?: MenuBadge} | {name: string, badge?: MenuBadge} | {title: string, badge?: MenuBadge} | null | undefined): {label: string, badge: MenuBadge} | undefined {
+    function getRecordFromChanged(rc: string | {label: string, badge?: MenuBadge} | {name: string, badge?: MenuBadge} | {title: string, badge?: MenuBadge} | {id: number, badge?: MenuBadge} | null | undefined): {label: string, badge: MenuBadge} | undefined {
         if(rc !== null && rc !== undefined) {
             if(typeof rc === "string") {
                 return {label: rc, badge: undefined}
             }else if(typeof rc === "object") {
-                const label = (rc as {name: string}).name ?? (rc as {title: string}).title ?? (rc as {label: string}).label
+                const label = (rc as {name: string}).name || (rc as {title: string}).title || (rc as {label: string}).label || (rc as {id: number}).id.toString()
                 return {label, badge: rc.badge}
             }
         }
