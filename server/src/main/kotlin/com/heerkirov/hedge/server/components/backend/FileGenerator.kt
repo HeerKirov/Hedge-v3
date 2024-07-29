@@ -63,7 +63,7 @@ private const val ARCHIVE_INTERVAL: Long = 2000
 class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                         private val appdata: AppDataManager,
                         private val data: DataRepository,
-                        private val bus: EventBus, taskBus: BackgroundTaskBus,
+                        private val bus: EventBus, taskCounter: TaskCounterModule, taskScheduler: TaskSchedulerModule,
                         private val trashManager: TrashManager) : FileGenerator, DaemonThreadComponent {
     private val log = LoggerFactory.getLogger(FileGenerator::class.java)
 
@@ -72,18 +72,18 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
     private val thumbnailTask = assignmentTask(thread = ::thumbnailDaemon, poolSize = Runtime.getRuntime().availableProcessors())
     private val fingerprintTask = assignmentTask(thread = ::fingerprintDaemon, poolSize = Runtime.getRuntime().availableProcessors() / 2)
 
-    private val archiveCounter = taskBus.counter(BackgroundTaskType.FILE_ARCHIVE)
-    private val generateCounter = taskBus.counter(BackgroundTaskType.FILE_GENERATE)
+    private val archiveCounter = taskCounter.counter(BackgroundTaskType.FILE_ARCHIVE)
+    private val generateCounter = taskCounter.counter(BackgroundTaskType.FILE_GENERATE)
 
     init {
         bus.on(arrayOf(FileBlockArchived::class, FileCreated::class), ::receiveEvents)
+        taskScheduler.dayStart(::dayStart)
     }
 
     override fun thread() {
         //使用thread来初始化：初始化是异步进行的
         if(appStatus.status == AppLoadStatus.READY) {
             Thread.sleep(1000)
-            cleanTrashedImages()
 
             //读取status为NOT_READY的file，准备处理其缩略图
             val thumbnailTasks = data.db.from(FileRecords)
@@ -106,49 +106,55 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                 fingerprintTask.addAll(fingerprintTasks)
                 generateCounter.addTotal(fingerprintTasks.size)
             }
-
-            //读取deleted为true的file，准备在归档线程中将其删除
-            val anyDeletedBlocks = data.db.from(FileRecords)
-                .select(FileRecords.block, count(FileRecords.id).aliased("count"))
-                .where { FileRecords.deleted }
-                .groupBy(FileRecords.block)
-                .having { count(FileRecords.id).aliased("count") greater 0 }
-                .asSequence()
-                .map { it[FileRecords.block]!! }
-                .toSet()
-            val toBeArchivedBlocks = if(!appdata.storage.accessible) emptySet() else {
-                val latestBlock = data.db.from(FileRecords)
-                    .select(FileRecords.block)
-                    .orderBy(FileRecords.id.desc())
-                    .limit(1)
-                    .map { it[FileRecords.block]!! }
-                    .firstOrNull()
-                    ?.toInt(16)
-                    ?: 1
-                //从存储位置读取所有的directory，准备在归档线程中将其归档
-                //筛选掉比latestBlock大的块，包括latestBlock。FileManager会管理latestBlock，并在它被归档时发出事件通知
-                ArchiveType.entries.asSequence().flatMap { archiveType ->
-                    Path(appdata.storage.storageDir, archiveType.toString())
-                        .toFile()
-                        .listFiles { f -> f.isDirectory && (f.name.toIntOrNull(16)?.let { it < latestBlock } ?: false) }
-                        ?.asSequence()
-                        ?: emptySequence()
-                }.map { it.name }.toSet()
-            }
-            if(anyDeletedBlocks.isNotEmpty() || toBeArchivedBlocks.isNotEmpty()) {
-                synchronized(archiveQueue) {
-                    val blocks = anyDeletedBlocks + toBeArchivedBlocks
-                    archiveQueue.addAll(blocks.map { blockName ->
-                        val toBeArchived = blockName in toBeArchivedBlocks
-                        ArchiveQueueUnit(blockName, toBeArchived)
-                    })
-                    archiveTask.start()
-                    archiveCounter.addTotal(blocks.size)
-                }
-            }
-
-            cleanExpiredCacheFiles()
         }
+    }
+
+    private fun dayStart() {
+        //清理已过期的trashedImage
+        cleanTrashedImages()
+
+        //读取deleted为true的file，准备在归档线程中将其删除
+        val anyDeletedBlocks = data.db.from(FileRecords)
+            .select(FileRecords.block, count(FileRecords.id).aliased("count"))
+            .where { FileRecords.deleted }
+            .groupBy(FileRecords.block)
+            .having { count(FileRecords.id).aliased("count") greater 0 }
+            .asSequence()
+            .map { it[FileRecords.block]!! }
+            .toSet()
+        val toBeArchivedBlocks = if(!appdata.storage.accessible) emptySet() else {
+            val latestBlock = data.db.from(FileRecords)
+                .select(FileRecords.block)
+                .orderBy(FileRecords.id.desc())
+                .limit(1)
+                .map { it[FileRecords.block]!! }
+                .firstOrNull()
+                ?.toInt(16)
+                ?: 1
+            //从存储位置读取所有的directory，准备在归档线程中将其归档
+            //筛选掉比latestBlock大的块，包括latestBlock。FileManager会管理latestBlock，并在它被归档时发出事件通知
+            ArchiveType.entries.asSequence().flatMap { archiveType ->
+                Path(appdata.storage.storageDir, archiveType.toString())
+                    .toFile()
+                    .listFiles { f -> f.isDirectory && (f.name.toIntOrNull(16)?.let { it < latestBlock } ?: false) }
+                    ?.asSequence()
+                    ?: emptySequence()
+            }.map { it.name }.toSet()
+        }
+        if(anyDeletedBlocks.isNotEmpty() || toBeArchivedBlocks.isNotEmpty()) {
+            synchronized(archiveQueue) {
+                val blocks = anyDeletedBlocks + toBeArchivedBlocks
+                archiveQueue.addAll(blocks.map { blockName ->
+                    val toBeArchived = blockName in toBeArchivedBlocks
+                    ArchiveQueueUnit(blockName, toBeArchived)
+                })
+                archiveTask.start()
+                archiveCounter.addTotal(blocks.size)
+            }
+        }
+
+        //清理已过期的缓存文件
+        cleanExpiredCacheFiles()
     }
 
     private fun receiveEvents(e: PackagedBusEvent) {

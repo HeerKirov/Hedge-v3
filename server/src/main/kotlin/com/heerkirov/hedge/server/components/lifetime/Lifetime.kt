@@ -1,17 +1,20 @@
 package com.heerkirov.hedge.server.components.lifetime
 
+import com.heerkirov.hedge.server.application.ApplicationOptions
+import com.heerkirov.hedge.server.library.framework.Component
 import com.heerkirov.hedge.server.library.framework.MainThreadComponent
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.system.exitProcess
 
 /**
- * 负责生命周期维持的组件。因为server一般不允许无限制地在后台运行，就需要各种机制来配合web、client、cli，确保它们在使用时server不会退出。
- * 1. 提供注册+心跳机制。client注册一个存在ID，并需要按要求隔一段时间发送一个心跳信号。收不到心跳，或收到一个撤销信号时移除此存在序号。
- * 3. 除此之外，生命周期维持还要看其他组件的空闲情况。每过一段时间检查其他有状态组件是否空闲，所有有状态组件都空闲时才允许退出。
- * 4. 最后，还允许用户直接将此组件设定为永久持续。
+ * 负责生命周期维持的组件。在local模式下，server不允许无限制地在后台运行，需要各种机制来配合web、client、cli，确保它们在使用时server不会退出。
+ * 1. 提供会话注册机制，提供给client使用。在建立ws连接时，同步注册会话ID。
+ * 2. 提供单次信号机制，提供给cli使用。可以提交单次信号，在信号时间到达之前不会退出。
+ * 3. 提供永久持续标记。在标记存在时不会退出。
+ * 在remote模式下，生命周期组件将失去作用，仅保留session管理机制。
  */
-interface Lifetime {
+interface Lifetime : Component {
     /**
      * 永久存续标记管理。当存在永久存续标记时，server不会退出。
      */
@@ -69,33 +72,30 @@ interface Lifetime {
     }
 }
 
-data class LifetimeOptions(
-    val permanent: Boolean = false,
-    val defaultSignalInterval: Long = 1000L * 60,
-    val threadInterval: Long = 1000L * 60
-)
+const val DEFAULT_SIGNAL_INTERVAL: Long = 1000L * 60
 
-class LifetimeImpl(private val options: LifetimeOptions) : Lifetime, MainThreadComponent {
+const val THREAD_INTERVAL: Long = 1000L * 60
+
+/**
+ * 本地部署模式的生命周期组件。它具有完整的生命周期控制功能。
+ */
+class LifetimeImpl(private val options: ApplicationOptions) : Lifetime, MainThreadComponent {
     private val log: Logger = LoggerFactory.getLogger(LifetimeImpl::class.java)
 
     override val heartSignal: HeartSignalImpl = HeartSignalImpl()
     override val permanent: PermanentImpl = PermanentImpl()
     override val session: SessionImpl = SessionImpl()
 
-    override fun load() {
-        if(options.permanent) {
-            permanent["Startup Permanent Flag"] = true
-        }
-    }
-
     override fun thread() {
-        //用作保底的例行检查线程。它以较低的频率循环检测所有生命体征是否存在，以避免出现任意失误导致进程不退出，或者没有初始连接导致无法退出
-        while (true) {
-            Thread.sleep(options.threadInterval)
-            //进行信号清理
-            heartSignal.update()
-            //进行信号例行检查
-            checkAlive()
+        if(!options.remoteMode && !options.devMode) {
+            //用作保底的例行检查线程。它以较低的频率循环检测所有生命体征是否存在，以避免出现任意失误导致进程不退出，或者没有初始连接导致无法退出
+            while (true) {
+                Thread.sleep(THREAD_INTERVAL)
+                //进行信号清理
+                heartSignal.update()
+                //进行信号例行检查
+                checkAlive()
+            }
         }
     }
 
@@ -185,7 +185,7 @@ class LifetimeImpl(private val options: LifetimeOptions) : Lifetime, MainThreadC
          */
         override fun signal(interval: Long?) {
             synchronized(this) {
-                val newSignal = System.currentTimeMillis() + (interval ?: options.defaultSignalInterval)
+                val newSignal = System.currentTimeMillis() + (interval ?: DEFAULT_SIGNAL_INTERVAL)
                 if(_signal == null || _signal!! < newSignal) {
                     _signal = newSignal
                 }

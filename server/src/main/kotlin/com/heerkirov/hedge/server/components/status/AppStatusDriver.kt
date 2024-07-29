@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.components.status
 
+import com.heerkirov.hedge.server.application.ApplicationOptions
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.constants.Filename
 import com.heerkirov.hedge.server.enums.AppLoadStatus
@@ -28,15 +29,14 @@ interface AppStatusDriver : Component {
  * 受控的存储组件。这些组件的初始化状态和版本同步状态会受到控制中心的驱动。
  */
 interface ControlledAppStatusDevice {
-
     /**
      * 初始化此组件，并使用Migrator进行版本同步。
      */
     fun load(migrator: VersionFileMigrator)
 }
 
-class AppStatusDriverImpl(private val context: FrameworkContext, private val bus: EventBus, channelPath: String) : AppStatusDriver {
-    private val serverDirPath = "$channelPath/${Filename.SERVER_DIR}"
+class AppStatusDriverImpl(private val context: FrameworkContext, private val bus: EventBus, private val options: ApplicationOptions) : AppStatusDriver {
+    private val serverDirPath = "${options.channelPath}/${Filename.SERVER_DIR}"
     private val versionLockPath = "$serverDirPath/${Filename.VERSION_LOCK}"
 
     private var _status: AppLoadStatus = AppLoadStatus.NOT_INITIALIZED
@@ -45,8 +45,9 @@ class AppStatusDriverImpl(private val context: FrameworkContext, private val bus
 
     override fun load() {
         if(!Fs.exists(versionLockPath)) {
-            //lock文件不存在，此时判定为未初始化
-            _status = AppLoadStatus.NOT_INITIALIZED
+            if(options.remoteMode) {
+                initialize()
+            }
         }else{
             _status = AppLoadStatus.LOADING
             bus.emit(AppStatusChanged(AppLoadStatus.LOADING))

@@ -42,10 +42,9 @@ import java.time.temporal.ChronoUnit
  */
 interface ImportProcessor : Component
 
-class ImportProcessorImpl(private val appStatus: AppStatusDriver,
-                          private val appdata: AppDataManager,
+class ImportProcessorImpl(private val appdata: AppDataManager,
                           private val data: DataRepository,
-                          private val bus: EventBus,
+                          private val bus: EventBus, taskScheduler: TaskSchedulerModule,
                           private val similarFinder: SimilarFinder,
                           private val illustManager: IllustManager,
                           private val sourceAnalyzeManager: SourceAnalyzeManager,
@@ -61,12 +60,7 @@ class ImportProcessorImpl(private val appStatus: AppStatusDriver,
                 all<FileProcessError>(::onFileError)
             }
         }
-    }
-
-    override fun close() {
-        if(appStatus.status == AppLoadStatus.READY) {
-            autoClean()
-        }
+        taskScheduler.dayEnd(::autoClean)
     }
 
     private fun autoClean() {

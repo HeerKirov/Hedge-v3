@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.components.server
 
+import com.heerkirov.hedge.server.application.ApplicationOptions
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.health.Health
@@ -27,20 +28,7 @@ interface HttpServer : Component {
     override fun load()
 }
 
-class HttpServerOptions(
-    /**
-     * 开发模式下强制使用此token。
-     */
-    val forceToken: String? = null,
-    /**
-     * 开发模式下强制使用此端口。
-     */
-    val forcePort: Int? = null,
-    /**
-     * 当用户没有在配置中指定端口时，从此端口开始迭代。
-     */
-    val defaultPort: Int = 9000
-)
+const val DEFAULT_PORT: Int = 9000
 
 class HttpServerImpl(private val health: Health,
                      private val lifetime: Lifetime,
@@ -49,8 +37,8 @@ class HttpServerImpl(private val health: Health,
                      private val archive: FileManager,
                      private val eventBus: EventBus,
                      private val allServices: AllServices,
-                     private val options: HttpServerOptions) : HttpServer {
-    private val token: String = options.forceToken ?: Token.token()
+                     private val options: ApplicationOptions) : HttpServer {
+    private val token: String = options.token ?: Token.token()
     private var port: Int? = null
 
     private var server: Javalin? = null
@@ -76,7 +64,7 @@ class HttpServerImpl(private val health: Health,
                     SettingRoutes(allServices.setting),
                     HomepageRoutes(allServices.homepage),
                     NoteRoutes(allServices.note),
-                    UtilQueryRoutes(allServices.queryService),
+                    UtilQueryRoutes(allServices.query),
                     UtilMetaRoutes(allServices.metaUtil),
                     UtilIllustRoutes(allServices.illustUtil),
                     UtilPickerRoutes(allServices.pickerUtil),
@@ -128,12 +116,12 @@ class HttpServerImpl(private val health: Health,
     }
 
     private fun getPorts(): List<Int> {
-        return if(options.forcePort != null) {
-            listOf(options.forcePort)
+        return if(options.port != null) {
+            listOf(options.port)
         }else if(appStatus.status == AppLoadStatus.READY && appdata.setting.server.port != null) {
             Net.analyzePort(appdata.setting.server.port!!)
         }else{
-            Net.generatePort(options.defaultPort)
+            Net.generatePort(DEFAULT_PORT)
         }
     }
 }

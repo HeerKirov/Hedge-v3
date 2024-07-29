@@ -1,7 +1,7 @@
 package com.heerkirov.hedge.server.components.backend.similar
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
-import com.heerkirov.hedge.server.components.backend.BackgroundTaskBus
+import com.heerkirov.hedge.server.components.backend.TaskCounterModule
 import com.heerkirov.hedge.server.components.backend.BackgroundTaskType
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
@@ -43,8 +43,8 @@ interface SimilarFinder : Component {
 class SimilarFinderImpl(private val appStatus: AppStatusDriver,
                         private val appdata: AppDataManager,
                         private val data: DataRepository,
-                        bus: EventBus, taskBus: BackgroundTaskBus) : SimilarFinder {
-    private val counter = taskBus.counter(BackgroundTaskType.FIND_SIMILARITY)
+                        bus: EventBus, taskCounter: TaskCounterModule) : SimilarFinder {
+    private val counter = taskCounter.counter(BackgroundTaskType.FIND_SIMILARITY)
     private val workerThread = SimilarFinderWorkThread(data, bus, counter)
     private val quickFinder = QuickFinder(data, bus)
 
@@ -133,7 +133,7 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver,
     }
 }
 
-class SimilarFinderWorkThread(private val data: DataRepository, private val bus: EventBus, private val counter: BackgroundTaskBus.Counter) : ControlledLoopThread() {
+class SimilarFinderWorkThread(private val data: DataRepository, private val bus: EventBus, private val counter: TaskCounterModule.Counter) : ControlledLoopThread() {
     override fun run() {
         val model = data.db.sequenceOf(FindSimilarTasks).firstOrNull()
         if(model == null) {

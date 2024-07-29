@@ -5,7 +5,10 @@ import com.heerkirov.hedge.server.events.BackgroundTaskChanged
 import java.util.TreeSet
 import java.util.concurrent.atomic.AtomicInteger
 
-class BackgroundTaskBus(private val bus: EventBus) {
+/**
+ * 用于后台任务计数管理的总线模块。
+ */
+class TaskCounterModule(private val bus: EventBus) {
     val counters = TreeSet<Counter>()
 
     fun cleanCompleted() {
@@ -15,14 +18,14 @@ class BackgroundTaskBus(private val bus: EventBus) {
     }
 
     fun counter(type: BackgroundTaskType): Counter {
-        return Counter(type, this).also { counters.add(it) }
+        return Counter(type).also { counters.add(it) }
     }
 
     private fun eventToast(counter: Counter) {
         bus.emit(BackgroundTaskChanged(counter.type, counter.count, counter.totalCount))
     }
 
-    inner class Counter(val type: BackgroundTaskType, private val taskBus: BackgroundTaskBus) : Comparable<Counter> {
+    inner class Counter(val type: BackgroundTaskType) : Comparable<Counter> {
         private val _count = AtomicInteger(0)
         private val _totalCount = AtomicInteger(0)
 
@@ -31,12 +34,12 @@ class BackgroundTaskBus(private val bus: EventBus) {
 
         fun addTotal(addTotalCount: Int) {
             _totalCount.addAndGet(addTotalCount)
-            taskBus.eventToast(this)
+            eventToast(this)
         }
 
         fun addCount(addCount: Int) {
             _count.addAndGet(addCount)
-            taskBus.eventToast(this)
+            eventToast(this)
         }
 
         fun cleanCompleted() {

@@ -6,10 +6,9 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.dao.*
-import com.heerkirov.hedge.server.enums.AppLoadStatus
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.events.HomepageInfoUpdated
-import com.heerkirov.hedge.server.library.framework.DaemonThreadComponent
+import com.heerkirov.hedge.server.library.framework.Component
 import com.heerkirov.hedge.server.model.HomepageRecord
 import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
@@ -27,15 +26,13 @@ import kotlin.random.nextInt
  */
 interface DailyProcessor
 
-class DailyProcessorImpl(private val appStatusDriver: AppStatusDriver,
-                         private val appdata: AppDataManager,
+class DailyProcessorImpl(private val appdata: AppDataManager,
                          private val data: DataRepository,
-                         private val bus: EventBus) : DailyProcessor, DaemonThreadComponent {
+                         private val bus: EventBus,
+                         taskScheduler: TaskSchedulerModule) : DailyProcessor, Component {
 
-    override fun thread() {
-        if(appStatusDriver.status == AppLoadStatus.READY) {
-            refreshHomepage()
-        }
+    init {
+        taskScheduler.dayStart(::refreshHomepage)
     }
 
     private fun refreshHomepage() {

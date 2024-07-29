@@ -1,7 +1,7 @@
 package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
-import com.heerkirov.hedge.server.components.backend.BackgroundTaskBus
+import com.heerkirov.hedge.server.components.backend.TaskCounterModule
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.res.*
@@ -18,7 +18,7 @@ import org.ktorm.entity.sequenceOf
 import java.time.Instant
 import java.time.LocalDate
 
-class HomepageService(private val appdata: AppDataManager, private val data: DataRepository, private val stagingPostManager: StagingPostManager, private val backgroundTaskBus: BackgroundTaskBus) {
+class HomepageService(private val appdata: AppDataManager, private val data: DataRepository, private val stagingPostManager: StagingPostManager, private val taskCounter: TaskCounterModule) {
     fun getHomepageInfo(): HomepageRes {
         val currentRecord = data.db.sequenceOf(HomepageRecords).firstOrNull()
 
@@ -41,9 +41,9 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
         return HomepageStateRes(today, importImageCount, importImageErrorCount, findSimilarCount, stagingPostCount)
     }
 
-    fun getBackgroundTasks(): List<BackgroundTaskRes> = backgroundTaskBus.counters.filter { it.totalCount > 0 }.map { BackgroundTaskRes(it.type, it.count, it.totalCount) }
+    fun getBackgroundTasks(): List<BackgroundTaskRes> = taskCounter.counters.filter { it.totalCount > 0 }.map { BackgroundTaskRes(it.type, it.count, it.totalCount) }
 
-    fun cleanCompletedBackgroundTask() = backgroundTaskBus.cleanCompleted()
+    fun cleanCompletedBackgroundTask() = taskCounter.cleanCompleted()
 
     private fun mapToHomepageRes(record: HomepageRecord): HomepageRes {
         val todayImages = if(record.content.todayImageIds.isEmpty()) emptyList() else {

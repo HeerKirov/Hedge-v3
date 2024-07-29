@@ -1,6 +1,6 @@
 package com.heerkirov.hedge.server.components.backend.exporter
 
-import com.heerkirov.hedge.server.components.backend.BackgroundTaskBus
+import com.heerkirov.hedge.server.components.backend.TaskCounterModule
 import com.heerkirov.hedge.server.components.backend.BackgroundTaskType
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
@@ -102,7 +102,7 @@ private val EXPORTER_TYPES = EXPORTER_TYPE_INDEX.mapIndexed { index, kClass -> k
 
 class BackendExporterImpl(private val appStatus: AppStatusDriver,
                           private val bus: EventBus,
-                          private val taskBus: BackgroundTaskBus,
+                          private val taskCounter: TaskCounterModule,
                           private val data: DataRepository,
                           private val illustKit: IllustKit,
                           private val bookKit: BookKit) : BackendExporter {
@@ -165,7 +165,7 @@ class BackendExporterImpl(private val appStatus: AppStatusDriver,
                 workerThreads[type] as ExporterWorkerThread<T>
             }else{
                 val workerType = getWorkerType(type)
-                val counter = if(workerType != null) taskBus.counter(workerType) else null
+                val counter = if(workerType != null) taskCounter.counter(workerType) else null
                 val thread = ExporterWorkerThread(data, newWorker(type), counter)
                 workerThreads[type] = thread
                 thread
@@ -174,7 +174,7 @@ class BackendExporterImpl(private val appStatus: AppStatusDriver,
     }
 }
 
-class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository, private val worker: ExporterWorker<T>, private val counter: BackgroundTaskBus.Counter?) : ControlledLoopThread() {
+class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository, private val worker: ExporterWorker<T>, private val counter: TaskCounterModule.Counter?) : ControlledLoopThread() {
     private val log = LoggerFactory.getLogger(ExporterWorkerThread::class.java)
 
     @Suppress("UNCHECKED_CAST")

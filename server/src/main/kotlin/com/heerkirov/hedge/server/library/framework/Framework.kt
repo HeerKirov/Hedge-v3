@@ -3,7 +3,6 @@ package com.heerkirov.hedge.server.library.framework
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.RuntimeException
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.concurrent.thread
 import kotlin.reflect.KClass
@@ -13,7 +12,7 @@ import kotlin.system.exitProcess
 class Framework {
     private val log: Logger = LoggerFactory.getLogger(Framework::class.java)
 
-    private val components: MutableList<Component> = LinkedList()
+    private val components: MutableList<Component> = ArrayList(20)
 
     val context = FrameworkContextImpl()
 
@@ -39,8 +38,6 @@ class Framework {
         components.filterIsInstance<DaemonThreadComponent>().forEach { thread(isDaemon = true) { it.thread() } }
         //随后，找到主程组件，调用主程的thread方法，进入程序维持期
         components.filterIsInstance<MainThreadComponent>().firstOrNull()?.thread()
-        //主程已结束，发送关闭指令。不沿执行流程自动退出是因为其他组件可能持有非背景线程，这些线程会阻止shutdown的发生
-        exitProcess(0)
     }
 
     inner class FrameworkContextImpl : FrameworkContext {
