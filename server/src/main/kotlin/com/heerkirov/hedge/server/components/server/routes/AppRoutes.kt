@@ -1,11 +1,13 @@
 package com.heerkirov.hedge.server.components.server.routes
 
+import com.heerkirov.hedge.server.application.ApplicationOptions
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.appdata.saveSetting
 import com.heerkirov.hedge.server.components.server.Routes
 import com.heerkirov.hedge.server.components.lifetime.Lifetime
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.enums.AppLoadStatus
+import com.heerkirov.hedge.server.exceptions.OnlyForLocal
 import com.heerkirov.hedge.server.exceptions.Reject
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.library.form.bodyAsForm
@@ -14,7 +16,7 @@ import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
 
 
-class AppRoutes(private val lifetime: Lifetime, private val appStatus: AppStatusDriver, private val appdata: AppDataManager) : Routes {
+class AppRoutes(private val lifetime: Lifetime, private val appStatus: AppStatusDriver, private val appdata: AppDataManager, private val options: ApplicationOptions) : Routes {
     override fun handle(javalin: JavalinConfig) {
         javalin.router.apiBuilder {
             path("app") {
@@ -30,6 +32,7 @@ class AppRoutes(private val lifetime: Lifetime, private val appStatus: AppStatus
                     }
                     post("signal", ::addSignal)
                 }
+                get("storage", ::getStorageStatus)
             }
         }
     }
@@ -39,11 +42,14 @@ class AppRoutes(private val lifetime: Lifetime, private val appStatus: AppStatus
     }
 
     private fun initialize(ctx: Context) {
+        if(options.remoteMode) throw be(OnlyForLocal)
+
         val form = ctx.bodyAsForm<InitializeForm>()
 
         if(appStatus.status != AppLoadStatus.NOT_INITIALIZED) {
             throw be(Reject("Server is already initialized."))
         }
+
         appStatus.initialize()
 
         appdata.saveSetting {
@@ -56,18 +62,33 @@ class AppRoutes(private val lifetime: Lifetime, private val appStatus: AppStatus
     }
 
     private fun getPermanentList(ctx: Context) {
+        if(options.remoteMode) throw be(OnlyForLocal)
+
         ctx.json(this.lifetime.permanent.stats)
     }
 
     private fun updatePermanent(ctx: Context) {
+        if(options.remoteMode) throw be(OnlyForLocal)
+
         val form = ctx.bodyAsForm<PermanentForm>()
         this.lifetime.permanent[form.type] = form.value
         ctx.json(this.lifetime.permanent.stats)
     }
 
     private fun addSignal(ctx: Context) {
+        if(options.remoteMode) throw be(OnlyForLocal)
+
         val form = ctx.bodyAsForm<SignalForm>()
         this.lifetime.heartSignal.signal(form.interval)
+    }
+
+    private fun getStorageStatus(ctx: Context) {
+        ctx.json(StorageStatusResponse(
+            appdata.storage.storageDir,
+            appdata.storage.accessible,
+            appdata.storage.cacheDir,
+            appdata.storage.cacheSize
+        ))
     }
 
     data class InitializeForm(val storagePath: String? = null)
@@ -77,4 +98,9 @@ class AppRoutes(private val lifetime: Lifetime, private val appStatus: AppStatus
     data class SignalForm(val interval: Long?)
 
     data class HealthResponse(val status: AppLoadStatus)
+
+    data class StorageStatusResponse(val storageDir: String,
+                                     val storageAccessible: Boolean,
+                                     val cacheDir: String,
+                                     val cacheSize: Long)
 }

@@ -59,8 +59,7 @@ class HttpServerImpl(private val health: Health,
                 })
                 it.jsonMapper(JavalinJackson(Json.objectMapper()))
                 it.handle(
-                    AppRoutes(lifetime, appStatus, appdata),
-                    ServiceRoutes(allServices.service),
+                    AppRoutes(lifetime, appStatus, appdata, options),
                     SettingRoutes(allServices.setting),
                     HomepageRoutes(allServices.homepage),
                     NoteRoutes(allServices.note),

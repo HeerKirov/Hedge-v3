@@ -26,8 +26,8 @@ class Authentication(private val baseToken: String, private val appdata: AppData
     private fun authenticate(ctx: Context) {
         //对于OPTIONS method放行
         if(ctx.method() == HandlerType.OPTIONS) return
-        val bearer = ctx.header("Authorization") ?: throw be(NoToken())
-        val userToken = if(bearer.substring(0, prefixBearer.length).lowercase() == prefixBearer) bearer.substring(prefixBearer.length) else throw be(NoToken())
+        val bearer = ctx.header("Authorization") ?: throw be(NoToken)
+        val userToken = if(bearer.substring(0, prefixBearer.length).lowercase() == prefixBearer) bearer.substring(prefixBearer.length) else throw be(NoToken)
 
         if(baseToken == userToken) {
             //通过baseToken的验证
@@ -36,7 +36,7 @@ class Authentication(private val baseToken: String, private val appdata: AppData
             //通过自定义token的验证
             return
         }else{
-            throw be(TokenWrong())
+            throw be(TokenWrong)
         }
     }
 
@@ -44,10 +44,10 @@ class Authentication(private val baseToken: String, private val appdata: AppData
         ws.onConnect {
             val token = it.queryParam("access_token")
             if(token == null) {
-                it.send(WsResult("ERROR", ErrorResult(NoToken())))
+                it.send(WsResult("ERROR", ErrorResult(NoToken)))
                 it.closeSession()
             }else if (token != baseToken) {
-                it.send(WsResult("ERROR", ErrorResult(TokenWrong())))
+                it.send(WsResult("ERROR", ErrorResult(TokenWrong)))
                 it.closeSession()
             }
         }

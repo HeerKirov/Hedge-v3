@@ -94,7 +94,6 @@ fun runApplication(options: ApplicationOptions) {
                 illustUtil = IllustUtilService(appdata, repo, illustManager),
                 exportUtil = ExportUtilService(repo, file),
                 fileUtil = FileUtilService(repo, file, bus),
-                service = ServiceService(appdata),
                 setting = SettingService(appdata, repo, bus)
             )
         }

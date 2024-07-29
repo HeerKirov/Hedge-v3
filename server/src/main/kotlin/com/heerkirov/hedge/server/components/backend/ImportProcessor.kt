@@ -6,7 +6,6 @@ import com.heerkirov.hedge.server.components.backend.similar.SimilarFinder
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
-import com.heerkirov.hedge.server.components.status.AppStatusDriver
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.form.IllustImageCreateForm
 import com.heerkirov.hedge.server.dto.form.SourceDataUpdateForm
@@ -33,6 +32,7 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.filter
 import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -50,6 +50,7 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
                           private val sourceAnalyzeManager: SourceAnalyzeManager,
                           private val sourceDataManager: SourceDataManager,
                           private val sourceMappingManager: SourceMappingManager) : ImportProcessor {
+    private val log = LoggerFactory.getLogger(ImportProcessor::class.java)
 
     private val sourceTypeReflector = SourceTypeReflector(data)
 
@@ -68,7 +69,7 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
             val now = Instant.now()
             //检测未删除的COMPLETED的记录，将其清理
             //因为是COMPLETED的记录，所以不需要清理file
-            data.db.update(ImportRecords) {
+            val cleanCount = data.db.update(ImportRecords) {
                 where { it.status eq ImportStatus.COMPLETED and it.deleted.not() }
                 set(it.deleted, true)
                 set(it.deletedTime, now)
@@ -85,7 +86,10 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
                 .firstOrNull()
                 ?.get(ImportRecords.deletedTime)
             val deadline = if(deadline2 == null || deadline1 > deadline2) deadline1 else deadline2
-            data.db.delete(ImportRecords) { it.deleted and (it.deletedTime lessEq deadline) }
+            val deleteCount = data.db.delete(ImportRecords) { it.deleted and (it.deletedTime lessEq deadline) }
+            if(cleanCount > 0 || deleteCount > 0) {
+                log.info("Import record: $cleanCount cleaned, $deleteCount deleted.")
+            }
         }
     }
 

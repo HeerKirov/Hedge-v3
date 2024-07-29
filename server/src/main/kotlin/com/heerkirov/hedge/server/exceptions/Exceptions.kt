@@ -92,32 +92,22 @@ open class Reject(message: String): BadRequestException<Nothing?>("REJECT", mess
 /**
  * 由于服务尚未初始化，API不能被调用。
  */
-open class NotInit: BadRequestException<Nothing?>("NOT_INIT", "Server is not initialized.", null)
+object NotInit: BadRequestException<Nothing?>("NOT_INIT", "Server is not initialized.", null)
 
 /**
  * 在headers中没有发现任何token，然而此API需要验证。或者token无法被正确解析。
  */
-class NoToken : UnauthorizedException<Nothing?>("NO_TOKEN", "No available token.", null)
+object NoToken : UnauthorizedException<Nothing?>("NO_TOKEN", "No available token.", null)
 
 /**
  * 使用的token是错误的，无法将其与任何token认证匹配。
  */
-class TokenWrong : UnauthorizedException<Nothing?>("TOKEN_WRONG", "Token is incorrect.", null)
+object TokenWrong : UnauthorizedException<Nothing?>("TOKEN_WRONG", "Token is incorrect.", null)
 
 /**
- * 使用的password是错误的。
+ * 此API限定了调用对象，仅在local模式下可用。
  */
-class PasswordWrong : UnauthorizedException<Nothing?>("PASSWORD_WRONG", "Password is incorrect.", null)
-
-/**
- * 此API只能在客户端调用。
- */
-class OnlyForClient : ForbiddenException<Nothing?>("ONLY_FOR_CLIENT", "This API can only be called from client.", null)
-
-/**
- * 此token只能由localhost使用。
- */
-class RemoteDisabled : ForbiddenException<Nothing?>("REMOTE_DISABLED", "This Token can only be used in localhost.", null)
+object OnlyForLocal : ForbiddenException<Nothing?>("ONLY_FOR_Local", "This API is forbidden, because server is not running in local mode.", null)
 
 /**
  * 当前主体资源未找到。

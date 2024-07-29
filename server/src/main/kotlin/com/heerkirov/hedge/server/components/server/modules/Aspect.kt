@@ -25,7 +25,7 @@ class Aspect(private val appStatus: AppStatusDriver) : Modules {
             if(appStatus.status == AppLoadStatus.READY) {
                 loaded = true
             }else{
-                throw be(NotInit())
+                throw be(NotInit)
             }
         }
     }
