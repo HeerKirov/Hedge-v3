@@ -6,7 +6,7 @@ import { createServerManager } from "../components/server"
 import { createStateManager } from "../components/state"
 import { createStorageManager } from "../components/storage"
 import { panic } from "../exceptions"
-import { getNodePlatform, promiseAll } from "../utils/process"
+import { getNodePlatform } from "../utils/process"
 import { registerGlobalIpcRemoteEvents } from "./ipc"
 import { createMenuManager } from "./menu"
 import { registerAppEvents } from "./event"
@@ -76,9 +76,9 @@ export async function createApplication(options?: AppOptions) {
 
         const storageManager = createStorageManager(appDataDriver, {userDataPath, channel: channelManager.currentChannel()})
 
-        const resourceManager = createResourceManager({userDataPath, appPath, debug: options?.debug && {serverFromResource: options.debug.serverFromResource}})
+        const resourceManager = createResourceManager(appDataDriver, {userDataPath, appPath, debug: options?.debug && {serverFromResource: options.debug.serverFromResource}})
 
-        const serverManager = createServerManager({userDataPath, channel: channelManager.currentChannel(), debug: options?.debug && {serverFromHost: options.debug.serverFromHost, serverFromFolder: options.debug.serverFromFolder}})
+        const serverManager = createServerManager(appDataDriver, {userDataPath, channel: channelManager.currentChannel(), debug: options?.debug && {serverFromHost: options.debug.serverFromHost, serverFromFolder: options.debug.serverFromFolder}})
 
         const themeManager = createThemeManager(appDataDriver)
 
@@ -92,7 +92,9 @@ export async function createApplication(options?: AppOptions) {
         registerAppEvents(windowManager, serverManager, platform)
         registerGlobalIpcRemoteEvents(appDataDriver, channelManager, serverManager, stateManager, themeManager, menuManager, windowManager, {debugMode, userDataPath, platform})
 
-        await promiseAll(appDataDriver.load(), resourceManager.load(), app.whenReady())
+        await appDataDriver.load()
+        await resourceManager.load()
+        await app.whenReady()
 
         menuManager.load()
         themeManager.load()

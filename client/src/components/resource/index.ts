@@ -5,6 +5,7 @@ import { DATA_FILE, APP_FILE } from "../../constants/file"
 import { ClientException } from "../../exceptions"
 import { Version, VersionLock, VersionStatus, VersionStatusSet } from "./model"
 import { RESOURCE_VERSION } from "./version"
+import { AppDataDriver } from "../appdata";
 
 /**
  * 对app程序资源进行管理的管理器。
@@ -61,14 +62,14 @@ export interface ResourceManagerOptions {
     }
 }
 
-export function createResourceManager(options: ResourceManagerOptions): ResourceManager {
+export function createResourceManager(appdata: AppDataDriver, options: ResourceManagerOptions): ResourceManager {
     if(options.debug && !options.debug.serverFromResource) {
         //禁用资源管理
         console.log("[ResourceManager] Resource manager is disabled because of develop mode.")
         return createForbiddenResourceManager()
     }else{
         //在生产环境或调试模式启用资源管理
-        return createProductionResourceManager(options)
+        return createProductionResourceManager(appdata, options)
     }
 }
 
@@ -82,44 +83,50 @@ function createForbiddenResourceManager(): ResourceManager {
     }
 }
 
-function createProductionResourceManager(options: ResourceManagerOptions): ResourceManager {
+function createProductionResourceManager(appdata: AppDataDriver, options: ResourceManagerOptions): ResourceManager {
     const versionLockPath = path.join(options.userDataPath, DATA_FILE.RESOURCE.VERSION_LOCK)
 
     let status: ResourceStatus = ResourceStatus.UNKNOWN
     const version: VersionStatusSet = {}
 
     async function load() {
-        try {
-            const versionLock = await readFile<VersionLock>(versionLockPath)
-            if(versionLock == null) {
-                status = ResourceStatus.NOT_INIT
-            }else{
-                version.server = createVersionStatus(versionLock.server, RESOURCE_VERSION.server)
-                if(version.server.latestVersion) {
-                    status = ResourceStatus.NEED_UPDATE
+        if(appdata.status() === "LOADED" && appdata.getAppData().connectOption.mode === "local") {
+            try {
+                const versionLock = await readFile<VersionLock>(versionLockPath)
+                if(versionLock == null) {
+                    status = ResourceStatus.NOT_INIT
                 }else{
-                    status = ResourceStatus.LATEST
+                    version.server = createVersionStatus(versionLock.server, RESOURCE_VERSION.server)
+                    if(version.server.latestVersion) {
+                        status = ResourceStatus.NEED_UPDATE
+                    }else{
+                        status = ResourceStatus.LATEST
+                    }
                 }
+            }catch (e) {
+                throw new ClientException("RESOURCE_LOAD_ERROR", e)
             }
-        }catch (e) {
-            throw new ClientException("RESOURCE_LOAD_ERROR", e)
+        }else{
+            console.log("[ResourceManager] Resource manager is not activated in remote mode.")
         }
     }
 
     async function update() {
-        try {
-            if(status == ResourceStatus.NOT_INIT || status == ResourceStatus.NEED_UPDATE) {
+        if(appdata.status() === "LOADED" && appdata.getAppData().connectOption.mode === "local") {
+            try {
                 if(status == ResourceStatus.NOT_INIT || status == ResourceStatus.NEED_UPDATE) {
-                    status = ResourceStatus.UPDATING
-                    if(version.server == undefined || version.server.latestVersion != undefined) {
-                        await updatePartServer()
+                    if(status == ResourceStatus.NOT_INIT || status == ResourceStatus.NEED_UPDATE) {
+                        status = ResourceStatus.UPDATING
+                        if(version.server == undefined || version.server.latestVersion != undefined) {
+                            await updatePartServer()
+                        }
+                        status = ResourceStatus.LATEST
                     }
-                    status = ResourceStatus.LATEST
+                    await save()
                 }
-                await save()
+            } catch(e) {
+                throw new ClientException("RESOURCE_UPDATE_ERROR", e)
             }
-        }catch (e) {
-            throw new ClientException("RESOURCE_UPDATE_ERROR", e)
         }
     }
 

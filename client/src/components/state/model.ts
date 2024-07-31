@@ -20,7 +20,10 @@ export type InitializeState
 
 export interface AppInitializeForm {
     password: string | null
+    connectMode: "local" | "remote"
     storagePath: string | null
+    remoteHost: string | null
+    remoteToken: string | null
     theme: NativeTheme | null
 }
 

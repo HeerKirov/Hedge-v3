@@ -3,11 +3,12 @@ import { openSync } from "fs"
 import { kill as killProcess } from "process"
 import { spawn } from "child_process"
 import { AxiosRequestConfig } from "axios"
+import { AppDataDriver } from "../appdata"
 import { DATA_FILE, RESOURCE_FILE } from "../../constants/file"
-import { sleep } from "../../utils/process"
 import { createEmitter, Emitter } from "../../utils/emitter"
-import { readFile } from "../../utils/fs"
 import { request, Ws, Response } from "../../utils/request"
+import { sleep } from "../../utils/process"
+import { readFile } from "../../utils/fs"
 import {
     AppInitializeForm,
     ServerConnectionStatus,
@@ -126,8 +127,8 @@ interface ServerManagerOptions {
     }
 }
 
-export function createServerManager(options: ServerManagerOptions): ServerManager {
-    const connectionManager = createConnectionManager(options)
+export function createServerManager(appdata: AppDataDriver, options: ServerManagerOptions): ServerManager {
+    const connectionManager = createConnectionManager(appdata, options)
     const serviceManager = createServiceManager(connectionManager)
 
     return {
@@ -136,7 +137,7 @@ export function createServerManager(options: ServerManagerOptions): ServerManage
     }
 }
 
-function createConnectionManager(options: ServerManagerOptions) {
+function createConnectionManager(appdata: AppDataDriver, options: ServerManagerOptions) {
     const debugMode = !!options.debug
     const serverBinPath = options.debug?.serverFromFolder
         ? path.resolve(options.debug?.serverFromFolder, RESOURCE_FILE.SERVER.BIN)
@@ -234,7 +235,7 @@ function createConnectionManager(options: ServerManagerOptions) {
         }
     }
 
-    async function startConnectionListenerInDebug() {
+    async function startConnectionListenerForRemote() {
         if(!_desired) {
             setStatus({status: "CLOSE", info: null})
             return
@@ -242,23 +243,29 @@ function createConnectionManager(options: ServerManagerOptions) {
 
         setStatus({status: "CONNECTING", info: null, error: null})
 
-        console.log("[ServerManager] Trying connect to server. Module is working in debug mode.")
+        if(!options.debug?.serverFromHost) {
+            console.log(`[ServerManager] Trying connect to remote server (${appdata.getAppData().connectOption.remote!.host}).`)
+        }else{
+            console.log("[ServerManager] Trying connect to server. Module is working in debug mode.")
+        }
 
         let health: ServerServiceStatus | null
         while(true) {
             //根据提供的debug地址，尝试请求连接server的/app/health地址，以做连接检查
+            const host = options.debug?.serverFromHost ?? appdata.getAppData().connectOption.remote!.host
+            const token = options.debug?.serverFromHost ? "dev" : appdata.getAppData().connectOption.remote!.token
             try {
-                health = await waitingForHealth(options.debug!.serverFromHost!, "dev", 1000)
+                health = await waitingForHealth(host, token, 1000)
             }catch (e) {
                 setStatus({status: "FAILED", info: null, error: {code: "SERVER_REQUEST_ERROR", message: e instanceof Error ? e.message : `${e}`}})
-                console.log("[ServerManager] Trying connect to server failed. SERVER_REQUEST_ERROR.")
+                console.log("[ServerManager] Trying connect to server failed. SERVER_REQUEST_ERROR.", e)
                 return
             }
             if(health == null) {
                 setStatus({ status: "FAILED", info: null, error: {code: "SERVER_WAITING_TIMEOUT"} })
                 console.log("[ServerManager] Trying connect to server failed. SERVER_WAITING_TIMEOUT. try again.")
             }else{
-                console.log(`[ServerManager] Successfully verified connection to server (${options.debug!.serverFromHost}). Server status is ${health}.`)
+                console.log(`[ServerManager] Successfully verified connection to server (${host}). Server status is ${health}.`)
                 break
             }
         }
@@ -269,8 +276,10 @@ function createConnectionManager(options: ServerManagerOptions) {
             _ws = null
         }
         try {
-            _ws = await waitingForWsClient(options.debug!.serverFromHost!, "dev", { onMessage: onWsMessage, onClose: startConnectionListenerInDebug })
-            const info: ServerConnectionInfo = {pid: 0, host: options.debug!.serverFromHost!, token: "dev", startTime: Date.now()}
+            const host = options.debug?.serverFromHost ?? appdata.getAppData().connectOption.remote!.host
+            const token = options.debug?.serverFromHost ? "dev" : appdata.getAppData().connectOption.remote!.token
+            _ws = await waitingForWsClient(host, token, { onMessage: onWsMessage, onClose: startConnectionListenerForRemote })
+            const info: ServerConnectionInfo = {pid: NaN, host, token, startTime: Date.now()}
             setStatus({status: "OPEN", info, error: null, appLoadStatus: health!})
             console.log(`[ServerManager] Ws connection established.`)
         }catch (e) {
@@ -297,7 +306,11 @@ function createConnectionManager(options: ServerManagerOptions) {
             return
         }
         console.log("[ServerManager] Ws connection disconnected.")
-        startConnectionListener().finally()
+        if(options.debug?.serverFromHost || (appdata.status() === "LOADED" && appdata.getAppData().connectOption.mode === "remote")) {
+            startConnectionListenerForRemote().finally()
+        }else{
+            startConnectionListener().finally()
+        }
     }
 
     function setStatus(s: {status?: ServerConnectionStatus, info?: ServerConnectionInfo | null, error?: ServerConnectionError | null, appLoadStatus?: ServerServiceStatus}) {
@@ -324,8 +337,8 @@ function createConnectionManager(options: ServerManagerOptions) {
         if(value !== undefined && value !== _desired) {
             _desired = value
             if(_desired) {
-                if(options.debug?.serverFromHost) {
-                    startConnectionListenerInDebug().finally()
+                if(options.debug?.serverFromHost || (appdata.status() === "LOADED" && appdata.getAppData().connectOption.mode === "remote")) {
+                    startConnectionListenerForRemote().finally()
                 }else{
                     startConnectionListener().finally()
                 }
@@ -345,7 +358,7 @@ function createConnectionManager(options: ServerManagerOptions) {
     }
 
     function kill() {
-        if(_connectionInfo !== null) {
+        if(_connectionInfo !== null && !isNaN(_connectionInfo.pid)) {
             killProcess(_connectionInfo.pid)
         }
     }
@@ -484,7 +497,8 @@ function waitingForWsClient(host: string, token: string, events?: WsClientEvent)
     return new Promise((resolve, reject) => {
         let ws: Ws
         try {
-            ws = new Ws(`ws://${host}/websocket?access_token=${token}`)
+            const base = host.startsWith("http://") ? `ws://${host.substring("http://".length)}` : host.startsWith("https://") ? `wss://${host.substring("wss://".length)}` : host.startsWith("ws://") || host.startsWith("wss://") ? host : `ws://${host}`
+            ws = new Ws(`${base}/websocket?access_token=${token}`)
         }catch (e) {
             reject(e)
             return

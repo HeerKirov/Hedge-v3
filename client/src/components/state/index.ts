@@ -94,12 +94,18 @@ export function createStateManager(appdata: AppDataDriver, theme: ThemeManager, 
             //初始化appdata数据存储
             initializeEvent.emit({state: "INITIALIZING_APPDATA"})
             await appdata.init()
-            await appdata.saveAppData(d => d.loginOption.password = form.password)
+            await appdata.saveAppData(d => {
+                d.connectOption.mode = form.connectMode
+                d.connectOption.remote = form.connectMode === "remote" ? {host: form.remoteHost!, token: form.remoteToken!} : undefined
+                d.loginOption.password = form.password
+            })
             if(form.theme !== null) await theme.setTheme(form.theme)
 
-            //初始化资源
-            initializeEvent.emit({state: "INITIALIZING_RESOURCE"})
-            await resource.update()
+            if(form.connectMode === "local") {
+                //初始化资源
+                initializeEvent.emit({state: "INITIALIZING_RESOURCE"})
+                await resource.update()
+            }
 
             //启动server
             initializeEvent.emit({state: "INITIALIZING_SERVER"})
@@ -108,9 +114,11 @@ export function createStateManager(appdata: AppDataDriver, theme: ThemeManager, 
             //等待server connection状态切换至可用
             await awaiter.waitForConnectionReady()
 
-            //初始化server
-            initializeEvent.emit({state: "INITIALIZING_SERVER_DATABASE"})
-            await server.service.appInitialize({storagePath: form.storagePath ?? undefined})
+            if(form.connectMode === "local") {
+                //初始化server
+                initializeEvent.emit({state: "INITIALIZING_SERVER_DATABASE"})
+                await server.service.appInitialize({storagePath: form.storagePath ?? undefined})
+            }
 
             //等待server service状态切换至可用
             await awaiter.waitForServiceReady()

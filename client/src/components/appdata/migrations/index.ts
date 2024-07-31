@@ -2,7 +2,15 @@ import { Migrate, migrate as migrateIt } from "../../../utils/migrations"
 import { AppData } from "../model"
 
 const migrations: {[version: string]: Migrate<MigrateContext>} = {
-    async "0.1.0"() {/*v0.1.0的占位符。只为将版本号升级到v0.1.0*/}
+    async "0.1.0"() {/*v0.1.0的占位符。只为将版本号升级到v0.1.0*/},
+    async "0.9.0"(context) {
+        const data = context.appData as any
+        if(!data.connectOption) {
+            data.connectOption = {
+                mode: "local"
+            }
+        }
+    }
 }
 
 export interface MigrateContext {
