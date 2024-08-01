@@ -1,7 +1,7 @@
 import { createHttpInstance, mapResponse, flatResponse, HttpInstance, HttpInstanceConfig, Response, ResponseOk, ResponseError, ResponseConnectionError } from "./instance"
 import { createHomepageEndpoint, HomepageEndpoint } from "./api/homepage"
 import { createStagingPostEndpoint, StagingPostEndpoint } from "./api/staging-post"
-import { createServiceEndpoint, ServiceEndpoint } from "./api/service"
+import { createAppEndpoint, AppEndpoint } from "./api/app"
 import { createSettingEndpoint, SettingEndpoint } from "./api/setting"
 import { createNoteEndpoint, NoteEndpoint } from "./api/note"
 import { createIllustEndpoint, IllustEndpoint } from "./api/illust"
@@ -30,7 +30,7 @@ export type { HttpInstance, HttpInstanceConfig as HttpClientConfig, Response, Re
 
 export interface HttpClient {
     homepage: HomepageEndpoint
-    service: ServiceEndpoint
+    app: AppEndpoint
     setting: SettingEndpoint
     note: NoteEndpoint
     illust: IllustEndpoint
@@ -60,7 +60,7 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
 
     return {
         homepage: createHomepageEndpoint(http),
-        service: createServiceEndpoint(http),
+        app: createAppEndpoint(http),
         setting: createSettingEndpoint(http),
         note: createNoteEndpoint(http),
         illust: createIllustEndpoint(http),

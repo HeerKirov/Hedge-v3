@@ -41,8 +41,7 @@ type DaemonException =
     NotInit |
     NoToken |
     TokenWrong |
-    OnlyForClient |
-    RemoteDisabled
+    OnlyForLocal
 
 type UncheckedException =
     ParamTypeError |
@@ -77,8 +76,7 @@ type CheckedException =
 type NotInit = BadRequestException<"NOT_INIT", null>
 type NoToken = UnauthorizedException<"NO_TOKEN", null>
 type TokenWrong = UnauthorizedException<"TOKEN_WRONG", null>
-type OnlyForClient = ForbiddenException<"ONLY_FOR_CLIENT", null>
-type RemoteDisabled = ForbiddenException<"REMOTE_DISABLED", null>
+type OnlyForLocal = ForbiddenException<"ONLY_FOR_LOCAL", null>
 
 //== 普通非必须异常：因为业务原因抛出的通用异常。这些异常是能通过先前检查避免的 ==
 

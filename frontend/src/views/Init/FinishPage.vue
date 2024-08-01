@@ -8,13 +8,16 @@ import { NATIVE_THEME_NAMES } from "@/constants/ui"
 import { strings } from "@/utils/primitives"
 
 const props = defineProps<{
+    database: {
+        remoteMode: boolean
+        customLocation: boolean
+        storagePath: string
+        remoteHost: string
+        remoteToken: string
+    }
     password: {
         hasPassword: boolean
         password: string
-    }
-    database: {
-        customLocation: boolean
-        storagePath: string
     }
     theme: {
         theme: NativeTheme
@@ -31,6 +34,9 @@ const { initialize, initializeState } = useAppInitializer()
 
 const execute = () => {
     initialize({
+        connectMode: props.database.remoteMode ? "remote" : "local",
+        remoteHost: props.database.remoteHost,
+        remoteToken: props.database.remoteToken,
         password: props.password.hasPassword ? props.password.password : null,
         storagePath: props.database.customLocation ? props.database.storagePath : null,
         theme: props.theme.theme
@@ -59,7 +65,7 @@ const initializingMessage: Record<string, string> = {
         </div>
         <div class="mt-2">
             <label class="label">存储位置</label>
-            <p>{{database.customLocation ? database.storagePath : "默认位置"}}</p>
+            <p>{{database.remoteMode ? `远程服务器 (${database.remoteHost})` : database.customLocation ? `自定义位置 (${database.storagePath})` : "默认位置"}}</p>
         </div>
         <div class="mt-2">
             <label class="label">主题</label>

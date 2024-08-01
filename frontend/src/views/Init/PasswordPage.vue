@@ -11,6 +11,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+    (e: "prev"): void
     (e: "submit", hasPassword: boolean, password: string): void
 }>()
 
@@ -51,6 +52,7 @@ const submit = () => {
         <p v-else class="mt-2 secondary-text">您选择了不设置口令。App打开时不会进行验证，允许任何访问。</p>
 
         <template #bottom>
+            <Button type="primary" mode="light" icon="arrow-left" @click="$emit('prev')">上一步</Button>
             <Button class="float-right" type="primary" mode="filled" icon="arrow-right" @click="submit">下一步</Button>
         </template>
     </BottomLayout>

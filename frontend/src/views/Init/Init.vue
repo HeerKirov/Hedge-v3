@@ -16,8 +16,11 @@ const data = reactive({
         password: ""
     },
     database: {
+        remoteMode: false,
         customLocation: false,
-        storagePath: ""
+        storagePath: "",
+        remoteHost: "",
+        remoteToken: ""
     },
     theme: {
         theme: <NativeTheme>"system"
@@ -28,8 +31,8 @@ const submitPassword = (hasPassword: boolean, password: string) => {
     data.password = { hasPassword, password }
     page.value += 1
 }
-const submitDatabase = (customLocation: boolean, storagePath: string) => {
-    data.database = { customLocation, storagePath }
+const submitDatabase = (customLocation: boolean, storagePath: string, remoteMode: boolean, remoteHost: string, remoteToken: string) => {
+    data.database = { customLocation, storagePath, remoteHost, remoteToken, remoteMode }
     page.value += 1
 }
 const submitTheme = (theme: NativeTheme) => {
@@ -43,8 +46,8 @@ const submitTheme = (theme: NativeTheme) => {
     <div :class="$style['top-bar']"/>
     <Block :class="[$style.area, 'fixed', 'center', 'p-4']" mode="shadow">
         <WelcomePage v-if="page === 0" @next="page++"/>
-        <PasswordPage v-else-if="page === 1" v-bind="data.password" @submit="submitPassword"/>
-        <DatabasePage v-else-if="page === 2" v-bind="data.database" @submit="submitDatabase" @prev="page--"/>
+        <DatabasePage v-else-if="page === 1" v-bind="data.database" @submit="submitDatabase"/>
+        <PasswordPage v-else-if="page === 2" v-bind="data.password" @submit="submitPassword" @prev="page--"/>
         <ThemePage v-else-if="page === 3" v-bind="data.theme" @submit="submitTheme" @prev="page--"/>
         <FinishPage v-else-if="page === 4" v-bind="data" @prev="page--"/>
     </Block>

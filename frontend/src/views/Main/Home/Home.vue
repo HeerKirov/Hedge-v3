@@ -10,8 +10,8 @@ import { AUTHOR_TYPE_ICONS, TOPIC_TYPE_ICONS } from "@/constants/entity"
 const { assetsUrl } = useAssets()
 
 const { 
-    loading, data, 
-    openBook,
+    loading, data,
+    openImport, openBook,
     openPartition, openIllustOfPartition, 
     openAuthorOrTopic, openIllustOfAuthorOrTopic
 } = useHomepageContext()
@@ -79,7 +79,7 @@ const router = useRouter()
     </div>
     <div v-else class="absolute center has-text-centered pb-6">
         <p class="pl-4 mb-4 is-font-size-large">现在没有任何内容…</p>
-        <p class="mb-1"><a @click="router.push({name: 'MainImport'})"><Icon icon="plus-square"/>导入文件</a></p>
+        <p class="mb-1"><a @click="openImport"><Icon icon="plus-square"/>导入文件</a></p>
         <p><a @click="windowManager.openGuide"><Icon icon="circle-question-regular"/>查看向导</a></p>
     </div>
 </template>

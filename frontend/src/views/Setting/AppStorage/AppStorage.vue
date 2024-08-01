@@ -2,15 +2,17 @@
 import { computed } from "vue"
 import { Button, Separator } from "@/components/universal"
 import { CheckBox, NumberInput } from "@/components/form"
-import { useServiceStorageStatus, useSettingStorage } from "@/services/setting"
+import { useAppStorageStatus, useSettingAuth, useSettingStorage } from "@/services/setting"
 import { usePropertySot } from "@/utils/forms"
 import { toRefNullable } from "@/utils/reactivity"
 import { numbers } from "@/utils/primitives"
 import StorageBox from "./StorageBox.vue"
 
+const { data: settingAuth } = useSettingAuth()
+
 const { data: settingStorage } = useSettingStorage()
 
-const { data: storageStatus, refresh: refreshStorageStatus } = useServiceStorageStatus()
+const { data: storageStatus, refresh: refreshStorageStatus } = useAppStorageStatus()
 
 const [autoCleanTrashesIntervalDay, autoCleanTrashesIntervalDaySot, saveAutoCleanTrashesIntervalDay] = usePropertySot(toRefNullable(settingStorage, "autoCleanTrashesIntervalDay"))
 
@@ -37,7 +39,7 @@ const cacheSize = computed(() => {
 
 <template>
     <template v-if="!!settingStorage">
-        <StorageBox v-model:storage-path="settingStorage.storagePath" :storage-status="storageStatus" @refresh:status="refreshStorageStatus"/>
+        <StorageBox v-model:storage-path="settingStorage.storagePath" :connect-mode="settingAuth?.mode" :storage-status="storageStatus" @refresh:status="refreshStorageStatus"/>
         <label class="label mt-2">缓存位置</label>
         <p>当前缓存大小：{{ cacheSize }}</p>
         <p class="secondary-text">访问归档中的文件或在本地目录打开文件时，文件会被提取至缓存位置。</p>

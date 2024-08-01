@@ -3,7 +3,6 @@ import { Group } from "@/components/layout"
 import { Button } from "@/components/universal"
 import { CheckBox, NumberInput } from "@/components/form"
 import { ThemeSelector } from "@/components-business/form-editor"
-import { OrderTimeType } from "@/functions/http-client/api/setting"
 import { useAppearance, useAppEnv } from "@/functions/app"
 import { useSettingAuth, useSettingServer } from "@/services/setting"
 import { usePropertySot } from "@/utils/forms"
@@ -20,12 +19,6 @@ const { data: server } = useSettingServer()
 
 const [timeOffsetHour, timeOffsetHourSot, saveTimeOffsetHour] = usePropertySot(toRefNullable(server, "timeOffsetHour"))
 
-const timeTypes: {value: OrderTimeType, label: string}[] = [
-    {value: "IMPORT_TIME", label: "项目导入时间"},
-    {value: "CREATE_TIME", label: "文件创建时间"},
-    {value: "UPDATE_TIME", label: "文件修改时间"}
-]
-
 </script>
 
 <template>
@@ -39,7 +32,7 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
         <p v-if="platform === 'darwin'" class="mt-2">
             <CheckBox v-model:value="auth.touchID">使用Touch ID进行登录认证</CheckBox>
         </p>
-        <p class="mt-2">
+        <p v-if="auth?.mode !== 'remote'" class="mt-2">
             <CheckBox v-if="!!auth.password" v-model:value="auth.fastboot">快速启动</CheckBox>
             <CheckBox v-else disabled>快速启动</CheckBox>
             <span class="ml-1 secondary-text">在登录通过之前就启动核心服务，以加快启动速度。</span>

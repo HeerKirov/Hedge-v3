@@ -104,6 +104,8 @@ export interface AuthSetting {
     password: string | null
     touchID: boolean
     fastboot: boolean
+    mode: "local" | "remote"
+    remote?: { host: string; token: string }
 }
 
 export interface AppearanceSetting {

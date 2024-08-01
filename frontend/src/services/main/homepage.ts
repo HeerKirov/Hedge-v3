@@ -12,6 +12,10 @@ export function useHomepageContext() {
         eventFilter: "app/homepage/info/updated"
     })
 
+    const openImport = () => {
+        router.routePush({routeName: "Import"})
+    }
+
     const openPartition = (date: LocalDate) => {
         router.routePush({routeName: "PartitionDetail", path: date})
     }
@@ -32,7 +36,7 @@ export function useHomepageContext() {
         router.routePush({routeName: "BookDetail", path: bookId})
     }
 
-    return {data, loading, openPartition, openIllustOfPartition, openBook, openAuthorOrTopic, openIllustOfAuthorOrTopic}
+    return {data, loading, openImport, openPartition, openIllustOfPartition, openBook, openAuthorOrTopic, openIllustOfAuthorOrTopic}
 }
 
 export const [installHomepageState, useHomepageState] = optionalInstallation(function() {

@@ -2,13 +2,14 @@
 import { ref } from "vue"
 import { Block, Icon, Button } from "@/components/universal"
 import { Input, CheckBox } from "@/components/form"
-import { StorageStatus } from "@/functions/http-client/api/service"
+import { StorageStatus } from "@/functions/http-client/api/app"
 import { dialogManager } from "@/modules/dialog"
 import { openLocalFile } from "@/modules/others"
 import { computedMutable } from "@/utils/reactivity"
 import { sleep } from "@/utils/process"
 
 const props = defineProps<{
+    connectMode?: "local" | "remote"
     storagePath: string | null
     storageStatus: StorageStatus | undefined
 }>()
@@ -54,7 +55,11 @@ const openStorageInExplorer = () => {
 <template>
     <Block v-if="status === 'normal'" class="p-2">
         <div>
-            <span v-if="!!storagePath" :class="[storageStatus?.storageAccessible ? 'has-text-success' : 'has-text-danger', 'is-line-height-std']">
+            <span v-if="connectMode === 'remote'" :class="[storageStatus?.storageAccessible ? 'has-text-success' : 'has-text-danger', 'is-line-height-std']">
+                <Icon class="mx-1" icon="file"/>
+                远程服务上的存储: {{ storageStatus?.storageAccessible ? "可访问" : "不可访问" }}
+            </span>
+            <span v-else-if="!!storagePath" :class="[storageStatus?.storageAccessible ? 'has-text-success' : 'has-text-danger', 'is-line-height-std']">
                 <Icon class="mx-1" icon="file"/>
                 自定义存储位置: {{ storageStatus?.storageAccessible ? "可访问" : "不可访问" }}
             </span>
@@ -63,10 +68,10 @@ const openStorageInExplorer = () => {
                 默认存储位置
             </span>
         </div>
-        <div class="no-wrap overflow-ellipsis is-font-size-small">
+        <div v-if="connectMode === 'local'" class="no-wrap overflow-ellipsis is-font-size-small">
             <code class="selectable">{{storageStatus?.storageDir}}</code>
         </div>
-        <div class="has-text-right mt-2">
+        <div v-if="connectMode === 'local'" class="has-text-right mt-2">
             <Button class="mr-1" icon="folder-open" @click="openStorageInExplorer">打开存储位置</Button>
             <Button icon="edit" @click="status = 'set'">更改存储位置</Button>
         </div>

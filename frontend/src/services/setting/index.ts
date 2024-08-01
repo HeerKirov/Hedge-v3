@@ -8,9 +8,9 @@ import { useMessageBox } from "@/modules/message-box"
 import { numbers } from "@/utils/primitives"
 import { computedMutable, optionalInstallation, toRef } from "@/utils/reactivity"
 
-export function useServiceStorageStatus() {
+export function useAppStorageStatus() {
     return useFetchReactive({
-        get: client => client.service.storageStatus
+        get: client => client.app.storageStatus
     })
 }
 

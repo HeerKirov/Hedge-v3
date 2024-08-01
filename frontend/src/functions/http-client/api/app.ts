@@ -1,12 +1,12 @@
 import { HttpInstance, Response } from ".."
 
-export function createServiceEndpoint(http: HttpInstance): ServiceEndpoint {
+export function createAppEndpoint(http: HttpInstance): AppEndpoint {
     return {
-        storageStatus: http.createRequest("/api/service/storage")
+        storageStatus: http.createRequest("/app/storage")
     }
 }
 
-export interface ServiceEndpoint {
+export interface AppEndpoint {
     /**
      * 获得存储的运行时状况信息。
      */
