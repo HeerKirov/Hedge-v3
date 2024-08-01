@@ -1,5 +1,4 @@
 import path from "path"
-import { openSync } from "fs"
 import { kill as killProcess } from "process"
 import { spawn } from "child_process"
 import { AxiosRequestConfig } from "axios"
@@ -142,9 +141,8 @@ function createConnectionManager(appdata: AppDataDriver, options: ServerManagerO
     const serverBinPath = options.debug?.serverFromFolder
         ? path.resolve(options.debug?.serverFromFolder, RESOURCE_FILE.SERVER.BIN)
         : path.resolve(options.userDataPath, DATA_FILE.RESOURCE.SERVER_FOLDER, RESOURCE_FILE.SERVER.BIN)
-    const channelPath = path.resolve(options.userDataPath, DATA_FILE.APPDATA.CHANNEL_FOLDER, options.channel)
-    const serverPIDPath = path.resolve(channelPath, DATA_FILE.APPDATA.CHANNEL.SERVER_PID)
-    const serverLogPath = path.resolve(channelPath, DATA_FILE.APPDATA.CHANNEL.SERVER_LOG)
+    const serverDir = path.resolve(options.userDataPath, DATA_FILE.APPDATA.CHANNEL_FOLDER, options.channel, DATA_FILE.APPDATA.CHANNEL.SERVER_DIR)
+    const serverPIDPath = path.resolve(serverDir, DATA_FILE.APPDATA.CHANNEL.SERVER_PID)
 
     const statusChangedEvent = createEmitter<{ status: ServerConnectionStatus, info: ServerConnectionInfo | null, error: ServerConnectionError | null, appLoadStatus?: ServerServiceStatus }>()
     const wsToastEvent = createEmitter<WsToastResult>()
@@ -173,7 +171,7 @@ function createConnectionManager(appdata: AppDataDriver, options: ServerManagerO
                 //在不具备serverStarted标记的情况下，首先检查PID文件。如果不存在此文件，则尝试启动server
                 pid = await checkForPIDFile(serverPIDPath)
                 if(pid == null) {
-                    startServerProcess(channelPath, debugMode, serverLogPath, serverBinPath)
+                    startServerProcess(serverDir, debugMode, serverBinPath)
                     serverStarted = true
                 }
             }
@@ -206,7 +204,7 @@ function createConnectionManager(appdata: AppDataDriver, options: ServerManagerO
                     return
                 }else{
                     //如果无法连接，但还没尝试过启动server，那么先尝试启动server，然后从第1步重新开始
-                    startServerProcess(channelPath, debugMode, serverLogPath, serverBinPath)
+                    startServerProcess(serverDir, debugMode, serverBinPath)
                     serverStarted = true
                 }
             }else{
@@ -354,7 +352,7 @@ function createConnectionManager(appdata: AppDataDriver, options: ServerManagerO
     }
 
     function staticInfo(): ServerStaticInfo {
-        return {logPath: serverLogPath}
+        return {logPath: path.resolve(serverDir, DATA_FILE.APPDATA.CHANNEL.SERVER_LOG)}
     }
 
     function kill() {
@@ -513,14 +511,13 @@ function waitingForWsClient(host: string, token: string, events?: WsClientEvent)
 /**
  * 启动server进程。
  */
-function startServerProcess(channelPath: string, debugMode: boolean, serverLogPath: string, serverBinPath: string) {
-    const baseArgs = ['--channel-path', channelPath]
+function startServerProcess(serverDir: string, debugMode: boolean, serverBinPath: string) {
+    const baseArgs = ['--dir', serverDir]
     const debugModeArgs = debugMode ? ['--force-token', 'dev'] : []
     const args = [...baseArgs, ...debugModeArgs]
-    const out = openSync(serverLogPath, "w")
     const s = spawn(serverBinPath, args, {
         detached: true,
-        stdio: ["ignore", out, out]
+        stdio: ["ignore", "ignore", "ignore"]
     })
     s.unref()
 
