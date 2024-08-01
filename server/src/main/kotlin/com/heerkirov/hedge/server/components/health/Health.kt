@@ -17,10 +17,10 @@ interface Health : Component {
     fun save(port: Int? = null, token: String? = null): Health
 }
 
-class HealthImpl(private val channelPath: String) : Health {
+class HealthImpl(private val serverPath: String) : Health {
     private val log: Logger = LoggerFactory.getLogger(HealthImpl::class.java)
 
-    private val pidPath: String = "${channelPath}/${Filename.SERVER_PID}"
+    private val pidPath: String = "${serverPath}/${Filename.SERVER_PID}"
 
     private val pid: Long = ProcessHandle.current().pid()
     private val model: PIDModel
@@ -35,7 +35,7 @@ class HealthImpl(private val channelPath: String) : Health {
     }
 
     private fun checkCurrentProcess() {
-        Fs.mkdir(channelPath)
+        Fs.mkdir(serverPath)
         val f = Fs.readFile<PIDModel>(pidPath)
         if(f != null && f.pid != pid && ProcessHandle.of(f.pid).isPresent) {
             log.info("Hedge server has been running with PID ${f.pid}. Exit current progress.")

@@ -14,14 +14,9 @@ class ApplicationOptions(parameters: Parameters) {
     val devMode: Boolean = parameters.contain("--dev")
 
     /**
-     * server启动频道的根目录。一般为{USER_DATA}/appdata/channel/{CHANNEL}。
+     * server工作目录。在本地模式下一般为{USER_DATA}/appdata/channel/{CHANNEL}/server。
      */
-    val channelPath: String = parameters["--channel-path"] ?: throw IllegalArgumentException("'--channel-path' is required.")
-
-    /**
-     * server存储目录。通常情况下不必指定此参数，存储目录会由用户设置管理。指定此参数会覆盖用户设置，或在远程模式下覆盖默认设置。
-     */
-    val storagePath: String? = parameters["--storage-path"]
+    val serverDir: String = parameters["--dir"] ?: throw IllegalArgumentException("'--dir' is required.")
 
     /**
      * 使用指定端口启动server。用于在开发模式下固定端口，以及在远程模式下必须指定启动参数。
@@ -32,4 +27,8 @@ class ApplicationOptions(parameters: Parameters) {
      * 使用指定token启动server。用于在开发模式下固定token，以及在远程模式下必须指定启动参数。
      */
     val token: String? = parameters["--token"] ?: if(this.remoteMode) throw IllegalArgumentException("'--token' is required in remote mode.") else null
+
+    init {
+        System.setProperty("LOG_DIR", "$serverDir/logs")
+    }
 }

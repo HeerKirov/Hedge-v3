@@ -140,7 +140,9 @@ class LifetimeImpl(private val options: ApplicationOptions) : Lifetime, MainThre
                 _sessions.add(sessionId)
             }else{
                 _sessions.remove(sessionId)
-                checkAlive()
+                if(!options.remoteMode) {
+                    checkAlive()
+                }
             }
         }
     }

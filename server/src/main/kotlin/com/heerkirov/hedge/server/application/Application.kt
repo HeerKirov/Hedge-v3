@@ -25,11 +25,11 @@ import com.heerkirov.hedge.server.library.framework.framework
 fun runApplication(options: ApplicationOptions) {
     framework {
         val bus = define { EventBusImpl() }
-        val health = define { HealthImpl(options.channelPath) }
+        val health = define { HealthImpl(options.serverDir) }
         val lifetime = define { LifetimeImpl(options) }
         val appStatus = define { AppStatusDriverImpl(context, bus, options) }
-        val appdata = define { AppDataManagerImpl(options.channelPath) }
-        val repo = define { DataRepositoryImpl(options.channelPath) }
+        val appdata = define { AppDataManagerImpl(options.serverDir) }
+        val repo = define { DataRepositoryImpl(options.serverDir) }
         val file = define { FileManager(appdata, repo, bus) }
 
         val services = run {

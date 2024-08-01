@@ -36,8 +36,7 @@ interface ControlledAppStatusDevice {
 }
 
 class AppStatusDriverImpl(private val context: FrameworkContext, private val bus: EventBus, private val options: ApplicationOptions) : AppStatusDriver {
-    private val serverDirPath = "${options.channelPath}/${Filename.SERVER_DIR}"
-    private val versionLockPath = "$serverDirPath/${Filename.VERSION_LOCK}"
+    private val versionLockPath = "${options.serverDir}/${Filename.VERSION_LOCK}"
 
     private var _status: AppLoadStatus = AppLoadStatus.NOT_INITIALIZED
 
@@ -64,7 +63,6 @@ class AppStatusDriverImpl(private val context: FrameworkContext, private val bus
             _status = AppLoadStatus.INITIALIZING
             bus.emit(AppStatusChanged(AppLoadStatus.INITIALIZING))
 
-            Fs.mkdir(serverDirPath)
             executeMigrate()
 
             _status = AppLoadStatus.READY

@@ -22,20 +22,18 @@ interface DataRepository : Component {
     val db: Database
 }
 
-class DataRepositoryImpl(channelPath: String) : DataRepository, ControlledAppStatusDevice {
-    private val serverDirPath = "$channelPath/${Filename.SERVER_DIR}"
-
+class DataRepositoryImpl(private val serverPath: String) : DataRepository, ControlledAppStatusDevice {
     private var _conn: Connection? = null
     private var _db: Database? = null
 
     override val db: Database get() = _db ?: throw RuntimeException("DB is not loaded yet.")
 
     override fun load(migrator: VersionFileMigrator) {
-        val connection = DriverManager.getConnection("jdbc:sqlite:$serverDirPath/${Filename.DATA_SQLITE}")
-        connection.attach("$serverDirPath/${Filename.META_SQLITE}", "meta_db")
-        connection.attach("$serverDirPath/${Filename.FILE_SQLITE}", "file_db")
-        connection.attach("$serverDirPath/${Filename.SOURCE_SQLITE}", "source_db")
-        connection.attach("$serverDirPath/${Filename.SYSTEM_SQLITE}", "system_db")
+        val connection = DriverManager.getConnection("jdbc:sqlite:$serverPath/${Filename.DATA_SQLITE}")
+        connection.attach("$serverPath/${Filename.META_SQLITE}", "meta_db")
+        connection.attach("$serverPath/${Filename.FILE_SQLITE}", "file_db")
+        connection.attach("$serverPath/${Filename.SOURCE_SQLITE}", "source_db")
+        connection.attach("$serverPath/${Filename.SYSTEM_SQLITE}", "system_db")
 
         _conn = connection
         _db = Database.connect(dialect = HedgeDialect()) {

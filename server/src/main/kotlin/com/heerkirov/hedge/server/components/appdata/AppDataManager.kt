@@ -24,9 +24,8 @@ interface AppDataManager : Component {
     val storage: StorageAccessor
 }
 
-class AppDataManagerImpl(channelPath: String) : AppDataManager, ControlledAppStatusDevice {
-    private val serverDirPath = "$channelPath/${Filename.SERVER_DIR}"
-    private val appDataPath = "$serverDirPath/${Filename.APPDATA_STORAGE_DAT}"
+class AppDataManagerImpl(private val serverPath: String) : AppDataManager, ControlledAppStatusDevice {
+    private val appDataPath = "$serverPath/${Filename.APPDATA_STORAGE_DAT}"
 
     private var _appdata: AppData? = null
     private var _storage: StorageAccessor? = null
@@ -46,7 +45,7 @@ class AppDataManagerImpl(channelPath: String) : AppDataManager, ControlledAppSta
             throw e
         }
 
-        _storage = StorageAccessor(serverDirPath, _appdata!!.storage.storagePath)
+        _storage = StorageAccessor(serverPath, _appdata!!.storage.storagePath)
     }
 
     override fun saveSetting() {
