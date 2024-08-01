@@ -95,8 +95,8 @@ export function createStateManager(appdata: AppDataDriver, theme: ThemeManager, 
             initializeEvent.emit({state: "INITIALIZING_APPDATA"})
             await appdata.init()
             await appdata.saveAppData(d => {
-                d.connectOption.mode = form.connectMode
-                d.connectOption.remote = form.connectMode === "remote" ? {host: form.remoteHost!, token: form.remoteToken!} : undefined
+                d.loginOption.mode = form.connectMode
+                d.loginOption.remote = form.connectMode === "remote" ? {host: form.remoteHost!, token: form.remoteToken!} : undefined
                 d.loginOption.password = form.password
             })
             if(form.theme !== null) await theme.setTheme(form.theme)

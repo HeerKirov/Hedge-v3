@@ -1,7 +1,6 @@
 export interface AppData {
     version: string
     loginOption: LoginOption
-    connectOption: ConnectOption
     appearanceOption: AppearanceOption
 }
 
@@ -18,9 +17,6 @@ interface LoginOption {
      * 在client启动后就尝试启动服务器，而不是等待登录通过。
      */
     fastboot: boolean
-}
-
-interface ConnectOption {
     /**
      * 此频道使用何种连接模式。
      * local: server在本地启动，由client/cli等自行启动作为后台服务。
@@ -45,9 +41,7 @@ export function defaultValue(): AppData {
         loginOption: {
             password: null,
             touchID: false,
-            fastboot: false
-        },
-        connectOption: {
+            fastboot: false,
             mode: "local"
         },
         appearanceOption: {

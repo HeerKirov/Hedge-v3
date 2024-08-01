@@ -104,6 +104,7 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
                         d.loginOption.password = value.password
                         d.loginOption.touchID = value.touchID
                         d.loginOption.fastboot = value.fastboot
+                        if(d.loginOption.mode === "remote" && value.remote) d.loginOption.remote = value.remote
                     })
                 }
             },

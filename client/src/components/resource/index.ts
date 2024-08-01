@@ -90,7 +90,7 @@ function createProductionResourceManager(appdata: AppDataDriver, options: Resour
     const version: VersionStatusSet = {}
 
     async function load() {
-        if(appdata.status() === "LOADED" && appdata.getAppData().connectOption.mode === "local") {
+        if(appdata.status() === "LOADED" && appdata.getAppData().loginOption.mode === "local") {
             try {
                 const versionLock = await readFile<VersionLock>(versionLockPath)
                 if(versionLock == null) {
@@ -112,7 +112,7 @@ function createProductionResourceManager(appdata: AppDataDriver, options: Resour
     }
 
     async function update() {
-        if(appdata.status() === "LOADED" && appdata.getAppData().connectOption.mode === "local") {
+        if(appdata.status() === "LOADED" && appdata.getAppData().loginOption.mode === "local") {
             try {
                 if(status == ResourceStatus.NOT_INIT || status == ResourceStatus.NEED_UPDATE) {
                     if(status == ResourceStatus.NOT_INIT || status == ResourceStatus.NEED_UPDATE) {

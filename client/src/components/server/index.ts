@@ -244,7 +244,7 @@ function createConnectionManager(appdata: AppDataDriver, options: ServerManagerO
         setStatus({status: "CONNECTING", info: null, error: null})
 
         if(!options.debug?.serverFromHost) {
-            console.log(`[ServerManager] Trying connect to remote server (${appdata.getAppData().connectOption.remote!.host}).`)
+            console.log(`[ServerManager] Trying connect to remote server (${appdata.getAppData().loginOption.remote!.host}).`)
         }else{
             console.log("[ServerManager] Trying connect to server. Module is working in debug mode.")
         }
@@ -252,8 +252,8 @@ function createConnectionManager(appdata: AppDataDriver, options: ServerManagerO
         let health: ServerServiceStatus | null
         while(true) {
             //根据提供的debug地址，尝试请求连接server的/app/health地址，以做连接检查
-            const host = options.debug?.serverFromHost ?? appdata.getAppData().connectOption.remote!.host
-            const token = options.debug?.serverFromHost ? "dev" : appdata.getAppData().connectOption.remote!.token
+            const host = options.debug?.serverFromHost ?? appdata.getAppData().loginOption.remote!.host
+            const token = options.debug?.serverFromHost ? "dev" : appdata.getAppData().loginOption.remote!.token
             try {
                 health = await waitingForHealth(host, token, 1000)
             }catch (e) {
@@ -276,8 +276,8 @@ function createConnectionManager(appdata: AppDataDriver, options: ServerManagerO
             _ws = null
         }
         try {
-            const host = options.debug?.serverFromHost ?? appdata.getAppData().connectOption.remote!.host
-            const token = options.debug?.serverFromHost ? "dev" : appdata.getAppData().connectOption.remote!.token
+            const host = options.debug?.serverFromHost ?? appdata.getAppData().loginOption.remote!.host
+            const token = options.debug?.serverFromHost ? "dev" : appdata.getAppData().loginOption.remote!.token
             _ws = await waitingForWsClient(host, token, { onMessage: onWsMessage, onClose: startConnectionListenerForRemote })
             const info: ServerConnectionInfo = {pid: NaN, host, token, startTime: Date.now()}
             setStatus({status: "OPEN", info, error: null, appLoadStatus: health!})
@@ -306,7 +306,7 @@ function createConnectionManager(appdata: AppDataDriver, options: ServerManagerO
             return
         }
         console.log("[ServerManager] Ws connection disconnected.")
-        if(options.debug?.serverFromHost || (appdata.status() === "LOADED" && appdata.getAppData().connectOption.mode === "remote")) {
+        if(options.debug?.serverFromHost || (appdata.status() === "LOADED" && appdata.getAppData().loginOption.mode === "remote")) {
             startConnectionListenerForRemote().finally()
         }else{
             startConnectionListener().finally()
@@ -337,7 +337,7 @@ function createConnectionManager(appdata: AppDataDriver, options: ServerManagerO
         if(value !== undefined && value !== _desired) {
             _desired = value
             if(_desired) {
-                if(options.debug?.serverFromHost || (appdata.status() === "LOADED" && appdata.getAppData().connectOption.mode === "remote")) {
+                if(options.debug?.serverFromHost || (appdata.status() === "LOADED" && appdata.getAppData().loginOption.mode === "remote")) {
                     startConnectionListenerForRemote().finally()
                 }else{
                     startConnectionListener().finally()
