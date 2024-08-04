@@ -14,10 +14,12 @@ export const DATA_FILE = {
         CHANNEL_CONFIG: "appdata/channel.json",
         CHANNEL_FOLDER: "appdata/channel",
         CHANNEL: {
+            CACHES_DIR: "caches",
             SERVER_DIR: "server",
             SERVER_PID: "PID",
             SERVER_LOG: "logs/server.log",
-            CLIENT_DATA: "client.dat"
+            CLIENT_DATA: "client.dat",
+            LEVEL_DB: "leveldb"
         }
     }
 }

@@ -33,6 +33,11 @@ function createRemoteIpcClient(): IpcClient {
                 ipcRenderer.on("/app/ws-toast", (_, arg) => emit(arg))
             })
         },
+        local: {
+            async loadFile(path) {
+                return await ipcRenderer.invoke("/local/load-file", path)
+            }
+        },
         window: {
             newWindow(url) {
                 ipcRenderer.send("/window/new-window", url)
@@ -164,3 +169,7 @@ function createRemoteIpcClient(): IpcClient {
 
 contextBridge.exposeInMainWorld("platform", getNodePlatform())
 contextBridge.exposeInMainWorld("createRemoteIpcClient", createRemoteIpcClient)
+
+// (window as any)["platform"] = getNodePlatform();
+// (window as any)["createRemoteIpcClient"] = createRemoteIpcClient
+

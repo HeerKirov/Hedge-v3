@@ -1,7 +1,8 @@
-import { app } from "electron"
+import { app, protocol, net } from "electron"
 import { WindowManager } from "./window"
 import { StateManager } from "../components/state"
 import { AppState } from "../components/state/model"
+import { LocalManager } from "../components/local"
 import { maps } from "../utils/types"
 
 export function registerProtocol(stateManager: StateManager, windowManager: WindowManager) {
@@ -27,6 +28,10 @@ export function registerProtocol(stateManager: StateManager, windowManager: Wind
             cachePool.push(originUrl)
         }
     })
+
+    protocol.registerSchemesAsPrivileged([
+        { scheme: 'archive', privileges: { stream: true } }
+    ])
 }
 
 function processUrl(originUrl: string, windowManager: WindowManager) {
@@ -41,4 +46,20 @@ function processUrl(originUrl: string, windowManager: WindowManager) {
     }else{
         console.log("open url", originUrl)
     }
+}
+
+export function registerRendererProtocol(local: LocalManager) {
+    const prefix = 'archive://'
+    protocol.handle('archive', async req => {
+        const url = req.url.substring(prefix.length)
+        const r = await local.file.loadFile(url)
+        if(r.ok) {
+            return net.fetch(r.filepath)
+        }else{
+            return new Response(r.error, {
+                status: 400,
+                headers: { 'content-type': 'text/plain' }
+            })
+        }
+    })
 }

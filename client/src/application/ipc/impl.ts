@@ -3,6 +3,7 @@ import { AppDataDriver } from "../../components/appdata"
 import { Channel } from "../../components/channel"
 import { ServerManager } from "../../components/server"
 import { StateManager } from "../../components/state"
+import { LocalManager } from "../../components/local"
 import { Platform, sleep } from "../../utils/process"
 import { createProxyEmitter } from "../../utils/emitter"
 import { ThemeManager } from "../theme"
@@ -17,7 +18,7 @@ export interface IpcRemoteOptions {
 
 type IpcClientWithoutRemote = Exclude<IpcClient, "remote">
 
-export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, server: ServerManager, state: StateManager, theme: ThemeManager, window: WindowManager, options: IpcRemoteOptions): IpcClientWithoutRemote {
+export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, server: ServerManager, state: StateManager, local: LocalManager, theme: ThemeManager, window: WindowManager, options: IpcRemoteOptions): IpcClientWithoutRemote {
     return {
         app: {
             env() {
@@ -71,6 +72,9 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
             }),
             initializeUpdatedEvent: state.initializeEvent,
             wsToastEvent: server.connection.wsToastEvent
+        },
+        local: {
+            loadFile: local.file.loadFile
         },
         window: {
             newWindow(url?: string) {

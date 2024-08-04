@@ -18,6 +18,9 @@ export interface IpcClient {
         initializeUpdatedEvent: Emitter<AppInitializeUpdatedEvent>
         wsToastEvent: Emitter<WsToastResult>
     }
+    local: {
+        loadFile(path: string): Promise<{ok: true, filepath: string} | {ok: false, error: string}>
+    }
     window: {
         newWindow(url?: string): void
         openSetting(): void

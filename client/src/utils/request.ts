@@ -16,22 +16,22 @@ export function request<T>(config: AxiosRequestConfig): Promise<Response<T>> {
                     data: res.data
                 })
             }).catch(reason => {
-            if(reason.response) {
-                const data = reason.response.data as {code: string, message: string | null, info: any}
-                resolve({
-                    ok: false,
-                    status: reason.response.status,
-                    code: data.code,
-                    message: data.message
-                })
-            }else{
-                resolve({
-                    ok: false,
-                    status: undefined,
-                    message: reason.message
-                })
-            }
-        })
+                if(reason.response) {
+                    const data = reason.response.data as {code: string, message: string | null, info: any}
+                    resolve({
+                        ok: false,
+                        status: reason.response.status,
+                        code: data.code,
+                        message: data.message
+                    })
+                }else{
+                    resolve({
+                        ok: false,
+                        status: undefined,
+                        message: reason.message
+                    })
+                }
+            })
     })
 }
 

@@ -6,6 +6,7 @@ import { AppDataDriver } from "../../components/appdata"
 import { Channel } from "../../components/channel"
 import { ServerManager } from "../../components/server"
 import { StateManager } from "../../components/state"
+import { LocalManager } from "../../components/local"
 import { ThemeManager } from "../theme"
 import { WindowManager } from "../window"
 import { MenuManager, UpdateStateOptions } from "../menu"
@@ -52,8 +53,8 @@ function ipcEventFocus<T>(channel: string, emitter: Emitter<T>) {
 /**
  * 注册全局的IPC远程事件实现。
  */
-export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: Channel, server: ServerManager, state: StateManager, theme: ThemeManager, menu: MenuManager, window: WindowManager, options: IpcRemoteOptions) {
-    const impl = createIpcClientImpl(appdata, channel, server, state, theme, window, options)
+export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: Channel, server: ServerManager, state: StateManager, local: LocalManager, theme: ThemeManager, menu: MenuManager, window: WindowManager, options: IpcRemoteOptions) {
+    const impl = createIpcClientImpl(appdata, channel, server, state, local, theme, window, options)
 
     ipcHandleSync("/app/env", impl.app.env)
     ipcHandleSync("/app/initialize", impl.app.initialize)
@@ -62,6 +63,7 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
     ipcEvent("/app/env/on-changed", impl.app.envChangedEvent)
     ipcEvent("/app/initialize/on-updated", impl.app.initializeUpdatedEvent)
     ipcEvent("/app/ws-toast", impl.app.wsToastEvent)
+    ipcHandle("/local/load-file", impl.local.loadFile)
     ipcHandleSync("/window/new-window", impl.window.newWindow)
     ipcHandleSync("/window/open-setting", impl.window.openSetting)
     ipcHandleSync("/window/open-guide", impl.window.openGuide)

@@ -5,6 +5,8 @@ import { createResourceManager } from "../components/resource"
 import { createServerManager } from "../components/server"
 import { createStateManager } from "../components/state"
 import { createStorageManager } from "../components/storage"
+import { createLocalManager } from "../components/local"
+import { createLevelManager } from "../components/level"
 import { panic } from "../exceptions"
 import { getNodePlatform } from "../utils/process"
 import { registerGlobalIpcRemoteEvents } from "./ipc"
@@ -12,7 +14,7 @@ import { createMenuManager } from "./menu"
 import { registerAppEvents } from "./event"
 import { createThemeManager } from "./theme"
 import { createWindowManager } from "./window"
-import { registerProtocol } from "./protocol"
+import { registerProtocol, registerRendererProtocol } from "./protocol"
 
 
 /**
@@ -76,6 +78,8 @@ export async function createApplication(options?: AppOptions) {
 
         const storageManager = createStorageManager(appDataDriver, {userDataPath, channel: channelManager.currentChannel()})
 
+        const levelManager = createLevelManager({userDataPath, channel: channelManager.currentChannel()})
+
         const resourceManager = createResourceManager(appDataDriver, {userDataPath, appPath, debug: options?.debug && {serverFromResource: options.debug.serverFromResource}})
 
         const serverManager = createServerManager(appDataDriver, {userDataPath, channel: channelManager.currentChannel(), debug: options?.debug && {serverFromHost: options.debug.serverFromHost, serverFromFolder: options.debug.serverFromFolder}})
@@ -88,13 +92,17 @@ export async function createApplication(options?: AppOptions) {
 
         const menuManager = createMenuManager(serverManager, windowManager, platform)
 
+        const localManager = createLocalManager(levelManager, serverManager, {userDataPath, channel: channelManager.currentChannel()})
+
         registerProtocol(stateManager, windowManager)
         registerAppEvents(windowManager, serverManager, platform)
-        registerGlobalIpcRemoteEvents(appDataDriver, channelManager, serverManager, stateManager, themeManager, menuManager, windowManager, {debugMode, userDataPath, platform})
+        registerGlobalIpcRemoteEvents(appDataDriver, channelManager, serverManager, stateManager, localManager, themeManager, menuManager, windowManager, {debugMode, userDataPath, platform})
 
         await appDataDriver.load()
-        await resourceManager.load()
+        await Promise.all([resourceManager.load(), localManager.file.load()])
         await app.whenReady()
+
+        registerRendererProtocol(localManager)
 
         menuManager.load()
         themeManager.load()

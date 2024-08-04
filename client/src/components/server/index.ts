@@ -1,7 +1,7 @@
 import path from "path"
 import { kill as killProcess } from "process"
 import { spawn } from "child_process"
-import { AxiosRequestConfig } from "axios"
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 import { AppDataDriver } from "../appdata"
 import { DATA_FILE, RESOURCE_FILE } from "../../constants/file"
 import { createEmitter, Emitter } from "../../utils/emitter"
@@ -88,10 +88,16 @@ interface ServiceManager {
     appInitialize(form: AppInitializeForm): Promise<void>
 
     /**
-     * 向服务器发送一个请求。
+     * 向服务器发送一个API请求。
      * @param config
      */
     request<T>(config: AxiosRequestConfig): Promise<Response<T>>
+
+    /**
+     * 向服务器发送一个原生axios请求。
+     * @param config
+     */
+    axiosRequest<T = any, R = AxiosResponse<T>, D = any>(config: AxiosRequestConfig<D>): Promise<R>
 
     /**
      * 加载状态发生改变的事件。
@@ -403,7 +409,13 @@ function createServiceManager(connectionManager: ConnectionManager): ServiceMana
     async function requestToServer<T>(config: AxiosRequestConfig): Promise<Response<T>> {
         const token = connectionManager.connectionInfo()!.token
         const host = connectionManager.connectionInfo()!.host
-        return request({...config, baseURL: `http://${host}`, headers: {'Authorization': `Bearer ${token}`}})
+        return request({...config, baseURL: `http://${host}`, headers: {'Authorization': `Bearer ${token}`, ...config.headers}})
+    }
+
+    function axiosRequest<T = any, R = AxiosResponse<T>, D = any>(config: AxiosRequestConfig<D>): Promise<R> {
+        const token = connectionManager.connectionInfo()!.token
+        const host = connectionManager.connectionInfo()!.host
+        return axios.request({...config, baseURL: `http://${host}`, headers: {'Authorization': `Bearer ${token}`, ...config.headers}})
     }
 
     connectionManager.statusChangedEvent.addEventListener(({ status, info, appLoadStatus  }) => {
@@ -432,7 +444,8 @@ function createServiceManager(connectionManager: ConnectionManager): ServiceMana
         status,
         statusChangedEvent,
         appInitialize,
-        request: requestToServer
+        request: requestToServer,
+        axiosRequest
     }
 }
 
