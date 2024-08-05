@@ -20,6 +20,7 @@ export interface IpcClient {
     }
     local: {
         loadFile(path: string): Promise<{ok: true, filepath: string} | {ok: false, error: string}>
+        downloadExportFile(form: { imageIds?: number[], bookId?: number, location: string, zip?: string }): Promise<{ok: true} | {ok: false, error: string}>
     }
     window: {
         newWindow(url?: string): void

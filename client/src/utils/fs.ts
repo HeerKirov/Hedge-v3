@@ -1,6 +1,6 @@
 import { Dirent, Mode } from "fs"
 import nodeFsPromises from "fs/promises"
-import compressing from "compressing"
+import compressing, { sourceType } from "compressing"
 
 export function writeFile<T>(file: string, data: T): Promise<void> {
     return nodeFsPromises.writeFile(file, JSON.stringify(data), {encoding: "utf-8"})
@@ -45,7 +45,7 @@ export async function rmdir(path: string): Promise<void> {
     await nodeFsPromises.rm(path, {recursive: true, force: true})
 }
 
-export function unzip(src: string, dest: string): Promise<void> {
+export function unzip(src: sourceType, dest: string): Promise<void> {
     return compressing.zip.uncompress(src, dest)
 }
 

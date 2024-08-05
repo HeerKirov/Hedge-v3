@@ -64,6 +64,7 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
     ipcEvent("/app/initialize/on-updated", impl.app.initializeUpdatedEvent)
     ipcEvent("/app/ws-toast", impl.app.wsToastEvent)
     ipcHandle("/local/load-file", impl.local.loadFile)
+    ipcHandle("/local/download-export-file", impl.local.downloadExportFile)
     ipcHandleSync("/window/new-window", impl.window.newWindow)
     ipcHandleSync("/window/open-setting", impl.window.openSetting)
     ipcHandleSync("/window/open-guide", impl.window.openGuide)

@@ -74,7 +74,8 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
             wsToastEvent: server.connection.wsToastEvent
         },
         local: {
-            loadFile: local.file.loadFile
+            loadFile: local.file.loadFile,
+            downloadExportFile: local.file.downloadExportFile,
         },
         window: {
             newWindow(url?: string) {
