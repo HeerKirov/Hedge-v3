@@ -98,7 +98,7 @@ class ImportService(private val appdata: AppDataManager,
      * @throws StorageNotAccessibleError 存储路径不可访问
      */
     fun upload(form: UploadForm): Int {
-        return importManager.upload(form.content, form.filename, form.extension)
+        return importManager.upload(form.content, form.filename, form.extension, form.modificationTime, form.creationTime)
     }
 
     /**

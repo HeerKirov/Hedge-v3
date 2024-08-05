@@ -12,7 +12,9 @@ import com.heerkirov.hedge.server.functions.service.ImportService
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
+import io.javalin.http.formParamAsClass
 import io.javalin.http.pathParamAsClass
+import java.time.Instant
 
 class ImportRoutes(private val importService: ImportService) : Routes {
     override fun handle(javalin: JavalinConfig) {
@@ -43,7 +45,11 @@ class ImportRoutes(private val importService: ImportService) : Routes {
     }
 
     private fun upload(ctx: Context) {
-        val form = ctx.uploadedFile("file")?.let { UploadForm(it.content(), it.filename(), it.extension().trimStart('.')) } ?: throw be(ParamRequired("file"))
+        val modificationTime = ctx.formParamAsClass<Instant>("modificationTime").allowNullable().get()
+        val creationTime = ctx.formParamAsClass<Instant>("creationTime").allowNullable().get()
+        val form = ctx.uploadedFile("file")
+            ?.let { UploadForm(it.content(), it.filename(), it.extension().trimStart('.'), modificationTime, creationTime) }
+            ?: throw be(ParamRequired("file"))
         val id = importService.upload(form)
         ctx.status(201).json(IdRes(id))
     }

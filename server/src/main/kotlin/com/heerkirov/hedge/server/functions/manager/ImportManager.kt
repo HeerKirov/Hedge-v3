@@ -73,7 +73,7 @@ class ImportManager(private val appdata: AppDataManager,
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      * @throws StorageNotAccessibleError 存储路径不可访问
      */
-    fun upload(content: InputStream, filename: String, extension: String): Int = defer {
+    fun upload(content: InputStream, filename: String, extension: String, modificationTime: Instant?, creationTime: Instant?): Int = defer {
         val file = Fs.temp(extension).applyDefer {
             deleteIfExists()
         }.also { file ->
@@ -98,7 +98,7 @@ class ImportManager(private val appdata: AppDataManager,
         }
 
         data.db.transaction {
-            newImportRecord(fileId, sourceFilename = filename)
+            newImportRecord(fileId, sourceFilename = filename, fileCreateTime = creationTime, fileUpdateTime = modificationTime)
         }
     }
 

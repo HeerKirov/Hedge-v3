@@ -1,14 +1,14 @@
 package com.heerkirov.hedge.server.components.server.routes
 
 import com.heerkirov.hedge.server.components.server.Routes
-import com.heerkirov.hedge.server.dto.form.ExecuteExportForm
-import com.heerkirov.hedge.server.dto.form.LoadLocalFileForm
+import com.heerkirov.hedge.server.dto.form.ExportForm
 import com.heerkirov.hedge.server.exceptions.ParamTypeError
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.service.ExportUtilService
 import com.heerkirov.hedge.server.library.form.bodyAsForm
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.config.JavalinConfig
+import io.javalin.http.ContentType
 import io.javalin.http.Context
 import io.javalin.http.bodyAsClass
 
@@ -17,8 +17,7 @@ class UtilExportRoutes(private val exportUtilService: ExportUtilService) : Route
         javalin.router.apiBuilder {
             path("api/utils/export") {
                 post("illust-situation", ::getExpandedIllusts)
-                post("execute-export", ::executeExport)
-                post("load-local-file", ::loadLocalFile)
+                post("download", ::download)
             }
         }
     }
@@ -30,13 +29,9 @@ class UtilExportRoutes(private val exportUtilService: ExportUtilService) : Route
         ctx.json(exportUtilService.getExpandedIllusts(images))
     }
 
-    private fun executeExport(ctx: Context) {
-        val form = ctx.bodyAsForm<ExecuteExportForm>()
-        ctx.json(exportUtilService.executeExport(form))
-    }
-
-    private fun loadLocalFile(ctx: Context) {
-        val form = ctx.bodyAsForm<LoadLocalFileForm>()
-        ctx.json(exportUtilService.loadLocalFile(form.filepath))
+    private fun download(ctx: Context) {
+        val form = ctx.bodyAsForm<ExportForm>()
+        ctx.contentType(ContentType.APPLICATION_ZIP)
+        exportUtilService.downloadExportFile(form, ctx.outputStream())
     }
 }
