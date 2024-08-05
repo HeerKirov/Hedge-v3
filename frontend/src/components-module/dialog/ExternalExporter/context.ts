@@ -1,4 +1,5 @@
 import { computed, onMounted, Ref, ref, shallowRef, watch } from "vue"
+import { remoteIpcClient } from "@/functions/ipc-client"
 import { IllustType, SimpleIllust } from "@/functions/http-client/api/illust"
 import { useFetchHelper, useFetchReactive, usePaginationDataView, useQueryListview } from "@/functions/fetch"
 import { FilePath } from "@/functions/http-client/api/all"
@@ -45,7 +46,6 @@ export function useExternalExporter(push: Push): ExternalExporter {
 export function useExporterData(data: ExternalExporterProps, close: () => void) {
     const toast = useToast()
     const message = useMessageBox()
-    const fetchExport = useFetchHelper(client => client.exportUtil.executeExport)
 
     const preview = useExporterPreview(data)
     
@@ -85,27 +85,21 @@ export function useExporterData(data: ExternalExporterProps, close: () => void) 
             return
         }
         executing.value = true
-        const res = await fetchExport({
-            location: externalLocation.value.trim(), 
-            packageName: preview.packagable.value && packageMode.value ? packageName.value.trim() : undefined,
+        const res = await remoteIpcClient.local.downloadExportFile({
+            location: externalLocation.value.trim(),
+            zip: preview.packagable.value && packageMode.value ? packageName.value.trim() : undefined,
             imageIds: preview.type === "ILLUST" ? preview.images.value.map(i => i.id) : undefined,
             bookId: preview.type === "BOOK" ? preview.book.value!.id : undefined
-        }, e => {
-            if(e.code === "LOCATION_NOT_ACCESSIBLE") {
-                message.showOkMessage("prompt", "导出位置不可用。", `选定的导出位置不可用，请选择可用的文件路径。`)
-            }else{
-                return e
-            }
         })
         executing.value = false
 
         if(res !== undefined) {
-            if(res.errors.length > 0) {
-                toast.toast(`${res.errors.length}个文件导出错误`, "danger", res.errors.map(e => `${e.exportFilename}: ${e.message}`).join("\n"))
-            }else{
-                toast.toast("文件已导出", "success", `${res.success}个文件已成功导出。`)
+            if(res.ok) {
+                toast.toast("文件已导出", "success", `文件已成功导出到${externalLocation.value.trim()}.`)
                 localStorage.value = {externalLocation: externalLocation.value, packageMode: packageMode.value}
                 close()
+            } else {
+                toast.toast(`文件导出错误`, "danger", res.error)
             }
         }
     }

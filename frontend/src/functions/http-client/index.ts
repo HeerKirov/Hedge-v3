@@ -22,7 +22,6 @@ import { createUtilQueryEndpoint, UtilQueryEndpoint } from "./api/util-query"
 import { createUtilSearchEndpoint, UtilSearchEndpoint } from "./api/util-picker"
 import { createUtilExportEndpoint, UtilExportEndpoint } from "./api/util-export"
 import { createUtilFileEndpoint, UtilFileEndpoint } from "./api/util-file"
-import { createAssets, Assets } from "./api/assets"
 import { mapListResult, ListResult } from "./api/all"
 
 export { mapListResult, mapResponse, flatResponse }
@@ -52,7 +51,6 @@ export interface HttpClient {
     searchUtil: UtilSearchEndpoint
     exportUtil: UtilExportEndpoint
     fileUtil: UtilFileEndpoint
-    assets: Assets
 }
 
 export function createHttpClient(config: HttpInstanceConfig): HttpClient {
@@ -81,7 +79,6 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
         queryUtil: createUtilQueryEndpoint(http),
         searchUtil: createUtilSearchEndpoint(http),
         exportUtil: createUtilExportEndpoint(http),
-        fileUtil: createUtilFileEndpoint(http),
-        assets: createAssets(http)
+        fileUtil: createUtilFileEndpoint(http)
     }
 }

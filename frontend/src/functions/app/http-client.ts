@@ -1,6 +1,8 @@
-import { installation } from "@/utils/reactivity"
+import { remoteIpcClient } from "@/functions/ipc-client"
 import { createHttpClient, HttpClientConfig, ResponseConnectionError, ResponseError } from "@/functions/http-client"
 import { AllException } from "@/functions/http-client/exceptions"
+import { installation } from "@/utils/reactivity"
+import emptyFile from "@/assets/empty-file.jpg"
 
 export const [installHttpClient, useHttpClient] = installation(createHttpClient)
 
@@ -26,10 +28,8 @@ function useErrorHandler(throwError: (title: string, message: string) => void) {
                 throwError("Connection Error", "未持有服务访问token，因此连接被拒绝")
             }else if(exception.code === "TOKEN_WRONG") {
                 throwError("Connection Error", "持有的token错误，因此连接被拒绝")
-            }else if(exception.code === "ONLY_FOR_CLIENT") {
-                throwError("Forbidden", "调用了仅提供给client mode的功能接口")
-            }else if(exception.code === "REMOTE_DISABLED") {
-                throwError("Forbidden", "尝试使用client mode的token执行远程连接，因此连接被拒绝")
+            }else if(exception.code === "ONLY_FOR_LOCAL") {
+                throwError("Forbidden", "远程模式不可调用的接口")
             }else if(exception.code === "INTERNAL_ERROR") {
                 throwError("Internal Error", exception.message)
             }else{
@@ -46,14 +46,26 @@ function useErrorHandler(throwError: (title: string, message: string) => void) {
 }
 
 export function useAssets() {
-    const httpClient = useHttpClient()
+    const assetsUrl = (filepath: string | null | undefined) => {
+        if(filepath) {
+            return `archive://${filepath}`
+        }else{
+            return emptyFile
+        }
+    }
 
     const assetsLocal = async (filepath: string | null | undefined) => {
         if(filepath) {
-            const res = await httpClient.exportUtil.loadLocalFile({filepath})
-            if(res.ok) {
-                return res.data.localFilePath
-            }else{
+            try {
+                const r = await remoteIpcClient.local.loadFile(filepath)
+                if(r.ok) {
+                    return r.filepath.substring("file://".length)
+                }else{
+                    console.error(`assetsLocal failed for file '${filepath}'.`, r.error)
+                    return ""
+                }
+            }catch(e){
+                console.error(`assetsLocal failed for file '${filepath}'.`, e)
                 return ""
             }
         }else{
@@ -61,5 +73,5 @@ export function useAssets() {
         }
     }
 
-    return {assetsUrl: httpClient.assets.assetsUrl, assetsLocal}
+    return {assetsUrl, assetsLocal}
 }
