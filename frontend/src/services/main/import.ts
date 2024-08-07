@@ -1,4 +1,5 @@
 import { Ref, computed, ref } from "vue"
+import { remoteIpcClient } from "@/functions/ipc-client"
 import { flatResponse } from "@/functions/http-client"
 import { ImportRecord, ImportQueryFilter } from "@/functions/http-client/api/import"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
@@ -35,7 +36,6 @@ export const [installImportContext, useImportContext] = installation(function ()
 
 function useImportService() {
     const toast = useToast()
-    const fetch = useFetchHelper(client => client.import.import)
 
     const progress = ref({value: 0, max: 0})
     const progressing = computed(() => progress.value.max > 0)
@@ -44,15 +44,18 @@ function useImportService() {
         progress.value.max += files.length
 
         for (const filepath of files) {
-            await fetch({filepath}, e => {
-                if(e.code === "FILE_NOT_FOUND") {
+            const r = await remoteIpcClient.local.importFile(filepath)
+            if(!r.ok) {
+                if(r.code === "FILE_NOT_FOUND") {
                     toast.toast("错误", "danger", `文件${filepath}不存在。`)
-                }else if(e.code === "ILLEGAL_FILE_EXTENSION") {
+                }else if(r.code === "ILLEGAL_FILE_EXTENSION") {
                     toast.toast("错误", "danger", `文件${filepath}的类型不适用。`)
+                }else if(r.code === "LOCATION_NOT_ACCESSIBLE") {
+                    toast.toast("错误", "danger", `存储位置目前不可用。`)
                 }else{
-                    toast.handleException(e)
+                    toast.handleError("错误", r.message ?? "")
                 }
-            })
+            }
             progress.value.value += 1
         }
 

@@ -98,8 +98,12 @@ export function useExporterData(data: ExternalExporterProps, close: () => void) 
                 toast.toast("文件已导出", "success", `文件已成功导出到${externalLocation.value.trim()}.`)
                 localStorage.value = {externalLocation: externalLocation.value, packageMode: packageMode.value}
                 close()
-            } else {
-                toast.toast(`文件导出错误`, "danger", res.error)
+            }else if(res.code === "FILE_NOT_FOUND") {
+                toast.toast(`文件导出错误`, "danger", "所选择的文件不存在。")
+            }else if(res.code === "LOCATION_NOT_ACCESSIBLE") {
+                toast.toast(`文件导出错误`, "danger", "选择的导出位置不可用。")
+            }else{
+                toast.toast(`文件导出错误`, "danger", res.message ?? "")
             }
         }
     }

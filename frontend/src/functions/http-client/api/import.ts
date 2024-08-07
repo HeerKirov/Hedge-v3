@@ -9,7 +9,7 @@ import { ImagePropsCloneForm, Tagme } from "./illust"
 import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
 import { RelatedSimpleTag } from "./tag"
-import { OrderTimeType } from "@/functions/http-client/api/setting";
+import { OrderTimeType } from "./setting"
 
 export function createImportEndpoint(http: HttpInstance): ImportEndpoint {
     return {

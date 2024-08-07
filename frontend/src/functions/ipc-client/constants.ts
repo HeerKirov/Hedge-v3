@@ -17,8 +17,9 @@ export interface IpcClient {
         wsToastEvent: Emitter<WsToastResult>
     }
     local: {
-        loadFile(path: string): Promise<{ok: true, filepath: string} | {ok: false, error: string}>
-        downloadExportFile(form: { imageIds?: number[], bookId?: number, location: string, zip?: string }): Promise<{ok: true} | {ok: false, error: string}>
+        importFile(filepath: string): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE" | "ILLEGAL_FILE_EXTENSION">>
+        loadFile(path: string): Promise<IResponse<string, "FILE_NOT_FOUND">>
+        downloadExportFile(form: { imageIds?: number[], bookId?: number, location: string, zip?: string }): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE">>
     }
     window: {
         newWindow(url?: string): void
@@ -68,6 +69,26 @@ export interface IpcClient {
             startDragFile(thumbnail: string, filepath: string | string[]): void
         }
     }
+}
+
+export type IResponse<T, C = string, I = any> = ResponseOk<T> | ResponseError<C, I> | ResponseConnectionError
+
+interface ResponseOk<T> {
+    ok: true
+    data: T
+}
+
+interface ResponseError<C, I> {
+    ok: false
+    code: C
+    message?: string | null
+    info?: I
+}
+
+interface ResponseConnectionError {
+    ok: false
+    code: undefined
+    message: string
 }
 
 export interface AppEnvironment {

@@ -59,9 +59,9 @@ export function useAssets() {
             try {
                 const r = await remoteIpcClient.local.loadFile(filepath)
                 if(r.ok) {
-                    return r.filepath.substring("file://".length)
+                    return r.data.substring("file://".length)
                 }else{
-                    console.error(`assetsLocal failed for file '${filepath}'.`, r.error)
+                    console.error(`assetsLocal failed for file '${filepath}'.`, r.message)
                     return ""
                 }
             }catch(e){
