@@ -54,10 +54,15 @@ export function registerRendererProtocol(local: LocalManager) {
         const url = req.url.substring(prefix.length)
         const r = await local.file.loadFile(url)
         if(r.ok) {
-            return net.fetch(r.filepath)
+            return net.fetch(r.data)
+        }else if(r.code === "FILE_NOT_FOUND") {
+            return new Response("File not found.", {
+                status: 404,
+                headers: { 'content-type': 'text/plain' }
+            })
         }else{
-            return new Response(r.error, {
-                status: 400,
+            return new Response(r.message, {
+                status: 500,
                 headers: { 'content-type': 'text/plain' }
             })
         }

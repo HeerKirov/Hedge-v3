@@ -34,6 +34,9 @@ function createRemoteIpcClient(): IpcClient {
             })
         },
         local: {
+            async importFile(path) {
+                return await ipcRenderer.invoke("/local/import-file", path)
+            },
             async loadFile(path) {
                 return await ipcRenderer.invoke("/local/load-file", path)
             },

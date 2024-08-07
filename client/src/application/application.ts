@@ -92,7 +92,7 @@ export async function createApplication(options?: AppOptions) {
 
         const menuManager = createMenuManager(serverManager, windowManager, platform)
 
-        const localManager = createLocalManager(levelManager, serverManager, {userDataPath, channel: channelManager.currentChannel()})
+        const localManager = createLocalManager(appDataDriver, levelManager, serverManager, {userDataPath, channel: channelManager.currentChannel()})
 
         registerProtocol(stateManager, windowManager)
         registerAppEvents(windowManager, serverManager, platform)

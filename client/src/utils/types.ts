@@ -31,3 +31,29 @@ export const arrays = {
         return 0
     }
 }
+
+/**
+ * 适用于各种IPC通用返回值的返回类型。它包括了几种常见情况。
+ * ok: 成功，可以获取返回结果。
+ * code !== undefined: 失败，可以获取一个预料之内的已编码的错误。
+ * else: 失败，且只能获取一个预料之外的未编码的错误信息。
+ */
+export type IResponse<T, C = string, I = any> = ResponseOk<T> | ResponseError<C, I> | ResponseConnectionError
+
+interface ResponseOk<T> {
+    ok: true
+    data: T
+}
+
+interface ResponseError<C, I> {
+    ok: false
+    code: C
+    message?: string | null
+    info?: I
+}
+
+interface ResponseConnectionError {
+    ok: false
+    code: undefined
+    message: string
+}

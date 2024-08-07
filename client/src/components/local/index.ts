@@ -1,3 +1,4 @@
+import { AppDataDriver } from "../appdata"
 import { ServerManager } from "../server"
 import { LevelManager } from "../level"
 import { createFileManager, FileManager } from "./file"
@@ -17,8 +18,8 @@ export interface LocalOptions {
     channel: string
 }
 
-export function createLocalManager(level: LevelManager, server: ServerManager, options: LocalOptions): LocalManager {
+export function createLocalManager(appdata: AppDataDriver, level: LevelManager, server: ServerManager, options: LocalOptions): LocalManager {
     return {
-        file: createFileManager(level, server, options)
+        file: createFileManager(appdata, level, server, options)
     }
 }

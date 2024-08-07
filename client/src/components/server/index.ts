@@ -1,11 +1,11 @@
 import path from "path"
+import Ws from "ws"
 import { kill as killProcess } from "process"
 import { spawn } from "child_process"
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 import { AppDataDriver } from "../appdata"
 import { DATA_FILE, RESOURCE_FILE } from "../../constants/file"
 import { createEmitter, Emitter } from "../../utils/emitter"
-import { request, Ws, Response } from "../../utils/request"
 import { sleep } from "../../utils/process"
 import { readFile } from "../../utils/fs"
 import {
@@ -91,7 +91,7 @@ interface ServiceManager {
      * 向服务器发送一个API请求。
      * @param config
      */
-    request<T>(config: AxiosRequestConfig): Promise<Response<T>>
+    request<T>(config: AxiosRequestConfig): Promise<JsonResponse<T>>
 
     /**
      * 向服务器发送一个原生axios请求。
@@ -397,7 +397,7 @@ function createServiceManager(connectionManager: ConnectionManager): ServiceMana
     async function appInitialize(data: AppInitializeForm): Promise<void> {
         if(_status === "NOT_INITIALIZED" && connectionManager.status() === "OPEN" && connectionManager.connectionInfo() !== null) {
             const info = connectionManager.connectionInfo()!
-            const res = await request({url: `http://${info.host}/app/initialize`, method: 'POST', headers: {'Authorization': `Bearer ${info.token}`}, data})
+            const res = await jsonRequest({url: `http://${info.host}/app/initialize`, method: 'POST', headers: {'Authorization': `Bearer ${info.token}`}, data})
             if(!res.ok) {
                 throw new Error(`App initialize failed. ${res.message}`)
             }
@@ -406,10 +406,10 @@ function createServiceManager(connectionManager: ConnectionManager): ServiceMana
         }
     }
 
-    async function requestToServer<T>(config: AxiosRequestConfig): Promise<Response<T>> {
+    async function request<T>(config: AxiosRequestConfig): Promise<JsonResponse<T>> {
         const token = connectionManager.connectionInfo()!.token
         const host = connectionManager.connectionInfo()!.host
-        return request({...config, baseURL: `http://${host}`, headers: {'Authorization': `Bearer ${token}`, ...config.headers}})
+        return jsonRequest({...config, baseURL: `http://${host}`, headers: {'Authorization': `Bearer ${token}`, ...config.headers}})
     }
 
     function axiosRequest<T = any, R = AxiosResponse<T>, D = any>(config: AxiosRequestConfig<D>): Promise<R> {
@@ -444,7 +444,7 @@ function createServiceManager(connectionManager: ConnectionManager): ServiceMana
         status,
         statusChangedEvent,
         appInitialize,
-        request: requestToServer,
+        request,
         axiosRequest
     }
 }
@@ -476,7 +476,7 @@ async function waitingForPIDFile(filepath: string, timeout: number = 10000): Pro
  * @throws Error 如果接口返回API错误，则构造一个Error异常并抛出。
  */
 async function checkForHealth(host: string, token: string): Promise<ServerServiceStatus | null> {
-    const res = await request({url: `http://${host}/app/health`, method: 'GET', headers: {'Authorization': `Bearer ${token}`}})
+    const res = await jsonRequest({url: `http://${host}/app/health`, method: 'GET', headers: {'Authorization': `Bearer ${token}`}})
     if(res.ok) {
         return (<{status: ServerServiceStatus}>res.data).status
     }else if(res.status) {
@@ -536,6 +536,60 @@ function startServerProcess(serverDir: string, debugMode: boolean, serverBinPath
 
     console.log(`[ServerManager] Start server process: ${serverBinPath} ${args.join(" ")}`)
 }
+
+/**
+ * 发送一个http请求。包装过axios方法，处理其异常。
+ */
+function jsonRequest<T>(config: AxiosRequestConfig): Promise<JsonResponse<T>> {
+    return new Promise(resolve => {
+        axios.request(config)
+            .then(res => {
+                resolve({
+                    ok: true,
+                    status: res.status,
+                    data: res.data
+                })
+            }).catch(reason => {
+            if(reason.response) {
+                const data = reason.response.data as {code: string, message: string | null, info: any}
+                resolve({
+                    ok: false,
+                    status: reason.response.status,
+                    code: data.code,
+                    message: data.message
+                })
+            }else{
+                resolve({
+                    ok: false,
+                    status: undefined,
+                    message: reason.message
+                })
+            }
+        })
+    })
+}
+
+export type JsonResponse<T> = ResponseOk<T> | ResponseError | ResponseConnectionError
+
+interface ResponseOk<T> {
+    ok: true
+    status: number
+    data: T
+}
+
+interface ResponseError {
+    ok: false
+    status: number
+    code: string
+    message: string | null
+}
+
+interface ResponseConnectionError {
+    ok: false
+    status: undefined
+    message: string
+}
+
 
 interface WsClientEvent {
     onMessage?(data: string): void
