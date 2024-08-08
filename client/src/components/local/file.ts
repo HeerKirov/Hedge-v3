@@ -138,7 +138,7 @@ export function createFileManager(appdata: AppDataDriver, level: LevelManager, s
 
             subLevel().put(filepath, {lastAccess: Date.now()}).catch(e => console.error("[FileManager] Cache file record failed.", e))
 
-            return {ok: true, data: `file://${localCachePath}`}
+            return {ok: true, data: localCachePath}
         },
         async downloadExportFile(form) {
             const formData = {imageIds: form.imageIds, bookId: form.bookId}

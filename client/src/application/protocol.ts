@@ -1,3 +1,5 @@
+import fs from "fs"
+import path from "path"
 import { app, protocol, net } from "electron"
 import { WindowManager } from "./window"
 import { StateManager } from "../components/state"
@@ -54,7 +56,36 @@ export function registerRendererProtocol(local: LocalManager) {
         const url = req.url.substring(prefix.length)
         const r = await local.file.loadFile(url)
         if(r.ok) {
-            return net.fetch(r.data)
+            //ISSUE: https://github.com/electron/electron/issues/38749
+            //Electron的handle API存在bug，无法正确对视频进行seek，因此进行手动处理
+            const extname = path.extname(r.data).substring(1).toLowerCase()
+            if(VIDEO_EXTNAME.includes(extname)) {
+                const headers = new Headers()
+                headers.set("Accept-Ranges", "bytes")
+                headers.set("Content-Type", `video/${extname}`)
+
+                const stats = await fs.promises.stat(r.data)
+                const rangeText = req.headers.get("range")
+
+                let status = 200
+                let stream: fs.ReadStream
+                if (rangeText) {
+                    const ranges = parseRangeRequests(rangeText, stats.size)
+
+                    const [start, end] = ranges[0]
+                    headers.set("Content-Length", `${end - start + 1}`)
+                    headers.set("Content-Range", `bytes ${start}-${end}/${stats.size}`)
+                    status = 206
+                    stream = fs.createReadStream(r.data, { start, end })
+                } else {
+                    headers.set("Content-Length", `${stats.size}`)
+                    stream = fs.createReadStream(r.data)
+                }
+
+                return new Response(stream as any, {headers, status})
+            }else{
+                return net.fetch(`file://${r.data}`)
+            }
         }else if(r.code === "FILE_NOT_FOUND") {
             return new Response("File not found.", {
                 status: 404,
@@ -67,4 +98,41 @@ export function registerRendererProtocol(local: LocalManager) {
             })
         }
     })
+}
+
+const VIDEO_EXTNAME = ["mp4", "webm", "ogv"]
+
+function parseRangeRequests(text: string, size: number) {
+    const token = text.split("=")
+    if (token.length !== 2 || token[0] !== "bytes") return []
+
+    return token[1]
+        .split(",")
+        .map((v) => parseRange(v, size))
+        .filter(([start, end]) => !isNaN(start) && !isNaN(end) && start <= end)
+}
+
+function parseRange(text: string, size: number) {
+    const token = text.split("-")
+    if (token.length !== 2) return [NaN, NaN]
+
+    const startText = token[0].trim()
+    const endText = token[1].trim()
+
+    if (startText === "") {
+        if (endText === "") {
+            return [NaN, NaN]
+        } else {
+            const start = size - Number(endText)
+            return [start < 0 ? 0 : start, size - 1]
+        }
+    } else {
+        if (endText === "") {
+            const start = Number(startText)
+            return [start, size - 1]
+        } else {
+            const end = Number(endText)
+            return [Number(startText), end >= size ? size - 1 : end]
+        }
+    }
 }
