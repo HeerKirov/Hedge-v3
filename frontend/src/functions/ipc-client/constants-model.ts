@@ -71,3 +71,15 @@ export type TabControlEvent = {type: "CLONE_TAB" | "PREV_TAB" | "NEXT_TAB" | "CL
     | {type: "NEW_TAB", routeName?: string, path?: string, params?: string, initializer?: string}
 
 export interface UpdateStateOptions { enabled: boolean }
+
+export interface FileWatcherStatus {
+    isOpen: boolean
+    statisticCount: number
+    errors: {path: string, error: PathWatcherErrorReason}[]
+}
+
+export type PathWatcherErrorReason
+    = "NO_USEFUL_PATH"
+    | "PATH_NOT_EXIST"
+    | "PATH_IS_NOT_DIRECTORY"
+    | "PATH_WATCH_FAILED"

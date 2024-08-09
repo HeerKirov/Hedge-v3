@@ -1,4 +1,4 @@
-import { Platform, NativeTheme, ServerStaticInfo, TabControlEvent, UpdateStateOptions } from "./constants-model"
+import { Platform, NativeTheme, ServerStaticInfo, TabControlEvent, UpdateStateOptions, FileWatcherStatus } from "./constants-model"
 import { ServerServiceStatus, ServerConnectionStatus, ServerConnectionInfo, WsToastResult } from "./constants-model"
 import { AppInitializeForm, AppState, InitializeState, LoginForm } from "./constants-model"
 import { Emitter } from "@/utils/emitter"
@@ -20,6 +20,8 @@ export interface IpcClient {
         importFile(filepath: string): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE" | "ILLEGAL_FILE_EXTENSION">>
         loadFile(path: string): Promise<IResponse<string, "FILE_NOT_FOUND">>
         downloadExportFile(form: { imageIds?: number[], bookId?: number, location: string, zip?: string }): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE">>
+        fileWatcherStatus(isOpen?: boolean): Promise<FileWatcherStatus>
+        fileWatcherChangedEvent: Emitter<FileWatcherStatus>
     }
     window: {
         newWindow(url?: string): void
@@ -35,6 +37,10 @@ export interface IpcClient {
         auth: {
             get(): Promise<AuthSetting>
             set(value: AuthSetting): Promise<void>
+        }
+        storage: {
+            get(): Promise<StorageSetting>
+            set(value: StorageSetting): Promise<void>
         }
         channel: {
             list(): Promise<string[]>
@@ -135,6 +141,14 @@ export interface AuthSetting {
 
 export interface AppearanceSetting {
     theme: NativeTheme
+}
+
+export interface StorageSetting {
+    cacheCleanIntervalDay: number
+    fileWatchPaths: string[]
+    autoFileWatch: boolean
+    fileWatchMoveMode: boolean
+    fileWatchInitialize: boolean
 }
 
 export interface PopupMenuOptions {

@@ -1,15 +1,15 @@
-import { Ref, computed, ref } from "vue"
-import { remoteIpcClient } from "@/functions/ipc-client"
+import { Ref, computed, ref, onMounted, onBeforeUnmount } from "vue"
+import { remoteIpcClient, FileWatcherStatus } from "@/functions/ipc-client"
 import { flatResponse } from "@/functions/http-client"
 import { ImportRecord, ImportQueryFilter } from "@/functions/http-client/api/import"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
 import { SourceDataPath } from "@/functions/http-client/api/all"
-import { QueryListview, useFetchEndpoint, useFetchHelper, useFetchReactive, usePostFetchHelper } from "@/functions/fetch"
+import { QueryListview, useFetchEndpoint, useFetchHelper, usePostFetchHelper } from "@/functions/fetch"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { ImportImageViewController, useImportImageViewController } from "@/services/base/view-controller"
-import { useSettingImport, useSettingSite } from "@/services/setting"
+import { useSettingSite } from "@/services/setting"
 import { installEmbedPreviewService, usePreviewService } from "@/components-module/preview"
 import { useBrowserTabs, useDocumentTitle, useTabRoute } from "@/modules/browser"
 import { useToast } from "@/modules/toast"
@@ -69,18 +69,25 @@ function useImportService() {
 }
 
 function useImportFileWatcher() {
-    const fetch = usePostFetchHelper(client => client.import.watcher.update)
+    const state = ref<FileWatcherStatus>()
+    const paths = ref<string[]>([])
 
-    const { data: state } = useFetchReactive({
-        get: client => client.import.watcher.get,
-        eventFilter: ["app/path-watcher/status-changed"]
+    onMounted(async () => {
+        state.value = await remoteIpcClient.local.fileWatcherStatus()
+        paths.value = (await remoteIpcClient.setting.storage.get()).fileWatchPaths
+        remoteIpcClient.local.fileWatcherChangedEvent.addEventListener(onUpdated)
     })
 
-    const { data: importSettingData } = useSettingImport()
+    onBeforeUnmount(() => remoteIpcClient.local.fileWatcherChangedEvent.removeEventListener(onUpdated))
 
-    const paths = computed(() => importSettingData.value?.watchPaths ?? [])
+    const onUpdated = (newValue: FileWatcherStatus) => {
+        state.value = newValue
+    }
 
-    const setState = async (opened: boolean) => await fetch({isOpen: opened})
+    const setState = async (opened: boolean) => {
+        await remoteIpcClient.local.fileWatcherStatus(opened)
+        paths.value = (await remoteIpcClient.setting.storage.get()).fileWatchPaths
+    }
 
     return {state, paths, setState}
 }

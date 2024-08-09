@@ -3,11 +3,13 @@ import { Separator } from "@/components/universal"
 import { CheckBox, NumberInput, Select } from "@/components/form"
 import { MetaType } from "@/functions/http-client/api/all"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
-import { useSettingImport } from "@/services/setting"
+import { useSettingClientStorage, useSettingImport } from "@/services/setting"
 import DBImportSourceRule from "./DBImportSourceRule.vue"
 import DBImportDirectoriesEditor from "./DBImportDirectoriesEditor.vue"
 
 const { data: settingImport } = useSettingImport()
+
+const { data: clientStorage } = useSettingClientStorage()
 
 const updateReflectMetaTagTypes = (metaType: MetaType, value: boolean) => {
     if(value && !settingImport.value!.reflectMetaTagType.includes(metaType)) settingImport.value!.reflectMetaTagType = [...settingImport.value!.reflectMetaTagType, metaType]
@@ -69,18 +71,22 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
                 <p class="mt-1 is-line-height-small">PNG格式转换阈值：<NumberInput size="small" width="half" :disabled="!settingImport.autoConvertFormat" v-model:value="settingImport.autoConvertPNGThresholdSizeMB" :min="0"/>MiB</p>
             </div>
         </div>
+    </template>
+    <template v-if="!!clientStorage">
         <Separator direction="horizontal" :spacing="2"/>
         <div>
             <label class="label">监听自动导入</label>
-            <DBImportDirectoriesEditor v-model:value="settingImport.watchPaths"/>
+            <DBImportDirectoriesEditor v-model:value="clientStorage.fileWatchPaths"/>
             <p class="secondary-text">此功能可以监听数个本地目录，向这些目录写入文件时，自动导入这些文件。</p>
-            <p class="mt-1"><CheckBox v-model:value="settingImport.autoWatchPath">自动开启</CheckBox></p>
+            <p class="mt-1"><CheckBox v-model:value="clientStorage.autoFileWatch">自动开启</CheckBox></p>
             <p class="secondary-text">程序启动时，自动将此功能设置为开启状态。</p>
-            <p class="mt-1"><CheckBox v-model:value="settingImport.watchPathInitialize">首先扫描已存在文件</CheckBox></p>
+            <p class="mt-1"><CheckBox v-model:value="clientStorage.fileWatchInitialize">首先扫描已存在文件</CheckBox></p>
             <p class="secondary-text">此功能开启时，将首先扫描目录中已存在的文件。</p>
-            <p class="mt-1"><CheckBox v-model:value="settingImport.watchPathMoveFile">移除已被导入的文件</CheckBox></p>
+            <p class="mt-1"><CheckBox v-model:value="clientStorage.fileWatchMoveMode">移除已被导入的文件</CheckBox></p>
             <p class="secondary-text">导入文件时，将文件从原位置移除。</p>
         </div>
+    </template>
+    <template v-if="!!settingImport">
         <Separator direction="horizontal" :spacing="2"/>
         <label class="label">来源数据解析规则</label>
         <DBImportSourceRule class="mt-1" v-model:rules="settingImport.sourceAnalyseRules"/>

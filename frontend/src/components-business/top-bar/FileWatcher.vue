@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { Button, Icon } from "@/components/universal"
 import { ElementPopupCallout } from "@/components/interaction"
-import { PathWatcherError } from "@/functions/http-client/api/import"
 import { openLocalFile } from "@/modules/others"
+import { FileWatcherStatus } from "@/functions/ipc-client"
 
 defineProps<{
     paths: string[]
     statisticCount: number
-    errors: PathWatcherError[]
+    errors: FileWatcherStatus["errors"]
 }>()
 
 defineEmits<{
@@ -18,15 +18,14 @@ const REASON_TEXT = {
     "NO_USEFUL_PATH": "没有可用的监听路径。请设置路径。",
     "PATH_NOT_EXIST": "目录不存在。",
     "PATH_IS_NOT_DIRECTORY": "路径并非可访问的目录。",
-    "PATH_WATCH_FAILED": "发生错误，目录监听失败。",
-    "PATH_NO_LONGER_AVAILABLE": "目录发生了变更。此目录已不可访问。"
+    "PATH_WATCH_FAILED": "发生错误，目录监听失败。"
 }
 
 </script>
 
 <template>
     <ElementPopupCallout :popup-block-color="errors.length ? 'danger' : 'success'">
-        <template #default="{ visible, click }">
+        <template #default="{ click }">
             <Button class="is-line-height-std" :type="errors.length ? 'danger' : 'success'" icon="ear-listen" @click="click">
                 <template v-if="errors.length">
                     <Icon class="mx-1" icon="exclamation-triangle"/>{{errors.length}}
@@ -50,7 +49,7 @@ const REASON_TEXT = {
                 <div v-else :class="$style.content">
                     <p v-for="error in errors" class="mt-1 has-text-danger no-wrap">
                         <Icon class="mr-1" icon="exclamation-triangle"/>
-                        {{error.reason === "NO_USEFUL_PATH" ? REASON_TEXT[error.reason] : `[${error.path}]: ${REASON_TEXT[error.reason]}`}}
+                        {{error.error === "NO_USEFUL_PATH" ? REASON_TEXT[error.error] : `[${error.path}]: ${REASON_TEXT[error.error]}`}}
                     </p>
                 </div>
                 <div class="mt-4">
