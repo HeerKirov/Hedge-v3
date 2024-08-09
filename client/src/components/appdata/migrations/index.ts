@@ -8,6 +8,15 @@ const migrations: {[version: string]: Migrate<MigrateContext>} = {
         if(!data.loginOption.mode) {
             data.loginOption.mode = "local"
         }
+        if(!data.storageOption) {
+            data.storageOption = {
+                cacheCleanIntervalDay: 7,
+                fileWatchPaths: [],
+                autoFileWatch: false,
+                fileWatchMoveMode: true,
+                fileWatchInitialize: true
+            }
+        }
     }
 }
 

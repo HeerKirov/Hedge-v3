@@ -1,6 +1,8 @@
 import { app, BrowserWindow, Menu, shell } from "electron"
 import { WindowManager } from "./window"
-import { ServerManager } from "../components/server"
+import { FileWatcher } from "../components/local/file-watcher"
+import { StateManager } from "../components/state"
+import { LocalManager } from "../components/local"
 import { Platform } from "../utils/process"
 import { createEmitter, Emitter, SendEmitter } from "../utils/emitter"
 
@@ -19,7 +21,7 @@ export type TabControlEvent = {type: "CLONE_TAB" | "PREV_TAB" | "NEXT_TAB" | "CL
 
 type GeneralEvent = {type: "TOGGLE_AUTO_IMPORT", value: boolean}
 
-export function createMenuManager(server: ServerManager, windowManager: WindowManager, platform: Platform): MenuManager {
+export function createMenuManager(state: StateManager, local: LocalManager, windowManager: WindowManager, platform: Platform): MenuManager {
     const isDarwin = platform === "darwin"
 
     const tabControlEvent = createEmitter<TabControlEvent>()
@@ -30,7 +32,7 @@ export function createMenuManager(server: ServerManager, windowManager: WindowMa
 
     const tabs = registerTabModule(windowManager, tabControlEvent, menu)
 
-    registerImportModule(server, menu, generalEvent)
+    registerImportModule(state, local.fileWatcher, menu, generalEvent)
 
     return {
         load() {
@@ -185,39 +187,21 @@ function registerTabModule(windowManager: WindowManager, tabControlEvent: Emitte
     return {updateState}
 }
 
-function registerImportModule(server: ServerManager, menu: Menu, generalEvent: SendEmitter<GeneralEvent>) {
+function registerImportModule(state: StateManager, fileWatcher: FileWatcher, menu: Menu, generalEvent: SendEmitter<GeneralEvent>) {
     let isPathWatcherOpen: boolean = false
 
     generalEvent.addEventListener(async e => {
-        if(e.type === "TOGGLE_AUTO_IMPORT" && e.value !== isPathWatcherOpen && server.service.status() === "READY") {
-            const res = await server.service.request({url: "/api/imports/watcher", method: "POST", data: {isOpen: e.value}})
-            if(res.ok) {
-                menu.getMenuItemById("AUTO_IMPORT")!.checked = isPathWatcherOpen = e.value
-                Menu.setApplicationMenu(menu)
-            }
+        if(e.type === "TOGGLE_AUTO_IMPORT" && e.value !== isPathWatcherOpen && state.state() === "READY") {
+            fileWatcher.setOpen(e.value)
+            menu.getMenuItemById("AUTO_IMPORT")!.checked = isPathWatcherOpen = fileWatcher.status().isOpen
+            Menu.setApplicationMenu(menu)
         }
     })
 
-    server.service.statusChangedEvent.addEventListener(async e => {
-        if(e.status === "READY") {
-            const res = await server.service.request({url: "/api/imports/watcher", method: "GET"})
-            if(res.ok) {
-                isPathWatcherOpen = (res.data as {isOpen: boolean}).isOpen
-                if(isPathWatcherOpen) {
-                    menu.getMenuItemById("AUTO_IMPORT")!.checked = true
-                    Menu.setApplicationMenu(menu)
-                }
-            }
-        }
-    })
-
-    server.connection.wsToastEvent.addEventListener(e => {
-        if(e.type === "EVENT" && e.data.eventType === "app/path-watcher/status-changed") {
-            const newIsPathWatcherOpen: boolean = e.data.events[0].event.isOpen
-            if(newIsPathWatcherOpen !== isPathWatcherOpen) {
-                menu.getMenuItemById("AUTO_IMPORT")!.checked = isPathWatcherOpen = newIsPathWatcherOpen
-                Menu.setApplicationMenu(menu)
-            }
+    fileWatcher.fileWatcherChangedEvent.addEventListener(status => {
+        if(isPathWatcherOpen !== status.isOpen) {
+            menu.getMenuItemById("AUTO_IMPORT")!.checked = isPathWatcherOpen = status.isOpen
+            Menu.setApplicationMenu(menu)
         }
     })
 }

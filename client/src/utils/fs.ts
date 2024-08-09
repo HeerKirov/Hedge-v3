@@ -1,4 +1,4 @@
-import { Dirent, Mode } from "fs"
+import { Dirent, Mode, Stats } from "fs"
 import nodeFsPromises from "fs/promises"
 import compressing, { sourceType } from "compressing"
 
@@ -22,8 +22,24 @@ export async function existsFile(path: string): Promise<boolean> {
     try {
         await nodeFsPromises.access(path)
         return true
-    }catch (_) {
-        return false
+    }catch (e) {
+        if(e instanceof Error && e.message.includes("ENOENT")) {
+            return false
+        }else{
+            throw e
+        }
+    }
+}
+
+export async function statOrNull(path: string): Promise<Stats | null> {
+    try {
+        return await nodeFsPromises.stat(path)
+    }catch (e) {
+        if(e instanceof Error && e.message.includes("ENOENT")) {
+            return null
+        }else{
+            throw e
+        }
     }
 }
 

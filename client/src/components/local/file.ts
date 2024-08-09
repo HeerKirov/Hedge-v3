@@ -6,7 +6,7 @@ import { AppDataDriver } from "../appdata"
 import { ServerManager } from "../server"
 import { LevelManager } from "../level"
 import { DATA_FILE } from "../../constants/file"
-import { existsFile, mkdir, unzip } from "../../utils/fs"
+import { existsFile, mkdir, statOrNull, unzip } from "../../utils/fs"
 import { lazy } from "../../utils/primitive"
 import { IResponse } from "../../utils/types"
 import { LocalOptions } from "."
@@ -20,9 +20,9 @@ export interface FileManager {
     load(): Promise<void>
     /**
      * 将本地指定位置的文件上传到服务器。
-     * @param filepath 本地文件路径
+     * @param form 本地文件路径
      */
-    importFile(filepath: string): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE" | "ILLEGAL_FILE_EXTENSION">>
+    importFile(form: {filepath: string, moveFile?: boolean}): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE" | "ILLEGAL_FILE_EXTENSION">>
     /**
      * 通过客户端的缓存机制访问一项来自server的文件资源。该访问首先将文件资源下载到本地缓存目录，随后提供缓存文件的本地路径。
      * @param filepath 文件资源地址，以type开头
@@ -101,9 +101,9 @@ export function createFileManager(appdata: AppDataDriver, level: LevelManager, s
         }
     }
 
-    const importFile = async (filepath: string): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE" | "ILLEGAL_FILE_EXTENSION">> => {
-        if(!await existsFile(filepath)) return {ok: false, code: "FILE_NOT_FOUND"}
-        const stat = await fs.promises.stat(filepath)
+    const importFile = async ({ filepath, moveFile }: {filepath: string, moveFile?: boolean}): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE" | "ILLEGAL_FILE_EXTENSION">> => {
+        const stat = await statOrNull(filepath)
+        if(stat === null) return {ok: false, code: "FILE_NOT_FOUND"}
 
         const data = new FormData()
         data.append("file", fs.createReadStream(filepath))
@@ -112,6 +112,7 @@ export function createFileManager(appdata: AppDataDriver, level: LevelManager, s
 
         const response = await server.service.request({url: "/api/imports/upload", method: "POST", data})
         if(response.ok) {
+            if(moveFile) await fs.promises.rm(filepath, {force: true})
             return {ok: true, data: undefined}
         }else if(response.status) {
             return {ok: false, code: response.code as any, message: response.message}

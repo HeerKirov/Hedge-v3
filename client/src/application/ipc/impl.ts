@@ -74,9 +74,14 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
             wsToastEvent: server.connection.wsToastEvent
         },
         local: {
-            importFile: local.file.importFile,
+            importFile: f => local.file.importFile({filepath: f}),
             loadFile: local.file.loadFile,
             downloadExportFile: local.file.downloadExportFile,
+            fileWatcherStatus: async isOpen => {
+                if(isOpen !== undefined) local.fileWatcher.setOpen(isOpen)
+                return local.fileWatcher.status()
+            },
+            fileWatcherChangedEvent: local.fileWatcher.fileWatcherChangedEvent
         },
         window: {
             newWindow(url?: string) {
@@ -111,6 +116,20 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
                         d.loginOption.touchID = value.touchID
                         d.loginOption.fastboot = value.fastboot
                         if(d.loginOption.mode === "remote" && value.remote) d.loginOption.remote = value.remote
+                    })
+                }
+            },
+            storage: {
+                async get() {
+                    return appdata.getAppData().storageOption
+                },
+                async set(value) {
+                    await appdata.saveAppData(d => {
+                        d.storageOption.cacheCleanIntervalDay = value.cacheCleanIntervalDay
+                        d.storageOption.autoFileWatch = value.autoFileWatch
+                        d.storageOption.fileWatchInitialize = value.fileWatchInitialize
+                        d.storageOption.fileWatchMoveMode = value.fileWatchMoveMode
+                        d.storageOption.fileWatchPaths = value.fileWatchPaths
                     })
                 }
             },

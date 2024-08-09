@@ -2,6 +2,7 @@ export interface AppData {
     version: string
     loginOption: LoginOption
     appearanceOption: AppearanceOption
+    storageOption: StorageOption
 }
 
 interface LoginOption {
@@ -33,6 +34,29 @@ interface AppearanceOption {
     theme: NativeTheme
 }
 
+interface StorageOption {
+    /**
+     * 自动清理缓存间隔的天数。
+     */
+    cacheCleanIntervalDay: number
+    /**
+     * 监听目录功能所监听的所有目录。
+     */
+    fileWatchPaths: string[]
+    /**
+     * 程序启动时，自动开启监听目录功能。
+     */
+    autoFileWatch: boolean
+    /**
+     * 监听功能将移动/删除所监听到的文件。
+     */
+    fileWatchMoveMode: boolean
+    /**
+     * 监听功能开启时，首先扫描一遍目录内已有的文件。
+     */
+    fileWatchInitialize: boolean
+}
+
 export type NativeTheme = "system" | "light" | "dark"
 
 export function defaultValue(): AppData {
@@ -46,6 +70,13 @@ export function defaultValue(): AppData {
         },
         appearanceOption: {
             theme: "system"
+        },
+        storageOption: {
+            cacheCleanIntervalDay: 7,
+            fileWatchPaths: [],
+            autoFileWatch: false,
+            fileWatchMoveMode: true,
+            fileWatchInitialize: true
         }
     }
 }

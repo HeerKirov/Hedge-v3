@@ -42,7 +42,13 @@ function createRemoteIpcClient(): IpcClient {
             },
             async downloadExportFile(form) {
                 return await ipcRenderer.invoke("/local/download-export-file", form)
-            }
+            },
+            async fileWatcherStatus(isOpen) {
+                return await ipcRenderer.invoke("/local/file-watcher/status", isOpen)
+            },
+            fileWatcherChangedEvent: createProxyEmitter(emit => {
+                ipcRenderer.on("/local/file-watcher/changed", (_, arg) => emit(arg))
+            })
         },
         window: {
             newWindow(url) {
@@ -73,6 +79,14 @@ function createRemoteIpcClient(): IpcClient {
                 },
                 async set(value) {
                     await ipcRenderer.invoke("/setting/auth/set", value)
+                }
+            },
+            storage: {
+                async get() {
+                    return await ipcRenderer.invoke("/setting/storage")
+                },
+                async set(value) {
+                    await ipcRenderer.invoke("/setting/storage/set", value)
                 }
             },
             channel: {

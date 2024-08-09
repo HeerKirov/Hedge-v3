@@ -1,10 +1,13 @@
 import { AppDataDriver } from "../appdata"
 import { ServerManager } from "../server"
 import { LevelManager } from "../level"
+import { StateManager } from "../state"
 import { createFileManager, FileManager } from "./file"
+import { createFileWatcher, FileWatcher } from "./file-watcher"
 
 export interface LocalManager {
     file: FileManager
+    fileWatcher: FileWatcher
 }
 
 export interface LocalOptions {
@@ -18,8 +21,8 @@ export interface LocalOptions {
     channel: string
 }
 
-export function createLocalManager(appdata: AppDataDriver, level: LevelManager, server: ServerManager, options: LocalOptions): LocalManager {
-    return {
-        file: createFileManager(appdata, level, server, options)
-    }
+export function createLocalManager(appdata: AppDataDriver, level: LevelManager, server: ServerManager, state: StateManager, options: LocalOptions): LocalManager {
+    const file = createFileManager(appdata, level, server, options)
+    const fileWatcher = createFileWatcher(appdata, state, file)
+    return {file, fileWatcher}
 }
