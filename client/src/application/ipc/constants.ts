@@ -2,6 +2,7 @@ import { Platform } from "../../utils/process"
 import { ServerServiceStatus, ServerConnectionStatus, ServerConnectionInfo, WsToastResult, ServerStaticInfo } from "../../components/server/model"
 import { AppInitializeForm, AppState, InitializeState, LoginForm } from "../../components/state/model"
 import { NativeTheme } from "../../components/appdata/model"
+import { CacheStatus } from "../../components/local/file"
 import { FileWatcherStatus } from "../../components/local/file-watcher"
 import { Emitter } from "../../utils/emitter"
 import { IResponse } from "../../utils/types"
@@ -24,6 +25,8 @@ export interface IpcClient {
         importFile(filepath: string): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE" | "ILLEGAL_FILE_EXTENSION">>
         loadFile(path: string): Promise<IResponse<string, "FILE_NOT_FOUND">>
         downloadExportFile(form: { imageIds?: number[], bookId?: number, location: string, zip?: string }): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE">>
+        cacheStatus(): Promise<CacheStatus>
+        cleanAllCacheFiles(): Promise<void>
         fileWatcherStatus(isOpen?: boolean): Promise<FileWatcherStatus>
         fileWatcherChangedEvent: Emitter<FileWatcherStatus>
     }

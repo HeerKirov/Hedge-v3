@@ -1,10 +1,10 @@
 import { systemPreferences } from "electron"
-import { AppDataDriver } from "../appdata"
+import { AppDataDriver, AppDataStatus } from "../appdata"
 import { ResourceManager, ResourceStatus } from "../resource"
 import { ServerManager } from "../server"
 import { panic } from "../../exceptions"
 import { createEmitter, Emitter } from "../../utils/emitter"
-import { AppState, AppInitializeForm, LoginForm, InitializeState } from "./model"
+import { AppInitializeForm, AppState, InitializeState, LoginForm } from "./model"
 import { ThemeManager } from "../../application/theme"
 
 /**
@@ -145,7 +145,7 @@ export function createStateManager(appdata: AppDataDriver, theme: ThemeManager, 
     }
 
     function load() {
-        if(appdata.status() === "LOADED") {
+        if(appdata.status() === AppDataStatus.LOADED) {
             setState("LOADING")
             asyncLoad().catch(e => panic(e))
         }

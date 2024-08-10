@@ -1,5 +1,5 @@
 import { systemPreferences } from "electron"
-import { AppDataDriver } from "../../components/appdata"
+import { AppDataDriver, AppDataStatus } from "../../components/appdata"
 import { Channel } from "../../components/channel"
 import { ServerManager } from "../../components/server"
 import { StateManager } from "../../components/state"
@@ -27,7 +27,7 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
                     debugMode: options.debugMode,
                     userDataPath: options.userDataPath,
                     channel: channel.currentChannel(),
-                    canPromptTouchID: appdata.status() === "LOADED" && appdata.getAppData().loginOption.touchID && systemPreferences.canPromptTouchID(),
+                    canPromptTouchID: appdata.status() === AppDataStatus.LOADED && appdata.getAppData().loginOption.touchID && systemPreferences.canPromptTouchID(),
                     app: {
                         state: state.state()
                     },
@@ -77,6 +77,8 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
             importFile: f => local.file.importFile({filepath: f}),
             loadFile: local.file.loadFile,
             downloadExportFile: local.file.downloadExportFile,
+            cacheStatus: local.file.cacheStatus,
+            cleanAllCacheFiles: local.file.cleanAllCacheFiles,
             fileWatcherStatus: async isOpen => {
                 if(isOpen !== undefined) local.fileWatcher.setOpen(isOpen)
                 return local.fileWatcher.status()

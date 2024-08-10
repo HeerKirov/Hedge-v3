@@ -66,6 +66,8 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
     ipcHandle("/local/import-file", impl.local.importFile)
     ipcHandle("/local/load-file", impl.local.loadFile)
     ipcHandle("/local/download-export-file", impl.local.downloadExportFile)
+    ipcHandle("/local/cache/status", impl.local.cacheStatus)
+    ipcHandle("/local/cache/clean", impl.local.cleanAllCacheFiles)
     ipcHandle("/local/file-watcher/status", impl.local.fileWatcherStatus)
     ipcEvent("/local/file-watcher/changed", impl.local.fileWatcherChangedEvent)
     ipcHandleSync("/window/new-window", impl.window.newWindow)

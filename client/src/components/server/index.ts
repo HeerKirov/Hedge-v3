@@ -3,18 +3,18 @@ import Ws from "ws"
 import { kill as killProcess } from "process"
 import { spawn } from "child_process"
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
-import { AppDataDriver } from "../appdata"
+import { AppDataDriver, AppDataStatus } from "../appdata"
 import { DATA_FILE, RESOURCE_FILE } from "../../constants/file"
 import { createEmitter, Emitter } from "../../utils/emitter"
 import { sleep } from "../../utils/process"
 import { readFile } from "../../utils/fs"
 import {
     AppInitializeForm,
-    ServerConnectionStatus,
-    ServerServiceStatus,
-    ServerPIDFile,
-    ServerConnectionInfo,
     ServerConnectionError,
+    ServerConnectionInfo,
+    ServerConnectionStatus,
+    ServerPIDFile,
+    ServerServiceStatus,
     ServerStaticInfo,
     WsToastResult
 } from "./model"
@@ -310,7 +310,7 @@ function createConnectionManager(appdata: AppDataDriver, options: ServerManagerO
             return
         }
         console.log("[ServerManager] Ws connection disconnected.")
-        if(options.debug?.serverFromHost || (appdata.status() === "LOADED" && appdata.getAppData().loginOption.mode === "remote")) {
+        if(options.debug?.serverFromHost || (appdata.status() === AppDataStatus.LOADED && appdata.getAppData().loginOption.mode === "remote")) {
             startConnectionListenerForRemote().finally()
         }else{
             startConnectionListener().finally()
@@ -341,7 +341,7 @@ function createConnectionManager(appdata: AppDataDriver, options: ServerManagerO
         if(value !== undefined && value !== _desired) {
             _desired = value
             if(_desired) {
-                if(options.debug?.serverFromHost || (appdata.status() === "LOADED" && appdata.getAppData().loginOption.mode === "remote")) {
+                if(options.debug?.serverFromHost || (appdata.status() === AppDataStatus.LOADED && appdata.getAppData().loginOption.mode === "remote")) {
                     startConnectionListenerForRemote().finally()
                 }else{
                     startConnectionListener().finally()

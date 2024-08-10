@@ -43,6 +43,12 @@ function createRemoteIpcClient(): IpcClient {
             async downloadExportFile(form) {
                 return await ipcRenderer.invoke("/local/download-export-file", form)
             },
+            async cacheStatus() {
+                return await ipcRenderer.invoke("/local/cache/status")
+            },
+            async cleanAllCacheFiles() {
+                return await ipcRenderer.invoke("/local/cache/clean")
+            },
             async fileWatcherStatus(isOpen) {
                 return await ipcRenderer.invoke("/local/file-watcher/status", isOpen)
             },

@@ -88,7 +88,7 @@ export function createFileWatcher(appdata: AppDataDriver, state: StateManager, f
         if(appdata.getAppData().storageOption.fileWatchInitialize) {
             for(const fileWatchPath of appdata.getAppData().storageOption.fileWatchPaths) {
                 const files = await readdir(fileWatchPath)
-                files.filter(f => f.isFile()).map(f => f.name).forEach(filename => importFile(path.join(fileWatchPath, filename)))
+                files.filter(f => f.isFile()).map(f => f.name).filter(filename => !filename.startsWith(".")).forEach(filename => importFile(path.join(fileWatchPath, filename)))
             }
         }
     }

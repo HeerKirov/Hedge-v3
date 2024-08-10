@@ -2,7 +2,7 @@ import path from "path"
 import fs from "fs"
 import FormData from "form-data"
 import { AxiosRequestConfig } from "axios"
-import { AppDataDriver } from "../appdata"
+import { AppDataDriver, AppDataStatus } from "../appdata"
 import { ServerManager } from "../server"
 import { LevelManager } from "../level"
 import { DATA_FILE } from "../../constants/file"
@@ -10,8 +10,6 @@ import { existsFile, mkdir, statOrNull, unzip } from "../../utils/fs"
 import { lazy } from "../../utils/primitive"
 import { IResponse } from "../../utils/types"
 import { LocalOptions } from "."
-
-const CACHE_EXPIRED_INTERVAL = 1000 * 5
 
 export interface FileManager {
     /**
@@ -38,33 +36,63 @@ export interface FileManager {
      * 清理所有的本地缓存。
      */
     cleanAllCacheFiles(): Promise<void>
+    /**
+     * 查看与缓存相关的讯息。
+     */
+    cacheStatus(): Promise<CacheStatus>
+}
+
+export interface CacheStatus {
+    cacheDir: string
+    cacheSize: number
 }
 
 export function createFileManager(appdata: AppDataDriver, level: LevelManager, server: ServerManager, options: LocalOptions): FileManager {
-    const cachesDir = path.resolve(options.userDataPath, DATA_FILE.APPDATA.CHANNEL_FOLDER, options.channel, DATA_FILE.APPDATA.CHANNEL.CACHES_DIR)
+    const cacheDir = path.resolve(options.userDataPath, DATA_FILE.APPDATA.CHANNEL_FOLDER, options.channel, DATA_FILE.APPDATA.CHANNEL.CACHES_DIR)
 
     const subLevel = lazy(() => level.getLevel().sublevel<string, {lastAccess: number}>("ARCHIVE_FILE_CACHE", { valueEncoding: "json" }))
 
-    const cleanExpiredFiles = async () => {
-        const now = Date.now()
-
-        const toBeDeleted: string[] = []
-        for await(const [k, v] of subLevel().iterator()) {
-            if(now - v.lastAccess >= CACHE_EXPIRED_INTERVAL) {
-                toBeDeleted.push(k)
+    const getCacheFileSize = async () => {
+        if(!await existsFile(cacheDir)) return 0
+        let sum = 0
+        const queue: string[] = [cacheDir]
+        while(queue.length > 0) {
+            const dir = queue.shift()!
+            for(const f of await fs.promises.readdir(dir)) {
+                const p = path.join(dir, f)
+                const stat = await statOrNull(p)
+                if(stat?.isDirectory()) {
+                    queue.push(p)
+                }else if(stat?.isFile()) {
+                    sum += stat.size
+                }
             }
         }
-        if(toBeDeleted.length > 0) {
-            for(const filepath of toBeDeleted) {
-                await fs.promises.rm(path.join(cachesDir, filepath), { force: true })
+        return sum
+    }
+
+    const cleanExpiredFiles = async () => {
+        if(appdata.status() === AppDataStatus.LOADED) {
+            const now = Date.now()
+
+            const toBeDeleted: string[] = []
+            for await(const [k, v] of subLevel().iterator()) {
+                if(now - v.lastAccess >= appdata.getAppData().storageOption.cacheCleanIntervalDay * 1000 * 60 * 60 * 24) {
+                    toBeDeleted.push(k)
+                }
             }
-            await level.getLevel().batch(toBeDeleted.map(k => ({type: "del", sublevel: subLevel(), key: k})))
-            console.log(`[FileManager] ${toBeDeleted.length} expired cache files are cleaned.`)
+            if(toBeDeleted.length > 0) {
+                for(const filepath of toBeDeleted) {
+                    await fs.promises.rm(path.join(cacheDir, filepath), { force: true })
+                }
+                await level.getLevel().batch(toBeDeleted.map(k => ({type: "del", sublevel: subLevel(), key: k})))
+                console.log(`[FileManager] ${toBeDeleted.length} expired cache files are cleaned.`)
+            }
         }
     }
 
     const cleanAllCacheFiles = async () => {
-        await fs.promises.rm(cachesDir, { recursive: true, force: true })
+        await fs.promises.rm(cacheDir, { recursive: true, force: true })
         await subLevel().clear()
     }
 
@@ -126,9 +154,10 @@ export function createFileManager(appdata: AppDataDriver, level: LevelManager, s
             cleanExpiredFiles().catch(e => console.error("[FileManager] cleanExpiredFiles throws an Error.", e))
         },
         async loadFile(filepath) {
-            const localCachePath = path.join(cachesDir, filepath)
+            const localCachePath = path.join(cacheDir, filepath)
             try {
-                if(!await existsFile(localCachePath)) {
+                const stat = await statOrNull(localCachePath)
+                if(stat === null || stat.size <= 0) {
                     await mkdir(path.dirname(localCachePath))
                     const r = await downloadFile(path.join("archives", filepath), localCachePath)
                     if(!r.ok) return r
@@ -160,7 +189,10 @@ export function createFileManager(appdata: AppDataDriver, level: LevelManager, s
             }
             return {ok: true, data: undefined}
         },
+        async cacheStatus(): Promise<CacheStatus> {
+            return {cacheDir, cacheSize: await getCacheFileSize()}
+        },
         importFile,
-        cleanAllCacheFiles
+        cleanAllCacheFiles,
     }
 }
