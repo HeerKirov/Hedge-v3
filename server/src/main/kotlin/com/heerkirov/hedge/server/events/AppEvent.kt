@@ -1,7 +1,6 @@
 package com.heerkirov.hedge.server.events
 
 import com.heerkirov.hedge.server.components.backend.BackgroundTaskType
-import com.heerkirov.hedge.server.components.backend.PathWatcherError
 import com.heerkirov.hedge.server.enums.AppLoadStatus
 
 /**
@@ -33,11 +32,6 @@ data class StagingPostChanged(val added: List<Int>, val moved: List<Int>, val de
  * 速查项的状态发生变化。
  */
 data class QuickFindChanged(val id: Int) : BaseBusEventImpl("app/quick-find/changed"), AppEvent
-
-/**
- * PathWatcher状态发生变化。
- */
-data class PathWatcherStatusChanged(val isOpen: Boolean, val statisticCount: Int, val errors: List<PathWatcherError>) : BaseBusEventImpl("app/path-watcher/status-changed"), AppEvent
 
 /**
  * 某类后台任务的量值发生变化。

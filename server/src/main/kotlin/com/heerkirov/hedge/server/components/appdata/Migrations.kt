@@ -22,8 +22,6 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
                 storagePath = null,
                 autoCleanTrashes = true,
                 autoCleanTrashesIntervalDay = 30,
-                autoCleanCaches = true,
-                autoCleanCachesIntervalDay = 30,
                 blockMaxSizeMB = 1024 * 4,
                 blockMaxCount = 1500
             ),
@@ -56,11 +54,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
                 autoConvertPNGThresholdSizeMB = 10,
                 setTagmeOfTag = true,
                 setOrderTimeBy = ImportOption.TimeType.UPDATE_TIME,
-                sourceAnalyseRules = emptyList(),
-                watchPaths = emptyList(),
-                autoWatchPath = false,
-                watchPathMoveFile = true,
-                watchPathInitialize = true
+                sourceAnalyseRules = emptyList()
             ),
             findSimilar = FindSimilarOption(
                 autoFindSimilar = false,

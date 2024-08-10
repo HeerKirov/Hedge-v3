@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.components.appdata
 
+import com.heerkirov.hedge.server.application.ApplicationOptions
 import com.heerkirov.hedge.server.components.status.ControlledAppStatusDevice
 import com.heerkirov.hedge.server.constants.Filename
 import com.heerkirov.hedge.server.library.framework.Component
@@ -24,8 +25,8 @@ interface AppDataManager : Component {
     val storage: StorageAccessor
 }
 
-class AppDataManagerImpl(private val serverPath: String) : AppDataManager, ControlledAppStatusDevice {
-    private val appDataPath = "$serverPath/${Filename.APPDATA_STORAGE_DAT}"
+class AppDataManagerImpl(private val options: ApplicationOptions) : AppDataManager, ControlledAppStatusDevice {
+    private val appDataPath = "${options.serverDir}/${Filename.APPDATA_STORAGE_DAT}"
 
     private var _appdata: AppData? = null
     private var _storage: StorageAccessor? = null
@@ -45,14 +46,17 @@ class AppDataManagerImpl(private val serverPath: String) : AppDataManager, Contr
             throw e
         }
 
-        _storage = StorageAccessor(serverPath, _appdata!!.storage.storagePath)
+        _storage = StorageAccessor(options, _appdata!!.storage.storagePath)
     }
 
     override fun saveSetting() {
         if(_appdata == null) { throw RuntimeException("Appdata is not initialized.") }
         Fs.writeFile(appDataPath, _appdata!!)
 
-        _storage!!.setStoragePath(_appdata!!.storage.storagePath)
+        if(!options.remoteMode) {
+            //storage path仅在local mode下可更改
+            _storage!!.setStoragePath(_appdata!!.storage.storagePath)
+        }
     }
 }
 

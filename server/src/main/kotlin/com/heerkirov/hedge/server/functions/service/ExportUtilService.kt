@@ -65,7 +65,7 @@ class ExportUtilService(private val data: DataRepository, private val archive: F
 
         ZipOutputStream(outputStream).use { zos ->
             for((id, block, fileId, ext) in files) {
-                archive.readInputStream(ArchiveType.ORIGINAL, block, "$fileId.$ext")?.use { fis ->
+                archive.readFile(ArchiveType.ORIGINAL, block, "$fileId.$ext")?.inputStream?.use { fis ->
                     zos.putNextEntry(ZipEntry("$id.$ext"))
                     var len: Int
                     val temp = ByteArray(4096)

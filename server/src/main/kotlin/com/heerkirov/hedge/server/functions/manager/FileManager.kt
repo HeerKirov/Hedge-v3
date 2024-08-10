@@ -1,50 +1,40 @@
 package com.heerkirov.hedge.server.functions.manager
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
+import com.heerkirov.hedge.server.components.backend.writeTo
 import com.heerkirov.hedge.server.components.bus.EventBus
-import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.components.database.DataRepository
-import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.constants.Filename
-import com.heerkirov.hedge.server.dao.FileCacheRecords
 import com.heerkirov.hedge.server.dao.FileFingerprints
 import com.heerkirov.hedge.server.dao.FileRecords
+import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.enums.FileStatus
 import com.heerkirov.hedge.server.enums.FingerprintStatus
 import com.heerkirov.hedge.server.events.FileBlockArchived
 import com.heerkirov.hedge.server.exceptions.IllegalFileExtensionError
 import com.heerkirov.hedge.server.exceptions.StorageNotAccessibleError
 import com.heerkirov.hedge.server.exceptions.be
-import com.heerkirov.hedge.server.library.framework.DaemonThreadComponent
-import com.heerkirov.hedge.server.model.FileCacheRecord
+import com.heerkirov.hedge.server.library.framework.Component
 import com.heerkirov.hedge.server.utils.*
 import com.heerkirov.hedge.server.utils.ktorm.first
 import org.ktorm.dsl.*
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
-import org.ktorm.support.sqlite.bulkInsertOrUpdate
 import java.io.File
 import java.io.InputStream
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Instant
-import java.time.temporal.ChronoUnit
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
 
-class FileManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus): DaemonThreadComponent {
+class FileManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus): Component {
     private val extensions = arrayOf("jpeg", "jpg", "png", "gif", "mp4", "webm")
 
     private val nextBlock = NextBlock()
-
-    private val cacheRecord = CacheRecord()
-
-    override fun thread() = cacheRecord.daemonThread()
 
     /**
      * 将指定的File载入到数据库中，同时创建一条新记录。
@@ -164,9 +154,15 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
 
         if(file.extension == extension) return
 
-        val src = load(ArchiveType.ORIGINAL, file.block, "${file.id}.${file.extension}")?.toFile() ?: return
+        val src = readFile(ArchiveType.ORIGINAL, file.block, "${file.id}.${file.extension}") ?: return
+        val temp = Fs.temp(file.extension)
 
-        val target = Graphics.convertFormat(src, extension)
+        val target = try {
+            temp.outputStream().use { src.inputStream.writeTo(it) }
+            Graphics.convertFormat(temp, extension)
+        } finally {
+            temp.deleteIfExists()
+        }
 
         if(target != null) {
             val size = target.length()
@@ -179,10 +175,6 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
                 target.deleteIfExists()
                 throw e
             }
-
-            //删除旧文件的缓存
-            val cachePath = Path(appdata.storage.cacheDir, ArchiveType.ORIGINAL.toString(), file.block, "${file.id}.${file.extension}")
-            cachePath.deleteIfExists()
 
             //如果旧文件仍位于dir目录，则将其也删除
             val oldPath = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), file.block, "${file.id}.${file.extension}")
@@ -198,61 +190,22 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
     }
 
     /**
-     * 从缓存读取一个文件，如果该文件不在缓存，则将其加载到缓存。
-     */
-    fun load(archiveType: ArchiveType, block: String, filename: String): Path? {
-        if(!appdata.storage.accessible) {
-            return null
-        }
-        val cachePath = Path(appdata.storage.cacheDir, archiveType.toString(), block, filename)
-        val cacheFile = cachePath.toFile()
-        if(cacheFile.exists()) {
-            cacheRecord.addAccessRecord(archiveType, block, filename)
-            return cachePath
-        }
-
-        val directPath = Path(appdata.storage.storageDir, archiveType.toString(), block, filename)
-        val directFile = directPath.toFile()
-        if(directFile.exists()) {
-            return directPath
-        }
-
-        val zipFile = Path(appdata.storage.storageDir, archiveType.toString(), "$block.zip").toFile()
-        if(zipFile.exists()) {
-            val zip = ZipFile(zipFile)
-            val entry = zip.getEntry(filename)
-            if(entry != null) {
-                cacheFile.parentFile.mkdirs()
-
-                zip.getInputStream(entry).use { fis ->
-                    Files.copy(fis, cachePath, StandardCopyOption.REPLACE_EXISTING)
-                }
-
-                cacheRecord.addAccessRecord(archiveType, block, filename)
-                return cachePath
-            }
-        }
-
-        return null
-    }
-
-    /**
      * 从存档读取一个文件的内容，并输出至inputStream。
      */
-    fun readInputStream(archiveType: ArchiveType, block: String, filename: String): InputStream? {
+    fun readFile(archiveType: ArchiveType, block: String, filename: String): Resource? {
         val zipFile = Path(appdata.storage.storageDir, archiveType.toString(), "$block.zip").toFile()
         if(zipFile.exists()) {
             val zip = ZipFile(zipFile)
             val entry = zip.getEntry(filename)
             if(entry != null) {
-                return zip.getInputStream(entry)
+                return Resource(filename, filename.substringAfterLast('.').lowercase(), entry.size, zip.getInputStream(entry))
             }
         }
 
         val directPath = Path(appdata.storage.storageDir, archiveType.toString(), block, filename)
         val directFile = directPath.toFile()
         if(directFile.exists()) {
-            return directFile.inputStream()
+            return Resource(filename, filename.substringAfterLast('.').lowercase(), directFile.length(), directFile.inputStream())
         }
 
         return null
@@ -389,60 +342,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
     }
 
     /**
-     * cache access record记录模块。
+     * 读取文件返回的资源类。
      */
-    private inner class CacheRecord {
-        private val lastRecords = ConcurrentHashMap<Int, FileCacheRecord>()
-        @Volatile private var cacheRecords = ConcurrentHashMap<Int, Instant>()
-
-        /**
-         * 添加一条对此文件的访问记录。
-         */
-        fun addAccessRecord(archiveType: ArchiveType, block: String, filename: String) {
-            val now = Instant.now()
-            val fileId = filename.substringBeforeLast('.').toInt()
-            val key = fileId shl 2 + archiveType.ordinal
-            lastRecords[key].let { lastTime ->
-                if(lastTime == null || now >= lastTime.lastAccessTime.plus(1, ChronoUnit.HOURS)) {
-                    cacheRecords[key] = now
-                    lastRecords[key] = FileCacheRecord(fileId, archiveType, block, filename, now)
-                    //使用lastRecords做总体计量。当一次访问距离上次访问超过1小时时，才允许下一次访问写入。此机制防止频繁写入
-                }
-            }
-        }
-
-        fun daemonThread() {
-            while (true) {
-                try {
-                    Thread.sleep(10000)
-                }catch (e: InterruptedException) {
-                    return
-                }
-
-                if(cacheRecords.isNotEmpty()) {
-                    val records = cacheRecords
-                    cacheRecords = ConcurrentHashMap()
-                    val chunks = records.keys.asSequence().mapNotNull(lastRecords::get).chunked(1000)
-                    data.db.transaction {
-                        for (chunk in chunks) {
-                            data.db.bulkInsertOrUpdate(FileCacheRecords) {
-                                for ((fileId, archiveType, block, filename, lastAccessTime) in chunk) {
-                                    item {
-                                        set(it.fileId, fileId)
-                                        set(it.archiveType, archiveType)
-                                        set(it.block, block)
-                                        set(it.filename, filename)
-                                        set(it.lastAccessTime, lastAccessTime)
-                                    }
-                                }
-                                onConflict(FileCacheRecords.fileId, FileCacheRecords.archiveType) {
-                                    set(it.lastAccessTime, excluded(it.lastAccessTime))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    class Resource(val filename: String, val extension: String, val size: Long, val inputStream: InputStream)
 }

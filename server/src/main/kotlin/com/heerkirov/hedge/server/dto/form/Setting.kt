@@ -45,11 +45,7 @@ data class ImportOptionUpdateForm(val autoAnalyseSourceData: Opt<Boolean>,
                                   val setTagmeOfSource: Opt<Boolean>,
                                   val setOrderTimeBy: Opt<ImportOption.TimeType>,
                                   @Range(min = 0 - 24, max = 24) val setPartitionTimeDelayHour: Opt<Long?>,
-                                  val sourceAnalyseRules: Opt<List<ImportOption.SourceAnalyseRule>>,
-                                  val watchPaths: Opt<List<String>>,
-                                  val autoWatchPath: Opt<Boolean>,
-                                  val watchPathMoveFile: Opt<Boolean>,
-                                  val watchPathInitialize: Opt<Boolean>)
+                                  val sourceAnalyseRules: Opt<List<ImportOption.SourceAnalyseRule>>)
 
 data class MetaOptionUpdateForm(val autoCleanTagme: Opt<Boolean>,
                                 val onlyCleanTagmeByCharacter: Opt<Boolean>,
@@ -71,8 +67,6 @@ data class FindSimilarOptionUpdateForm(val autoFindSimilar: Opt<Boolean>,
 data class StorageOptionUpdateForm(val storagePath: Opt<String?>,
                                    val autoCleanTrashes: Opt<Boolean>,
                                    @Range(1, 90) val autoCleanTrashesIntervalDay: Opt<Int>,
-                                   val autoCleanCaches: Opt<Boolean>,
-                                   @Range(1, 90) val autoCleanCachesIntervalDay: Opt<Int>,
                                    @Range(10, 10000) val blockMaxSizeMB: Opt<Long>,
                                    @Range(5, 5000) val blockMaxCount: Opt<Int>)
 

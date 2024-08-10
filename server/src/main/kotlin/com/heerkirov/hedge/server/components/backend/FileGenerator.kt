@@ -5,7 +5,6 @@ import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.components.status.AppStatusDriver
-import com.heerkirov.hedge.server.dao.FileCacheRecords
 import com.heerkirov.hedge.server.dao.FileFingerprints
 import com.heerkirov.hedge.server.dao.FileRecords
 import com.heerkirov.hedge.server.dao.TrashedImages
@@ -44,7 +43,6 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
-import kotlin.io.path.deleteIfExists
 import kotlin.math.absoluteValue
 
 /**
@@ -152,9 +150,6 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
                 archiveCounter.addTotal(blocks.size)
             }
         }
-
-        //清理已过期的缓存文件
-        cleanExpiredCacheFiles()
     }
 
     private fun receiveEvents(e: PackagedBusEvent) {
@@ -231,7 +226,6 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             if(toBeDeletedFiles.isNotEmpty()) {
                 data.db.transaction {
                     data.db.delete(FileRecords) { it.id inList toBeDeletedFiles and it.deleted }
-                    data.db.delete(FileCacheRecords) { it.fileId inList toBeDeletedFiles }
                 }
             }
         } catch (e: Exception) {
@@ -374,19 +368,6 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
         }
     }
 
-    private fun cleanExpiredCacheFiles() {
-        if(appdata.setting.storage.autoCleanCaches) {
-            val intervalDay = appdata.setting.storage.autoCleanCachesIntervalDay
-            val deadline = Instant.now().minus(intervalDay.absoluteValue.toLong(), ChronoUnit.DAYS)
-            for (record in data.db.sequenceOf(FileCacheRecords).filter { it.lastAccessTime lessEq deadline }) {
-                val cachePath = Path(appdata.storage.cacheDir, record.archiveType.toString(), record.block, record.filename)
-                cachePath.deleteIfExists()
-            }
-            val cnt = data.db.delete(FileCacheRecords) { it.lastAccessTime lessEq deadline }
-            if(cnt > 0) log.info("$cnt cache files have been cleaned.")
-        }
-    }
-
     private fun processThumbnail(fileRecord: FileRecord, file: File): Tuple5<Long?, Long?, Int, Int, Long?> {
         //生成thumbnail。当file为除jpg外的其他格式，或file尺寸高于阈值时，会生成thumbnail。
         val (thumbnailTempFile, resolutionWidth, resolutionHeight, videoDuration) = Graphics.generateThumbnail(file, Graphics.THUMBNAIL_RESIZE_AREA)
@@ -451,7 +432,6 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
         val finalZipPath = Path(appdata.storage.storageDir, archiveType.toString(), "$block.zip")
         val oldZipPath = Path(appdata.storage.storageDir, archiveType.toString(), "$block.zip")
         val dirPath = Path(appdata.storage.storageDir, archiveType.toString(), block)
-        val cacheDirPath = Path(appdata.storage.cacheDir, archiveType.toString(), block)
 
         val oldZip = oldZipPath.toFile().takeIf { it.exists() }?.let(::ZipFile)
         val dir = dirPath.toFile().takeIf { it.isDirectory }
@@ -520,11 +500,6 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
             }
             //删除dir目录，toBeDeleted的项因为不会被归档，所以在这一步被删除了
             dir?.deleteRecursively()
-            //清理缓存目录下的toBeDeleted文件
-            cacheDirPath.toFile().takeIf { it.isDirectory }?.run {
-                val toBeDeletedStr = toBeDeleted.asSequence().map { it.toString() }.toSet()
-                listFiles { f -> f.nameWithoutExtension in toBeDeletedStr }?.forEach { it.deleteIfExists() }
-            }
 
             log.info("Block $archiveType/$block ${if(addedFromZipCount > 0 || deletedInZipCount > 0) "re-archived" else "archived"}. ${
                 sequenceOf(

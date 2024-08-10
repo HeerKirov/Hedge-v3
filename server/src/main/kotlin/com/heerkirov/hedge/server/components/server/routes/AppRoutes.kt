@@ -86,8 +86,7 @@ class AppRoutes(private val lifetime: Lifetime, private val appStatus: AppStatus
         ctx.json(StorageStatusResponse(
             appdata.storage.storageDir,
             appdata.storage.accessible,
-            appdata.storage.cacheDir,
-            appdata.storage.cacheSize
+            appdata.storage.storageSize
         ))
     }
 
@@ -101,6 +100,5 @@ class AppRoutes(private val lifetime: Lifetime, private val appStatus: AppStatus
 
     data class StorageStatusResponse(val storageDir: String,
                                      val storageAccessible: Boolean,
-                                     val cacheDir: String,
-                                     val cacheSize: Long)
+                                     val storageSize: Long)
 }

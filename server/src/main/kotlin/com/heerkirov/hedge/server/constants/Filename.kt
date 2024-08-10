@@ -17,7 +17,6 @@ object Filename {
     const val VERSION_LOCK = "version.lock"
 
     const val DEFAULT_STORAGE_DIR = "archives"
-    const val DEFAULT_CACHE_DIR = "cache"
 
     const val ORIGINAL_FILE_DIR = "original"
     const val THUMBNAIL_FILE_DIR = "thumbnail"

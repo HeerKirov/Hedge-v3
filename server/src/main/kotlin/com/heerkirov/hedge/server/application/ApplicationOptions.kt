@@ -19,6 +19,11 @@ class ApplicationOptions(parameters: Parameters) {
     val serverDir: String = parameters["--dir"] ?: throw IllegalArgumentException("'--dir' is required.")
 
     /**
+     * server存储目录。用于在远程模式下覆盖默认存储位置。(远程模式下存储位置配置项无效)
+     */
+    val storageDir: String? = parameters["--storage-dir"]
+
+    /**
      * 使用指定端口启动server。用于在开发模式下固定端口，以及在远程模式下必须指定启动参数。
      */
     val port: Int? = parameters["--port"]?.toInt() ?: if(this.remoteMode) throw IllegalArgumentException("'--port' is required in remote mode.") else null

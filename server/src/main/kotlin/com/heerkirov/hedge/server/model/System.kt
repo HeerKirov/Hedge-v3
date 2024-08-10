@@ -1,6 +1,5 @@
 package com.heerkirov.hedge.server.model
 
-import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.enums.NoteStatus
 import java.time.Instant
 import java.time.LocalDate
@@ -71,15 +70,6 @@ data class HomepageRecord(val date: LocalDate, val content: Content) {
 
     data class HistoryImage(val date: LocalDate, val imageIds: List<Int>)
 }
-
-/**
- * 文件缓存访问记录。
- */
-data class FileCacheRecord(val fileId: Int,
-                           val archiveType: ArchiveType,
-                           val block: String,
-                           val filename: String,
-                           val lastAccessTime: Instant)
 
 /**
  * 便签功能的记录表。

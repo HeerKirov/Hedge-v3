@@ -1,6 +1,5 @@
 package com.heerkirov.hedge.server.dto.res
 
-import com.heerkirov.hedge.server.components.backend.PathWatcherError
 import com.heerkirov.hedge.server.enums.ImportStatus
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.model.ImportRecord
@@ -24,5 +23,3 @@ data class ImportImageDetailRes(val id: Int, val status: ImportStatus, val statu
                             val description: String, val score: Int?, val favorite: Boolean, val tagme: Illust.Tagme,
                             val source: SourceDataPath?, val partitionTime: LocalDate, val orderTime: Instant)
 }
-
-data class ImportWatcherRes(val isOpen: Boolean, val statisticCount: Int, val errors: List<PathWatcherError>)

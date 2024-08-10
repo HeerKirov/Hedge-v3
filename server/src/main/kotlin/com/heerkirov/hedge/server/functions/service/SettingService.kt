@@ -76,10 +76,6 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
             form.setTagmeOfTag.alsoOpt { import.setTagmeOfTag = it }
             form.setOrderTimeBy.alsoOpt { import.setOrderTimeBy = it }
             form.sourceAnalyseRules.alsoOpt { import.sourceAnalyseRules = it }
-            form.watchPaths.alsoOpt { import.watchPaths = it }
-            form.autoWatchPath.alsoOpt { import.autoWatchPath = it }
-            form.watchPathMoveFile.alsoOpt { import.watchPathMoveFile = it }
-            form.watchPathInitialize.alsoOpt { import.watchPathInitialize = it }
         }
 
         bus.emit(SettingImportChanged())
@@ -94,8 +90,6 @@ class SettingService(private val appdata: AppDataManager, private val data: Data
             form.storagePath.alsoOpt { storage.storagePath = it }
             form.autoCleanTrashes.alsoOpt { storage.autoCleanTrashes = it }
             form.autoCleanTrashesIntervalDay.alsoOpt { storage.autoCleanTrashesIntervalDay = it }
-            form.autoCleanCaches.alsoOpt { storage.autoCleanCaches = it }
-            form.autoCleanCachesIntervalDay.alsoOpt { storage.autoCleanCachesIntervalDay = it }
             form.blockMaxSizeMB.alsoOpt { storage.blockMaxSizeMB = it }
             form.blockMaxCount.alsoOpt { storage.blockMaxCount = it }
         }

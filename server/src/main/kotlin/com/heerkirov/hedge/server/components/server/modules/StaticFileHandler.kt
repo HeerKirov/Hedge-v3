@@ -41,26 +41,20 @@ class StaticFileHandler(private val archive: FileManager) : Modules {
             return
         }
 
-        val path = archive.load(archiveType, splits[1], splits[2])
-        if(path == null) {
+        val resource = archive.readFile(archiveType, splits[1], splits[2])
+        if(resource == null) {
             ctx.status(HttpStatus.NOT_FOUND)
             return
         }
 
-        val resource = resourceHandler.getResource(path.toString())
-
-        if(resource != null && resource.exists() && !resource.isDirectory) {
-            val contentType = when(resource.file.extension) {
-                "jpeg", "jpg" -> "image/jpeg"
-                "png" -> "image/png"
-                "gif" -> "image/gif"
-                "mp4" -> "video/mp4"
-                "webm" -> "video/webm"
-                else -> "application/octet-stream"
-            }
-            ctx.writeSeekableStream(resource.inputStream, contentType, resource.length())
-        }else{
-            ctx.status(HttpStatus.NOT_FOUND)
+        val contentType = when(resource.extension) {
+            "jpeg", "jpg" -> "image/jpeg"
+            "png" -> "image/png"
+            "gif" -> "image/gif"
+            "mp4" -> "video/mp4"
+            "webm" -> "video/webm"
+            else -> "application/octet-stream"
         }
+        ctx.writeSeekableStream(resource.inputStream, contentType, resource.size)
     }
 }

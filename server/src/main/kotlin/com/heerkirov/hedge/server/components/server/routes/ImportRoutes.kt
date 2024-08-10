@@ -24,10 +24,6 @@ class ImportRoutes(private val importService: ImportService) : Routes {
                 post("import", ::import)
                 post("upload", ::upload)
                 post("batch", ::batch)
-                path("watcher") {
-                    get(::getWatcher)
-                    post(::updateWatcher)
-                }
                 get("{id}", ::get)
             }
         }
@@ -45,8 +41,8 @@ class ImportRoutes(private val importService: ImportService) : Routes {
     }
 
     private fun upload(ctx: Context) {
-        val modificationTime = ctx.formParamAsClass<Instant>("modificationTime").allowNullable().get()
-        val creationTime = ctx.formParamAsClass<Instant>("creationTime").allowNullable().get()
+        val modificationTime = ctx.formParamAsClass<String>("modificationTime").allowNullable().get()?.let { Instant.parse(it) }
+        val creationTime = ctx.formParamAsClass<String>("creationTime").allowNullable().get()?.let { Instant.parse(it) }
         val form = ctx.uploadedFile("file")
             ?.let { UploadForm(it.content(), it.filename(), it.extension().trimStart('.'), modificationTime, creationTime) }
             ?: throw be(ParamRequired("file"))
@@ -63,14 +59,5 @@ class ImportRoutes(private val importService: ImportService) : Routes {
         val form = ctx.bodyAsForm<ImportBatchForm>()
         importService.batch(form)
         ctx.status(200)
-    }
-
-    private fun getWatcher(ctx: Context) {
-        ctx.json(importService.getWatcherStatus())
-    }
-
-    private fun updateWatcher(ctx: Context) {
-        val form = ctx.bodyAsForm<ImportWatcherForm>()
-        importService.updateWatcherStatus(form)
     }
 }

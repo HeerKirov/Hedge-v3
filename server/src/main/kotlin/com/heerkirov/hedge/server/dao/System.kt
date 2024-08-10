@@ -1,6 +1,5 @@
 package com.heerkirov.hedge.server.dao
 
-import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.enums.NoteStatus
 import com.heerkirov.hedge.server.model.*
 import com.heerkirov.hedge.server.utils.ktorm.type.enum
@@ -46,22 +45,6 @@ object HomepageRecords : BaseTable<HomepageRecord>("homepage_record", schema = "
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = HomepageRecord(
         date = row[date]!!,
         content = row[content]!!
-    )
-}
-
-object FileCacheRecords : BaseTable<FileCacheRecord>("file_cache_record", schema = "system_db") {
-    val fileId = int("file_id")
-    val archiveType = enum("archive_type", typeRef<ArchiveType>())
-    val block = varchar("block")
-    val filename = varchar("filename")
-    val lastAccessTime = timestamp("last_access_time")
-
-    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = FileCacheRecord(
-        fileId = row[fileId]!!,
-        archiveType = row[archiveType]!!,
-        block = row[block]!!,
-        filename = row[filename]!!,
-        lastAccessTime = row[lastAccessTime]!!
     )
 }
 

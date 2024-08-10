@@ -28,7 +28,7 @@ fun runApplication(options: ApplicationOptions) {
         val health = define { HealthImpl(options.serverDir) }
         val lifetime = define { LifetimeImpl(options) }
         val appStatus = define { AppStatusDriverImpl(context, bus, options) }
-        val appdata = define { AppDataManagerImpl(options.serverDir) }
+        val appdata = define { AppDataManagerImpl(options) }
         val repo = define { DataRepositoryImpl(options.serverDir) }
         val file = define { FileManager(appdata, repo, bus) }
 
@@ -44,7 +44,6 @@ fun runApplication(options: ApplicationOptions) {
             val importManager = ImportManager(appdata, repo, bus, file)
 
             val similarFinder = define { SimilarFinderImpl(appStatus, appdata, repo, bus, taskCounter) }
-            val pathWatcher = define { PathWatcherImpl(appStatus, appdata, bus, importManager) }
 
             val annotationKit = AnnotationKit(repo)
             val annotationManager = AnnotationManager(repo)
@@ -81,7 +80,7 @@ fun runApplication(options: ApplicationOptions) {
                 tag = TagService(repo, bus, tagKit, sourceMappingManager),
                 author = AuthorService(appdata, repo, bus, authorKit, queryManager, sourceMappingManager),
                 topic = TopicService(appdata, repo, bus, topicKit, queryManager, sourceMappingManager),
-                import = ImportService(appdata, repo, bus, file, illustManager, importManager, sourceAnalyzeManager, sourceManager, pathWatcher),
+                import = ImportService(appdata, repo, bus, file, illustManager, importManager, sourceAnalyzeManager, sourceManager),
                 stagingPost = StagingPostService(illustManager, stagingPostManager),
                 trash = TrashService(appdata, repo, trashManager),
                 sourceData = SourceDataService(appdata, repo, sourceManager, sourceAnalyzeManager, queryManager),

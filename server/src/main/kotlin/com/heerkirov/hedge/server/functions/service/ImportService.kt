@@ -2,7 +2,6 @@ package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.appdata.ImportOption
-import com.heerkirov.hedge.server.components.backend.PathWatcher
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
@@ -37,9 +36,7 @@ class ImportService(private val appdata: AppDataManager,
                     private val illustManager: IllustManager,
                     private val importManager: ImportManager,
                     private val sourceAnalyzeManager: SourceAnalyzeManager,
-                    private val sourceDataManager: SourceDataManager,
-                    private val pathWatcher: PathWatcher
-) {
+                    private val sourceDataManager: SourceDataManager) {
     private val orderTranslator = OrderTranslator {
         "id" to ImportRecords.id
         "status" to ImportRecords.status
@@ -307,13 +304,5 @@ class ImportService(private val appdata: AppDataManager,
                 forms.forEach { illustManager.bulkUpdate(it) }
             }
         }
-    }
-
-    fun getWatcherStatus(): ImportWatcherRes {
-        return ImportWatcherRes(pathWatcher.isOpen, pathWatcher.statisticCount, pathWatcher.errors)
-    }
-
-    fun updateWatcherStatus(form: ImportWatcherForm) {
-        pathWatcher.isOpen = form.isOpen
     }
 }
