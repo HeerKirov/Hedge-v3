@@ -23,11 +23,7 @@ export interface StorageStatus {
      */
     storageDir: string
     /**
-     * 缓存路径。
+     * 存储占用空间大小。
      */
-    cacheDir: string
-    /**
-     * 缓存占用空间大小。
-     */
-    cacheSize: number
+    storageSize: number
 }

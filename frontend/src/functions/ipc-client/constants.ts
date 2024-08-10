@@ -1,4 +1,4 @@
-import { Platform, NativeTheme, ServerStaticInfo, TabControlEvent, UpdateStateOptions, FileWatcherStatus } from "./constants-model"
+import { Platform, NativeTheme, ServerStaticInfo, TabControlEvent, UpdateStateOptions, FileWatcherStatus, CacheStatus } from "./constants-model"
 import { ServerServiceStatus, ServerConnectionStatus, ServerConnectionInfo, WsToastResult } from "./constants-model"
 import { AppInitializeForm, AppState, InitializeState, LoginForm } from "./constants-model"
 import { Emitter } from "@/utils/emitter"
@@ -20,6 +20,8 @@ export interface IpcClient {
         importFile(filepath: string): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE" | "ILLEGAL_FILE_EXTENSION">>
         loadFile(path: string): Promise<IResponse<string, "FILE_NOT_FOUND">>
         downloadExportFile(form: { imageIds?: number[], bookId?: number, location: string, zip?: string }): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE">>
+        cacheStatus(): Promise<CacheStatus>
+        cleanAllCacheFiles(): Promise<void>
         fileWatcherStatus(isOpen?: boolean): Promise<FileWatcherStatus>
         fileWatcherChangedEvent: Emitter<FileWatcherStatus>
     }

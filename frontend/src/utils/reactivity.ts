@@ -1,4 +1,4 @@
-import { computed, inject, InjectionKey, isRef, provide, Ref, ref, reactive, watch, watchEffect, toRef as originToRef, WatchSource } from "vue"
+import { computed, inject, InjectionKey, isRef, provide, Ref, ref, reactive, watch, watchEffect, toRef as originToRef, WatchSource, onMounted } from "vue"
 
 /**
  * 执行computed计算，产生一个ref，它的值会随watch源的变动而重新计算，但它也能被修改。
@@ -56,6 +56,17 @@ export function computedAsync<T>(initValue: T, call: () => Promise<T>): Readonly
     const data = <Ref<T>>ref(initValue)
 
     watchEffect(async () => data.value = await call())
+
+    return data
+}
+
+/**
+ * 获得一个ref，其值在mounted时异步计算产生。
+ */
+export function refAsync<T>(initValue: T, call: () => Promise<T>): Ref<T> {
+    const data = <Ref<T>>ref(initValue)
+
+    onMounted(async () => data.value = await call())
 
     return data
 }

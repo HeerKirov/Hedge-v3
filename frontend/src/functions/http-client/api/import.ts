@@ -20,11 +20,7 @@ export function createImportEndpoint(http: HttpInstance): ImportEndpoint {
         import: http.createDataRequest("/api/imports/import", "POST"),
         upload: http.createDataRequest("/api/imports/upload", "POST", { parseData: mapFromUploadFile }),
         batch: http.createDataRequest("/api/imports/batch", "POST"),
-        get: http.createPathRequest(id => `/api/imports/${id}`, "GET", { parseResponse: mapToDetailImportImage }),
-        watcher: {
-            get: http.createRequest("/api/imports/watcher", "GET"),
-            update: http.createDataRequest("/api/imports/watcher", "POST")
-        }
+        get: http.createPathRequest(id => `/api/imports/${id}`, "GET", { parseResponse: mapToDetailImportImage })
     }
 }
 
@@ -101,24 +97,9 @@ export interface ImportEndpoint {
      * @exception:warning INVALID_REGEX (regex) 解析错误，解析规则的正则表达式有误。
      */
     batch(form: ImportBatchForm): Promise<Response<null, ResourceNotExist<"target", number[]>>>
-    /**
-     * 目录监听器。
-     */
-    watcher: {
-        /**
-         * 查看监听器状态。
-         */
-        get(): Promise<Response<ImportWatcherResponse>>
-        /**
-         * 修改监听器状态。
-         */
-        update(form: ImportWatcherForm): Promise<Response<null>>
-    }
 }
 
 export type ImportStatus = "PROCESSING" | "COMPLETED" | "ERROR"
-
-export type PathWatcherErrorReason = "NO_USEFUL_PATH" | "PATH_NOT_EXIST" | "PATH_IS_NOT_DIRECTORY" | "PATH_WATCH_FAILED" | "PATH_NO_LONGER_AVAILABLE"
 
 export interface ImportStatusInfo {
     thumbnailError: boolean | null
@@ -146,11 +127,6 @@ export interface PreferenceCloneImage {
     props: ImagePropsCloneForm["props"]
     merge: boolean
     deleteFrom: boolean
-}
-
-export interface PathWatcherError {
-    path: string
-    reason: PathWatcherErrorReason
 }
 
 export interface ImportRecord {
@@ -185,16 +161,6 @@ export interface DetailImportRecord extends ImportRecord {
         tags: RelatedSimpleTag[]
         description: string
     } | null
-}
-
-export interface ImportWatcherResponse {
-    isOpen: boolean
-    statisticCount: number
-    errors: PathWatcherError[]
-}
-
-export interface ImportWatcherForm {
-    isOpen: boolean
 }
 
 export interface ImportForm {

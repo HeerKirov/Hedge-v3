@@ -3,7 +3,7 @@ import { BackgroundTaskType } from "@/functions/http-client/api/homepage"
 import { MetaType } from "@/functions/http-client/api/all"
 import { IllustType } from "@/functions/http-client/api/illust"
 import { FolderType } from "@/functions/http-client/api/folder"
-import { ImportStatus, PathWatcherError } from "@/functions/http-client/api/import"
+import { ImportStatus } from "@/functions/http-client/api/import"
 import { NoteStatus } from "@/functions/http-client/api/note"
 
 export interface BaseWsEvent<ET extends string> { eventType: ET }
@@ -12,7 +12,7 @@ export type AllEventTypes = AllEvents["eventType"]
 
 export type AllEvents = AppEvents | EntityEvents | SettingEvents
 
-type AppEvents = AppStatusChanged | HomepageInfoUpdated | HomepageStateChanged | QuickFindChanged | StagingPostChanged | PathWatcherStatusChanged | BackgroundTaskChanged
+type AppEvents = AppStatusChanged | HomepageInfoUpdated | HomepageStateChanged | QuickFindChanged | StagingPostChanged | BackgroundTaskChanged
 
 type EntityEvents
     = AnnotationCreated | AnnotationUpdated | AnnotationDeleted
@@ -40,8 +40,6 @@ export interface HomepageStateChanged extends BaseWsEvent<"app/homepage/state/ch
 export interface StagingPostChanged extends BaseWsEvent<"app/staging-post/changed"> { added: number[], moved: number[], deleted: number[] }
 
 export interface QuickFindChanged extends BaseWsEvent<"app/quick-find/changed"> { id: number }
-
-export interface PathWatcherStatusChanged extends BaseWsEvent<"app/path-watcher/status-changed"> { isOpen: boolean, statisticCount: number, errors: PathWatcherError[] }
 
 export interface BackgroundTaskChanged extends BaseWsEvent<"app/background-task/changed"> { type: BackgroundTaskType, currentValue: number, maxValue: number }
 

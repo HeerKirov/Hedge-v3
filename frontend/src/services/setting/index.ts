@@ -6,12 +6,26 @@ import { useFetchReactive, useRetrieveHelper } from "@/functions/fetch"
 import { useAppEnv, useServerStatus } from "@/functions/app"
 import { useMessageBox } from "@/modules/message-box"
 import { numbers } from "@/utils/primitives"
-import { computedMutable, optionalInstallation, toRef } from "@/utils/reactivity"
+import { computedMutable, optionalInstallation, refAsync, toRef } from "@/utils/reactivity"
 
 export function useAppStorageStatus() {
     return useFetchReactive({
         get: client => client.app.storageStatus
     })
+}
+
+export function useClientCacheStatus() {
+    const message = useMessageBox()
+    const cacheStatus = refAsync(null, remoteIpcClient.local.cacheStatus)
+
+    const cleanCache = async () => {
+        if(await message.showYesNoMessage("confirm", "确认要清理全部缓存吗?")) {
+            await remoteIpcClient.local.cleanAllCacheFiles()
+            cacheStatus.value = await remoteIpcClient.local.cacheStatus()
+        }
+    }
+
+    return {cacheStatus, cleanCache}
 }
 
 export function useSettingAuth() {

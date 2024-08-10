@@ -199,14 +199,6 @@ export interface StorageOption {
      */
     autoCleanTrashesIntervalDay: number
     /**
-     * 自动清理长期未访问的缓存。
-     */
-    autoCleanCaches: boolean
-    /**
-     * 自动清理缓存的间隔天数。
-     */
-    autoCleanCachesIntervalDay: number
-    /**
      * 区块最大可储存的容量。
      */
     blockMaxSizeMB: number
@@ -320,23 +312,6 @@ export interface ImportOption {
      * source分析的规则列表。
      */
     sourceAnalyseRules: SourceAnalyseRule[]
-    /**
-     * 监听目录导入功能所存储的默认目录列表。
-     */
-    watchPaths: string[]
-    /**
-     * 程序启动时，自动开启监听目录功能。
-     */
-    autoWatchPath: boolean
-    /**
-     * 监听目录功能将移动所监听到的文件。
-     */
-    watchPathMoveFile: boolean
-    /**
-     * 监听目录功能会在开启时首先扫描一遍目录内已有的文件。
-     * 一般来说建议开启此功能时也开启移动文件功能。
-     */
-    watchPathInitialize: boolean
 }
 
 export type ImportOptionUpdateForm = Partial<ImportOption>

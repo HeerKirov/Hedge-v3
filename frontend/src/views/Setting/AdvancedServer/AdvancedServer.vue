@@ -93,7 +93,7 @@ const restart = async () => {
 <template>
     <Block v-if="server !== undefined" class="p-3 mt-2">
         <p v-if="authSetting?.mode === 'remote' && connectionStatus === 'OPEN'" class="has-text-primary is-font-size-large">
-            <Icon class="mr-2" icon="server"/>远程核心服务已连接
+            <Icon class="mr-2" icon="server"/>已连接到远程核心服务
         </p>
         <p v-else-if="connectionStatus === 'OPEN'" class="has-text-success is-font-size-large">
             <Icon class="mr-2" icon="server"/>核心服务正在运行
@@ -107,9 +107,12 @@ const restart = async () => {
         <p v-else-if="connectionStatus === 'FAILED'" class="has-text-danger is-font-size-large">
             <Icon class="mr-2" icon="server"/>核心服务发生错误
         </p>
-        <p class="mt-2">核心服务是一项独立的进程，在后台为整套Hedge应用提供功能服务。除App外，还可为CLI、插件等提供支持。</p>
+        <p class="mt-2">核心服务是一项独立的进程，承载应用程序的所有主要功能。除App外，还可为CLI、浏览器扩展等提供支持。</p>
         <template v-if="authSetting?.mode === 'remote'">
             <p>当前正在使用远程部署的核心服务。</p>
+            <p v-if="!!connectionInfo" class="mt-2 is-font-size-small">
+                <Icon class="mr-1" icon="globe"/>Host <code>{{authSetting.remote?.host}}</code>
+            </p>
         </template>
         <template v-else>
             <p>Hedge会自行管理核心服务，通常不必关心这个进程。</p>
@@ -125,11 +128,16 @@ const restart = async () => {
         </template>
     </Block>
     <template v-if="authSetting?.mode === 'remote'">
-        <label class="mt-2 label">连接地址</label>
-        <Input class="mt-1" :value="remoteForm.host" @update:value="updateRemoteHost" size="small" placeholder="localhost:9000"/>
-        <label class="mt-2 label">连接Token</label>
-        <Input class="mt-1" :value="remoteForm.token" @update:value="updateRemoteToken" size="small" placeholder="XXX"/>
-        <p v-if="remoteForm.changed" class="mt-2"><Button mode="filled" type="primary" size="small" icon="save" @click="saveRemote">联通测试并保存</Button></p>
+        <label class="mt-2 label">连接参数</label>
+        <div class="mt-1 is-line-height-small">
+            <div :class="$style['line-title']">连接地址：</div>
+            <Input :value="remoteForm.host" @update:value="updateRemoteHost" size="small" placeholder="localhost:9000"/>
+        </div>
+        <div class="mt-1 is-line-height-small">
+            <div :class="$style['line-title']">连接Token：</div>
+            <Input :value="remoteForm.token" @update:value="updateRemoteToken" size="small" placeholder="XXX"/>
+        </div>
+        <p v-if="remoteForm.changed" class="mt-2"><Button mode="filled" type="primary" size="small" icon="save" @click="saveRemote">测试连接并保存</Button></p>
     </template>
     <template v-else>
         <label class="mt-2 label">建议的端口</label>
@@ -149,3 +157,9 @@ const restart = async () => {
         <p class="secondary-text">使用固定Token可方便地在其他位置使用核心服务。</p>
     </template>
 </template>
+
+<style module lang="sass">
+.line-title
+    display: inline-block
+    width: 90px
+</style>

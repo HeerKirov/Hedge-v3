@@ -83,3 +83,8 @@ export type PathWatcherErrorReason
     | "PATH_NOT_EXIST"
     | "PATH_IS_NOT_DIRECTORY"
     | "PATH_WATCH_FAILED"
+
+export interface CacheStatus {
+    cacheDir: string
+    cacheSize: number
+}
