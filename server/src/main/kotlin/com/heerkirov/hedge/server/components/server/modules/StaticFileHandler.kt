@@ -1,29 +1,31 @@
 package com.heerkirov.hedge.server.components.server.modules
 
+import com.heerkirov.hedge.server.application.ApplicationOptions
 import com.heerkirov.hedge.server.components.server.Modules
 import com.heerkirov.hedge.server.enums.ArchiveType
+import com.heerkirov.hedge.server.exceptions.OnlyForLocal
+import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.manager.FileManager
 import io.javalin.Javalin
 import io.javalin.http.Context
 import io.javalin.http.HttpStatus
 import io.javalin.http.util.SeekableWriter
-import org.eclipse.jetty.server.handler.ResourceHandler
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import kotlin.io.path.Path
+import kotlin.io.path.createDirectories
 
-class StaticFileHandler(private val archive: FileManager) : Modules {
+class StaticFileHandler(private val archive: FileManager, private val options: ApplicationOptions) : Modules {
     private val prefix = "/archives"
-    private val resourceHandler = ResourceHandler()
+    private val prefixLocal = "/archives-for-local"
 
     init {
-        resourceHandler.resourceBase = "/"
-        resourceHandler.isDirAllowed = false
-        resourceHandler.isEtags = true
         SeekableWriter.chunkSize = 1000 * 1000 * 4
     }
 
     override fun handle(javalin: Javalin) {
         javalin.get("$prefix/*", ::handle)
-        javalin.jettyServer()?.server()?.let { resourceHandler.server = it }
-        resourceHandler.start()
+        javalin.get("$prefixLocal/*", ::handleLocal)
     }
 
     private fun handle(ctx: Context) {
@@ -56,5 +58,36 @@ class StaticFileHandler(private val archive: FileManager) : Modules {
             else -> "application/octet-stream"
         }
         ctx.writeSeekableStream(resource.inputStream, contentType, resource.size)
+    }
+
+    private fun handleLocal(ctx: Context) {
+        if(options.remoteMode) throw be(OnlyForLocal)
+
+        val target = ctx.path().removePrefix(prefixLocal).trimStart('/')
+        val splits = target.split("/", limit = 3)
+        if(splits.size < 3) {
+            ctx.status(HttpStatus.NOT_FOUND)
+            return
+        }
+
+        val archiveType = try {
+            ArchiveType.valueOf(splits[0].uppercase())
+        }catch (e: IllegalArgumentException) {
+            ctx.status(HttpStatus.NOT_FOUND)
+            return
+        }
+
+        val resource = archive.readFile(archiveType, splits[1], splits[2])
+        if(resource == null) {
+            ctx.status(HttpStatus.NOT_FOUND)
+            return
+        }
+
+        val dest = Path(options.serverDir, "../caches", target)
+        dest.createDirectories()
+
+        resource.inputStream.use { fis -> Files.copy(fis, dest, StandardCopyOption.REPLACE_EXISTING) }
+
+        ctx.status(204)
     }
 }

@@ -84,7 +84,7 @@ class AppRoutes(private val lifetime: Lifetime, private val appStatus: AppStatus
 
     private fun getStorageStatus(ctx: Context) {
         ctx.json(StorageStatusResponse(
-            appdata.storage.storageDir,
+            if(options.remoteMode) "" else appdata.storage.storageDir,
             appdata.storage.accessible,
             appdata.storage.storageSize
         ))

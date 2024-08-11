@@ -67,7 +67,7 @@ class HttpServerImpl(private val health: Health,
                     UtilMetaRoutes(allServices.metaUtil),
                     UtilIllustRoutes(allServices.illustUtil),
                     UtilPickerRoutes(allServices.pickerUtil),
-                    UtilExportRoutes(allServices.exportUtil),
+                    UtilExportRoutes(allServices.exportUtil, options),
                     UtilFileRoutes(allServices.fileUtil),
                     FindSimilarRoutes(allServices.findSimilar),
                     IllustRoutes(allServices.illust),
@@ -86,7 +86,7 @@ class HttpServerImpl(private val health: Health,
             .handle(
                 Aspect(appStatus),
                 Authentication(token, appdata),
-                StaticFileHandler(archive),
+                StaticFileHandler(archive, options),
                 ErrorHandler(),
                 WsRoutes(lifetime, eventBus)
             )
