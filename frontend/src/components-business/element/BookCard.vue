@@ -1,5 +1,5 @@
-<script setup lang="ts" generic="T extends Book">
-import { onMounted, ref } from "vue"
+<script setup lang="ts" generic="T extends BookCardItem">
+import { onMounted, Ref, ref, toRef } from "vue"
 import { Block, Icon } from "@/components/universal"
 import { useAssets } from "@/functions/app"
 import { numbers } from "@/utils/primitives"
@@ -17,6 +17,7 @@ const emit = defineEmits<{
 
 const { assetsUrl } = useAssets()
 
+const item: Ref<BookCardItem> = toRef(props, "item")
 const imgRef = ref<HTMLImageElement>()
 const imgAspectRatio = ref<number>(0)
 
@@ -33,7 +34,7 @@ const contextmenu = () => emit("contextmenu", props.item)
 <script lang="ts">
 import { FilePath } from "@/functions/http-client/api/all"
 
-export interface Book {
+export interface BookCardItem {
     id: number
     title: string
     filePath: FilePath | null
@@ -53,7 +54,7 @@ export interface Book {
              :style="{ 'top': `${numbers.round2decimal(50 - 37.5 / imgAspectRatio)}%` }"
              :src="assetsUrl(item.filePath?.thumbnail)" :alt="item.title"/>
         <Icon v-if="item.favorite" :class="$style.fav" icon="heart"/>
-        <div :class="$style['num-tag']"><Icon class="mr-half" icon="images"/>{{item.imageCount || '(空)'}}</div>
+        <div :class="$style['num-tag']"><Icon v-if="item.imageCount" class="mr-half" icon="images"/>{{item.imageCount || '(空)'}}</div>
         <div :class="$style.info">
             <span v-if="item.title" class="selectable">{{item.title}}</span>
             <span v-else><Icon class="mr-2" icon="id-card"/><span class="selectable">{{item.id}}</span></span>

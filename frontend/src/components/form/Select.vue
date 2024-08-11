@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T = string">
-import { computed, onMounted, ref, watch } from "vue"
+import { onMounted, ref, watch } from "vue"
 
 const props = defineProps<{
     value?: T
@@ -53,7 +53,6 @@ function watchProps() {
 .select
     display: inline-block
     vertical-align: middle
-    display: inline-block
     outline: none
     line-height: 1.2
     height: $element-height-std
