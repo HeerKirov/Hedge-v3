@@ -526,7 +526,7 @@ function waitingForWsClient(host: string, token: string, events?: WsClientEvent)
  */
 function startServerProcess(serverDir: string, debugMode: boolean, serverBinPath: string) {
     const baseArgs = ['--dir', serverDir]
-    const debugModeArgs = debugMode ? ['--force-token', 'dev'] : []
+    const debugModeArgs = debugMode ? ['--token', 'dev'] : []
     const args = [...baseArgs, ...debugModeArgs]
     const s = spawn(serverBinPath, args, {
         detached: true,

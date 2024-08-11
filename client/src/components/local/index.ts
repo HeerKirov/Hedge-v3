@@ -22,7 +22,7 @@ export interface LocalOptions {
 }
 
 export function createLocalManager(appdata: AppDataDriver, level: LevelManager, server: ServerManager, state: StateManager, options: LocalOptions): LocalManager {
-    const file = createFileManager(appdata, level, server, options)
+    const file = createFileManager(appdata, state, level, server, options)
     const fileWatcher = createFileWatcher(appdata, state, file)
     return {file, fileWatcher}
 }
