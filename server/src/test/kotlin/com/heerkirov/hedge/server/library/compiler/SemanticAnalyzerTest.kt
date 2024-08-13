@@ -329,68 +329,68 @@ class SemanticAnalyzerTest {
             sorts = listOf(Sort(IllustDialect.IllustSortItem.ID, desc = false)),
             filters = emptyList(),
             elements = emptyList()
-        )), parse("order:id", IllustDialect::class))
+        )), parse("sort:id", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             sorts = listOf(Sort(IllustDialect.IllustSortItem.ID, desc = false)),
             filters = emptyList(),
             elements = emptyList()
-        )), parse("order:ID", IllustDialect::class))
+        )), parse("sort:ID", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             sorts = listOf(Sort(IllustDialect.IllustSortItem.SOURCE_ID, desc = false)),
             filters = emptyList(),
             elements = emptyList()
-        )), parse("order:^ID", IllustDialect::class))
+        )), parse("sort:^ID", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             sorts = listOf(Sort(IllustDialect.IllustSortItem.ID, desc = true)),
             filters = emptyList(),
             elements = emptyList()
-        )), parse("order:-id", IllustDialect::class))
+        )), parse("sort:-id", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             sorts = listOf(Sort(IllustDialect.IllustSortItem.ID, desc = false)),
             filters = emptyList(),
             elements = emptyList()
-        )), parse("order:+id", IllustDialect::class))
+        )), parse("sort:+id", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             sorts = listOf(Sort(IllustDialect.IllustSortItem.ID, desc = false), Sort(IllustDialect.IllustSortItem.SCORE, desc = false)),
             filters = emptyList(),
             elements = emptyList()
-        )), parse("order:id,score", IllustDialect::class))
+        )), parse("sort:id,score", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             sorts = listOf(Sort(IllustDialect.IllustSortItem.ID, desc = false), Sort(IllustDialect.IllustSortItem.SCORE, desc = true)),
             filters = emptyList(),
             elements = emptyList()
-        )), parse("order:id, -score", IllustDialect::class))
+        )), parse("sort:id, -score", IllustDialect::class))
         //测试关系
         assertEquals(AnalysisResult(QueryPlan(
             sorts = listOf(Sort(IllustDialect.IllustSortItem.ID, desc = false), Sort(IllustDialect.IllustSortItem.SCORE, desc = false)),
             filters = emptyList(),
             elements = emptyList()
-        )), parse("order:id order:score", IllustDialect::class))
+        )), parse("sort:id sort:score", IllustDialect::class))
         //测试错误
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            SortIsIndependent(0, 20)
-        )), parse("order:id|order:score", IllustDialect::class))
+            SortIsIndependent(0, 18)
+        )), parse("sort:id|sort:score", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            SortIsIndependent(0, 13)
-        )), parse("order:id|id:1", IllustDialect::class))
+            SortIsIndependent(0, 12)
+        )), parse("sort:id|id:1", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            SortIsIndependent(0, 9)
-        )), parse("-order:id", IllustDialect::class))
+            SortIsIndependent(0, 8)
+        )), parse("-sort:id", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            ThisIdentifyCannotHaveSourceFlag("order", 1, 6)
-        )), parse("^order:score", IllustDialect::class))
+            ThisIdentifyCannotHaveSourceFlag("sort", 1, 5)
+        )), parse("^sort:score", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            SortValueRequired(0, 5)
-        )), parse("order", IllustDialect::class))
+            SortValueRequired(0, 4)
+        )), parse("sort", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            SortValueMustBeSortList(0, 9)
-        )), parse("order:{1}", IllustDialect::class))
+            SortValueMustBeSortList(0, 8)
+        )), parse("sort:{1}", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            SortValueMustBeSortList(0, 7)
-        )), parse("order>1", IllustDialect::class))
+            SortValueMustBeSortList(0, 6)
+        )), parse("sort>1", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            InvalidSortItem("x", listOf("id", "score", "s", "ordinal", "ord", "partition", "pt", "create-time", "create", "ct", "update-time", "update", "ut", "^id", "source-id", "^site", "source-site"), 6, 7)
-        )), parse("order:x", IllustDialect::class))
+            InvalidSortItem("x", listOf("id", "score", "s", "partition", "pt", "order-time", "order", "ot", "create-time", "create", "ct", "update-time", "update", "ut", "^id", "source-id", "^site", "source-site", "^publish-time", "source-publish-time", "^publish", "^bt"), 5, 6)
+        )), parse("sort:x", IllustDialect::class))
     }
 
     @Test
@@ -398,7 +398,7 @@ class SemanticAnalyzerTest {
         //string类型
         assertEquals(AnalysisResult(QueryPlan(
             sorts = emptyList(),
-            filters = listOf(UnionFilters(listOf(MatchFilter(IllustDialect.description, listOf(FilterStringValueImpl("hello-world")))))),
+            filters = listOf(UnionFilters(listOf(MatchFilter(IllustDialect.description, listOf(FilterStringValueImpl("hello-world")), false)))),
             elements = emptyList()
         )), parse("desc:hello-world", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
@@ -407,7 +407,7 @@ class SemanticAnalyzerTest {
             elements = emptyList()
         )), parse("desc:`hello, world`", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            EnumTypeCastError("x", "Tagme", listOf("tag", "author", "topic", "source"), 6, 7)
+            EnumTypeCastError("x", "TAGME", listOf("tag", "topic", "author", "source"), 6, 7)
         )), parse("tagme:x", IllustDialect::class))
         //number类型
         assertEquals(AnalysisResult(QueryPlan(
@@ -421,22 +421,22 @@ class SemanticAnalyzerTest {
         //pattern number类型
         assertEquals(AnalysisResult(QueryPlan(
             sorts = emptyList(),
-            filters = listOf(UnionFilters(listOf(MatchFilter(IllustDialect.id, listOf(FilterPatternNumberValueImpl("*")))))),
+            filters = listOf(UnionFilters(listOf(MatchFilter(IllustDialect.id, listOf(FilterPatternNumberValueImpl("*")), true)))),
             elements = emptyList()
         )), parse("id:*", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             sorts = emptyList(),
-            filters = listOf(UnionFilters(listOf(MatchFilter(IllustDialect.id, listOf(FilterPatternNumberValueImpl("2*5")))))),
+            filters = listOf(UnionFilters(listOf(MatchFilter(IllustDialect.id, listOf(FilterPatternNumberValueImpl("2*5")), true)))),
             elements = emptyList()
         )), parse("id:2*5", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             sorts = emptyList(),
-            filters = listOf(UnionFilters(listOf(MatchFilter(IllustDialect.id, listOf(FilterPatternNumberValueImpl("256*1?")))))),
+            filters = listOf(UnionFilters(listOf(MatchFilter(IllustDialect.id, listOf(FilterPatternNumberValueImpl("256*1?")), true)))),
             elements = emptyList()
         )), parse("id:256*1?", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             sorts = emptyList(),
-            filters = listOf(UnionFilters(listOf(MatchFilter(IllustDialect.id, listOf(FilterPatternNumberValueImpl("1?2?")))))),
+            filters = listOf(UnionFilters(listOf(MatchFilter(IllustDialect.id, listOf(FilterPatternNumberValueImpl("1?2?")), true)))),
             elements = emptyList()
         )), parse("id:1?2?", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
@@ -468,12 +468,12 @@ class SemanticAnalyzerTest {
         )), parse("pt:2021-01-01", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             sorts = emptyList(),
-            filters = listOf(UnionFilters(listOf(EqualFilter(IllustDialect.createTime, listOf(FilterDateValueImpl(LocalDate.of(2021, 12, 31))))))),
+            filters = listOf(UnionFilters(listOf(RangeFilter(IllustDialect.createTime, FilterDateValueImpl(LocalDate.of(2021, 12, 31)), FilterDateValueImpl(LocalDate.of(2022, 1, 1)), includeBegin = true, includeEnd = false)))),
             elements = emptyList()
         )), parse("create-time:2021-12-31", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             sorts = emptyList(),
-            filters = listOf(UnionFilters(listOf(EqualFilter(IllustDialect.updateTime, listOf(FilterDateValueImpl(LocalDate.of(2021, 1, 1))))))),
+            filters = listOf(UnionFilters(listOf(RangeFilter(IllustDialect.updateTime, FilterDateValueImpl(LocalDate.of(2021, 1, 1)), FilterDateValueImpl(LocalDate.of(2021, 1, 2)), includeBegin = true, includeEnd = false)))),
             elements = emptyList()
         )), parse("update-time:'2021/01.01'", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
@@ -574,14 +574,14 @@ class SemanticAnalyzerTest {
         //集合类型
         assertEquals(AnalysisResult(QueryPlan(
             sorts = emptyList(),
-            filters = listOf(UnionFilters(listOf(MatchFilter(IllustDialect.description, listOf(FilterStringValueImpl("a"), FilterStringValueImpl("b"), FilterStringValueImpl("c")))))),
+            filters = listOf(UnionFilters(listOf(MatchFilter(IllustDialect.description, listOf(FilterStringValueImpl("a"), FilterStringValueImpl("b"), FilterStringValueImpl("c")), false)))),
             elements = emptyList()
         )), parse("desc:{a, b, c}", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             sorts = emptyList(),
             filters = listOf(UnionFilters(listOf(
                 EqualFilter(IllustDialect.id, listOf(FilterPatternNumberValueImpl(124))),
-                MatchFilter(IllustDialect.id, listOf(FilterPatternNumberValueImpl("28*")))
+                MatchFilter(IllustDialect.id, listOf(FilterPatternNumberValueImpl("28*")), true)
             ))),
             elements = emptyList()
         )), parse("id:{124, 28*}", IllustDialect::class))
@@ -605,7 +605,7 @@ class SemanticAnalyzerTest {
         )), parse("desc:{}|id:{1,2}", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             sorts = emptyList(),
-            filters = listOf(UnionFilters(listOf(MatchFilter(IllustDialect.description, listOf(FilterStringValueImpl("a"), FilterStringValueImpl("b"), FilterStringValueImpl("c")))))),
+            filters = listOf(UnionFilters(listOf(MatchFilter(IllustDialect.description, listOf(FilterStringValueImpl("a"), FilterStringValueImpl("b"), FilterStringValueImpl("c")), false)))),
             elements = emptyList()
         )), parse("desc:{a, b, c}|desc:{}", IllustDialect::class))
         //区间类型
@@ -631,11 +631,11 @@ class SemanticAnalyzerTest {
         //预热
         parseAndTestPerformance("""hello""", IllustDialect::class)
         //高复杂度
-        parseAndTestPerformance("""[@fav|like][updating] -$'rather'.`than`.x rating:[A, C)|D~E|G~+|rating>=G ext:{jpg, jpeg} ^id:4396???? order:+partition,-^id""", IllustDialect::class)
+        parseAndTestPerformance("""[@fav|like][updating] -$'rather'.`than`.x rating:[A, C)|D~E|G~+|rating>=G type:{jpg, jpeg} ^id:4396???? sort:+partition,-^id""", IllustDialect::class)
         //中复杂度
-        parseAndTestPerformance("""[@fav|like][updating] -$'rather'.`than`.x ^id:4396???? order:+partition,-^id""", IllustDialect::class)
+        parseAndTestPerformance("""[@fav|like][updating] -$'rather'.`than`.x ^id:4396???? sort:+partition,-^id""", IllustDialect::class)
         //低复杂度
-        parseAndTestPerformance("""[updating] $'rather' order:+partition""", IllustDialect::class)
+        parseAndTestPerformance("""[updating] $'rather' sort:+partition""", IllustDialect::class)
     }
 
     private fun parseAndTestPerformance(text: String, dialect: KClass<out QueryDialect<*>>) {
