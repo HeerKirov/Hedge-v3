@@ -2,10 +2,13 @@ plugins {
     application
     kotlin("jvm").version("1.9.22")
     id("org.beryx.jlink").version("3.0.1")
+    id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
 group = "com.heerkirov.hedge"
 version = "0.8.0"
+
+var targetPlatform: String? = project.findProperty("targetPlatform")?.toString()
 
 dependencies {
     val kotlinVersion = "1.9.22"
@@ -19,15 +22,31 @@ dependencies {
     val quartzVersion = "2.3.2"
     val logbackVersion = "1.4.14"
     val junitVersion = "4.13.2"
-    val javePlatform = when(System.getProperty("os.name").lowercase()) {
-        "mac os x" -> if(System.getProperty("os.arch").lowercase() == "aarch64") {
-            "nativebin-osxm1"
-        }else{
-            "nativebin-osx64"
+    val javePlatform = if(targetPlatform != null) {
+        when(targetPlatform) {
+            "mac" -> "nativebin-osx64"
+            "mac-arm64" -> "nativebin-osxm1"
+            "linux", "linux64" -> "nativebin-linux64"
+            "linux-arm64" -> "nativebin-linux-arm64"
+            "win", "win64" -> "nativebin-win64"
+            "all" -> "all-deps"
+            else -> throw GradleException("Unsupported targetPlatform '$targetPlatform'")
         }
-        "linux" -> "nativebin-linux64"
-        "win" -> "nativebin-win64"
-        else -> "all-deps"
+    } else {
+        when(System.getProperty("os.name").lowercase()) {
+            "mac os x" -> if(System.getProperty("os.arch").lowercase() == "aarch64") {
+                "nativebin-osxm1"
+            }else{
+                "nativebin-osx64"
+            }
+            "linux" -> if(System.getProperty("os.arch").lowercase() == "aarch64") {
+                "nativebin-linux-arm64"
+            }else{
+                "nativebin-linux64"
+            }
+            "win" -> "nativebin-win64"
+            else -> "all-deps"
+        }
     }
 
     implementation(group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk8", version = kotlinVersion)        //kotlin标准库
@@ -91,6 +110,18 @@ tasks {
     }
     compileTestKotlin {
         kotlinOptions.jvmTarget = javaVersion
+    }
+}
+
+if (project.hasProperty("skipTests")) {
+    tasks.withType<Test> {
+        enabled = false
+    }
+}
+
+tasks.withType<Jar> {
+    manifest {
+        attributes["Main-Class"] = projectMainClass
     }
 }
 
