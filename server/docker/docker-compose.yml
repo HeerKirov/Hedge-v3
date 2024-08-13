@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  hedge-v3-server:
+    container_name: hedge-v3-server
+    image: hedge-v3-server:dev
+    environment:
+      - TZ=Asia/Shanghai
+      - STORAGE_DIR=/data
+      - TOKEN=dev
+    ports:
+      - "19000:19000"
+    volumes:
+      - ./server:/server
+      - ./data:/data
