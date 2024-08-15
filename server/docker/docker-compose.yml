@@ -3,6 +3,7 @@ services:
   hedge-v3-server:
     container_name: hedge-v3-server
     image: hedge-v3-server:dev
+    user: "1000:1000"
     environment:
       - TZ=Asia/Shanghai
       - STORAGE_DIR=/data
