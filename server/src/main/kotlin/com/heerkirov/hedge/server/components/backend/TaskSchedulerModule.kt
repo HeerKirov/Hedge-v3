@@ -89,11 +89,11 @@ class TaskSchedulerModule(private val appStatus: AppStatusDriver, private val ap
             synchronized(scheduler!!) {
                 if(offsetHour != currentOffsetHour) {
                     // 取消已有的定时任务（如果有的话）
-                    scheduler!!.deleteJob(JobKey.jobKey("myJob", "group1"))
+                    scheduler!!.deleteJob(JobKey.jobKey("day-job", "backend"))
 
                     // 创建新的JobDetail
                     val job = JobBuilder.newJob(ScheduledJob::class.java)
-                        .withIdentity("ScheduledTask", "group1")
+                        .withIdentity("day-job", "backend")
                         .build()
 
                     // 计算Cron表达式

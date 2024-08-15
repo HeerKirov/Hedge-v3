@@ -38,7 +38,7 @@ class WsConsumer(ctx: (WsConsumer.() -> Unit)? = null) : Consumer<WsConfig> {
     private fun onConnectEvent(ctx: WsConnectContext) {
         connections.add(ctx)
         whenConnectConsumers.forEach { it(ctx.sessionId()) }
-        log.info("connection ${ctx.sessionId()} established.")
+        log.info("connection (${ctx.sessionId()}) ${ctx.session.remoteAddress} established.")
 
         pingThread.start()
     }
@@ -46,7 +46,7 @@ class WsConsumer(ctx: (WsConsumer.() -> Unit)? = null) : Consumer<WsConfig> {
     private fun onCloseEvent(ctx: WsCloseContext) {
         connections.remove(ctx)
         whenCloseConsumers.forEach { it(ctx.sessionId()) }
-        log.info("connection ${ctx.sessionId()} closed.")
+        log.info("connection (${ctx.sessionId()}) closed.")
 
         if(connections.isEmpty()) pingThread.stop()
     }
