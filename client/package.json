@@ -1,7 +1,7 @@
 {
   "name": "hedge-v3",
   "productName": "Hedge-v3-development",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "main": "target/main.js",
   "author": "Heer Kirov",
   "license": "MIT",
