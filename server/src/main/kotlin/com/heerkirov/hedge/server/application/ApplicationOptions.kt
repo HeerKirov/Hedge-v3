@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.application
 
+import com.heerkirov.hedge.server.utils.registerRollingFileLog
 import com.heerkirov.hedge.server.utils.tools.Parameters
 
 class ApplicationOptions(parameters: Parameters) {
@@ -34,6 +35,6 @@ class ApplicationOptions(parameters: Parameters) {
     val token: String? = parameters["--token"] ?: if(this.remoteMode) throw IllegalArgumentException("'--token' is required in remote mode.") else null
 
     init {
-        System.setProperty("LOG_DIR", "$serverDir/logs")
+        registerRollingFileLog(serverDir)
     }
 }
