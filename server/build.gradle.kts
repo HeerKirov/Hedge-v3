@@ -19,7 +19,6 @@ dependencies {
     val thumbnailatorVersion = "0.4.20"
     val twelvemonkeysVersion = "3.10.1"
     val javeVersion = "3.4.0"
-    val quartzVersion = "2.3.2"
     val logbackVersion = "1.4.14"
     val junitVersion = "4.13.2"
     val javePlatform = if(targetPlatform != null) {
@@ -59,7 +58,6 @@ dependencies {
     implementation(group = "org.ktorm", name = "ktorm-core", version = ktormVersion)                            //dao层
     implementation(group = "org.ktorm", name = "ktorm-support-sqlite", version = ktormVersion)                  //dao层sqlite方言支持
     implementation(group = "io.javalin", name = "javalin", version = javalinVersion)                            //http服务器
-    implementation(group = "org.quartz-scheduler", name = "quartz", version = quartzVersion)                    //定时任务
     implementation(group = "net.coobird", name = "thumbnailator", version = thumbnailatorVersion)               //图像处理库，用于缩略图生成
     implementation(group = "com.twelvemonkeys.imageio", name = "imageio-jpeg", version = twelvemonkeysVersion)  //ImageIO扩展，增强jpeg格式处理，兼容各种错误情况
     implementation(group = "ws.schild", name = "jave-core", version = javeVersion)                              //视频处理库，用于缩略图生成

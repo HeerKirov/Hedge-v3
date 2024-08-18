@@ -9,10 +9,13 @@ import com.heerkirov.hedge.server.events.AppStatusChanged
 import com.heerkirov.hedge.server.events.PackagedBusEvent
 import com.heerkirov.hedge.server.events.SettingServerChanged
 import com.heerkirov.hedge.server.library.framework.DaemonThreadComponent
-import org.quartz.*
-import org.quartz.impl.StdSchedulerFactory
 import org.slf4j.LoggerFactory
-import java.util.*
+import java.time.LocalTime
+import java.time.temporal.ChronoUnit
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 
 /**
@@ -25,16 +28,12 @@ class TaskSchedulerModule(private val appStatus: AppStatusDriver, private val ap
     private val startDays = ArrayList<() -> Unit>()
     private val endDays = ArrayList<() -> Unit>()
 
-    private var scheduler: Scheduler? = null
+    private var scheduler: ScheduledExecutorService? = null
+    @Volatile private var future: ScheduledFuture<*>? = null
     @Volatile private var currentOffsetHour: Int? = null
 
     override fun load() {
-        scheduler = if(options.remoteMode) {
-            StdSchedulerFactory(Properties().also {
-                it["org.quartz.scheduler.instanceName"] = "TaskScheduler"
-                it["org.quartz.threadPool.threadCount"] = "1"
-            }).scheduler
-        } else null
+        scheduler = if(options.remoteMode) Executors.newScheduledThreadPool(1) else null
     }
 
     override fun thread() {
@@ -88,27 +87,24 @@ class TaskSchedulerModule(private val appStatus: AppStatusDriver, private val ap
         if(scheduler != null && (offsetHour != currentOffsetHour)) {
             synchronized(scheduler!!) {
                 if(offsetHour != currentOffsetHour) {
-                    // 取消已有的定时任务（如果有的话）
-                    scheduler!!.deleteJob(JobKey.jobKey("day-job", "backend"))
+                    // 取消已有的定时任务（如果有的话
+                    if(future != null) {
+                        future!!.cancel(false)
+                    }
 
-                    // 创建新的JobDetail
-                    val job = JobBuilder.newJob(ScheduledJob::class.java)
-                        .withIdentity("day-job", "backend")
-                        .build()
-
-                    // 计算Cron表达式
-                    val cronExpression = "0 0 ${offsetHour % 24} * * ?"
-
-                    // 创建新的Trigger
-                    val trigger = TriggerBuilder.newTrigger()
-                        .withIdentity("ScheduledTaskTrigger", "group1")
-                        .withSchedule(CronScheduleBuilder.cronSchedule(cronExpression))
-                        .build()
+                    //计算当前时间距离下次调度时间的时间间隔，作为初次调用间隔
+                    val dailyExecutionTime = LocalTime.of((offsetHour + 24) % 24, 0)
+                    val now = LocalTime.now()
+                    val period = 60 * 60 * 24L
+                    val initialDelay = (ChronoUnit.SECONDS.between(now, dailyExecutionTime) + period) % period
 
                     // 调度新的任务
-                    scheduler!!.scheduleJob(job, trigger)
+                    future = scheduler!!.scheduleAtFixedRate(::run, initialDelay, period, TimeUnit.SECONDS)
                     currentOffsetHour = offsetHour
-                    log.info("Trigger created with cron '$cronExpression'.")
+
+                    val initialText = String.format("%dh%02dm%02ds", initialDelay / 3600, initialDelay % 3600 / 60, initialDelay % 60)
+                    val periodText = String.format("%dh", period / 3600)
+                    log.info("Trigger created in '$dailyExecutionTime'. First schedule is after ${initialText}, period is ${periodText}.")
                 }
             }
         }
@@ -122,11 +118,9 @@ class TaskSchedulerModule(private val appStatus: AppStatusDriver, private val ap
         }
     }
 
-    private inner class ScheduledJob : Job {
-        override fun execute(context: JobExecutionContext) {
-            log.info("Have a nice day.")
-            endDays.asReversed().forEach { it() }
-            startDays.forEach { it() }
-        }
+    private fun run() {
+        log.info("Have a nice day.")
+        endDays.asReversed().forEach { it() }
+        startDays.forEach { it() }
     }
 }
