@@ -1,5 +1,5 @@
-import fs from "fs"
 import path from "path"
+import chokidar from "chokidar"
 import { AppDataDriver } from "../appdata"
 import { AppState } from "../state/model"
 import { readdir, statOrNull } from "../../utils/fs"
@@ -42,7 +42,7 @@ export function createFileWatcher(appdata: AppDataDriver, state: StateManager, f
     let statisticCount = 0
     let errors: {path: string, error: PathWatcherErrorReason}[] = []
     let moveMode = false
-    let watchers: fs.FSWatcher[] = []
+    let watcher: chokidar.FSWatcher | null = null
 
     state.stateChangedEvent.addEventListener(loadWhenStateReady)
 
@@ -64,6 +64,7 @@ export function createFileWatcher(appdata: AppDataDriver, state: StateManager, f
             errors.push({path: "", error: "NO_USEFUL_PATH"})
             return
         }
+        const accessPaths: string[] = []
         for(const fileWatchPath of appdata.getAppData().storageOption.fileWatchPaths) {
             const stat = await statOrNull(fileWatchPath)
             if(stat === null) {
@@ -71,22 +72,19 @@ export function createFileWatcher(appdata: AppDataDriver, state: StateManager, f
             }else if(!stat.isDirectory()) {
                 errors.push({path: fileWatchPath, error: "PATH_IS_NOT_DIRECTORY"})
             }else{
-                try {
-                    const w = fs.watch(fileWatchPath, {persistent: false, encoding: "utf-8"}, async (type, filename) => {
-                        if(filename && type === "rename") {
-                            await importFile(path.join(fileWatchPath, filename))
-                        }
-                    })
-                    watchers.push(w)
-                }catch(e) {
-                    console.error("[FileWatcher] File watch failed.", e)
-                    errors.push({path: fileWatchPath, error: "PATH_WATCH_FAILED"})
-                }
+                accessPaths.push(fileWatchPath)
             }
+        }
+        try {
+            watcher = chokidar.watch(accessPaths, {persistent: true, depth: 1, ignoreInitial: true, awaitWriteFinish: {stabilityThreshold: 500, pollInterval: 250}})
+            watcher.on("add", (filepath) => importFile(filepath))
+        }catch(e) {
+            console.error("[FileWatcher] File watch failed.", e)
+            errors.push({path: "", error: "PATH_WATCH_FAILED"})
         }
         fileWatcherChangedEvent.emit({isOpen, statisticCount, errors})
         if(appdata.getAppData().storageOption.fileWatchInitialize) {
-            for(const fileWatchPath of appdata.getAppData().storageOption.fileWatchPaths) {
+            for(const fileWatchPath of accessPaths) {
                 const files = await readdir(fileWatchPath)
                 files.filter(f => f.isFile()).map(f => f.name).filter(filename => !filename.startsWith(".")).forEach(filename => importFile(path.join(fileWatchPath, filename)))
             }
@@ -94,14 +92,13 @@ export function createFileWatcher(appdata: AppDataDriver, state: StateManager, f
     }
 
     function stopWatcher() {
-        watchers.forEach(watcher => watcher.close())
-        watchers = []
+        watcher?.close()
         fileWatcherChangedEvent.emit({isOpen, statisticCount, errors})
     }
 
     async function importFile(filepath: string) {
-        console.log(`[FileWatcher] import file '${filepath}'.`)
         if(AVAILABLE_EXTNAME.includes(path.extname(filepath).substring(1).toLowerCase())) {
+            console.log(`[FileWatcher] import file '${filepath}'.`)
             const r = await file.importFile({filepath, moveFile: moveMode})
             if(r.ok) {
                 statisticCount += 1
