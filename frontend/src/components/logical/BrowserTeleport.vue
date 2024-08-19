@@ -5,12 +5,27 @@ defineProps<{
     to: "top-bar" | "side-bar"
 }>()
 
-const { active } = useCurrentTab()!
+const { activePage, activeTab } = useCurrentTab()!
+
+</script>
+
+<script lang="ts">
+import { defineComponent } from "vue"
+
+const WrappedSlot = defineComponent({
+    setup(_, { slots }) {
+        return () => slots?.default?.()
+    },
+})
 
 </script>
 
 <template>
-    <teleport v-if="active" :to="`#${to}`">
-        <slot/>
-    </teleport>
+    <Teleport v-if="activePage" :to="`#${to}`">
+        <KeepAlive>
+            <WrappedSlot v-if="activeTab">
+                <slot/>
+            </WrappedSlot>
+        </KeepAlive>
+    </Teleport>
 </template>

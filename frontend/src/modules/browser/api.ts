@@ -204,11 +204,19 @@ export const [installCurrentTab, useCurrentTab] = installationNullable(function 
 
     const page = ref<InternalPage>(view.value.current.historyId === props.historyId ? view.value.current : (view.value.histories.find(p => p.historyId === props.historyId) ?? view.value.forwards.find(p => p.historyId === props.historyId)!!))
 
-    const active = ref(view.value.current.historyId === props.historyId && views.value.findIndex(v => v.id === props.id) === activeIndex.value)
+    const activePage = ref(view.value.current.historyId === props.historyId)
 
-    useListeningEvent(event, () => active.value = view.value.current.historyId === props.historyId && views.value.findIndex(v => v.id === props.id) === activeIndex.value)
+    const activeTab = ref(views.value.findIndex(v => v.id === props.id) === activeIndex.value)
 
-    return {view, page, active}
+    const active = ref(activePage.value && activeTab.value)
+
+    useListeningEvent(event, () => {
+        activePage.value = view.value.current.historyId === props.historyId
+        activeTab.value = views.value.findIndex(v => v.id === props.id) === activeIndex.value
+        active.value = activePage.value && activeTab.value
+    })
+
+    return {view, page, active, activePage, activeTab}
 })
 
 export function isBrowserEnvironment() {

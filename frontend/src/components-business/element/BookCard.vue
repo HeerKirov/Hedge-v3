@@ -2,7 +2,6 @@
 import { onMounted, Ref, ref, toRef } from "vue"
 import { Block, Icon } from "@/components/universal"
 import { useAssets } from "@/functions/app"
-import { numbers } from "@/utils/primitives"
 
 const props = defineProps<{
     item: T
