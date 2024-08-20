@@ -25,7 +25,7 @@ installNavigationRecords()
                 <MainTopBar/>
             </template>
 
-            <MainTab v-for="(view, index) in tabStacks" :key="view.id" :view="view" :active="activeIndex === index" :index="index"/>
+            <MainTab v-for="(view, index) in tabStacks" :key="view.id" :view="view" :active="activeIndex === index"/>
         </TopBarLayout>
 
         <template #side>

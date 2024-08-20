@@ -10,7 +10,7 @@ defineProps<{
 </script>
 
 <template>
-    <div :class="{[$style.tab]: true, [$style.active]: active}">
+    <div :id="`tab-${view.id}`" :class="{[$style.tab]: true, [$style.active]: active}">
         <MainTabHistory v-for="s in view.stacks" :key="s.historyId" :id="view.id" :history-id="s.historyId" :component="s.component"/>
     </div>
 </template>

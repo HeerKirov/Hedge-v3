@@ -120,13 +120,15 @@ export default {
     ],
     stackDefinitions: [
         ["Illust", "CollectionDetail"],
-        ["Partition", "PartitionDetail", "CollectionDetail"],
-        ["Book", "BookDetail", "CollectionDetail"],
         ["Partition", "PartitionDetail"],
+        ["Partition", "PartitionDetail", "CollectionDetail"],
         ["Book", "BookDetail"],
+        ["Book", "BookDetail", "CollectionDetail"],
         ["Author", "AuthorDetail"],
         ["Topic", "TopicDetail"],
         ["FindSimilar", "FindSimilarDetail"],
-        ["Folder", "FolderDetail"]
+        ["FindSimilar", "FindSimilarDetail", "CollectionDetail"],
+        ["Folder", "FolderDetail"],
+        ["Folder", "FolderDetail", "CollectionDetail"],
     ]
 }

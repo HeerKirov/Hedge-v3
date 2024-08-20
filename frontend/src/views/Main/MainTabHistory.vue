@@ -16,7 +16,7 @@ installGlobalKeyStack(active)
 </script>
 
 <template>
-    <div :class="$style.stack"><component :is="component"/></div>
+    <div :id="`history-${historyId}`" :class="$style.stack"><component :is="component"/></div>
 </template>
 
 <style module lang="sass">

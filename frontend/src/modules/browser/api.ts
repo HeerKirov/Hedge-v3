@@ -29,26 +29,23 @@ export const [installBrowserView, useBrowserView] = installationNullable(functio
         return nextHistoryIdVal++
     }
 
-    function matchStacks(tab: InternalTab): InternalPage[] {
-        //tips: 此算法还存在一个小瑕疵。有可能在后台装载那些已经被卸载的page，造成不必要的加载。
-        //例如，假设[A B]是个可残留的序列，而我们依次打开A、B、C页面，然后依次返回。
-        //于是，[A B]状态下，这两个页面都如期缓存；[A B C]状态下，只有C打开，A、B不会留下；
-        //然而当关闭C时，[A B]状态又一次符合了缓存条件，于是它们都被打开。但实际上它们是被全新打开的page，并没有之前的缓存状态。
-        //这种行为并不符合此功能的设计预期，它根本没有尽到缓存的作用。
-        //如果要改善这种行为，就应该在计算时将之前的tab stack内容也纳入输入条件，这样可以得知哪些page之前是打开的、有残留价值。
+    function matchStacks(tab: InternalTab, prevStacks: {historyId: number}[] | undefined): InternalPage[] {
         if(!options.stackDefinitions?.length || tab.histories.length <= 0) return []
         const ret: InternalPage[] = []
         let filtered = options.stackDefinitions.filter(d => d[d.length - 1] === tab.current.route.routeName)
-        let step = 2
-        for(let i = tab.histories.length - 1; i >= 0; --i) {
+        for(let i = tab.histories.length - 1, step = 2; i >= 0; --i, ++step) {
             const nextFiltered = filtered.filter(d => d.length >= step && d[d.length - step] === tab.histories[i].route.routeName)
             if(nextFiltered.length > 0) {
                 filtered = nextFiltered
-                step += 1
                 ret.unshift(tab.histories[i])
+            }else{
+                //tips: 之前的一个隐藏坑已被解决，这里没加打断导致可以跨元素匹配，也就会出现[1 3][2]这样的交替加载bug。
+                break
             }
         }
-        return ret
+        //tips: 之前的一个遗留瑕疵已被解决。现在获取prev stacks，即上一个状态中被装载的history。
+        //根据此stacks列表进行过滤，不存在于此列表的history page被滤掉，也就不会出现超前加载历史页面的问题
+        return ret.filter(page => prevStacks?.find(s => s.historyId === page.historyId) ?? false)
     }
 
     function getRouteDefinition(routeName?: string): RouteDefinition {
@@ -231,9 +228,11 @@ export function useBrowserTabStacks() {
 
     const generateTabStacks = async () => {
         const ret: BrowserTabStack[] = []
-        for (const v of views.value) {
+        for(let i = 0; i < views.value.length; i++) {
+            const v = views.value[i]
             const component = await loadComponent(v.current.route.routeName)
-            const s = matchStacks(v).map(h => ({historyId: h.historyId, component: getComponentOrNull(h.route.routeName)!}))
+            const prevStacks = (tabStacks.value[i]?.id === v.id ? tabStacks.value[i] : tabStacks.value.find(s => s.id === v.id))?.stacks
+            const s = matchStacks(v, prevStacks).map(h => ({historyId: h.historyId, component: getComponentOrNull(h.route.routeName)!}))
             ret.push({id: v.id, stacks: [...s, {historyId: v.current.historyId, component}]})
         }
         tabStacks.value = ret
