@@ -76,8 +76,13 @@ export function createFileWatcher(appdata: AppDataDriver, state: StateManager, f
             }
         }
         try {
-            watcher = chokidar.watch(accessPaths, {persistent: true, depth: 1, ignoreInitial: true, awaitWriteFinish: {stabilityThreshold: 500, pollInterval: 250}})
-            watcher.on("add", (filepath) => importFile(filepath))
+            watcher = chokidar.watch(accessPaths, {persistent: true, depth: 0, ignoreInitial: true, awaitWriteFinish: {stabilityThreshold: 500, pollInterval: 250}})
+            watcher.on("add", (filepath) => {
+                //tips: 有必要再做一层路径检查，chokidar的相关选项不保险。在使用macOS归档工具或其他压缩App解压文件时，事件响应会穿透depth限制。
+                if(accessPaths.includes(path.dirname(filepath))) {
+                    importFile(filepath)
+                }
+            })
         }catch(e) {
             console.error("[FileWatcher] File watch failed.", e)
             errors.push({path: "", error: "PATH_WATCH_FAILED"})
