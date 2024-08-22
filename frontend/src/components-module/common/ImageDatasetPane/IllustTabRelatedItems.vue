@@ -30,7 +30,7 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
     <template v-if="data?.books?.length">
         <b class="mb-1">所属画集</b>
         <Block v-for="book in data.books" :key="book.id" :class="$style['book-item']" @click="openRelatedBook(book)">
-            <p>{{book.title}}</p>
+            <div :class="$style.info">{{book.title}}</div>
             <img v-if="book.filePath !== null" :src="assetsUrl(book.filePath.thumbnail)" :alt="book.title"/>
         </Block>
         <div class="mb-2"/>
@@ -63,19 +63,34 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
 
 <style module lang="sass">
 @import "../../../styles/base/size"
+@import "../../../styles/base/color"
 
 .book-item
+    position: relative
     margin-bottom: $spacing-1
-    text-align: center
     cursor: pointer
-    > p
+    aspect-ratio: 3
+    overflow: hidden
+
+    > .info
+        position: absolute
+        bottom: 0
+        left: 0
+        right: 0
+        max-height: 100%
+        padding: $spacing-1 $spacing-2
+        overflow-y: auto
         white-space: nowrap
-        overflow: hidden
-        text-overflow: ellipsis
-        padding: $spacing-half 0
+        box-sizing: border-box
+        background: linear-gradient(to top, rgba(0, 0, 0, 50%), rgba(0, 0, 0, 0%))
+        color: $light-mode-text-inverted-color
+        font-weight: 700
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 50%)
+        &::-webkit-scrollbar
+            display: none
 
     > img
         width: 100%
-        height: 4rem
+        height: 100%
         object-fit: cover
 </style>
