@@ -44,6 +44,10 @@ const props = defineProps<{
      */
     selected?: number[]
     /**
+     * 选择器：已选择项索引。
+     */
+    selectedIndex?: (number | undefined)[]
+    /**
      * 选择器：最后一个选择项。
      */
     lastSelected?: number | null
@@ -102,6 +106,7 @@ const data = toRef(props, "data")
 const state = toRef(props, "state")
 const columnNum = computed(() => props.viewMode === "grid" ? (props.columnNum ?? 3) : undefined)
 const selected = computed(() => props.selected ?? [])
+const selectedIndex = computed(() => props.selectedIndex ?? [])
 const lastSelected = computed(() => props.lastSelected ?? null)
 const draggable = computed(() => props.draggable ?? false)
 const droppable = computed(() => props.droppable ?? false)
@@ -113,7 +118,7 @@ const style = computed(() => ({"--var-fit-type": props.fitType ?? "cover"}))
 installDatasetContext({
     queryInstance: props.queryInstance,
     data, state, keyOf, columnNum,
-    selected, lastSelected,
+    selected, lastSelected, selectedIndex,
     draggable, droppable,
     dragAndDropType: "illusts",
     updateState: (_, __) => emit("update:state", _, __),

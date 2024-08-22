@@ -14,7 +14,7 @@ import { StagingPostImage } from "@/functions/http-client/api/staging-post"
 const { 
     paneState,
     listview: { listview, paginationData: { data, state, setState, navigateTo } },
-    selector: { selected, lastSelected, update: updateSelect },
+    selector: { selected, selectedIndex, lastSelected, update: updateSelect },
     listviewController: { viewMode, fitType, columnNum },
     operators
 } = useStagingPostContext()
@@ -67,7 +67,7 @@ const menu = useDynamicPopupMenu<StagingPostImage>(illust => [
         </div>
         <StagingPostDataset v-else :data="data" :state="state" :query-instance="listview.proxy"
                             :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable droppable
-                            :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
+                            :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                             @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event)"
                             @dblclick="(i, s) => operators.openDetailByClick(i, s)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
                             @drop="operators.dropToAdd"/>

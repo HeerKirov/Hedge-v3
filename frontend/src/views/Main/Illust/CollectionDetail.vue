@@ -16,7 +16,7 @@ const {
     sideBar: { tabType },
     listview: { listview, paginationData: { data: paginationData, state, setState, navigateTo } },
     listviewController: { viewMode, fitType, columnNum, editableLockOn },
-    selector: { selected, lastSelected, update: updateSelect },
+    selector: { selected, selectedIndex, lastSelected, update: updateSelect },
     paneState,
     operators
 } = useCollectionContext()
@@ -110,7 +110,7 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
     <PaneLayout :show-pane="paneState.visible.value">
         <IllustImageDataset :data="paginationData" :state="state" :query-instance="listview.proxy"
                             :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
-                            :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
+                            :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                             @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
                             @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
                             @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>

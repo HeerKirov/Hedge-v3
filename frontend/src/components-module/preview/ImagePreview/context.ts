@@ -12,6 +12,7 @@ interface ListviewModeProps {
     columnNum?: Readonly<Ref<number>>
     viewMode?: Readonly<Ref<"grid" | "row">>
     selected: Readonly<Ref<number[]>>
+    selectedIndex: Readonly<Ref<(number | undefined)[]>>
     lastSelected: Readonly<Ref<number | null>>
     updateSelect(selected: number[], lastSelected: number | null): void
 }
@@ -132,8 +133,7 @@ function getMultipleCtx(ctx: ListviewModeProps): ArrayModeProps {
     }else{
         initIndex = undefined
     }
-    const files = ctx.selected.value.map(id => {
-        const idx = ctx.listview.proxy.sync.findByKey(id)
+    const files = ctx.selectedIndex.value.map(idx => {
         if(idx !== undefined) {
             const item = ctx.listview.proxy.sync.retrieve(idx)!
             return item.filePath?.original ?? null

@@ -13,7 +13,7 @@ import { MenuItem, usePopupMenu } from "@/modules/popup-menu"
 const { 
     paneState,
     listview: { listview, paginationData: { data, state, setState, navigateTo } },
-    selector: { selected, lastSelected, update: updateSelect },
+    selector: { selected, selectedIndex, lastSelected, update: updateSelect },
     listviewController: { viewMode, fitType, columnNum },
     operators: { deleteItem, restoreItem }
 } = installTrashContext()
@@ -51,7 +51,7 @@ const menu = usePopupMenu<TrashedImage>(() => [
         </div>
         <TrashedImageDataset v-else :data="data" :state="state" :query-instance="listview.proxy"
                              :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
-                             :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
+                             :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                              @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event)"/>
 
         <template #pane>

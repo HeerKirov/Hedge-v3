@@ -186,6 +186,7 @@ function useOperators(listview: QueryListview<ImportRecord, number>, queryFilter
             columnNum: listviewController.columnNum,
             viewMode: listviewController.viewMode,
             selected: selector.selected,
+            selectedIndex: selector.selectedIndex,
             lastSelected: selector.lastSelected,
             updateSelect: selector.update
         })
@@ -262,6 +263,7 @@ export function useImportDetailPane() {
             columnNum: listviewController.columnNum,
             viewMode: listviewController.viewMode,
             selected: selector.selected,
+            selectedIndex: selector.selectedIndex,
             lastSelected: selector.lastSelected,
             updateSelect: selector.update
         })

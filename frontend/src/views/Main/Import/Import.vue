@@ -19,7 +19,7 @@ const {
     watcher: { state, setState, paths },
     listview: { listview, paginationData },
     listviewController: { viewMode, fitType, columnNum },
-    selector: { selected, lastSelected, update: updateSelect },
+    selector: { selected, selectedIndex, lastSelected, update: updateSelect },
     operators: { historyMode, openDialog, deleteItem, openImagePreview, openImageInPartition, analyseSource, analyseTime, retry, clear }
 } = installImportContext()
 
@@ -75,7 +75,7 @@ const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
     <PaneLayout :show-pane="paneState.visible.value">
         <ImportEmpty v-if="!paginationData.status.value.loading && paginationData.data.value.metrics && paginationData.state.value?.total === 0" :class="$style.empty"/>
         <ImportImageDataset v-else :data="paginationData.data.value" :state="paginationData.state.value" :query-instance="listview.proxy" :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
-                            :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
+                            :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                             @update:state="paginationData.setState" @navigate="paginationData.navigateTo($event)" @select="updateSelect" @contextmenu="menu.popup($event)" @space="openImagePreview()"/>
         <EmbedPreview/>
         <LoadingScreen :loading="paginationData.status.value.loading"/>

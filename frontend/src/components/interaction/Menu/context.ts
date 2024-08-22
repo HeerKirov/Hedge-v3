@@ -5,7 +5,7 @@ import { useLocalStorage } from "@/functions/app"
 export const [installMenuContext, useMenuContext] = installation(function (selected: Ref<{ id: string, subId: string | null } | undefined>) {
     const scopeStorage = useLocalStorage<{[scopeKey: string]: boolean}>("side-bar/menu/scope", () => ({}), true)
 
-    const scopeStatus = reactive(scopeStorage.value ?? {})
+    const scopeStatus = reactive(scopeStorage.value)
 
     watch(() => scopeStatus, scopeStatus => scopeStorage.value = scopeStatus, {deep: true})
 

@@ -295,6 +295,7 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
             columnNum: listviewController.columnNum,
             viewMode: gridMode,
             selected: selector.selected,
+            selectedIndex: selector.selectedIndex,
             lastSelected: selector.lastSelected,
             updateSelect: selector.update
         })
@@ -610,6 +611,7 @@ export function useDetailPane() {
                     columnNum: listviewController.columnNum,
                     viewMode: listviewController.viewMode,
                     selected: selector.selected,
+                    selectedIndex: selector.selectedIndex,
                     lastSelected: selector.lastSelected,
                     updateSelect: selector.update
                 })

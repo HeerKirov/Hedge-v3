@@ -7,7 +7,7 @@ import { useFindSimilarDetailPanel } from "@/services/main/find-similar"
 const {
     listview,
     paginationData: { data, state, setState, navigateTo },
-    selector: { selected, lastSelected, update: updateSelect }, 
+    selector: { selected, selectedIndex, lastSelected, update: updateSelect },
     listviewController: { fitType, columnNum }, 
     operators: { allBooks, allCollections, modifyFavorite, addToStagingPost, addToCollection, addToBook, markIgnored, deleteItem, cloneImage, openPreviewBySpace, openImageInPartition }
 } = useFindSimilarDetailPanel()
@@ -38,6 +38,6 @@ const menu = useDynamicPopupMenu<FindSimilarResultDetailImage>(illust => [
 <template>
     <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy"
                         view-mode="grid" :fit-type="fitType" :column-num="columnNum"
-                        :selected="selected" :last-selected="lastSelected" @select="updateSelect"
+                        :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" @select="updateSelect"
                         @update:state="setState" @navigate="navigateTo" @space="openPreviewBySpace()" @contextmenu="menu.popup($event as FindSimilarResultDetailImage)"/>
 </template>

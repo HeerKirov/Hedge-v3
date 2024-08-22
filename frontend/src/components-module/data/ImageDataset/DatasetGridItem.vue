@@ -23,6 +23,7 @@ const dragEvents = useDragEvents({
     queryInstance, keyOf,
     draggable: drag.draggable.value,
     selected: selector.selected,
+    selectedIndex: selector.selectedIndex,
     byType: drag.byType,
     dataRef: () => dataRef,
     dataMap: images => (images as any)

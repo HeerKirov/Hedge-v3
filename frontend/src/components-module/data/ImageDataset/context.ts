@@ -13,6 +13,7 @@ interface DatasetContextOptions {
     state: Ref<PaginationViewState | null>
     keyOf(item: unknown): number
     selected: Ref<number[]>
+    selectedIndex: Ref<(number | undefined)[]>
     lastSelected: Ref<number | null>
     columnNum: Ref<number | undefined>
     draggable: Ref<boolean>
@@ -35,6 +36,7 @@ export interface Selector {
     moveSelect(arrow: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", shift: boolean): Promise<void>
     multiSelect(fromId: number, toId: number): void
     selected: Ref<number[]>
+    selectedIndex: Ref<(number | undefined)[]>
     lastSelected: Ref<number | null>
 }
 
@@ -43,6 +45,7 @@ interface SelectorOptions<T> {
     data: Ref<PaginationData<T>>
     state: Ref<PaginationViewState | null>
     selected: Ref<number[]>
+    selectedIndex: Ref<(number | undefined)[]>
     lastSelected: Ref<number | null>
     columnNum: Ref<number | undefined>
     keyOf: (item: T) => number
@@ -58,6 +61,7 @@ export const [installDatasetContext, useDatasetContext] = installation(function 
         data: options.data,
         state: options.state,
         selected: options.selected,
+        selectedIndex: options.selectedIndex,
         lastSelected: options.lastSelected,
         columnNum: options.columnNum,
         keyOf: options.keyOf,
@@ -90,7 +94,7 @@ export const [installDatasetContext, useDatasetContext] = installation(function 
 
 function useSelector<T>(options: SelectorOptions<T>): Selector {
     const { toast } = useToast()
-    const { state, selected, lastSelected, queryInstance, columnNum, select: onSelect, keyOf, navigate } = options
+    const { state, selected, selectedIndex, lastSelected, queryInstance, columnNum, select: onSelect, keyOf, navigate } = options
 
     const select = (_: number, illustId: number) => {
         // 单击一个项时，只选择此项
@@ -229,7 +233,7 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
         return res !== null ? keyOf(res) : null
     }
 
-    return {select, appendSelect, shiftSelect, moveSelect, multiSelect, lastSelected, selected}
+    return {select, appendSelect, shiftSelect, moveSelect, multiSelect, lastSelected, selected, selectedIndex}
 }
 
 function useKeyboardEvents({ moveSelect, lastSelected }: Selector, enter: (illustId: number) => void, space: (illustId: number) => void) {
@@ -274,31 +278,21 @@ function useSummaryDropEvents<T extends keyof TypeDefinition>(options: {
 export function useDragEvents<T extends keyof TypeDefinition, DATA>(options: {
     draggable: boolean
     selected: Ref<number[]>
+    selectedIndex: Ref<(number | undefined)[]>
     byType: T
     queryInstance: QueryInstance<DATA, number> | undefined
     keyOf: (item: DATA) => number
     dataRef(): Ref<DATA>
     dataMap(item: DATA[]): TypeDefinition[T]
 }) {
-    const { draggable, queryInstance, selected, byType, keyOf, dataMap, dataRef } = options
+    const { draggable, queryInstance, selected, selectedIndex, byType, keyOf, dataMap, dataRef } = options
 
     if(draggable && queryInstance !== undefined) {
         const data = dataRef()
         const dragEvents = useDraggable(byType, () => {
             //拖曳行为：与context的复数选择行为一致。当拖曳项是选择项时，拖曳全部选择项；不是时，仅拖曳拖曳项。
             if(selected.value.includes(keyOf(data.value))) {
-                const d = selected.value.map(illustId => {
-                    if(illustId !== keyOf(data.value)) {
-                        const index = queryInstance.sync.findByKey(illustId)
-                        if(index !== undefined) {
-                            return queryInstance.sync.retrieve(index)!
-                        }else{
-                            return null
-                        }
-                    }else{
-                        return data.value
-                    }
-                }).filter(i => i !== null) as DATA[]
+                const d = selectedIndex.value.filter(i => i !== undefined).map(i => queryInstance.sync.retrieve(i!)!)
                 return dataMap(d)
             }else{
                 return dataMap([data.value])

@@ -366,6 +366,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
             columnNum: listviewController.columnNum,
             viewMode: listviewController.viewMode,
             selected: selector.selected,
+            selectedIndex: selector.selectedIndex,
             lastSelected: selector.lastSelected,
             updateSelect: selector.update
         })

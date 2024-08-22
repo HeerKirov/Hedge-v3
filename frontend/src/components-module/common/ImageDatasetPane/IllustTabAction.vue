@@ -10,12 +10,13 @@ import { MenuItem } from "@/modules/popup-menu"
 
 const props = defineProps<{
     selected: number[]
+    selectedIndex: (number | undefined)[]
     parent?: {type: "book", bookId: number} | {type: "folder", folderId: number} | null
 }>()
 
-const { selected, parent } = toRefs(props)
+const { selected, selectedIndex, parent } = toRefs(props)
 
-const { actives, form, editMetaTag, setScore, setDescription, setTagme, editOrderTimeRange, editPartitionTime, submitOrderTimeRange, submitPartitionTime, partitionTimeAction, orderTimeAction, ordinalAction } = useSideBarAction(selected, parent)
+const { actives, form, editMetaTag, setScore, setDescription, setTagme, editOrderTimeRange, editPartitionTime, submitOrderTimeRange, submitPartitionTime, partitionTimeAction, orderTimeAction, ordinalAction } = useSideBarAction(selected, selectedIndex, parent)
 
 const metaTagMenuItems = <MenuItem<undefined>[]>[
     {type: "normal", label: "覆盖原有标签…", click: () => editMetaTag("OVERRIDE")},

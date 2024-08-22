@@ -12,7 +12,7 @@ defineEmits<{
     (e: "close"): void
 }>()
 
-const { tabType, detail, selector: { selected }, parent, openImagePreview } = useIllustDetailPane()
+const { tabType, detail, selector: { selected, selectedIndex }, parent, openImagePreview } = useIllustDetailPane()
 
 const paneButtonItems = computedEffect(() => [
     {value: "info", label: "项目信息", icon: "info"},
@@ -39,7 +39,7 @@ const paneButtonItems = computedEffect(() => [
             <IllustTabDetailInfo v-if="detail && tabType === 'info'" :detail-id="detail.id"/>
             <IllustTabRelatedItems v-else-if="detail && tabType === 'related'" :detail-id="detail.id" :type="detail.type"/>
             <IllustTabSourceData v-else-if="detail && tabType === 'source'" :detail-id="detail.id" :type="detail.type"/>
-            <IllustTabAction v-else-if="tabType === 'action'" :selected="selected" :parent="parent"/>
+            <IllustTabAction v-else-if="tabType === 'action'" :selected="selected" :selected-index="selectedIndex" :parent="parent"/>
         </KeepAlive>
 
         <template #bottom>

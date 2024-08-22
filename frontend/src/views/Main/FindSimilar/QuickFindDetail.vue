@@ -15,7 +15,7 @@ const {
     paneState,
     listview: { listview, paginationData: { data, state, setState, navigateTo } },
     listviewController: { viewMode, fitType, columnNum },
-    selector: { selected, lastSelected, update: updateSelect },
+    selector: { selected, selectedIndex, lastSelected, update: updateSelect },
     operators
 } = useQuickFindContext()
 
@@ -81,7 +81,7 @@ const menu = useDynamicPopupMenu<CommonIllust>(illust => [
     <PaneLayout :show-pane="paneState.visible.value">
         <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy"
                             :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable
-                            :selected="selected" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
+                            :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
                             @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
                             @dblclick="(i, s) => operators.openDetailByClick(i, s)"
                             @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"

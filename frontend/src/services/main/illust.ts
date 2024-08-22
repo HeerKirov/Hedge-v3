@@ -25,7 +25,6 @@ import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 import { arrays, objects } from "@/utils/primitives"
 import { useListeningEvent } from "@/utils/emitter"
 import { toRef } from "@/utils/reactivity"
-import { sleep } from "@/utils/process"
 
 export function useIllustContext() {
     const querySchema = useQuerySchema("ILLUST")
@@ -74,10 +73,7 @@ export function useIllustContext() {
 function useIllustListView(querySchema: QuerySchemaContext) {
     const listview = useListViewContext({
         defaultFilter: <IllustQueryFilter>{order: "-orderTime", type: "IMAGE"},
-        request: client => async (offset, limit, filter) => {
-            await sleep(1000)
-            return await client.illust.list({offset, limit, ...filter})
-        },
+        request: client => (offset, limit, filter) => client.illust.list({offset, limit, ...filter}),
         keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/illust/created", "entity/illust/updated", "entity/illust/deleted", "entity/illust/images/changed"],
@@ -255,6 +251,7 @@ export function useIllustDetailPane() {
             columnNum: listviewController.columnNum,
             viewMode: listviewController.viewMode,
             selected: selector.selected,
+            selectedIndex: selector.selectedIndex,
             lastSelected: selector.lastSelected,
             updateSelect: selector.update
         })
@@ -312,7 +309,7 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
     return detail
 }
 
-export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "book", bookId: number} | {type: "folder", folderId: number} | null | undefined> | undefined) {
+export function useSideBarAction(selected: Ref<number[]>, selectedIndex: Ref<(number | undefined)[]>, parent: Ref<{type: "book", bookId: number} | {type: "folder", folderId: number} | null | undefined> | undefined) {
     const toast = useToast()
     const { metaTagEditor } = useDialogService()
 
@@ -390,8 +387,7 @@ export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "bo
     const editPartitionTime = async () => {
         if(!actives.partitionTime && !form.partitionTime) {
             const counter: Record<number, { value: LocalDate, count: number }> = {}
-            const selectedIndexes = await Promise.all(selected.value.map(id => listview.proxy.findByKey(id)))
-            for(const idx of selectedIndexes) {
+            for(const idx of selectedIndex.value) {
                 if(idx !== undefined) {
                     const ord = listview.proxy.sync.retrieve(idx)!.orderTime
                     const cur = date.ofDate(ord.year, ord.month, ord.day)
@@ -407,8 +403,7 @@ export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "bo
     const editOrderTimeRange = async () => {
         if(!actives.orderTime && !form.orderTime) {
             let min: LocalDateTime | undefined = undefined, max: LocalDateTime | undefined = undefined
-            const selectedIndexes = await Promise.all(selected.value.map(id => listview.proxy.findByKey(id)))
-            for(const idx of selectedIndexes) {
+            for(const idx of selectedIndex.value) {
                 if(idx !== undefined) {
                     const cur = listview.proxy.sync.retrieve(idx)!.orderTime
                     if(min === undefined || cur.timestamp < min.timestamp) min = cur

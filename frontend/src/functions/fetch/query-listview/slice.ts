@@ -52,6 +52,7 @@ export function createMappedQueryInstance<T, R, KEY>(instance: QueryInstance<T, 
         async queryList(indexList: number[]): Promise<R[]> {
             return (await instance.queryList(indexList)).map(mapper)
         },
+        findByKey: instance.findByKey,
         count: instance.count,
         isRangeLoaded: instance.isRangeLoaded,
         sync: {
