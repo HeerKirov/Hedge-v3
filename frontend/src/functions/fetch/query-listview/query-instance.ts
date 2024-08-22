@@ -50,6 +50,13 @@ export interface QueryInstance<T, KEY> {
      */
     queryList(indexList: number[]): Promise<T[]>
     /**
+     * 根据key查找指定的项。
+     * @param key 要查找的KEY
+     * @param priorityRange 指定一个中轴offset或指定[start, end)范围作为优先查找范围。查询会从这个范围开始向两侧逐步扩张直到匹配目标。
+     * @param maxRange 指定一个半区延展量(从优先查找范围两端向外延伸)或指定[start, end)范围作为最大查找范围。作为可以加载数据的查找，如果不限范围，它可能载入全部的数据。
+     */
+    findByKey(key: KEY, priorityRange?: number | [number, number], maxRange?: number | [number, number]): Promise<number | undefined>
+    /**
      * 查询指定范围的数据是否是已加载的状态。
      */
     isRangeLoaded(offset: number, limit: number): LoadedStatus
@@ -127,6 +134,42 @@ export function createQueryInstance<T, KEY, E extends BasicException>(options: Q
             }
             return result
         },
+        async findByKey(key: KEY, priorityRange?: number | [number, number], maxRange?: number | [number, number]): Promise<number | undefined> {
+            const directReturn = datasource.map.get(key)
+            if(directReturn !== undefined) return directReturn[0]
+
+            //在开始之前如果数据量为null，则首先进行一次初始化，获得count
+            if(datasource.data.total === null && !await segments.loadData(0, segmentSize)) return undefined
+            //segment总分片数
+            const segmentCount = Math.ceil(datasource.data.total! / segmentSize)
+            //根据当前的数据显示范围计算搜索起始的段位置
+            const [lowerBound, upperBound] = calcPriorityRange(priorityRange, segmentCount, segmentSize)
+            //扩展得到搜索的最大限制段位置
+            const [lowerLimit, upperLimit] = calcMaxRange(priorityRange, maxRange, segmentCount, segmentSize)
+
+            //首先加载整个起始搜索位置
+            {
+                if(!await segments.loadData(lowerBound * segmentSize, upperBound * segmentSize)) return undefined
+                const directReturn = datasource.map.get(key)
+                if(directReturn !== undefined) return directReturn[0]
+            }
+            //如果不行，就从lower和upper向两侧迭代
+            for(let lower = lowerBound - 1, upper = upperBound; lower >= lowerLimit || upper < upperLimit;) {
+                if(lower >= lowerLimit) {
+                    if(!await segments.loadData(lower * segmentSize, (lower + 1) * segmentSize)) return undefined
+                    const directReturn = datasource.map.get(key)
+                    if(directReturn !== undefined) return directReturn[0]
+                    lower -= 1
+                }
+                if(upper < upperLimit) {
+                    if(!await segments.loadData(upper * segmentSize, (upper + 1) * segmentSize)) return undefined
+                    const directReturn = datasource.map.get(key)
+                    if(directReturn !== undefined) return directReturn[0]
+                    upper += 1
+                }
+            }
+            return undefined
+        },
         async count() {
             const ok = await segments.loadData(0, segmentSize)
             return ok ? datasource.data.total! : 0
@@ -142,18 +185,7 @@ export function createQueryInstance<T, KEY, E extends BasicException>(options: Q
                 if(datasource.data.total == null) return undefined
                 //segment总分片数
                 const segmentCount = Math.ceil(datasource.data.total / segmentSize)
-                    const segmentList = segments.getSegments()
-
-                function calcPriorityRange() {
-                    if(typeof priorityRange === "number") {
-                        return [Math.floor(priorityRange / segmentSize), Math.ceil(priorityRange / segmentSize)]
-                    }else if(typeof priorityRange === "object") {
-                        const [begin, end] = priorityRange
-                        return [Math.floor(begin / segmentSize), Math.ceil(end / segmentSize)]
-                    }else{
-                        return [0, segmentCount]
-                    }
-                }
+                const segmentList = segments.getSegments()
 
                 function findInSegment(segmentIndex: number): number | undefined {
                     if(segmentList[segmentIndex]?.status === SegmentStatus.LOADED) {
@@ -169,7 +201,7 @@ export function createQueryInstance<T, KEY, E extends BasicException>(options: Q
                 }
 
                 //根据当前的数据显示范围计算搜索起始的段位置
-                const [lowerBound, upperBound] = calcPriorityRange()
+                const [lowerBound, upperBound] = calcPriorityRange(priorityRange, segmentCount, segmentSize)
                 //首先在这些段中搜索
                 for(let i = lowerBound; i < upperBound; ++i) {
                     const result = findInSegment(i)
@@ -394,6 +426,35 @@ function createDatasource<T, KEY, E extends BasicException>({ request, keyOf, ha
     }
 
     return {data, map, pull}
+}
+
+function calcPriorityRange(priorityRange: number | [number, number] | undefined, segmentCount: number, segmentSize: number): [number, number] {
+    if(typeof priorityRange === "number") {
+        return [Math.floor(priorityRange / segmentSize), Math.ceil(priorityRange / segmentSize)]
+    }else if(typeof priorityRange === "object") {
+        const [begin, end] = priorityRange
+        return [Math.floor(begin / segmentSize), Math.ceil(end / segmentSize)]
+    }else{
+        return [0, segmentCount]
+    }
+}
+
+function calcMaxRange(priorityRange: number | [number, number] | undefined, maxRange: number | [number, number] | undefined, segmentCount: number, segmentSize: number): [number, number] {
+    if(typeof maxRange === "object") {
+        const [begin, end] = maxRange
+        return [Math.floor(begin / segmentSize), Math.ceil(end / segmentSize)]
+    }else if(typeof maxRange === "number") {
+        if(typeof priorityRange === "number") {
+            return [Math.floor(Math.max(0, priorityRange - maxRange) / segmentSize), Math.ceil((priorityRange + maxRange) / segmentSize)]
+        }else if(typeof priorityRange === "object") {
+            const [begin, end] = priorityRange
+            return [Math.floor(Math.max(0, begin - maxRange) / segmentSize), Math.ceil((end + maxRange) / segmentSize)]
+        }else{
+            return [0, segmentCount]
+        }
+    }else{
+        return [0, segmentCount]
+    }
 }
 
 export enum LoadedStatus {

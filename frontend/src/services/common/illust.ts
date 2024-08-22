@@ -259,36 +259,37 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     }
 
     const openAll = (illustId: number) => {
-        const currentIndex = listview.proxy.sync.findByKey(illustId)
-        if(currentIndex !== undefined) {
-            const slice: AllSlice<Illust, number> = {type: "ALL", focusIndex: currentIndex, instance: getSliceInstance()}
-            stackedView.openImageView(slice, illustId => {
-                //回调：给出了目标id，回查data的此项，并找到此项现在的位置，导航到此位置
-                const index = listview.proxy.sync.findByKey(illustId)
-                if(index !== undefined) {
-                    selector.update([illustId], illustId)
-                    paginationData.navigateTo(index)
-                }
-            })
-        }
-    }
-
-    const openList = (selected: number[], currentIndex: number) => {
-        const indexList = selected
-            .map(selectedId => listview.proxy.sync.findByKey(selectedId))
-            .filter(index => index !== undefined) as number[]
-        const slice: ListIndexSlice<Illust, number> = {type: "LIST", indexes: indexList, focusIndex: currentIndex, instance: getSliceInstance()}
-        stackedView.openImageView(slice, illustId => {
-            //回调：给出了目标id，回查data的此项，并找到此项现在的位置，导航到此位置
-            const index = listview.proxy.sync.findByKey(illustId)
-            if(index !== undefined) paginationData.navigateTo(index)
+        listview.proxy.findByKey(illustId).then(currentIndex => {
+            if(currentIndex !== undefined) {
+                const slice: AllSlice<Illust, number> = {type: "ALL", focusIndex: currentIndex, instance: getSliceInstance()}
+                stackedView.openImageView(slice, illustId => {
+                    //回调：给出了目标id，回查data的此项，并找到此项现在的位置，导航到此位置
+                    listview.proxy.findByKey(illustId).then(index => {
+                        if(index !== undefined) {
+                            selector.update([illustId], illustId)
+                            paginationData.navigateTo(index)
+                        }
+                    })
+                })
+            }
         })
     }
 
-    const openDetailByClick = (illustId: number, openCollection?: boolean) => {
+    const openList = async (selected: number[], currentIndex: number) => {
+        const indexList = (await Promise.all(selected.map(selectedId => listview.proxy.findByKey(selectedId)))).filter(index => index !== undefined) as number[]
+        const slice: ListIndexSlice<Illust, number> = {type: "LIST", indexes: indexList, focusIndex: currentIndex, instance: getSliceInstance()}
+        stackedView.openImageView(slice, illustId => {
+            //回调：给出了目标id，回查data的此项，并找到此项现在的位置，导航到此位置
+            listview.proxy.findByKey(illustId).then(index => {
+                if(index !== undefined) paginationData.navigateTo(index)
+            })
+        })
+    }
+
+    const openDetailByClick = async (illustId: number, openCollection?: boolean) => {
         if(openCollection) {
             //在按下option/alt键时，打开集合
-            const index = listview.proxy.sync.findByKey(illustId)
+            const index = await listview.proxy.findByKey(illustId)
             if(index !== undefined) {
                 const illust = listview.proxy.sync.retrieve(index)!
                 if(illust.type === "COLLECTION") {
@@ -304,7 +305,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
                 //特殊情况：在选择项之外的项上右键选择了预览。此时仍按全局显示
                 openAll(illustId)
             }else{
-                openList(selector.selected.value, currentIndex)
+                await openList(selector.selected.value, currentIndex)
             }
         }else{
             //否则显示全局
@@ -315,7 +316,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     const openDetailByEnter = (illustId: number) => {
         if(selector.selected.value.length > 1) {
             //选择项数量大于1时，只显示选择项列表，且进入模式是enter进入，默认不指定选择项，从头开始浏览
-            openList(selector.selected.value, 0)
+            openList(selector.selected.value, 0).finally()
         }else{
             //否则显示全局
             openAll(illustId)
@@ -323,19 +324,20 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     }
 
     const openCollectionDetail = (illustId: number, at: "newTab" | undefined) => {
-        const currentIndex = listview.proxy.sync.findByKey(illustId)
-        if(currentIndex !== undefined) {
-            const illust = listview.proxy.sync.retrieve(currentIndex)!
-            if(illust.type === "COLLECTION") {
-                if(at === "newTab") {
-                    browserTabs.newTab({routeName: "CollectionDetail", path: illustId})
+        listview.proxy.findByKey(illustId).then(currentIndex => {
+            if(currentIndex !== undefined) {
+                const illust = listview.proxy.sync.retrieve(currentIndex)!
+                if(illust.type === "COLLECTION") {
+                    if(at === "newTab") {
+                        browserTabs.newTab({routeName: "CollectionDetail", path: illustId})
+                    }else{
+                        router.routePush({routeName: "CollectionDetail", path: illustId})
+                    }
                 }else{
-                    router.routePush({routeName: "CollectionDetail", path: illustId})
+                    console.error(`Illust ${illust.id} is not a collection.`)
                 }
-            }else{
-                console.error(`Illust ${illust.id} is not a collection.`)
             }
-        }
+        })
     }
 
     const openInNewWindow = (illust: T) => {
@@ -457,7 +459,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     }
 
     const popStagingPost = dataDropOptions === undefined ? () => {} : async (illust: T, position: "before" | "after" = "after") => {
-        const idx = listview.proxy.sync.findByKey(illust.id)
+        const idx = await listview.proxy.findByKey(illust.id)
         if(idx !== undefined) {
             const res = await fetchStagingPostListAll({})
             if(res !== undefined) {
@@ -554,8 +556,8 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
             return "asc"
         }
 
-        const checkOptimize = (insertIndex: number, illustIds: number[]): boolean => {
-            const findByKeys = illustIds.map(listview.proxy.sync.findByKey)
+        const checkOptimize = async (insertIndex: number, illustIds: number[]): Promise<boolean> => {
+            const findByKeys = await Promise.all(illustIds.map(id => listview.proxy.findByKey(id)))
             //如果有的项找不到，那么跳过此检查步骤，直接返回
             if(findByKeys.some(i => i === undefined)) return false
             const indexes = (findByKeys as number[]).sort()
@@ -567,8 +569,8 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
 
         const insertIntoIllusts = async (insertIndex: number | null, illusts: DraggingIllust[], mode: "ADD" | "MOVE"): Promise<boolean> => {
             const target = illusts.map(i => i.id)
-            const finalInsertIndex = insertIndex ?? listview.proxy.sync.count()
-            if(mode === "MOVE" && finalInsertIndex !== null && checkOptimize(finalInsertIndex, target)) return false
+            const finalInsertIndex = insertIndex ?? await listview.proxy.count()
+            if(mode === "MOVE" && await checkOptimize(finalInsertIndex, target)) return false
             const partitionTime = dataDropOptions.dropInType === "partition" ? unref(dataDropOptions.path) ?? undefined : undefined
             if(finalInsertIndex === 0) {
                 const afterItem = listview.proxy.sync.retrieve(finalInsertIndex)!
@@ -619,7 +621,7 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
                     }else if(illusts.length > 0) {
                         //移动操作直接调用API即可
                         const target = illusts.map(i => i.id)
-                        if(mode === "MOVE" && insertIndex !== null && checkOptimize(insertIndex, target)) return false
+                        if(mode === "MOVE" && insertIndex !== null && await checkOptimize(insertIndex, target)) return false
                         return await fetchBookImagesPartialUpdate(path, {action: "MOVE", images: target, ordinal: insertIndex})
                     }
                 }
@@ -637,7 +639,7 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
                     }else if(illusts.length > 0) {
                         //移动操作直接调用API即可
                         const target = illusts.map(i => i.id)
-                        if(mode === "MOVE" && insertIndex !== null && checkOptimize(insertIndex, target)) return false
+                        if(mode === "MOVE" && insertIndex !== null && await checkOptimize(insertIndex, target)) return false
                         return await fetchFolderImagesPartialUpdate(path, {action: "MOVE", images: target, ordinal: insertIndex})
                     }
                 }

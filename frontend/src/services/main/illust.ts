@@ -25,6 +25,7 @@ import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 import { arrays, objects } from "@/utils/primitives"
 import { useListeningEvent } from "@/utils/emitter"
 import { toRef } from "@/utils/reactivity"
+import { sleep } from "@/utils/process"
 
 export function useIllustContext() {
     const querySchema = useQuerySchema("ILLUST")
@@ -73,7 +74,10 @@ export function useIllustContext() {
 function useIllustListView(querySchema: QuerySchemaContext) {
     const listview = useListViewContext({
         defaultFilter: <IllustQueryFilter>{order: "-orderTime", type: "IMAGE"},
-        request: client => (offset, limit, filter) => client.illust.list({offset, limit, ...filter}),
+        request: client => async (offset, limit, filter) => {
+            await sleep(1000)
+            return await client.illust.list({offset, limit, ...filter})
+        },
         keyOf: item => item.id,
         eventFilter: {
             filter: ["entity/illust/created", "entity/illust/updated", "entity/illust/deleted", "entity/illust/images/changed"],
@@ -273,7 +277,7 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
 
     watch(path, async path => {
         if(path !== null) {
-            const idx = listview.proxy.sync.findByKey(path)
+            const idx = await listview.proxy.findByKey(path)
             if(idx !== undefined) {
                 const item = listview.proxy.sync.retrieve(idx)!
                 detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
@@ -289,7 +293,7 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
     useListeningEvent(listview.modifiedEvent, async e => {
         if(path.value !== null) {
             if(e.type === "FILTER_UPDATED" || e.type === "REFRESH") {
-                const idx = listview.proxy.sync.findByKey(path.value)
+                const idx = await listview.proxy.findByKey(path.value)
                 if(idx !== undefined) {
                     const item = listview.proxy.sync.retrieve(idx)!
                     detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
@@ -383,11 +387,11 @@ export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "bo
         return true
     }
 
-    const editPartitionTime = () => {
+    const editPartitionTime = async () => {
         if(!actives.partitionTime && !form.partitionTime) {
             const counter: Record<number, { value: LocalDate, count: number }> = {}
-            for(const selectedId of selected.value) {
-                const idx = listview.proxy.sync.findByKey(selectedId)
+            const selectedIndexes = await Promise.all(selected.value.map(id => listview.proxy.findByKey(id)))
+            for(const idx of selectedIndexes) {
                 if(idx !== undefined) {
                     const ord = listview.proxy.sync.retrieve(idx)!.orderTime
                     const cur = date.ofDate(ord.year, ord.month, ord.day)
@@ -400,11 +404,11 @@ export function useSideBarAction(selected: Ref<number[]>, parent: Ref<{type: "bo
         actives.partitionTime = !actives.partitionTime
     }
 
-    const editOrderTimeRange = () => {
+    const editOrderTimeRange = async () => {
         if(!actives.orderTime && !form.orderTime) {
             let min: LocalDateTime | undefined = undefined, max: LocalDateTime | undefined = undefined
-            for(const selectedId of selected.value) {
-                const idx = listview.proxy.sync.findByKey(selectedId)
+            const selectedIndexes = await Promise.all(selected.value.map(id => listview.proxy.findByKey(id)))
+            for(const idx of selectedIndexes) {
                 if(idx !== undefined) {
                     const cur = listview.proxy.sync.retrieve(idx)!.orderTime
                     if(min === undefined || cur.timestamp < min.timestamp) min = cur

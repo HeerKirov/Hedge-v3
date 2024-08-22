@@ -45,9 +45,9 @@ function useListviewMode(ctx: ListviewModeProps, close: () => void) {
         }
     }
 
-    const watchRefresh = (selectedId: number | null) => {
+    const watchRefresh = async (selectedId: number | null) => {
         if(selectedId !== null) {
-            idx = ctx.listview.proxy.sync.findByKey(selectedId)
+            idx = await ctx.listview.proxy.findByKey(selectedId)
             if(idx !== undefined) {
                 const item = ctx.listview.proxy.sync.retrieve(idx)!
                 targetFile.value = item.filePath?.original ?? null

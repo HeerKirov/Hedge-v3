@@ -2,6 +2,7 @@
 import { onMounted, Ref, ref, toRef } from "vue"
 import { Block, Icon } from "@/components/universal"
 import { useAssets } from "@/functions/app"
+import { numbers } from "@/utils/primitives"
 
 const props = defineProps<{
     item: T
@@ -50,7 +51,7 @@ export interface BookCardItem {
              @load="imageLoad"/>
         <img v-if="imgAspectRatio >= 1"
              :class="$style['horizontal-img']"
-             :style="{ 'top': `${numbers.round2decimal(50 - 37.5 / imgAspectRatio)}%` }"
+             :style="{ 'top': `${numbers.round2decimal(40 - 27.5 / imgAspectRatio)}%` }"
              :src="assetsUrl(item.filePath?.thumbnail)" :alt="item.title"/>
         <Icon v-if="item.favorite" :class="$style.fav" icon="heart"/>
         <div :class="$style['num-tag']"><Icon v-if="item.imageCount" class="mr-half" icon="images"/>{{item.imageCount || '(空)'}}</div>

@@ -638,7 +638,7 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
 
     watch(path, async path => {
         if(path !== null) {
-            const idx = listview.proxy.sync.findByKey(path)
+            const idx = await listview.proxy.findByKey(path)
             if(idx !== undefined) {
                 const item = listview.proxy.sync.retrieve(idx)!
                 detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
@@ -654,7 +654,7 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
     useListeningEvent(listview.modifiedEvent, async e => {
         if(path.value !== null) {
             if(e.type === "FILTER_UPDATED" || e.type === "REFRESH") {
-                const idx = listview.proxy.sync.findByKey(path.value)
+                const idx = await listview.proxy.findByKey(path.value)
                 if(idx !== undefined) {
                     const item = listview.proxy.sync.retrieve(idx)!
                     detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}

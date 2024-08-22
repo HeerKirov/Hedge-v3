@@ -63,11 +63,12 @@ function useOperators(listview: QueryListview<Author, number>) {
     const openDetailView = (authorId: number) => router.routePush({routeName: "AuthorDetail", path: authorId})
 
     const createByTemplate = (author: Author) => {
-        const idx = listview.proxy.sync.findByKey(author.id)
-        if(idx != undefined) {
-            const author = listview.proxy.sync.retrieve(idx)
-            router.routePush({routeName: "AuthorCreate", initializer: {createTemplate: author}})
-        }
+        listview.proxy.findByKey(author.id).then(idx => {
+            if(idx != undefined) {
+                const author = listview.proxy.sync.retrieve(idx)
+                router.routePush({routeName: "AuthorCreate", initializer: {createTemplate: author}})
+            }
+        })
     }
 
     const deleteItem = async (author: Author) => {

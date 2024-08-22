@@ -60,33 +60,35 @@ function useOperators(listview: QueryListview<Topic, number>) {
     const openDetailView = (topicId: number) => router.routePush({routeName: "TopicDetail", path: topicId})
 
     const createByTemplate = (topic: Topic) => {
-        const idx = listview.proxy.sync.findByKey(topic.id)
-        if(idx != undefined) {
-            const topic = listview.proxy.sync.retrieve(idx)
-            router.routePush({routeName: "TopicCreate", initializer: {createTemplate: topic}})
-        }
+        listview.proxy.findByKey(topic.id).then(idx => {
+            if(idx != undefined) {
+                const topic = listview.proxy.sync.retrieve(idx)
+                router.routePush({routeName: "TopicCreate", initializer: {createTemplate: topic}})
+            }
+        })
     }
 
     const createChildOfTemplate = (topic: Topic) => {
-        const idx = listview.proxy.sync.findByKey(topic.id)
-        if(idx != undefined) {
-            const topic = listview.proxy.sync.retrieve(idx)
-            if(topic !== undefined) {
-                router.routePush({
-                    routeName: "TopicCreate",
-                    initializer: {
-                        createTemplate: {
-                            parents: [{
-                                id: topic.id,
-                                name: topic.name,
-                                type: topic.type,
-                                color: topic.color
-                            }]
+        listview.proxy.findByKey(topic.id).then(idx => {
+            if(idx != undefined) {
+                const topic = listview.proxy.sync.retrieve(idx)
+                if(topic !== undefined) {
+                    router.routePush({
+                        routeName: "TopicCreate",
+                        initializer: {
+                            createTemplate: {
+                                parents: [{
+                                    id: topic.id,
+                                    name: topic.name,
+                                    type: topic.type,
+                                    color: topic.color
+                                }]
+                            }
                         }
-                    }
-                })
+                    })
+                }
             }
-        }
+        })
     }
 
     const deleteItem = async (topic: Topic) => {

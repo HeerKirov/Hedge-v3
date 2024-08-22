@@ -49,11 +49,12 @@ function useOperators(paneState: DetailViewState<number, Partial<Annotation>>, l
     })
 
     const createByTemplate = (id: number) => {
-        const idx = listview.proxy.sync.findByKey(id)
-        if(idx != undefined) {
-            const annotation = listview.proxy.sync.retrieve(idx)
-            paneState.openCreateView(annotation)
-        }
+        listview.proxy.findByKey(id).then(idx => {
+            if(idx != undefined) {
+                const annotation = listview.proxy.sync.retrieve(idx)
+                paneState.openCreateView(annotation)
+            }
+        })
     }
 
     const deleteItem = async (id: number) => {

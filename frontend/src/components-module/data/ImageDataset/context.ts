@@ -202,8 +202,8 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
     }
 
     async function getShiftSelectItems(queryEndpoint: QueryInstance<T, number>, selectId: number, lastSelectId: number) {
-        const index1 = queryEndpoint.sync.findByKey(selectId)
-        const index2 = queryEndpoint.sync.findByKey(lastSelectId)
+        const index1 = await queryEndpoint.findByKey(selectId)
+        const index2 = await queryEndpoint.findByKey(lastSelectId)
         if(index1 === undefined || index2 === undefined) {
             return null
         }
@@ -215,7 +215,7 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
     }
 
     async function getArrowSelectItem(queryEndpoint: QueryInstance<T, number>, lastSelectId: number, offset: number) {
-        const lastIndex = queryEndpoint.sync.findByKey(lastSelectId)
+        const lastIndex = await queryEndpoint.findByKey(lastSelectId)
         if(lastIndex === undefined) return null
         const index = lastIndex + offset
         const count = await queryEndpoint.count()

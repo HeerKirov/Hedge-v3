@@ -161,15 +161,30 @@ function useProxyInstance<T, KEY>(instance: Ref<QueryInstance<T, KEY>>): QueryIn
     onMounted(() => instance.value.modifiedEvent.addEventListener(modifiedEvent.emit))
     onUnmounted(() => instance.value.modifiedEvent.removeEventListener(modifiedEvent.emit))
 
+    let localPriorityRange: [number, number] | undefined
+
     return {
-        queryOne: index => instance.value.queryOne(index),
-        queryRange: (offset, limit) => instance.value.queryRange(offset, limit),
-        queryList: indexList => instance.value.queryList(indexList),
+        queryOne: async index => {
+            const returns = await instance.value.queryOne(index)
+            localPriorityRange = [index, index + 1]
+            return returns
+        },
+        queryRange: async (offset, limit) => {
+            const returns = await instance.value.queryRange(offset, limit)
+            localPriorityRange = [offset, offset + limit]
+            return returns
+        },
+        queryList: async indexList => {
+            const returns = await instance.value.queryList(indexList)
+            localPriorityRange = indexList.length > 0 ? [Math.min(...indexList), Math.max(...indexList)] : undefined
+            return returns
+        },
+        findByKey: (key, priorityRange, maxRange) => instance.value.findByKey(key, priorityRange ?? localPriorityRange, maxRange ?? 500),
         isRangeLoaded: (offset, limit) => instance.value.isRangeLoaded(offset, limit),
         count: () => instance.value.count(),
         sync: {
             count: () => instance.value.sync.count(),
-            find: (condition, priorityRange) => instance.value.sync.find(condition, priorityRange),
+            find: (condition, priorityRange) => instance.value.sync.find(condition, priorityRange ?? localPriorityRange),
             findByKey: key => instance.value.sync.findByKey(key),
             retrieve: index => instance.value.sync.retrieve(index),
             modify: (index, newData) => instance.value.sync.modify(index, newData),

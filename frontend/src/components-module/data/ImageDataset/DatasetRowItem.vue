@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue"
+import { Icon } from "@/components/universal"
 import { platform } from "@/functions/ipc-client"
 import { toRef } from "@/utils/reactivity"
 import { useCheckBoxEvents, useDatasetContext, useDragEvents, useDropEvents } from "./context"
-import { Icon } from "@/components/universal";
 
 const props = defineProps<{
     item: unknown
