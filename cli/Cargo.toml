@@ -1,0 +1,20 @@
+[package]
+name = "hedge_cli"
+version = "0.9.1"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.3.10", features = ["derive"] }
+clap_complete = { version = "4.4.3" }
+chrono = { version = "0.4.26" }
+serde = { version = "1.0.166", features = ["derive"] }
+serde_json = { version = "1.0.100" }
+serde_yaml = { version = "0.9.22" }
+toml = { version = "0.7.5" }
+home = { version = "0.5.5" }
+reqwest = { version = "0.12.5", features = ["gzip", "multipart", "stream"] }
+tokio = { version = "1.29.1", features = ["macros", "rt-multi-thread"] }
+tokio-util = { version = "0.7.11", features = ["codec"] }
+async-std = { version = "1.12.0" }
+sqlite = { version = "0.31.0" }
+sysinfo = { version = "0.29.10" }

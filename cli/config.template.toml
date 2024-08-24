@@ -1,0 +1,51 @@
+debug_mode = false  # 调试模式
+
+[work_path]  # 工作目录
+application_path = "/opt/hedge/hedge"           # App可执行文件的文件路径
+userdata_path = "~/.config/Hedge-v3"            # 用户数据目录，即Hedge应用程序的数据目录，CLI的local data也会存放在"$userdata_path/cli"的位置
+server_path = "~/.config/Hedge-v3/server"       # appdata的存放位置，可不填，默认值是"$userdata_path/appdata"
+appdata_path = "~/.config/Hedge-v3/appdata"     # server的存放位置，可不填，默认值是"$userdata_path/server"
+
+[download]  # 下载模块配置
+waiting_interval = 10                           # 两项下载之间的间隔，单位秒
+timeout_interval = 20                           # 请求超时的时间，单位秒
+proxy = "http://127.0.0.1:8080"                 # 指定时，使用代理
+available_sites = [                             # 配置Hedge sites使用的规则。site=Hedge中定义的site名称; rule=CLI支持的下载类型
+    { site = "sankakucomplex", rule = "sankakucomplex" }
+]
+
+[connect]   # 连接模块配置，可忽略
+driver = "sqlite"                               # 连接的数据库类型 (可用: sqlite)
+url = "~/data.db"                               # 连接地址
+query = """
+ SELECT source AS site, pid AS `id`, tags, relations, meta
+ FROM meta
+ WHERE status = 1 AND NOT deleted AND source IN $site AND folder IN $split
+ ORDER BY create_time
+ LIMIT $limit
+"""                                             # 连接使用的SQL查询。其中，固定需要列`site`, `id`, 且需要$site: string[], $split: string[], $limit: number几项参数用于注入
+
+[connect.parser.complex]    # 连接模块parser，以site名称命名，site名称与数据库中查询到的site列内容一致
+site = "sankakucomplex"     # 对应的Hedge中定义的site名称
+
+tag.selector = "tags"       # tag选择器，需要选择一个object[] (选择器使用"XX.YY"语法，选择对应的列，若有后续字段则继续选择json object)
+tag.code = "name"           # code对应字段 (在object中选择)
+tag.name = "name"           # name对应字段，可选，可NULL
+tag.other_name = "title"    # other name对应字段，可选，可NULL
+tag.type = "type"           # type对应字段，可选，可NULL
+
+book.selector = "relations.pools"   # book选择器，需要选择一个object[]
+book.code = "id"                    # code对应字段
+book.title = "name"                 # title对应字段，可选，可NULL
+book.other_title = "name_ja"        # other title对应字段，可选，可NULL
+
+relation.selector = [ "relations.parent", "relations.children" ]    # relation选择器，需要选择一个(number|string)[]，可指定多个
+additional_info = { md5 = "meta.md5", "source" = "meta.source" }    # additional info选择器，需要选择一个string，结构为{ Hedge中site的Field名称 = 选择器 }
+
+translate_underscore_to_space = [   # 转换器配置：将下划线转换为空格。在以下指定的字段中，实施此转换
+    "tag.code",
+    "tag.name",
+    "tag.other_name",
+    "book.title",
+    "book.other_title"
+]
