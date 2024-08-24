@@ -771,8 +771,8 @@ class IllustManager(private val appdata: AppDataManager,
             }
         }
 
-        val timeSot = anyOpt(form.partitionTime, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
-        val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
+        val timeSot = anyOpt(form.partitionTime, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
+        val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
         for (record in records) {
             val thisMetaTagSot = metaResponses[record.id]?.first != Illust.Tagme.EMPTY
             val thisDetailUpdated = listUpdated || thisMetaTagSot || anyOpt(form.description, form.partitionTime)
