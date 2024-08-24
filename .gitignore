@@ -2,10 +2,11 @@
 .idea
 .DS_Store
 
-/cli/venv
-/cli/**/__pycache__
+/cli/target
 /client/node_modules
 /client/target
+/crx/node_modules
+/crx/dist
 /frontend/node_modules
 /frontend/dist
 /server/.gradle
