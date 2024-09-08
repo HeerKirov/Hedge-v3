@@ -1,5 +1,5 @@
 import { BasicException } from "./exceptions"
-import { Response } from "./impl"
+import { Response, fetchRequestByMessage } from "./impl"
 import { AppHealth, app } from "./api-app"
 import { sourceData } from "./api-source-data"
 import { quickFind } from "./api-find-similar"
@@ -12,4 +12,5 @@ export const server = {
     sourceTagMapping
 }
 
+export { fetchRequestByMessage }
 export type { Response, BasicException, AppHealth }

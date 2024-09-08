@@ -1,9 +1,7 @@
 import { Result } from "@/utils/primitives"
 import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
-import { IdResponse, SourceDataPath, SourceTagPath } from "./server/api-all"
-import { SourceMappingTargetDetail } from "@/functions/server/api-source-tag-mapping.ts";
-import { QuickFindResult, QuickFindUploadForm } from "@/functions/server/api-find-similar.ts";
-import { Response } from "@/functions/server";
+import { SourceDataPath } from "@/functions/server/api-all"
+import { BasicException, Response } from "@/functions/server"
 
 //== 消息函数 ==
 
@@ -40,13 +38,11 @@ export type ContentScriptCallbackTypes = Extract<ContentScriptMessagesList, MsgT
 
 //== 联合消息列表 ==
 
-export type ServiceSenderMessagesList = Test | ReportSourceData | ReportSourceDataPath | QuickFindSimilar
+export type ServiceSenderMessagesList = ReportSourceData | ReportSourceDataPath | QuickFindSimilar
 
-export type ContentScriptMessagesList = SetActiveTabBadge | DownloadURL | CaptureVisibleTab | GetSourceData | SourceTagMappingGet | QuickFindUpload | QuickFindGet | ArchiveGet
+export type ContentScriptMessagesList = SetActiveTabBadge | DownloadURL | CaptureVisibleTab | GetSourceData | FetchRequest
 
 //== service worker发送至content script的消息类型定义 ==
-
-type Test = MsgTemplate<"TEST", {test: number}>
 
 type ReportSourceData = MsgTemplateWithCallback<"REPORT_SOURCE_DATA", undefined, Result<SourceDataUpdateForm, string>>
 
@@ -64,10 +60,4 @@ type CaptureVisibleTab = MsgTemplateWithCallback<"CAPTURE_VISIBLE_TAB", undefine
 
 type GetSourceData = MsgTemplateWithCallback<"GET_SOURCE_DATA", {siteName: string, sourceId: string}, Result<SourceDataUpdateForm, string>>
 
-type SourceTagMappingGet = MsgTemplateWithCallback<"SOURCE_TAG_MAPPING_GET", SourceTagPath, Response<SourceMappingTargetDetail[]>>
-
-type QuickFindUpload = MsgTemplateWithCallback<"QUICK_FIND_UPLOAD", QuickFindUploadForm, Response<IdResponse>>
-
-type QuickFindGet = MsgTemplateWithCallback<"QUICK_FIND_GET", {id: number}, Response<QuickFindResult>>
-
-type ArchiveGet = MsgTemplateWithCallback<"ARCHIVE_GET", {filepath: string}, Response<string>>
+type FetchRequest = MsgTemplateWithCallback<"FETCH_REQUEST", {url: string, method?: any, query?: {[name: string]: any}, data?: any}, Response<unknown, BasicException>>

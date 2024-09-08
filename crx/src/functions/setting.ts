@@ -207,29 +207,27 @@ export function defaultSetting(): Setting {
     }
 }
 
-export const settings = {
-    async load(reload: boolean = false): Promise<void> {
-        const r = (await chrome.storage.local.get(["setting"]))["setting"] as Setting | undefined
-        if(r !== undefined && !reload) {
-            const { setting, changed } = await migrate({setting: r}, migrations, {
-                set(context, v) {
-                    context.setting.version = v
-                },
-                get(context) {
-                    return context.setting.version
-                }
-            })
-            if(changed) {
-                await chrome.storage.local.set({ "setting": setting })
+export async function initialize(details: chrome.runtime.InstalledDetails) {
+    const r = (await chrome.storage.local.get(["setting"]))["setting"] as Setting | undefined
+    if(r !== undefined && details.reason !== "install") {
+        const { setting, changed } = await migrate({setting: r}, migrations, {
+            set(context, v) {
+                context.setting.version = v
+            },
+            get(context) {
+                return context.setting.version
             }
-            console.log(`[setting] version ${setting.version}.`)
-        }else{
-            await chrome.storage.local.set({ "setting": defaultSetting() })
+        })
+        if(changed) {
+            await chrome.storage.local.set({ "setting": setting })
         }
-    },
-    async reset(): Promise<void> {
+        console.log(`[setting] version ${setting.version}.`)
+    }else{
         await chrome.storage.local.set({ "setting": defaultSetting() })
-    },
+    }
+}
+
+export const settings = {
     async get(): Promise<Setting> {
         const r = (await chrome.storage.local.get(["setting"]))["setting"] as Setting | undefined
         return r ?? defaultSetting()

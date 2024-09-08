@@ -190,6 +190,24 @@ export const objects = {
     }
 }
 
+export const files = {
+    dataURLtoFile(dataURL: string, fileName: string): File {
+        const arr = dataURL.split(','), mime = arr[0].match(/:(.*?);/)![1], bstr = atob(arr[1])
+        let n = bstr.length, u8arr = new Uint8Array(n)
+        while(n--){
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new File([u8arr], fileName, {type:mime})
+    },
+    blobToDataURL(blob: Blob): Promise<string> {
+        return new Promise(resolve => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.readAsDataURL(blob)
+        })
+    }
+}
+
 export const numbers = {
     compareTo(a: number, b: number): -1 | 0 | 1 {
         return a === b ? 0 : a > b ? 1 : -1

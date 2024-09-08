@@ -1,9 +1,8 @@
 import { ContentScriptMessagesList, ServiceSenderCallbackTypes, ServiceSenderMessages } from "@/functions/messages"
-import { setActiveTabBadge } from "./active-tab"
+import { fetchRequestByMessage } from "@/functions/server"
 import { downloadURL } from "@/services/downloads"
 import { getSourceData } from "@/services/source-data"
-import { server } from "@/functions/server";
-import { settings } from "@/functions/setting.ts";
+import { setActiveTabBadge } from "./active-tab"
 
 /**
  * service worker: 接收一条消息。
@@ -33,53 +32,8 @@ function onMessage<T extends ContentScriptMessagesList>(msg: T, sender: chrome.r
     }else if(msg.type === "GET_SOURCE_DATA") {
         getSourceData(msg.msg.siteName, msg.msg.sourceId).then(r => callback(r))
         return true
-    }else if(msg.type === "SOURCE_TAG_MAPPING_GET") {
-        server.sourceTagMapping.get(msg.msg).then(r => callback(r))
-        return true
-    }else if(msg.type === "QUICK_FIND_UPLOAD") {
-        function dataURLtoFile(dataURL: string, fileName: string): File {
-            const arr = dataURL.split(','), mime = arr[0].match(/:(.*?);/)![1], bstr = atob(arr[1])
-            let n = bstr.length, u8arr = new Uint8Array(n)
-            while(n--){
-                u8arr[n] = bstr.charCodeAt(n);
-            }
-            return new File([u8arr], fileName, {type:mime})
-        }
-        server.quickFind.upload({...msg.msg, file: dataURLtoFile(msg.msg.file as any, "tmp.jpg")}).then(r => callback(r))
-        return true
-    }else if(msg.type === "QUICK_FIND_GET") {
-        server.quickFind.get(msg.msg.id).then(r => callback(r))
-        return true
-    }else if(msg.type === "ARCHIVE_GET") {
-        settings.get().then(setting => {
-            const url = new URL(`archives/${msg.msg.filepath}`, `http://${setting.server.host}`)
-
-            return fetch(url, {
-                headers: {
-                    "Authorization": `Bearer ${setting.server.token}`,
-                }
-            })
-        }).then(res => {
-            if(res.ok) {
-                return res.blob()
-            }else{
-                callback({
-                    ok: false,
-                    exception: undefined,
-                    reason: res.statusText
-                })
-            }
-        }).then(blob => {
-            if(blob) {
-                const reader = new FileReader()
-                reader.onloadend = () => callback({ok: true, status: 200, data: reader.result})
-                reader.readAsDataURL(blob)
-            }
-        }).catch((reason) => callback({
-            ok: false,
-            exception: undefined,
-            reason
-        }))
+    }else if(msg.type === "FETCH_REQUEST") {
+        fetchRequestByMessage(msg.msg).then(r => callback(r))
         return true
     }
     return false

@@ -2,13 +2,14 @@ import React, { useEffect, useState } from "react"
 import ReactDOM from "react-dom/client"
 import { styled, StyleSheetManager } from "styled-components"
 import { AspectGrid, Button, FormattedText, Icon, LayouttedDiv } from "@/components"
+import { server } from "@/functions/server"
 import { Setting } from "@/functions/setting"
 import { sendMessage } from "@/functions/messages"
 import { SimpleAuthor, SimpleTopic, SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
 import { FindSimilarResultDetailImage } from "@/functions/server/api-find-similar"
 import { createEventTrigger, EventTrigger } from "@/utils/emitter"
-import { Result } from "@/utils/primitives"
+import { files, Result } from "@/utils/primitives"
 import { GlobalStyle, SPACINGS, ThemeColors } from "@/styles"
 import { config } from "@fortawesome/fontawesome-svg-core"
 import fontAwesomeCSS from "@fortawesome/fontawesome-svg-core/styles.css?inline"
@@ -124,7 +125,7 @@ export function QuickFindComponent({ trigger }: {host: string, trigger: EventTri
     useEffect(() => {
         if(findId !== null) {
             const callback = async () => {
-                const res = await sendMessage("QUICK_FIND_GET", {id: findId})
+                const res = await server.quickFind.get(findId)
                 if(res.ok && res.data.succeed) {
                     setResult(res.data.result)
                     setStatus("SUCCEED")
@@ -145,8 +146,8 @@ export function QuickFindComponent({ trigger }: {host: string, trigger: EventTri
             setStatus("LOADING")
             setExample(dataURL)
 
-            const tagResult = await Promise.all(sourceData.tags?.map(tag => sendMessage("SOURCE_TAG_MAPPING_GET", {sourceSite: sourcePath.sourceSite, sourceTagType: tag.type, sourceTagCode: tag.code})) ?? [])
-            const conditionTags = tagResult.map(r => r.ok ? r.data : []).flat(1).filter(r => r.metaType !== "TAG") as ({ metaType: "AUTHOR", metaTag: SimpleAuthor } | { metaType: "TOPIC", metaTag: SimpleTopic })[]
+            const tagResult = await Promise.all(sourceData.tags?.map(tag => server.sourceTagMapping.get({sourceSite: sourcePath.sourceSite, sourceTagType: tag.type, sourceTagCode: tag.code})) ?? [])
+            const conditionTags = tagResult.map(r => r.ok ? r.data : []).flat(1).filter(r => r.metaType === "AUTHOR") as ({ metaType: "AUTHOR", metaTag: SimpleAuthor })[]
 
             setTags(conditionTags)
             if(conditionTags.length <= 0) {
@@ -154,9 +155,8 @@ export function QuickFindComponent({ trigger }: {host: string, trigger: EventTri
                 return
             }
 
-            const topics = conditionTags.filter(r => r.metaType === "TOPIC").map(r => r.metaTag.id)
             const authors = conditionTags.filter(r => r.metaType === "AUTHOR").map(r => r.metaTag.id)
-            const res = await sendMessage("QUICK_FIND_UPLOAD", {file: dataURL as any, topics, authors})
+            const res = await server.quickFind.upload({file: files.dataURLtoFile(dataURL, "tmp.jpg"), authors})
             if(res.ok) {
                 setFindId(res.data.id)
             }
@@ -197,7 +197,7 @@ function Img(props: {filepath: string, alt: string}) {
     const [dataURL, setDataURL] = useState<string>()
 
     useEffect(() => {
-        sendMessage("ARCHIVE_GET", {filepath: props.filepath}).then(res => {
+        server.app.archiveFiles(props.filepath).then(res => {
             if(res.ok) {
                 setDataURL(res.data)
             }else{
