@@ -9,10 +9,10 @@ import { BasicException, Response } from "@/functions/server"
  * tab: 接收一条消息。
  */
 export function receiveMessageForTab(onMessage: <T extends ServiceSenderMessagesList>(msg: T, sender: chrome.runtime.MessageSender) => boolean) {
-    return function(msg: any, sender: chrome.runtime.MessageSender, callback: (response?: any) => void) {
+    chrome.runtime.onMessage.addListener(function(msg: any, sender: chrome.runtime.MessageSender, callback: (response?: any) => void) {
         const m = {type: msg.type, msg: msg.msg, callback}
         return onMessage(m, sender)
-    }
+    })
 }
 
 /**
@@ -38,26 +38,54 @@ export type ContentScriptCallbackTypes = Extract<ContentScriptMessagesList, MsgT
 
 //== 联合消息列表 ==
 
-export type ServiceSenderMessagesList = ReportSourceData | ReportSourceDataPath | QuickFindSimilar
+export type ServiceSenderMessagesList = ReportSourceData | ReportPageInfo | QuickFindSimilar
 
-export type ContentScriptMessagesList = SetActiveTabBadge | DownloadURL | CaptureVisibleTab | GetSourceData | FetchRequest
+export type ContentScriptMessagesList = SubmitPageInfo | SubmitSourceData | GetSourceData | CollectSourceData | DownloadURL | CaptureVisibleTab | FetchRequest
 
 //== service worker发送至content script的消息类型定义 ==
 
 type ReportSourceData = MsgTemplateWithCallback<"REPORT_SOURCE_DATA", undefined, Result<SourceDataUpdateForm, string>>
 
-type ReportSourceDataPath = MsgTemplateWithCallback<"REPORT_SOURCE_DATA_PATH", undefined, SourceDataPath>
+/**
+ * 要求页面提交当前页面的部分基本信息。
+ */
+type ReportPageInfo = MsgTemplateWithCallback<"REPORT_PAGE_INFO", undefined, {path: SourceDataPath}>
 
 type QuickFindSimilar = MsgTemplate<"QUICK_FIND_SIMILAR", undefined>
 
 //== content script发送至service worker的消息类型定义
 
-type SetActiveTabBadge = MsgTemplate<"SET_ACTIVE_TAB_BADGE", {path: SourceDataPath}>
+/**
+ * 向service worker提交当前页面的部分基本信息(主要是其path)，这些信息会被用于设置扩展中与当前页面相关的部分，如badge。
+ */
+type SubmitPageInfo = MsgTemplate<"SUBMIT_PAGE_INFO", {path: SourceDataPath}>
 
+/**
+ * 向来源数据管理模块提交当前页面所包含的source data & path信息。这些信息会被缓存用作后续其他用处。
+ */
+type SubmitSourceData = MsgTemplate<"SUBMIT_SOURCE_DATA", {path: SourceDataPath, data: Result<SourceDataUpdateForm, string>}>
+
+/**
+ * 向来源数据管理模块请求指定的source data。
+ */
+type GetSourceData = MsgTemplateWithCallback<"GET_SOURCE_DATA", {sourceSite: string, sourceId: string}, SourceDataUpdateForm | null>
+
+/**
+ * 向来源数据管理模块要求上传指定source data到服务器。
+ */
+type CollectSourceData = MsgTemplateWithCallback<"COLLECT_SOURCE_DATA", {sourceSite: string, sourceId: string}, boolean>
+
+/**
+ * 向下载管理模块发出一个下载请求。
+ */
 type DownloadURL = MsgTemplate<"DOWNLOAD_URL", {url: string, referrer: string}>
 
+/**
+ * 要求对当前页面进行截屏，获得截屏的dataURL。
+ */
 type CaptureVisibleTab = MsgTemplateWithCallback<"CAPTURE_VISIBLE_TAB", undefined, string>
 
-type GetSourceData = MsgTemplateWithCallback<"GET_SOURCE_DATA", {siteName: string, sourceId: string}, Result<SourceDataUpdateForm, string>>
-
+/**
+ * 向service worker的server模块提交一个server网络请求。它不应该被调用，仅用作server的内部实现。
+ */
 type FetchRequest = MsgTemplateWithCallback<"FETCH_REQUEST", {url: string, method?: any, query?: {[name: string]: any}, data?: any}, Response<unknown, BasicException>>

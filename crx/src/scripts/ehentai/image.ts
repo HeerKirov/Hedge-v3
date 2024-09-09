@@ -11,49 +11,38 @@ let ui: QuickFindController | undefined
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] ehentai/image script loaded.")
     const setting = await settings.get()
-    loadActiveTabInfo(setting)
-    loadGalleryPageHash()
+    const sourceDataPath = getSourceDataPath(setting)
+    sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
+
+    const { gid, page, imageHash } = getIdentityInfo()
+    sessions.reflect.ehentaiGalleryImageHash.set({gid, page: page.toString()}, {imageHash}).finally()
+
     if(setting.tool.ehentai.enableUIOptimize) enableOptimizeUI()
     ui = initializeUI()
 })
 
-chrome.runtime.onMessage.addListener(receiveMessageForTab(({ type, msg: _, callback }) => {
-    if(type === "REPORT_SOURCE_DATA_PATH") {
+receiveMessageForTab(({ type, msg: _, callback }) => {
+    if(type === "REPORT_PAGE_INFO") {
         settings.get().then(setting => {
-            callback(reportSourceDataPath(setting))
+            callback({path: getSourceDataPath(setting)})
         })
         return true
     }else if(type === "QUICK_FIND_SIMILAR") {
         settings.get().then(async setting => {
-            const sourceDataPath = reportSourceDataPath(setting)
-            const sourceData = await sendMessage("GET_SOURCE_DATA", {siteName: "ehentai", sourceId: sourceDataPath.sourceId})
+            const sourceDataPath = getSourceDataPath(setting)
+            const sourceData = await sendMessage("GET_SOURCE_DATA", {sourceSite: "ehentai", sourceId: sourceDataPath.sourceId})
             const files = [...document.querySelectorAll<HTMLImageElement>("div#i3 img#img")]
             if(ui) {
                 const f = await Promise.all(files.map(f => ui!.getImageDataURL(f)))
-                ui!.openQuickFindModal(setting, f.length > 0 ? f[0] : undefined, sourceDataPath, sourceData)
+                ui!.openQuickFindModal(setting, f.length > 0 ? f[0] : undefined, sourceDataPath, sourceData !== null ? {ok: true, value: sourceData} : {ok: false, err: "Source data from manager is null."})
             }
         })
         return false
     }else{
         return false
     }
-}))
+})
 
-/**
- * 加载active tab在action badge上的标示信息。
- */
-function loadActiveTabInfo(setting: Setting) {
-    const sourceDataPath = reportSourceDataPath(setting)
-    sendMessage("SET_ACTIVE_TAB_BADGE", {path: sourceDataPath})
-}
-
-/**
- * 加载gallery page数据。将image hash信息保存到session。
- */
-function loadGalleryPageHash() {
-    const { gid, page, imageHash } = getIdentityInfo()
-    sessions.reflect.ehentaiGalleryImageHash.set({gid: gid.toString(), page: page.toString()}, {imageHash}).finally()
-}
 
 /**
  * 功能：UI优化。
@@ -131,9 +120,9 @@ function enableOptimizeUI() {
 }
 
 /**
- * 事件：获得当前页面的SourceDataPath。当前页面为image页，可以获得gid、page和imageHash。
+ * 获得当前页面的SourceDataPath。当前页面为image页，可以获得gid、page和imageHash。
  */
-function reportSourceDataPath(setting: Setting): SourceDataPath {
+function getSourceDataPath(setting: Setting): SourceDataPath {
     const overrideRule = setting.sourceData.overrideRules["ehentai"]
     const sourceSite = overrideRule?.sourceSite ?? "ehentai"
     const { gid, page, imageHash } = getIdentityInfo()

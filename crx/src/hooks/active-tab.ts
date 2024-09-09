@@ -5,9 +5,9 @@ import { SourceDataCollectStatus } from "@/functions/server/api-source-data"
 import { SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
 import { server } from "@/functions/server"
 import { setActiveTabBadgeByStatus } from "@/services/active-tab"
-import { collectSourceData } from "@/services/source-data"
 import { sendMessageToTab } from "@/services/messages"
 import { useAsyncLoading } from "@/utils/reactivity"
+ import { sendMessage } from "@/functions/messages.ts";
 
 export interface SourceInfo {
     tabId: number
@@ -53,9 +53,8 @@ export function useTabSourceInfo() {
 
     const manualCollectSourceData = async () => {
         if(sourceInfo !== null && sourceInfo.sourceDataPath !== null) {
-            const setting = await settings.get()
             const { siteName, sourceDataPath: { sourceId } } = sourceInfo
-            const ok = await collectSourceData({siteName, sourceId, setting})
+            const ok = await sendMessage("COLLECT_SOURCE_DATA", {sourceSite: siteName, sourceId})
             if(ok) refreshCollectStatus(sourceInfo).finally()
         }
     }
@@ -83,8 +82,8 @@ async function matchTabSourceData(tabId: number, url: URL, setting: Setting): Pr
         }
         if(typeof site.host === "string" ? site.host === url.host : site.host.includes(url.host)) {
             if(site.sourcePages && site.sourcePages.some(i => i.test(url.pathname))) {
-                const sourceDataPath = await sendMessageToTab(tabId, "REPORT_SOURCE_DATA_PATH", undefined)
-                return {tabId, siteName, host: url.host, sourceDataPath}
+                const pageInfo = await sendMessageToTab(tabId, "REPORT_PAGE_INFO", undefined)
+                return {tabId, siteName, host: url.host, sourceDataPath: pageInfo.path}
             }else{
                 return {tabId, siteName, host: url.host, sourceDataPath: null}
             }

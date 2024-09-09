@@ -1,8 +1,8 @@
 import { ContentScriptMessagesList, ServiceSenderCallbackTypes, ServiceSenderMessages } from "@/functions/messages"
 import { fetchRequestByMessage } from "@/functions/server"
 import { downloadURL } from "@/services/downloads"
-import { getSourceData } from "@/services/source-data"
-import { setActiveTabBadge } from "./active-tab"
+import { sourceDataManager } from "@/services/source-data"
+import { setActiveTabBadge } from "@/services/active-tab"
 
 /**
  * service worker: 接收一条消息。
@@ -20,17 +20,19 @@ export function sendMessageToTab<T extends keyof ServiceSenderMessages>(tabId: n
 }
 
 function onMessage<T extends ContentScriptMessagesList>(msg: T, sender: chrome.runtime.MessageSender, callback: (response?: any) => void): boolean {
-    if(msg.type === "SET_ACTIVE_TAB_BADGE") {
-        if(sender.tab?.id) {
-            setActiveTabBadge(sender.tab.id, msg.msg.path).finally()
-        }
+    if(msg.type === "SUBMIT_PAGE_INFO") {
+        if(sender.tab?.id) setActiveTabBadge(sender.tab.id, msg.msg.path).finally()
+    }else if(msg.type === "SUBMIT_SOURCE_DATA") {
+        sourceDataManager.submit(msg.msg.path, msg.msg.data)
+    }else if(msg.type === "GET_SOURCE_DATA") {
+        callback(sourceDataManager.get(msg.msg))
+    }else if(msg.type === "COLLECT_SOURCE_DATA"){
+        sourceDataManager.collect(msg.msg).then(r => callback(r))
+        return true
     }else if(msg.type === "DOWNLOAD_URL") {
         downloadURL({url: msg.msg.url, referrer: msg.msg.referrer}).finally()
     }else if(msg.type === "CAPTURE_VISIBLE_TAB") {
         chrome.tabs.captureVisibleTab().then(dataURL => callback(dataURL))
-        return true
-    }else if(msg.type === "GET_SOURCE_DATA") {
-        getSourceData(msg.msg.siteName, msg.msg.sourceId).then(r => callback(r))
         return true
     }else if(msg.type === "FETCH_REQUEST") {
         fetchRequestByMessage(msg.msg).then(r => callback(r))

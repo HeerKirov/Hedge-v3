@@ -43,10 +43,10 @@ export function determiningFilename(downloadItem: chrome.downloads.DownloadItem,
                 return
             }
             suggest({filename: replaceWithArgs(result.rename, finalArgs) + (extension ? "." + extension : "")})
-            autoCollectSourceData({siteName: result.siteName, args: finalArgs, setting}).finally()
+            autoCollectSourceData({sourceSite: result.siteName, args: finalArgs, setting}).finally()
         }else{
             suggest({filename: replaceWithArgs(result.rename, result.args) + (extension ? "." + extension : "")})
-            autoCollectSourceData({siteName: result.siteName, args: result.args, setting}).finally()
+            autoCollectSourceData({sourceSite: result.siteName, args: result.args, setting}).finally()
         }
     })
 

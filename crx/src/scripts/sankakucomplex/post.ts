@@ -13,28 +13,30 @@ let ui: QuickFindController | undefined
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] sankakucomplex/post script loaded.")
     const setting = await settings.get()
-    loadActiveTabInfo(setting)
+    const sourceDataPath = getSourceDataPath(setting)
+    const sourceData = collectSourceData()
+    sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
+    sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
+
     if(setting.tool.sankakucomplex.enableBookNoticeEnhancement) enableBookEnhancement()
     if(setting.tool.sankakucomplex.enableImageLinkReplacement) enableImageLinkReplacement()
     enableOptimizeUI()
     ui = initializeUI()
 })
 
-chrome.runtime.onMessage.addListener(receiveMessageForTab(({ type, msg: _, callback }) => {
+receiveMessageForTab(({ type, msg: _, callback }) => {
     if(type === "REPORT_SOURCE_DATA") {
+        callback(collectSourceData())
+        return false
+    }else if(type === "REPORT_PAGE_INFO") {
         settings.get().then(setting => {
-            callback(reportSourceData(setting))
-        })
-        return true
-    }else if(type === "REPORT_SOURCE_DATA_PATH") {
-        settings.get().then(setting => {
-            callback(reportSourceDataPath(setting))
+            callback({path: getSourceDataPath(setting)})
         })
         return true
     }else if(type === "QUICK_FIND_SIMILAR") {
         settings.get().then(async setting => {
-            const sourceDataPath = reportSourceDataPath(setting)
-            const sourceData = reportSourceData(setting)
+            const sourceDataPath = getSourceDataPath(setting)
+            const sourceData = collectSourceData()
             const files = [...document.querySelectorAll<HTMLImageElement>("a#image-link img#image")]
             if(ui) {
                 const f = await Promise.all(files.map(f => ui!.getImageDataURL(f)))
@@ -45,15 +47,7 @@ chrome.runtime.onMessage.addListener(receiveMessageForTab(({ type, msg: _, callb
     }else{
         return false
     }
-}))
-
-/**
- * 加载active tab在action badge上的标示信息。
- */
-function loadActiveTabInfo(setting: Setting) {
-    const sourceDataPath = reportSourceDataPath(setting)
-    sendMessage("SET_ACTIVE_TAB_BADGE", {path: sourceDataPath})
-}
+})
 
 /**
  * 功能：进行UI增强。
@@ -153,9 +147,9 @@ function enableImageLinkReplacement() {
 }
 
 /**
- * 事件：收集来源数据。
+ * 收集来源数据。
  */
-function reportSourceData(_: Setting): Result<SourceDataUpdateForm, string> {
+function collectSourceData(): Result<SourceDataUpdateForm, string> {
     const tags: SourceTagForm[] = []
     const tagLiList = document.querySelectorAll("#tag-sidebar li")
     for(let i = 0; i < tagLiList.length; ++i) {
@@ -228,9 +222,9 @@ function reportSourceData(_: Setting): Result<SourceDataUpdateForm, string> {
 }
 
 /**
- * 事件：获得当前页面的SourceDataPath。
+ * 获得当前页面的SourceDataPath。
  */
-function reportSourceDataPath(setting: Setting): SourceDataPath {
+function getSourceDataPath(setting: Setting): SourceDataPath {
     const overrideRule = setting.sourceData.overrideRules["sankakucomplex"]
     const pid = getPID()
     const sourceSite = overrideRule?.sourceSite ?? "sankakucomplex"

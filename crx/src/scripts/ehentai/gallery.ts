@@ -10,7 +10,11 @@ import { onDOMContentLoaded } from "@/utils/document"
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] ehentai/gallery script loaded.")
     const setting = await settings.get()
-    loadActiveTabInfo(setting)
+    const sourceDataPath = getSourceDataPath(setting)
+    const sourceData = collectSourceData(setting)
+    sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
+    sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
+
     enableRenameFile()
     if(setting.tool.ehentai.enableCommentCNBlock || setting.tool.ehentai.enableCommentVoteBlock || setting.tool.ehentai.enableCommentKeywordBlock || setting.tool.ehentai.enableCommentUserBlock) {
         enableCommentFilter(
@@ -22,29 +26,21 @@ onDOMContentLoaded(async () => {
     }
 })
 
-chrome.runtime.onMessage.addListener(receiveMessageForTab(({ type, msg: _, callback }) => {
+receiveMessageForTab(({ type, msg: _, callback }) => {
     if(type === "REPORT_SOURCE_DATA") {
         settings.get().then(setting => {
-            callback(reportSourceData(setting))
+            callback(collectSourceData(setting))
         })
         return true
-    }else if(type === "REPORT_SOURCE_DATA_PATH") {
+    }else if(type === "REPORT_PAGE_INFO") {
         settings.get().then(setting => {
-            callback(reportSourceDataPath(setting))
+            callback({path: getSourceDataPath(setting)})
         })
         return true
     }else{
         return false
     }
-}))
-
-/**
- * 加载active tab在action badge上的标示信息。
- */
-function loadActiveTabInfo(setting: Setting) {
-    const sourceDataPath = reportSourceDataPath(setting)
-    sendMessage("SET_ACTIVE_TAB_BADGE", {path: sourceDataPath})
-}
+})
 
 /**
  * 功能：评论区屏蔽机制。
@@ -191,9 +187,9 @@ function enableRenameFile() {
 }
 
 /**
- * 事件：收集来源数据。
+ * 收集来源数据。
  */
-function reportSourceData(setting: Setting): Result<SourceDataUpdateForm, string> {
+function collectSourceData(setting: Setting): Result<SourceDataUpdateForm, string> {
     const rule = setting.sourceData.overrideRules["ehentai"] ?? SOURCE_DATA_COLLECT_SITES["ehentai"]
 
     const tags: SourceTagForm[] = []
@@ -279,9 +275,9 @@ function reportSourceData(setting: Setting): Result<SourceDataUpdateForm, string
 }
 
 /**
- * 事件：获得当前页面的SourceDataPath。需要注意的是，当前页面为gallery页，没有page参数。
+ * 获得当前页面的SourceDataPath。需要注意的是，当前页面为gallery页，没有page参数。
  */
-function reportSourceDataPath(setting: Setting): SourceDataPath {
+function getSourceDataPath(setting: Setting): SourceDataPath {
     const overrideRule = setting.sourceData.overrideRules["ehentai"]
     const sourceSite = overrideRule?.sourceSite ?? "ehentai"
     const gid = getGalleryId()
