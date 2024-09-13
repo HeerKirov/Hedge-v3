@@ -48,6 +48,61 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
  * 收集来源数据。
  */
 function collectSourceData(): Result<SourceDataUpdateForm, string> {
+    //pixiv在初始状态下不包含DOM结构，而是包含preload-data。因此在初次加载时可以从这里解析数据。
+    //而加载完成后preload-data会被移除，因此可以转而从DOM获取数据。
+    if(document.querySelector("meta#meta-preload-data")) {
+        return collectSourceDataFromPreloadData()
+    }else{
+        return collectSourceDataFromDOM()
+    }
+}
+
+/**
+ * 从预加载数据收集来源数据。
+ */
+function collectSourceDataFromPreloadData(): Result<SourceDataUpdateForm, string> {
+    const preloadData = JSON.parse(document.querySelector<HTMLMetaElement>("meta#meta-preload-data")!.content)
+    const illustData = Object.values(preloadData["illust"])[0] as any
+
+    const tags: SourceTagForm[] = []
+
+    //查找作者，作为tag写入。作者的type固定为"artist"，code为"{UID}"
+    for(const userData of Object.values(preloadData["user"])) {
+        const userId = (userData as any)["userId"]
+        const artistName = (userData as any)["name"]
+        tags.push({code: userId, name: artistName, type: "artist"})
+    }
+
+    //查找标签列表，作为tag写入。标签的type固定为"tag"，code为"{NAME}"
+    for(const tag of illustData["tags"]["tags"]) {
+        const name = tag["tag"]
+        const otherName = tag["translation"]?.["en"] ?? undefined
+        tags.push({code: name, name, otherName, type: "tag"})
+    }
+
+    const title = illustData["title"] ?? undefined
+
+    let description: string | undefined
+    if(illustData["description"]) {
+        description = illustData["description"].replaceAll(/<br\s*\/?>/g, "\n")
+    }
+
+    let publishTime: string | undefined
+    if(illustData["createDate"]) {
+        const date = new Date(illustData["createDate"])
+        publishTime = date.toISOString()
+    }
+
+    return {
+        ok: true,
+        value: {tags, title, description, publishTime}
+    }
+}
+
+/**
+ * 从DOM结构收集来源数据。
+ */
+function collectSourceDataFromDOM(): Result<SourceDataUpdateForm, string> {
     const tags: SourceTagForm[] = []
 
     //查找作者，作为tag写入。作者的type固定为"artist"，code为"{UID}"
@@ -92,16 +147,16 @@ function collectSourceData(): Result<SourceDataUpdateForm, string> {
             tags.push({code: name, name, type: "tag"})
         }
         //没有span的可能是R-18标记
-    } 
+    }
 
     let description: string | undefined
     const descriptionMeta = document.querySelector<HTMLMetaElement>("meta[property=\"og:description\"]")
     if(descriptionMeta !== null) {
         description = descriptionMeta.content || undefined
     }else{
-        const descriptionDiv = document.querySelector<HTMLDivElement>("figcaption h1 + div")
-        if(descriptionDiv !== null && descriptionDiv.textContent) {
-            description = descriptionDiv.textContent
+        const descriptionParagraph = document.querySelector<HTMLParagraphElement>("figcaption h1 + div > div > p")
+        if(descriptionParagraph !== null) {
+            description = descriptionParagraph.innerText
         }
     }
 
