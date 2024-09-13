@@ -117,30 +117,6 @@ export const sourceDataManager = {
             }
         }
 
-        const patternResult = generator.pattern(sourceId)
-        const pageURL = typeof patternResult === "string" ? patternResult : await patternResult
-        if(pageURL === null) {
-            chrome.notifications.create({
-                type: "basic",
-                iconUrl: "/public/favicon.png",
-                title: "来源数据收集异常",
-                message: `${sourceSite}-${sourceId}: 无法正确生成提取页面的URL。`
-            })
-            console.warn(`[collectSourceData] ${sourceSite}-${sourceId} Cannot generate pattern URL.`)
-            return false
-        }
-        const tabs = await chrome.tabs.query({currentWindow: true, url: pageURL})
-        if(tabs.length <= 0 || tabs[0].id === undefined) {
-            chrome.notifications.create({
-                type: "basic",
-                iconUrl: "/public/favicon.png",
-                title: "来源数据收集异常",
-                message: `${sourceSite}-${sourceId}: 未找到用于提取数据的页面。`
-            })
-            console.warn(`[collectSourceData] Page '${pageURL}' not found.`)
-            return false
-        }
-
         const sourceData = sourceDataManager.get({sourceSite, sourceId})
         const res = await server.sourceData.bulk([{...sourceData, sourceSite, sourceId}])
         if(!res.ok) {
