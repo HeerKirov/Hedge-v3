@@ -63,17 +63,19 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver,
     }
 
     override fun add(selector: FindSimilarTask.TaskSelector, config: FindSimilarTask.TaskConfig?): Int {
-        val id = data.db.insertAndGenerateKey(FindSimilarTasks) {
-            set(it.selector, selector)
-            set(it.config, config ?: appdata.setting.findSimilar.defaultTaskConf)
-            set(it.recordTime, Instant.now())
-        } as Int
+        synchronized(workerThread) {
+            val id = data.db.insertAndGenerateKey(FindSimilarTasks) {
+                set(it.selector, selector)
+                set(it.config, config ?: appdata.setting.findSimilar.defaultTaskConf)
+                set(it.recordTime, Instant.now())
+            } as Int
 
-        counter.addTotal(1)
+            counter.addTotal(1)
 
-        workerThread.start()
+            workerThread.start()
 
-        return id
+            return id
+        }
     }
 
     override fun delete(id: Int) {
@@ -135,10 +137,11 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver,
 
 class SimilarFinderWorkThread(private val data: DataRepository, private val bus: EventBus, private val counter: TaskCounterModule.Counter) : ControlledLoopThread() {
     override fun run() {
-        val model = data.db.sequenceOf(FindSimilarTasks).firstOrNull()
-        if(model == null) {
-            this.stop()
-            return
+        val model = synchronized(this) {
+            data.db.sequenceOf(FindSimilarTasks).firstOrNull() ?: run {
+                this.stop()
+                return
+            }
         }
 
         val config = model.config
