@@ -360,7 +360,7 @@ private class SourceTypeReflector(private val data: DataRepository) {
                 if(cache == null) {
                     //首先聚合得到每种sourceType对每种metaType的映射数量，包括metaType为null的项，表示无映射的sourceTag的数量；之后，对每种sourceType做内部分析。
                     //当targetMetaType仅包含null时，略过不处理；
-                    //当targetMetaType包含仅1种种类时，若这个种类的数量至少大于所有数量的5%，将此种类视为有效种类；
+                    //当targetMetaType包含仅1种种类时，若这个种类的数量至少大于所有数量的5%，或者大于10，将此种类视为有效种类；
                     //当targetMetaType包含超过1种种类时，选出数量最多的种类，要求满足上一条条件，且其他种类数量均不超过所有数量的5%。
                     //tips: 由于数量阈值的问题，在测试环境很可能达不到阈值导致此逻辑未生效
                     cache = data.db.from(SourceTags)
@@ -375,7 +375,7 @@ private class SourceTypeReflector(private val data: DataRepository) {
                             }else if(v.count { it.first != null } == 1) {
                                 val sumCnt = v.sumOf { it.second }
                                 val (targetMetaType, cnt) = v.first { it.first != null }
-                                if(cnt >= sumCnt * 0.05) {
+                                if(cnt >= sumCnt * 0.05 || cnt >= 10) {
                                     (targetMetaType!! to s.first) to s.second
                                 }else{
                                     null
@@ -383,7 +383,7 @@ private class SourceTypeReflector(private val data: DataRepository) {
                             }else{
                                 val sumCnt = v.sumOf { it.second }
                                 val (targetMetaType, cnt) = v.filter { it.first != null }.maxBy { it.second }
-                                if(cnt >= sumCnt * 0.05 && v.none { it.first != null && it.first != targetMetaType && it.second >= sumCnt * 0.05 }) {
+                                if((cnt >= sumCnt * 0.05 || cnt >= 10) && v.none { it.first != null && it.first != targetMetaType && it.second >= sumCnt * 0.05 }) {
                                     (targetMetaType!! to s.first) to s.second
                                 }else{
                                     null
