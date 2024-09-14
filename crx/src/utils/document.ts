@@ -1,9 +1,16 @@
 
 export function onDOMContentLoaded(callback: () => void) {
+    const call = () => {
+        try {
+            callback()
+        }catch (error) {
+            console.error(error)
+        }
+    }
     if(document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", callback)
+        document.addEventListener("DOMContentLoaded", call)
     }else{
-        callback()
+        call()
     }
 }
 

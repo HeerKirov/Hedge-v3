@@ -16,8 +16,8 @@ export const sourceDataManager = {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "/public/favicon.png",
-                title: "来源数据收集异常",
-                message: `${path.sourceSite}-${path.sourceId}: 在提取页面收集数据时发生错误。请查看扩展日志。`
+                title: "来源数据获取异常",
+                message: `${path.sourceSite}-${path.sourceId}: 在提取页面来源数据时发生错误。请查看扩展日志。`
             })
             console.error(`[sourceDataManager] Failed to collect source data.`, data.err)
             return
@@ -118,6 +118,17 @@ export const sourceDataManager = {
         }
 
         const sourceData = sourceDataManager.get({sourceSite, sourceId})
+        if(sourceData === null) {
+            chrome.notifications.create({
+                type: "basic",
+                iconUrl: "/public/favicon.png",
+                title: "来源数据收集异常",
+                message: `${sourceSite}-${sourceId}: 未发现此来源数据的缓存。`
+            })
+            console.error(`[collectSourceData] Source data ${sourceSite}-${sourceId} upload failed: Cache data not exist.`)
+            return false
+        }
+
         const res = await server.sourceData.bulk([{...sourceData, sourceSite, sourceId}])
         if(!res.ok) {
             if(res.exception !== undefined) {
@@ -181,6 +192,13 @@ export const sourceDataManager = {
         }
         console.log(`[collectSourceData] Source data ${sourceSite}-${sourceId} collected.`)
         return true
+    },
+    /**
+     * 自动收集指定来源的数据的调用函数。包含开启条件判断。
+     */
+    async autoCollectSourceData(options: CollectSourceDataOptions) {
+        const setting = options.setting ?? await settings.get()
+        if(setting.sourceData.autoCollectWhenDownload && !await sessions.cache.closeAutoCollect()) await sourceDataManager.collect({...options, setting, autoCollect: true})
     }
 }
 
@@ -190,14 +208,6 @@ type CollectSourceDataOptions = ({sourceId: string, args?: undefined} | {args: R
     sourceSite: string
     setting?: Setting
     autoCollect?: boolean
-}
-
-/**
- * 自动收集指定来源的数据的调用函数。包含开启条件判断。
- */
-export async function autoCollectSourceData(options: CollectSourceDataOptions) {
-    const setting = options.setting ?? await settings.get()
-    if(setting.sourceData.autoCollectWhenDownload && !await sessions.cache.closeAutoCollect()) await sourceDataManager.collect({...options, setting, autoCollect: true})
 }
 
 /**

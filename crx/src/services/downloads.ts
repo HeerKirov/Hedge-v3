@@ -1,12 +1,10 @@
 import { Setting, settings } from "@/functions/setting"
 import { sessions } from "@/functions/storage"
 import {
-    DOWNLOAD_EXTENSIONS,
-    DOWNLOAD_RENAME_SITES,
-    EHENTAI_CONSTANTS, GELBOORU_CONSTANTS, IDOL_SANKAKUCOMPLEX_CONSTANTS, KEMONO_CONSTANTS, PIXIV_CONSTANTS,
-    SANKAKUCOMPLEX_CONSTANTS
+    DOWNLOAD_EXTENSIONS, DOWNLOAD_RENAME_SITES,
+    EHENTAI_CONSTANTS, GELBOORU_CONSTANTS, IDOL_SANKAKUCOMPLEX_CONSTANTS, KEMONO_CONSTANTS, PIXIV_CONSTANTS, SANKAKUCOMPLEX_CONSTANTS
 } from "@/functions/sites"
-import { autoCollectSourceData } from "@/services/source-data"
+import { sourceDataManager } from "@/services/source-data"
 
 export async function downloadURL(options: {url: string, referrer?: string}) {
     await sessions.cache.downloadItemInfo.set(options.url, {referrer: options.referrer ?? ""})
@@ -43,10 +41,10 @@ export function determiningFilename(downloadItem: chrome.downloads.DownloadItem,
                 return
             }
             suggest({filename: replaceWithArgs(result.rename, finalArgs) + (extension ? "." + extension : "")})
-            autoCollectSourceData({sourceSite: result.siteName, args: finalArgs, setting}).finally()
+            sourceDataManager.autoCollectSourceData({sourceSite: result.siteName, args: finalArgs, setting}).finally()
         }else{
             suggest({filename: replaceWithArgs(result.rename, result.args) + (extension ? "." + extension : "")})
-            autoCollectSourceData({sourceSite: result.siteName, args: result.args, setting}).finally()
+            sourceDataManager.autoCollectSourceData({sourceSite: result.siteName, args: result.args, setting}).finally()
         }
     })
 
