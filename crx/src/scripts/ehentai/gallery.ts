@@ -11,18 +11,20 @@ onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] ehentai/gallery script loaded.")
     const setting = await settings.get()
     const sourceDataPath = getSourceDataPath(setting)
-    const sourceData = collectSourceData(setting)
-    sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
-    sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
+    if(!isContentWarning()) {
+        const sourceData = collectSourceData(setting)
+        sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
+        sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
 
-    enableRenameFile()
-    if(setting.tool.ehentai.enableCommentCNBlock || setting.tool.ehentai.enableCommentVoteBlock || setting.tool.ehentai.enableCommentKeywordBlock || setting.tool.ehentai.enableCommentUserBlock) {
-        enableCommentFilter(
-            setting.tool.ehentai.enableCommentCNBlock, 
-            setting.tool.ehentai.enableCommentVoteBlock,
-            setting.tool.ehentai.enableCommentKeywordBlock ? setting.tool.ehentai.commentBlockKeywords : [], 
-            setting.tool.ehentai.enableCommentUserBlock ? setting.tool.ehentai.commentBlockUsers : []
-        )
+        enableRenameFile()
+        if(setting.tool.ehentai.enableCommentCNBlock || setting.tool.ehentai.enableCommentVoteBlock || setting.tool.ehentai.enableCommentKeywordBlock || setting.tool.ehentai.enableCommentUserBlock) {
+            enableCommentFilter(
+                setting.tool.ehentai.enableCommentCNBlock,
+                setting.tool.ehentai.enableCommentVoteBlock,
+                setting.tool.ehentai.enableCommentKeywordBlock ? setting.tool.ehentai.commentBlockKeywords : [],
+                setting.tool.ehentai.enableCommentUserBlock ? setting.tool.ehentai.commentBlockUsers : []
+            )
+        }
     }
 })
 
@@ -184,6 +186,14 @@ function enableRenameFile() {
             }
         }
     }
+}
+
+/**
+ * 检查当前页面是否处于Content Warning状态下。若在此状态下，则不应该有后续处理。
+ */
+function isContentWarning() {
+    const h1 = document.querySelector<HTMLDivElement>("body > div > h1")
+    return h1 !== null && h1.textContent === "Content Warning"
 }
 
 /**
