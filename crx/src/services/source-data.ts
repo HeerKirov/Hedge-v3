@@ -1,17 +1,17 @@
 import { Setting, settings } from "@/functions/setting"
 import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
-import { SourceDataPath } from "@/functions/server/api-all"
 import { server } from "@/functions/server"
 import { sessions } from "@/functions/storage"
 import { EHENTAI_CONSTANTS, PIXIV_CONSTANTS, SANKAKUCOMPLEX_CONSTANTS, SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
 import { NOTIFICATIONS } from "@/services/notification"
+import { sendMessageToTab } from "@/services/messages"
 import { Result } from "@/utils/primitives"
 
 export const sourceDataManager = {
     /**
      * 向管理器写入一条来源数据。它会被存储在缓存序列中等待使用。写入的data包含Result，因此也包含对错误数据的抛出操作。
      */
-    submit(path: SourceDataPath, data: Result<SourceDataUpdateForm, string>): void {
+    submit(path: {sourceSite: string, sourceId: string}, data: Result<SourceDataUpdateForm, string>): void {
         if(!data.ok) {
             chrome.notifications.create({
                 type: "basic",
@@ -22,22 +22,52 @@ export const sourceDataManager = {
             console.error(`[sourceDataManager] Failed to collect source data.`, data.err)
             return
         }
+        console.log(`[sourceDataManager] submit source data ${path.sourceSite}-${path.sourceId}.`, data.value)
         const existIndex = _sourceDataCache.findIndex(i => i.sourceSite === path.sourceSite && i.sourceId === path.sourceId)
         if(existIndex >= 0) _sourceDataCache.splice(existIndex, 1)
         _sourceDataCache.push({sourceSite: path.sourceSite, sourceId: path.sourceId, data: data.value})
         if(_sourceDataCache.length > 100) _sourceDataCache.splice(0, _sourceDataCache.length - 100)
     },
     /**
-     * 从管理器请求一条来源数据。管理器只会从缓存中拉取数据，如果没有缓存，则会返回null。
+     * 从管理器请求一条来源数据。管理器会先尝试从缓存中拉取数据，如果没有缓存，则尝试搜寻页面以直接拉取数据。如果这也失败，将返回null。
      */
-    get(path: {sourceSite: string, sourceId: string}): SourceDataUpdateForm | null {
+    async get(path: {sourceSite: string, sourceId: string}): Promise<SourceDataUpdateForm | null> {
         for(let i = _sourceDataCache.length - 1; i >= 0; --i) {
             const item = _sourceDataCache[i]
             if(item.sourceSite === path.sourceSite && item.sourceId === path.sourceId) {
                 return item.data
             }
         }
-        return null
+
+        //tips: 偶尔会有一种情况，get获取来源数据时内容为null。尚不清楚原因，没有任何错误抛出，也无法复现。
+        //为了解决这个问题，暂且加回了主动拉取的能力，在这种没有数据的情况下主动去页面请求数据。
+        console.warn(`[sourceDataManager] ${path.sourceSite}-${path.sourceId} source data not found in cache. Try to pull it from tab.`)
+        const generator = SOURCE_DATA_RULES[path.sourceSite]
+        const pageURL = generator.pattern(path.sourceId)
+        if(pageURL === null) {
+            chrome.notifications.create({
+                type: "basic",
+                iconUrl: "/public/favicon.png",
+                title: "来源数据收集异常",
+                message: `${path.sourceSite}-${path.sourceId}: 无法正确生成提取页面的URL。`
+            })
+            console.warn(`[sourceDataManager] ${path.sourceSite}-${path.sourceId} cannot generate pattern URL.`)
+            return null
+        }
+        const tabs = await chrome.tabs.query({currentWindow: true, url: pageURL})
+        if(tabs.length <= 0 || tabs[0].id === undefined) {
+            chrome.notifications.create({
+                type: "basic",
+                iconUrl: "/public/favicon.png",
+                title: "来源数据收集异常",
+                message: `${path.sourceSite}-${path.sourceId}: 未找到用于提取数据的页面。`
+            })
+            console.warn(`[sourceDataManager] Page '${pageURL}' not found.`)
+            return null
+        }
+        const reportResult = await sendMessageToTab(tabs[0].id, "REPORT_SOURCE_DATA", undefined)
+        sourceDataManager.submit(path, reportResult)
+        return reportResult.ok ? reportResult.value : null
     },
     /**
      * 要求管理器将指定source data上传到服务器。这个函数包含对错误数据的抛出操作，最终只返回一个成功与否的布尔值。
@@ -117,7 +147,7 @@ export const sourceDataManager = {
             }
         }
 
-        const sourceData = sourceDataManager.get({sourceSite, sourceId})
+        const sourceData = await sourceDataManager.get({sourceSite, sourceId})
         if(sourceData === null) {
             chrome.notifications.create({
                 type: "basic",
@@ -230,5 +260,5 @@ const SOURCE_DATA_RULES: Record<string, SourceDataRule> = {
 
 interface SourceDataRule {
     sourceId: string
-    pattern(sourceId: string): string | string[] | null | Promise<string | string[] | null>
+    pattern(sourceId: string): string | string[] | null
 }

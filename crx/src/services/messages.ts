@@ -25,7 +25,8 @@ function onMessage<T extends ContentScriptMessagesList>(msg: T, sender: chrome.r
     }else if(msg.type === "SUBMIT_SOURCE_DATA") {
         sourceDataManager.submit(msg.msg.path, msg.msg.data)
     }else if(msg.type === "GET_SOURCE_DATA") {
-        callback(sourceDataManager.get(msg.msg))
+        sourceDataManager.get(msg.msg).then(r => callback(r))
+        return true
     }else if(msg.type === "COLLECT_SOURCE_DATA"){
         sourceDataManager.collect(msg.msg).then(r => callback(r))
         return true
