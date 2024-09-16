@@ -50,12 +50,24 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
 function collectSourceData(): Result<SourceDataUpdateForm, string> {
     //pixiv在初始状态下不包含DOM结构，而是包含preload-data。因此在初次加载时可以从这里解析数据。
     //而加载完成后preload-data会被移除，因此可以转而从DOM获取数据。
-    if(document.querySelector("meta#meta-preload-data")) {
+    const cache = collectSourceDataInCache()
+    if(cache?.ok) {
+        return cache
+    }else if(document.querySelector("meta#meta-preload-data")) {
         return collectSourceDataFromPreloadData()
     }else{
         return collectSourceDataFromDOM()
     }
 }
+
+/**
+ * 前置的预加载数据额外收集器。
+ * 根据观察，偶尔会存在既不存在meta，也不存在DOM的瞬间。为了解决这个问题，在脚本预载时缓存meta内容，供后续使用。
+ */
+const collectSourceDataInCache = (function () {
+    const cacheData = document.querySelector("meta#meta-preload-data") ? collectSourceDataFromPreloadData() : undefined
+    return () => cacheData
+})()
 
 /**
  * 从预加载数据收集来源数据。
@@ -150,14 +162,10 @@ function collectSourceDataFromDOM(): Result<SourceDataUpdateForm, string> {
     }
 
     let description: string | undefined
-    const descriptionMeta = document.querySelector<HTMLMetaElement>("meta[property=\"og:description\"]")
-    if(descriptionMeta !== null) {
-        description = descriptionMeta.content || undefined
-    }else{
-        const descriptionParagraph = document.querySelector<HTMLParagraphElement>("figcaption h1 + div > div > p")
-        if(descriptionParagraph !== null) {
-            description = descriptionParagraph.innerText
-        }
+    //tips: 从meta获得的description没有换行，只能从DOM获得
+    const descriptionParagraph = document.querySelector<HTMLParagraphElement>("figcaption h1 + div > div > p")
+    if(descriptionParagraph !== null) {
+        description = descriptionParagraph.innerText
     }
 
     let title: string | undefined
