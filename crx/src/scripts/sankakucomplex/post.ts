@@ -4,11 +4,12 @@ import { SourceBookForm, SourceDataUpdateForm, SourceTagForm } from "@/functions
 import { Setting, settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { SANKAKUCOMPLEX_CONSTANTS } from "@/functions/sites"
-import { initializeUI, QuickFindController } from "@/scripts/utils"
+import { initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
+import { imageToolbar } from "@/scripts/utils/image-toolbar.tsx"
 import { Result } from "@/utils/primitives"
 import { onDOMContentLoaded } from "@/utils/document"
 
-let ui: QuickFindController | undefined
+let quickFind: QuickFindController | undefined
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] sankakucomplex/post script loaded.")
@@ -21,7 +22,10 @@ onDOMContentLoaded(async () => {
     if(setting.tool.sankakucomplex.enableBookNoticeEnhancement) enableBookEnhancement()
     if(setting.tool.sankakucomplex.enableImageLinkReplacement) enableImageLinkReplacement()
     enableOptimizeUI()
-    ui = initializeUI()
+
+    quickFind = initializeQuickFindUI()
+
+    initializeUI()
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
@@ -38,9 +42,9 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
             const sourceDataPath = getSourceDataPath(setting)
             const sourceData = collectSourceData()
             const files = [...document.querySelectorAll<HTMLImageElement>("a#image-link img#image")]
-            if(ui) {
-                const f = await Promise.all(files.map(f => ui!.getImageDataURL(f)))
-                ui!.openQuickFindModal(setting, f.length > 0 ? f[0] : undefined, sourceDataPath, sourceData)
+            if(quickFind) {
+                const f = await Promise.all(files.map(f => quickFind!.getImageDataURL(f)))
+                quickFind!.openQuickFindModal(setting, f.length > 0 ? f[0] : undefined, sourceDataPath, sourceData)
             }
         })
         return false
@@ -53,52 +57,6 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
  * 功能：进行UI增强。
  */
 function enableOptimizeUI() {
-    const postContent = document.querySelector("#post-content")
-    if(!postContent) {
-        console.warn("[enableOptimizeUI] Cannot find #post-content.")
-        return
-    }
-
-    const imageLink = postContent.querySelector<HTMLAnchorElement>("#image-link")
-    let url: string
-    if(imageLink) {
-        if(imageLink.classList.contains("sample") && imageLink.href) {
-            url = imageLink.href
-        }else if(imageLink.classList.contains("full")) {
-            const img = imageLink.querySelector("img")
-            if(img) {
-                url = img.src
-            }else{
-                console.warn("[enableOptimizeUI] Cannot find #image-link > img.")
-            }
-        }else{
-            console.warn("[enableOptimizeUI] Cannot find #image-link with class 'full' or 'sample'.")
-        }
-    }else{
-        const video = postContent.querySelector<HTMLVideoElement>("video#image")
-        if(video) {
-            url = video.src
-        }else{
-            console.warn("[enableOptimizeUI] Cannot find #image-link or video#image.")
-            return
-        }
-    }
-
-    //添加下载链接
-    const downloadAnchor = document.createElement("a")
-    downloadAnchor.textContent = "[Hedge] Download Post Img"
-    downloadAnchor.href = "#"
-    downloadAnchor.onclick = (e: MouseEvent) => {
-        (e.target as HTMLAnchorElement).style.color = "burlywood"
-        sendMessage("DOWNLOAD_URL", {url, referrer: document.URL})
-        return false
-    }
-    const downloadNotice = document.createElement("div")
-    downloadNotice.className = "carousel"
-    downloadNotice.append(downloadAnchor)
-    postContent.before(downloadNotice)
-
-
     //移除resized notice
     const resizedNotice = document.querySelector("#resized_notice")
     if(resizedNotice) resizedNotice.remove()
@@ -144,6 +102,46 @@ function enableImageLinkReplacement() {
     }else{
         console.warn("[ImageLinkReplacement] Cannot find #image-link.")
     }
+}
+
+/**
+ * 进行image-toolbar, find-similar相关的UI初始化。
+ */
+function initializeUI() {
+    const postContent = document.querySelector<HTMLDivElement>("#post-content")
+    if(!postContent) {
+        console.warn("[initializeUI] Cannot find #post-content.")
+        return
+    }
+    const imageLink = postContent.querySelector<HTMLAnchorElement>("#image-link")
+    let url: string
+    if(imageLink) {
+        if(imageLink.classList.contains("sample") && imageLink.href) {
+            url = imageLink.href
+        }else if(imageLink.classList.contains("full")) {
+            const img = imageLink.querySelector("img")
+            if(img) {
+                url = img.src
+            }else{
+                console.warn("[initializeUI] Cannot find #image-link > img.")
+                return
+            }
+        }else{
+            console.warn("[initializeUI] Cannot find #image-link with class 'full' or 'sample'.")
+            return
+        }
+    }else{
+        const video = postContent.querySelector<HTMLVideoElement>("video#image")
+        if(video) {
+            url = video.src
+        }else{
+            console.warn("[initializeUI] Cannot find #image-link or video#image.")
+            return
+        }
+    }
+
+    imageToolbar.locale("sankaku")
+    imageToolbar.add([{index: null, element: postContent, downloadURL: url}])
 }
 
 /**

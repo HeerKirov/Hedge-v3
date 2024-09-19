@@ -22,7 +22,7 @@ export interface QuickFindController {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-export function initializeUI(): QuickFindController {
+export function initializeQuickFindUI(): QuickFindController {
     let initialized: boolean = false
     const trigger: EventTrigger<{dataURL: string, sourcePath: SourceDataPath, sourceData: SourceDataUpdateForm}> = createEventTrigger()
 

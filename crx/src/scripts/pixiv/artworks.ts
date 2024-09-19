@@ -3,11 +3,11 @@ import { SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-sour
 import { Setting, settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { PIXIV_CONSTANTS } from "@/functions/sites"
-import { initializeUI, QuickFindController } from "@/scripts/utils"
+import { imageToolbar, initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
 import { Result } from "@/utils/primitives"
 import { onDOMContentLoaded } from "@/utils/document"
 
-let ui: QuickFindController | undefined
+let quickFind: QuickFindController | undefined
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] pixiv/artworks script loaded.")
@@ -16,7 +16,10 @@ onDOMContentLoaded(async () => {
     const sourceData = collectSourceData()
     sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
     sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
-    ui = initializeUI()
+
+    quickFind = initializeQuickFindUI()
+
+    initializeUI()
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
@@ -33,9 +36,9 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
             const sourceDataPath = getSourceDataPath(setting)
             const sourceData = collectSourceData()
             const files = [...document.querySelectorAll<HTMLImageElement>("div[role=presentation] > a > img")]
-            if(ui) {
-                Promise.all(files.map(f => ui!.getImageDataURL(f)))
-                    .then(files => ui!.openQuickFindModal(setting, files.length > 0 ? files[0] : undefined, sourceDataPath, sourceData))
+            if(quickFind) {
+                Promise.all(files.map(f => quickFind!.getImageDataURL(f)))
+                    .then(files => quickFind!.openQuickFindModal(setting, files.length > 0 ? files[0] : undefined, sourceDataPath, sourceData))
             }
         })
         return false
@@ -43,6 +46,47 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
         return false
     }
 })
+
+/**
+ * 进行image-toolbar, find-similar相关的UI初始化。
+ */
+function initializeUI() {
+    function observeAllPresentations(callback: (nodes: HTMLDivElement[]) => void) {
+        const observer = new MutationObserver(mutationsList => {
+            const values: HTMLDivElement[] = []
+            for(const mutation of mutationsList) {
+                if(mutation.type === "childList") {
+                    mutation.addedNodes.forEach(node => {
+                        if(node instanceof HTMLDivElement) {
+                            if(node.role === "presentation" && node?.parentElement?.parentElement?.role === "presentation") {
+                                values.push(node)
+                            }else{
+                                const list = [...node.querySelectorAll<HTMLDivElement>("div[role=presentation] > div > div[role=presentation]").values()]
+                                values.push(...list)
+                            }
+                        }
+                    })
+                }
+            }
+            if(values.length > 0) callback(values)
+        })
+
+        observer.observe(document.body, { childList: true, subtree: true })
+
+        //进行一波初始化回调
+        const initValues = [...document.querySelectorAll<HTMLDivElement>("div[role=presentation] > div > div[role=presentation]").values()]
+        if(initValues.length > 0) callback(initValues)
+    }
+
+    imageToolbar.locale("pixiv")
+    observeAllPresentations(nodes => {
+        imageToolbar.add(nodes.map(node => ({
+            index: node.previousElementSibling ? parseInt(node.previousElementSibling.id) : 1,
+            element: node,
+            downloadURL: () => node.querySelector("a")!.href
+        })))
+    })
+}
 
 /**
  * 收集来源数据。

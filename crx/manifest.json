@@ -41,6 +41,11 @@
 			"run_at": "document_start"
 		},
 		{
+			"matches": ["https://e-hentai.org/mpv/*", "https://exhentai.org/mpv/*"],
+			"js": ["src/scripts/ehentai/mpv.ts"],
+			"run_at": "document_start"
+		},
+		{
 			"matches": ["https://e-hentai.org/s/*", "https://exhentai.org/s/*"],
 			"js": ["src/scripts/ehentai/image.ts"],
 			"run_at": "document_start"

@@ -3,10 +3,12 @@ export const EHENTAI_CONSTANTS = {
     HOSTS: ["e-hentai.org", "exhentai.org"],
     PATTERNS: {
         ANY_IMAGE_URL: ["https://e-hentai.org/s/*/*", "https://exhentai.org/s/*/*"],
-        GALLERY_URL: (sourceId: string) => [`https://e-hentai.org/g/${sourceId}/*`, `https://exhentai.org/g/${sourceId}/*`]
+        GALLERY_URL: (sourceId: string) => [`https://e-hentai.org/g/${sourceId}/*`, `https://exhentai.org/g/${sourceId}/*`],
+        MPV_URL: (sourceId: string) => [`https://e-hentai.org/mpv/${sourceId}/*`, `https://exhentai.org/mpv/${sourceId}/*`]
     },
     REGEXES: {
         GALLERY_PATHNAME: /^\/g\/(?<GID>\d+)\/(?<TOKEN>[a-zA-Z0-9]+)\/?$/,
+        MPV_PATHNAME: /^\/mpv\/(?<GID>\d+)\/(?<TOKEN>[a-zA-Z0-9]+)\/?$/,
         IMAGE_PATHNAME: /^\/s\/(?<PHASH>[a-zA-Z0-9]+)\/(?<GID>\d+)-(?<PAGE>\d+)\/?$/,
         TAG_PATHNAME: /^\/tag\/(?<TYPE>.*):(?<NAME>.+)\/?$/,
         HOMEPAGE_URL: /https:\/\/e[-x]hentai\.org\/$/,
@@ -118,6 +120,7 @@ export const SOURCE_DATA_COLLECT_SITES: {[siteName: string]: SourceDataCollectRu
         host: EHENTAI_CONSTANTS.HOSTS,
         sourcePages: [
             EHENTAI_CONSTANTS.REGEXES.GALLERY_PATHNAME,
+            EHENTAI_CONSTANTS.REGEXES.MPV_PATHNAME,
             EHENTAI_CONSTANTS.REGEXES.IMAGE_PATHNAME
         ]
     },

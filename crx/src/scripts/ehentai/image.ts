@@ -3,10 +3,11 @@ import { Setting, settings } from "@/functions/setting"
 import { sessions } from "@/functions/storage"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { EHENTAI_CONSTANTS } from "@/functions/sites"
-import { initializeUI, QuickFindController } from "@/scripts/utils"
+import { initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
+import { imageToolbar } from "@/scripts/utils/image-toolbar.tsx"
 import { onDOMContentLoaded } from "@/utils/document"
 
-let ui: QuickFindController | undefined
+let quickFind: QuickFindController | undefined
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] ehentai/image script loaded.")
@@ -18,7 +19,10 @@ onDOMContentLoaded(async () => {
     sessions.reflect.ehentaiGalleryImageHash.set({gid, page: page.toString()}, {imageHash}).finally()
 
     if(setting.tool.ehentai.enableUIOptimize) enableOptimizeUI()
-    ui = initializeUI()
+
+    quickFind = initializeQuickFindUI()
+
+    initializeUI(page)
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
@@ -32,9 +36,9 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
             const sourceDataPath = getSourceDataPath(setting)
             const sourceData = await sendMessage("GET_SOURCE_DATA", {sourceSite: "ehentai", sourceId: sourceDataPath.sourceId})
             const files = [...document.querySelectorAll<HTMLImageElement>("div#i3 img#img")]
-            if(ui) {
-                const f = await Promise.all(files.map(f => ui!.getImageDataURL(f)))
-                ui!.openQuickFindModal(setting, f.length > 0 ? f[0] : undefined, sourceDataPath, sourceData !== null ? {ok: true, value: sourceData} : {ok: false, err: "Source data from manager is null."})
+            if(quickFind) {
+                const f = await Promise.all(files.map(f => quickFind!.getImageDataURL(f)))
+                quickFind!.openQuickFindModal(setting, f.length > 0 ? f[0] : undefined, sourceDataPath, sourceData !== null ? {ok: true, value: sourceData} : {ok: false, err: "Source data from manager is null."})
             }
         })
         return false
@@ -71,52 +75,45 @@ function enableOptimizeUI() {
     }else{
         i6.style.flexFlow = "row nowrap"
     }
+}
 
+/**
+ * 进行image-toolbar, find-similar相关的UI初始化。
+ */
+function initializeUI(page: number) {
+    const i3 = document.querySelector<HTMLDivElement>("#i3")
+    if(!i3) {
+        console.warn("[initializeUI] Cannot find div#i3.")
+        return
+    }
+    const i6 = document.querySelector<HTMLDivElement>("#i6")
+    if(!i6) {
+        console.warn("[initializeUI] Cannot find div#i6.")
+        return
+    }
+    let downloadURL: string
     if(i6.childElementCount === 4) {
         //4个元素表明此图像有original，最后一个元素的下载链接就是original的链接
         const anchor = document.querySelector<HTMLAnchorElement>("#i6 div:last-child a")
         if(!anchor) {
-            console.warn("[enableOptimizeUI] Cannot find #i6 div a.")
+            console.warn("[initializeUI] Cannot find #i6 div a.")
             return
         }
-
-        const url = anchor.href
-        anchor.onclick = (e: MouseEvent) => {
-            console.log(e, url, document.URL);
-            (e.target as HTMLAnchorElement).style.color = "burlywood"
-            sendMessage("DOWNLOAD_URL", {url, referrer: document.URL})
-            return false
-        }
+        downloadURL = anchor.href
     }else if(i6.childElementCount === 3) {
-        //只有3个元素表明此图像没有original，使用直接下载链接，因此需要在下方补充一个下载链接
+        //只有3个元素表明此图像没有original，使用直接使用图像地址
         const img = document.querySelector<HTMLImageElement>("#img")
         if(!img) {
-            console.warn("[enableOptimizeUI] Cannot find #img.")
+            console.warn("[initializeUI] Cannot find #img.")
             return
         }
-
-        const i = document.createElement("img")
-        i.src = "https://ehgt.org/g/mr.gif"
-        i.className = "mr"
-
-        const anchor = document.createElement("a")
-        anchor.textContent = "(Download original from img link)"
-        anchor.style.cursor = "pointer"
-        anchor.onclick = (e: MouseEvent) => {
-            (e.target as HTMLAnchorElement).style.color = "burlywood"
-            sendMessage("DOWNLOAD_URL", {url: img.src, referrer: document.URL})
-            return false
-        }
-
-        const div = document.createElement("div")
-        div.appendChild(document.createTextNode(" "))
-        div.appendChild(i)
-        div.appendChild(anchor)
-
-        i6.appendChild(div)
+        downloadURL = img.src
     }else{
-        console.warn(`[enableOptimizeUI] div#i6 has ${i6.childElementCount} div. its illegal.`)
+        console.warn(`[initializeUI] div#i6 has ${i6.childElementCount} div. it is unexpect.`)
+        return
     }
+    imageToolbar.locale("ehentai-image")
+    imageToolbar.add([{index: page, element: i3, downloadURL}])
 }
 
 /**
