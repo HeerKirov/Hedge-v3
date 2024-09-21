@@ -68,7 +68,7 @@ export const GELBOORU_CONSTANTS = {
 export const KEMONO_CONSTANTS = {
     HOSTS: ["kemono.su"],
     REGEXES: {
-        POST_URL: /https:\/\/kemono.su\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<PID>\d+)\/?(#part=(?<PAGE>\d+))?/
+        POST_URL: /https:\/\/kemono.su\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<PID>\d+)(\/revision\/\d+)?\/?(#part=(?<PAGE>\d+))?/
     }
 }
 

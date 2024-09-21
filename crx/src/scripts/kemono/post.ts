@@ -1,32 +1,22 @@
-import { sendMessage } from "@/functions/messages"
 import { onDOMContentLoaded } from "@/utils/document"
+import { imageToolbar } from "@/scripts/utils";
 
 onDOMContentLoaded(() => {
     console.log("[Hedge v3 Helper] kemono/post script loaded.")
-    enablePostContentEnhancement()
+
+    initializeUI()
 })
 
 /**
- * 功能：增强post内容。
- * 将对图像内容追加下载功能和重命名。
+ * 进行image-toolbar, find-similar相关的UI初始化。
  */
-function enablePostContentEnhancement() {
-    const imageLinks = document.querySelectorAll<HTMLAnchorElement>(".post__files .post__thumbnail .fileThumb")
+function initializeUI() {
+    const imageLinks = [...document.querySelectorAll<HTMLDivElement>(".post__files .post__thumbnail")]
 
-    for(let i = 0; i < imageLinks.length; i++) {
-        const imageLink = imageLinks[i]
-        const url = imageLink.href
-        const referrer = `${document.URL}#part=${i}`
-        imageLink.href = "#"
-        imageLink.onclick = () => {
-            sendMessage("DOWNLOAD_URL", {url, referrer})
-            return false
-        }
-        const label = document.createElement("label")
-        label.textContent = i.toString()
-        label.style.color = "white"
-        imageLink.appendChild(label)
-    }
-
-    console.log(`[enablePostContentEnhancement] ${imageLinks.length} post files enhanced.`)
+    imageToolbar.locale("kemono")
+    imageToolbar.add(imageLinks.map((node, index) => ({
+        index,
+        element: node,
+        downloadURL: node.querySelector<HTMLAnchorElement>(".fileThumb")!.href
+    })))
 }

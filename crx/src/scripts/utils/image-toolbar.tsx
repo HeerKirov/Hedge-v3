@@ -15,16 +15,8 @@ export const imageToolbar = {
     add(items: RegisterItem[]) {
         for(const item of items) {
             const rootElement = document.createElement("div")
+            item.element.appendChild(rootElement)
             rootElement.id = `image-toolbar-${item.index}`
-            if(locale === "pixiv") {
-                rootElement.setAttribute("style", "position: absolute; right: 0; top: 35px")
-            }else if(locale === "ehentai-image" ) {
-                rootElement.setAttribute("style", "position: absolute; right: 0; bottom: 35px")
-            }else if(locale === "ehentai-mpv") {
-                rootElement.setAttribute("style", "position: absolute; right: 0; bottom: 50px")
-            }else if(locale === "sankaku") {
-                rootElement.setAttribute("style", "position: absolute; right: 5px; top: 0")
-            }
             const shadowRoot = rootElement.attachShadow({ mode: "open" })
 
             const styleSlot = document.createElement("section")
@@ -35,8 +27,24 @@ export const imageToolbar = {
             body.setAttribute("style", "background: none")
             shadowRoot.appendChild(body)
 
-            item.element.style.position = "relative"
-            item.element.appendChild(rootElement)
+            if(locale === "pixiv") {
+                rootElement.setAttribute("style", "position: absolute; right: 0; top: 35px")
+                item.element.style.position = "relative"
+            }else if(locale === "ehentai-image" ) {
+                rootElement.setAttribute("style", "position: absolute; right: 0; bottom: 35px")
+                item.element.style.position = "relative"
+            }else if(locale === "ehentai-mpv") {
+                rootElement.setAttribute("style", "position: absolute; right: 0; bottom: 50px")
+                item.element.style.position = "relative"
+            }else if(locale === "sankaku") {
+                rootElement.setAttribute("style", "position: absolute; right: 5px; top: 0")
+                item.element.style.position = "relative"
+            }else if(locale === "fanbox") {
+                rootElement.setAttribute("style", "position: absolute; right: 0; top: 35px")
+            }else if(locale === "kemono") {
+                rootElement.setAttribute("style", "position: absolute; right: -10px; bottom: 4px; transform: translateX(100%)")
+                item.element.style.position = "relative"
+            }
 
             ReactDOM.createRoot(body).render(
                 <React.StrictMode>
@@ -72,35 +80,40 @@ function ToolBar(props: {index: number | null, downloadURL: string | (() => stri
 }
 
 const ToolBarDiv = styled.div<{ $style?: LocaleSite }>`
-    ${p => p.$style === "pixiv" ? css`
-        width: 60px;
-        height: 30px;
+    width: 60px;
+    height: 30px;
+    ${p => p.$style === "pixiv" || p.$style === "fanbox" ? css`
         border-top-left-radius: 15px;
         border-bottom-left-radius: 15px;
+        color: rgb(31, 31, 31);
         background-color: rgb(245, 245, 245);
-        @media (prefers-color-scheme: dark) {
-            background-color: rgb(0, 0, 0);
-        }
+        ${p.$style === "pixiv" && css`
+            @media (prefers-color-scheme: dark) {
+                color: rgb(245, 245, 245);
+                background-color: rgb(0, 0, 0);
+            }
+        `}
     ` : p.$style === "ehentai-image" || p.$style === "ehentai-mpv" ? css`
-        width: 60px;
-        height: 30px;
         border-top-left-radius: 15px;
         border-bottom-left-radius: 15px;
+        color: #5C0D11;
         background-color: #E3E0D1;
         ${p.$style === "ehentai-image" && css`
             border: 1px solid #5C0D12;
             border-right: none;
         `}
     ` : p.$style === "sankaku" ? css`
-        width: 60px;
-        height: 30px;
         background: #FAFAFA;
         border: 2px solid #DDD;
         text-align: center;
         border-radius: 10px;
         color: #FF761C;
-    ` : css`
-    `}
+    ` : p.$style === "kemono" ? css`
+        text-align: center;
+        background: transparent;
+        border: 1px solid hsl(0, 0%, 45%);
+        color: hsl(0, 0%, 70%);
+    ` : undefined}
 `
 
 const DoubleFlipButton = styled.button<{ $style?: LocaleSite }>`
@@ -110,7 +123,7 @@ const DoubleFlipButton = styled.button<{ $style?: LocaleSite }>`
     box-sizing: border-box;
     background-color: transparent;
     
-    ${p => p.$style === "pixiv" || p.$style === "ehentai-image" || p.$style === "ehentai-mpv" ? css`
+    ${p => p.$style === "pixiv" || p.$style === "fanbox" || p.$style === "ehentai-image" || p.$style === "ehentai-mpv" ? css`
         border-top-left-radius: 15px;
         border-bottom-left-radius: 15px;
     ` : p.$style === "sankaku" ? css`
@@ -120,9 +133,11 @@ const DoubleFlipButton = styled.button<{ $style?: LocaleSite }>`
     &:hover {
         cursor: pointer;
         background-color: rgba(179, 179, 179, 25%);
-        @media (prefers-color-scheme: dark) {
-            background-color: rgba(255, 255, 255, 25%);
-        }
+        ${p => p.$style === "pixiv" && css`
+            @media (prefers-color-scheme: dark) {
+                background-color: rgba(255, 255, 255, 25%);
+            }
+        `}
     }
     
     display: flex;
