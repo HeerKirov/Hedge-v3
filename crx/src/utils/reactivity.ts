@@ -35,21 +35,19 @@ export function usePartialSet<T extends object>(value: T | null | undefined, set
     }
 }
 
-interface UseEditorProps<T, F> {
+interface UseEditorProps<T> {
     value: T | null | undefined,
     updateValue?(v: T): void
-    from(v: T): F
-    to(v: F): T
-    default(): F
+    default(): T
     afterChange?(v: T | null | undefined): void
 }
 
-export function useEditor<T, F extends object>(props: UseEditorProps<T, F>) {
+export function useEditor<T extends object>(props: UseEditorProps<T>) {
     const [editor, setEditor] = useState(props.default())
     const [changed, setChanged] = useState(false)
 
     useWatch(() => {
-        setEditor(props.value ? props.from(props.value) : props.default())
+        setEditor(props.value ? props.value : props.default())
         props.afterChange?.(props.value)
     }, [props.value], {immediate: true})
 
@@ -60,7 +58,7 @@ export function useEditor<T, F extends object>(props: UseEditorProps<T, F>) {
 
     const save = () => {
         setChanged(false)
-        props.updateValue?.(props.to(editor))
+        props.updateValue?.(editor)
     }
 
     return {editor, changed, setProperty, save}

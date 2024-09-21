@@ -1,17 +1,21 @@
+import { SourceDataPath } from "@/functions/server/api-all"
 import { onDOMContentLoaded } from "@/utils/document"
 import { imageToolbar } from "@/scripts/utils"
+import { FANBOX_CONSTANTS, SOURCE_DATA_COLLECT_SITES } from "@/functions/sites.ts";
 
 onDOMContentLoaded(() => {
     console.log("[Hedge v3 Helper] fanbox/post script loaded.")
-
-    initializeUI()
+    const sourceDataPath = getSourceDataPath()
+    initializeUI(sourceDataPath)
 })
+
+//TODO 添加fanbox source data
 
 /**
  * 进行image-toolbar, find-similar相关的UI初始化。
  */
-function initializeUI() {
-    function observeAllPresentations(callback: (nodes: {index: number, element: HTMLDivElement, downloadURL: string}[]) => void) {
+function initializeUI(sourcePath: SourceDataPath) {
+    function observeAllPresentations(callback: (nodes: {index: number, element: HTMLDivElement, sourcePath: SourceDataPath, downloadURL: string}[]) => void) {
         let imgList: HTMLImageElement[] | undefined
 
         const callbackWithProcessor = (nodes: HTMLImageElement[]) => {
@@ -19,7 +23,7 @@ function initializeUI() {
             const ret = nodes.filter(node => node.parentElement?.parentElement instanceof HTMLAnchorElement).map(node => {
                 const index = imgList!.indexOf(node) + 1
                 const downloadURL = (node.parentElement!.parentElement as HTMLAnchorElement).href
-                return {index, downloadURL, element: node.parentElement!.parentElement!.parentElement as HTMLDivElement}
+                return {index, downloadURL, sourcePath: {...sourcePath, sourcePart: index}, element: node.parentElement!.parentElement!.parentElement as HTMLDivElement}
             })
             callback(ret)
         }
@@ -44,4 +48,27 @@ function initializeUI() {
     imageToolbar.locale("fanbox")
 
     observeAllPresentations(nodes => imageToolbar.add(nodes))
+}
+
+/**
+ * 获得当前页面的SourceDataPath。需要注意的是，fanbox的页面构成只能解析到id，没有page参数。
+ */
+function getSourceDataPath(): SourceDataPath {
+    const sourceSite = SOURCE_DATA_COLLECT_SITES["fanbox"].sourceSite
+    const { pid } = getIdentityInfo()
+    return {sourceSite, sourceId: pid, sourcePart: null, sourcePartName: null}
+}
+
+/**
+ * 获得PID和作者名。
+ */
+function getIdentityInfo(): {pid: string, artist: string} {
+    const match = document.location.pathname.match(FANBOX_CONSTANTS.REGEXES.POST_PATHNAME)
+    if(match && match.groups) {
+        const pid = match.groups["PID"]
+        const artist = match.groups["ARTIST"]
+        return {pid, artist}
+    }else{
+        throw new Error("Cannot analyse pathname.")
+    }
 }

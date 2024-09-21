@@ -11,10 +11,7 @@ import { FindSimilarResultDetailImage } from "@/functions/server/api-find-simila
 import { createEventTrigger, EventTrigger } from "@/utils/emitter"
 import { files, Result } from "@/utils/primitives"
 import { GlobalStyle, SPACINGS, ThemeColors } from "@/styles"
-import { config } from "@fortawesome/fontawesome-svg-core"
-import fontAwesomeCSS from "@fortawesome/fontawesome-svg-core/styles.css?inline"
-
-config.autoAddCss = false
+import { fontAwesomeCSS } from "@/styles/fontawesome"
 
 export interface QuickFindController {
     openQuickFindModal(setting: Setting, dataURL: string | undefined, sourcePath: SourceDataPath, sourceData: Result<SourceDataUpdateForm, string>): void
@@ -75,7 +72,7 @@ export function initializeQuickFindUI(): QuickFindController {
             return
         }
         if(!initialized) {
-            createReactUI(setting.server.host)
+            createReactUI(setting.general.host)
             initialized = true
         }
         trigger.emit({dataURL, sourcePath, sourceData: sourceData.value})

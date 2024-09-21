@@ -46,22 +46,17 @@ export const SANKAKUCOMPLEX_CONSTANTS = {
     },
     REGEXES: {
         POST_PATHNAME: /^\/(\S+\/)?(post\/show|posts|posts\/show)\/(?<PID>[A-Za-z0-9]+)\/?$/,
-        SEARCH_PATHNAME: /^(\/|\/post|\/\S+\/post|\/posts|\/\S+\/posts)\/?$/,
-        POST_URL: /https:\/\/chan\.sankakucomplex\.com\/(\S+\/)?(post\/show|posts|posts\/show)\/(?<PID>[A-Za-z0-9]+)/
+        SEARCH_PATHNAME: /^(\/|\/post|\/\S+\/post|\/posts|\/\S+\/posts)\/?$/
     }
 }
 
-export const IDOL_SANKAKUCOMPLEX_CONSTANTS = {
-    HOSTS: ["idol.sankakucomplex.com"],
+export const FANBOX_CONSTANTS = {
+    HOSTS: ["www.fanbox.cc"],
+    PATTERNS: {
+        POST_URL: (sourceId: string) => `https://www.fanbox.cc/*/posts/${sourceId}`
+    },
     REGEXES: {
-        POST_URL: /https:\/\/idol.sankakucomplex.com\/post\/show\/(?<PID>\d+)/
-    }
-}
-
-export const GELBOORU_CONSTANTS = {
-    HOSTS: ["gelbooru.com"],
-    REGEXES: {
-        POST_URL: /https:\/\/gelbooru.com\/index.php\?.*id=(?<PID>\d+)/
+        POST_PATHNAME: /^\/@(?<ARTIST>[^/]+)\/posts\/(?<PID>\d+)\/?$/
     }
 }
 
@@ -73,52 +68,20 @@ export const KEMONO_CONSTANTS = {
 }
 
 /**
- * 在Download Rename功能中受支持的网站。此处只包含了网站的总定义(即默认设置)，一些细节都在download模块。
- */
-export const DOWNLOAD_RENAME_SITES: {[siteName: string]: DownloadRenameRule} = {
-    "sankakucomplex": {
-        args: ["PID"],
-        rename: "sankakucomplex_$<PID>",
-    },
-    "ehentai": {
-        args: ["GID", "PAGE", "PHASH"],
-        rename: "ehentai_$<GID>_$<PAGE>_$<PHASH>"
-    },
-    "pixiv": {
-        args: ["PID", "PAGE"],
-        rename: "pixiv_$<PID>_p$<PAGE>"
-    },
-    "gelbooru": {
-        args: ["PID"],
-        rename: "gelbooru_$<PID>"
-    },
-    "idolcomplex": {
-        args: ["PID"],
-        rename: "idolcomplex_$<PID>"
-    },
-    "kemono": {
-        args: ["SITE", "PID", "PAGE"],
-        rename: "$<SITE>_$<PID>_$<PAGE>"
-    }
-}
-
-/**
  * 在Collect SourceData功能中受支持的网站。此处只包含了网站的总定义(即默认设置)，一些细节都在source-data模块。
  */
 export const SOURCE_DATA_COLLECT_SITES: {[siteName: string]: SourceDataCollectRule} = {
     "sankakucomplex": {
         sourceSite: "sankakucomplex",
-        additionalInfo: {},
         host: SANKAKUCOMPLEX_CONSTANTS.HOSTS,
-        sourcePages: [
+        activeTabPages: [
             SANKAKUCOMPLEX_CONSTANTS.REGEXES.POST_PATHNAME
         ]
     },
     "ehentai": {
         sourceSite: "ehentai",
-        additionalInfo: {"token": "token"},
         host: EHENTAI_CONSTANTS.HOSTS,
-        sourcePages: [
+        activeTabPages: [
             EHENTAI_CONSTANTS.REGEXES.GALLERY_PATHNAME,
             EHENTAI_CONSTANTS.REGEXES.MPV_PATHNAME,
             EHENTAI_CONSTANTS.REGEXES.IMAGE_PATHNAME
@@ -126,27 +89,34 @@ export const SOURCE_DATA_COLLECT_SITES: {[siteName: string]: SourceDataCollectRu
     },
     "pixiv": {
         sourceSite: "pixiv",
-        additionalInfo: {},
         host: PIXIV_CONSTANTS.HOSTS,
-        sourcePages: [
+        activeTabPages: [
             PIXIV_CONSTANTS.REGEXES.ARTWORK_PATHNAME
+        ]
+    },
+    "fanbox": {
+        sourceSite: "fanbox",
+        host: FANBOX_CONSTANTS.HOSTS,
+        activeTabPages: [
+            FANBOX_CONSTANTS.REGEXES.POST_PATHNAME
         ]
     }
 }
 
 /**
- * 在Download Rename功能中受支持的扩展名。
+ * 可进行来源数据采集与交互的站点的定义。
  */
-export const DOWNLOAD_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp", "webm", "mp4", "ogv"]
-
-interface DownloadRenameRule {
-    args: string[]
-    rename: string
-}
-
 interface SourceDataCollectRule {
+    /**
+     * 此站点的sourceSite名称，与服务端和来源数据中的名称保持一致。
+     */
     sourceSite: string
-    additionalInfo: {[key: string]: string}
+    /**
+     * 此站点包括哪些可用host。
+     */
     host: string | string[]
-    sourcePages: RegExp[]
+    /**
+     * 此站点中，在哪些页面中，可以激活active-tab的信息播报。
+     */
+    activeTabPages: RegExp[]
 }

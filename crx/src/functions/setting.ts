@@ -6,30 +6,29 @@ import { Migrate, migrate } from "@/utils/migrations"
  */
 export interface Setting {
     version: string
-    server: Server
-    tool: Tool
-    download: Download
-    sourceData: SourceData
+    general: General
+    website: Website
+    toolkit: Toolkit
 }
 
 /**
- * 与后端连接相关的设置项。
+ * 一般设置项。
  */
-interface Server {
+interface General {
     /**
      * 要连接到的后端地址。
      */
     host: string
     /**
-     * 连接到后端时使用的token。需要在后端设置项里配置一个常驻token。
+     * 连接到后端时使用的token。
      */
     token: string
 }
 
 /**
- * 与优化工具相关的设置项。所有功能默认开启。
+ * 网站增强扩展功能，为每个站点提供一些网站UI等方面的体验增强。
  */
-interface Tool {
+interface Website {
     /**
      * sankakucomplex的扩展工具。
      */
@@ -95,88 +94,66 @@ interface Tool {
 }
 
 /**
- * 与文件下载重命名相关的设置项。
+ * 扩展工具功能，提供通用于各个站点的功能类工具。
  */
-interface Download {
+interface Toolkit {
     /**
-     * 覆盖固有规则。默认情况下，启用全部固有规则，在这里可以覆盖一部分设置。
+     * 图像工具栏。在图像页面附加在可下载图像附近的工具栏，提示其页码，并可点击下载图像。
      */
-    overrideRules: {
-        [siteName: string]: {
-            /**
-             * 是否启用此规则。禁用后，此规则在文件下载提供建议时不再生效。
-             */
-            enable: boolean
-            /**
-             * 覆盖：新的rename模板。
-             */
-            rename: string | null
-        }
+    downloadToolbar: {
+        /**
+         * 全局启用此功能。
+         */
+        enabled: boolean
+        /**
+         * 在点击下载时，一同收集来源数据。
+         */
+        autoCollectSourceData: boolean
     }
     /**
-     * 追加的自定义规则。
+     * 在下载文件时对其进行重命名。此下载功能与图像工具栏的下载功能无关，仅作为备用功能。
      */
-    customRules: {
+    determiningFilename: {
         /**
-         * 重命名模板。
+         * 全局启用此功能。
          */
-        rename: string
+        enabled: boolean
         /**
-         * 匹配referrer并获取字段。
+         * 扩展名支持列表。
          */
-        referrer: string | null
+        extensions: string[]
         /**
-         * 匹配url并获取字段。
+         * 规则列表。
          */
-        url: string | null
-        /**
-         * 匹配filename并获取字段。
-         */
-        filename: string | null
-    }[]
-    /**
-     * 覆盖扩展名支持。默认情况下，使用内置的扩展名列表，在这里可以追加新扩展名。
-     */
-    customExtensions: string[]
-}
-
-/**
- * 与来源数据收集相关的设置项。
- */
-interface SourceData {
-    /**
-     * 在下载文件时，自动收集来源数据。
-     */
-    autoCollectWhenDownload: boolean
-    /**
-     * 覆盖固有规则。默认情况下，启用全部固有规则，在这里可以覆盖一部分设置。
-     */
-    overrideRules: {
-        [siteName: string]: {
+        rules: {
             /**
-             * 是否启用此规则。禁用后，此规则在文件下载后不再自动触发，且禁用此站点的来源数据解析、显示和匹配功能。
+             * 重命名模板。
              */
-            enable: boolean
+            rename: string
             /**
-             * 映射到Hedge server中的site name。
+             * 匹配referrer并获取字段。
              */
-            sourceSite: string
+            referrer: string | null
             /**
-             * 映射到Hedge server中的附加信息定义。key为固有信息键名，additionalField为site中的附加信息字段名。
+             * 匹配url并获取字段。
              */
-            additionalInfo: Record<string, string>
-        } | undefined
+            url: string | null
+            /**
+             * 匹配filename并获取字段。
+             */
+            filename: string | null
+        }[]
     }
 }
 
 export function defaultSetting(): Setting {
     return {
         version,
-        server: {
+        general: {
             host: "localhost:9000",
             token: "dev"
         },
-        tool: {
+        website: {
             sankakucomplex: {
                 enableShortcutForbidden: true,
                 enableTagListEnhancement: true,
@@ -195,14 +172,16 @@ export function defaultSetting(): Setting {
                 commentBlockUsers: []
             }
         },
-        download: {
-            overrideRules: {},
-            customRules: [],
-            customExtensions: []
-        },
-        sourceData: {
-            autoCollectWhenDownload: false,
-            overrideRules: {}
+        toolkit: {
+            downloadToolbar: {
+                enabled: true,
+                autoCollectSourceData: true
+            },
+            determiningFilename: {
+                enabled: false,
+                rules: [],
+                extensions: ["jpg", "jpeg", "png", "gif", "webp", "webm", "mp4", "ogv"]
+            }
         }
     }
 }
@@ -240,12 +219,31 @@ export const settings = {
 const migrations: {[version: string]: Migrate<MigrateContext>} = {
     async "0.1.0"() {/*v0.1.0的占位符。只为将版本号升级到v0.1.0*/},
     async "0.2.0"(ctx) {
-        const oldVal = (ctx.setting.tool.ehentai as any)["enableImageDownloadAnchor"] as boolean
-        ctx.setting.tool.ehentai.enableUIOptimize = ctx.setting.tool.ehentai.enableUIOptimize ?? oldVal
+        const val = ctx.setting as any
+        val["tool"]["ehentai"]["enableUIOptimize"] = val["tool"]["ehentai"]["enableUIOptimize"] ?? val["tool"]["ehentai"]["enableImageDownloadAnchor"]
     },
     async "0.3.0"(ctx) {
-        const oldVal = (ctx.setting.server as any)["port"] as number
-        ctx.setting.server.host = ctx.setting.server.host ?? `localhost:${oldVal}`
+        const val = ctx.setting as any
+        val["server"]["host"] = val["server"]["host"] ?? `localhost:${val["server"]["port"]}`
+    },
+    async "0.10.0"(ctx) {
+        const val = ctx.setting as any
+        val["general"] = val["server"]
+        val["website"] = val["tool"]
+        val["toolkit"] = {
+            downloadToolbar: {
+                enabled: true,
+                autoCollectSourceData: val["sourceData"]["autoCollectWhenDownload"] ?? true,
+            },
+            determiningFilename: {
+                enabled: !!val["download"]["customRules"]?.length,
+                rules: val["download"]["customRules"],
+                extensions: val["download"]["customExtensions"].length ? val["download"]["customExtensions"] : ["jpg", "jpeg", "png", "gif", "webp", "webm", "mp4", "ogv"],
+            }
+        }
+        delete val["server"]
+        delete val["tool"]
+        delete val["sourceData"]
     }
 }
 

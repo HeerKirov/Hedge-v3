@@ -1,39 +1,43 @@
 import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
-import { Setting, settings } from "@/functions/setting"
+import { settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
-import { PIXIV_CONSTANTS } from "@/functions/sites"
+import { PIXIV_CONSTANTS, SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
 import { imageToolbar, initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
 import { Result } from "@/utils/primitives"
 import { onDOMContentLoaded } from "@/utils/document"
 
 let quickFind: QuickFindController | undefined
 
-onDOMContentLoaded(async () => {
+/**
+ * 前置的预加载数据额外收集器。
+ * 根据观察，偶尔会存在既不存在meta，也不存在DOM的瞬间。为了解决这个问题，在脚本预载时缓存meta内容，供后续使用。
+ */
+const collectSourceDataInCache = (function () {
+    const cacheData = document.querySelector("meta#meta-preload-data") ? collectSourceDataFromPreloadData() : undefined
+    return () => cacheData
+})()
+
+onDOMContentLoaded(() => {
     console.log("[Hedge v3 Helper] pixiv/artworks script loaded.")
-    const setting = await settings.get()
-    const sourceDataPath = getSourceDataPath(setting)
+    const sourceDataPath = getSourceDataPath()
     const sourceData = collectSourceData()
     sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
     sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
 
     quickFind = initializeQuickFindUI()
 
-    initializeUI()
+    initializeUI(sourceDataPath)
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
     if(type === "REPORT_SOURCE_DATA") {
         callback(collectSourceData())
-        return false
     }else if(type === "REPORT_PAGE_INFO") {
-        settings.get().then(setting => {
-            callback({path: getSourceDataPath(setting)})
-        })
-        return true
+        callback({path: getSourceDataPath()})
     }else if(type === "QUICK_FIND_SIMILAR") {
         settings.get().then(setting => {
-            const sourceDataPath = getSourceDataPath(setting)
+            const sourceDataPath = getSourceDataPath()
             const sourceData = collectSourceData()
             const files = [...document.querySelectorAll<HTMLImageElement>("div[role=presentation] > a > img")]
             if(quickFind) {
@@ -41,16 +45,14 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
                     .then(files => quickFind!.openQuickFindModal(setting, files.length > 0 ? files[0] : undefined, sourceDataPath, sourceData))
             }
         })
-        return false
-    }else{
-        return false
     }
+    return false
 })
 
 /**
  * 进行image-toolbar, find-similar相关的UI初始化。
  */
-function initializeUI() {
+function initializeUI(sourcePath: SourceDataPath) {
     function observeAllPresentations(callback: (nodes: HTMLDivElement[]) => void) {
         const observer = new MutationObserver(mutationsList => {
             const values: HTMLDivElement[] = []
@@ -80,11 +82,15 @@ function initializeUI() {
 
     imageToolbar.locale("pixiv")
     observeAllPresentations(nodes => {
-        imageToolbar.add(nodes.map(node => ({
-            index: node.previousElementSibling ? parseInt(node.previousElementSibling.id) : 1,
-            element: node,
-            downloadURL: () => node.querySelector("a")!.href
-        })))
+        imageToolbar.add(nodes.map(node => {
+            const index = node.previousElementSibling ? parseInt(node.previousElementSibling.id) : 1
+            return {
+                index,
+                element: node,
+                sourcePath: {...sourcePath, sourcePart: index},
+                downloadURL: () => node.querySelector("a")!.href
+            }
+        }))
     })
 }
 
@@ -103,15 +109,6 @@ function collectSourceData(): Result<SourceDataUpdateForm, string> {
         return collectSourceDataFromDOM()
     }
 }
-
-/**
- * 前置的预加载数据额外收集器。
- * 根据观察，偶尔会存在既不存在meta，也不存在DOM的瞬间。为了解决这个问题，在脚本预载时缓存meta内容，供后续使用。
- */
-const collectSourceDataInCache = (function () {
-    const cacheData = document.querySelector("meta#meta-preload-data") ? collectSourceDataFromPreloadData() : undefined
-    return () => cacheData
-})()
 
 /**
  * 从预加载数据收集来源数据。
@@ -233,9 +230,8 @@ function collectSourceDataFromDOM(): Result<SourceDataUpdateForm, string> {
 /**
  * 获得当前页面的SourceDataPath。需要注意的是，pixiv的页面构成只能解析到id，没有page参数。
  */
-function getSourceDataPath(setting: Setting): SourceDataPath {
-    const overrideRule = setting.sourceData.overrideRules["pixiv"]
-    const sourceSite = overrideRule?.sourceSite ?? "pixiv"
+function getSourceDataPath(): SourceDataPath {
+    const sourceSite = SOURCE_DATA_COLLECT_SITES["pixiv"].sourceSite
     const pid = getPID()
     return {sourceSite, sourceId: pid, sourcePart: null, sourcePartName: null}
 }

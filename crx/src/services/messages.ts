@@ -27,11 +27,11 @@ function onMessage<T extends ContentScriptMessagesList>(msg: T, sender: chrome.r
     }else if(msg.type === "GET_SOURCE_DATA") {
         sourceDataManager.get(msg.msg).then(r => callback(r))
         return true
-    }else if(msg.type === "COLLECT_SOURCE_DATA"){
-        sourceDataManager.collect(msg.msg).then(r => callback(r))
+    }else if(msg.type === "COLLECT_SOURCE_DATA") {
+        sourceDataManager.collect({...msg.msg, type: "manual"}).then(r => callback(r))
         return true
     }else if(msg.type === "DOWNLOAD_URL") {
-        downloadURL({url: msg.msg.url, referrer: msg.msg.referrer}).finally()
+        downloadURL(msg.msg).finally()
     }else if(msg.type === "CAPTURE_VISIBLE_TAB") {
         chrome.tabs.captureVisibleTab().then(dataURL => callback(dataURL))
         return true

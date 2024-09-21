@@ -1,8 +1,7 @@
-import { Setting, settings } from "@/functions/setting"
 import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
 import { server } from "@/functions/server"
 import { sessions } from "@/functions/storage"
-import { EHENTAI_CONSTANTS, PIXIV_CONSTANTS, SANKAKUCOMPLEX_CONSTANTS, SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
+import { EHENTAI_CONSTANTS, FANBOX_CONSTANTS, PIXIV_CONSTANTS, SANKAKUCOMPLEX_CONSTANTS } from "@/functions/sites"
 import { NOTIFICATIONS } from "@/services/notification"
 import { sendMessageToTab } from "@/services/messages"
 import { Result } from "@/utils/primitives"
@@ -43,7 +42,7 @@ export const sourceDataManager = {
         //为了解决这个问题，暂且加回了主动拉取的能力，在这种没有数据的情况下主动去页面请求数据。
         console.warn(`[sourceDataManager] ${path.sourceSite}-${path.sourceId} source data not found in cache. Try to pull it from tab.`)
         const generator = SOURCE_DATA_RULES[path.sourceSite]
-        const pageURL = generator.pattern(path.sourceId)
+        const pageURL = generator?.pattern?.(path.sourceId)
         if(pageURL === null) {
             chrome.notifications.create({
                 type: "basic",
@@ -73,34 +72,9 @@ export const sourceDataManager = {
      * 要求管理器将指定source data上传到服务器。这个函数包含对错误数据的抛出操作，最终只返回一个成功与否的布尔值。
      */
     async collect(options: CollectSourceDataOptions): Promise<boolean> {
-        const rule = SOURCE_DATA_COLLECT_SITES[options.sourceSite]
-        if(rule === undefined) {
-            console.log(`[collectSourceData] '${options.sourceSite}' no this rule, skip.`)
-            //没有对应名称的规则，因此跳过
-            return false
-        }
-        const setting = options.setting ?? await settings.get()
-        const overrideRule = setting.sourceData.overrideRules[options.sourceSite]
-        if(overrideRule && !overrideRule.enable) {
-            console.log(`[collectSourceData] '${options.sourceSite}' is disabled, skip.`)
-            //该规则已被禁用，因此跳过
-            return false
-        }
-        const generator = SOURCE_DATA_RULES[options.sourceSite]
+        const { sourceSite, sourceId } = options
 
-        const sourceSite = (overrideRule ?? rule).sourceSite
-        let sourceId: string
-        if(options.sourceId !== undefined) {
-            sourceId = options.sourceId
-        }else{
-            sourceId = options.args[generator.sourceId]
-            if(!sourceId) {
-                console.error(`[collectSourceData] ${sourceSite}-${options.args[generator.sourceId]} source id analyse failed.`)
-                return false
-            }
-        }
-
-        if(options.autoCollect) {
+        if(options.type === "auto") {
             if(await sessions.cache.sourceDataCollected.get({site: sourceSite, sourceId})) {
                 console.log(`[collectSourceData] ${sourceSite}-${sourceId} cached, skip.`)
                 //该条数据近期被保存过，因此跳过
@@ -174,8 +148,8 @@ export const sourceDataManager = {
                     type: "basic",
                     iconUrl: "/public/favicon.png",
                     title: "核心服务连接失败",
-                    message: "未能成功连接到核心服务。",
-                    buttons: options.autoCollect ? [{title: "暂时关闭自动收集"}] : undefined
+                    message: "未能成功连接到核心服务，因此无法收集来源数据。",
+                    buttons: options.type === "auto" ? [{title: "暂时关闭自动收集"}] : undefined
                 })
                 console.error(`[collectSourceData] Connect error: ${res.exception}`)
             }
@@ -212,7 +186,7 @@ export const sourceDataManager = {
 
         await sessions.cache.sourceDataCollected.set({site: sourceSite, sourceId}, true)
 
-        if(!options.autoCollect) {
+        if(options.type === "manual") {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "/public/favicon.png",
@@ -222,22 +196,16 @@ export const sourceDataManager = {
         }
         console.log(`[collectSourceData] Source data ${sourceSite}-${sourceId} collected.`)
         return true
-    },
-    /**
-     * 自动收集指定来源的数据的调用函数。包含开启条件判断。
-     */
-    async autoCollectSourceData(options: CollectSourceDataOptions) {
-        const setting = options.setting ?? await settings.get()
-        if(setting.sourceData.autoCollectWhenDownload && !await sessions.cache.closeAutoCollect()) await sourceDataManager.collect({...options, setting, autoCollect: true})
     }
 }
 
+//TODO 存到local存储里
 const _sourceDataCache: {sourceSite: string, sourceId: string, data: SourceDataUpdateForm}[] = []
 
-type CollectSourceDataOptions = ({sourceId: string, args?: undefined} | {args: Record<string, string>, sourceId?: undefined}) & {
+interface CollectSourceDataOptions {
     sourceSite: string
-    setting?: Setting
-    autoCollect?: boolean
+    sourceId: string
+    type: "auto" | "manual"
 }
 
 /**
@@ -255,6 +223,10 @@ const SOURCE_DATA_RULES: Record<string, SourceDataRule> = {
     "pixiv": {
         sourceId: "PID",
         pattern: PIXIV_CONSTANTS.PATTERNS.ARTWORK_URL
+    },
+    "fanbox": {
+        sourceId: "PID",
+        pattern: FANBOX_CONSTANTS.PATTERNS.POST_URL
     }
 }
 

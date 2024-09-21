@@ -1,11 +1,10 @@
 import { tz } from "moment-timezone"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceBookForm, SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
-import { Setting, settings } from "@/functions/setting"
+import { settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
-import { SANKAKUCOMPLEX_CONSTANTS } from "@/functions/sites"
-import { initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
-import { imageToolbar } from "@/scripts/utils/image-toolbar.tsx"
+import { SANKAKUCOMPLEX_CONSTANTS, SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
+import { imageToolbar, initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
 import { Result } from "@/utils/primitives"
 import { onDOMContentLoaded } from "@/utils/document"
 
@@ -14,32 +13,28 @@ let quickFind: QuickFindController | undefined
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] sankakucomplex/post script loaded.")
     const setting = await settings.get()
-    const sourceDataPath = getSourceDataPath(setting)
+    const sourceDataPath = getSourceDataPath()
     const sourceData = collectSourceData()
     sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
     sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
 
-    if(setting.tool.sankakucomplex.enableBookNoticeEnhancement) enableBookEnhancement()
-    if(setting.tool.sankakucomplex.enableImageLinkReplacement) enableImageLinkReplacement()
+    if(setting.website.sankakucomplex.enableBookNoticeEnhancement) enableBookEnhancement()
+    if(setting.website.sankakucomplex.enableImageLinkReplacement) enableImageLinkReplacement()
     enableOptimizeUI()
 
     quickFind = initializeQuickFindUI()
 
-    initializeUI()
+    initializeUI(sourceDataPath)
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
     if(type === "REPORT_SOURCE_DATA") {
         callback(collectSourceData())
-        return false
     }else if(type === "REPORT_PAGE_INFO") {
-        settings.get().then(setting => {
-            callback({path: getSourceDataPath(setting)})
-        })
-        return true
+        callback({path: getSourceDataPath()})
     }else if(type === "QUICK_FIND_SIMILAR") {
         settings.get().then(async setting => {
-            const sourceDataPath = getSourceDataPath(setting)
+            const sourceDataPath = getSourceDataPath()
             const sourceData = collectSourceData()
             const files = [...document.querySelectorAll<HTMLImageElement>("a#image-link img#image")]
             if(quickFind) {
@@ -48,9 +43,8 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
             }
         })
         return false
-    }else{
-        return false
     }
+    return false
 })
 
 /**
@@ -107,7 +101,7 @@ function enableImageLinkReplacement() {
 /**
  * 进行image-toolbar, find-similar相关的UI初始化。
  */
-function initializeUI() {
+function initializeUI(sourcePath: SourceDataPath) {
     const postContent = document.querySelector<HTMLDivElement>("#post-content")
     if(!postContent) {
         console.warn("[initializeUI] Cannot find #post-content.")
@@ -141,7 +135,7 @@ function initializeUI() {
     }
 
     imageToolbar.locale("sankaku")
-    imageToolbar.add([{index: null, element: postContent, downloadURL: url}])
+    imageToolbar.add([{index: null, element: postContent, sourcePath, downloadURL: url}])
 }
 
 /**
@@ -222,10 +216,9 @@ function collectSourceData(): Result<SourceDataUpdateForm, string> {
 /**
  * 获得当前页面的SourceDataPath。
  */
-function getSourceDataPath(setting: Setting): SourceDataPath {
-    const overrideRule = setting.sourceData.overrideRules["sankakucomplex"]
+function getSourceDataPath(): SourceDataPath {
+    const sourceSite = SOURCE_DATA_COLLECT_SITES["sankakucomplex"].sourceSite
     const pid = getPID()
-    const sourceSite = overrideRule?.sourceSite ?? "sankakucomplex"
     return {sourceSite, sourceId: pid, sourcePart: null, sourcePartName: null}
 }
 

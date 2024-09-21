@@ -96,7 +96,7 @@ async function sendRequestByMessage<R, E extends BasicException>(requestConfig: 
     return await sendMessage("FETCH_REQUEST", {url: requestConfig.url, method: requestConfig.method, query: requestConfig.query, data}) as Response<R, E>
 }
 
-export async function fetchRequestByMessage(requestConfig: Exclude<RequestConfig<unknown>, "parseResponse">): Promise<Response<unknown, BasicException>> {
+export async function fetchRequestByMessage(requestConfig: Omit<RequestConfig<unknown>, "parseResponse">): Promise<Response<unknown, BasicException>> {
     let data: any
     if(requestConfig.data instanceof Object && requestConfig.data["__form_data__"]) {
         data = new FormData()
@@ -119,7 +119,7 @@ export async function fetchRequestByMessage(requestConfig: Exclude<RequestConfig
 function request<R, E extends BasicException>(requestConfig: RequestConfig<R>): Promise<Response<R, E>> {    
     return new Promise(async resolve => {
         const setting = await settings.get()
-        const url = new URL(requestConfig.url, `http://${setting.server.host}`)
+        const url = new URL(requestConfig.url, `http://${setting.general.host}`)
         if(requestConfig.query) {
             url.search = new URLSearchParams(requestConfig.query).toString()
         }
@@ -127,9 +127,9 @@ function request<R, E extends BasicException>(requestConfig: RequestConfig<R>): 
         fetch(url, {
             method: requestConfig.method,
             headers: (requestConfig.data instanceof FormData) ? {
-                "Authorization": `Bearer ${setting.server.token}`,
+                "Authorization": `Bearer ${setting.general.token}`,
             } : {
-                "Authorization": `Bearer ${setting.server.token}`,
+                "Authorization": `Bearer ${setting.general.token}`,
                 "Content-Type": "application/json"
             },
             body: (requestConfig.data instanceof FormData) ? requestConfig.data : JSON.stringify(requestConfig.data),

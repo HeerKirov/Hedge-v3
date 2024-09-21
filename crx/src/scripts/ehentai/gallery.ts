@@ -1,7 +1,7 @@
 import { tz } from "moment-timezone"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceAdditionalInfoForm, SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
-import { Setting, settings } from "@/functions/setting"
+import { settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { EHENTAI_CONSTANTS, SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
 import { Result } from "@/utils/primitives"
@@ -10,19 +10,19 @@ import { onDOMContentLoaded } from "@/utils/document"
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] ehentai/gallery script loaded.")
     const setting = await settings.get()
-    const sourceDataPath = getSourceDataPath(setting)
+    const sourceDataPath = getSourceDataPath()
     if(!isContentWarning()) {
-        const sourceData = collectSourceData(setting)
+        const sourceData = collectSourceData()
         sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
         sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
 
         enableRenameFile()
-        if(setting.tool.ehentai.enableCommentCNBlock || setting.tool.ehentai.enableCommentVoteBlock || setting.tool.ehentai.enableCommentKeywordBlock || setting.tool.ehentai.enableCommentUserBlock) {
+        if(setting.website.ehentai.enableCommentCNBlock || setting.website.ehentai.enableCommentVoteBlock || setting.website.ehentai.enableCommentKeywordBlock || setting.website.ehentai.enableCommentUserBlock) {
             enableCommentFilter(
-                setting.tool.ehentai.enableCommentCNBlock,
-                setting.tool.ehentai.enableCommentVoteBlock,
-                setting.tool.ehentai.enableCommentKeywordBlock ? setting.tool.ehentai.commentBlockKeywords : [],
-                setting.tool.ehentai.enableCommentUserBlock ? setting.tool.ehentai.commentBlockUsers : []
+                setting.website.ehentai.enableCommentCNBlock,
+                setting.website.ehentai.enableCommentVoteBlock,
+                setting.website.ehentai.enableCommentKeywordBlock ? setting.website.ehentai.commentBlockKeywords : [],
+                setting.website.ehentai.enableCommentUserBlock ? setting.website.ehentai.commentBlockUsers : []
             )
         }
     }
@@ -30,18 +30,11 @@ onDOMContentLoaded(async () => {
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
     if(type === "REPORT_SOURCE_DATA") {
-        settings.get().then(setting => {
-            callback(collectSourceData(setting))
-        })
-        return true
+        callback(collectSourceData())
     }else if(type === "REPORT_PAGE_INFO") {
-        settings.get().then(setting => {
-            callback({path: getSourceDataPath(setting)})
-        })
-        return true
-    }else{
-        return false
+        getSourceDataPath()
     }
+    return false
 })
 
 /**
@@ -199,9 +192,7 @@ function isContentWarning() {
 /**
  * 收集来源数据。
  */
-function collectSourceData(setting: Setting): Result<SourceDataUpdateForm, string> {
-    const rule = setting.sourceData.overrideRules["ehentai"] ?? SOURCE_DATA_COLLECT_SITES["ehentai"]
-
+function collectSourceData(): Result<SourceDataUpdateForm, string> {
     const tags: SourceTagForm[] = []
     const tagListDiv = document.querySelector<HTMLDivElement>("#taglist")
     if(tagListDiv) {
@@ -247,12 +238,11 @@ function collectSourceData(setting: Setting): Result<SourceDataUpdateForm, strin
         }
     }
 
+    //画廊的token将作为附加信息写入
     const additionalInfo: SourceAdditionalInfoForm[] = []
     const pathnameMatch = document.location.pathname.match(EHENTAI_CONSTANTS.REGEXES.GALLERY_PATHNAME)
     if(pathnameMatch && pathnameMatch.groups) {
-        const value = pathnameMatch.groups["TOKEN"]
-        const field = rule.additionalInfo["token"]
-        additionalInfo.push({field, value})
+        additionalInfo.push({field: "token", value: pathnameMatch.groups["TOKEN"]})
     }
     
     let title: string | undefined
@@ -287,9 +277,8 @@ function collectSourceData(setting: Setting): Result<SourceDataUpdateForm, strin
 /**
  * 获得当前页面的SourceDataPath。需要注意的是，当前页面为gallery页，没有page参数。
  */
-function getSourceDataPath(setting: Setting): SourceDataPath {
-    const overrideRule = setting.sourceData.overrideRules["ehentai"]
-    const sourceSite = overrideRule?.sourceSite ?? "ehentai"
+function getSourceDataPath(): SourceDataPath {
+    const sourceSite = SOURCE_DATA_COLLECT_SITES["ehentai"].sourceSite
     const gid = getGalleryId()
     return {sourceSite, sourceId: gid, sourcePart: null, sourcePartName: null}
 }

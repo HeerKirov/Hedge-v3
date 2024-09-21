@@ -1,10 +1,9 @@
 import { SourceDataPath } from "@/functions/server/api-all"
-import { Setting, settings } from "@/functions/setting"
+import { settings } from "@/functions/setting"
 import { sessions } from "@/functions/storage"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
-import { EHENTAI_CONSTANTS } from "@/functions/sites"
-import { initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
-import { imageToolbar } from "@/scripts/utils/image-toolbar.tsx"
+import { EHENTAI_CONSTANTS, SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
+import { imageToolbar, initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
 import { onDOMContentLoaded } from "@/utils/document"
 
 let quickFind: QuickFindController | undefined
@@ -12,28 +11,23 @@ let quickFind: QuickFindController | undefined
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] ehentai/image script loaded.")
     const setting = await settings.get()
-    const sourceDataPath = getSourceDataPath(setting)
+    const sourceDataPath = getSourceDataPath()
     sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
+    sessions.reflect.ehentaiGalleryImageHash.set({gid: sourceDataPath.sourceId, page: sourceDataPath.sourcePart!.toString()}, {imageHash: sourceDataPath.sourcePartName!}).finally()
 
-    const { gid, page, imageHash } = getIdentityInfo()
-    sessions.reflect.ehentaiGalleryImageHash.set({gid, page: page.toString()}, {imageHash}).finally()
-
-    if(setting.tool.ehentai.enableUIOptimize) enableOptimizeUI()
+    if(setting.website.ehentai.enableUIOptimize) enableOptimizeUI()
 
     quickFind = initializeQuickFindUI()
 
-    initializeUI(page)
+    initializeUI(sourceDataPath)
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
     if(type === "REPORT_PAGE_INFO") {
-        settings.get().then(setting => {
-            callback({path: getSourceDataPath(setting)})
-        })
-        return true
+        callback({path: getSourceDataPath()})
     }else if(type === "QUICK_FIND_SIMILAR") {
         settings.get().then(async setting => {
-            const sourceDataPath = getSourceDataPath(setting)
+            const sourceDataPath = getSourceDataPath()
             const sourceData = await sendMessage("GET_SOURCE_DATA", {sourceSite: "ehentai", sourceId: sourceDataPath.sourceId})
             const files = [...document.querySelectorAll<HTMLImageElement>("div#i3 img#img")]
             if(quickFind) {
@@ -41,10 +35,8 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
                 quickFind!.openQuickFindModal(setting, f.length > 0 ? f[0] : undefined, sourceDataPath, sourceData !== null ? {ok: true, value: sourceData} : {ok: false, err: "Source data from manager is null."})
             }
         })
-        return false
-    }else{
-        return false
     }
+    return false
 })
 
 
@@ -80,7 +72,7 @@ function enableOptimizeUI() {
 /**
  * 进行image-toolbar, find-similar相关的UI初始化。
  */
-function initializeUI(page: number) {
+function initializeUI(sourcePath: SourceDataPath) {
     const i3 = document.querySelector<HTMLDivElement>("#i3")
     if(!i3) {
         console.warn("[initializeUI] Cannot find div#i3.")
@@ -113,15 +105,14 @@ function initializeUI(page: number) {
         return
     }
     imageToolbar.locale("ehentai-image")
-    imageToolbar.add([{index: page, element: i3, downloadURL}])
+    imageToolbar.add([{index: sourcePath.sourcePart!, element: i3, sourcePath, downloadURL}])
 }
 
 /**
  * 获得当前页面的SourceDataPath。当前页面为image页，可以获得gid、page和imageHash。
  */
-function getSourceDataPath(setting: Setting): SourceDataPath {
-    const overrideRule = setting.sourceData.overrideRules["ehentai"]
-    const sourceSite = overrideRule?.sourceSite ?? "ehentai"
+function getSourceDataPath(): SourceDataPath {
+    const sourceSite = SOURCE_DATA_COLLECT_SITES["ehentai"].sourceSite
     const { gid, page, imageHash } = getIdentityInfo()
     return {sourceSite, sourceId: gid, sourcePart: page, sourcePartName: imageHash}
 }

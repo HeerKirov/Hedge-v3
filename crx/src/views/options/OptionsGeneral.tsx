@@ -5,25 +5,17 @@ import { useServerHealth } from "@/hooks/server"
 import { useEditor } from "@/utils/reactivity"
 import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, FONT_SIZES, SPACINGS } from "@/styles"
 
-interface OptionsServerPanelProps {
-    server: Setting["server"] | null | undefined
-    onUpdateServer?(server: Setting["server"]): void
+interface OptionsGeneralPanelProps {
+    general: Setting["general"] | null | undefined
+    onUpdateGeneral?(general: Setting["general"]): void
 }
 
-export function OptionsServerPanel(props: OptionsServerPanelProps) {
+export function OptionsGeneralPanel(props: OptionsGeneralPanelProps) {
     const { health, refreshHealth } = useServerHealth()
     
     const { editor, changed, setProperty, save } = useEditor({
-        value: props.server,
-        updateValue: props.onUpdateServer,
-        from: v => ({
-            host: v.host,
-            token: v.token
-        }),
-        to: f => ({
-            host: f.host,
-            token: f.token
-        }),
+        value: props.general,
+        updateValue: props.onUpdateGeneral,
         default: () => ({
             host: "",
             token: ""
@@ -34,10 +26,11 @@ export function OptionsServerPanel(props: OptionsServerPanelProps) {
     })
 
     return <>
+        <h3>核心服务</h3>
         <div>
-            连接到后台服务后，可以使用一系列与来源数据相关的交互功能。
+            连接到核心服务后，可使用一系列与程序相关的交互功能。
         </div>
-        <Label>后台服务连通状态</Label>
+        <Label>核心服务连通状态</Label>
         <StyledHealthDiv>
             <StyledHealth $status={health}>{health}</StyledHealth>
             <Button size="small" onClick={() => refreshHealth()}>刷新</Button>
@@ -46,12 +39,12 @@ export function OptionsServerPanel(props: OptionsServerPanelProps) {
         <Label>连接Host</Label>
         <div>
             <Input placeholder="连接Host" value={editor.host} onUpdateValue={v => setProperty("host", v)}/>
-            <SecondaryText>连接到后台服务的地址。为了确保稳定连接，建议在「核心服务」设置中设定固定的端口号。</SecondaryText>
+            <SecondaryText>连接到核心服务的地址。为了确保稳定连接，建议在「核心服务」设置中设定固定的端口号。</SecondaryText>
         </div>
         <Label>连接Token</Label>
         <div>
             <Input placeholder="连接Token" value={editor.token} onUpdateValue={v => setProperty("token", v)}/>
-            <SecondaryText>连接到后台服务的Token。建议在「核心服务」设置中设定固定的Token。</SecondaryText>
+            <SecondaryText>连接到核心服务的Token。建议在「核心服务」设置中设定固定的Token。</SecondaryText>
         </div>
         {changed && <StyledSaveButton mode="filled" width="10em" type="primary" onClick={save}><Icon icon="save" mr={2}/>保存</StyledSaveButton>}
     </>
@@ -86,10 +79,10 @@ const STATUS_TO_COLOR = {
 } as const
 
 const STATUS_TO_DESCRIPTION = {
-    "NOT_INITIALIZED": "后台服务还没有初始化。",
-    "INITIALIZING": "后台服务正在初始化……",
-    "LOADING": "后台服务正在启动……",
-    "READY": "后台服务已连接。",
-    "DISCONNECTED": "后台服务未连接。请检查后台服务是否开启，以及Host、Token是否正确配置。",
-    "UNKNOWN": "后台服务状态未知。",
+    "NOT_INITIALIZED": "核心服务还没有初始化。",
+    "INITIALIZING": "核心服务正在初始化……",
+    "LOADING": "核心服务正在启动……",
+    "READY": "核心服务已连接。",
+    "DISCONNECTED": "核心服务未连接。请检查核心服务是否开启，以及Host、Token是否正确配置。",
+    "UNKNOWN": "核心服务状态未知。",
 }

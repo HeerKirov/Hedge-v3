@@ -4,11 +4,11 @@ import { onDOMContentLoaded } from "@/utils/document"
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] sankakucomplex/global script loaded.")
     const setting = await settings.get()
-    if(setting.tool.sankakucomplex.enableBlockAds) enableBlockAds()
-    if(setting.tool.sankakucomplex.enableShortcutForbidden) enableShortcutForbidden()
-    if(setting.tool.sankakucomplex.enablePaginationEnhancement) enablePaginationEnhancement()
-    if(setting.tool.sankakucomplex.enableTagListEnhancement) enableTagListEnhancement()
-    if(setting.tool.sankakucomplex.enableImageLinkReplacement) enableImageThumbnailReplacement()
+    if(setting.website.sankakucomplex.enableBlockAds) enableBlockAds()
+    if(setting.website.sankakucomplex.enableShortcutForbidden) enableShortcutForbidden()
+    if(setting.website.sankakucomplex.enablePaginationEnhancement) enablePaginationEnhancement()
+    if(setting.website.sankakucomplex.enableTagListEnhancement) enableTagListEnhancement()
+    if(setting.website.sankakucomplex.enableImageLinkReplacement) enableImageThumbnailReplacement()
 })
 
 /**

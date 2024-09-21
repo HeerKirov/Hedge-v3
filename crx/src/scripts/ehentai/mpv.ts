@@ -1,35 +1,28 @@
 import { SourceDataPath } from "@/functions/server/api-all"
-import { EHENTAI_CONSTANTS } from "@/functions/sites"
-import { Setting, settings } from "@/functions/setting"
+import { EHENTAI_CONSTANTS, SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { onDOMContentLoaded } from "@/utils/document"
 import { imageToolbar } from "@/scripts/utils"
 
-
-onDOMContentLoaded(async () => {
+onDOMContentLoaded(() => {
     console.log("[Hedge v3 Helper] ehentai/image script loaded.")
-    const setting = await settings.get()
-    const sourceDataPath = getSourceDataPath(setting)
+    const sourceDataPath = getSourceDataPath()
     sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
 
-    initializeUI()
+    initializeUI(sourceDataPath)
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
     if(type === "REPORT_PAGE_INFO") {
-        settings.get().then(setting => {
-            callback({path: getSourceDataPath(setting)})
-        })
-        return true
-    }else{
-        return false
+        callback({path: getSourceDataPath()})
     }
+    return false
 })
 
 /**
  * 进行image-toolbar, find-similar相关的UI初始化。
  */
-function initializeUI() {
+function initializeUI(sourcePath: SourceDataPath) {
     function observeAllPresentations(callback: (nodes: HTMLDivElement[]) => void) {
         const observer = new MutationObserver(mutationsList => {
             const values: HTMLDivElement[] = []
@@ -53,20 +46,25 @@ function initializeUI() {
     }
 
     imageToolbar.locale("ehentai-mpv")
-    observeAllPresentations(nodes => imageToolbar.add(nodes.map(node => ({
-        index: parseInt(node.id.substring("image_".length)),
-        element: node,
-        downloadURL: () => node.querySelector<HTMLAnchorElement>("div.mbar > div:first-child > a")?.href
-    }))))
+    observeAllPresentations(nodes => imageToolbar.add(nodes.map(node => {
+        const index = parseInt(node.id.substring("image_".length))
+        const normalURL = (node.querySelector("div.mbar > div > a > img[title=\"Open image in normal viewer\"]")?.parentElement as HTMLAnchorElement)?.href
+        const { imageHash } = getIdentityInfo(normalURL)
+        return {
+            index,
+            sourcePath: {...sourcePath, sourcePart: index, sourcePartName: imageHash},
+            element: node,
+            downloadURL: () => node.querySelector<HTMLAnchorElement>("div.mbar > div:first-child > a")?.href
+        }
+    })))
 
 }
 
 /**
  * 获得当前页面的SourceDataPath。需要注意的是，当前页面为mpv页，没有page参数。
  */
-function getSourceDataPath(setting: Setting): SourceDataPath {
-    const overrideRule = setting.sourceData.overrideRules["ehentai"]
-    const sourceSite = overrideRule?.sourceSite ?? "ehentai"
+function getSourceDataPath(): SourceDataPath {
+    const sourceSite = SOURCE_DATA_COLLECT_SITES["ehentai"].sourceSite
     const gid = getGalleryId()
     return {sourceSite, sourceId: gid, sourcePart: null, sourcePartName: null}
 }
@@ -78,6 +76,21 @@ function getGalleryId(): string {
     const match = document.location.pathname.match(EHENTAI_CONSTANTS.REGEXES.MPV_PATHNAME)
     if(match && match.groups) {
         return match.groups["GID"]
+    }else{
+        throw new Error("Cannot analyse pathname.")
+    }
+}
+
+/**
+ * 获得GalleryId、Page和ImageHash。
+ */
+function getIdentityInfo(viewURL: string): {gid: string, page: number, imageHash: string} {
+    const match = viewURL.match(EHENTAI_CONSTANTS.REGEXES.IMAGE_URL)
+    if(match && match.groups) {
+        const gid = match.groups["GID"]
+        const page = parseInt(match.groups["PAGE"])
+        const imageHash = match.groups["PHASH"]
+        return {gid, page, imageHash}
     }else{
         throw new Error("Cannot analyse pathname.")
     }

@@ -2,11 +2,10 @@ import React, { useMemo } from "react"
 import ReactDOM from "react-dom/client"
 import { css, styled, StyleSheetManager } from "styled-components"
 import { Icon, LayouttedDiv } from "@/components"
+import { SourceDataPath } from "@/functions/server/api-all"
+import { sendMessage } from "@/functions/messages"
 import { GlobalStyle } from "@/styles"
-import { config as fontAwesomeConfig } from "@fortawesome/fontawesome-svg-core"
-import fontAwesomeCSS from "@fortawesome/fontawesome-svg-core/styles.css?inline"
-
-fontAwesomeConfig.autoAddCss = false
+import { fontAwesomeCSS } from "@/styles/fontawesome"
 
 export const imageToolbar = {
     locale(site: LocaleSite) {
@@ -51,7 +50,7 @@ export const imageToolbar = {
                     <StyleSheetManager target={styleSlot}>
                         <style>{fontAwesomeCSS}</style>
                         <GlobalStyle/>
-                        <ToolBar index={item.index} downloadURL={item.downloadURL}/>
+                        <ToolBar index={item.index} downloadURL={item.downloadURL} sourcePath={item.sourcePath}/>
                     </StyleSheetManager>
                 </React.StrictMode>
             )
@@ -64,15 +63,26 @@ type LocaleSite = "pixiv" | "ehentai-image" | "ehentai-mpv" | "sankaku" | "fanbo
 interface RegisterItem {
     index: number | null
     downloadURL: string | (() => string | undefined)
+    sourcePath: SourceDataPath | null
     element: HTMLElement
 }
 
 let locale: LocaleSite | undefined
 
-function ToolBar(props: {index: number | null, downloadURL: string | (() => string | undefined)}) {
+function ToolBar(props: Omit<RegisterItem, "element">) {
     const favicon = useMemo(() => props.index === null ? chrome.runtime.getURL("favicon.png") : null, [props.index === null])
+
+    //TODO 添加防重放机制和点击后的图标变化
+
+    const downloadClick = () => {
+        const url = typeof props.downloadURL === "function" ? props.downloadURL() ?? "" : props.downloadURL
+        const referrer = document.URL
+        const sourcePath = props.sourcePath ?? undefined
+        sendMessage("DOWNLOAD_URL", {url, referrer, sourcePath})
+    }
+
     return <ToolBarDiv $style={locale}>
-        <DoubleFlipButton $style={locale}>
+        <DoubleFlipButton $style={locale} onClick={downloadClick}>
             {favicon === null ? <b>{props.index}</b> : <LayouttedDiv padding={1}><img src={favicon} alt="favicon"/></LayouttedDiv>}
             <Icon icon="download"/>
         </DoubleFlipButton>

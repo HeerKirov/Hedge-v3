@@ -1,3 +1,4 @@
+import { SourceDataPath } from "@/functions/server/api-all.ts";
 
 /**
  * session会话存储。在这里的通常是各类临时缓存。
@@ -30,7 +31,7 @@ export const sessions = {
          * 最近手动下载的文件的一些附加信息。
          * 这些附加信息在手动下载时被写入，并在determining过程中被提取出来，代替从下载项获得的信息来使用。
          */
-        downloadItemInfo: createDictEndpoint<string, {referrer: string}>("session", "cache/download/info", p => p.toString())
+        downloadItemInfo: createDictEndpoint<string, {referrer: string, sourcePath: SourceDataPath | undefined}>("session", "cache/download/info", p => p.toString())
     },
 }
 
@@ -92,6 +93,14 @@ function createDictEndpoint<P, T>(type: "local" | "session", key: string, subKey
             }else{
                 const newRes = { [subKey]: newValue }
                 await f.set({ [key]: newRes })
+            }
+        },
+        async del(path: P): Promise<void> {
+            const subKey = subKeyOf(path)
+            const { [key]: res } = await f.get([key])
+            if(res !== undefined && res[subKey] !== undefined) {
+                delete res[subKey]
+                await f.set({ [key]: res })
             }
         }
     }

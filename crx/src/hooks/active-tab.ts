@@ -1,13 +1,12 @@
  import { useState } from "react"
-import { Setting, settings } from "@/functions/setting"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataCollectStatus } from "@/functions/server/api-source-data"
 import { SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
 import { server } from "@/functions/server"
+import { sendMessage } from "@/functions/messages"
 import { setActiveTabBadgeByStatus } from "@/services/active-tab"
 import { sendMessageToTab } from "@/services/messages"
 import { useAsyncLoading } from "@/utils/reactivity"
- import { sendMessage } from "@/functions/messages.ts";
 
 export interface SourceInfo {
     tabId: number
@@ -21,13 +20,12 @@ export interface SourceInfo {
  */
 export function useTabSourceInfo() {
     const [sourceInfo] = useAsyncLoading<SourceInfo | null>(async () => {
-        const setting = await settings.get()
         const tabs = await chrome.tabs.query({currentWindow: true, active: true})
         if(tabs.length > 0 && tabs[0].url && tabs[0].id && tabs[0].id !== chrome.tabs.TAB_ID_NONE) {
             const tabId = tabs[0].id
             const strURL = tabs[0].url
             const url = new URL(strURL)
-            const sourceInfo = await matchTabSourceData(tabId, url, setting)
+            const sourceInfo = await matchTabSourceData(tabId, url)
             refreshCollectStatus(sourceInfo).finally()
             return sourceInfo
         }
@@ -73,15 +71,11 @@ export function useTabSourceInfo() {
 /**
  * 解析URL，分析它属于哪个来源网站，并获取其来源数据信息。
  */
-async function matchTabSourceData(tabId: number, url: URL, setting: Setting): Promise<{tabId: number, siteName: string, host: string, sourceDataPath: SourceDataPath | null} | null> {
+async function matchTabSourceData(tabId: number, url: URL): Promise<{tabId: number, siteName: string, host: string, sourceDataPath: SourceDataPath | null} | null> {
     for(const siteName in SOURCE_DATA_COLLECT_SITES) {
         const site = SOURCE_DATA_COLLECT_SITES[siteName]
-        const overrideRule = setting.sourceData.overrideRules[siteName]
-        if(overrideRule && !overrideRule.enable) {
-            continue
-        }
         if(typeof site.host === "string" ? site.host === url.host : site.host.includes(url.host)) {
-            if(site.sourcePages && site.sourcePages.some(i => i.test(url.pathname))) {
+            if(site.activeTabPages && site.activeTabPages.some(i => i.test(url.pathname))) {
                 const pageInfo = await sendMessageToTab(tabId, "REPORT_PAGE_INFO", undefined)
                 return {tabId, siteName, host: url.host, sourceDataPath: pageInfo.path}
             }else{
