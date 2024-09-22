@@ -3,7 +3,7 @@ import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceBookForm, SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
 import { settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
-import { SANKAKUCOMPLEX_CONSTANTS, SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
+import { SANKAKUCOMPLEX_CONSTANTS } from "@/functions/sites"
 import { imageToolbar, initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
 import { Result } from "@/utils/primitives"
 import { onDOMContentLoaded } from "@/utils/document"
@@ -67,7 +67,7 @@ function enableBookEnhancement() {
             if(sn.id.startsWith("pool")) {
                 const bookId = sn.id.slice("pool".length)
                 const legacyA = document.createElement("a")
-                legacyA.href = SANKAKUCOMPLEX_CONSTANTS.PATTERNS.BOOK_URL(bookId)
+                legacyA.href = SANKAKUCOMPLEX_CONSTANTS.PATTERNS.BOOK_PATHNAME(bookId)
                 legacyA.text = `Legacy pool: ${bookId}`
                 sn.append("(")
                 sn.appendChild(legacyA)
@@ -217,7 +217,7 @@ function collectSourceData(): Result<SourceDataUpdateForm, string> {
  * 获得当前页面的SourceDataPath。
  */
 function getSourceDataPath(): SourceDataPath {
-    const sourceSite = SOURCE_DATA_COLLECT_SITES["sankakucomplex"].sourceSite
+    const sourceSite = SANKAKUCOMPLEX_CONSTANTS.SITE_NAME
     const pid = getPID()
     return {sourceSite, sourceId: pid, sourcePart: null, sourcePartName: null}
 }

@@ -1,7 +1,7 @@
  import { useState } from "react"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataCollectStatus } from "@/functions/server/api-source-data"
-import { SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
+import { WEBSITES } from "@/functions/sites"
 import { server } from "@/functions/server"
 import { sendMessage } from "@/functions/messages"
 import { setActiveTabBadgeByStatus } from "@/services/active-tab"
@@ -72,9 +72,9 @@ export function useTabSourceInfo() {
  * 解析URL，分析它属于哪个来源网站，并获取其来源数据信息。
  */
 async function matchTabSourceData(tabId: number, url: URL): Promise<{tabId: number, siteName: string, host: string, sourceDataPath: SourceDataPath | null} | null> {
-    for(const siteName in SOURCE_DATA_COLLECT_SITES) {
-        const site = SOURCE_DATA_COLLECT_SITES[siteName]
-        if(typeof site.host === "string" ? site.host === url.host : site.host.includes(url.host)) {
+    for(const siteName in WEBSITES) {
+        const site = WEBSITES[siteName]
+        if(site.host.includes(url.host)) {
             if(site.activeTabPages && site.activeTabPages.some(i => i.test(url.pathname))) {
                 const pageInfo = await sendMessageToTab(tabId, "REPORT_PAGE_INFO", undefined)
                 return {tabId, siteName, host: url.host, sourceDataPath: pageInfo.path}

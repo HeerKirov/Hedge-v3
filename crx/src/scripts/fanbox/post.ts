@@ -1,7 +1,7 @@
 import { SourceDataPath } from "@/functions/server/api-all"
 import { onDOMContentLoaded } from "@/utils/document"
 import { imageToolbar } from "@/scripts/utils"
-import { FANBOX_CONSTANTS, SOURCE_DATA_COLLECT_SITES } from "@/functions/sites.ts";
+import { FANBOX_CONSTANTS } from "@/functions/sites"
 
 onDOMContentLoaded(() => {
     console.log("[Hedge v3 Helper] fanbox/post script loaded.")
@@ -54,7 +54,7 @@ function initializeUI(sourcePath: SourceDataPath) {
  * 获得当前页面的SourceDataPath。需要注意的是，fanbox的页面构成只能解析到id，没有page参数。
  */
 function getSourceDataPath(): SourceDataPath {
-    const sourceSite = SOURCE_DATA_COLLECT_SITES["fanbox"].sourceSite
+    const sourceSite = FANBOX_CONSTANTS.SITE_NAME
     const { pid } = getIdentityInfo()
     return {sourceSite, sourceId: pid, sourcePart: null, sourcePartName: null}
 }

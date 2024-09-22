@@ -1,59 +1,53 @@
 
 export const EHENTAI_CONSTANTS = {
+    SITE_NAME: "ehentai",
     HOSTS: ["e-hentai.org", "exhentai.org"],
     PATTERNS: {
-        ANY_IMAGE_URL: ["https://e-hentai.org/s/*/*", "https://exhentai.org/s/*/*"],
-        GALLERY_URL: (sourceId: string) => [`https://e-hentai.org/g/${sourceId}/*`, `https://exhentai.org/g/${sourceId}/*`],
-        MPV_URL: (sourceId: string) => [`https://e-hentai.org/mpv/${sourceId}/*`, `https://exhentai.org/mpv/${sourceId}/*`]
+        GALLERY_PATHNAME: (sourceId: string) => [`/g/${sourceId}/*`]
     },
     REGEXES: {
         GALLERY_PATHNAME: /^\/g\/(?<GID>\d+)\/(?<TOKEN>[a-zA-Z0-9]+)\/?$/,
         MPV_PATHNAME: /^\/mpv\/(?<GID>\d+)\/(?<TOKEN>[a-zA-Z0-9]+)\/?$/,
-        IMAGE_PATHNAME: /^\/s\/(?<PHASH>[a-zA-Z0-9]+)\/(?<GID>\d+)-(?<PAGE>\d+)\/?$/,
-        TAG_PATHNAME: /^\/tag\/(?<TYPE>.*):(?<NAME>.+)\/?$/,
-        HOMEPAGE_URL: /https:\/\/e[-x]hentai\.org\/$/,
-        FULLIMG_URL: /https:\/\/e[-x]hentai\.org\/fullimg\.php\?gid=(?<GID>\d+)&page=(?<PAGE>\d+)/,
-        IMAGE_URL: /https:\/\/e[-x]hentai\.org\/s\/(?<PHASH>[a-zA-Z0-9]+)\/(?<GID>\d+)-(?<PAGE>\d+)/
+        IMAGE_PATHNAME: /^\/s\/(?<PHASH>[a-zA-Z0-9]+)\/(?<GID>\d+)-(?<PAGE>\d+)\/?$/
     }
 }
 
 export const PIXIV_CONSTANTS = {
+    SITE_NAME: "pixiv",
     HOSTS: ["www.pixiv.net"],
     PATTERNS: {
-        ARTWORK_URL: (sourceId: string) => `https://www.pixiv.net/artworks/${sourceId}`
+        ARTWORK_PATHNAME: (sourceId: string) => [`/artworks/${sourceId}`]
     },
     REGEXES: {
         ARTWORK_PATHNAME: /^\/artworks\/(?<PID>\d+)\/?$/,
-        USER_PATHNAME: /^\/users\/(?<UID>\d+)\/?/,
-        USER_ABOUT_PATHNAME: /^\/users\/(?<UID>\d+)(\/(artworks|illustrations|manga))?\/?$/,
-        HOMEPAGE_URL: /https:\/\/www\.pixiv\.net\/$/
+        USER_PATHNAME: /^\/users\/(?<UID>\d+)\/?/
     }
 }
 
 export const SANKAKUCOMPLEX_CONSTANTS = {
+    SITE_NAME: "sankakucomplex",
     HOSTS: ["chan.sankakucomplex.com"],
     PATTERNS: {
-        ANY_URL: "https://chan.sankakucomplex.com/*",
-        POST_URL: (pid: string) => [
-            `https://chan.sankakucomplex.com/*/posts/${pid}`,
-            `https://chan.sankakucomplex.com/*/posts/show/${pid}`,
-            `https://chan.sankakucomplex.com/*/post/show/${pid}`,
-            `https://chan.sankakucomplex.com/posts/${pid}`,
-            `https://chan.sankakucomplex.com/posts/show/${pid}`,
-            `https://chan.sankakucomplex.com/post/show/${pid}`
+        POST_PATHNAME: (pid: string) => [
+            `/*/posts/${pid}`,
+            `/*/posts/show/${pid}`,
+            `/*/post/show/${pid}`,
+            `/posts/${pid}`,
+            `/posts/show/${pid}`,
+            `/post/show/${pid}`
         ],
-        BOOK_URL: (bookId: number | string) => `https://chan.sankakucomplex.com/pool/show/${bookId}`
+        BOOK_PATHNAME: (bookId: number | string) => `/pool/show/${bookId}`
     },
     REGEXES: {
-        POST_PATHNAME: /^\/(\S+\/)?(post\/show|posts|posts\/show)\/(?<PID>[A-Za-z0-9]+)\/?$/,
-        SEARCH_PATHNAME: /^(\/|\/post|\/\S+\/post|\/posts|\/\S+\/posts)\/?$/
+        POST_PATHNAME: /^\/(\S+\/)?(post\/show|posts|posts\/show)\/(?<PID>[A-Za-z0-9]+)\/?$/
     }
 }
 
 export const FANBOX_CONSTANTS = {
+    SITE_NAME: "fanbox",
     HOSTS: ["www.fanbox.cc"],
     PATTERNS: {
-        POST_URL: (sourceId: string) => `https://www.fanbox.cc/*/posts/${sourceId}`
+        POST_PATHNAME: (sourceId: string) => [`/*/posts/${sourceId}`]
     },
     REGEXES: {
         POST_PATHNAME: /^\/@(?<ARTIST>[^/]+)\/posts\/(?<PID>\d+)\/?$/
@@ -61,62 +55,71 @@ export const FANBOX_CONSTANTS = {
 }
 
 export const KEMONO_CONSTANTS = {
+    SITE_NAME: "kemono",
     HOSTS: ["kemono.su"],
     REGEXES: {
-        POST_URL: /https:\/\/kemono.su\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<PID>\d+)(\/revision\/\d+)?\/?(#part=(?<PAGE>\d+))?/
+        POST_PATHNAME: /^\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<PID>\d+)(\/revision\/\d+)?\/?$/
     }
 }
 
 /**
- * 在Collect SourceData功能中受支持的网站。此处只包含了网站的总定义(即默认设置)，一些细节都在source-data模块。
+ * 在此处集中声明各个站点的功能。
  */
-export const SOURCE_DATA_COLLECT_SITES: {[siteName: string]: SourceDataCollectRule} = {
-    "sankakucomplex": {
-        sourceSite: "sankakucomplex",
+export const WEBSITES: {[siteName: string]: WebsiteConstant} = {
+    [SANKAKUCOMPLEX_CONSTANTS.SITE_NAME]: {
         host: SANKAKUCOMPLEX_CONSTANTS.HOSTS,
         activeTabPages: [
             SANKAKUCOMPLEX_CONSTANTS.REGEXES.POST_PATHNAME
-        ]
+        ],
+        sourceDataPages: SANKAKUCOMPLEX_CONSTANTS.PATTERNS.POST_PATHNAME
     },
-    "ehentai": {
-        sourceSite: "ehentai",
+    [EHENTAI_CONSTANTS.SITE_NAME]: {
         host: EHENTAI_CONSTANTS.HOSTS,
         activeTabPages: [
             EHENTAI_CONSTANTS.REGEXES.GALLERY_PATHNAME,
             EHENTAI_CONSTANTS.REGEXES.MPV_PATHNAME,
             EHENTAI_CONSTANTS.REGEXES.IMAGE_PATHNAME
-        ]
+        ],
+        sourceDataPages: EHENTAI_CONSTANTS.PATTERNS.GALLERY_PATHNAME
     },
-    "pixiv": {
-        sourceSite: "pixiv",
+    [PIXIV_CONSTANTS.SITE_NAME]: {
         host: PIXIV_CONSTANTS.HOSTS,
         activeTabPages: [
             PIXIV_CONSTANTS.REGEXES.ARTWORK_PATHNAME
-        ]
+        ],
+        sourceDataPages: PIXIV_CONSTANTS.PATTERNS.ARTWORK_PATHNAME
     },
-    "fanbox": {
-        sourceSite: "fanbox",
+    [FANBOX_CONSTANTS.SITE_NAME]: {
         host: FANBOX_CONSTANTS.HOSTS,
         activeTabPages: [
             FANBOX_CONSTANTS.REGEXES.POST_PATHNAME
+        ],
+        sourceDataPages: FANBOX_CONSTANTS.PATTERNS.POST_PATHNAME
+    },
+    [KEMONO_CONSTANTS.SITE_NAME]: {
+        host: KEMONO_CONSTANTS.HOSTS,
+        activeTabPages: [
+            KEMONO_CONSTANTS.REGEXES.POST_PATHNAME
         ]
     }
 }
 
 /**
- * 可进行来源数据采集与交互的站点的定义。
+ * 集中声明站点的定义。
  */
-interface SourceDataCollectRule {
+interface WebsiteConstant {
     /**
-     * 此站点的sourceSite名称，与服务端和来源数据中的名称保持一致。
+     * host：此站点包括哪些可用host。在active-tab识别中会用到。
      */
-    sourceSite: string
+    host: string[]
     /**
-     * 此站点包括哪些可用host。
+     * active-tab支持：此站点中，可以激活active-tab的信息播报的页面。这些页面会发送SUBMIT_PAGE_INFO信息，并响应REPORT_PAGE_INFO事件。
+     * 提供的值应当是一组正则表达式，仅匹配pathname部分。
      */
-    host: string | string[]
+    activeTabPages?: RegExp[]
     /**
-     * 此站点中，在哪些页面中，可以激活active-tab的信息播报。
+     * source-data支持：此站点中，可以支持来源数据收集的页面。这些页面会发送SUBMIT_SOURCE_DATA信息，并响应REPORT_SOURCE_DATA事件。
+     * 返回的值应当是一组通配符字符串，仅包含应当匹配的pathname部分。
      */
-    activeTabPages: RegExp[]
+    sourceDataPages?: (sourceId: string) => string[]
 }

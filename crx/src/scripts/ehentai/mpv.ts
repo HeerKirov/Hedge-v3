@@ -1,5 +1,5 @@
 import { SourceDataPath } from "@/functions/server/api-all"
-import { EHENTAI_CONSTANTS, SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
+import { EHENTAI_CONSTANTS } from "@/functions/sites"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { onDOMContentLoaded } from "@/utils/document"
 import { imageToolbar } from "@/scripts/utils"
@@ -64,7 +64,7 @@ function initializeUI(sourcePath: SourceDataPath) {
  * 获得当前页面的SourceDataPath。需要注意的是，当前页面为mpv页，没有page参数。
  */
 function getSourceDataPath(): SourceDataPath {
-    const sourceSite = SOURCE_DATA_COLLECT_SITES["ehentai"].sourceSite
+    const sourceSite = EHENTAI_CONSTANTS.SITE_NAME
     const gid = getGalleryId()
     return {sourceSite, sourceId: gid, sourcePart: null, sourcePartName: null}
 }
@@ -85,7 +85,8 @@ function getGalleryId(): string {
  * 获得GalleryId、Page和ImageHash。
  */
 function getIdentityInfo(viewURL: string): {gid: string, page: number, imageHash: string} {
-    const match = viewURL.match(EHENTAI_CONSTANTS.REGEXES.IMAGE_URL)
+    const url = new URL(viewURL)
+    const match = url.pathname.match(EHENTAI_CONSTANTS.REGEXES.IMAGE_PATHNAME)
     if(match && match.groups) {
         const gid = match.groups["GID"]
         const page = parseInt(match.groups["PAGE"])

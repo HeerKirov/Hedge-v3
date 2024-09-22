@@ -3,7 +3,7 @@ import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceAdditionalInfoForm, SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
 import { settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
-import { EHENTAI_CONSTANTS, SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
+import { EHENTAI_CONSTANTS } from "@/functions/sites"
 import { Result } from "@/utils/primitives"
 import { onDOMContentLoaded } from "@/utils/document"
 
@@ -32,7 +32,7 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
     if(type === "REPORT_SOURCE_DATA") {
         callback(collectSourceData())
     }else if(type === "REPORT_PAGE_INFO") {
-        getSourceDataPath()
+        callback({path: getSourceDataPath()})
     }
     return false
 })
@@ -148,7 +148,8 @@ function enableRenameFile() {
             const hrefs = [...anchors.values()]
                 .map(a => {
                     const img = a.querySelector("img")
-                    const m = a.href.match(EHENTAI_CONSTANTS.REGEXES.IMAGE_URL)
+                    const url = new URL(a.href)
+                    const m = url.pathname.match(EHENTAI_CONSTANTS.REGEXES.IMAGE_PATHNAME)
                     if(m && m.groups && img) {
                         const page = img.alt
                         const pHash = m.groups["PHASH"]
@@ -278,7 +279,7 @@ function collectSourceData(): Result<SourceDataUpdateForm, string> {
  * 获得当前页面的SourceDataPath。需要注意的是，当前页面为gallery页，没有page参数。
  */
 function getSourceDataPath(): SourceDataPath {
-    const sourceSite = SOURCE_DATA_COLLECT_SITES["ehentai"].sourceSite
+    const sourceSite = EHENTAI_CONSTANTS.SITE_NAME
     const gid = getGalleryId()
     return {sourceSite, sourceId: gid, sourcePart: null, sourcePartName: null}
 }

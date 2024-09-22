@@ -2,7 +2,7 @@ import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
 import { settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
-import { PIXIV_CONSTANTS, SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
+import { PIXIV_CONSTANTS } from "@/functions/sites"
 import { imageToolbar, initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
 import { Result } from "@/utils/primitives"
 import { onDOMContentLoaded } from "@/utils/document"
@@ -231,7 +231,7 @@ function collectSourceDataFromDOM(): Result<SourceDataUpdateForm, string> {
  * 获得当前页面的SourceDataPath。需要注意的是，pixiv的页面构成只能解析到id，没有page参数。
  */
 function getSourceDataPath(): SourceDataPath {
-    const sourceSite = SOURCE_DATA_COLLECT_SITES["pixiv"].sourceSite
+    const sourceSite = PIXIV_CONSTANTS.SITE_NAME
     const pid = getPID()
     return {sourceSite, sourceId: pid, sourcePart: null, sourcePartName: null}
 }

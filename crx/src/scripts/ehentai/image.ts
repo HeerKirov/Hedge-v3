@@ -2,7 +2,7 @@ import { SourceDataPath } from "@/functions/server/api-all"
 import { settings } from "@/functions/setting"
 import { sessions } from "@/functions/storage"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
-import { EHENTAI_CONSTANTS, SOURCE_DATA_COLLECT_SITES } from "@/functions/sites"
+import { EHENTAI_CONSTANTS } from "@/functions/sites"
 import { imageToolbar, initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
 import { onDOMContentLoaded } from "@/utils/document"
 
@@ -112,7 +112,7 @@ function initializeUI(sourcePath: SourceDataPath) {
  * 获得当前页面的SourceDataPath。当前页面为image页，可以获得gid、page和imageHash。
  */
 function getSourceDataPath(): SourceDataPath {
-    const sourceSite = SOURCE_DATA_COLLECT_SITES["ehentai"].sourceSite
+    const sourceSite = EHENTAI_CONSTANTS.SITE_NAME
     const { gid, page, imageHash } = getIdentityInfo()
     return {sourceSite, sourceId: gid, sourcePart: page, sourcePartName: imageHash}
 }

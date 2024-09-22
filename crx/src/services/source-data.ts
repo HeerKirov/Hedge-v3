@@ -1,7 +1,7 @@
 import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
 import { server } from "@/functions/server"
 import { sessions } from "@/functions/storage"
-import { EHENTAI_CONSTANTS, FANBOX_CONSTANTS, PIXIV_CONSTANTS, SANKAKUCOMPLEX_CONSTANTS } from "@/functions/sites"
+import { WEBSITES } from "@/functions/sites"
 import { NOTIFICATIONS } from "@/services/notification"
 import { sendMessageToTab } from "@/services/messages"
 import { Result } from "@/utils/primitives"
@@ -22,28 +22,21 @@ export const sourceDataManager = {
             return
         }
         console.log(`[sourceDataManager] submit source data ${path.sourceSite}-${path.sourceId}.`, data.value)
-        const existIndex = _sourceDataCache.findIndex(i => i.sourceSite === path.sourceSite && i.sourceId === path.sourceId)
-        if(existIndex >= 0) _sourceDataCache.splice(existIndex, 1)
-        _sourceDataCache.push({sourceSite: path.sourceSite, sourceId: path.sourceId, data: data.value})
-        if(_sourceDataCache.length > 100) _sourceDataCache.splice(0, _sourceDataCache.length - 100)
+        sessions.cache.sourceDataStorage.set(path, data.value).finally()
     },
     /**
      * 从管理器请求一条来源数据。管理器会先尝试从缓存中拉取数据，如果没有缓存，则尝试搜寻页面以直接拉取数据。如果这也失败，将返回null。
      */
     async get(path: {sourceSite: string, sourceId: string}): Promise<SourceDataUpdateForm | null> {
-        for(let i = _sourceDataCache.length - 1; i >= 0; --i) {
-            const item = _sourceDataCache[i]
-            if(item.sourceSite === path.sourceSite && item.sourceId === path.sourceId) {
-                return item.data
-            }
-        }
+        const data = await sessions.cache.sourceDataStorage.get(path)
+        if(data !== undefined) return data
 
         //tips: 偶尔会有一种情况，get获取来源数据时内容为null。尚不清楚原因，没有任何错误抛出，也无法复现。
         //为了解决这个问题，暂且加回了主动拉取的能力，在这种没有数据的情况下主动去页面请求数据。
         console.warn(`[sourceDataManager] ${path.sourceSite}-${path.sourceId} source data not found in cache. Try to pull it from tab.`)
-        const generator = SOURCE_DATA_RULES[path.sourceSite]
-        const pageURL = generator?.pattern?.(path.sourceId)
-        if(pageURL === null) {
+        const website = WEBSITES[path.sourceSite]
+        const pagePathNames = website?.sourceDataPages?.(path.sourceId)
+        if(pagePathNames === undefined) {
             chrome.notifications.create({
                 type: "basic",
                 iconUrl: "/public/favicon.png",
@@ -53,6 +46,7 @@ export const sourceDataManager = {
             console.warn(`[sourceDataManager] ${path.sourceSite}-${path.sourceId} cannot generate pattern URL.`)
             return null
         }
+        const pageURL = website.host.flatMap(host => pagePathNames.map(p => `https://${host}${p}`))
         const tabs = await chrome.tabs.query({currentWindow: true, url: pageURL})
         if(tabs.length <= 0 || tabs[0].id === undefined) {
             chrome.notifications.create({
@@ -75,7 +69,7 @@ export const sourceDataManager = {
         const { sourceSite, sourceId } = options
 
         if(options.type === "auto") {
-            if(await sessions.cache.sourceDataCollected.get({site: sourceSite, sourceId})) {
+            if(await sessions.cache.sourceDataCollected.get({sourceSite, sourceId})) {
                 console.log(`[collectSourceData] ${sourceSite}-${sourceId} cached, skip.`)
                 //该条数据近期被保存过，因此跳过
                 return false
@@ -85,14 +79,14 @@ export const sourceDataManager = {
             if(retrieve.ok) {
                 if(retrieve.data.status === "IGNORED") {
                     //已忽略的数据，不收集
-                    await sessions.cache.sourceDataCollected.set({site: sourceSite, sourceId}, true)
+                    await sessions.cache.sourceDataCollected.set({sourceSite, sourceId}, true)
                     console.log(`[collectSourceData] Source data ${sourceSite}-${sourceId} is IGNORED, skip collecting.`)
                     return false
                 }else if(retrieve.data.status === "EDITED") {
                     const lastUpdateTime = Date.parse(retrieve.data.updateTime)
                     if(Date.now() - lastUpdateTime < 1000 * 60 * 60 * 24 * 7) {
                         //EDITED状态，依据上次更新时间，在7天以内的不收集
-                        await sessions.cache.sourceDataCollected.set({site: sourceSite, sourceId}, true)
+                        await sessions.cache.sourceDataCollected.set({sourceSite, sourceId}, true)
                         console.log(`[collectSourceData] Source data ${sourceSite}-${sourceId} is edited in 7 days, skip collecting.`)
                         return false
                     }
@@ -184,7 +178,7 @@ export const sourceDataManager = {
             return false
         }
 
-        await sessions.cache.sourceDataCollected.set({site: sourceSite, sourceId}, true)
+        await sessions.cache.sourceDataCollected.set({sourceSite, sourceId}, true)
 
         if(options.type === "manual") {
             chrome.notifications.create({
@@ -199,38 +193,8 @@ export const sourceDataManager = {
     }
 }
 
-//TODO 存到local存储里
-const _sourceDataCache: {sourceSite: string, sourceId: string, data: SourceDataUpdateForm}[] = []
-
 interface CollectSourceDataOptions {
     sourceSite: string
     sourceId: string
     type: "auto" | "manual"
-}
-
-/**
- * 来源数据收集时的一些规则，包括：从args中的什么字段提取sourceId；根据sourceId如何匹配URL(用于chrome.tabs.query)，以找到要收集数据的页面。
- */
-const SOURCE_DATA_RULES: Record<string, SourceDataRule> = {
-    "sankakucomplex": {
-        sourceId: "PID",
-        pattern: SANKAKUCOMPLEX_CONSTANTS.PATTERNS.POST_URL
-    },
-    "ehentai": {
-        sourceId: "GID",
-        pattern: EHENTAI_CONSTANTS.PATTERNS.GALLERY_URL
-    },
-    "pixiv": {
-        sourceId: "PID",
-        pattern: PIXIV_CONSTANTS.PATTERNS.ARTWORK_URL
-    },
-    "fanbox": {
-        sourceId: "PID",
-        pattern: FANBOX_CONSTANTS.PATTERNS.POST_URL
-    }
-}
-
-interface SourceDataRule {
-    sourceId: string
-    pattern(sourceId: string): string | string[] | null
 }
