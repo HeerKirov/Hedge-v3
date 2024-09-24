@@ -20,7 +20,7 @@ export function Options() {
         <SecondaryHeader>工具配置与扩展选项</SecondaryHeader>
         <SideButtonDiv><Button width="100%" type={panel === "general" ? "primary" : undefined} onClick={() => setPanel("general")}><Icon icon="server" mr={2}/>通用选项</Button></SideButtonDiv>
         <SideButtonDiv><Button width="100%" type={panel === "website" ? "primary" : undefined} onClick={() => setPanel("website")}><Icon icon="toolbox" mr={2}/>网站增强</Button></SideButtonDiv>
-        <SideButtonDiv><Button width="100%" type={panel === "toolkit" ? "primary" : undefined} onClick={() => setPanel("toolkit")}><Icon icon="download" mr={2}/>扩展工具</Button></SideButtonDiv>
+        <SideButtonDiv><Button width="100%" type={panel === "toolkit" ? "primary" : undefined} onClick={() => setPanel("toolkit")}><Icon icon="screwdriver-wrench" mr={2}/>扩展工具</Button></SideButtonDiv>
     </>
 
     const content = panel === "general" ? <OptionsGeneralPanel general={setting?.general} onUpdateGeneral={v => setSettingPartial("general", v)}/>

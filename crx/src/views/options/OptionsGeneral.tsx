@@ -1,5 +1,5 @@
 import { styled } from "styled-components"
-import { Button, Icon, Input, Label, SecondaryText } from "@/components"
+import { Button, FormattedText, Icon, Input, Header, LayouttedDiv, SecondaryText } from "@/components"
 import { Setting } from "@/functions/setting"
 import { useServerHealth } from "@/hooks/server"
 import { useEditor } from "@/utils/reactivity"
@@ -26,34 +26,30 @@ export function OptionsGeneralPanel(props: OptionsGeneralPanelProps) {
     })
 
     return <>
-        <h3>核心服务</h3>
-        <div>
-            连接到核心服务后，可使用一系列与程序相关的交互功能。
-        </div>
-        <Label>核心服务连通状态</Label>
-        <StyledHealthDiv>
+        <Header>核心服务</Header>
+        <p>扩展可连接到Hedge App的服务端，以提供来源数据收集、相似项查找等一系列功能。</p>
+        <LayouttedDiv border radius="std" display="inline-block" padding={[1, 2]} mt={1}>
+            <FormattedText color="secondary">SERVER STATUS: </FormattedText>
             <StyledHealth $status={health}>{health}</StyledHealth>
+            <FormattedText color="secondary" size="small">{STATUS_TO_DESCRIPTION[health]}</FormattedText>
             <Button size="small" onClick={() => refreshHealth()}>刷新</Button>
-            <SecondaryText>{STATUS_TO_DESCRIPTION[health]}</SecondaryText>
-        </StyledHealthDiv>
-        <Label>连接Host</Label>
-        <div>
-            <Input placeholder="连接Host" value={editor.host} onUpdateValue={v => setProperty("host", v)}/>
-            <SecondaryText>连接到核心服务的地址。为了确保稳定连接，建议在「核心服务」设置中设定固定的端口号。</SecondaryText>
-        </div>
-        <Label>连接Token</Label>
-        <div>
-            <Input placeholder="连接Token" value={editor.token} onUpdateValue={v => setProperty("token", v)}/>
-            <SecondaryText>连接到核心服务的Token。建议在「核心服务」设置中设定固定的Token。</SecondaryText>
-        </div>
-        {changed && <StyledSaveButton mode="filled" width="10em" type="primary" onClick={save}><Icon icon="save" mr={2}/>保存</StyledSaveButton>}
+        </LayouttedDiv>
+        <StyledTable>
+            <tbody>
+                <tr>
+                    <th>连接Host</th>
+                    <th>连接Token</th>
+                </tr>
+                <tr>
+                    <td><Input placeholder="连接Host" value={editor.host} onUpdateValue={v => setProperty("host", v)}/></td>
+                    <td><Input placeholder="连接Token" value={editor.token} onUpdateValue={v => setProperty("token", v)}/></td>
+                    <td>{changed && <Button mode="filled" type="primary" onClick={save}><Icon icon="save" mr={2}/>保存</Button>}</td>
+                </tr>
+            </tbody>
+        </StyledTable>
+        <SecondaryText>连接到核心服务的地址。为了确保稳定连接，建议在「核心服务」设置中设定固定的端口号。</SecondaryText>
     </>
 }
-
-const StyledHealthDiv = styled.div`
-    padding: ${SPACINGS[2]};
-    vertical-align: middle;
-`
 
 const StyledHealth = styled.span<{ $status: "NOT_INITIALIZED" | "INITIALIZING" | "LOADING" | "READY" | "DISCONNECTED" | "UNKNOWN" }>`
     font-size: ${FONT_SIZES["large"]};
@@ -64,9 +60,8 @@ const StyledHealth = styled.span<{ $status: "NOT_INITIALIZED" | "INITIALIZING" |
     }
 `
 
-const StyledSaveButton = styled(Button)`
-    margin-top: ${SPACINGS[4]};
-    padding: 0 ${SPACINGS[5]};
+const StyledTable = styled.table`
+    text-align: left;
 `
 
 const STATUS_TO_COLOR = {

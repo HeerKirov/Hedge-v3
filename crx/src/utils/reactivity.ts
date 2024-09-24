@@ -1,4 +1,5 @@
 import { DependencyList, useCallback, useEffect, useRef, useState } from "react"
+import { objects } from "@/utils/primitives"
 
 /**
  * 提供对某些state变化的响应。它看起来有点像useEffect，但作用并不相同，它不是副作用，在每次渲染期间就会执行。
@@ -29,7 +30,7 @@ export function useWatch(func: () => void, dependencies: DependencyList, options
 
 export function usePartialSet<T extends object>(value: T | null | undefined, setValue?: (v: T) => void) {
     return function<K extends keyof T>(key: K, newValue: T[K]) {
-        if(value !== null && value !== undefined && setValue && value[key] !== newValue) {
+        if(value !== null && value !== undefined && setValue && !objects.deepEquals(value[key], newValue)) {
             setValue({...value, [key]: newValue})
         }
     }

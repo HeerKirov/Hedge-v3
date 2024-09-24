@@ -7,6 +7,6 @@ export { Icon } from "./Icon"
 export { StandardSideLayout, MiddleLayout, AspectGrid } from "./Layouts"
 export { DraggableEditList } from "./Data"
 export { PopupMenu } from "./Menu"
-export { Label, FormattedText, LayouttedDiv, SecondaryText, Group, Separator, WrappedText } from "./Styled"
+export { Header, Label, FormattedText, LayouttedDiv, SecondaryText, Group, Separator, WrappedText } from "./Styled"
 
 export type { PopupMenuItem } from "./Menu"

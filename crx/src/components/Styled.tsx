@@ -156,6 +156,19 @@ export const Group = styled.div`
     }
 `
 
+export const Header = styled.h4`
+    font-weight: 700;
+    display: block;
+    color: ${LIGHT_MODE_COLORS["text"]};
+    margin-bottom: ${SPACINGS[2]};
+    &:not(:first-child) {
+        margin-top: ${SPACINGS[2]};
+    }
+    @media (prefers-color-scheme: dark) {
+        color: ${DARK_MODE_COLORS["text"]};
+    }
+`
+
 export const Label = styled.label`
     font-weight: 700;
     display: block;
