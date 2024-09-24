@@ -1,10 +1,11 @@
 import { SourceDataPath } from "@/functions/server/api-all"
 import { Setting, settings } from "@/functions/setting"
 import { sessions } from "@/functions/storage"
+import { DETERMINING_RULES } from "@/functions/sites"
 import { sourceDataManager } from "@/services/source-data"
 import { NOTIFICATIONS } from "@/services/notification"
 
-export async function downloadURL(options: {url: string, referrer: string, sourcePath?: SourceDataPath}) {
+export async function downloadURL(options: {url: string, sourcePath?: SourceDataPath, collectSourceData?: boolean}) {
     if(!options.url.trim()) {
         chrome.notifications.create(NOTIFICATIONS.AUTO_COLLECT_SERVER_DISCONNECTED, {
             type: "basic",
@@ -14,7 +15,10 @@ export async function downloadURL(options: {url: string, referrer: string, sourc
         })
         return
     }
-    await sessions.cache.downloadItemInfo.set(options.url, {referrer: options.referrer ?? "", sourcePath: options.sourcePath})
+    if(options.sourcePath !== undefined) {
+        const filename = generateSourceName(options.sourcePath)
+        await sessions.cache.downloadItemInfo.set(options.url, {filename, sourcePath: options.collectSourceData ? options.sourcePath : undefined})
+    }
     await chrome.downloads.download({url: options.url})
 }
 
@@ -25,32 +29,38 @@ export async function downloadURL(options: {url: string, referrer: string, sourc
  * 不存在sourcePath时，走determiningFilename功能，首先经扩展名过滤，其次经规则匹配后，对其进行重命名。
  */
 export function determiningFilename(downloadItem: chrome.downloads.DownloadItem, suggest: (suggestion?: chrome.downloads.DownloadFilenameSuggestion) => void): boolean | void {
-    console.log(downloadItem)
     const [ filenameWithoutExt, extension ] = splitNameAndExtension(downloadItem.filename)
 
     settings.get().then(async setting => {
         const url = downloadItem.url
         const info = await sessions.cache.downloadItemInfo.get(url)
         try {
-            if(info?.sourcePath) {
-                console.log(`[determiningFilename] url=[${url}], source=[${info.sourcePath.sourceSite}-${info.sourcePath.sourceId}/p${info.sourcePath.sourcePart}/${info.sourcePath.sourcePartName}], filename=[${filenameWithoutExt}]`)
-                suggest({filename: generateSourceName(info.sourcePath) + (extension ? "." + extension : "")})
-                if(setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) await sourceDataManager.collect({...info.sourcePath, type: "auto"})
+            if(info?.filename) {
+                //在从info提取获得文件名时，此文件是通过download API指定下载的。使用已准备好的文件名。
+                console.log(`[determiningFilename] url=[${url}], filename=[${filenameWithoutExt}]`)
+                suggest({filename: info.filename + (extension ? "." + extension : "")})
+                if(info.sourcePath !== undefined && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
+                    await sourceDataManager.collect({...info.sourcePath, type: "auto"})
+                }
             }else{
-                console.log(`[determiningFilename] url=[${url}], referrer=[${info?.referrer ?? downloadItem.referrer}], filename=[${filenameWithoutExt}]`)
-                if(!extension || !setting.toolkit.determiningFilename.extensions.includes(extension)) {
+                //否则，此文件是用户行为触发的下载。使用建议规则集。
+                console.log(`[determiningFilename] url=[${url}], referrer=[${downloadItem.referrer}], filename=[${filenameWithoutExt}]`)
+                if(!extension || !(BUILTIN_EXTENSIONS.includes(extension) || setting.toolkit.determiningFilename.extensions.includes(extension))) {
                     suggest()
                     return
                 }
-                const result = matchRulesAndArgs(info?.referrer ?? downloadItem.referrer, url, filenameWithoutExt, setting)
+                const result = matchRulesAndArgs(downloadItem.referrer, url, filenameWithoutExt, setting)
                 if(result === null) {
                     suggest()
                     return
                 }
-                suggest({filename: replaceWithArgs(result.rename, result.args) + (extension ? "." + extension : "")})
+                suggest({filename: result.determining + (extension ? "." + extension : "")})
+                if(result.sourcePath !== null && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
+                    await sourceDataManager.collect({...result.sourcePath, type: "auto"})
+                }
             }
         }finally{
-            await sessions.cache.downloadItemInfo.del(url)
+            if(info) await sessions.cache.downloadItemInfo.del(url)
         }
     })
 
@@ -66,9 +76,9 @@ function splitNameAndExtension(filename: string): [string, string | null] {
 }
 
 /**
- * 对给出的项，逐规则进行匹配，发现完成匹配的规则，返回此规则与匹配获得的参数。
+ * 对给出的项，逐规则进行匹配，发现完成匹配的规则，根据此规则生成的建议名称，以及sourcePath。
  */
-function matchRulesAndArgs(referrer: string, url: string, filename: string, setting: Setting): {rename: string, args: Record<string, string>} | null {
+function matchRulesAndArgs(referrer: string, url: string, filename: string, setting: Setting): {determining: string, sourcePath: SourceDataPath | null} | null {
     function match(re: RegExp, goal: string, args: Record<string, string>): boolean {
         const matches = re.exec(goal)
         if(matches) {
@@ -79,13 +89,24 @@ function matchRulesAndArgs(referrer: string, url: string, filename: string, sett
         }
     }
 
+    for(const rule of DETERMINING_RULES) {
+        const args: Record<string, string> = {}
+        if(rule.referrer && !match(rule.referrer, referrer, args)) continue
+        if(rule.url && !match(rule.url, url, args)) continue
+        if(rule.filename && !match(rule.filename, filename, args)) continue
+
+        const sourcePath: SourceDataPath = {sourceSite: rule.siteName, sourceId: args["ID"], sourcePart: args["PART"] ? parseInt(args["PART"]) : null, sourcePartName: args["PNAME"] ?? null}
+        const determining = generateSourceName(sourcePath)
+        return {determining, sourcePath: rule.collectSourceData ? sourcePath : null}
+    }
     for(const rule of setting.toolkit.determiningFilename.rules) {
         const args: Record<string, string> = {}
         if(rule.referrer && !match(new RegExp(rule.referrer), referrer, args)) continue
         if(rule.url && !match(new RegExp(rule.url), url, args)) continue
         if(rule.filename && !match(new RegExp(rule.filename), filename, args)) continue
 
-        return {rename: rule.rename, args}
+        const determining = replaceWithArgs(rule.rename, args)
+        return {determining, sourcePath: null}
     }
     
     return null
@@ -106,3 +127,5 @@ function generateSourceName(sourcePath: SourceDataPath): string {
         + (sourcePath.sourcePart !== null ? `_${sourcePath.sourcePart}` : '')
         + (sourcePath.sourcePartName !== null ? `_${sourcePath.sourcePartName}` : '')
 }
+
+const BUILTIN_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp", "webm", "mp4", "ogv"]

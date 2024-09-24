@@ -8,8 +8,9 @@ import { GlobalStyle } from "@/styles"
 import { fontAwesomeCSS } from "@/styles/fontawesome"
 
 export const imageToolbar = {
-    locale(site: LocaleSite) {
-        locale = site
+    config(newConfig: Partial<ToolbarConfig>) {
+        if(newConfig.locale !== undefined) config.locale = newConfig.locale
+        if(newConfig.collectSourceData !== undefined) config.collectSourceData = newConfig.collectSourceData
     },
     add(items: RegisterItem[]) {
         for(const item of items) {
@@ -26,21 +27,21 @@ export const imageToolbar = {
             body.setAttribute("style", "background: none")
             shadowRoot.appendChild(body)
 
-            if(locale === "pixiv") {
+            if(config.locale === "pixiv") {
                 rootElement.setAttribute("style", "position: absolute; right: 0; top: 35px")
                 item.element.style.position = "relative"
-            }else if(locale === "ehentai-image" ) {
+            }else if(config.locale === "ehentai-image" ) {
                 rootElement.setAttribute("style", "position: absolute; right: 0; bottom: 35px")
                 item.element.style.position = "relative"
-            }else if(locale === "ehentai-mpv") {
+            }else if(config.locale === "ehentai-mpv") {
                 rootElement.setAttribute("style", "position: absolute; right: 0; bottom: 50px")
                 item.element.style.position = "relative"
-            }else if(locale === "sankaku") {
+            }else if(config.locale === "sankaku") {
                 rootElement.setAttribute("style", "position: absolute; right: 5px; top: 0")
                 item.element.style.position = "relative"
-            }else if(locale === "fanbox") {
+            }else if(config.locale === "fanbox") {
                 rootElement.setAttribute("style", "position: absolute; right: 0; top: 35px")
-            }else if(locale === "kemono") {
+            }else if(config.locale === "kemono") {
                 rootElement.setAttribute("style", "position: absolute; right: -10px; bottom: 4px; transform: translateX(100%)")
                 item.element.style.position = "relative"
             }
@@ -67,7 +68,12 @@ interface RegisterItem {
     element: HTMLElement
 }
 
-let locale: LocaleSite | undefined
+interface ToolbarConfig {
+    locale: LocaleSite | undefined
+    collectSourceData: boolean
+}
+
+const config: ToolbarConfig = {locale: undefined, collectSourceData: true}
 
 function ToolBar(props: Omit<RegisterItem, "element">) {
     const favicon = useMemo(() => props.index === null ? chrome.runtime.getURL("favicon.png") : null, [props.index === null])
@@ -76,13 +82,12 @@ function ToolBar(props: Omit<RegisterItem, "element">) {
 
     const downloadClick = () => {
         const url = typeof props.downloadURL === "function" ? props.downloadURL() ?? "" : props.downloadURL
-        const referrer = document.URL
         const sourcePath = props.sourcePath ?? undefined
-        sendMessage("DOWNLOAD_URL", {url, referrer, sourcePath})
+        sendMessage("DOWNLOAD_URL", {url, sourcePath, collectSourceData: config.collectSourceData})
     }
 
-    return <ToolBarDiv $style={locale}>
-        <DoubleFlipButton $style={locale} onClick={downloadClick}>
+    return <ToolBarDiv $style={config.locale}>
+        <DoubleFlipButton $style={config.locale} onClick={downloadClick}>
             {favicon === null ? <b>{props.index}</b> : <LayouttedDiv padding={1}><img src={favicon} alt="favicon"/></LayouttedDiv>}
             <Icon icon="download"/>
         </DoubleFlipButton>

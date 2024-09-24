@@ -45,7 +45,7 @@ function initializeUI(sourcePath: SourceDataPath) {
         if(initValues.length > 0) callbackWithProcessor(initValues)
     }
 
-    imageToolbar.locale("fanbox")
+    imageToolbar.config({locale: "fanbox"})
 
     observeAllPresentations(nodes => imageToolbar.add(nodes))
 }

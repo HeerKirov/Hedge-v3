@@ -104,7 +104,7 @@ function initializeUI(sourcePath: SourceDataPath) {
         console.warn(`[initializeUI] div#i6 has ${i6.childElementCount} div. it is unexpect.`)
         return
     }
-    imageToolbar.locale("ehentai-image")
+    imageToolbar.config({locale: "ehentai-image"})
     imageToolbar.add([{index: sourcePath.sourcePart!, element: i3, sourcePath, downloadURL}])
 }
 

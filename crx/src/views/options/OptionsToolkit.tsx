@@ -40,10 +40,11 @@ export function OptionsToolkitPanel(props: OptionsToolkitPanelProps) {
         <h3>文件下载重命名</h3>
         <p>自定义规则以在任意站点支持任意形式的文件下载重命名。只要该站点提供了足够的信息。</p>
         <CheckBox checked={editor.determiningFilename.enabled} onUpdateChecked={v => setDeterminingFilename("enabled", v)}>启用</CheckBox>
+        <CheckBox checked={editor.determiningFilename.autoCollectSourceData} onUpdateChecked={v => setDeterminingFilename("autoCollectSourceData", v)}>启用自动收集来源数据</CheckBox>
         <Label>扩展名</Label>
         <div>
             <SecondaryText>何种扩展名可以触发文件重命名。以逗号(,)分隔多个扩展名。</SecondaryText>
-            <Input value={editor.determiningFilename.extensions.join(", ")} onUpdateValue={v => setDeterminingFilename("extensions", v.split(",").filter(s => !!s))}/>
+            <Input value={editor.determiningFilename.extensions.join(", ")} onUpdateValue={v => setDeterminingFilename("extensions", v.split(",").map(s => s.trim()).filter(s => !!s))}/>
         </div>
         <Label>重命名规则</Label>
         <SecondaryText>referrer、url、filename全部正则匹配成功时，应用规则。</SecondaryText>
@@ -95,9 +96,9 @@ function DeterminingRuleAddItem({ onAdd }: {onAdd(item: DeterminingRule): void})
 
     return <Group>
         <Input placeholder="referrer" value={referrer} onUpdateValue={setReferrer}/>
-        <Input placeholder="url"  value={url} onUpdateValue={setUrl}/>
-        <Input placeholder="filename"  value={filename} onUpdateValue={setFilename}/>
-        <Input placeholder="重命名模板"  value={rename} onUpdateValue={setRename}/>
+        <Input placeholder="url" value={url} onUpdateValue={setUrl}/>
+        <Input placeholder="filename" value={filename} onUpdateValue={setFilename}/>
+        <Input placeholder="重命名模板" value={rename} onUpdateValue={setRename}/>
         <Button disabled={disabled} onClick={add}>添加</Button>
     </Group>
 }

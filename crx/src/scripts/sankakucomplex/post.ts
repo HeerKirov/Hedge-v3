@@ -134,7 +134,7 @@ function initializeUI(sourcePath: SourceDataPath) {
         }
     }
 
-    imageToolbar.locale("sankaku")
+    imageToolbar.config({locale: "sankaku"})
     imageToolbar.add([{index: null, element: postContent, sourcePath, downloadURL: url}])
 }
 

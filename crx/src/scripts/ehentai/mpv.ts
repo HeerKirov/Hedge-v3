@@ -45,7 +45,7 @@ function initializeUI(sourcePath: SourceDataPath) {
         if(initValues.length > 0) callback(initValues)
     }
 
-    imageToolbar.locale("ehentai-mpv")
+    imageToolbar.config({locale: "ehentai-mpv"})
     observeAllPresentations(nodes => imageToolbar.add(nodes.map(node => {
         const index = parseInt(node.id.substring("image_".length))
         const normalURL = (node.querySelector("div.mbar > div > a > img[title=\"Open image in normal viewer\"]")?.parentElement as HTMLAnchorElement)?.href

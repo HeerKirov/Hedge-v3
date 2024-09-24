@@ -62,10 +62,22 @@ export const KEMONO_CONSTANTS = {
     }
 }
 
+export const DANBOORU_CONSTANTS = {
+    SITE_NAME: "danbooru",
+    HOSTS: ["danbooru.donmai.us"],
+    REGEXES: {}
+}
+
+export const GELBOORU_CONSTANTS = {
+    SITE_NAME: "gelbooru",
+    HOSTS: ["gelbooru.com"],
+    REGEXES: {}
+}
+
 /**
  * 在此处集中声明各个站点的功能。
  */
-export const WEBSITES: {[siteName: string]: WebsiteConstant} = {
+export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
     [SANKAKUCOMPLEX_CONSTANTS.SITE_NAME]: {
         host: SANKAKUCOMPLEX_CONSTANTS.HOSTS,
         activeTabPages: [
@@ -105,6 +117,26 @@ export const WEBSITES: {[siteName: string]: WebsiteConstant} = {
 }
 
 /**
+ * 在此处集中声明重命名建议机制的默认规则集。
+ */
+export const DETERMINING_RULES: Readonly<DeterminingRule[]> = [
+    {
+        siteName: PIXIV_CONSTANTS.SITE_NAME,
+        referrer: /^https:\/\/www\.pixiv\.net\//,
+        filename: /(?<ID>\d+)_p(?<PART>\d+)/,
+        collectSourceData: true
+    },
+    {
+        siteName: DANBOORU_CONSTANTS.SITE_NAME,
+        referrer: /^https:\/\/danbooru\.donmai\.us\/posts\/(?<ID>\d+)/
+    },
+    {
+        siteName: GELBOORU_CONSTANTS.SITE_NAME,
+        referrer: /^https:\/\/gelbooru\.com\/index\.php\?.*id=(?<ID>\d+)/
+    }
+]
+
+/**
  * 集中声明站点的定义。
  */
 interface WebsiteConstant {
@@ -122,4 +154,30 @@ interface WebsiteConstant {
      * 返回的值应当是一组通配符字符串，仅包含应当匹配的pathname部分。
      */
     sourceDataPages?: (sourceId: string) => string[]
+}
+
+/**
+ * 重命名建议规则。
+ */
+interface DeterminingRule {
+    /**
+     * 使用的source site名称。
+     */
+    siteName: string
+    /**
+     * 对referrer匹配。
+     */
+    referrer?: RegExp
+    /**
+     * 对url匹配。
+     */
+    url?: RegExp
+    /**
+     * 对不包括扩展名部分的文件名匹配。
+     */
+    filename?: RegExp
+    /**
+     * 对于此规则，是否应该收集其来源数据。
+     */
+    collectSourceData?: boolean
 }

@@ -3,7 +3,7 @@ import { SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-sour
 import { settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { PIXIV_CONSTANTS } from "@/functions/sites"
-import { imageToolbar, initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
+import { initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
 import { Result } from "@/utils/primitives"
 import { onDOMContentLoaded } from "@/utils/document"
 
@@ -26,8 +26,6 @@ onDOMContentLoaded(() => {
     sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
 
     quickFind = initializeQuickFindUI()
-
-    initializeUI(sourceDataPath)
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
@@ -48,51 +46,6 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
     }
     return false
 })
-
-/**
- * 进行image-toolbar, find-similar相关的UI初始化。
- */
-function initializeUI(sourcePath: SourceDataPath) {
-    function observeAllPresentations(callback: (nodes: HTMLDivElement[]) => void) {
-        const observer = new MutationObserver(mutationsList => {
-            const values: HTMLDivElement[] = []
-            for(const mutation of mutationsList) {
-                if(mutation.type === "childList") {
-                    mutation.addedNodes.forEach(node => {
-                        if(node instanceof HTMLDivElement) {
-                            if(node.role === "presentation" && node?.parentElement?.parentElement?.role === "presentation") {
-                                values.push(node)
-                            }else{
-                                const list = [...node.querySelectorAll<HTMLDivElement>("div[role=presentation] > div > div[role=presentation]").values()]
-                                values.push(...list)
-                            }
-                        }
-                    })
-                }
-            }
-            if(values.length > 0) callback(values)
-        })
-
-        observer.observe(document.body, { childList: true, subtree: true })
-
-        //进行一波初始化回调
-        const initValues = [...document.querySelectorAll<HTMLDivElement>("div[role=presentation] > div > div[role=presentation]").values()]
-        if(initValues.length > 0) callback(initValues)
-    }
-
-    imageToolbar.locale("pixiv")
-    observeAllPresentations(nodes => {
-        imageToolbar.add(nodes.map(node => {
-            const index = node.previousElementSibling ? parseInt(node.previousElementSibling.id) : 1
-            return {
-                index,
-                element: node,
-                sourcePath: {...sourcePath, sourcePart: index},
-                downloadURL: () => node.querySelector("a")!.href
-            }
-        }))
-    })
-}
 
 /**
  * 收集来源数据。
@@ -130,7 +83,7 @@ function collectSourceDataFromPreloadData(): Result<SourceDataUpdateForm, string
     for(const tag of illustData["tags"]["tags"]) {
         const name = tag["tag"]
         const otherName = tag["translation"]?.["en"] ?? undefined
-        tags.push({code: name, name, otherName, type: "tag"})
+        if(name !== "R-18") tags.push({code: name, name, otherName, type: "tag"})
     }
 
     const title = illustData["title"] ?? undefined

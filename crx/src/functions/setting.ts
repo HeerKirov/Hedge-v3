@@ -98,7 +98,7 @@ interface Website {
  */
 interface Toolkit {
     /**
-     * 图像工具栏。在图像页面附加在可下载图像附近的工具栏，提示其页码，并可点击下载图像。
+     * 下载工具栏。在图像页面附加在可下载图像附近的工具栏，提示其页码，并可点击下载图像。
      */
     downloadToolbar: {
         /**
@@ -119,11 +119,15 @@ interface Toolkit {
          */
         enabled: boolean
         /**
-         * 扩展名支持列表。
+         * 在匹配的内置规则生效时，一同收集来源数据。
+         */
+        autoCollectSourceData: boolean
+        /**
+         * 额外的扩展名支持列表。
          */
         extensions: string[]
         /**
-         * 规则列表。
+         * 自订规则列表。
          */
         rules: {
             /**
@@ -178,9 +182,10 @@ export function defaultSetting(): Setting {
                 autoCollectSourceData: true
             },
             determiningFilename: {
-                enabled: false,
+                enabled: true,
+                autoCollectSourceData: true,
                 rules: [],
-                extensions: ["jpg", "jpeg", "png", "gif", "webp", "webm", "mp4", "ogv"]
+                extensions: []
             }
         }
     }
@@ -238,7 +243,7 @@ const migrations: {[version: string]: Migrate<MigrateContext>} = {
             determiningFilename: {
                 enabled: !!val["download"]["customRules"]?.length,
                 rules: val["download"]["customRules"],
-                extensions: val["download"]["customExtensions"].length ? val["download"]["customExtensions"] : ["jpg", "jpeg", "png", "gif", "webp", "webm", "mp4", "ogv"],
+                extensions: val["download"]["customExtensions"].length ? val["download"]["customExtensions"] : [],
             }
         }
         delete val["server"]

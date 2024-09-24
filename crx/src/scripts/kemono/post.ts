@@ -15,7 +15,7 @@ onDOMContentLoaded(() => {
 function initializeUI() {
     const imageLinks = [...document.querySelectorAll<HTMLDivElement>(".post__files .post__thumbnail")]
 
-    imageToolbar.locale("kemono")
+    imageToolbar.config({locale: "kemono", collectSourceData: false})
     imageToolbar.add(imageLinks.map((node, index) => ({
         index,
         element: node,

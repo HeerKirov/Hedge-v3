@@ -35,7 +35,7 @@ export const sessions = {
          * 最近手动下载的文件的一些附加信息。
          * 这些附加信息在手动下载时被写入，并在determining过程中被提取出来，代替从下载项获得的信息来使用。
          */
-        downloadItemInfo: createDictEndpoint<string, {referrer: string, sourcePath: SourceDataPath | undefined}>("session", "cache/download/info", p => p.toString())
+        downloadItemInfo: createDictEndpoint<string, {filename: string, sourcePath: SourceDataPath | undefined}>("session", "cache/download/info", p => p.toString())
     },
 }
 

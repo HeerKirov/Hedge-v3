@@ -78,7 +78,7 @@ type CollectSourceData = MsgTemplateWithCallback<"COLLECT_SOURCE_DATA", {sourceS
 /**
  * 向下载管理模块发出一个下载请求。在指定sourcePath后，它将按照下载工具的流程处理，使用来源信息重命名。否则，走重命名建议模块。
  */
-type DownloadURL = MsgTemplate<"DOWNLOAD_URL", {url: string, referrer: string, sourcePath?: SourceDataPath}>
+type DownloadURL = MsgTemplate<"DOWNLOAD_URL", {url: string, sourcePath?: SourceDataPath, collectSourceData?: boolean}>
 
 /**
  * 要求对当前页面进行截屏，获得截屏的dataURL。
