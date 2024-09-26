@@ -64,6 +64,11 @@
 			"matches": ["https://kemono.su/*/user/*/post/*"],
 			"js": ["src/scripts/kemono/post.ts"],
 			"run_at": "document_start"
+		},
+		{
+			"matches": ["https://danbooru.donmai.us/posts/*", "https://gelbooru.com/*"],
+			"js": ["src/scripts/utils/referrer-policy.ts"],
+			"run_at": "document_start"
 		}
     ],
     "options_page": "options.html"

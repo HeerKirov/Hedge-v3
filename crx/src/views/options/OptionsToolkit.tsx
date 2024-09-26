@@ -81,15 +81,19 @@ export function OptionsToolkitPanel(props: OptionsToolkitPanelProps) {
         <LayouttedDiv mt={1}>
             <CheckBox checked={editor.determiningFilename.enabled} onUpdateChecked={v => setDeterminingFilename("enabled", v)}>启用文件下载重命名</CheckBox>
         </LayouttedDiv>
+        <LayouttedDiv mt={1}>
+            <CheckBox checked={editor.determiningFilename.referrerPolicy} onUpdateChecked={v => setDeterminingFilename("referrerPolicy", v)}>Referrer Policy注入</CheckBox>
+            <SecondaryText>Chrome已禁止获得详细referrer，这会使重命名功能在某些网站完全不可用。开启此功能后，将在上述网站注入元数据，以允许下载项获得详细referrer。</SecondaryText>
+        </LayouttedDiv>
+        <Label>自定义规则</Label>
+        <SecondaryText>添加自定义的重命名规则。referrer、url、filename全部正则匹配成功时，应用规则，并从其中提取参数，用于重命名模板。</SecondaryText>
+        {editor.determiningFilename.rules.map((customRule, i) => <DeterminingRuleItem key={i} {...customRule} onUpdate={v => updateCustomRuleAt(i, v)} onRemove={() => removeCustomRuleAt(i)}/>)}
+        <DeterminingRuleAddItem onAdd={addCustomRule}/>
         <Label>自定义扩展名</Label>
         <div>
             <SecondaryText>添加额外的可以触发文件重命名的扩展名。以逗号(,)分隔多个扩展名。</SecondaryText>
             <Input value={editor.determiningFilename.extensions.join(", ")} onUpdateValue={v => setDeterminingFilename("extensions", v.split(",").map(s => s.trim()).filter(s => !!s))}/>
         </div>
-        <Label>自定义规则</Label>
-        <SecondaryText>添加自定义的重命名规则。referrer、url、filename全部正则匹配成功时，应用规则，并从其中提取参数，用于重命名模板。</SecondaryText>
-        {editor.determiningFilename.rules.map((customRule, i) => <DeterminingRuleItem key={i} {...customRule} onUpdate={v => updateCustomRuleAt(i, v)} onRemove={() => removeCustomRuleAt(i)}/>)}
-        <DeterminingRuleAddItem onAdd={addCustomRule}/>
 
         <Separator spacing={[4, 1]}/>
         <Header>来源数据收集</Header>
@@ -125,13 +129,13 @@ export function OptionsToolkitPanel(props: OptionsToolkitPanelProps) {
 }
 
 function DeterminingRuleItem({ onUpdate, onRemove, ...rule }: DeterminingRuleItemProps) {
-    return <LayouttedDiv mt={1}>
+    return <LayouttedDiv mb={1}>
         <Group>
             <Input placeholder="referrer" value={rule.referrer} onUpdateValue={v => onUpdate({...rule, referrer: v})}/>
             <Input placeholder="url" value={rule.url} onUpdateValue={v => onUpdate({...rule, url: v})}/>
             <Input placeholder="filename" value={rule.filename} onUpdateValue={v => onUpdate({...rule, filename: v})}/>
             <Input placeholder="重命名模板" value={rule.rename} onUpdateValue={v => onUpdate({...rule, rename: v})}/>
-            <Button onClick={onRemove}>删除</Button>
+            <Button onClick={onRemove}><Icon icon="trash"/></Button>
         </Group>
     </LayouttedDiv>
 }
@@ -157,7 +161,7 @@ function DeterminingRuleAddItem({ onAdd }: {onAdd(item: DeterminingRule): void})
         <Input placeholder="url" value={url} onUpdateValue={setUrl}/>
         <Input placeholder="filename" value={filename} onUpdateValue={setFilename}/>
         <Input placeholder="重命名模板 $<参数>" value={rename} onUpdateValue={setRename}/>
-        <Button disabled={disabled} onClick={add}>添加</Button>
+        <Button disabled={disabled} mode={!disabled ? "filled" : "transparent"} type={!disabled ? "success" : undefined} onClick={add}><Icon icon="plus"/> 添加</Button>
     </Group>
 }
 

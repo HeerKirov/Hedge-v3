@@ -119,6 +119,10 @@ interface Toolkit {
          */
         enabled: boolean
         /**
+         * 启用Referrer Policy注入。
+         */
+        referrerPolicy: boolean
+        /**
          * 在匹配的内置规则生效时，一同收集来源数据。
          */
         autoCollectSourceData: boolean
@@ -183,6 +187,7 @@ export function defaultSetting(): Setting {
             },
             determiningFilename: {
                 enabled: true,
+                referrerPolicy: true,
                 autoCollectSourceData: true,
                 rules: [],
                 extensions: []
@@ -242,8 +247,10 @@ const migrations: {[version: string]: Migrate<MigrateContext>} = {
             },
             determiningFilename: {
                 enabled: !!val["download"]["customRules"]?.length,
+                referrerPolicy: true,
+                autoCollectSourceData: val["sourceData"]["autoCollectWhenDownload"] ?? true,
                 rules: val["download"]["customRules"],
-                extensions: val["download"]["customExtensions"].length ? val["download"]["customExtensions"] : [],
+                extensions: val["download"]["customExtensions"]
             }
         }
         delete val["server"]
