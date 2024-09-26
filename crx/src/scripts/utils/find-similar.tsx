@@ -53,9 +53,7 @@ export function initializeQuickFindUI(): QuickFindController {
 
     function openQuickFindModal(setting: Setting, dataURL: string | undefined, sourcePath: SourceDataPath, sourceData: Result<SourceDataUpdateForm, string>) {
         if(!sourceData.ok) {
-            chrome.notifications.create({
-                type: "basic",
-                iconUrl: "/public/favicon.png",
+            sendMessage("NOTIFICATION", {
                 title: "快速查找异常",
                 message: `无法正确提取页面中的来源收集数据，因此快速查找过程被迫中止。`
             })
@@ -63,9 +61,7 @@ export function initializeQuickFindUI(): QuickFindController {
             return
         }
         if(dataURL === undefined) {
-            chrome.notifications.create({
-                type: "basic",
-                iconUrl: "/public/favicon.png",
+            sendMessage("NOTIFICATION", {
                 title: "快速查找异常",
                 message: `没有提取到任何缩略图，因此快速查找过程被迫中止。`
             })

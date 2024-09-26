@@ -2,7 +2,7 @@ import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
 import { server } from "@/functions/server"
 import { sessions } from "@/functions/storage"
 import { WEBSITES } from "@/functions/sites"
-import { NOTIFICATIONS } from "@/services/notification"
+import { notification, NOTIFICATIONS } from "@/services/notification"
 import { sendMessageToTab } from "@/services/messages"
 import { Result } from "@/utils/primitives"
 
@@ -12,9 +12,7 @@ export const sourceDataManager = {
      */
     submit(path: {sourceSite: string, sourceId: string}, data: Result<SourceDataUpdateForm, string>): void {
         if(!data.ok) {
-            chrome.notifications.create({
-                type: "basic",
-                iconUrl: "/public/favicon.png",
+            notification({
                 title: "来源数据获取异常",
                 message: `${path.sourceSite}-${path.sourceId}: 在提取页面来源数据时发生错误。请查看扩展日志。`
             })
@@ -37,9 +35,7 @@ export const sourceDataManager = {
         const website = WEBSITES[path.sourceSite]
         const pagePathNames = website?.sourceDataPages?.(path.sourceId)
         if(pagePathNames === undefined) {
-            chrome.notifications.create({
-                type: "basic",
-                iconUrl: "/public/favicon.png",
+            notification({
                 title: "来源数据收集异常",
                 message: `${path.sourceSite}-${path.sourceId}: 无法正确生成提取页面的URL。`
             })
@@ -49,9 +45,7 @@ export const sourceDataManager = {
         const pageURL = website.host.flatMap(host => pagePathNames.map(p => `https://${host}${p}`))
         const tabs = await chrome.tabs.query({currentWindow: true, url: pageURL})
         if(tabs.length <= 0 || tabs[0].id === undefined) {
-            chrome.notifications.create({
-                type: "basic",
-                iconUrl: "/public/favicon.png",
+            notification({
                 title: "来源数据收集异常",
                 message: `${path.sourceSite}-${path.sourceId}: 未找到用于提取数据的页面。`
             })
@@ -93,9 +87,7 @@ export const sourceDataManager = {
                 }
             }else if(retrieve.exception) {
                 if(retrieve.exception.code !== "NOT_FOUND") {
-                    chrome.notifications.create({
-                        type: "basic",
-                        iconUrl: "/public/favicon.png",
+                    notification({
                         title: "来源数据收集异常",
                         message: `${sourceSite}-${sourceId}: 在访问数据时报告了一项错误。请查看扩展或核心服务日志。`
                     })
@@ -103,9 +95,8 @@ export const sourceDataManager = {
                     return false
                 }
             }else{
-                chrome.notifications.create(NOTIFICATIONS.AUTO_COLLECT_SERVER_DISCONNECTED, {
-                    type: "basic",
-                    iconUrl: "/public/favicon.png",
+                notification({
+                    notificationId: NOTIFICATIONS.AUTO_COLLECT_SERVER_DISCONNECTED,
                     title: "核心服务连接失败",
                     message: "未能成功连接到核心服务。",
                     buttons: [{title: "暂时关闭自动收集"}]
@@ -117,9 +108,7 @@ export const sourceDataManager = {
 
         const sourceData = await sourceDataManager.get({sourceSite, sourceId})
         if(sourceData === null) {
-            chrome.notifications.create({
-                type: "basic",
-                iconUrl: "/public/favicon.png",
+            notification({
                 title: "来源数据收集异常",
                 message: `${sourceSite}-${sourceId}: 未发现此来源数据的缓存。`
             })
@@ -130,17 +119,14 @@ export const sourceDataManager = {
         const res = await server.sourceData.bulk([{...sourceData, sourceSite, sourceId}])
         if(!res.ok) {
             if(res.exception !== undefined) {
-                chrome.notifications.create({
-                    type: "basic",
-                    iconUrl: "/public/favicon.png",
+                notification({
                     title: "来源数据收集异常",
                     message: `${sourceSite}-${sourceId}: 数据未能成功写入。请查看扩展或核心服务日志。`
                 })
                 console.error(`[collectSourceData] Source data ${sourceSite}-${sourceId} upload failed: ${res.exception.message}`)
             }else{
-                chrome.notifications.create(NOTIFICATIONS.AUTO_COLLECT_SERVER_DISCONNECTED, {
-                    type: "basic",
-                    iconUrl: "/public/favicon.png",
+                notification({
+                    notificationId: NOTIFICATIONS.AUTO_COLLECT_SERVER_DISCONNECTED,
                     title: "核心服务连接失败",
                     message: "未能成功连接到核心服务，因此无法收集来源数据。",
                     buttons: options.type === "auto" ? [{title: "暂时关闭自动收集"}] : undefined
@@ -152,23 +138,17 @@ export const sourceDataManager = {
             for(const e of res.data.errors) {
                 const [type, info] = e.error.info
                 if(type === "site") {
-                    chrome.notifications.create({
-                        type: "basic",
-                        iconUrl: "/public/favicon.png",
+                    notification({
                         title: "来源数据写入失败",
                         message: `来源站点${info}不存在，因此写入被拒绝。请在Hedge中创建此站点。`
                     })
                 }else if(type === "additionalInfo") {
-                    chrome.notifications.create({
-                        type: "basic",
-                        iconUrl: "/public/favicon.png",
+                    notification({
                         title: "来源数据写入失败",
                         message: `来源附加信息字段${info}不存在，因此写入被拒绝。请在Hedge中为站点添加此字段。`
                     })
                 }else if(type === "sourceTagType") {
-                    chrome.notifications.create({
-                        type: "basic",
-                        iconUrl: "/public/favicon.png",
+                    notification({
                         title: "来源数据写入失败",
                         message: `标签类型${info.join("、")}未注册，因此写入被拒绝。请在Hedge中为站点添加这些标签类型。`
                     })
@@ -181,9 +161,7 @@ export const sourceDataManager = {
         await sessions.cache.sourceDataCollected.set({sourceSite, sourceId}, true)
 
         if(options.type === "manual") {
-            chrome.notifications.create({
-                type: "basic",
-                iconUrl: "/public/favicon.png",
+            notification({
                 title: "来源数据已收集",
                 message: `${sourceSite} ${sourceId}已收集完成。`
             })

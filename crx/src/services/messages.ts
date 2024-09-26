@@ -3,6 +3,7 @@ import { fetchRequestByMessage } from "@/functions/server"
 import { downloadURL } from "@/services/downloads"
 import { sourceDataManager } from "@/services/source-data"
 import { setActiveTabBadge } from "@/services/active-tab"
+import { notification } from "@/services/notification"
 
 /**
  * service worker: 接收一条消息。
@@ -32,6 +33,8 @@ function onMessage<T extends ContentScriptMessagesList>(msg: T, sender: chrome.r
         return true
     }else if(msg.type === "DOWNLOAD_URL") {
         downloadURL(msg.msg).finally()
+    }else if(msg.type === "NOTIFICATION") {
+        notification(msg.msg)
     }else if(msg.type === "CAPTURE_VISIBLE_TAB") {
         chrome.tabs.captureVisibleTab().then(dataURL => callback(dataURL))
         return true

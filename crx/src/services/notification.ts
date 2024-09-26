@@ -8,6 +8,21 @@ export function notificationButtonClicked(notificationId: string, buttonIndex: n
     }
 }
 
+export function notification(context: {notificationId?: string, title: string, message: string, buttons?: [{title: string}]}) {
+    const options: chrome.notifications.NotificationOptions<true> = {
+        type: "basic",
+        iconUrl: "/public/favicon.png",
+        title: context.title,
+        message: context.message,
+        buttons: context.buttons
+    }
+    if(context.notificationId !== undefined) {
+        chrome.notifications.create(context.notificationId, options)
+    }else{
+        chrome.notifications.create(options)
+    }
+}
+
 export const NOTIFICATIONS = {
     AUTO_COLLECT_SERVER_DISCONNECTED: "AUTO_COLLECT_SERVER_DISCONNECTED"
 }

@@ -3,13 +3,11 @@ import { Setting, settings } from "@/functions/setting"
 import { sessions } from "@/functions/storage"
 import { DETERMINING_RULES } from "@/functions/sites"
 import { sourceDataManager } from "@/services/source-data"
-import { NOTIFICATIONS } from "@/services/notification"
+import { notification } from "@/services/notification"
 
 export async function downloadURL(options: {url: string, sourcePath?: SourceDataPath, collectSourceData?: boolean}) {
     if(!options.url.trim()) {
-        chrome.notifications.create(NOTIFICATIONS.AUTO_COLLECT_SERVER_DISCONNECTED, {
-            type: "basic",
-            iconUrl: "/public/favicon.png",
+        notification({
             title: "下载文件失败",
             message: "下载URL为空。"
         })
