@@ -49,7 +49,7 @@ type ReportSourceData = MsgTemplateWithCallback<"REPORT_SOURCE_DATA", undefined,
 /**
  * 要求页面提交当前页面的部分基本信息。
  */
-type ReportPageInfo = MsgTemplateWithCallback<"REPORT_PAGE_INFO", undefined, {path: SourceDataPath}>
+type ReportPageInfo = MsgTemplateWithCallback<"REPORT_PAGE_INFO", undefined, {path: SourceDataPath | null}>
 
 type QuickFindSimilar = MsgTemplate<"QUICK_FIND_SIMILAR", undefined>
 

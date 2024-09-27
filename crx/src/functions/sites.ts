@@ -60,7 +60,8 @@ export const KEMONO_CONSTANTS = {
     HOSTS: ["kemono.su"],
     REGEXES: {
         POST_PATHNAME: /^\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<PID>\d+)(\/revision\/\d+)?\/?$/
-    }
+    },
+    AVAILABLE_SERVICES: ["fanbox", "fantia", "patreon", "gumroad"] as const
 }
 
 export const DANBOORU_CONSTANTS = {

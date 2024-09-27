@@ -51,8 +51,8 @@ export function useTabSourceInfo() {
 
     const manualCollectSourceData = async () => {
         if(sourceInfo !== null && sourceInfo.sourceDataPath !== null) {
-            const { siteName, sourceDataPath: { sourceId } } = sourceInfo
-            const ok = await sendMessage("COLLECT_SOURCE_DATA", {sourceSite: siteName, sourceId})
+            const { sourceDataPath: { sourceSite, sourceId } } = sourceInfo
+            const ok = await sendMessage("COLLECT_SOURCE_DATA", {sourceSite, sourceId})
             if(ok) refreshCollectStatus(sourceInfo).finally()
         }
     }
@@ -77,10 +77,11 @@ async function matchTabSourceData(tabId: number, url: URL): Promise<{tabId: numb
         if(site.host.includes(url.host)) {
             if(site.activeTabPages && site.activeTabPages.some(i => i.test(url.pathname))) {
                 const pageInfo = await sendMessageToTab(tabId, "REPORT_PAGE_INFO", undefined)
-                return {tabId, siteName, host: url.host, sourceDataPath: pageInfo.path}
-            }else{
-                return {tabId, siteName, host: url.host, sourceDataPath: null}
+                if(pageInfo?.path) {
+                    return {tabId, siteName, host: url.host, sourceDataPath: pageInfo.path}
+                }
             }
+            return {tabId, siteName, host: url.host, sourceDataPath: null}
         }
     }
     return null
