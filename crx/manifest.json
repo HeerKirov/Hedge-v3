@@ -55,6 +55,11 @@
 			"js": ["src/scripts/pixiv/artworks.ts"],
 			"run_at": "document_start"
 		},
+		{
+			"matches": ["https://www.fanbox.cc/*"],
+			"js": ["src/scripts/fanbox/global.ts"],
+			"run_at": "document_start"
+		},
         {
 			"matches": ["https://www.fanbox.cc/*/posts/*"],
 			"js": ["src/scripts/fanbox/post.ts"],

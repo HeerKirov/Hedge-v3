@@ -38,7 +38,7 @@ type EnvironmentType = "OPTIONS" | "POPUP" | "CONTENT_SCRIPT" | "SERVICE_WORKER"
 let environmentType: EnvironmentType | undefined
 
 export const documents = {
-    createElement<K extends keyof HTMLElementTagNameMap>(tagName: K, attrs?: Record<string, string>, children?: Node[]): HTMLElementTagNameMap[K] {
+    createElement<K extends keyof HTMLElementTagNameMap>(tagName: K, attrs?: Record<string, string>, children?: (Node | string)[]): HTMLElementTagNameMap[K] {
         const element = document.createElement(tagName, undefined)
         if(attrs) for(const [k, v] of Object.entries(attrs)) {
             element.setAttribute(k, v)

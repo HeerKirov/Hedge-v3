@@ -1,15 +1,44 @@
 import { SourceDataPath } from "@/functions/server/api-all"
-import { onDOMContentLoaded } from "@/utils/document"
-import { imageToolbar } from "@/scripts/utils"
+import { SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
+import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { FANBOX_CONSTANTS } from "@/functions/sites"
+import { settings } from "@/functions/setting"
+import { imageToolbar, initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
+import { onDOMContentLoaded } from "@/utils/document"
+import { Result } from "@/utils/primitives"
 
-onDOMContentLoaded(() => {
+let quickFind: QuickFindController | undefined
+
+onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] fanbox/post script loaded.")
     const sourceDataPath = getSourceDataPath()
+    const sourceData = await collectSourceData()
+    sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
+    sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
+
+    quickFind = initializeQuickFindUI()
     initializeUI(sourceDataPath)
 })
 
-//TODO 添加fanbox source data
+receiveMessageForTab(({ type, msg: _, callback }) => {
+    if(type === "REPORT_SOURCE_DATA") {
+        collectSourceData().then(r => callback(r))
+        return true
+    }else if(type === "REPORT_PAGE_INFO") {
+        callback({path: getSourceDataPath()})
+    }else if(type === "QUICK_FIND_SIMILAR") {
+        settings.get().then(async setting => {
+            const sourceDataPath = getSourceDataPath()
+            const sourceData = await collectSourceData()
+            if(quickFind) {
+                const file = document.querySelector<HTMLImageElement>("article img")
+                const dataURL = file !== null ? await quickFind.getImageDataURL(file) : undefined
+                quickFind!.openQuickFindModal(setting, dataURL, sourceDataPath, sourceData)
+            }
+        })
+    }
+    return false
+})
 
 /**
  * 进行image-toolbar, find-similar相关的UI初始化。
@@ -48,6 +77,42 @@ function initializeUI(sourcePath: SourceDataPath) {
     imageToolbar.config({locale: "fanbox"})
 
     observeAllPresentations(nodes => imageToolbar.add(nodes))
+}
+
+/**
+ * 收集来源数据。
+ */
+async function collectSourceData(): Promise<Result<SourceDataUpdateForm, string>> {
+    const { pid } = getIdentityInfo()
+    try {
+        const response = await fetch(`https://api.fanbox.cc/post.info?postId=${pid}`, {credentials: "include"})
+        if(response.ok) {
+            const body = (await response.json())["body"]
+
+            const tags: SourceTagForm[] = []
+
+            //查找作者，作为tag写入。作者的type固定为`artist`，code为"{userId}"，name为"{creatorId}"，otherName为"{name}"
+            tags.push({code: body["user"]["userId"], name: body["creatorId"], otherName: body["user"]["name"], type: "artist"})
+
+            //查找标签列表，作为tag写入。标签的type固定为"tag"，code为"{TAG}"
+            tags.push(...(body["tags"] as string[]).map(tag => (<SourceTagForm>{code: tag, type: "tag"})))
+
+            const title: string | undefined = body["title"] || undefined
+
+            const description: string | undefined = body["excerpt"] || undefined
+
+            const publishTime = new Date(body["publishedDatetime"]).toISOString()
+
+            return {ok: true, value: {tags, title, description, publishTime}}
+        }else{
+            const body = await response.text()
+            console.error("[collectSourceData] Fetch error.", body)
+            return {ok: false, err: body}
+        }
+    }catch(err) {
+        console.error("[collectSourceData] Fetch connection error.", err)
+        return {ok: false, err: err instanceof Error ? err.message : typeof err === "string" ? err : (err?.toString() ?? "")}
+    }
 }
 
 /**

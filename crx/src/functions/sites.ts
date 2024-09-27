@@ -50,7 +50,8 @@ export const FANBOX_CONSTANTS = {
         POST_PATHNAME: (sourceId: string) => [`/*/posts/${sourceId}`]
     },
     REGEXES: {
-        POST_PATHNAME: /^\/@(?<ARTIST>[^/]+)\/posts\/(?<PID>\d+)\/?$/
+        POST_PATHNAME: /^\/@(?<ARTIST>[^/]+)\/posts\/(?<PID>\d+)\/?$/,
+        ANY_CREATOR_PATHNAME: /^\/@(?<CREATOR>[^/]+)/
     }
 }
 
