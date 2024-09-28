@@ -5,7 +5,7 @@ import { settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { EHENTAI_CONSTANTS } from "@/functions/sites"
 import { Result } from "@/utils/primitives"
-import { onDOMContentLoaded } from "@/utils/document"
+import { documents, onDOMContentLoaded } from "@/utils/document"
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] ehentai/gallery script loaded.")
@@ -160,23 +160,13 @@ function enableRenameFile() {
                     }
                 })
                 .filter(tuple => tuple !== null) as [string, string, string][]
+
             const scripts = hrefs.map(([pHash, gid, page]) => `rename $@ 's/(.*)(\\..*)/$1_${pHash}$2/' ehentai_${gid}_${page}.*`).join("\n")
-            const blob = new Blob([scripts])
-            const filename = `RenameScript-${hrefs[0][1]}-${hrefs[0][2]}.sh`
-            const url = window.URL.createObjectURL(blob)
-            const tempAnchor = document.createElement("a")
-            tempAnchor.href = url
-            tempAnchor.download = filename
-            tempAnchor.click()
+            documents.clickDownload(`RenameScript-${hrefs[0][1]}-${hrefs[0][2]}.sh`, scripts)
+
             if(parseInt(hrefs[0][2]) === 1) {
                 const scripts = `rename $@ 's/(\\d+).*(\\..*)/ehentai_${hrefs[0][1]}_$1$2/' *.*\nchmod +x *.sh`
-                const blob = new Blob([scripts])
-                const filename = `RenameScript-${hrefs[0][1]}.sh`
-                const url = window.URL.createObjectURL(blob)
-                const tempAnchor = document.createElement("a")
-                tempAnchor.href = url
-                tempAnchor.download = filename
-                tempAnchor.click()
+                documents.clickDownload(`RenameScript-${hrefs[0][1]}.sh`, scripts)
             }
         }
     }

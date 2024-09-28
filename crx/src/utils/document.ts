@@ -45,5 +45,17 @@ export const documents = {
         }
         if(children?.length) element.append(...children)
         return element
+    },
+    clickDownload(filename: string, content: Blob | string | object) {
+        const blob = content instanceof Blob ? content : new Blob([typeof content === "string" ? content : JSON.stringify(content, null, 2)], { type: content === "string" ? "text/plain" : "application/json" })
+        const url = window.URL.createObjectURL(blob)
+        try {
+            const tempAnchor = document.createElement("a")
+            tempAnchor.href = url
+            tempAnchor.download = filename
+            tempAnchor.click()
+        }finally{
+            URL.revokeObjectURL(url)
+        }
     }
 }

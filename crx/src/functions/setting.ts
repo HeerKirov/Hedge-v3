@@ -223,6 +223,18 @@ export const settings = {
     },
     async set(setting: Setting) {
         await chrome.storage.local.set({ "setting": setting })
+    },
+    async importAndMigrate(content: any) {
+        const { setting } = await migrate({setting: content}, migrations, {
+            set(context, v) {
+                context.setting.version = v
+            },
+            get(context) {
+                return context.setting.version
+            }
+        })
+        await chrome.storage.local.set({ "setting": setting })
+        console.log(`[setting] version ${setting.version}.`)
     }
 }
 

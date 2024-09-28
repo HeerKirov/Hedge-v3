@@ -3,11 +3,11 @@ import { Setting, settings } from "@/functions/setting"
 import { sessions } from "@/functions/storage"
 import { DETERMINING_RULES } from "@/functions/sites"
 import { sourceDataManager } from "@/services/source-data"
-import { notification } from "@/services/notification"
+import { notify } from "@/services/notification"
 
 export async function downloadURL(options: {url: string, sourcePath?: SourceDataPath, collectSourceData?: boolean}) {
     if(!options.url.trim()) {
-        notification({
+        notify({
             title: "下载文件失败",
             message: "下载URL为空。"
         })
