@@ -1,10 +1,9 @@
 import { styled } from "styled-components"
-import { Button, CheckBox, Header, Icon, Input, LayouttedDiv, SecondaryText, Separator } from "@/components"
+import { Button, CheckBox, Header, Icon, LayouttedDiv, SecondaryText, Separator, MultilineAddList, CollapsePanel } from "@/components"
 import { defaultSetting, Setting } from "@/functions/setting"
 import { useEditor, usePartialSet } from "@/utils/reactivity"
 import { SPACINGS } from "@/styles"
-import { SankakuIcon, EHentaiIcon } from "@/styles/assets"
-import React from "react";
+import { SankakuIcon, EHentaiIcon, FanboxIcon } from "@/styles/assets"
 
 interface OptionsWebsitePanelProps {
     website: Setting["website"] | null | undefined
@@ -22,16 +21,20 @@ export function OptionsWebsitePanel(props: OptionsWebsitePanelProps) {
 
     const setEhentai = usePartialSet(editor.ehentai, v => setProperty("ehentai", v))
 
+    const setFanbox = usePartialSet(editor.fanbox, v => setProperty("fanbox", v))
+
     return <>
         <p>扩展提供了面向一些站点的优化增强功能。</p>
 
         <Separator spacing={[4, 1]}/>
         <Header><IconImg src={EHentaiIcon} alt="e-hentai icon"/>E-Hentai</Header>
         <StyledDiv>
-            <CheckBox checked={editor.ehentai.enableUIOptimize} onUpdateChecked={v => setEhentai("enableUIOptimize", v)}>优化图像页面的UI显示</CheckBox>
-            <SecondaryText>顶部标题栏和底部工具栏将始终保持在一行内，不会随宽度的不同而挪动位置。</SecondaryText>
-            <SecondaryText>将下载链接的实现方式替换为使用Extension API实现，与原链接的性状不完全一致，它总是能触发下载操作。</SecondaryText>
-            <SecondaryText>没有original的图像，也增加一个链接，因此可以统一操作模式。</SecondaryText>
+            <CheckBox checked={editor.ehentai.enableUIOptimize} onUpdateChecked={v => setEhentai("enableUIOptimize", v)}>优化UI显示</CheckBox>
+            <SecondaryText>图像页面的顶部标题栏和底部工具栏将始终保持在一行内，不会随宽度的不同而挪动位置。</SecondaryText>
+        </StyledDiv>
+        <StyledDiv>
+            <CheckBox checked={editor.ehentai.enableRenameScript} onUpdateChecked={v => setEhentai("enableRenameScript", v)}>添加"下载重命名脚本"功能</CheckBox>
+            <SecondaryText>在画廊添加"Rename Script Download"功能，可以下载能将归档包内文件批量重命名的脚本。</SecondaryText>
         </StyledDiv>
         <StyledDiv>
             <CheckBox checked={editor.ehentai.enableCommentCNBlock} onUpdateChecked={v => setEhentai("enableCommentCNBlock", v)}>针对评论区的中文用户</CheckBox>
@@ -43,48 +46,47 @@ export function OptionsWebsitePanel(props: OptionsWebsitePanelProps) {
             <CheckBox checked={editor.ehentai.enableCommentVoteBlock} onUpdateChecked={v => setEhentai("enableCommentVoteBlock", v)}>评论区低Vote屏蔽</CheckBox>
             <SecondaryText>屏蔽Vote数被踩得比较低的评论。</SecondaryText>
         </StyledDiv>
-        <StyledDiv>
-            <CheckBox checked={editor.ehentai.enableCommentKeywordBlock} onUpdateChecked={v => setEhentai("enableCommentKeywordBlock", v)}>评论区关键字屏蔽</CheckBox>
-            <SecondaryText>根据关键词屏蔽列表，屏蔽不想看到的评论。</SecondaryText>
-        </StyledDiv>
-        {editor.ehentai.enableCommentKeywordBlock && <StyledDiv>
-            <LayouttedDiv size="small">关键词屏蔽列表 (以空格分隔多个关键词)</LayouttedDiv>
-            <Input type="textarea" size="small" width="400px" value={editor.ehentai.commentBlockKeywords.map(s => s.includes(" ") ? s.replaceAll(" ", "_") : s).join(" ")} onUpdateValue={v => setEhentai("commentBlockKeywords", v.split(" ").filter(s => !!s).map(s => s.includes("_") ? s.replaceAll("_", " ") : s))}/>
-        </StyledDiv>}
-        <StyledDiv>
-            <CheckBox checked={editor.ehentai.enableCommentUserBlock} onUpdateChecked={v => setEhentai("enableCommentUserBlock", v)}>评论区用户屏蔽</CheckBox>
-            <SecondaryText>根据用户屏蔽列表，屏蔽不想看到的用户评论。</SecondaryText>
-        </StyledDiv>
-        {editor.ehentai.enableCommentUserBlock && <StyledDiv>
-            <LayouttedDiv size="small">用户屏蔽列表 (以空格分隔多个关键词)</LayouttedDiv>
-            <Input type="textarea" size="small" width="400px" value={editor.ehentai.commentBlockUsers.map(s => s.includes(" ") ? s.replaceAll(" ", "_") : s).join(" ")} onUpdateValue={v => setEhentai("commentBlockUsers", v.split(" ").filter(s => !!s).map(s => s.includes("_") ? s.replaceAll("_", " ") : s))}/>
-        </StyledDiv>}
+        <TwoColDiv>
+            <div>
+                <StyledDiv>
+                    <CheckBox checked={editor.ehentai.enableCommentKeywordBlock} onUpdateChecked={v => setEhentai("enableCommentKeywordBlock", v)}>评论区关键字屏蔽</CheckBox>
+                    <SecondaryText>根据关键词屏蔽列表，屏蔽不想看到的评论。</SecondaryText>
+                </StyledDiv>
+                <CollapsePanel title="关键词屏蔽列表">
+                    {editor.ehentai.enableCommentKeywordBlock && <MultilineAddList value={editor.ehentai.commentBlockKeywords} onUpdateValue={v => setEhentai("commentBlockKeywords", v)}/>}
+                </CollapsePanel>
+            </div>
+            <div>
+                <StyledDiv>
+                    <CheckBox checked={editor.ehentai.enableCommentUserBlock} onUpdateChecked={v => setEhentai("enableCommentUserBlock", v)}>评论区用户屏蔽</CheckBox>
+                    <SecondaryText>根据用户屏蔽列表，屏蔽不想看到的用户评论。</SecondaryText>
+                </StyledDiv>
+                <CollapsePanel title="用户屏蔽列表">
+                    {editor.ehentai.enableCommentUserBlock && <MultilineAddList value={editor.ehentai.commentBlockUsers} onUpdateValue={v => setEhentai("commentBlockUsers", v)}/>}
+                </CollapsePanel>
+            </div>
+        </TwoColDiv>
 
         <Separator spacing={[4, 1]}/>
         <Header><IconImg src={SankakuIcon} alt="sankaku icon"/>Sankaku Complex</Header>
         <StyledDiv>
-            <CheckBox checked={editor.sankakucomplex.enableBlockAds} onUpdateChecked={v => setSankakucomplex("enableBlockAds", v)}>屏蔽部分广告和弹窗</CheckBox>
-            <SecondaryText>网站总有一些弹窗无法被广告屏蔽插件干掉，但CSS选择器可以做到。</SecondaryText>
+            <CheckBox checked={editor.sankakucomplex.enableBlockAds} onUpdateChecked={v => setSankakucomplex("enableBlockAds", v)}>屏蔽部分广告和冗余UI</CheckBox>
+            <SecondaryText>屏蔽一些显眼的嵌入式广告与一些冗余的UI，让视野干净一些。</SecondaryText>
         </StyledDiv>
         <StyledDiv>
-            <CheckBox checked={editor.sankakucomplex.enableShortcutForbidden} onUpdateChecked={v => setSankakucomplex("enableShortcutForbidden", v)}>屏蔽部分快捷键</CheckBox>
-            <SecondaryText>屏蔽网站的Tab快捷键与CTRL+D快捷键。这两个快捷键给浏览器的使用带来了一些麻烦。</SecondaryText>
+            <CheckBox checked={editor.sankakucomplex.enableUIOptimize} onUpdateChecked={v => setSankakucomplex("enableUIOptimize", v)}>优化UI显示</CheckBox>
+            <SecondaryText>在Book链接的后面追加Legacy Pool的跳转链接。移除"查看原始图像"的notice提示。</SecondaryText>
         </StyledDiv>
         <StyledDiv>
-            <CheckBox checked={editor.sankakucomplex.enablePaginationEnhancement} onUpdateChecked={v => setSankakucomplex("enablePaginationEnhancement", v)}>增强翻页</CheckBox>
+            <CheckBox checked={editor.sankakucomplex.enablePaginationEnhancement} onUpdateChecked={v => setSankakucomplex("enablePaginationEnhancement", v)}>增强翻页器</CheckBox>
             <SecondaryText>使翻页可以突破最大页码上限。不过不能突破跳页限制，需要逐页翻页。</SecondaryText>
         </StyledDiv>
+
+        <Separator spacing={[4, 1]}/>
+        <Header><IconImg src={FanboxIcon} alt="fanbox icon"/>FANBOX</Header>
         <StyledDiv>
-            <CheckBox checked={editor.sankakucomplex.enableTagListEnhancement} onUpdateChecked={v => setSankakucomplex("enableTagListEnhancement", v)}>增强标签列表</CheckBox>
-            <SecondaryText>在artist, publish, copyright, character类型的标签后面追加该标签的Post/Book数量。</SecondaryText>
-        </StyledDiv>
-        <StyledDiv>
-            <CheckBox checked={editor.sankakucomplex.enableBookNoticeEnhancement} onUpdateChecked={v => setSankakucomplex("enableBookNoticeEnhancement", v)}>增强Book列表</CheckBox>
-            <SecondaryText>在Book链接的后面追加Legacy Pool的跳转链接。</SecondaryText>
-        </StyledDiv>
-        <StyledDiv>
-            <CheckBox checked={editor.sankakucomplex.enableImageLinkReplacement} onUpdateChecked={v => setSankakucomplex("enableImageLinkReplacement", v)}>替换图像链接</CheckBox>
-            <SecondaryText>将所有图像的<code>https://v</code>链接替换为<code>https://s</code>链接。此举可能减少无法访问的文件数量。</SecondaryText>
+            <CheckBox checked={editor.fanbox.enableUIOptimize} onUpdateChecked={v => setFanbox("enableUIOptimize", v)}>优化UI显示</CheckBox>
+            <SecondaryText>在创作者的名字后面追加显示userId和creatorId。</SecondaryText>
         </StyledDiv>
 
         <LayouttedDiv mt={2}>
@@ -102,6 +104,15 @@ const IconImg = styled.img`
     height: 16px;
     margin-right: 4px;
     transform: translateY(2px);
+`
+
+const TwoColDiv = styled.div`
+    display: flex;
+    width: 600px;
+    gap: ${SPACINGS[4]};
+    > div {
+        width: 50%;
+    }
 `
 
 const StyledDiv = styled.div`

@@ -5,30 +5,14 @@ onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] sankakucomplex/global script loaded.")
     const setting = await settings.get()
     if(setting.website.sankakucomplex.enableBlockAds) enableBlockAds()
-    if(setting.website.sankakucomplex.enableShortcutForbidden) enableShortcutForbidden()
     if(setting.website.sankakucomplex.enablePaginationEnhancement) enablePaginationEnhancement()
-    if(setting.website.sankakucomplex.enableTagListEnhancement) enableTagListEnhancement()
-    if(setting.website.sankakucomplex.enableImageLinkReplacement) enableImageThumbnailReplacement()
 })
 
 /**
- * 功能：屏蔽Tab和CTRL+D快捷键
- * Tab和CTRL+D这两个常用键被占用了，搞不懂怎么设计的键位。关掉它。
- */
-function enableShortcutForbidden() {
-    document.addEventListener("keydown", e => {
-        if(e.code === "Tab") {
-            e.stopImmediatePropagation()
-        }else if(e.code === "KeyD" && e.ctrlKey) {
-            e.stopImmediatePropagation()
-        }
-    }, true)
-}
-
-/**
- * 功能：屏蔽部分广告和弹窗。
+ * 功能：屏蔽部分广告和冗余UI。
  */
 function enableBlockAds() {
+    //不记得是什么了
     const contentDiv = document.querySelector("#content")
     if(contentDiv) {
         for(let i = contentDiv.children.length - 1; i >= contentDiv.children.length - 3; --i) {
@@ -38,17 +22,28 @@ function enableBlockAds() {
             }
         }
     }
-    const ads = document.querySelectorAll("#sp1.scad")
-    for(const item of ads) {
-        item.remove()
-    }
-    const mailNotice = document.querySelectorAll("#has-mail-notice.has-mail")
-    for(const item of mailNotice) {
-        item.remove()
-    }
-    document.querySelector("#headerlogo")?.remove()
+    //不记得是什么了
+    document.querySelectorAll("#sp1.scad").forEach(it => it.remove())
+    //新邮件提醒，当广告处理了
+    document.querySelectorAll("#has-mail-notice.has-mail").forEach(it => it.remove())
+    //不记得是什么了
     document.querySelector("div > ul + ins")?.remove()
+    //不记得是什么了
     document.querySelector("#news-ticker")?.remove()
+    //悬浮的按钮，AI的推广
+    document.querySelector(".companion--toggle_button")?.remove()
+    //顶栏广告区域
+    document.querySelector(".carousel.topbar-carousel")?.remove()
+    //顶栏，不是广告，属于UI，但有点碍眼
+    document.querySelector(".top-bar")?.remove()
+    //标题栏，不是广告，属于UI，但有点碍眼
+    document.querySelector("h2#page-title")?.remove()
+    //内容区域里的AI推广
+    document.querySelector(".carousel.ai-carousel")?.remove()
+    //内容区域里的广告推广
+    document.querySelector(".carousel.companion-carousel")?.remove()
+    //提示开会员的notice
+    document.querySelector(".carousel a[href=\"https://get.sankaku.plus/\"]")?.closest(".carousel")!.remove()
 }
 
 /**
@@ -102,60 +97,6 @@ function enablePaginationEnhancement() {
             if(pageNumSpan) {
                 pageNumSpan.textContent = `  ${displayPage} (${realPage})  `
             }
-        }
-    }
-}
-
-/**
- * 功能：标签列表增强
- * SC的标签列表在一次改版后只显示名称，不显示数量了。但是显示一部分数量又是很有用的功能。此增强将post/book数量追加到标签名称后面。
- */
-function enableTagListEnhancement() {
-    //只增强这里列出的几类标签，其他的没有必要
-    const tagLiList = document.querySelectorAll("#tag-sidebar li.tag-type-artist,li.tag-type-studio,li.tag-type-copyright,li.tag-type-character")
-    for(const tagLi of tagLiList) {
-        const tagDiv = tagLi.querySelector("div")
-        if(tagDiv !== null) {
-            let postCount = "", bookCount = ""
-            const childNodes = tagDiv.querySelector(".tooltip > span")?.childNodes ?? []
-            for(let i = 0; i < childNodes.length; i++) {
-                const childNode = childNodes[i]
-                if(childNode.textContent) {
-                    if(childNode.nodeName === "#text" && childNode.textContent.startsWith("Posts:")) {
-                        const spanNode = childNodes[i + 1]
-                        if(spanNode.nodeName === "SPAN") {
-                            postCount = (spanNode as HTMLSpanElement).innerText
-                        }
-                    }else if(childNode.nodeName === "#text" && childNode.textContent.startsWith("Books:")) {
-                        const aNode = childNodes[i + 1]
-                        if(aNode.nodeName === "A") {
-                            bookCount = (aNode as HTMLAnchorElement).innerText
-                        } 
-                    }
-                    if(postCount && bookCount) {
-                        break
-                    }
-                }
-            }
-            if(bookCount) {
-                tagDiv.append(`  (${postCount} / ${bookCount})`)
-            }else{
-                tagDiv.append(`  (${postCount})`)
-            }
-        }
-    }
-}
-
-/**
- * 功能：Image缩略图替换
- * image的链接有s开头和v开头两种。之前曾经存在过问题，v开头链接经常下载异常，导致需要把v开头替换成s开头。
- */
-function enableImageThumbnailReplacement() {
-    const thumbs = document.getElementsByClassName("thumb") as HTMLCollectionOf<HTMLSpanElement>
-    for(const thumb of thumbs) {
-        const img = thumb.getElementsByTagName("img")[0] as HTMLImageElement | null
-        if(img && img.src && img.src.startsWith("https://v")) {
-            img.src = "https://s" + img.src.substring("https://v".length)
         }
     }
 }

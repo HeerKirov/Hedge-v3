@@ -16,7 +16,7 @@ onDOMContentLoaded(async () => {
         sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
         sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
 
-        enableRenameFile()
+        if(setting.website.ehentai.enableRenameScript) enableRenameFile()
         if(setting.website.ehentai.enableCommentCNBlock || setting.website.ehentai.enableCommentVoteBlock || setting.website.ehentai.enableCommentKeywordBlock || setting.website.ehentai.enableCommentUserBlock) {
             enableCommentFilter(
                 setting.website.ehentai.enableCommentCNBlock,
@@ -137,38 +137,45 @@ function enableCommentFilter(blockCN: boolean, blockVote: boolean, blockKeywords
 function enableRenameFile() {
     const gd5 = document.querySelector<HTMLDivElement>("#gd5")
     if(gd5) {
-        const a = document.createElement("a")
-        a.textContent = "Rename Script Download"
-        a.href = "#"
-        gd5.childNodes[1].appendChild(document.createTextNode(" / "))
-        gd5.childNodes[1].appendChild(a)
-        a.onclick = (e: MouseEvent) => {
-            (e.target as HTMLAnchorElement).style.color = "burlywood"
-            const anchors = document.querySelectorAll<HTMLAnchorElement>(".gdtl > a")
-            const hrefs = [...anchors.values()]
-                .map(a => {
-                    const img = a.querySelector("img")
-                    const url = new URL(a.href)
-                    const m = url.pathname.match(EHENTAI_CONSTANTS.REGEXES.IMAGE_PATHNAME)
-                    if(m && m.groups && img) {
-                        const page = img.alt
-                        const pHash = m.groups["PHASH"]
-                        const gid = m.groups["GID"]
-                        return [pHash, gid, page] as const
-                    }else{
-                        return null
+        const archiveDownloadDiv = gd5.childNodes[1] as HTMLDivElement
+        const p = documents.createElement("p", {class: "g2"}, [
+            documents.createElement("img", {src: "https://ehgt.org/g/mr.gif"}),
+            documents.createElement("a", {
+                style: "margin-left: 4px; cursor: pointer",
+                click(e: MouseEvent) {
+                    (e.target as HTMLAnchorElement).style.color = "burlywood"
+                    const anchors = document.querySelectorAll<HTMLAnchorElement>(".gdtl > a")
+                    const hrefs = [...anchors.values()]
+                        .map(a => {
+                            const img = a.querySelector("img")
+                            const url = new URL(a.href)
+                            const m = url.pathname.match(EHENTAI_CONSTANTS.REGEXES.IMAGE_PATHNAME)
+                            if(m && m.groups && img) {
+                                const page = img.alt
+                                const pHash = m.groups["PHASH"]
+                                const gid = m.groups["GID"]
+                                return [pHash, gid, page] as const
+                            }else{
+                                return null
+                            }
+                        })
+                        .filter(tuple => tuple !== null) as [string, string, string][]
+
+                    const scripts = hrefs.map(([pHash, gid, page]) => `rename $@ 's/(.*)(\\..*)/$1_${pHash}$2/' ehentai_${gid}_${page}.*`).join("\n")
+                    documents.clickDownload(`RenameScript-${hrefs[0][1]}-${hrefs[0][2]}.sh`, scripts)
+
+                    if(parseInt(hrefs[0][2]) === 1) {
+                        const scripts = `rename $@ 's/(\\d+).*(\\..*)/ehentai_${hrefs[0][1]}_$1$2/' *.*\nchmod +x *.sh`
+                        documents.clickDownload(`RenameScript-${hrefs[0][1]}.sh`, scripts)
                     }
-                })
-                .filter(tuple => tuple !== null) as [string, string, string][]
+                }
+            }, [
+                "Rename Script"
+            ])
+        ])
 
-            const scripts = hrefs.map(([pHash, gid, page]) => `rename $@ 's/(.*)(\\..*)/$1_${pHash}$2/' ehentai_${gid}_${page}.*`).join("\n")
-            documents.clickDownload(`RenameScript-${hrefs[0][1]}-${hrefs[0][2]}.sh`, scripts)
-
-            if(parseInt(hrefs[0][2]) === 1) {
-                const scripts = `rename $@ 's/(\\d+).*(\\..*)/ehentai_${hrefs[0][1]}_$1$2/' *.*\nchmod +x *.sh`
-                documents.clickDownload(`RenameScript-${hrefs[0][1]}.sh`, scripts)
-            }
-        }
+        archiveDownloadDiv.setAttribute("style", "padding-bottom: 0px")
+        archiveDownloadDiv.after(p)
     }
 }
 

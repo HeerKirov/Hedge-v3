@@ -1,12 +1,16 @@
 import { FANBOX_CONSTANTS } from "@/functions/sites"
+import { settings } from "@/functions/setting"
 import { documents, onDOMContentLoaded } from "@/utils/document"
 import { Result } from "@/utils/primitives"
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] fanbox/global script loaded.")
-    const creatorId = ifAndGetCreator()
-    if(creatorId !== null) {
-        enableUIOptimize(creatorId)
+    const setting = await settings.get()
+    if(setting.website.fanbox.enableUIOptimize) {
+        const creatorId = ifAndGetCreator()
+        if(creatorId !== null) {
+            enableUIOptimize(creatorId)
+        }
     }
 })
 

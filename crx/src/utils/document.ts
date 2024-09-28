@@ -38,10 +38,14 @@ type EnvironmentType = "OPTIONS" | "POPUP" | "CONTENT_SCRIPT" | "SERVICE_WORKER"
 let environmentType: EnvironmentType | undefined
 
 export const documents = {
-    createElement<K extends keyof HTMLElementTagNameMap>(tagName: K, attrs?: Record<string, string>, children?: (Node | string)[]): HTMLElementTagNameMap[K] {
+    createElement<K extends keyof HTMLElementTagNameMap>(tagName: K, attrs?: Record<string, string | ((e: any) => void)>, children?: (Node | string)[]): HTMLElementTagNameMap[K] {
         const element = document.createElement(tagName, undefined)
         if(attrs) for(const [k, v] of Object.entries(attrs)) {
-            element.setAttribute(k, v)
+            if(typeof v === "function") {
+                element.addEventListener(k, v)
+            }else{
+                element.setAttribute(k, v)
+            }
         }
         if(children?.length) element.append(...children)
         return element

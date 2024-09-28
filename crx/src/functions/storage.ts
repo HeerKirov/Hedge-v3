@@ -6,16 +6,6 @@ import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
  */
 export const sessions = {
     /**
-     * 反射信息。根据一个固定ID，反射至该固定ID的某个固定值。
-     * 这类反射信息通常在document loaded时在页面被保存，并在download suggest等处被使用。
-     */
-    reflect: {
-        /**
-         * E-Hentai: gallery id + page映射到image hash。
-         */
-        ehentaiGalleryImageHash: createDictEndpoint<{gid: string, page: string}, {imageHash: string}>("session", "reflect/ehentai/gallery/image-hash",p => `${p.gid}-${p.page}`)
-    },
-    /**
      * 临时存储。
      */
     cache: {
@@ -35,7 +25,7 @@ export const sessions = {
          * 最近手动下载的文件的一些附加信息。
          * 这些附加信息在手动下载时被写入，并在determining过程中被提取出来，代替从下载项获得的信息来使用。
          */
-        downloadItemInfo: createDictEndpoint<string, {filename: string, sourcePath: SourceDataPath | undefined}>("session", "cache/download/info", p => p.toString())
+        downloadItemInfo: createDictEndpoint<string, {sourcePath: SourceDataPath, collectSourceData: boolean}>("session", "cache/download/info", p => p.toString())
     },
 }
 

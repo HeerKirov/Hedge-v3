@@ -34,27 +34,15 @@ interface Website {
      */
     sankakucomplex: {
         /**
-         * 屏蔽部分快捷键。
+         * 启用UI优化。
          */
-        enableShortcutForbidden: boolean
+        enableUIOptimize: boolean
         /**
          * 增强翻页。
          */
         enablePaginationEnhancement: boolean
         /**
-         * 增强标签列表。
-         */
-        enableTagListEnhancement: boolean
-        /**
-         * 增强pool列表。
-         */
-        enableBookNoticeEnhancement: boolean
-        /**
-         * 替换图像链接。
-         */
-        enableImageLinkReplacement: boolean
-        /**
-         * 屏蔽广告和烦人的窗口。
+         * 屏蔽广告和冗余UI。
          */
         enableBlockAds: boolean
     }
@@ -66,6 +54,10 @@ interface Website {
          * 启用UI优化。
          */
         enableUIOptimize: boolean
+        /**
+         * 启用"下载重命名脚本"功能项。
+         */
+        enableRenameScript: boolean
         /**
          * 启用评论区中文智能屏蔽。
          */
@@ -90,6 +82,15 @@ interface Website {
          * 评论区屏蔽用户列表。
          */
         commentBlockUsers: string[]
+    }
+    /**
+     * fanbox的扩展工具。
+     */
+    fanbox: {
+        /**
+         * 启用UI优化。
+         */
+        enableUIOptimize: boolean
     }
 }
 
@@ -163,21 +164,22 @@ export function defaultSetting(): Setting {
         },
         website: {
             sankakucomplex: {
-                enableShortcutForbidden: true,
-                enableTagListEnhancement: true,
+                enableUIOptimize: true,
                 enablePaginationEnhancement: true,
-                enableBookNoticeEnhancement: true,
-                enableImageLinkReplacement: true,
                 enableBlockAds: true
             },
             ehentai: {
                 enableUIOptimize: true,
+                enableRenameScript: true,
                 enableCommentCNBlock: true,
                 enableCommentVoteBlock: true,
                 enableCommentKeywordBlock: true,
                 enableCommentUserBlock: true,
                 commentBlockKeywords: [],
                 commentBlockUsers: []
+            },
+            fanbox: {
+                enableUIOptimize: true,
             }
         },
         toolkit: {
@@ -251,7 +253,20 @@ const migrations: {[version: string]: Migrate<MigrateContext>} = {
     async "0.10.0"(ctx) {
         const val = ctx.setting as any
         val["general"] = val["server"]
-        val["website"] = val["tool"]
+        val["website"] = {
+            sankakucomplex: {
+                enableUIOptimize: val["tool"]["sankakucomplex"]["enableShortcutForbidden"],
+                enablePaginationEnhancement: val["tool"]["sankakucomplex"]["enablePaginationEnhancement"],
+                enableBlockAds: val["tool"]["sankakucomplex"]["enableBlockAds"]
+            },
+            ehentai: {
+                ...val["tool"]["ehentai"],
+                enableRenameScript: true,
+            },
+            fanbox: {
+                enableUIOptimize: true
+            }
+        }
         val["toolkit"] = {
             downloadToolbar: {
                 enabled: true,

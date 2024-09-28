@@ -1,6 +1,6 @@
 import React, { useState, ReactNode } from "react"
 import { styled } from "styled-components"
-import { Button, CheckBox, Group, Icon, Input, Label, LayouttedDiv, SecondaryText, Header, Separator, Anchor } from "@/components"
+import { Button, CheckBox, Group, Icon, Input, Label, LayouttedDiv, SecondaryText, Header, Separator, CollapsePanel } from "@/components"
 import { defaultSetting, Setting } from "@/functions/setting"
 import { sessions } from "@/functions/storage"
 import { useAsyncLoading, useEditor, usePartialSet } from "@/utils/reactivity"
@@ -117,7 +117,9 @@ export function OptionsToolkitPanel(props: OptionsToolkitPanelProps) {
             <CheckBox checked={editor.determiningFilename.autoCollectSourceData} onUpdateChecked={v => setDeterminingFilename("autoCollectSourceData", v)}>在触发文件下载重命名时，同步收集来源数据</CheckBox>
         </LayouttedDiv>
         <LayouttedDiv mt={3}>
-            {Object.keys(SOURCE_DATA_RULE_DESCRIPTIONS).map(name => <SourceDataDescriptionItem key={name} siteName={name}/>)}
+            {Object.keys(SOURCE_DATA_RULE_DESCRIPTIONS).map(name => <CollapsePanel key={name} prefix={<StyledFixedRuleName>{name}</StyledFixedRuleName>} title="收集内容详情" mt={1} panel={{border: true, radius: "std", padding: 2}}>
+                {SOURCE_DATA_RULE_DESCRIPTIONS[name]}
+            </CollapsePanel>)}
         </LayouttedDiv>
         <LayouttedDiv mt={2}>
             {changed && <>
@@ -165,16 +167,6 @@ function DeterminingRuleAddItem({ onAdd }: {onAdd(item: DeterminingRule): void})
     </Group>
 }
 
-function SourceDataDescriptionItem(props: {siteName: string}) {
-    const [showDetails, setShowDetails] = useState(false)
-
-    return <LayouttedDiv mt={1}>
-        <StyledFixedRuleName>{props.siteName}</StyledFixedRuleName>
-        <LayouttedDiv display="inline-block" ml={2}><Anchor onClick={() => setShowDetails(v => !v)}><Icon icon={showDetails ? "caret-down" : "caret-right"} mr={1}/>收集内容详情</Anchor></LayouttedDiv>
-        {showDetails && <LayouttedDiv border radius="std" padding={2} margin={1}>{SOURCE_DATA_RULE_DESCRIPTIONS[props.siteName]}</LayouttedDiv>}
-    </LayouttedDiv>
-}
-
 const IconDisplayDiv = styled.div`
     margin: ${SPACINGS[2]} 0 ${SPACINGS[3]} 0;
     display: flex;
@@ -194,6 +186,11 @@ const IconDisplayDiv = styled.div`
 
 const StyledSaveButton = styled(Button)`
     padding: 0 ${SPACINGS[5]};
+`
+
+const StyledFixedRuleName = styled.span`
+    display: inline-block;
+    width: 75px;
 `
 
 const SOURCE_DATA_RULE_DESCRIPTIONS: Record<string, ReactNode> = {
@@ -306,8 +303,3 @@ const SOURCE_DATA_RULE_DESCRIPTIONS: Record<string, ReactNode> = {
         </tbody>
     </table>,
 }
-
-const StyledFixedRuleName = styled.span`
-    display: inline-block;
-    width: 75px;
-`

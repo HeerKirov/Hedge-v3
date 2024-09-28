@@ -8,7 +8,7 @@ import { Separator } from "./Styled"
 interface ButtonProps extends React.HTMLAttributes<HTMLButtonElement> {
     mode?: "transparent" | "filled"
     type?: ThemeColors
-    size?: "std" | "small" | "large"
+    size?: "tiny" | "std" | "small" | "large"
     square?: boolean
     round?: boolean
     width?: string
@@ -60,7 +60,7 @@ export function Anchor(props: AnchorProps) {
 const StyledButton = styled.button<{
     $mode?: "transparent" | "filled"
     $type?: ThemeColors
-    $size?: "std" | "small" | "large"
+    $size?: "tiny" | "std" | "small" | "large"
     $square?: boolean
     $round?: boolean
     $width?: string

@@ -1,6 +1,5 @@
 import { SourceDataPath } from "@/functions/server/api-all"
 import { settings } from "@/functions/setting"
-import { sessions } from "@/functions/storage"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { EHENTAI_CONSTANTS } from "@/functions/sites"
 import { imageToolbar, initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
@@ -13,7 +12,6 @@ onDOMContentLoaded(async () => {
     const setting = await settings.get()
     const sourceDataPath = getSourceDataPath()
     sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
-    sessions.reflect.ehentaiGalleryImageHash.set({gid: sourceDataPath.sourceId, page: sourceDataPath.sourcePart!.toString()}, {imageHash: sourceDataPath.sourcePartName!}).finally()
 
     if(setting.website.ehentai.enableUIOptimize) enableOptimizeUI()
 
@@ -44,8 +42,6 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
  * 功能：UI优化。
  * - 使title标题始终保持单行。
  * - 使底部工具栏始终保持单行。
- * - 有些图像没有最下方的图像下载链接，因为加载的图像就是它们的原图像。为保持操作统一，添加了一个下载链接，用扩展API实现其下载操作。
- * - 有下载链接的，将链接也替换为扩展API实现。
  */
 function enableOptimizeUI() {
     const h1 = document.querySelector<HTMLHeadingElement>("div.sni h1")

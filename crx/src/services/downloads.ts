@@ -14,8 +14,7 @@ export async function downloadURL(options: {url: string, sourcePath?: SourceData
         return
     }
     if(options.sourcePath !== undefined) {
-        const filename = generateSourceName(options.sourcePath)
-        await sessions.cache.downloadItemInfo.set(options.url, {filename, sourcePath: options.collectSourceData ? options.sourcePath : undefined})
+        await sessions.cache.downloadItemInfo.set(options.url, {sourcePath: options.sourcePath, collectSourceData: options.collectSourceData ?? false})
     }
     await chrome.downloads.download({url: options.url})
 }
@@ -33,11 +32,12 @@ export function determiningFilename(downloadItem: chrome.downloads.DownloadItem,
         const url = downloadItem.url
         const info = await sessions.cache.downloadItemInfo.get(url)
         try {
-            if(info?.filename) {
+            if(info) {
                 //在从info提取获得文件名时，此文件是通过download API指定下载的。使用已准备好的文件名。
                 console.log(`[determiningFilename] url=[${url}], filename=[${filenameWithoutExt}]`)
-                suggest({filename: info.filename + (extension ? "." + extension : "")})
-                if(info.sourcePath !== undefined && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
+                const filename = generateSourceName(info.sourcePath)
+                suggest({filename: filename + (extension ? "." + extension : "")})
+                if(info.collectSourceData && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
                     await sourceDataManager.collect({...info.sourcePath, type: "auto"})
                 }
             }else{

@@ -18,9 +18,7 @@ onDOMContentLoaded(async () => {
     sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
     sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
 
-    if(setting.website.sankakucomplex.enableBookNoticeEnhancement) enableBookEnhancement()
-    if(setting.website.sankakucomplex.enableImageLinkReplacement) enableImageLinkReplacement()
-    enableOptimizeUI()
+    if(setting.website.sankakucomplex.enableUIOptimize) enableUIOptimize()
 
     quickFind = initializeQuickFindUI()
 
@@ -48,19 +46,16 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
 })
 
 /**
- * 功能：进行UI增强。
+ * 功能：进行UI优化
+ * - legacy的post页面的Book清单只能通向beta Book。把legacy的加回去。
+ * - 移除"查看原始图像"的notice
  */
-function enableOptimizeUI() {
-    //移除resized notice
+function enableUIOptimize() {
+    //移除origin image notice
     const resizedNotice = document.querySelector("#resized_notice")
     if(resizedNotice) resizedNotice.remove()
-}
 
-/**
- * 功能：增强Book清单
- * legacy的post页面的Book清单只能通向beta Book。把legacy的加回去。
- */
-function enableBookEnhancement() {
+    //添加book legacy链接
     const statusNotice = document.querySelectorAll(".content .status-notice")
     if(statusNotice.length) {
         statusNotice.forEach(sn => {
@@ -74,27 +69,6 @@ function enableBookEnhancement() {
                 sn.append(")")
             }
         })
-    }
-}
-
-/**
- * 功能：Image链接替换
- * image的链接有s开头和v开头两种。之前曾经存在过问题，v开头链接经常下载异常，导致需要把v开头替换成s开头。
- */
-function enableImageLinkReplacement() {
-    const imageLink = document.getElementById("image-link") as HTMLAnchorElement | null
-    if(imageLink) {
-        if(imageLink.href && imageLink.href.startsWith("https://v")) {
-            console.log(`[ImageLinkReplacement] Replaced #image-link from v to s.`)
-            imageLink.href = "https://s" + imageLink.href.substring("https://v".length)
-        }
-        const imageLinkImg = imageLink.getElementsByTagName("img")[0] as HTMLImageElement | undefined
-        if(imageLinkImg && imageLinkImg.src && imageLinkImg.src.startsWith("https://v")) {
-            console.log(`[ImageLinkReplacement] Replaced #image-link > img from v to s.`)
-            imageLinkImg.src = "https://s" + imageLinkImg.src.substring("https://v".length)
-        }
-    }else{
-        console.warn("[ImageLinkReplacement] Cannot find #image-link.")
     }
 }
 

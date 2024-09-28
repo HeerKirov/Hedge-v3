@@ -6,7 +6,7 @@ interface Children {
     children?: ReactNode
 }
 
-interface Formatted {
+export interface Formatted {
     backgroundColor?: ThemeColors | FunctionalColors
     color?: ThemeColors | FunctionalColors
     size?: FontSizes
@@ -21,7 +21,7 @@ interface Formatted {
     mr?: number, ml?: number
 }
 
-interface Layoutted {
+export interface Layoutted {
     display?: "block" | "inline-block" | "inline" | "flex"
     position?: "relative" | "absolute" | "fixed"
     margin?: number | [number, number] | [number, number, number, number]
