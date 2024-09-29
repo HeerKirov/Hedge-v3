@@ -2,13 +2,10 @@ import { tz } from "moment-timezone"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
-import { settings } from "@/functions/setting"
 import { KEMONO_CONSTANTS } from "@/functions/sites"
-import { imageToolbar, initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
+import { imageToolbar, similarFinder } from "@/scripts/utils"
 import { onDOMContentLoaded } from "@/utils/document"
 import { Result } from "@/utils/primitives"
-
-let quickFind: QuickFindController | undefined
 
 onDOMContentLoaded(() => {
     console.log("[Hedge v3 Helper] kemono/post script loaded.")
@@ -20,7 +17,6 @@ onDOMContentLoaded(() => {
         sendMessage("SUBMIT_SOURCE_DATA", {path: sourcePath, data: sourceData})
     }
 
-    quickFind = initializeQuickFindUI()
     initializeUI(sourcePath)
 })
 
@@ -33,13 +29,8 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
         const sourceDataPath = getSourceDataPath()
         if(sourceDataPath !== null) {
             const sourceData = collectSourceData()
-            settings.get().then(async setting => {
-                const file = document.querySelector<HTMLImageElement>("a#image-link img#image")
-                if(quickFind) {
-                    const dataURL = file !== null ? await quickFind.getImageDataURL(file) : undefined
-                    quickFind!.openQuickFindModal(setting, dataURL, sourceDataPath, sourceData)
-                }
-            })
+            const file = document.querySelector<HTMLImageElement>("a#image-link img#image")
+            similarFinder.quickFind(file?.src, sourceDataPath, sourceData)
         }
         return false
     }

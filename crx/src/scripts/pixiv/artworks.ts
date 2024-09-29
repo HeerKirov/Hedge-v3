@@ -1,13 +1,10 @@
 import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
-import { settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { PIXIV_CONSTANTS } from "@/functions/sites"
-import { initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
+import { similarFinder } from "@/scripts/utils"
 import { Result } from "@/utils/primitives"
 import { onDOMContentLoaded } from "@/utils/document"
-
-let quickFind: QuickFindController | undefined
 
 /**
  * 前置的预加载数据额外收集器。
@@ -24,8 +21,6 @@ onDOMContentLoaded(() => {
     const sourceData = collectSourceData()
     sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
     sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
-
-    quickFind = initializeQuickFindUI()
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
@@ -34,15 +29,10 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
     }else if(type === "REPORT_PAGE_INFO") {
         callback({path: getSourceDataPath()})
     }else if(type === "QUICK_FIND_SIMILAR") {
-        settings.get().then(setting => {
-            const sourceDataPath = getSourceDataPath()
-            const sourceData = collectSourceData()
-            const files = [...document.querySelectorAll<HTMLImageElement>("div[role=presentation] > a > img")]
-            if(quickFind) {
-                Promise.all(files.map(f => quickFind!.getImageDataURL(f)))
-                    .then(files => quickFind!.openQuickFindModal(setting, files.length > 0 ? files[0] : undefined, sourceDataPath, sourceData))
-            }
-        })
+        const sourceDataPath = getSourceDataPath()
+        const sourceData = collectSourceData()
+        const file = document.querySelector<HTMLImageElement>("div[role=presentation] > a > img")
+        similarFinder.quickFind(file?.src, sourceDataPath, sourceData)
     }
     return false
 })

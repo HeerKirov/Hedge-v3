@@ -1,3 +1,2 @@
-export { initializeQuickFindUI } from "./find-similar"
-export type { QuickFindController } from "./find-similar"
+export { similarFinder } from "./find-similar.tsx"
 export { imageToolbar } from "./image-toolbar"

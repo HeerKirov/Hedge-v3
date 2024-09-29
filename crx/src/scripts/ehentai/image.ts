@@ -2,10 +2,8 @@ import { SourceDataPath } from "@/functions/server/api-all"
 import { settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { EHENTAI_CONSTANTS } from "@/functions/sites"
-import { imageToolbar, initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
+import { imageToolbar, similarFinder } from "@/scripts/utils"
 import { onDOMContentLoaded } from "@/utils/document"
-
-let quickFind: QuickFindController | undefined
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] ehentai/image script loaded.")
@@ -15,8 +13,6 @@ onDOMContentLoaded(async () => {
 
     if(setting.website.ehentai.enableUIOptimize) enableOptimizeUI()
 
-    quickFind = initializeQuickFindUI()
-
     initializeUI(sourceDataPath)
 })
 
@@ -24,14 +20,10 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
     if(type === "REPORT_PAGE_INFO") {
         callback({path: getSourceDataPath()})
     }else if(type === "QUICK_FIND_SIMILAR") {
-        settings.get().then(async setting => {
-            const sourceDataPath = getSourceDataPath()
-            const sourceData = await sendMessage("GET_SOURCE_DATA", {sourceSite: "ehentai", sourceId: sourceDataPath.sourceId})
-            const files = [...document.querySelectorAll<HTMLImageElement>("div#i3 img#img")]
-            if(quickFind) {
-                const f = await Promise.all(files.map(f => quickFind!.getImageDataURL(f)))
-                quickFind!.openQuickFindModal(setting, f.length > 0 ? f[0] : undefined, sourceDataPath, sourceData !== null ? {ok: true, value: sourceData} : {ok: false, err: "Source data from manager is null."})
-            }
+        const sourceDataPath = getSourceDataPath()
+        sendMessage("GET_SOURCE_DATA", {sourceSite: "ehentai", sourceId: sourceDataPath.sourceId}).then(sourceData => {
+            const file = document.querySelector<HTMLImageElement>("div#i3 img#img")
+            similarFinder.quickFind(file?.src, sourceDataPath, sourceData !== null ? {ok: true, value: sourceData} : {ok: false, err: "Source data from manager is null."})
         })
     }
     return false

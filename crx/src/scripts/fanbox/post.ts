@@ -2,12 +2,9 @@ import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { FANBOX_CONSTANTS } from "@/functions/sites"
-import { settings } from "@/functions/setting"
-import { imageToolbar, initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
+import { imageToolbar, similarFinder } from "@/scripts/utils"
 import { onDOMContentLoaded } from "@/utils/document"
 import { Result } from "@/utils/primitives"
-
-let quickFind: QuickFindController | undefined
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] fanbox/post script loaded.")
@@ -16,7 +13,6 @@ onDOMContentLoaded(async () => {
     sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
     sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
 
-    quickFind = initializeQuickFindUI()
     initializeUI(sourceDataPath)
 })
 
@@ -27,14 +23,10 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
     }else if(type === "REPORT_PAGE_INFO") {
         callback({path: getSourceDataPath()})
     }else if(type === "QUICK_FIND_SIMILAR") {
-        settings.get().then(async setting => {
-            const sourceDataPath = getSourceDataPath()
-            const sourceData = await collectSourceData()
-            if(quickFind) {
-                const file = document.querySelector<HTMLImageElement>("article img")
-                const dataURL = file !== null ? await quickFind.getImageDataURL(file) : undefined
-                quickFind!.openQuickFindModal(setting, dataURL, sourceDataPath, sourceData)
-            }
+        const sourceDataPath = getSourceDataPath()
+        collectSourceData().then(sourceData => {
+            const file = document.querySelector<HTMLImageElement>("article img")
+            similarFinder.quickFind(file?.src, sourceDataPath, sourceData)
         })
     }
     return false

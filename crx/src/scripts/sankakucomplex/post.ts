@@ -4,11 +4,9 @@ import { SourceBookForm, SourceDataUpdateForm, SourceTagForm } from "@/functions
 import { settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { SANKAKUCOMPLEX_CONSTANTS } from "@/functions/sites"
-import { imageToolbar, initializeQuickFindUI, QuickFindController } from "@/scripts/utils"
+import { imageToolbar, similarFinder } from "@/scripts/utils"
 import { Result } from "@/utils/primitives"
 import { onDOMContentLoaded } from "@/utils/document"
-
-let quickFind: QuickFindController | undefined
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] sankakucomplex/post script loaded.")
@@ -20,8 +18,6 @@ onDOMContentLoaded(async () => {
 
     if(setting.website.sankakucomplex.enableUIOptimize) enableUIOptimize()
 
-    quickFind = initializeQuickFindUI()
-
     initializeUI(sourceDataPath)
 })
 
@@ -31,16 +27,10 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
     }else if(type === "REPORT_PAGE_INFO") {
         callback({path: getSourceDataPath()})
     }else if(type === "QUICK_FIND_SIMILAR") {
-        settings.get().then(async setting => {
-            const sourceDataPath = getSourceDataPath()
-            const sourceData = collectSourceData()
-            const files = [...document.querySelectorAll<HTMLImageElement>("a#image-link img#image")]
-            if(quickFind) {
-                const f = await Promise.all(files.map(f => quickFind!.getImageDataURL(f)))
-                quickFind!.openQuickFindModal(setting, f.length > 0 ? f[0] : undefined, sourceDataPath, sourceData)
-            }
-        })
-        return false
+        const sourceDataPath = getSourceDataPath()
+        const sourceData = collectSourceData()
+        const file = document.querySelector<HTMLImageElement>("a#image-link img#image")
+        similarFinder.quickFind(file?.src, sourceDataPath, sourceData)
     }
     return false
 })
