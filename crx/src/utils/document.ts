@@ -63,3 +63,16 @@ export const documents = {
         }
     }
 }
+
+export const nativeApp = {
+    newTab(routeName: string, args?: {path?: string | number, params?: Record<string, any>, initializer?: Record<string, any>}) {
+        const encodedPath = args?.path !== undefined ? encodeURIComponent(window.btoa(JSON.stringify(args.path))) : undefined
+        const encodedParams = args?.params !== undefined ? encodeURIComponent(window.btoa(JSON.stringify(args.params))) : undefined
+        const encodedInitializer = args?.initializer !== undefined ? encodeURIComponent(window.btoa(JSON.stringify(args.initializer))) : undefined
+        const url = `hedge://hedge/new-tab?routeName=${routeName}`
+            + (encodedPath !== undefined ? `&path=${encodedPath}` : "")
+            + (encodedParams !== undefined ? `&params=${encodedParams}` : "")
+            + (encodedInitializer !== undefined ? `&initializer=${encodedInitializer}` : "")
+        window.open(url)
+    }
+}

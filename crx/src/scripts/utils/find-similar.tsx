@@ -1,16 +1,21 @@
 import React, { SyntheticEvent, useCallback, useEffect, useRef, useState } from "react"
 import ReactDOM from "react-dom/client"
 import { css, styled, StyleSheetManager } from "styled-components"
-import { AspectGrid, Button, FormattedText, Icon, LayouttedDiv } from "@/components"
+import {
+    AspectGrid, Button, FormattedText, Icon, Separator, LayouttedDiv,
+    PartitionTimeDisplay, FileInfoDisplay, SourceInfo, ThumbnailImage
+} from "@/components"
 import { server } from "@/functions/server"
 import { sendMessage } from "@/functions/messages"
 import { SimpleAuthor, SimpleTopic, SourceDataPath } from "@/functions/server/api-all"
+import { DetailIllust } from "@/functions/server/api-illust"
 import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
 import { FindSimilarResultDetailImage } from "@/functions/server/api-find-similar"
 import { createEventTrigger, EventTrigger } from "@/utils/emitter"
 import { files, Result } from "@/utils/primitives"
-import { GlobalStyle, SPACINGS, ThemeColors } from "@/styles"
+import { DARK_MODE_COLORS, GlobalStyle, LIGHT_MODE_COLORS, SPACINGS, ThemeColors } from "@/styles"
 import { fontAwesomeCSS } from "@/styles/fontawesome"
+import { nativeApp } from "@/utils/document.ts";
 
 export const similarFinder = {
     /**
@@ -110,7 +115,7 @@ export function QuickFindComponent({ channel }: {channel: EventTrigger<{src: str
             : status === "LOADING" && originData && dataURL
                 ? <QuickFindLoading dataURL={dataURL} sourcePath={originData.sourcePath} sourceData={originData.sourceData} tags={tags} onUpdateTags={setTags} onCompleted={completeLoading}/>
             : status === "COMPLETE" && dataURL && result
-                ? <QuickFindComplete dataURL={dataURL} findId={result.id} images={result.images} tags={tags}/>
+                ? <QuickFindComplete dataURL={dataURL} findId={result.id} images={result.images} tags={tags} onClose={close}/>
             : null
         }
     </>)
@@ -122,7 +127,6 @@ function QuickFindCapture(props: {src: string, onCompleted: (dataURL: string) =>
 
     const onLoad = size !== undefined ? undefined : (e: SyntheticEvent<HTMLImageElement>) => {
         const img = e.currentTarget
-        console.log("onLoad", img)
         if(img.width > window.innerWidth * 0.8 || img.height > window.innerHeight * 0.8) {
             const rate = Math.min(window.innerWidth * 0.8 / img.width, window.innerHeight * 0.8 / img.height)
             setSize({width: img.width * rate, height: img.height * rate})
@@ -199,45 +203,70 @@ function QuickFindLoading(props: {dataURL: string, sourcePath: SourceDataPath, s
 
     return <DialogDiv border padding={1} radius="std" backgroundColor="background">
         <div>
-            <LayouttedDiv size="large" margin={[2, 0, 0, 0]} padding={[0, 0, 0, 1]}>快速查找</LayouttedDiv>
-            <LayouttedDiv margin={[1, 0, 0, 0]} padding={[0, 0, 0, 1]}>{description}</LayouttedDiv>
-            <LayouttedDiv padding={[0, 0, 0, 1]}>适用的标签: {props.tags.map(t => <FormattedText key={t.metaTag.id} mr={1} bold color={t.metaTag.color as ThemeColors}>{t.metaTag.name}</FormattedText>)}</LayouttedDiv>
+            <div>
+                <LayouttedDiv bold size="large">快速查找</LayouttedDiv>
+                <div><Icon icon="tags" mr={1}/>{props.tags.map(t => <FormattedText key={t.metaTag.id} mr={1} bold color={t.metaTag.color as ThemeColors}>{t.metaTag.name}</FormattedText>)}</div>
+            </div>
+            <Separator/>
+            <LoadingScrollDiv>{description}</LoadingScrollDiv>
+            <Separator/>
+            <BottomButtonBarDiv>
+                <Button mode="filled" type="primary" disabled><Icon icon="calendar-alt" mr={1}/>在时间分区中显示</Button>
+                <Button mode="filled" type="primary" disabled><Icon icon="up-right-from-square" mr={1}/>在Hedge App中打开</Button>
+            </BottomButtonBarDiv>
         </div>
-        <div>
-            <LayouttedDiv size="large" margin={[2, 0, 1, 0]}>参考图像</LayouttedDiv>
-            <img src={props.dataURL} alt="example image"/>
-        </div>
+        <LayouttedDiv border radius="std" backgroundColor="block" padding={2}>
+            <img src={props.dataURL} alt="sample image"/>
+        </LayouttedDiv>
     </DialogDiv>
 }
 
-function QuickFindComplete(props: {dataURL: string, findId: number, images: FindSimilarResultDetailImage[], tags: ({ metaType: "AUTHOR", metaTag: SimpleAuthor } | { metaType: "TOPIC", metaTag: SimpleTopic })[]}) {
+function QuickFindComplete(props: { dataURL: string, findId: number, images: FindSimilarResultDetailImage[], tags: ({ metaType: "AUTHOR", metaTag: SimpleAuthor } | { metaType: "TOPIC", metaTag: SimpleTopic })[], onClose: () => void }) {
+    const [selected, setSelected] = useState<FindSimilarResultDetailImage | null>(null)
 
-    const openInApp = () => {
-        window.open(`hedge://hedge/new-tab?routeName=QuickFindDetail&path=${encodeURIComponent(window.btoa(JSON.stringify(props.findId!)))}`)
+    const openInApp = useCallback(() => {
+        nativeApp.newTab("QuickFindDetail", {
+            path: props.findId!
+        })
+        props.onClose()
+    }, [props.findId, props.onClose])
+
+    const openInAppPartition = () => {
+        nativeApp.newTab("PartitionDetail", {
+            path: selected!.partitionTime,
+            initializer: {locate: selected!.id}
+        })
+        props.onClose()
     }
-
-    const description = props.images.length > 0 ? `查找已完成。找到${props.images.length}个近似项。` : "查找已完成，未找到任何近似项。"
 
     return <DialogDiv border padding={1} radius="std" backgroundColor="background">
         <div>
-            <LayouttedDiv size="large" margin={[2, 0, 0, 0]} padding={[0, 0, 0, 1]}>快速查找</LayouttedDiv>
-            <LayouttedDiv margin={[1, 0, 0, 0]} padding={[0, 0, 0, 1]}>{description}</LayouttedDiv>
-            <LayouttedDiv padding={[0, 0, 0, 1]}>适用的标签: {props.tags.map(t => <FormattedText key={t.metaTag.id} mr={1} bold color={t.metaTag.color as ThemeColors}>{t.metaTag.name}</FormattedText>)}</LayouttedDiv>
+            <div>
+                <div><FormattedText bold size="large">快速查找</FormattedText><FormattedText ml={1} size="std">共{props.images.length}项</FormattedText></div>
+                <div><Icon icon="tags" mr={1}/>{props.tags.map(t => <FormattedText key={t.metaTag.id} mr={1} bold color={t.metaTag.color as ThemeColors}>{t.metaTag.name}</FormattedText>)}</div>
+            </div>
+            <Separator/>
             <ScrollDiv>
-                <AspectGrid spacing={1} columnNum={8} items={props.images} children={(item) => (<Img filepath={item.filePath.sample} alt={`${item.id}`}/>)}/>
+                <SelectableGrid images={props.images} selected={selected} onUpdateSelected={setSelected}/>
             </ScrollDiv>
-            <LayouttedDiv margin={[2, 0, 0, 0]} textAlign="right">
+            <Separator/>
+            <BottomButtonBarDiv>
+                <Button mode="filled" type="primary" disabled={selected === null} onClick={openInAppPartition}><Icon icon="calendar-alt" mr={1}/>在时间分区中显示</Button>
                 <Button mode="filled" type="primary" disabled={props.images.length <= 0} onClick={openInApp}><Icon icon="up-right-from-square" mr={1}/>在Hedge App中打开</Button>
-            </LayouttedDiv>
+            </BottomButtonBarDiv>
         </div>
-        <div>
-            <LayouttedDiv size="large" margin={[2, 0, 1, 0]}>参考图像</LayouttedDiv>
-            <img src={props.dataURL} alt="example image"/>
-        </div>
+        <DetailPane image={selected} originDataURL={props.dataURL}/>
     </DialogDiv>
 }
 
-function Img(props: {filepath: string, alt: string}) {
+function SelectableGrid(props: {images: FindSimilarResultDetailImage[], selected: FindSimilarResultDetailImage | null, onUpdateSelected: (item: FindSimilarResultDetailImage) => void}) {
+    return <AspectGrid spacing={1} columnNum={8} items={props.images} children={(item) => <>
+        <SelectableGridImg filepath={item.filePath.sample} alt={`${item.id}`} onClick={() => props.onUpdateSelected(item)}/>
+        {item === props.selected && <SelectedBorder/>}
+    </>}/>
+}
+
+function SelectableGridImg(props: {filepath: string, alt: string, onClick: () => void}) {
     const [dataURL, setDataURL] = useState<string>()
 
     useEffect(() => {
@@ -250,7 +279,47 @@ function Img(props: {filepath: string, alt: string}) {
         })
     }, [props.filepath])
 
-    return <img src={dataURL} alt={props.alt}/>
+    return <img src={dataURL} alt={props.alt} onClick={props.onClick}/>
+}
+
+function DetailPane(props: {image: FindSimilarResultDetailImage | null, originDataURL: string}) {
+    const [dataURL, setDataURL] = useState<string>()
+
+    const [detail, setDetail] = useState<DetailIllust | null>(null)
+
+    useEffect(() => {
+        if(props.image !== null) {
+            server.illust.get(props.image.id)
+                .then(res => res.ok ? res.data : null)
+                .then(d => setDetail(d))
+            server.app.archiveFiles(props.image.filePath.thumbnail)
+                .then(res => res.ok ? res.data : null)
+                .then(d => setDataURL(d ?? ""))
+        }else if(detail !== null) {
+            setDetail(null)
+        }
+
+    }, [props.image])
+
+    return <DetailPaneDiv border radius="std" backgroundColor="block" padding={2}>
+        {dataURL === undefined && detail === null && <img src={props.originDataURL} alt="sample image"/>}
+        {dataURL !== undefined && <ThumbnailImage file={dataURL} alt="sample image"/>}
+        {detail !== null && <>
+            <LayouttedDiv mt={2} mb={1}>
+                <Icon icon="id-card" mr={1}/><b>{detail.id}</b>
+            </LayouttedDiv>
+            <Separator/>
+            <LayouttedDiv mt={1}>
+                <SourceInfo source={detail.source}/>
+            </LayouttedDiv>
+            <LayouttedDiv mt={1}>
+                <FileInfoDisplay mode="inline" extension={detail.extension} fileSize={detail.size} resolutionWidth={detail.resolutionWidth} resolutionHeight={detail.resolutionHeight} videoDuration={detail.videoDuration}/>
+            </LayouttedDiv>
+            <LayouttedDiv mt={1}>
+                <PartitionTimeDisplay partitionTime={detail.partitionTime} orderTime={detail.orderTime}/>
+            </LayouttedDiv>
+        </>}
+    </DetailPaneDiv>
 }
 
 const BackgroundDiv = styled.div`
@@ -279,19 +348,36 @@ const DialogDiv = styled(LayouttedDiv)`
     left: 50%;
     top: 50%;
     width: 80vw;
+    @media screen and (min-width: 1400px) {
+        width: 1120px;
+    }
+    height: 60vh;
     transform: translate(-50%, -50%);
     display: flex;
     flex-wrap: nowrap;
     gap: ${SPACINGS[1]};
     > div:first-child {
-        width: 70%;
+        width: 60%;
+        @media screen and (min-width: 1400px) {
+            width: 100%;
+        }
         display: flex;
         flex-direction: column;
+        > div:first-child {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: ${SPACINGS[1]};
+            margin-bottom: ${SPACINGS[1]};
+        }
     }
     > div:last-child {
-        width: 30%;
-        display: flex;
-        flex-direction: column;
+        width: 40%;
+        @media screen and (min-width: 1400px) {
+            width: 443px;
+            flex-shrink: 0;
+        }
         > img {
             width: 100%;
             height: 100%;
@@ -300,11 +386,52 @@ const DialogDiv = styled(LayouttedDiv)`
     }
 `
 
+const DetailPaneDiv = styled(LayouttedDiv)`
+    overflow-y: auto;
+    height: 100%;
+`
+
 const ScrollDiv = styled.div`
     overflow-y: auto;
-    max-height: 60vh;
     min-height: 30px;
     height: 100%;
     margin-top: ${SPACINGS[1]};
-    padding: 0 ${SPACINGS[1]};
+`
+
+const LoadingScrollDiv = styled.div`
+    min-height: 30px;
+    height: 100%;
+    margin-top: ${SPACINGS[1]};
+    text-align: center;
+`
+
+const BottomButtonBarDiv = styled.div`
+    margin-top: ${SPACINGS[1]};
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: ${SPACINGS[1]};
+`
+
+const SelectedBorder = styled.div`
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border: solid 3px ${LIGHT_MODE_COLORS["primary"]};
+    @media (prefers-color-scheme: dark) {
+        border-color: ${DARK_MODE_COLORS["primary"]};
+        border-width: 2px;
+    }
+
+    > div {
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        border: solid 1px white;
+        @media (prefers-color-scheme: dark) {
+            border-color: black;
+        }
+    }
 `

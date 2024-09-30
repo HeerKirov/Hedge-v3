@@ -1,6 +1,7 @@
 import { styled, css } from "styled-components"
+import { LayouttedDiv, Layoutted, Anchor, Icon } from "@/components"
 import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, SPACINGS } from "@/styles"
-import React, { ReactNode } from "react"
+import React, { ReactNode, useState } from "react"
 
 interface StandardSideLayoutProps {
     left?: ReactNode
@@ -67,6 +68,28 @@ export function AspectGrid<T>(props: AspectGridProps<T>) {
         ))}
     </AspectGridRootDiv>
 }
+
+export function CollapsePanel(props: { title?: ReactNode, prefix?: ReactNode, children?: ReactNode, panel?: Layoutted } & Layoutted) {
+    const { title, children, prefix, panel, ...attrs } = props
+    const [showDetails, setShowDetails] = useState(false)
+
+    return <LayouttedDiv {...attrs}>
+        <LayouttedDiv display="inline-block">
+            {prefix}
+            <Anchor onClick={() => setShowDetails(v => !v)}>
+                <CollapsePanelStyledIconDiv><Icon icon={showDetails ? "caret-down" : "caret-right"}/></CollapsePanelStyledIconDiv>
+                {title}
+            </Anchor>
+        </LayouttedDiv>
+        {showDetails && <LayouttedDiv {...panel}>{children}</LayouttedDiv>}
+    </LayouttedDiv>
+}
+
+const CollapsePanelStyledIconDiv = styled.div`
+    display: inline-block;
+    width: 10px;
+    margin-right: ${SPACINGS[1]};
+`
 
 const StandardSideLayoutRootDiv = styled.div`
     position: fixed;

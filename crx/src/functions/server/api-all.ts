@@ -22,9 +22,10 @@ export interface SimpleBook {
     filePath: FilePath | null
 }
 
-export interface SimpleIllust {
+export interface SimpleFolder {
     id: number
-    filePath: FilePath
+    address: string[]
+    type: "NODE" | "FOLDER"
 }
 
 export interface SimpleAuthor {
@@ -45,6 +46,18 @@ export interface SimpleTag {
     id: number
     name: string
     color: string | null
+}
+
+export interface RelatedSimpleAuthor extends SimpleAuthor {
+    isExported: boolean
+}
+
+export interface RelatedSimpleTopic extends SimpleTopic {
+    isExported: boolean
+}
+
+export interface RelatedSimpleTag extends SimpleTag {
+    isExported: boolean
 }
 
 export interface FilePath {

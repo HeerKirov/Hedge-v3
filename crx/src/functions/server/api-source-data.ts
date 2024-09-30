@@ -1,4 +1,5 @@
-import { LimitAndOffsetFilter, ListResult, OrderList, SimpleIllust, SourceDataPath, mapFromOrderList } from "./api-all"
+import { SimpleIllust } from "./api-illust"
+import { LimitAndOffsetFilter, ListResult, OrderList, SourceDataPath, mapFromOrderList } from "./api-all"
 import { createDataRequest, createPathDataRequest, createPathRequest, createQueryRequest } from "./impl"
 import { AlreadyExists, BasicException, NotFound, ResourceNotExist } from "./exceptions"
 

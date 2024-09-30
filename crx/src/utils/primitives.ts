@@ -211,5 +211,36 @@ export const files = {
 export const numbers = {
     compareTo(a: number, b: number): -1 | 0 | 1 {
         return a === b ? 0 : a > b ? 1 : -1
+    },
+    roundNDecimal(n: number, len: number): number {
+        const x = Math.pow(10, len)
+        return Math.round(n * x) / x
+    },
+    toBytesDisplay(byteSize: number): string {
+        if(byteSize >= 1 << 30) {
+            return `${numbers.roundNDecimal(byteSize / (1 << 30), 3)} GiB`
+        }else if(byteSize >= 1 << 20) {
+            return `${numbers.roundNDecimal(byteSize / (1 << 20), 3)} MiB`
+        }else if(byteSize >= 1 << 10) {
+            return `${numbers.roundNDecimal(byteSize / (1 << 10), 3)} KiB`
+        }else{
+            return `${numbers.roundNDecimal(byteSize, 3)} B`
+        }
+    },
+    toHourTimesDisplay(mills: number, optionalHour: boolean = true): string {
+        const secInterval = Math.floor(mills / 1000)
+        const sec = secInterval % 60
+        const min = (secInterval - sec) % 3600 / 60
+        const hour = Math.floor(secInterval / 3600)
+
+        function dbl(i: number): string | number {
+            return i >= 10 ? i : `0${i}`
+        }
+
+        if(optionalHour && hour <= 0) {
+            return `${dbl(min)}:${dbl(sec)}`
+        }else{
+            return `${dbl(hour)}:${dbl(min)}:${dbl(sec)}`
+        }
     }
 }
