@@ -290,7 +290,7 @@ export function useTimelineContext() {
 }
 
 export function useDetailIllustContext() {
-    const path = usePath<LocalDate>()
+    const path = usePath<LocalDate, string | LocalDate>(s => typeof s === "string" ? date.of(s) : s, s => s)
     const querySchema = useQuerySchema("ILLUST")
     const listviewController = useIllustViewController()
 
