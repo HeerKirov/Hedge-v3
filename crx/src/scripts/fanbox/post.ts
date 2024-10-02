@@ -7,13 +7,15 @@ import { onDOMContentLoaded } from "@/utils/document"
 import { Result } from "@/utils/primitives"
 
 onDOMContentLoaded(async () => {
-    console.log("[Hedge v3 Helper] fanbox/post script loaded.")
-    const sourceDataPath = getSourceDataPath()
-    const sourceData = await collectSourceData()
-    sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
-    sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
+    if(FANBOX_CONSTANTS.REGEXES.POST_PATHNAME.test(document.location.pathname)) {
+        console.log("[Hedge v3 Helper] fanbox/post script loaded.")
+        const sourceDataPath = getSourceDataPath()
+        const sourceData = await collectSourceData()
+        sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
+        sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
 
-    initializeUI(sourceDataPath)
+        initializeUI(sourceDataPath)
+    }
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
@@ -117,14 +119,13 @@ function getSourceDataPath(): SourceDataPath {
 }
 
 /**
- * 获得PID和作者名。
+ * 获得PID。
  */
-function getIdentityInfo(): {pid: string, artist: string} {
+function getIdentityInfo(): {pid: string} {
     const match = document.location.pathname.match(FANBOX_CONSTANTS.REGEXES.POST_PATHNAME)
     if(match && match.groups) {
         const pid = match.groups["PID"]
-        const artist = match.groups["ARTIST"]
-        return {pid, artist}
+        return {pid}
     }else{
         throw new Error("Cannot analyse pathname.")
     }

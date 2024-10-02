@@ -5,10 +5,11 @@ import { Result } from "@/utils/primitives"
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] fanbox/global script loaded.")
-    const setting = await settings.get()
-    if(setting.website.fanbox.enableUIOptimize) {
-        const creatorId = ifAndGetCreator()
-        if(creatorId !== null) {
+
+    const creatorId = ifAndGetCreator()
+    if(creatorId !== null) {
+        const setting = await settings.get()
+        if(setting.website.fanbox.enableUIOptimize) {
             enableUIOptimize(creatorId)
         }
     }
@@ -24,7 +25,7 @@ function enableUIOptimize(creatorId: string) {
             for(const mutation of mutationsList) {
                 for(const addedNode of mutation.addedNodes) {
                     if(addedNode instanceof HTMLElement) {
-                        const anchors = [...addedNode.querySelectorAll<HTMLAnchorElement>(`h1 > a[href=\"/@${creatorId}\"]`)]
+                        const anchors = [...addedNode.querySelectorAll<HTMLAnchorElement>("h1 > a")]
                         if(anchors.length > 0) {
                             callback(anchors)
                             observer.disconnect()
@@ -34,9 +35,7 @@ function enableUIOptimize(creatorId: string) {
             }
         })
 
-
-        //机制决定img都是懒加载的，此时的img应该都没有src。不过以防万一还是加了初始化容错
-        const anchors = [...document.querySelectorAll<HTMLAnchorElement>(`h1 > a[href=\"/@${creatorId}\"]`)]
+        const anchors = [...document.querySelectorAll<HTMLAnchorElement>("h1 > a")]
         if(anchors.length > 0) {
             callback(anchors)
             observer.disconnect()
@@ -86,5 +85,12 @@ async function fetchCreatorInfo(creatorId: string): Promise<Result<any, string>>
  */
 function ifAndGetCreator(): string | null {
     const match = document.location.pathname.match(FANBOX_CONSTANTS.REGEXES.ANY_CREATOR_PATHNAME)
-    return match && match.groups ? match.groups["CREATOR"] ?? null : null
+    if(FANBOX_CONSTANTS.HOSTS.includes(document.location.host) && match && match.groups && match.groups["CREATOR"]) {
+        return match.groups["CREATOR"]
+    }
+    const match2 = document.location.host.match(FANBOX_CONSTANTS.REGEXES.HOST)
+    if(match2 && match2.groups && match2.groups["CREATOR"] && match2.groups["CREATOR"] !== "www") {
+        return match2.groups["CREATOR"]
+    }
+    return null
 }

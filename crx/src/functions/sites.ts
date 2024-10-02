@@ -3,7 +3,7 @@ export const EHENTAI_CONSTANTS = {
     SITE_NAME: "ehentai",
     HOSTS: ["e-hentai.org", "exhentai.org"],
     PATTERNS: {
-        GALLERY_PATHNAME: (sourceId: string) => [`/g/${sourceId}/*`]
+        GALLERY_PATHNAME: (sourceId: string) => [`https://e-hentai.org/g/${sourceId}/*`, `https://exhentai.org/g/${sourceId}/*`],
     },
     REGEXES: {
         GALLERY_PATHNAME: /^\/g\/(?<GID>\d+)\/(?<TOKEN>[a-zA-Z0-9]+)\/?$/,
@@ -16,7 +16,7 @@ export const PIXIV_CONSTANTS = {
     SITE_NAME: "pixiv",
     HOSTS: ["www.pixiv.net"],
     PATTERNS: {
-        ARTWORK_PATHNAME: (sourceId: string) => [`/artworks/${sourceId}`]
+        ARTWORK_PATHNAME: (sourceId: string) => [`https://www.pixiv.net/artworks/${sourceId}`]
     },
     REGEXES: {
         ARTWORK_PATHNAME: /^\/artworks\/(?<PID>\d+)\/?$/,
@@ -29,12 +29,12 @@ export const SANKAKUCOMPLEX_CONSTANTS = {
     HOSTS: ["chan.sankakucomplex.com"],
     PATTERNS: {
         POST_PATHNAME: (pid: string) => [
-            `/*/posts/${pid}`,
-            `/*/posts/show/${pid}`,
-            `/*/post/show/${pid}`,
-            `/posts/${pid}`,
-            `/posts/show/${pid}`,
-            `/post/show/${pid}`
+            `https://chan.sankakucomplex.com/*/posts/${pid}`,
+            `https://chan.sankakucomplex.com/*/posts/show/${pid}`,
+            `https://chan.sankakucomplex.com/*/post/show/${pid}`,
+            `https://chan.sankakucomplex.com/posts/${pid}`,
+            `https://chan.sankakucomplex.com/posts/show/${pid}`,
+            `https://chan.sankakucomplex.com/post/show/${pid}`
         ],
         BOOK_PATHNAME: (bookId: number | string) => `/pool/show/${bookId}`
     },
@@ -47,10 +47,14 @@ export const FANBOX_CONSTANTS = {
     SITE_NAME: "fanbox",
     HOSTS: ["www.fanbox.cc"],
     PATTERNS: {
-        POST_PATHNAME: (sourceId: string) => [`/*/posts/${sourceId}`]
+        POST_PATHNAME: (sourceId: string) => [
+            `https://www.fanbox.cc/*/posts/${sourceId}`,
+            `https://*.fanbox.cc/posts/${sourceId}`
+        ]
     },
     REGEXES: {
-        POST_PATHNAME: /^\/@(?<ARTIST>[^/]+)\/posts\/(?<PID>\d+)\/?$/,
+        HOST: /^(?<CREATOR>[^.]+)\.fanbox\.cc$/,
+        POST_PATHNAME: /^(\/@(?<ARTIST>[^/]+))?\/posts\/(?<PID>\d+)\/?$/,
         ANY_CREATOR_PATHNAME: /^\/@(?<CREATOR>[^/]+)/
     }
 }
@@ -104,7 +108,7 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
         sourceDataPages: PIXIV_CONSTANTS.PATTERNS.ARTWORK_PATHNAME
     },
     [FANBOX_CONSTANTS.SITE_NAME]: {
-        host: FANBOX_CONSTANTS.HOSTS,
+        host: [...FANBOX_CONSTANTS.HOSTS, FANBOX_CONSTANTS.REGEXES.HOST],
         activeTabPages: [
             FANBOX_CONSTANTS.REGEXES.POST_PATHNAME
         ],
@@ -145,15 +149,15 @@ interface WebsiteConstant {
     /**
      * host：此站点包括哪些可用host。在active-tab识别中会用到。
      */
-    host: string[]
+    host: (string | RegExp)[]
     /**
      * active-tab支持：此站点中，可以激活active-tab的信息播报的页面。这些页面会发送SUBMIT_PAGE_INFO信息，并响应REPORT_PAGE_INFO事件。
-     * 提供的值应当是一组正则表达式，仅匹配pathname部分。
+     * 由于其使用方式是对当前页面的pathname部分进行测试，因此提供的值应当是一组正则表达式，仅匹配pathname部分。
      */
     activeTabPages?: RegExp[]
     /**
      * source-data支持：此站点中，可以支持来源数据收集的页面。这些页面会发送SUBMIT_SOURCE_DATA信息，并响应REPORT_SOURCE_DATA事件。
-     * 返回的值应当是一组通配符字符串，仅包含应当匹配的pathname部分。
+     * 由于其使用方式是调用tab API进行通配，因此提供的值应当是一组通配符字符串，匹配完整的url。
      */
     sourceDataPages?: (sourceId: string) => string[]
 }

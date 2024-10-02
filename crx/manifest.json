@@ -56,12 +56,12 @@
 			"run_at": "document_start"
 		},
 		{
-			"matches": ["https://www.fanbox.cc/*"],
+			"matches": ["https://*.fanbox.cc/*"],
 			"js": ["src/scripts/fanbox/global.ts"],
 			"run_at": "document_start"
 		},
         {
-			"matches": ["https://www.fanbox.cc/*/posts/*"],
+			"matches": ["https://www.fanbox.cc/*/posts/*", "https://*.fanbox.cc/posts/*"],
 			"js": ["src/scripts/fanbox/post.ts"],
 			"run_at": "document_start"
 		},
@@ -71,7 +71,7 @@
 			"run_at": "document_start"
 		},
 		{
-			"matches": ["https://danbooru.donmai.us/posts/*", "https://gelbooru.com/*"],
+			"matches": ["https://www.pixiv.net/artworks/*", "https://danbooru.donmai.us/posts/*", "https://gelbooru.com/*"],
 			"js": ["src/scripts/utils/referrer-policy.ts"],
 			"run_at": "document_start"
 		}

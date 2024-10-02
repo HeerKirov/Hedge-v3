@@ -74,7 +74,7 @@ export function useTabSourceInfo() {
 async function matchTabSourceData(tabId: number, url: URL): Promise<{tabId: number, siteName: string, host: string, sourceDataPath: SourceDataPath | null} | null> {
     for(const siteName in WEBSITES) {
         const site = WEBSITES[siteName]
-        if(site.host.includes(url.host)) {
+        if(site.host.some(host => typeof host === "string" ? host === url.host : host.test(url.host))) {
             if(site.activeTabPages && site.activeTabPages.some(i => i.test(url.pathname))) {
                 const pageInfo = await sendMessageToTab(tabId, "REPORT_PAGE_INFO", undefined)
                 if(pageInfo?.path) {

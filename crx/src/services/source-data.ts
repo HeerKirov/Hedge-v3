@@ -33,8 +33,8 @@ export const sourceDataManager = {
         //为了解决这个问题，暂且加回了主动拉取的能力，在这种没有数据的情况下主动去页面请求数据。
         console.warn(`[sourceDataManager] ${path.sourceSite}-${path.sourceId} source data not found in cache. Try to pull it from tab.`)
         const website = WEBSITES[path.sourceSite]
-        const pagePathNames = website?.sourceDataPages?.(path.sourceId)
-        if(pagePathNames === undefined) {
+        const pageURL = website?.sourceDataPages?.(path.sourceId)
+        if(pageURL === undefined) {
             notify({
                 title: "来源数据收集异常",
                 message: `${path.sourceSite}-${path.sourceId}: 无法正确生成提取页面的URL。`
@@ -42,7 +42,6 @@ export const sourceDataManager = {
             console.warn(`[sourceDataManager] ${path.sourceSite}-${path.sourceId} cannot generate pattern URL.`)
             return null
         }
-        const pageURL = website.host.flatMap(host => pagePathNames.map(p => `https://${host}${p}`))
         const tabs = await chrome.tabs.query({currentWindow: true, url: pageURL})
         if(tabs.length <= 0 || tabs[0].id === undefined) {
             notify({
