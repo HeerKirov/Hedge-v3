@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.components.appdata
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.heerkirov.hedge.server.constants.BUILTIN_SITES
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.Json.updateField
@@ -87,6 +88,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
         register.map("0.5.0", ::modifyMetaAndImportArguments)
         register.map("0.6.0", ::addImportConvertArguments)
         register.map("0.8.0", ::addManyArguments)
+        register.map("0.10.0", ::createBuiltinSites)
     }
 
     /**
@@ -238,6 +240,39 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             "query" to json["query"],
             "source" to json["source"],
             "import" to json["import"].upsertField("resolveConflictByParent") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() },
+            "findSimilar" to json["findSimilar"]
+        ).toJsonNode()
+    }
+
+    /**
+     * 在0.10.0版本，新增了内建站点，因此需要重构sites列表。
+     */
+    private fun createBuiltinSites(json: JsonNode): JsonNode {
+        val sites = json["source"]["sites"].map { node ->
+            val name = node["name"].asText()
+            if(BUILTIN_SITES.any { it.name == name }) {
+                mapOf("name" to name, "isBuiltin" to "BUILTIN")
+            }else{
+                mapOf(
+                    "name" to name,
+                    "isBuiltin" to "CUSTOM",
+                    "title" to json["title"],
+                    "idMode" to SourceOption.SiteIdMode.NUMBER.name,
+                    "partMode" to json["partMode"],
+                    "additionalInfo" to json["availableAdditionalInfo"],
+                    "sourceLinkRules" to json["sourceLinkGenerateRules"],
+                    "tagTypes" to json["availableTypes"],
+                    "tagTypeMappings" to emptyMap<String, String>()
+                )
+            }
+        }
+        return mapOf(
+            "server" to json["server"],
+            "storage" to json["storage"],
+            "meta" to json["meta"],
+            "query" to json["query"],
+            "source" to mapOf("sites" to sites).toJsonNode(),
+            "import" to json["import"],
             "findSimilar" to json["findSimilar"]
         ).toJsonNode()
     }

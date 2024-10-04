@@ -20,6 +20,7 @@ import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.functions.manager.AssociateManager
 import com.heerkirov.hedge.server.functions.manager.IllustManager
 import com.heerkirov.hedge.server.functions.manager.SourceDataManager
+import com.heerkirov.hedge.server.functions.manager.SourceSiteManager
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
@@ -51,6 +52,7 @@ class IllustService(private val appdata: AppDataManager,
                     private val kit: IllustKit,
                     private val illustManager: IllustManager,
                     private val associateManager: AssociateManager,
+                    private val sourceSiteManager: SourceSiteManager,
                     private val sourceManager: SourceDataManager,
                     private val queryManager: QueryManager) {
     private val orderTranslator = OrderTranslator {
@@ -457,7 +459,7 @@ class IllustService(private val appdata: AppDataManager,
 
         val source = sourcePathOf(row)
         return if(source != null) {
-            val site = appdata.setting.source.sites.find { it.name == source.sourceSite }
+            val site = sourceSiteManager.get(source.sourceSite)
             val sourceRow = data.db.from(SourceDatas).select()
                 .where { (SourceDatas.sourceSite eq source.sourceSite) and (SourceDatas.sourceId eq source.sourceId) }
                 .firstOrNull()
@@ -474,7 +476,7 @@ class IllustService(private val appdata: AppDataManager,
                     .map { SourceBooks.createEntity(it) }
                     .map { SourceBookDto(it.code, it.title, it.otherTitle) }
                 val additionalInfo = (sourceRow[SourceDatas.additionalInfo] ?: emptyMap()).entries.map { (k, v) ->
-                    SourceDataAdditionalInfoDto(k, site?.availableAdditionalInfo?.find { it.field == k }?.label ?: "", v)
+                    SourceDataAdditionalInfoDto(k, site?.additionalInfo?.find { it.field == k }?.label ?: "", v)
                 }
 
                 IllustImageSourceDataRes(

@@ -36,10 +36,11 @@ fun runApplication(options: ApplicationOptions) {
             val taskCounter = TaskCounterModule(bus)
             val taskScheduler = define { TaskSchedulerModule(appStatus, appdata, bus, options) }
 
+            val sourceSiteManager = SourceSiteManager(appdata, repo, bus)
             val sourceAnalyzeManager = SourceAnalyzeManager(appdata)
-            val sourceTagManager = SourceTagManager(appdata, repo, bus)
             val sourceBookManager = SourceBookManager(repo, bus)
-            val sourceManager = SourceDataManager(appdata, repo, bus, sourceTagManager, sourceBookManager)
+            val sourceTagManager = SourceTagManager(repo, bus, sourceSiteManager)
+            val sourceDataManager = SourceDataManager(repo, bus, sourceSiteManager, sourceTagManager, sourceBookManager)
             val sourceMappingManager = SourceMappingManager(appdata, repo, bus, sourceTagManager)
             val importManager = ImportManager(appdata, repo, bus, file)
 
@@ -61,29 +62,29 @@ fun runApplication(options: ApplicationOptions) {
             val stagingPostManager = StagingPostManager(repo, bus)
             val bookManager = BookManager(repo, bus, bookKit)
             val folderManager = FolderManager(repo, bus, folderKit)
-            val trashManager = TrashManager(repo, bus, backendExporter, illustKit, file, bookManager, folderManager, associateManager, sourceManager)
-            val illustManager = IllustManager(appdata, repo, bus, illustKit, file, sourceManager, sourceMappingManager, associateManager, bookManager, folderManager, importManager, trashManager)
+            val trashManager = TrashManager(repo, bus, backendExporter, illustKit, file, bookManager, folderManager, associateManager, sourceDataManager)
+            val illustManager = IllustManager(appdata, repo, bus, illustKit, file, sourceDataManager, sourceMappingManager, associateManager, bookManager, folderManager, importManager, trashManager)
             val historyRecordManager = HistoryRecordManager(repo)
             val queryManager = QueryManager(appdata, repo, bus)
 
             define { EventCompositorImpl(repo, bus, backendExporter) }
             define { FileGeneratorImpl(appStatus, appdata, repo, bus, taskCounter, taskScheduler, trashManager) }
             define { DailyProcessorImpl(appdata, repo, bus, taskScheduler) }
-            define { ImportProcessorImpl(appdata, repo, bus, taskScheduler, similarFinder, illustManager, sourceAnalyzeManager, sourceManager, sourceMappingManager) }
+            define { ImportProcessorImpl(appdata, repo, bus, taskScheduler, similarFinder, illustManager, sourceAnalyzeManager, sourceDataManager, sourceMappingManager) }
 
             AllServices(
                 homepage = HomepageService(appdata, repo, stagingPostManager, taskCounter),
-                illust = IllustService(appdata, repo, bus, illustKit, illustManager, associateManager, sourceManager, queryManager),
+                illust = IllustService(appdata, repo, bus, illustKit, illustManager, associateManager, sourceSiteManager, sourceDataManager, queryManager),
                 book = BookService(appdata, repo, bus, bookKit, bookManager, illustManager, queryManager),
                 folder = FolderService(repo, bus, folderKit, folderManager, illustManager),
                 annotation = AnnotationService(repo, bus, annotationKit, queryManager),
                 tag = TagService(repo, bus, tagKit, sourceMappingManager),
                 author = AuthorService(appdata, repo, bus, authorKit, queryManager, sourceMappingManager),
                 topic = TopicService(appdata, repo, bus, topicKit, queryManager, sourceMappingManager),
-                import = ImportService(appdata, repo, bus, file, illustManager, importManager, sourceAnalyzeManager, sourceManager),
+                import = ImportService(appdata, repo, bus, file, illustManager, importManager, sourceAnalyzeManager, sourceDataManager),
                 stagingPost = StagingPostService(illustManager, stagingPostManager),
                 trash = TrashService(appdata, repo, trashManager),
-                sourceData = SourceDataService(appdata, repo, sourceManager, sourceAnalyzeManager, queryManager),
+                sourceData = SourceDataService(repo, sourceSiteManager, sourceDataManager, sourceAnalyzeManager, queryManager),
                 sourceMapping = SourceMappingService(repo, sourceMappingManager),
                 note = NoteService(repo, bus),
                 query = QueryService(repo, queryManager, historyRecordManager),
@@ -93,7 +94,7 @@ fun runApplication(options: ApplicationOptions) {
                 illustUtil = IllustUtilService(appdata, repo, illustManager),
                 exportUtil = ExportUtilService(repo, file),
                 fileUtil = FileUtilService(repo, file, bus),
-                setting = SettingService(appdata, repo, bus)
+                setting = SettingService(appdata, bus, sourceSiteManager)
             )
         }
 

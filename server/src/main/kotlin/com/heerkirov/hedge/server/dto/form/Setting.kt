@@ -12,27 +12,6 @@ import com.heerkirov.hedge.server.library.form.Range
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.types.Opt
 
-data class SiteCreateForm(@NotBlank @Length(16) val name: String,
-                          @NotBlank val title: String,
-                          val partMode: SourceOption.SitePartMode = SourceOption.SitePartMode.NO,
-                          val ordinal: Int? = null,
-                          val availableAdditionalInfo: List<SourceOption.AvailableAdditionalInfo> = emptyList(),
-                          val sourceLinkGenerateRules: List<String> = emptyList(),
-                          val availableTypes: List<String> = emptyList())
-
-data class SiteUpdateForm(@NotBlank val title: Opt<String>,
-                          val ordinal: Opt<Int>,
-                          val availableAdditionalInfo: Opt<List<SourceOption.AvailableAdditionalInfo>>,
-                          val sourceLinkGenerateRules: Opt<List<String>>,
-                          val availableTypes: Opt<List<String>>)
-
-data class SiteBulkForm(@NotBlank @Length(16) val name: String,
-                        @NotBlank val title: Opt<String>,
-                        val partMode: Opt<SourceOption.SitePartMode>,
-                        val availableAdditionalInfo: Opt<List<SourceOption.AvailableAdditionalInfo>>,
-                        val sourceLinkGenerateRules: Opt<List<String>>,
-                        val availableTypes: Opt<List<String>>)
-
 data class ImportOptionUpdateForm(val autoAnalyseSourceData: Opt<Boolean>,
                                   val preventNoneSourceData: Opt<Boolean>,
                                   val autoReflectMetaTag: Opt<Boolean>,

@@ -4,6 +4,13 @@ import com.heerkirov.hedge.server.utils.tuples.Tuple3
 import com.heerkirov.hedge.server.utils.tuples.t3
 
 /**
+ * 当尝试对内建内容进行写操作时，抛出此异常。
+ * 抛出位置：
+ * - site add/update/delete的对象是内建内容时
+ */
+class BuiltinNotWritableError(objectName: String) : BadRequestException<String>("BUILTIN_NOT_WRITABLE", "Builtin object '$objectName' is not writable.", objectName)
+
+/**
  * 当指定导入的文件不可访问时，抛出此异常。
  * 抛出位置：
  * - import从本地导入

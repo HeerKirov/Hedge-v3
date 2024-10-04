@@ -1,5 +1,8 @@
 package com.heerkirov.hedge.server.components.appdata
 
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.heerkirov.hedge.server.dto.form.FindSimilarResultResolveForm.CloneImageResolution
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAuthorType
 import com.heerkirov.hedge.server.enums.TagTopicType
@@ -121,14 +124,36 @@ data class SourceOption(
      */
     val sites: MutableList<Site>
 ) {
-    data class Site(val name: String,
-                    var title: String,
-                    val partMode: SitePartMode,
-                    var availableAdditionalInfo: List<AvailableAdditionalInfo>,
-                    var sourceLinkGenerateRules: List<String>,
-                    var availableTypes: List<String>)
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "isBuiltin")
+    @JsonSubTypes(value = [
+        JsonSubTypes.Type(value = CustomSite::class, name = "CUSTOM"),
+        JsonSubTypes.Type(value = BuiltinSite::class, name = "BUILTIN"),
+    ])
+    sealed interface Site { val name: String }
+
+    data class CustomSite(override val name: String,
+                          var title: String?,
+                          val idMode: SiteIdMode,
+                          val partMode: SitePartMode,
+                          var additionalInfo: List<AvailableAdditionalInfo>,
+                          var sourceLinkRules: List<String>,
+                          var tagTypes: List<String>,
+                          var tagTypeMappings: Map<String, String>) : Site
+
+    data class BuiltinSite(override val name: String) : Site
 
     data class AvailableAdditionalInfo(val field: String, val label: String)
+
+    enum class SiteIdMode {
+        /**
+         * 仅允许数字ID。
+         */
+        NUMBER,
+        /**
+         * 也允许字符串ID。
+         */
+        STRING
+    }
 
     enum class SitePartMode {
         /**

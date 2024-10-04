@@ -12,6 +12,7 @@ import com.heerkirov.hedge.server.enums.SourceEditStatus
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.manager.SourceAnalyzeManager
 import com.heerkirov.hedge.server.functions.manager.SourceDataManager
+import com.heerkirov.hedge.server.functions.manager.SourceSiteManager
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.utils.business.collectBulkResult
 import com.heerkirov.hedge.server.utils.business.filePathFrom
@@ -24,9 +25,9 @@ import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
 
-class SourceDataService(private val appdata: AppDataManager,
-                        private val data: DataRepository,
-                        private val sourceManager: SourceDataManager,
+class SourceDataService(private val data: DataRepository,
+                        private val sourceSiteManager: SourceSiteManager,
+                        private val sourceDataManager: SourceDataManager,
                         private val sourceAnalyzeManager: SourceAnalyzeManager,
                         private val queryManager: QueryManager) {
     private val orderTranslator = OrderTranslator {
@@ -42,7 +43,7 @@ class SourceDataService(private val appdata: AppDataManager,
         val schema = if(filter.query.isNullOrBlank()) null else {
             queryManager.querySchema(filter.query, QueryManager.Dialect.SOURCE_DATA).executePlan ?: return ListResult(0, emptyList())
         }
-        val titles = appdata.setting.source.sites.associate { it.name to it.title }
+        val titles = sourceSiteManager.list().associate { it.name to it.title }
         return data.db.from(SourceDatas)
             .let { schema?.joinConditions?.fold(it) { acc, join -> if(join.left) acc.leftJoin(join.table, join.condition) else acc.innerJoin(join.table, join.condition) } ?: it }
             .let { if(filter.sourceTag == null) it else {
@@ -86,8 +87,8 @@ class SourceDataService(private val appdata: AppDataManager,
      */
     fun create(form: SourceDataCreateForm) {
         data.db.transaction {
-            sourceManager.checkSourceSite(form.sourceSite, form.sourceId)
-            sourceManager.createOrUpdateSourceData(form.sourceSite, form.sourceId,
+            sourceDataManager.checkSourceSite(form.sourceSite, form.sourceId)
+            sourceDataManager.createOrUpdateSourceData(form.sourceSite, form.sourceId,
                 title = form.title, description = form.description, tags = form.tags,
                 books = form.books, relations = form.relations, links = form.links,
                 additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
@@ -105,8 +106,8 @@ class SourceDataService(private val appdata: AppDataManager,
     fun bulk(bulks: List<SourceDataCreateForm>): BulkResult<SourceDataIdentity> {
         return bulks.collectBulkResult({ SourceDataIdentity(it.sourceSite, it.sourceId) }) { form ->
             data.db.transaction {
-                sourceManager.checkSourceSite(form.sourceSite, form.sourceId)
-                sourceManager.createOrUpdateSourceData(form.sourceSite, form.sourceId,
+                sourceDataManager.checkSourceSite(form.sourceSite, form.sourceId)
+                sourceDataManager.createOrUpdateSourceData(form.sourceSite, form.sourceId,
                     title = form.title, description = form.description, status = form.status,
                     tags = form.tags, books = form.books, relations = form.relations, links = form.links,
                     additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
@@ -138,9 +139,9 @@ class SourceDataService(private val appdata: AppDataManager,
             .select()
             .map { SourceBooks.createEntity(it) }
             .map { SourceBookDto(it.code, it.title, it.otherTitle) }
-        val site = appdata.setting.source.sites.find { it.name == sourceSite }
+        val site = sourceSiteManager.get(sourceSite)
         val additionalInfo = (row[SourceDatas.additionalInfo] ?: emptyMap()).entries.map { (k, v) ->
-            SourceDataAdditionalInfoDto(k, site?.availableAdditionalInfo?.find { it.field == k }?.label ?: "", v)
+            SourceDataAdditionalInfoDto(k, site?.additionalInfo?.find { it.field == k }?.label ?: "", v)
         }
 
         return SourceDataDetailRes(sourceSite, site?.title ?: sourceSite, sourceId,
@@ -176,8 +177,8 @@ class SourceDataService(private val appdata: AppDataManager,
      */
     fun update(sourceSite: String, sourceId: String, form: SourceDataUpdateForm) {
         data.db.transaction {
-            sourceManager.checkSourceSite(sourceSite, sourceId)
-            sourceManager.createOrUpdateSourceData(sourceSite, sourceId,
+            sourceDataManager.checkSourceSite(sourceSite, sourceId)
+            sourceDataManager.createOrUpdateSourceData(sourceSite, sourceId,
                 title = form.title, description = form.description, tags = form.tags,
                 books = form.books, relations = form.relations, links = form.links,
                 additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
@@ -191,7 +192,7 @@ class SourceDataService(private val appdata: AppDataManager,
      */
     fun delete(sourceSite: String, sourceId: String) {
         data.db.transaction {
-            sourceManager.deleteSourceData(sourceSite, sourceId)
+            sourceDataManager.deleteSourceData(sourceSite, sourceId)
         }
     }
 

@@ -1,7 +1,13 @@
 package com.heerkirov.hedge.server.dto.res
 
+import com.heerkirov.hedge.server.components.appdata.SourceOption.*
+import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.SourceEditStatus
 import java.time.Instant
+
+data class SourceSiteRes(val name: String, val title: String, val isBuiltin: Boolean, val idMode: SiteIdMode, val partMode: SitePartMode,
+                         val additionalInfo: List<AvailableAdditionalInfo>, val sourceLinkRules: List<String>,
+                         val tagTypes: List<String>, val tagTypeMappings: Map<String, String>)
 
 data class SourceDataRes(val sourceSite: String, val sourceSiteName: String, val sourceId: String,
                          val tagCount: Int, val bookCount: Int, val relationCount: Int,
@@ -31,3 +37,11 @@ data class SourceTagDto(val code: String, val type: String, val name: String, va
 data class SourceBookDto(val code: String, val title: String, val otherTitle: String?)
 
 data class SourceDataIdentity(val sourceSite: String, val sourceId: String)
+
+data class SourceMappingBatchQueryResult(val site: String, val type: String, val code: String, val sourceTag: SourceTagDto, val mappings: List<SourceMappingTargetItemDetail>)
+
+data class SourceMappingTargetItemDetail(val metaType: MetaType, val metaTag: Any /* simple meta tag*/)
+
+data class SourceMappingTargetItem(val metaType: MetaType, val metaId: Int)
+
+data class MappingSourceTagDto(val site: String, val type: String, val code: String, val name: String, val otherName: String?)

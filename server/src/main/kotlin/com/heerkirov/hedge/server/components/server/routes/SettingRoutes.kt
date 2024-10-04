@@ -39,6 +39,7 @@ class SettingRoutes(private val setting: SettingService) : Routes {
                 }
                 path("source/sites") {
                     get(::listSourceSite)
+                    get("builtins", ::listBuiltinSourceSite)
                     put(::updateAllSourceSite)
                     post(::createSourceSite)
                     path("{name}") {
@@ -107,6 +108,10 @@ class SettingRoutes(private val setting: SettingService) : Routes {
 
     private fun listSourceSite(ctx: Context) {
         ctx.json(setting.listSourceSite())
+    }
+
+    private fun listBuiltinSourceSite(ctx: Context) {
+        ctx.json(setting.listBuiltinSourceSite())
     }
 
     private fun createSourceSite(ctx: Context) {

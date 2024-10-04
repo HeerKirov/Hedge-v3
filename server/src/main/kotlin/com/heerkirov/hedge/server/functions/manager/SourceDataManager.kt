@@ -27,9 +27,9 @@ import org.ktorm.entity.sequenceOf
 import org.ktorm.support.sqlite.bulkInsertReturning
 import java.time.Instant
 
-class SourceDataManager(private val appdata: AppDataManager,
-                        private val data: DataRepository,
+class SourceDataManager(private val data: DataRepository,
                         private val bus: EventBus,
+                        private val sourceSiteManager: SourceSiteManager,
                         private val sourceTagManager: SourceTagManager,
                         private val sourceBookManager: SourceBookManager) {
     /**
@@ -39,7 +39,7 @@ class SourceDataManager(private val appdata: AppDataManager,
      */
     fun checkSourceSite(sourceSite: String?, sourceId: String?, sourcePart: Int?, sourcePartName: String?): SourceDataIdentity? {
         return if(sourceSite != null) {
-            val site = appdata.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
+            val site = sourceSiteManager.get(sourceSite) ?: throw be(ResourceNotExist("site", sourceSite))
 
             if(sourceId.isNullOrEmpty()) throw be(ParamRequired("sourceId"))
             else if(!checkSourceId(sourceId)) throw be(ParamError("sourceId"))
@@ -73,7 +73,7 @@ class SourceDataManager(private val appdata: AppDataManager,
      */
     fun checkSourceSite(sourceSite: String?, sourceId: String?): SourceDataIdentity? {
         return if(sourceSite != null) {
-            appdata.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
+            sourceSiteManager.get(sourceSite) ?: throw be(ResourceNotExist("site", sourceSite))
 
             if(sourceId.isNullOrEmpty()) throw be(ParamRequired("sourceId"))
             else if(!checkSourceId(sourceId)) throw be(ParamError("sourceId"))
@@ -185,8 +185,8 @@ class SourceDataManager(private val appdata: AppDataManager,
      * @throws ResourceNotExist ("additionalInfo", field) 如果存在不合法的字段，抛出此异常。
      */
     private fun validateAdditionalInfo(sourceSite: String, additionalInfo: Map<String, String>) {
-        val site = appdata.setting.source.sites.first { it.name == sourceSite }
-        val availableFields = site.availableAdditionalInfo.asSequence().map { it.field }.toSet()
+        val site = sourceSiteManager.get(sourceSite)!!
+        val availableFields = site.additionalInfo.asSequence().map { it.field }.toSet()
         for (field in additionalInfo.keys) {
             if(field !in availableFields) throw be(ResourceNotExist("additionalInfo", field))
         }
@@ -196,7 +196,7 @@ class SourceDataManager(private val appdata: AppDataManager,
      * 尝试根据site的规则，自动生成新的links，与表单的links一起返回。
      */
     private fun generateLinks(sourceSite: String, sourceId: String, newInfo: Map<String, String>, newLinks: Opt<List<String>>, oldInfo: Map<String, String>?, oldLinks: List<String>?): Opt<List<String>> {
-        val rules = appdata.setting.source.sites.first { it.name == sourceSite }.sourceLinkGenerateRules
+        val rules = sourceSiteManager.get(sourceSite)!!.sourceLinkRules
         if(rules.isEmpty()) {
             return newLinks
         }

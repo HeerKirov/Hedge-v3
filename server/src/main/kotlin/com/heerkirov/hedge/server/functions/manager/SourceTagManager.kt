@@ -1,6 +1,5 @@
 package com.heerkirov.hedge.server.functions.manager
 
-import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.SourceTags
@@ -19,13 +18,13 @@ import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
 
-class SourceTagManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus) {
+class SourceTagManager(private val data: DataRepository, private val bus: EventBus, private val sourceSiteManager: SourceSiteManager) {
     /**
      * 校验source的合法性。
      * @throws ResourceNotExist ("site", string) 给出的source不存在
      */
     fun checkSourceSite(site: String) {
-        appdata.setting.source.sites.firstOrNull { it.name == site } ?: throw be(ResourceNotExist("site", site))
+        sourceSiteManager.get(site) ?: throw be(ResourceNotExist("site", site))
     }
 
     /**
@@ -35,8 +34,8 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
         return data.db.sequenceOf(SourceTags)
             .firstOrNull { (it.site eq sourceSite) and (it.type eq sourceTagType) and (it.code eq sourceTagCode) }
             ?: run {
-                val site = appdata.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
-                if(site.availableTypes.indexOf(sourceTagType) < 0) throw be(ResourceNotExist("sourceTagType", site))
+                val site = sourceSiteManager.get(sourceSite) ?: throw be(ResourceNotExist("site", sourceSite))
+                if(site.tagTypes.indexOf(sourceTagType) < 0) throw be(ResourceNotExist("sourceTagType", site))
 
                 val id = data.db.insertAndGenerateKey(SourceTags) {
                     set(it.site, sourceSite)
@@ -64,8 +63,8 @@ class SourceTagManager(private val appdata: AppDataManager, private val data: Da
      * @throws ResourceNotExist ("sourceTagType", string[]) 列出的tagType不存在
      */
     fun getAndUpsertSourceTags(sourceSite: String, tags: List<SourceTagForm>): List<Int> {
-        val site = appdata.setting.source.sites.firstOrNull { it.name == sourceSite } ?: throw be(ResourceNotExist("site", sourceSite))
-        tags.asSequence().map { it.type }.distinct().filter { site.availableTypes.indexOf(it) < 0 }.toList().let { if(it.isNotEmpty()) throw be(ResourceNotExist("sourceTagType", it)) }
+        val site = sourceSiteManager.get(sourceSite) ?: throw be(ResourceNotExist("site", sourceSite))
+        tags.asSequence().map { it.type }.distinct().filter { site.tagTypes.indexOf(it) < 0 }.toList().let { if(it.isNotEmpty()) throw be(ResourceNotExist("sourceTagType", it)) }
 
         val dbTags = tags.groupBy ({ it.type }) { it.code }.flatMap { (type, codes) -> data.db.sequenceOf(SourceTags).filter { (it.site eq sourceSite) and (it.type eq type) and (it.code inList codes) }.toList() }
         val dbTagMap = dbTags.associateBy { Pair(it.type, it.code.toAlphabetLowercase()) }
