@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { SelectList } from "@/components/form"
-import { Flex, FlexItem } from "@/components/layout"
-import { SiteCreateForm, SiteUpdateForm } from "@/functions/http-client/api/setting"
+import { Icon, Button } from "@/components/universal"
 import { useSettingSite } from "@/services/setting"
 import { computedMutable } from "@/utils/reactivity"
-import DimSourceSiteEditor from "./SourceSiteEditor.vue"
-import DimSourceSiteCreator from "./SourceSiteCreator.vue"
+import Editor from "./Editor.vue"
+import Creator from "./Creator.vue"
 
-const { data: sites, createItem, updateItem, deleteItem } = useSettingSite()
+const { data: sites } = useSettingSite()
 
-const selectItems = computed(() => sites.value?.map(site => ({label: site.title, value: site.name})).concat([{label: "新建站点…", value: "<new>"}]))
+const selectItems = computed(() => sites.value?.map(site => ({label: site.title, value: site.name})))
 
 const selectedItem = computedMutable<string | undefined>(o => {
     if((o !== undefined && sites.value?.find(i => i.name === o) !== undefined) || (o === "<new>")) {
@@ -19,50 +17,43 @@ const selectedItem = computedMutable<string | undefined>(o => {
     return undefined
 })
 const selectedIndex = computed(() => selectedItem.value && sites.value && selectedItem.value !== "<new>" ? sites.value.findIndex(i => i.name === selectedItem.value) : null)
-const selectedSite = computed(() => selectedIndex.value !== null ? sites.value![selectedIndex.value] ?? null : null)
 
-const create = async (form: SiteCreateForm) => {
-    await createItem(form)
-}
-
-const update = async (form: SiteUpdateForm) => {
-    if(selectedItem.value) {
-        await updateItem(selectedItem.value, form)
-    }
-}
-
-const trash = async () => {
-    if(selectedItem.value && await deleteItem(selectedItem.value)) {
-        selectedItem.value = undefined
-    }
+const created = async (name: string) => {
+    selectedItem.value = name
 }
 
 </script>
 
 <template>
-    <label class="label mt-2 mb-1">来源站点</label>
-    <Flex :class="$style['site-list']" horizontal="stretch" :spacing="1">
-        <FlexItem :width="35">
-            <SelectList :items="selectItems" v-model:value="selectedItem"/>
-        </FlexItem>
-        <FlexItem :width="65">
-            <DimSourceSiteEditor v-if="selectedSite !== null"
-                                :name="selectedSite.name" 
-                                :title="selectedSite.title" 
-                                :part-mode="selectedSite.partMode" 
-                                :source-link-generate-rules="selectedSite.sourceLinkGenerateRules"
-                                :available-additional-info="selectedSite.availableAdditionalInfo"
-                                :available-types="selectedSite.availableTypes"
-                                :ordinal="selectedIndex!" 
-                                @update="update" @delete="trash"/>
-            <DimSourceSiteCreator v-else-if="selectedItem === '<new>'" @create="create"/>
-        </FlexItem>
-    </Flex>
+    <div class="flex no-wrap align-stretch gap-2">
+        <div :class="[$style['left-column'], 'flex-item', 'w-35']">
+            <div class="flex jc-between align-baseline">
+                <label class="label mt-2 mb-1">来源站点</label>
+                <a :class="{'is-font-size-small': true, 'has-text-secondary': selectedItem === '<new>'}" @click="selectedItem = '<new>'"><Icon icon="plus"/>添加站点</a>
+            </div>
+            <div class="flex column no-wrap align-stretch">
+                <Button v-for="item in selectItems" :key="item.value"
+                        :mode="selectedItem === item.value ? 'filled' : undefined"
+                        :type="selectedItem === item.value ? 'primary' : undefined"
+                        @click="selectedItem = item.value">
+                    {{item.label}}
+                </Button>
+            </div>
+        </div>
+        <div class="flex-item w-65">
+            <Editor v-if="selectedItem !== undefined && selectedItem !== '<new>'" :name="selectedItem" :ordinal="selectedIndex!" @close="selectedItem = undefined"/>
+            <Creator v-else-if="selectedItem === '<new>'" @created="created"/>
+        </div>
+    </div>
 </template>
 
 <style module lang="sass">
-.site-list
-    width: 100%
-    min-height: 150px
-    max-height: 450px
+@import "../../../styles/base/color"
+@import "../../../styles/base/size"
+
+.left-column
+    border-right: solid 1px $light-mode-border-color
+    padding-right: $spacing-2
+    @media (prefers-color-scheme: dark)
+        border-right-color: $dark-mode-border-color
 </style>

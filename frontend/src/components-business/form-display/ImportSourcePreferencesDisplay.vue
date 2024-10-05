@@ -24,7 +24,7 @@ const additionalInfo = computed(() => {
             const ret: {field: string, label: string | null, value: string}[] = []
             for(const field of Object.keys(props.preference.additionalInfo)) {
                 const value = props.preference.additionalInfo[field]
-                const label = site.availableAdditionalInfo.find(a => a.field === field)?.label ?? null
+                const label = site.additionalInfo.find(a => a.field === field)?.label ?? null
                 ret.push({field, label, value})
             }
             return ret

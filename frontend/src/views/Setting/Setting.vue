@@ -44,7 +44,3 @@ const { menuItems, menuSelected } = installNavMenu({
         </template>
     </SideLayout>
 </template>
-
-<style module lang="sass">
-
-</style>

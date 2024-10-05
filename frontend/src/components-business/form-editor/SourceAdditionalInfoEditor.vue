@@ -15,7 +15,7 @@ const emit = defineEmits<{
 }>()
 
 const { data: sites } = useSettingSite()
-const fields = computed(() => props.site && sites.value ? sites.value.find(s => s.name === props.site)?.availableAdditionalInfo : undefined)
+const fields = computed(() => props.site && sites.value ? sites.value.find(s => s.name === props.site)?.additionalInfo : undefined)
 const values = computed(() => fields.value?.map(field => {
     const v = props.value?.find(i => i.field === field.field)
     return {field: field.field, label: field.label, value: v?.value ?? ""}

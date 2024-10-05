@@ -60,6 +60,7 @@ type CheckedException =
     CascadeResourceExists<string, string, unknown> |
     FileNotFoundError |
     FileNotReadyError |
+    BuiltinNotWritableError |
     LocationNotAccessibleError |
     IllegalFileExtensionError |
     StorageNotAccessibleError |
@@ -100,6 +101,7 @@ export type CascadeResourceExists<R extends string, P extends string, V> = BadRe
 
 export type FileNotFoundError = BadRequestException<"FILE_NOT_FOUND", null>
 export type FileNotReadyError = BadRequestException<"FILE_NOT_READY", null>
+export type BuiltinNotWritableError = BadRequestException<"BUILTIN_NOT_WRITABLE", string>
 export type LocationNotAccessibleError = BadRequestException<"LOCATION_NOT_ACCESSIBLE", null>
 export type IllegalFileExtensionError = BadRequestException<"ILLEGAL_FILE_EXTENSION", string>
 export type StorageNotAccessibleError = BadRequestException<"STORAGE_NOT_ACCESSIBLE", null>

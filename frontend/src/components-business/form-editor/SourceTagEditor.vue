@@ -30,8 +30,8 @@ const groupedTags = computed(() => {
     if(props.value?.length) {
         const site = sites.value?.find(s => s.name === props.site)
         const values = props.value.map((tag, idx) => ({tag, idx}))
-        if(site?.availableTypes?.length) {
-            return site.availableTypes.map(type => ({type, tags: values.filter(st => st.tag.type === type)})).filter(({ tags }) => tags.length > 0)
+        if(site?.tagTypes?.length) {
+            return site.tagTypes.map(type => ({type, tags: values.filter(st => st.tag.type === type)})).filter(({ tags }) => tags.length > 0)
         }else{
             return [{type: "", tags: values}]
         }

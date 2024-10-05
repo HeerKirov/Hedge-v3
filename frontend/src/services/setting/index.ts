@@ -2,7 +2,7 @@ import { onMounted, onUnmounted, ref, toRaw, watch } from "vue"
 import { remoteIpcClient } from "@/functions/ipc-client"
 import { AuthSetting, StorageSetting } from "@/functions/ipc-client/constants"
 import { ServerOption, MetaOption, QueryOption, ImportOption, FindSimilarOption, StorageOption } from "@/functions/http-client/api/setting"
-import { useFetchReactive, useRetrieveHelper } from "@/functions/fetch"
+import { useFetchReactive } from "@/functions/fetch"
 import { useAppEnv, useServerStatus } from "@/functions/app"
 import { useMessageBox } from "@/modules/message-box"
 import { numbers } from "@/utils/primitives"
@@ -167,40 +167,8 @@ export function useSettingFindSimilar() {
 }
 
 export const [installSettingSite, useSettingSite] = optionalInstallation(function() {
-    const message = useMessageBox()
-
-    const { data } = useFetchReactive({
+    return useFetchReactive({
         get: client => client.setting.source.site.list,
         eventFilter: "setting/source-site/changed"
     })
-
-    const { getData: getItem, createData: createItem, setData: updateItem, deleteData: deleteItem } = useRetrieveHelper({
-        get: client => client.setting.source.site.get,
-        create: client => client.setting.source.site.create,
-        update: client => client.setting.source.site.update,
-        delete: client => client.setting.source.site.delete,
-        handleErrorInCreate(e) {
-            if(e.code === "ALREADY_EXISTS") {
-                message.showOkMessage("prompt", "已经存在同名的站点。")
-            }else{
-                return e
-            }
-        },
-        handleErrorInDelete(e) {
-            if(e.code == "CASCADE_RESOURCE_EXISTS") {
-                const [resource, _, __] = e.info
-                const resourceName = {
-                    "Illust": "图库项目",
-                    "ImportImage": "导入项目",
-                    "TrashedImage": "已删除项目",
-                    "SourceAnalyseRule": "来源解析规则"
-                }[resource]
-                message.showOkMessage("prompt", "无法删除此来源站点。", `此来源站点仍存在关联的${resourceName}，请先清理关联项，确保没有意外的级联删除。`)
-            }else{
-                return e
-            }
-        }
-    })
-
-    return {data, getItem, createItem, updateItem, deleteItem}
 })

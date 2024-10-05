@@ -23,6 +23,10 @@ const props = withDefaults(defineProps<{
      */
     useEditValue?: boolean
     /**
+     * 是否开启编辑。默认显然是开启的，可以在有需要时禁用编辑。
+     */
+    editable?: boolean
+    /**
      * 允许在显示模式下双击以进入编辑模式。
      */
     allowDoubleClick?: boolean
@@ -44,6 +48,7 @@ const props = withDefaults(defineProps<{
      */
     setValue?(newValue: T): Promise<boolean>
 }>(), {
+    editable: true,
     allowDoubleClick: true,
     allowSingleClick: false,
     allowClickOutside: true,
@@ -64,7 +69,7 @@ const editMode = ref(false)
 const editValue = ref<T>()
 
 const edit = () => {
-    if(!editMode.value) {
+    if(props.editable && !editMode.value) {
         editMode.value = true
         editValue.value = objects.deepCopy(props.useEditValue ? props.editValue : props.value)
     }
@@ -76,12 +81,14 @@ const setEditValue = (v: T) => {
 }
 
 const save = async () => {
-    if(editMode.value && editValue.value !== undefined) {
+    if(props.editable && editMode.value && editValue.value !== undefined) {
         emit("update:value", editValue.value)
         if(props.setValue) {
             if(await props.setValue(editValue.value)) {
                 editMode.value = false
             }
+        }else{
+            editMode.value = false
         }
     }
 }
@@ -102,7 +109,7 @@ const divRef = ref<HTMLElement>()
 
 if(props.allowClickOutside) {
     onOutsideClick(divRef, () => {
-        if(editMode.value) {
+        if(props.editable && editMode.value) {
             save()
         }
     })
@@ -111,7 +118,7 @@ if(props.allowClickOutside) {
 </script>
 
 <template>
-    <div ref="divRef" :class="{'is-cursor-text': !editMode}" @click="click" @dblclick="doubleClick">
+    <div ref="divRef" :class="{'is-cursor-text': editable && !editMode}" @click="click" @dblclick="doubleClick">
         <slot v-if="editMode" name="edit" :value="editValue!" :setValue="setEditValue" :save="save"/>
         <slot v-else :value="displayValue" :edit="edit"/>
     </div>

@@ -39,9 +39,9 @@ const extraTargetItems: {label: string, value: SourceAnalyseRuleExtraTarget}[] =
     {label: "关联项", value: "RELATION"},
 ]
 
-const additionalInfoFields = computed(() => site.value?.availableAdditionalInfo.map(i => ({label: i.label, value: i.field})) ?? [])
+const additionalInfoFields = computed(() => site.value?.additionalInfo.map(i => ({label: i.label, value: i.field})) ?? [])
 
-const sourceTagTypeFields = computed(() => site.value?.availableTypes.map(i => ({label: i, value: i})) ?? [])
+const sourceTagTypeFields = computed(() => site.value?.tagTypes.map(i => ({label: i, value: i})) ?? [])
 
 const content = computedMutable(() => {
     const dep = objects.deepCopy(props.rule)

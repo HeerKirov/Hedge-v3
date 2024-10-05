@@ -17,7 +17,7 @@ const { data: sites } = useSettingSite()
 
 const currentSite = computed(() => sites.value?.find(i => i.name === props.site))
 
-const items = computed(() => currentSite.value?.availableTypes.map(t => ({label: t, value: t})))
+const items = computed(() => currentSite.value?.tagTypes.map(t => ({label: t, value: t})))
 
 const updateValue = (value: string) => emit("update:value", value)
 

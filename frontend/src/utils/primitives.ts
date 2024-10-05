@@ -72,14 +72,14 @@ export const arrays = {
         }
         return result
     },
-    toMap<T extends string, R>(arr: T[], generator: (value: T, index: number) => R): {[key in T]: R} {
+    toMap<T extends string, R>(arr: readonly T[], generator: (value: T, index: number) => R): {[key in T]: R} {
         const ret: {[key: string]: R} = {}
         arr.forEach((t, i) => {
             ret[t] = generator(t, i)
         })
         return <{[key in T]: R}>ret
     },
-    toTupleMap<T, K extends string, R>(arr: T[], generator: (value: T, index: number) => [K, R]): {[key in K]: R} {
+    toTupleMap<T, K extends string, R>(arr: readonly T[], generator: (value: T, index: number) => [K, R]): {[key in K]: R} {
         const ret: {[key: string]: R} = {}
         arr.forEach((t, i) => {
             const [k, v] = generator(t, i)
@@ -87,7 +87,7 @@ export const arrays = {
         })
         return <{[key in K]: R}>ret
     },
-    equals<T>(a: T[], b: T[], equalsBy: (a: T, b: T) => boolean = (a, b) => a === b): boolean {
+    equals<T>(a: readonly T[], b: readonly T[], equalsBy: (a: T, b: T) => boolean = (a, b) => a === b): boolean {
         if (a.length !== b.length) {
             return false
         }

@@ -1,6 +1,6 @@
 import { UsefulColors } from "@/constants/ui"
 import { HttpInstance, Response } from "../instance"
-import { AlreadyExists, CascadeResourceExists, NotFound, InvalidRuleIndexError, ResourceNotExist } from "../exceptions"
+import { AlreadyExists, CascadeResourceExists, NotFound, InvalidRuleIndexError, ResourceNotExist, BuiltinNotWritableError } from "../exceptions"
 import { AuthorType } from "./author"
 import { TopicType } from "./topic"
 import { TaskConfig } from "./find-similar"
@@ -31,6 +31,7 @@ export function createSettingEndpoint(http: HttpInstance): SettingEndpoint {
         source: {
             site: {
                 list: http.createRequest("/api/setting/source/sites"),
+                listBuiltins: http.createRequest("/api/setting/source/sites/builtins"),
                 create: http.createDataRequest("/api/setting/source/sites", "POST"),
                 get: http.createPathRequest(name => `/api/setting/source/sites/${encodeURIComponent(name)}`),
                 update: http.createPathDataRequest(name => `/api/setting/source/sites/${encodeURIComponent(name)}`, "PUT"),
@@ -125,10 +126,14 @@ export interface SettingEndpoint {
              */
             list(): Promise<Response<Site[]>>
             /**
+             * 查看内建列表。
+             */
+            listBuiltins(): Promise<Response<Site[]>>
+            /**
              * 新增一个来源网站。
              * @exception ALREADY_EXISTS
              */
-            create(form: SiteCreateForm): Promise<Response<unknown, AlreadyExists<"site", "name", string>>>
+            create(form: SiteCreateForm): Promise<Response<null, AlreadyExists<"site", "name", string>>>
             /**
              * 查看单个项。
              * @exception NOT_FOUND 此项不存在。
@@ -138,13 +143,13 @@ export interface SettingEndpoint {
              * 更改项。
              * @exception NOT_FOUND 此项不存在。
              */
-            update(name: string, form: SiteUpdateForm): Promise<Response<unknown>>
+            update(name: string, form: SiteUpdateForm): Promise<Response<null, NotFound | BuiltinNotWritableError>>
             /**
              * 删除项。
              * @exception NOT_FOUND 此项不存在。
              * @exception CASCADE_RESOURCE_EXISTS("Illust"|"ImportImage"|"TrashedImage"|"SourceAnalyseRule", "site", string) 存在级联资源，无法删除。
              */
-            delete(name: string): Promise<Response<unknown, CascadeResourceExists<"Illust" | "ImportImage" | "TrashedImage" | "SourceAnalyseRule", "site", string>>>
+            delete(name: string): Promise<Response<null, NotFound | CascadeResourceExists<"Illust" | "ImportImage" | "TrashedImage" | "SourceAnalyseRule", "site", string>>>
         }
     }
     /**
@@ -355,6 +360,14 @@ export interface Site {
      */
     title: string
     /**
+     * 是否是内建网站。
+     */
+    isBuiltin: boolean
+    /**
+     * 此网站的ID模式。
+     */
+    idMode: SiteIdMode
+    /**
      * 此网站是否拥有分页。
      * @default NO
      */
@@ -362,37 +375,44 @@ export interface Site {
     /**
      * 此网站可接受的元数据条目。
      */
-    availableAdditionalInfo: {field: string, label: string}[]
+    additionalInfo: {field: string, label: string}[]
     /**
      * 根据元数据id与附加信息，自动生成links的规则列表。
      */
-    sourceLinkGenerateRules: string[]
+    sourceLinkRules: string[]
     /**
      * 此站点可用的标签类型。
      */
-    availableTypes: string[]
+    tagTypes: string[]
+    /**
+     * 此站点的标签类型向元数据类型的映射。
+     */
+    tagTypeMappings: Record<string, Exclude<TopicType, "UNKNOWN"> | Exclude<AuthorType, "UNKNOWN"> | "TAG">
 }
 
 export interface SiteCreateForm extends SiteUpdateForm {
     name: string
-    title: string
+    idMode?: SiteIdMode
     partMode?: SitePartMode
 }
 
 export interface SiteUpdateForm {
-    title?: string
-    availableAdditionalInfo?: {field: string, label: string}[]
-    sourceLinkGenerateRules?: string[]
-    availableTypes?: string[]
     /**
      * 在列表中的排序顺序，从0开始。
      * @default 追加到末尾
      */
     ordinal?: number
+    title?: string | null
+    additionalInfo?: {field: string, label: string}[]
+    sourceLinkRules?: string[]
+    tagTypes?: string[]
+    tagTypeMappings?: Site["tagTypeMappings"]
 }
 
 export type OrderTimeType = "IMPORT_TIME" | "CREATE_TIME" | "UPDATE_TIME"
 
 export type SourceAnalyseRuleExtraTarget = "TITLE" | "DESCRIPTION" | "ADDITIONAL_INFO" | "TAG" | "BOOK" | "RELATION"
+
+export type SiteIdMode = "NUMBER" | "STRING"
 
 export type SitePartMode = "NO" | "PAGE" | "PAGE_WITH_NAME"

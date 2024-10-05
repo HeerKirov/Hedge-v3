@@ -1,3 +1,5 @@
+@use "sass:math"
+@import "../base/size"
 
 .flex
   display: flex
@@ -11,6 +13,38 @@
     flex-direction: row
   &.column
     flex-direction: column
+
+  &.jc-start
+    justify-content: flex-start
+  &.jc-end
+    justify-content: flex-end
+  &.jc-center
+    justify-content: center
+  &.jc-around
+    justify-content: space-around
+  &.jc-between
+    justify-content: space-between
+  &.jc-stretch
+    justify-content: stretch
+
+  &.align-start
+    align-items: flex-start
+  &.align-end
+    align-items: flex-end
+  &.align-baseline
+    align-items: baseline
+  &.align-stretch
+    align-items: stretch
+
+  @each $name, $size in $spacing-map
+    &.gap-#{$name}
+      gap: $size
+  @for $i from 1 through 20
+    &.column-#{$i} .flex-item
+      flex-basis: math.div(100%, $i)
+    @each $name, $size in $spacing-map
+      &.column-#{$i}.gap-#{$name} .flex-item
+        flex-basis: calc(math.div(100%, $i) - #{math.div($i - 1, $i) * $size})
 
 .flex-item
   &.align-center
