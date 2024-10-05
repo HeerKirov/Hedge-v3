@@ -88,6 +88,7 @@ class SourceSiteManager(private val appdata: AppDataManager, private val data: D
             form.title.alsoOpt { site.title = it }
             form.sourceLinkRules.alsoOpt { site.sourceLinkRules = it }
             form.tagTypes.alsoOpt { site.tagTypes = it }
+            form.tagTypeMappings.alsoOpt { site.tagTypeMappings = it }
             form.additionalInfo.alsoOpt {
                 for(metadata in it) {
                     if(!checkVariableName(metadata.field)) throw be(ParamError("availableAdditionalInfo"))
@@ -221,7 +222,7 @@ class SourceSiteManager(private val appdata: AppDataManager, private val data: D
         bus.emit(SettingSourceSiteChanged())
     }
 
-    fun SourceOption.CustomSite.toRes(): SourceSiteRes {
+    private fun SourceOption.CustomSite.toRes(): SourceSiteRes {
         return SourceSiteRes(name, title ?: name, false, idMode, partMode, additionalInfo, sourceLinkRules, tagTypes, tagTypeMappings)
     }
 }
