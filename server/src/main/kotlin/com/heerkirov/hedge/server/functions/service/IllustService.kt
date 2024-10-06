@@ -478,15 +478,14 @@ class IllustService(private val appdata: AppDataManager,
                 val additionalInfo = (sourceRow[SourceDatas.additionalInfo] ?: emptyMap()).entries.map { (k, v) ->
                     SourceDataAdditionalInfoDto(k, site?.additionalInfo?.find { it.field == k }?.label ?: "", v)
                 }
+                val links = if(site != null) sourceManager.generateLinks(site.sourceLinkRules, source.sourceId, sourceTags, additionalInfo) else emptyList()
 
                 IllustImageSourceDataRes(
                     source, site?.title ?: source.sourceSite,
                     sourceRow[SourceDatas.empty]!!, sourceRow[SourceDatas.status]!!,
                     sourceRow[SourceDatas.title] ?: "", sourceRow[SourceDatas.description] ?: "",
-                    sourceTags, sourcePools,
-                    sourceRow[SourceDatas.relations] ?: emptyList(),
-                    sourceRow[SourceDatas.links] ?: emptyList(),
-                    additionalInfo, sourceRow[SourceDatas.publishTime])
+                    sourceTags, sourcePools, sourceRow[SourceDatas.relations] ?: emptyList(),
+                    links, additionalInfo, sourceRow[SourceDatas.publishTime])
             }else{
                 IllustImageSourceDataRes(
                     source, site?.title ?: source.sourceSite,
@@ -751,10 +750,10 @@ class IllustService(private val appdata: AppDataManager,
             val tagme = row[Illusts.tagme]!!
             if(form.source.isPresent) {
                 illustManager.updateSourceDataOfImage(id, form.source.value, oldTagme = tagme)
-                form.source.value?.let { source -> sourceManager.createOrUpdateSourceData(source.sourceSite, source.sourceId, form.status, form.title, form.description, form.tags, form.books, form.relations, form.links, form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } }, form.publishTime) }
+                form.source.value?.let { source -> sourceManager.createOrUpdateSourceData(source.sourceSite, source.sourceId, form.status, form.title, form.description, form.tags, form.books, form.relations, form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } }, form.publishTime) }
             }else{
                 sourceManager.checkSourceSite(sourceSite, sourceId, sourcePart, sourcePartName)?.let { (source, sourceId) ->
-                    sourceManager.createOrUpdateSourceData(source, sourceId, form.status, form.title, form.description, form.tags, form.books, form.relations, form.links, form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } }, form.publishTime)
+                    sourceManager.createOrUpdateSourceData(source, sourceId, form.status, form.title, form.description, form.tags, form.books, form.relations, form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } }, form.publishTime)
                 }
             }
         }

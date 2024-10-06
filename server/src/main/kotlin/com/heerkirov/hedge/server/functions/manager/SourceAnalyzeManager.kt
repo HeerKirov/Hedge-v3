@@ -82,7 +82,6 @@ class SourceAnalyzeManager(private val appdata: AppDataManager) {
                         relations = if(relations.isNotEmpty()) optOf(relations) else undefined(),
                         additionalInfo = if(additionalInfo.isNotEmpty()) optOf(additionalInfo.entries.map { SourceDataAdditionalInfoForm(it.key, it.value) }) else undefined(),
                         publishTime = undefined(),
-                        links = undefined(),
                         status = undefined()
                     )
                 }else{

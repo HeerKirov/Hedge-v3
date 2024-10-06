@@ -2,28 +2,28 @@ package com.heerkirov.hedge.server.utils
 
 import java.util.*
 
-object SqlDelimiter {
+object StrTemplate {
     /**
-     * 给出一段SQL语句，使用参数列表渲染其中的可替换值。
+     * 给出一段字符串模板，使用参数列表渲染其中的可替换值。
      */
-    fun render(sql: String, arguments: Map<String, String>): String {
+    fun render(template: String, arguments: Map<String, String>, startMatch: String = "\${", endMatch: String = "}"): String {
         val sb = StringBuilder()
         var start = 0
         while (true) {
-            val idx = sql.indexOf("\${", start)
+            val idx = template.indexOf(startMatch, start)
             if(idx < start) {
-                sb.append(sql.substring(start))
+                sb.append(template.substring(start))
                 break
             }
 
-            val endIdx = sql.indexOf("}", idx).let { if(it >= idx) it else sql.length }
-            val argumentName = sql.substring(idx + 2, endIdx)
+            val endIdx = template.indexOf(endMatch, idx + startMatch.length).let { if(it >= idx) it else template.length }
+            val argumentName = template.substring(idx + startMatch.length, endIdx)
             val argumentValue = arguments[argumentName] ?: throw IllegalArgumentException("Argument '$argumentName' not exist.")
 
-            sb.append(sql.substring(start, idx))
+            sb.append(template.substring(start, idx))
             sb.append(argumentValue)
 
-            start = endIdx + 1
+            start = endIdx + endMatch.length
         }
         return sb.toString()
     }
@@ -33,7 +33,7 @@ object SqlDelimiter {
      * @param sql SQL语句段
      * @return 单句SQL的列表
      */
-    fun splitByDelimiter(sql: String): List<String> {
+    fun splitSQL(sql: String): List<String> {
         val result: MutableList<String> = ArrayList()
 
         //记录字符串匹配状态。null表示不在字符串内，其他表示在字符串内，且表示字符串字符

@@ -3,19 +3,19 @@ package com.heerkirov.hedge.server.utils
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class SqlDelimiterTest {
+class StrTemplateTest {
     @Test
-    fun testSplitByDelimiter() {
+    fun testSplitSQL() {
         assertEquals(
             listOf("SELECT * FROM TEST", "SELECT count(1)"),
-            SqlDelimiter.splitByDelimiter("""
+            StrTemplate.splitSQL("""
                 SELECT * FROM TEST;
                 SELECT count(1);
             """.trimIndent()))
 
         assertEquals(
             listOf("SELECT  * FROM TEST", "SELECT count(1)"),
-            SqlDelimiter.splitByDelimiter("""
+            StrTemplate.splitSQL("""
                 SELECT/*hello?*/ * FROM TEST;
                 --oh
                 SELECT count(1);--ok
@@ -24,7 +24,7 @@ class SqlDelimiterTest {
 
         assertEquals(
             listOf("SELECT *\nFROM\nTEST", "SELECT count(1)"),
-            SqlDelimiter.splitByDelimiter("""
+            StrTemplate.splitSQL("""
                 SELECT *
                 FROM
                 TEST;SELECT count(1);
@@ -38,7 +38,7 @@ class SqlDelimiterTest {
                 -- comment
                 UPDATE partition SET `date` = `date` + 12800 WHERE TRUE;
             """.trimIndent(),
-            SqlDelimiter.render("""
+            StrTemplate.render("""
                 -- comment
                 UPDATE partition SET `date` = `date` + ${'$'}{OFFSET} WHERE TRUE;
             """.trimIndent(), mapOf(
@@ -48,7 +48,7 @@ class SqlDelimiterTest {
 
         assertEquals(
             "-- comment\nUPDATE partition SET `date` = `date` + 12800 WHERE TRUE;",
-            SqlDelimiter.render("\${COMMENT}\nUPDATE partition SET `date` = `date` + \${OFFSET} WHERE TRUE;", mapOf(
+            StrTemplate.render("\${COMMENT}\nUPDATE partition SET `date` = `date` + \${OFFSET} WHERE TRUE;", mapOf(
                 "OFFSET" to "12800",
                 "COMMENT" to "-- comment"
             ))
@@ -56,7 +56,7 @@ class SqlDelimiterTest {
 
         assertEquals(
             "UPDATE partition SET `date` = `date` + 12800 WHERE TRUE;\n-- comment",
-            SqlDelimiter.render("UPDATE partition SET `date` = `date` + \${OFFSET} WHERE TRUE;\n\${COMMENT}", mapOf(
+            StrTemplate.render("UPDATE partition SET `date` = `date` + \${OFFSET} WHERE TRUE;\n\${COMMENT}", mapOf(
                 "OFFSET" to "12800",
                 "COMMENT" to "-- comment"
             ))

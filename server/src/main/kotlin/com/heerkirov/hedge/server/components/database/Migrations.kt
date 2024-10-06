@@ -3,7 +3,7 @@ package com.heerkirov.hedge.server.components.database
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.utils.Resources
-import com.heerkirov.hedge.server.utils.SqlDelimiter
+import com.heerkirov.hedge.server.utils.StrTemplate
 import com.heerkirov.hedge.server.utils.migrations.*
 import org.ktorm.database.Database
 import org.ktorm.database.Transaction
@@ -34,10 +34,10 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
     private fun Transaction.useSQLResource(version: Version, arguments: Map<String, String>? = null) {
         connection.createStatement().use { stat ->
             if(arguments != null) {
-                Resources.getResourceAsText("migrations/v$version.tpl.sql").let { SqlDelimiter.render(it, arguments) }
+                Resources.getResourceAsText("migrations/v$version.tpl.sql").let { StrTemplate.render(it, arguments) }
             }else{
                 Resources.getResourceAsText("migrations/v$version.sql")
-            }.let { SqlDelimiter.splitByDelimiter(it) }.forEach { stat.execute(it) }
+            }.let { StrTemplate.splitSQL(it) }.forEach { stat.execute(it) }
         }
     }
 

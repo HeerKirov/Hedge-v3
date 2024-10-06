@@ -36,12 +36,12 @@ data class SiteBulkForm(@NotBlank @Length(16) val name: String,
 data class SourceDataCreateForm(val sourceSite: String, val sourceId: String, val status: Opt<SourceEditStatus>,
                                 val title: Opt<String?>, val description: Opt<String?>,
                                 val tags: Opt<List<SourceTagForm>>, val books: Opt<List<SourceBookForm>>,
-                                val relations: Opt<List<String>>, val links: Opt<List<String>>, val additionalInfo: Opt<List<SourceDataAdditionalInfoForm>>,
+                                val relations: Opt<List<String>>, val additionalInfo: Opt<List<SourceDataAdditionalInfoForm>>,
                                 val publishTime: Opt<Instant?>)
 
 data class SourceDataUpdateForm(val title: Opt<String?>, val description: Opt<String?>, val status: Opt<SourceEditStatus>,
                                 val tags: Opt<List<SourceTagForm>>, val books: Opt<List<SourceBookForm>>,
-                                val relations: Opt<List<String>>, val links: Opt<List<String>>, val additionalInfo: Opt<List<SourceDataAdditionalInfoForm>>,
+                                val relations: Opt<List<String>>, val additionalInfo: Opt<List<SourceDataAdditionalInfoForm>>,
                                 val publishTime: Opt<Instant?>)
 
 data class SourceDataAdditionalInfoForm(val field: String, val value: String)

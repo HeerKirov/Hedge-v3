@@ -1,6 +1,5 @@
 package com.heerkirov.hedge.server.functions.service
 
-import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
@@ -90,7 +89,7 @@ class SourceDataService(private val data: DataRepository,
             sourceDataManager.checkSourceSite(form.sourceSite, form.sourceId)
             sourceDataManager.createOrUpdateSourceData(form.sourceSite, form.sourceId,
                 title = form.title, description = form.description, tags = form.tags,
-                books = form.books, relations = form.relations, links = form.links,
+                books = form.books, relations = form.relations,
                 additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
                 publishTime = form.publishTime,
                 status = form.status, allowUpdate = false)
@@ -109,7 +108,7 @@ class SourceDataService(private val data: DataRepository,
                 sourceDataManager.checkSourceSite(form.sourceSite, form.sourceId)
                 sourceDataManager.createOrUpdateSourceData(form.sourceSite, form.sourceId,
                     title = form.title, description = form.description, status = form.status,
-                    tags = form.tags, books = form.books, relations = form.relations, links = form.links,
+                    tags = form.tags, books = form.books, relations = form.relations,
                     additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
                     publishTime = form.publishTime)
             }
@@ -143,6 +142,7 @@ class SourceDataService(private val data: DataRepository,
         val additionalInfo = (row[SourceDatas.additionalInfo] ?: emptyMap()).entries.map { (k, v) ->
             SourceDataAdditionalInfoDto(k, site?.additionalInfo?.find { it.field == k }?.label ?: "", v)
         }
+        val links = if(site != null) sourceDataManager.generateLinks(site.sourceLinkRules, sourceId, sourceTags, additionalInfo) else emptyList()
 
         return SourceDataDetailRes(sourceSite, site?.title ?: sourceSite, sourceId,
             row[SourceDatas.title] ?: "",
@@ -151,8 +151,7 @@ class SourceDataService(private val data: DataRepository,
             row[SourceDatas.status]!!,
             sourceTags, sourceBooks,
             row[SourceDatas.relations] ?: emptyList(),
-            row[SourceDatas.links] ?: emptyList(),
-            additionalInfo, publishTime,
+            links, additionalInfo, publishTime,
             createTime, updateTime)
     }
 
@@ -180,7 +179,7 @@ class SourceDataService(private val data: DataRepository,
             sourceDataManager.checkSourceSite(sourceSite, sourceId)
             sourceDataManager.createOrUpdateSourceData(sourceSite, sourceId,
                 title = form.title, description = form.description, tags = form.tags,
-                books = form.books, relations = form.relations, links = form.links,
+                books = form.books, relations = form.relations,
                 additionalInfo = form.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
                 publishTime = form.publishTime,
                 status = form.status, allowCreate = false)

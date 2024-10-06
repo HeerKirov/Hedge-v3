@@ -34,10 +34,6 @@ data class SourceData(val id: Int,
                         */
                       val relations: List<String>? = null,
                       /**
-                       * 此原数据指向的原始链接。
-                       */
-                      val links: List<String>? = null,
-                      /**
                        * 原数据的额外追加信息。它的数据条目需要定义，在site中定义。
                        */
                       val additionalInfo: Map<String, String>? = null,

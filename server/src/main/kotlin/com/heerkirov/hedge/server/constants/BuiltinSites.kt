@@ -10,7 +10,7 @@ val BUILTIN_SITES = listOf(
     SourceSiteRes(
         name = "pixiv", title = "Pixiv", isBuiltin = true,
         idMode = SourceOption.SiteIdMode.NUMBER, partMode = SourceOption.SitePartMode.PAGE,
-        sourceLinkRules = listOf("https://www.pixiv.net/artworks/(id)"),
+        sourceLinkRules = listOf("https://www.pixiv.net/artworks/{{id}}"),
         tagTypes = listOf("artist", "tag"),
         tagTypeMappings = mapOf("artist" to TagAuthorType.ARTIST.name),
         additionalInfo = emptyList()
@@ -18,7 +18,7 @@ val BUILTIN_SITES = listOf(
     SourceSiteRes(
         name = "ehentai", title = "E-Hentai", isBuiltin = true,
         idMode = SourceOption.SiteIdMode.NUMBER, partMode = SourceOption.SitePartMode.PAGE_WITH_NAME,
-        sourceLinkRules = listOf("https://www.pixiv.net/artworks/${'$'}id"),
+        sourceLinkRules = listOf("https://e-hentai.org/g/{{id}}/{{token}}/"),
         tagTypes = listOf("artist", "group", "parody", "category", "character", "language", "reclass", "male", "female", "mixed", "other", "temp"),
         tagTypeMappings = mapOf(
             "artist" to TagAuthorType.ARTIST.name,
@@ -39,7 +39,7 @@ val BUILTIN_SITES = listOf(
     SourceSiteRes(
         name = "sankakucomplex", title = "Sankaku", isBuiltin = true,
         idMode = SourceOption.SiteIdMode.STRING, partMode = SourceOption.SitePartMode.NO,
-        sourceLinkRules = listOf("https://chan.sankakucomplex.com/post/show/${'$'}id"),
+        sourceLinkRules = listOf("https://chan.sankakucomplex.com/post/show/{{id}}"),
         tagTypes = listOf("artist", "studio", "copyright", "character", "medium", "meta", "group", "general", "genre", "pose", "role", "anatomy", "fashion", "activity", "substance", "language", "flora", "setting", "automatic", "entity", "object", "fauna"),
         tagTypeMappings = mapOf(
             "artist" to TagAuthorType.ARTIST.name,
@@ -73,7 +73,7 @@ val BUILTIN_SITES = listOf(
     SourceSiteRes(
         name = "fanbox", title = "FANBOX", isBuiltin = true,
         idMode = SourceOption.SiteIdMode.NUMBER, partMode = SourceOption.SitePartMode.PAGE,
-        sourceLinkRules = listOf("https://www.fanbox.cc/@(artist.name)/posts/(id)"),
+        sourceLinkRules = listOf("https://www.fanbox.cc/@{{artist.name}}/posts/{{id}}"),
         tagTypes = listOf("artist", "tag"),
         tagTypeMappings = mapOf("artist" to TagAuthorType.ARTIST.name),
         additionalInfo = emptyList()

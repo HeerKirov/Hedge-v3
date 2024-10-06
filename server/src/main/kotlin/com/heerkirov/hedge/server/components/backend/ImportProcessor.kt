@@ -174,7 +174,7 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
         for ((sourceIdentity, updateForm) in sourceForms) {
             sourceDataManager.createOrUpdateSourceData(sourceIdentity.sourceSite, sourceIdentity.sourceId,
                 title = updateForm.title, description = updateForm.description, tags = updateForm.tags,
-                books = updateForm.books, relations = updateForm.relations, links = updateForm.links,
+                books = updateForm.books, relations = updateForm.relations,
                 additionalInfo = updateForm.additionalInfo.letOpt { it.associateBy({ f -> f.field }) { f -> f.value } },
                 publishTime = updateForm.publishTime,
                 status = updateForm.status, allowUpdate = true, appendUpdate = true)
