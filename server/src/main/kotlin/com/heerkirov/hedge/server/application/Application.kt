@@ -70,7 +70,7 @@ fun runApplication(options: ApplicationOptions) {
             define { EventCompositorImpl(repo, bus, backendExporter) }
             define { FileGeneratorImpl(appStatus, appdata, repo, bus, taskCounter, taskScheduler, trashManager) }
             define { DailyProcessorImpl(appdata, repo, bus, taskScheduler) }
-            define { ImportProcessorImpl(appdata, repo, bus, taskScheduler, similarFinder, illustManager, sourceAnalyzeManager, sourceDataManager, sourceMappingManager) }
+            define { ImportProcessorImpl(appdata, repo, bus, taskScheduler, similarFinder, illustManager, sourceAnalyzeManager, sourceSiteManager, sourceDataManager, sourceMappingManager) }
 
             AllServices(
                 homepage = HomepageService(appdata, repo, stagingPostManager, taskCounter),
