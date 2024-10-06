@@ -11,7 +11,7 @@ defineProps<{
 <template>
     <div v-if="value?.length" class="mb-2 mt-3">
         <p v-for="link in value" class="mb-1 no-wrap overflow-hidden overflow-ellipsis selectable">
-            <a @click="openExternalLink(link)"><Icon icon="link"/>{{ link }}</a>
+            <a @click="openExternalLink(link)"><Icon class="mr-1" icon="link"/>{{ link }}</a>
         </p>
     </div>
     <div v-else class="mb-2 mt-3">

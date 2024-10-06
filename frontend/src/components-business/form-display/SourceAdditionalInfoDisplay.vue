@@ -11,7 +11,7 @@ defineProps<{
 <template>
     <div v-if="value?.length" class="my-2">
         <p v-for="info in value" class="mb-1 no-wrap overflow-hidden overflow-ellipsis">
-            <Icon icon="diamond"/>
+            <Icon class="mr-1" icon="diamond"/>
             <b class="mr-1">{{ info.label }}</b>
             <span class="selectable">{{ info.value }}</span>
         </p>

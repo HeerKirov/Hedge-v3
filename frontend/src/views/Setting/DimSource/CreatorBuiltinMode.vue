@@ -2,10 +2,15 @@
 import { computed } from "vue"
 import { Block, Button } from "@/components/universal"
 import { CheckBox } from "@/components/form"
-import { useFetchReactive, usePostFetchHelper } from "@/functions/fetch"
+import { Site } from "@/functions/http-client/api/setting"
+import { usePostFetchHelper } from "@/functions/fetch"
 import { useSettingSite } from "@/services/setting"
 import { computedMutable } from "@/utils/reactivity"
 import { SITE_ICONS } from "@/constants/site"
+
+const props = defineProps<{
+    builtins?: Site[]
+}>()
 
 const emit = defineEmits<{
     (e: "created", name: string): void
@@ -15,9 +20,7 @@ const fetch = usePostFetchHelper(client => client.setting.source.site.create)
 
 const { data: sites } = useSettingSite()
 
-const { data: builtins } = useFetchReactive({get: client => client.setting.source.site.listBuiltins})
-
-const items = computedMutable(() => builtins.value !== undefined && sites.value !== undefined ? builtins.value.map(site => ({name: site.name, title: site.title, used: sites.value!.findIndex(i => i.name === site.name) >= 0, checked: false})) : [])
+const items = computedMutable(() => props.builtins !== undefined && sites.value !== undefined ? props.builtins.map(site => ({name: site.name, title: site.title, used: sites.value!.findIndex(i => i.name === site.name) >= 0, checked: false})) : [])
 
 const anyChecked = computed(() => items.value.some(i => i.checked))
 

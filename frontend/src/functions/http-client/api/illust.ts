@@ -716,7 +716,6 @@ export interface ImageSourceDataUpdateForm {
     tags?: SourceTagForm[]
     books?: SourceBookForm[]
     relations?: string[]
-    links?: string[]
     additionalInfo?: SourceAdditionalInfoForm[]
     status?: SourceEditStatus
     publishTime?: LocalDateTime

@@ -63,7 +63,6 @@ export function useCreateData(completed: () => void) {
             tags: [],
             books: [],
             relations: [],
-            links: [],
             additionalInfo: [],
             publishTime: null,
         }
@@ -80,7 +79,6 @@ export function useCreateData(completed: () => void) {
                 tags: patchSourceTagForm(form.data.tags, []),
                 books: patchSourceBookForm(form.data.books, []),
                 relations: form.data.relations,
-                links: form.data.links,
                 additionalInfo: form.data.additionalInfo,
                 publishTime: form.data.publishTime
             }
@@ -142,7 +140,6 @@ export function useEditorData(identity: Ref<SourceDataIdentity>, completed: () =
                 tags: !objects.deepEquals(form.value.tags, data.value.tags) ? patchSourceTagForm(form.value.tags, data.value.tags) : undefined,
                 books: !objects.deepEquals(form.value.books, data.value.books) ? patchSourceBookForm(form.value.books, data.value.books) : undefined,
                 relations: !objects.deepEquals(form.value.relations, data.value.relations) ? form.value.relations : undefined,
-                links: !objects.deepEquals(form.value.links, data.value.links) ? form.value.links : undefined,
                 additionalInfo: !objects.deepEquals(form.value.additionalInfo, data.value.additionalInfo) ? form.value.additionalInfo : undefined,
                 publishTime: !objects.deepEquals(form.value.publishTime, data.value.publishTime) ? form.value.publishTime : undefined
             }
@@ -160,7 +157,6 @@ interface SourceDataUpdateFormData {
     tags: SourceTag[],
     books: SourceBook[],
     relations: string[],
-    links: string[],
     additionalInfo: SourceAdditionalInfo[]
     publishTime: LocalDateTime | null
 }
@@ -177,7 +173,6 @@ function mapDataToUpdateForm(data: DetailSourceData): SourceDataUpdateFormData {
         tags: data.tags,
         books: data.books,
         relations: data.relations,
-        links: data.links,
         additionalInfo: data.additionalInfo,
         publishTime: data.publishTime
     }

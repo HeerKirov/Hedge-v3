@@ -189,7 +189,6 @@ export interface SourceDataUpdateForm {
     tags?: SourceTagForm[]
     books?: SourceBookForm[]
     relations?: string[]
-    links?: string[]
     additionalInfo?: SourceAdditionalInfoForm[]
     publishTime?: LocalDateTime | null
 }

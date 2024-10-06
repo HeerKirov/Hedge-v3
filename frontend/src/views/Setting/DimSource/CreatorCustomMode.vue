@@ -14,6 +14,10 @@ import TagTypeMappingEditor from "./TagTypeMappingEditor.vue"
 import SourceLinkRuleEditor from "./SourceLinkRuleEditor.vue"
 import AdditionalFieldEditor from "./AdditionalFieldEditor.vue"
 
+const props = defineProps<{
+    builtins?: Site[]
+}>()
+
 const emit = defineEmits<{
     (e: "created", name: string): void
 }>()
@@ -47,30 +51,33 @@ const { submit } = useCreatingHelper({
     beforeCreate(form) {
         if(!form.name.trim()) {
             message.showOkMessage("prompt", "站点唯一标识名称错误。", "站点唯一标识名称不能设置为空。")
-            return
+            return false
         }else if(form.name.length > 16) {
             message.showOkMessage("prompt", "站点唯一标识名称错误。", "站点唯一标识名称长度不能超过16。")
-            return
+            return false
+        }else if(props.builtins?.some(i => i.name === form.name.trim())) {
+            message.showOkMessage("prompt", "不能使用的唯一标识名称。", `${form.name.trim()}是内置站点的标识名称。`)
+            return false
         }
         for(const rule of form.sourceLinkRules) {
             if(!rule.trim()) {
                 message.showOkMessage("prompt", "链接条目错误。", "链接内容不能为空。")
-                return
+                return false
             }
         }
         for(const { field, label } of form.additionalInfo) {
             if(!checkVariableName(field)) {
                 message.showOkMessage("prompt", "附加信息条目字段名错误。", "字段名必须以大小写字母开头，且仅允许包含大小写字母、数字、下划线。")
-                return
+                return false
             }else if(!label.trim()) {
                 message.showOkMessage("prompt", "附加信息条目显示名称错误。", "显示名称不能设置为空。")
-                return
+                return false
             }
         }
         for(const rule of form.tagTypes) {
             if(!rule.trim()) {
                 message.showOkMessage("prompt", "标签类型条目错误。", "标签类型内容不能为空。")
-                return
+                return false
             }
         }
     },

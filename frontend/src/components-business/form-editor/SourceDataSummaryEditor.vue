@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CheckBox, Input } from "@/components/form"
 import { Flex, FlexItem } from "@/components/layout"
-import { SourceTagEditor, SourceBookEditor, SourceRelationEditor, SourceLinkEditor, SourceAdditionalInfoEditor } from "@/components-business/form-editor"
+import { SourceTagEditor, SourceBookEditor, SourceRelationEditor, SourceAdditionalInfoEditor } from "@/components-business/form-editor"
 import { SourceAdditionalInfo, SourceBook, SourceTag } from "@/functions/http-client/api/source-data"
 import { datetime, LocalDateTime } from "@/utils/datetime"
 import DateTimeEditor from "./DateTimeEditor.vue"
@@ -12,7 +12,6 @@ interface SummaryData {
     tags: SourceTag[]
     books: SourceBook[]
     relations: string[]
-    links: string[]
     additionalInfo: SourceAdditionalInfo[]
     publishTime: LocalDateTime | null
 }
@@ -54,27 +53,19 @@ const changePublishTime = (checked: boolean) => {
         <SourceTagEditor :site="site" :value="data.tags" @update:value="set('tags', $event)"/>
     </div>
     <Flex class="mt-1" :spacing="2">
-        <FlexItem :width="65">
+        <FlexItem :width="40">
             <div>
                 <label class="label">集合</label>
                 <SourceBookEditor :value="data.books" @update:value="set('books', $event)"/>
             </div>
         </FlexItem>
-        <FlexItem :width="35">
+        <FlexItem :width="30">
             <div>
                 <label class="label">关联项</label>
                 <SourceRelationEditor :value="data.relations" @update:value="set('relations', $event)"/>
             </div>
         </FlexItem>
-    </Flex>
-    <Flex class="mt-1" :spacing="2">
-        <FlexItem :width="65">
-            <div>
-                <label class="label">链接*</label>
-                <SourceLinkEditor v-model:value="data.links"/>
-            </div>
-        </FlexItem>
-        <FlexItem :width="35">
+        <FlexItem :width="30">
             <div>
                 <label class="label">附加信息*</label>
                 <SourceAdditionalInfoEditor :site="site" v-model:value="data.additionalInfo"/>

@@ -40,9 +40,10 @@ const created = async (name: string) => {
                 </Button>
             </div>
         </div>
-        <div class="flex-item w-65">
+        <div class="flex-item w-65 relative">
             <Editor v-if="selectedItem !== undefined && selectedItem !== '<new>'" :name="selectedItem" :ordinal="selectedIndex!" @close="selectedItem = undefined"/>
             <Creator v-else-if="selectedItem === '<new>'" @created="created"/>
+            <i v-else class="absolute center has-text-secondary">选择一项以查看详情</i>
         </div>
     </div>
 </template>
