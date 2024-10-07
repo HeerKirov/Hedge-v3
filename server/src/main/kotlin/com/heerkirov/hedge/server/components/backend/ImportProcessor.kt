@@ -288,8 +288,8 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
         val mappingTags = sourceMappingManager.batchQuery(sourceTags)
         val resolveConflictParents by lazy { mappingTags.asSequence().flatMap { it.mappings }.map { it.metaTag }.filterIsInstance<TopicSimpleRes>().filter { it.type == TagTopicType.COPYRIGHT || it.type == TagTopicType.IP }.map { it.id }.toSet() }
         for (mappingTag in mappingTags) {
-            if(mappingTag.mappings.size >= 2 && setting.import.resolveConflictByParent && enableTopic && mappingTag.mappings.all { it.metaTag is TopicSimpleRes && it.metaTag.type == TagTopicType.CHARACTER }) {
-                //当一个sourceTag存在至少2个映射目标，目标都是character，且符合resolveConflictByParent条件时，需要根据父标签限定选择其一
+            if(mappingTag.mappings.size >= 2 && setting.meta.resolveTagConflictByParent && enableTopic && mappingTag.mappings.all { it.metaTag is TopicSimpleRes && it.metaTag.type == TagTopicType.CHARACTER }) {
+                //当一个sourceTag存在至少2个映射目标，目标都是character，且符合resolveTagConflictByParent条件时，需要根据父标签限定选择其一
                 for (mapping in mappingTag.mappings) {
                     val topic = mapping.metaTag as TopicSimpleRes
                     var cur: Triple<Int, Int?, Int?>? = null
@@ -323,14 +323,14 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
 
         //根据映射移除对应的tagme。映射从缓存获取，依次尝试topic、author和tag，获取它们在当前site下对应的所有sourceTagType
         //当某种类型的对应的sourceTagType的所有sourceTag全部有映射条目时，此tagme可以消除，因此加入minusTagme
-        //开启onlyCleanTagmeByCharacter时，就要求必须至少有一个CHARACTER
+        //开启onlyCharacterTopic时，就要求必须至少有一个CHARACTER
         val minusTagme: Illust.Tagme = (Illust.Tagme.EMPTY as Illust.Tagme)
             .letIf(setting.import.setTagmeOfTag) { tagme ->
                 tagme.letIf(enableTag && getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.TAG).let { types -> mappingTags.filter { it.type in types } }.let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }) { it + Illust.Tagme.TAG }
                     .letIf(enableAuthor && getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.AUTHOR).let { types -> mappingTags.filter { it.type in types } }.let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }) { it + Illust.Tagme.AUTHOR }
                     .letIf(enableTopic && getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.TOPIC)
                         .let { types -> mappingTags.filter { it.type in types } }
-                        .let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } && if(setting.meta.onlyCleanTagmeByCharacter) { it.flatMap { t -> t.mappings }.any { t -> t.metaTag is TopicSimpleRes && t.metaTag.type == TagTopicType.CHARACTER } }else true }
+                        .let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } && if(setting.meta.onlyCharacterTopic) { it.flatMap { t -> t.mappings }.any { t -> t.metaTag is TopicSimpleRes && t.metaTag.type == TagTopicType.CHARACTER } }else true }
                     ) { it + Illust.Tagme.TOPIC }
             }
 

@@ -72,7 +72,7 @@ class IllustKit(private val appdata: AppDataManager,
             (Illust.Tagme.EMPTY as Illust.Tagme).letIf(appdata.setting.meta.autoCleanTagme) { r ->
                 r.letIf(validatedTags.any { (_, isExported) -> !isExported }) { it + Illust.Tagme.TAG }
                     .letIf(validatedAuthors.any { (_, isExported) -> !isExported }) { it + Illust.Tagme.AUTHOR }
-                    .letIf(validatedTopics.any { (t, isExported) -> !isExported && if(appdata.setting.meta.onlyCleanTagmeByCharacter) t.type == TagTopicType.CHARACTER else true }) { it + Illust.Tagme.TOPIC }
+                    .letIf(validatedTopics.any { (t, isExported) -> !isExported && if(appdata.setting.meta.onlyCharacterTopic) t.type == TagTopicType.CHARACTER else true }) { it + Illust.Tagme.TOPIC }
             }
         }else{
             Illust.Tagme.EMPTY
@@ -164,7 +164,7 @@ class IllustKit(private val appdata: AppDataManager,
             (Illust.Tagme.EMPTY as Illust.Tagme).letIf(appdata.setting.meta.autoCleanTagme) { r ->
                 r.letIf(validatedTags.isPresentAnd { it.any { (_, isExported) -> !isExported } }) { it + Illust.Tagme.TAG }
                 .letIf(validatedAuthors.isPresentAnd { it.any { (_, isExported) -> !isExported } }) { it + Illust.Tagme.AUTHOR }
-                .letIf(validatedTopics.isPresentAnd { it.any { (t, isExported) -> !isExported && if(appdata.setting.meta.onlyCleanTagmeByCharacter) t.type == TagTopicType.CHARACTER else true } }) { it + Illust.Tagme.TOPIC }
+                .letIf(validatedTopics.isPresentAnd { it.any { (t, isExported) -> !isExported && if(appdata.setting.meta.onlyCharacterTopic) t.type == TagTopicType.CHARACTER else true } }) { it + Illust.Tagme.TOPIC }
             }
         }else{
             Illust.Tagme.EMPTY

@@ -420,12 +420,12 @@ class IllustManager(private val appdata: AppDataManager,
                         .map { SourceTagPath(it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.code]!!) }
                     val sourceTagMappings = sourceTags.mapNotNull { mappings[it] }
                     val mappedMetaTags = sourceTagMappings.flatMap { it.mappings }.map { it.metaTag }
-                    val conflictTopics = mutableSetOf<Int>().letIf(appdata.setting.import.resolveConflictByParent) { conflictRet ->
+                    val conflictTopics = mutableSetOf<Int>().letIf(appdata.setting.meta.resolveTagConflictByParent) { conflictRet ->
                         val conflicts = sourceTagMappings.filter { m -> m.mappings.size >= 2 && m.mappings.all { it.metaTag is TopicSimpleRes && it.metaTag.type == TagTopicType.CHARACTER } }
                         if(conflicts.isNotEmpty()) {
                             val resolveConflictParents = mappedMetaTags.filterIsInstance<TopicSimpleRes>().filter { it.type == TagTopicType.IP || it.type == TagTopicType.COPYRIGHT }.map { it.id }
                             for (conflict in conflicts) {
-                                //当一个sourceTag存在至少2个映射目标，目标都是character，且符合resolveConflictByParent条件时，需要根据父标签限定选择其一
+                                //当一个sourceTag存在至少2个映射目标，目标都是character，且符合resolveTagConflictByParent条件时，需要根据父标签限定选择其一
                                 for (mapping in conflict.mappings) {
                                     val topic = mapping.metaTag as TopicSimpleRes
                                     var cur: Triple<Int, Int?, Int?>? = null

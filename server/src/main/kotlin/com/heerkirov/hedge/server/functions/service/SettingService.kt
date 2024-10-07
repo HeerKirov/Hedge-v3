@@ -2,7 +2,6 @@ package com.heerkirov.hedge.server.functions.service
 
 import com.heerkirov.hedge.server.components.appdata.*
 import com.heerkirov.hedge.server.components.bus.EventBus
-import com.heerkirov.hedge.server.components.database.*
 import com.heerkirov.hedge.server.constants.Ui
 import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.SourceSiteRes
@@ -60,9 +59,7 @@ class SettingService(private val appdata: AppDataManager, private val bus: Event
             form.autoAnalyseSourceData.alsoOpt { import.autoAnalyseSourceData = it }
             form.preventNoneSourceData.alsoOpt { import.preventNoneSourceData = it }
             form.autoReflectMetaTag.alsoOpt { import.autoReflectMetaTag = it }
-            form.resolveConflictByParent.alsoOpt { import.resolveConflictByParent = it }
             form.reflectMetaTagType.alsoOpt { import.reflectMetaTagType = it }
-            form.notReflectForMixedSet.alsoOpt { import.notReflectForMixedSet = it }
             form.autoConvertFormat.alsoOpt { import.autoConvertFormat = it }
             form.autoConvertPNGThresholdSizeMB.alsoOpt { import.autoConvertPNGThresholdSizeMB = it }
             form.setTagmeOfTag.alsoOpt { import.setTagmeOfTag = it }
@@ -103,7 +100,8 @@ class SettingService(private val appdata: AppDataManager, private val bus: Event
 
         appdata.saveSetting {
             form.autoCleanTagme.alsoOpt { meta.autoCleanTagme = it }
-            form.onlyCleanTagmeByCharacter.alsoOpt { meta.onlyCleanTagmeByCharacter = it }
+            form.onlyCharacterTopic.alsoOpt { meta.onlyCharacterTopic = it }
+            form.resolveTagConflictByParent.alsoOpt { meta.resolveTagConflictByParent = it }
             form.centralizeCollection.alsoOpt { meta.centralizeCollection = it }
             form.bindingPartitionWithOrderTime.alsoOpt { meta.bindingPartitionWithOrderTime = it }
             form.topicColors.alsoOpt { meta.topicColors = it }

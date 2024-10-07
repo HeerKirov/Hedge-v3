@@ -2,7 +2,6 @@ package com.heerkirov.hedge.server.components.appdata
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import com.heerkirov.hedge.server.dto.form.FindSimilarResultResolveForm.CloneImageResolution
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAuthorType
 import com.heerkirov.hedge.server.enums.TagTopicType
@@ -71,9 +70,13 @@ data class MetaOption(
      */
     var autoCleanTagme: Boolean,
     /**
-     * 只有character成份会清理TOPIC Tagme。
+     * 以角色标签为主题核心。
      */
-    var onlyCleanTagmeByCharacter: Boolean,
+    var onlyCharacterTopic: Boolean,
+    /**
+     * 根据推导得到的父标签解决子标签冲突。用于解决character多义映射的情况。这个选项会在“导入自动映射”和“根据来源标签批量设置标签”功能中生效。
+     */
+    var resolveTagConflictByParent: Boolean,
     /**
      * 对orderTime的变更将会自动同步至partitionTime。
      */
@@ -188,17 +191,9 @@ data class ImportOption(
      */
     var autoReflectMetaTag: Boolean,
     /**
-     * 根据推导得到的父标签解决子标签冲突。用于解决character多义映射的情况。这个选项会在“导入自动映射”和“根据来源标签批量设置标签”功能中生效。
-     */
-    var resolveConflictByParent: Boolean,
-    /**
      * 启用哪些元数据标签类型的映射。
      */
     var reflectMetaTagType: List<MetaType>,
-    /**
-     * 对于那些author和ip/copyright数量较多的对象，将其视为混杂集合，不做映射。
-     */
-    var notReflectForMixedSet: Boolean,
     /**
      * 在文件导入时，自动对那些特定格式的、容量较大的图像进行格式转换，以在不损失质量的前提下减少其大小。
      */

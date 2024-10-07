@@ -1,13 +1,10 @@
 package com.heerkirov.hedge.server.dto.form
 
 import com.heerkirov.hedge.server.components.appdata.ImportOption
-import com.heerkirov.hedge.server.components.appdata.SourceOption
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAuthorType
 import com.heerkirov.hedge.server.enums.TagTopicType
-import com.heerkirov.hedge.server.library.form.Length
 import com.heerkirov.hedge.server.library.form.Min
-import com.heerkirov.hedge.server.library.form.NotBlank
 import com.heerkirov.hedge.server.library.form.Range
 import com.heerkirov.hedge.server.model.FindSimilarTask
 import com.heerkirov.hedge.server.utils.types.Opt
@@ -15,9 +12,8 @@ import com.heerkirov.hedge.server.utils.types.Opt
 data class ImportOptionUpdateForm(val autoAnalyseSourceData: Opt<Boolean>,
                                   val preventNoneSourceData: Opt<Boolean>,
                                   val autoReflectMetaTag: Opt<Boolean>,
-                                  val resolveConflictByParent: Opt<Boolean>,
+
                                   val reflectMetaTagType: Opt<List<MetaType>>,
-                                  val notReflectForMixedSet: Opt<Boolean>,
                                   val autoConvertFormat: Opt<Boolean>,
                                   val autoConvertPNGThresholdSizeMB: Opt<Long>,
                                   val setTagmeOfTag: Opt<Boolean>,
@@ -27,7 +23,8 @@ data class ImportOptionUpdateForm(val autoAnalyseSourceData: Opt<Boolean>,
                                   val sourceAnalyseRules: Opt<List<ImportOption.SourceAnalyseRule>>)
 
 data class MetaOptionUpdateForm(val autoCleanTagme: Opt<Boolean>,
-                                val onlyCleanTagmeByCharacter: Opt<Boolean>,
+                                val onlyCharacterTopic: Opt<Boolean>,
+                                val resolveTagConflictByParent: Opt<Boolean>,
                                 val bindingPartitionWithOrderTime: Opt<Boolean>,
                                 val centralizeCollection: Opt<Boolean>,
                                 val topicColors: Opt<Map<TagTopicType, String>>,

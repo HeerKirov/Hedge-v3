@@ -28,7 +28,8 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             ),
             meta = MetaOption(
                 autoCleanTagme = true,
-                onlyCleanTagmeByCharacter = true,
+                onlyCharacterTopic = true,
+                resolveTagConflictByParent = true,
                 centralizeCollection = true,
                 bindingPartitionWithOrderTime = true,
                 topicColors = emptyMap(),
@@ -48,9 +49,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
                 autoAnalyseSourceData = false,
                 preventNoneSourceData = false,
                 autoReflectMetaTag = false,
-                resolveConflictByParent = false,
                 reflectMetaTagType = listOf(MetaType.TAG, MetaType.TOPIC, MetaType.AUTHOR),
-                notReflectForMixedSet = false,
                 autoConvertFormat = false,
                 autoConvertPNGThresholdSizeMB = 10,
                 setTagmeOfTag = true,
@@ -269,7 +268,9 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
         return mapOf(
             "server" to json["server"],
             "storage" to json["storage"],
-            "meta" to json["meta"],
+            "meta" to json["meta"]
+                .upsertField("onlyCharacterTopic") { value -> if(value != null && value.isBoolean) value else json["meta"]["onlyCleanTagmeByCharacter"] }
+                .upsertField("resolveTagConflictByParent") { value -> if(value != null && value.isBoolean) value else json["import"]["resolveConflictByParent"] },
             "query" to json["query"],
             "source" to mapOf("sites" to sites).toJsonNode(),
             "import" to json["import"],
