@@ -54,14 +54,6 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
                 <CheckBox :disabled="!settingImport.autoReflectMetaTag" :value="settingImport.reflectMetaTagType.includes('AUTHOR')" @update:value="updateReflectMetaTagTypes('AUTHOR', $event)">作者</CheckBox>
                 <p class="secondary-text">启用哪些类型的元数据标签映射。</p>
             </div>
-            <div class="mt-2">
-                <CheckBox :disabled="!settingImport.autoReflectMetaTag" v-model:value="settingImport.notReflectForMixedSet">不映射混合图集</CheckBox>
-                <p class="secondary-text">主题、作者标签数量过多的来源会被视作混合图集，不会进行任何映射。</p>
-            </div>
-            <div class="mt-2">
-                <CheckBox :disabled="!settingImport.autoReflectMetaTag" v-model:value="settingImport.resolveConflictByParent">根据推导得到的父标签解决子标签冲突</CheckBox>
-                <p class="secondary-text">对于映射多个角色标签的来源标签，根据映射得到的其他主题标签限定其中一或多个，以解决一对多映射冲突。</p>
-            </div>
         </div>
         <div class="mt-4">
             <label class="label">文件处理</label>

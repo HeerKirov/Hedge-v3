@@ -40,7 +40,15 @@ const { data: settingMeta } = useSettingMeta()
         <div class="mt-2">
             <CheckBox v-model:value="settingMeta.autoCleanTagme">自动清理Tagme</CheckBox>
             <p class="secondary-text">更改图库项目时，如果Tagme标记的部分发生变更，则自动去除这部分的Tagme标记。</p>
-            <CheckBox class="ml-4 is-font-size-small" v-model:value="settingMeta.onlyCleanTagmeByCharacter">仅在角色标签变更时清理主题Tagme</CheckBox>
+        </div>
+        <div class="mt-2">
+            <CheckBox v-model:value="settingMeta.onlyCharacterTopic">以角色类型作为主题标签核心</CheckBox>
+            <p class="secondary-text">仅在角色标签发生变更时，才自动去除Tagme标记。</p>
+            <p class="secondary-text">来源标签映射时，不会主动添加父级主题标签，除非映射列表中不包含它的子角色标签。</p>
+        </div>
+        <div class="mt-2">
+            <CheckBox v-model:value="settingMeta.resolveTagConflictByParent">推导时根据父标签解决子标签冲突</CheckBox>
+            <p class="secondary-text">对于映射多个角色标签的来源标签，根据映射得到的其他主题标签限定其中一或多个，以解决一对多映射冲突。</p>
         </div>
     </template>
 </template>

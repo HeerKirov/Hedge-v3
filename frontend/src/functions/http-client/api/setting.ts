@@ -221,9 +221,13 @@ export interface MetaOption {
      */
     autoCleanTagme: boolean
     /**
-     * 只有character成份会清理TOPIC Tagme。
+     * 以角色标签为主题核心。
      */
-    onlyCleanTagmeByCharacter: boolean
+    onlyCharacterTopic: boolean
+    /**
+     * 根据推导得到的父标签解决子标签冲突。用于解决character多义映射的情况。这个选项会在“导入自动映射”和“根据来源标签批量设置标签”功能中生效。
+     */
+    resolveTagConflictByParent: boolean
     /**
      * 当创建新集合或向集合添加新项时，允许指定分区，将不在此分区的项聚集到此分区中。
      */
@@ -286,17 +290,9 @@ export interface ImportOption {
      */
     autoReflectMetaTag: boolean
     /**
-     * 根据推导得到的父标签解决子标签冲突。用于解决character多义映射的情况。这个选项会在“导入自动映射”和“根据来源标签批量设置标签”功能中生效。
-     */
-    resolveConflictByParent: boolean
-    /**
      * 启用哪些元数据标签类型的映射。
      */
     reflectMetaTagType: MetaType[]
-    /**
-     * 对于那些author和ip/copyright数量较多的对象，将其视为混杂集合，不做映射。
-     */
-    notReflectForMixedSet: boolean
     /**
      * 在文件导入时，自动对那些特定格式的、容量较大的图像进行格式转换，以在不损失质量的前提下减少其大小。
      */
