@@ -318,8 +318,8 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
         }
 
         //进行混合图集检测。author/topic类型符合检测后，其结果不会输出
-        val notReflectForAuthor = detectImageSet(siteDetail, MetaType.AUTHOR, sourceTags)
-        val notReflectForTopic = detectImageSet(siteDetail, MetaType.TOPIC, sourceTags)
+        val notReflectForAuthor = detectImageSet(siteDetail, MetaType.AUTHOR, sourceTags, mappingTags)
+        val notReflectForTopic = detectImageSet(siteDetail, MetaType.TOPIC, sourceTags, mappingTags)
 
         //根据映射移除对应的tagme。映射从缓存获取，依次尝试topic、author和tag，获取它们在当前site下对应的所有sourceTagType
         //当某种类型的对应的sourceTagType的所有sourceTag全部有映射条目时，此tagme可以消除，因此加入minusTagme
@@ -360,16 +360,26 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
     /**
      * 根据site类型，检测是否符合ImageSet混合图集的定义。
      */
-    private fun detectImageSet(site: SourceSiteRes, metaType: MetaType, sourceTags: List<SourceTagPath>): Boolean {
+    private fun detectImageSet(site: SourceSiteRes, metaType: MetaType, sourceTags: List<SourceTagPath>, mappingTags: List<SourceMappingBatchQueryResult>): Boolean {
         return if(site.isBuiltin && (site.name == "ehentai" || site.name == "imhentai")) {
             when(metaType) {
-                MetaType.TOPIC -> sourceTags.any { it.sourceTagType == "category" || it.sourceTagType == "reclass" && it.sourceTagCode == "image-set" } || getSiteMetaTypeToTagTypeMapping(site, MetaType.AUTHOR).let { types -> sourceTags.count { it.sourceTagType in types } } >= 5
+                MetaType.TOPIC -> sourceTags.any { it.sourceTagType == "category" || it.sourceTagType == "reclass" && it.sourceTagCode == "image-set" }
+                        || site.tagTypeMappings.filterValues { it == TagTopicType.IP.name }.keys.let { types -> sourceTags.count { it.sourceTagType in types } } >= 2
+                        || getSiteMetaTypeToTagTypeMapping(site, MetaType.TOPIC).let { types -> sourceTags.count { it.sourceTagType in types } } >= 8
                 MetaType.AUTHOR -> getSiteMetaTypeToTagTypeMapping(site, MetaType.AUTHOR).let { types -> sourceTags.count { it.sourceTagType in types } } >= 4
                 else -> false
             }
-        }else if(site.isBuiltin && (site.name == "sankakucomplex" || site.name == "konachan" || site.name == "danbooru" || site.name == "gelbooru")) {
+        }else if(site.isBuiltin && (site.name == "pixiv")) {
             when(metaType) {
-                MetaType.TOPIC -> getSiteMetaTypeToTagTypeMapping(site, MetaType.AUTHOR).let { types -> sourceTags.count { it.sourceTagType in types } } >= 5
+                MetaType.TOPIC -> {
+                    val topics = mappingTags.flatMap { it.mappings }.filter { it.metaType == MetaType.TOPIC }.map { it.metaTag as TopicSimpleRes }
+                    topics.size >= 8 || topics.count { it.type == TagTopicType.IP } >= 2
+                }
+                else -> false
+            }
+        }else if(site.isBuiltin && (site.name == "sankakucomplex")) {
+            when(metaType) {
+                MetaType.TOPIC -> getSiteMetaTypeToTagTypeMapping(site, MetaType.TOPIC).let { types -> sourceTags.count { it.sourceTagType in types } } >= 8
                 MetaType.AUTHOR -> getSiteMetaTypeToTagTypeMapping(site, MetaType.AUTHOR).let { types -> sourceTags.count { it.sourceTagType in types } } >= 4
                 else -> false
             }
