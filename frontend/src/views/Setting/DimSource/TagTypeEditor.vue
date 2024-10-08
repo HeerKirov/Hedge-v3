@@ -45,7 +45,7 @@ const addText = ref("")
 </script>
 
 <template>
-    <div class="flex wrap gap-1 align-center">
+    <div class="flex multiline gap-1 align-center">
         <FormEditKit v-for="(item, idx) in tagTypes" :key="item" :value="item" @update:value="update($event, idx)" :editable="editable">
             <template #default="{ value }">
                 <Block :class="$style['tag-block']">{{value}}</Block>

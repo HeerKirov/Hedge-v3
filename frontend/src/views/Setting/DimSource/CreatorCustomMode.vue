@@ -116,7 +116,7 @@ const partModeMenuItems: MenuItem<undefined>[] = [
             <Input width="fullwidth" placeholder="站点唯一标识名称" v-model:value="form.name"/>
         </div>
     </div>
-    <div class="flex no-wrap mt-1">
+    <div class="flex mt-1">
         <div class="flex-item w-30">
             <label class="label mb-1">ID类型</label>
             <ElementPopupMenu :items="idModeMenuItems" position="bottom" align="left" v-slot="{ popup, setEl, attrs}">

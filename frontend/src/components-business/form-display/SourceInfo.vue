@@ -3,6 +3,7 @@ import { computed } from "vue"
 import { Icon } from "@/components/universal"
 import { useSettingSite } from "@/services/setting"
 import { SourceDataPath } from "@/functions/http-client/api/all"
+import { SITE_ICONS } from "@/constants/site"
 
 const props = defineProps<{
     source: SourceDataPath | null
@@ -18,7 +19,8 @@ const siteTitle = computed(() => site?.value?.title ?? props.source?.sourceSite)
 
 <template>
     <p v-if="source" class="no-wrap">
-        <Icon class="mr-1" icon="pager"/>
+        <img v-if="SITE_ICONS[source.sourceSite]" :class="$style['site-icon']" :src="SITE_ICONS[source.sourceSite]" alt="site icon"/>
+        <Icon v-else class="mr-1" icon="pager"/>
         <span class="selectable">
             {{ siteTitle }}
             <b>{{ source.sourceId }}</b>
@@ -31,3 +33,14 @@ const siteTitle = computed(() => site?.value?.title ?? props.source?.sourceSite)
         <span class="secondary-text">无来源信息</span>
     </p>
 </template>
+
+<style module lang="sass">
+@import "../../styles/base/size"
+
+.site-icon
+    display: inline-block
+    margin-right: $spacing-1
+    width: 16px
+    height: 16px
+    vertical-align: sub
+</style>

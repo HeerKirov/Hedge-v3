@@ -39,7 +39,7 @@ const submit = async () => {
 </script>
 
 <template>
-    <div class="flex wrap gap-1 column-3">
+    <div class="flex multiline gap-1 column-3">
         <Block v-for="item in items" :key="item.name" class="relative flex-item has-text-centered pt-2 pb-1" mode="transparent" :color="item.checked ? 'primary' : undefined" @click="toggle(item.name)">
             <div v-if="!item.used" class="absolute top-left ml-1"><CheckBox :value="item.checked"/></div>
             <img :class="{[$style['site-icon']]: true, [$style.used]: item.used}" :src="SITE_ICONS[item.name]" alt="site icon"/>

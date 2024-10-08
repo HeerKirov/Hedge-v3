@@ -25,7 +25,7 @@ const created = async (name: string) => {
 </script>
 
 <template>
-    <div class="flex no-wrap align-stretch gap-2">
+    <div class="flex align-stretch gap-2">
         <div :class="[$style['left-column'], 'flex-item', 'w-35']">
             <div class="flex jc-between align-baseline">
                 <label class="label mt-2 mb-1">来源站点</label>

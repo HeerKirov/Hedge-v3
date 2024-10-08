@@ -21,7 +21,7 @@ const click = (e: MouseEvent, value: ElementValue) => {
 <template>
     <div class="flex no-wrap">
         <div :class="$style['element-type']"><b>{{QUERY_ELEMENT_TYPES[elementGroup.type]}}</b></div>
-        <div class="flex-item w-100 flex wrap">
+        <div class="flex-item w-100 flex multiline">
             <template v-for="(intersectItem, idx) in elementGroup.intersectItems">
                 <b v-if="idx > 0" class="ml-half mr-1">&</b>
                 <b v-if="intersectItem.exclude" class="mr-half">-</b>

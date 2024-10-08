@@ -38,7 +38,7 @@ const addText = ref<string>("")
 </script>
 
 <template>
-    <div class="flex no-wrap column gap-1">
+    <div class="flex column gap-1">
         <FormEditKit v-for="(item, idx) in sourceLinkRules" :key="item" :value="item" @update:value="update($event, idx)" :editable="editable">
             <template #default="{ value }">
                 <Block mode="transparent" :class="$style['tag-block']">
@@ -51,7 +51,7 @@ const addText = ref<string>("")
             </template>
         </FormEditKit>
         <Button v-if="editable && !addMode" size="small" type="success" icon="plus" @click="addMode = true">添加链接</Button>
-        <div v-else-if="editable" class="flex no-wrap gap-1">
+        <div v-else-if="editable" class="flex gap-1">
             <Input size="small" width="fullwidth" placeholder="链接" v-model:value="addText" @enter="add" update-on-input auto-focus/>
             <Button class="flex-item no-grow-shrink" square size="small" type="success" icon="check" @click="add"/>
         </div>

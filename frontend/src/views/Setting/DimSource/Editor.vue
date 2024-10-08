@@ -7,13 +7,13 @@ import { FormEditKit } from "@/components/interaction"
 import { Site } from "@/functions/http-client/api/setting"
 import { useFetchEndpoint } from "@/functions/fetch"
 import { useMessageBox } from "@/modules/message-box"
+import { SITE_ICONS, SITE_FEATURES, SITE_FEATURE_DESCRIPTIONS } from "@/constants/site"
 import { checkVariableName } from "@/utils/validation"
 import { objects } from "@/utils/primitives"
 import TagTypeEditor from "./TagTypeEditor.vue"
 import TagTypeMappingEditor from "./TagTypeMappingEditor.vue"
 import AdditionalFieldEditor from "./AdditionalFieldEditor.vue"
 import SourceLinkRuleEditor from "./SourceLinkRuleEditor.vue"
-import { SITE_ICONS } from "@/constants/site";
 
 const props = defineProps<{
     name: string
@@ -110,7 +110,7 @@ const trash = async () => {
             ({{name}})
         </div>
     </div>
-    <div v-if="data !== null" class="flex no-wrap mt-1">
+    <div v-if="data !== null" class="flex mt-1">
         <div class="flex-item w-30">
             <label class="label mb-1">ID类型</label>
             <span :class="data.idMode === 'STRING' ? 'has-text-primary' : 'has-text-secondary'"><Icon :icon="data.idMode === 'STRING' ? 'font' : '1'"/>{{data.idMode === 'STRING' ? '字符类型ID' : '数字类型ID'}}</span>
@@ -119,6 +119,11 @@ const trash = async () => {
             <label class="label mb-1">分页</label>
             <span :class="data.partMode !== 'NO' ? 'has-text-primary' : 'has-text-secondary'"><Icon :icon="data.partMode !== 'NO' ? 'check' : 'close'"/>{{data.partMode === 'PAGE_WITH_NAME' ? '允许分页和可选页名' : data.partMode === 'PAGE' ? '允许分页' : '不允许分页'}}</span>
         </div>
+    </div>
+    <div class="mt-1">
+        <p v-for="item in SITE_FEATURES[name]" class="secondary-text">
+            <Icon icon="exclamation-triangle"/>{{SITE_FEATURE_DESCRIPTIONS[item]}}
+        </p>
     </div>
     <div v-if="data !== null" class="mt-1">
         <label class="label">附加字段</label>
