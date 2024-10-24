@@ -10,6 +10,14 @@
     "host_permissions": [
         "*://localhost/"
     ],
+	"web_accessible_resources": [
+		{
+			"resources": [
+				"favicon.png"
+			],
+			"matches": ["<all_urls>"]
+		}
+	],
     "action": {
         "default_popup": "popup.html"
     },

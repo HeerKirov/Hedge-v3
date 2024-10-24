@@ -31,35 +31,32 @@ export function determiningFilename(downloadItem: chrome.downloads.DownloadItem,
     settings.get().then(async setting => {
         const url = downloadItem.url
         const info = await sessions.cache.downloadItemInfo.get(url)
-        try {
-            if(info) {
-                //在从info提取获得文件名时，此文件是通过download API指定下载的。使用已准备好的文件名。
-                console.log(`[determiningFilename] url=[${url}], filename=[${filenameWithoutExt}]`)
-                const filename = generateSourceName(info.sourcePath)
-                suggest({filename: filename + (extension ? "." + extension : "")})
-                if(info.collectSourceData && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
-                    await sourceDataManager.collect({...info.sourcePath, type: "auto"})
-                }
-            }else{
-                //否则，此文件是用户行为触发的下载。使用建议规则集。
-                console.log(`[determiningFilename] url=[${url}], referrer=[${downloadItem.referrer}], filename=[${filenameWithoutExt}]`)
-                if(!extension || !(BUILTIN_EXTENSIONS.includes(extension) || setting.toolkit.determiningFilename.extensions.includes(extension))) {
-                    suggest()
-                    return
-                }
-                const result = matchRulesAndArgs(downloadItem.referrer, url, filenameWithoutExt, setting)
-                if(result === null) {
-                    suggest()
-                    return
-                }
-                suggest({filename: result.determining + (extension ? "." + extension : "")})
-                if(result.sourcePath !== null && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
-                    await sourceDataManager.collect({...result.sourcePath, type: "auto"})
-                }
+        if(info) {
+            //在从info提取获得文件名时，此文件是通过download API指定下载的。使用已准备好的文件名。
+            console.log(`[determiningFilename] url=[${url}], filename=[${filenameWithoutExt}]`)
+            const filename = generateSourceName(info.sourcePath)
+            suggest({filename: filename + (extension ? "." + extension : "")})
+            if(info.collectSourceData && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
+                await sourceDataManager.collect({...info.sourcePath, type: "auto"})
             }
-        }finally{
-            if(info) await sessions.cache.downloadItemInfo.del(url)
+        }else{
+            //否则，此文件是用户行为触发的下载。使用建议规则集。
+            console.log(`[determiningFilename] url=[${url}], referrer=[${downloadItem.referrer}], filename=[${filenameWithoutExt}]`)
+            if(!extension || !(BUILTIN_EXTENSIONS.includes(extension) || setting.toolkit.determiningFilename.extensions.includes(extension))) {
+                suggest()
+                return
+            }
+            const result = matchRulesAndArgs(downloadItem.referrer, url, filenameWithoutExt, setting)
+            if(result === null) {
+                suggest()
+                return
+            }
+            suggest({filename: result.determining + (extension ? "." + extension : "")})
+            if(result.sourcePath !== null && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
+                await sourceDataManager.collect({...result.sourcePath, type: "auto"})
+            }
         }
+        //tips: info的信息不应该被移除。当文件下载失败时，它还会再走一次determiningFilename机制，此时就会出现找不到info而出现默认命名的情况
     })
 
     return true

@@ -36,8 +36,6 @@ function enableBlockAds() {
     document.querySelector(".carousel.topbar-carousel")?.remove()
     //顶栏，不是广告，属于UI，但有点碍眼
     document.querySelector(".top-bar")?.remove()
-    //标题栏，不是广告，属于UI，但有点碍眼
-    document.querySelector("h2#page-title")?.remove()
     //内容区域里的AI推广
     document.querySelector(".carousel.ai-carousel")?.remove()
     //内容区域里的广告推广
