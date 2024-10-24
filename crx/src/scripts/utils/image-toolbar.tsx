@@ -1,7 +1,7 @@
-import React, { useMemo } from "react"
+import React, { useMemo, useState } from "react"
 import ReactDOM from "react-dom/client"
 import { css, styled, StyleSheetManager } from "styled-components"
-import { Icon, LayouttedDiv } from "@/components"
+import { FormattedText, Icon, LayouttedDiv } from "@/components"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { sendMessage } from "@/functions/messages"
 import { GlobalStyle } from "@/styles"
@@ -78,18 +78,26 @@ const config: ToolbarConfig = {locale: undefined, collectSourceData: true}
 function ToolBar(props: Omit<RegisterItem, "element">) {
     const favicon = useMemo(() => props.index === null ? chrome.runtime.getURL("favicon.png") : null, [props.index === null])
 
-    //TODO 添加防重放机制和点击后的图标变化
+    const [status, setStatus] = useState<"DN" | "ING" | "OK">("DN")
 
     const downloadClick = () => {
-        const url = typeof props.downloadURL === "function" ? props.downloadURL() ?? "" : props.downloadURL
-        const sourcePath = props.sourcePath ?? undefined
-        sendMessage("DOWNLOAD_URL", {url, sourcePath, collectSourceData: config.collectSourceData})
+        if(status !== "ING") {
+            const url = typeof props.downloadURL === "function" ? props.downloadURL() ?? "" : props.downloadURL
+            const sourcePath = props.sourcePath ?? undefined
+            sendMessage("DOWNLOAD_URL", {url, sourcePath, collectSourceData: config.collectSourceData})
+            setStatus("ING")
+            setTimeout(() => setStatus("OK"), 500)
+        }
     }
 
     return <ToolBarDiv $style={config.locale}>
         <DoubleFlipButton $style={config.locale} onClick={downloadClick}>
             {favicon === null ? <b>{props.index}</b> : <LayouttedDiv padding={1}><img src={favicon} alt="favicon"/></LayouttedDiv>}
-            <Icon icon="download"/>
+            {
+                status === "DN" ? <FormattedText><Icon icon="download"/></FormattedText>
+                : status === "ING" ? <FormattedText><Icon icon="circle-notch" spin/></FormattedText>
+                : <FormattedText color="success"><Icon icon="check"/></FormattedText>
+            }
         </DoubleFlipButton>
     </ToolBarDiv>
 }

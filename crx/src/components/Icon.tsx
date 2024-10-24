@@ -72,7 +72,7 @@ import {
     faCalendar, faCalendarCheck, faCalendarDay, faCalendarPlus, faCalendarWeek, faCaretDown, faCaretRight, faCaretUp, faCheck, faClose, faCircle,
     faDownload, faEdit, faFile, faFileExport, faFileImport, faFileInvoice, faFolder, faPlus, faCalendarAlt,
     faRecordVinyl, faSave, faSearch, faServer, faStar, faToolbox, faTrash, faUpload, faWarning, faToggleOn, faUpRightFromSquare,
-    faGrinSquint, faScrewdriverWrench, faTags, faIdCard, faImage, faBullseye, faPager, faClock, faBusinessTime
+    faGrinSquint, faScrewdriverWrench, faTags, faIdCard, faImage, faBullseye, faPager, faClock, faBusinessTime, faCircleNotch
 } from "@fortawesome/free-solid-svg-icons"
 import {
     faStar as faStarRegular, faSave as faSaveRegular
@@ -83,6 +83,6 @@ library.add(
     faCalendar, faCalendarCheck, faCalendarDay, faCalendarPlus, faCalendarWeek, faCaretDown, faCaretRight, faCaretUp, faCheck, faClose, faCircle,
     faDownload, faEdit, faFile, faFileExport, faFileImport, faFileInvoice, faFolder, faPlus, faCalendarAlt,
     faRecordVinyl, faSave, faSearch, faServer, faStar, faToolbox, faTrash, faUpload, faWarning, faToggleOn, faUpRightFromSquare,
-    faGrinSquint, faScrewdriverWrench, faTags, faIdCard, faImage, faBullseye, faPager, faClock, faBusinessTime
+    faGrinSquint, faScrewdriverWrench, faTags, faIdCard, faImage, faBullseye, faPager, faClock, faBusinessTime, faCircleNotch
 )
 library.add(faStarRegular, faSaveRegular)
