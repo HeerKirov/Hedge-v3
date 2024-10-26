@@ -54,7 +54,16 @@ function initializeUI(sourcePath: SourceDataPath) {
             index,
             sourcePath: {...sourcePath, sourcePart: index, sourcePartName: imageHash},
             element: node,
-            downloadURL: () => node.querySelector<HTMLAnchorElement>("div.mbar > div:first-child > a")?.href
+            downloadURL: () => {
+                const fullImgURL = node.querySelector<HTMLAnchorElement>("div.mbar > div:first-child > a")?.href
+                if(fullImgURL !== undefined) {
+                    return fullImgURL
+                }else if(node.querySelector("div.mbar > div:first-child > img[title=\"Original Image\"]") !== undefined) {
+                    return node.querySelector<HTMLImageElement>(`a > img#imgsrc_${index}`)?.src
+                }else{
+                    return undefined
+                }
+            }
         }
     })))
 
