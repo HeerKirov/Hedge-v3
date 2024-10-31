@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Separator } from "@/components/universal"
+import { Block, Separator } from "@/components/universal"
 import { CheckBox, NumberInput, Select } from "@/components/form"
 import { MetaType } from "@/functions/http-client/api/all"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
@@ -80,7 +80,14 @@ const timeTypes: {value: OrderTimeType, label: string}[] = [
     </template>
     <template v-if="!!settingImport">
         <Separator direction="horizontal" :spacing="2"/>
-        <label class="label">来源数据解析规则</label>
+        <label class="label">来源解析规则</label>
+
+        <p class="mt-1">对于<b>内置</b>来源站点，内置统一的来源解析规则:</p>
+        <Block class="p-1">
+            <code>{站点标识名称}_{ID}<span class="has-text-secondary">[</span>_{页码}<span class="has-text-secondary">[</span>_{页名}<span class="has-text-secondary">]]</span></code>
+            <span class="secondary-text float-right is-line-height-tiny">页码、页名会根据站点的分页规则可选。</span>
+        </Block>
+        <p class="mt-1">除此之外，可以使用正则表达式为自定义站点添加解析规则，或为内置站点追加额外的规则。</p>
         <DBImportSourceRule class="mt-1" v-model:rules="settingImport.sourceAnalyseRules"/>
     </template>
 </template>
