@@ -28,7 +28,7 @@ export function checkVariableName(name: string): boolean {
     return /^[A-Za-z][A-Za-z0-9_]*$/.test(name)
 }
 
-const DISABLE_CHARACTER = ["'", "\"", "`", ".", "|"]
+const DISABLE_CHARACTER = ["`", "|"]
 
 export type PortType = "AUTO" | "RANGE" | number | "ERROR"
 

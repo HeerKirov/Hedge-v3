@@ -80,7 +80,7 @@ export function useAnnotationCreatePane() {
         create: client => client.annotation.create,
         beforeCreate(form): boolean | void {
             if(!checkTagName(form.name)) {
-                message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` \" ' . | 字符。")
+                message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` | 字符。")
                 return false
             }
         },
@@ -118,7 +118,7 @@ export function useAnnotationDetailPane() {
 
     const setName = async (name: string) => {
         if(!checkTagName(name)) {
-            message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` \" ' . | 字符。")
+            message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` | 字符。")
             return false
         }
         return name === data.value?.name || await setData({ name }, e => {

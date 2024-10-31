@@ -98,12 +98,12 @@ export function useTagCreatePane() {
         mapForm: mapCreateFormToHelper,
         beforeCreate(form): boolean | void {
             if(!checkTagName(form.name)) {
-                message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` \" ' . | 字符。")
+                message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` | 字符。")
                 return false
             }
             for(const otherName of form.otherNames) {
                 if(!checkTagName(otherName)) {
-                    message.showOkMessage("prompt", "不合法的别名。", "别名不能包含 ` \" ' . | 字符。")
+                    message.showOkMessage("prompt", "不合法的别名。", "别名不能包含 ` | 字符。")
                     return false
                 }
             }
@@ -219,11 +219,11 @@ export function useTagDetailPane() {
 
     const setName = async ([name, otherNames, color]: [string, string[], UsefulColors | null]) => {
         if(!checkTagName(name)) {
-            message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` \" ' . | 字符。")
+            message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` | 字符。")
             return false
         }
         if(otherNames.some(n => !checkTagName(n))) {
-            message.showOkMessage("prompt", "不合法的别名。", "别名不能为空，且不能包含 ` \" ' . | 字符。")
+            message.showOkMessage("prompt", "不合法的别名。", "别名不能为空，且不能包含 ` | 字符。")
             return false
         }
 

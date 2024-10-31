@@ -34,7 +34,7 @@ const add = () => {
             emit("update:value", [...props.value, text])
             addTextBox.value = ""
         }else{
-            message.showOkMessage("prompt", "不合法的别名。", "别名不能为空，且不能包含 ` \" ' . | 字符。")
+            message.showOkMessage("prompt", "不合法的别名。", "别名不能为空，且不能包含 ` | 字符。")
         }
     }
 }

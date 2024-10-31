@@ -145,12 +145,12 @@ export function useAuthorCreatePanel() {
         mapForm: mapCreateFormToHelper,
         beforeCreate(form): boolean | void {
             if(!checkTagName(form.name)) {
-                message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` \" ' . | 字符。")
+                message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` | 字符。")
                 return false
             }
             for(const otherName of form.otherNames) {
                 if(!checkTagName(otherName)) {
-                    message.showOkMessage("prompt", "不合法的别名。", "别名不能包含 ` \" ' . | 字符。")
+                    message.showOkMessage("prompt", "不合法的别名。", "别名不能包含 ` | 字符。")
                     return false
                 }
             }
@@ -286,7 +286,7 @@ function useAuthorDetailPanelEditor(data: Readonly<Ref<DetailAuthor | null>>, se
 
             if(form.value.name !== data.value.name) {
                 if(!checkTagName(form.value.name)) {
-                    message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` \" ' . | 字符。")
+                    message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` | 字符。")
                     return
                 }
                 updateForm.name = form.value.name
@@ -294,7 +294,7 @@ function useAuthorDetailPanelEditor(data: Readonly<Ref<DetailAuthor | null>>, se
             if(!objects.deepEquals(form.value.otherNames, data.value.otherNames)) {
                 for(const otherName of form.value.otherNames) {
                     if(!checkTagName(otherName)) {
-                        message.showOkMessage("prompt", "不合法的别名。", "别名不能为空，且不能包含 ` \" ' . | 字符。")
+                        message.showOkMessage("prompt", "不合法的别名。", "别名不能为空，且不能包含 ` | 字符。")
                         return
                     }
                 }
