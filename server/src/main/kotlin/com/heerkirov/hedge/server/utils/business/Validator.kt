@@ -14,7 +14,7 @@ fun checkTagName(name: String): Boolean {
         return false
     }
 
-    //不能包含禁用符号' " ` . |
+    //不能包含禁用符号` |
     for (c in disableCharacter) {
         if(name.contains(c)) {
             return false
@@ -56,6 +56,6 @@ fun checkScore(score: Int): Boolean {
     return score in 1..5
 }
 
-private val disableCharacter = arrayOf('\'', '"', '`', '.', '|')
+private val disableCharacter = arrayOf('`', '|')
 private val variableRegex = Pattern.compile("^[A-Za-z][A-Za-z0-9_]*$")
 private val sourceIdRegex = Pattern.compile("^[A-Za-z0-9]*$")
