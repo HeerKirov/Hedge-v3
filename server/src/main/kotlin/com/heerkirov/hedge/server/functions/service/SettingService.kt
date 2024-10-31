@@ -104,6 +104,7 @@ class SettingService(private val appdata: AppDataManager, private val bus: Event
             form.resolveTagConflictByParent.alsoOpt { meta.resolveTagConflictByParent = it }
             form.centralizeCollection.alsoOpt { meta.centralizeCollection = it }
             form.bindingPartitionWithOrderTime.alsoOpt { meta.bindingPartitionWithOrderTime = it }
+            form.tuningOrderTime.alsoOpt { meta.tuningOrderTime = it }
             form.topicColors.alsoOpt { meta.topicColors = it }
             form.authorColors.alsoOpt { meta.authorColors = it }
         }

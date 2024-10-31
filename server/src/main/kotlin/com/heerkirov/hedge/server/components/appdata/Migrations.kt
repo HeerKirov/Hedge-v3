@@ -32,6 +32,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
                 resolveTagConflictByParent = true,
                 centralizeCollection = true,
                 bindingPartitionWithOrderTime = true,
+                tuningOrderTime = true,
                 topicColors = emptyMap(),
                 authorColors = emptyMap()
             ),
@@ -270,7 +271,8 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             "storage" to json["storage"],
             "meta" to json["meta"]
                 .upsertField("onlyCharacterTopic") { value -> if(value != null && value.isBoolean) value else json["meta"]["onlyCleanTagmeByCharacter"] }
-                .upsertField("resolveTagConflictByParent") { value -> if(value != null && value.isBoolean) value else json["import"]["resolveConflictByParent"] },
+                .upsertField("resolveTagConflictByParent") { value -> if(value != null && value.isBoolean) value else json["import"]["resolveConflictByParent"] }
+                .upsertField("tuningOrderTime") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() },
             "query" to json["query"],
             "source" to mapOf("sites" to sites).toJsonNode(),
             "import" to json["import"],

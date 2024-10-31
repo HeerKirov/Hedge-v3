@@ -54,7 +54,7 @@ fun runApplication(options: ApplicationOptions) {
             val metaUtilKit = MetaUtilKit(appdata, repo)
             val metaManager = MetaManager(repo)
 
-            val illustKit = IllustKit(appdata, repo, metaManager)
+            val illustKit = IllustKit(appdata, repo, bus, metaManager)
             val bookKit = BookKit(repo, metaManager)
             val folderKit = FolderKit(repo)
             val backendExporter = define { BackendExporterImpl(appStatus, bus, taskCounter, repo, illustKit, bookKit) }

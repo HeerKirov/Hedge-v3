@@ -101,6 +101,8 @@ class IllustManager(private val appdata: AppDataManager,
                 }
             }
 
+            if(appdata.setting.meta.tuningOrderTime) kit.tuningOrderTime(form.zip(ids).map { (f, id) -> id to f.orderTime.toEpochMilli() })
+
             bus.emit(ids.map { IllustCreated(it, IllustType.IMAGE) })
 
             return form.map { it.importId }.zip(ids).toMap()
@@ -535,15 +537,17 @@ class IllustManager(private val appdata: AppDataManager,
 
             if(orderTimeSeq.isNotEmpty()) {
                 //将orderTime序列的值依次赋值给项目序列中的每一项
+                val list = orderTimeSeq.zip(newOrderTimeSeq) { (id, _, _), ot -> id to ot }
                 data.db.batchUpdate(Illusts) {
-                    orderTimeSeq.forEachIndexed { i, (id, _, _) ->
+                    list.forEach { (id, ot) ->
                         item {
                             where { it.id eq id }
-                            set(it.partitionTime, newOrderTimeSeq[i].toInstant().toPartitionDate(appdata.setting.server.timeOffsetHour))
-                            set(it.orderTime, newOrderTimeSeq[i])
+                            set(it.partitionTime, ot.toInstant().toPartitionDate(appdata.setting.server.timeOffsetHour))
+                            set(it.orderTime, ot)
                         }
                     }
                 }
+                if(appdata.setting.meta.tuningOrderTime) kit.tuningOrderTime(list)
             }
 
             if(collections.isNotEmpty()) {
@@ -1005,8 +1009,9 @@ class IllustManager(private val appdata: AppDataManager,
                 val max = specifiedImages.maxOf { it.orderTime }
                 val step = (max - min) / (images.size - 1)
                 val values = images.indices.map { index -> min + step * index }
+                val list = images.sortedBy { it.orderTime }.zip(values)
                 data.db.batchUpdate(Illusts) {
-                    images.sortedBy { it.orderTime }.zip(values).forEach { (illust, ot) ->
+                    list.forEach { (illust, ot) ->
                         item {
                             where { it.id eq illust.id }
                             set(it.orderTime, ot)
@@ -1014,6 +1019,8 @@ class IllustManager(private val appdata: AppDataManager,
                         }
                     }
                 }
+                //tips: 这里没有发送imageUpdated(timeSot=true)事件，因为考虑到这里的时间属性变化没有什么可触发的后续内容(集合的时间已提前计算)，就节省了一次事件
+                if(appdata.setting.meta.tuningOrderTime) kit.tuningOrderTime(list.map { (i, ot) -> i.id to ot }, eventForAllIllusts = true)
             }
         }
 

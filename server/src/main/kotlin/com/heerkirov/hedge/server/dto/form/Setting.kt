@@ -26,6 +26,7 @@ data class MetaOptionUpdateForm(val autoCleanTagme: Opt<Boolean>,
                                 val onlyCharacterTopic: Opt<Boolean>,
                                 val resolveTagConflictByParent: Opt<Boolean>,
                                 val bindingPartitionWithOrderTime: Opt<Boolean>,
+                                val tuningOrderTime: Opt<Boolean>,
                                 val centralizeCollection: Opt<Boolean>,
                                 val topicColors: Opt<Map<TagTopicType, String>>,
                                 val authorColors: Opt<Map<TagAuthorType, String>>)

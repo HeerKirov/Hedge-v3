@@ -21,6 +21,23 @@ fun <T> Iterable<T>.mostCount(): T {
 }
 
 /**
+ * 按照给定条件，将迭代内容分割至N个列表。
+ */
+inline fun <T> Iterable<T>.splitWhen(whetherSplit: (T, T) -> Boolean): Iterable<Collection<T>> {
+    val ret = ArrayList<Collection<T>>()
+    var current = ArrayList<T>()
+    for (t in this) {
+        if(current.isNotEmpty() && whetherSplit(current.last(), t)) {
+            ret.add(current)
+            current = ArrayList()
+        }
+        current.add(t)
+    }
+    if(current.isNotEmpty()) ret.add(current)
+    return ret
+}
+
+/**
  * 按照给定条件，将迭代内容分割至两个列表。
  */
 inline fun <T> Iterable<T>.filterInto(condition: (T) -> Boolean): Pair<List<T>, List<T>> {

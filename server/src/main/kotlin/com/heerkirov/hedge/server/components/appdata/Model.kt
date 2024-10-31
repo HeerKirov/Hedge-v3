@@ -82,6 +82,10 @@ data class MetaOption(
      */
     var bindingPartitionWithOrderTime: Boolean,
     /**
+     * 自动微调排序时间。
+     */
+    var tuningOrderTime: Boolean,
+    /**
      * 当创建新集合或向集合添加新项时，允许指定分区，将不在此分区的项聚集到此分区中。
      */
     var centralizeCollection: Boolean,

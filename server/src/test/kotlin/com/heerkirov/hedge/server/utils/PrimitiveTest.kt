@@ -54,4 +54,13 @@ class PrimitiveTest {
             assertEquals(listOf(1 to 2, 1 to 3, 1 to 4, 2 to 3, 2 to 4, 3 to 4), output)
         }
     }
+
+    @Test
+    fun testSplitWhen() {
+        assertEquals(listOf(listOf(1, 2), listOf(4, 5), listOf(9, 10, 11)), listOf(1, 2, 4, 5, 9, 10, 11).splitWhen { a, b -> b - a > 1 })
+        assertEquals(listOf(listOf(1), listOf(3), listOf(5)), listOf(1, 3, 5).splitWhen { a, b -> b - a > 1 })
+        assertEquals(listOf(listOf(1), listOf(3), listOf(5, 6, 7)), listOf(1, 3, 5, 6, 7).splitWhen { a, b -> b - a > 1 })
+        assertEquals(listOf(listOf(1, 2, 3, 4)), listOf(1, 2, 3, 4).splitWhen { a, b -> b - a > 1 })
+        assertEquals(emptyList(), emptyList<Int>().splitWhen { a, b -> b - a > 1 })
+    }
 }
