@@ -2,11 +2,14 @@ package com.heerkirov.hedge.server.functions.manager
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.appdata.ImportOption
+import com.heerkirov.hedge.server.components.appdata.SourceOption
+import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.dto.form.SourceBookForm
 import com.heerkirov.hedge.server.dto.form.SourceDataAdditionalInfoForm
 import com.heerkirov.hedge.server.dto.form.SourceDataUpdateForm
 import com.heerkirov.hedge.server.dto.form.SourceTagForm
 import com.heerkirov.hedge.server.dto.res.SourceDataPath
+import com.heerkirov.hedge.server.events.SettingSourceSiteChanged
 import com.heerkirov.hedge.server.exceptions.BusinessException
 import com.heerkirov.hedge.server.exceptions.InvalidRegexError
 import com.heerkirov.hedge.server.exceptions.be
@@ -21,18 +24,27 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
 
-class SourceAnalyzeManager(private val appdata: AppDataManager) {
+class SourceAnalyzeManager(private val appdata: AppDataManager, bus: EventBus, private val siteManager: SourceSiteManager) {
+    init {
+        bus.on(SettingSourceSiteChanged::class) {
+            builtinRules = generateBuiltinRules()
+        }
+    }
     /**
      * 对一条import记录的内容进行解析，得到source元数据。
      * @throws InvalidRegexError (regex) 执行正则表达式时发生错误，怀疑是表达式或相关参数没写对
      */
     fun analyseSourceMeta(filename: String?): Pair<SourceDataPath, SourceDataUpdateForm?>? {
+        for (rule in getBuiltinRules()) {
+            analyseOneRule(rule, filename)?.let { (id, secondaryId, secondaryName, form) ->
+                return Pair(sourcePathOf(rule.site, id, secondaryId, secondaryName), form)
+            }
+        }
         for (rule in appdata.setting.import.sourceAnalyseRules) {
             analyseOneRule(rule, filename)?.let { (id, secondaryId, secondaryName, form) ->
                 return Pair(sourcePathOf(rule.site, id, secondaryId, secondaryName), form)
             }
         }
-
         return null
     }
 
@@ -115,6 +127,33 @@ class SourceAnalyzeManager(private val appdata: AppDataManager) {
         val i = filename.lastIndexOf('.')
         return if(i >= 0) filename.substring(0, i) else filename
     }
+
+    private fun generateBuiltinRules(): List<ImportOption.SourceAnalyseRule> {
+        return siteManager.list().filter { it.isBuiltin }.map {
+            val id = if(it.idMode == SourceOption.SiteIdMode.NUMBER) "_(?<ID>\\d+)" else "_(?<ID>[A-Za-z0-9]+)"
+            val part = when(it.partMode) {
+                SourceOption.SitePartMode.PAGE_WITH_NAME -> "_(?<P>\\d+)(_(?<PN>[A-Za-z0-9]+))?"
+                SourceOption.SitePartMode.PAGE -> "_(?<P>\\d+)"
+                SourceOption.SitePartMode.NO -> ""
+            }
+            val partGroup = if(it.partMode != SourceOption.SitePartMode.NO) "P" else null
+            val partNameGroup = if(it.partMode == SourceOption.SitePartMode.PAGE_WITH_NAME) "PN" else null
+            ImportOption.SourceAnalyseRule(it.name, "${it.name}$id$part", "ID", partGroup, partNameGroup, null)
+        }
+    }
+
+    private fun getBuiltinRules(): List<ImportOption.SourceAnalyseRule> {
+        if(builtinRules == null) {
+            synchronized(this) {
+                if(builtinRules == null) {
+                    builtinRules = generateBuiltinRules()
+                }
+            }
+        }
+        return builtinRules!!
+    }
+
+    @Volatile private var builtinRules: List<ImportOption.SourceAnalyseRule>? = null
 
     private val patterns = ConcurrentHashMap<String, Pattern>()
 }

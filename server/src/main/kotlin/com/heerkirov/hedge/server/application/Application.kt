@@ -37,7 +37,7 @@ fun runApplication(options: ApplicationOptions) {
             val taskScheduler = define { TaskSchedulerModule(appStatus, appdata, bus, options) }
 
             val sourceSiteManager = SourceSiteManager(appdata, repo, bus)
-            val sourceAnalyzeManager = SourceAnalyzeManager(appdata)
+            val sourceAnalyzeManager = SourceAnalyzeManager(appdata, bus, sourceSiteManager)
             val sourceBookManager = SourceBookManager(repo, bus)
             val sourceTagManager = SourceTagManager(repo, bus, sourceSiteManager)
             val sourceDataManager = SourceDataManager(repo, bus, sourceSiteManager, sourceTagManager, sourceBookManager)
