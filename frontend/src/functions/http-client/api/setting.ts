@@ -233,6 +233,10 @@ export interface MetaOption {
      */
     centralizeCollection: boolean
     /**
+     * 自动微调排序时间。
+     */
+    tuningOrderTime: boolean
+    /**
      * 对orderTime的变更将会自动同步至partitionTime。
      */
     bindingPartitionWithOrderTime: boolean

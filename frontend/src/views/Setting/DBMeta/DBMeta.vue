@@ -38,6 +38,10 @@ const { data: settingMeta } = useSettingMeta()
             <p class="secondary-text">更改项的排序时间时，根据排序时间自动更改时间分区。</p>
         </div>
         <div class="mt-2">
+            <CheckBox v-model:value="settingMeta.tuningOrderTime">自动微调排序时间</CheckBox>
+            <p class="secondary-text">通过拖放位置、创建集合等方式修改排序时间时，会在项之间过于靠近时自动调整，使其保持一定的距离，以避免项集中。</p>
+        </div>
+        <div class="mt-2">
             <CheckBox v-model:value="settingMeta.autoCleanTagme">自动清理Tagme</CheckBox>
             <p class="secondary-text">更改图库项目时，如果Tagme标记的部分发生变更，则自动去除这部分的Tagme标记。</p>
         </div>
