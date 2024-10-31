@@ -38,10 +38,10 @@ function initializeUI(sourcePath: SourceDataPath) {
             if(values.length > 0) callback(values)
         })
 
-        observer.observe(document.querySelector("#pane_images_inner")!, { childList: true, subtree: true })
+        observer.observe(document.querySelector("#pane_images")!, { childList: true, subtree: true })
 
         //进行一波初始化回调
-        const initValues = [...document.querySelectorAll<HTMLDivElement>("#pane_images_inner > div.mimg").values()].filter(n => n.hasChildNodes())
+        const initValues = [...document.querySelectorAll<HTMLDivElement>("#pane_images > div.mimg").values()].filter(n => n.hasChildNodes())
         if(initValues.length > 0) callback(initValues)
     }
 
