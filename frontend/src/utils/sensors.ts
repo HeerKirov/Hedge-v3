@@ -44,10 +44,12 @@ export function onOutsideClick(refs: Ref<HTMLElement | ComponentPublicInstance |
         //      因此，制造一个微小的延迟，造成事实上的异步，使挂载click事件晚于可能的触发事件
         await sleep(1)
         document.addEventListener("click", clickDocument)
+        document.addEventListener("mousedown", mouseDownDocument)
     })
 
     onUnmounted(() => {
         document.removeEventListener("click", clickDocument)
+        document.removeEventListener("mousedown", mouseDownDocument)
     })
 
     if(refs instanceof Array) {
@@ -73,6 +75,7 @@ export function onOutsideClick(refs: Ref<HTMLElement | ComponentPublicInstance |
     }
 
     let clickEventBuffer: MouseEvent | null = null
+    let mouseDownTarget: EventTarget | null = null
 
     const clickRef = async (e: MouseEvent) => {
         // tips: 如果某个click事件造成了点击元素被卸载，但点击元素又属于此ref，那这次click事件会被判定为outside，造成意外。
@@ -84,12 +87,17 @@ export function onOutsideClick(refs: Ref<HTMLElement | ComponentPublicInstance |
         clickEventBuffer = null
     }
 
+    const mouseDownDocument = (e: MouseEvent) => {
+        mouseDownTarget = e.target
+    }
+
     const clickDocument = refs instanceof Array ? (e: MouseEvent) => {
         if(clickEventBuffer === e) {
             clickEventBuffer = null
             return
         }
-        const target = e.target
+        const target = mouseDownTarget ?? e.target
+        if(mouseDownTarget) mouseDownTarget = null
         for(const r of refs) {
             if(r.value && !(r.value === target || (r.value instanceof HTMLElement ? r.value : r.value.$el).contains(target as Node))) {
                 event(e)
@@ -101,7 +109,8 @@ export function onOutsideClick(refs: Ref<HTMLElement | ComponentPublicInstance |
             clickEventBuffer = null
             return
         }
-        const target = e.target
+        const target = mouseDownTarget ?? e.target
+        if(mouseDownTarget) mouseDownTarget = null
         if(refs.value && !(refs.value === target || (refs.value instanceof HTMLElement ? refs.value : refs.value.$el).contains(target as Node))) {
             event(e)
         }

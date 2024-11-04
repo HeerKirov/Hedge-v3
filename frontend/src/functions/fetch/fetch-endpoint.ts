@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, ref, Ref, shallowReadonly, watch } from "vue"
+import { onMounted, onUnmounted, onUpdated, ref, Ref, shallowReadonly, watch } from "vue"
 import { BasicException, NotFound } from "@/functions/http-client/exceptions"
 import { HttpClient, Response } from "@/functions/http-client"
 import { WsEventConditions } from "@/functions/ws-client"
@@ -116,6 +116,8 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
         delete: options.delete?.(httpClient)
     }
     const path = options.path
+    let pathLegacy: PATH | null = path.value
+    let pathIncoming: PATH | null | undefined = undefined
 
     const loading: Ref<boolean> = ref(true)
     const updating: Ref<boolean> = ref(false)
@@ -132,6 +134,7 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
             //path的值为null时，直接按not found处理
             loading.value = false
             data.value = null
+            pathIncoming = path
             options.afterRetrieve?.(null, null, "PATH_CHANGED")
         }else{
             let invalidate = false
@@ -139,6 +142,7 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
 
             loading.value = true
             data.value = null
+            pathIncoming = path
 
             const res = await method.get(path)
             if(invalidate) return
@@ -151,12 +155,26 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
                 handleException(res.exception)
             }
 
+            if(pathIncoming !== undefined) {
+                pathLegacy = pathIncoming
+                pathIncoming = undefined
+            }
             loading.value = false
         }
 
         //发送afterPath事件，但此事件是在path变化后发送，所以前提是有oldPath
         if(oldPath !== undefined) options.afterPath?.()
     }, {immediate: true})
+
+    onUpdated(() => {
+        //path有一个缓存机制。它会在path发生更改后，依然将原先的值缓存在pathLegacy变量，直到vue完成帧刷新。
+        //这么做是为了配合FormEditKit组件的卸载提交机制。因为vue并不是react那样的帧快照机制，path首先变更，之后组件卸载，此时path就已经是新值，没有对上一个状态的快照。
+        //因此在帧刷新之前，都应该缓存旧的path值，它会被使用在setData和deleteData操作中，完成对上一个path对象的操作。
+        if(pathIncoming !== undefined) {
+            pathLegacy = pathIncoming
+            pathIncoming = undefined
+        }
+    })
 
     if(options.eventFilter) {
         const context: EventFilterContext<PATH, MODEL> = {path: path.value, data: data.value}
@@ -194,29 +212,32 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
     }
 
     const setData = async (form: FORM, handleError?: (e: UE) => UE | void): Promise<boolean> => {
-        if(method.update && !updating.value && path.value != null) {
+        if(method.update && !updating.value && pathLegacy != null) {
             updating.value = true
-            const pathValue = path.value
+            const pathValue = pathLegacy
             try {
                 const res = await method.update(pathValue, form)
                 if(res.ok) {
-                    if(res.data) {
-                        data.value = res.data
-                        options.afterRetrieve?.(pathValue, data.value, "UPDATE")
-                        options.afterUpdate?.(pathValue, data.value)
-                    }else{
-                        //在update函数没有提供返回值的情况下，去请求get函数以更新数据
-                        const res = await method.get(pathValue)
-                        if(res.ok) {
+                    //在pathValue与当前path不一致时，直接丢弃结果，也不发送任何回调
+                    if(pathValue === path.value) {
+                        if(res.data) {
                             data.value = res.data
                             options.afterRetrieve?.(pathValue, data.value, "UPDATE")
                             options.afterUpdate?.(pathValue, data.value)
-                        }else if(res.exception) {
-                            data.value = null
-                            if(res.exception.code !== "NOT_FOUND") {
-                                handleException(res.exception)
-                            }else{
-                                options.afterRetrieve?.(pathValue, null, "UPDATE")
+                        }else{
+                            //在update函数没有提供返回值的情况下，去请求get函数以更新数据
+                            const res = await method.get(pathValue)
+                            if(res.ok) {
+                                data.value = res.data
+                                options.afterRetrieve?.(pathValue, data.value, "UPDATE")
+                                options.afterUpdate?.(pathValue, data.value)
+                            }else if(res.exception) {
+                                data.value = null
+                                if(res.exception.code !== "NOT_FOUND") {
+                                    handleException(res.exception)
+                                }else{
+                                    options.afterRetrieve?.(pathValue, null, "UPDATE")
+                                }
                             }
                         }
                     }
@@ -236,15 +257,17 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
     }
 
     const deleteData = async (): Promise<boolean> => {
-        if(method.delete && !deleting.value && path.value != null) {
+        if(method.delete && !deleting.value && pathLegacy != null) {
             deleting.value = true
-            const pathValue = path.value
+            const pathValue = pathLegacy
             try {
                 const res = await method.delete(pathValue)
                 if(res.ok) {
-                    data.value = null
-                    options.afterRetrieve?.(pathValue, null, "DELETE")
-                    options.afterDelete?.(pathValue)
+                    if(pathValue === path.value) {
+                        data.value = null
+                        options.afterRetrieve?.(pathValue, null, "DELETE")
+                        options.afterDelete?.(pathValue)
+                    }
                 }else if(res.exception) {
                     //错误处理的调用顺序是：options的handler、fetchManager的handler
                     const e = options.handleErrorInDelete ? options.handleErrorInDelete(res.exception) : res.exception

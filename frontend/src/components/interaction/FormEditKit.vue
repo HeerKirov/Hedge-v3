@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T">
-import { ref } from "vue"
+import { onBeforeUnmount, ref } from "vue"
 import { objects } from "@/utils/primitives"
 import { onOutsideClick } from "@/utils/sensors"
 import { toRef } from "@/utils/reactivity"
@@ -39,6 +39,10 @@ const props = withDefaults(defineProps<{
      */
     allowClickOutside?: boolean
     /**
+     * 允许在组件卸载时自动保存。
+     */
+    allowUnmountSave?: boolean
+    /**
      * 只要获得数据提交，就保存。适用于那些只会有一次编辑行为，然后就会立即提交的场景。
      */
     saveOnceUpdated?: boolean
@@ -52,6 +56,7 @@ const props = withDefaults(defineProps<{
     allowDoubleClick: true,
     allowSingleClick: false,
     allowClickOutside: true,
+    allowUnmountSave: true,
     saveOnceUpdated: false
 })
 
@@ -109,6 +114,14 @@ const divRef = ref<HTMLElement>()
 
 if(props.allowClickOutside) {
     onOutsideClick(divRef, () => {
+        if(props.editable && editMode.value) {
+            save()
+        }
+    })
+}
+
+if(props.allowUnmountSave) {
+    onBeforeUnmount(() => {
         if(props.editable && editMode.value) {
             save()
         }
