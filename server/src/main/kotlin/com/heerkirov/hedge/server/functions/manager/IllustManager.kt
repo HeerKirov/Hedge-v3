@@ -555,14 +555,21 @@ class IllustManager(private val appdata: AppDataManager,
                 val collectionValues = orderTimeSeq.zip(newOrderTimeSeq) { (id, p, _), ot -> Triple(id, p, ot) }
                     .filter { (_, p, _) -> p != null }
                     .groupBy { (_, p, _) -> p!! }
-                    .mapValues { (_, values) -> values.minOf { (_, _, t) -> t } }
+                    .mapValues { (_, values) ->
+                        val (firstId, _, ot) = values.minBy { (_, _, t) -> t }
+                        val fileId = childrenOfCollections.find { it.id == firstId }!!.fileId
+                        Pair(ot, fileId)
+                    }
+                println()
                 if(collectionValues.isNotEmpty()) {
                     data.db.batchUpdate(Illusts) {
-                        for ((id, ot) in collectionValues) {
+                        for ((id, pair) in collectionValues) {
+                            val (ot, fileId) = pair
                             item {
                                 where { it.id eq id }
                                 set(it.partitionTime, ot.toInstant().toPartitionDate(appdata.setting.server.timeOffsetHour))
                                 set(it.orderTime, ot)
+                                set(it.fileId, fileId)
                             }
                         }
                     }
