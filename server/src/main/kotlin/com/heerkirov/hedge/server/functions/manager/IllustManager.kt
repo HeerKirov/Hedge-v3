@@ -560,7 +560,6 @@ class IllustManager(private val appdata: AppDataManager,
                         val fileId = childrenOfCollections.find { it.id == firstId }!!.fileId
                         Pair(ot, fileId)
                     }
-                println()
                 if(collectionValues.isNotEmpty()) {
                     data.db.batchUpdate(Illusts) {
                         for ((id, pair) in collectionValues) {
