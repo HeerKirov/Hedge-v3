@@ -1,4 +1,4 @@
-FROM azul/zulu-openjdk-alpine:21-jre
+FROM azul/zulu-openjdk:21
 
 ADD start.sh /
 ADD hedge-v3-server.jar /
