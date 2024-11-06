@@ -12,7 +12,6 @@ import com.heerkirov.hedge.server.utils.types.Opt
 data class ImportOptionUpdateForm(val autoAnalyseSourceData: Opt<Boolean>,
                                   val preventNoneSourceData: Opt<Boolean>,
                                   val autoReflectMetaTag: Opt<Boolean>,
-
                                   val reflectMetaTagType: Opt<List<MetaType>>,
                                   val autoConvertFormat: Opt<Boolean>,
                                   val autoConvertPNGThresholdSizeMB: Opt<Long>,
