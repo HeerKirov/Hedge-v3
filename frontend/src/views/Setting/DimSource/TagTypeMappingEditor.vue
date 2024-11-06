@@ -50,8 +50,8 @@ const TARGET_ICONS = arrays.toMap(TARGETS, k => AUTHOR_TYPE_ICONS[k as AuthorTyp
     <table class="table w-100">
         <tbody>
             <tr v-for="(items, k) in value" :key="k">
-                <td><Icon class="mr-1" :icon="TARGET_ICONS[k]"/>{{TARGET_NAMES[k]}}</td>
-                <td class="w-100">
+                <td :class="$style.header"><Icon class="mr-1" :icon="TARGET_ICONS[k]"/>{{TARGET_NAMES[k]}}</td>
+                <td>
                     <TagTypeEditor :tag-types="items" @update:tag-types="update($event, items, k)" :editable="editable"/>
                 </td>
             </tr>
@@ -60,9 +60,6 @@ const TARGET_ICONS = arrays.toMap(TARGETS, k => AUTHOR_TYPE_ICONS[k as AuthorTyp
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-
-.tag-block
-    padding: 0 $spacing-2
-    line-height: #{$element-height-small - 2px}
+.header
+    width: 80px
 </style>
