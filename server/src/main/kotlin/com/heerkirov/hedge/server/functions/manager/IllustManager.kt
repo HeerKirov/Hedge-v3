@@ -532,7 +532,7 @@ class IllustManager(private val appdata: AppDataManager,
                 }
                 .toList()
         }
-        fun setOrderTimeBySeq(newOrderTimeSeq: List<Long>) {
+        fun setOrderTimeBySeq(newOrderTimeSeq: List<Long>, disableTuning: Boolean = false) {
             if(newOrderTimeSeq.size != orderTimeSeq.size) throw RuntimeException("newOrderTimeSeq is not suitable to seq.")
 
             if(orderTimeSeq.isNotEmpty()) {
@@ -547,7 +547,7 @@ class IllustManager(private val appdata: AppDataManager,
                         }
                     }
                 }
-                if(appdata.setting.meta.tuningOrderTime) kit.tuningOrderTime(list)
+                if(appdata.setting.meta.tuningOrderTime && !disableTuning) kit.tuningOrderTime(list)
             }
 
             if(collections.isNotEmpty()) {
@@ -575,7 +575,7 @@ class IllustManager(private val appdata: AppDataManager,
                 }
             }
         }
-        fun setOrderTimeByRange(begin: Instant, end: Instant? = null, excludeBeginAndEnd: Boolean = false) {
+        fun setOrderTimeByRange(begin: Instant, end: Instant? = null, excludeBeginAndEnd: Boolean = false, disableTuning: Boolean = false) {
             //找出所有image及collection的children，按照原有orderTime顺序排序，并依次计算新orderTime。排序时相同parent的children保持相邻
             //对于collection，绕过标准导出流程进行更改。直接按照计算结果修改collection的orderTime，且无需导出，因为orderTime并未变化
 
@@ -618,12 +618,12 @@ class IllustManager(private val appdata: AppDataManager,
                 listOf(begin.toEpochMilli())
             }
 
-            setOrderTimeBySeq(values)
+            setOrderTimeBySeq(values, disableTuning)
         }
         //insert by list
         form.orderTimeList.alsoOpt { orderTimeList -> setOrderTimeBySeq(orderTimeList.map { it.toEpochMilli() }) }
         //insert between instants
-        form.orderTimeBegin.alsoOpt { orderTimeBegin -> setOrderTimeByRange(orderTimeBegin, form.orderTimeEnd.unwrapOrNull(), form.orderTimeExclude) }
+        form.orderTimeBegin.alsoOpt { orderTimeBegin -> setOrderTimeByRange(orderTimeBegin, form.orderTimeEnd.unwrapOrNull(), form.orderTimeExclude, disableTuning = true) }
         //insert between illusts
         form.timeInsertBegin.alsoOpt { beginId ->
             if(form.timeInsertEnd.isPresent) {

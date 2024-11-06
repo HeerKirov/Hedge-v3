@@ -14,13 +14,16 @@ import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.business.checkScore
 import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.letIf
-import com.heerkirov.hedge.server.utils.splitWhen
+import com.heerkirov.hedge.server.utils.structs.LinkedNodeList
+import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import com.heerkirov.hedge.server.utils.types.Opt
 import org.ktorm.dsl.*
 import org.ktorm.dsl.where
 import org.ktorm.entity.*
 import java.time.Instant
 import java.time.LocalDate
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.roundToInt
 
 class IllustKit(private val appdata: AppDataManager,
@@ -572,150 +575,139 @@ class IllustKit(private val appdata: AppDataManager,
     /**
      * 对给出项的排序时间进行微调。如果项和它们周围的项的排序时间相同或过近，就会微调一下位置，使彼此错开。
      * 如果有必要，邻近项的排序时间也会被调整。邻近项被调整时会发出相应的事件，给出的项则不会。
+     * @param illustIds 已经排序的项与它们的排序时间，此参数必须已经按排序时间降序。在调用此函数之前，项的排序已经写入数据库，此参数仅作通知用，而不是使用此参数做修改。
      * @param eventForAllIllusts 为所有的项发送调整事件，而不只是项列表之外的项。
      */
     fun tuningOrderTime(illustIds: List<Pair<Int, Long>>, eventForAllIllusts: Boolean = false) {
-        fun toGapFlag(illusts: List<Pair<Int, Long>>): ByteArray {
-            val gapFlag = ByteArray(illusts.size - 1)
-            for(i in 0 until illusts.size - 1) {
-                if(illusts[i + 1].second - illusts[i].second < 1000L) gapFlag[i] = 2
-                else if(illusts[i + 1].second - illusts[i].second == 1000L) gapFlag[i] = 1
-            }
-            return gapFlag
-        }
+        if(illustIds.isEmpty()) return
 
-        fun makeAreaFlag(gapFlag: ByteArray): ByteArray {
-            var i = 0
-            while(i < gapFlag.size) {
-                if(gapFlag[i] == 2.toByte()) {
-                    if(i > 0 && gapFlag[i - 1] == 1.toByte()) {
-                        for(j in (i - 1) downTo 0) {
-                            if(gapFlag[j] == 1.toByte()) {
-                                gapFlag[j] = 2
-                            }else{
-                                break
-                            }
-                        }
+        fun findArea(node: LinkedNodeList<Pair<Int, Long>>.Node?): Pair<LinkedNodeList<Pair<Int, Long>>.Node, LinkedNodeList<Pair<Int, Long>>.Node>? {
+            var begin: LinkedNodeList<Pair<Int, Long>>.Node? = null
+            run {
+                var cur = node
+                while (cur != null) {
+                    if(cur.next != null && cur.next!!.value.second - cur.value.second < 1000L) {
+                        begin = cur
+                        break
                     }
-                    if(i < gapFlag.size - 1 && gapFlag[i + 1] == 1.toByte()) {
-                        for(j in (i + 1) until gapFlag.size) {
-                            if(gapFlag[j] == 1.toByte()) {
-                                gapFlag[j] = 2
-                            }else{
-                                i = j - 1
-                                break
-                            }
-                        }
+                    cur = cur.next
+                }
+            }
+            if(begin == null) return null
+            run {
+                var cur = begin!!.next!!
+                while (true) {
+                    if(cur.next == null || (cur.next != null && cur.next!!.value.second - cur.value.second >= 1000L)) {
+                        return Pair(begin!!, cur)
                     }
+                    cur = cur.next!!
                 }
-                i += 1
             }
-            return gapFlag
         }
 
-        fun toAreas(gapFlag: ByteArray): List<Pair<Int, Int>> {
-            val areas = mutableListOf<Pair<Int, Int>>()
-            var areaCurrentIndex: Int? = null
-            var i = 0
-            while(i < gapFlag.size) {
-                if(gapFlag[i] == 2.toByte() && areaCurrentIndex == null) {
-                    areaCurrentIndex = i
-                }else if(gapFlag[i] != 2.toByte() && areaCurrentIndex != null) {
-                    areas.add(Pair(areaCurrentIndex, i + 1))
-                    areaCurrentIndex = null
-                }
-                i += 1
-            }
-            if(areaCurrentIndex != null) areas.add(Pair(areaCurrentIndex, gapFlag.size + 1))
-            return areas
-        }
-
-        //这里首先需要给出的一组illusts是较为临近的，不会间隔太远。如果间隔太远了(相邻两项间隔超过1小时)，会将它划分成几组分别处理。
-        val groups = illustIds.sortedBy { it.second }.splitWhen { a, b -> b.second - a.second >= 1000 * 60 * 60  }
-        val updatedIds = mutableSetOf<Int>()
-        for (group in groups) {
-            //对于每一个小组，获得两侧端点，查询补全端点间的所有项，还包括端点两侧超出一定秒数内的项。
-            val items = data.db.from(Illusts)
-                .select(Illusts.id, Illusts.orderTime)
-                .where { (Illusts.type notEq IllustModelType.COLLECTION) and (Illusts.orderTime greaterEq group.first().second - 1000 * 10) and (Illusts.orderTime lessEq group.last().second + 1000 * 10) }
-                .orderBy(Illusts.orderTime.asc(), Illusts.id.asc())
-                .map { Pair(it[Illusts.id]!!, it[Illusts.orderTime]!!) }
-                .toMutableList()
-
-            val betweenIllustIds = items.map { it.first }.toSet()
-            val notInBetweenIllusts = group.filter { it.first !in betweenIllustIds }
-            if(notInBetweenIllusts.isNotEmpty()) {
-                items.addAll(notInBetweenIllusts)
-                items.sortWith { a, b -> if(a.second != b.second) a.second.compareTo(b.second) else a.first.compareTo(b.first) }
-            }
-            val originMap = items.toMap().toMutableMap()
-
-            for (round in 1..5) {
-                //在这些所有项中，判断是否有任意项之间的间隔小于1秒。如果小于1秒，就要调整时间。这种项称之为初始调整项。从两个初始调整项开始，向两侧搜索间隔小于等于1秒的所有项，构成一个调整片区。
-                //这里将小于1秒间隔标记为2，等于1秒间隔标记为1。之后将所有与2紧邻的1都调整为2，这样就可以获得所有应当调整的片区。
-                val areas = toGapFlag(items).let(::makeAreaFlag).let(::toAreas)
-                if(areas.isEmpty()) {
+        fun findExpand(areas: MutableList<Tuple4<LinkedNodeList<Pair<Int, Long>>.Node, LinkedNodeList<Pair<Int, Long>>.Node, Long, Long>>, currentBegin: LinkedNodeList<Pair<Int, Long>>.Node, currentEnd: LinkedNodeList<Pair<Int, Long>>.Node, tuningLower: Long, tuningUpper: Long): Pair<LinkedNodeList<Pair<Int, Long>>.Node?, LinkedNodeList<Pair<Int, Long>>.Node?> {
+            var expandBegin: LinkedNodeList<Pair<Int, Long>>.Node? = null
+            var expandEnd: LinkedNodeList<Pair<Int, Long>>.Node? = null
+            while(areas.isNotEmpty()) {
+                if(areas.last().f4 > tuningLower - 1000L) {
+                    expandBegin = areas.last().f1
+                    areas.removeLast()
+                }else{
                     break
                 }
-
-                //对于一个调整片区，找到它的中点时间，从中点开始向两侧疏散片区里的项。
-                val minTimestamp = items.first().second
-                val maxTimestamp = items.last().second
-                for ((begin, end) in areas) {
-                    val mid = (begin + end) / 2
-                    for(i in begin until mid) {
-                        items[i] = Pair(items[i].first, items[mid].second - (mid - i) * 1000L)
-                    }
-                    for(i in mid + 1 until end) {
-                        items[i] = Pair(items[i].first, items[mid].second + (i - mid) * 1000L)
-                    }
-                }
-
-                //在调整中，如果最两侧的项要被调整，那么就需要再额外查询更外面的几项。这种扩充理论上不会太多，但仍需要设置一个扩充上限，扩充的项数不应超过原项数的2倍。
-                if(items.size < group.size * 2) {
-                    val itemIds by lazy { items.map { it.first }.toSet() }
-                    if(areas.any { it.first == 0 } && items.first().second < minTimestamp) {
-                        data.db.from(Illusts)
-                            .select(Illusts.id, Illusts.orderTime)
-                            .where { (Illusts.type notEq IllustModelType.COLLECTION) and (Illusts.orderTime less minTimestamp) and (Illusts.orderTime greaterEq items.first().second - 1000 * 10) }
-                            .orderBy(Illusts.orderTime.asc(), Illusts.id.asc())
-                            .limit(100)
-                            .map { Pair(it[Illusts.id]!!, it[Illusts.orderTime]!!) }
-                            .filter { it.first !in itemIds }
-                            .also { items.addAll(it) }
-                            .also { originMap.putAll(it.toMap()) }
-                    }
-                    if(areas.any { it.second == items.size } && items.last().second > maxTimestamp) {
-                        data.db.from(Illusts)
-                            .select(Illusts.id, Illusts.orderTime)
-                            .where { (Illusts.type notEq IllustModelType.COLLECTION) and (Illusts.orderTime greater maxTimestamp) and (Illusts.orderTime lessEq items.last().second + 1000 * 10) }
-                            .orderBy(Illusts.orderTime.asc(), Illusts.id.asc())
-                            .limit(100)
-                            .map { Pair(it[Illusts.id]!!, it[Illusts.orderTime]!!) }
-                            .filter { it.first !in itemIds }
-                            .also { items.addAll(it) }
-                            .also { originMap.putAll(it.toMap()) }
-                    }
-                }
-
-                items.sortWith { a, b -> if(a.second != b.second) a.second.compareTo(b.second) else a.first.compareTo(b.first) }
-
-                //做完一轮调整之后，开始第二轮的搜索，因为上一轮的调整可能会使原本不相邻的片区相邻相交。调整进行多轮，直到不再存在片区，或者调整轮数过多，主动终止防止死循环。
             }
-            //应用所有调整。
-            val changed = items.filter { (id, ot) -> originMap[id] != ot }
-            if(changed.isNotEmpty()) {
-                data.db.batchUpdate(Illusts) {
-                    for ((id, ot) in changed) {
-                        item {
-                            where { it.id eq id }
-                            set(it.orderTime, ot)
-                        }
+            if(expandBegin == null) {
+                var cur = currentBegin
+                while (true) {
+                    if(cur.prev == null) {
+                        //在扩展达到当前项列表的两端后，需要去数据库再拉取更多的项，必须保证找到一个不需要调整的间隔才能停下。
+                        val appends = data.db.from(Illusts)
+                            .select(Illusts.id, Illusts.orderTime)
+                            .where { (Illusts.type notEq IllustModelType.COLLECTION) and (Illusts.orderTime greaterEq cur.value.second - 1000 * 10) and ((Illusts.orderTime less cur.value.second)) }
+                            .orderBy(Illusts.orderTime.asc())
+                            .map { Pair(it[Illusts.id]!!, it[Illusts.orderTime]!!) }
+                        if(appends.isNotEmpty()) appends.asReversed().forEach { cur.parent.addFirst(it) } else break
                     }
+                    cur = cur.prev!!
+                    if(cur.value.second > tuningLower - 1000L) expandBegin = cur else break
                 }
-                updatedIds.addAll(changed.map { (id, _) -> id })
+            }
+            run {
+                var cur = currentEnd
+                while (true) {
+                    if(cur.next == null) {
+                        //在扩展达到当前项列表的两端后，需要去数据库再拉取更多的项，必须保证找到一个不需要调整的间隔才能停下。
+                        val appends = data.db.from(Illusts)
+                            .select(Illusts.id, Illusts.orderTime)
+                            .where { (Illusts.type notEq IllustModelType.COLLECTION) and (Illusts.orderTime lessEq cur.value.second + 1000 * 10) and ((Illusts.orderTime greater cur.value.second)) }
+                            .orderBy(Illusts.orderTime.asc())
+                            .map { Pair(it[Illusts.id]!!, it[Illusts.orderTime]!!) }
+                        if(appends.isNotEmpty()) appends.forEach { cur.parent.addLast(it) } else break
+                    }
+                    cur = cur.next!!
+                    if(cur.value.second < tuningUpper + 1000L) expandEnd = cur else break
+                }
+            }
+            return Pair(expandBegin, expandEnd)
+        }
+
+        //根据给出的项，查询首尾时间外延10sec范围内的所有项。给出的项是不需要用的。
+        val db = data.db.from(Illusts)
+            .select(Illusts.id, Illusts.orderTime)
+            .where { (Illusts.type notEq IllustModelType.COLLECTION) and (Illusts.orderTime greaterEq illustIds.first().second - 1000 * 10) and (Illusts.orderTime lessEq illustIds.last().second + 1000 * 10) }
+            .orderBy(Illusts.orderTime.asc())
+            .map { Pair(it[Illusts.id]!!, it[Illusts.orderTime]!!) }
+            .let { LinkedNodeList(it) }
+
+        val areas = mutableListOf<Tuple4<LinkedNodeList<Pair<Int, Long>>.Node, LinkedNodeList<Pair<Int, Long>>.Node, Long, Long>>()
+
+        while(true) {
+            //找出下一个连锁片区。当两项之间的间隔小于1秒时，就认为这两项需要调整。连续多项需要调整时，构成调整片区。
+            val area = findArea(if(areas.isNotEmpty()) areas.last().f2.next else db.head)
+            var (begin, end) = area ?: break
+
+            //开始针对这个片区的多轮调整。
+            for(round in 1..1000) {
+                //找出中点，根据极值计算中点排序时间，并以此时间为基准，向两侧计算出tuning范围，作为这个片区即将占据的时间范围。
+                val distance = begin distance end
+                val midOrderTime = (begin.value.second + end.value.second) / 2
+                val tuningLower = midOrderTime - floor(distance / 2.0).toInt() * 1000L
+                val tuningUpper = midOrderTime + ceil(distance / 2.0).toInt() * 1000L
+                //之后，查找是否时间范围是否覆盖了两侧的其他项，或者与之前的area产生了连接。
+                val expand = findExpand(areas, begin, end, tuningLower, tuningUpper)
+                if(expand.first == null && expand.second == null) {
+                    //不再能找到任何扩展覆盖项后，多轮调整结束。经过多轮调整之后，得到一个片区，该片区可以赋值为tuning所包含的时间范围，并且不会与更外侧的项有时间冲突了。
+                    areas.add(Tuple4(begin, end, tuningLower, tuningUpper))
+                    break
+                }else{
+                    //找到扩展覆盖项后，下一轮会将扩展项也加入片区，进行下一轮的计算调整。
+                    begin = expand.first ?: begin
+                    end = expand.second ?: end
+                }
             }
         }
+
+        //整个列表跑完一遍之后，获得了所有的可调整片区。将片区中每一项的时间计算出来，并应用其中发生了变化的项。
+        val updatedIds = mutableListOf<Int>()
+        val changed = areas.flatMap { (begin, end, tuningLower, tuningUpper) ->
+            val items = (begin iterTo end).asSequence().toList()
+            items.mapIndexedNotNull { index, (id, ot) ->
+                val newOt = (tuningUpper - tuningLower) / (items.size - 1) * index + tuningLower
+                if(newOt != ot) Pair(id, newOt) else null
+            }
+        }
+        if(changed.isNotEmpty()) {
+            data.db.batchUpdate(Illusts) {
+                for ((id, ot) in changed) {
+                    item {
+                        where { it.id eq id }
+                        set(it.orderTime, ot)
+                    }
+                }
+            }
+            updatedIds.addAll(changed.map { (id, _) -> id })
+        }
+
         //最后，发送事件。
         val eventIllustIds =  if(!eventForAllIllusts) updatedIds - illustIds.map { (id, _) -> id }.toSet() else updatedIds
         bus.emit(eventIllustIds.map { IllustUpdated(it, IllustType.IMAGE, timeSot = true) })
