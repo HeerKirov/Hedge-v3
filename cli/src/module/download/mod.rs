@@ -139,7 +139,6 @@ impl DownloadResult {
             books: self.books.as_ref().map(|books| books.iter().map(|book| SourceBookForm { code: book.code.clone(), title: book.title.clone(), other_title: book.other_title.clone() }).collect()),
             relations: self.relations.clone(),
             status: Option::None,
-            links: Option::None,
             additional_info: self.additional_info.as_ref().map(|info| info.iter().map(|(k, v)| AdditionalInfoForm { field: k.clone(), value: v.clone() }).collect())
         }
     }

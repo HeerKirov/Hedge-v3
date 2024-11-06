@@ -12,6 +12,9 @@ impl <'t> SettingModule<'t> {
     pub fn new(server_manager: &'t ServerManager) -> SettingModule {
         SettingModule { server_manager }        
     }
+    pub async fn _get_server_option(&mut self) -> Result<ServerOption, Box<dyn Error>> {
+        self.server_manager.req(Method::GET, "/api/setting/server").await
+    }
     pub async fn _get_storage_option(&mut self) -> Result<StorageOption, Box<dyn Error>> {
         self.server_manager.req(Method::GET, "/api/setting/file").await
     }
@@ -29,6 +32,10 @@ impl <'t> SettingModule<'t> {
     }
     pub async fn _get_source_sites(&mut self) -> Result<Vec<SourceSite>, Box<dyn Error>> {
         self.server_manager.req(Method::GET, "/api/setting/source/sites").await
+    }
+    pub async fn set_server_option(&mut self, bulks: &ServerOptionUpdateForm) -> Result<(), Box<dyn Error>> {
+        let body = serde_json::to_value(bulks)?;
+        self.server_manager.req_without_res(Method::PATCH, "/api/setting/server", body).await
     }
     pub async fn set_storage_option(&mut self, bulks: &StorageOptionUpdateForm) -> Result<(), Box<dyn Error>> {
         let body = serde_json::to_value(bulks)?;
@@ -57,6 +64,16 @@ impl <'t> SettingModule<'t> {
 }
 
 #[derive(Deserialize)]
+pub struct ServerOption {
+    #[serde(rename = "port")]
+    pub port: Option<String>,
+    #[serde(rename = "token")]
+    pub token: Option<String>,
+    #[serde(rename = "timeOffsetHour")]
+    pub time_offset_hour: Option<i32>
+}
+
+#[derive(Deserialize)]
 pub struct StorageOption {
     #[serde(rename = "storagePath")]
     pub storage_path: Option<String>,
@@ -64,10 +81,6 @@ pub struct StorageOption {
     pub auto_clean_trashes: bool,
     #[serde(rename = "autoCleanTrashesIntervalDay")]
     pub auto_clean_trashes_interval_day: i32,
-    #[serde(rename = "autoCleanCaches")]
-    pub auto_clean_caches: bool,
-    #[serde(rename = "autoCleanCachesIntervalDay")]
-    pub auto_clean_caches_interval_day: i32,
     #[serde(rename = "blockMaxSizeMB")]
     pub block_max_size: i64,
     #[serde(rename = "blockMaxCount")]
@@ -102,6 +115,16 @@ pub struct QueryOption {
 pub struct MetaOption {
     #[serde(rename = "autoCleanTagme")]
     pub auto_clean_tagme: bool,
+    #[serde(rename = "onlyCharacterTopic")]
+    pub only_character_topic: bool,
+    #[serde(rename = "resolveTagConflictByParent")]
+    pub resolve_tag_conflict_by_parent: bool,
+    #[serde(rename = "bindingPartitionWithOrderTime")]
+    pub binding_partition_with_order_time: bool,
+    #[serde(rename = "tuningOrderTime")]
+    pub tuning_order_time: bool,
+    #[serde(rename = "centralizeCollection")]
+    pub centralize_collection: bool,
     #[serde(rename = "topicColors")]
     pub topic_colors: HashMap<String, String>,
     #[serde(rename = "authorColors")]
@@ -112,53 +135,64 @@ pub struct MetaOption {
 pub struct ImportOption {
     #[serde(rename = "autoAnalyseSourceData")]
     pub auto_analyse_source_data: bool,
+    #[serde(rename = "preventNoneSourceData")]
+    pub prevent_none_source_data: bool,
+    #[serde(rename = "autoReflectMetaTag")]
+    pub auto_reflect_meta_tag: bool,
+    #[serde(rename = "reflectMetaTagType")]
+    pub reflect_meta_tag_type: Vec<String>,
+    #[serde(rename = "autoConvertFormat")]
+    pub auto_convert_format: bool,
+    #[serde(rename = "autoConvertPNGThresholdSizeMB")]
+    pub auto_convert_png_threshold_size_mb: i64,
     #[serde(rename = "setTagmeOfTag")]
     pub set_tagme_of_tag: bool,
     #[serde(rename = "setTagmeOfSource")]
     pub set_tagme_of_source: bool,
     #[serde(rename = "setOrderTimeBy")]
     pub set_order_time_by: String,
-    #[serde(rename = "setPartitionTimeDelayHour")]
-    pub set_partition_time_delay_hour: i64,
     #[serde(rename = "sourceAnalyseRules")]
-    pub source_analyse_rules: Vec<SourceAnalyseRule>,
-    #[serde(rename = "watchPaths")]
-    pub watch_paths: Vec<String>,
-    #[serde(rename = "autoWatchPath")]
-    pub auto_watch_path: bool,
-    #[serde(rename = "watchPathMoveFile")]
-    pub watch_path_move_file: bool,
-    #[serde(rename = "watchPathInitialize")]
-    pub watch_path_initialize: bool
+    pub source_analyse_rules: Vec<SourceAnalyseRule>
 }
 
 #[derive(Deserialize)]
 pub struct SourceSite {
     pub name: String,
     pub title: String,
+    #[serde(rename = "idMode")]
+    pub id_mode: String,
     #[serde(rename = "partMode")]
     pub part_mode: String,
-    #[serde(rename = "availableAdditionalInfo")]
-    pub available_additional_info: Vec<AvailableAdditionalInfo>,
-    #[serde(rename = "sourceLinkGenerateRules")]
-    pub source_link_generate_rules: Vec<String>,
-    #[serde(rename = "availableTypes")]
-    pub available_types: Vec<String>
+    #[serde(rename = "additionalInfo")]
+    pub additional_info: Vec<AdditionalInfo>,
+    #[serde(rename = "sourceLinkRules")]
+    pub source_link_rules: Vec<String>,
+    #[serde(rename = "tagTypes")]
+    pub tag_types: Vec<String>,
+    #[serde(rename = "tagTypeMappings")]
+    pub tag_type_mappings: Vec<HashMap<String, String>>
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct ServerOptionUpdateForm {
+    #[serde(rename = "port", skip_serializing_if = "Option::is_none")]
+    pub port: Option<String>,
+    #[serde(rename = "token", skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+    #[serde(rename = "timeOffsetHour", alias = "time_offset_hour", skip_serializing_if = "Option::is_none")]
+    pub time_offset_hour: Option<i32>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct StorageOptionUpdateForm {
-    #[serde(rename = "storagePath")]
+    #[serde(rename = "storagePath", skip_serializing_if = "Option::is_none")]
     pub storage_path: Option<String>,
     #[serde(rename = "autoCleanTrashes", alias = "auto_clean_trashes", skip_serializing_if = "Option::is_none")]
     pub auto_clean_trashes: Option<bool>,
     #[serde(rename = "autoCleanTrashesIntervalDay", alias = "auto_clean_trashes_interval_day", skip_serializing_if = "Option::is_none")]
     pub auto_clean_trashes_interval_day: Option<i32>,
-    #[serde(rename = "autoCleanCaches", alias = "auto_clean_caches", skip_serializing_if = "Option::is_none")]
-    pub auto_clean_caches: Option<bool>,
-    #[serde(rename = "autoCleanCachesIntervalDay", alias = "auto_clean_caches_interval_day", skip_serializing_if = "Option::is_none")]
-    pub auto_clean_caches_interval_day: Option<i32>,
     #[serde(rename = "blockMaxSizeMB", alias = "block_max_size", skip_serializing_if = "Option::is_none")]
     pub block_max_size: Option<i64>,
     #[serde(rename = "blockMaxCount", alias = "block_max_count", skip_serializing_if = "Option::is_none")]
@@ -196,6 +230,16 @@ pub struct QueryOptionUpdateForm {
 pub struct MetaOptionUpdateForm {
     #[serde(rename = "autoCleanTagme", alias = "auto_clean_tagme", skip_serializing_if = "Option::is_none")]
     pub auto_clean_tagme: Option<bool>,
+    #[serde(rename = "onlyCharacterTopic", alias = "only_character_topic", skip_serializing_if = "Option::is_none")]
+    pub only_character_topic: Option<bool>,
+    #[serde(rename = "resolveTagConflictByParent", alias = "resolve_tag_conflict_by_parent", skip_serializing_if = "Option::is_none")]
+    pub resolve_tag_conflict_by_parent: Option<bool>,
+    #[serde(rename = "bindingPartitionWithOrderTime", alias = "binding_partition_with_order_time", skip_serializing_if = "Option::is_none")]
+    pub binding_partition_with_order_time: Option<bool>,
+    #[serde(rename = "tuningOrderTime", alias = "tuning_order_time", skip_serializing_if = "Option::is_none")]
+    pub tuning_order_time: Option<bool>,
+    #[serde(rename = "centralizeCollection", alias = "centralize_collection", skip_serializing_if = "Option::is_none")]
+    pub centralize_collection: Option<bool>,
     #[serde(rename = "topicColors", alias = "topic_colors", skip_serializing_if = "Option::is_none")]
     pub topic_colors: Option<HashMap<String, String>>,
     #[serde(rename = "authorColors", alias = "author_colors", skip_serializing_if = "Option::is_none")]
@@ -207,24 +251,24 @@ pub struct MetaOptionUpdateForm {
 pub struct ImportOptionUpdateForm {
     #[serde(rename = "autoAnalyseSourceData", alias = "auto_analyse_source_data", skip_serializing_if = "Option::is_none")]
     pub auto_analyse_source_data: Option<bool>,
+    #[serde(rename = "preventNoneSourceData", alias = "prevent_none_source_data", skip_serializing_if = "Option::is_none")]
+    pub prevent_none_source_data: Option<bool>,
+    #[serde(rename = "autoReflectMetaTag", alias = "auto_reflect_meta_tag", skip_serializing_if = "Option::is_none")]
+    pub auto_reflect_meta_tag: Option<bool>,
+    #[serde(rename = "reflectMetaTagType", alias = "reflect_meta_tag_type", skip_serializing_if = "Option::is_none")]
+    pub reflect_meta_tag_type: Option<Vec<String>>,
+    #[serde(rename = "autoConvertFormat", alias = "auto_convert_format", skip_serializing_if = "Option::is_none")]
+    pub auto_convert_format: Option<bool>,
+    #[serde(rename = "autoConvertPNGThresholdSizeMB", alias = "auto_convert_png_threshold_size_mb", skip_serializing_if = "Option::is_none")]
+    pub auto_convert_png_threshold_size_mb: Option<i64>,
     #[serde(rename = "setTagmeOfTag", alias = "set_tagme_of_tag", skip_serializing_if = "Option::is_none")]
     pub set_tagme_of_tag: Option<bool>,
     #[serde(rename = "setTagmeOfSource", alias = "set_tagme_of_source", skip_serializing_if = "Option::is_none")]
     pub set_tagme_of_source: Option<bool>,
     #[serde(rename = "setOrderTimeBy", alias = "set_order_time_by", skip_serializing_if = "Option::is_none")]
     pub set_order_time_by: Option<String>,
-    #[serde(rename = "setPartitionTimeDelayHour", alias = "set_partition_time_delay_hour", skip_serializing_if = "Option::is_none")]
-    pub set_partition_time_delay_hour: Option<i64>,
     #[serde(rename = "sourceAnalyseRules", alias = "source_analyse_rules", skip_serializing_if = "Option::is_none")]
-    pub source_analyse_rules: Option<Vec<SourceAnalyseRule>>,
-    #[serde(rename = "watchPaths", alias = "watch_paths", skip_serializing_if = "Option::is_none")]
-    pub watch_paths: Option<Vec<String>>,
-    #[serde(rename = "autoWatchPath", alias = "auto_watch_path", skip_serializing_if = "Option::is_none")]
-    pub auto_watch_path: Option<bool>,
-    #[serde(rename = "watchPathMoveFile", alias = "watch_path_move_file", skip_serializing_if = "Option::is_none")]
-    pub watch_path_move_file: Option<bool>,
-    #[serde(rename = "watchPathInitialize", alias = "watch_path_initialize", skip_serializing_if = "Option::is_none")]
-    pub watch_path_initialize: Option<bool>
+    pub source_analyse_rules: Option<Vec<SourceAnalyseRule>>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -233,14 +277,18 @@ pub struct SourceSiteUpdateForm {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[serde(rename = "idMode", alias = "id_mode", skip_serializing_if = "Option::is_none")]
+    pub id_mode: Option<String>,
     #[serde(rename = "partMode", alias = "part_mode", skip_serializing_if = "Option::is_none")]
     pub part_mode: Option<String>,
-    #[serde(rename = "availableAdditionalInfo", alias = "available_additional_info", skip_serializing_if = "Option::is_none")]
-    pub available_additional_info: Option<Vec<AvailableAdditionalInfo>>,
-    #[serde(rename = "sourceLinkGenerateRules", alias = "source_link_generate_rules", skip_serializing_if = "Option::is_none")]
-    pub source_link_generate_rules: Option<Vec<String>>,
-    #[serde(rename = "availableTypes", alias = "available_types", skip_serializing_if = "Option::is_none")]
-    pub available_types: Option<Vec<String>>
+    #[serde(rename = "additionalInfo", alias = "additional_info", skip_serializing_if = "Option::is_none")]
+    pub additional_info: Option<Vec<AdditionalInfo>>,
+    #[serde(rename = "sourceLinkRules", alias = "source_link_rules", skip_serializing_if = "Option::is_none")]
+    pub source_link_rules: Option<Vec<String>>,
+    #[serde(rename = "tagTypes", alias = "tag_types", skip_serializing_if = "Option::is_none")]
+    pub tag_types: Option<Vec<String>>,
+    #[serde(rename = "tagTypeMappings", alias = "tag_type_mappings", skip_serializing_if = "Option::is_none")]
+    pub tag_type_mappings: Option<HashMap<String, String>>
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -305,7 +353,7 @@ pub struct SourceAnalyseRuleExtra {
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct AvailableAdditionalInfo {
+pub struct AdditionalInfo {
     pub field: String,
     pub label: String
 }

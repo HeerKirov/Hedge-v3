@@ -1,6 +1,6 @@
 use std::{path::PathBuf, io::stdin, error::Error};
 use serde::Deserialize;
-use crate::{module::api::{bulk::{BulkModule, SourceDataBulkForm, TagBulkForm, TopicBulkForm, AuthorBulkForm}, setting::{MetaOptionUpdateForm, QueryOptionUpdateForm, ImportOptionUpdateForm, StorageOptionUpdateForm, FindSimilarOptionUpdateForm, SettingModule, SourceSiteUpdateForm}}, utils::error::ApplicationError};
+use crate::{module::api::{bulk::{AuthorBulkForm, BulkModule, SourceDataBulkForm, TagBulkForm, TopicBulkForm}, setting::{FindSimilarOptionUpdateForm, ImportOptionUpdateForm, MetaOptionUpdateForm, QueryOptionUpdateForm, ServerOptionUpdateForm, SettingModule, SourceSiteUpdateForm, StorageOptionUpdateForm}}, utils::error::ApplicationError};
 use super::Context;
 
 pub enum ApplyInputType {
@@ -9,7 +9,6 @@ pub enum ApplyInputType {
     Input
 }
 
-//TODO 替换enum
 pub async fn apply(context: &mut Context<'_>, input: &Vec<ApplyInputType>, verbose: bool) {
     if let Err(e) = context.server_manager.maintaining_for_start().await {
         eprintln!("Cannot establish connection to server. {}", e);
@@ -107,10 +106,10 @@ pub async fn apply(context: &mut Context<'_>, input: &Vec<ApplyInputType>, verbo
                 Ok(_) => println!("Update setting.find_similar succeed.")
             }
         }
-        if let Some(b) = setting.file {
+        if let Some(b) = setting.storage {
             match setting_module.set_storage_option(&b).await {
-                Err(e) => eprintln!("Update setting.file failed. {}", e),
-                Ok(_) => println!("Update setting.file succeed.")
+                Err(e) => eprintln!("Update setting.storage failed. {}", e),
+                Ok(_) => println!("Update setting.storage succeed.")
             }
         }
         if let Some(b) = setting.source_sites {
@@ -123,6 +122,12 @@ pub async fn apply(context: &mut Context<'_>, input: &Vec<ApplyInputType>, verbo
             match setting_module.set_import_option(&b).await {
                 Err(e) => eprintln!("Update setting.import failed. {}", e),
                 Ok(_) => println!("Update setting.import succeed.")
+            }
+        }
+        if let Some(b) = setting.server {
+            match setting_module.set_server_option(&b).await {
+                Err(e) => eprintln!("Update setting.server failed. {}", e),
+                Ok(_) => println!("Update setting.server succeed.")
             }
         }
     }
@@ -246,18 +251,26 @@ fn reduce_apply_setting(settings: Vec<ApplyFileSetting>) -> Result<Option<ApplyF
         meta: Option::None,
         query: Option::None,
         import: Option::None,
-        file: Option::None,
+        storage: Option::None,
+        server: Option::None,
         find_similar: Option::None,
         source_sites: Option::None
     };
 
     
     for setting in settings {
-        if let Some(file) = setting.file {
-            if ret.file.is_none() {
-                ret.file = Option::Some(file)
+        if let Some(server) = setting.server {
+            if ret.server.is_none() {
+                ret.server = Option::Some(server)
             }else{
-                return Result::Err(Box::new(ApplicationError::new("setting.file is declared multiple times.")))
+                return Result::Err(Box::new(ApplicationError::new("setting.server is declared multiple times.")))
+            }
+        }
+        if let Some(storage) = setting.storage {
+            if ret.storage.is_none() {
+                ret.storage = Option::Some(storage)
+            }else{
+                return Result::Err(Box::new(ApplicationError::new("setting.storage is declared multiple times.")))
             }
         }
         if let Some(query) = setting.query {
@@ -297,7 +310,7 @@ fn reduce_apply_setting(settings: Vec<ApplyFileSetting>) -> Result<Option<ApplyF
         }
     }
 
-    Result::Ok(if ret.meta.is_some() || ret.query.is_some() || ret.import.is_some() || ret.file.is_some() || ret.find_similar.is_some() || ret.source_sites.is_some() { Option::Some(ret) }else{ Option::None })
+    Result::Ok(if ret.meta.is_some() || ret.query.is_some() || ret.import.is_some() || ret.server.is_some() || ret.storage.is_some() || ret.find_similar.is_some() || ret.source_sites.is_some() { Option::Some(ret) }else{ Option::None })
 }
 
 #[derive(Deserialize)]
@@ -317,7 +330,8 @@ pub struct ApplyFileSetting {
     pub meta: Option<MetaOptionUpdateForm>,
     pub query: Option<QueryOptionUpdateForm>,
     pub import: Option<ImportOptionUpdateForm>,
-    pub file: Option<StorageOptionUpdateForm>,
+    pub storage: Option<StorageOptionUpdateForm>,
+    pub server: Option<ServerOptionUpdateForm>,
     #[serde(alias = "find_similar", alias = "findSimilar")]
     pub find_similar: Option<FindSimilarOptionUpdateForm>,
     #[serde(alias = "source_sites", alias = "sites", alias = "sourceSites")]

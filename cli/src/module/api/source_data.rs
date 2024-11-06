@@ -136,8 +136,6 @@ pub struct SourceDataUpdateForm {
     pub books: Option<Vec<SourceBookForm>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub relations: Option<Vec<i64>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub links: Option<Vec<String>>,
     #[serde(rename = "additionalInfo", skip_serializing_if = "Option::is_none")] 
     pub additional_info: Option<Vec<AdditionalInfoForm>>
 }
