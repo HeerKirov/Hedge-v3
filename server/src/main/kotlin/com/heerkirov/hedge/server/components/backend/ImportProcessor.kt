@@ -320,22 +320,28 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
         //进行混合图集检测。author/topic类型符合检测后，其结果不会输出
         val notReflectForAuthor = detectImageSet(siteDetail, MetaType.AUTHOR, sourceTags, mappingTags)
         val notReflectForTopic = detectImageSet(siteDetail, MetaType.TOPIC, sourceTags, mappingTags)
+        val notReflectForTag = detectImageSet(siteDetail, MetaType.TAG, sourceTags, mappingTags)
 
         //根据映射移除对应的tagme。映射从缓存获取，依次尝试topic、author和tag，获取它们在当前site下对应的所有sourceTagType
         //当某种类型的对应的sourceTagType的所有sourceTag全部有映射条目时，此tagme可以消除，因此加入minusTagme
         //开启onlyCharacterTopic时，就要求必须至少有一个CHARACTER
         val minusTagme: Illust.Tagme = (Illust.Tagme.EMPTY as Illust.Tagme)
             .letIf(setting.import.setTagmeOfTag) { tagme ->
-                tagme.letIf(enableTag && getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.TAG).let { types -> mappingTags.filter { it.type in types } }.let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }) { it + Illust.Tagme.TAG }
-                    .letIf(enableAuthor && getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.AUTHOR).let { types -> mappingTags.filter { it.type in types } }.let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }) { it + Illust.Tagme.AUTHOR }
-                    .letIf(enableTopic && getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.TOPIC)
+                tagme.letIf(enableTag && !notReflectForTag && getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.TAG).let { types -> mappingTags.filter { it.type in types } }.let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }) { it + Illust.Tagme.TAG }
+                    .letIf(enableAuthor && !notReflectForAuthor && getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.AUTHOR).let { types -> mappingTags.filter { it.type in types } }.let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }) { it + Illust.Tagme.AUTHOR }
+                    .letIf(enableTopic && !notReflectForTopic && getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.TOPIC)
                         .let { types -> mappingTags.filter { it.type in types } }
                         .let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } && if(setting.meta.onlyCharacterTopic) { it.flatMap { t -> t.mappings }.any { t -> t.metaTag is TopicSimpleRes && t.metaTag.type == TagTopicType.CHARACTER } }else true }
                     ) { it + Illust.Tagme.TOPIC }
             }
 
-        return if(minusTagme == Illust.Tagme.EMPTY && (resultTopics.isEmpty() || notReflectForTopic) && (resultAuthors.isEmpty() || notReflectForAuthor) && resultTags.isEmpty()) null
-        else Tuple4(resultTags.toList(), if(notReflectForTopic) emptyList() else resultTopics.toList(), if(notReflectForAuthor) emptyList() else resultAuthors.toList(), minusTagme)
+        return if(minusTagme == Illust.Tagme.EMPTY && (resultTopics.isEmpty() || notReflectForTopic) && (resultAuthors.isEmpty() || notReflectForAuthor) && (resultTags.isEmpty() || notReflectForTag)) null
+        else Tuple4(
+            if(notReflectForTag) emptyList() else resultTags.toList(),
+            if(notReflectForTopic) emptyList() else resultTopics.toList(),
+            if(notReflectForAuthor) emptyList() else resultAuthors.toList(),
+            minusTagme
+        )
     }
 
     /**
@@ -363,11 +369,11 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
     private fun detectImageSet(site: SourceSiteRes, metaType: MetaType, sourceTags: List<SourceTagPath>, mappingTags: List<SourceMappingBatchQueryResult>): Boolean {
         return if(site.isBuiltin && (site.name == "ehentai" || site.name == "imhentai")) {
             when(metaType) {
-                MetaType.TOPIC -> sourceTags.any { it.sourceTagType == "category" || it.sourceTagType == "reclass" && it.sourceTagCode == "image-set" }
+                MetaType.TOPIC -> sourceTags.any { (it.sourceTagType == "category" || it.sourceTagType == "reclass") && (it.sourceTagCode == "image-set" || it.sourceTagCode == "western") }
                         || site.tagTypeMappings.filterValues { it == TagTopicType.IP.name }.keys.let { types -> sourceTags.count { it.sourceTagType in types } } >= 2
                         || getSiteMetaTypeToTagTypeMapping(site, MetaType.TOPIC).let { types -> sourceTags.count { it.sourceTagType in types } } >= 8
                 MetaType.AUTHOR -> getSiteMetaTypeToTagTypeMapping(site, MetaType.AUTHOR).let { types -> sourceTags.count { it.sourceTagType in types } } >= 4
-                else -> false
+                MetaType.TAG -> sourceTags.any { (it.sourceTagType == "category" || it.sourceTagType == "reclass") && (it.sourceTagCode == "image-set" || it.sourceTagCode == "western") }
             }
         }else if(site.isBuiltin && (site.name == "pixiv")) {
             when(metaType) {
@@ -375,13 +381,14 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
                     val topics = mappingTags.flatMap { it.mappings }.filter { it.metaType == MetaType.TOPIC }.map { it.metaTag as TopicSimpleRes }
                     topics.size >= 8 || topics.count { it.type == TagTopicType.IP } >= 2
                 }
-                else -> false
+                MetaType.AUTHOR -> false
+                MetaType.TAG -> true
             }
         }else if(site.isBuiltin && (site.name == "sankakucomplex")) {
             when(metaType) {
                 MetaType.TOPIC -> getSiteMetaTypeToTagTypeMapping(site, MetaType.TOPIC).let { types -> sourceTags.count { it.sourceTagType in types } } >= 8
                 MetaType.AUTHOR -> getSiteMetaTypeToTagTypeMapping(site, MetaType.AUTHOR).let { types -> sourceTags.count { it.sourceTagType in types } } >= 4
-                else -> false
+                MetaType.TAG -> false
             }
         }else{
             false
