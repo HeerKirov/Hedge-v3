@@ -182,7 +182,7 @@ function useOperators(data: Ref<Illust | null>, id: Ref<number | null>) {
     const { assetsLocal } = useAssets()
 
     const fetchSetData = usePostPathFetchHelper(client => client.illust.image.update)
-    const fetchDeleteData = usePostFetchHelper(client => client.illust.image.delete)
+    const fetchDeleteData = usePostPathFetchHelper(client => client.illust.image.delete)
     const fetchStagingPostUpdate = usePostFetchHelper(client => client.stagingPost.update)
 
     const toggleFavorite = () => {
@@ -192,8 +192,9 @@ function useOperators(data: Ref<Illust | null>, id: Ref<number | null>) {
     }
 
     const deleteItem = async () => {
-        if(id.value !== null && await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
-            await fetchDeleteData(id.value)
+        if(id.value !== null) {
+            const res = await message.showCheckBoxMessage("warn", "确定要删除此项吗？", "被删除的项将放入「已删除」归档。", [{key: "SHIFT", name: "彻底删除图像"}])
+            if(res.ok) await fetchDeleteData(id.value, {deleteCompletely: res.checks.includes("SHIFT")})
         }
     }
 
