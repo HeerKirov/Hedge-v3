@@ -1,8 +1,8 @@
 plugins {
     application
-    kotlin("jvm").version("1.9.22")
+    kotlin("jvm").version("2.0.21")
     id("org.beryx.jlink").version("3.0.1")
-    id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "com.heerkirov.hedge"
@@ -11,16 +11,16 @@ version = "0.10.1"
 var targetPlatform: String? = project.findProperty("targetPlatform")?.toString()
 
 dependencies {
-    val kotlinVersion = "1.9.22"
-    val javalinVersion = "6.0.1"
-    val ktormVersion = "3.6.0"
-    val sqliteVersion = "3.45.1.0"
-    val jacksonVersion = "2.16.1"
+    val kotlinVersion = "2.0.21"
+    val javalinVersion = "6.3.0"
+    val ktormVersion = "4.1.1"
+    val sqliteVersion = "3.47.0.0"
+    val jacksonVersion = "2.18.1"
     val thumbnailatorVersion = "0.4.20"
-    val twelvemonkeysVersion = "3.10.1"
-    val javeVersion = "3.4.0"
-    val logbackVersion = "1.4.14"
-    val junitVersion = "4.13.2"
+    val twelvemonkeysVersion = "3.12.0"
+    val javeVersion = "3.5.0"
+    val logbackVersion = "1.5.12"
+    val junitVersion = "5.11.3"
     val javePlatform = if(targetPlatform != null) {
         when(targetPlatform) {
             "mac" -> "nativebin-osx64"
@@ -65,10 +65,10 @@ dependencies {
     implementation(group = "ch.qos.logback", name = "logback-core", version = logbackVersion)                   //日志
     implementation(group = "ch.qos.logback", name = "logback-classic", version = logbackVersion)                //日志
     testImplementation(group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version = kotlinVersion)     //测试
-    testImplementation(group = "junit", name = "junit", version = junitVersion)                                 //测试
+    testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = junitVersion)         //测试
 }
 
-val javaVersion = "21"
+val javaVersion = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
 val projectMainModule = "com.heerkirov.hedge.server"
 val projectMainClass = "com.heerkirov.hedge.server.ApplicationKt"
 val projectBinaryName = "hedge-v3-server"
@@ -103,11 +103,11 @@ tasks {
         dependsOn(processResources)
     }
     compileKotlin {
-        kotlinOptions.jvmTarget = javaVersion
+        compilerOptions.jvmTarget = javaVersion
         destinationDirectory.set(compileJava.get().destinationDirectory)
     }
     compileTestKotlin {
-        kotlinOptions.jvmTarget = javaVersion
+        compilerOptions.jvmTarget = javaVersion
     }
 }
 

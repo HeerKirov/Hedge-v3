@@ -93,8 +93,9 @@ object CompositionSerializer : JsonSerializer<Composition<*>>() {
 
 object TupleSerializer : JsonSerializer<Tuple>() {
     override fun serialize(value: Tuple, gen: JsonGenerator, serializers: SerializerProvider) {
-        gen.writeStartArray(value.length)
-        value.toArray().forEach { gen.writeObject(it) }
+        val arr = value.toArray()
+        gen.writeStartArray(arr, value.length)
+        arr.forEach { gen.writeObject(it) }
         gen.writeEndArray()
     }
 }
