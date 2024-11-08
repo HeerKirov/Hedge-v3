@@ -39,8 +39,8 @@ const hasDarwinBorder = props.enableDarwinBorder ? useDarwinWindowed() : undefin
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .darwin-border-button:last-child
-    border-bottom-right-radius: $radius-size-very-large
+    border-bottom-right-radius: size.$radius-size-very-large
 </style>

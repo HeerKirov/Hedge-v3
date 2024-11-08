@@ -1,19 +1,19 @@
-@import "../base/size"
-@import "../base/font"
-@import "../base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/font"
+@use "@/styles/base/color" as color
 
 //==== 元素(文本)格式相关原子类 ====
 
 //文本尺寸
-@each $name, $size in $font-size-map
+@each $name, $size in size.$font-size-map
   .is-font-size-#{$name}
     font-size: $size
-@each $name, $size in $font-size-name
+@each $name, $size in size.$font-size-name
   .is-font-size-#{$name}
     font-size: $size
 
 //文本行高(用于跟表单元素对齐)
-@each $name, $size in $element-height-map
+@each $name, $size in size.$element-height-map
   .is-line-height-#{$name}
     line-height: $size
     > *
@@ -33,13 +33,13 @@
 
 //自由指定文本颜色和背景色
 @media (prefers-color-scheme: light)
-  @each $name, $color in $light-mode-colors
+  @each $name, $color in color.$light-mode-colors
     .has-text-#{$name}
       color: $color !important
     .has-bg-#{$name}
       background-color: $color !important
 @media (prefers-color-scheme: dark)
-  @each $name, $color in $dark-mode-colors
+  @each $name, $color in color.$dark-mode-colors
     .has-text-#{$name}
       color: $color
     .has-bg-#{$name}
@@ -47,9 +47,9 @@
 
 //文本字体
 .is-monospace
-  font-family: $family-monospace
+  font-family: font.$family-monospace
 .is-monaco
-  font-family: $family-monaco
+  font-family: font.$family-monaco
 
 //文本对齐位置
 .has-text-centered
@@ -80,13 +80,13 @@
 .label
   font-weight: 700
   display: block
-  color: $light-mode-text-color
+  color: color.$light-mode-text-color
   @media (prefers-color-scheme: dark)
-    color: $dark-mode-text-color
+    color: color.$dark-mode-text-color
 
 //灰色提示文本
 .secondary-text
-  font-size: $font-size-small
-  color: $light-mode-secondary-text-color
+  font-size: size.$font-size-small
+  color: color.$light-mode-secondary-text-color
   @media (prefers-color-scheme: dark)
-    color: $dark-mode-secondary-text-color
+    color: color.$dark-mode-secondary-text-color

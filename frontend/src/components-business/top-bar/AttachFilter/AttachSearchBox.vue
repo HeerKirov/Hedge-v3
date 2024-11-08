@@ -52,11 +52,11 @@ const templateOptions = computedAsync([], async () => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
+@use "@/styles/base/size"
 
 //因被popupCallout包裹，需要单独处理按钮的边角，并使用disable-any-radius禁用掉组件自带的边角
 .root:first-child .button
-    border-top-left-radius: $radius-size-std
-    border-bottom-left-radius: $radius-size-std
+    border-top-left-radius: size.$radius-size-std
+    border-bottom-left-radius: size.$radius-size-std
 
 </style>

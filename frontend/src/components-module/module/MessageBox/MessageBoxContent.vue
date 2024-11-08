@@ -46,26 +46,26 @@ const click = (action: string) => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .content
-    padding: $spacing-2
+    padding: size.$spacing-2
     max-width: 15rem
     text-align: center
     > .title
-        font-size: $font-size-large
-        margin-bottom: $spacing-4
+        font-size: size.$font-size-large
+        margin-bottom: size.$spacing-4
     > .message
-        margin: 0 #{$spacing-3} #{$spacing-1} #{$spacing-3}
+        margin: 0 #{size.$spacing-3} #{size.$spacing-1} #{size.$spacing-3}
     > .detail-message
-        margin: 0 #{$spacing-3}
-        color: $light-mode-secondary-text-color
-        font-size: $font-size-small
+        margin: 0 #{size.$spacing-3}
+        color: color.$light-mode-secondary-text-color
+        font-size: size.$font-size-small
         @media (prefers-color-scheme: dark)
-            color: $dark-mode-secondary-text-color
+            color: color.$dark-mode-secondary-text-color
     > .buttons
-        margin-top: $spacing-3
+        margin-top: size.$spacing-3
         > .button
             min-width: 4rem
 </style>

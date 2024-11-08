@@ -20,14 +20,14 @@ defineProps<{
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/color"
-@import "../../styles/base/size"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 .filter-button
     flex: 0 0 auto
-    border-bottom: solid 1px $light-mode-border-color
+    border-bottom: solid 1px color.$light-mode-border-color
     @media (prefers-color-scheme: dark)
-        border-bottom-color: $dark-mode-border-color
+        border-bottom-color: color.$dark-mode-border-color
 
 .button
     box-sizing: border-box
@@ -37,23 +37,23 @@ defineProps<{
     flex-wrap: nowrap
     align-items: center
     justify-content: center
-    border-radius: $radius-size-std
-    font-size: $font-size-std
-    height: $element-height-std
+    border-radius: size.$radius-size-std
+    font-size: size.$font-size-std
+    height: size.$element-height-std
     padding: 0 0.7em
     &.square
-        width: $element-height-std
+        width: size.$element-height-std
         padding: 0 0
     @media (prefers-color-scheme: light)
         background-color: rgba(#ffffff, 0)
-        color: $light-mode-text-color
+        color: color.$light-mode-text-color
         &:hover
             background-color: rgba(45, 50, 55, 0.09)
         &:active
             background-color: rgba(45, 50, 55, 0.13)
     @media (prefers-color-scheme: dark)
         background-color: rgba(#000000, 0)
-        color: $dark-mode-text-color
+        color: color.$dark-mode-text-color
         &:hover
             background-color: rgba(255, 255, 255, 0.09)
         &:active

@@ -59,11 +59,11 @@ const addText = ref<string>("")
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
+@use "@/styles/base/size"
 
 .tag-block
-    padding: 0 $spacing-2
-    line-height: #{$element-height-small - 2px}
+    padding: 0 size.$spacing-2
+    line-height: #{size.$element-height-small - 2px}
     overflow-x: auto
     overflow-y: hidden
     &::-webkit-scrollbar

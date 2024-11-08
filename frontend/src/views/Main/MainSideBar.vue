@@ -100,7 +100,7 @@ const hasDarwinBorder = useDarwinWindowed()
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .side-bar-area
     position: absolute
@@ -110,11 +110,11 @@ const hasDarwinBorder = useDarwinWindowed()
     height: 100%
     .std-menu
         height: 100%
-        padding: $spacing-1 $spacing-2
+        padding: size.$spacing-1 size.$spacing-2
         overflow-y: auto
         &:not(:last-child)
             display: none
 
 .darwin-border-button
-    border-bottom-left-radius: $radius-size-very-large
+    border-bottom-left-radius: size.$radius-size-very-large
 </style>

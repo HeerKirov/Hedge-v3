@@ -50,47 +50,48 @@ const TASK_NAMES: Record<BackgroundTaskType, string> = {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "sass:color" as sass-color
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .task
-    margin: $spacing-half $spacing-1
-    padding: $spacing-1 $spacing-1 $spacing-half $spacing-1
-    border-radius: $radius-size-large
+    margin: size.$spacing-half size.$spacing-1
+    padding: size.$spacing-1 size.$spacing-1 size.$spacing-half size.$spacing-1
+    border-radius: size.$radius-size-large
 
     &:first-child
-        margin-top: $spacing-1
+        margin-top: size.$spacing-1
     &:last-child
-        margin-bottom: $spacing-1
+        margin-bottom: size.$spacing-1
 
     &:hover
-        background-color: mix($light-mode-block-color, #000000, 95%)
+        background-color: sass-color.mix(color.$light-mode-block-color, #000000, 95%)
 
 .title
-    padding: 0 $spacing-1
+    padding: 0 size.$spacing-1
 
 .progress
     width: 100%
     height: 8px
-    border: 1px solid $light-mode-border-color
-    border-radius: $radius-size-round
+    border: 1px solid color.$light-mode-border-color
+    border-radius: size.$radius-size-round
     vertical-align: 0
 
     &::-webkit-progress-bar
-        background-color: $light-mode-background-color
-        border-radius: $radius-size-round
+        background-color: color.$light-mode-background-color
+        border-radius: size.$radius-size-round
 
     &::-webkit-progress-value
-        background-color: $light-mode-primary
+        background-color: color.$light-mode-primary
         border-radius: 5px
 
     @media (prefers-color-scheme: dark)
-        border-color: $dark-mode-border-color
+        border-color: color.$dark-mode-border-color
 
         &::-webkit-progress-bar
-            background-color: $dark-mode-background-color
+            background-color: color.$dark-mode-background-color
 
         &::-webkit-progress-value
-            background-color: $dark-mode-primary
+            background-color: color.$dark-mode-primary
 
 </style>

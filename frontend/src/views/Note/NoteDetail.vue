@@ -38,16 +38,17 @@ const { paneState, form, setTitle, setContent, submit, toggleCompleted, togglePi
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
-@import "../../styles/base/color"
+@use "sass:math"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .darwin-margin
-    $content-margin-size: calc(($title-bar-height - $element-height-std) / 2)
-    padding-left: #{$content-margin-size + $macos-buttons-width}
+    $content-margin-size: math.div(size.$title-bar-height - size.$element-height-std, 2)
+    padding-left: #{$content-margin-size + size.$macos-buttons-width}
 
 .block
-    padding: $spacing-1
-    margin: 0 $spacing-2 $spacing-2 $spacing-2
+    padding: size.$spacing-1
+    margin: 0 size.$spacing-2 size.$spacing-2 size.$spacing-2
     height: 100%
     display: flex
     flex-direction: column
@@ -56,10 +57,10 @@ const { paneState, form, setTitle, setContent, submit, toggleCompleted, togglePi
     display: flex
     flex-wrap: nowrap
     align-items: center
-    margin: $spacing-2
-    border-bottom: solid 1px $light-mode-border-color
+    margin: size.$spacing-2
+    border-bottom: solid 1px color.$light-mode-border-color
     @media (prefers-color-scheme: dark)
-        border-bottom-color: $dark-mode-border-color
+        border-bottom-color: color.$dark-mode-border-color
     > input
         border: none
         width: 100%
@@ -70,7 +71,7 @@ const { paneState, form, setTitle, setContent, submit, toggleCompleted, togglePi
     border: none
     width: 100%
     height: 100%
-    padding: $spacing-3 $spacing-5 $spacing-3 $spacing-5 !important
+    padding: size.$spacing-3 size.$spacing-5 size.$spacing-3 size.$spacing-5 !important
     max-height: none !important
     resize: none !important
 </style>

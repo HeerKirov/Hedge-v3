@@ -17,24 +17,25 @@ defineProps<{
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
+
 .block
     position: relative
-    padding: $spacing-1 $spacing-2
+    padding: size.$spacing-1 size.$spacing-2
     max-height: 200px
     overflow: auto
     &::-webkit-scrollbar
         display: none
 
     .text
-        font-size: $font-size-small
+        font-size: size.$font-size-small
         &:not(:first-child)
-            margin-top: $spacing-1
+            margin-top: size.$spacing-1
 
     .exported
         position: absolute
         right: 2px
         bottom: 2px
         padding: 0 2px
-        font-size: $font-size-tiny
+        font-size: size.$font-size-tiny
 </style>

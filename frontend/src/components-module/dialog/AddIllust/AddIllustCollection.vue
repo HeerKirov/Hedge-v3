@@ -63,7 +63,7 @@ const { situations, collectionTotalCount, selectedCollections, selectedPartition
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
+@use "@/styles/base/size"
 
 .item
     margin-top: 0.5rem
@@ -107,7 +107,7 @@ const { situations, collectionTotalCount, selectedCollections, selectedPartition
         width: 4rem
         height: 4rem
 .img
-    border-radius: $radius-size-std
+    border-radius: size.$radius-size-std
     flex-shrink: 0
     object-fit: cover
 </style>

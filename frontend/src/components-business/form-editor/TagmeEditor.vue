@@ -46,9 +46,9 @@ const updateValue = (tagme: Tagme, v: boolean) => {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .horizontal
-    line-height: $element-height-std
+    line-height: size.$element-height-std
     padding: 0 0.25rem
 </style>

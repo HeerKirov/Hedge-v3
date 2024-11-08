@@ -130,8 +130,10 @@ const inputClass = computed(() => [
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
-@import "../../styles/base/color"
+@use "sass:math"
+@use "sass:color" as sass-color
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .input
     vertical-align: middle
@@ -139,20 +141,20 @@ const inputClass = computed(() => [
     display: inline-flex
     line-height: 1.2
     padding: 0 calc(0.85em - 1px)
-    border-radius: $radius-size-std
-    border: 1px solid $light-mode-border-color
-    color: $light-mode-text-color
-    background-color: $light-mode-block-color
+    border-radius: size.$radius-size-std
+    border: 1px solid color.$light-mode-border-color
+    color: color.$light-mode-text-color
+    background-color: color.$light-mode-block-color
     &[disabled]
-        color: mix($light-mode-text-color, #ffffff, 20%)
-        background-color: mix($light-mode-block-color, #000000, 96%)
+        color: sass-color.mix(color.$light-mode-text-color, #ffffff, 20%)
+        background-color: sass-color.mix(color.$light-mode-block-color, #000000, 96%)
     @media (prefers-color-scheme: dark)
-        border-color: $dark-mode-border-color
-        color: $dark-mode-text-color
-        background-color: $dark-mode-block-color
+        border-color: color.$dark-mode-border-color
+        color: color.$dark-mode-text-color
+        background-color: color.$dark-mode-block-color
         &[disabled]
-            color: mix($dark-mode-text-color, #000000, 20%)
-            background-color: mix($dark-mode-block-color, #FFFFFF, 96%)
+            color: sass-color.mix(color.$dark-mode-text-color, #000000, 20%)
+            background-color: sass-color.mix(color.$dark-mode-block-color, #FFFFFF, 96%)
 
 textarea.input
     $textarea-max-height: 40em !default
@@ -166,14 +168,14 @@ textarea.input
         height: initial
 
 .is-size-small
-    font-size: $font-size-small
-    height: $element-height-small
+    font-size: size.$font-size-small
+    height: size.$element-height-small
 .is-size-std
-    font-size: $font-size-std
-    height: $element-height-std
+    font-size: size.$font-size-std
+    height: size.$element-height-std
 .is-size-large
-    font-size: $font-size-large
-    height: $element-height-large
+    font-size: size.$font-size-large
+    height: size.$element-height-large
 
 @each $name, $size in ("one-third" 0.333em, "half" 0.5em, "three-quarter" 0.75em, "std" 1em, "medium" 1.25em, "large" 1.5em, "2x" 2em, "3x" 3em)
     .is-width-#{$name}
@@ -181,7 +183,7 @@ textarea.input
         max-width: #{$size * 13.6}
 @each $name, $size in ("25" 0.25, "50" 0.5, "75" 0.75, "fullwidth" 1)
     .is-width-#{$name}
-        width: percentage($size)
-        max-width: percentage($size)
+        width: math.percentage($size)
+        max-width: math.percentage($size)
 
 </style>

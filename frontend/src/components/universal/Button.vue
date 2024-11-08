@@ -38,50 +38,51 @@ const buttonClass = computed(() => [
 
 <style module lang="sass">
 @use "sass:math"
-@import "../../styles/base/size"
-@import "../../styles/base/color"
+@use "sass:color" as sass-color
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .button
     position: relative
     box-sizing: border-box
     vertical-align: middle
-    border-radius: $radius-size-std
+    border-radius: size.$radius-size-std
     padding: 0 1em
     &.square
         padding: 0 0
     &:not(.square) > .icon
-        transform: translateX(#{-$spacing-1})
+        transform: translateX(#{- size.$spacing-1})
     &.round
-        border-radius: $radius-size-round
+        border-radius: size.$radius-size-round
     .end-icon
         position: absolute
-        right: calc(math.div($element-height-small, 2) - 0.5rem)
-        top: calc(math.div($element-height-small, 2) - 0.5rem + 1px)
+        right: calc(math.div(size.$element-height-small, 2) - 0.5rem)
+        top: calc(math.div(size.$element-height-small, 2) - 0.5rem + 1px)
 
 .is-size-tiny
-    font-size: $font-size-tiny
-    height: $element-height-tiny
-    line-height: $element-height-tiny
+    font-size: size.$font-size-tiny
+    height: size.$element-height-tiny
+    line-height: size.$element-height-tiny
     &.square
-        width: $element-height-tiny
+        width: size.$element-height-tiny
 .is-size-small
-    font-size: $font-size-small
-    height: $element-height-small
-    line-height: $element-height-small
+    font-size: size.$font-size-small
+    height: size.$element-height-small
+    line-height: size.$element-height-small
     &.square
-        width: $element-height-small
+        width: size.$element-height-small
 .is-size-std
-    font-size: $font-size-std
-    height: $element-height-std
-    line-height: $element-height-std
+    font-size: size.$font-size-std
+    height: size.$element-height-std
+    line-height: size.$element-height-std
     &.square
-        width: $element-height-std
+        width: size.$element-height-std
 .is-size-large
-    font-size: $font-size-large
-    height: $element-height-large
-    line-height: $element-height-large
+    font-size: size.$font-size-large
+    height: size.$element-height-large
+    line-height: size.$element-height-large
     &.square
-        width: $element-height-large
+        width: size.$element-height-large
 
 @media (prefers-color-scheme: light)
     .color-mode-transparent
@@ -91,12 +92,12 @@ const buttonClass = computed(() => [
         &:active:not([disabled])
             background-color: rgba(45, 50, 55, 0.13)
         &[disabled]
-            color: $light-mode-secondary-text-color
-        @each $name, $color in $light-mode-colors
+            color: color.$light-mode-secondary-text-color
+        @each $name, $color in color.$light-mode-colors
             &.is-color-#{$name}:not([disabled])
                 color: $color
     .color-mode-light
-        @each $name, $color in $light-mode-colors
+        @each $name, $color in color.$light-mode-colors
             &.is-color-#{$name}
                 color: $color
                 background-color: rgba($color, 0.15)
@@ -105,18 +106,18 @@ const buttonClass = computed(() => [
                 &:active:not([disabled])
                     background-color: rgba($color, 0.28)
                 &[disabled]
-                    color: $light-mode-secondary-text-color
+                    color: color.$light-mode-secondary-text-color
     .color-mode-filled
-        @each $name, $color in $light-mode-colors
+        @each $name, $color in color.$light-mode-colors
             &.is-color-#{$name}
-                color: $light-mode-text-inverted-color
+                color: color.$light-mode-text-inverted-color
                 background-color: $color
                 &:hover:not([disabled])
                     background-color: rgba($color, 0.88)
                 &:active:not([disabled])
                     background-color: rgba($color, 0.8)
                 &[disabled]
-                    background-color: mix($color, #FFFFFF)
+                    background-color: sass-color.mix($color, #FFFFFF)
 @media (prefers-color-scheme: dark)
     .color-mode-transparent
         background-color: rgba(#000000, 0)
@@ -125,12 +126,12 @@ const buttonClass = computed(() => [
         &:active:not([disabled])
             background-color: rgba(255, 255, 255, 0.13)
         &[disabled]
-            color: $dark-mode-secondary-text-color
-        @each $name, $color in $dark-mode-colors
+            color: color.$dark-mode-secondary-text-color
+        @each $name, $color in color.$dark-mode-colors
             &.is-color-#{$name}:not([disabled])
                 color: $color
     .color-mode-light
-        @each $name, $color in $dark-mode-colors
+        @each $name, $color in color.$dark-mode-colors
             &.is-color-#{$name}
                 color: $color
                 background-color: rgba($color, 0.15)
@@ -139,16 +140,16 @@ const buttonClass = computed(() => [
                 &:active:not([disabled])
                     background-color: rgba($color, 0.28)
                 &[disabled]
-                    color: $dark-mode-secondary-text-color
+                    color: color.$dark-mode-secondary-text-color
     .color-mode-filled
-        @each $name, $color in $dark-mode-colors
+        @each $name, $color in color.$dark-mode-colors
             &.is-color-#{$name}
-                color: $dark-mode-text-inverted-color
+                color: color.$dark-mode-text-inverted-color
                 background-color: $color
                 &:hover:not([disabled])
                     background-color: rgba($color, 0.88)
                 &:active:not([disabled])
                     background-color: rgba($color, 0.8)
                 &[disabled]
-                    background-color: mix($color, #000000)
+                    background-color: sass-color.mix($color, #000000)
 </style>

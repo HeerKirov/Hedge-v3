@@ -79,8 +79,8 @@ const rightClick = () => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
-@import "../../../styles/base/size"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 .item
     position: relative
@@ -101,18 +101,18 @@ const rightClick = () => {
         left: 0
         right: 0
         margin: 1px
-        border: solid 3px $light-mode-primary
+        border: solid 3px color.$light-mode-primary
         @media (prefers-color-scheme: dark)
-            border-color: $dark-mode-primary
+            border-color: color.$dark-mode-primary
             border-width: 2px
 
         > .internal-border
             width: 100%
             height: 100%
             box-sizing: border-box
-            border: solid 1px $white
+            border: solid 1px color.$white
             @media (prefers-color-scheme: dark)
-                border-color: $black
+                border-color: color.$black
 
     //分侧的点击浮层(用于判断拖放位置)
     > .left-touch
@@ -154,10 +154,10 @@ const rightClick = () => {
         width: 30px
         height: 30px
         padding: 2px
-        color: $dark-mode-text-color
-        border-radius: $radius-size-std
-        border: solid 1px $dark-mode-text-color
-        filter: drop-shadow(0 0 1px $dark-mode-background-color)
+        color: color.$dark-mode-text-color
+        border-radius: size.$radius-size-std
+        border: solid 1px color.$dark-mode-text-color
+        filter: drop-shadow(0 0 1px color.$dark-mode-background-color)
         > svg
             width: 24px
             height: 24px

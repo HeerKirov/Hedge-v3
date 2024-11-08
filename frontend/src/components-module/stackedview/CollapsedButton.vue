@@ -23,9 +23,10 @@ const { hover, ...mouseEvents } = useMouseHover()
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "sass:math"
+@use "@/styles/base/size"
 
-$content-margin-size: calc(($title-bar-height - $element-height-std) / 2)
+$content-margin-size: math.div(size.$title-bar-height - size.$element-height-std, 2)
 
 .hover-area
     -webkit-app-region: none
@@ -33,17 +34,17 @@ $content-margin-size: calc(($title-bar-height - $element-height-std) / 2)
     top: 0
     right: 0
     left: 0
-    height: $title-bar-height
-    padding-top: $spacing-1
-    padding-right: $spacing-1
+    height: size.$title-bar-height
+    padding-top: size.$spacing-1
+    padding-right: size.$spacing-1
     //macOS平台的内容区域布局。左侧留出红绿灯的宽度
     &.has-darwin-button
-        padding-left: #{$content-margin-size + $macos-buttons-width}
+        padding-left: #{$content-margin-size + size.$macos-buttons-width}
 
 .collapse-button
     position: fixed
-    top: $spacing-1
-    right: $spacing-1
+    top: size.$spacing-1
+    right: size.$spacing-1
     &.darwin-border-button
-        border-top-right-radius: $radius-size-very-large
+        border-top-right-radius: size.$radius-size-very-large
 </style>

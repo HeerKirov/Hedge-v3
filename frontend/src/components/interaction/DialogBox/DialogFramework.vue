@@ -47,7 +47,7 @@ const closeByOutside = () => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
+@use "@/styles/base/size"
 
 .background
     z-index: 90
@@ -62,7 +62,7 @@ const closeByOutside = () => {
     .top-bar-region
         position: absolute
         width: 100%
-        height: $title-bar-height
+        height: size.$title-bar-height
         left: 0
         top: 0
         -webkit-app-region: none

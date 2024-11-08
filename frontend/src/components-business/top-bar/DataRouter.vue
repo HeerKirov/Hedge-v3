@@ -39,10 +39,10 @@ const submit = () => {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .root
-    margin: 0 $spacing-2
+    margin: 0 size.$spacing-2
     display: flex
     align-items: center
     flex: 0 0 auto

@@ -69,23 +69,23 @@ const contextmenu = () => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .root
-    padding: $spacing-3 $spacing-2
+    padding: size.$spacing-3 size.$spacing-2
 
 .root-node-list
-    padding-left: $spacing-2
-    margin-top: $spacing-3
-    border-top: solid 1px $light-mode-border-color
+    padding-left: size.$spacing-2
+    margin-top: size.$spacing-3
+    border-top: solid 1px color.$light-mode-border-color
     @media (prefers-color-scheme: dark)
-        border-top-color: $dark-mode-border-color
+        border-top-color: color.$dark-mode-border-color
 
 .jump-target
-    border-radius: $radius-size-std
+    border-radius: size.$radius-size-std
     @media (prefers-color-scheme: light)
-        border: solid 2px $light-mode-warning
+        border: solid 2px color.$light-mode-warning
     @media (prefers-color-scheme: dark)
-        border: solid 2px $dark-mode-warning
+        border: solid 2px color.$dark-mode-warning
 </style>

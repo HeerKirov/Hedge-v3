@@ -13,15 +13,15 @@ defineProps<{
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .group
     > *
         display: inline-block
         vertical-align: middle
         &:not(:last-child)
-            margin-right: $spacing-1
+            margin-right: size.$spacing-1
     &:not(.single-line)
         > *
-            margin-bottom: $spacing-1
+            margin-bottom: size.$spacing-1
 </style>

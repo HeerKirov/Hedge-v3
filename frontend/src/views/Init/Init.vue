@@ -54,7 +54,7 @@ const submitTheme = (theme: NativeTheme) => {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .top-bar
     -webkit-app-region: drag
@@ -62,7 +62,7 @@ const submitTheme = (theme: NativeTheme) => {
     top: 0
     left: 0
     right: 0
-    height: $title-bar-height
+    height: size.$title-bar-height
 
 .area
     height: 31.25rem

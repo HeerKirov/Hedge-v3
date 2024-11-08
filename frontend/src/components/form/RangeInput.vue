@@ -46,38 +46,40 @@ const events = {[props.updateOnInput ? "onInput" : "onChange"]: onUpdate, onKeyd
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
-@import "../../styles/base/color"
+@use "sass:math"
+@use "sass:color" as sass-color
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 input[type="range"].range
     $height: 8px
-    $margin: calc(($element-height-std - $height) / 2)
+    $margin: math.div(size.$element-height-std - $height, 2)
     -webkit-appearance: none
     margin: $margin 0.25rem
     height: $height
     box-sizing: border-box
-    border-radius: $radius-size-round
-    border: solid 1px $light-mode-border-color
-    background-color: mix($light-mode-block-color, #000000, 98%)
+    border-radius: size.$radius-size-round
+    border: solid 1px color.$light-mode-border-color
+    background-color: sass-color.mix(color.$light-mode-block-color, #000000, 98%)
     @media (prefers-color-scheme: dark)
-        border-color: $dark-mode-border-color
-        background-color: mix($dark-mode-block-color, #ffffff, 98%)
+        border-color: color.$dark-mode-border-color
+        background-color: sass-color.mix(color.$dark-mode-block-color, #ffffff, 98%)
 
     &::-webkit-slider-thumb
         $size: 0.75rem
         $hover-scale: 0.15
         -webkit-appearance: none
-        border-radius: $radius-size-round
+        border-radius: size.$radius-size-round
         width: $size
         height: $size
         transition: transform 0.15s
         &:hover
             transform: scale(#{1 + $hover-scale})
-        background-color: $light-mode-primary
+        background-color: color.$light-mode-primary
         &:active
-            background-color: mix($light-mode-primary, #000000, 75%)
+            background-color: sass-color.mix(color.$light-mode-primary, #000000, 75%)
         @media (prefers-color-scheme: dark)
-            background-color: $dark-mode-primary
+            background-color: color.$dark-mode-primary
             &:active
-                background-color: mix($dark-mode-primary, #ffffff, 75%)
+                background-color: sass-color.mix(color.$dark-mode-primary, #ffffff, 75%)
 </style>

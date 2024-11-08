@@ -49,12 +49,12 @@ const created = async (name: string) => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
-@import "../../../styles/base/size"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 .left-column
-    border-right: solid 1px $light-mode-border-color
-    padding-right: $spacing-2
+    border-right: solid 1px color.$light-mode-border-color
+    padding-right: size.$spacing-2
     @media (prefers-color-scheme: dark)
-        border-right-color: $dark-mode-border-color
+        border-right-color: color.$dark-mode-border-color
 </style>

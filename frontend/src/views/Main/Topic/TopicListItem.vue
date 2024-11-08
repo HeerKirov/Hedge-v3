@@ -108,11 +108,11 @@ const { hover, ...hoverEvents } = useMouseHover()
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
+@use "@/styles/base/size"
 
 .item
     height: 40px
-    padding: 0 $spacing-2
+    padding: 0 size.$spacing-2
     margin-bottom: 4px
 
     > div

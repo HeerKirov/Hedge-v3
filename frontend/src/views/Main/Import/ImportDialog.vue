@@ -27,34 +27,34 @@ const progressingStyle = computed(() => ({
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .content
-    padding: $spacing-3 0 $spacing-4 0
+    padding: size.$spacing-3 0 size.$spacing-4 0
     width: 24rem
     max-height: 12rem
     text-align: center
     > p
-        margin-top: $spacing-1
+        margin-top: size.$spacing-1
     > .progress-bar
         display: inline-block
         position: relative
         overflow: hidden
         width: 12rem
         height: 1rem
-        margin-top: $spacing-1
-        border-radius: $radius-size-very-large
-        background-color: $light-mode-border-color
+        margin-top: size.$spacing-1
+        border-radius: size.$radius-size-very-large
+        background-color: color.$light-mode-border-color
         @media (prefers-color-scheme: dark)
-            background-color: $dark-mode-border-color
+            background-color: color.$dark-mode-border-color
 
         > .progressing
             position: absolute
             left: 0
             top: 0
             bottom: 0
-            background-color: $light-mode-primary
+            background-color: color.$light-mode-primary
             @media (prefers-color-scheme: dark)
-                background-color: $dark-mode-primary
+                background-color: color.$dark-mode-primary
 </style>

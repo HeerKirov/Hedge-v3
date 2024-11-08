@@ -43,49 +43,49 @@ defineEmits<{
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
-@import "../../../styles/base/size"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 .base-pane
     position: relative
     box-sizing: border-box
-    background-color: $light-mode-block-color
-    border-left: solid 1px $light-mode-border-color
+    background-color: color.$light-mode-block-color
+    border-left: solid 1px color.$light-mode-border-color
     @media (prefers-color-scheme: dark)
-        background-color: $dark-mode-block-color
-        border-left-color: $dark-mode-border-color
+        background-color: color.$dark-mode-block-color
+        border-left-color: color.$dark-mode-border-color
 
     > .close-button
         position: absolute
-        top: $spacing-1
-        right: $spacing-1
+        top: size.$spacing-1
+        right: size.$spacing-1
 
     > .title
         position: absolute
-        top: $spacing-1
-        left: $spacing-1
-        right: calc(#{$spacing-1 * 2} + #{$element-height-std})
-        height: $element-height-std
+        top: size.$spacing-1
+        left: size.$spacing-1
+        right: calc(#{size.$spacing-1 * 2} + #{size.$element-height-std})
+        height: size.$element-height-std
         &.full-width
-            right: $spacing-1
+            right: size.$spacing-1
 
     > .top-content
         box-sizing: border-box
-        padding: calc(#{$spacing-1 * 2} + #{$element-height-std}) $spacing-2 $spacing-1 $spacing-2
+        padding: calc(#{size.$spacing-1 * 2} + #{size.$element-height-std}) size.$spacing-2 size.$spacing-1 size.$spacing-2
         max-height: 75%
     
     > .top-content-full
         box-sizing: border-box
-        padding: $spacing-1 $spacing-2
+        padding: size.$spacing-1 size.$spacing-2
         max-height: 75%
 
     > .content
         box-sizing: border-box
-        padding-left: $spacing-3
-        padding-right: $spacing-3
+        padding-left: size.$spacing-3
+        padding-right: size.$spacing-3
 
     > .bottom-content
         box-sizing: border-box
-        padding: $spacing-1
+        padding: size.$spacing-1
 
 </style>

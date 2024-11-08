@@ -97,12 +97,12 @@ const menu = usePopupMenu<MetaTagTypeValue>([
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .exported
     position: absolute
     right: 3px
     bottom: 2px
     padding: 0 2px
-    font-size: $font-size-tiny
+    font-size: size.$font-size-tiny
 </style>

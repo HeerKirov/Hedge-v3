@@ -39,32 +39,33 @@ const hasDarwinButton = computed(() => platform === "darwin" && !props.isSideOpe
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "sass:math"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 $transaction-time: 0.4s
-$content-margin-size: calc(($title-bar-height - $element-height-std) / 2)
+$content-margin-size: math.div(size.$title-bar-height - size.$element-height-std, 2)
 
 .top-bar
     -webkit-app-region: drag
     position: relative
     width: 100%
-    height: $title-bar-height
+    height: size.$title-bar-height
     transition: padding-left $transaction-time ease
-    background-color: $light-mode-block-color
-    border-bottom: solid 1px $light-mode-border-color
+    background-color: color.$light-mode-block-color
+    border-bottom: solid 1px color.$light-mode-border-color
     @media (prefers-color-scheme: dark)
-        background-color: $dark-mode-block-color
-        border-bottom-color: $dark-mode-border-color
+        background-color: color.$dark-mode-block-color
+        border-bottom-color: color.$dark-mode-border-color
 
     //macOS平台的内容区域布局。左侧留出红绿灯的宽度
     &.has-darwin-button
-        padding-left: $macos-buttons-width
+        padding-left: size.$macos-buttons-width
 
 .collapse-button
     -webkit-app-region: none
-    margin-left: $spacing-1
-    margin-top: $spacing-1
+    margin-left: size.$spacing-1
+    margin-top: size.$spacing-1
     &.transition-enter-active,
     &.transition-leave-active
         transition: transform $transaction-time ease
@@ -75,15 +76,15 @@ $content-margin-size: calc(($title-bar-height - $element-height-std) / 2)
 .content
     position: absolute
     top: $content-margin-size
-    height: $element-height-std
-    right: $spacing-1
+    height: size.$element-height-std
+    right: size.$spacing-1
     transition: left $transaction-time ease
     box-sizing: border-box
 
 .top-bar:not(.has-darwin-button) > .content
     //在侧边栏折叠时，显示折叠按钮，需要留出左侧的空隙
     &.has-cl-button
-        left: #{$element-height-std + $content-margin-size * 2}
+        left: #{size.$element-height-std + $content-margin-size * 2}
     //在侧边栏展开时，不显示折叠按钮，不用留出空隙
     &:not(.has-cl-button)
         left: $content-margin-size
@@ -91,8 +92,8 @@ $content-margin-size: calc(($title-bar-height - $element-height-std) / 2)
 .top-bar.has-darwin-button > .content
     //在侧边栏折叠时，显示折叠按钮，需要留出左侧的空隙
     &.has-cl-button 
-        left: #{$element-height-std + $content-margin-size * 2 + $macos-buttons-width}
+        left: #{size.$element-height-std + $content-margin-size * 2 + size.$macos-buttons-width}
     //在侧边栏展开时，不显示折叠按钮，不用留出空隙
     &:not(.has-cl-button) 
-        left: #{$content-margin-size + $macos-buttons-width}
+        left: #{$content-margin-size + size.$macos-buttons-width}
 </style>

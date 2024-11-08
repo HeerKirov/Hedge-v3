@@ -34,8 +34,8 @@ const badges = computed(() => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .button
     box-sizing: border-box
@@ -44,73 +44,73 @@ const badges = computed(() => {
     justify-content: stretch
     white-space: nowrap
     overflow: hidden
-    border-radius: $radius-size-std
+    border-radius: size.$radius-size-std
     text-align: left
-    margin-top: $spacing-half
+    margin-top: size.$spacing-half
     padding: 0 0.5em 0 1em
     height: 30px
     width: 100%
-    font-size: $font-size-std
+    font-size: size.$font-size-std
     > span:first-child
-        margin-left: calc(1.25em + $spacing-2)
+        margin-left: calc(1.25em + #{size.$spacing-2})
 
 @media (prefers-color-scheme: light)
     .general
         background-color: rgba(#ffffff, 0)
-        color: $light-mode-text-color
+        color: color.$light-mode-text-color
         &:hover:not([disabled])
             background-color: rgba(45, 50, 55, 0.09)
         &:active:not([disabled])
             background-color: rgba(45, 50, 55, 0.13)
         &[disabled]
-            color: $light-mode-secondary-text-color
+            color: color.$light-mode-secondary-text-color
 
     .checked
-        color: $light-mode-primary
-        background-color: rgba($light-mode-primary, 0.15)
+        color: color.$light-mode-primary
+        background-color: rgba(color.$light-mode-primary, 0.15)
         &:hover:not([disabled])
-            background-color: rgba($light-mode-primary, 0.2)
+            background-color: rgba(color.$light-mode-primary, 0.2)
         &:active:not([disabled])
-            background-color: rgba($light-mode-primary, 0.28)
+            background-color: rgba(color.$light-mode-primary, 0.28)
         &[disabled]
-            color: $light-mode-secondary-text-color
+            color: color.$light-mode-secondary-text-color
         
     .badge
         &.std
             background-color: rgba(#000000, 0.08)
         &.danger
-            background-color: rgba($light-mode-danger, 0.3)
+            background-color: rgba(color.$light-mode-danger, 0.3)
 
 @media (prefers-color-scheme: dark)
     .general
         background-color: rgba(#000000, 0)
-        color: $dark-mode-text-color
+        color: color.$dark-mode-text-color
         &:hover:not([disabled])
             background-color: rgba(255, 255, 255, 0.09)
         &:active:not([disabled])
             background-color: rgba(255, 255, 255, 0.13)
         &[disabled]
-            color: $dark-mode-secondary-text-color
+            color: color.$dark-mode-secondary-text-color
 
     .checked
-        color: $dark-mode-primary
-        background-color: rgba($dark-mode-primary, 0.15)
+        color: color.$dark-mode-primary
+        background-color: rgba(color.$dark-mode-primary, 0.15)
         &:hover:not([disabled])
-            background-color: rgba($dark-mode-primary, 0.2)
+            background-color: rgba(color.$dark-mode-primary, 0.2)
         &:active:not([disabled])
-            background-color: rgba($dark-mode-primary, 0.28)
+            background-color: rgba(color.$dark-mode-primary, 0.28)
         &[disabled]
-            color: $dark-mode-secondary-text-color
+            color: color.$dark-mode-secondary-text-color
     
     .badge
         background-color: rgba(#000000, 0.3)
         &.danger
-            color: $dark-mode-danger
+            color: color.$dark-mode-danger
 
 .badge
     flex: 0 0 auto
     padding: 2px 6px
     margin-left: 2px
-    border-radius: $radius-size-std
+    border-radius: size.$radius-size-std
     font-weight: 700
 </style>

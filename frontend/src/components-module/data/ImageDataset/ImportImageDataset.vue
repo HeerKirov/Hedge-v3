@@ -178,7 +178,7 @@ installDatasetContext({
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
+@use "@/styles/base/color"
 
 .grid-img
     height: 100%
@@ -190,8 +190,8 @@ installDatasetContext({
     position: absolute
     left: 0.3rem
     bottom: 0.25rem
-    color: $dark-mode-text-color
-    filter: drop-shadow(0 0 1px $dark-mode-background-color)
+    color: color.$dark-mode-text-color
+    filter: drop-shadow(0 0 1px color.$dark-mode-background-color)
 
 .grid-status-icon
     position: absolute
@@ -201,25 +201,25 @@ installDatasetContext({
     height: 0
     border-left: 1.7rem solid transparent
     border-bottom: 1.7rem solid transparent
-    color: $white
+    color: color.$white
     > svg 
         position: absolute
         top: 0.7rem
         right: 0
     @media (prefers-color-scheme: light)
         &.completed
-            border-bottom-color: $light-mode-success
+            border-bottom-color: color.$light-mode-success
         &.error
-            border-bottom-color: $light-mode-danger
+            border-bottom-color: color.$light-mode-danger
         &.processing
-            border-bottom-color: $light-mode-primary
+            border-bottom-color: color.$light-mode-primary
     @media (prefers-color-scheme: dark)
         &.completed
-            border-bottom-color: $dark-mode-success
+            border-bottom-color: color.$dark-mode-success
         &.error
-            border-bottom-color: $dark-mode-danger
+            border-bottom-color: color.$dark-mode-danger
         &.processing
-            border-bottom-color: $dark-mode-primary
+            border-bottom-color: color.$dark-mode-primary
 
 .row-img
     margin-top: 1px

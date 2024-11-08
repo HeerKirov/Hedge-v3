@@ -13,18 +13,18 @@ defineProps<{
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .root
     position: absolute
     right: 0
     top: 0
-    margin-top: $spacing-3
-    margin-right: $spacing-3
+    margin-top: size.$spacing-3
+    margin-right: size.$spacing-3
     padding: 0.15rem 0.6rem
-    border-radius: $radius-size-std
-    color: $dark-mode-text-color
+    border-radius: size.$radius-size-std
+    color: color.$dark-mode-text-color
     background-color: rgba(0, 0, 0, 0.65)
     box-shadow: 0 0 3px rgba(0, 0, 0, 0.65)
 </style>

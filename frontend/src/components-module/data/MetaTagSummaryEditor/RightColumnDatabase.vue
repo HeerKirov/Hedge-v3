@@ -67,8 +67,8 @@ const addTag = (tag: TagTreeNode) => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
-@import "../../../styles/base/size"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 .content
     height: 100%
@@ -76,17 +76,17 @@ const addTag = (tag: TagTreeNode) => {
     padding: 1rem
 
 .item
-    padding: $spacing-half $spacing-1
+    padding: size.$spacing-half size.$spacing-1
 
 .selected
-    border-radius: $radius-size-std
+    border-radius: size.$radius-size-std
     @media (prefers-color-scheme: light)
-        border: solid 2px $light-mode-warning
+        border: solid 2px color.$light-mode-warning
     @media (prefers-color-scheme: dark)
-        border: solid 2px $dark-mode-warning
+        border: solid 2px color.$dark-mode-warning
 
 .parent-root
     vertical-align: bottom
-    margin-left: $spacing-1
-    font-size: $font-size-tiny
+    margin-left: size.$spacing-1
+    font-size: size.$font-size-tiny
 </style>

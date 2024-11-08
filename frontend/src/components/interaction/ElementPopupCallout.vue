@@ -53,8 +53,6 @@ onOutsideClick(divRef, () => {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
-
 .root
     display: inline-block
     position: relative

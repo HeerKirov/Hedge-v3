@@ -55,14 +55,13 @@ useInterceptedKey(["Space", "ArrowLeft", "ArrowRight"], e => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
-@import "../../../styles/base/size"
+@use "@/styles/base/color"
 
 .view
     position: relative
     width: 100%
     height: 100%
-    background-color: $black
+    background-color: color.$black
     
     > video
         width: 100%

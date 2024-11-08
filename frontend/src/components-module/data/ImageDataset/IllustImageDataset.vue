@@ -184,8 +184,8 @@ installDatasetContext({
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .grid-img
     height: 100%
@@ -197,23 +197,23 @@ installDatasetContext({
     position: absolute
     right: 0.3rem
     bottom: 0.25rem
-    color: $dark-mode-text-color
-    filter: drop-shadow(0 0 1px $dark-mode-background-color)
+    color: color.$dark-mode-text-color
+    filter: drop-shadow(0 0 1px color.$dark-mode-background-color)
 
 .grid-video
     position: absolute
     left: 0.3rem
     bottom: 0.25rem
-    color: $dark-mode-text-color
-    filter: drop-shadow(0 0 1px $dark-mode-background-color)
+    color: color.$dark-mode-text-color
+    filter: drop-shadow(0 0 1px color.$dark-mode-background-color)
 
 .grid-num-tag
     position: absolute
     right: 0.25rem
     top: 0.25rem
     padding: 0.25rem 0.35rem
-    border-radius: $radius-size-std
-    color: $dark-mode-text-color
+    border-radius: size.$radius-size-std
+    color: color.$dark-mode-text-color
     background-color: rgba(0, 0, 0, 0.65)
 
 .row-img

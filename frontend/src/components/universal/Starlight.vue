@@ -50,7 +50,7 @@ const click = (value: number) => {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .editable > svg
     cursor: pointer
@@ -60,5 +60,5 @@ const click = (value: number) => {
     width: 1em
     text-align: center
     user-select: none
-    padding-left: $spacing-1
+    padding-left: size.$spacing-1
 </style>

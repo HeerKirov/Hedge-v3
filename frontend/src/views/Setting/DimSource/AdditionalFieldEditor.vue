@@ -59,9 +59,9 @@ const addForm = ref<Site["additionalInfo"][number]>({label: "", field: ""})
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
+@use "@/styles/base/size"
 
 .tag-block
-    padding: 0 $spacing-2
-    line-height: #{$element-height-small - 2px}
+    padding: 0 size.$spacing-2
+    line-height: #{size.$element-height-small - 2px}
 </style>

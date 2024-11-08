@@ -111,12 +111,12 @@ const pick = (item: any) => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
+@use "@/styles/base/size"
 
 .root
     box-sizing: border-box
 
 .panel
-    height: calc(100% - #{$element-height-std} - #{$spacing-1})
-    margin-top: $spacing-1
+    height: calc(100% - #{size.$element-height-std} - #{size.$spacing-1})
+    margin-top: size.$spacing-1
 </style>

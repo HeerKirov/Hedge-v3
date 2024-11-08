@@ -132,12 +132,12 @@ onUnmounted(() => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .item
-    margin-bottom: $spacing-2
-    padding: $spacing-2 $spacing-1 $spacing-3 $spacing-3
+    margin-bottom: size.$spacing-2
+    padding: size.$spacing-2 size.$spacing-1 size.$spacing-3 size.$spacing-3
     width: fit-content
     min-width: 8rem
     max-width: 35rem
@@ -151,23 +151,23 @@ onUnmounted(() => {
             &.show
                 visibility: visible
     > .content
-        padding: $spacing-1 0 0 0
+        padding: size.$spacing-1 0 0 0
     > .bar
         position: absolute
         bottom: 0
         left: 0
         width: 100%
-        height: $spacing-half
-        background-color: $light-mode-primary
+        height: size.$spacing-half
+        background-color: color.$light-mode-primary
         @media (prefers-color-scheme: dark)
-            background-color: $dark-mode-primary
+            background-color: color.$dark-mode-primary
         &.timeout
             width: 0
         &.timeout-transition
             transition: width 3s linear
 
     @media (prefers-color-scheme: light)
-        @each $name, $color in $light-mode-theme-colors
+        @each $name, $color in color.$light-mode-theme-colors
             &.is-color-#{$name}
                 > .title-div > .title
                     color: $color
@@ -175,7 +175,7 @@ onUnmounted(() => {
                     background-color: $color
 
     @media (prefers-color-scheme: dark)
-        @each $name, $color in $dark-mode-theme-colors
+        @each $name, $color in color.$dark-mode-theme-colors
             &.is-color-#{$name}
                 > .title-div > .title
                     color: $color

@@ -37,27 +37,27 @@ const { isOpen } = useSideLayoutState()
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
-@import "../../../styles/base/size"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 .top-bar-layout
     position: relative
     width: 100%
     height: 100%
-    background-color: $light-mode-background-color
+    background-color: color.$light-mode-background-color
     @media (prefers-color-scheme: dark)
-        background-color: $dark-mode-background-color
+        background-color: color.$dark-mode-background-color
 
     > .main-content
         position: absolute
-        top: $title-bar-height
+        top: size.$title-bar-height
         left: 0
         right: 0
         bottom: 0
 
     > .expand-background
         position: absolute
-        top: $title-bar-height
+        top: size.$title-bar-height
         left: 0
         right: 0
         bottom: 0
@@ -71,20 +71,20 @@ const { isOpen } = useSideLayoutState()
 
     > .expand-area
         position: absolute
-        top: $title-bar-height
+        top: size.$title-bar-height
         width: 100%
         min-height: 2rem
-        max-height: calc(75% - #{$title-bar-height})
+        max-height: calc(75% - #{size.$title-bar-height})
 
         @media (prefers-color-scheme: light)
-            background: $light-mode-block-color
-            border-bottom: solid 1px $light-mode-border-color
-            box-shadow: 0 0.5em 1em -0.125em rgba($black, 0.1), 0 0px 0 1px rgba($black, 0.02)
+            background: color.$light-mode-block-color
+            border-bottom: solid 1px color.$light-mode-border-color
+            box-shadow: 0 0.5em 1em -0.125em rgba(color.$black, 0.1), 0 0px 0 1px rgba(color.$black, 0.02)
 
         @media (prefers-color-scheme: dark)
-            background: $dark-mode-block-color
-            border-bottom: solid 1px $dark-mode-border-color
-            box-shadow: 0 0.5em 1em -0.125em rgba($white, 0.1), 0 0px 0 1px rgba($white, 0.02)
+            background: color.$dark-mode-block-color
+            border-bottom: solid 1px color.$dark-mode-border-color
+            box-shadow: 0 0.5em 1em -0.125em rgba(color.$white, 0.1), 0 0px 0 1px rgba(color.$white, 0.02)
 
         &.transition-enter-active
             transition: transform 0.15s ease-in

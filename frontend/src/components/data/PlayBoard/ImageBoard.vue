@@ -20,7 +20,6 @@ const { viewRef, containerRef, containerStyle, imageLoadedEvent } = useImagePosi
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
 .view
     position: relative
     width: 100%

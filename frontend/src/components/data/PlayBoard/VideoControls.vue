@@ -63,8 +63,8 @@ const { volumeHover, volumeHoverEvents, volumeBarStyle, mousemove, mousedown } =
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
-@import "../../../styles/base/size"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 .controls
     position: absolute
@@ -90,14 +90,14 @@ const { volumeHover, volumeHoverEvents, volumeBarStyle, mousemove, mousedown } =
         height: 0.5rem
     > .progressing
         height: 100%
-        background-color: $blue
+        background-color: color.$blue
 
 .progress-span
     position: absolute
     right: 1.5rem
     bottom: 2.5rem
     text-align: right
-    color: $white
+    color: color.$white
 
 .play-button
     position: absolute
@@ -109,9 +109,9 @@ const { volumeHover, volumeHoverEvents, volumeBarStyle, mousemove, mousedown } =
     padding-top: 1px
     line-height: 2.5rem
     text-align: center
-    font-size: $font-size-large
-    color: $white
-    border-radius: $radius-size-round
+    font-size: size.$font-size-large
+    color: color.$white
+    border-radius: size.$radius-size-round
     &:hover
         background-color: rgba(128, 128, 128, 0.5)
 
@@ -122,8 +122,8 @@ const { volumeHover, volumeHoverEvents, volumeBarStyle, mousemove, mousedown } =
     height: 2rem
     width: 2rem
     line-height: 2rem
-    color: $white
-    border-radius: $radius-size-round
+    color: color.$white
+    border-radius: size.$radius-size-round
     display: flex
     flex-wrap: nowrap
     justify-content: flex-end
@@ -142,7 +142,7 @@ const { volumeHover, volumeHoverEvents, volumeBarStyle, mousemove, mousedown } =
         margin-top: 0.75rem
         margin-right: 0.25rem
         background-color: rgba(16, 16, 16, 0.5)
-        border-radius: $radius-size-round
+        border-radius: size.$radius-size-round
         > .hidden-trigger-area
             position: absolute
             left: 0
@@ -151,8 +151,8 @@ const { volumeHover, volumeHoverEvents, volumeBarStyle, mousemove, mousedown } =
             height: 1.5rem
         > .progressing
             height: 100%
-            border-radius: $radius-size-round
-            background-color: $light-mode-block-color
+            border-radius: size.$radius-size-round
+            background-color: color.$light-mode-block-color
     > .icon
         width: 2rem
         text-align: center

@@ -22,7 +22,7 @@ useInterception()
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/color"
+@use "@/styles/base/color"
 
 .container
     position: absolute
@@ -30,7 +30,7 @@ useInterception()
     height: 100vh
     top: 0
     left: 0
-    background-color: $light-mode-background-color
+    background-color: color.$light-mode-background-color
     @media (prefers-color-scheme: dark)
-        background-color: $dark-mode-background-color
+        background-color: color.$dark-mode-background-color
 </style>

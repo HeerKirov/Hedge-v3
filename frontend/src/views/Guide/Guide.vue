@@ -49,40 +49,41 @@ const { menuItems, menuSelected, component, title } = useMarkdownDocument({
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
-@import "../../styles/base/color"
+@use "sass:color" as sass-color
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .markdown
     -webkit-user-select: text
     h1,h2,h3,h4,h5,p,ul,ol
-        padding: $spacing-1 0
+        padding: size.$spacing-1 0
     li
-        padding: $spacing-half 0
-        margin-left: $spacing-5
+        padding: size.$spacing-half 0
+        margin-left: size.$spacing-5
     a
-        margin: 0 $spacing-half
+        margin: 0 size.$spacing-half
         border-bottom: solid 1px
     h1,h2
-        margin: $spacing-2 0
+        margin: size.$spacing-2 0
         border-bottom: solid 2px
-        border-color: $light-mode-border-color
+        border-color: color.$light-mode-border-color
         @media (prefers-color-scheme: dark)
-            border-color: $dark-mode-border-color
+            border-color: color.$dark-mode-border-color
     h3
-        margin: $spacing-2 0
+        margin: size.$spacing-2 0
     pre
-        margin: $spacing-1 0
-        padding: $spacing-1
-        border-radius: $radius-size-std
-        background-color: mix($light-mode-background-color, $light-mode-secondary, 90%)
+        margin: size.$spacing-1 0
+        padding: size.$spacing-1
+        border-radius: size.$radius-size-std
+        background-color: sass-color.mix(color.$light-mode-background-color, color.$light-mode-secondary, 90%)
         @media (prefers-color-scheme: dark)
-            background-color: mix($dark-mode-background-color, $dark-mode-secondary, 90%)
+            background-color: sass-color.mix(color.$dark-mode-background-color, color.$dark-mode-secondary, 90%)
         > code
             padding: 0
     blockquote
-        padding: $spacing-half $spacing-1
-        border-radius: $radius-size-std
-        background-color: $light-mode-border-color
+        padding: size.$spacing-half size.$spacing-1
+        border-radius: size.$radius-size-std
+        background-color: color.$light-mode-border-color
         @media (prefers-color-scheme: dark)
-            background-color: $dark-mode-border-color
+            background-color: color.$dark-mode-border-color
 </style>

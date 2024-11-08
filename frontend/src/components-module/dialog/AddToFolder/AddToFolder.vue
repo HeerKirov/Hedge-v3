@@ -78,8 +78,8 @@ const { tabType, folderTree, recentFolders, checkExists, selectedId, submit, cho
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .scroll-content
     overflow-y: auto
@@ -92,7 +92,7 @@ const { tabType, folderTree, recentFolders, checkExists, selectedId, submit, cho
     line-height: 1.5em
     width: 1.5em
     text-align: center
-    border-radius: $radius-size-round
+    border-radius: size.$radius-size-round
     background-color: rgba(0, 0, 0, 0.65)
-    color: $dark-mode-text-color
+    color: color.$dark-mode-text-color
 </style>

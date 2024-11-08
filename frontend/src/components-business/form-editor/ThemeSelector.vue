@@ -30,25 +30,25 @@ defineEmits<{
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/color"
-@import "../../styles/base/size"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 .theme-select-card
     width: 30%
     text-align: center
     &.selected > div
-        border: solid 3px $light-mode-primary
+        border: solid 3px color.$light-mode-primary
         @media (prefers-color-scheme: dark)
-            border-color: $dark-mode-primary
+            border-color: color.$dark-mode-primary
     > div
         box-sizing: border-box
-        border-radius: $radius-size-std
-        border: solid 1px $light-mode-border-color
+        border-radius: size.$radius-size-std
+        border: solid 1px color.$light-mode-border-color
         height: 6rem
     > .light-mode
-        background-color: $light-mode-block-color
+        background-color: color.$light-mode-block-color
     > .dark-mode
-        background-color: $dark-mode-block-color
+        background-color: color.$dark-mode-block-color
     > .system-mode
-        background: linear-gradient(to right bottom, $light-mode-block-color, $light-mode-block-color 50%, $dark-mode-block-color 51%, $dark-mode-block-color)
+        background: linear-gradient(to right bottom, color.$light-mode-block-color, color.$light-mode-block-color 50%, color.$dark-mode-block-color 51%, color.$dark-mode-block-color)
 </style>

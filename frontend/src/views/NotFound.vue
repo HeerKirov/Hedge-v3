@@ -18,7 +18,7 @@ const goHome = () => router.push({name: "Index"})
 </template>
 
 <style module lang="sass">
-@import "../styles/base/size"
+@use "@/styles/base/size"
 
 .block
     position: fixed
@@ -26,9 +26,9 @@ const goHome = () => router.push({name: "Index"})
     top: 50%
     transform: translate(-50%, -50%)
     text-align: center
-    padding: $spacing-2
+    padding: size.$spacing-2
 
     > p
-        margin-top: $spacing-2
-        margin-bottom: $spacing-2
+        margin-top: size.$spacing-2
+        margin-bottom: size.$spacing-2
 </style>

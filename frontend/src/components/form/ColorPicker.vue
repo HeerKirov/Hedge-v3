@@ -35,8 +35,8 @@ const click = (c: UsefulColors) => {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
-@import "../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .root
     display: inline-block
@@ -45,23 +45,23 @@ const click = (c: UsefulColors) => {
 .picker
     z-index: 1
     position: absolute
-    left: #{-$spacing-1}
-    top: calc($element-height-std + $spacing-1)
-    padding-top: $spacing-1
-    padding-left: $spacing-1
-    width: calc(#{$element-height-std * 4} + #{$spacing-1 * 5} + 2px)
+    left: #{- size.$spacing-1}
+    top: calc(#{size.$element-height-std} + #{size.$spacing-1})
+    padding-top: size.$spacing-1
+    padding-left: size.$spacing-1
+    width: calc(#{size.$element-height-std * 4} + #{size.$spacing-1 * 5} + 2px)
     > *
         display: inline-block
-        margin-bottom: $spacing-1
-        margin-right: $spacing-1
+        margin-bottom: size.$spacing-1
+        margin-right: size.$spacing-1
 
 .button
     box-sizing: border-box
     cursor: pointer
-    height: $element-height-std
-    width: $element-height-std
-    border-radius: $radius-size-round
-    border: solid 1px $light-mode-border-color
+    height: size.$element-height-std
+    width: size.$element-height-std
+    border-radius: size.$radius-size-round
+    border: solid 1px color.$light-mode-border-color
     @media (prefers-color-scheme: dark)
-        border-color: $dark-mode-border-color
+        border-color: color.$dark-mode-border-color
 </style>

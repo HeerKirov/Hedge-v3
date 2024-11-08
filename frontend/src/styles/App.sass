@@ -1,6 +1,6 @@
-@import 'base/size'
-@import 'base/font'
-@import 'base/color'
+@use "base/size"
+@use "base/font"
+@use "base/color"
 
 //body基本样式
 body
@@ -8,14 +8,14 @@ body
   -moz-osx-font-smoothing: grayscale
   -webkit-user-select: none
   text-rendering: optimizeLegibility
-  font-family: $family-std
-  font-size: $font-size-std
+  font-family: font.$family-std
+  font-size: size.$font-size-std
   @media (prefers-color-scheme: light)
-    color: $light-mode-text-color
-    background-color: $light-mode-background-color
+    color: color.$light-mode-text-color
+    background-color: color.$light-mode-background-color
   @media (prefers-color-scheme: dark)
-    color: $dark-mode-text-color
-    background-color: $dark-mode-background-color
+    color: color.$dark-mode-text-color
+    background-color: color.$dark-mode-background-color
 
 //可选择的样式
 .selectable
@@ -30,13 +30,13 @@ a
   text-decoration: none
   cursor: pointer
   @media (prefers-color-scheme: light)
-    color: $light-mode-link
+    color: color.$light-mode-link
     &:hover
-      color: rgba($light-mode-link, 0.8)
+      color: rgba(color.$light-mode-link, 0.8)
   @media (prefers-color-scheme: dark)
-    color: $dark-mode-link
+    color: color.$dark-mode-link
     &:hover
-      color: rgba($dark-mode-link, 0.8)
+      color: rgba(color.$dark-mode-link, 0.8)
 
 //按钮默认样式
 button
@@ -123,23 +123,23 @@ span
   font-weight: inherit
 
 h1
-  font-size: $font-size-h1
+  font-size: size.$font-size-h1
 
 h2
-  font-size: $font-size-h2
+  font-size: size.$font-size-h2
 
 h3
-  font-size: $font-size-h3
+  font-size: size.$font-size-h3
 
 h4
-  font-size: $font-size-h4
+  font-size: size.$font-size-h4
 
 code
-  color: $red
+  color: color.$red
   font-weight: normal
   padding-right: 0.25em
   padding-left: 0.25em
-  font-family: $family-monospace
+  font-family: font.$family-monospace
 
 img,
 video

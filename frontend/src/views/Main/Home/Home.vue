@@ -85,10 +85,10 @@ const router = useRouter()
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
-$margin-x: $spacing-4
+$margin-x: size.$spacing-4
 
 .root
     width: 100%
@@ -104,14 +104,14 @@ $margin-x: $spacing-4
 .header
     font-weight: 700
     display: block
-    margin-left: $spacing-3
-    margin-bottom: $spacing-2
+    margin-left: size.$spacing-3
+    margin-bottom: size.$spacing-2
     &:not(:first-child)
-        margin-top: $spacing-2
+        margin-top: size.$spacing-2
 
 .primary-scroll-area
     $image-width: 8vw
-    $image-gap: $spacing-1
+    $image-gap: size.$spacing-1
     $image-column-num: 4
     $block-column-num: 3
     height: calc(#{$image-width * $image-column-num} + #{$image-gap * ($image-column-num - 1)})
@@ -133,17 +133,17 @@ $margin-x: $spacing-4
     > .block
         flex-shrink: 0
         height: calc((#{$image-width * $image-column-num} + #{$image-gap * ($image-column-num - $block-column-num)}) / 3)
-        padding: $spacing-2
+        padding: size.$spacing-2
         > .title-area
-            height: $element-height-small
-            line-height: $element-height-tiny
+            height: size.$element-height-small
+            line-height: size.$element-height-tiny
             align-items: baseline
             white-space: nowrap
             overflow: hidden
             text-overflow: ellipsis
             cursor: pointer
         > .example-area
-            $example-height: calc((#{$image-width * $image-column-num} + #{$image-gap * ($image-column-num - $block-column-num)}) / 3 - #{$element-height-small} - #{$spacing-2 * 2} - 2px)
+            $example-height: calc((#{$image-width * $image-column-num} + #{$image-gap * ($image-column-num - $block-column-num)}) / 3 - #{size.$element-height-small} - #{size.$spacing-2 * 2} - 2px)
             height: $example-height
             width: calc(#{$example-height} * 3 + #{$image-gap * 2})
             display: flex
@@ -165,7 +165,7 @@ $margin-x: $spacing-4
 
 .secondary-scroll-area
     $image-width: 8vw
-    $image-gap: $spacing-1
+    $image-gap: size.$spacing-1
     padding: 0 $margin-x
     overflow-x: auto
     display: flex
@@ -182,7 +182,7 @@ $margin-x: $spacing-4
 .book-scroll-area
     $book-width: 12vw
     $book-aspect: 1.3333
-    $book-gap: $spacing-1
+    $book-gap: size.$spacing-1
     padding: 0 $margin-x
     overflow-x: auto
     display: flex
@@ -200,9 +200,9 @@ $margin-x: $spacing-4
     .header
         visibility: hidden
     .image
-        background-color: $light-mode-block-color
+        background-color: color.$light-mode-block-color
         @media (prefers-color-scheme: dark) 
-            background-color: $dark-mode-block-color
+            background-color: color.$dark-mode-block-color
     .block, .book
         border-width: 0
     .image, .block, .book

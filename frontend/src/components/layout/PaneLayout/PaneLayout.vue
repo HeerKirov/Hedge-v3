@@ -55,7 +55,7 @@ const paneStyle = computed<CSSProperties>(() => ({
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
+@use "@/styles/base/color"
 
 $transaction-time: 0.25s
 
@@ -65,9 +65,9 @@ $transaction-time: 0.25s
         top: 0
         bottom: 0
         right: 0
-        background-color: $light-mode-background-color
+        background-color: color.$light-mode-background-color
         @media (prefers-color-scheme: dark)
-            background-color: $dark-mode-background-color
+            background-color: color.$dark-mode-background-color
 
         &.transition-enter-active,
         &.transition-leave-active

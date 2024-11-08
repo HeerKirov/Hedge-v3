@@ -49,7 +49,7 @@ const { form, formAnyChanged, images, loading, data, reloadData, apply } = useOr
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
+@use "@/styles/base/color"
 
 .img
     border-radius: 0 !important
@@ -64,8 +64,8 @@ const { form, formAnyChanged, images, loading, data, reloadData, apply } = useOr
         border-left-width: 4px
         border-right-width: 4px
     @media (prefers-color-scheme: light)
-        border-color: $light-mode-block-color
-        @each $name, $color in $light-mode-colors
+        border-color: color.$light-mode-block-color
+        @each $name, $color in color.$light-mode-colors
             &.is-#{$name}
                 border-top-color: $color
                 border-bottom-color: $color
@@ -75,8 +75,8 @@ const { form, formAnyChanged, images, loading, data, reloadData, apply } = useOr
                     border-right-color: $color
 
     @media (prefers-color-scheme: dark)
-        border-color: $dark-mode-block-color
-        @each $name, $color in $dark-mode-colors
+        border-color: color.$dark-mode-block-color
+        @each $name, $color in color.$dark-mode-colors
             &.is-#{$name}
                 border-top-color: $color
                 border-bottom-color: $color

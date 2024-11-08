@@ -23,8 +23,6 @@ const click = (e: MouseEvent) => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-
 .button
     display: inline-block
     color: inherit

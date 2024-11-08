@@ -31,8 +31,8 @@ watch(() => props.loading, async (l, _, onInvalidate) => {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/color"
-@import "../../styles/base/size"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 .background
     position: absolute
@@ -42,10 +42,10 @@ watch(() => props.loading, async (l, _, onInvalidate) => {
     height: 100px
     text-align: center
     transform: translate(-50%, -50%)
-    border-radius: $radius-size-very-large
-    background-color: rgba($light-mode-background-color, 75%)
+    border-radius: size.$radius-size-very-large
+    background-color: rgba(color.$light-mode-background-color, 75%)
     @media (prefers-color-scheme: dark)
-        background-color: rgba($dark-mode-background-color, 75%)
+        background-color: rgba(color.$dark-mode-background-color, 75%)
 
     > div
         position: absolute

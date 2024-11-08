@@ -33,8 +33,8 @@ const spanClass = computed(() => [
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
-@import "../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .tag
     border-bottom: solid 2px
@@ -52,15 +52,15 @@ const spanClass = computed(() => [
 
 @media (prefers-color-scheme: light)
     .tag
-        color: $light-mode-text-color
-        border-bottom-color: $light-mode-text-color
+        color: color.$light-mode-text-color
+        border-bottom-color: color.$light-mode-text-color
     a.tag
         &:hover
-            color: rgba($light-mode-text-color, 0.75)
+            color: rgba(color.$light-mode-text-color, 0.75)
         &:active
-            color: rgba($light-mode-text-color, 0.75)
+            color: rgba(color.$light-mode-text-color, 0.75)
 
-    @each $name, $color in $light-mode-colors
+    @each $name, $color in color.$light-mode-colors
         .is-color-#{$name}
             border-bottom-color: $color
             color: $color
@@ -71,15 +71,15 @@ const spanClass = computed(() => [
                 color: rgba($color, 0.6)
 @media (prefers-color-scheme: dark)
     .tag
-        color: $dark-mode-text-color
-        border-bottom-color: $dark-mode-text-color
+        color: color.$dark-mode-text-color
+        border-bottom-color: color.$dark-mode-text-color
     a.tag
         &:hover
-            color: rgba($dark-mode-text-color, 0.75)
+            color: rgba(color.$dark-mode-text-color, 0.75)
         &:active
-            color: rgba($dark-mode-text-color, 0.75)
+            color: rgba(color.$dark-mode-text-color, 0.75)
 
-    @each $name, $color in $dark-mode-colors
+    @each $name, $color in color.$dark-mode-colors
         .is-color-#{$name}
             border-bottom-color: $color
             color: $color

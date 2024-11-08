@@ -41,8 +41,8 @@ const { state, illusts, submit } = useConvertFormat(props.p, () => emit("close")
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .fetching
     position: absolute
@@ -50,6 +50,6 @@ const { state, illusts, submit } = useConvertFormat(props.p, () => emit("close")
     top: 0
     bottom: 0
     right: 0
-    background-color: rgba($lightgrey, 0.7)
-    font-size: $font-size-1
+    background-color: rgba(color.$lightgrey, 0.7)
+    font-size: size.$font-size-1
 </style>

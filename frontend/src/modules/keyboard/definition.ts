@@ -10,9 +10,10 @@
  * 支持的所有组合键形式。包括Meta, Alt, Shift和所有KeyCode的组合。
  */
 export type KeyPress = KeyCode
-    | `${KeyFuncMeta}+${KeyCode}` | `${KeyFuncAlt}+${KeyCode}`
-    | `${KeyFuncMeta}+${KeyFuncShift}+${KeyCode}` | `${KeyFuncAlt}+${KeyFuncShift}+${KeyCode}`
-    | `${KeyFuncMeta}+${KeyFuncAlt}+${KeyCode}` | `${KeyFuncMeta}+${KeyFuncAlt}+${KeyFuncShift}+${KeyCode}`
+    | `${KeyFuncMeta}+${KeyCode}`
+    | `${KeyFuncAlt}+${KeyCode}`
+    | `${KeyFuncMeta}+${KeyFuncShift}+${KeyCode}`
+    | `${KeyFuncMeta}+${KeyFuncAlt}+${KeyCode}`
 
 type KeyFuncAlt = "Alt"
 type KeyFuncMeta = "Meta"

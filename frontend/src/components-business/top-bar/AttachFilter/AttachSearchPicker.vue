@@ -97,11 +97,11 @@ const tagBrackets = computed(() => props.template.displayStyle === "annotation" 
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
+@use "@/styles/base/size"
 
 .root
     max-width: 450px
     min-width: 250px
     max-height: 450px
-    padding: $spacing-2
+    padding: size.$spacing-2
 </style>

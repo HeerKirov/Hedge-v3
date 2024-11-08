@@ -114,7 +114,7 @@ watch(form, form => {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .root.horizontal
     width: 100%
@@ -138,6 +138,6 @@ watch(form, form => {
         flex-direction: column
 
 .editor
-    padding: $spacing-2 $spacing-1
-    margin-top: $spacing-1
+    padding: size.$spacing-2 size.$spacing-1
+    margin-top: size.$spacing-1
 </style>

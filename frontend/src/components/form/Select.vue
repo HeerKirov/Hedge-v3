@@ -47,28 +47,28 @@ function watchProps() {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
-@import "../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .select
     display: inline-block
     vertical-align: middle
     outline: none
     line-height: 1.2
-    height: $element-height-std
+    height: size.$element-height-std
     padding: 0 0.75em 0 0.75em
-    border: 1px solid $light-mode-border-color
-    border-radius: $radius-size-std
+    border: 1px solid color.$light-mode-border-color
+    border-radius: size.$radius-size-std
     @media (prefers-color-scheme: dark)
-        border-color: $dark-mode-border-color
+        border-color: color.$dark-mode-border-color
 
 .is-size-small
-    font-size: $font-size-small
-    height: $element-height-small
+    font-size: size.$font-size-small
+    height: size.$element-height-small
 .is-size-std
-    font-size: $font-size-std
-    height: $element-height-std
+    font-size: size.$font-size-std
+    height: size.$element-height-std
 .is-size-large
-    font-size: $font-size-large
-    height: $element-height-large
+    font-size: size.$font-size-large
+    height: size.$element-height-large
 </style>

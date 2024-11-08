@@ -59,15 +59,15 @@ installOptionCacheStorage(props.templates ?? [])
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .root
     position: relative
     display: flex
     flex-wrap: nowrap
     align-items: center
-    border-bottom: solid 1px $light-mode-border-color
+    border-bottom: solid 1px color.$light-mode-border-color
     @media (prefers-color-scheme: dark)
-        border-bottom-color: $dark-mode-border-color
+        border-bottom-color: color.$dark-mode-border-color
 </style>

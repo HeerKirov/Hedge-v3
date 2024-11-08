@@ -62,12 +62,12 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .book-item
     position: relative
-    margin-bottom: $spacing-1
+    margin-bottom: size.$spacing-1
     cursor: pointer
     aspect-ratio: 3
     overflow: hidden
@@ -78,12 +78,12 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
         left: 0
         right: 0
         max-height: 100%
-        padding: $spacing-1 $spacing-2
+        padding: size.$spacing-1 size.$spacing-2
         overflow-y: auto
         white-space: nowrap
         box-sizing: border-box
         background: linear-gradient(to top, rgba(0, 0, 0, 50%), rgba(0, 0, 0, 0%))
-        color: $light-mode-text-inverted-color
+        color: color.$light-mode-text-inverted-color
         font-weight: 700
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 50%)
         &::-webkit-scrollbar

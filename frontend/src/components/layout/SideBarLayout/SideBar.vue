@@ -45,20 +45,21 @@ const switchSideBar = () => isOpen.value = !isOpen.value
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
-@import "../../../styles/base/size"
+@use "sass:math"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
-$content-margin-size: calc(($title-bar-height - $element-height-std) / 2)
+$content-margin-size: math.div(size.$title-bar-height - size.$element-height-std, 2)
 
 .side-bar
     position: relative
     width: 100%
     height: 100%
-    background-color: $light-mode-block-color
-    border-right: solid 1px $light-mode-border-color
+    background-color: color.$light-mode-block-color
+    border-right: solid 1px color.$light-mode-border-color
     @media (prefers-color-scheme: dark)
-        background-color: $dark-mode-block-color
-        border-right-color: $dark-mode-border-color
+        background-color: color.$dark-mode-block-color
+        border-right-color: color.$dark-mode-border-color
 
 .app-region-area
     -webkit-app-region: drag
@@ -66,10 +67,10 @@ $content-margin-size: calc(($title-bar-height - $element-height-std) / 2)
     left: 0
     top: 0
     width: 100%
-    height: $title-bar-height
-    border-bottom: solid 1px $light-mode-border-color
+    height: size.$title-bar-height
+    border-bottom: solid 1px color.$light-mode-border-color
     @media (prefers-color-scheme: dark)
-        border-bottom-color: $dark-mode-border-color
+        border-bottom-color: color.$dark-mode-border-color
 
     .top-bar
         position: absolute
@@ -79,31 +80,31 @@ $content-margin-size: calc(($title-bar-height - $element-height-std) / 2)
         top: $content-margin-size
         left: $content-margin-size
         right: $content-margin-size
-        height: $element-height-std
+        height: size.$element-height-std
         //macOS平台的内容区域布局。左侧留出红绿灯的宽度
         &.has-darwin-button
-            left: $macos-buttons-width
+            left: size.$macos-buttons-width
 
 .content
     position: absolute
     left: 0
-    top: $title-bar-height
-    height: calc(100% - #{$title-bar-height + $element-height-std + 8px + 1px})
-    padding: $spacing-1 $spacing-2
+    top: size.$title-bar-height
+    height: calc(100% - #{size.$title-bar-height + size.$element-height-std + 8px + 1px})
+    padding: size.$spacing-1 size.$spacing-2
     width: 100%
     &.scrollable
         overflow-y: auto
     &.no-bottom
-        height: calc(100% - $title-bar-height)
+        height: calc(100% - #{size.$title-bar-height})
 
 .bottom
     position: absolute
-    border-top: solid 1px $light-mode-border-color
-    padding: $spacing-1
+    border-top: solid 1px color.$light-mode-border-color
+    padding: size.$spacing-1
     width: 100%
     bottom: 0
     left: 0
-    height: #{$element-height-std + 8px + 1px}
+    height: #{size.$element-height-std + 8px + 1px}
     @media (prefers-color-scheme: dark)
-        border-top-color: $dark-mode-border-color
+        border-top-color: color.$dark-mode-border-color
 </style>

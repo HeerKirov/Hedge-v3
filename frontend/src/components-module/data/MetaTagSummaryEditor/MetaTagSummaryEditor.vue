@@ -62,8 +62,8 @@ const { dragover: _, ...dropEvents } = useDroppable(["author", "tag", "topic"], 
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
-@import "../../../styles/base/size"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 .root
     position: relative
@@ -81,9 +81,9 @@ const { dragover: _, ...dropEvents } = useDroppable(["author", "tag", "topic"], 
         right: $padding
         height: $top-real-height
         box-sizing: border-box
-        border-bottom: solid 1px $light-mode-border-color
+        border-bottom: solid 1px color.$light-mode-border-color
         @media (prefers-color-scheme: dark)
-            border-bottom-color: $dark-mode-border-color
+            border-bottom-color: color.$dark-mode-border-color
 
     > .left
         position: absolute
@@ -97,13 +97,13 @@ const { dragover: _, ...dropEvents } = useDroppable(["author", "tag", "topic"], 
 
     > .mid-gap
         position: absolute
-        border-left: solid 1px $light-mode-border-color
-        @media (prefers-color-scheme: dark)
-            border-left-color: $dark-mode-border-color
+        border-left: solid 1px color.$light-mode-border-color
         top: #{$top-height + $padding}
         left: 50%
         width: 0
         bottom: $padding
+        @media (prefers-color-scheme: dark)
+            border-left-color: color.$dark-mode-border-color
 
     > .right
         position: absolute

@@ -75,7 +75,7 @@ const { situations, selected, submit } = useCreatingCollectionContext(computed((
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
+@use "@/styles/base/size"
 .item
     margin-top: 0.5rem
     padding: 0.75rem 0.5rem 0.75rem 0.75rem
@@ -85,7 +85,7 @@ const { situations, selected, submit } = useCreatingCollectionContext(computed((
         width: 4rem
         flex-shrink: 0
         > .img
-            border-radius: $radius-size-std
+            border-radius: size.$radius-size-std
             width: 4rem
             height: 4rem
             flex-shrink: 0
@@ -95,10 +95,10 @@ const { situations, selected, submit } = useCreatingCollectionContext(computed((
         padding-left: 0.5rem
         > .title
             margin-bottom: 0.25rem
-            font-size: $font-size-large
+            font-size: size.$font-size-large
         > .example-img
             display: inline-block
-            border-radius: $radius-size-small
+            border-radius: size.$radius-size-small
             width: 2rem
             height: 2rem
             object-fit: cover
@@ -130,7 +130,7 @@ const { situations, selected, submit } = useCreatingCollectionContext(computed((
                 width: 4rem
                 height: 4rem
         .img
-            border-radius: $radius-size-std
+            border-radius: size.$radius-size-std
             flex-shrink: 0
             object-fit: cover
 </style>

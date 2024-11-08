@@ -37,8 +37,8 @@ const { chooseIgnore, chooseResolve, situations } = useAddIllustBookFolderContex
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .ordinal-flag
     position: absolute
@@ -47,7 +47,7 @@ const { chooseIgnore, chooseResolve, situations } = useAddIllustBookFolderContex
     line-height: 1.5em
     width: 1.5em
     text-align: center
-    border-radius: $radius-size-round
+    border-radius: size.$radius-size-round
     background-color: rgba(0, 0, 0, 0.65)
-    color: $dark-mode-text-color
+    color: color.$dark-mode-text-color
 </style>

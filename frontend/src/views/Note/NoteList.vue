@@ -88,41 +88,42 @@ const { popup } = useDynamicPopupMenu<NoteRecord>(note => note.deleted ? [
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "sass:math"
+@use "@/styles/base/size"
 
 .darwin-margin
-    $content-margin-size: calc(($title-bar-height - $element-height-std) / 2)
-    padding-left: #{$content-margin-size + $macos-buttons-width}
+    $content-margin-size: math.div(size.$title-bar-height - size.$element-height-std, 2)
+    padding-left: #{$content-margin-size + size.$macos-buttons-width}
 
 .item
-    padding: $spacing-2
-    margin: 0 $spacing-2
+    padding: size.$spacing-2
+    margin: 0 size.$spacing-2
     &:not(:first-child)
-        margin-top: $spacing-2
+        margin-top: size.$spacing-2
 
     > .header
         display: flex
         flex-wrap: nowrap
         align-items: center
         > .lock
-            width: $element-height-std
-            height: $element-height-std
-            line-height: $element-height-std
+            width: size.$element-height-std
+            height: size.$element-height-std
+            line-height: size.$element-height-std
             text-align: center
             flex-shrink: 0
         > button
             flex-shrink: 0
         > .title
             width: 100%
-            margin-left: $spacing-2
-            font-size: $font-size-large
+            margin-left: size.$spacing-2
+            font-size: size.$font-size-large
             font-weight: 700
             white-space: nowrap
             overflow: hidden
             text-overflow: ellipsis
 
     > .content
-        margin: 0 $spacing-1
+        margin: 0 size.$spacing-1
         white-space: nowrap
         overflow: hidden
         text-overflow: ellipsis

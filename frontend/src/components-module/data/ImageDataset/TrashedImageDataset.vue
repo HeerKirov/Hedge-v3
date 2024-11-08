@@ -186,8 +186,8 @@ const simpleRemain = (remainingTime: number | null) => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .grid-img
     height: 100%
@@ -200,8 +200,8 @@ const simpleRemain = (remainingTime: number | null) => {
     right: 0
     bottom: 0
     padding: 0 0.25rem 0
-    border-top-left-radius: $radius-size-std
-    color: $dark-mode-text-color
+    border-top-left-radius: size.$radius-size-std
+    color: color.$dark-mode-text-color
     background-color: rgba(0, 0, 0, 0.65)
     white-space: nowrap
     overflow: hidden
@@ -210,8 +210,8 @@ const simpleRemain = (remainingTime: number | null) => {
     position: absolute
     left: 0.3rem
     bottom: 0.25rem
-    color: $dark-mode-text-color
-    filter: drop-shadow(0 0 1px $dark-mode-background-color)
+    color: color.$dark-mode-text-color
+    filter: drop-shadow(0 0 1px color.$dark-mode-background-color)
     
 .row-img
     margin-top: 1px

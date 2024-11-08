@@ -60,32 +60,32 @@ const clear = () => {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/color"
-@import "../../styles/base/size"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 .select
     box-sizing: border-box
     overflow-y: auto
     overflow-x: hidden
-    border-radius: $radius-size-std
-    border: solid 1px $light-mode-border-color
+    border-radius: size.$radius-size-std
+    border: solid 1px color.$light-mode-border-color
     @media (prefers-color-scheme: dark)
-        border-color: $dark-mode-border-color
+        border-color: color.$dark-mode-border-color
 
     > .item
         padding: 0.5em 0.35em
         white-space: nowrap
         overflow: hidden
-        background-color: $light-mode-background-color
-        color: $light-mode-text-color
+        background-color: color.$light-mode-background-color
+        color: color.$light-mode-text-color
         &.selected
-            background-color: $light-mode-primary
-            color: $light-mode-text-inverted-color
+            background-color: color.$light-mode-primary
+            color: color.$light-mode-text-inverted-color
         @media (prefers-color-scheme: dark)
-            background-color: $dark-mode-background-color
-            color: $dark-mode-text-color
+            background-color: color.$dark-mode-background-color
+            color: color.$dark-mode-text-color
             &.selected
-                background-color: $dark-mode-primary
-                color: $dark-mode-text-inverted-color
+                background-color: color.$dark-mode-primary
+                color: color.$dark-mode-text-inverted-color
 
 </style>

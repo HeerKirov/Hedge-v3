@@ -34,7 +34,9 @@ const menu = usePopupMenu<{day: number, count: number | null}>(() => [
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
+@use "sass:math"
+@use "sass:color" as sass-color
+@use "@/styles/base/color"
 
 $column-num: 7
 
@@ -54,7 +56,7 @@ $column-num: 7
     margin: 1rem
     > .col
         box-sizing: border-box
-        width: #{percentage(calc(1 / $column-num))}
+        width: #{math.percentage(calc(1 / $column-num))}
         text-align: center
         padding-top: 1.5rem
         padding-bottom: 1.5rem
@@ -65,7 +67,7 @@ $column-num: 7
     margin: 0.5rem
     > .col
         box-sizing: border-box
-        width: #{percentage(calc(1 / $column-num))}
+        width: #{math.percentage(calc(1 / $column-num))}
         padding: 0.5rem
 
         > div
@@ -83,9 +85,9 @@ $column-num: 7
             @for $i from 1 through 10
                 &.lv-#{$i}
                     @media (prefers-color-scheme: light)
-                        background-color: mix($light-mode-primary, $light-mode-block-color, $i * 9% + 10%)
-                        color: if($i > 5, $light-mode-text-inverted-color, $light-mode-text-color)
+                        background-color: sass-color.mix(color.$light-mode-primary, color.$light-mode-block-color, $i * 9% + 10%)
+                        color: if($i > 5, color.$light-mode-text-inverted-color, color.$light-mode-text-color)
                     @media (prefers-color-scheme: dark)
-                        background-color: mix($dark-mode-primary, $dark-mode-block-color, $i * 9% + 10%)
-                        color: $dark-mode-text-color
+                        background-color: sass-color.mix(color.$dark-mode-primary, color.$dark-mode-block-color, $i * 9% + 10%)
+                        color: color.$dark-mode-text-color
 </style>

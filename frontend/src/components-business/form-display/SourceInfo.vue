@@ -35,11 +35,11 @@ const siteTitle = computed(() => site?.value?.title ?? props.source?.sourceSite)
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .site-icon
     display: inline-block
-    margin-right: $spacing-1
+    margin-right: size.$spacing-1
     width: 16px
     height: 16px
     vertical-align: sub

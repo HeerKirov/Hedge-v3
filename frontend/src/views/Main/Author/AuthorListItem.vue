@@ -119,7 +119,7 @@ const { hover, ...hoverEvents } = useMouseHover()
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
+@use "@/styles/base/size"
 
 .item
     $height: 76px
@@ -135,12 +135,12 @@ const { hover, ...hoverEvents } = useMouseHover()
         > .favorite
             width: 48px
             text-align: center
-            padding-top: $spacing-2
+            padding-top: size.$spacing-2
 
         > .score-and-count
             width: 52px
-            padding-right: $spacing-1
-            padding-top: $spacing-1
+            padding-right: size.$spacing-1
+            padding-top: size.$spacing-1
             text-align: right
             position: relative
 

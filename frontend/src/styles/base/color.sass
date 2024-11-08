@@ -1,3 +1,4 @@
+@use "sass:map"
 
 //== 基本颜色定义 ==
 
@@ -87,6 +88,6 @@ $light-mode-theme-colors: ("primary": $light-mode-primary, "info": $light-mode-i
 
 $dark-mode-theme-colors: ("primary": $dark-mode-primary, "info": $dark-mode-info, "success": $dark-mode-success, "warning": $dark-mode-warning, "danger": $dark-mode-danger, "link": $dark-mode-link, "secondary": $dark-mode-secondary, "tertiary": $dark-mode-tertiary)
 
-$light-mode-colors: map-merge($light-mode-useful-colors, $light-mode-theme-colors)
+$light-mode-colors: map.merge($light-mode-useful-colors, $light-mode-theme-colors)
 
-$dark-mode-colors: map-merge($dark-mode-useful-colors, $dark-mode-theme-colors)
+$dark-mode-colors: map.merge($dark-mode-useful-colors, $dark-mode-theme-colors)

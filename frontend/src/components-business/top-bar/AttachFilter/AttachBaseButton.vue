@@ -40,44 +40,44 @@ defineExpose({
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .button
     box-sizing: border-box
     vertical-align: middle
     white-space: nowrap
-    font-size: $font-size-std
-    height: $element-height-std
+    font-size: size.$font-size-std
+    height: size.$element-height-std
     padding: 0 0.65em
+    display: flex
+    flex-wrap: nowrap
+    align-items: center
+    justify-content: center
     &.square
-        width: $element-height-std
+        width: size.$element-height-std
         padding: 0 0
     &.allow-radius:last-child
-        border-top-right-radius: $radius-size-std
-        border-bottom-right-radius: $radius-size-std
+        border-top-right-radius: size.$radius-size-std
+        border-bottom-right-radius: size.$radius-size-std
     &.allow-radius:first-child
-        border-top-left-radius: $radius-size-std
-        border-bottom-left-radius: $radius-size-std
+        border-top-left-radius: size.$radius-size-std
+        border-bottom-left-radius: size.$radius-size-std
     @media (prefers-color-scheme: light)
         background-color: rgba(#ffffff, 0)
-        color: $light-mode-text-color
+        color: color.$light-mode-text-color
         &:hover
             background-color: rgba(45, 50, 55, 0.09)
         &:active
             background-color: rgba(45, 50, 55, 0.13)
     @media (prefers-color-scheme: dark)
         background-color: rgba(#000000, 0)
-        color: $dark-mode-text-color
+        color: color.$dark-mode-text-color
         &:hover
             background-color: rgba(255, 255, 255, 0.09)
         &:active
             background-color: rgba(255, 255, 255, 0.13)
 
-    display: flex
-    flex-wrap: nowrap
-    align-items: center
-    justify-content: center
     > .item
         display: inline-block
         :not(:last-child)

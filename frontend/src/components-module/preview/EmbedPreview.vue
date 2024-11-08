@@ -24,7 +24,7 @@ const { context } = useInternalService()
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/color"
+@use "@/styles/base/color"
 
 .embed-preview
     position: absolute
@@ -50,9 +50,9 @@ const { context } = useInternalService()
     top: 0
     width: 100%
     height: 100%
-    background-color: $light-mode-background-color
+    background-color: color.$light-mode-background-color
     @media (prefers-color-scheme: dark)
-        background-color: $dark-mode-background-color
+        background-color: color.$dark-mode-background-color
 
     &.transition-enter-active,
     &.transition-leave-active

@@ -22,8 +22,8 @@ defineProps<{
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
-@import "../../../styles/base/size"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 $transaction-time: 0.25s
 
@@ -31,13 +31,13 @@ $transaction-time: 0.25s
     position: relative
     width: 100%
     height: 100%
-    background-color: $light-mode-background-color
+    background-color: color.$light-mode-background-color
     @media (prefers-color-scheme: dark)
-        background-color: $dark-mode-background-color
+        background-color: color.$dark-mode-background-color
 
     > .main-content
         position: absolute
-        top: $title-bar-height
+        top: size.$title-bar-height
         left: 0
         right: 0
         bottom: 0
@@ -48,5 +48,5 @@ $transaction-time: 0.25s
     > .top-bar
         transition: transform $transaction-time ease
         &.collapsed
-            transform: translateY(#{-$title-bar-height})
+            transform: translateY(#{- size.$title-bar-height})
 </style>

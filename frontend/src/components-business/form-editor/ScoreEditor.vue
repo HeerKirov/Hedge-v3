@@ -21,7 +21,7 @@ defineEmits<{
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .exported
     position: absolute
@@ -29,5 +29,5 @@ defineEmits<{
     bottom: 0
     display: inline-block
     padding: 0 2px
-    font-size: $font-size-tiny
+    font-size: size.$font-size-tiny
 </style>

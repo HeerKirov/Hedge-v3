@@ -39,7 +39,7 @@ const rootStyle = computed(() => ({
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .item
     position: relative
@@ -60,5 +60,5 @@ const rootStyle = computed(() => ({
             object-fit: cover
             object-position: center
         &.img-radius > img
-            border-radius: $radius-size-std
+            border-radius: size.$radius-size-std
 </style>

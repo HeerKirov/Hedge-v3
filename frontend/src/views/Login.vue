@@ -56,7 +56,7 @@ const doLogin = async () => {
 </template>
 
 <style module lang="sass">
-@import "../styles/base/size"
+@use "@/styles/base/size"
 
 .top-bar
     -webkit-app-region: drag
@@ -64,5 +64,5 @@ const doLogin = async () => {
     top: 0
     left: 0
     right: 0
-    height: $title-bar-height
+    height: size.$title-bar-height
 </style>

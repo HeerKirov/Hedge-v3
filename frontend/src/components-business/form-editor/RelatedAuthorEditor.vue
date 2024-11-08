@@ -65,14 +65,14 @@ const removeItem = (idx: number) => {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .embedded
     max-width: 400px
     min-width: 200px
-    margin-top: $spacing-1
+    margin-top: size.$spacing-1
 .popup
     max-width: 400px
     min-width: 200px
-    padding: $spacing-2
+    padding: size.$spacing-2
 </style>

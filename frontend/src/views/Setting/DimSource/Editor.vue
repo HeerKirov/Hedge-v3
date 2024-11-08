@@ -142,10 +142,11 @@ const trash = async () => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
+@use "@/styles/base/size"
+
 .main-icon
     position: relative
-    width: $element-height-std
+    width: size.$element-height-std
     > img, svg
         position: absolute
         left: 50%
@@ -156,6 +157,6 @@ const trash = async () => {
         height: 20px
 
 .tag-block
-    padding: 0 $spacing-2
-    line-height: #{$element-height-small - 2px}
+    padding: 0 size.$spacing-2
+    line-height: #{size.$element-height-small - 2px}
 </style>

@@ -54,8 +54,9 @@ const menu = usePopupMenu<{date: LocalDate}>(() => [
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
-@import "../../../styles/base/size"
+@use "sass:color" as sass-color
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 .timeline
     display: flex
@@ -99,10 +100,10 @@ const menu = usePopupMenu<{date: LocalDate}>(() => [
             background: white
             > .content
                 mix-blend-mode: difference
-                color: $light-mode-text-inverted-color
+                color: color.$light-mode-text-inverted-color
             > .float-right-message
                 mix-blend-mode: difference
-                color: $light-mode-text-inverted-color
+                color: color.$light-mode-text-inverted-color
             > .processor
                 background: black
             > .marked, > .unmarked
@@ -112,21 +113,21 @@ const menu = usePopupMenu<{date: LocalDate}>(() => [
                 mix-blend-mode: screen
             @for $i from 1 through 10
                 &.lv-#{$i} > .marked
-                    background-color: mix($light-mode-primary, $light-mode-block-color, $i * 6% + 40%)
+                    background-color: sass-color.mix(color.$light-mode-primary, color.$light-mode-block-color, $i * 6% + 40%)
             > .marked
                 left: 0
             > .unmarked
                 right: 0
-                background: $light-mode-text-color
+                background: color.$light-mode-text-color
 
         @media (prefers-color-scheme: dark)
             > .content
-                color: $dark-mode-text-color
+                color: color.$dark-mode-text-color
             > .float-right-message
-                color: $dark-mode-text-color
+                color: color.$dark-mode-text-color
             @for $i from 1 through 10
                 &.lv-#{$i} > .processor
-                    background-color: mix($dark-mode-primary, $dark-mode-block-color, $i * 6% + 40%)
+                    background-color: sass-color.mix(color.$dark-mode-primary, color.$dark-mode-block-color, $i * 6% + 40%)
             > .marked, > .unmarked
                 visibility: hidden
 </style>

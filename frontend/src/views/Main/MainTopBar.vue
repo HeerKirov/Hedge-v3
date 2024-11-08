@@ -81,8 +81,8 @@ const mouseUp = (e: MouseEvent, tab: Tab) => {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
-@import "../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .tab-bar
     display: flex
@@ -96,31 +96,31 @@ const mouseUp = (e: MouseEvent, tab: Tab) => {
         flex-wrap: nowrap
         align-items: center
         justify-content: space-between
-        padding: 0 5px 0 $spacing-2
-        border-radius: $radius-size-large
+        padding: 0 5px 0 size.$spacing-2
+        border-radius: size.$radius-size-large
         width: 180px
         font-weight: 700
 
         &.active
-            background-color: $light-mode-background-color
+            background-color: color.$light-mode-background-color
             @media (prefers-color-scheme: dark)
-                background-color: $dark-mode-background-color
+                background-color: color.$dark-mode-background-color
 
         &:not(.active)
             font-weight: 500
-            color: $light-mode-secondary-text-color
-            border: solid 1px $light-mode-block-color
+            color: color.$light-mode-secondary-text-color
+            border: solid 1px color.$light-mode-block-color
             @media (prefers-color-scheme: dark)
-                color: $dark-mode-secondary-text-color
-                border-color: $dark-mode-block-color
+                color: color.$dark-mode-secondary-text-color
+                border-color: color.$dark-mode-block-color
 
             &:hover
-                background-color: $light-mode-background-color
+                background-color: color.$light-mode-background-color
                 @media (prefers-color-scheme: dark)
-                    background-color: $dark-mode-background-color
+                    background-color: color.$dark-mode-background-color
 
         > .close
-            font-size: $font-size-small
+            font-size: size.$font-size-small
             flex: 0 0 auto
 
         > .drop-area
@@ -142,5 +142,5 @@ const mouseUp = (e: MouseEvent, tab: Tab) => {
         > *
             -webkit-app-region: none
         &.darwin-border-area > button:last-child
-            border-top-right-radius: $radius-size-very-large
+            border-top-right-radius: size.$radius-size-very-large
 </style>

@@ -65,8 +65,8 @@ const contextmenu = () => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
-@import "../../../styles/base/size"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 .expanded-button-element
     position: relative
@@ -76,10 +76,10 @@ const contextmenu = () => {
         transform: translateX(-100%)
 
 .jump-target
-    border-radius: $radius-size-std
-    padding: $spacing-half $spacing-1
+    border-radius: size.$radius-size-std
+    padding: size.$spacing-half size.$spacing-1
     @media (prefers-color-scheme: light)
-        border: solid 2px $light-mode-warning
+        border: solid 2px color.$light-mode-warning
     @media (prefers-color-scheme: dark)
-        border: solid 2px $dark-mode-warning
+        border: solid 2px color.$dark-mode-warning
 </style>

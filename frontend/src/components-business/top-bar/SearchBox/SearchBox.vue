@@ -222,8 +222,10 @@ const clear = () => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-@import "../../../styles/base/color"
+@use "sass:math"
+@use "sass:color" as sass-color
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 $collapse-width: 130px
 $expand-width: 260px
@@ -240,39 +242,39 @@ $warning-badge-width: 50px
     .input
         -webkit-app-region: none
         position: absolute
-        padding-left: $spacing-2
+        padding-left: size.$spacing-2
         width: 100%
         border: none
-        border-bottom: solid $light-mode-border-color 1px
-        border-radius: $radius-size-std $radius-size-std 0 0
+        border-bottom: solid color.$light-mode-border-color 1px
+        border-radius: size.$radius-size-std size.$radius-size-std 0 0
         @media (prefers-color-scheme: dark)
-            border-bottom-color: $dark-mode-border-color
+            border-bottom-color: color.$dark-mode-border-color
         &:focus,
         &.focus
-            background-color: mix($light-mode-block-color, #000000, 96%)
+            background-color: sass-color.mix(color.$light-mode-block-color, #000000, 96%)
             @media (prefers-color-scheme: dark)
-                background-color: mix($dark-mode-block-color, #000000, 65%)
+                background-color: sass-color.mix(color.$dark-mode-block-color, #000000, 65%)
         &.has-value
-            padding-right: #{calc($element-height-std - ($element-height-std - $element-height-tiny) / 2)}
+            padding-right: #{size.$element-height-std - math.div(size.$element-height-std - size.$element-height-tiny, 2)}
         &.has-warning
-            padding-right: #{calc($element-height-std + $warning-badge-width - ($element-height-std - $element-height-tiny) / 2)}
+            padding-right: #{size.$element-height-std + $warning-badge-width - math.div(size.$element-height-std - size.$element-height-tiny, 2)}
 
     .clear-button
         position: absolute
-        font-size: $font-size-small
-        right: #{calc(($element-height-std - $element-height-tiny) / 2 + 1px)}
-        top: #{calc(($element-height-std - $element-height-tiny) / 2)}
+        font-size: size.$font-size-small
+        right: #{math.div(size.$element-height-std - size.$element-height-tiny, 2) + 1px}
+        top: #{math.div(size.$element-height-std - size.$element-height-tiny, 2)}
         > svg
             transform: translateY(1px)
 
     .warning-badge
         position: absolute
-        right: #{calc(($element-height-std - $element-height-tiny) / 2 + $element-height-tiny + 1px)}
-        top: #{calc(($element-height-std - $element-height-tiny) / 2)}
-        height: $element-height-tiny
+        right: #{math.div(size.$element-height-std - size.$element-height-tiny, 2) + size.$element-height-tiny + 1px}
+        top: #{math.div(size.$element-height-std - size.$element-height-tiny, 2)}
+        height: size.$element-height-tiny
         width: $warning-badge-width
-        line-height: $element-height-tiny
-        font-size: $font-size-tiny
+        line-height: size.$element-height-tiny
+        font-size: size.$font-size-tiny
         pointer-events: none
         padding: 0
 

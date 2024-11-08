@@ -97,7 +97,7 @@ const onDragstart = async (e: DragEvent, item: SimpleIllust) => {
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
+@use "@/styles/base/size"
 
 .single-line
     height: 100%
@@ -110,14 +110,14 @@ const onDragstart = async (e: DragEvent, item: SimpleIllust) => {
     > img
         max-height: 100%
         max-width: 100%
-        border-radius: $radius-size-std
+        border-radius: size.$radius-size-std
 
 .book-cover
-    width: $element-height-std
-    height: $element-height-std
+    width: size.$element-height-std
+    height: size.$element-height-std
     object-position: center
     object-fit: cover
-    border-radius: $radius-size-std
+    border-radius: size.$radius-size-std
 .book-image
     position: relative
     height: 0
@@ -134,5 +134,5 @@ const onDragstart = async (e: DragEvent, item: SimpleIllust) => {
             width: 100%
             object-position: center
             object-fit: cover
-            border-radius: $radius-size-std
+            border-radius: size.$radius-size-std
 </style>

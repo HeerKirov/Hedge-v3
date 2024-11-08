@@ -64,7 +64,7 @@ defineExpose({
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/color"
+@use "@/styles/base/color"
 
 .select-list-item
     padding: 0.35em
@@ -72,8 +72,8 @@ defineExpose({
     overflow: hidden
     border: solid 2px rgba(0, 0, 0, 0)
     &.selected
-        border-color: $light-mode-primary
+        border-color: color.$light-mode-primary
     @media (prefers-color-scheme: dark)
         &.selected
-            border-color: $dark-mode-primary
+            border-color: color.$dark-mode-primary
 </style>

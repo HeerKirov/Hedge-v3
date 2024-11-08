@@ -148,10 +148,10 @@ const partModeMenuItems: MenuItem<undefined>[] = [
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
+@use "@/styles/base/size"
 .main-icon
     position: relative
-    width: $element-height-std
+    width: size.$element-height-std
     > svg
         position: absolute
         left: 50%
@@ -162,7 +162,7 @@ const partModeMenuItems: MenuItem<undefined>[] = [
         height: 20px
 
 .tag-block
-    padding: 0 $spacing-2
-    line-height: #{$element-height-small - 2px}
+    padding: 0 size.$spacing-2
+    line-height: #{size.$element-height-small - 2px}
 </style>
 

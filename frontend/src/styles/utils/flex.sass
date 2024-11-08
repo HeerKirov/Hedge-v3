@@ -1,5 +1,5 @@
 @use "sass:math"
-@import "../base/size"
+@use "@/styles/base/size"
 
 .flex
   display: flex
@@ -34,13 +34,13 @@
   &.align-stretch
     align-items: stretch
 
-  @each $name, $size in $spacing-map
+  @each $name, $size in size.$spacing-map
     &.gap-#{$name}
       gap: $size
   @for $i from 1 through 20
     &.column-#{$i} .flex-item
       flex-basis: math.div(100%, $i)
-    @each $name, $size in $spacing-map
+    @each $name, $size in size.$spacing-map
       &.column-#{$i}.gap-#{$name} .flex-item
         flex-basis: calc(math.div(100%, $i) - #{math.div($i - 1, $i) * $size})
 

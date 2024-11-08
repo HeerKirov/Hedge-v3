@@ -63,8 +63,8 @@ export interface BookCardItem {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/color"
-@import "../../styles/base/size"
+@use "@/styles/base/color"
+@use "@/styles/base/size"
 
 //horizontal模式下，img的margin-top有一个固定计算公式。若aspect为1时下限为A，aspect趋向于无穷大时上限为B，则最终公式为marginTop=(A-B)/aspect+B
 .root
@@ -77,9 +77,9 @@ export interface BookCardItem {
     overflow: hidden
 
     &.selected
-        outline: solid 2px $light-mode-primary
+        outline: solid 2px color.$light-mode-primary
         @media (prefers-color-scheme: dark)
-            outline-color: $dark-mode-primary
+            outline-color: color.$dark-mode-primary
 
     > .img
         position: absolute
@@ -103,16 +103,16 @@ export interface BookCardItem {
         position: absolute
         left: 0.35rem
         top: 0.5rem
-        color: $dark-mode-text-color
-        filter: drop-shadow(0 0 1px $dark-mode-background-color)
+        color: color.$dark-mode-text-color
+        filter: drop-shadow(0 0 1px color.$dark-mode-background-color)
 
     > .num-tag
         position: absolute
         right: 0.25rem
         top: 0.25rem
         padding: 0.25rem 0.35rem
-        border-radius: $radius-size-std
-        color: $dark-mode-text-color
+        border-radius: size.$radius-size-std
+        color: color.$dark-mode-text-color
         background-color: rgba(0, 0, 0, 0.65)
 
     > .info
@@ -125,7 +125,7 @@ export interface BookCardItem {
         overflow-y: auto
         box-sizing: border-box
         background: linear-gradient(to top, rgba(0, 0, 0, 50%), rgba(0, 0, 0, 0%))
-        color: $light-mode-text-inverted-color
+        color: color.$light-mode-text-inverted-color
         font-weight: 700
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 50%)
         &::-webkit-scrollbar

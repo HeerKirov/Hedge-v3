@@ -28,13 +28,13 @@ const calloutStyle = computed(() => ({
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
+@use "@/styles/base/size"
 
 .popup
     z-index: 1
     position: fixed
-    left: $spacing-1
-    bottom: calc(#{$element-height-std} + #{$spacing-3})
+    left: size.$spacing-1
+    bottom: calc(#{size.$element-height-std} + #{size.$spacing-3})
     box-shadow: 0 0.25rem 0.5rem 0 rgba(59,63,73,.25)
     
     .top-drag-area

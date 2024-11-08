@@ -45,8 +45,6 @@ const { data, viewMode, listviewController, operators: { complete } } = installF
 </template>
 
 <style module lang="sass">
-@import "../../../styles/base/size"
-
 .compare-mode
     position: relative
     width: 100%
@@ -73,5 +71,4 @@ const { data, viewMode, listviewController, operators: { complete } } = installF
     > div
         width: 100%
         height: 100%
-
 </style>

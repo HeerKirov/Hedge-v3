@@ -123,7 +123,7 @@ const popupMenu = usePopupMenu(computed(() => [
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .navigator
     padding: 0 0.25rem
@@ -134,12 +134,12 @@ const popupMenu = usePopupMenu(computed(() => [
     position: absolute
     width: 100%
     right: 0
-    top: #{$title-bar-height - 1px}
+    top: #{size.$title-bar-height - 1px}
 
 .right-top-bar
     -webkit-app-region: drag
     > *
         -webkit-app-region: none
     &.has-darwin-border > button:last-child
-        border-top-right-radius: $radius-size-very-large
+        border-top-right-radius: size.$radius-size-very-large
 </style>

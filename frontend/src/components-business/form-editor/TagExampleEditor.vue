@@ -42,7 +42,7 @@ const { dragover: _, ...dropEvents } = useDroppable("illusts", illusts => {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
+@use "@/styles/base/size"
 
 .drop-area
     position: relative
@@ -54,7 +54,7 @@ const { dragover: _, ...dropEvents } = useDroppable("illusts", illusts => {
 
     > div
         position: absolute
-        border-radius: $radius-size-std
+        border-radius: size.$radius-size-std
         border: dashed 1px darkgrey
         top: 0
         left: 0

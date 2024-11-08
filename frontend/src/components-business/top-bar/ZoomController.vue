@@ -67,8 +67,8 @@ useInterceptedKey(["Meta+Minus", "Meta+Equal", "Meta+Digit0"], e => {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
-@import "../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .root
     position: relative
@@ -86,7 +86,7 @@ useInterceptedKey(["Meta+Minus", "Meta+Equal", "Meta+Digit0"], e => {
     top: -1px
     right: -1px
     padding-left: 0.125rem
-    border-radius: $radius-size-large
+    border-radius: size.$radius-size-large
 
     display: flex
     flex-wrap: nowrap

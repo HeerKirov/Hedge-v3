@@ -55,8 +55,8 @@ const onDragstart = async (e: DragEvent) => {
 </template>
 
 <style module lang="sass">
-@import "../../styles/base/size"
-@import "../../styles/base/color"
+@use "@/styles/base/size"
+@use "@/styles/base/color"
 
 .thumbnail-image
     text-align: center
@@ -70,17 +70,17 @@ const onDragstart = async (e: DragEvent) => {
         box-sizing: border-box
         object-fit: contain
         object-position: center
-        border-radius: $radius-size-std
-        border: solid 1px $light-mode-border-color
+        border-radius: size.$radius-size-std
+        border: solid 1px color.$light-mode-border-color
         @media (prefers-color-scheme: dark)
-            border-color: $dark-mode-border-color
+            border-color: color.$dark-mode-border-color
 
     > .num-tag
         position: absolute
         right: 0.35rem
         top: 0.35rem
         padding: 0.125rem 0.25rem
-        border-radius: $radius-size-std
-        color: $dark-mode-text-color
+        border-radius: size.$radius-size-std
+        color: color.$dark-mode-text-color
         background-color: rgba(0, 0, 0, 0.65)
 </style>

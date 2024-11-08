@@ -1,4 +1,4 @@
-@import "../base/size"
+@use "@/styles/base/size"
 
 //==== 元素显示效果相关原子类 ====
 
@@ -37,7 +37,7 @@
   text-decoration: underline
 
 //自订圆角
-@each $name, $size in $radius-size-map
+@each $name, $size in size.$radius-size-map
   .has-radius-#{$name}
     border-radius: $size !important
 
