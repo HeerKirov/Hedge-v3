@@ -4,6 +4,7 @@ services:
     container_name: hedge-v3-server
     image: hedge-v3-server:dev
     user: "1000:1000"
+    restart: unless-stopped
     environment:
       - TZ=Asia/Shanghai
       - STORAGE_DIR=/data
@@ -11,5 +12,5 @@ services:
     ports:
       - "19000:19000"
     volumes:
-      - ./server:/server
-      - ./data:/data
+      - /path/to/server:/server
+      - /path/to/data:/data
