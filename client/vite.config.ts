@@ -3,10 +3,13 @@ import { BuildOptions, defineConfig, PluginOption } from "vite"
 import electron from "vite-plugin-electron/simple"
 import { getServerVersion } from "./build/utils"
 
-export default defineConfig(async env => {
+export default defineConfig(async () => {
     const serverVersion = await getServerVersion()
 
     return {
+        server: {
+            port: 15173
+        },
         build: <BuildOptions>{
             outDir: "dist-electron",
             minify: "esbuild"
