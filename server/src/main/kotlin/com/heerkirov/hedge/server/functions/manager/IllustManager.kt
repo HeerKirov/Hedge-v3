@@ -843,7 +843,7 @@ class IllustManager(private val appdata: AppDataManager,
                     if(props.description) set(it.exportedDescription, if(merge) { fromIllust.description.ifEmpty { toIllust.description } }else{ fromIllust.description })
                 }
                 if(props.favorite) set(it.favorite, if(merge) { fromIllust.favorite || toIllust.favorite }else{ fromIllust.favorite })
-                if(props.tagme) set(it.tagme, if(merge) { fromIllust.tagme + toIllust.tagme }else{ fromIllust.tagme })
+                if(props.tagme) set(it.tagme, fromIllust.tagme)
                 if(props.score) set(it.score, if(merge) { fromIllust.score ?: toIllust.score }else{ fromIllust.score })
                 if(props.description) set(it.description, if(merge) { fromIllust.description.ifEmpty { toIllust.description } }else{ fromIllust.description })
                 if(props.orderTime) set(it.orderTime, fromIllust.orderTime)

@@ -94,8 +94,8 @@ class TaskSchedulerModule(private val appStatus: AppStatusDriver, private val ap
 
                     //计算当前时间距离下次调度时间的时间间隔，作为初次调用间隔。
                     val dailyExecutionTime = LocalTime.of((offsetHour + 24) % 24, 0)
-                    //获取now时，去掉nano部分，并使sec+1，避免最后算得的时间点落在定时时间之前，那会使homepage这类调度不生效
-                    val now = LocalTime.now().withNano(0).plusSeconds(1)
+                    //获取now时，去掉nano部分，避免最后算得的时间点落在定时时间之前，那会使homepage这类调度不生效
+                    val now = LocalTime.now().withNano(0)
                     val period = 60 * 60 * 24L
                     val initialDelay = (ChronoUnit.SECONDS.between(now, dailyExecutionTime) + period) % period
 
