@@ -93,6 +93,18 @@ export const [installBrowserView, useBrowserView] = installationNullable(functio
 function installBrowserTabs(views: Ref<InternalTab[]>, activeIndex: Ref<number>, getRouteDefinition: (routeName?: string) => RouteDefinition, nextTabId: () => number, nextHistoryId: () => number, historyMax: number, event: SendRefEmitter<BrowserTabEvent>): BrowserTabs {
     const tabs = computed<Tab[]>(() => views.value.map(({ id, current: { title } }, index) => ({id, index, title, active: activeIndex.value === index})))
 
+    const lastAccessed: number[] = []
+
+    watch(activeIndex, (_, oldIndex) => {
+        const lastId = views.value[oldIndex]?.id
+        if(lastId !== undefined && lastAccessed.length > 0 && lastAccessed[lastAccessed.length - 1] !== lastId) {
+            const existIdx = lastAccessed.indexOf(lastId)
+            if(existIdx >= 0) lastAccessed.splice(existIdx, 1)
+            lastAccessed.push(lastId)
+            console.log("lastAccessed", lastAccessed)
+        }
+    }, {flush: "sync"})
+
     function newTab(args?: NewRoute) {
         const routeDef = getRouteDefinition(args?.routeName)
         const route: Route = args !== undefined ? {routeName: args.routeName, path: args.path, params: args.params ?? {}, initializer: args.initializer ?? {}} : {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
@@ -148,6 +160,12 @@ function installBrowserTabs(views: Ref<InternalTab[]>, activeIndex: Ref<number>,
             const [view] = views.value.splice(index, 1)
             if(views.value.length <= 0) {
                 window.close()
+            }else if(lastAccessed.length > 0) {
+                const viewInLA = lastAccessed.indexOf(view.id)
+                if(viewInLA >= 0) lastAccessed.splice(viewInLA, 1)
+                const id = lastAccessed.pop()
+                const idx = id !== undefined ? views.value.findIndex(v => v.id === id) : -1
+                activeIndex.value = idx >= 0 ? idx : activeIndex.value
             }else if(index < activeIndex.value || (index === activeIndex.value && activeIndex.value > 0)) {
                 activeIndex.value -= 1
             }
