@@ -1,4 +1,4 @@
-import { NativeTheme } from "../appdata/model"
+import { NativeTheme } from "@/components/appdata/model"
 
 
 export type AppState

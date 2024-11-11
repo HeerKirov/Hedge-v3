@@ -1,11 +1,10 @@
 import fs from "fs"
 import path from "path"
 import { app, protocol, net } from "electron"
-import { WindowManager } from "./window"
-import { StateManager } from "../components/state"
-import { AppState } from "../components/state/model"
-import { LocalManager } from "../components/local"
-import { maps } from "../utils/types"
+import { WindowManager } from "@/application/window"
+import { StateManager, AppState } from "@/components/state"
+import { LocalManager } from "@/components/local"
+import { maps } from "@/utils/types"
 
 export function registerProtocol(stateManager: StateManager, windowManager: WindowManager) {
     //FUTURE 处理其他平台的协议注册事件

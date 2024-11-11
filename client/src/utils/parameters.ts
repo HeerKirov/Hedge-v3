@@ -3,10 +3,10 @@ export function createParameters(argv: string[]) {
         return argv.find(v => v === flag) != undefined
     }
 
-    function opt(param: string, defaultValue?: string): string | undefined {
+    function opt(param: string, defaultValue?: () => string | undefined): string | undefined {
         const index = argv.findIndex(v => v === param)
         const value = index >= 0 ? argv[index + 1] : undefined
-        return value ?? defaultValue
+        return value ?? defaultValue?.()
     }
 
     return {contains, opt}

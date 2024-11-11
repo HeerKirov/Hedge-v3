@@ -1,10 +1,10 @@
 import * as path from "path"
 import { BrowserWindow, BrowserWindowConstructorOptions } from "electron"
-import { Platform } from "../utils/process"
-import { StateManager } from "../components/state"
-import { StorageManager } from "../components/storage"
-import { APP_FILE, RESOURCE_FILE } from "../constants/file"
-import { createEmitter, Emitter } from "../utils/emitter"
+import { Platform } from "@/utils/process"
+import { StateManager } from "@/components/state"
+import { StorageManager } from "@/components/storage"
+import { APP_FILE, RESOURCE_FILE } from "@/constants/file"
+import { createEmitter, Emitter } from "@/utils/emitter"
 import { registerWindowIpcRemoteEvent } from "./ipc"
 import { ThemeManager } from "./theme"
 
@@ -81,7 +81,7 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, st
             webPreferences: {
                 sandbox: false,
                 devTools: true,
-                preload: path.join(__dirname, 'ipc/preload.js'),
+                preload: path.join(__dirname, 'preload.js'),
             },
             autoHideMenuBar: true,
             titleBarStyle: options.platform === "darwin" ? "hiddenInset" : "default",

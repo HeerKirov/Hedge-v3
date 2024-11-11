@@ -1,4 +1,4 @@
-import { Migrate, migrate as migrateIt } from "../../../utils/migrations"
+import { Migrate, migrate as migrateIt } from "@/utils/migrations"
 import { AppData } from "../model"
 
 const migrations: {[version: string]: Migrate<MigrateContext>} = {

@@ -3,21 +3,17 @@ import Ws from "ws"
 import { kill as killProcess } from "process"
 import { spawn } from "child_process"
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
-import { AppDataDriver, AppDataStatus } from "../appdata"
-import { DATA_FILE, RESOURCE_FILE } from "../../constants/file"
-import { createEmitter, Emitter } from "../../utils/emitter"
-import { sleep } from "../../utils/process"
-import { readFile } from "../../utils/fs"
+import { AppDataDriver, AppDataStatus } from "@/components/appdata"
+import { DATA_FILE, RESOURCE_FILE } from "@/constants/file"
+import { createEmitter, Emitter } from "@/utils/emitter"
+import { sleep } from "@/utils/process"
+import { readFile } from "@/utils/fs"
 import {
-    AppInitializeForm,
-    ServerConnectionError,
-    ServerConnectionInfo,
-    ServerConnectionStatus,
-    ServerPIDFile,
-    ServerServiceStatus,
-    ServerStaticInfo,
-    WsToastResult
+    AppInitializeForm, ServerConnectionError, ServerConnectionInfo, ServerConnectionStatus,
+    ServerPIDFile, ServerServiceStatus, ServerStaticInfo, WsToastResult
 } from "./model"
+
+export type { ServerServiceStatus, ServerConnectionStatus, ServerConnectionInfo, WsToastResult, ServerStaticInfo }
 
 /**
  * 对接后台服务部分的管理器。负责监视本频道对应的后台服务的运行状态，获取其运行参数，提供后台服务的管理功能，提供部分后台服务的功能接口。

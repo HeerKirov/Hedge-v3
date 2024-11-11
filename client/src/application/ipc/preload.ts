@@ -1,6 +1,6 @@
 import { ipcRenderer, contextBridge } from "electron"
-import { getNodePlatform } from "../../utils/process"
-import { createProxyEmitter } from "../../utils/emitter"
+import { getNodePlatform } from "@/utils/process"
+import { createProxyEmitter } from "@/utils/emitter"
 import { IpcClient, MenuTemplate, MenuTemplateInIpc } from "./constants"
 
 /**

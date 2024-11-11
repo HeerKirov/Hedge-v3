@@ -1,4 +1,4 @@
-import { showError } from "../utils/notification"
+import { showError } from "@/utils/notification"
 
 export type ErrorCode = PanicError | CheckedError
 

@@ -1,11 +1,10 @@
 import path from "path"
 import { FSWatcher, watch } from "chokidar"
-import { AppDataDriver } from "../appdata"
-import { AppState } from "../state/model"
-import { readdir, statOrNull } from "../../utils/fs"
-import { createEmitter, Emitter } from "../../utils/emitter"
+import { AppDataDriver } from "@/components/appdata"
+import { StateManager, AppState } from "@/components/state"
+import { readdir, statOrNull } from "@/utils/fs"
+import { createEmitter, Emitter } from "@/utils/emitter"
 import { FileManager } from "./file"
-import { StateManager } from "../state"
 
 export interface FileWatcher {
     /**

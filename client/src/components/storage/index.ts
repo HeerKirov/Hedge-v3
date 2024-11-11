@@ -1,8 +1,8 @@
 import path from "path"
 import fs from "fs/promises"
-import { AppDataDriver, AppDataStatus } from "../appdata"
-import { DATA_FILE } from "../../constants/file"
-import { existsFile, readFile, writeFile } from "../../utils/fs"
+import { AppDataDriver, AppDataStatus } from "@/components/appdata"
+import { DATA_FILE } from "@/constants/file"
+import { existsFile, readFile, writeFile } from "@/utils/fs"
 
 /**
  * 提供不限定格式的自由读写存储器。用于在client提供类似localStorage的快速存储。

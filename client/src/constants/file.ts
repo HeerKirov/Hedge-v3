@@ -1,5 +1,5 @@
 export const APP_FILE = {
-    FRONTEND_FOLDER: "../frontend",
+    FRONTEND_FOLDER: "frontend",
     SERVER_ZIP: "../server.zip"
 }
 

@@ -1,6 +1,6 @@
 import { nativeTheme } from "electron"
-import { NativeTheme } from "../components/appdata/model"
-import { AppDataDriver, AppDataStatus } from "../components/appdata"
+import { NativeTheme } from "@/components/appdata/model"
+import { AppDataDriver, AppDataStatus } from "@/components/appdata"
 
 /**
  * electron的主题管理器。管控窗口主题。

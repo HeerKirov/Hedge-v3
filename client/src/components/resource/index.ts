@@ -1,11 +1,10 @@
 import path from "path"
-import { arrays } from "../../utils/types"
-import { readFile, rename, rmdir, unzip, writeFile } from "../../utils/fs"
-import { APP_FILE, DATA_FILE } from "../../constants/file"
-import { ClientException } from "../../exceptions"
+import { AppDataDriver, AppDataStatus } from "@/components/appdata"
+import { APP_FILE, DATA_FILE } from "@/constants/file"
+import { ClientException } from "@/exceptions"
+import { arrays } from "@/utils/types"
+import { readFile, rename, rmdir, unzip, writeFile } from "@/utils/fs"
 import { Version, VersionLock, VersionStatus, VersionStatusSet } from "./model"
-import { RESOURCE_VERSION } from "./version"
-import { AppDataDriver, AppDataStatus } from "../appdata";
 
 /**
  * 对app程序资源进行管理的管理器。
@@ -37,6 +36,10 @@ export enum ResourceStatus {
     NEED_UPDATE = "NEED_UPDATE",
     UPDATING = "UPDATING",
     LATEST = "LATEST"
+}
+
+export const RESOURCE_VERSION = {
+    "server": import.meta.env.SERVER_VERSION ?? "<?>"
 }
 
 /**

@@ -2,28 +2,33 @@
   "name": "hedge-v3",
   "productName": "Hedge-v3-development",
   "version": "0.10.1",
-  "main": "target/main.js",
+  "main": "dist-electron/main.js",
   "author": "Heer Kirov",
   "license": "MIT",
   "scripts": {
-    "build": "tsc && node build/common/version.js",
-    "start": "electron .",
-    "dev": "electron . $(sh args.local.sh)",
-    "package-with-build": "node build/common/build.js",
-    "package": "node build/common/build.js clean install-app install-client install-frontend install-server"
+    "dev": "vite",
+    "build": "vite build",
+    "package": "vite build && esr build/make.ts"
   },
   "dependencies": {
     "axios": "1.7.7",
-    "tslib": "^2.8.1",
+    "chokidar": "4.0.1",
     "compressing": "1.10.1",
-    "ws": "8.18.0",
     "level": "8.0.1",
-    "chokidar": "4.0.1"
+    "tslib": "^2.8.1",
+    "ws": "8.18.0"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.7.0",
     "@types/node": "22.9.0",
     "@types/ws": "8.5.13",
+    "asar": "^3.2.0",
     "electron": "33.2.0",
-    "typescript": "5.6.3"
+    "esbuild": "0.24.0",
+    "esbuild-runner": "^2.2.2",
+    "type-fest": "^4.26.1",
+    "typescript": "5.6.3",
+    "vite": "^5.4.10",
+    "vite-plugin-electron": "^0.28.8"
   }
 }

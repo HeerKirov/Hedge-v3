@@ -1,10 +1,10 @@
 import { app, BrowserWindow, Menu, shell } from "electron"
-import { WindowManager } from "./window"
-import { FileWatcher } from "../components/local/file-watcher"
-import { StateManager } from "../components/state"
-import { LocalManager } from "../components/local"
-import { Platform } from "../utils/process"
-import { createEmitter, Emitter, SendEmitter } from "../utils/emitter"
+import { WindowManager } from "@/application/window"
+import { FileWatcher } from "@/components/local/file-watcher"
+import { StateManager } from "@/components/state"
+import { LocalManager } from "@/components/local"
+import { Platform } from "@/utils/process"
+import { createEmitter, Emitter, SendEmitter } from "@/utils/emitter"
 
 export interface MenuManager {
     load(): void

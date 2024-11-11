@@ -4,7 +4,8 @@
 
 /cli/target
 /client/node_modules
-/client/target
+/client/dist-electron
+/client/dist
 /crx/node_modules
 /crx/dist
 /frontend/node_modules
@@ -13,7 +14,6 @@
 /server/gradle/wrapper/*.jar
 /server/gradlew*
 /server/build
-/dist
 *.db
 
 *.local.*

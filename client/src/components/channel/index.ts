@@ -1,8 +1,8 @@
 import { app } from "electron"
-import { readdir, readFile, writeFile } from "../../utils/fs"
-import { DATA_FILE } from "../../constants/file"
-import { ClientException } from "../../exceptions"
-import { sleep } from "../../utils/process"
+import { readdir, readFile, writeFile } from "@/utils/fs"
+import { DATA_FILE } from "@/constants/file"
+import { ClientException } from "@/exceptions"
+import { sleep } from "@/utils/process"
 
 /**
  * 信道和启动参数管理器。它没有初始化函数，但构造函数异步，初始化在所有组件之前，因为需要依赖此组件获得channel属性。

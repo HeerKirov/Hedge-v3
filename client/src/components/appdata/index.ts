@@ -1,7 +1,7 @@
 import path from "path"
-import { mkdir, readFile, writeFile } from "../../utils/fs"
-import { DATA_FILE } from "../../constants/file"
-import { ClientException } from "../../exceptions"
+import { mkdir, readFile, writeFile } from "@/utils/fs"
+import { DATA_FILE } from "@/constants/file"
+import { ClientException } from "@/exceptions"
 import { AppData, defaultValue } from "./model"
 import { migrate } from "./migrations"
 

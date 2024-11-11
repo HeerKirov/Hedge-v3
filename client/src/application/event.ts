@@ -1,7 +1,7 @@
 import { app } from "electron"
-import { WindowManager } from "./window"
-import { ServerManager } from "../components/server"
-import { Platform } from "../utils/process"
+import { WindowManager } from "@/application/window"
+import { ServerManager } from "@/components/server"
+import { Platform } from "@/utils/process"
 
 export function registerAppEvents(windowManager: WindowManager, serverManager: ServerManager, platform: Platform) {
     app.on('activate', () => {

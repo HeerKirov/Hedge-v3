@@ -5,7 +5,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>Hedge</string>
 	<key>CFBundleExecutable</key>
-	<string>hedge</string>
+	<string>Hedge</string>
 	<key>CFBundleIconFile</key>
 	<string>hedge.icns</string>
 	<key>CFBundleIdentifier</key>
@@ -36,13 +36,13 @@
 	<key>DTCompiler</key>
 	<string>com.apple.compilers.llvm.clang.1_0</string>
 	<key>DTSDKBuild</key>
-	<string>22E245</string>
+	<string>23F73</string>
 	<key>DTSDKName</key>
-	<string>macosx13.3</string>
+	<string>macosx14.5</string>
 	<key>DTXcode</key>
-	<string>1431</string>
+	<string>1540</string>
 	<key>DTXcodeBuild</key>
-	<string>14E300c</string>
+	<string>15F31d</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.developer-tools</string>
 	<key>LSEnvironment</key>
@@ -51,7 +51,7 @@
 		<string>0</string>
 	</dict>
 	<key>LSMinimumSystemVersion</key>
-	<string>10.13</string>
+	<string>11.0</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

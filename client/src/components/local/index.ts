@@ -1,7 +1,7 @@
-import { AppDataDriver } from "../appdata"
-import { ServerManager } from "../server"
-import { LevelManager } from "../level"
-import { StateManager } from "../state"
+import { AppDataDriver } from "@/components/appdata"
+import { ServerManager } from "@/components/server"
+import { LevelManager } from "@/components/level"
+import { StateManager } from "@/components/state"
 import { createFileManager, FileManager } from "./file"
 import { createFileWatcher, FileWatcher } from "./file-watcher"
 

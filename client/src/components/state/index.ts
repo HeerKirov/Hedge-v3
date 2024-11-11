@@ -1,11 +1,13 @@
 import { systemPreferences } from "electron"
-import { AppDataDriver, AppDataStatus } from "../appdata"
-import { ResourceManager, ResourceStatus } from "../resource"
-import { ServerManager } from "../server"
-import { panic } from "../../exceptions"
-import { createEmitter, Emitter } from "../../utils/emitter"
+import { AppDataDriver, AppDataStatus } from "@/components/appdata"
+import { ResourceManager, ResourceStatus } from "@/components/resource"
+import { ServerManager } from "@/components/server"
+import { panic } from "@/exceptions"
+import { createEmitter, Emitter } from "@/utils/emitter"
 import { AppInitializeForm, AppState, InitializeState, LoginForm } from "./model"
-import { ThemeManager } from "../../application/theme"
+import { ThemeManager } from "@/application/theme"
+
+export type { AppInitializeForm, AppState, InitializeState, LoginForm }
 
 /**
  * 对客户端app的状态进行管理。处理从加载到登录的一系列状态和伴生操作。

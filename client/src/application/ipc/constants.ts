@@ -1,12 +1,12 @@
-import { Platform } from "../../utils/process"
-import { ServerServiceStatus, ServerConnectionStatus, ServerConnectionInfo, WsToastResult, ServerStaticInfo } from "../../components/server/model"
-import { AppInitializeForm, AppState, InitializeState, LoginForm } from "../../components/state/model"
-import { NativeTheme } from "../../components/appdata/model"
-import { CacheStatus } from "../../components/local/file"
-import { FileWatcherStatus } from "../../components/local/file-watcher"
-import { Emitter } from "../../utils/emitter"
-import { IResponse } from "../../utils/types"
-import { TabControlEvent, UpdateStateOptions } from "../menu"
+import { TabControlEvent, UpdateStateOptions } from "@/application/menu"
+import { ServerServiceStatus, ServerConnectionStatus, ServerConnectionInfo, WsToastResult, ServerStaticInfo } from "@/components/server"
+import { AppInitializeForm, AppState, InitializeState, LoginForm } from "@/components/state"
+import { NativeTheme } from "@/components/appdata/model"
+import { CacheStatus } from "@/components/local/file"
+import { FileWatcherStatus } from "@/components/local/file-watcher"
+import { Emitter } from "@/utils/emitter"
+import { IResponse } from "@/utils/types"
+import { Platform } from "@/utils/process"
 
 /**
  * IPC API Client的定义。这份定义会在客户端和前端通用。

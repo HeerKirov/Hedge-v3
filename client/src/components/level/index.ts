@@ -1,6 +1,6 @@
 import path from "path"
 import { Level } from "level"
-import { DATA_FILE } from "../../constants/file"
+import { DATA_FILE } from "@/constants/file"
 
 export interface LevelManager {
     getLevel(): Level
