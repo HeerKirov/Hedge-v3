@@ -65,7 +65,9 @@ const TASK_NAMES: Record<BackgroundTaskType, string> = {
         margin-bottom: size.$spacing-1
 
     &:hover
-        background-color: sass-color.mix(color.$light-mode-block-color, #000000, 95%)
+        background-color: rgba(45, 50, 55, 0.09)
+        @media (prefers-color-scheme: dark)
+            background-color: rgba(255, 255, 255, 0.09)
 
 .title
     padding: 0 size.$spacing-1

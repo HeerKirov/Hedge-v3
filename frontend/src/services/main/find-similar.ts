@@ -154,7 +154,7 @@ export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = instal
     })
 
     const listview = useQueryListview({
-        request: () => async (offset, limit) => ({ok: true, status: 200, data: {total: data.value?.images.length ?? 0, result: data.value?.images.slice(offset, limit) ?? []}}),
+        request: () => async (offset, limit) => ({ok: true, status: 200, data: {total: data.value?.images.length ?? 0, result: data.value?.images.slice(offset, offset + limit) ?? []}}),
         keyOf: item => item.id
     })
 
@@ -514,7 +514,7 @@ export function useGraphView({ menu }: {menu: (i: FindSimilarResultDetailImage) 
             {
                 name: "相似项关系视图",
                 type: "graph",
-                layout: "force",
+                layout: "circular",
                 data: graphNodes,
                 links: graphLinks,
                 categories: [{name: "图像"}, {name: "集合"}, {name: "画集"}, {name: "来源集合"}, {name: "来源ID"}],
@@ -522,8 +522,7 @@ export function useGraphView({ menu }: {menu: (i: FindSimilarResultDetailImage) 
                 draggable: true,
                 legendHoverLink: true,
                 cursor: "pointer",
-                symbolSize: 20,
-                zoom: 6,
+                symbolSize: 50,
                 label: {
                     position: "top"
                 },
@@ -535,9 +534,6 @@ export function useGraphView({ menu }: {menu: (i: FindSimilarResultDetailImage) 
                     lineStyle: {
                         width: 16
                     }
-                },
-                force: {
-                    repulsion: 30
                 }
             }
         ],
