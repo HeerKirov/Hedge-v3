@@ -631,17 +631,24 @@ class IllustManager(private val appdata: AppDataManager,
                 //如果begin端点是集合，那么会选取集合中在end之前的最大的子项的orderTime；如果end端点是集合，那么使用集合的orderTime即可
                 //需要注意的是如果两端点不在一个时间分区，则会靠近其中一边，变成下述情况的那种排布方式
                 //如果两端点时间一致，则变成第三种情况的排布方式
-                val a = data.db.from(Illusts).select(Illusts.type, Illusts.orderTime)
+                var a = data.db.from(Illusts).select(Illusts.type, Illusts.orderTime)
                     .where { Illusts.id eq beginId }.firstOrNull()
                     ?.let { Pair(it[Illusts.type]!!, it[Illusts.orderTime]!!) }
                     ?: throw be(ResourceNotExist("timeInsertBegin", beginId))
-                val b = data.db.from(Illusts).select(Illusts.type, Illusts.orderTime)
+                var b = data.db.from(Illusts).select(Illusts.type, Illusts.orderTime)
                     .where { Illusts.id eq form.timeInsertEnd.value }.firstOrNull()
                     ?.let { Pair(it[Illusts.type]!!, it[Illusts.orderTime]!!) }
-                    ?: throw be(ResourceNotExist("timeInsertEnd", beginId))
+                    ?: throw be(ResourceNotExist("timeInsertEnd", form.timeInsertEnd.value))
                 if(a.second == b.second) {
-                    setOrderTimeByRange(a.second.toInstant(), a.second.toInstant())
-                    return@alsoOpt
+                    if(!appdata.setting.meta.tuningOrderTime) {
+                        setOrderTimeByRange(a.second.toInstant(), a.second.toInstant())
+                        return@alsoOpt
+                    }else{
+                        //在开启了tuningOrderTime的情况下，使用两点之间插入，若两点时间相等，会首先对两点做一次调整，以保证端点之间存在空隙可插入，防止插入最终落位到两点之外
+                        val tuning = kit.tuningOrderTime(listOf(Pair(beginId, a.second), Pair(form.timeInsertEnd.value, b.second)))
+                        a = Pair(a.first, tuning.find { it.first == beginId }?.second ?: a.second)
+                        b = Pair(b.first, tuning.find { it.first == form.timeInsertEnd.value }?.second ?: b.second)
+                    }
                 }
                 val begin = if(a.second < b.second && a.first != IllustModelType.COLLECTION) a.second else if(a.second > b.second && b.first !== IllustModelType.COLLECTION) b.second else {
                     data.db.from(Illusts)

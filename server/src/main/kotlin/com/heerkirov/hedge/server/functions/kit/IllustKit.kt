@@ -578,8 +578,30 @@ class IllustKit(private val appdata: AppDataManager,
      * @param illustIds 已经排序的项与它们的排序时间，此参数必须已经按排序时间降序。在调用此函数之前，项的排序已经写入数据库，此参数仅作通知用，而不是使用此参数做修改。
      * @param eventForAllIllusts 为所有的项发送调整事件，而不只是项列表之外的项。
      */
-    fun tuningOrderTime(illustIds: List<Pair<Int, Long>>, eventForAllIllusts: Boolean = false) {
-        if(illustIds.isEmpty()) return
+    fun tuningOrderTime(illustIds: List<Pair<Int, Long>>, eventForAllIllusts: Boolean = false): List<Pair<Int, Long>> {
+        if(illustIds.isEmpty()) return emptyList()
+
+        fun reorderIllustIds(illustIds: List<Pair<Int, Long>>, allIllustIds: List<Pair<Int, Long>>): List<Pair<Int, Long>> {
+            val groupedMap = illustIds.groupBy { it.second }.filterValues { it.size > 1 }.mapValues { (_, v) -> v.map { (id, _) -> id } }
+            val nextMap = groupedMap.keys.associateWith { 0 }.toMutableMap()
+
+            return allIllustIds.map { pair ->
+                val (id, ot) = pair
+                if(ot in groupedMap) {
+                    val ids = groupedMap.getValue(ot)
+                    if(id in ids) {
+                        val nextIndex = nextMap.getValue(ot)
+                        val nextId = ids[nextIndex]
+                        nextMap[ot] = nextIndex + 1
+                        Pair(nextId, ot)
+                    }else{
+                        pair
+                    }
+                }else{
+                    pair
+                }
+            }
+        }
 
         fun findArea(node: LinkedNodeList<Pair<Int, Long>>.Node?): Pair<LinkedNodeList<Pair<Int, Long>>.Node, LinkedNodeList<Pair<Int, Long>>.Node>? {
             var begin: LinkedNodeList<Pair<Int, Long>>.Node? = null
@@ -651,13 +673,14 @@ class IllustKit(private val appdata: AppDataManager,
             return Pair(expandBegin, expandEnd)
         }
 
-        //根据给出的项，查询首尾时间外延10sec范围内的所有项。给出的项是不需要用的。
-        val db = data.db.from(Illusts)
+        //根据给出的项，查询首尾时间外延10sec范围内的所有项。
+        val allIllusts = data.db.from(Illusts)
             .select(Illusts.id, Illusts.orderTime)
             .where { (Illusts.type notEq IllustModelType.COLLECTION) and (Illusts.orderTime greaterEq illustIds.first().second - 1000 * 10) and (Illusts.orderTime lessEq illustIds.last().second + 1000 * 10) }
-            .orderBy(Illusts.orderTime.asc())
+            .orderBy(Illusts.orderTime.asc(), Illusts.id.asc())
             .map { Pair(it[Illusts.id]!!, it[Illusts.orderTime]!!) }
-            .let { LinkedNodeList(it) }
+
+        val db = LinkedNodeList(reorderIllustIds(illustIds, allIllusts))
 
         val areas = mutableListOf<Tuple4<LinkedNodeList<Pair<Int, Long>>.Node, LinkedNodeList<Pair<Int, Long>>.Node, Long, Long>>()
 
@@ -711,5 +734,7 @@ class IllustKit(private val appdata: AppDataManager,
         //最后，发送事件。
         val eventIllustIds =  if(!eventForAllIllusts) updatedIds - illustIds.map { (id, _) -> id }.toSet() else updatedIds
         bus.emit(eventIllustIds.map { IllustUpdated(it, IllustType.IMAGE, timeSot = true) })
+
+        return changed
     }
 }
