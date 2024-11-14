@@ -1,4 +1,6 @@
 ## [Unreleased]
+### Removed
+* **[CRX]** Sankaku-优化UI显示-Book Legacy增强: Legacy Book已被网站移除，该功能已不可用，因此从优化项中移除。
 ### Fixed
 * **[CRX]** 修复“相似项查找”功能对一部分图像会卡在截屏阶段的问题。这个问题是遗漏了对较小、不需要缩放的图像的处理导致的。
 

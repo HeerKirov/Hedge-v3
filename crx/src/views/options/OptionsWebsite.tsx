@@ -75,7 +75,7 @@ export function OptionsWebsitePanel(props: OptionsWebsitePanelProps) {
         </StyledDiv>
         <StyledDiv>
             <CheckBox checked={editor.sankakucomplex.enableUIOptimize} onUpdateChecked={v => setSankakucomplex("enableUIOptimize", v)}>优化UI显示</CheckBox>
-            <SecondaryText>在Book链接的后面追加Legacy Pool的跳转链接。移除"查看原始图像"的notice提示。</SecondaryText>
+            <SecondaryText>移除"查看原始图像"的notice提示。</SecondaryText>
         </StyledDiv>
         <StyledDiv>
             <CheckBox checked={editor.sankakucomplex.enablePaginationEnhancement} onUpdateChecked={v => setSankakucomplex("enablePaginationEnhancement", v)}>增强翻页器</CheckBox>

@@ -44,22 +44,6 @@ function enableUIOptimize() {
     //移除origin image notice
     const resizedNotice = document.querySelector("#resized_notice")
     if(resizedNotice) resizedNotice.remove()
-
-    //添加book legacy链接
-    const statusNotice = document.querySelectorAll(".content .status-notice")
-    if(statusNotice.length) {
-        statusNotice.forEach(sn => {
-            if(sn.id.startsWith("pool")) {
-                const bookId = sn.id.slice("pool".length)
-                const legacyA = document.createElement("a")
-                legacyA.href = SANKAKUCOMPLEX_CONSTANTS.PATTERNS.BOOK_PATHNAME(bookId)
-                legacyA.text = `Legacy pool: ${bookId}`
-                sn.append("(")
-                sn.appendChild(legacyA)
-                sn.append(")")
-            }
-        })
-    }
 }
 
 /**
