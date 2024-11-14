@@ -130,6 +130,8 @@ function QuickFindCapture(props: {src: string, onCompleted: (dataURL: string) =>
         if(img.width > window.innerWidth * 0.8 || img.height > window.innerHeight * 0.8) {
             const rate = Math.min(window.innerWidth * 0.8 / img.width, window.innerHeight * 0.8 / img.height)
             setSize({width: img.width * rate, height: img.height * rate})
+        }else{
+            setSize({width: img.width, height: img.height})
         }
     }
 
