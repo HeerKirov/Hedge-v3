@@ -4,7 +4,7 @@ import { SourceAdditionalInfoForm, SourceDataUpdateForm, SourceTagForm } from "@
 import { settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { EHENTAI_CONSTANTS } from "@/functions/sites"
-import { Result } from "@/utils/primitives"
+import { numbers, Result } from "@/utils/primitives"
 import { documents, onDOMContentLoaded } from "@/utils/document"
 
 onDOMContentLoaded(async () => {
@@ -144,30 +144,75 @@ function enableRenameFile() {
                 style: "margin-left: 4px; cursor: pointer",
                 click(e: MouseEvent) {
                     (e.target as HTMLAnchorElement).style.color = "burlywood"
-                    const anchors = document.querySelectorAll<HTMLAnchorElement>(".gdtl > a")
-                    const hrefs = [...anchors.values()]
-                        .map(a => {
-                            const img = a.querySelector("img")
-                            const url = new URL(a.href)
-                            const m = url.pathname.match(EHENTAI_CONSTANTS.REGEXES.IMAGE_PATHNAME)
-                            if(m && m.groups && img) {
-                                const page = img.alt
-                                const pHash = m.groups["PHASH"]
-                                const gid = m.groups["GID"]
-                                return [pHash, gid, page] as const
-                            }else{
-                                return null
-                            }
-                        })
-                        .filter(tuple => tuple !== null) as [string, string, string][]
 
-                    const scripts = hrefs.map(([pHash, gid, page]) => `rename $@ 's/(.*)(\\..*)/$1_${pHash}$2/' ehentai_${gid}_${page}.*`).join("\n")
-                    documents.clickDownload(`RenameScript-${hrefs[0][1]}-${hrefs[0][2]}.sh`, scripts)
+                    //获取当前页的所有图像，并提取它们的页码、hash、文件名信息
+                    const anchors = document.querySelectorAll<HTMLAnchorElement>("#gdt > a")
+                    const hrefs = [...anchors.values()].map(a => {
+                        const titleDiv = a.querySelector<HTMLDivElement>("div[title]")
+                        if(!titleDiv) {
+                            throw new Error(`[Rename Script] Cannot find div[title] for a[href=${a.href}].`)
+                        }
+                        const n = titleDiv.title.match(/^Page (\d+): (?<FILENAME>.*)$/)
+                        if(!(n && n.groups)) {
+                            throw new Error(`[Rename Script] Cannot analyse title '${titleDiv.title}' for a[href=${a.href}].`)
+                        }
+                        const filename = n.groups["FILENAME"]
 
-                    if(parseInt(hrefs[0][2]) === 1) {
-                        const scripts = `rename $@ 's/(\\d+).*(\\..*)/ehentai_${hrefs[0][1]}_$1$2/' *.*\nchmod +x *.sh`
-                        documents.clickDownload(`RenameScript-${hrefs[0][1]}.sh`, scripts)
-                    }
+                        const url = new URL(a.href)
+                        const m = url.pathname.match(EHENTAI_CONSTANTS.REGEXES.IMAGE_PATHNAME)
+                        if(!(m && m.groups)) {
+                            throw new Error(`[Rename Script] Cannot analyse URL for a[href=${a.href}].`)
+                        }
+                        const page = parseInt(m.groups["PAGE"])
+                        const pHash = m.groups["PHASH"]
+                        return {page, pHash, filename}
+                    })
+
+
+                    const galleryId = getGalleryId()
+                    const galleryPageNum = getGalleryPageNum()
+                    const galleryImgCount = getGalleryImageCount()
+                    const galleryImgCountLen = numbers.getLength(galleryImgCount)
+
+                    const primaryTitleHeading = document.querySelector<HTMLHeadingElement>(".gm #gd2 #gn")
+                    const secondaryTitleHeading = document.querySelector<HTMLHeadingElement>(".gm #gd2 #gj")
+                    const galleryTitle = secondaryTitleHeading?.textContent || primaryTitleHeading?.textContent || galleryId
+
+                    const scripts = [
+                        "#!/bin/bash",
+                        "",
+                        "EXECUTE=$1",
+                        "",
+                        "if [[ \"$EXECUTE\" != \"execute\" ]]; then",
+                        "   for script in ./*.sh; do",
+                        "       /bin/bash \"$script\" \"execute\" ",
+                        "   done",
+                        "   exit 0",
+                        "fi",
+                        "",
+                        "groups=(",
+                        ...hrefs.map(({ page, pHash, filename }) => {
+                            const ext = filename.split(".").pop()
+                            return `    "${filename}" "${page.toString().padStart(galleryImgCountLen, "0")}" "ehentai_${galleryId}_${page}_${pHash}.${ext}"`
+                        }),
+                        ")",
+                        "for ((i = 0; i < ${#groups[@]}; i += 3)); do",
+                        "   A=\"${groups[i]}\"",
+                        "   B=\"${groups[i + 1]}\"",
+                        "   C=\"${groups[i + 2]}\"",
+                        "   if [[ -f \"${B}_${A}\" ]]; then",
+                        "       mv \"${B}_${A}\" \"$C\"",
+                        "       echo \"rename ${B}_${A} -> $C\"",
+                        "   elif [[ -f \"$A\" ]]; then",
+                        "       mv \"$A\" \"$C\"",
+                        "       echo \"rename $A -> $C\"",
+                        "   else",
+                        "       echo \"ERR: [$B]$A not found.\"",
+                        "   fi",
+                        "done"
+                    ].join("\n")
+                    console.log(scripts)
+                    documents.clickDownload(`Rename Script - ${galleryTitle} - Page ${galleryPageNum}.sh`, scripts)
                 }
             }, [
                 "Rename Script"
@@ -291,4 +336,24 @@ function getGalleryId(): string {
     }else{
         throw new Error("Cannot analyse pathname.")
     }
+}
+
+/**
+ * 获得画廊页面当前的翻页页码。从1开始。
+ */
+function getGalleryPageNum(): number {
+    const p = new URLSearchParams(location.search).get("p")
+    if(!p) return 1
+    return parseInt(p) + 1
+}
+
+/**
+ * 获得画廊的图像数量。
+ */
+function getGalleryImageCount(): number {
+    const p = document.querySelector<HTMLParagraphElement>(".gtb > .gpc")
+    if(!p) throw new Error("Cannot find div.gtb > p.gpc.")
+    const m = p.textContent?.match(/^Showing \d+ - \d+ of (?<COUNT>\d+) images$/)
+    if(!m || !m.groups) throw new Error(`Cannot analyse div.gtb > p.gpc textContent '${p.textContent}'.`)
+    return parseInt(m.groups["COUNT"])
 }

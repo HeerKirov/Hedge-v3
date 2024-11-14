@@ -242,5 +242,13 @@ export const numbers = {
         }else{
             return `${dbl(hour)}:${dbl(min)}:${dbl(sec)}`
         }
+    },
+    getLength(integer: number): number {
+        let n = 1
+        while(integer >= 10) {
+            integer = Math.floor(integer / 10)
+            n += 1
+        }
+        return n
     }
 }
