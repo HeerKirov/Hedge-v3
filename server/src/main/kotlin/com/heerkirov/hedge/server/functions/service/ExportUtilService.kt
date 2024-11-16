@@ -13,8 +13,10 @@ import com.heerkirov.hedge.server.exceptions.LocationNotAccessibleError
 import com.heerkirov.hedge.server.exceptions.ParamRequired
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.manager.FileManager
+import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.business.filePathFrom
-import com.heerkirov.hedge.server.utils.tuples.Tuple4
+import com.heerkirov.hedge.server.utils.business.sourcePathOf
+import com.heerkirov.hedge.server.utils.tuples.Tuple6
 import org.ktorm.dsl.*
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
@@ -52,24 +54,24 @@ class ExportUtilService(private val data: DataRepository, private val archive: F
         val files = if(form.imageIds != null) {
             data.db.from(Illusts)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension)
+                .select(Illusts.id, Illusts.orderTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName, FileRecords.id, FileRecords.block, FileRecords.extension)
                 .where { (((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.id inList form.imageIds)) or ((Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) and (Illusts.parentId inList form.imageIds)) }
-                .map { Tuple4(it[Illusts.id]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!) }
+                .map { Tuple6(it[Illusts.id]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!, it[Illusts.orderTime]!!.toInstant(), sourcePathOf(it)) }
         }else if(form.bookId != null) {
             data.db.from(BookImageRelations)
                 .innerJoin(Illusts, Illusts.id eq BookImageRelations.imageId)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(BookImageRelations.imageId, FileRecords.id, FileRecords.block, FileRecords.extension)
+                .select(BookImageRelations.imageId, FileRecords.id, FileRecords.block, FileRecords.extension, Illusts.orderTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName)
                 .where { BookImageRelations.bookId eq form.bookId }
-                .map { Tuple4(it[BookImageRelations.imageId]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!) }
+                .map { Tuple6(it[BookImageRelations.imageId]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!, it[Illusts.orderTime]!!.toInstant(), sourcePathOf(it)) }
         }else{
             throw be(ParamRequired("imageIds"))
         }
 
         ZipOutputStream(outputStream).use { zos ->
-            for((id, block, fileId, ext) in files) {
+            for((id, block, fileId, ext, ot, _) in files) {
                 archive.readFile(ArchiveType.ORIGINAL, block, "$fileId.$ext")?.inputStream?.use { fis ->
-                    zos.putNextEntry(ZipEntry("$id.$ext"))
+                    zos.putNextEntry(ZipEntry("$id.$ext").also { entry -> entry.time = ot.toEpochMilli() })
                     var len: Int
                     val temp = ByteArray(4096)
                     while (fis.read(temp).also { len = it } != -1) {
@@ -88,16 +90,16 @@ class ExportUtilService(private val data: DataRepository, private val archive: F
         val files = if(form.imageIds != null) {
             data.db.from(Illusts)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension)
+                .select(Illusts.id, Illusts.orderTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName, FileRecords.id, FileRecords.block, FileRecords.extension)
                 .where { (((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.id inList form.imageIds)) or ((Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) and (Illusts.parentId inList form.imageIds)) }
-                .map { Tuple4(it[Illusts.id]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!) }
+                .map { Tuple6(it[Illusts.id]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!, it[Illusts.orderTime]!!.toInstant(), sourcePathOf(it)) }
         }else if(form.bookId != null) {
             data.db.from(BookImageRelations)
                 .innerJoin(Illusts, Illusts.id eq BookImageRelations.imageId)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(BookImageRelations.imageId, FileRecords.id, FileRecords.block, FileRecords.extension)
+                .select(BookImageRelations.imageId, FileRecords.id, FileRecords.block, FileRecords.extension, Illusts.orderTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName)
                 .where { BookImageRelations.bookId eq form.bookId }
-                .map { Tuple4(it[BookImageRelations.imageId]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!) }
+                .map { Tuple6(it[BookImageRelations.imageId]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!, it[Illusts.orderTime]!!.toInstant(), sourcePathOf(it)) }
         }else{
             throw be(ParamRequired("imageIds"))
         }
@@ -110,9 +112,9 @@ class ExportUtilService(private val data: DataRepository, private val archive: F
 
             FileOutputStream(packageFile).use { fos ->
                 ZipOutputStream(fos).use { zos ->
-                    for ((id, block, fileId, ext) in files) {
+                    for ((id, block, fileId, ext, ot, _) in files) {
                         archive.readFile(ArchiveType.ORIGINAL, block, "$fileId.$ext")?.inputStream?.use { fis ->
-                            zos.putNextEntry(ZipEntry("$id.$ext"))
+                            zos.putNextEntry(ZipEntry("$id.$ext").also { entry -> entry.time = ot.toEpochMilli() })
                             var len: Int
                             val temp = ByteArray(4096)
                             while (fis.read(temp).also { len = it } != -1) {
