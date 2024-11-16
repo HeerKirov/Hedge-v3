@@ -199,7 +199,7 @@ function createRemoteMode(server: ServerManager, subLevel: () => AbstractSubleve
         if(!await existsFile(form.location)) return {ok: false, code: "LOCATION_NOT_ACCESSIBLE"}
         if(form.zip) {
             try {
-                const r = await downloadFile({url: "/api/utils/export/download", method: "POST", data: formData}, path.join(form.location, form.zip))
+                const r = await downloadFile({url: "/api/utils/export/download", method: "POST", data: formData}, path.join(form.location, `${form.zip}.zip`))
                 if(!r.ok) return r
             }catch(err) {
                 return {ok: false, code: undefined, message: err instanceof Error ? err.message : typeof err === "string" ? err : err?.toString() ?? "unknown error"}
