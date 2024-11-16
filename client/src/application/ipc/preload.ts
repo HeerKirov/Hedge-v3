@@ -1,4 +1,4 @@
-import { ipcRenderer, contextBridge } from "electron"
+import { ipcRenderer, contextBridge, webUtils } from "electron"
 import { getNodePlatform } from "@/utils/process"
 import { createProxyEmitter } from "@/utils/emitter"
 import { IpcClient, MenuTemplate, MenuTemplateInIpc } from "./constants"
@@ -188,6 +188,9 @@ function createRemoteIpcClient(): IpcClient {
                 startDragFile(thumbnail, filepath) {
                     ipcRenderer.send("/remote/shell/start-drag-file", {thumbnail, filepath})
                 },
+                showFilePath(file) {
+                    return webUtils.getPathForFile(file)
+                }
             }
         }
     }
