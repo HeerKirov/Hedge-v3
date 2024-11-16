@@ -236,7 +236,7 @@ function QuickFindComplete(props: { dataURL: string, findId: number, images: Fin
     const openInAppPartition = () => {
         nativeApp.newTab("PartitionDetail", {
             path: selected!.partitionTime,
-            initializer: {locate: selected!.id}
+            initializer: {locateId: selected!.id}
         })
         props.onClose()
     }
