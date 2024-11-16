@@ -25,6 +25,13 @@ class FileNotFoundError : BadRequestException<Nothing?>("FILE_NOT_FOUND", "Targe
 class LocationNotAccessibleError : BadRequestException<Nothing?>("LOCATION_NOT_ACCESSIBLE", "Target location is not found or not accessible.", null)
 
 /**
+ * 当指定的文件已存在时，抛出此异常。
+ * 抛出位置：
+ * - export导出时
+ */
+class FileAlreadyExistsError(file: String) : BadRequestException<String?>("FILE_ALREADY_EXISTS", "Target file '$file' is already exists.", file)
+
+/**
  * 当指定的文件的扩展名不受支持时，抛出此异常。
  * 抛出位置：
  * - upload/import导入时

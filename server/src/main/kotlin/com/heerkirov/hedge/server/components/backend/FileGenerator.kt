@@ -28,8 +28,6 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.io.InputStream
-import java.io.OutputStream
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.time.Instant
@@ -38,8 +36,6 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.LinkedList
-import java.util.zip.CRC32
-import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
@@ -514,41 +510,3 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
 }
 
 private data class ArchiveQueueUnit(val block: String, var toBeArchived: Boolean)
-
-fun ZipOutputStream.putFile(file: File) {
-    val entry = ZipEntry(file.name)
-    entry.time = file.lastModified()
-    entry.crc = CRC32().let { crc32 ->
-        file.inputStream().use { fis -> fis.writeTo(crc32) }
-        crc32.value
-    }
-    entry.size = file.length()
-
-    this.putNextEntry(entry)
-
-    file.inputStream().use { fis -> fis.writeTo(this) }
-
-    this.closeEntry()
-}
-
-fun ZipOutputStream.putEntry(entry: ZipEntry, inputStream: InputStream) {
-    this.putNextEntry(entry)
-    inputStream.writeTo(this)
-    this.closeEntry()
-}
-
-fun InputStream.writeTo(os: OutputStream) {
-    var len: Int
-    val buffer = ByteArray(1024 * 1024 * 4)
-    while(this.read(buffer).also { len = it } != -1) {
-        os.write(buffer, 0, len)
-    }
-}
-
-fun InputStream.writeTo(os: CRC32) {
-    var len: Int
-    val buffer = ByteArray(1024 * 1024 * 4)
-    while(this.read(buffer).also { len = it } != -1) {
-        os.update(buffer, 0, len)
-    }
-}

@@ -1,7 +1,6 @@
 package com.heerkirov.hedge.server.functions.manager
 
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
-import com.heerkirov.hedge.server.components.backend.writeTo
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.constants.Filename

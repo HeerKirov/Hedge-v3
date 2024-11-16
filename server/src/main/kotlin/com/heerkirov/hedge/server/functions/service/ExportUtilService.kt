@@ -9,6 +9,7 @@ import com.heerkirov.hedge.server.dto.res.FilePath
 import com.heerkirov.hedge.server.dto.res.IllustSimpleRes
 import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.enums.IllustModelType
+import com.heerkirov.hedge.server.exceptions.FileAlreadyExistsError
 import com.heerkirov.hedge.server.exceptions.LocationNotAccessibleError
 import com.heerkirov.hedge.server.exceptions.ParamRequired
 import com.heerkirov.hedge.server.exceptions.be
@@ -16,7 +17,9 @@ import com.heerkirov.hedge.server.functions.manager.FileManager
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.business.sourcePathOf
+import com.heerkirov.hedge.server.utils.putEntry
 import com.heerkirov.hedge.server.utils.tuples.Tuple6
+import com.heerkirov.hedge.server.utils.writeTo
 import org.ktorm.dsl.*
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
@@ -24,6 +27,7 @@ import java.io.OutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
+import kotlin.io.path.exists
 
 class ExportUtilService(private val data: DataRepository, private val archive: FileManager) {
     /**
@@ -71,13 +75,7 @@ class ExportUtilService(private val data: DataRepository, private val archive: F
         ZipOutputStream(outputStream).use { zos ->
             for((id, block, fileId, ext, ot, _) in files) {
                 archive.readFile(ArchiveType.ORIGINAL, block, "$fileId.$ext")?.inputStream?.use { fis ->
-                    zos.putNextEntry(ZipEntry("$id.$ext").also { entry -> entry.time = ot.toEpochMilli() })
-                    var len: Int
-                    val temp = ByteArray(4096)
-                    while (fis.read(temp).also { len = it } != -1) {
-                        zos.write(temp, 0, len)
-                    }
-                    zos.closeEntry()
+                    zos.putEntry(ZipEntry("$id.$ext").also { entry -> entry.time = ot.toEpochMilli() }, fis)
                 } ?: throw FileNotFoundException("File ${ArchiveType.ORIGINAL}/$block/$fileId.$ext not found in archive.")
             }
         }
@@ -105,25 +103,27 @@ class ExportUtilService(private val data: DataRepository, private val archive: F
         }
 
         if(form.location == null) throw be(ParamRequired("location"))
+        else if(!Path(form.location).exists()) throw be(LocationNotAccessibleError())
 
         if(form.packageName != null) {
             val packageFile = Path(form.location, "${form.packageName}.zip").toFile()
-            if (packageFile.exists()) throw be(LocationNotAccessibleError())
+            if (packageFile.exists()) throw be(FileAlreadyExistsError("${form.packageName}.zip"))
 
             FileOutputStream(packageFile).use { fos ->
                 ZipOutputStream(fos).use { zos ->
                     for ((id, block, fileId, ext, ot, _) in files) {
                         archive.readFile(ArchiveType.ORIGINAL, block, "$fileId.$ext")?.inputStream?.use { fis ->
-                            zos.putNextEntry(ZipEntry("$id.$ext").also { entry -> entry.time = ot.toEpochMilli() })
-                            var len: Int
-                            val temp = ByteArray(4096)
-                            while (fis.read(temp).also { len = it } != -1) {
-                                zos.write(temp, 0, len)
-                            }
-                            zos.closeEntry()
+                            zos.putEntry(ZipEntry("$id.$ext").also { entry -> entry.time = ot.toEpochMilli() }, fis)
                         } ?: throw FileNotFoundException("File ${ArchiveType.ORIGINAL}/$block/$fileId.$ext not found in archive.")
                     }
                 }
+            }
+        }else{
+            for ((id, _, _, ext, _, _) in files) if(Path(form.location, "$id.$ext").exists()) throw be(FileAlreadyExistsError("$id.$ext"))
+            for ((id, block, fileId, ext, _, _) in files) {
+                archive.readFile(ArchiveType.ORIGINAL, block, "$fileId.$ext")?.inputStream?.use { fis ->
+                    Path(form.location, "$id.$ext").toFile().outputStream().use { fos -> fis.writeTo(fos) }
+                } ?: throw FileNotFoundException("File ${ArchiveType.ORIGINAL}/$block/$fileId.$ext not found in archive.")
             }
         }
     }
