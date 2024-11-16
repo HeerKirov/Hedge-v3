@@ -547,28 +547,31 @@ class IllustManager(private val appdata: AppDataManager,
                         }
                     }
                 }
-                if(appdata.setting.meta.tuningOrderTime && !disableTuning) kit.tuningOrderTime(list)
-            }
+                val tuningChanges = if(appdata.setting.meta.tuningOrderTime && !disableTuning) kit.tuningOrderTime(list) else emptyList()
 
-            if(collections.isNotEmpty()) {
-                //根据项目序列和orderTime序列，推算每一个parent collection应获得的orderTime
-                val collectionValues = orderTimeSeq.zip(newOrderTimeSeq) { (id, p, _), ot -> Triple(id, p, ot) }
-                    .filter { (_, p, _) -> p != null }
-                    .groupBy { (_, p, _) -> p!! }
-                    .mapValues { (_, values) ->
-                        val (firstId, _, ot) = values.minBy { (_, _, t) -> t }
-                        val fileId = childrenOfCollections.find { it.id == firstId }!!.fileId
-                        Pair(ot, fileId)
-                    }
-                if(collectionValues.isNotEmpty()) {
-                    data.db.batchUpdate(Illusts) {
-                        for ((id, pair) in collectionValues) {
-                            val (ot, fileId) = pair
-                            item {
-                                where { it.id eq id }
-                                set(it.partitionTime, ot.toInstant().toPartitionDate(appdata.setting.server.timeOffsetHour))
-                                set(it.orderTime, ot)
-                                set(it.fileId, fileId)
+                if(collections.isNotEmpty()) {
+                    //tuning对项进行了变更时，就需要将变更合并到collection的变更中
+                    val tuningChangedMap = if(tuningChanges.isNotEmpty()) tuningChanges.toMap() else null
+
+                    //根据项目序列和orderTime序列，推算每一个parent collection应获得的orderTime
+                    val collectionValues = orderTimeSeq.zip(newOrderTimeSeq) { (id, p, _), ot -> Triple(id, p, tuningChangedMap?.get(id) ?: ot) }
+                        .filter { (_, p, _) -> p != null }
+                        .groupBy { (_, p, _) -> p!! }
+                        .mapValues { (_, values) ->
+                            val (firstId, _, ot) = values.minBy { (_, _, t) -> t }
+                            val fileId = childrenOfCollections.find { it.id == firstId }!!.fileId
+                            Pair(ot, fileId)
+                        }
+                    if(collectionValues.isNotEmpty()) {
+                        data.db.batchUpdate(Illusts) {
+                            for ((id, pair) in collectionValues) {
+                                val (ot, fileId) = pair
+                                item {
+                                    where { it.id eq id }
+                                    set(it.partitionTime, ot.toInstant().toPartitionDate(appdata.setting.server.timeOffsetHour))
+                                    set(it.orderTime, ot)
+                                    set(it.fileId, fileId)
+                                }
                             }
                         }
                     }
@@ -791,7 +794,7 @@ class IllustManager(private val appdata: AppDataManager,
         val timeSot = anyOpt(form.partitionTime, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
         val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
         for (record in records) {
-            val thisMetaTagSot = metaResponses[record.id]?.first != Illust.Tagme.EMPTY
+            val thisMetaTagSot = metaResponses[record.id]?.first?.let { it != Illust.Tagme.EMPTY } ?: false
             val thisDetailUpdated = listUpdated || thisMetaTagSot || anyOpt(form.description, form.partitionTime)
             if(listUpdated || thisDetailUpdated) {
                 //tips: 此处使用了偷懒的手法。并没有对受partition/orderTime变更影响的children进行处理

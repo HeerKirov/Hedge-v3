@@ -18,6 +18,8 @@ class Opt<T> {
         this.has = false
     }
 
+    override fun toString(): String = if(isPresent) "Some(${value.toString()})" else "None()"
+
     override fun equals(other: Any?) = other is Opt<*> && other.has == this.has && other.v == this.v
 
     override fun hashCode() = Objects.hash(has, v)

@@ -141,5 +141,7 @@ class LinkedNodeList<T>(collection: Collection<T>? = null) {
                 this._next = node
             }
         }
+
+        override fun toString(): String = "Node(${value})"
     }
 }
