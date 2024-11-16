@@ -22,9 +22,9 @@ export interface IpcClient {
         wsToastEvent: Emitter<WsToastResult>
     }
     local: {
-        importFile(filepath: string): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE" | "ILLEGAL_FILE_EXTENSION">>
+        importFile(filepath: string): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "STORAGE_NOT_ACCESSIBLE" | "ILLEGAL_FILE_EXTENSION">>
         loadFile(path: string): Promise<IResponse<string, "FILE_NOT_FOUND">>
-        downloadExportFile(form: { imageIds?: number[], bookId?: number, location: string, zip?: string }): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE">>
+        downloadExportFile(form: { imageIds?: number[], bookId?: number, location: string, zip?: string }): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "FILE_ALREADY_EXISTS" | "LOCATION_NOT_ACCESSIBLE">>
         cacheStatus(): Promise<CacheStatus>
         cleanAllCacheFiles(): Promise<void>
         fileWatcherStatus(isOpen?: boolean): Promise<FileWatcherStatus>

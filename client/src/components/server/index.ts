@@ -552,7 +552,8 @@ function jsonRequest<T>(config: AxiosRequestConfig): Promise<JsonResponse<T>> {
                     ok: false,
                     status: reason.response.status,
                     code: data.code,
-                    message: data.message
+                    message: data.message,
+                    info: data.info
                 })
             }else{
                 resolve({
@@ -578,6 +579,7 @@ interface ResponseError {
     status: number
     code: string
     message: string | null
+    info: any
 }
 
 interface ResponseConnectionError {

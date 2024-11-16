@@ -23,7 +23,7 @@ export interface FileManager {
      * 将本地指定位置的文件上传到服务器。
      * @param form 本地文件路径
      */
-    importFile(form: {filepath: string, moveFile?: boolean}): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE" | "ILLEGAL_FILE_EXTENSION">>
+    importFile(form: {filepath: string, moveFile?: boolean}): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "STORAGE_NOT_ACCESSIBLE" | "ILLEGAL_FILE_EXTENSION">>
     /**
      * 通过客户端的缓存机制访问一项来自server的文件资源。该访问首先将文件资源下载到本地缓存目录，随后提供缓存文件的本地路径。
      * @param filepath 文件资源地址，以type开头
@@ -34,7 +34,7 @@ export interface FileManager {
      * 根据提供的参数，将导出的文件下载到指定位置。
      * @param form location: 导出位置; zip: 导出并保存为zip文件，该参数指定zip文件名称
      */
-    downloadExportFile(form: { imageIds?: number[], bookId?: number, location: string, zip?: string }): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "LOCATION_NOT_ACCESSIBLE">>
+    downloadExportFile(form: { imageIds?: number[], bookId?: number, location: string, zip?: string }): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "FILE_ALREADY_EXISTS" | "LOCATION_NOT_ACCESSIBLE">>
     /**
      * 清理所有的本地缓存。
      */
@@ -218,12 +218,14 @@ function createRemoteMode(server: ServerManager, subLevel: () => AbstractSubleve
 }
 
 function createLocalMode(server: ServerManager, subLevel: () => AbstractSublevel<Level, string | Buffer | Uint8Array, string, {lastAccess: number}>, cacheDir: string) {
-    const downloadFile = async (config: string | AxiosRequestConfig): Promise<IResponse<undefined, "FILE_NOT_FOUND">> => {
+    const downloadFile = async <E = "FILE_ALREADY_EXISTS">(config: string | AxiosRequestConfig): Promise<IResponse<undefined, "FILE_NOT_FOUND" | E>> => {
         const response = await server.service.request(typeof config === "string" ? {url: config, method: "GET"} : config)
         if(response.ok) {
             return {ok: true, data: undefined}
         }else if(response.status === 404) {
             return {ok: false, code: "FILE_NOT_FOUND"}
+        }else if(response.status !== undefined) {
+            return {ok: false, code: response.code as E, message: response.message, info: response.info}
         }else{
             return {ok: false, code: undefined, message: response.message ?? "Unknown error"}
         }
@@ -248,7 +250,7 @@ function createLocalMode(server: ServerManager, subLevel: () => AbstractSublevel
         try {
             const stat = await statOrNull(localCachePath)
             if(stat === null || stat.size <= 0) {
-                const r = await downloadFile(path.join("archives-for-local", filepath))
+                const r = await downloadFile<never>(path.join("archives-for-local", filepath))
                 if(!r.ok) return r
             }
         }catch(err) {
