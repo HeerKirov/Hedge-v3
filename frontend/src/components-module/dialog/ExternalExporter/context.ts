@@ -102,6 +102,8 @@ export function useExporterData(data: ExternalExporterProps, close: () => void) 
                 toast.toast(`文件导出错误`, "danger", "所选择的文件不存在。")
             }else if(res.code === "LOCATION_NOT_ACCESSIBLE") {
                 toast.toast(`文件导出错误`, "danger", "选择的导出位置不可用。")
+            }else if(res.code === "FILE_ALREADY_EXISTS") {
+                toast.toast(`文件导出错误`, "danger", `文件${res.info}已存在。`)
             }else{
                 toast.toast(`文件导出错误`, "danger", res.message ?? "")
             }

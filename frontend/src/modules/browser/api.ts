@@ -97,11 +97,10 @@ function installBrowserTabs(views: Ref<InternalTab[]>, activeIndex: Ref<number>,
 
     watch(activeIndex, (_, oldIndex) => {
         const lastId = views.value[oldIndex]?.id
-        if(lastId !== undefined && lastAccessed.length > 0 && lastAccessed[lastAccessed.length - 1] !== lastId) {
+        if(lastId !== undefined && (lastAccessed.length <= 0 || lastAccessed[lastAccessed.length - 1] !== lastId)) {
             const existIdx = lastAccessed.indexOf(lastId)
             if(existIdx >= 0) lastAccessed.splice(existIdx, 1)
             lastAccessed.push(lastId)
-            console.log("lastAccessed", lastAccessed)
         }
     }, {flush: "sync"})
 

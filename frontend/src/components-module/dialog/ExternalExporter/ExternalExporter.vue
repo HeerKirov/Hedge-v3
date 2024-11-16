@@ -29,7 +29,7 @@ const onDragstart = async (e: DragEvent, item: SimpleIllust) => {
 </script>
 
 <template>
-    <Flex class="ml-1 h-100" :spacing="2">
+    <Flex :class="$style.root" :spacing="2">
         <FlexItem :width="20">
             <BottomLayout>
                 <p class="mt-2 is-font-size-large">导出</p>
@@ -51,7 +51,7 @@ const onDragstart = async (e: DragEvent, item: SimpleIllust) => {
                 </template>
                 
                 <template #bottom>
-                    <Button class="mt-2 w-100" mode="filled" type="primary" icon="external-link-alt" :disabled="executing" @click="executeExport">导出</Button>
+                    <Button class="mt-2 w-100" mode="filled" type="primary" :icon="executing ? 'circle-notch' : 'external-link-alt'" :icon-spin="executing" :disabled="executing" @click="executeExport">导出</Button>
                 </template>
             </BottomLayout>
         </FlexItem>
@@ -69,7 +69,7 @@ const onDragstart = async (e: DragEvent, item: SimpleIllust) => {
                     <img :src="assetsUrl(item.filePath.sample)" :alt="`${item.id}`" @dragstart="onDragstart($event, item)"/>
                 </AspectGrid>
             </div>
-            <div v-else-if="preview.type === 'BOOK'" class="p-2">
+            <div v-else-if="preview.type === 'BOOK'" class="p-2 flex column">
                 <Block v-if="preview.book.value !== undefined" class="p-2">
                     <Flex :spacing="2" align="center">
                         <FlexItem v-if="preview.book.value.filePath !== null" :shrink="0" :grow="0">
@@ -83,8 +83,7 @@ const onDragstart = async (e: DragEvent, item: SimpleIllust) => {
                         </FlexItem>
                     </Flex>
                 </Block>
-                <VirtualGridView :column-count="7" :buffer-size="3" :min-update-delta="1"
-                                 :metrics="preview.paginationData.data.value.metrics" :state="preview.paginationData.state.value" @update:state="preview.paginationData.setState">
+                <VirtualGridView :column-count="7" :metrics="preview.paginationData.data.value.metrics" :state="preview.paginationData.state.value" @update:state="preview.paginationData.setState">
                     <div v-for="item in preview.paginationData.data.value.items" :key="item.id" :class="$style['book-image']">
                         <div :class="$style.content">
                             <img :src="assetsUrl(item.filePath.sample)" @dragstart="onDragstart($event, item)"/>
@@ -98,6 +97,9 @@ const onDragstart = async (e: DragEvent, item: SimpleIllust) => {
 
 <style module lang="sass">
 @use "@/styles/base/size"
+
+.root
+    height: 50vh
 
 .single-line
     height: 100%
