@@ -1,4 +1,5 @@
 import { inject, InjectionKey, provide } from "vue"
+import { remoteIpcClient } from "@/functions/ipc-client"
 import { SendRefEmitter, useListeningEvent, useRefEmitter } from "@/utils/emitter"
 
 const fileInjection: InjectionKey<SendRefEmitter<string[]>> = Symbol()
@@ -25,15 +26,15 @@ export function useDroppableForFile() {
         if(fileListener && e.dataTransfer && e.dataTransfer.files.length) {
             const ret: string[] = []
             for(let i = 0; i < e.dataTransfer.files.length; ++i) {
-                const file = e.dataTransfer.files.item(i)
-                //tips: 此处为Electron的额外注入参数。
-                const filepath = (file as any)["path"]
+                const file = e.dataTransfer.files.item(i)!
+                const filepath = remoteIpcClient.remote.shell.showFilePath(file)
                 if(filepath) ret.push(filepath)
             }
             if(ret.length) fileListener.emit(ret)
 
             e.stopImmediatePropagation()
             e.stopPropagation()
+            e.preventDefault()
         }
     }
 

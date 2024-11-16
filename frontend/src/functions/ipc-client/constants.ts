@@ -75,6 +75,7 @@ export interface IpcClient {
             openPath(url: string): void
             openPathInFolder(url: string): void
             startDragFile(thumbnail: string, filepath: string | string[]): void
+            showFilePath(file: File): string
         }
     }
 }

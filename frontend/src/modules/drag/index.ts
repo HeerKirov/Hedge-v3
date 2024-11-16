@@ -1,4 +1,5 @@
 import { readonly, ref, Ref, unref } from "vue"
+import { remoteIpcClient } from "@/functions/ipc-client"
 import { TypeDefinition } from "./definition"
 import { useDroppingFileListener, useOptionalDroppingFile, useDroppableForFile } from "./file"
 
@@ -85,9 +86,8 @@ function useDroppableInternal<T extends keyof TypeDefinition>(event: (data: Type
                 if(fileListener && e.dataTransfer.files.length) {
                     const ret: string[] = []
                     for(let i = 0; i < e.dataTransfer.files.length; ++i) {
-                        const file = e.dataTransfer.files.item(i)
-                        //tips: 此处为Electron的额外注入参数。
-                        const filepath = (file as any)["path"]
+                        const file = e.dataTransfer.files.item(i)!
+                        const filepath = remoteIpcClient.remote.shell.showFilePath(file)
                         if(filepath) ret.push(filepath)
                     }
                     if(ret.length) fileListener.emit(ret)

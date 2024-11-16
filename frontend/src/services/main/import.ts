@@ -50,7 +50,7 @@ function useImportService() {
                     toast.toast("错误", "danger", `文件${filepath}不存在。`)
                 }else if(r.code === "ILLEGAL_FILE_EXTENSION") {
                     toast.toast("错误", "danger", `文件${filepath}的类型不适用。`)
-                }else if(r.code === "LOCATION_NOT_ACCESSIBLE") {
+                }else if(r.code === "STORAGE_NOT_ACCESSIBLE") {
                     toast.toast("错误", "danger", `存储位置目前不可用。`)
                 }else{
                     toast.handleError("错误", r.message ?? "")
