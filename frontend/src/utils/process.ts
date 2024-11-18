@@ -1,4 +1,4 @@
-import { reactive, ref } from "vue"
+import { onMounted, onUnmounted, reactive, ref } from "vue"
 
 /**
  * 线程睡眠一段时间。
@@ -6,6 +6,24 @@ import { reactive, ref } from "vue"
  */
 export async function sleep(timeMs: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, timeMs))
+}
+
+/**
+ * 使用setInterval创建一个定时调用器。该调用器在mounted时生效，并在unmounted时卸载。
+ */
+export function useSetInterval(handler: TimerHandler, timeout?: number) {
+    let timer: number | null = null
+
+    onMounted(() => {
+        timer = setInterval(handler, timeout)
+    })
+
+    onUnmounted(() => {
+        if(timer !== null) {
+            clearInterval(timer)
+            timer = null
+        }
+    })
 }
 
 /**

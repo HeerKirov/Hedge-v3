@@ -1,11 +1,12 @@
-import { onMounted, onUnmounted, ref, toRaw, watch } from "vue"
+import { computed, onMounted, ref, toRaw, watch } from "vue"
 import { remoteIpcClient } from "@/functions/ipc-client"
 import { AuthSetting, StorageSetting } from "@/functions/ipc-client/constants"
 import { ServerOption, MetaOption, QueryOption, ImportOption, FindSimilarOption, StorageOption } from "@/functions/http-client/api/setting"
-import { useFetchReactive } from "@/functions/fetch"
+import { useFetchReactive, usePathFetchHelper } from "@/functions/fetch"
 import { useAppEnv, useServerStatus } from "@/functions/app"
 import { useMessageBox } from "@/modules/message-box"
 import { numbers } from "@/utils/primitives"
+import { useSetInterval } from "@/utils/process"
 import { computedMutable, optionalInstallation, refAsync, toRef } from "@/utils/reactivity"
 
 export function useAppStorageStatus() {
@@ -72,22 +73,11 @@ export function useSettingConnectionInfo() {
         return null
     })
 
-    let timer: NodeJS.Timeout | null = null
-
-    onMounted(() => {
-        timer = setInterval(() => {
-            if(connectionInfo.value !== null && serverStatus.value.connectionInfo !== null) {
-                connectionInfo.value.runningTime = numbers.toHourTimesDisplay(Date.now() - serverStatus.value.connectionInfo.startTime, false)
-            }
-        }, 1000)
-    })
-
-    onUnmounted(() => {
-        if(timer !== null) {
-            clearInterval(timer)
-            timer = null
+    useSetInterval(() => {
+        if(connectionInfo.value !== null && serverStatus.value.connectionInfo !== null) {
+            connectionInfo.value.runningTime = numbers.toHourTimesDisplay(Date.now() - serverStatus.value.connectionInfo.startTime, false)
         }
-    })
+    }, 1000)
 
     function getPortFromHost(host: string): number {
         const idx = host.lastIndexOf(":")
@@ -116,6 +106,44 @@ export function useSettingChannel() {
     })
 
     return {channels, currentChannel, defaultChannel, toggle: remoteIpcClient.setting.channel.toggle}
+}
+
+export function useLogViewer() {
+    const fetchRead = usePathFetchHelper(client => client.app.log.get)
+
+    const { data: logListRes } = useFetchReactive({
+        get: client => client.app.log.list
+    })
+
+    const logFiles = computed(() => logListRes.value?.toReversed() ?? [])
+
+    const selected = computedMutable<string | null>(o => o ?? logFiles.value?.[0] ?? null)
+
+    const data = ref("")
+
+    let offset = 0
+
+    async function read() {
+        if(selected.value) {
+            const res = await fetchRead(selected.value, {offset})
+            if(res !== undefined) {
+                if(res.newOffset !== undefined) offset = res.newOffset
+                if(res.text) data.value += res.text
+            }
+        }
+    }
+
+    onMounted(() => {
+        watch(selected, () => {
+            data.value = ""
+            offset = 0
+            read().finally()
+        }, {immediate: true})
+    })
+
+    useSetInterval(read, 5000)
+
+    return {logFiles, selected, data}
 }
 
 export function useSettingServer() {

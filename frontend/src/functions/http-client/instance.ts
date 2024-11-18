@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosRequestHeaders, Method } from "axios"
+import axios, { AxiosError, AxiosResponse, Method } from "axios"
 import { BasicException, AllException } from "./exceptions"
 
 export interface HttpInstance {
@@ -42,13 +42,13 @@ interface RequestConfig<R> {
     method?: Method
     query?: {[name: string]: any}
     data?: any
-    parseResponse?(data: any): R
+    parseResponse?(data: any, res: AxiosResponse<any, any>): R
 }
 
 type URLParser<P> = (path: P) => string
 interface QueryParser<Q> { parseQuery?(query: Q): any }
 interface DataParser<T> { parseData?(data: T): any }
-interface ResponseParser<R> { parseResponse?(data: any): R }
+interface ResponseParser<R> { parseResponse?(data: any, res: AxiosResponse<any, any>): R }
 
 export interface HttpInstanceConfig {
     /**
@@ -103,7 +103,7 @@ export function createHttpInstance(config: Readonly<HttpInstanceConfig>): HttpIn
                 .then(res => resolve({
                     ok: true,
                     status: res.status,
-                    data: requestConfig.parseResponse?.(res.data) ?? res.data
+                    data: requestConfig.parseResponse?.(res.data, res) ?? res.data
                 }))
                 .catch((reason: AxiosError) => {
                     let error: ResponseError<AllException> | ResponseConnectionError

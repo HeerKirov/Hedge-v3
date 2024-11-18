@@ -4,17 +4,15 @@ import { Block, Button, Icon } from "@/components/universal"
 import { Input } from "@/components/form"
 import { Group } from "@/components/layout"
 import { remoteIpcClient } from "@/functions/ipc-client"
-import { useServerStatus } from "@/functions/app"
 import { useSettingAuth, useSettingConnectionInfo, useSettingServer } from "@/services/setting"
 import { useMessageBox } from "@/modules/message-box"
-import { openLocalFile } from "@/modules/others"
 import { usePropertySot } from "@/utils/forms"
 import { computedMutable, toRefNullable } from "@/utils/reactivity"
 import { PortType, validatePort } from "@/utils/validation"
 import { sleep } from "@/utils/process"
+import LogViewer from "./LogViewer.vue"
 
 const message = useMessageBox()
-const server = useServerStatus()
 const { data: authSetting } = useSettingAuth()
 const { data: serverSetting } = useSettingServer()
 
@@ -80,7 +78,7 @@ watch(port, async (v, _, onInvalidate) => {
     }
 })
 
-const openLog = () => openLocalFile(server.value.staticInfo.logPath)
+const logOpened = ref(false)
 
 const restart = async () => {
     if(await message.showYesNoMessage("warn", "将会关闭核心服务，并等待它自动拉起。")) {
@@ -91,7 +89,7 @@ const restart = async () => {
 </script>
 
 <template>
-    <Block v-if="server !== undefined" class="p-3 mt-2">
+    <Block class="p-3 mt-2">
         <p v-if="authSetting?.mode === 'remote' && connectionStatus === 'OPEN'" class="has-text-primary is-font-size-large">
             <Icon class="mr-2" icon="server"/>已连接到远程核心服务
         </p>
@@ -121,7 +119,7 @@ const restart = async () => {
                 <Icon class="mr-1" icon="ethernet"/>端口 <code>:{{connectionInfo.port}}</code>
             </p>
             <Button class="float-right" size="small" icon="power-off" @click="restart">重新启动</Button>
-            <Button class="float-right" size="small" icon="file-waveform" @click="openLog">查看核心服务日志</Button>
+            <Button class="float-right" size="small" icon="file-waveform" @click="logOpened = true">查看核心服务日志</Button>
             <p v-if="!!connectionInfo" class="mt-1 is-font-size-small">
                 <Icon class="mr-1" icon="business-time"/>已运行时长 <code>{{connectionInfo.runningTime}}</code>
             </p>
@@ -156,6 +154,7 @@ const restart = async () => {
         </Group>
         <p class="secondary-text">使用固定Token可方便地在其他位置使用核心服务。</p>
     </template>
+    <LogViewer v-if="logOpened" :mode="authSetting?.mode" @close="logOpened = false"/>
 </template>
 
 <style module lang="sass">
