@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, CSSProperties, ref } from "vue"
+import { computed, CSSProperties, ref, watch } from "vue"
+import { useLocalStorage, useTabStorage } from "@/functions/app"
 import { useResizeBar } from "@/utils/sensors"
+import { sleep } from "@/utils/process"
 
 // == Pane Layout 侧边面板布局 ==
 // 将布局分为右侧的侧边面板和左侧的主要区域。slot#default为主要区域，slot#pane为侧边面板。
@@ -16,7 +18,18 @@ const MAX_WIDTH = 900
 const MIN_WIDTH = 200
 const ATTACH_RANGE = 10
 
-const width = ref(DEFAULT_WIDTH)
+const sharedWidth = useLocalStorage<number>("pane-layout/shared/width", DEFAULT_WIDTH)
+
+const width = useTabStorage<number>("pane-layout/width", () => sharedWidth.value, true)
+
+watch(width, async (width, _, onCleanup) => {
+    if(width !== sharedWidth.value) {
+        let cleaned = false
+        onCleanup(() => cleaned = true)
+        await sleep(500)
+        if(!cleaned) sharedWidth.value = width
+    }
+})
 
 const areaRef = ref<HTMLElement>()
 
