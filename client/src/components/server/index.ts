@@ -354,7 +354,7 @@ function createConnectionManager(appdata: AppDataDriver, options: ServerManagerO
     }
 
     function staticInfo(): ServerStaticInfo {
-        return {logPath: path.resolve(serverDir, DATA_FILE.APPDATA.CHANNEL.SERVER_LOG)}
+        return {logPath: path.resolve(serverDir, DATA_FILE.APPDATA.CHANNEL.SERVER_LOG_DIR)}
     }
 
     function kill() {

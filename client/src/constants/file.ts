@@ -17,7 +17,7 @@ export const DATA_FILE = {
             CACHES_DIR: "caches",
             SERVER_DIR: "server",
             SERVER_PID: "PID",
-            SERVER_LOG: "logs/server.log",
+            SERVER_LOG_DIR: "logs",
             CLIENT_DATA: "client.dat",
             LEVEL_DB: "leveldb"
         }
