@@ -7,6 +7,10 @@ import ch.qos.logback.core.rolling.RollingFileAppender
 import ch.qos.logback.core.rolling.TimeBasedRollingPolicy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileNotFoundException
+import java.io.InputStream
 
 fun registerRollingFileLog(serverDir: String) {
     val ctx = LoggerFactory.getILoggerFactory() as LoggerContext
@@ -34,4 +38,23 @@ fun registerRollingFileLog(serverDir: String) {
     }
 
     logger.addAppender(fileAppender)
+}
+
+fun listLogFiles(serverDir: String): List<String> {
+    return File("$serverDir/logs").listFiles { file: File -> file.isFile && file.extension == "log" }?.map { it.name }?.sorted() ?: emptyList()
+}
+
+fun readLogFile(serverDir: String, logFileName: String, offset: Long = 0): Pair<InputStream, Long> {
+    val filepath = "$serverDir/logs/$logFileName"
+    val file = File(filepath)
+    if (!file.exists()) throw FileNotFoundException()
+
+    if(offset >= file.length()) return Pair(InputStream.nullInputStream(), 0L)
+
+    val inputStream = FileInputStream(file)
+    inputStream.skip(offset)
+
+    val newOffset = file.length()
+
+    return Pair(inputStream, newOffset)
 }

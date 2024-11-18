@@ -11,9 +11,14 @@ import com.heerkirov.hedge.server.exceptions.OnlyForLocal
 import com.heerkirov.hedge.server.exceptions.Reject
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.library.form.bodyAsForm
+import com.heerkirov.hedge.server.utils.listLogFiles
+import com.heerkirov.hedge.server.utils.readLogFile
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.config.JavalinConfig
+import io.javalin.http.ContentType
 import io.javalin.http.Context
+import io.javalin.http.queryParamAsClass
+import java.io.FileNotFoundException
 
 
 class AppRoutes(private val lifetime: Lifetime, private val appStatus: AppStatusDriver, private val appdata: AppDataManager, private val options: ApplicationOptions) : Routes {
@@ -33,6 +38,10 @@ class AppRoutes(private val lifetime: Lifetime, private val appStatus: AppStatus
                     post("signal", ::addSignal)
                 }
                 get("storage", ::getStorageStatus)
+                path("logs") {
+                    get(::getLogList)
+                    get("{log}", ::getLog)
+                }
             }
         }
     }
@@ -88,6 +97,32 @@ class AppRoutes(private val lifetime: Lifetime, private val appStatus: AppStatus
             appdata.storage.accessible,
             appdata.storage.storageSize
         ))
+    }
+
+    private fun getLogList(ctx: Context) {
+        ctx.json(listLogFiles(options.serverDir))
+    }
+
+    private fun getLog(ctx: Context) {
+        val filename = ctx.pathParam("log")
+        val offset = ctx.queryParamAsClass<Long>("offset").getOrDefault(0)
+
+        val (stream, size) = try {
+            readLogFile(options.serverDir, filename, offset)
+        }catch (e: FileNotFoundException) {
+            ctx.status(404)
+            return
+        }
+
+        if(size <= 0) {
+            ctx.status(204).contentType(ContentType.TEXT_PLAIN)
+            return
+        }
+
+        ctx.result(stream)
+            .header("X-New-Offset", size.toString())
+            .header("Access-Control-Expose-Headers", "X-New-Offset")
+            .contentType(ContentType.TEXT_PLAIN)
     }
 
     data class InitializeForm(val storagePath: String? = null)
