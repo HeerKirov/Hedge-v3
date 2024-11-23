@@ -66,7 +66,7 @@ export const [installNavigationRecords, useNavigationRecords] = installation(fun
                 if(historyBySort?.length) historiesBySort[routeName] = historyBySort.filter(i => !exclude.includes(i.id))
             }
         }
-    })
+    }, {deep: true})
 
     return {records: histories, excludes, setRecord, clearRecord}
 })

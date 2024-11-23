@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { toRef } from "vue"
-import { installMenuContext } from "./context"
+import { ContextMenuDefinition, installMenuContext } from "./context"
 
 // == Menu 侧边栏主菜单 ==
 // 侧边栏的、拥有二级菜单和折叠区块的纵向菜单。
@@ -9,13 +9,14 @@ import { installMenuContext } from "./context"
 
 const props = defineProps<{
     selected?: string
+    contextMenu?: ContextMenuDefinition
 }>()
 
 const emit = defineEmits<{
     (e: "update:selected", value: string): void
 }>()
 
-installMenuContext(toRef(props, "selected"), value => emit("update:selected", value))
+installMenuContext(toRef(props, "selected"), value => emit("update:selected", value), v => props.contextMenu?.(v))
 
 </script>
 

@@ -1,6 +1,5 @@
 import DialogBox from "./DialogBox/DialogBox.vue"
 import DialogFramework from "./DialogBox/DialogFramework.vue"
-import { MenuDefinition, MenuItemDefinition, SubMenuItemDefinition, BadgeDefinition, MenuBadge } from "./Menu/definition"
 import Menu from "./SideMenu/Menu.vue"
 import MenuScope from "./SideMenu/MenuScope.vue"
 import MenuItem from "./SideMenu/MenuItem.vue"
@@ -16,7 +15,8 @@ import FormEditKit from "./FormEditKit.vue"
 
 export { DialogBox, DialogFramework, ElementPopupMenu, ElementPopupCallout, PopupBox, FormEditKit }
 export { Menu, MenuScope, MenuItem, BrowserNavMenu, RouterNavMenu, NavMenuItem, NavMenuItems, NavMenuItemsByHistory }
-export type { MenuDefinition, MenuItemDefinition, SubMenuItemDefinition, BadgeDefinition, MenuBadge }
+export type { MenuBadgeDefinition, MenuBadge, ContextMenuDefinition } from "./SideMenu/context"
+export type { NavContextMenuDefinition } from "./NavMenu/context"
 
 export interface Rect { x: number, y: number, width?: number, height?: number }
 

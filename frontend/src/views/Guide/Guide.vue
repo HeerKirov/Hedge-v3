@@ -1,26 +1,33 @@
 <script setup lang="ts">
-import { Menu } from "@/components/interaction"
+import { Menu, MenuItem, MenuScope } from "@/components/interaction"
 import { SideLayout, TopBarLayout, Container, SideBar, MiddleLayout, installSideLayoutState } from "@/components/layout"
-import { useMarkdownDocument } from "@/services/base/md-document"
+import { useMarkdownDocument } from "@/services/base/side-nav-md"
 
 installSideLayoutState()
 
-const { menuItems, menuSelected, component, title } = useMarkdownDocument({
+const { menuSelected, component, title, menuItems } = useMarkdownDocument({
+    routeName: "Guide",
+    documentDir: "./markdown",
+    default: "quickstart",
     documents: [
-        {type: "scope", scopeName: "introduction", label: "简介"},
-        {type: "document", location: "quickstart", title: "入门", icon: "flag", component: () => import("./markdown/quickstart.md")},
-        {type: "scope", scopeName: "illust", label: "构建图库"},
-        {type: "document", location: "illust", title: "图像", icon: "image", component: () => import("./markdown/illust.md")},
-        {type: "document", location: "relation", title: "组织结构", icon: "clone", component: () => import("./markdown/relation.md")},
-        {type: "document", location: "meta-tag", title: "元数据标签", icon: "user-tag", component: () => import("./markdown/meta-tag.md")},
-        {type: "document", location: "source", title: "来源数据", icon: "file-invoice", component: () => import("./markdown/source.md")},
-        {type: "scope", scopeName: "tools", label: "工具箱"},
-        {type: "document", location: "import", title: "导入", icon: "plus-square", component: () => import("./markdown/import.md")},
-        {type: "document", location: "find-similar", title: "相似项查找", icon: "grin-squint", component: () => import("./markdown/find-similar.md")},
-        {type: "scope", scopeName: "query", label: "HQL高级查询"},
-        {type: "document", location: "query", title: "高级查询入门", icon: "search", component: () => import("./markdown/query.md")},
-        {type: "document", location: "query-dialect", title: "查询关键字", icon: "keyboard", component: () => import("./markdown/query-dialect.md")},
-        {type: "document", location: "query-grammar", title: "完整语法", icon: "landmark-flag", component: () => import("./markdown/query-grammar.md")},
+        {scopeName: "introduction", label: "简介", documents: [
+            {id: "quickstart", title: "入门", icon: "flag", component: () => import("./markdown/quickstart.md")},
+        ]},
+        {scopeName: "illust", label: "构建图库", documents: [
+            {id: "illust", title: "图像", icon: "image", component: () => import("./markdown/illust.md")},
+            {id: "relation", title: "组织结构", icon: "clone", component: () => import("./markdown/relation.md")},
+            {id: "meta-tag", title: "元数据标签", icon: "user-tag", component: () => import("./markdown/meta-tag.md")},
+            {id: "source", title: "来源数据", icon: "file-invoice", component: () => import("./markdown/source.md")},
+        ]},
+        {scopeName: "tools", label: "工具箱", documents: [
+            {id: "import", title: "导入", icon: "plus-square", component: () => import("./markdown/import.md")},
+            {id: "find-similar", title: "相似项查找", icon: "grin-squint", component: () => import("./markdown/find-similar.md")},
+        ]},
+        {scopeName: "query", label: "HQL高级查询", documents: [
+            {id: "query", title: "高级查询入门", icon: "search", component: () => import("./markdown/query.md")},
+            {id: "query-dialect", title: "查询关键字", icon: "keyboard", component: () => import("./markdown/query-dialect.md")},
+            {id: "query-grammar", title: "完整语法", icon: "landmark-flag", component: () => import("./markdown/query-grammar.md")},
+        ]},
     ]
 })
 
@@ -42,7 +49,11 @@ const { menuItems, menuSelected, component, title } = useMarkdownDocument({
         </template>
         <template #side>
             <SideBar>
-                <Menu :items="menuItems" v-model:selected="menuSelected"/>
+                <Menu v-model:selected="menuSelected">
+                    <MenuScope v-for="scope in menuItems" :key="scope.scopeName" :id="scope.scopeName" :label="scope.label">
+                        <MenuItem v-for="document in scope.documents" :key="document.id" :id="document.id" :label="document.title" :icon="document.icon"/>
+                    </MenuScope>
+                </Menu>
             </SideBar>
         </template>
     </SideLayout>

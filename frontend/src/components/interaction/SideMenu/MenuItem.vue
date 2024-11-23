@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeMount, onUnmounted, useCssModule, watch } from "vue"
 import { Icon } from "@/components/universal"
-import { installParentContext, MenuBadge, useMenuContext, useParentContext } from "./context"
+import { popupMenu } from "@/modules/popup-menu"
+import { ContextMenuDefinition, installParentContext, MenuBadge, useMenuContext, useParentContext } from "./context"
 
 const props = defineProps<{
     id: string
@@ -9,6 +10,7 @@ const props = defineProps<{
     icon?: string
     badge?: MenuBadge
     disabled?: boolean
+    contextMenu?: ContextMenuDefinition
 }>()
 
 const emit = defineEmits<{
@@ -16,7 +18,7 @@ const emit = defineEmits<{
     (e: "contextmenu", event: MouseEvent): void
 }>()
 
-const { itemStatus, selected, setSelected } = useMenuContext()
+const { itemStatus, selected, setSelected, commonContextMenu } = useMenuContext()
 
 const parentContext = useParentContext()
 
@@ -37,6 +39,14 @@ const click = (e: MouseEvent) => {
 }
 
 const rightClick = (e: MouseEvent) => {
+    const ctx = {id: props.id, label: props.label}
+    const contextMenu = commonContextMenu(ctx)
+    const selfContextMenu = props.contextMenu?.(ctx)
+    if(contextMenu?.length || selfContextMenu?.length) popupMenu([
+        ...(contextMenu ?? []),
+        ...(contextMenu?.length && selfContextMenu?.length ? [{type: "separator"} as const] : []),
+        ...(selfContextMenu ?? [])
+    ])
     emit("contextmenu", e)
 }
 
@@ -91,7 +101,9 @@ onUnmounted(() => {
             <Icon :icon="isOpened ? 'caret-down' : 'caret-right'"/>
         </span>
     </button>
-    <slot v-if="isOpened"/>
+    <div v-show="isOpened">
+        <slot/>
+    </div>
 </template>
 
 <style module lang="sass">

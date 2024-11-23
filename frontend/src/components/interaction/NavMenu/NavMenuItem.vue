@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeMount, onUnmounted, watch } from "vue"
-import { MenuBadge, MenuItem } from "@/components/interaction"
+import { ContextMenuDefinition, MenuBadge, MenuItem } from "@/components/interaction"
 import { mapAnyPathToString } from "@/utils/router"
-import { useNavMenuContext } from "./context"
+import { NavContextMenuDefinition, useNavMenuContext } from "./context"
 
 const props = defineProps<{
     routeName: string
@@ -10,6 +10,7 @@ const props = defineProps<{
     label: string
     icon?: string
     badge?: MenuBadge
+    contextMenu?: NavContextMenuDefinition
     disabled?: boolean
 }>()
 
@@ -29,8 +30,10 @@ onUnmounted(() => {
     delete mapping[id.value]
 })
 
+const contextMenu: ContextMenuDefinition = () => props.contextMenu?.({routeName: props.routeName, routePath: props.routePath, label: props.label})
+
 </script>
 
 <template>
-    <MenuItem :id :label :icon :badge :disabled><slot/></MenuItem>
+    <MenuItem :id :label :icon :badge :disabled :contextMenu><slot/></MenuItem>
 </template>

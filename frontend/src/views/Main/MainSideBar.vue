@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { computed, watch } from "vue"
-import { BrowserNavMenu, MenuScope, NavMenuItem, NavMenuItems, NavMenuItemsByHistory } from "@/components/interaction"
+import { BrowserNavMenu, NavContextMenuDefinition, MenuScope, NavMenuItem, NavMenuItems, NavMenuItemsByHistory } from "@/components/interaction"
 import { Button, Separator } from "@/components/universal"
 import { Flex, FlexItem, SideBar } from "@/components/layout"
 import { BackgroundTaskButton, StagingPostButton } from "@/components-module/common"
 import { windowManager } from "@/modules/window"
-import { useActivateTabRoute } from "@/modules/browser"
+import { MenuItem } from "@/modules/popup-menu"
+import { useActivateTabRoute, useBrowserTabs } from "@/modules/browser"
 import { useDarwinWindowed } from "@/functions/app"
-import { useFetchReactive } from "@/functions/fetch"
+import { useFetchReactive, usePostFetchHelper, usePostPathFetchHelper } from "@/functions/fetch"
 import { useHomepageState } from "@/services/main/homepage"
 import { useNavigationRecords } from "@/services/base/side-nav-records"
 
-const router = useActivateTabRoute()
-
-const { histories, forwards, routeBack, routeForward } = router
+const { newTab } = useBrowserTabs()
+const { histories, forwards, routeBack, routeForward } = useActivateTabRoute()
 
 const { data: homepageState } = useHomepageState()
 
@@ -36,11 +36,24 @@ const { data: pins } = useFetchReactive({
     eventFilter: "entity/folder/pin/changed"
 })
 
+const fetchSetPin = usePostPathFetchHelper(client => client.folder.pin.set)
+const fetchUnsetPin = usePostFetchHelper(client => client.folder.pin.unset)
+
 watch(pins, pins => navigationRecords.excludes["FolderDetail"] = pins?.map(i => i.id.toString()) ?? [])
 
 const navigationRecords = useNavigationRecords()
 
 const hasDarwinBorder = useDarwinWindowed()
+
+const partitionContextMenu: NavContextMenuDefinition = () => <MenuItem<undefined>[]>[{type: "normal", label: "今天", click: () => newTab({routeName: "PartitionDetail", path: homepageState.value?.today})}]
+
+const authorContextMenu: NavContextMenuDefinition = () => <MenuItem<undefined>[]>[{type: "normal", label: "新建作者", click: () => newTab({routeName: "AuthorCreate"})}]
+
+const topicContextMenu: NavContextMenuDefinition = () => <MenuItem<undefined>[]>[{type: "normal", label: "新建主题", click: () => newTab({routeName: "TopicCreate"})}]
+
+const folderRecentContextMenu: NavContextMenuDefinition = ctx => <MenuItem<undefined>[]>[{type: "normal", label: "固定到侧边栏", click: () => fetchSetPin(ctx.routePath as number, undefined)}]
+
+const folderPinnedContextMenu: NavContextMenuDefinition = ctx => <MenuItem<undefined>[]>[{type: "normal", label: "取消固定到侧边栏", click: () => fetchUnsetPin(ctx.routePath as number)}]
 
 </script>
 
@@ -59,7 +72,7 @@ const hasDarwinBorder = useDarwinWindowed()
                     <NavMenuItem route-name="Home" label="主页" icon="house"/>
                     <MenuScope id="main" label="浏览">
                         <NavMenuItem route-name="Illust" label="图库" icon="search"/>
-                        <NavMenuItem route-name="Partition" label="分区" icon="calendar-alt">
+                        <NavMenuItem route-name="Partition" label="分区" icon="calendar-alt" :context-menu="partitionContextMenu">
                             <NavMenuItemsByHistory route-name="PartitionDetail"/>
                         </NavMenuItem>
                         <NavMenuItem route-name="Book" label="画集" icon="clone">
@@ -67,10 +80,10 @@ const hasDarwinBorder = useDarwinWindowed()
                         </NavMenuItem>
                     </MenuScope>
                     <MenuScope id="meta" label="元数据">
-                        <NavMenuItem route-name="Author" label="作者" icon="user-tag">
+                        <NavMenuItem route-name="Author" label="作者" icon="user-tag" :context-menu="authorContextMenu">
                             <NavMenuItemsByHistory route-name="AuthorDetail"/>
                         </NavMenuItem>
-                        <NavMenuItem route-name="Topic" label="主题" icon="hashtag">
+                        <NavMenuItem route-name="Topic" label="主题" icon="hashtag" :context-menu="topicContextMenu">
                             <NavMenuItemsByHistory route-name="TopicDetail"/>
                         </NavMenuItem>
                         <NavMenuItem route-name="Tag" label="标签" icon="tag"/>
@@ -82,8 +95,8 @@ const hasDarwinBorder = useDarwinWindowed()
                     </MenuScope>
                     <MenuScope id="folder" label="目录">
                         <NavMenuItem route-name="Folder" label="所有目录" icon="archive"/>
-                        <NavMenuItems route-name="FolderDetail" icon="thumbtack" :items="pins" :generator="v => ({key: v.id, label: v.address.join('/'), routePath: v.id})"/>
-                        <NavMenuItemsByHistory route-name="FolderDetail" icon="folder"/>
+                        <NavMenuItems route-name="FolderDetail" icon="thumbtack" :items="pins" :generator="v => ({key: v.id, label: v.address.join('/'), routePath: v.id})" :context-menu="folderPinnedContextMenu"/>
+                        <NavMenuItemsByHistory route-name="FolderDetail" icon="folder" :context-menu="folderRecentContextMenu"/>
                     </MenuScope>
                 </BrowserNavMenu>
             </div>
