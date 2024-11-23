@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from "vue"
-import { Menu } from "@/components/interaction"
+import { BrowserNavMenu, MenuScope, NavMenuItem, NavMenuItems, NavMenuItemsByHistory } from "@/components/interaction"
 import { Button, Separator } from "@/components/universal"
 import { Flex, FlexItem, SideBar } from "@/components/layout"
 import { BackgroundTaskButton, StagingPostButton } from "@/components-module/common"
@@ -9,7 +9,7 @@ import { useActivateTabRoute } from "@/modules/browser"
 import { useDarwinWindowed } from "@/functions/app"
 import { useFetchReactive } from "@/functions/fetch"
 import { useHomepageState } from "@/services/main/homepage"
-import { useNavigationRecords, installNavMenu, setupItemByNavHistory, setupItemByRef, setupSubItemByNavHistory } from "@/services/base/side-nav-menu"
+import { useNavigationRecords } from "@/services/base/side-nav-records"
 
 const router = useActivateTabRoute()
 
@@ -40,30 +40,6 @@ watch(pins, pins => navigationRecords.excludes["FolderDetail"] = pins?.map(i => 
 
 const navigationRecords = useNavigationRecords()
 
-const { menuItems, menuSelected } = installNavMenu({
-    router, navigationRecords,
-    menuItems: [
-        {type: "menu", routeName: "Home", label: "主页", icon: "house"},
-        {type: "scope", scopeName: "main", label: "浏览"},
-        {type: "menu", routeName: "Illust", label: "图库", icon: "search"},
-        {type: "menu", routeName: "Partition", label: "分区", icon: "calendar-alt", submenu: [setupSubItemByNavHistory(navigationRecords, "PartitionDetail")] },
-        {type: "menu", routeName: "Book", label: "画集", icon: "clone", submenu: [setupSubItemByNavHistory(navigationRecords, "BookDetail")] },
-        {type: "scope", scopeName: "meta", label: "元数据"},
-        {type: "menu", routeName: "Author", label: "作者", icon: "user-tag", submenu: [setupSubItemByNavHistory(navigationRecords, "AuthorDetail")] },
-        {type: "menu", routeName: "Topic", label: "主题", icon: "hashtag", submenu: [setupSubItemByNavHistory(navigationRecords, "TopicDetail")] },
-        {type: "menu", routeName: "Tag", label: "标签", icon: "tag"},
-        {type: "menu", routeName: "SourceData", label: "来源数据", icon: "file-invoice"},
-        {type: "scope", scopeName: "tool", label: "工具箱"},
-        {type: "menu", routeName: "Import", label: "导入", icon: "plus-square", badge: importCountBadge},
-        {type: "menu", routeName: "FindSimilar", label: "相似项目", icon: "grin-squint", badge: similarityCountBadge},
-        {type: "menu", routeName: "Trash", label: "已删除", icon: "trash-can"},
-        {type: "scope", scopeName: "folder", label: "目录"},
-        {type: "menu", routeName: "Folder", label: "所有目录", icon: "archive"},
-        setupItemByRef(pins, "FolderDetail", "thumbtack", t => ({routePathValue: `${t.id}`, label: t.address.join("/")})),
-        setupItemByNavHistory(navigationRecords, "FolderDetail", "folder")
-    ]
-})
-
 const hasDarwinBorder = useDarwinWindowed()
 
 </script>
@@ -78,7 +54,39 @@ const hasDarwinBorder = useDarwinWindowed()
         </template>
 
         <div id="side-bar" :class="$style['side-bar-area']">
-            <div :class="$style['std-menu']"><Menu :items="menuItems" v-model:selected="menuSelected"/></div>
+            <div :class="$style['std-menu']">
+                <BrowserNavMenu>
+                    <NavMenuItem route-name="Home" label="主页" icon="house"/>
+                    <MenuScope id="main" label="浏览">
+                        <NavMenuItem route-name="Illust" label="图库" icon="search"/>
+                        <NavMenuItem route-name="Partition" label="分区" icon="calendar-alt">
+                            <NavMenuItemsByHistory route-name="PartitionDetail"/>
+                        </NavMenuItem>
+                        <NavMenuItem route-name="Book" label="画集" icon="clone">
+                            <NavMenuItemsByHistory route-name="BookDetail"/>
+                        </NavMenuItem>
+                    </MenuScope>
+                    <MenuScope id="meta" label="元数据">
+                        <NavMenuItem route-name="Author" label="作者" icon="user-tag">
+                            <NavMenuItemsByHistory route-name="AuthorDetail"/>
+                        </NavMenuItem>
+                        <NavMenuItem route-name="Topic" label="主题" icon="hashtag">
+                            <NavMenuItemsByHistory route-name="TopicDetail"/>
+                        </NavMenuItem>
+                        <NavMenuItem route-name="Tag" label="标签" icon="tag"/>
+                    </MenuScope>
+                    <MenuScope id="tool" label="工具箱">
+                        <NavMenuItem route-name="Import" label="导入" icon="plus-square" :badge="importCountBadge"/>
+                        <NavMenuItem route-name="FindSimilar" label="相似项目" icon="grin-squint" :badge="similarityCountBadge"/>
+                        <NavMenuItem route-name="Trash" label="已删除" icon="trash-can"/>
+                    </MenuScope>
+                    <MenuScope id="folder" label="目录">
+                        <NavMenuItem route-name="Folder" label="所有目录" icon="archive"/>
+                        <NavMenuItems route-name="FolderDetail" icon="thumbtack" :items="pins" :generator="v => ({key: v.id, label: v.address.join('/'), routePath: v.id})"/>
+                        <NavMenuItemsByHistory route-name="FolderDetail" icon="folder"/>
+                    </MenuScope>
+                </BrowserNavMenu>
+            </div>
         </div>
 
         <template #bottom>

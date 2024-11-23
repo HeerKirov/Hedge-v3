@@ -1,22 +1,36 @@
 <script setup lang="ts">
+import { computed } from "vue"
+import { useMenuContext } from "./context"
 
-defineProps<{
+const props = defineProps<{
+    id?: string
     label: string
 }>()
+
+const key = props.id ?? props.label
+
+const { scopeStatus } = useMenuContext()
+
+const isOpened = computed({
+    get: () => scopeStatus[key] ?? true,
+    set: value => { scopeStatus[key] = value }
+})
 
 </script>
 
 <template>
-    <div :class="$style.scope">
+    <div :class="$style.scope" @click="isOpened = !isOpened">
         <div :class="$style.separatorHeader"/>
         <span :class="$style.label">{{label}}</span>
         <div :class="$style.separator"/>
     </div>
+    <slot v-if="isOpened"/>
 </template>
 
 <style module lang="sass">
 @use "@/styles/base/size"
 @use "@/styles/base/color"
+
 .scope
     display: flex
     align-items: center

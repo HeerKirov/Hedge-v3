@@ -1,6 +1,6 @@
 import { computed, ref, Ref, watch } from "vue"
 import { useRoute } from "vue-router"
-import { date, LocalDate } from "@/utils/datetime";
+import { date, LocalDate } from "@/utils/datetime"
 
 
 /**
@@ -56,6 +56,7 @@ export function useQueryNumber(routerName: string, queryName: string): Ref<numbe
 
 /**
  * 将一个“任意”类型的path参数单项映射转换为string类型。
+ * 此处的任意是指实际上会用到的几种path类型：string, number, boolean, LocalDate。
  */
 export function mapAnyPathToString(path: unknown): string {
     if(path === null || path === undefined) {
