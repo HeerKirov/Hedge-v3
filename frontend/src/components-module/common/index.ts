@@ -10,7 +10,8 @@ import IllustTabAction from "./ImageDatasetPane/IllustTabAction.vue"
 import BookTabDetailInfo from "./ImageDatasetPane/BookTabDetailInfo.vue"
 import BookDetailPane from "./ImageDatasetPane/BookDetailPane.vue"
 import LoadingScreen from "./LoadingScreen.vue"
+import ServerStatScreen from "./ServerStatScreen.vue"
 
 export { ImportDetailPane, IllustDetailPane, TrashedDetailPane, BookDetailPane }
 export { IllustTabDetailInfo, IllustTabRelatedItems, IllustTabSourceData, IllustTabAction, BookTabDetailInfo }
-export { StagingPostButton, BackgroundTaskButton, LoadingScreen }
+export { StagingPostButton, BackgroundTaskButton, LoadingScreen, ServerStatScreen }
