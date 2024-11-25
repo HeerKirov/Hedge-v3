@@ -45,22 +45,21 @@ export function useSelectedState<T extends string | number, ITEM = undefined>(op
                 clear()
             }else if(e.type === "REFRESH") {
                 //与queryListview的联动机制。当列表刷新时，重新检测selected项的存在性，并移除无法查找到的选择项。
-                selectedIndex.value = new Array(selected.value.length).fill(undefined)
                 if(options?.queryListview) {
-                    Promise.all(selected.value.map(id => options.queryListview!.proxy.findByKey(id))).then(values => {
-                        if(values.includes(undefined)) {
+                    Promise.all(selected.value.map(id => options.queryListview!.proxy.findByKey(id))).then(foundIndex => {
+                        if(foundIndex.includes(undefined)) {
                             const newSelected: T[] = [], newSelectedIndex: number[] = []
-                            for(let i = 0; i < values.length; i++) {
-                                if(values[i] !== undefined) {
+                            for(let i = 0; i < foundIndex.length; i++) {
+                                if(foundIndex[i] !== undefined) {
                                     newSelected.push(selected.value[i])
-                                    newSelectedIndex.push(values[i]!)
+                                    newSelectedIndex.push(foundIndex[i]!)
                                 }
                             }
                             selected.value = newSelected
                             selectedIndex.value = newSelectedIndex
                             if(lastSelected.value !== null && !newSelected.includes(lastSelected.value)) lastSelected.value = null
                         }else{
-                            selectedIndex.value = values
+                            selectedIndex.value = foundIndex
                         }
                     })
                 }

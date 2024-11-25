@@ -290,13 +290,20 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
     useListeningEvent(listview.modifiedEvent, async e => {
         if(path.value !== null) {
             if(e.type === "FILTER_UPDATED" || e.type === "REFRESH") {
-                const idx = await listview.proxy.findByKey(path.value)
-                if(idx !== undefined) {
-                    const item = listview.proxy.sync.retrieve(idx)!
-                    detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
-                }else{
-                    const res = await fetch(path.value)
-                    detail.value = res !== undefined ? {id: res.id, type: res.type ?? "IMAGE", filePath: res.filePath} : null
+                const pathValue = path.value
+                const idx = await listview.proxy.findByKey(pathValue)
+                //异步结束后需要验证path尚未改变。如果已经发生改变，则不执行任何操作，所需要的操作会在其他改变的位置完成。
+                //如果不加这个验证，则这里的变更事件极有可能和watch(path)的事件同时交叉响应，在path更改后，此处依然沿用旧值。
+                if(pathValue === path.value) {
+                    if(idx !== undefined) {
+                        const item = listview.proxy.sync.retrieve(idx)!
+                        detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
+                    }else{
+                        const res = await fetch(pathValue)
+                        if(pathValue === path.value) {
+                            detail.value = res !== undefined ? {id: res.id, type: res.type ?? "IMAGE", filePath: res.filePath} : null
+                        }
+                    }
                 }
             }else if(e.type === "MODIFY" && e.value.id === path.value) {
                 detail.value = {id: e.value.id, type: e.value.type ?? "IMAGE", filePath: e.value.filePath}
