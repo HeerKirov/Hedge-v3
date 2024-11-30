@@ -81,11 +81,11 @@ const emit = defineEmits<{
     /**
      * 右键单击某项。
      */
-    (e: "contextmenu", i: ImportRecord): void
+    (e: "contextmenu", i: ImportRecord, option: {alt: boolean} | undefined): void
     /**
      * 双击某项。
      */
-    (e: "dblclick", id: number, shift: boolean): void
+    (e: "dblclick", id: number, alt: boolean): void
     /**
      * 在选择项上按下enter。
      */
@@ -124,7 +124,7 @@ installDatasetContext({
     updateState: (_, __) => emit("update:state", _, __),
     navigate: (_) => emit("navigate", _),
     select: (_, __) => emit("select", _, __),
-    rightClick: (_) => emit("contextmenu", _ as ImportRecord),
+    rightClick: (_, __) => emit("contextmenu", _ as ImportRecord, __),
     dblClick: (_, __) => emit("dblclick", _, __),
     enterClick: (_) => emit("enter", _),
     spaceClick: (_) => emit("space", _),

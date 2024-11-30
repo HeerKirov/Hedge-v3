@@ -7,7 +7,7 @@ import { IllustImageDataset } from "@/components-module/data"
 import { IllustDetailPane } from "@/components-module/common"
 import { EmbedPreview } from "@/components-module/preview"
 import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
-import { CommonIllust, Illust } from "@/functions/http-client/api/illust"
+import { CommonIllust } from "@/functions/http-client/api/illust"
 import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 import { useQuickFindContext } from "@/services/main/find-similar"
 
@@ -30,7 +30,7 @@ const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
     ]},
 ]
 
-const menu = useDynamicPopupMenu<CommonIllust>(illust => [
+const menu = useDynamicPopupMenu<CommonIllust>((illust, { alt }) => [
     {type: "normal", label: "打开", click: i => operators.openDetailByClick(i.id)},
     {type: "normal", label: "在新窗口中打开", click: operators.openInNewWindow},
     {type: "separator"},
@@ -38,13 +38,12 @@ const menu = useDynamicPopupMenu<CommonIllust>(illust => [
     {type: "normal", label: "在新标签页的时间分区显示", click: i => operators.openImageInPartition(i.id, "NEW_TAB")},
     {type: "separator"},
     {type: "normal", label: "预览", click: operators.openPreviewBySpace},
-    {type: "checkbox", checked: paneState.visible.value, label: "在侧边栏预览", click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "checkbox", label: "标记为收藏", checked: illust.favorite, click: i => operators.modifyFavorite(i, !i.favorite)},
     {type: "separator"},
     {type: "normal", label: "暂存", click: operators.addToStagingPost},
     {type: "separator"},
-    {type: "normal", label: "创建图像集合", click: operators.createCollection},
+    {type: "normal", label: alt ? "以推荐参数创建图像集合" : "创建图像集合", click: i => operators.createCollection(i, alt)},
     {type: "normal", label: "创建画集…", click: operators.createBook},
     {type: "normal", label: "编辑关联组", click: operators.editAssociate},
     {type: "normal", label: "添加到目录…", click: operators.addToFolder},
@@ -82,10 +81,10 @@ const menu = useDynamicPopupMenu<CommonIllust>(illust => [
         <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy"
                             :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable
                             :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                            @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
-                            @dblclick="(i, s) => operators.openDetailByClick(i, s)"
-                            @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
-                            @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
+                            @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup"
+                            @dblclick="operators.openDetailByClick"
+                            @enter="operators.openDetailByEnter" @space="operators.openPreviewBySpace"
+                            @drop="operators.dataDrop"/>
         <EmbedPreview/>
         <template #pane>
             <IllustDetailPane @close="paneState.visible.value = false"/>

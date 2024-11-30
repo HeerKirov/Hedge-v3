@@ -39,5 +39,5 @@ const menu = useDynamicPopupMenu<FindSimilarResultDetailImage>(illust => [
     <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy"
                         view-mode="grid" :fit-type="fitType" :column-num="columnNum"
                         :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" @select="updateSelect"
-                        @update:state="setState" @navigate="navigateTo" @space="openPreviewBySpace()" @contextmenu="menu.popup($event as FindSimilarResultDetailImage)"/>
+                        @update:state="setState" @navigate="navigateTo" @space="openPreviewBySpace" @contextmenu="menu.popup"/>
 </template>

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends CommonIllust">
 import { computed } from "vue"
 import { Icon } from "@/components/universal"
 import { Flex, FlexItem } from "@/components/layout"
@@ -18,7 +18,7 @@ const props = defineProps<{
     /**
      * 分页数据。
      */
-    data: PaginationData<CommonIllust>
+    data: PaginationData<T>
     /**
      * 视口状态。
      */
@@ -26,7 +26,7 @@ const props = defineProps<{
     /**
      * 查询实例。选择器模块会用到，被用于自由选取数据。
      */
-    queryInstance?: QueryInstance<CommonIllust, number>
+    queryInstance?: QueryInstance<T, number>
     /**
      * 视图模式，Grid表模式或row行模式。
      */
@@ -81,11 +81,11 @@ const emit = defineEmits<{
     /**
      * 右键单击某项。
      */
-    (e: "contextmenu", i: CommonIllust): void
+    (e: "contextmenu", i: T, option: {alt: boolean} | undefined): void
     /**
      * 双击某项。
      */
-    (e: "dblclick", id: number, shift: boolean): void
+    (e: "dblclick", id: number, alt: boolean): void
     /**
      * 在选择项上按下enter。
      */
@@ -124,7 +124,7 @@ installDatasetContext({
     updateState: (_, __) => emit("update:state", _, __),
     navigate: (_) => emit("navigate", _),
     select: (_, __) => emit("select", _, __),
-    rightClick: (_) => emit("contextmenu", _ as CommonIllust),
+    rightClick: (_, __) => emit("contextmenu", _ as T, __),
     dblClick: (_, __) => emit("dblclick", _, __),
     enterClick: (_) => emit("enter", _),
     spaceClick: (_) => emit("space", _),

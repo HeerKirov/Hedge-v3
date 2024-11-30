@@ -22,8 +22,8 @@ interface DatasetContextOptions {
     updateState(offset: number, limit: number): void
     navigate(offset: number): void
     select(selected: number[], lastSelected: number | null): void
-    rightClick(i: unknown): void
-    dblClick(id: number, shift: boolean): void
+    rightClick(i: unknown, e?: {alt: boolean}): void
+    dblClick(id: number, alt: boolean): void
     enterClick(id: number): void
     spaceClick(id: number): void
     dropData(insertIndex: number | null, images: TypeDefinition[keyof TypeDefinition], mode: "ADD" | "MOVE"): void
@@ -371,7 +371,7 @@ export function useCheckBoxEvents<DATA>(options: {selector: Selector, keyOf: (i:
         }
     }
 
-    return {isMouseOver, checkboxDrop, onMouseenter, onMouseleave, onClick, onDblclick, onDragstart, onDragend, draggable: true}
+    return {isMouseOver, checkboxDrop, checkAreaEvents: {onMouseenter, onMouseleave}, checkBoxEvents: {onClick, onDblclick, onDragstart, onDragend, draggable: true}}
 }
 
 export function isVideoExtension(extension: string): boolean {

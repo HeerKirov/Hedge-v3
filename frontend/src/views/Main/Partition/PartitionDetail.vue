@@ -33,38 +33,26 @@ const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
     ]},
 ]
 
-const menu = useDynamicPopupMenu<Illust>(illust => [
+const menu = useDynamicPopupMenu<Illust>((illust, { alt }) => [
     {type: "normal", label: "打开", click: i => operators.openDetailByClick(i.id)},
     (illust.type === "COLLECTION" || null) && {type: "normal", label: "查看集合详情", click: i => operators.openCollectionDetail(i.id)},
     (illust.type === "COLLECTION" || null) && {type: "normal", label: "在新标签页打开集合", click: i => operators.openCollectionDetail(i.id, "newTab")},
     {type: "normal", label: illust.type === "COLLECTION" ? "在新窗口中打开集合" : "在新窗口中打开", click: operators.openInNewWindow},
     {type: "separator"},
     {type: "normal", label: "预览", click: operators.openPreviewBySpace},
-    {type: "checkbox", checked: paneState.visible.value, label: "在侧边栏预览", click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "checkbox", label: "标记为收藏", checked: illust.favorite, click: i => operators.modifyFavorite(i, !i.favorite)},
     {type: "separator"},
     {type: "normal", label: "暂存", click: operators.addToStagingPost},
     {type: "separator"},
-    {type: "normal", label: "创建图像集合", click: operators.createCollection},
+    {type: "normal", label: alt ? "以推荐参数创建图像集合" : "创建图像集合", click: i => operators.createCollection(i, alt)},
     {type: "normal", label: "创建画集…", click: operators.createBook},
     {type: "normal", label: "编辑关联组", click: operators.editAssociate},
     {type: "normal", label: "添加到目录…", click: operators.addToFolder},
     {type: "normal", label: "克隆图像属性…", click: operators.cloneImage},
     {type: "separator"},
-    {type: "normal", label: "快捷整理", enabled: selected.value.length > 1, click: operators.organizeOfImage},
-    {type: "submenu", label: "快捷排序", enabled: selected.value.length > 1, submenu: [
-        {type: "normal", label: "将时间分区集中在最多的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_MOST")},
-        {type: "normal", label: "将时间分区设为最早的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_EARLIEST")},
-        {type: "normal", label: "将时间分区设为最晚的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_LATEST")},
-        {type: "separator"},
-        {type: "normal", label: "将排序时间集中在最多的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_MOST")},
-        {type: "normal", label: "倒置排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_REVERSE")},
-        {type: "normal", label: "均匀分布排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_UNIFORMLY")},
-        {type: "separator"},
-        {type: "normal", label: "按来源顺序重设排序时间", click: i => operators.batchUpdateTimeSeries(i, "SET_ORDER_TIME_BY_SOURCE_ID")},
-    ]},
-    {type: "normal", label: "查找相似项", click: operators.findSimilarOfImage},
+    {type: "normal", label: alt ? "以默认选项快捷整理" : "快捷整理", enabled: selected.value.length > 1, click: i => operators.organizeOfImage(i, alt)},
+    {type: "normal", label: alt ? "创建相似项查找任务" : "查找相似项", click: i => operators.findSimilarOfImage(i, alt)},
     {type: "normal", label: "导出", click: operators.exportItem},
     {type: "separator"},
     {type: "normal", label: illust.type === "COLLECTION" ? "删除集合项目" : "删除项目", click: operators.deleteItem}
@@ -90,10 +78,10 @@ const menu = useDynamicPopupMenu<Illust>(illust => [
         <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy"
                             :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
                             :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                            @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event as Illust)"
-                            @dblclick="(i, s) => operators.openDetailByClick(i, s)"
-                            @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
-                            @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
+                            @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup"
+                            @dblclick="operators.openDetailByClick"
+                            @enter="operators.openDetailByEnter" @space="operators.openPreviewBySpace"
+                            @drop="operators.dataDrop"/>
         <EmbedPreview/>
         <LoadingScreen/>
         <template #pane>

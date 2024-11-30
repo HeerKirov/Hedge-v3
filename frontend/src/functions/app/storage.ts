@@ -40,6 +40,15 @@ export function useLocalStorage<T>(bucketName: string, defaultValue?: T | (() =>
     return data
 }
 
+/**
+ * 单次取出一个local storage存储的值。
+ */
+export function getLocalStorage<T>(bucketName: string): T | null {
+    const storageName = `com.heerkirov.hedge.v3(${remoteIpcClient.setting.channel.getCurrent()})${bucketName}`
+    const initValue = window.localStorage.getItem(storageName)
+    return initValue !== null ? JSON.parse(initValue) : null
+}
+
 export function useSessionStorage<T>(bucketName: string): Ref<T | null>
 export function useSessionStorage<T>(bucketName: string, defaultValue: T): Ref<T>
 export function useSessionStorage<T>(bucketName: string, defaultValue: () => T, defaultFunction: true): Ref<T>

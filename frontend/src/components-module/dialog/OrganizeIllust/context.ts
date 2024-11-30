@@ -1,7 +1,7 @@
 import { onMounted, Ref, ref, shallowRef, watch } from "vue"
 import { useFetchHelper, usePostFetchHelper } from "@/functions/fetch"
 import { OrganizationSituation, OrganizationSituationForm } from "@/functions/http-client/api/util-illust"
-import { useLocalStorage } from "@/functions/app"
+import { getLocalStorage, useLocalStorage } from "@/functions/app"
 import { USEFUL_COLORS, UsefulColors } from "@/constants/ui"
 import { Push } from "../context"
 
@@ -12,6 +12,12 @@ export interface OrganizeIllust {
      * @param onSucceed 如果成功保存，则执行回调。
      */
     organize(images?: number[], onSucceed?: () => void): void
+    /**
+     * 传入一组images，使用上次的参数，直接完成整理，不进行预览。
+     * @param images 要进行整理的image id列表。
+     * @param onSucceed 如果成功保存，则执行回调。
+     */
+    organizeWithDefault(images?: number[], onSucceed?: () => void): void
 }
 
 export interface OrganizeIllustProps {
@@ -20,12 +26,23 @@ export interface OrganizeIllustProps {
 }
 
 export function useOrganizeIllust(push: Push): OrganizeIllust {
+    const fetchOrganizationSituation = useFetchHelper(client => client.illustUtil.getOrganizationSituation)
+    const fetchApplyOrganizationSituation = usePostFetchHelper(client => client.illustUtil.applyOrganizationSituation)
+
     return {
         async organize(images, onSucceed) {
             push({
                 type: "organizeIllust",
                 props: {images: images ?? [], onSucceed}
             })
+        },
+        async organizeWithDefault(images, onSucceed) {
+            const args = getLocalStorage<Omit<OrganizationSituationForm, "illustIds">>("dialog/organize-illust/form") ?? {}
+            const res = await fetchOrganizationSituation({...args, illustIds: images ?? []})
+            if(res !== undefined) {
+                const ok = await fetchApplyOrganizationSituation({groups: res.map(g => g.map(i => ({id: i.id, newOrderTime: i.newOrderTime})))})
+                if(ok && onSucceed) onSucceed()
+            }
         }
     }
 }

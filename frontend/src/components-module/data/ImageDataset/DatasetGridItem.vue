@@ -17,7 +17,7 @@ const { queryInstance, selector, keyOf, dblClick: emitDblClick, rightClick: emit
 
 const currentSelected = computed(() => selector.selected.value.find(i => i === keyOf(props.item)) !== undefined)
 
-const { isMouseOver, checkboxDrop, ...checkboxEvents } = useCheckBoxEvents({selector, keyOf, dataRef, indexRef})
+const { isMouseOver, checkboxDrop, checkAreaEvents, checkBoxEvents } = useCheckBoxEvents({selector, keyOf, dataRef, indexRef})
 
 const dragEvents = useDragEvents({
     queryInstance, keyOf,
@@ -55,8 +55,8 @@ const dblClick = (e: MouseEvent) => {
     emitDblClick(keyOf(props.item), e.altKey)
 }
 
-const rightClick = () => {
-    emitRightClick(props.item)
+const rightClick = (e: MouseEvent) => {
+    emitRightClick(props.item, e.altKey ? {alt: e.altKey} : undefined)
 }
 
 </script>
@@ -70,8 +70,10 @@ const rightClick = () => {
         <div v-if="isLeftDragover" :class="$style['left-drop-tooltip']"/>
         <div v-if="isRightDragover" :class="$style['right-drop-tooltip']"/>
         <div :class="$style['left-touch']" v-bind="leftDropEvents">
-            <div :class="{[$style.checkbox]: true, 'opacity': !isMouseOver}" v-bind="checkboxEvents">
-                <Icon icon="plus"/>
+            <div :class="$style['checkbox-touch-area']" v-bind="checkAreaEvents">
+                <div :class="{[$style.checkbox]: true, 'opacity': !isMouseOver}" v-bind="checkBoxEvents">
+                    <Icon icon="plus"/>
+                </div>
             </div>
         </div>
         <div :class="$style['right-touch']" v-bind="rightDropEvents"/>
@@ -146,19 +148,25 @@ const rightClick = () => {
         width: 5px
         background-color: rgba(127, 127, 127, 0.6)
 
-    //点选器
-    .checkbox
+    .checkbox-touch-area
         position: absolute
-        left: 3px
-        top: 3px
-        width: 30px
-        height: 30px
-        padding: 2px
-        color: color.$dark-mode-text-color
-        border-radius: size.$radius-size-std
-        border: solid 1px color.$dark-mode-text-color
-        filter: drop-shadow(0 0 1px color.$dark-mode-background-color)
-        > svg
-            width: 24px
-            height: 24px
+        top: 0
+        left: 0
+        width: 100%
+        height: 50%
+
+        .checkbox
+            position: absolute
+            left: 3px
+            top: 3px
+            width: 30px
+            height: 30px
+            padding: 2px
+            color: color.$dark-mode-text-color
+            border-radius: size.$radius-size-std
+            border: solid 1px color.$dark-mode-text-color
+            filter: drop-shadow(0 0 1px color.$dark-mode-background-color)
+            > svg
+                width: 24px
+                height: 24px
 </style>

@@ -17,7 +17,7 @@ const { queryInstance, selector, keyOf, dblClick: emitDblClick, rightClick: emit
 
 const currentSelected = computed(() => selector.selected.value.find(i => i === keyOf(props.item)) !== undefined)
 
-const { isMouseOver, checkboxDrop, ...checkboxEvents } = useCheckBoxEvents({selector, keyOf, dataRef, indexRef})
+const { isMouseOver, checkboxDrop, checkAreaEvents, checkBoxEvents } = useCheckBoxEvents({selector, keyOf, dataRef, indexRef})
 
 const dragEvents = useDragEvents({
     queryInstance, keyOf,
@@ -55,8 +55,8 @@ const dblClick = (e: MouseEvent) => {
     emitDblClick(keyOf(props.item), e.altKey)
 }
 
-const rightClick = () => {
-    emitRightClick(props.item)
+const rightClick = (e: MouseEvent) => {
+    emitRightClick(props.item, e.altKey ? {alt: e.altKey} : undefined)
 }
 
 </script>
@@ -68,7 +68,7 @@ const rightClick = () => {
         <div v-if="isRightDragover" :class="$style['right-drop-tooltip']"/>
         <div :class="$style['right-touch']" v-bind="rightDropEvents"/>
         <div :class="$style['left-touch']" v-bind="leftDropEvents">
-            <div :class="{[$style.checkbox]: true, 'opacity': !isMouseOver}" v-bind="checkboxEvents">
+            <div :class="{[$style.checkbox]: true, 'opacity': !isMouseOver}" v-bind="{...checkBoxEvents, ...checkAreaEvents}">
                 <Icon icon="plus"/>
             </div>
         </div>

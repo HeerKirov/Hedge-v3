@@ -3,7 +3,7 @@ import { installWsClient, useWsClient, useWsListeningEvent } from "./ws-client"
 import { installFullscreen, useFullscreen, useAppearance, useDarwinWindowed } from "./app-runtime"
 import { installAppBase, useAppState, useAppEnv, useServerStatus } from "./app-base"
 import { useAppInitializer } from "./app-initialize"
-import { useLocalStorage, useSessionStorage, useMemoryStorage, useTabStorage, useRouteStorage, installMemoryStorageManager } from "./storage"
+import { useLocalStorage, useSessionStorage, useMemoryStorage, useTabStorage, useRouteStorage, installMemoryStorageManager, getLocalStorage } from "./storage"
 
 interface AppServiceOptions {
     handleError(title: string, message: string): void
@@ -43,5 +43,6 @@ export {
     useAppEnv,
     useServerStatus,
     useAssets,
-    useDarwinWindowed
+    useDarwinWindowed,
+    getLocalStorage
 }

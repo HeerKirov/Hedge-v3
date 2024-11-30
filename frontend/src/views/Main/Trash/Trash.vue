@@ -25,9 +25,7 @@ const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "radio", checked: viewMode.value === "grid", label: "网格模式", click: () => viewMode.value = "grid"}
 ]
 
-const menu = usePopupMenu<TrashedImage>(() => [
-    {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
-    {type: "separator"},
+const menu = usePopupMenu<TrashedImage>([
     {type: "normal", label: "还原", click: i => restoreItem(i.id)},
     {type: "separator"},
     {type: "normal", label: "删除项目", click: i => deleteItem(i.id)}

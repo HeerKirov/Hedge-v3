@@ -1,7 +1,7 @@
-import { computed, isReactive, isRef, ref, Ref, unref, watch, watchEffect } from "vue"
+import { isReactive, isRef, ref, Ref, unref } from "vue"
 import { remoteIpcClient, MenuTemplate } from "@/functions/ipc-client"
 
-//== popup menu定义解构 ==
+//== popup menu定义结构 ==
 
 export type MenuItem<P> = ButtonMenuItem<P> | CheckboxMenuItem<P> | RadioMenuItem<P> | SeparatorMenuItem | SubMenuItem<P>
 
@@ -113,6 +113,10 @@ function popupNativeMenu<P>(items: MenuItem<P>[], scale: PopupScale | undefined,
 
 //== 一级包装的popup menu: 提供根据响应式变化生成的菜单 ==
 
+interface DynamicAttachParameter extends Partial<PopupScale> {
+    alt?: boolean
+}
+
 /**
  * 创建composition API模式的菜单，且不使用参数。在点击时，根据响应式内容或函数返回，生成菜单。
  * @param items 允许传入Ref, Reactive, 普通变量, 或一个函数
@@ -154,9 +158,10 @@ export function usePopupMenu<P = undefined>(menuItems: MenuItem<P>[] | Ref<MenuI
  * 创建composition API模式的菜单，此菜单使用参数，且根据点击参数的不同，生成不同的菜单。
  * @param generator
  */
-export function useDynamicPopupMenu<P>(generator: (value: P) => (MenuItem<P> | null | undefined)[]) {
-    function popup(args: P, scale?: PopupScale) {
-        const items = generator(args).filter(item => item != null) as MenuItem<P>[]
+export function useDynamicPopupMenu<P>(generator: (value: P, param: DynamicAttachParameter) => (MenuItem<P> | null | undefined)[]) {
+    function popup(args: P, param?: DynamicAttachParameter) {
+        const items = generator(args, param ?? {}).filter(item => item != null) as MenuItem<P>[]
+        const scale = param?.x !== undefined && param?.y !== undefined ? {x: param.x, y: param.y} : undefined
         popupMenu({items, scale, args})
     }
 

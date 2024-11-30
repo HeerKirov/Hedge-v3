@@ -279,13 +279,16 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
         }
     }
 
-    const openPreviewBySpace = (illust?: CommonIllust) => {
+    const openPreviewBySpace = (illust?: CommonIllust | number) => {
         if(illust !== undefined) {
+            const illustId = typeof illust === "object" ? illust.id : illust
             //如果指定项已选中，那么将最后选中项重新指定为指定项；如果未选中，那么将单独选中此项
-            if(selector.selected.value.includes(illust.id)) {
-                selector.update(selector.selected.value, illust.id)
-            }else{
-                selector.update([illust.id], illust.id)
+            if(selector.lastSelected.value !== illustId) {
+                if(selector.selected.value.includes(illustId)) {
+                    selector.update(selector.selected.value, illustId)
+                }else{
+                    selector.update([illustId], illustId)
+                }
             }
         }
         if(selector.selected.value.length > 0) preview.show({

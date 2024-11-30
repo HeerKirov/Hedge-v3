@@ -170,13 +170,16 @@ function useOperators(listview: QueryListview<ImportRecord, number>, queryFilter
         }
     }
 
-    const openImagePreview = (importImage?: ImportRecord) => {
+    const openImagePreview = (importImage?: ImportRecord | number) => {
         if(importImage !== undefined) {
+            const illustId = typeof importImage === "object" ? importImage.id : importImage
             //如果指定项已选中，那么将最后选中项重新指定为指定项；如果未选中，那么将单独选中此项
-            if(selector.selected.value.includes(importImage.id)) {
-                selector.update(selector.selected.value, importImage.id)
-            }else{
-                selector.update([importImage.id], importImage.id)
+            if(selector.lastSelected.value !== illustId) {
+                if(selector.selected.value.includes(illustId)) {
+                    selector.update(selector.selected.value, illustId)
+                }else{
+                    selector.update([illustId], illustId)
+                }
             }
         }
         if(selector.selected.value.length > 0) preview.show({

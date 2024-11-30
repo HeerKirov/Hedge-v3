@@ -42,15 +42,6 @@ export interface ImageDatasetOperatorsOptions<T extends CommonIllust> {
      */
     mapSlice?: (item: T) => Illust
     /**
-     * 为{createCollection}提供更多选项参数。
-     */
-    createCollection?: {
-        /**
-         * 如果可能，跳过对话框以确认。(即如果image无冲突，调用会直接创建集合而不会打开对话框)
-         */
-        skipDialogIfAllow?: boolean
-    }
-    /**
      * 激活dataDrop操作，并提供更多参数。
      */
     dataDrop?: {
@@ -121,7 +112,7 @@ export interface ImageDatasetOperators<T extends CommonIllust> {
     /**
      * 通过选中空格的方式打开预览。未指定参数时，它总是预览最后选中项；指定参数时，则尝试预览指定项。
      */
-    openPreviewBySpace(illust?: T): void
+    openPreviewBySpace(illust?: T | number): void
     /**
      * 更改favorite属性。
      */
@@ -132,11 +123,10 @@ export interface ImageDatasetOperators<T extends CommonIllust> {
     batchUpdateTimeSeries(illust: T, action: BatchUpdateAction): void
     /**
      * 创建集合。选用的items列表是已选择项加上当前目标项。
-     * 如果选择的项中存在集合，或存在已属于其他集合的图像，那么打开一个对话框以供判别。
-     * - forceDialog: 无论有没有冲突，都打开对话框。
-     * - refreshWhenCreated: 创建成功后，刷新endpoint。
+     * @param illust
+     * @param useRecommended 使用推荐参数，直接进行创建，不会打开对话框。
      */
-    createCollection(illust: T): void
+    createCollection(illust: T, useRecommended?: boolean): void
     /**
      * 从当前集合中拆分出选择项来生成新集合。应该在集合详情页的列表中替代{createCollection}来调用。
      * 因为总是从现有集合中选取数据，因此它的作用是从现有集合拆分出一个新集合。
@@ -174,12 +164,16 @@ export interface ImageDatasetOperators<T extends CommonIllust> {
     fileEdit(illust: T | undefined, action: "convertFormat"): void
     /**
      * 使用选定的项，提交相似项查找任务。
+     * @param illust
+     * @param createTask 创建标准的相似项查找任务，而非使用快速查找。
      */
-    findSimilarOfImage(illust: T): void
+    findSimilarOfImage(illust: T, createTask?: boolean): void
     /**
      * 使用选定的项，提交快捷整理操作。
+     * @param illust
+     * @param noPreview 使用默认参数直接执行整理，而不进行预览
      */
-    organizeOfImage(illust: T): void
+    organizeOfImage(illust: T, noPreview?: boolean): void
     /**
      * 将项目加入暂存区。
      */
@@ -233,7 +227,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     const dialog = useDialogService()
     const stackedView = useStackedView()
     const preview = options.embedPreview === "auto" ? installEmbedPreviewService() : options.embedPreview ?? usePreviewService()
-    const { listview, listviewController, paginationData, selector, dataDrop: dataDropOptions, createCollection: createCollectionOptions } = options
+    const { listview, listviewController, paginationData, selector, dataDrop: dataDropOptions } = options
 
     const fetchIllustBatchUpdate = usePostFetchHelper(client => client.illust.batchUpdate)
     const fetchIllustDelete = usePostPathFetchHelper(client => client.illust.delete)
@@ -243,6 +237,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     const fetchFolderImagesPartialUpdate = usePostPathFetchHelper(client => client.folder.images.partialUpdate)
     const fetchStagingPostListAll = useFetchHelper(client => client.stagingPost.list)
     const fetchStagingPostUpdate = usePostFetchHelper(client => client.stagingPost.update)
+    const fetchFindSimilarTaskCreate = usePostFetchHelper(client => client.findSimilar.task.create)
 
     const homepageState = dataDropOptions === undefined ? null : useHomepageState()
 
@@ -350,13 +345,16 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
         }
     }
 
-    const openPreviewBySpace = (illust?: T) => {
+    const openPreviewBySpace = (illust?: T | number) => {
         if(illust !== undefined) {
+            const illustId = typeof illust === "object" ? illust.id : illust
             //如果指定项已选中，那么将最后选中项重新指定为指定项；如果未选中，那么将单独选中此项
-            if(selector.selected.value.includes(illust.id)) {
-                selector.update(selector.selected.value, illust.id)
-            }else{
-                selector.update([illust.id], illust.id)
+            if(selector.lastSelected.value !== illustId) {
+                if(selector.selected.value.includes(illustId)) {
+                    selector.update(selector.selected.value, illustId)
+                }else{
+                    selector.update([illustId], illustId)
+                }
             }
         }
         if(selector.selected.value.length > 0) preview.show({
@@ -383,13 +381,13 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
         toast.toast("批量编辑完成", "info", "已完成所选项目的更改。")
     }
 
-    const createCollection = (illust: T) => {
+    const createCollection = (illust: T, useRecommended?: boolean) => {
         const items = getEffectedItems(illust)
         const onCreated = (_: number, newCollection: boolean) => {
             toast.toast(newCollection ? "已创建" : "已合并", "success",  newCollection ? "已创建新集合。" : "已将图像合并至指定集合。")
         }
 
-        dialog.creatingCollection.createCollection(items, onCreated, createCollectionOptions?.skipDialogIfAllow)
+        dialog.creatingCollection.createCollection(items, onCreated, useRecommended ? "ALWAYS" : "ALLOW")
     }
 
     const splitToGenerateNewCollection = async (illust: T) => {
@@ -472,14 +470,20 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
         }
     }
 
-    const findSimilarOfImage = async (illust: T) => {
+    const findSimilarOfImage = async (illust: T, createTask?: boolean) => {
         const imageIds = getEffectedItems(illust)
-        dialog.findSimilarTaskExplorer.quickFind(imageIds)
+        if(!createTask) {
+            dialog.findSimilarTaskExplorer.quickFind(imageIds)
+        }else{
+            await fetchFindSimilarTaskCreate({selector: {type: "image", imageIds}})
+            toast.toast("已创建", "success", "相似项查找任务已创建完成。")
+        }
     }
 
-    const organizeOfImage = async (illust: T) => {
+    const organizeOfImage = async (illust: T, noPreview?: boolean) => {
         const imageIds = getEffectedItems(illust)
-        dialog.organizeIllust.organize(imageIds)
+        if(noPreview) dialog.organizeIllust.organizeWithDefault(imageIds)
+        else dialog.organizeIllust.organize(imageIds)
     }
 
     const fileEdit = async (illust: T | undefined, action: "convertFormat") => {

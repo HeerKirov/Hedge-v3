@@ -37,7 +37,6 @@ const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
 
 const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
     {type: "normal", label: "预览", click: openImagePreview},
-    {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "normal", label: "在时间分区显示", enabled: importRecord.illust !== null, click: openImageInPartition},
     {type: "separator"},
@@ -76,7 +75,7 @@ const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
         <ImportEmpty v-if="!paginationData.status.value.loading && paginationData.data.value.metrics && paginationData.state.value?.total === 0" :class="$style.empty"/>
         <ImportImageDataset v-else :data="paginationData.data.value" :state="paginationData.state.value" :query-instance="listview.proxy" :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
                             :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                            @update:state="paginationData.setState" @navigate="paginationData.navigateTo($event)" @select="updateSelect" @contextmenu="menu.popup($event)" @space="openImagePreview()"/>
+                            @update:state="paginationData.setState" @navigate="paginationData.navigateTo" @select="updateSelect" @contextmenu="menu.popup" @space="openImagePreview"/>
         <EmbedPreview/>
         <LoadingScreen :loading="paginationData.status.value.loading"/>
         <template #pane>

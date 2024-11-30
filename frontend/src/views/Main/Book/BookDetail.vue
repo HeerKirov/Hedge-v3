@@ -31,12 +31,11 @@ const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "normal", label: "删除此画集", click: deleteItem}
 ]
 
-const menu = useDynamicPopupMenu<BookImage>(bookImage => [
+const menu = useDynamicPopupMenu<BookImage>((bookImage, { alt }) => [
     {type: "normal", label: "打开", click: i => operators.openDetailByClick(i.id)},
     {type: "normal", label: "在新窗口中打开", click: operators.openInNewWindow},
     {type: "separator"},
     {type: "normal", label: "预览", click: operators.openPreviewBySpace},
-    {type: "checkbox", checked: paneState.visible.value, label: "在侧边栏预览", click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "checkbox", label: "标记为收藏", checked: bookImage.favorite, click: i => operators.modifyFavorite(i, !i.favorite)},
     {type: "separator"},
@@ -45,13 +44,13 @@ const menu = useDynamicPopupMenu<BookImage>(bookImage => [
         ? {type: "normal", label: `将暂存的${operators.stagingPostCount.value}项添加到此处`, click: operators.popStagingPost}
         : {type: "normal", label: "将暂存的项添加到此处", enabled: false},
     {type: "separator"},
-    {type: "normal", label: "创建图像集合", click: operators.createCollection},
+    {type: "normal", label: alt ? "以推荐参数创建图像集合" : "创建图像集合", click: i => operators.createCollection(i, alt)},
     {type: "normal", label: "创建画集…", click: operators.createBook},
     {type: "normal", label: "编辑关联组", click: operators.editAssociate},
     {type: "normal", label: "添加到目录…", click: operators.addToFolder},
     {type: "normal", label: "克隆图像属性…", click: operators.cloneImage},
     {type: "separator"},
-    {type: "normal", label: "查找相似项", click: operators.findSimilarOfImage},
+    {type: "normal", label: alt ? "创建相似项查找任务" : "查找相似项", click: i => operators.findSimilarOfImage(i, alt)},
     {type: "normal", label: "导出", click: operators.exportItem},
     {type: "separator"},
     {type: "normal", label: "删除项目", click: operators.deleteItem},
@@ -83,9 +82,9 @@ const menu = useDynamicPopupMenu<BookImage>(bookImage => [
         <IllustImageDataset :data="paginationData" :state="state" :query-instance="listview.proxy"
                             :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
                             :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                            @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event as BookImage)"
-                            @dblclick="operators.openDetailByClick($event)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
-                            @drop="(a, b, c) => operators.dataDrop(a, b, c)"/>
+                            @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup"
+                            @dblclick="operators.openDetailByClick" @enter="operators.openDetailByEnter" @space="operators.openPreviewBySpace"
+                            @drop="operators.dataDrop"/>
         <EmbedPreview/>
         <template #pane>
             <IllustDetailPane @close="paneState.visible.value = false"/>

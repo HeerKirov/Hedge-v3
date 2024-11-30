@@ -28,22 +28,21 @@ const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "normal", label: "清空暂存区", click: operators.clear}
 ]
 
-const menu = useDynamicPopupMenu<StagingPostImage>(illust => [
+const menu = useDynamicPopupMenu<StagingPostImage>((illust, { alt }) => [
     {type: "normal", label: "打开", click: i => operators.openDetailByClick(i.id)},
     {type: "normal", label: "在新窗口中打开", click: operators.openInNewWindow},
     {type: "separator"},
     {type: "normal", label: "预览", click: operators.openPreviewBySpace},
-    {type: "checkbox", checked: paneState.visible.value, label: "在侧边栏预览", click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
     {type: "checkbox", label: "标记为收藏", checked: illust.favorite, click: i => operators.modifyFavorite(i, !i.favorite)},
     {type: "separator"},
-    {type: "normal", label: "创建图像集合", click: operators.createCollection},
+    {type: "normal", label: alt ? "以推荐参数创建图像集合" : "创建图像集合", click: i => operators.createCollection(i, alt)},
     {type: "normal", label: "创建画集…", click: operators.createBook},
     {type: "normal", label: "编辑关联组", click: operators.editAssociate},
     {type: "normal", label: "添加到目录…", click: operators.addToFolder},
     {type: "normal", label: "克隆图像属性…", click: operators.cloneImage},
     {type: "separator"},
-    {type: "normal", label: "查找相似项", click: operators.findSimilarOfImage},
+    {type: "normal", label: alt ? "创建相似项查找任务" : "查找相似项", click: i => operators.findSimilarOfImage(i, alt)},
     {type: "normal", label: "导出", click: operators.exportItem},
     {type: "separator"},
     {type: "normal", label: "从暂存区移除此项目", click: operators.removeFromStagingPost}
@@ -68,8 +67,8 @@ const menu = useDynamicPopupMenu<StagingPostImage>(illust => [
         <StagingPostDataset v-else :data="data" :state="state" :query-instance="listview.proxy"
                             :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable droppable
                             :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
-                            @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup($event)"
-                            @dblclick="(i, s) => operators.openDetailByClick(i, s)" @enter="operators.openDetailByEnter($event)" @space="operators.openPreviewBySpace()"
+                            @update:state="setState" @navigate="navigateTo" @select="updateSelect" @contextmenu="menu.popup"
+                            @dblclick="operators.openDetailByClick" @enter="operators.openDetailByEnter" @space="operators.openPreviewBySpace"
                             @drop="operators.dropToAdd"/>
         <EmbedPreview/>
         <template #pane>
