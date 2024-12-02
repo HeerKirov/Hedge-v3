@@ -181,8 +181,9 @@ class IllustKit(private val appdata: AppDataManager,
 
     /**
      * 从现有列表中移除指定的tags/topics/authors，然后重新处理导出并应用更改。
+     * @return 返回一个Tagme用以标示此次更新涉及了对哪些类型的更改。它不会受到setting中相关选项的影响。
      */
-    fun removeMeta(thisId: Int, removeTags: List<Int>, removeTopics: List<Int>, removeAuthors: List<Int>, copyFromParent: Int? = null, copyFromChildren: Boolean = false, ignoreNotExist: Boolean = false) {
+    fun removeMeta(thisId: Int, removeTags: List<Int>, removeTopics: List<Int>, removeAuthors: List<Int>, copyFromParent: Int? = null, copyFromChildren: Boolean = false, ignoreNotExist: Boolean = false): Illust.Tagme {
         if(removeTags.isNotEmpty() || removeTopics.isNotEmpty() || removeAuthors.isNotEmpty()) {
             val existTags = metaManager.getNotExportMetaTags(thisId, IllustTagRelations, Tags).map { it.id }
             val existTopics = metaManager.getNotExportMetaTags(thisId, IllustTopicRelations, Topics).map { it.id }
@@ -223,8 +224,14 @@ class IllustKit(private val appdata: AppDataManager,
 
                     processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
                 }
+
+                return (Illust.Tagme.EMPTY as Illust.Tagme)
+                    .letIf(newTags.size < existTags.size) { it + Illust.Tagme.TAG }
+                    .letIf(newTopics.size < existTopics.size) { it + Illust.Tagme.TOPIC }
+                    .letIf(newAuthors.size < existAuthors.size) { it + Illust.Tagme.AUTHOR }
             }
         }
+        return Illust.Tagme.EMPTY
     }
 
     /**

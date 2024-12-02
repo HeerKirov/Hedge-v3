@@ -464,24 +464,17 @@ class IllustManager(private val appdata: AppDataManager,
                 }
 
                 val metaResponse = when (form.tagUpdateMode) {
-                    IllustBatchUpdateForm.TagUpdateMode.OVERRIDE -> kit.updateMeta(illust.id, newTags = tags, newAuthors = authors, newTopics = topics, copyFromParent = illust.parentId)
+                    IllustBatchUpdateForm.TagUpdateMode.OVERRIDE -> kit.updateMeta(illust.id, newTags = tags.elseOr { emptyList() }, newAuthors = authors.elseOr { emptyList() }, newTopics = topics.elseOr { emptyList() }, copyFromParent = illust.parentId)
                     IllustBatchUpdateForm.TagUpdateMode.APPEND -> kit.appendMeta(illust.id, appendTags = tags.unwrapOr { emptyList() }, appendAuthors = authors.unwrapOr { emptyList() }, appendTopics = topics.unwrapOr { emptyList() }, isCollection = false)
-                    IllustBatchUpdateForm.TagUpdateMode.REMOVE -> {
-                        kit.removeMeta(illust.id, removeTags = tags.unwrapOr { emptyList() }, removeAuthors = authors.unwrapOr { emptyList() }, removeTopics = topics.unwrapOr { emptyList() }, copyFromParent = illust.parentId)
-                        Illust.Tagme.EMPTY
-                    }
+                    IllustBatchUpdateForm.TagUpdateMode.REMOVE -> kit.removeMeta(illust.id, removeTags = tags.unwrapOr { emptyList() }, removeAuthors = authors.unwrapOr { emptyList() }, removeTopics = topics.unwrapOr { emptyList() }, copyFromParent = illust.parentId)
                 }
-
                 if(metaResponse != Illust.Tagme.EMPTY) metaResponses[illust.id] = metaResponse to illust.tagme
             }
             for (illust in collections) {
                 val metaResponse = when (form.tagUpdateMode) {
                     IllustBatchUpdateForm.TagUpdateMode.OVERRIDE -> kit.updateMeta(illust.id, newTags = form.tags.elseOr { emptyList() }, newAuthors = form.authors.elseOr { emptyList() }, newTopics = form.topics.elseOr { emptyList() }, copyFromChildren = true)
                     IllustBatchUpdateForm.TagUpdateMode.APPEND -> kit.appendMeta(illust.id, appendTags = form.tags.unwrapOr { emptyList() }, appendAuthors = form.authors.unwrapOr { emptyList() }, appendTopics = form.topics.unwrapOr { emptyList() }, isCollection = true)
-                    IllustBatchUpdateForm.TagUpdateMode.REMOVE -> {
-                        kit.removeMeta(illust.id, removeTags = form.tags.unwrapOr { emptyList() }, removeAuthors = form.authors.unwrapOr { emptyList() }, removeTopics = form.topics.unwrapOr { emptyList() }, copyFromChildren = true)
-                        Illust.Tagme.EMPTY
-                    }
+                    IllustBatchUpdateForm.TagUpdateMode.REMOVE -> kit.removeMeta(illust.id, removeTags = form.tags.unwrapOr { emptyList() }, removeAuthors = form.authors.unwrapOr { emptyList() }, removeTopics = form.topics.unwrapOr { emptyList() }, copyFromChildren = true)
                 }
                 if(metaResponse != Illust.Tagme.EMPTY) metaResponses[illust.id] = metaResponse to illust.tagme
             }
@@ -493,7 +486,8 @@ class IllustManager(private val appdata: AppDataManager,
                 where { it.id inList form.target }
                 set(it.tagme, form.tagme.value)
             }
-        }else if(metaResponses.isNotEmpty()) {
+        }else if(metaResponses.isNotEmpty() && form.tagUpdateMode != IllustBatchUpdateForm.TagUpdateMode.REMOVE) {
+            //metaResponse反映的是标签种类的变化情况，可以同时当作tagme的变化情况，但在remove操作时不行，这时并不需要消除tagme
             data.db.batchUpdate(Illusts) {
                 for ((recordId, pair) in metaResponses) {
                     val (minusTagme, originTagme) = pair
