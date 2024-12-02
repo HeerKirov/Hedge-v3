@@ -87,6 +87,15 @@ interface FilterNumberValue : FilterValue, EquableValue<Long>, ComparableValue<L
 }
 
 /**
+ * 数字类型：可等价判断或区间比较。
+ */
+interface FilterFloatNumberValue : FilterValue, EquableValue<Double>, ComparableValue<Double> {
+    val value: Double
+    override val compareValue get() = value
+    override val equalValue get() = value
+}
+
+/**
  * 匹配数字类型：在数字类型的基础上，追加可进行匹配判断。其实现是string类型。
  */
 interface FilterPatternNumberValue : FilterValue, EquableValue<Long>, ComparableValue<Long>, MatchableValue<String> {
@@ -139,6 +148,9 @@ value class FilterStringValueImpl(override val value: String) : FilterStringValu
 
 @JvmInline
 value class FilterNumberValueImpl(override val value: Long) : FilterNumberValue
+
+@JvmInline
+value class FilterFloatNumberValueImpl(override val value: Double) : FilterFloatNumberValue
 
 @JvmInline
 value class FilterDateValueImpl(override val value: LocalDate) : FilterDateValue

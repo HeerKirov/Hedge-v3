@@ -25,7 +25,12 @@ object IllustDialect : QueryDialect<IllustDialect.IllustSortItem> {
     val createTime = datetimeField("CREATE_TIME", "create", "create-time", "ct")
     val updateTime = datetimeField("UPDATE_TIME", "update", "update-time", "ut")
     val description = patternStringField("DESCRIPTION", "description", "desc")
-    val filesize = sizeField("FILESIZE", "filesize", "size")
+    val filesize = byteSizeField("FILESIZE", "filesize", "size")
+    val resolutionWidth = numberField("RESOLUTION_WIDTH", "resolution-width", "width")
+    val resolutionHeight = numberField("RESOLUTION_HEIGHT", "resolution-height", "height")
+    val resolutionArea = numberField("RESOLUTION_AREA", "resolution-area", "area", timesValue = true)
+    val resolutionRatio = ratioField("RESOLUTION_RATIO", "resolution-ratio", "ratio")
+    val videoDuration = durationSizeField("VIDEO_DURATION", "video-duration", "duration")
     val sourceId = patternStringField("SOURCE_ID", "^id", "source-id", exact = true)
     val sourcePage = numberField("SOURCE_PAGE", "^page", "source-page")
     val sourcePageName = stringField("SOURCE_PAGE_NAME", "^page-name", "^pn", "source-page-name")
@@ -33,7 +38,7 @@ object IllustDialect : QueryDialect<IllustDialect.IllustSortItem> {
     val sourceTitle = patternStringField("SOURCE_TITLE", "^title", "source-title")
     val sourceDescription = patternStringField("SOURCE_DESCRIPTION", "^description", "^desc", "source-description", "source-desc")
     val sourcePublishTime = datetimeField("SOURCE_PUBLISH_TIME", "^publish-time", "^publish", "source-publish-time", "source-publish", "^bt")
-    val fileType = compositionField("FILETYPE", "file-type", "type", "extension", "ext") {
+    val fileType = compositionField("FILETYPE", "file-type", "ft", "type", "extension", "ext") {
         item("VIDEO", "video")
         item("IMAGE", "image", "img")
         item("JPEG", "jpeg", "jpg")

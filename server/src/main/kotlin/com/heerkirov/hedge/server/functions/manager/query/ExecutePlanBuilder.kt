@@ -21,10 +21,7 @@ import org.ktorm.dsl.*
 import org.ktorm.expression.ArgumentExpression
 import org.ktorm.expression.OrderByExpression
 import org.ktorm.expression.ScalarExpression
-import org.ktorm.schema.BaseTable
-import org.ktorm.schema.BooleanSqlType
-import org.ktorm.schema.Column
-import org.ktorm.schema.ColumnDeclaring
+import org.ktorm.schema.*
 import java.time.*
 import kotlin.collections.ArrayList
 
@@ -167,6 +164,11 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, S
         IllustDialect.description to Illusts.exportedDescription,
         IllustDialect.fileType to FileRecords.extension,
         IllustDialect.filesize to FileRecords.size,
+        IllustDialect.resolutionWidth to FileRecords.resolutionWidth,
+        IllustDialect.resolutionHeight to FileRecords.resolutionHeight,
+        IllustDialect.resolutionArea to (FileRecords.resolutionWidth times FileRecords.resolutionHeight),
+        IllustDialect.resolutionRatio to (FileRecords.resolutionWidth.cast(DoubleSqlType) div FileRecords.resolutionHeight.cast(DoubleSqlType)),
+        IllustDialect.videoDuration to FileRecords.videoDuration,
         IllustDialect.sourceId to Illusts.sourceId,
         IllustDialect.sourcePage to Illusts.sourcePart,
         IllustDialect.sourcePageName to Illusts.sourcePartName,

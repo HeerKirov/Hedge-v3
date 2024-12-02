@@ -468,12 +468,17 @@ class CompositionField<V>(override val key: String, override val alias: Array<ou
 /**
  * 数值型关键字项。
  */
-fun numberField(key: String, vararg alias: String): FilterFieldDefinition<FilterNumberValue> = ComparableField(key, alias, NumberParser)
+fun numberField(key: String, vararg alias: String, timesValue: Boolean = false): FilterFieldDefinition<FilterNumberValue> = ComparableField(key, alias, if(timesValue) TimesNumberParser else NumberParser)
 
 /**
  * 数值且可匹配的关键字项。
  */
 fun patternNumberField(key: String, vararg alias: String): FilterFieldDefinition<FilterPatternNumberValue> = NumberPatternField(key, alias)
+
+/**
+ * 比值型关键字项。
+ */
+fun ratioField(key: String, vararg alias: String): FilterFieldDefinition<FilterFloatNumberValue> = ComparableField(key, alias, RatioParser)
 
 /**
  * 日期型关键字项。
@@ -486,9 +491,14 @@ fun dateField(key: String, vararg alias: String): FilterFieldDefinition<FilterDa
 fun datetimeField(key: String, vararg alias: String): FilterFieldDefinition<FilterDateValue> = ComplexComparableField(key, alias, DateTimeParser)
 
 /**
- * 文件大小型关键字项。
+ * 带有byte单位的大小类型关键字项。
  */
-fun sizeField(key: String, vararg alias: String): FilterFieldDefinition<FilterSizeValue> = ComparableField(key, alias, SizeParser)
+fun byteSizeField(key: String, vararg alias: String): FilterFieldDefinition<FilterSizeValue> = ComparableField(key, alias, ByteSizeParser)
+
+/**
+ * 带有duration单位的大小类型关键字项。
+ */
+fun durationSizeField(key: String, vararg alias: String): FilterFieldDefinition<FilterSizeValue> = ComparableField(key, alias, DurationSizeParser)
 
 /**
  * 字符串型关键字项，对精确的字符串进行等价判断，非精确字符串模糊匹配。
