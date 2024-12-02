@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { BasePane } from "@/components/layout"
 import { ThumbnailImage, Separator, Icon, Starlight } from "@/components/universal"
-import { DescriptionDisplay, TagmeInfo, MetaTagListDisplay, TimeGroupDisplay, SourceInfo } from "@/components-business/form-display"
+import {
+    DescriptionDisplay,
+    TagmeInfo,
+    MetaTagListDisplay,
+    TimeGroupDisplay,
+    SourceInfo,
+    FileInfoDisplay, PartitionTimeDisplay
+} from "@/components-business/form-display"
 import { useTrashDetailPane } from "@/services/main/trash"
 import { datetime } from "@/utils/datetime"
 
@@ -43,12 +50,14 @@ const remain = (remainingTime: number | null) => {
                 <span v-if="data.remainingTime !== null" class="float-right has-text-warning">{{ remain(data.remainingTime) }}</span>
             </p>
             <Separator direction="horizontal"/>
-            <SourceInfo v-if="data.source !== null" class="mt-1" :source="data.source"/>
+            <SourceInfo v-if="data.source !== null" class="mt-1 mb-2" :source="data.source"/>
             <Starlight v-if="data.score !== null" class="mt-1" :value="data.score"/>
             <DescriptionDisplay v-if="data.description" class="mt-1" :value="data.description"/>
-            <MetaTagListDisplay v-if="data.topics.length || data.authors.length || data.tags.length" class="my-1" :topics="data.topics" :authors="data.authors" :tags="data.tags"/>
             <TagmeInfo v-if="data.tagme.length > 0" class="mt-1" :value="data.tagme"/>
-            <TimeGroupDisplay class="mt-2" :partition-time="data.partitionTime" :order-time="data.orderTime" :create-time="data.createTime" :update-time="data.updateTime"/>
+            <MetaTagListDisplay v-if="data.topics.length || data.authors.length || data.tags.length" class="my-1" :topics="data.topics" :authors="data.authors" :tags="data.tags"/>
+            <FileInfoDisplay class="mt-3" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>
+            <PartitionTimeDisplay class="mt-2" :partition-time="data.partitionTime" :order-time="data.orderTime"/>
+            <TimeGroupDisplay :create-time="data.createTime" :update-time="data.updateTime"/>
             <p class="secondary-text">删除时间 {{datetime.toSimpleFormat(data.trashedTime)}}</p>
         </template>
     </BasePane>

@@ -40,7 +40,7 @@ const collapse = () => {
 }
 
 const menu = usePopupMenu(() => [
-    {type: "normal", "label": isOpened.value ? "折叠时间属性" : "展开时间属性", click: collapse},
+    {type: "normal", label: isOpened.value ? "折叠时间属性" : "展开时间属性", enabled: props.createTime !== undefined || props.updateTime !== undefined || (!!offset.value && (offset.value > 1 || offset.value < -1)), click: collapse},
     ...(hasBrowser ? [
         {type: "separator"},
         {type: "normal", "label": "查看时间分区", click: openPartition},
