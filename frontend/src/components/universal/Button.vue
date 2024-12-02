@@ -96,6 +96,10 @@ const buttonClass = computed(() => [
         @each $name, $color in color.$light-mode-colors
             &.is-color-#{$name}:not([disabled])
                 color: $color
+                &:hover:not([disabled])
+                    background-color: rgba($color, 0.2)
+                &:active:not([disabled])
+                    background-color: rgba($color, 0.28)
     .color-mode-light
         @each $name, $color in color.$light-mode-colors
             &.is-color-#{$name}
@@ -130,6 +134,10 @@ const buttonClass = computed(() => [
         @each $name, $color in color.$dark-mode-colors
             &.is-color-#{$name}:not([disabled])
                 color: $color
+                &:hover:not([disabled])
+                    background-color: rgba($color, 0.2)
+                &:active:not([disabled])
+                    background-color: rgba($color, 0.28)
     .color-mode-light
         @each $name, $color in color.$dark-mode-colors
             &.is-color-#{$name}

@@ -159,14 +159,27 @@ function installBrowserTabs(views: Ref<InternalTab[]>, activeIndex: Ref<number>,
             const [view] = views.value.splice(index, 1)
             if(views.value.length <= 0) {
                 window.close()
-            }else if(lastAccessed.length > 0) {
-                const viewInLA = lastAccessed.indexOf(view.id)
-                if(viewInLA >= 0) lastAccessed.splice(viewInLA, 1)
-                const id = lastAccessed.pop()
-                const idx = id !== undefined ? views.value.findIndex(v => v.id === id) : -1
-                activeIndex.value = idx >= 0 ? idx : activeIndex.value
-            }else if(index < activeIndex.value || (index === activeIndex.value && activeIndex.value > 0)) {
-                activeIndex.value -= 1
+            }else{
+                if(lastAccessed.length > 0) {
+                    //在lastAccessed不为空时，从此列表移除被关闭的页面
+                    const viewInLA = lastAccessed.indexOf(view.id)
+                    if(viewInLA >= 0) lastAccessed.splice(viewInLA, 1)
+                }
+                if(index === activeIndex.value) {
+                    //如果被关闭的页面就是当前激活的页面，则首先尝试从lastAccessed获取最后访问项
+                    const id = lastAccessed.pop()
+                    const idx = id !== undefined ? views.value.findIndex(v => v.id === id) : -1
+                    if(idx >= 0) {
+                        //能获取最后访问项时，切换至该项激活
+                        activeIndex.value = idx
+                    }else if(activeIndex.value > 0) {
+                        //如果不能获得最后访问项，便切换至前一项，表现为activeIndex-1，除非现在就是第一项
+                        activeIndex.value -= 1
+                    }
+                }else if(index < activeIndex.value) {
+                    //如果被关闭的页面不是当前激活页面，那么当被关闭页面在当前页面之前时，需要让activeIndex-1，因为页面数组发生了缩减，否则则不需要变动
+                    activeIndex.value -= 1
+                }
             }
             event.emit({type: "TabClosed", id: view.id})
         }
