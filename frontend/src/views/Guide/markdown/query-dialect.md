@@ -29,7 +29,17 @@
 * **文件类型**: `file-type`, `type`, `extension`, `ext`  
     根据文件类型。可以使用扩展名(`jpeg`与`jpg`是等价的)，或使用`video`, `image`(`img`)获取视频、图像类型。
 * **文件大小**: `filesize`, `size`  
-    根据文件大小。运算对象为size。
+    根据文件大小。运算对象为byte size。
+* **分辨率宽度**: `resolution-width`, `width`  
+  根据文件分辨率宽度。运算对象为number。
+* **分辨率高度**: `resolution-height`, `height`  
+  根据文件分辨率高度。运算对象为number。
+* **分辨率面积**: `resolution-area`, `area`  
+  根据文件分辨率面积，即宽度乘以高度。运算对象为number，支持乘积写法。
+* **分辨率宽高比**: `resolution-ratio`, `ratio`  
+  根据文件分辨率宽高比，即宽度除以高度。运算对象为number，支持除以、比值和小数点写法。
+* **视频时长**: `resolution-ratio`, `ratio`  
+  根据视频时长。运算对象为duration size。
 * **来源ID**: `source-id`, `^id`  
     根据来源ID。运算对象为patternNumber。
 * **来源分页**: `source-page`, `^page`  

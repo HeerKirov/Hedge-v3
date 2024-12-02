@@ -178,6 +178,20 @@ filesize: 150KB         //=> 查询大小为150KB的项(虽然这种精确值没
 filesize >= 1MiB        //=> 查询大于等于1MiB的项
 size: [512k, 2m]        //=> 查询大小在512KB~2MB之间的项
 ```
+根据文件尺寸查询，使用resolution系列关键字。
+```
+resolution-width >= 2000    //=> 查询分辨率宽度大于等于2000的项
+resolution-height <= 750    //=> 查询分辨率高度小于750的项
+resolution-area > 2000x2000 //=> 查询面积大于4000000的项，可以在数值中使用乘号(x/*)，这样可以以更方便理解的方式书写面积的数值
+resolution-ratio:"16:9"     //=> 查询宽高比为16:9的项，可以在数值中使用除号(/)、比值符号(:)、小数点(.)，不过要搭配引号
+```
+根据视频文件时长查询，使用`video-duration`/`duration`关键字。  
+该关键字使用时间时长格式，支持的单位有`S SEC SECOND M MIN MINUTE H HOUR`。单位无视大小写，只支持整数。
+```
+video-duration: 1minute //=> 查询时长为1分钟的项(虽然这种精确值很少会用到)
+video-duration >= 30s   //=> 查询时长大于等于30秒的项
+duration: [1s, 1h]      //=> 查询时长在1秒~1小时之间的项
+```
 根据Tagme查询。
 ```
 tagme                   //=> 查询有Tagme的项
