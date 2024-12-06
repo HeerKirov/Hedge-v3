@@ -72,7 +72,7 @@ class IllustService(private val appdata: AppDataManager,
             .let { schema?.joinConditions?.fold(it) { acc, join -> if(join.left) acc.leftJoin(join.table, join.condition) else acc.innerJoin(join.table, join.condition) } ?: it }
             .let { if(filter.topic == null) it else it.innerJoin(IllustTopicRelations, (IllustTopicRelations.illustId eq Illusts.id) and (IllustTopicRelations.topicId eq filter.topic)) }
             .let { if(filter.author == null) it else it.innerJoin(IllustAuthorRelations, (IllustAuthorRelations.illustId eq Illusts.id) and (IllustAuthorRelations.authorId eq filter.author)) }
-            .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime, Illusts.cachedChildrenCount,
+            .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.partitionTime, Illusts.orderTime, Illusts.cachedChildrenCount,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .whereWithConditions {
@@ -128,7 +128,7 @@ class IllustService(private val appdata: AppDataManager,
     fun findByIds(imageIds: List<Int>): List<IllustRes?> {
         return data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-            .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime, Illusts.cachedChildrenCount,
+            .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.partitionTime, Illusts.orderTime, Illusts.cachedChildrenCount,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.id inList imageIds }
@@ -386,6 +386,23 @@ class IllustService(private val appdata: AppDataManager,
 
     /**
      * @throws NotFound 请求对象不存在
+     */
+    fun getSimple(id: Int): IllustRes {
+        val row = data.db.from(Illusts)
+            .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
+            .select(
+                Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.partitionTime, Illusts.orderTime, Illusts.cachedChildrenCount,
+                Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
+                FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
+            .where { Illusts.id eq id }
+            .firstOrNull()
+            ?: throw be(NotFound())
+
+        return newIllustRes(row)
+    }
+
+    /**
+     * @throws NotFound 请求对象不存在
      * @throws ResourceNotExist ("topics", number[]) 部分topics资源不存在。给出不存在的topic id列表
      * @throws ResourceNotExist ("authors", number[]) 部分authors资源不存在。给出不存在的author id列表
      * @throws ResourceNotExist ("tags", number[]) 部分tags资源不存在。给出不存在的tag id列表
@@ -444,7 +461,7 @@ class IllustService(private val appdata: AppDataManager,
     fun getCollectionImages(id: Int, filter: LimitAndOffsetFilter): ListResult<IllustRes> {
         return data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-            .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime,
+            .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.partitionTime, Illusts.orderTime,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { (Illusts.parentId eq id) and (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) }

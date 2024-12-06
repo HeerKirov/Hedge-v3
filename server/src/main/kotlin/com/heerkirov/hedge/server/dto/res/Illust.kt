@@ -14,7 +14,7 @@ import java.time.Instant
 
 data class IllustRes(val id: Int, val type: IllustType, val childrenCount: Int?, val filePath: FilePath,
                      val score: Int?, val favorite: Boolean, val tagme: Illust.Tagme,
-                     val source: SourceDataPath?, val orderTime: Instant)
+                     val source: SourceDataPath?, val partitionTime: LocalDate, val orderTime: Instant)
 
 data class IllustSimpleRes(val id: Int, val filePath: FilePath)
 
@@ -60,9 +60,10 @@ fun newIllustRes(it: QueryRowSet): IllustRes {
     val score = it[Illusts.exportedScore]
     val favorite = it[Illusts.favorite]!!
     val tagme = it[Illusts.tagme]!!
+    val partitionTime = it[Illusts.partitionTime]!!
     val orderTime = Instant.ofEpochMilli(it[Illusts.orderTime]!!)
     val childrenCount = it[Illusts.cachedChildrenCount]?.takeIf { type == IllustType.COLLECTION }
     val source = sourcePathOfNullable(it[Illusts.sourceSite], it[Illusts.sourceId], it[Illusts.sourcePart], it[Illusts.sourcePartName])
     val filePath = filePathFrom(it)
-    return IllustRes(id, type, childrenCount, filePath, score, favorite, tagme, source, orderTime)
+    return IllustRes(id, type, childrenCount, filePath, score, favorite, tagme, source, partitionTime, orderTime)
 }

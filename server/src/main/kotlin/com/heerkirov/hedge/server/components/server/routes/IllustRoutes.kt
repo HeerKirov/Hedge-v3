@@ -30,6 +30,7 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
                     post("clone-image-props", ::cloneImageProps)
                     path("{id}") {
                         get(::get)
+                        get("simple", ::getSimple)
                         patch(::update)
                         delete(::delete)
                     }
@@ -107,6 +108,11 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
     private fun get(ctx: Context) {
         val id = ctx.pathParamAsClass<Int>("id").get()
         ctx.json(illustService.get(id))
+    }
+
+    private fun getSimple(ctx: Context) {
+        val id = ctx.pathParamAsClass<Int>("id").get()
+        ctx.json(illustService.getSimple(id))
     }
 
     private fun update(ctx: Context) {
