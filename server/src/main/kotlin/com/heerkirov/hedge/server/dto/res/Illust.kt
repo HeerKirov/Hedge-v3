@@ -23,10 +23,11 @@ data class IllustDetailRes(val id: Int, val type: IllustType, val childrenCount:
                            val topics: List<TopicSimpleRes>, val authors: List<AuthorSimpleRes>, val tags: List<TagSimpleRes>,
                            val description: String, val score: Int?, val favorite: Boolean, val tagme: Illust.Tagme,
                            val originDescription: String, val originScore: Int?, val source: SourceDataPath?,
+                           val parent: IllustParent?, val children: List<IllustSimpleRes>?, val books: List<BookSimpleRes>, val folders: List<FolderSimpleRes>, val associateCount: Int,
                            val partitionTime: LocalDate, val orderTime: Instant,
                            val createTime: Instant, val updateTime: Instant)
 
-data class IllustCollectionRelatedRes(val associates: List<IllustRes>, val books: List<BookSimpleRes>, val folders: List<FolderSimpleRes>)
+data class IllustCollectionRelatedRes(val children: List<IllustSimpleRes>, val childrenCount: Int, val associates: List<IllustRes>, val books: List<BookSimpleRes>, val folders: List<FolderSimpleRes>)
 
 data class IllustImageRelatedRes(val collection: IllustParent?,
                                  val books: List<BookSimpleRes>,

@@ -9,8 +9,17 @@ import com.heerkirov.hedge.server.dto.res.newIllustRes
 import com.heerkirov.hedge.server.exceptions.ParamError
 import com.heerkirov.hedge.server.exceptions.be
 import org.ktorm.dsl.*
+import org.ktorm.entity.count
+import org.ktorm.entity.sequenceOf
 
 class AssociateManager(private val data: DataRepository) {
+    /**
+     * 获得illust关联的illust项的数量。
+     */
+    fun getAssociateCountOfIllust(illustId: Int): Int {
+        return data.db.sequenceOf(AssociateRelations).count { it.illustId eq illustId }
+    }
+
     /**
      * 获得illust关联的所有illust列表。
      */

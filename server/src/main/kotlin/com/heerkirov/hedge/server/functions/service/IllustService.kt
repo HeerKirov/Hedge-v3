@@ -281,7 +281,7 @@ class IllustService(private val appdata: AppDataManager,
             .select(
                 FileRecords.id, FileRecords.block, FileRecords.status, FileRecords.extension, FileRecords.size,
                 FileRecords.resolutionWidth, FileRecords.resolutionHeight, FileRecords.videoDuration,
-                Illusts.type, Illusts.cachedChildrenCount, Illusts.description, Illusts.score,
+                Illusts.type, Illusts.parentId, Illusts.cachedChildrenCount, Illusts.description, Illusts.score,
                 Illusts.exportedDescription, Illusts.exportedScore, Illusts.favorite, Illusts.tagme,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 Illusts.partitionTime, Illusts.orderTime, Illusts.createTime, Illusts.updateTime)
@@ -297,6 +297,7 @@ class IllustService(private val appdata: AppDataManager,
         val videoDuration = row[FileRecords.videoDuration]!!
 
         val finalType = type ?: if(row[Illusts.type]!! == IllustModelType.COLLECTION) IllustType.COLLECTION else IllustType.IMAGE
+        val parentId = if(finalType == IllustType.IMAGE) row[Illusts.parentId] else null
         val childrenCount = row[Illusts.cachedChildrenCount]!!.takeIf { finalType == IllustType.COLLECTION }
         val originDescription = row[Illusts.description]!!
         val originScore = row[Illusts.score]
@@ -342,12 +343,43 @@ class IllustService(private val appdata: AppDataManager,
             .orderBy(Tags.globalOrdinal.asc())
             .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], it[IllustTagRelations.isExported]!!) }
 
+        val parent = if(parentId == null) null else data.db.from(Illusts)
+            .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
+            .select(Illusts.id, Illusts.cachedChildrenCount, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
+            .where { Illusts.id eq parentId }
+            .firstOrNull()
+            ?.let { IllustParent(it[Illusts.id]!!, filePathFrom(it), it[Illusts.cachedChildrenCount]!!) }
+
+        val children = if(finalType == IllustType.IMAGE) null else data.db.from(Illusts)
+            .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
+            .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
+            .where { (Illusts.parentId eq id) and (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) }
+            .limit(9)
+            .orderBy(Illusts.orderTime.asc())
+            .map { IllustSimpleRes(it[Illusts.id]!!, filePathFrom(it)) }
+
+        val books = data.db.from(Books)
+            .innerJoin(BookImageRelations, BookImageRelations.bookId eq Books.id)
+            .leftJoin(FileRecords, Books.fileId eq FileRecords.id)
+            .select(Books.id, Books.title, FileRecords.id, FileRecords.status, FileRecords.block, FileRecords.extension)
+            .where { BookImageRelations.imageId eq id }
+            .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!, if(it[FileRecords.id] != null) filePathFrom(it) else null) }
+
+        val folders = data.db.from(Folders)
+            .innerJoin(FolderImageRelations, FolderImageRelations.folderId eq Folders.id)
+            .select(Folders.id, Folders.title, Folders.parentAddress, Folders.type)
+            .where { FolderImageRelations.imageId eq id }
+            .map { FolderSimpleRes(it[Folders.id]!!, (it[Folders.parentAddress] ?: emptyList()) + it[Folders.title]!!, it[Folders.type]!!) }
+
+        val associateCount = associateManager.getAssociateCountOfIllust(id)
+
         return IllustDetailRes(
             id, finalType, childrenCount, filePath,
             extension, size, resolutionWidth, resolutionHeight, videoDuration,
             topics, authors, tags,
             description, score, favorite, tagme,
             originDescription, originScore, source,
+            parent, children, books, folders, associateCount,
             partitionTime, orderTime, createTime, updateTime
         )
     }
@@ -374,10 +406,20 @@ class IllustService(private val appdata: AppDataManager,
      */
     fun getCollectionRelatedItems(id: Int): IllustCollectionRelatedRes {
         val row = data.db.from(Illusts)
-            .select(Illusts.cachedBookIds, Illusts.cachedFolderIds)
+            .select(Illusts.cachedBookIds, Illusts.cachedFolderIds, Illusts.cachedChildrenCount)
             .where { retrieveCondition(id, IllustType.COLLECTION) }
             .firstOrNull()
             ?: throw be(NotFound())
+
+        val children = data.db.from(Illusts)
+            .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
+            .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
+            .where { (Illusts.parentId eq id) and (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) }
+            .limit(9)
+            .orderBy(Illusts.orderTime.asc())
+            .map { IllustSimpleRes(it[Illusts.id]!!, filePathFrom(it)) }
+
+        val childrenCount = row[Illusts.cachedChildrenCount]!!
         
         val associates = associateManager.getAssociatesOfIllust(id)
 
@@ -396,7 +438,7 @@ class IllustService(private val appdata: AppDataManager,
                 .map { FolderSimpleRes(it[Folders.id]!!, (it[Folders.parentAddress] ?: emptyList()) + it[Folders.title]!!, it[Folders.type]!!) }
         } ?: emptyList()
 
-        return IllustCollectionRelatedRes(associates, books, folders)
+        return IllustCollectionRelatedRes(children, childrenCount, associates, books, folders)
     }
 
     fun getCollectionImages(id: Int, filter: LimitAndOffsetFilter): ListResult<IllustRes> {
