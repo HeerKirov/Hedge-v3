@@ -1,6 +1,6 @@
 import { ComponentPublicInstance, Ref, computed, watch } from "vue"
 import { Partition, IllustQueryFilter } from "@/functions/http-client/api/illust"
-import { flatResponse } from "@/functions/http-client"
+import { mapResponse } from "@/functions/http-client"
 import { useFetchReactive } from "@/functions/fetch"
 import { useLocalStorage, useRouteStorage } from "@/functions/app"
 import { useBrowserTabs, useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
@@ -359,7 +359,7 @@ function useListView(querySchema: QuerySchemaContext) {
                     }
                 }
             },
-            request: client => async items => flatResponse(await Promise.all(items.map(a => client.illust.get(a.id))))
+            request: client => async items => mapResponse(await client.illust.findByIds(items.map(i => i.id)), r => r.map(i => i !== null ? i : undefined))
         }
     })
 

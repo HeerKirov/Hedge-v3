@@ -264,7 +264,7 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
     const detail = ref<{id: number, type: "IMAGE" | "COLLECTION", filePath: FilePath} | null>(null)
 
     const fetch = useFetchHelper({
-        request: client => client.illust.get, 
+        request: client => client.illust.getSimple,
         handleErrorInRequest(e) {
             if(e.code !== "NOT_FOUND") {
                 return e
@@ -295,9 +295,9 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
                 //异步结束后需要验证path尚未改变。如果已经发生改变，则不执行任何操作，所需要的操作会在其他改变的位置完成。
                 //如果不加这个验证，则这里的变更事件极有可能和watch(path)的事件同时交叉响应，在path更改后，此处依然沿用旧值。
                 if(pathValue === path.value) {
-                    if(idx !== undefined) {
-                        const item = listview.proxy.sync.retrieve(idx)!
-                        detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
+                    const exist = idx !== undefined ? listview.proxy.sync.retrieve(idx) : undefined
+                    if(exist !== undefined) {
+                        detail.value = {id: exist.id, type: exist.type ?? "IMAGE", filePath: exist.filePath}
                     }else{
                         const res = await fetch(pathValue)
                         if(pathValue === path.value) {

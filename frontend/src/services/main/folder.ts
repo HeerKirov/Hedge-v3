@@ -5,7 +5,7 @@ import {
     usePostFetchHelper, usePostPathFetchHelper, useRetrieveHelper
 } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
-import { flatResponse, mapResponse } from "@/functions/http-client"
+import { mapResponse } from "@/functions/http-client"
 import { useMessageBox } from "@/modules/message-box"
 import { useBrowserTabs, useDocumentTitle, usePath, useTabRoute } from "@/modules/browser"
 import { DetailViewState, useRouteStorageViewState } from "@/services/base/detail-view-state"
@@ -268,7 +268,7 @@ function useListView(path: Ref<number | null>) {
                     refresh()
                 }
             },
-            request: client => async items => flatResponse(await Promise.all(items.map(a => client.illust.get(a.id))))
+            request: client => async items => mapResponse(await client.illust.findByIds(items.map(i => i.id)), r => r.map(i => i !== null ? i : undefined))
         }
     })
 }

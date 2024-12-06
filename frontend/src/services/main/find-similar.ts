@@ -115,7 +115,7 @@ function useQuickFindOperators() {
     const router = useTabRoute()
     const browserTabs = useBrowserTabs()
 
-    const fetch = useFetchHelper(client => client.illust.get)
+    const fetch = useFetchHelper(client => client.illust.getSimple)
 
     const openImageInPartition = async (currentImageId: number, at?: "NEW_TAB" | "NEW_WINDOW") => {
         const res = await fetch(currentImageId)

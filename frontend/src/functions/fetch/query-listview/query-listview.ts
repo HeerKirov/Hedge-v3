@@ -233,6 +233,9 @@ function useWsEventProcessor<T, KEY, E extends BasicException>(options: EventFil
             return undefined
         }).filter(i => i !== undefined) as [number, T][]
 
+        //过滤完成后，如果没有发现任何有效事件，就跳过后续步骤
+        if(itemsWithIndex.length == 0) return
+
         const gen = generation.value
         const preciseIndexes: (number | null)[] = itemsWithIndex.map(([idx, _]) => idx)
         const modifiedEvent = (e: ModifiedEvent<T>) => {

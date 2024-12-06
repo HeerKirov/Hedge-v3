@@ -195,7 +195,7 @@ function useBookDetailListView(path: Ref<number>) {
                     refresh()
                 }
             },
-            request: client => async items => flatResponse(await Promise.all(items.map(a => client.illust.get(a.id))))
+            request: client => async items => mapResponse(await client.illust.findByIds(items.map(i => i.id)), r => r.map(i => i !== null ? i : undefined))
         }
     })
 }

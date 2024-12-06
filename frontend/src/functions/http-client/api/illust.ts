@@ -36,6 +36,9 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
         get: http.createPathRequest(id => `/api/illusts/${id}`, "GET", {
             parseResponse: mapToDetailIllust
         }),
+        getSimple: http.createPathRequest(id => `/api/illusts/${id}/simple`, "GET", {
+            parseResponse: mapToIllust
+        }),
         update: http.createPathDataRequest(id => `/api/illusts/${id}`, "PATCH", {
             parseData: mapFromImageUpdateForm
         }),
@@ -114,6 +117,7 @@ function mapToIllust(data: any): Illust {
         favorite: <boolean>data["favorite"],
         tagme: <Tagme[]>data["tagme"],
         source: <SourceDataPath | null>data["source"],
+        partitionTime: date.of(<string>data["partitionTime"]),
         orderTime: datetime.of(<string>data["orderTime"])
     }
 }
@@ -137,7 +141,6 @@ function mapToDetailIllust(data: any): DetailIllust {
         books: <SimpleBook[]>data["books"],
         folders: <SimpleFolder[]>data["folders"],
         associateCount: <number>data["associateCount"],
-        partitionTime: date.of(<string>data["partitionTime"]),
         createTime: datetime.of(<string>data["createTime"]),
         updateTime: datetime.of(<string>data["updateTime"])
     }
@@ -268,6 +271,11 @@ export interface IllustEndpoint {
      * @exception NOT_FOUND
      */
     get(id: number): Promise<Response<DetailIllust, NotFound>>
+    /**
+     * 进行简单查阅。
+     * @exception NOT_FOUND
+     */
+    getSimple(id: number): Promise<Response<Illust, NotFound>>
     /**
      * 更改元数据。仅涉及公有部分。
      * @exception NOT_FOUND
@@ -520,6 +528,10 @@ export interface Illust extends CommonIllust {
      */
     source: SourceDataPath | null
     /**
+     * 分区时间。
+     */
+    partitionTime: LocalDate
+    /**
      * 此项目的排序时间。
      */
     orderTime: LocalDateTime
@@ -590,10 +602,6 @@ export interface DetailIllust extends Illust {
      * 关联项的数量。
      */
     associateCount: number
-    /**
-     * 分区时间。
-     */
-    partitionTime: LocalDate
     /**
      * 创建时间。
      */
