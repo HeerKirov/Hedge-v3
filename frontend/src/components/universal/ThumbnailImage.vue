@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Icon } from "@/components/universal"
+import { NumBadge } from "@/components/universal"
 import { useAssets } from "@/functions/app"
 import { startDragFile } from "@/modules/others"
 
@@ -47,10 +47,7 @@ const onDragstart = async (e: DragEvent) => {
 <template>
     <div :class="$style['thumbnail-image']" :style="divStyle">
         <img :src="assetsUrl(props.file ?? null)" :style="imgStyle" :alt="alt" @dragstart="onDragstart"/>
-        <div v-if="numTagValue !== undefined" :class="$style['num-tag']">
-            <Icon icon="images"/>
-            {{numTagValue}}
-        </div>
+        <NumBadge v-if="numTagValue !== undefined" fixed="right-top" :num="numTagValue"/>
     </div>
 </template>
 
@@ -74,13 +71,4 @@ const onDragstart = async (e: DragEvent) => {
         border: solid 1px color.$light-mode-border-color
         @media (prefers-color-scheme: dark)
             border-color: color.$dark-mode-border-color
-
-    > .num-tag
-        position: absolute
-        right: 0.35rem
-        top: 0.35rem
-        padding: 0.125rem 0.25rem
-        border-radius: size.$radius-size-std
-        color: color.$dark-mode-text-color
-        background-color: rgba(0, 0, 0, 0.65)
 </style>

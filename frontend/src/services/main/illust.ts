@@ -2,7 +2,7 @@ import { computed, reactive, ref, Ref, watch } from "vue"
 import { useLocalStorage } from "@/functions/app"
 import { mapResponse } from "@/functions/http-client"
 import { QueryListview, useFetchEndpoint, useFetchHelper, usePostFetchHelper, usePostPathFetchHelper } from "@/functions/fetch"
-import { CommonIllust, IllustQueryFilter, Tagme } from "@/functions/http-client/api/illust"
+import { CollectionRelatedItems, CommonIllust, Illust, IllustExceptions, IllustQueryFilter, ImageRelatedItems, Tagme } from "@/functions/http-client/api/illust"
 import { FilePath, SourceDataPath } from "@/functions/http-client/api/all"
 import { SimpleBook } from "@/functions/http-client/api/book"
 import { SimpleFolder } from "@/functions/http-client/api/folder"
@@ -12,7 +12,7 @@ import { usePreviewService } from "@/components-module/preview"
 import { useDialogService } from "@/components-module/dialog"
 import { useToast } from "@/modules/toast"
 import { useInterceptedKey } from "@/modules/keyboard"
-import { useMessageBox } from "@/modules/message-box"
+import { MessageBoxManager, useMessageBox } from "@/modules/message-box"
 import { useBrowserTabs, useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
@@ -477,7 +477,9 @@ export function useSideBarAction(selected: Ref<number[]>, selectedIndex: Ref<(nu
 }
 
 export function useSideBarDetailInfo(path: Ref<number | null>) {
+    const message = useMessageBox()
     const dialog = useDialogService()
+    const fetchSourceUpdate = usePostPathFetchHelper(client => client.illust.image.sourceData.update)
     const { data, setData } = useFetchEndpoint({
         path,
         get: client => client.illust.get,
@@ -490,6 +492,9 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
     }
     const setScore = async (score: number | null) => {
         return score === data.value?.score || await setData({score})
+    }
+    const setFavorite = async (favorite: boolean) => {
+        return favorite === data.value?.favorite || await setData({favorite})
     }
     const setTagme = async (tagme: Tagme[]) => {
         return objects.deepEquals(tagme, data.value?.tagme) || await setData({tagme})
@@ -507,59 +512,34 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
             dialog.metaTagEditor.editIdentity({type: data.value.type, id: data.value.id})
         }
     }
+    const setSourceDataPath = async (source: SourceDataPath | null) => {
+        if(path.value !== null) {
+            return objects.deepEquals(source, data.value?.source) || await fetchSourceUpdate(path.value, {source}, e => handleSourceUpdateError(e, source, message))
+        }
+        return false
+    }
 
-    return {data, id: path, setDescription, setScore, setTime, setTagme, openMetaTagEditor}
+    const relatedOperators = useRelatedOperators(path)
+
+    return {data, id: path, setDescription, setScore, setFavorite, setTime, setTagme, openMetaTagEditor, setSourceDataPath, ...relatedOperators}
 }
 
 export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref<"IMAGE" | "COLLECTION">) {
-    const viewStack = useStackedView()
-    const browserTabs = useBrowserTabs()
-    const router = useTabRoute()
-    const dialog = useDialogService()
     const { data } = useFetchEndpoint({
         path,
         get: client => async path => {
             if(illustType.value === "IMAGE") {
-                return await client.illust.image.relatedItems.get(path, {limit: 9})
+                return mapResponse(await client.illust.image.relatedItems.get(path), d => (<ImageRelatedItems & CollectionRelatedItems>{...d, children: [], childrenCount: 0}))
             }else{
-                return mapResponse(await client.illust.collection.relatedItems.get(path, {limit: 9}), d => ({associates: d.associates, collection: null, books: d.books, folders: d.folders}))
+                return mapResponse(await client.illust.collection.relatedItems.get(path), d => (<ImageRelatedItems & CollectionRelatedItems>{...d, collection: null}))
             }
         },
         eventFilter: c => event => event.eventType === "entity/illust/related-items/updated" && event.illustId === c.path
     })
 
-    const openRelatedBook = (book: SimpleBook) => {
-        router.routePush({routeName: "BookDetail", path: book.id})
-    }
+    const operators = useRelatedOperators(path)
 
-    const openRelatedCollection = () => {
-        const id = data.value?.collection?.id
-        if(id !== undefined) {
-            router.routePush({routeName: "CollectionDetail", path: id})
-        }
-    }
-
-    const openAssociate = () => {
-        if(path.value !== null) {
-            dialog.associateExplorer.openAssociateView(path.value)
-        }
-    }
-
-    const openAssociateInNewView = (index?: number) => {
-        if(data.value?.associates.length) {
-            viewStack.openImageView({imageIds: data.value.associates.map(i => i.id), focusIndex: index})
-        }
-    }
-
-    const openFolderInNewTab = (folder: SimpleFolder) => {
-        browserTabs.newTab({routeName: "MainFolder", params: {detail: folder.id}})
-    }
-
-    const openFolderInNewWindow = (folder: SimpleFolder) => {
-        browserTabs.newWindow({routeName: "MainFolder", params: {detail: folder.id}})
-    }
-
-    return {data, openRelatedBook, openRelatedCollection, openAssociate, openAssociateInNewView, openFolderInNewTab, openFolderInNewWindow}
+    return {data, ...operators}
 }
 
 export function useSideBarSourceData(path: Ref<number | null>) {
@@ -577,29 +557,7 @@ export function useSideBarSourceData(path: Ref<number | null>) {
     const sourceDataPath: Ref<SourceDataPath | null> = computed(() => data.value?.source ?? null)
 
     const setSourceDataPath = async (source: SourceDataPath | null) => {
-        return objects.deepEquals(source, data.value?.source) || await setData({source}, e => {
-            if(e.code === "NOT_EXIST" && e.info[0] === "site") {
-                message.showOkMessage("error", `来源${source?.sourceSite}不存在。`)
-            }else if(e.code === "PARAM_ERROR") {
-                const target = e.info === "sourceId" ? "来源ID" : e.info === "sourcePart" ? "分页" : e.info === "sourcePartName" ? "分页页名": e.info
-                message.showOkMessage("error", `${target}的值内容错误。`, "ID只能是自然数。")
-            }else if(e.code === "PARAM_REQUIRED") {
-                const target = e.info === "sourceId" ? "来源ID" : e.info === "sourcePart" ? "分页" : e.info === "sourcePartName" ? "分页页名": e.info
-                message.showOkMessage("error", `${target}属性缺失。`)
-            }else if(e.code === "PARAM_NOT_REQUIRED") {
-                if(e.info === "sourcePart") {
-                    message.showOkMessage("error", `分页属性不需要填写，因为选择的来源站点不支持分页。`)
-                }else if(e.info === "sourcePartName") {
-                    message.showOkMessage("error", `分页页名属性不需要填写，因为选择的来源站点不支持分页页名。`)
-                }else if(e.info === "sourceId/sourcePart/sourcePartName") {
-                    message.showOkMessage("error", `来源ID/分页属性不需要填写，因为未指定来源站点。`)
-                }else{
-                    message.showOkMessage("error", `${e.info}属性不需要填写。`)
-                }
-            }else{
-                return e
-            }
-        })
+        return objects.deepEquals(source, data.value?.source) || await setData({source}, e => handleSourceUpdateError(e, source, message))
     }
 
     const setSourceStatus = async (status: SourceEditStatus) => {
@@ -613,4 +571,79 @@ export function useSideBarSourceData(path: Ref<number | null>) {
     }
 
     return {data, sourceDataPath, setSourceDataPath, setSourceStatus, openSourceDataEditor}
+}
+
+function useRelatedOperators(path: Ref<number | null>) {
+    const browserTabs = useBrowserTabs()
+    const router = useTabRoute()
+    const dialog = useDialogService()
+    const viewStack = useStackedView()
+
+    const openCollection = (collectionId: number, at?: "newTab" | "newWindow") => {
+        if(at === "newTab") {
+            browserTabs.newTab({routeName: "CollectionDetail", path: collectionId})
+        }else if(at === "newWindow") {
+            browserTabs.newWindow({routeName: "CollectionDetail", path: collectionId})
+        }else{
+            router.routePush({routeName: "CollectionDetail", path: collectionId})
+        }
+    }
+
+    const openAssociate = () => {
+        if(path.value !== null) {
+            dialog.associateExplorer.openAssociateView(path.value)
+        }
+    }
+
+    const openAssociateInViewStack = (associates: Illust[], index?: number) => {
+        if(associates.length) {
+            viewStack.openImageView({imageIds: associates.map(i => i.id), focusIndex: index})
+        }
+    }
+
+    const openBook = (book: SimpleBook, at?: "newTab" | "newWindow") => {
+        if(at === "newTab") {
+            browserTabs.newTab({routeName: "BookDetail", path: book.id})
+        }else if(at === "newWindow") {
+            browserTabs.newWindow({routeName: "BookDetail", path: book.id})
+        }else{
+            router.routePush({routeName: "BookDetail", path: book.id})
+        }
+    }
+
+    const openFolder = (folder: SimpleFolder, at?: "newTab" | "newWindow") => {
+        if(at === "newTab") {
+            browserTabs.newTab({routeName: "FolderDetail", path: folder.id})
+        }else if(at === "newWindow") {
+            browserTabs.newWindow({routeName: "FolderDetail", path: folder.id})
+        }else{
+            router.routePush({routeName: "FolderDetail", path: folder.id})
+        }
+    }
+
+    return {openCollection, openAssociate, openAssociateInViewStack, openBook, openFolder}
+}
+
+function handleSourceUpdateError(e: IllustExceptions["image.sourceData.update"], source: SourceDataPath | null, message: MessageBoxManager): IllustExceptions["image.sourceData.update"] | void {
+    if(e.code === "NOT_EXIST" && e.info[0] === "site") {
+        message.showOkMessage("error", `来源${source?.sourceSite}不存在。`)
+    }else if(e.code === "PARAM_ERROR") {
+        const target = e.info === "sourceId" ? "来源ID" : e.info === "sourcePart" ? "分页" : e.info === "sourcePartName" ? "分页页名": e.info
+        message.showOkMessage("error", `${target}的值内容错误。`, "ID只能是自然数。")
+    }else if(e.code === "PARAM_REQUIRED") {
+        const target = e.info === "sourceId" ? "来源ID" : e.info === "sourcePart" ? "分页" : e.info === "sourcePartName" ? "分页页名": e.info
+        message.showOkMessage("error", `${target}属性缺失。`)
+    }else if(e.code === "PARAM_NOT_REQUIRED") {
+        if(e.info === "sourcePart") {
+            message.showOkMessage("error", `分页属性不需要填写，因为选择的来源站点不支持分页。`)
+        }else if(e.info === "sourcePartName") {
+            message.showOkMessage("error", `分页页名属性不需要填写，因为选择的来源站点不支持分页页名。`)
+        }else if(e.info === "sourceId/sourcePart/sourcePartName") {
+            message.showOkMessage("error", `来源ID/分页属性不需要填写，因为未指定来源站点。`)
+        }else{
+            message.showOkMessage("error", `${e.info}属性不需要填写。`)
+        }
+    }else{
+        return e
+    }
 }

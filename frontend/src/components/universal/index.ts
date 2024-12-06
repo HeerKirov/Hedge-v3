@@ -9,5 +9,6 @@ import Block from "./Block.vue"
 import ThumbnailImage from "./ThumbnailImage.vue"
 import GridImages from "./GridImages.vue"
 import OptionButtons from "./OptionButtons.vue"
+import NumBadge from "./NumBadge.vue"
 
-export { Icon, Starlight, WrappedText, Tag, Button, Separator, Block, ThumbnailImage, GridImages, OptionButtons }
+export { Icon, Starlight, WrappedText, Tag, Button, Separator, Block, ThumbnailImage, GridImages, OptionButtons, NumBadge }

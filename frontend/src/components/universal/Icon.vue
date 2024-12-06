@@ -91,7 +91,7 @@ import {
 
 import {
     faStar as farStar, faCheckSquare as farCheckSquare, faCircleQuestion as farCircleQuestion,
-    faFaceMehBlank as farFaceMehBlank
+    faFaceMehBlank as farFaceMehBlank, faHeart as farHeart
 } from "@fortawesome/free-regular-svg-icons"
 
 library.add(
@@ -116,6 +116,6 @@ library.add(
     faFaceMehBlank, faClock, faUserClock, faUpRightFromSquare, faUpRightAndDownLeftFromCenter, faDownLeftAndUpRightToCenter,
     faGlobe, faFilePen, faFont, fa1, faShuffle, faPlugCircleXmark
 )
-library.add(farStar, farCheckSquare, farCircleQuestion, farFaceMehBlank)
+library.add(farStar, farCheckSquare, farCircleQuestion, farFaceMehBlank, farHeart)
 
 </script>

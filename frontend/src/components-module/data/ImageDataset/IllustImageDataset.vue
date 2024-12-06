@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T extends CommonIllust">
 import { computed } from "vue"
-import { Icon } from "@/components/universal"
+import { Icon, NumBadge } from "@/components/universal"
 import { Flex, FlexItem } from "@/components/layout"
 import { FileInfoDisplay, SourceInfo } from "@/components-business/form-display"
 import { PaginationData, PaginationViewState, QueryInstance } from "@/functions/fetch"
@@ -139,7 +139,7 @@ installDatasetContext({
             <img :class="$style['grid-img']" :src="assetsUrl(item.filePath[thumbType])" :alt="`illust-${item.id}`"/>
             <Icon v-if="item.favorite" :class="$style['grid-favorite']" icon="heart"/>
             <Icon v-if="isVideoExtension(item.filePath.extension)" :class="$style['grid-video']" icon="video"/>
-            <div v-if="item.childrenCount" :class="$style['grid-num-tag']"><Icon class="mr-half" icon="images"/>{{item.childrenCount}}</div>
+            <NumBadge v-if="item.childrenCount" fixed="right-top" :num="item.childrenCount"/>
         </DatasetGridFramework>
         <DatasetRowFramework v-else :key-of="keyOf" :row-height="32" v-slot="{ item }">
             <Flex horizontal="stretch" align="center">
@@ -206,15 +206,6 @@ installDatasetContext({
     bottom: 0.25rem
     color: color.$dark-mode-text-color
     filter: drop-shadow(0 0 1px color.$dark-mode-background-color)
-
-.grid-num-tag
-    position: absolute
-    right: 0.25rem
-    top: 0.25rem
-    padding: 0.25rem 0.35rem
-    border-radius: size.$radius-size-std
-    color: color.$dark-mode-text-color
-    background-color: rgba(0, 0, 0, 0.65)
 
 .row-img
     margin-top: 1px

@@ -6,7 +6,7 @@ import {
     ParamNotRequired, ParamRequired,
     ResourceNotExist, ResourceNotSuitable
 } from "../exceptions"
-import { FilePath, IdResponse, LimitAndOffsetFilter, LimitFilter, ListResult, OrderList, SourceDataPath, SourceTagPath } from "./all"
+import { FilePath, IdResponse, LimitAndOffsetFilter, ListResult, OrderList, SourceDataPath, SourceTagPath } from "./all"
 import { SimpleBook } from "./book"
 import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
@@ -52,7 +52,7 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
             }),
             delete: http.createPathQueryRequest(id => `/api/illusts/collection/${id}`, "DELETE"),
             relatedItems: {
-                get: http.createPathQueryRequest(id => `/api/illusts/collection/${id}/related-items`, "GET", {
+                get: http.createPathRequest(id => `/api/illusts/collection/${id}/related-items`, "GET", {
                     parseResponse: mapToCollectionRelatedItems
                 }),
                 update: http.createPathDataRequest(id => `/api/illusts/collection/${id}/related-items`, "PATCH")
@@ -75,7 +75,7 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
             }),
             delete: http.createPathQueryRequest(id => `/api/illusts/image/${id}`, "DELETE"),
             relatedItems: {
-                get: http.createPathQueryRequest(id => `/api/illusts/image/${id}/related-items`, "GET", {
+                get: http.createPathRequest(id => `/api/illusts/image/${id}/related-items`, "GET", {
                     parseResponse: mapToImageRelatedItems
                 }),
                 update: http.createPathDataRequest(id => `/api/illusts/image/${id}/related-items`, "PATCH")
@@ -132,6 +132,11 @@ function mapToDetailIllust(data: any): DetailIllust {
         description: <string>data["description"],
         originDescription: <string>data["originDescription"],
         originScore: <number | null>data["originScore"],
+        parent: <SimpleCollection | null>data["parent"],
+        children: <SimpleIllust[] | null>data["children"],
+        books: <SimpleBook[]>data["books"],
+        folders: <SimpleFolder[]>data["folders"],
+        associateCount: <number>data["associateCount"],
         partitionTime: date.of(<string>data["partitionTime"]),
         createTime: datetime.of(<string>data["createTime"]),
         updateTime: datetime.of(<string>data["updateTime"])
@@ -147,6 +152,8 @@ function mapToPartition(data: any): Partition {
 
 function mapToCollectionRelatedItems(data: any): CollectionRelatedItems {
     return {
+        children: <SimpleIllust[]>data["children"],
+        childrenCount: <number>data["childrenCount"],
         books: <SimpleBook[]>data["books"],
         folders: <SimpleFolder[]>data["folders"],
         associates: (<any[]>data["associates"]).map(mapToIllust)
@@ -313,7 +320,7 @@ export interface IllustEndpoint {
              * 查看关联内容。
              * @exception NOT_FOUND
              */
-            get(id: number, filter: LimitFilter): Promise<Response<CollectionRelatedItems, NotFound>>
+            get(id: number): Promise<Response<CollectionRelatedItems, NotFound>>
             /**
              * 更改关联内容。
              * @exception NOT_FOUND
@@ -368,7 +375,7 @@ export interface IllustEndpoint {
              * 查看关联内容。
              * @exception NOT_FOUND
              */
-            get(id: number, filter: LimitFilter): Promise<Response<ImageRelatedItems, NotFound>>
+            get(id: number): Promise<Response<ImageRelatedItems, NotFound>>
             /**
              * 更改关联内容。
              * @exception NOT_FOUND
@@ -564,6 +571,26 @@ export interface DetailIllust extends Illust {
      */
     originScore: number | null
     /**
+     * image所属的collection。
+     */
+    parent: SimpleCollection | null
+    /**
+     * collection下属的images。这里最多只会列出9个项。
+     */
+    children: SimpleIllust[] | null
+    /**
+     * image所属的画集列表。
+     */
+    books: SimpleBook[]
+    /**
+     * image所属的文件夹列表。
+     */
+    folders: SimpleFolder[]
+    /**
+     * 关联项的数量。
+     */
+    associateCount: number
+    /**
      * 分区时间。
      */
     partitionTime: LocalDate
@@ -586,7 +613,7 @@ export interface SimpleCollection extends SimpleIllust {
     childrenCount: number
 }
 
-export interface CollectionRelatedItems {
+interface CommonRelatedItems {
     /**
      * 关联组。
      */
@@ -601,7 +628,18 @@ export interface CollectionRelatedItems {
     folders: SimpleFolder[]
 }
 
-export interface ImageRelatedItems extends CollectionRelatedItems {
+export interface CollectionRelatedItems extends CommonRelatedItems {
+    /**
+     * collection下属的images。这里最多只会列出9个项。
+     */
+    children: SimpleIllust[]
+    /**
+     * collection下属的images的数量。
+     */
+    childrenCount: number
+}
+
+export interface ImageRelatedItems extends CommonRelatedItems {
     /**
      * image所属的collection。
      */
