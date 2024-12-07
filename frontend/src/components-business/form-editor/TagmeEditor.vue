@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Block, Icon } from "@/components/universal"
+import { Block, Icon, Tag } from "@/components/universal"
 import { CheckBox } from "@/components/form"
 import { Tagme } from "@/functions/http-client/api/illust"
 import { TAGME_TYPES, TAGME_TYPE_ICONS, TAGME_TYPE_NAMES } from "@/constants/entity"
@@ -26,7 +26,7 @@ const updateValue = (tagme: Tagme, v: boolean) => {
 
 <template>
     <Block v-if="direction === 'horizontal'" :class="$style.horizontal">
-        <b>Tagme</b>
+        <Icon icon="flag"/><b class="mr-1">TAGME</b>
         <span v-for="tagme in TAGME_TYPES" :key="tagme" class="ml-2">
             <CheckBox :value="value.includes(tagme)" @update:value="updateValue(tagme, $event)">
                 <Icon :icon="TAGME_TYPE_ICONS[tagme]"/>
@@ -35,7 +35,7 @@ const updateValue = (tagme: Tagme, v: boolean) => {
         </span>
     </Block>
     <Block v-else class="p-1">
-        <b>Tagme</b>
+        <Tag class="mb-2 is-inline-block" icon="flag"><b>TAGME</b></Tag>
         <p v-for="tagme in TAGME_TYPES" :key="tagme">
             <CheckBox :value="value.includes(tagme)" @update:value="updateValue(tagme, $event)">
                 <Icon :icon="TAGME_TYPE_ICONS[tagme]"/>

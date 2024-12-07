@@ -66,7 +66,7 @@ function useImageData(initIndex: number | null) {
             const metadata = await client.illust.image.get(path)
                 if(!metadata.ok) return metadata
 
-                const relatedItems = await client.illust.image.relatedItems.get(path, {limit: 9})
+                const relatedItems = await client.illust.image.relatedItems.get(path)
                 if(!relatedItems.ok) return relatedItems
 
                 const sourceData = await client.illust.image.sourceData.get(path)

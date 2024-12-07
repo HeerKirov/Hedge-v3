@@ -2,9 +2,9 @@
 import { toRef } from "vue"
 import { FormEditKit } from "@/components/interaction"
 import { Input } from "@/components/form"
-import { Separator, Icon, Starlight } from "@/components/universal"
+import { Separator, Icon } from "@/components/universal"
 import { TitleDisplay, DescriptionDisplay, TimeGroupDisplay, MetaTagListDisplay } from "@/components-business/form-display"
-import { DescriptionEditor } from "@/components-business/form-editor"
+import { DescriptionEditor, FavoriteEditor, ScoreEditor } from "@/components-business/form-editor"
 import { DetailBook } from "@/functions/http-client/api/book"
 import { useSideBarDetailInfo } from "@/services/main/book"
 
@@ -12,7 +12,7 @@ const props = defineProps<{book: DetailBook | null}>()
 
 const data = toRef(props, "book")
 
-const { setTitle, setScore, setDescription, openMetaTagEditor } = useSideBarDetailInfo(data)
+const { setTitle, setScore, setFavorite, setDescription, openMetaTagEditor } = useSideBarDetailInfo(data)
 
 </script>
 
@@ -23,16 +23,19 @@ const { setTitle, setScore, setDescription, openMetaTagEditor } = useSideBarDeta
             <span class="float-right"><Icon class="mr-1" icon="images"/>{{ data.imageCount }}个图像</span>
         </p>
         <Separator direction="horizontal"/>
-        <FormEditKit class="mt-2" :value="data.title" :set-value="setTitle">
+        <div class="flex jc-between">
+            <ScoreEditor :value="data.score" @update:value="setScore"/>
+            <FavoriteEditor :value="data.favorite" @update:value="setFavorite"/>
+        </div>
+        <FormEditKit class="mt-1" :value="data.title" :set-value="setTitle">
             <template #default="{ value }">
                 <TitleDisplay :value="value"/>
             </template>
             <template #edit="{ value, setValue, save }">
-                <Input auto-focus :value="value" @update:value="setValue" @enter="save"/>
+                <Input class="w-100" auto-focus :value="value" @update:value="setValue" @enter="save"/>
             </template>
         </FormEditKit>
-        <Starlight class="is-inline-block mt-4" editable :value="data.score" @update:value="setScore"/>
-        <FormEditKit class="mt-2" :value="data.description" :set-value="setDescription">
+        <FormEditKit class="mt-1" :value="data.description" :set-value="setDescription">
             <template #default="{ value }">
                 <DescriptionDisplay :value="value"/>
             </template>
@@ -40,7 +43,8 @@ const { setTitle, setScore, setDescription, openMetaTagEditor } = useSideBarDeta
                 <DescriptionEditor :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
-        <MetaTagListDisplay class="mt-2" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
         <TimeGroupDisplay class="mt-2" :update-time="data.updateTime" :create-time="data.createTime"/>
+        <Separator direction="horizontal" :spacing="2"/>
+        <MetaTagListDisplay :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
     </template>
 </template>

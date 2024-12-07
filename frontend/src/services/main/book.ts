@@ -1,7 +1,7 @@
 import { computed, Ref, watch } from "vue"
 import { installation } from "@/utils/reactivity"
 import { Book, BookQueryFilter, DetailBook } from "@/functions/http-client/api/book"
-import { flatResponse } from "@/functions/http-client"
+import { flatResponse, mapResponse } from "@/functions/http-client"
 import { useFetchEndpoint, useRetrieveHelper } from "@/functions/fetch"
 import { useMessageBox } from "@/modules/message-box"
 import { useBrowserTabs, useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
@@ -232,11 +232,15 @@ export function useSideBarDetailInfo(data: Ref<DetailBook | null>) {
         return score === data.value?.score || await setData(data.value!.id, { score })
     }
 
+    const setFavorite = async (favorite: boolean) => {
+        return favorite === data.value?.favorite || await setData(data.value!.id, { favorite })
+    }
+
     const openMetaTagEditor = () => {
         if(data.value !== null) {
             dialog.metaTagEditor.editIdentity({type: "BOOK", id: data.value.id})
         }
     }
 
-    return {data, setTitle, setDescription, setScore, openMetaTagEditor}
+    return {data, setTitle, setDescription, setScore, setFavorite, openMetaTagEditor}
 }

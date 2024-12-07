@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { Button, OptionButtons, Separator } from "@/components/universal"
+import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { BrowserTeleport } from "@/components/logical"
 import { BottomLayout, PaneLayout } from "@/components/layout"
 import { EmbedPreview } from "@/components-module/preview"
 import { IllustImageDataset } from "@/components-module/data"
-import { IllustDetailPane, IllustTabDetailInfo, IllustTabRelatedItems } from "@/components-module/common"
+import { IllustDetailTab, IllustDetailPane } from "@/components-module/common"
 import { LockOnButton, DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
 import { Illust } from "@/functions/http-client/api/illust"
 import { useCollectionContext } from "@/services/main/illust"
@@ -13,18 +13,12 @@ import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
 
 const {
     target: { path, data, deleteItem, toggleFavorite },
-    sideBar: { tabType },
     listview: { listview, paginationData: { data: paginationData, state, setState, navigateTo } },
     listviewController: { viewMode, fitType, columnNum, editableLockOn },
     selector: { selected, selectedIndex, lastSelected, update: updateSelect },
     paneState,
     operators
 } = useCollectionContext()
-
-const sideBarButtonItems = [
-    {value: "info", label: "项目信息", icon: "info"},
-    {value: "related", label: "相关项目", icon: "dice-d6"}
-]
 
 const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
@@ -85,13 +79,8 @@ const menu = useDynamicPopupMenu<Illust>((illust, { alt }) => [
     <BrowserTeleport to="side-bar">
         <BottomLayout container-class="p-2 pl-3" bottom-class="p-1">
             <KeepAlive>
-                <IllustTabDetailInfo v-if="tabType === 'info'" :detail-id="path" is-collection-detail/>
-                <IllustTabRelatedItems v-else-if="tabType === 'related'" :detail-id="path" type="COLLECTION"/>
+                <IllustDetailTab :detail-id="path" type="COLLECTION" scene="CollectionDetail"/>
             </KeepAlive>
-
-            <template #bottom>
-                <OptionButtons :items="sideBarButtonItems" v-model:value="tabType" enable-darwin-border/>
-            </template>
         </BottomLayout>
     </BrowserTeleport>
 

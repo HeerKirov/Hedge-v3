@@ -9,10 +9,14 @@ import { useAssets } from "@/functions/app"
 
 const props = defineProps<{detailId: number, type: "IMAGE" | "COLLECTION"}>()
 
+const emit = defineEmits<{
+    (e: "backTab"): void
+}>()
+
 const detailId = toRef(props, "detailId")
 const illustType = toRef(props, "type")
 
-const { data, openCollection, openAssociate, openAssociateInViewStack, openBook, openFolder } = useSideBarRelatedItems(detailId, illustType)
+const { data, openCollection, openAssociate, openAssociateInViewStack, openBook, openFolder } = useSideBarRelatedItems(detailId, illustType, () => emit("backTab"))
 
 const { assetsUrl } = useAssets()
 
@@ -34,7 +38,8 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
 </script>
 
 <template>
-    <p class="mt-1 mb-1">
+    <p class="mt-1 mb-1 is-cursor-pointer" @click="$emit('backTab')">
+        <a class="mr-1"><Icon icon="angle-left"/></a>
         <Icon icon="id-card"/><b class="ml-1 selectable">{{detailId}}</b>
     </p>
     <Separator direction="horizontal"/>
@@ -109,6 +114,8 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
     margin-bottom: size.$spacing-1
     cursor: pointer
     aspect-ratio: 3
+    width: 100%
+    max-height: 100px
     overflow: hidden
 
     > .info

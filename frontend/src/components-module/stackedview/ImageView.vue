@@ -2,9 +2,9 @@
 import { computed } from "vue"
 import { PlayBoard } from "@/components/data"
 import { ElementPopupMenu } from "@/components/interaction"
-import { Button, Separator, OptionButtons } from "@/components/universal"
+import { Button, Separator } from "@/components/universal"
 import { PaneLayout, BasePane, TopBarCollapseLayout, MiddleLayout, Flex, FlexItem } from "@/components/layout"
-import { IllustTabDetailInfo, IllustTabRelatedItems, IllustTabSourceData } from "@/components-module/common"
+import { IllustDetailTab, } from "@/components-module/common"
 import { ZoomController } from "@/components-business/top-bar"
 import { useAssets, useDarwinWindowed } from "@/functions/app"
 import { Illust } from "@/functions/http-client/api/illust"
@@ -22,7 +22,7 @@ const props = defineProps<{
 const {
     navigator: { metrics, subMetrics, prev, next },
     target: { id, data },
-    sideBar: { tabType, collapsed },
+    sideBar: { collapsed },
     playBoard: { zoomEnabled, zoomValue },
     operators: { 
         toggleFavorite, deleteItem, openInNewWindow, openInLocalFolder, openInLocalPreference,
@@ -33,12 +33,6 @@ const {
 const { assetsUrl } = useAssets()
 
 const hasDarwinBorder = useDarwinWindowed()
-
-const sideBarButtonItems = [
-    {value: "info", label: "项目信息", icon: "info"},
-    {value: "related", label: "相关内容", icon: "dice-d6"},
-    {value: "source", label: "来源数据", icon: "file-invoice"},
-]
 
 const externalMenuItems = <MenuItem<undefined>[]>[
     {type: "normal", label: "在新窗口中打开", click: openInNewWindow},
@@ -108,15 +102,7 @@ const popupMenu = usePopupMenu(computed(() => [
                     <Separator :class="$style['right-top-bar-border']" direction="horizontal" :spacing="0"/>
                 </template>
 
-                <KeepAlive>
-                    <IllustTabDetailInfo v-if="id !== null && tabType === 'info'" :detail-id="id"/>
-                    <IllustTabRelatedItems v-else-if="id !== null && tabType === 'related'" :detail-id="id" type="IMAGE"/>
-                    <IllustTabSourceData v-else-if="id !== null && tabType === 'source'" :detail-id="id" type="IMAGE"/>
-                </KeepAlive>
-
-                <template #bottom>
-                    <OptionButtons :items="sideBarButtonItems" v-model:value="tabType" enable-darwin-border/>
-                </template>
+                <IllustDetailTab v-if="id" :detail-id="id" type="IMAGE"/>
             </BasePane>
         </template>
     </PaneLayout>

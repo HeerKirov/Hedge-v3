@@ -320,17 +320,11 @@ function usePlayBoardContext() {
 }
 
 function useSideBarContext() {
-    const storage = useLocalStorage<{collapsed: boolean, tabType: "info" | "source" | "related"}>("image-detail-view/side-bar", () => ({collapsed: false, tabType: "info"}), true)
+    const storage = useLocalStorage<{collapsed: boolean}>("image-detail-view/side-bar", () => ({collapsed: false}), true)
 
-    const tabType = toRef(storage, "tabType")
     const collapsed = toRef(storage, "collapsed")
 
-    useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Digit3", "Meta+KeyP"], e => {
-        if(e.key === "Digit1") tabType.value = "info"
-        else if(e.key === "Digit2") tabType.value = "related"
-        else if(e.key === "Digit3") tabType.value = "source"
-        else if(e.key === "KeyP") collapsed.value = !collapsed.value
-    })
+    useInterceptedKey("Meta+KeyP", () => collapsed.value = !collapsed.value)
 
-    return {tabType, collapsed}
+    return {collapsed}
 }

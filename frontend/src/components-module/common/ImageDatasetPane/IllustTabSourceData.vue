@@ -3,29 +3,30 @@ import { toRef } from "vue"
 import { Separator, Icon } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
 import {
-    SourceInfo,
-    SourceEditStatusDisplay,
-    TitleDisplay,
-    DescriptionDisplay,
-    SourceRelationsDisplay,
-    SourceBooksDisplay,
-    SourceTagsDisplay,
-    SourceLinksDisplay,
-    SourceAdditionalInfoDisplay,
-    TimeGroupDisplay
+    SourceInfo, SourceEditStatusDisplay, TitleDisplay, DescriptionDisplay, TimeGroupDisplay,
+    SourceRelationsDisplay, SourceBooksDisplay, SourceTagsDisplay, SourceLinksDisplay, SourceAdditionalInfoDisplay
 } from "@/components-business/form-display"
 import { SourceIdentityEditor, SourceEditStatusEditor } from "@/components-business/form-editor"
 import { useSideBarSourceData } from "@/services/main/illust"
 
 const props = defineProps<{detailId: number, type: "IMAGE" | "COLLECTION"}>()
 
+const emit = defineEmits<{
+    (e: "backTab"): void
+}>()
+
 const detailId = toRef(props, "detailId")
 
-const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceDataEditor } = useSideBarSourceData(detailId)
+const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceDataEditor } = useSideBarSourceData(detailId, () => emit("backTab"))
 
 </script>
 
 <template>
+    <p class="mt-1 mb-1 is-cursor-pointer" @click="$emit('backTab')">
+        <a class="mr-1"><Icon icon="angle-left"/></a>
+        <Icon icon="id-card"/><b class="ml-1 selectable">{{detailId}}</b>
+    </p>
+    <Separator direction="horizontal" :spacing="[1, 2]"/>
     <template v-if="data !== null">
         <FormEditKit class="my-1" :value="sourceDataPath!" :set-value="setSourceDataPath">
             <template #default="{ value }">
@@ -35,7 +36,7 @@ const { data, sourceDataPath, setSourceStatus, setSourceDataPath, openSourceData
                 <SourceIdentityEditor :source="value" @update:source="setValue" @enter="save"/>
             </template>
         </FormEditKit>
-        <Separator direction="horizontal"/>
+        <Separator direction="horizontal" :spacing="2"/>
         <FormEditKit v-if="!!sourceDataPath" class="mb-2" :value="data.status" :set-value="setSourceStatus" save-once-updated>
             <template #default="{ value }">
                 <a class="float-right" @click="openSourceDataEditor"><Icon icon="edit"/>编辑</a>

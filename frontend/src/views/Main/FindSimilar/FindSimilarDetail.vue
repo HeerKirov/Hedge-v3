@@ -8,7 +8,7 @@ import { installFindSimilarDetailPanel } from "@/services/main/find-similar"
 import CompareTable from "./DetailPanel/CompareTable.vue"
 import GraphView from "./DetailPanel/GraphView.vue"
 import GridList from "./DetailPanel/GridList.vue"
-import DetailPane from "./DetailPanel/DetailPane.vue"
+import DetailPane from "./DetailPanel/FindSimilarDetailPane.vue"
 
 const { data, viewMode, listviewController, operators: { complete } } = installFindSimilarDetailPanel()
 

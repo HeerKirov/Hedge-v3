@@ -13,7 +13,11 @@ import { useSideBarDetailInfo } from "@/services/main/illust"
 
 const props = defineProps<{
     detailId: number
-    isCollectionDetail?: boolean
+    scene?: "CollectionDetail"
+}>()
+
+defineEmits<{
+    (e: "setTab", tab: "related" | "source"): void
 }>()
 
 const detailId = toRef(props, "detailId")
@@ -58,28 +62,7 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
                 <DescriptionEditor :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
-        <FormEditKit class="mt-1" :value="data.tagme" :set-value="setTagme">
-            <template #default="{ value }">
-                <TagmeInfo v-if="value.length" :value="value"/>
-            </template>
-            <template #edit="{ value, setValue }">
-                <TagmeEditor :value="value" @update:value="setValue"/>
-            </template>
-        </FormEditKit>
-        <div v-if="data.type === 'IMAGE'" class="mt-2 flex jc-between">
-            <FormEditKit v-if="data.source === null" :value="null" :set-value="setSourceDataPath">
-                <template #default="{ value }">
-                    <SourceInfo :source="value"/>
-                </template>
-                <template #edit="{ value, setValue, save }">
-                    <SourceIdentityEditor :source="value" @update:source="setValue" @enter="save"/>
-                </template>
-            </FormEditKit>
-            <SourceInfo v-else class="no-wrap overflow-ellipsis is-cursor-pointer" :source="data.source"/>
-            <span v-if="data.source === null" class="has-text-secondary"><Icon icon="angle-right"/></span>
-            <a v-else><Icon icon="angle-right"/></a>
-        </div>
-        <FileInfoDisplay v-if="!isCollectionDetail" class="mt-2" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>
+        <FileInfoDisplay v-if="scene !== 'CollectionDetail'" class="mt-2" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>
         <FormEditKit class="mt-2" :value="{partitionTime: data.partitionTime, orderTime: data.orderTime}" :set-value="setTime">
             <template #default="{ value }">
                 <PartitionTimeDisplay :partition-time="value.partitionTime" :order-time="value.orderTime" :create-time="data.createTime" :update-time="data.updateTime"/>
@@ -91,9 +74,27 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
                 <DateTimeEditor auto-focus :value="value.orderTime" @update:value="setValue({partitionTime: value.partitionTime, orderTime: $event})" @enter="save"/>
             </template>
         </FormEditKit>
-        <template v-if="(data.parent || data.children?.length || data.books.length || data.folders.length || data.associateCount)">
-            <Separator direction="horizontal"/>
-            <div class="bold mt-2 mb-1">
+        <template v-if="data.type === 'IMAGE'">
+            <Separator direction="horizontal" :spacing="2"/>
+            <div v-if="data.source === null" class="mt-2 flex jc-between">
+                <FormEditKit :value="null" :set-value="setSourceDataPath">
+                    <template #default="{ value }">
+                        <SourceInfo :source="value"/>
+                    </template>
+                    <template #edit="{ value, setValue, save }">
+                        <SourceIdentityEditor :source="value" @update:source="setValue" @enter="save"/>
+                    </template>
+                </FormEditKit>
+                <span class="has-text-secondary"><Icon icon="angle-right"/></span>
+            </div>
+            <div v-else class="mt-2 flex jc-between is-cursor-pointer" @click="$emit('setTab', 'source')">
+                <SourceInfo class="no-wrap overflow-ellipsis" :source="data.source"/>
+                <a><Icon icon="angle-right"/></a>
+            </div>
+        </template>
+        <template v-if="(data.parent || (data.children?.length && scene !== 'CollectionDetail') || data.books.length || data.folders.length || data.associateCount)">
+            <Separator direction="horizontal" :spacing="2"/>
+            <div class="bold mt-2 mb-1 is-cursor-pointer" @click="$emit('setTab', 'related')">
                 关联项
                 <a class="float-right"><Icon icon="angle-right"/></a>
             </div>
@@ -104,7 +105,7 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
                     <div :class="$style.info"><Icon icon="id-card"/><b class="ml-1 selectable">{{data.parent.id}}</b></div>
                 </Block>
             </template>
-            <div v-if="data.children?.length" :class="$style['children-items']" @click="openCollection(data.id)" @contextmenu="collectionPopupMenu.popup(data.id)">
+            <div v-if="data.children?.length && scene !== 'CollectionDetail'" :class="$style['children-items']" @click="openCollection(data.id)" @contextmenu="collectionPopupMenu.popup(data.id)">
                 <Block v-for="item in data.children" :key="item.id">
                     <img :src="assetsUrl(item.filePath.sample)" :alt="`child item ${item.id}`"/>
                 </Block>
@@ -112,8 +113,8 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
             </div>
             <template v-if="data.books.length">
                 <p v-for="book in data.books" :key="book.id" class="no-wrap overflow-ellipsis is-cursor-pointer mt-1" @click="openBook(book)" @contextmenu="bookPopupMenu.popup(book)">
-                    <Icon class="mr-1" icon="clone"/>
-                    {{book.title}}
+                    <Icon class="mr-m1" icon="clone"/>
+                    《{{book.title}}》
                 </p>
             </template>
             <template v-if="data.folders.length">
@@ -127,8 +128,16 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
                 <b>{{data.associateCount}}</b> 关联组项
             </p>
         </template>
-        <Separator direction="horizontal"/>
-        <MetaTagListDisplay class="my-2" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
+        <Separator direction="horizontal" :spacing="2"/>
+        <FormEditKit v-if="data.tagme.length" :value="data.tagme" :set-value="setTagme">
+            <template #default="{ value }">
+                <TagmeInfo :value="value"/>
+            </template>
+            <template #edit="{ value, setValue }">
+                <TagmeEditor :value="value" @update:value="setValue"/>
+            </template>
+        </FormEditKit>
+        <MetaTagListDisplay class="mt-1" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
     </template>
 </template>
 

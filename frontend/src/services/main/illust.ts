@@ -1,5 +1,4 @@
-import { computed, reactive, ref, Ref, watch } from "vue"
-import { useLocalStorage } from "@/functions/app"
+import { computed, onActivated, reactive, ref, Ref, watch } from "vue"
 import { mapResponse } from "@/functions/http-client"
 import { QueryListview, useFetchEndpoint, useFetchHelper, usePostFetchHelper, usePostPathFetchHelper } from "@/functions/fetch"
 import { CollectionRelatedItems, CommonIllust, Illust, IllustExceptions, IllustQueryFilter, ImageRelatedItems, Tagme } from "@/functions/http-client/api/illust"
@@ -11,7 +10,6 @@ import { useStackedView } from "@/components-module/stackedview"
 import { usePreviewService } from "@/components-module/preview"
 import { useDialogService } from "@/components-module/dialog"
 import { useToast } from "@/modules/toast"
-import { useInterceptedKey } from "@/modules/keyboard"
 import { MessageBoxManager, useMessageBox } from "@/modules/message-box"
 import { useBrowserTabs, useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
 import { useListViewContext } from "@/services/base/list-view-context"
@@ -123,15 +121,13 @@ export function useCollectionContext() {
         dataDrop: {dropInType: "collection", path}
     })
 
-    const sideBar = useCollectionSideBarContext()
-
     installIllustListviewContext({listview, selector, listviewController})
 
     useSettingSite()
 
     useDocumentTitle(() => `集合${path.value}`)
 
-    return {target, sideBar, listview, selector, paneState, listviewController, operators}
+    return {target, listview, selector, paneState, listviewController, operators}
 }
 
 function useCollectionTarget(path: Ref<number>) {
@@ -189,40 +185,9 @@ function useCollectionListView(path: Ref<number | null>) {
     })
 }
 
-function useCollectionSideBarContext() {
-    const storage = useLocalStorage<{tabType: "info"| "related"}>("collection-detail-view/side-bar", () => ({tabType: "info"}), true)
-
-    const tabType = toRef(storage, "tabType")
-
-    //由于Meta+N快捷键可能被Illust列表的侧边栏占用，因此此处提供了一个Meta+Shift+N的快捷键
-    useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Shift+Digit1", "Meta+Shift+Digit2"], e => {
-        if(e.key === "Digit1") tabType.value = "info"
-        else if(e.key === "Digit2") tabType.value = "related"
-    })
-
-    return {tabType}
-}
-
 export function useIllustDetailPane() {
     const preview = usePreviewService()
     const { listview, selector, listviewController, book, folder } = useIllustListviewContext()
-
-    const storage = useLocalStorage<{tabType: "info" | "source" | "related", multiple: boolean}>("illust/list/pane", () => ({tabType: "info", multiple: true}), true)
-
-    const tabType = computed({
-        get: () => selector.selected.value.length > 1 && storage.value.multiple ? "action" : storage.value.tabType,
-        set: (value) => {
-            if(selector.selected.value.length > 1) {
-                if(value !== "action") {
-                    storage.value = {tabType: value, multiple: false}   
-                }else if(!storage.value.multiple) {
-                    storage.value.multiple = true
-                }
-            }else if(value !== "action") {
-                storage.value.tabType = value
-            }
-        }
-    })
 
     const path = computed(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
 
@@ -234,13 +199,6 @@ export function useIllustDetailPane() {
         }else if(folder !== undefined && folder.value !== null) {
             return {type: "folder", folderId: typeof folder.value === "number" ? folder.value : folder.value.id} as const
         }
-    })
-
-    useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Digit3", "Meta+Digit4"], e => {
-        if(e.key === "Digit1") tabType.value = "info"
-        else if(e.key === "Digit2") tabType.value = "related"
-        else if(e.key === "Digit3") tabType.value = "source"
-        else if(e.key === "Digit4") tabType.value = "action"
     })
 
     const openImagePreview = () => {
@@ -257,7 +215,7 @@ export function useIllustDetailPane() {
         })
     }
 
-    return {tabType, detail, selector, parent, openImagePreview}
+    return {detail, selector, parent, openImagePreview}
 }
 
 function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview<CommonIllust, number>) {
@@ -274,14 +232,20 @@ function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview
 
     watch(path, async path => {
         if(path !== null) {
+            const syncIdx = listview.proxy.sync.findByKey(path)
+            if(syncIdx !== undefined) {
+                const item = listview.proxy.sync.retrieve(syncIdx)!
+                detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
+                return
+            }
             const idx = await listview.proxy.findByKey(path)
             if(idx !== undefined) {
                 const item = listview.proxy.sync.retrieve(idx)!
                 detail.value = {id: item.id, type: item.type ?? "IMAGE", filePath: item.filePath}
-            }else{
-                const res = await fetch(path)
-                detail.value = res !== undefined ? {id: res.id, type: res.type ?? "IMAGE", filePath: res.filePath} : null
+                return
             }
+            const res = await fetch(path)
+            detail.value = res !== undefined ? {id: res.id, type: res.type ?? "IMAGE", filePath: res.filePath} : null
         }else{
             detail.value = null
         }
@@ -339,6 +303,7 @@ export function useSideBarAction(selected: Ref<number[]>, selectedIndex: Ref<(nu
 
     const form = reactive<{
         score: number | null,
+        favorite: boolean | null,
         description: string,
         tagme: Tagme[],
         partitionTime: LocalDate | null,
@@ -348,6 +313,7 @@ export function useSideBarAction(selected: Ref<number[]>, selectedIndex: Ref<(nu
         } | null
     }>({
         score: null,
+        favorite: null,
         description: "",
         tagme: [],
         partitionTime: null,
@@ -372,6 +338,13 @@ export function useSideBarAction(selected: Ref<number[]>, selectedIndex: Ref<(nu
         if(score !== form.score) {
             form.score = score
             batchFetch({target: selected.value, score})
+        }
+    }
+
+    const setFavorite = (favorite: boolean) => {
+        if(favorite !== form.favorite) {
+            form.favorite = favorite
+            batchFetch({target: selected.value, favorite})
         }
     }
 
@@ -473,7 +446,7 @@ export function useSideBarAction(selected: Ref<number[]>, selectedIndex: Ref<(nu
         }
     }
 
-    return {actives, form, setScore, setDescription, setTagme, editMetaTag, editPartitionTime, editOrderTimeRange, submitPartitionTime, submitOrderTimeRange, partitionTimeAction, orderTimeAction, ordinalAction}
+    return {actives, form, setScore, setFavorite, setDescription, setTagme, editMetaTag, editPartitionTime, editOrderTimeRange, submitPartitionTime, submitOrderTimeRange, partitionTimeAction, orderTimeAction, ordinalAction}
 }
 
 export function useSideBarDetailInfo(path: Ref<number | null>) {
@@ -524,8 +497,8 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
     return {data, id: path, setDescription, setScore, setFavorite, setTime, setTagme, openMetaTagEditor, setSourceDataPath, ...relatedOperators}
 }
 
-export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref<"IMAGE" | "COLLECTION">) {
-    const { data } = useFetchEndpoint({
+export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref<"IMAGE" | "COLLECTION">, backTab: () => void) {
+    const { data, loading } = useFetchEndpoint({
         path,
         get: client => async path => {
             if(illustType.value === "IMAGE") {
@@ -534,7 +507,24 @@ export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref
                 return mapResponse(await client.illust.collection.relatedItems.get(path), d => (<ImageRelatedItems & CollectionRelatedItems>{...d, collection: null}))
             }
         },
-        eventFilter: c => event => event.eventType === "entity/illust/related-items/updated" && event.illustId === c.path
+        eventFilter: c => event => event.eventType === "entity/illust/related-items/updated" && event.illustId === c.path,
+        afterRetrieve(path, data) {
+            //在无数据时，离开当前选项卡
+            if(path !== null) {
+                if(data === null || (data.associates.length <= 0 && data.books.length <= 0 && data.childrenCount <= 0 && data.collection === null && data.folders.length <= 0)) {
+                    backTab()
+                }
+            }
+        }
+    })
+
+    onActivated(() => {
+        //由于选项卡会被KeepAlive缓存，它在第二次切换至选项卡时不会发生retrieve，需要在activate事件也做检测
+        if(!loading.value && path.value !== null) {
+            if(data.value === null || (data.value.associates.length <= 0 && data.value.books.length <= 0 && data.value.childrenCount <= 0 && data.value.collection === null && data.value.folders.length <= 0)) {
+                backTab()
+            }
+        }
     })
 
     const operators = useRelatedOperators(path)
@@ -542,14 +532,31 @@ export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref
     return {data, ...operators}
 }
 
-export function useSideBarSourceData(path: Ref<number | null>) {
+export function useSideBarSourceData(path: Ref<number | null>, backTab: () => void) {
     const message = useMessageBox()
     const dialog = useDialogService()
-    const { data, setData } = useFetchEndpoint({
+    const { data, setData, loading } = useFetchEndpoint({
         path,
         get: client => client.illust.image.sourceData.get,
         update: client => client.illust.image.sourceData.update,
-        eventFilter: c => event => event.eventType === "entity/illust/source-data/updated" && event.illustId === c.path
+        eventFilter: c => event => event.eventType === "entity/illust/source-data/updated" && event.illustId === c.path,
+        afterRetrieve(path, data) {
+            //在无数据时，离开当前选项卡
+            if(path !== null) {
+                if(data === null || data.source === null) {
+                    backTab()
+                }
+            }
+        }
+    })
+
+    onActivated(() => {
+        //由于选项卡会被KeepAlive缓存，它在第二次切换至选项卡时不会发生retrieve，需要在activate事件也做检测
+        if(!loading.value && path.value !== null) {
+            if(data.value === null || data.value.source === null) {
+                backTab()
+            }
+        }
     })
 
     useSettingSite()

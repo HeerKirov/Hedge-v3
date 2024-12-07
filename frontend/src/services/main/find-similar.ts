@@ -15,7 +15,6 @@ import { platform } from "@/functions/ipc-client"
 import { useAssets, useLocalStorage } from "@/functions/app"
 import { useBrowserTabs, useDocumentTitle, usePath, useTabRoute } from "@/modules/browser"
 import { useMessageBox } from "@/modules/message-box"
-import { useInterceptedKey } from "@/modules/keyboard"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { IllustViewController, useIllustViewController } from "@/services/base/view-controller"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
@@ -571,34 +570,9 @@ export function useDetailPane() {
     const preview = usePreviewService()
     const { data, listview, selector, listviewController, viewMode } = useFindSimilarDetailPanel()
 
-    const storage = useLocalStorage<{tabType: "info" | "source" | "related", multiple: "action" | "resolve" | false}>("find-similar/detail/pane", () => ({tabType: "info", multiple: "resolve"}), true)
-
-    const tabType = computed({
-        get: () => selector.selected.value.length > 1 && storage.value.multiple ? storage.value.multiple : storage.value.tabType,
-        set: (value) => {
-            if(selector.selected.value.length > 1) {
-                if(value !== "action" && value !== "resolve") {
-                    storage.value = {tabType: value, multiple: false}   
-                }else{
-                    storage.value.multiple = value
-                }
-            }else if(value !== "action" && value !== "resolve") {
-                storage.value.tabType = value
-            }
-        }
-    })
-
     const path = computed(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
 
     const detail = useIllustDetailPaneId(path, listview)
-
-    useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Digit3", "Meta+Digit4", "Meta+Digit5"], e => {
-        if(e.key === "Digit1") tabType.value = "info"
-        else if(e.key === "Digit2") tabType.value = "related"
-        else if(e.key === "Digit3") tabType.value = "source"
-        else if(e.key === "Digit4") tabType.value = "action"
-        else if(e.key === "Digit5") tabType.value = "resolve"
-    })
 
     const openImagePreview = () => {
         if(data.value !== null && selector.selected.value.length > 0) {
@@ -622,7 +596,7 @@ export function useDetailPane() {
         }
     }
 
-    return {tabType, detail, selector, parent, openImagePreview}
+    return {detail, selector, parent, openImagePreview}
 }
 
 function useIllustDetailPaneId(path: Ref<number | null>, listview: QueryListview<CommonIllust, number>) {
