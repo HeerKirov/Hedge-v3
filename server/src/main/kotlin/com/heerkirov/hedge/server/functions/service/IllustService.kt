@@ -281,7 +281,8 @@ class IllustService(private val appdata: AppDataManager,
             .select(
                 FileRecords.id, FileRecords.block, FileRecords.status, FileRecords.extension, FileRecords.size,
                 FileRecords.resolutionWidth, FileRecords.resolutionHeight, FileRecords.videoDuration,
-                Illusts.type, Illusts.parentId, Illusts.cachedChildrenCount, Illusts.description, Illusts.score,
+                Illusts.type, Illusts.parentId, Illusts.description, Illusts.score,
+                Illusts.cachedChildrenCount, Illusts.cachedBookIds, Illusts.cachedFolderIds,
                 Illusts.exportedDescription, Illusts.exportedScore, Illusts.favorite, Illusts.tagme,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 Illusts.partitionTime, Illusts.orderTime, Illusts.createTime, Illusts.updateTime)
@@ -358,18 +359,37 @@ class IllustService(private val appdata: AppDataManager,
             .orderBy(Illusts.orderTime.asc())
             .map { IllustSimpleRes(it[Illusts.id]!!, filePathFrom(it)) }
 
-        val books = data.db.from(Books)
-            .innerJoin(BookImageRelations, BookImageRelations.bookId eq Books.id)
-            .leftJoin(FileRecords, Books.fileId eq FileRecords.id)
-            .select(Books.id, Books.title, FileRecords.id, FileRecords.status, FileRecords.block, FileRecords.extension)
-            .where { BookImageRelations.imageId eq id }
-            .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!, if(it[FileRecords.id] != null) filePathFrom(it) else null) }
+        val books = if(finalType == IllustType.IMAGE) {
+            data.db.from(Books)
+                .innerJoin(BookImageRelations, BookImageRelations.bookId eq Books.id)
+                .leftJoin(FileRecords, Books.fileId eq FileRecords.id)
+                .select(Books.id, Books.title, FileRecords.id, FileRecords.status, FileRecords.block, FileRecords.extension)
+                .where { BookImageRelations.imageId eq id }
+                .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!, if(it[FileRecords.id] != null) filePathFrom(it) else null) }
+        }else{
+            row[Illusts.cachedBookIds]?.let {
+                data.db.from(Books)
+                    .leftJoin(FileRecords, Books.fileId eq FileRecords.id)
+                    .select(Books.id, Books.title, FileRecords.id, FileRecords.status, FileRecords.block, FileRecords.extension)
+                    .where { Books.id inList it }
+                    .map { BookSimpleRes(it[Books.id]!!, it[Books.title]!!, if(it[FileRecords.id] != null) filePathFrom(it) else null) }
+            } ?: emptyList()
+        }
 
-        val folders = data.db.from(Folders)
-            .innerJoin(FolderImageRelations, FolderImageRelations.folderId eq Folders.id)
-            .select(Folders.id, Folders.title, Folders.parentAddress, Folders.type)
-            .where { FolderImageRelations.imageId eq id }
-            .map { FolderSimpleRes(it[Folders.id]!!, (it[Folders.parentAddress] ?: emptyList()) + it[Folders.title]!!, it[Folders.type]!!) }
+        val folders = if(finalType == IllustType.IMAGE) {
+            data.db.from(Folders)
+                .innerJoin(FolderImageRelations, FolderImageRelations.folderId eq Folders.id)
+                .select(Folders.id, Folders.title, Folders.parentAddress, Folders.type)
+                .where { FolderImageRelations.imageId eq id }
+                .map { FolderSimpleRes(it[Folders.id]!!, (it[Folders.parentAddress] ?: emptyList()) + it[Folders.title]!!, it[Folders.type]!!) }
+        }else{
+            row[Illusts.cachedFolderIds]?.let {
+                data.db.from(Folders)
+                    .select(Folders.id, Folders.title, Folders.parentAddress, Folders.type)
+                    .where { Folders.id inList it }
+                    .map { FolderSimpleRes(it[Folders.id]!!, (it[Folders.parentAddress] ?: emptyList()) + it[Folders.title]!!, it[Folders.type]!!) }
+            } ?: emptyList()
+        }
 
         val associateCount = associateManager.getAssociateCountOfIllust(id)
 
