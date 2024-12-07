@@ -64,7 +64,7 @@ class FileGeneratorImpl(private val appStatus: AppStatusDriver,
     private val archiveQueue = LinkedList<ArchiveQueueUnit>()
     private val archiveTask = loopPoolThread(thread = ::archiveDaemon)
     private val thumbnailTask = assignmentTask(thread = ::thumbnailDaemon, poolSize = Runtime.getRuntime().availableProcessors())
-    private val fingerprintTask = assignmentTask(thread = ::fingerprintDaemon, poolSize = Runtime.getRuntime().availableProcessors() / 2)
+    private val fingerprintTask = assignmentTask(thread = ::fingerprintDaemon, poolSize = (Runtime.getRuntime().availableProcessors() + 1) / 2)
 
     private val archiveCounter = taskCounter.counter(BackgroundTaskType.FILE_ARCHIVE)
     private val generateCounter = taskCounter.counter(BackgroundTaskType.FILE_GENERATE)

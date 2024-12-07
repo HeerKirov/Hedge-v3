@@ -3,6 +3,7 @@ package com.heerkirov.hedge.server.functions.manager
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
+import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.constants.Filename
 import com.heerkirov.hedge.server.dao.FileFingerprints
 import com.heerkirov.hedge.server.dao.FileRecords
@@ -25,6 +26,7 @@ import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.time.Instant
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
@@ -35,17 +37,18 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
 
     private val nextBlock = NextBlock()
 
+    private val convertFormatExecutor = Executors.newFixedThreadPool((Runtime.getRuntime().availableProcessors() + 1) / 2)
+
     /**
      * 将指定的File载入到数据库中，同时创建一条新记录。
      * - folder指定为文件的更改日期(UTC)。对于上传的文件，这就相当于取了导入日期。
      * - extension指定为此file的扩展名。
      * - thumbnail和大小等信息留白，处于NOT READY状态，需要调用FileGenerator生成这些信息。
-     * @param moveFile 使用移动的方式导入文件。
      * @return file id。使用此id来索引物理文件记录。
      * @throws StorageNotAccessibleError 存储路径不可访问
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      */
-    fun newFile(file: File, filename: String, moveFile: Boolean = false): Int {
+    fun newFile(file: File, filename: String): Int {
         if(!appdata.storage.accessible) throw be(StorageNotAccessibleError(appdata.storage.storageDir))
 
         val now = Instant.now()
@@ -82,11 +85,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
         nextBlock.addSizeAndCount(block, file.length())
 
         try {
-            if(moveFile) {
-                Files.move(file.toPath(), targetFile.toPath())
-            }else{
-                Files.copy(file.toPath(), targetFile.toPath())
-            }
+            Files.copy(file.toPath(), targetFile.toPath())
         }catch (e: FileAlreadyExistsException) {
             throw e
         }catch (e: Exception) {
@@ -103,17 +102,13 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
      * - 如果文件被移动，那么移动回去；如果文件被复制，那么删除文件。
      * - 如果缩略图已完成，那么删除缩略图。
      */
-    fun undoFile(importFile: File, fileId: Int, moveFile: Boolean = false) {
+    fun undoFile(fileId: Int) {
         if(!appdata.storage.accessible) throw be(StorageNotAccessibleError(appdata.storage.storageDir))
 
         val fileRecord = data.db.sequenceOf(FileRecords).firstOrNull { it.id eq fileId } ?: return
 
         val file = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), fileRecord.block, "$fileId.${fileRecord.extension}").toFile()
-        if(moveFile) {
-            Files.move(file.toPath(), importFile.toPath())
-        }else{
-            file.delete()
-        }
+        file.delete()
 
         nextBlock.delSizeAndCount(fileRecord.block, fileRecord.size)
 
@@ -158,7 +153,9 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
 
         val target = try {
             temp.outputStream().use { src.inputStream.writeTo(it) }
-            Graphics.convertFormat(temp, extension)
+            convertFormatExecutor.submit { Graphics.convertFormat(temp, extension) }.get() as File?
+        } catch (e: ExecutionException) {
+            throw e.cause ?: e
         } finally {
             temp.deleteIfExists()
         }
@@ -179,11 +176,13 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
             val oldPath = Path(appdata.storage.storageDir, ArchiveType.ORIGINAL.toString(), file.block, "${file.id}.${file.extension}")
             oldPath.deleteIfExists()
 
-            data.db.update(FileRecords) {
-                where { it.id eq file.id }
-                set(it.size, size)
-                set(it.extension, extension)
-                set(it.updateTime, Instant.now())
+            data.db.transaction {
+                data.db.update(FileRecords) {
+                    where { it.id eq file.id }
+                    set(it.size, size)
+                    set(it.extension, extension)
+                    set(it.updateTime, Instant.now())
+                }
             }
         }
     }

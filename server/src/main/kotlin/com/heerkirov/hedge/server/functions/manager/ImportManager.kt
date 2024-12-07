@@ -49,11 +49,13 @@ class ImportManager(private val appdata: AppDataManager,
         val fileSize = file.length()
 
         val fileId = data.db.transaction {
-            fileManager.newFile(file, fileName, mobileImport)
+            fileManager.newFile(file, fileName)
         }.alsoExcept {
-            fileManager.undoFile(file, it, mobileImport)
+            fileManager.undoFile(it)
         }.alsoReturns {
             bus.emit(FileCreated(it))
+            //tips: 直接使用move导入的话可能与下面的convertFormat操作有不兼容的隐患，因此更加稳妥的办法是在函数成功退出前将原文件删除
+            if(mobileImport) file.deleteIfExists()
         }
 
         if(appdata.setting.import.autoConvertFormat) {
@@ -84,7 +86,7 @@ class ImportManager(private val appdata: AppDataManager,
         val fileId = data.db.transaction {
             fileManager.newFile(file, filename)
         }.alsoExcept { fileId ->
-            fileManager.undoFile(file, fileId)
+            fileManager.undoFile(fileId)
         }.alsoReturns {
             bus.emit(FileCreated(it))
         }
