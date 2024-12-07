@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog } from "electron"
+import { BrowserWindow, Notification, dialog } from "electron"
 
 export interface MessageOptions {
     type: "none" | "info" | "error" | "question"
@@ -8,6 +8,13 @@ export interface MessageOptions {
     message: string
     detail?: string
     attachedWindow?: BrowserWindow
+}
+
+export interface NotificationOptions {
+    title?: string
+    subtitle?: string
+    body?: string
+    silent?: boolean
 }
 
 /**
@@ -31,6 +38,17 @@ export function showMessageSync(options: MessageOptions): number {
         return dialog.showMessageBoxSync(options.attachedWindow, options)
     }else{
         return dialog.showMessageBoxSync(options)
+    }
+}
+
+/**
+ * 发送一条系统通知。
+ * @param options
+ */
+export function showNotification(options: NotificationOptions) {
+    if (Notification.isSupported()) {
+        const notification = new Notification(options)
+        notification.show()
     }
 }
 

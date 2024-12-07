@@ -4,6 +4,7 @@ import { AppDataDriver } from "@/components/appdata"
 import { StateManager, AppState } from "@/components/state"
 import { readdir, statOrNull } from "@/utils/fs"
 import { createEmitter, Emitter } from "@/utils/emitter"
+import { showNotification } from "@/utils/notification"
 import { FileManager } from "./file"
 
 export interface FileWatcher {
@@ -107,9 +108,14 @@ export function createFileWatcher(appdata: AppDataDriver, state: StateManager, f
             if(r.ok) {
                 statisticCount += 1
                 fileWatcherChangedEvent.emit({isOpen, statisticCount, errors})
-            }else if(r.code === "LOCATION_NOT_ACCESSIBLE" || r.code === "FILE_NOT_FOUND" || r.code === "ILLEGAL_FILE_EXTENSION") {
+            }else if(r.code === "STORAGE_NOT_ACCESSIBLE" || r.code === "FILE_NOT_FOUND" || r.code === "ILLEGAL_FILE_EXTENSION") {
                 //ignore this file
             }else{
+                showNotification({
+                    title: "自动导入发生错误",
+                    body: `${path.basename(filepath)}文件导入失败，请检查核心服务。`,
+                    silent: true
+                })
                 console.warn("[FileWatcher] Import file failed.", r.message)
             }
         }
