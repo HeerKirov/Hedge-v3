@@ -188,7 +188,7 @@ class IllustManager(private val appdata: AppDataManager,
             set(it.updateTime, Instant.now())
         }
 
-        val oldImageIds = updateSubImages(collectionId, images, specifyPartitionTime)
+        val oldImageIds = updateSubImages(collectionId, images.sortedBy { it.orderTime }, specifyPartitionTime)
 
         kit.refreshAllMeta(collectionId, copyFromChildren = true)
 
@@ -197,6 +197,102 @@ class IllustManager(private val appdata: AppDataManager,
         val deleted = (oldImageIds - imageIds).toList()
         bus.emit(IllustImagesChanged(collectionId, added, deleted))
         added.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }
+        deleted.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }
+    }
+
+    /**
+     * 向一个collection中添加一组新的images。指定insertIndex时，会将插入的项的位置改变至插入位置。不指定时，则不进行额外操作。
+     */
+    fun addImagesToCollection(collectionId: Int, addImages: List<Illust>, insertIndex: Int?, specifyPartitionTime: LocalDate?, originScore: Int? = null) {
+        if(addImages.isEmpty()) return
+        val currentChildren = data.db.sequenceOf(Illusts).filter { it.parentId eq collectionId }.sortedBy { it.orderTime }.toList()
+        val addImageIds = addImages.map { it.id }.toSet()
+        if(insertIndex != null) {
+            val (nextImages, insertBegin, insertEnd) = when {
+                insertIndex <= 0 -> Triple(addImages.sortedBy { it.orderTime } + currentChildren.filter { it.id !in addImageIds }, 0, addImages.size)
+                insertIndex > currentChildren.size -> {
+                    val prev = currentChildren.filter { it.id !in addImageIds }
+                    Triple(prev + addImages.sortedBy { it.orderTime }, prev.size, prev.size + addImages.size)
+                }
+                else -> {
+                    val prev = currentChildren.subList(0, insertIndex).filter { it.id !in addImageIds }
+                    val next = currentChildren.subList(insertIndex, currentChildren.size).filter { it.id !in addImageIds }
+                    Triple(prev + addImages.sortedBy { it.orderTime } + next, prev.size, prev.size + addImages.size)
+                }
+            }
+
+            val (fileId, scoreFromSub, favoriteFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(nextImages, specifyPartitionTime)
+
+            data.db.update(Illusts) {
+                where { it.id eq collectionId }
+                set(it.fileId, fileId)
+                set(it.cachedChildrenCount, nextImages.size)
+                set(it.exportedScore, originScore ?: scoreFromSub)
+                set(it.favorite, favoriteFromSub)
+                set(it.partitionTime, partitionTime)
+                set(it.orderTime, orderTime)
+                set(it.updateTime, Instant.now())
+            }
+
+            updateSubImages(collectionId, nextImages, specifyPartitionTime, specifyInsertPosition = Pair(insertBegin, insertEnd))
+        }else{
+            val nextImages = currentChildren.filter { it.id !in addImageIds } + addImages
+
+            val (fileId, scoreFromSub, favoriteFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(nextImages, specifyPartitionTime)
+
+            data.db.update(Illusts) {
+                where { it.id eq collectionId }
+                set(it.fileId, fileId)
+                set(it.cachedChildrenCount, nextImages.size)
+                set(it.exportedScore, originScore ?: scoreFromSub)
+                set(it.favorite, favoriteFromSub)
+                set(it.partitionTime, partitionTime)
+                set(it.orderTime, orderTime)
+                set(it.updateTime, Instant.now())
+            }
+
+            updateSubImages(collectionId, nextImages, specifyPartitionTime)
+        }
+
+        kit.refreshAllMeta(collectionId, copyFromChildren = true)
+
+        val added = (addImageIds - currentChildren.map { it.id }.toSet()).toList()
+        bus.emit(IllustImagesChanged(collectionId, added, emptyList()))
+        added.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }
+    }
+
+    /**
+     * 从一个collection中移除一组images。
+     */
+    fun removeImagesFromCollection(collectionId: Int, images: List<Int>, originScore: Int?) {
+        if(images.isEmpty()) return
+        val currentChildren = data.db.sequenceOf(Illusts).filter { it.parentId eq collectionId }.sortedBy { it.orderTime }.toList()
+        val nextImages = currentChildren.filter { it.id !in images }
+        if(nextImages.isEmpty()) {
+            //此collection的所有项都被移除了，将其删除。不能使用prune delete的方式，因此此时项还在里面
+            delete(data.db.sequenceOf(Illusts).first { it.id eq collectionId })
+            return
+        }
+
+        val (fileId, scoreFromSub, favoriteFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(nextImages, null)
+
+        data.db.update(Illusts) {
+            where { it.id eq collectionId }
+            set(it.fileId, fileId)
+            set(it.cachedChildrenCount, images.size)
+            set(it.exportedScore, originScore ?: scoreFromSub)
+            set(it.favorite, favoriteFromSub)
+            set(it.partitionTime, partitionTime)
+            set(it.orderTime, orderTime)
+            set(it.updateTime, Instant.now())
+        }
+
+        val oldImageIds = updateSubImages(collectionId, nextImages, null)
+
+        kit.refreshAllMeta(collectionId, copyFromChildren = true)
+
+        val deleted = (oldImageIds - images.toSet()).toList()
+        bus.emit(IllustImagesChanged(collectionId, emptyList(), deleted))
         deleted.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }
     }
 
@@ -305,7 +401,7 @@ class IllustManager(private val appdata: AppDataManager,
     /**
      * 批量编辑项目。
      */
-    fun bulkUpdate(form: IllustBatchUpdateForm) {
+    fun bulkUpdate(form: IllustBatchUpdateForm, disableEvent: Boolean = false) {
         val records = data.db.sequenceOf(Illusts).filter { it.id inList form.target }.toList().also { records ->
             val targetSet = form.target.toSet()
             if(records.size < form.target.size) {
@@ -785,22 +881,24 @@ class IllustManager(private val appdata: AppDataManager,
             }
         }
 
-        val timeSot = anyOpt(form.partitionTime, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
-        val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
-        for (record in records) {
-            val thisMetaTagSot = metaResponses[record.id]?.first?.let { it != Illust.Tagme.EMPTY } ?: false
-            val thisDetailUpdated = listUpdated || thisMetaTagSot || anyOpt(form.description, form.partitionTime)
-            if(listUpdated || thisDetailUpdated) {
-                //tips: 此处使用了偷懒的手法。并没有对受partition/orderTime变更影响的children进行处理
-                bus.emit(IllustUpdated(
-                    record.id, record.type.toIllustType(),
-                    listUpdated = listUpdated,
-                    detailUpdated = true,
-                    metaTagSot = thisMetaTagSot,
-                    scoreSot = form.score.isPresent,
-                    descriptionSot = form.description.isPresent,
-                    favoriteSot = form.favorite.isPresent,
-                    timeSot = timeSot))
+        if(!disableEvent) {
+            val timeSot = anyOpt(form.partitionTime, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
+            val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
+            for (record in records) {
+                val thisMetaTagSot = metaResponses[record.id]?.first?.let { it != Illust.Tagme.EMPTY } ?: false
+                val thisDetailUpdated = listUpdated || thisMetaTagSot || anyOpt(form.description, form.partitionTime)
+                if(listUpdated || thisDetailUpdated) {
+                    //tips: 此处使用了偷懒的手法。并没有对受partition/orderTime变更影响的children进行处理
+                    bus.emit(IllustUpdated(
+                        record.id, record.type.toIllustType(),
+                        listUpdated = listUpdated,
+                        detailUpdated = true,
+                        metaTagSot = thisMetaTagSot,
+                        scoreSot = form.score.isPresent,
+                        descriptionSot = form.description.isPresent,
+                        favoriteSot = form.favorite.isPresent,
+                        timeSot = timeSot))
+                }
             }
         }
     }
@@ -987,7 +1085,7 @@ class IllustManager(private val appdata: AppDataManager,
      * @throws ResourceNotExist ("specifyPartitionTime", LocalDate) 在指定的时间分区下没有存在的图像
      * @return oldImageIds
      */
-    private fun updateSubImages(collectionId: Int, images: List<Illust>, specifyPartitionTime: LocalDate?): Set<Int> {
+    private fun updateSubImages(collectionId: Int, images: List<Illust>, specifyPartitionTime: LocalDate?, specifyInsertPosition: Pair<Int, Int>? = null): Set<Int> {
         val imageIds = images.map { it.id }.toSet()
         val oldImageIds = data.db.from(Illusts).select(Illusts.id)
             .where { Illusts.parentId eq collectionId }
@@ -1010,28 +1108,57 @@ class IllustManager(private val appdata: AppDataManager,
             set(it.type, IllustModelType.IMAGE_WITH_PARENT)
         }
 
-        //若开启相关选项，则需要对排序时间做整理。当存在不在指定分区的图像时，将它们集中到指定分区内
-        if(appdata.setting.meta.centralizeCollection && specifyPartitionTime != null) {
-            val (specifiedImages, outsideImages) = images.filterInto { it.partitionTime == specifyPartitionTime }
-            if(outsideImages.isNotEmpty()) {
-                if(specifiedImages.isEmpty()) throw be(ResourceNotExist("specifyPartitionTime", specifyPartitionTime))
-                val min = specifiedImages.minOf { it.orderTime }
-                val max = specifiedImages.maxOf { it.orderTime }
-                val step = (max - min) / (images.size - 1)
-                val values = images.indices.map { index -> min + step * index }
-                val list = images.sortedBy { it.orderTime }.zip(values)
-                data.db.batchUpdate(Illusts) {
-                    list.forEach { (illust, ot) ->
-                        item {
-                            where { it.id eq illust.id }
-                            set(it.orderTime, ot)
-                            set(it.partitionTime, specifyPartitionTime)
-                        }
+        fun processSpecifyItems(min: Long, max: Long, items: List<Illust>, specifyPartitionTime: LocalDate?) {
+            val step = (max - min) / (items.size - 1)
+            val list = items.mapIndexed { index, illust -> illust to min + step * index }
+            data.db.batchUpdate(Illusts) {
+                list.forEach { (illust, ot) ->
+                    item {
+                        where { it.id eq illust.id }
+                        set(it.orderTime, ot)
+                        if(specifyPartitionTime != null) set(it.partitionTime, specifyPartitionTime)
                     }
                 }
-                //tips: 这里没有发送imageUpdated(timeSot=true)事件，因为考虑到这里的时间属性变化没有什么可触发的后续内容(集合的时间已提前计算)，就节省了一次事件
-                if(appdata.setting.meta.tuningOrderTime) kit.tuningOrderTime(list.map { (i, ot) -> i.id to ot }, eventForAllIllusts = true)
             }
+            //tips: 上面的处理没有发送imageUpdated(timeSot=true)事件，因为考虑到这里的时间属性变化没有什么可触发的后续内容(集合的时间已提前计算)，就节省了一次事件
+            if(appdata.setting.meta.tuningOrderTime) kit.tuningOrderTime(list.map { (i, ot) -> i.id to ot }, eventForAllIllusts = true)
+        }
+
+        if(appdata.setting.meta.centralizeCollection && specifyPartitionTime != null && images.any { it.partitionTime != specifyPartitionTime }) {
+            //若开启相关选项，则需要对排序时间做整理。当存在不在指定分区的图像时，将它们集中到指定分区内
+            val specifiedImages = images.filter { it.partitionTime == specifyPartitionTime }
+            if(specifiedImages.isEmpty()) throw be(ResourceNotExist("specifyPartitionTime", specifyPartitionTime))
+            val min = specifiedImages.minOf { it.orderTime }
+            val max = specifiedImages.maxOf { it.orderTime }
+            processSpecifyItems(min, max, images, specifyPartitionTime)
+        }else if(specifyInsertPosition != null) {
+            //在没有触发排序时间整理的情况下，可能会有插入整理
+            val (insertBegin, insertEnd) = specifyInsertPosition
+            val partitionTime = if(insertBegin == 0) {
+                //如果插入位置是最开始，那么就使用后面那个项的时间分区
+                images[insertEnd].partitionTime
+            }else if(insertEnd == images.size) {
+                //如果插入位置是最末尾，那么就使用前一个项的时间分区
+                images[insertBegin - 1].partitionTime
+            }else{
+                val prev = images[insertBegin - 1]
+                val next = images[insertEnd]
+                if(prev.partitionTime != next.partitionTime) {
+                    //如果插入位置两侧的时间分区不同，那么统计插入项中的排序时间离哪边近的更多，以此决定将插入项放到左右哪个时间分区
+                    if(images.subList(insertBegin, insertEnd).count { abs(it.orderTime - prev.orderTime) < abs(it.orderTime - next.orderTime) } * 2 >= insertEnd - insertBegin) {
+                        prev.partitionTime //这样是左边
+                    }else{
+                        next.partitionTime //这样是右边
+                    }
+                }else{
+                    prev.partitionTime //使用两侧项的时间分区
+                }
+            }
+            val targetPartitionImages = images.filter { it.partitionTime == partitionTime }
+            val min = targetPartitionImages.minOf { it.orderTime }
+            val max = targetPartitionImages.maxOf { it.orderTime }
+            val items = images.filterIndexed { index, it -> it.partitionTime == partitionTime || (index in insertBegin..<insertEnd) }
+            processSpecifyItems(min, max, items, null)
         }
 
         //这些image有旧的parent，需要对旧parent做重新导出

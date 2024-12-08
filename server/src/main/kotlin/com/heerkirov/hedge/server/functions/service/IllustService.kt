@@ -692,6 +692,29 @@ class IllustService(private val appdata: AppDataManager,
 
     /**
      * @throws NotFound 请求对象不存在
+     * @throws ResourceNotExist ("images", number[]) 给出的部分images不存在。给出不存在的image id列表
+     */
+    fun partialUpdateCollectionImages(id: Int, form: IllustCollectionImagesPartialUpdateForm) {
+        data.db.transaction {
+            val illust = data.db.sequenceOf(Illusts).filter { retrieveCondition(id, IllustType.COLLECTION) }.firstOrNull() ?: throw be(NotFound())
+
+            if(form.illustIds.isEmpty()) throw be(ParamError("images"))
+
+            when(form.action) {
+                BatchAction.ADD -> {
+                    val images = illustManager.unfoldImages(form.illustIds, sorted = false)
+                    illustManager.addImagesToCollection(illust.id, images, form.ordinal, form.specifyPartitionTime, illust.score)
+                }
+                BatchAction.DELETE -> {
+                    illustManager.removeImagesFromCollection(illust.id, form.illustIds, illust.score)
+                }
+                else -> throw be(ParamError("action"))
+            }
+        }
+    }
+
+    /**
+     * @throws NotFound 请求对象不存在
      * @throws ResourceNotExist ("topics", number[]) 部分topics资源不存在。给出不存在的topic id列表
      * @throws ResourceNotExist ("authors", number[]) 部分authors资源不存在。给出不存在的author id列表
      * @throws ResourceNotExist ("tags", number[]) 部分tags资源不存在。给出不存在的tag id列表

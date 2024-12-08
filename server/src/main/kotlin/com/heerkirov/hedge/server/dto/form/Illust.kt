@@ -39,6 +39,8 @@ class IllustCollectionRelatedUpdateForm(val associates: Opt<List<Int>?>)
 
 class IllustCollectionImagesUpdateForm(val illustIds: List<Int>, val specifyPartitionTime: LocalDate? = null)
 
+class IllustCollectionImagesPartialUpdateForm(val illustIds: List<Int>, val action: BatchAction, val specifyPartitionTime: LocalDate? = null, val ordinal: Int? = null)
+
 class IllustImageRelatedUpdateForm(val associates: Opt<List<Int>?>, val collectionId: Opt<Int?>)
 
 class IllustImageSourceDataUpdateForm(val source: Opt<SourceDataPath?>,

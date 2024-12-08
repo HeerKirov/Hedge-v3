@@ -47,6 +47,7 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
                             path("images") {
                                 get(::listCollectionImages)
                                 put(::updateCollectionImages)
+                                patch(::partialUpdateCollectionImages)
                             }
                         }
                     }
@@ -173,6 +174,12 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
         val id = ctx.pathParamAsClass<Int>("id").get()
         val form = ctx.bodyAsForm<IllustCollectionImagesUpdateForm>()
         illustService.updateCollectionImages(id, form)
+    }
+
+    private fun partialUpdateCollectionImages(ctx: Context) {
+        val id = ctx.pathParamAsClass<Int>("id").get()
+        val form = ctx.bodyAsForm<IllustCollectionImagesPartialUpdateForm>()
+        illustService.partialUpdateCollectionImages(id, form)
     }
 
     private fun getImage(ctx: Context) {
