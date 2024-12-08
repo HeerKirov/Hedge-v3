@@ -19,16 +19,25 @@ import java.time.Instant
 import java.time.LocalDate
 
 class HomepageService(private val appdata: AppDataManager, private val data: DataRepository, private val stagingPostManager: StagingPostManager, private val taskCounter: TaskCounterModule) {
+    @Volatile
+    private var homepageInfoCache: HomepageRes? = null
+
     fun getHomepageInfo(): HomepageRes {
-        val currentRecord = data.db.sequenceOf(HomepageRecords).firstOrNull()
-
         val todayDate = Instant.now().toPartitionDate(appdata.setting.server.timeOffsetHour)
+        if(homepageInfoCache == null || homepageInfoCache!!.date != todayDate) {
+            synchronized(this) {
+                if(homepageInfoCache == null || homepageInfoCache!!.date != todayDate) {
+                    val currentRecord = data.db.sequenceOf(HomepageRecords).firstOrNull()
+                    if(currentRecord == null || currentRecord.date != todayDate) {
+                        return HomepageRes(false, LocalDate.now(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+                    }
 
-        return if(currentRecord != null && currentRecord.date == todayDate) {
-            mapToHomepageRes(currentRecord)
-        }else{
-            HomepageRes(false, LocalDate.now(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+                    homepageInfoCache = mapToHomepageCache(currentRecord)
+                }
+            }
         }
+
+        return mapToHomepageRes(homepageInfoCache!!)
     }
 
     fun getHomepageState(): HomepageStateRes {
@@ -45,7 +54,7 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
 
     fun cleanCompletedBackgroundTask() = taskCounter.cleanCompleted()
 
-    private fun mapToHomepageRes(record: HomepageRecord): HomepageRes {
+    private fun mapToHomepageCache(record: HomepageRecord): HomepageRes {
         val todayImages = if(record.content.todayImageIds.isEmpty()) emptyList() else {
             data.db.from(Illusts)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
@@ -139,6 +148,10 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
                 .filter { it.images.isNotEmpty() }
         }
 
+        return HomepageRes(true, record.date, todayImages, books, authorAndTopics, emptyList(), historyImages)
+    }
+
+    private fun mapToHomepageRes(cache: HomepageRes): HomepageRes {
         val recentImages = data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
             .select(Illusts.id, Illusts.partitionTime, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
@@ -147,7 +160,6 @@ class HomepageService(private val appdata: AppDataManager, private val data: Dat
             .limit(20)
             .map { HomepageRes.Illust(it[Illusts.id]!!, filePathFrom(it), it[Illusts.partitionTime]!!) }
 
-        return HomepageRes(true, record.date, todayImages, books, authorAndTopics, recentImages, historyImages)
+        return HomepageRes(cache.ready, cache.date, cache.todayImages, cache.todayBooks, cache.todayAuthorAndTopics, recentImages, cache.historyImages)
     }
-
 }
