@@ -14,7 +14,7 @@ defineEmits<{
 </script>
 
 <template>
-    <div class="relative">
+    <div>
         <Starlight :value="value" @update:value="$emit('update:value', $event)" show-text editable :mode="mode"/>
         <Block v-if="value !== null && exported" :class="[$style.exported, 'has-text-secondary']">EXPORTED</Block>
     </div>
@@ -24,10 +24,8 @@ defineEmits<{
 @use "@/styles/base/size"
 
 .exported
-    position: absolute
-    right: 3px
-    bottom: 0
     display: inline-block
-    padding: 0 2px
+    padding: 0 size.$spacing-half
+    margin-left: size.$spacing-1
     font-size: size.$font-size-tiny
 </style>

@@ -28,7 +28,7 @@ useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Digit3"], e => {
 <template>
     <KeepAlive>
         <IllustTabDetailInfo v-if="tabType === 'info'" :detailId :scene @set-tab="tabType = $event"/>
-        <IllustTabRelatedItems v-else-if="tabType === 'related'" :detailId :type @back-tab="tabType = 'info'"/>
+        <IllustTabRelatedItems v-else-if="tabType === 'related'" :detailId :scene :type @back-tab="tabType = 'info'"/>
         <IllustTabSourceData v-else-if="tabType === 'source'" :detailId :type @back-tab="tabType = 'info'"/>
     </KeepAlive>
 </template>

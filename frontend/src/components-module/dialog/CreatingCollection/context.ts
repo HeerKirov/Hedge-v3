@@ -71,7 +71,7 @@ export function useCreatingCollectionContext(images: Ref<number[]>, preSituation
 function useSituate() {
     const toast = useToast()
     const fetchCreate = useFetchHelper({request: client => client.illust.collection.create, handleErrorInRequest: toast.handleException})
-    const fetchUpdate = usePostPathFetchHelper({request: client => client.illust.collection.images.update, handleErrorInRequest: toast.handleException})
+    const fetchUpdate = usePostPathFetchHelper({request: client => client.illust.collection.images.partialUpdate, handleErrorInRequest: toast.handleException})
 
     function getRecommendedSituation(preSituations: CollectionSituation[]): {type: "new"} | {type: "collection", id: number} | {type: "partition", ts: number} {
         const situations = preSituations.map(s => ({...s, totalImageCount: s.images.length + s.collections.map(c => c.belongs.includes(c.collectionId) ? c.childrenCount : c.belongs.length).reduce((a, b) => a + b, 0)}))
@@ -86,7 +86,7 @@ function useSituate() {
             const situation = situations.find(s => s.partitionTime!.timestamp === ts)!
             if(situation.collections.length > 0) {
                 const collectionId = arrays.maxBy(situation.collections, c => c.belongs.length)!.collectionId
-                const res = await fetchUpdate(collectionId, {illustIds: images, specifyPartitionTime: situation.partitionTime!})
+                const res = await fetchUpdate(collectionId, {action: "ADD", illustIds: images, specifyPartitionTime: situation.partitionTime!})
                 if(res) return {collectionId, created: false}
             }else{
                 const res = await fetchCreate({images: images, specifyPartitionTime: situation.partitionTime!})
@@ -95,7 +95,7 @@ function useSituate() {
         }else if(selected.type === "collection") {
             const collectionId = selected.id
             const specifyPartitionTime = situations.length > 1 ? situations.find(s => s.collections.findIndex(c => c.collectionId === collectionId) >= 0)!.partitionTime! : undefined
-            const res = await fetchUpdate(selected.id, {illustIds: images, specifyPartitionTime})
+            const res = await fetchUpdate(selected.id, {action: "ADD", illustIds: images, specifyPartitionTime})
             if(res) return {collectionId: selected.id, created: false}
         }else{
             const res = await fetchCreate({images: images})

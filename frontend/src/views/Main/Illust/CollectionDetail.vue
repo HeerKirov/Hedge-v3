@@ -58,7 +58,7 @@ const menu = useDynamicPopupMenu<Illust>((illust, { alt }) => [
     {type: "normal", label: "导出", click: operators.exportItem},
     {type: "separator"},
     {type: "normal", label: "删除项目", click: operators.deleteItem},
-    {type: "normal", label: "从集合移除此项目", click: operators.removeItemFromCollection}
+    {type: "normal", label: "从集合移除此项目", click: i => operators.removeItemFromCollection(i, path.value)}
 ])
 
 </script>

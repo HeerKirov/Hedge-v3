@@ -66,7 +66,10 @@ export function createIllustEndpoint(http: HttpInstance): IllustEndpoint {
                 }),
                 update: http.createPathDataRequest(id => `/api/illusts/collection/${id}/images`, "PUT", {
                     parseData: mapFromCollectionImagesUpdateForm
-                })
+                }),
+                partialUpdate: http.createPathDataRequest(id => `/api/illusts/collection/${id}/images`, "PATCH", {
+                    parseData: mapFromCollectionImagesPartialUpdateForm
+                }),
             }
         },
         image: {
@@ -198,6 +201,14 @@ function mapFromCollectionImagesUpdateForm(form: CollectionImagesUpdateForm): an
     return {
         illustIds: form.illustIds,
         specifyPartitionTime: form.specifyPartitionTime !== undefined ? date.toISOString(form.specifyPartitionTime) : undefined
+    }
+}
+
+function mapFromCollectionImagesPartialUpdateForm(form: CollectionImagesPartialUpdateForm): any {
+    return {
+        ...mapFromCollectionImagesUpdateForm(form),
+        ordinal: form.ordinal,
+        action: form.action
     }
 }
 
@@ -350,6 +361,12 @@ export interface IllustEndpoint {
              * @exception RESOURCE_NOT_EXIST ("images", id: number[]) image id不存在或者可能是collection，总之不能用
              */
             update(id: number, form: CollectionImagesUpdateForm): Promise<Response<null, IllustExceptions["collection.images.update"]>>
+            /**
+             * 部分更改下属images。
+             * @exception PARAM_REQUIRED ("images") images未提供
+             * @exception RESOURCE_NOT_EXIST ("images", id: number[]) image id不存在或者可能是collection，总之不能用
+             */
+            partialUpdate(id: number, form: CollectionImagesPartialUpdateForm): Promise<Response<null, IllustExceptions["collection.images.update"]>>
         }
     }
     /**
@@ -749,6 +766,13 @@ export interface CollectionRelatedUpdateForm {
 export interface CollectionImagesUpdateForm {
     illustIds: number[]
     specifyPartitionTime?: LocalDate
+}
+
+export interface CollectionImagesPartialUpdateForm {
+    illustIds: number[]
+    action: "ADD" | "DELETE"
+    specifyPartitionTime?: LocalDate
+    ordinal?: number
 }
 
 export interface ImageRelatedUpdateForm extends CollectionRelatedUpdateForm {

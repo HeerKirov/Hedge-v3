@@ -7,7 +7,11 @@ import { useSideBarRelatedItems } from "@/services/main/illust"
 import { usePopupMenu } from "@/modules/popup-menu"
 import { useAssets } from "@/functions/app"
 
-const props = defineProps<{detailId: number, type: "IMAGE" | "COLLECTION"}>()
+const props = defineProps<{
+    detailId: number,
+    type: "IMAGE" | "COLLECTION"
+    scene?: "CollectionDetail"
+}>()
 
 const emit = defineEmits<{
     (e: "backTab"): void
@@ -48,7 +52,7 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
         <ThumbnailImage class="is-cursor-pointer" max-height="12rem" :file="data.collection.filePath.sample" :num-tag-value="data.collection.childrenCount" @click="openCollection(data.collection.id)" @contextmenu="collectionPopupMenu.popup(data.collection.id)"/>
         <div class="mb-2"/>
     </template>
-    <template v-if="data?.children?.length">
+    <template v-if="data?.children?.length && scene !== 'CollectionDetail'">
         <div class="bold my-1">集合子项</div>
         <div :class="$style['children-items']" @click="openCollection(detailId)" @contextmenu="collectionPopupMenu.popup(detailId)">
             <Block v-for="item in data.children" :key="item.id">

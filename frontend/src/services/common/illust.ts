@@ -185,8 +185,9 @@ export interface ImageDatasetOperators<T extends CommonIllust> {
     /**
      * 将项目从其所属的collection中移除。会先打开对话框确认。
      * @param illust
+     * @param collectionId
      */
-    removeItemFromCollection(illust: T): void
+    removeItemFromCollection(illust: T, collectionId: number): void
     /**
      * 将项目从指定的book中移除。会先打开对话框确认。
      * @param illust
@@ -232,7 +233,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     const fetchIllustBatchUpdate = usePostFetchHelper(client => client.illust.batchUpdate)
     const fetchIllustDelete = usePostPathFetchHelper(client => client.illust.delete)
     const fetchCollectionCreate = useFetchHelper(client => client.illust.collection.create)
-    const fetchImageRelatedUpdate = usePostPathFetchHelper(client => client.illust.image.relatedItems.update)
+    const fetchCollectionImagesPartialUpdate = usePostPathFetchHelper(client => client.illust.collection.images.partialUpdate)
     const fetchBookImagesPartialUpdate = usePostPathFetchHelper(client => client.book.images.partialUpdate)
     const fetchFolderImagesPartialUpdate = usePostPathFetchHelper(client => client.folder.images.partialUpdate)
     const fetchStagingPostListAll = useFetchHelper(client => client.stagingPost.list)
@@ -496,10 +497,10 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
         dialog.externalExporter.export("ILLUST", itemIds)
     }
 
-    const removeItemFromCollection = async (illust: T) => {
+    const removeItemFromCollection = async (illust: T, collectionId: number) => {
         const images = getEffectedItems(illust)
-        if(await message.showYesNoMessage("warn", `确定要从集合移除${images.length > 1 ? "这些" : "此"}项吗？`)) {
-            await Promise.all(images.map(illustId => fetchImageRelatedUpdate(illustId, {collectionId: null})))
+        if(await message.showYesNoMessage("warn", `确定要从集合移除${images.length > 1 ? `共${images.length}个` : "此"}项吗？`)) {
+            await fetchCollectionImagesPartialUpdate(collectionId, {action: "DELETE", illustIds: images})
         }
     }
 
@@ -534,7 +535,7 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
         const dialog = useDialogService()
 
         const fetchIllustBatchUpdate = usePostFetchHelper(client => client.illust.batchUpdate)
-        const fetchCollectionImagesUpdate = usePostPathFetchHelper(client => client.illust.collection.images.update)
+        const fetchCollectionImagesPartialUpdate = usePostPathFetchHelper(client => client.illust.collection.images.partialUpdate)
         const fetchBookImagesPartialUpdate = usePostPathFetchHelper(client => client.book.images.partialUpdate)
         const fetchFolderImagesPartialUpdate = usePostPathFetchHelper(client => client.folder.images.partialUpdate)
 
@@ -605,8 +606,11 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
                     if(mode === "ADD") {
                         const resolves = await dialog.addIllust.checkExistsInCollection(illusts.map(i => i.id), path)
                         if(resolves !== undefined && resolves.illustIds.length > 0) {
-                            //在ADD时并不会更改排序，要想在集合中更改排序只能是MOVE操作。这种设计适合只是想将项加入集合而不想重排序的情况。
-                            return await fetchCollectionImagesUpdate(path, {illustIds: [path, ...resolves.illustIds], specifyPartitionTime: resolves.specifyPartitionTime})
+                            return await fetchCollectionImagesPartialUpdate(path, {
+                                ...resolves,
+                                action: "ADD",
+                                ordinal: insertIndex ?? undefined
+                            })
                         }
                     }else{
                         return await insertIntoIllusts(insertIndex, illusts, "MOVE")
