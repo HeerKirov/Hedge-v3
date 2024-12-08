@@ -108,6 +108,7 @@ const restart = async () => {
         <p class="mt-2">核心服务是一项独立的进程，承载应用程序的所有主要功能。除App外，还可为CLI、浏览器扩展等提供支持。</p>
         <template v-if="authSetting?.mode === 'remote'">
             <p>当前正在使用远程部署的核心服务。</p>
+            <Button class="float-right" size="small" icon="file-waveform" @click="logOpened = true">查看核心服务日志</Button>
             <p v-if="!!connectionInfo" class="mt-2 is-font-size-small">
                 <Icon class="mr-1" icon="globe"/>Host <code>{{authSetting.remote?.host}}</code>
             </p>
