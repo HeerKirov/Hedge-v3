@@ -10,7 +10,7 @@ import IllustTabSourceData from "./IllustTabSourceData.vue"
 const { detailId, type } = defineProps<{
     detailId: number
     type: IllustType
-    scene?: "CollectionDetail"
+    scene?: "CollectionDetail" | "CollectionPane"
 }>()
 
 const storage = useSessionStorage<{tabType: "info" | "source" | "related"}>("illust/detail-tab", () => ({tabType: "info"}), true)

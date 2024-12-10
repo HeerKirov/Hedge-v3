@@ -87,6 +87,7 @@ const folderPinnedContextMenu: NavContextMenuDefinition = ctx => <MenuItem<undef
                             <NavMenuItemsByHistory route-name="TopicDetail"/>
                         </NavMenuItem>
                         <NavMenuItem route-name="Tag" label="标签" icon="tag"/>
+                        <NavMenuItem route-name="SourceData" label="来源数据" icon="file-invoice"/>
                     </MenuScope>
                     <MenuScope id="tool" label="工具箱">
                         <NavMenuItem route-name="Import" label="导入" icon="plus-square" :badge="importCountBadge"/>

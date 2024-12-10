@@ -5,6 +5,10 @@ import { useIllustDetailPane } from "@/services/main/illust"
 import IllustDetailTab from "./IllustDetailTab.vue"
 import IllustTabAction from "./IllustTabAction.vue"
 
+defineProps<{
+    scene?: "CollectionDetail" | "CollectionPane"
+}>()
+
 defineEmits<{
     (e: "close"): void
 }>()
@@ -26,7 +30,7 @@ const { detail, selector: { selected, selectedIndex }, parent, openImagePreview 
             <ThumbnailImage class="is-cursor-zoom-in" :aspect="1" :file="detail?.filePath.thumbnail" :draggable-file="detail?.filePath.original" :drag-icon-file="detail?.filePath.sample" @click="openImagePreview"/>
         </template>
 
-        <IllustTabAction v-if="selected.length > 1" :selected="selected" :selected-index="selectedIndex" :parent="parent"/>
-        <IllustDetailTab v-else-if="detail" :detail-id="detail.id" :type="detail.type"/>
+        <IllustTabAction v-if="selected.length > 1" :selected :selectedIndex :parent/>
+        <IllustDetailTab v-else-if="detail" :detail-id="detail.id" :type="detail.type" :scene/>
     </BasePane>
 </template>

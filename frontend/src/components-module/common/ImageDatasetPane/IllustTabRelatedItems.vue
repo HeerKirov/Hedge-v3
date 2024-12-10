@@ -10,7 +10,7 @@ import { useAssets } from "@/functions/app"
 const props = defineProps<{
     detailId: number,
     type: "IMAGE" | "COLLECTION"
-    scene?: "CollectionDetail"
+    scene?: "CollectionDetail" | "CollectionPane"
 }>()
 
 const emit = defineEmits<{
@@ -47,7 +47,7 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
         <Icon icon="id-card"/><b class="ml-1 selectable">{{detailId}}</b>
     </p>
     <Separator direction="horizontal"/>
-    <template v-if="data?.collection">
+    <template v-if="data?.collection && scene !== 'CollectionPane'">
         <div class="my-1"><b class="mr-2">所属集合</b><Icon icon="id-card"/><b class="ml-1 selectable is-font-size-large">{{data.collection.id}}</b></div>
         <ThumbnailImage class="is-cursor-pointer" max-height="12rem" :file="data.collection.filePath.sample" :num-tag-value="data.collection.childrenCount" @click="openCollection(data.collection.id)" @contextmenu="collectionPopupMenu.popup(data.collection.id)"/>
         <div class="mb-2"/>

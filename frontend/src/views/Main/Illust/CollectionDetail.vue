@@ -93,7 +93,7 @@ const menu = useDynamicPopupMenu<Illust>((illust, { alt }) => [
                             @drop="operators.dataDrop"/>
         <EmbedPreview/>
         <template #pane>
-            <IllustDetailPane @close="paneState.visible.value = false"/>
+            <IllustDetailPane scene="CollectionPane" @close="paneState.visible.value = false"/>
         </template>
     </PaneLayout>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toRef } from "vue"
+import { computed, toRef } from "vue"
 import { FormEditKit } from "@/components/interaction"
 import { Separator, Icon, Block, NumBadge } from "@/components/universal"
 import { TagmeInfo, DescriptionDisplay, PartitionTimeDisplay, MetaTagListDisplay, FileInfoDisplay, SourceInfo } from "@/components-business/form-display"
@@ -13,7 +13,7 @@ import { useSideBarDetailInfo } from "@/services/main/illust"
 
 const props = defineProps<{
     detailId: number
-    scene?: "CollectionDetail"
+    scene?: "CollectionDetail" | "CollectionPane"
 }>()
 
 defineEmits<{
@@ -25,6 +25,8 @@ const detailId = toRef(props, "detailId")
 const { assetsUrl } = useAssets()
 
 const { data, setScore, setFavorite, setDescription, openMetaTagEditor, setTime, setTagme, setSourceDataPath, openCollection, openBook, openFolder, openAssociate } = useSideBarDetailInfo(detailId)
+
+const anyRelatedItems = computed(() => data.value !== null && ((data.value.parent && props.scene !== 'CollectionPane') || (data.value.children?.length && props.scene !== 'CollectionDetail') || data.value.books.length || data.value.folders.length || data.value.associateCount))
 
 const collectionPopupMenu = usePopupMenu<number>([
     {type: "normal", label: "在新标签页打开集合", click: i => openCollection(i, "newTab")},
@@ -50,100 +52,127 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
             <span v-if="data.type === 'COLLECTION'" class="float-right"><Icon class="mr-1" icon="images"/>{{ data.childrenCount }}项</span>
         </p>
         <Separator direction="horizontal"/>
-        <div class="flex jc-between">
-            <ScoreEditor :value="data.score" @update:value="setScore" :exported="data.originScore === null"/>
-            <FavoriteEditor :value="data.favorite" @update:value="setFavorite"/>
-        </div>
-        <FormEditKit class="mt-1" :value="data.description" :set-value="setDescription">
-            <template #default="{ value }">
-                <DescriptionDisplay :value="value" :exported="!data.originDescription"/>
-            </template>
-            <template #edit="{ value, setValue }">
-                <DescriptionEditor :value="value" @update:value="setValue"/>
-            </template>
-        </FormEditKit>
-        <FileInfoDisplay v-if="scene !== 'CollectionDetail'" class="mt-2" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>
-        <FormEditKit class="mt-2" :value="{partitionTime: data.partitionTime, orderTime: data.orderTime}" :set-value="setTime">
-            <template #default="{ value }">
-                <PartitionTimeDisplay :partition-time="value.partitionTime" :order-time="value.orderTime" :create-time="data.createTime" :update-time="data.updateTime"/>
-            </template>
-            <template #edit="{ value, setValue, save }">
-                <label><Icon class="mr-2" icon="clock"/><b>时间分区</b></label>
-                <DateEditor auto-focus :value="value.partitionTime" @update:value="setValue({partitionTime: $event, orderTime: value.orderTime})" @enter="save"/>
-                <label><Icon class="mr-2" icon="business-time"/><b>排序时间</b></label>
-                <DateTimeEditor auto-focus :value="value.orderTime" @update:value="setValue({partitionTime: value.partitionTime, orderTime: $event})" @enter="save"/>
-            </template>
-        </FormEditKit>
-        <template v-if="data.type === 'IMAGE'">
-            <Separator direction="horizontal" :spacing="2"/>
-            <div v-if="data.source === null" class="mt-2 flex jc-between">
-                <FormEditKit :value="null" :set-value="setSourceDataPath">
+        <div :class="$style.container">
+            <div :class="$style.item">
+                <div class="flex jc-between">
+                    <ScoreEditor :value="data.score" @update:value="setScore" :exported="data.originScore === null"/>
+                    <FavoriteEditor :value="data.favorite" @update:value="setFavorite"/>
+                </div>
+                <FormEditKit class="mt-1" :value="data.description" :set-value="setDescription">
                     <template #default="{ value }">
-                        <SourceInfo :source="value"/>
+                        <DescriptionDisplay :value="value" :exported="!data.originDescription"/>
                     </template>
-                    <template #edit="{ value, setValue, save }">
-                        <SourceIdentityEditor :source="value" @update:source="setValue" @enter="save"/>
+                    <template #edit="{ value, setValue }">
+                        <DescriptionEditor :value="value" @update:value="setValue"/>
                     </template>
                 </FormEditKit>
-                <span class="has-text-secondary"><Icon icon="angle-right"/></span>
+                <FileInfoDisplay v-if="scene !== 'CollectionDetail'" class="mt-2" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>
+                <FormEditKit class="mt-2" :value="{partitionTime: data.partitionTime, orderTime: data.orderTime}" :set-value="setTime">
+                    <template #default="{ value }">
+                        <PartitionTimeDisplay :partition-time="value.partitionTime" :order-time="value.orderTime" :create-time="data.createTime" :update-time="data.updateTime"/>
+                    </template>
+                    <template #edit="{ value, setValue, save }">
+                        <label><Icon class="mr-2" icon="clock"/><b>时间分区</b></label>
+                        <DateEditor auto-focus :value="value.partitionTime" @update:value="setValue({partitionTime: $event, orderTime: value.orderTime})" @enter="save"/>
+                        <label><Icon class="mr-2" icon="business-time"/><b>排序时间</b></label>
+                        <DateTimeEditor auto-focus :value="value.orderTime" @update:value="setValue({partitionTime: value.partitionTime, orderTime: $event})" @enter="save"/>
+                    </template>
+                </FormEditKit>
             </div>
-            <div v-else class="mt-2 flex jc-between is-cursor-pointer" @click="$emit('setTab', 'source')">
-                <SourceInfo class="no-wrap overflow-ellipsis" :source="data.source"/>
-                <a><Icon icon="angle-right"/></a>
+            <div v-if="data.type === 'IMAGE' || anyRelatedItems" :class="[$style.item, $style.right]">
+                <template v-if="data.type === 'IMAGE'">
+                    <Separator :class="$style.separator" direction="horizontal" :spacing="2"/>
+                    <div v-if="data.source === null" class="mt-2 flex jc-between">
+                        <FormEditKit :value="null" :set-value="setSourceDataPath">
+                            <template #default="{ value }">
+                                <SourceInfo :source="value"/>
+                            </template>
+                            <template #edit="{ value, setValue, save }">
+                                <SourceIdentityEditor :source="value" @update:source="setValue" @enter="save"/>
+                            </template>
+                        </FormEditKit>
+                        <span class="has-text-secondary"><Icon icon="angle-right"/></span>
+                    </div>
+                    <div v-else class="mt-2 flex jc-between is-cursor-pointer" @click="$emit('setTab', 'source')">
+                        <SourceInfo class="no-wrap overflow-ellipsis" :source="data.source"/>
+                        <a><Icon icon="angle-right"/></a>
+                    </div>
+                </template>
+                <template v-if="anyRelatedItems">
+                    <Separator :class="$style.separator" direction="horizontal" :spacing="2"/>
+                    <div class="bold mt-2 mb-1 is-cursor-pointer" @click="$emit('setTab', 'related')">
+                        关联项
+                        <a class="float-right"><Icon icon="angle-right"/></a>
+                    </div>
+                    <template v-if="data.parent && scene !== 'CollectionPane'">
+                        <Block :class="$style['parent-item']" @click="openCollection(data.parent.id)" @contextmenu="collectionPopupMenu.popup(data.parent.id)">
+                            <img :src="assetsUrl(data.parent.filePath.sample)" :alt="`collection ${data.parent.id}`"/>
+                            <NumBadge fixed="right-top" :num="data.parent.childrenCount"/>
+                            <div :class="$style.info"><Icon icon="id-card"/><b class="ml-1 selectable">{{data.parent.id}}</b></div>
+                        </Block>
+                    </template>
+                    <div v-if="data.children?.length && scene !== 'CollectionDetail'" :class="$style['children-items']" @click="openCollection(data.id)" @contextmenu="collectionPopupMenu.popup(data.id)">
+                        <Block v-for="item in data.children" :key="item.id">
+                            <img :src="assetsUrl(item.filePath.sample)" :alt="`child item ${item.id}`"/>
+                        </Block>
+                        <div v-if="data.childrenCount !== null && data.children.length < data.childrenCount" class="secondary-text has-text-centered">等{{data.childrenCount}}项</div>
+                    </div>
+                    <template v-if="data.books.length">
+                        <p v-for="book in data.books" :key="book.id" class="no-wrap overflow-ellipsis is-cursor-pointer mt-1" @click="openBook(book)" @contextmenu="bookPopupMenu.popup(book)">
+                            <Icon class="mr-m1" icon="clone"/>
+                            《{{book.title}}》
+                        </p>
+                    </template>
+                    <template v-if="data.folders.length">
+                        <p v-for="folder in data.folders" :key="folder.id" class="no-wrap overflow-ellipsis is-cursor-pointer mt-1" @click="openFolder(folder)" @contextmenu="folderPopupMenu.popup(folder)">
+                            <Icon class="mr-1" icon="folder"/>
+                            {{folder.address.join("/")}}
+                        </p>
+                    </template>
+                    <p v-if="data.associateCount > 0" class="is-cursor-pointer mt-1" @click="openAssociate">
+                        <Icon class="mr-2" icon="eye"/>
+                        <b>{{data.associateCount}}</b> 关联组项
+                    </p>
+                </template>
             </div>
-        </template>
-        <template v-if="(data.parent || (data.children?.length && scene !== 'CollectionDetail') || data.books.length || data.folders.length || data.associateCount)">
-            <Separator direction="horizontal" :spacing="2"/>
-            <div class="bold mt-2 mb-1 is-cursor-pointer" @click="$emit('setTab', 'related')">
-                关联项
-                <a class="float-right"><Icon icon="angle-right"/></a>
+            <div :class="[$style.item, !anyRelatedItems ? (data.type === 'IMAGE' ? $style['right-bottom'] : $style['right']) : undefined]">
+                <Separator :class="$style.separator" direction="horizontal" :spacing="2"/>
+                <FormEditKit v-if="data.tagme.length" :value="data.tagme" :set-value="setTagme">
+                    <template #default="{ value }">
+                        <TagmeInfo :value="value"/>
+                    </template>
+                    <template #edit="{ value, setValue }">
+                        <TagmeEditor :value="value" @update:value="setValue"/>
+                    </template>
+                </FormEditKit>
+                <MetaTagListDisplay class="mt-1" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
             </div>
-            <template v-if="data.parent">
-                <Block :class="$style['parent-item']" @click="openCollection(data.parent.id)" @contextmenu="collectionPopupMenu.popup(data.parent.id)">
-                    <img :src="assetsUrl(data.parent.filePath.sample)" :alt="`collection ${data.parent.id}`"/>
-                    <NumBadge fixed="right-top" :num="data.parent.childrenCount"/>
-                    <div :class="$style.info"><Icon icon="id-card"/><b class="ml-1 selectable">{{data.parent.id}}</b></div>
-                </Block>
-            </template>
-            <div v-if="data.children?.length && scene !== 'CollectionDetail'" :class="$style['children-items']" @click="openCollection(data.id)" @contextmenu="collectionPopupMenu.popup(data.id)">
-                <Block v-for="item in data.children" :key="item.id">
-                    <img :src="assetsUrl(item.filePath.sample)" :alt="`child item ${item.id}`"/>
-                </Block>
-                <div v-if="data.childrenCount !== null && data.children.length < data.childrenCount" class="secondary-text has-text-centered">等{{data.childrenCount}}项</div>
-            </div>
-            <template v-if="data.books.length">
-                <p v-for="book in data.books" :key="book.id" class="no-wrap overflow-ellipsis is-cursor-pointer mt-1" @click="openBook(book)" @contextmenu="bookPopupMenu.popup(book)">
-                    <Icon class="mr-m1" icon="clone"/>
-                    《{{book.title}}》
-                </p>
-            </template>
-            <template v-if="data.folders.length">
-                <p v-for="folder in data.folders" :key="folder.id" class="no-wrap overflow-ellipsis is-cursor-pointer mt-1" @click="openFolder(folder)" @contextmenu="folderPopupMenu.popup(folder)">
-                    <Icon class="mr-1" icon="folder"/>
-                    {{folder.address.join("/")}}
-                </p>
-            </template>
-            <p v-if="data.associateCount > 0" class="is-cursor-pointer mt-1" @click="openAssociate">
-                <Icon class="mr-2" icon="eye"/>
-                <b>{{data.associateCount}}</b> 关联组项
-            </p>
-        </template>
-        <Separator direction="horizontal" :spacing="2"/>
-        <FormEditKit v-if="data.tagme.length" :value="data.tagme" :set-value="setTagme">
-            <template #default="{ value }">
-                <TagmeInfo :value="value"/>
-            </template>
-            <template #edit="{ value, setValue }">
-                <TagmeEditor :value="value" @update:value="setValue"/>
-            </template>
-        </FormEditKit>
-        <MetaTagListDisplay class="mt-1" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
+        </div>
     </template>
 </template>
 
 <style module lang="sass">
 @use "@/styles/base/size"
 @use "@/styles/base/color"
+
+.container
+    position: relative
+    container-type: inline-size
+    container-name: side-pane
+
+    @container side-pane (min-width: 500px)
+        .item
+            width: calc(50% - #{size.$spacing-2})
+        .item.right
+            position: absolute
+            right: 0
+            top: 0
+            .separator:first-child
+                display: none
+        .item.right-bottom
+            position: absolute
+            right: 0
+            top: calc(1em + #{size.$spacing-3 + size.$spacing-half})
 
 .parent-item
     position: relative
