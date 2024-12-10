@@ -20,7 +20,7 @@ const siteTitle = computed(() => site?.value?.title ?? props.source?.sourceSite)
 <template>
     <p v-if="source" class="no-wrap">
         <img v-if="SITE_ICONS[source.sourceSite]" :class="$style['site-icon']" :src="SITE_ICONS[source.sourceSite]" alt="site icon"/>
-        <Icon v-else class="mr-1" icon="pager"/>
+        <Icon v-else class="mr-2" icon="pager"/>
         <span class="selectable">
             {{ siteTitle }}
             <b>{{ source.sourceId }}</b>
@@ -39,7 +39,7 @@ const siteTitle = computed(() => site?.value?.title ?? props.source?.sourceSite)
 
 .site-icon
     display: inline-block
-    margin-right: size.$spacing-1
+    margin-right: size.$spacing-2
     width: 16px
     height: 16px
     vertical-align: sub

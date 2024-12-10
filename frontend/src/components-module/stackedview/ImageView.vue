@@ -62,7 +62,7 @@ const popupMenu = usePopupMenu(computed(() => [
 </script>
 
 <template>
-    <PaneLayout :show-pane="!collapsed">
+    <PaneLayout scope-name="stacked-view" :show-pane="!collapsed">
         <TopBarCollapseLayout :collapsed="collapsed">
             <template #top-bar>
                 <MiddleLayout>

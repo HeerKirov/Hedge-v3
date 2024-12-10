@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { installSideLayoutState } from "@/components/layout"
 import { installDialogService, GlobalDialog } from "@/components-module/dialog"
 import { installCalloutService, GlobalCallout } from "@/components-module/callout"
 import { installPreviewService, GlobalPreview } from "@/components-module/preview"
@@ -8,7 +7,6 @@ import { installStackedView, StackedView } from "@/components-module/stackedview
 installDialogService()
 installCalloutService()
 installPreviewService()
-installSideLayoutState({defaultSwitch: false})
 installStackedView({isRootView: true})
 
 </script>

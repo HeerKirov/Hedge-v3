@@ -75,7 +75,7 @@ function useSubSlice(slice: SliceDataView<Illust>) {
                     remove(i => i.id === event.illustId)
                 }
             },
-            request: client => async items => flatResponse(await Promise.all(items.map(i => client.illust.image.get(i.id))))
+            request: client => async items => flatResponse(await Promise.all(items.map(i => client.illust.getSimple(i.id))))
         }
     })
 

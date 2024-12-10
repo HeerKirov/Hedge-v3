@@ -23,11 +23,7 @@ const { setTitle, setScore, setFavorite, setDescription, openMetaTagEditor } = u
             <span class="float-right"><Icon class="mr-1" icon="images"/>{{ data.imageCount }}个图像</span>
         </p>
         <Separator direction="horizontal"/>
-        <div class="flex jc-between">
-            <ScoreEditor :value="data.score" @update:value="setScore"/>
-            <FavoriteEditor :value="data.favorite" @update:value="setFavorite"/>
-        </div>
-        <FormEditKit class="mt-1" :value="data.title" :set-value="setTitle">
+        <FormEditKit :value="data.title" :set-value="setTitle">
             <template #default="{ value }">
                 <TitleDisplay :value="value"/>
             </template>
@@ -35,6 +31,10 @@ const { setTitle, setScore, setFavorite, setDescription, openMetaTagEditor } = u
                 <Input class="w-100" auto-focus :value="value" @update:value="setValue" @enter="save"/>
             </template>
         </FormEditKit>
+        <div class="mt-1 flex jc-between">
+            <ScoreEditor :value="data.score" @update:value="setScore"/>
+            <FavoriteEditor :value="data.favorite" @update:value="setFavorite"/>
+        </div>
         <FormEditKit class="mt-1" :value="data.description" :set-value="setDescription">
             <template #default="{ value }">
                 <DescriptionDisplay :value="value"/>

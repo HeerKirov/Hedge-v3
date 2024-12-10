@@ -29,18 +29,18 @@ const { data, setScore, setFavorite, setDescription, openMetaTagEditor, setTime,
 const anyRelatedItems = computed(() => data.value !== null && ((data.value.parent && props.scene !== 'CollectionPane') || (data.value.children?.length && props.scene !== 'CollectionDetail') || data.value.books.length || data.value.folders.length || data.value.associateCount))
 
 const collectionPopupMenu = usePopupMenu<number>([
-    {type: "normal", label: "在新标签页打开集合", click: i => openCollection(i, "newTab")},
-    {type: "normal", label: "在新窗口打开集合", click: i => openCollection(i, "newWindow")}
+    {type: "normal", label: "在新标签页打开集合", enabled: !!openCollection, click: i => openCollection!(i, "newTab")},
+    {type: "normal", label: "在新窗口打开集合", enabled: !!openCollection, click: i => openCollection!(i, "newWindow")}
 ])
 
 const bookPopupMenu = usePopupMenu<SimpleBook>([
-    {type: "normal", label: "在新标签页打开此画集", click: b => openBook(b, "newTab")},
-    {type: "normal", label: "在新窗口打开此画集", click: b => openBook(b, "newWindow")}
+    {type: "normal", label: "在新标签页打开此画集", enabled: !!openBook, click: b => openBook!(b, "newTab")},
+    {type: "normal", label: "在新窗口打开此画集", enabled: !!openBook, click: b => openBook!(b, "newWindow")}
 ])
 
 const folderPopupMenu = usePopupMenu<SimpleFolder>([
-    {type: "normal", label: "在新标签页打开此文件夹", click: f => openFolder(f, "newTab")},
-    {type: "normal", label: "在新窗口打开此文件夹", click: f => openFolder(f, "newWindow")}
+    {type: "normal", label: "在新标签页打开此文件夹", enabled: !!openFolder, click: f => openFolder!(f, "newTab")},
+    {type: "normal", label: "在新窗口打开此文件夹", enabled: !!openFolder, click: f => openFolder!(f, "newWindow")}
 ])
 
 </script>
@@ -58,9 +58,9 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
                     <ScoreEditor :value="data.score" @update:value="setScore" :exported="data.originScore === null"/>
                     <FavoriteEditor :value="data.favorite" @update:value="setFavorite"/>
                 </div>
-                <FormEditKit class="mt-1" :value="data.description" :set-value="setDescription">
+                <FormEditKit class="mt-2" :value="data.description" :set-value="setDescription">
                     <template #default="{ value }">
-                        <DescriptionDisplay :value="value" :exported="!data.originDescription"/>
+                        <DescriptionDisplay :value="value" :exported="!data.originDescription" new-skin/>
                     </template>
                     <template #edit="{ value, setValue }">
                         <DescriptionEditor :value="value" @update:value="setValue"/>
@@ -105,26 +105,26 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
                         <a class="float-right"><Icon icon="angle-right"/></a>
                     </div>
                     <template v-if="data.parent && scene !== 'CollectionPane'">
-                        <Block :class="$style['parent-item']" @click="openCollection(data.parent.id)" @contextmenu="collectionPopupMenu.popup(data.parent.id)">
+                        <Block :class="$style['parent-item']" @click="openCollection?.(data.parent.id)" @contextmenu="collectionPopupMenu.popup(data.parent.id)">
                             <img :src="assetsUrl(data.parent.filePath.sample)" :alt="`collection ${data.parent.id}`"/>
                             <NumBadge fixed="right-top" :num="data.parent.childrenCount"/>
                             <div :class="$style.info"><Icon icon="id-card"/><b class="ml-1 selectable">{{data.parent.id}}</b></div>
                         </Block>
                     </template>
-                    <div v-if="data.children?.length && scene !== 'CollectionDetail'" :class="$style['children-items']" @click="openCollection(data.id)" @contextmenu="collectionPopupMenu.popup(data.id)">
+                    <div v-if="data.children?.length && scene !== 'CollectionDetail'" :class="$style['children-items']" @click="openCollection?.(data.id)" @contextmenu="collectionPopupMenu.popup(data.id)">
                         <Block v-for="item in data.children" :key="item.id">
                             <img :src="assetsUrl(item.filePath.sample)" :alt="`child item ${item.id}`"/>
                         </Block>
                         <div v-if="data.childrenCount !== null && data.children.length < data.childrenCount" class="secondary-text has-text-centered">等{{data.childrenCount}}项</div>
                     </div>
                     <template v-if="data.books.length">
-                        <p v-for="book in data.books" :key="book.id" class="no-wrap overflow-ellipsis is-cursor-pointer mt-1" @click="openBook(book)" @contextmenu="bookPopupMenu.popup(book)">
+                        <p v-for="book in data.books" :key="book.id" class="no-wrap overflow-ellipsis is-cursor-pointer mt-1" @click="openBook?.(book)" @contextmenu="bookPopupMenu.popup(book)">
                             <Icon class="mr-m1" icon="clone"/>
                             《{{book.title}}》
                         </p>
                     </template>
                     <template v-if="data.folders.length">
-                        <p v-for="folder in data.folders" :key="folder.id" class="no-wrap overflow-ellipsis is-cursor-pointer mt-1" @click="openFolder(folder)" @contextmenu="folderPopupMenu.popup(folder)">
+                        <p v-for="folder in data.folders" :key="folder.id" class="no-wrap overflow-ellipsis is-cursor-pointer mt-1" @click="openFolder?.(folder)" @contextmenu="folderPopupMenu.popup(folder)">
                             <Icon class="mr-1" icon="folder"/>
                             {{folder.address.join("/")}}
                         </p>

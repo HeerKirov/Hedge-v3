@@ -43,7 +43,7 @@ const menu = usePopupMenu<TrashedImage>([
         </ElementPopupMenu>
     </BrowserTeleport>
 
-    <PaneLayout :show-pane="paneState.visible.value">
+    <PaneLayout scope-name="trash" :show-pane="paneState.visible.value">
         <div v-if="state !== null && state.total <= 0" class="h-100 has-text-centered">
             <p class="secondary-text"><i>没有任何暂存的已删除项目</i></p>
         </div>

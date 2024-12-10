@@ -102,7 +102,7 @@ const menu = usePopupMenu<MetaTagTypeValue>([
 .exported
     position: absolute
     right: 3px
-    bottom: 2px
+    top: 2px
     padding: 0 2px
     font-size: size.$font-size-tiny
 </style>

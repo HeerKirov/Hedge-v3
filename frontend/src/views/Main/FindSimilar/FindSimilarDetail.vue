@@ -29,7 +29,7 @@ const { data, viewMode, listviewController, operators: { complete } } = installF
     </BrowserTeleport>
 
     <template v-if="data !== null">
-        <PaneLayout :show-pane="viewMode === 'graph' || viewMode === 'grid'">
+        <PaneLayout scope-name="illust" :show-pane="viewMode === 'graph' || viewMode === 'grid'">
             <div v-if="viewMode === 'graph' || viewMode === 'compare'" :class="viewMode === 'graph' ? $style['grid-mode'] : $style['compare-mode']">
                 <CompareTable v-if="viewMode === 'compare'"/>
                 <Separator :class="$style.separator" direction="horizontal" :spacing="0"/>

@@ -48,8 +48,8 @@ const remain = (remainingTime: number | null) => {
                 <Starlight :value="data.score"/>
                 <FavoriteEditor :value="data.favorite"/>
             </div>
-            <DescriptionDisplay v-if="data.description" class="mt-1" :value="data.description"/>
-            <FileInfoDisplay class="mt-3" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>
+            <DescriptionDisplay v-if="data.description" class="mt-2" :value="data.description" new-skin/>
+            <FileInfoDisplay class="mt-2" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>
             <PartitionTimeDisplay class="mt-2" :partition-time="data.partitionTime" :order-time="data.orderTime"/>
             <TimeGroupDisplay :create-time="data.createTime" :update-time="data.updateTime"/>
             <p class="secondary-text">删除时间 {{datetime.toSimpleFormat(data.trashedTime)}}</p>

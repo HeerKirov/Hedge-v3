@@ -144,6 +144,7 @@ export function useResizeBar(options: {areaRef: Ref<HTMLElement | undefined>, lo
     const mouseMove = location === "left" ? (e: MouseEvent) => {
         if(areaRef.value) {
             const newWidth = areaRef.value.getBoundingClientRect().left + areaRef.value.clientWidth - e.pageX
+            console.log(`pageX=${e.pageX}, left=${areaRef.value.getBoundingClientRect().left}, clientWidth=${areaRef.value.clientWidth}, newWidth=${newWidth}`)
             width.value
                 = newWidth > maxWidth ? maxWidth
                 : newWidth < minWidth ? minWidth

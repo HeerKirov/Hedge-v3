@@ -36,7 +36,7 @@ const onDelete = (tag: TagTreeNode) => operators.deleteItem(tag.id)
         <Button class="flex-item no-grow-shrink" icon="plus" square @click="paneState.openCreateView()"/>
     </BrowserTeleport>
 
-    <PaneLayout :show-pane="paneState.opened.value">
+    <PaneLayout scope-name="tag" :show-pane="paneState.opened.value">
         <template #pane>
             <BasePane @close="paneState.closeView()">
                 <TagCreatePane v-if="paneState.mode.value === 'create'"/>

@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { Menu, MenuItem, MenuScope } from "@/components/interaction"
-import { SideLayout, TopBarLayout, Container, SideBar, MiddleLayout, installSideLayoutState } from "@/components/layout"
+import { SideLayout, TopBarLayout, Container, SideBar, MiddleLayout } from "@/components/layout"
 import { useMarkdownDocument } from "@/services/base/side-nav-md"
-
-installSideLayoutState()
 
 const { menuSelected, component, title, menuItems } = useMarkdownDocument({
     routeName: "Guide",

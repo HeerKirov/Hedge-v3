@@ -11,7 +11,14 @@ import { usePreviewService } from "@/components-module/preview"
 import { useDialogService } from "@/components-module/dialog"
 import { useToast } from "@/modules/toast"
 import { MessageBoxManager, useMessageBox } from "@/modules/message-box"
-import { useBrowserTabs, useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
+import {
+    isBrowserEnvironment,
+    useBrowserTabs,
+    useDocumentTitle,
+    useInitializer,
+    usePath,
+    useTabRoute
+} from "@/modules/browser"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
@@ -136,7 +143,7 @@ function useCollectionTarget(path: Ref<number>) {
 
     const { data, setData, deleteData } = useFetchEndpoint({
         path,
-        get: client => client.illust.collection.get,
+        get: client => client.illust.getSimple,
         update: client => client.illust.collection.update,
         delete: client => client.illust.collection.delete,
         eventFilter: c => event => (event.eventType === "entity/illust/updated" || event.eventType === "entity/illust/deleted") && event.illustId === c.path,
@@ -581,20 +588,42 @@ export function useSideBarSourceData(path: Ref<number | null>, backTab: () => vo
 }
 
 function useRelatedOperators(path: Ref<number | null>) {
-    const browserTabs = useBrowserTabs()
-    const router = useTabRoute()
     const dialog = useDialogService()
     const viewStack = useStackedView()
 
-    const openCollection = (collectionId: number, at?: "newTab" | "newWindow") => {
-        if(at === "newTab") {
-            browserTabs.newTab({routeName: "CollectionDetail", path: collectionId})
-        }else if(at === "newWindow") {
-            browserTabs.newWindow({routeName: "CollectionDetail", path: collectionId})
-        }else{
-            router.routePush({routeName: "CollectionDetail", path: collectionId})
+    const { openCollection, openBook, openFolder } = isBrowserEnvironment() ? (() => {
+        const browserTabs = useBrowserTabs()
+        const router = useTabRoute()
+        return {
+            openCollection: (collectionId: number, at?: "newTab" | "newWindow") => {
+                if(at === "newTab") {
+                    browserTabs.newTab({routeName: "CollectionDetail", path: collectionId})
+                }else if(at === "newWindow") {
+                    browserTabs.newWindow({routeName: "CollectionDetail", path: collectionId})
+                }else{
+                    router.routePush({routeName: "CollectionDetail", path: collectionId})
+                }
+            },
+            openBook: (book: SimpleBook, at?: "newTab" | "newWindow") => {
+                if(at === "newTab") {
+                    browserTabs.newTab({routeName: "BookDetail", path: book.id})
+                }else if(at === "newWindow") {
+                    browserTabs.newWindow({routeName: "BookDetail", path: book.id})
+                }else{
+                    router.routePush({routeName: "BookDetail", path: book.id})
+                }
+            },
+            openFolder: (folder: SimpleFolder, at?: "newTab" | "newWindow") => {
+                if(at === "newTab") {
+                    browserTabs.newTab({routeName: "FolderDetail", path: folder.id})
+                }else if(at === "newWindow") {
+                    browserTabs.newWindow({routeName: "FolderDetail", path: folder.id})
+                }else{
+                    router.routePush({routeName: "FolderDetail", path: folder.id})
+                }
+            }
         }
-    }
+    })() : {openCollection: undefined, openBook: undefined, openFolder: undefined}
 
     const openAssociate = () => {
         if(path.value !== null) {
@@ -605,26 +634,6 @@ function useRelatedOperators(path: Ref<number | null>) {
     const openAssociateInViewStack = (associates: Illust[], index?: number) => {
         if(associates.length) {
             viewStack.openImageView({imageIds: associates.map(i => i.id), focusIndex: index})
-        }
-    }
-
-    const openBook = (book: SimpleBook, at?: "newTab" | "newWindow") => {
-        if(at === "newTab") {
-            browserTabs.newTab({routeName: "BookDetail", path: book.id})
-        }else if(at === "newWindow") {
-            browserTabs.newWindow({routeName: "BookDetail", path: book.id})
-        }else{
-            router.routePush({routeName: "BookDetail", path: book.id})
-        }
-    }
-
-    const openFolder = (folder: SimpleFolder, at?: "newTab" | "newWindow") => {
-        if(at === "newTab") {
-            browserTabs.newTab({routeName: "FolderDetail", path: folder.id})
-        }else if(at === "newWindow") {
-            browserTabs.newWindow({routeName: "FolderDetail", path: folder.id})
-        }else{
-            router.routePush({routeName: "FolderDetail", path: folder.id})
         }
     }
 

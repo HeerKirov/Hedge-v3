@@ -77,7 +77,7 @@ const menu = useDynamicPopupMenu<CommonIllust>((illust, { alt }) => [
         </ElementPopupMenu>
     </BrowserTeleport>
 
-    <PaneLayout :show-pane="paneState.visible.value">
+    <PaneLayout scope-name="illust" :show-pane="paneState.visible.value">
         <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy"
                             :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable
                             :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
@@ -87,7 +87,7 @@ const menu = useDynamicPopupMenu<CommonIllust>((illust, { alt }) => [
                             @drop="operators.dataDrop"/>
         <EmbedPreview/>
         <template #pane>
-            <IllustDetailPane @close="paneState.visible.value = false"/>
+            <IllustDetailPane tab-scope="find-similar" @close="paneState.visible.value = false"/>
         </template>
     </PaneLayout>
 </template>

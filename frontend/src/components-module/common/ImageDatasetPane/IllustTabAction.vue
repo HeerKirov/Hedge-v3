@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { toRefs } from "vue"
-import { Icon, Button, Separator, Starlight, Block } from "@/components/universal"
+import { Icon, Button, Separator, Starlight } from "@/components/universal"
 import { DescriptionDisplay } from "@/components-business/form-display"
 import { TagmeEditor, DescriptionEditor, DateEditor, DateTimeEditor, FavoriteEditor } from "@/components-business/form-editor"
 import { TAGME_TYPE_ICONS } from "@/constants/entity"
@@ -59,19 +59,16 @@ const ordinalEllipsisMenuItems = <MenuItem<undefined>[]>[
 
 <template>
     <p class="my-1 has-text-centered">
-        已选择<b>{{selected.length}}</b>项
+        <Icon icon="pen-nib"/>已选择<b>{{selected.length}}</b>项
     </p>
     <Separator direction="horizontal"/>
-    <p class="mt-2 has-text-centered"><Icon icon="pen-nib"/><b>多选操作</b></p>
-    <p class="mt-2"></p>
-    <div class="mt-2 flex jc-between">
+    <div class="mt-1 flex jc-between">
         <Starlight editable :value="form.score" @update:value="setScore"/>
         <FavoriteEditor :value="form.favorite" @update:value="setFavorite"/>
     </div>
-    <FormEditKit class="mt-1" :value="form.description" :set-value="setDescription" allow-single-click>
+    <FormEditKit class="mt-2" :value="form.description" :set-value="setDescription" allow-single-click>
         <template #default="{ value }">
-            <DescriptionDisplay v-if="value" :value="value"/>
-            <Block v-else class="py-1 px-2 secondary-text" >编辑描述…</Block>
+            <DescriptionDisplay :value="value" placeholder="编辑描述…"/>
         </template>
         <template #edit="{ value, setValue }">
             <DescriptionEditor :value="value" @update:value="setValue"/>

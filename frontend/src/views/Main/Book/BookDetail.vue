@@ -78,7 +78,7 @@ const menu = useDynamicPopupMenu<BookImage>((bookImage, { alt }) => [
         </BottomLayout>
     </BrowserTeleport>
 
-    <PaneLayout :show-pane="paneState.visible.value">
+    <PaneLayout scope-name="illust" :show-pane="paneState.visible.value">
         <IllustImageDataset :data="paginationData" :state="state" :query-instance="listview.proxy"
                             :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
                             :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
@@ -87,7 +87,7 @@ const menu = useDynamicPopupMenu<BookImage>((bookImage, { alt }) => [
                             @drop="operators.dataDrop"/>
         <EmbedPreview/>
         <template #pane>
-            <IllustDetailPane @close="paneState.visible.value = false"/>
+            <IllustDetailPane tab-scope="book-detail" @close="paneState.visible.value = false"/>
         </template>
     </PaneLayout>
 </template>

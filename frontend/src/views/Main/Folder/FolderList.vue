@@ -33,7 +33,7 @@ const updateSelected = (folderId: number | null) => {
         <LockOnButton v-model:value="editableLockOn"/>
     </BrowserTeleport>
 
-    <PaneLayout :show-pane="paneState.opened.value">
+    <PaneLayout scope-name="folder" :show-pane="paneState.opened.value">
         <template #pane>
             <BasePane @close="paneState.closeView()">
                 <FolderListPane/>

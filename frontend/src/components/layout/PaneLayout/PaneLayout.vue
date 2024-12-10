@@ -10,7 +10,14 @@ import { sleep } from "@/utils/process"
 // 侧边面板可以被拖放改变大小。
 
 const props = defineProps<{
+    /**
+     * 是否显示侧边面板。
+     */
     showPane?: boolean
+    /**
+     * 启用宽度记忆。使用相同scopeName的面板将会共享记忆。
+     */
+    scopeName?: string
 }>()
 
 const DEFAULT_WIDTH = 250
@@ -18,18 +25,26 @@ const MAX_WIDTH = 900
 const MIN_WIDTH = 200
 const ATTACH_RANGE = 10
 
-const sharedWidth = useLocalStorage<number>("pane-layout/shared/width", DEFAULT_WIDTH)
+const width = props.scopeName ? (() => {
+    const scopeName = props.scopeName
+    const sharedWidth = useLocalStorage<Record<string, number>>("pane-layout/width", () => ({}), true)
 
-const width = useTabStorage<number>("pane-layout/width", () => sharedWidth.value, true)
+    const width = useTabStorage<number>(`pane-layout/scope/${scopeName}/width`, () => sharedWidth.value[scopeName] ?? DEFAULT_WIDTH, true)
 
-watch(width, async (width, _, onCleanup) => {
-    if(width !== sharedWidth.value) {
-        let cleaned = false
-        onCleanup(() => cleaned = true)
-        await sleep(500)
-        if(!cleaned) sharedWidth.value = width
-    }
-})
+    watch(width, async (width, _, onCleanup) => {
+        if(width !== (sharedWidth.value[scopeName] ?? DEFAULT_WIDTH)) {
+            let cleaned = false
+            onCleanup(() => cleaned = true)
+            await sleep(500)
+            if(!cleaned) {
+                if(width !== DEFAULT_WIDTH) sharedWidth.value[scopeName] = width
+                else delete sharedWidth.value[scopeName]
+            }
+        }
+    })
+
+    return width
+})() : ref(DEFAULT_WIDTH)
 
 const areaRef = ref<HTMLElement>()
 

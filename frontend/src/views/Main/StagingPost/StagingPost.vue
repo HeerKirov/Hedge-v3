@@ -60,7 +60,7 @@ const menu = useDynamicPopupMenu<StagingPostImage>((illust, { alt }) => [
         </ElementPopupMenu>
     </BrowserTeleport>
 
-    <PaneLayout :show-pane="paneState.visible.value">
+    <PaneLayout scope-name="illust" :show-pane="paneState.visible.value">
         <div v-if="state !== null && state.total <= 0" class="h-100 has-text-centered">
             <p class="secondary-text"><i>暂存区为空</i></p>
         </div>
@@ -72,7 +72,7 @@ const menu = useDynamicPopupMenu<StagingPostImage>((illust, { alt }) => [
                             @drop="operators.dropToAdd"/>
         <EmbedPreview/>
         <template #pane>
-            <IllustDetailPane @close="paneState.visible.value = false"/>
+            <IllustDetailPane tab-scope="illust" @close="paneState.visible.value = false"/>
         </template>
     </PaneLayout>
 </template>

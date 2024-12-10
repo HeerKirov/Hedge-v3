@@ -36,7 +36,7 @@ const popupMenu = usePopupMenu([
         <Button class="flex-item no-grow-shrink" icon="plus" square @click="sourceDataEditor.create()"/>
     </BrowserTeleport>
 
-    <PaneLayout :show-pane="paneState.opened.value">
+    <PaneLayout scope-name="source-data" :show-pane="paneState.opened.value">
         <template #pane>
             <SourceDataDetailPane v-if="paneState.mode.value === 'detail'" @close="paneState.closeView()"/>
         </template>

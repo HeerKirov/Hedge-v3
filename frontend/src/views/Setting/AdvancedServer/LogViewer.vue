@@ -34,7 +34,7 @@ const openInExternal = () => {
 </script>
 
 <template>
-    <PaneLayout show-pane>
+    <PaneLayout :class="$style.root" show-pane>
         <template #pane>
             <BasePane @close="$emit('close')">
                 <Button v-for="item in logFiles" :key="item"
@@ -62,14 +62,21 @@ const openInExternal = () => {
 @use "@/styles/base/color"
 @use "@/styles/base/size"
 
+.root
+    position: absolute
+    width: 100%
+    height: 100%
+    top: 0
+    left: 0
+    background-color: color.$light-mode-background-color
+    @media (prefers-color-scheme: dark)
+        background-color: color.$dark-mode-border-color
+
 .content
     height: 100%
     width: 100%
     padding: size.$spacing-2
     overflow: auto
-    background-color: color.$light-mode-background-color
-    @media (prefers-color-scheme: dark)
-        background-color: color.$dark-mode-border-color
 
 .file-item
     width: 100%

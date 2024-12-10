@@ -25,6 +25,6 @@ const { detail, selector: { selected, selectedIndex }, openImagePreview } = useD
             <IllustTabAction :selected="selected" :selected-index="selectedIndex"/>
             <FindSimilarTabResolve/>
         </template>
-        <IllustDetailTab v-else-if="detail" :detail-id="detail.id" :type="detail.type"/>
+        <IllustDetailTab v-else-if="detail" :detail-id="detail.id" :type="detail.type" tab-scope="find-similar"/>
     </BasePane>
 </template>

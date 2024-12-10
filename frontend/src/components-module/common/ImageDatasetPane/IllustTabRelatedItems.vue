@@ -25,18 +25,18 @@ const { data, openCollection, openAssociate, openAssociateInViewStack, openBook,
 const { assetsUrl } = useAssets()
 
 const collectionPopupMenu = usePopupMenu<number>([
-    {type: "normal", label: "在新标签页打开集合", click: i => openCollection(i, "newTab")},
-    {type: "normal", label: "在新窗口打开集合", click: i => openCollection(i, "newWindow")}
+    {type: "normal", label: "在新标签页打开集合", enabled: !!openCollection, click: i => openCollection!(i, "newTab")},
+    {type: "normal", label: "在新窗口打开集合", enabled: !!openCollection, click: i => openCollection!(i, "newWindow")}
 ])
 
 const bookPopupMenu = usePopupMenu<SimpleBook>([
-    {type: "normal", label: "在新标签页打开此画集", click: b => openBook(b, "newTab")},
-    {type: "normal", label: "在新窗口打开此画集", click: b => openBook(b, "newWindow")}
+    {type: "normal", label: "在新标签页打开此画集", enabled: !!openBook, click: b => openBook!(b, "newTab")},
+    {type: "normal", label: "在新窗口打开此画集", enabled: !!openBook, click: b => openBook!(b, "newWindow")}
 ])
 
 const folderPopupMenu = usePopupMenu<SimpleFolder>([
-    {type: "normal", label: "在新标签页打开此文件夹", click: f => openFolder(f, "newTab")},
-    {type: "normal", label: "在新窗口打开此文件夹", click: f => openFolder(f, "newWindow")}
+    {type: "normal", label: "在新标签页打开此文件夹", enabled: !!openFolder, click: f => openFolder!(f, "newTab")},
+    {type: "normal", label: "在新窗口打开此文件夹", enabled: !!openFolder, click: f => openFolder!(f, "newWindow")}
 ])
 
 </script>
@@ -49,12 +49,12 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
     <Separator direction="horizontal"/>
     <template v-if="data?.collection && scene !== 'CollectionPane'">
         <div class="my-1"><b class="mr-2">所属集合</b><Icon icon="id-card"/><b class="ml-1 selectable is-font-size-large">{{data.collection.id}}</b></div>
-        <ThumbnailImage class="is-cursor-pointer" max-height="12rem" :file="data.collection.filePath.sample" :num-tag-value="data.collection.childrenCount" @click="openCollection(data.collection.id)" @contextmenu="collectionPopupMenu.popup(data.collection.id)"/>
+        <ThumbnailImage class="is-cursor-pointer" max-height="12rem" :file="data.collection.filePath.sample" :num-tag-value="data.collection.childrenCount" @click="openCollection?.(data.collection.id)" @contextmenu="collectionPopupMenu.popup(data.collection.id)"/>
         <div class="mb-2"/>
     </template>
     <template v-if="data?.children?.length && scene !== 'CollectionDetail'">
         <div class="bold my-1">集合子项</div>
-        <div :class="$style['children-items']" @click="openCollection(detailId)" @contextmenu="collectionPopupMenu.popup(detailId)">
+        <div :class="$style['children-items']" @click="openCollection?.(detailId)" @contextmenu="collectionPopupMenu.popup(detailId)">
             <Block v-for="item in data.children" :key="item.id">
                 <img :src="assetsUrl(item.filePath.sample)" :alt="`child item ${item.id}`"/>
             </Block>
@@ -63,7 +63,7 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
     </template>
     <template v-if="data?.books?.length">
         <div class="bold my-1">所属画集</div>
-        <Block v-for="book in data.books" :key="book.id" :class="$style['book-item']" @click="openBook(book)" @contextmenu="bookPopupMenu.popup(book)">
+        <Block v-for="book in data.books" :key="book.id" :class="$style['book-item']" @click="openBook?.(book)" @contextmenu="bookPopupMenu.popup(book)">
             <div :class="$style.info">{{book.title}}</div>
             <img v-if="book.filePath !== null" :src="assetsUrl(book.filePath.thumbnail)" :alt="book.title"/>
         </Block>
@@ -79,7 +79,7 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
     </template>
     <template v-if="data?.folders?.length">
         <div class="bold my-1">已加入的目录</div>
-        <p v-for="folder in data.folders" :key="folder.id" class="is-cursor-pointer" @click="openFolder(folder)" @contextmenu="folderPopupMenu.popup(folder)">
+        <p v-for="folder in data.folders" :key="folder.id" class="is-cursor-pointer" @click="openFolder?.(folder)" @contextmenu="folderPopupMenu.popup(folder)">
             <Icon icon="folder"/>
             {{folder.address.join("/")}}
         </p>

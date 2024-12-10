@@ -71,7 +71,7 @@ const menu = useDynamicPopupMenu<ImportRecord>(importRecord => [
         </ElementPopupMenu>
     </BrowserTeleport>
 
-    <PaneLayout :show-pane="paneState.visible.value">
+    <PaneLayout scope-name="import" :show-pane="paneState.visible.value">
         <ImportEmpty v-if="!paginationData.status.value.loading && paginationData.data.value.metrics && paginationData.state.value?.total === 0" :class="$style.empty"/>
         <ImportImageDataset v-else :data="paginationData.data.value" :state="paginationData.state.value" :query-instance="listview.proxy" :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum"
                             :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"

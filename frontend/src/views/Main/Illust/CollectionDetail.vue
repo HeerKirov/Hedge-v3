@@ -79,12 +79,12 @@ const menu = useDynamicPopupMenu<Illust>((illust, { alt }) => [
     <BrowserTeleport to="side-bar">
         <BottomLayout container-class="p-2 pl-3" bottom-class="p-1">
             <KeepAlive>
-                <IllustDetailTab :detail-id="path" type="COLLECTION" scene="CollectionDetail"/>
+                <IllustDetailTab :detail-id="path" type="COLLECTION" scene="CollectionDetail" tab-scope="collection"/>
             </KeepAlive>
         </BottomLayout>
     </BrowserTeleport>
 
-    <PaneLayout :show-pane="paneState.visible.value">
+    <PaneLayout scope-name="illust" :show-pane="paneState.visible.value">
         <IllustImageDataset :data="paginationData" :state="state" :query-instance="listview.proxy"
                             :view-mode="viewMode" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn"
                             :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" :selected-count-badge="!paneState.visible.value"
@@ -93,7 +93,7 @@ const menu = useDynamicPopupMenu<Illust>((illust, { alt }) => [
                             @drop="operators.dataDrop"/>
         <EmbedPreview/>
         <template #pane>
-            <IllustDetailPane scene="CollectionPane" @close="paneState.visible.value = false"/>
+            <IllustDetailPane tab-scope="collection-detail" scene="CollectionPane" @close="paneState.visible.value = false"/>
         </template>
     </PaneLayout>
 </template>

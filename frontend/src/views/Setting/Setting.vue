@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { MenuScope, NavMenuItem, RouterNavMenu } from "@/components/interaction"
-import { Container, SideLayout, SideBar, TopBarLayout, installSideLayoutState } from "@/components/layout"
-
-installSideLayoutState()
+import { Container, SideLayout, SideBar, TopBarLayout } from "@/components/layout"
 
 </script>
 
