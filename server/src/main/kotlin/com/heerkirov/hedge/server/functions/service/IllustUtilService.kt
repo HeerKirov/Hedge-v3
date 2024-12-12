@@ -198,7 +198,7 @@ class IllustUtilService(private val appdata: AppDataManager, private val data: D
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sortableSourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 FileRecords.id, FileRecords.status, FileRecords.extension, FileRecords.block,
                 FileFingerprints.dHash, FileFingerprints.pHash, FileFingerprints.pHashSimple, FileFingerprints.dHashSimple)
-            .where { Illusts.id inList illustIds }
+            .where { (Illusts.type eq IllustModelType.IMAGE and (Illusts.id inList illustIds)) or ((Illusts.type eq IllustModelType.IMAGE_WITH_PARENT and (Illusts.parentId inList illustIds))) }
             .orderBy(Illusts.orderTime.asc())
             .map {
                 val filePath = filePathFrom(it)
