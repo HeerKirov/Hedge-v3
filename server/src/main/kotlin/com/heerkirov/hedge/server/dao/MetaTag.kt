@@ -10,6 +10,7 @@ import com.heerkirov.hedge.server.utils.ktorm.type.unionList
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.schema.*
 
+@Deprecated("annotation is deprecated.")
 open class Annotations(alias: String? = null) : BaseTable<Annotation>("annotation", schema = "meta_db", alias = alias) {
     companion object : Annotations(null)
     override fun aliased(alias: String) = Annotations(alias)
@@ -28,6 +29,22 @@ open class Annotations(alias: String? = null) : BaseTable<Annotation>("annotatio
         type = row[type]!!,
         target = row[target]!!,
         createTime = row[createTime]!!
+    )
+}
+
+object Keywords : BaseTable<Keyword>("keyword", schema = "meta_db") {
+    val id = int("id").primaryKey()
+    val tagType = enum("tag_type", typeRef<MetaType>())
+    val keyword = varchar("keyword")
+    val tagCount = int("tag_count")
+    val lastUsedTime = timestamp("last_used_time")
+
+    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = Keyword(
+        id = row[id]!!,
+        tagType = row[tagType]!!,
+        keyword = row[keyword]!!,
+        tagCount = row[tagCount]!!,
+        lastUsedTime = row[lastUsedTime]!!
     )
 }
 
@@ -136,6 +153,7 @@ object Authors : MetaTagTable<Author>("author", schema = "meta_db") {
     )
 }
 
+@Deprecated("annotation is deprecated.")
 object TagAnnotationRelations : MetaAnnotationRelationTable<TagAnnotationRelation>("tag_annotation_relation", schema = "meta_db") {
     val tagId = int("tag_id")
     val annotationId = int("annotation_id")
@@ -149,6 +167,7 @@ object TagAnnotationRelations : MetaAnnotationRelationTable<TagAnnotationRelatio
     )
 }
 
+@Deprecated("annotation is deprecated.")
 open class TopicAnnotationRelations(alias: String?) : MetaAnnotationRelationTable<TopicAnnotationRelation>("topic_annotation_relation", schema = "meta_db", alias = alias) {
     companion object : TopicAnnotationRelations(null)
     override fun aliased(alias: String) = TopicAnnotationRelations(alias)
@@ -165,6 +184,7 @@ open class TopicAnnotationRelations(alias: String?) : MetaAnnotationRelationTabl
     )
 }
 
+@Deprecated("annotation is deprecated.")
 open class AuthorAnnotationRelations(alias: String?) : MetaAnnotationRelationTable<AuthorAnnotationRelation>("author_annotation_relation", schema = "meta_db", alias = alias) {
     companion object : AuthorAnnotationRelations(null)
     override fun aliased(alias: String) = AuthorAnnotationRelations(alias)

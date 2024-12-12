@@ -2,8 +2,12 @@ package com.heerkirov.hedge.server.components.database
 
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.IllustModelType
+import com.heerkirov.hedge.server.enums.MetaType
+import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import com.heerkirov.hedge.server.utils.Resources
 import com.heerkirov.hedge.server.utils.StrTemplate
+import com.heerkirov.hedge.server.utils.duplicateCount
+import com.heerkirov.hedge.server.utils.ktorm.type.StringUnionListType
 import com.heerkirov.hedge.server.utils.migrations.*
 import org.ktorm.database.Database
 import org.ktorm.database.Transaction
@@ -27,6 +31,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         register.useSQL("0.9.0")
         register.useSQL("0.9.0.1")
         register.useSQL("0.10.0.1")
+        register.useSQL("0.12.0", ::processAnnotationRemoving)
     }
 
     /**
@@ -45,12 +50,13 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
     /**
      * 直接向database应用一个以sql文件同步为全部内容的版本。
      */
-    private fun MigrationRegister<Database>.useSQL(version: String, addonFunc: ((Database) -> Unit)? = null): MigrationRegister<Database> {
+    private fun MigrationRegister<Database>.useSQL(version: String, addonFunc: ((Database, Transaction) -> Unit)? = null, funcBefore: Boolean = false): MigrationRegister<Database> {
         return this.map(version) { db ->
             db.apply {
                 transactionWithCtx {
+                    if(funcBefore && addonFunc != null) addonFunc(this, it)
                     it.useSQLResource(versionOf(version))
-                    addonFunc?.invoke(this)
+                    if(!funcBefore && addonFunc != null) addonFunc(this, it)
                 }
             }
         }
@@ -80,7 +86,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
     /**
      * 由于新增了cached book ids，需要初始化这项参数；由于新增了收藏状态的联动，需要初始化集合的收藏状态。
      */
-    private fun initializeIllustCacheBookAndFavorite(db: Database) {
+    private fun initializeIllustCacheBookAndFavorite(db: Database, t: Transaction) {
         val j = Illusts.aliased("joined_image")
 
         val parentToBooks = db.from(Illusts)
@@ -154,7 +160,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
     /**
      * 由于sourceId的类型发生了变化，有一些数据需要额外的操作来变更。
      */
-    private fun processSourceIdModify(db: Database) {
+    private fun processSourceIdModify(db: Database, t: Transaction) {
         val sourceDataList = db.from(SourceDatas)
             .select(SourceDatas.id, SourceDatas.relations)
             .where { SourceDatas.relations.isNotNull() and (SourceDatas.relations notEq emptyList()) }
@@ -167,6 +173,87 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
                     item {
                         where { it.id eq id }
                         set(it.relations, translatedRelations)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 由于Annotation的移除，需要对现有数据进行合并。
+     */
+    private fun processAnnotationRemoving(db: Database, t: Transaction) {
+        val topics = mutableListOf<Pair<Int, List<String>>>()
+        val authors = mutableListOf<Pair<Int, List<String>>>()
+        t.connection.createStatement().use { stat ->
+            //读取topic、author当前关联的annotation，将其写入到keywords中
+            stat.executeQuery("SELECT id, keywords, cached_annotations FROM meta_db.topic WHERE cached_annotations IS NOT NULL AND cached_annotations <> ''").use { rs ->
+                while (rs.next()) {
+                    val cachedAnnotations = rs.getString("cached_annotations").parseJSONObject<List<Map<String, Any>>>()
+                    if(cachedAnnotations.isNotEmpty()) {
+                        val keywords = StringUnionListType.getResult(rs, "keywords") ?: emptyList()
+                        val annotations = cachedAnnotations.map { it["name"] as String }
+                        val filtered = annotations - keywords.toSet()
+                        if(filtered.isNotEmpty()) {
+                            topics.add(Pair(rs.getInt("id"), filtered + keywords))
+                        }
+                    }
+                }
+            }
+            stat.executeQuery("SELECT id, keywords, cached_annotations FROM meta_db.author WHERE cached_annotations IS NOT NULL AND cached_annotations <> ''").use { rs ->
+                while (rs.next()) {
+                    val cachedAnnotations = rs.getString("cached_annotations").parseJSONObject<List<Map<String, Any>>>()
+                    if(cachedAnnotations.isNotEmpty()) {
+                        val keywords = StringUnionListType.getResult(rs, "keywords") ?: emptyList()
+                        val annotations = cachedAnnotations.map { it["name"] as String }
+                        val filtered = annotations - keywords.toSet()
+                        if(filtered.isNotEmpty()) {
+                            authors.add(Pair(rs.getInt("id"), filtered + keywords))
+                        }
+                    }
+                }
+            }
+        }
+        if(topics.isNotEmpty()) {
+            db.batchUpdate(Topics) {
+                for ((id, k) in topics) {
+                    item {
+                        where { it.id eq id }
+                        set(it.keywords, k)
+                    }
+                }
+            }
+        }
+        if(authors.isNotEmpty()) {
+            db.batchUpdate(Authors) {
+                for ((id, k) in authors) {
+                    item {
+                        where { it.id eq id }
+                        set(it.keywords, k)
+                    }
+                }
+            }
+        }
+        //读取全部keywords并写入keyword表
+        val topicKeywords = db.from(Topics).select(Topics.keywords).where { Topics.keywords.isNotNull() }.map { it[Topics.keywords]!!.distinct() }.flatten().duplicateCount()
+        val authorKeywords = db.from(Authors).select(Authors.keywords).where { Authors.keywords.isNotNull() }.map { it[Authors.keywords]!!.distinct() }.flatten().duplicateCount()
+        if(topicKeywords.isNotEmpty() || authorKeywords.isNotEmpty()) {
+            val now = Instant.now()
+            db.batchInsert(Keywords) {
+                for ((k, cnt) in topicKeywords) {
+                    item {
+                        set(it.tagType, MetaType.TOPIC)
+                        set(it.keyword, k)
+                        set(it.tagCount, cnt)
+                        set(it.lastUsedTime, now)
+                    }
+                }
+                for ((k, cnt) in authorKeywords) {
+                    item {
+                        set(it.tagType, MetaType.AUTHOR)
+                        set(it.keyword, k)
+                        set(it.tagCount, cnt)
+                        set(it.lastUsedTime, now)
                     }
                 }
             }

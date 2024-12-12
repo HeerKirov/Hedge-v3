@@ -26,7 +26,7 @@ data class HistoryRecord(/**
          */
         META_EDITOR,
         /**
-         * 在选取器中选取过的(FOLDER, TOPIC, AUTHOR, ANNOTATION)。
+         * 在选取器中选取过的(FOLDER, TOPIC, AUTHOR)。
          */
         PICKER,
         /**

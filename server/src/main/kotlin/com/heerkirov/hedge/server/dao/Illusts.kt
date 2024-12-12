@@ -77,6 +77,7 @@ object AssociateRelations : BaseTable<AssociateRelation>("associate_relation") {
     )
 }
 
+@Deprecated("annotation is deprecated.")
 open class IllustAnnotationRelations(alias: String?) : EntityAnnotationRelationTable<IllustAnnotationRelation>("illust_annotation_relation", alias = alias) {
     companion object : IllustAnnotationRelations(null)
     override fun aliased(alias: String) = IllustAnnotationRelations(alias)

@@ -2,27 +2,24 @@ package com.heerkirov.hedge.server.functions.kit
 
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.Illusts
-import com.heerkirov.hedge.server.dao.TagAnnotationRelations
 import com.heerkirov.hedge.server.dao.Tags
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.TagAddressType
 import com.heerkirov.hedge.server.exceptions.ParamError
-import com.heerkirov.hedge.server.exceptions.ResourceNotSuitable
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
+import com.heerkirov.hedge.server.exceptions.ResourceNotSuitable
 import com.heerkirov.hedge.server.exceptions.be
-import com.heerkirov.hedge.server.functions.manager.AnnotationManager
 import com.heerkirov.hedge.server.model.Tag
-import com.heerkirov.hedge.server.model.Annotation
 import com.heerkirov.hedge.server.utils.business.checkTagName
-import com.heerkirov.hedge.server.utils.ktorm.asSequence
-import org.ktorm.dsl.*
+import org.ktorm.dsl.eq
+import org.ktorm.dsl.inList
 import org.ktorm.entity.filter
 import org.ktorm.entity.first
 import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
 import java.util.*
 
-class TagKit(private val data: DataRepository, private val annotationManager: AnnotationManager) {
+class TagKit(private val data: DataRepository) {
     /**
      * 校验并纠正name。
      */
@@ -82,37 +79,6 @@ class TagKit(private val data: DataRepository, private val annotationManager: An
 
             newExamples
         }
-    }
-
-    /**
-     * 检验给出的annotations参数的正确性，根据需要add/delete。
-     * @throws ResourceNotExist ("annotations", number[]) 有annotation不存在时，抛出此异常。给出不存在的annotation id列表
-     * @throws ResourceNotSuitable ("annotations", number[]) 指定target类型且有元素不满足此类型时，抛出此异常。给出不适用的annotation id列表
-     */
-    fun processAnnotations(thisId: Int, newAnnotations: List<Any>?, creating: Boolean = false): Boolean {
-        val annotationIds = if(newAnnotations != null) annotationManager.analyseAnnotationParam(newAnnotations, Annotation.AnnotationTarget.TAG) else emptyMap()
-        val oldAnnotationIds = if(creating) emptySet() else {
-            data.db.from(TagAnnotationRelations).select(TagAnnotationRelations.annotationId)
-                .where { TagAnnotationRelations.tagId eq thisId }
-                .asSequence()
-                .map { it[TagAnnotationRelations.annotationId]!! }
-                .toSet()
-        }
-
-        val deleteIds = oldAnnotationIds - annotationIds.keys
-        data.db.delete(TagAnnotationRelations) { (it.tagId eq thisId) and (it.annotationId inList deleteIds) }
-
-        val addIds = annotationIds.keys - oldAnnotationIds
-        if(addIds.isNotEmpty()) data.db.batchInsert(TagAnnotationRelations) {
-            for (addId in addIds) {
-                item {
-                    set(it.tagId, thisId)
-                    set(it.annotationId, addId)
-                }
-            }
-        }
-
-        return deleteIds.isNotEmpty() || addIds.isNotEmpty()
     }
 
     /**

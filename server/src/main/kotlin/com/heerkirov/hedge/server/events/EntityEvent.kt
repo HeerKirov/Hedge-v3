@@ -8,14 +8,6 @@ import com.heerkirov.hedge.server.enums.*
  */
 interface EntityEvent : BaseBusEvent
 
-interface AnnotationEntityEvent : EntityEvent { val annotationId: Int; val type: MetaType }
-
-data class AnnotationCreated(override val annotationId: Int, override val type: MetaType) : BaseBusEventImpl("entity/annotation/created"), AnnotationEntityEvent
-
-data class AnnotationUpdated(override val annotationId: Int, override val type: MetaType) : BaseBusEventImpl("entity/annotation/updated"), AnnotationEntityEvent
-
-data class AnnotationDeleted(override val annotationId: Int, override val type: MetaType) : BaseBusEventImpl("entity/annotation/deleted"), AnnotationEntityEvent
-
 interface MetaTagEntityEvent : EntityEvent { val metaId: Int; val metaType: MetaType }
 
 data class MetaTagCreated(override val metaId: Int, override val metaType: MetaType) : BaseBusEventImpl("entity/meta-tag/created"), MetaTagEntityEvent
@@ -23,14 +15,12 @@ data class MetaTagCreated(override val metaId: Int, override val metaType: MetaT
 /**
  * @param listUpdated list API相关属性变更。
  * @param detailUpdated retrieve API相关属性变更。
- * @param annotationSot 注解变更。
  * @param parentSot topic的parent变更、tag的parent/ordinal变更。
  * @param sourceTagMappingSot 与之相关的映射变更。
  */
 data class MetaTagUpdated(override val metaId: Int, override val metaType: MetaType,
                           val listUpdated: Boolean,
                           val detailUpdated: Boolean,
-                          val annotationSot: Boolean,
                           val parentSot: Boolean,
                           val sourceTagMappingSot: Boolean) : BaseBusEventImpl("entity/meta-tag/updated"), MetaTagEntityEvent
 

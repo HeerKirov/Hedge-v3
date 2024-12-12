@@ -10,6 +10,7 @@ import java.time.Instant
  * 不能直接关联到illust等，因为它不是标签。不过，标记为导出的注解会以导出的形式关联到illust，此时可以使用注解查询语法。
  * 非导出注解不会导出给images，因此只能用于标签查询。在image查询中也可用，但因为会严重拖慢性能而受到限制。
  */
+@Deprecated("annotation is deprecated.")
 data class Annotation(val id: Int,
                       /**
                        * 注解名称。
@@ -62,6 +63,27 @@ data class Annotation(val id: Int,
         const val CHARACTER = 0b1000000
     }
 }
+
+/**
+ * 关键字缓存列表。
+ */
+data class Keyword(val id: Int,
+                   /**
+                    * 关联何种标签。
+                    */
+                   val tagType: MetaType,
+                   /**
+                    * 关键字本体。
+                    */
+                   val keyword: String,
+                   /**
+                    * 关键字关联的标签数量。
+                    */
+                   val tagCount: Int,
+                   /**
+                    * 关键字上次被使用的时间。
+                    */
+                   val lastUsedTime: Instant)
 
 /**
  * 内容标签。
@@ -133,6 +155,7 @@ data class Tag(val id: Int,
 /**
  * 注解与tag的关联。
  */
+@Deprecated("annotation is deprecated.")
 data class TagAnnotationRelation(val tagId: Int, val annotationId: Int)
 
 /**
@@ -174,6 +197,7 @@ data class Author(val id: Int,
                   /**
                    * [cache field]冗余存储关联的注解。在author列表中会用到，防止N+1查询。
                    */
+                  @Deprecated("annotation is deprecated.")
                   val cachedAnnotations: List<CachedAnnotation>? = null,
                   /**
                    * 此标签创建的时间。
@@ -183,12 +207,15 @@ data class Author(val id: Int,
                    * 此标签关联的image项上次发生更新的时间。
                    */
                   val updateTime: Instant) {
+
+    @Deprecated("annotation is deprecated.")
     data class CachedAnnotation(val id: Int, val name: String)
 }
 
 /**
  * 注解与author的关联。
  */
+@Deprecated("annotation is deprecated.")
 data class AuthorAnnotationRelation(val authorId: Int, val annotationId: Int)
 
 /**
@@ -242,6 +269,7 @@ data class Topic(val id: Int,
                  /**
                   * [cache field]冗余存储关联的注解。在author列表中会用到，防止N+1查询。
                   */
+                 @Deprecated("annotation is deprecated.")
                  val cachedAnnotations: List<CachedAnnotation>? = null,
                  /**
                   * 此标签创建的时间。
@@ -251,10 +279,13 @@ data class Topic(val id: Int,
                   * 此标签关联的image项上次发生更新的时间。
                   */
                  val updateTime: Instant) {
+
+    @Deprecated("annotation is deprecated.")
     data class CachedAnnotation(val id: Int, val name: String)
 }
 
 /**
  * 注解与topic的关联。
  */
+@Deprecated("annotation is deprecated.")
 data class TopicAnnotationRelation(val topicId: Int, val annotationId: Int)

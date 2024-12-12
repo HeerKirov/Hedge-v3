@@ -6,7 +6,6 @@ import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.manager.MetaManager
 import com.heerkirov.hedge.server.model.BookImageRelation
 import com.heerkirov.hedge.server.utils.business.checkScore
-import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import com.heerkirov.hedge.server.utils.types.Opt
 import org.ktorm.dsl.*
@@ -22,7 +21,7 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
     }
 
     /**
-     * 检验给出的tags/topics/authors的正确性，处理导出，并应用其更改。此外，annotations的更改也会被一并导出处理。
+     * 检验给出的tags/topics/authors的正确性，处理导出，并应用其更改。
      * @throws ResourceNotExist ("topics", number[]) 部分topics资源不存在。给出不存在的topic id列表
      * @throws ResourceNotExist ("authors", number[]) 部分authors资源不存在。给出不存在的author id列表
      * @throws ResourceNotExist ("tags", number[]) 部分tags资源不存在。给出不存在的tag id列表
@@ -41,7 +40,6 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
             if(newTags.isPresent) metaManager.deleteMetaTags(thisId, BookTagRelations, Tags, false)
             if(newAuthors.isPresent) metaManager.deleteMetaTags(thisId, BookAuthorRelations, Authors, false)
             if(newTopics.isPresent) metaManager.deleteMetaTags(thisId, BookTopicRelations, Topics, false)
-            metaManager.deleteAnnotations(thisId, BookAnnotationRelations)
             //从children拷贝全部notExported的metaTag，然后做导出
             copyAllMetaFromImages(thisId)
         }else if(newTags.isPresent || newAuthors.isPresent || newTopics.isPresent){
@@ -54,29 +52,26 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
                 metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, analyseStatisticCount = false, remainNotExported = true)
                 metaManager.deleteMetaTags(thisId, IllustAuthorRelations, Authors, analyseStatisticCount = false, remainNotExported = true)
                 metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, analyseStatisticCount = false, remainNotExported = true)
-                metaManager.deleteAnnotations(thisId, IllustAnnotationRelations)
             }
 
-            val tagAnnotations = if(newTags.isUndefined) null else
+            newTags.alsoOpt {
                 metaManager.processMetaTags(thisId, creating, false,
                     metaTag = Tags,
                     metaRelations = BookTagRelations,
-                    metaAnnotationRelations = TagAnnotationRelations,
-                    newTagIds = metaManager.validateAndExportTag(newTags.value))
-            val topicAnnotations = if(newTopics.isUndefined) null else
+                    newTagIds = metaManager.validateAndExportTag(it))
+            }
+            newTopics.alsoOpt {
                 metaManager.processMetaTags(thisId, creating, false,
                     metaTag = Topics,
                     metaRelations = BookTopicRelations,
-                    metaAnnotationRelations = TopicAnnotationRelations,
-                    newTagIds = metaManager.validateAndExportTopic(newTopics.value))
-            val authorAnnotations = if(newAuthors.isUndefined) null else
+                    newTagIds = metaManager.validateAndExportTopic(it))
+            }
+            newAuthors.alsoOpt {
                 metaManager.processMetaTags(thisId, creating, false,
                     metaTag = Authors,
                     metaRelations = BookAuthorRelations,
-                    metaAnnotationRelations = AuthorAnnotationRelations,
-                    newTagIds = metaManager.validateAndExportAuthor(newAuthors.value))
-
-            processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
+                    newTagIds = metaManager.validateAndExportAuthor(it))
+            }
         }
     }
 
@@ -96,7 +91,6 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
             if(tagCount == 0) metaManager.deleteMetaTags(thisId, BookTagRelations, Tags, false, remainNotExported)
             if(authorCount == 0) metaManager.deleteMetaTags(thisId, BookAuthorRelations, Authors, false, remainNotExported)
             if(topicCount == 0) metaManager.deleteMetaTags(thisId, BookTopicRelations, Topics, false, remainNotExported)
-            metaManager.deleteAnnotations(thisId, BookAnnotationRelations)
         }
 
         if(tagCount == 0 && topicCount == 0 && authorCount == 0) {
@@ -107,64 +101,27 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
             //至少一个列表不为0时，清空所有为0的列表的全部tag
             deleteAllMeta(remainNotExported = true)
 
-            val tagAnnotations = metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = false,
+            metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = false,
                 metaTag = Tags,
                 metaRelations = BookTagRelations,
-                metaAnnotationRelations = TagAnnotationRelations,
                 newTagIds = metaManager.exportTag(tags).first) //直接忽略任何冲突组错误
-            val topicAnnotations = metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = false,
+            metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = false,
                 metaTag = Topics,
                 metaRelations = BookTopicRelations,
-                metaAnnotationRelations = TopicAnnotationRelations,
                 newTagIds = metaManager.exportTopic(topics))
-            val authorAnnotations = metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = false,
+            metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = false,
                 metaTag = Authors,
                 metaRelations = BookAuthorRelations,
-                metaAnnotationRelations = AuthorAnnotationRelations,
                 newTagIds = metaManager.exportAuthor(authors))
-
-            processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
-        }
-    }
-
-    /**
-     * 当关联的meta变化时，会引发间接关联的annotation的变化，处理这种变化。
-     */
-    private fun processAnnotationOfMeta(thisId: Int, tagAnnotations: Set<Int>?, authorAnnotations: Set<Int>?, topicAnnotations: Set<Int>?) {
-        if(tagAnnotations != null || topicAnnotations != null || authorAnnotations != null) {
-            val oldAnnotations = data.db.from(BookAnnotationRelations).select()
-                .where { BookAnnotationRelations.bookId eq thisId }
-                .asSequence()
-                .map { it[BookAnnotationRelations.annotationId]!! }
-                .toSet()
-
-            val newAnnotations = mutableSetOf<Int>()
-            tagAnnotations?.let(newAnnotations::addAll)
-            topicAnnotations?.let(newAnnotations::addAll)
-            authorAnnotations?.let(newAnnotations::addAll)
-
-            val adds = newAnnotations - oldAnnotations
-            val deletes = oldAnnotations - newAnnotations
-
-            if(adds.isNotEmpty()) data.db.batchInsert(BookAnnotationRelations) {
-                for (addId in adds) {
-                    item {
-                        set(it.bookId, thisId)
-                        set(it.annotationId, addId)
-                    }
-                }
-            }
-            if(deletes.isNotEmpty()) data.db.delete(BookAnnotationRelations) { (it.bookId eq thisId) and (it.annotationId inList deletes) }
         }
     }
 
     /**
      * 从所有子项拷贝meta并处理合并，统一设定为exported。
      * book的子项合并和collection不同，它按照一个出现频率的阈值取一部分tag。
-     * book的annotations导出则是根据导出的meta tag，重新导出annotations。
      */
     private fun copyAllMetaFromImages(thisId: Int) {
-        fun <IR : EntityMetaRelationTable<*>, AR:EntityMetaRelationTable<*>> copyOneMeta(imageTagRelations: IR, bookTagRelations: AR, conditionRate: Double): List<Int> {
+        fun <IR : EntityMetaRelationTable<*>, AR:EntityMetaRelationTable<*>> copyOneMeta(imageTagRelations: IR, bookTagRelations: AR, conditionRate: Double) {
             val metaTags = data.db.from(BookImageRelations)
                 .innerJoin(Illusts, BookImageRelations.imageId eq Illusts.id)
                 .innerJoin(imageTagRelations, imageTagRelations.entityId() eq Illusts.id)
@@ -186,39 +143,14 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
                             }
                         }
                     }
-                    return selectedTags
-                }
-            }
-            return emptyList()
-        }
-
-        fun copyAnnotationOfMeta(tagIds: List<Int>, authorIds: List<Int>, topicIds: List<Int>) {
-            val tagAnnotations = metaManager.getAnnotationsOfMetaTags(tagIds, TagAnnotationRelations)
-            val authorAnnotations = metaManager.getAnnotationsOfMetaTags(authorIds, AuthorAnnotationRelations)
-            val topicAnnotations = metaManager.getAnnotationsOfMetaTags(topicIds, TopicAnnotationRelations)
-
-            if(tagAnnotations.isNotEmpty() || authorAnnotations.isNotEmpty() || topicAnnotations.isNotEmpty()) {
-                val adds = mutableSetOf<Int>()
-                adds.addAll(tagAnnotations)
-                adds.addAll(topicAnnotations)
-                adds.addAll(authorAnnotations)
-                if(adds.isNotEmpty()) data.db.batchInsert(BookAnnotationRelations) {
-                    for (addId in adds) {
-                        item {
-                            set(it.bookId, thisId)
-                            set(it.annotationId, addId)
-                        }
-                    }
                 }
             }
         }
 
         //tag的临界阈值是30%，而author/topic的是5%
-        val tagIds = copyOneMeta(IllustTagRelations, BookTagRelations, 0.3)
-        val authorIds = copyOneMeta(IllustAuthorRelations, BookAuthorRelations, 0.05)
-        val topicIds = copyOneMeta(IllustTopicRelations, BookTopicRelations, 0.05)
-
-        copyAnnotationOfMeta(tagIds, authorIds, topicIds)
+        copyOneMeta(IllustTagRelations, BookTagRelations, 0.3)
+        copyOneMeta(IllustAuthorRelations, BookAuthorRelations, 0.05)
+        copyOneMeta(IllustTopicRelations, BookTopicRelations, 0.05)
     }
 
     /**

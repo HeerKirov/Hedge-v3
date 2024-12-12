@@ -11,7 +11,6 @@ class AllServices(
     val stagingPost: StagingPostService,
     val trash: TrashService,
     val tag: TagService,
-    val annotation: AnnotationService,
     val author: AuthorService,
     val topic: TopicService,
     val sourceData: SourceDataService,

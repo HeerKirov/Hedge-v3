@@ -222,12 +222,12 @@ class MetaManager(private val data: DataRepository) {
     }
 
     /**
-     * 检验并处理某一种类的meta tag，并返回它导出的annotations。
-     * @return 返回由此列meta tag导出的annotation的id列表。
+     * 检验并处理某一种类的meta tag。
      */
-    fun <T, R, RA> processMetaTags(thisId: Int, creating: Boolean = false, analyseStatisticCount: Boolean, newTagIds: List<Pair<Int, Boolean>>,
-                                   metaTag: T, metaRelations: R, metaAnnotationRelations: RA): Set<Int>
-            where T: MetaTagTable<*>, R: EntityMetaRelationTable<*>, RA: MetaAnnotationRelationTable<*> {
+    fun <T, R> processMetaTags(thisId: Int, creating: Boolean = false, analyseStatisticCount: Boolean,
+                               newTagIds: List<Pair<Int, Boolean>>,
+                               metaTag: T, metaRelations: R)
+    where T: MetaTagTable<*>, R: EntityMetaRelationTable<*> {
         val now = Instant.now()
 
         val tagIds = newTagIds.toMap()
@@ -285,8 +285,6 @@ class MetaManager(private val data: DataRepository) {
                 }
             }
         }
-
-        return getAnnotationsOfMetaTags(tagIds.keys, metaAnnotationRelations)
     }
 
     /**
@@ -327,26 +325,5 @@ class MetaManager(private val data: DataRepository) {
         return data.db.from(metaRelations).select(count().aliased("count"))
             .where { (metaRelations.entityId() eq id) and (metaRelations.exported().not()) }
             .firstOrNull()?.getInt("count") ?: 0
-    }
-
-    /**
-     * 根据一个meta tag列表，取得这个列表关联的全部annotations的id列表。
-     */
-    fun <RA : MetaAnnotationRelationTable<*>> getAnnotationsOfMetaTags(metaIds: Collection<Int>, metaAnnotationRelations: RA): Set<Int> {
-        return if(metaIds.isEmpty()) emptySet() else
-            data.db.from(metaAnnotationRelations)
-                .innerJoin(Annotations, (metaAnnotationRelations.annotationId() eq Annotations.id) and Annotations.canBeExported)
-                .select(Annotations.id)
-                .where { metaAnnotationRelations.metaId() inList metaIds }
-                .asSequence()
-                .map { it[Annotations.id]!! }
-                .toSet()
-    }
-
-    /**
-     * 删除此关系关联的全部annotations。
-     */
-    fun <RA : EntityAnnotationRelationTable<*>> deleteAnnotations(id: Int, entityAnnotationRelations: RA) {
-        data.db.delete(entityAnnotationRelations) { it.entityId() eq id }
     }
 }

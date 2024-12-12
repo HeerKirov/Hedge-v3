@@ -40,6 +40,7 @@ object BookImageRelations : BaseTable<BookImageRelation>("book_image_relation") 
     )
 }
 
+@Deprecated("annotation is deprecated.")
 open class BookAnnotationRelations(alias: String?) : EntityAnnotationRelationTable<BookAnnotationRelation>("book_annotation_relation", alias = alias) {
     companion object : BookAnnotationRelations(null)
     override fun aliased(alias: String) = BookAnnotationRelations(alias)

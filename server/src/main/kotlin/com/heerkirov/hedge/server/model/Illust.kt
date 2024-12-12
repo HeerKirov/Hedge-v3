@@ -150,6 +150,7 @@ data class AssociateRelation(val illustId: Int, val relatedIllustId: Int)
 /**
  * 可导出的注解与illust的关联。
  */
+@Deprecated("annotation is deprecated.")
 data class IllustAnnotationRelation(val illustId: Int, val annotationId: Int)
 
 /**

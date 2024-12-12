@@ -58,10 +58,6 @@ class EventCompositorImpl(private val data: DataRepository,
     private fun export(events: PackagedBusEvent) {
         events.which {
             each<MetaTagUpdated> { e ->
-                if(e.annotationSot) {
-                    //标签关联的annotation变化时，将关联的illust/book重导出
-                    exportMetadataOfMetaTag(e.metaType, e.metaId)
-                }
                 if(e.metaType == MetaType.TAG && e.parentSot) {
                     //tag的parent发生变化时，重新导出global tag ordinal
                     exportTagGlobal()
@@ -205,48 +201,4 @@ class EventCompositorImpl(private val data: DataRepository,
             backendExporter.add(BookMetadataExporterTask(bookId, exportMetaTag = true))
         }
     }
-
-    private fun exportMetadataOfMetaTag(metaType: MetaType, metaId: Int) {
-        when(metaType) {
-            MetaType.AUTHOR -> {
-                data.db.from(IllustAuthorRelations)
-                    .select(IllustAuthorRelations.illustId)
-                    .where { IllustAuthorRelations.authorId eq metaId }
-                    .map { IllustMetadataExporterTask(it[IllustAuthorRelations.illustId]!!, exportMetaTag = true, exportDescription = false, exportFavorite = false, exportFirstCover = false, exportScore = false) }
-                    .let { backendExporter.add(it) }
-                data.db.from(BookAuthorRelations)
-                    .select(BookAuthorRelations.bookId)
-                    .where { BookAuthorRelations.authorId eq metaId }
-                    .map { BookMetadataExporterTask(it[BookAuthorRelations.bookId]!!, exportMetaTag = true) }
-                    .let { backendExporter.add(it) }
-            }
-            MetaType.TOPIC -> {
-                //tips: 原本的触发条件还包括topic.parent的变化，现在省略掉了
-                data.db.from(IllustTopicRelations)
-                    .select(IllustTopicRelations.illustId)
-                    .where { IllustTopicRelations.topicId eq metaId }
-                    .map { IllustMetadataExporterTask(it[IllustTopicRelations.illustId]!!, exportMetaTag = true, exportDescription = false, exportFavorite = false, exportFirstCover = false, exportScore = false) }
-                    .let { backendExporter.add(it) }
-                data.db.from(BookTopicRelations)
-                    .select(BookTopicRelations.bookId)
-                    .where { BookTopicRelations.topicId eq metaId }
-                    .map { BookMetadataExporterTask(it[BookTopicRelations.bookId]!!, exportMetaTag = true) }
-                    .let { backendExporter.add(it) }
-            }
-            MetaType.TAG -> {
-                //tips: 原本的触发条件还包括tag.link/type/parent的变化，现在省略掉了
-                data.db.from(IllustTagRelations)
-                    .select(IllustTagRelations.illustId)
-                    .where { IllustTagRelations.tagId eq metaId }
-                    .map { IllustMetadataExporterTask(it[IllustTagRelations.illustId]!!, exportMetaTag = true, exportDescription = false, exportFavorite = false, exportFirstCover = false, exportScore = false) }
-                    .let { backendExporter.add(it) }
-                data.db.from(BookTagRelations)
-                    .select(BookTagRelations.bookId)
-                    .where { BookTagRelations.tagId eq metaId }
-                    .map { BookMetadataExporterTask(it[BookTagRelations.bookId]!!, exportMetaTag = true) }
-                    .let { backendExporter.add(it) }
-            }
-        }
-    }
-
 }

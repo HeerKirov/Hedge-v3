@@ -1,24 +1,19 @@
 package com.heerkirov.hedge.server.functions.kit
 
 import com.heerkirov.hedge.server.components.database.DataRepository
-import com.heerkirov.hedge.server.dao.TopicAnnotationRelations
 import com.heerkirov.hedge.server.dao.Topics
 import com.heerkirov.hedge.server.dto.res.TopicChildrenNode
 import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.exceptions.*
-import com.heerkirov.hedge.server.functions.manager.AnnotationManager
 import com.heerkirov.hedge.server.model.Topic
-import com.heerkirov.hedge.server.model.Annotation
 import com.heerkirov.hedge.server.utils.business.checkTagName
-import com.heerkirov.hedge.server.utils.composition.unionComposition
-import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tuples.Tuple2
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import java.util.*
 
-class TopicKit(private val data: DataRepository, private val annotationManager: AnnotationManager) {
+class TopicKit(private val data: DataRepository) {
     /**
      * 校验并纠正name，同时对name进行查重。
      * @param parentRootId 指定此参数以说明当前项所处的分组。
@@ -189,48 +184,6 @@ class TopicKit(private val data: DataRepository, private val annotationManager: 
         }
 
         recursionUpdateProps(thisId)
-    }
-
-    /**
-     * 检验给出的annotations参数的正确性，返回全量表。
-     * @throws ResourceNotExist ("annotations", number[]) 有annotation不存在时，抛出此异常。给出不存在的annotation id列表
-     * @throws ResourceNotSuitable ("annotations", number[]) 指定target类型且有元素不满足此类型时，抛出此异常。给出不适用的annotation id列表
-     */
-    fun validateAnnotations(newAnnotations: List<Any>?, type: TagTopicType): List<Topic.CachedAnnotation> {
-        return if(newAnnotations != null) annotationManager.analyseAnnotationParam(newAnnotations, target = when(type) {
-            TagTopicType.UNKNOWN -> Annotation.AnnotationTarget.topicElements.unionComposition()
-            TagTopicType.CHARACTER -> Annotation.AnnotationTarget.CHARACTER
-            TagTopicType.IP -> Annotation.AnnotationTarget.IP
-            TagTopicType.COPYRIGHT -> Annotation.AnnotationTarget.COPYRIGHT
-        }).map { Topic.CachedAnnotation(it.key, it.value) } else emptyList()
-    }
-
-    /**
-     * 将annotations的全量表和旧值解析为adds和deletes，并执行增删。
-     */
-    fun processAnnotations(thisId: Int, annotationIds: Set<Int>, creating: Boolean = false): Boolean {
-        val oldAnnotationIds = if(creating) emptySet() else {
-            data.db.from(TopicAnnotationRelations).select(TopicAnnotationRelations.annotationId)
-                .where { TopicAnnotationRelations.topicId eq thisId }
-                .asSequence()
-                .map { it[TopicAnnotationRelations.annotationId]!! }
-                .toSet()
-        }
-
-        val deleteIds = oldAnnotationIds - annotationIds
-        data.db.delete(TopicAnnotationRelations) { (it.topicId eq thisId) and (it.annotationId inList deleteIds) }
-
-        val addIds = annotationIds - oldAnnotationIds
-        if(addIds.isNotEmpty()) data.db.batchInsert(TopicAnnotationRelations) {
-            for (addId in addIds) {
-                item {
-                    set(it.topicId, thisId)
-                    set(it.annotationId, addId)
-                }
-            }
-        }
-
-        return deleteIds.isNotEmpty() || addIds.isNotEmpty()
     }
 
     /**

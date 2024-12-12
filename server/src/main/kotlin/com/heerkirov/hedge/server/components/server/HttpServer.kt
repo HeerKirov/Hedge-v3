@@ -79,7 +79,6 @@ class HttpServerImpl(private val health: Health,
                     MetaTagRoutes(allServices.tag),
                     MetaTopicRoutes(allServices.topic),
                     MetaAuthorRoutes(allServices.author),
-                    MetaAnnotationRoutes(allServices.annotation),
                     SourceRoutes(allServices.sourceData, allServices.sourceMapping)
                 )
             }

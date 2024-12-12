@@ -354,7 +354,6 @@ class IllustManager(private val appdata: AppDataManager,
         data.db.delete(IllustTagRelations) { it.illustId eq illust.id }
         data.db.delete(IllustAuthorRelations) { it.illustId eq illust.id }
         data.db.delete(IllustTopicRelations) { it.illustId eq illust.id }
-        data.db.delete(IllustAnnotationRelations) { it.illustId eq illust.id }
 
         //移除illust时，将此illust的关联组设置为空，这将同时移除所有的关联关系
         associateManager.setAssociatesOfIllust(illust.id, emptyList())
@@ -1205,7 +1204,6 @@ class IllustManager(private val appdata: AppDataManager,
             data.db.delete(IllustTagRelations) { it.illustId eq collectionId }
             data.db.delete(IllustAuthorRelations) { it.illustId eq collectionId }
             data.db.delete(IllustTopicRelations) { it.illustId eq collectionId }
-            data.db.delete(IllustAnnotationRelations) { it.illustId eq collectionId }
 
             bus.emit(IllustDeleted(collectionId, IllustType.COLLECTION))
         }

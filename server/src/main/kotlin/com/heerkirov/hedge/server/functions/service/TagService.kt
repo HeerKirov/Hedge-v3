@@ -74,10 +74,8 @@ class TagService(private val data: DataRepository,
      * @throws ResourceNotExist ("parentId", number) 给出的parent id不存在
      * @throws ResourceNotExist ("links", number[]) links中给出的tag不存在。给出不存在的link id列表
      * @throws ResourceNotExist ("examples", number[]) examples中给出的image不存在。给出不存在的image id列表
-     * @throws ResourceNotExist ("annotations", number[]) 有annotation不存在时，抛出此异常。给出不存在的annotation id列表
      * @throws ResourceNotSuitable ("links", number[]) links中给出的部分资源不适用，虚拟地址段是不能被link的。给出不适用的link id列表
      * @throws ResourceNotSuitable ("examples", number[]) examples中给出的部分资源不适用，collection不能用作example。给出不适用的link id列表
-     * @throws ResourceNotSuitable ("annotations", number[]) 指定target类型且有元素不满足此类型时，抛出此异常。给出不适用的annotation id列表
      * @throws ResourceNotExist ("site", string) 更新source mapping tags时给出的site不存在
      * @throws ResourceNotExist ("sourceTagType", string[]) 更新source mapping tags时列出的tagType不存在
      */
@@ -159,8 +157,6 @@ class TagService(private val data: DataRepository,
 
             form.mappingSourceTags?.also { sourceMappingManager.update(MetaType.TAG, id, it) }
 
-            kit.processAnnotations(id, form.annotations, creating = true)
-
             bus.emit(MetaTagCreated(id, MetaType.TAG))
 
             return id
@@ -172,12 +168,6 @@ class TagService(private val data: DataRepository,
      */
     fun get(id: Int): TagDetailRes {
         val tag = data.db.sequenceOf(Tags).firstOrNull { it.id eq id } ?: throw be(NotFound())
-
-        val annotations = data.db.from(TagAnnotationRelations)
-            .innerJoin(Annotations, TagAnnotationRelations.annotationId eq Annotations.id)
-            .select(Annotations.id, Annotations.name, Annotations.canBeExported)
-            .where { TagAnnotationRelations.tagId eq id }
-            .map { TagDetailRes.Annotation(it[Annotations.id]!!, it[Annotations.name]!!, it[Annotations.canBeExported]!!) }
 
         val examples = if(tag.examples.isNullOrEmpty()) emptyList() else data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
@@ -191,7 +181,7 @@ class TagService(private val data: DataRepository,
 
         val mappingSourceTags = sourceMappingManager.query(MetaType.TAG, id)
 
-        return newTagDetailRes(tag, parents, links, annotations, examples, mappingSourceTags)
+        return newTagDetailRes(tag, parents, links, examples, mappingSourceTags)
     }
 
     /**
@@ -202,10 +192,8 @@ class TagService(private val data: DataRepository,
      * @throws ResourceNotExist ("parentId", number) 给出的parent id不存在
      * @throws ResourceNotExist ("links", number[]) links中给出的tag不存在。给出不存在的link id列表
      * @throws ResourceNotExist ("examples", number[]) examples中给出的image不存在。给出不存在的image id列表
-     * @throws ResourceNotExist ("annotations", number[]) 有annotation不存在时，抛出此异常。给出不存在的annotation id列表
      * @throws ResourceNotSuitable ("links", number[]) links中给出的部分资源不适用，虚拟地址段是不能被link的。给出不适用的link id列表
      * @throws ResourceNotSuitable ("examples", number[]) examples中给出的部分资源不适用，collection不能用作example。给出不适用的link id列表
-     * @throws ResourceNotSuitable ("annotations", number[]) 指定target类型且有元素不满足此类型时，抛出此异常。给出不适用的annotation id列表
      * @throws ResourceNotExist ("site", string) 更新source mapping tags时给出的site不存在
      * @throws ResourceNotExist ("sourceTagType", string[]) 更新source mapping tags时列出的tagType不存在
      */
@@ -333,8 +321,6 @@ class TagService(private val data: DataRepository,
                 }
             }
 
-            val annotationSot = form.annotations.isPresentAnd { newAnnotations -> kit.processAnnotations(id, newAnnotations) }
-
             val sourceTagMappingSot = form.mappingSourceTags.letOpt { sourceMappingManager.update(MetaType.TAG, id, it ?: emptyList()) }.unwrapOr { false }
 
             newColor.letOpt { color ->
@@ -367,9 +353,9 @@ class TagService(private val data: DataRepository,
 
             val parentSot = anyOpt(newParentId, newOrdinal)
             val listUpdated = anyOpt(newName, newColor, newType, newGroup)
-            val detailUpdated = listUpdated || parentSot || annotationSot || sourceTagMappingSot || anyOpt(newOtherNames, newDescription, newLinks, newExamples)
+            val detailUpdated = listUpdated || parentSot || sourceTagMappingSot || anyOpt(newOtherNames, newDescription, newLinks, newExamples)
             if(listUpdated || detailUpdated) {
-                bus.emit(MetaTagUpdated(id, MetaType.TAG, listUpdated = listUpdated, detailUpdated = true, annotationSot = annotationSot, parentSot = parentSot, sourceTagMappingSot = sourceTagMappingSot))
+                bus.emit(MetaTagUpdated(id, MetaType.TAG, listUpdated = listUpdated, detailUpdated = true, parentSot = parentSot, sourceTagMappingSot = sourceTagMappingSot))
             }
         }
     }
@@ -382,7 +368,6 @@ class TagService(private val data: DataRepository,
             data.db.delete(Tags) { it.id eq id }
             data.db.delete(IllustTagRelations) { it.tagId eq id }
             data.db.delete(BookTagRelations) { it.tagId eq id }
-            data.db.delete(TagAnnotationRelations) { it.tagId eq id }
             val children = data.db.from(Tags).select(Tags.id).where { Tags.parentId eq id }.map { it[Tags.id]!! }
             for (child in children) {
                 recursionDelete(child)
@@ -421,13 +406,13 @@ class TagService(private val data: DataRepository,
                                 form.type.unwrapOr { TagAddressType.VIRTUAL_ADDR },
                                 form.group.unwrapOr { TagGroupType.NO },
                                 null,
-                                form.annotations.unwrapOrNull(), form.description.unwrapOr { "" },
+                                form.description.unwrapOr { "" },
                                 form.color.unwrapOrNull(), null,
                                 form.mappingSourceTags.unwrapOrNull()
                             ))
                         }else{
                             val formOrdinal = if(parentId != null && record.ordinal != index) optOf(index) else undefined()
-                            update(record.id, TagUpdateForm(form.rename, form.otherNames, formOrdinal, undefined(), form.type, form.group, undefined(), form.annotations, form.description, form.color, undefined(), form.mappingSourceTags))
+                            update(record.id, TagUpdateForm(form.rename, form.otherNames, formOrdinal, undefined(), form.type, form.group, undefined(), form.description, form.color, undefined(), form.mappingSourceTags))
                             record.id
                         }
                     }
@@ -496,7 +481,7 @@ class TagService(private val data: DataRepository,
             for ((id, form) in linkRecords) {
                 item(form, calc = false) {
                     val links = form.links.value!!.map { addressRecords.computeIfAbsent(it, ::getIdByAddress) }
-                    update(id, TagUpdateForm(undefined(), undefined(), undefined(), undefined(), undefined(), undefined(), optOf(links), undefined(), undefined(), undefined(), undefined(), undefined()))
+                    update(id, TagUpdateForm(undefined(), undefined(), undefined(), undefined(), undefined(), undefined(), optOf(links), undefined(), undefined(), undefined(), undefined()))
                 }
             }
         }

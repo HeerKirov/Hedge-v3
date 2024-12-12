@@ -5,7 +5,6 @@ import com.heerkirov.hedge.server.library.form.Limit
 import com.heerkirov.hedge.server.library.form.Offset
 import com.heerkirov.hedge.server.library.form.Order
 import com.heerkirov.hedge.server.library.form.Search
-import com.heerkirov.hedge.server.model.Annotation
 import com.heerkirov.hedge.server.utils.types.OrderItem
 import java.time.LocalDate
 
@@ -59,16 +58,6 @@ data class FolderImagesFilter(@Limit val limit: Int,
                               val order: List<OrderItem>? = null,
                               val favorite: Boolean? = null)
 
-data class AnnotationFilter(@Limit val limit: Int,
-                            @Offset val offset: Int,
-                            @Search val query: String?,
-                            @Order(options = ["id", "name", "createTime"])
-                            val order: List<OrderItem>? = null,
-                            val type: MetaType,
-                            val name: String? = null,
-                            val canBeExported: Boolean? = null,
-                            val target: Annotation.AnnotationTarget? = null)
-
 data class TagFilter(@Limit val limit: Int,
                      @Offset val offset: Int,
                      @Search val search: String?,
@@ -87,8 +76,7 @@ data class TopicFilter(@Limit val limit: Int,
                        val order: List<OrderItem>? = null,
                        val type: TagTopicType? = null,
                        val favorite: Boolean? = null,
-                       val parentId: Int? = null,
-                       val annotationIds: List<Int>? = null)
+                       val parentId: Int? = null)
 
 data class AuthorFilter(@Limit val limit: Int,
                         @Offset val offset: Int,
@@ -96,8 +84,7 @@ data class AuthorFilter(@Limit val limit: Int,
                         @Order(options = ["id", "name", "score", "count", "createTime", "updateTime"])
                         val order: List<OrderItem>? = null,
                         val type: TagAuthorType? = null,
-                        val favorite: Boolean? = null,
-                        val annotationIds: List<Int>? = null)
+                        val favorite: Boolean? = null)
 
 data class ImportFilter(@Limit val limit: Int,
                         @Offset val offset: Int,

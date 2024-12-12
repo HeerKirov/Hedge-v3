@@ -55,6 +55,7 @@ data class BookImageRelation(val bookId: Int,
 /**
  * 可导出的注解与book的关联。
  */
+@Deprecated("annotation is deprecated.")
 data class BookAnnotationRelation(val bookId: Int, val annotationId: Int)
 
 /**

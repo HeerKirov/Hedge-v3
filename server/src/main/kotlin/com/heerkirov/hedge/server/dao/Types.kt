@@ -7,6 +7,7 @@ import java.time.Instant
 /**
  * 实体和注解类型的关系表的抽象表。
  */
+@Deprecated("annotation is deprecated.")
 abstract class EntityAnnotationRelationTable<T : Any>(tableName: String, schema: String? = null, alias: String? = null) : BaseTable<T>(tableName = tableName, schema = schema, alias = alias) {
     abstract fun entityId(): Column<Int>
     abstract fun annotationId(): Column<Int>
@@ -35,6 +36,7 @@ abstract class MetaTagTable<T : Any>(tableName: String, schema: String? = null, 
 /**
  * 标签和注解类型的关系表的抽象表。
  */
+@Deprecated("annotation is deprecated.")
 abstract class MetaAnnotationRelationTable<T : Any>(tableName: String, schema: String? = null, alias: String? = null) : BaseTable<T>(tableName = tableName, schema = schema, alias = alias) {
     /**
      * 关联的metaTag的id。

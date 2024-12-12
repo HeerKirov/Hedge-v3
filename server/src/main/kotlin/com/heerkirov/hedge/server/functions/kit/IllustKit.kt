@@ -56,26 +56,18 @@ class IllustKit(private val appdata: AppDataManager,
             val validatedTopics = if(newTopics.isEmpty()) emptyList() else metaManager.validateAndExportTopicModel(newTopics, ignoreError = ignoreNotExist)
             val validatedAuthors = if(newAuthors.isEmpty()) emptyList() else metaManager.validateAndExportAuthorModel(newAuthors, ignoreError = ignoreNotExist)
 
-            val tagAnnotations = if(validatedTags.isEmpty()) null else
-                metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !isCollection,
+            if(validatedTags.isNotEmpty()) metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !isCollection,
                     metaTag = Tags,
                     metaRelations = IllustTagRelations,
-                    metaAnnotationRelations = TagAnnotationRelations,
                     newTagIds = validatedTags.map { (t, e) -> t.id to e })
-            val topicAnnotations = if(validatedTopics.isEmpty()) null else
-                metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !isCollection,
+            if(validatedTopics.isNotEmpty()) metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !isCollection,
                     metaTag = Topics,
                     metaRelations = IllustTopicRelations,
-                    metaAnnotationRelations = TopicAnnotationRelations,
                     newTagIds = validatedTopics.map { (t, e) -> t.id to e })
-            val authorAnnotations = if(validatedAuthors.isEmpty()) null else
-                metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !isCollection,
+            if(validatedAuthors.isNotEmpty()) metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !isCollection,
                     metaTag = Authors,
                     metaRelations = IllustAuthorRelations,
-                    metaAnnotationRelations = AuthorAnnotationRelations,
                     newTagIds = validatedAuthors.map { (t, e) -> t.id to e })
-
-            processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
 
             (Illust.Tagme.EMPTY as Illust.Tagme).letIf(appdata.setting.meta.autoCleanTagme) { r ->
                 r.letIf(validatedTags.any { (_, isExported) -> !isExported }) { it + Illust.Tagme.TAG }
@@ -88,7 +80,7 @@ class IllustKit(private val appdata: AppDataManager,
     }
 
     /**
-     * 检验给出的tags/topics/authors的正确性，处理导出，并应用其更改。此外，annotations的更改也会被一并导出处理。
+     * 检验给出的tags/topics/authors的正确性，处理导出，并应用其更改。
      * @param copyFromParent 当当前对象没有任何meta tag关联时，从parent复制tag，并提供parent的id
      * @param copyFromChildren 当当前对象没有任何meta tag关联时，从children复制tag
      * @param ignoreNotExist 忽略不存在的项，以及其他任何错误。此选项用于模糊/近似地完成metaTag的设置，而不在乎完全精确
@@ -115,7 +107,6 @@ class IllustKit(private val appdata: AppDataManager,
             if(newTags.isPresent) metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, analyseStatisticCount)
             if(newAuthors.isPresent) metaManager.deleteMetaTags(thisId, IllustAuthorRelations, Authors, analyseStatisticCount)
             if(newTopics.isPresent) metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, analyseStatisticCount)
-            metaManager.deleteAnnotations(thisId, IllustAnnotationRelations)
 
             if(copyFromParent != null) {
                 //如果发现parent有notExported的metaTag，那么从parent直接拷贝全部metaTag
@@ -136,38 +127,32 @@ class IllustKit(private val appdata: AppDataManager,
                 metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, analyseStatisticCount, true)
                 metaManager.deleteMetaTags(thisId, IllustAuthorRelations, Authors, analyseStatisticCount, true)
                 metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, analyseStatisticCount, true)
-                metaManager.deleteAnnotations(thisId, IllustAnnotationRelations)
             }
             val validatedTags = newTags.map { metaManager.validateAndExportTagModel(it, ignoreError = ignoreNotExist) }
             val validatedTopics = newTopics.map { metaManager.validateAndExportTopicModel(it, ignoreError = ignoreNotExist) }
             val validatedAuthors = newAuthors.map { metaManager.validateAndExportAuthorModel(it, ignoreError = ignoreNotExist) }
 
-            val tagAnnotations = validatedTags.map {
+            validatedTags.alsoOpt {
                 metaManager.processMetaTags(thisId, creating, analyseStatisticCount,
                     metaTag = Tags,
                     metaRelations = IllustTagRelations,
-                    metaAnnotationRelations = TagAnnotationRelations,
                     newTagIds = it.map { (t, e) -> t.id to e }
                 )
             }.unwrapOrNull()
-            val topicAnnotations = validatedTopics.map {
+            validatedTopics.alsoOpt {
                 metaManager.processMetaTags(thisId, creating, analyseStatisticCount,
                     metaTag = Topics,
                     metaRelations = IllustTopicRelations,
-                    metaAnnotationRelations = TopicAnnotationRelations,
                     newTagIds = it.map { (t, e) -> t.id to e }
                 )
             }.unwrapOrNull()
-            val authorAnnotations = validatedAuthors.map {
+            validatedAuthors.alsoOpt {
                 metaManager.processMetaTags(thisId, creating, analyseStatisticCount,
                     metaTag = Authors,
                     metaRelations = IllustAuthorRelations,
-                    metaAnnotationRelations = AuthorAnnotationRelations,
                     newTagIds = it.map { (t, e) -> t.id to e }
                 )
             }.unwrapOrNull()
-
-            processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
 
             (Illust.Tagme.EMPTY as Illust.Tagme).letIf(appdata.setting.meta.autoCleanTagme) { r ->
                 r.letIf(validatedTags.isPresentAnd { it.any { (_, isExported) -> !isExported } }) { it + Illust.Tagme.TAG }
@@ -198,7 +183,6 @@ class IllustKit(private val appdata: AppDataManager,
                     if(existTags.isNotEmpty()) metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, !copyFromChildren)
                     if(existAuthors.isNotEmpty()) metaManager.deleteMetaTags(thisId, IllustAuthorRelations, Authors, !copyFromChildren)
                     if(existTopics.isNotEmpty()) metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, !copyFromChildren)
-                    metaManager.deleteAnnotations(thisId, IllustAnnotationRelations)
 
                     if(copyFromParent != null) {
                         if(anyNotExportedMetaExists(copyFromParent)) copyAllMetaFromParent(thisId, copyFromParent)
@@ -206,23 +190,18 @@ class IllustKit(private val appdata: AppDataManager,
                         copyAllMetaFromChildren(thisId)
                     }
                 }else{
-                    val tagAnnotations = metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !copyFromChildren,
+                    metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !copyFromChildren,
                             metaTag = Tags,
                             metaRelations = IllustTagRelations,
-                            metaAnnotationRelations = TagAnnotationRelations,
                             newTagIds = metaManager.validateAndExportTag(newTags, ignoreError = ignoreNotExist))
-                    val topicAnnotations = metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !copyFromChildren,
+                    metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !copyFromChildren,
                             metaTag = Topics,
                             metaRelations = IllustTopicRelations,
-                            metaAnnotationRelations = TopicAnnotationRelations,
                             newTagIds = metaManager.validateAndExportTopic(newTopics, ignoreError = ignoreNotExist))
-                    val authorAnnotations = metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !copyFromChildren,
+                    metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !copyFromChildren,
                             metaTag = Authors,
                             metaRelations = IllustAuthorRelations,
-                            metaAnnotationRelations = AuthorAnnotationRelations,
                             newTagIds = metaManager.validateAndExportAuthor(newAuthors, ignoreError = ignoreNotExist))
-
-                    processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
                 }
 
                 return (Illust.Tagme.EMPTY as Illust.Tagme)
@@ -262,23 +241,18 @@ class IllustKit(private val appdata: AppDataManager,
             //在copyFromChildren为false的情况下，认为是image的更改，要求修改统计计数；否则不予修改
             deleteAllMeta(thisId, remainNotExported = true, analyseStatisticCount = analyseStatisticCount, tagCount = tagCount, topicCount = topicCount, authorCount = authorCount)
 
-            val tagAnnotations = metaManager.processMetaTags(thisId, false, analyseStatisticCount,
+            metaManager.processMetaTags(thisId, false, analyseStatisticCount,
                 metaTag = Tags,
                 metaRelations = IllustTagRelations,
-                metaAnnotationRelations = TagAnnotationRelations,
                 newTagIds = metaManager.exportTag(tags).first) //直接忽略任何冲突组错误
-            val topicAnnotations = metaManager.processMetaTags(thisId, false, analyseStatisticCount,
+            metaManager.processMetaTags(thisId, false, analyseStatisticCount,
                 metaTag = Topics,
                 metaRelations = IllustTopicRelations,
-                metaAnnotationRelations = TopicAnnotationRelations,
                 newTagIds = metaManager.exportTopic(topics))
-            val authorAnnotations = metaManager.processMetaTags(thisId, false, analyseStatisticCount,
+            metaManager.processMetaTags(thisId, false, analyseStatisticCount,
                 metaTag = Authors,
                 metaRelations = IllustAuthorRelations,
-                metaAnnotationRelations = AuthorAnnotationRelations,
                 newTagIds = metaManager.exportAuthor(authors))
-
-            processAnnotationOfMeta(thisId, tagAnnotations = tagAnnotations, topicAnnotations = topicAnnotations, authorAnnotations = authorAnnotations)
         }
     }
 
@@ -306,25 +280,10 @@ class IllustKit(private val appdata: AppDataManager,
                 set(it.updateTime, now)
             }
         }
-        fun copyAnnotation() {
-            val items = data.db.from(IllustAnnotationRelations)
-                .select(IllustAnnotationRelations.annotationId)
-                .where { IllustAnnotationRelations.illustId eq fromId }
-                .map { it[IllustAnnotationRelations.annotationId]!! }
-            if(items.isNotEmpty()) data.db.batchInsert(IllustAnnotationRelations) {
-                for (id in items) {
-                    item {
-                        set(IllustAnnotationRelations.illustId, thisId)
-                        set(IllustAnnotationRelations.annotationId, id)
-                    }
-                }
-            }
-        }
 
         copyOneMeta(IllustTagRelations, Tags)
         copyOneMeta(IllustAuthorRelations, Authors)
         copyOneMeta(IllustTopicRelations, Topics)
-        copyAnnotation()
     }
 
     /**
@@ -360,29 +319,10 @@ class IllustKit(private val appdata: AppDataManager,
 
             sumAvailableChildren.addAll(availableChildren)
         }
-        fun copyAnnotation() {
-            //拷贝注解时，也只从之前那些确定是notExported的children中拷贝
-            val items = data.db.from(Illusts)
-                .innerJoin(IllustAnnotationRelations, IllustAnnotationRelations.illustId eq Illusts.id)
-                .select(IllustAnnotationRelations.annotationId)
-                .where { Illusts.id inList sumAvailableChildren }
-                .asSequence()
-                .map { it[IllustAnnotationRelations.annotationId]!! }
-                .toSet()
-            if(items.isNotEmpty()) data.db.batchInsert(IllustAnnotationRelations) {
-                for (id in items) {
-                    item {
-                        set(IllustAnnotationRelations.illustId, thisId)
-                        set(IllustAnnotationRelations.annotationId, id)
-                    }
-                }
-            }
-        }
 
         copyOneMeta(IllustTagRelations)
         copyOneMeta(IllustAuthorRelations)
         copyOneMeta(IllustTopicRelations)
-        copyAnnotation()
     }
 
     /**
@@ -393,38 +333,6 @@ class IllustKit(private val appdata: AppDataManager,
         if(tagCount == 0) metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, analyseStatisticCount ?: false, remainNotExported)
         if(authorCount == 0) metaManager.deleteMetaTags(thisId, IllustAuthorRelations, Authors, analyseStatisticCount ?: false, remainNotExported)
         if(topicCount == 0) metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, analyseStatisticCount ?: false, remainNotExported)
-        metaManager.deleteAnnotations(thisId, IllustAnnotationRelations)
-    }
-
-    /**
-     * 当关联的meta变化时，会引发间接关联的annotation的变化，处理这种变化。
-     */
-    private fun processAnnotationOfMeta(thisId: Int, tagAnnotations: Set<Int>?, authorAnnotations: Set<Int>?, topicAnnotations: Set<Int>?) {
-        if(tagAnnotations != null || topicAnnotations != null || authorAnnotations != null) {
-            val oldAnnotations = data.db.from(IllustAnnotationRelations).select()
-                .where { IllustAnnotationRelations.illustId eq thisId }
-                .asSequence()
-                .map { it[IllustAnnotationRelations.annotationId]!! }
-                .toSet()
-
-            val newAnnotations = mutableSetOf<Int>()
-            tagAnnotations?.let(newAnnotations::addAll)
-            topicAnnotations?.let(newAnnotations::addAll)
-            authorAnnotations?.let(newAnnotations::addAll)
-
-            val adds = newAnnotations - oldAnnotations
-            val deletes = oldAnnotations - newAnnotations
-
-            if(adds.isNotEmpty()) data.db.batchInsert(IllustAnnotationRelations) {
-                for (addId in adds) {
-                    item {
-                        set(it.illustId, thisId)
-                        set(it.annotationId, addId)
-                    }
-                }
-            }
-            if(deletes.isNotEmpty()) data.db.delete(IllustAnnotationRelations) { (it.illustId eq thisId) and (it.annotationId inList deletes) }
-        }
     }
 
     /**

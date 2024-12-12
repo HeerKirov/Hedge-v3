@@ -17,7 +17,6 @@ import com.heerkirov.hedge.server.events.MetaTagCreated
 import com.heerkirov.hedge.server.events.MetaTagDeleted
 import com.heerkirov.hedge.server.events.MetaTagUpdated
 import com.heerkirov.hedge.server.exceptions.*
-import com.heerkirov.hedge.server.model.Topic
 import com.heerkirov.hedge.server.utils.business.collectBulkResult
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
@@ -53,15 +52,6 @@ class TopicService(private val appdata: AppDataManager,
         }
         val rootAliased = Topics.aliased("tr")
         return data.db.from(Topics)
-            .let {
-                if(filter.annotationIds.isNullOrEmpty()) it else {
-                    var joinCount = 0
-                    filter.annotationIds.fold(it) { acc, id ->
-                        val j = TopicAnnotationRelations.aliased("AR_${++joinCount}")
-                        acc.innerJoin(j, (j.topicId eq Topics.id) and (j.annotationId eq id))
-                    }
-                }
-            }
             .leftJoin(rootAliased, rootAliased.id eq Topics.parentRootId)
             .let { schema?.joinConditions?.fold(it) { acc, join -> if(join.left) acc.leftJoin(join.table, join.condition) else acc.innerJoin(join.table, join.condition) } ?: it }
             .select(*Topics.columns.toTypedArray(), rootAliased.id, rootAliased.name, rootAliased.type)
@@ -87,8 +77,6 @@ class TopicService(private val appdata: AppDataManager,
      * @throws RecursiveParentError parentId出现闭环
      * @throws IllegalConstraintError ("type", "parent", TopicType[]) 当前的type与parent的type不兼容。给出parent的type
      * @throws ResourceNotExist ("parentId", number) 给出的parent不存在。给出parentId
-     * @throws ResourceNotExist ("annotations", number[]) 有annotation不存在时，抛出此异常。给出不存在的annotation id列表
-     * @throws ResourceNotSuitable ("annotations", number[]) 指定target类型且有元素不满足此类型时，抛出此异常。给出不适用的annotation id列表
      * @throws ResourceNotExist ("site", string) 更新source mapping tags时给出的site不存在
      * @throws ResourceNotExist ("sourceTagType", string[]) 更新source mapping tags时列出的tagType不存在
      */
@@ -99,8 +87,6 @@ class TopicService(private val appdata: AppDataManager,
             val name = kit.validateName(form.name, form.type, parentRootId)
             val otherNames = kit.validateOtherNames(form.otherNames)
             val keywords = kit.validateKeywords(form.keywords)
-
-            val annotations = kit.validateAnnotations(form.annotations, form.type)
 
             val createTime = Instant.now()
 
@@ -115,7 +101,6 @@ class TopicService(private val appdata: AppDataManager,
                 set(it.favorite, form.favorite)
                 set(it.score, form.score)
                 set(it.cachedCount, 0)
-                set(it.cachedAnnotations, annotations)
                 set(it.createTime, createTime)
                 set(it.updateTime, createTime)
             } as Int
@@ -126,8 +111,6 @@ class TopicService(private val appdata: AppDataManager,
             }
 
             form.mappingSourceTags?.also { sourceMappingManager.update(MetaType.TOPIC, id, it) }
-
-            kit.processAnnotations(id, annotations.asSequence().map { it.id }.toSet(), creating = true)
 
             bus.emit(MetaTagCreated(id, MetaType.TOPIC))
 
@@ -152,8 +135,6 @@ class TopicService(private val appdata: AppDataManager,
      * @throws RecursiveParentError parentId出现闭环
      * @throws IllegalConstraintError ("type", "children" | "parent", TopicType[]) 当前的type与parent|children的type不兼容。给出parent|children的type
      * @throws ResourceNotExist ("parentId", number) 给出的parent不存在。给出parentId
-     * @throws ResourceNotExist ("annotations", number[]) 有annotation不存在时，抛出此异常。给出不存在的annotation id列表
-     * @throws ResourceNotSuitable ("annotations", number[]) 指定target类型且有元素不满足此类型时，抛出此异常。给出不适用的annotation id列表
      * @throws ResourceNotExist ("site", string) 更新source mapping tags时给出的site不存在
      * @throws ResourceNotExist ("sourceTagType", string[]) 更新source mapping tags时列出的tagType不存在
      */
@@ -184,12 +165,9 @@ class TopicService(private val appdata: AppDataManager,
             val newFavorite = form.favorite.isPresentThen { it != record.favorite }
             val newScore = form.score.isPresentThen { it != record.score }
 
-            val newAnnotations = form.annotations.letOpt { kit.validateAnnotations(it, newType.unwrapOr { record.type }) }
-                .isPresentThen { kit.processAnnotations(id, it.asSequence().map(Topic.CachedAnnotation::id).toSet()) }
-
             val sourceTagMappingSot = form.mappingSourceTags.letOpt { sourceMappingManager.update(MetaType.TOPIC, id, it ?: emptyList()) }.unwrapOr { false }
 
-            if(anyOpt(newName, newOtherNames, newKeywords, newParentId, newType, newDescription, newFavorite, newScore, newAnnotations)) {
+            if(anyOpt(newName, newOtherNames, newKeywords, newParentId, newType, newDescription, newFavorite, newScore)) {
                 data.db.update(Topics) {
                     where { it.id eq id }
                     newName.applyOpt { set(it.name, this) }
@@ -203,7 +181,6 @@ class TopicService(private val appdata: AppDataManager,
                     newDescription.applyOpt { set(it.description, this) }
                     newFavorite.applyOpt { set(it.favorite, this) }
                     newScore.applyOpt { set(it.score, this) }
-                    newAnnotations.applyOpt { set(it.cachedAnnotations, this) }
                 }
             }
 
@@ -214,9 +191,9 @@ class TopicService(private val appdata: AppDataManager,
 
             val parentSot = newParentId.isPresent && newParentId.value.f1 != record.parentId
             val listUpdated = anyOpt(newName, newOtherNames, newKeywords, newType, newFavorite, newScore)
-            val detailUpdated = listUpdated || parentSot || newAnnotations.isPresent || sourceTagMappingSot || newDescription.isPresent
+            val detailUpdated = listUpdated || parentSot || sourceTagMappingSot || newDescription.isPresent
             if(listUpdated || detailUpdated) {
-                bus.emit(MetaTagUpdated(id, MetaType.TOPIC, listUpdated = listUpdated, detailUpdated = true, annotationSot = newAnnotations.isPresent, sourceTagMappingSot = sourceTagMappingSot, parentSot = parentSot))
+                bus.emit(MetaTagUpdated(id, MetaType.TOPIC, listUpdated = listUpdated, detailUpdated = true, sourceTagMappingSot = sourceTagMappingSot, parentSot = parentSot))
             }
         }
     }
@@ -231,7 +208,6 @@ class TopicService(private val appdata: AppDataManager,
             }
             data.db.delete(IllustTopicRelations) { it.topicId eq id }
             data.db.delete(BookTopicRelations) { it.topicId eq id }
-            data.db.delete(TopicAnnotationRelations) { it.topicId eq id }
             data.db.update(Topics) {
                 //删除topic时，不会像tag那样递归删除子标签，而是将子标签的parent设为null。
                 where { it.parentId eq id }
@@ -256,11 +232,11 @@ class TopicService(private val appdata: AppDataManager,
                             //当给出rename字段时，此操作被强制为更新操作，因此当走到这里时要报NotFound
                             if(form.rename.isPresent) throw be(NotFound()) else create(TopicCreateForm(
                                 form.name, form.otherNames.unwrapOrNull(), parentId, form.type.unwrapOr { TagTopicType.UNKNOWN },
-                                form.keywords.unwrapOrNull(), form.description.unwrapOr { "" }, form.annotations.unwrapOrNull(),
+                                form.keywords.unwrapOrNull(), form.description.unwrapOr { "" },
                                 form.favorite.unwrapOr { false }, form.score.unwrapOrNull(), form.mappingSourceTags.unwrapOrNull()
                             ))
                         }else{
-                            update(record.id, TopicUpdateForm(form.rename, form.otherNames, undefined(), form.type, form.keywords, form.description, form.annotations, form.favorite, form.score, form.mappingSourceTags))
+                            update(record.id, TopicUpdateForm(form.rename, form.otherNames, undefined(), form.type, form.keywords, form.description, form.favorite, form.score, form.mappingSourceTags))
                             record.id
                         }
                     }

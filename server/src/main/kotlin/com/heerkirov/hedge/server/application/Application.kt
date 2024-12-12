@@ -46,11 +46,9 @@ fun runApplication(options: ApplicationOptions) {
 
             val similarFinder = define { SimilarFinderImpl(appStatus, appdata, repo, bus, taskCounter) }
 
-            val annotationKit = AnnotationKit(repo)
-            val annotationManager = AnnotationManager(repo)
-            val authorKit = AuthorKit(repo, annotationManager)
-            val topicKit = TopicKit(repo, annotationManager)
-            val tagKit = TagKit(repo, annotationManager)
+            val authorKit = AuthorKit(repo)
+            val topicKit = TopicKit(repo)
+            val tagKit = TagKit(repo)
             val metaUtilKit = MetaUtilKit(appdata, repo)
             val metaManager = MetaManager(repo)
 
@@ -77,7 +75,6 @@ fun runApplication(options: ApplicationOptions) {
                 illust = IllustService(appdata, repo, bus, illustKit, illustManager, associateManager, sourceSiteManager, sourceDataManager, queryManager),
                 book = BookService(appdata, repo, bus, bookKit, bookManager, illustManager, queryManager),
                 folder = FolderService(repo, bus, folderKit, folderManager, illustManager),
-                annotation = AnnotationService(repo, bus, annotationKit, queryManager),
                 tag = TagService(repo, bus, tagKit, sourceMappingManager),
                 author = AuthorService(appdata, repo, bus, authorKit, queryManager, sourceMappingManager),
                 topic = TopicService(appdata, repo, bus, topicKit, queryManager, sourceMappingManager),

@@ -3,26 +3,23 @@ package com.heerkirov.hedge.server.functions.service
 import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
-import com.heerkirov.hedge.server.dao.Annotations
 import com.heerkirov.hedge.server.dao.Authors
 import com.heerkirov.hedge.server.dao.Folders
 import com.heerkirov.hedge.server.dao.Topics
 import com.heerkirov.hedge.server.dto.form.HistoryPushForm
-import com.heerkirov.hedge.server.dto.res.*
+import com.heerkirov.hedge.server.dto.res.AuthorSimpleRes
+import com.heerkirov.hedge.server.dto.res.FolderSimpleRes
+import com.heerkirov.hedge.server.dto.res.TopicSimpleRes
 import com.heerkirov.hedge.server.enums.FolderType
-import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.exceptions.ParamError
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.manager.HistoryRecordManager
 import com.heerkirov.hedge.server.model.HistoryRecord
 import org.ktorm.dsl.*
-import org.ktorm.entity.associate
-import org.ktorm.entity.filter
-import org.ktorm.entity.sequenceOf
 
 class PickerUtilService(private val appdata: AppDataManager, private val data: DataRepository, private val historyRecordManager: HistoryRecordManager) {
     private val limitCount = 20
-    private val channels = listOf("FOLDER", "TOPIC", "AUTHOR", "ANNOTATION:${MetaType.TAG}", "ANNOTATION:${MetaType.TOPIC}", "ANNOTATION:${MetaType.AUTHOR}")
+    private val channels = listOf("FOLDER", "TOPIC", "AUTHOR")
 
     fun getRecentFolders(): List<FolderSimpleRes> {
         val folderIds = historyRecordManager.getHistory(HistoryRecord.HistoryType.PICKER, "FOLDER", limitCount).map { it.toInt() }
@@ -63,12 +60,6 @@ class PickerUtilService(private val appdata: AppDataManager, private val data: D
                 id to AuthorSimpleRes(id, it[Authors.name]!!, type, false, color)
             }
         return authorIds.mapNotNull(result::get)
-    }
-
-    fun getRecentAnnotations(annotationType: MetaType): List<AnnotationRes> {
-        val annotationIds = historyRecordManager.getHistory(HistoryRecord.HistoryType.PICKER, "ANNOTATION:$annotationType", limitCount).map { it.toInt() }
-        val result = data.db.sequenceOf(Annotations).filter { it.id inList annotationIds }.associate { it.id to newAnnotationRes(it) }
-        return annotationIds.mapNotNull(result::get)
     }
 
     fun pushUsedHistory(form: HistoryPushForm) {

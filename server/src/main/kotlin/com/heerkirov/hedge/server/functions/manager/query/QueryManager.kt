@@ -23,7 +23,7 @@ class QueryManager(private val appdata: AppDataManager, private val data: DataRe
 
     init {
         //监听meta tag、annotation、source tag的变化，刷新缓存
-        bus.on(arrayOf(MetaTagEntityEvent::class, AnnotationEntityEvent::class, SourceTagUpdated::class), ::flushCacheByEvent)
+        bus.on(arrayOf(MetaTagEntityEvent::class, SourceTagUpdated::class), ::flushCacheByEvent)
         //监听query option的变化，刷新查询选项
         bus.on(SettingQueryChanged::class) { options.flushOptionsByEvent() }
     }
@@ -100,9 +100,6 @@ class QueryManager(private val appdata: AppDataManager, private val data: DataRe
                 if(events.any { it.metaType == MetaType.TAG }) flushCacheOf(CacheType.TAG)
                 if(events.any { it.metaType == MetaType.TOPIC }) flushCacheOf(CacheType.TOPIC)
                 if(events.any { it.metaType == MetaType.AUTHOR }) flushCacheOf(CacheType.AUTHOR)
-            }
-            all<AnnotationEntityEvent> {
-                flushCacheOf(CacheType.ANNOTATION)
             }
             all<SourceTagUpdated> {
                 flushCacheOf(CacheType.SOURCE_TAG)
