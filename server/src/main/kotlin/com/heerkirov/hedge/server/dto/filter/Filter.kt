@@ -121,6 +121,10 @@ data class FindSimilarTaskQueryFilter(@Limit val limit: Int,
 
 data class StagingPostFilter(val limit: Int? = null, val offset: Int? = null)
 
+data class MetaKeywordsFilter(@Limit(10) val limit: Int,
+                              @Search val search: String?,
+                              val tagType: MetaType)
+
 data class NoteFilter(@Limit val limit: Int,
                       @Offset val offset: Int,
                       @Order(options = ["status", "createTime", "updateTime"])

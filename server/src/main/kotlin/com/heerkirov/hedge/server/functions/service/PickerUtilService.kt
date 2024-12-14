@@ -6,18 +6,21 @@ import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.Authors
 import com.heerkirov.hedge.server.dao.Folders
 import com.heerkirov.hedge.server.dao.Topics
+import com.heerkirov.hedge.server.dto.filter.MetaKeywordsFilter
 import com.heerkirov.hedge.server.dto.form.HistoryPushForm
 import com.heerkirov.hedge.server.dto.res.AuthorSimpleRes
 import com.heerkirov.hedge.server.dto.res.FolderSimpleRes
+import com.heerkirov.hedge.server.dto.res.KeywordInfo
 import com.heerkirov.hedge.server.dto.res.TopicSimpleRes
 import com.heerkirov.hedge.server.enums.FolderType
 import com.heerkirov.hedge.server.exceptions.ParamError
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.manager.HistoryRecordManager
+import com.heerkirov.hedge.server.functions.manager.MetaKeywordManager
 import com.heerkirov.hedge.server.model.HistoryRecord
 import org.ktorm.dsl.*
 
-class PickerUtilService(private val appdata: AppDataManager, private val data: DataRepository, private val historyRecordManager: HistoryRecordManager) {
+class PickerUtilService(private val appdata: AppDataManager, private val data: DataRepository, private val keywordManager: MetaKeywordManager, private val historyRecordManager: HistoryRecordManager) {
     private val limitCount = 20
     private val channels = listOf("FOLDER", "TOPIC", "AUTHOR")
 
@@ -60,6 +63,10 @@ class PickerUtilService(private val appdata: AppDataManager, private val data: D
                 id to AuthorSimpleRes(id, it[Authors.name]!!, type, false, color)
             }
         return authorIds.mapNotNull(result::get)
+    }
+
+    fun getMetaKeywords(filter: MetaKeywordsFilter): List<KeywordInfo> {
+        return keywordManager.queryKeywords(filter.tagType, filter.search, filter.limit)
     }
 
     fun pushUsedHistory(form: HistoryPushForm) {

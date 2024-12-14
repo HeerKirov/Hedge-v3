@@ -63,6 +63,7 @@ fun runApplication(options: ApplicationOptions) {
             val trashManager = TrashManager(repo, bus, backendExporter, illustKit, file, bookManager, folderManager, associateManager, sourceDataManager)
             val illustManager = IllustManager(appdata, repo, bus, illustKit, file, sourceDataManager, sourceMappingManager, associateManager, bookManager, folderManager, importManager, trashManager)
             val historyRecordManager = HistoryRecordManager(repo)
+            val metaKeywordManager = MetaKeywordManager(repo)
             val queryManager = QueryManager(appdata, repo, bus)
 
             define { EventCompositorImpl(repo, bus, backendExporter) }
@@ -76,8 +77,8 @@ fun runApplication(options: ApplicationOptions) {
                 book = BookService(appdata, repo, bus, bookKit, bookManager, illustManager, queryManager),
                 folder = FolderService(repo, bus, folderKit, folderManager, illustManager),
                 tag = TagService(repo, bus, tagKit, sourceMappingManager),
-                author = AuthorService(appdata, repo, bus, authorKit, queryManager, sourceMappingManager),
-                topic = TopicService(appdata, repo, bus, topicKit, queryManager, sourceMappingManager),
+                author = AuthorService(appdata, repo, bus, authorKit, queryManager, metaKeywordManager, sourceMappingManager),
+                topic = TopicService(appdata, repo, bus, topicKit, queryManager, metaKeywordManager, sourceMappingManager),
                 import = ImportService(appdata, repo, bus, file, illustManager, importManager, sourceAnalyzeManager, sourceDataManager),
                 stagingPost = StagingPostService(illustManager, stagingPostManager),
                 trash = TrashService(appdata, repo, trashManager),
@@ -86,8 +87,8 @@ fun runApplication(options: ApplicationOptions) {
                 note = NoteService(repo, bus),
                 query = QueryService(repo, queryManager, historyRecordManager),
                 findSimilar = FindSimilarService(repo, bus, similarFinder, illustManager, bookManager),
-                metaUtil = MetaUtilService(appdata, repo, metaUtilKit, metaManager, historyRecordManager),
-                pickerUtil = PickerUtilService(appdata, repo, historyRecordManager),
+                metaUtil = MetaEditorService(appdata, repo, metaUtilKit, metaManager, historyRecordManager),
+                pickerUtil = PickerUtilService(appdata, repo, metaKeywordManager, historyRecordManager),
                 illustUtil = IllustUtilService(appdata, repo, illustManager),
                 exportUtil = ExportUtilService(repo, file),
                 fileUtil = FileUtilService(repo, file, bus),

@@ -17,6 +17,7 @@ import com.heerkirov.hedge.server.events.MetaTagCreated
 import com.heerkirov.hedge.server.events.MetaTagDeleted
 import com.heerkirov.hedge.server.events.MetaTagUpdated
 import com.heerkirov.hedge.server.exceptions.*
+import com.heerkirov.hedge.server.functions.manager.MetaKeywordManager
 import com.heerkirov.hedge.server.utils.business.collectBulkResult
 import com.heerkirov.hedge.server.utils.business.toListResult
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
@@ -36,6 +37,7 @@ class TopicService(private val appdata: AppDataManager,
                    private val bus: EventBus,
                    private val kit: TopicKit,
                    private val queryManager: QueryManager,
+                   private val keywordManager: MetaKeywordManager,
                    private val sourceMappingManager: SourceMappingManager) {
     private val orderTranslator = OrderTranslator {
         "id" to Topics.id
@@ -110,6 +112,8 @@ class TopicService(private val appdata: AppDataManager,
                 throw RuntimeException("Topic insert failed. generatedKey is $id but queried verify id is $verifyId.")
             }
 
+            if(!form.keywords.isNullOrEmpty()) keywordManager.updateByKeywords(MetaType.TOPIC, form.keywords)
+
             form.mappingSourceTags?.also { sourceMappingManager.update(MetaType.TOPIC, id, it) }
 
             bus.emit(MetaTagCreated(id, MetaType.TOPIC))
@@ -167,6 +171,8 @@ class TopicService(private val appdata: AppDataManager,
 
             val sourceTagMappingSot = form.mappingSourceTags.letOpt { sourceMappingManager.update(MetaType.TOPIC, id, it ?: emptyList()) }.unwrapOr { false }
 
+            if(newKeywords.isPresent) keywordManager.updateByKeywords(MetaType.TOPIC, newKeywords.value, record.keywords)
+
             if(anyOpt(newName, newOtherNames, newKeywords, newParentId, newType, newDescription, newFavorite, newScore)) {
                 data.db.update(Topics) {
                     where { it.id eq id }
@@ -203,9 +209,11 @@ class TopicService(private val appdata: AppDataManager,
      */
     fun delete(id: Int) {
         data.db.transaction {
-            data.db.delete(Topics) { it.id eq id }.let {
-                if(it <= 0) throw be(NotFound())
-            }
+            val record = data.db.sequenceOf(Topics).firstOrNull { it.id eq id } ?: throw be(NotFound())
+
+            keywordManager.updateByKeywords(MetaType.TOPIC, emptyList(), record.keywords)
+
+            data.db.delete(Topics) { it.id eq id }
             data.db.delete(IllustTopicRelations) { it.topicId eq id }
             data.db.delete(BookTopicRelations) { it.topicId eq id }
             data.db.update(Topics) {

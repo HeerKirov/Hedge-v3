@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.model.Author
 import com.heerkirov.hedge.server.model.Topic
 import com.heerkirov.hedge.server.model.Tag
 import com.heerkirov.hedge.server.utils.tuples.Tuple3
+import java.time.Instant
 
 data class TagRes(val id: Int, val ordinal: Int, val parentId: Int?,
                   val name: String, val otherNames: List<String>,
@@ -57,6 +58,8 @@ data class AuthorDetailRes(val id: Int, val name: String, val otherNames: List<S
                            val type: TagAuthorType, val favorite: Boolean,
                            val score: Int?, val count: Int, val color: String?,
                            val mappingSourceTags: List<MappingSourceTagDto>)
+
+data class KeywordInfo(val tagType: MetaType, val keyword: String, val count: Int, val lastUsedTime: Instant)
 
 fun newTagRes(tag: Tag) = TagRes(tag.id, tag.ordinal, tag.parentId, tag.name, tag.otherNames, tag.type, tag.isGroup, tag.color)
 

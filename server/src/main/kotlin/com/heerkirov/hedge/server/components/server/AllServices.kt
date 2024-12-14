@@ -20,7 +20,7 @@ class AllServices(
     val query: QueryService,
     val findSimilar: FindSimilarService,
     val exportUtil: ExportUtilService,
-    val metaUtil: MetaUtilService,
+    val metaUtil: MetaEditorService,
     val illustUtil: IllustUtilService,
     val pickerUtil: PickerUtilService,
     val fileUtil: FileUtilService

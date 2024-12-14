@@ -42,7 +42,7 @@ class TopicKit(private val data: DataRepository) {
      * 校验并纠正otherNames。
      */
     fun validateOtherNames(newOtherNames: List<String>?): List<String> {
-        return newOtherNames.let { if(it.isNullOrEmpty()) emptyList() else it.map(String::trim) }.apply {
+        return newOtherNames.let { if(it.isNullOrEmpty()) emptyList() else it.map(String::trim).filter(String::isNotEmpty).distinct() }.apply {
             if(any { !checkTagName(it) }) throw be(ParamError("otherNames"))
         }
     }
@@ -51,7 +51,7 @@ class TopicKit(private val data: DataRepository) {
      * 校验并纠正keywords。
      */
     fun validateKeywords(newKeywords: List<String>?): List<String> {
-        return newKeywords.let { if(it.isNullOrEmpty()) emptyList() else it.map(String::trim) }.apply {
+        return newKeywords.let { if(it.isNullOrEmpty()) emptyList() else it.map(String::trim).filter(String::isNotEmpty).distinct() }.apply {
             if(any { !checkTagName(it) }) throw be(ParamError("keywords"))
         }
     }

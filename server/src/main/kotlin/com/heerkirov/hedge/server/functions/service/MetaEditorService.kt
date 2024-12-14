@@ -26,11 +26,11 @@ import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import java.util.*
 
-class MetaUtilService(private val appdata: AppDataManager,
-                      private val data: DataRepository,
-                      private val kit: MetaUtilKit,
-                      private val metaManager: MetaManager,
-                      private val historyRecordManager: HistoryRecordManager) {
+class MetaEditorService(private val appdata: AppDataManager,
+                        private val data: DataRepository,
+                        private val kit: MetaUtilKit,
+                        private val metaManager: MetaManager,
+                        private val historyRecordManager: HistoryRecordManager) {
     private val limitMetaTagCount = 20
     private val identityMaxStorageCount = 10
     private val identityHistory: LinkedList<MetaUtilIdentity> = LinkedList()

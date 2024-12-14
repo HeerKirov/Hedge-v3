@@ -19,6 +19,7 @@ import com.heerkirov.hedge.server.events.MetaTagDeleted
 import com.heerkirov.hedge.server.events.MetaTagUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.AuthorKit
+import com.heerkirov.hedge.server.functions.manager.MetaKeywordManager
 import com.heerkirov.hedge.server.functions.manager.SourceMappingManager
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.utils.business.collectBulkResult
@@ -38,6 +39,7 @@ class AuthorService(private val appdata: AppDataManager,
                     private val bus: EventBus,
                     private val kit: AuthorKit,
                     private val queryManager: QueryManager,
+                    private val keywordManager: MetaKeywordManager,
                     private val sourceMappingManager: SourceMappingManager) {
     private val orderTranslator = OrderTranslator {
         "id" to Authors.id
@@ -101,6 +103,8 @@ class AuthorService(private val appdata: AppDataManager,
                 throw RuntimeException("Author insert failed. generatedKey is $id but queried verify id is $verifyId.")
             }
 
+            if(!form.keywords.isNullOrEmpty()) keywordManager.updateByKeywords(MetaType.AUTHOR, form.keywords)
+
             form.mappingSourceTags?.also { sourceMappingManager.update(MetaType.AUTHOR, id, it) }
 
             bus.emit(MetaTagCreated(id, MetaType.AUTHOR))
@@ -141,6 +145,8 @@ class AuthorService(private val appdata: AppDataManager,
 
             val sourceTagMappingSot = form.mappingSourceTags.letOpt { sourceMappingManager.update(MetaType.AUTHOR, id, it ?: emptyList()) }.unwrapOr { false }
 
+            if(newKeywords.isPresent) keywordManager.updateByKeywords(MetaType.AUTHOR, newKeywords.value, record.keywords)
+
             if(anyOpt(newName, newOtherNames, newKeywords, newType, newDescription, newFavorite, newScore)) {
                 data.db.update(Authors) {
                     where { it.id eq id }
@@ -167,9 +173,11 @@ class AuthorService(private val appdata: AppDataManager,
      */
     fun delete(id: Int) {
         data.db.transaction {
-            data.db.delete(Authors) { it.id eq id }.let {
-                if(it <= 0) throw be(NotFound())
-            }
+            val record = data.db.sequenceOf(Authors).firstOrNull { it.id eq id } ?: throw be(NotFound())
+
+            keywordManager.updateByKeywords(MetaType.AUTHOR, emptyList(), record.keywords)
+
+            data.db.delete(Authors) { it.id eq id }
             data.db.delete(IllustAuthorRelations) { it.authorId eq id }
             data.db.delete(BookAuthorRelations) { it.authorId eq id }
 
