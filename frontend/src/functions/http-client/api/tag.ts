@@ -1,7 +1,6 @@
 import { UsefulColors } from "@/constants/ui"
 import { HttpInstance, Response } from "../instance"
 import { IdResponse, LimitAndOffsetFilter, ListResult, OrderList } from "./all"
-import { RelatedSimpleAnnotation } from "./annotations"
 import { SimpleIllust } from "./illust"
 import { MappingSourceTag, MappingSourceTagForm } from "./source-tag-mapping"
 import {
@@ -36,8 +35,8 @@ export interface TagEndpoint {
     tree(filter: TagTreeFilter): Promise<Response<TagTreeNode[]>>
     /**
      * 新建标签。
-     * @exception NOT_EXIST ("parentId"|"links"|"examples"|"annotations", id) 指定的资源不存在
-     * @exception NOT_SUITABLE ("examples"|"annotations", id) 指定的资源不适用。对于examples，只有类型为image的项目可用；对于annotations，是此注解的target要求不能应用于此种类的tag
+     * @exception NOT_EXIST ("parentId"|"links"|"examples", id) 指定的资源不存在
+     * @exception NOT_SUITABLE ("examples", id) 指定的资源不适用。对于examples，只有类型为image的项目可用。
      * @exception CANNOT_GIVE_COLOR 只有创建顶层标签时才能指定颜色
      * @exception ALREADY_EXISTS ("Tag", "name", name) 标签重名。addr类型的标签在同一个parent下禁止重名，tag类型的标签除上一条外还禁止与全局其他tag类型的标签重名
      */
@@ -50,8 +49,8 @@ export interface TagEndpoint {
     /**
      * 更改标签。
      * @exception NOT_FOUND
-     * @exception NOT_EXIST ("parentId"|"links"|"examples"|"annotations", id) 指定的资源不存在
-     * @exception NOT_SUITABLE ("examples"|"annotations|links", id) 指定的资源不适用。对于examples，只有类型为image的项目可用；对于annotations，是此注解的target要求不能应用于tag; 对于links，目标必须是非虚拟的
+     * @exception NOT_EXIST ("parentId"|"links"|"examples", id) 指定的资源不存在
+     * @exception NOT_SUITABLE ("examples"|"links", id) 指定的资源不适用。对于examples，只有类型为image的项目可用; 对于links，目标必须是非虚拟的
      * @exception RECURSIVE_PARENT 在父标签检查中发现了闭环
      * @exception CANNOT_GIVE_COLOR 只有顶层标签才能指定颜色
      * @exception ALREADY_EXISTS ("Tag", "name", name) 标签重名。addr类型的标签在同一个parent下禁止重名，tag类型的标签除上一条外还禁止与全局其他tag类型的标签重名
@@ -66,8 +65,8 @@ export interface TagEndpoint {
 }
 
 export interface TagExceptions {
-    "create": AlreadyExists<"Tag", "name", string> | CannotGiveColorError | ResourceNotExist<"parentId", number> | ResourceNotExist<"links" | "examples" | "annotations", number[]> | ResourceNotSuitable<"links" | "examples" | "annotations", number[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
-    "update": NotFound | RecursiveParentError | AlreadyExists<"Tag", "name", string> | CannotGiveColorError | ResourceNotExist<"parentId", number> | ResourceNotExist<"links" | "examples" | "annotations", number[]> | ResourceNotSuitable<"links" | "examples" | "annotations", number[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
+    "create": AlreadyExists<"Tag", "name", string> | CannotGiveColorError | ResourceNotExist<"parentId", number> | ResourceNotExist<"links" | "examples", number[]> | ResourceNotSuitable<"links" | "examples", number[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
+    "update": NotFound | RecursiveParentError | AlreadyExists<"Tag", "name", string> | CannotGiveColorError | ResourceNotExist<"parentId", number> | ResourceNotExist<"links" | "examples", number[]> | ResourceNotSuitable<"links" | "examples", number[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
     "delete": NotFound
 }
 
@@ -127,10 +126,6 @@ export interface DetailTag extends Tag {
      */
     examples: SimpleIllust[]
     /**
-     * 标签的注解。
-     */
-    annotations: RelatedSimpleAnnotation[]
-    /**
      * 标签关联的项目的平均分。
      */
     score: number | null
@@ -187,7 +182,6 @@ export interface TagCreateForm {
     ordinal?: number | null
     group?: TagGroupType
     links?: number[]
-    annotations?: (number | string)[] | null
     description?: string
     color?: UsefulColors | null
     examples?: number[] | null
@@ -202,7 +196,6 @@ export interface TagUpdateForm {
     type?: TagAddressType
     group?: TagGroupType
     links?: number[] | null
-    annotations?: (number | string)[] | null
     description?: string
     color?: UsefulColors
     examples?: number[] | null

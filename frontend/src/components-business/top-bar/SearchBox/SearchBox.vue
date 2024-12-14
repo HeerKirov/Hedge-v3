@@ -212,7 +212,7 @@ const clear = () => {
         </div>
         <template #popup>
             <SearchBoxSuggestions v-if="forecast" ref="suggestionRef" :class="$style.popup" :forecast="forecast" @pick="pickSuggestion"/>
-            <SearchBoxHistories v-else-if="showHistory && !textValue && dialect !== undefined" ref="historyRef" :class="$style.popup" :dialect="dialect" :time-cost="timeCost" @pick="updateValue"/>
+            <SearchBoxHistories v-else-if="showHistory && !textValue && dialect !== undefined" ref="historyRef" :class="$style.popup" :dialect="dialect" @pick="updateValue"/>
             <template v-else-if="showSchema && schema">
                 <QueryResult :class="$style.popup" :schema="schema"/>
                 <TimeCostDiv :class="$style.popup" :time-cost="timeCost"/>

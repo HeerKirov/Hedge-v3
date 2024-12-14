@@ -39,7 +39,7 @@ const ellipsisMenuItems = <MenuItem<undefined>[]>[
         <TopicDetailPanelDisplay v-if="!editMode && data !== null" :data="data" v-model:children-mode="childrenMode" :examples="exampleData" @click:topic="openTopicDetail"/>
         <TopicDetailPanelForm v-else-if="editMode && form !== null" :name="form.name" :other-names="form.otherNames"
                               :type="form.type" :parent="form.parent"
-                              :annotations="form.annotations" :keywords="form.keywords"
+                              :keywords="form.keywords"
                               :description="form.description" :score="form.score"
                               :mapping-source-tags="form.mappingSourceTags"
                               @set-property="setProperty"/>

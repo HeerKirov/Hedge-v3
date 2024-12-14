@@ -3,15 +3,15 @@ import { Starlight } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
 import {
     TagNameAndOtherDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay, TagLinkDisplay, TagExampleDisplay,
-    DescriptionDisplay, RelatedAnnotationDisplay, SourceTagMappingDisplay
+    DescriptionDisplay, SourceTagMappingDisplay
 } from "@/components-business/form-display"
 import {
     TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, TagLinkEditor, TagExampleEditor,
-    DescriptionEditor, RelatedAnnotationEditor, SourceTagMappingEditor
+    DescriptionEditor, SourceTagMappingEditor
 } from "@/components-business/form-editor"
 import { useTagDetailPane } from "@/services/main/tag"
 
-const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotations, setDescription, setLinks, setMappingSourceTags, setExamples } = useTagDetailPane()
+const { data, addressInfo, isRootNode, setName, setType, setGroup, setDescription, setLinks, setMappingSourceTags, setExamples } = useTagDetailPane()
 
 </script>
 
@@ -53,15 +53,6 @@ const { data, addressInfo, isRootNode, setName, setType, setGroup, setAnnotation
             </template>
             <template #edit="{ value, setValue, save }">
                 <DescriptionEditor :value="value" @update:value="setValue" @save="save"/>
-            </template>
-        </FormEditKit>
-
-        <FormEditKit class="mt-1" :value="data.annotations" :set-value="setAnnotations">
-            <template #default="{ value }">
-                <RelatedAnnotationDisplay :value="value"/>
-            </template>
-            <template #edit="{ value, setValue, save }">
-                <RelatedAnnotationEditor mode="embedded" meta-type="TAG" :value="value" @update:value="setValue"/>
             </template>
         </FormEditKit>
 

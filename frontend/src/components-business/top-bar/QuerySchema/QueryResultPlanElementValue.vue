@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Tag } from "@/components/universal"
 import { ElementAuthor, ElementTag, ElementTopic, ElementValue } from "@/functions/http-client/api/util-query"
-import { AnnotationElement, SourceTagElement, SimpleMetaTagElement } from "@/components-business/element"
-import type { SimpleAuthor, SimpleTopic, SimpleTag, MetaTagValues } from "@/functions/http-client/api/all"
+import { SourceTagElement, SimpleMetaTagElement } from "@/components-business/element"
+import type { MetaTagValues } from "@/functions/http-client/api/all"
 
 defineProps<{
     value: ElementValue
@@ -19,8 +19,7 @@ function mapMetaTag(value: ElementTopic | ElementAuthor | ElementTag): MetaTagVa
 </script>
 
 <template>
-    <AnnotationElement v-if="value.type === 'annotation'" :value="{id: value.id, name: value.name}"/>
-    <SourceTagElement v-else-if="value.type === 'source-tag'" :site="value.site" :value="{code: value.code, name: value.name, otherName: null, type: value.type}"/>
+    <SourceTagElement v-if="value.type === 'source-tag'" :site="value.site" :value="{code: value.code, name: value.name, otherName: null, type: value.type}"/>
     <Tag v-else-if="value.type === undefined">{{value.value}}</Tag>
     <SimpleMetaTagElement v-else :type="value.type" :value="mapMetaTag(value)"/>
 </template>

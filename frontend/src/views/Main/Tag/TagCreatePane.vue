@@ -3,7 +3,7 @@ import { Button } from "@/components/universal"
 import { useTagCreatePane } from "@/services/main/tag"
 import {
     TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, TagLinkEditor,
-    DescriptionEditor, RelatedAnnotationEditor, SourceTagMappingEditor, TagExampleEditor
+    DescriptionEditor, SourceTagMappingEditor, TagExampleEditor
 } from "@/components-business/form-editor"
 
 const { form, submit, addressInfo, isRootNode } = useTagCreatePane()
@@ -25,9 +25,6 @@ const { form, submit, addressInfo, isRootNode } = useTagCreatePane()
     </p>
     <p class="mt-4">
         <DescriptionEditor v-model:value="form.description"/>
-    </p>
-    <p class="mt-1">
-        <RelatedAnnotationEditor mode="embedded" meta-type="TAG" v-model:value="form.annotations"/>
     </p>
     <label class="mt-5 label is-font-size-small">标签链接</label>
     <p>

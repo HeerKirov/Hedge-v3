@@ -75,7 +75,7 @@ defineExpose({
         if(selectedIndex.value === undefined) {
             //在搜索关键词内容不变时，按下enter触发的是高亮第一项
             selectedIndex.value = 0
-        }else{
+        }else if(selectItems.value[selectedIndex.value]) {
             //在进一步，已经有高亮选择项时，按下enter将pick此项
             selectListClick(selectItems.value[selectedIndex.value].value, selectedIndex.value)
         }

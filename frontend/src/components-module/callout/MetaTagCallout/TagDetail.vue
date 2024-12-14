@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import { Icon } from "@/components/universal"
-import { Group, Flex } from "@/components/layout"
-import { DescriptionDisplay, RelatedAnnotationDisplay, TagLinkDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay } from "@/components-business/form-display"
+import { Flex } from "@/components/layout"
+import { DescriptionDisplay, TagLinkDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay } from "@/components-business/form-display"
 import { META_TYPE_ICONS } from "@/constants/entity"
 import { toRef } from "@/utils/reactivity"
 import { useTagDetailData } from "./context"
@@ -34,9 +34,6 @@ const otherNameText = computed(() => data.value !== null && data.value.otherName
             <TagGroupTypeDisplay :value="data.group" :member="addressInfo.member" :member-index="addressInfo.memberIndex"/>
         </Flex>
         <div class="mb-2"/>
-        <Group v-if="data.annotations.length">
-            <RelatedAnnotationDisplay :value="data.annotations"/>
-        </Group>
         <p v-if="data.description">
             <DescriptionDisplay :value="data.description"/>
         </p>

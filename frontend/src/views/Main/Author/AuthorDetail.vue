@@ -37,7 +37,7 @@ const ellipsisMenuItems = <MenuItem<undefined>[]>[
         <AuthorDetailPanelDisplay v-if="!editMode && data !== null" :data="data" :examples="exampleData" @click:author="openAuthorDetail"/>
         <AuthorDetailPanelForm v-else-if="editMode && form !== null"
                                :name="form.name" :other-names="form.otherNames" :type="form.type"
-                               :annotations="form.annotations" :keywords="form.keywords"
+                               :keywords="form.keywords"
                                :description="form.description" :score="form.score"
                                :mapping-source-tags="form.mappingSourceTags"
                                @set-property="setProperty"/>

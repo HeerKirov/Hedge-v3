@@ -7,7 +7,6 @@ import { ElementPopupCallout } from "@/components/interaction"
 import { SimpleMetaTagElement } from "@/components-business/element"
 import { HttpClient } from "@/functions/http-client"
 import { SimpleAuthor } from "@/functions/http-client/api/all"
-import { Author } from "@/functions/http-client/api/author"
 
 const props = defineProps<{
     value: SimpleAuthor[]
@@ -25,8 +24,8 @@ const searchProps = {
     query: (client: HttpClient) => (offset: number, limit: number, search: string) => client.author.list({offset, limit, query: search, order: "-updateTime"}),
     historyList: (client: HttpClient) => client.searchUtil.history.authors,
     historyPush: (client: HttpClient) => (item: SimpleAuthor) => client.searchUtil.history.push({type: "AUTHOR", id: item.id}),
-    mapOption: (item: Author) => ({label: item.name, value: `${item.id}`}),
-    onPick: (item: Author) => {
+    mapOption: (item: SimpleAuthor) => ({label: item.name, value: `${item.id}`}),
+    onPick: (item: SimpleAuthor) => {
         if(!props.value.some(i => i.id === item.id)) {
             emit("update:value", [...props.value, {id: item.id, name: item.name, type: item.type, color: item.color}])
         }

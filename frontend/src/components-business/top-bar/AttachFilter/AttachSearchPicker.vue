@@ -3,8 +3,7 @@ import { computed } from "vue"
 import { SearchPickList } from "@/components/data"
 import { Tag } from "@/components/universal"
 import { Group } from "@/components/layout"
-import { HttpClient, mapResponse, mapListResult } from "@/functions/http-client"
-import { Colors } from "@/constants/ui"
+import { HttpClient, mapResponse, mapListResult, Response, ListResult } from "@/functions/http-client"
 import { computedAsync } from "@/utils/reactivity"
 import { useOptionCacheStorage } from "./utils"
 import { SearchTemplate, TemplateOption } from "./template"
@@ -34,11 +33,11 @@ const pickProps = {
     query: props.template.query && (props.template.mapQuery ? (client: HttpClient) => {
         const method = props.template.query!(client)
         return async (offset: number, limit: number, search: string) => mapResponse(await method(offset, limit, search), d => mapListResult(d, props.template.mapQuery!))
-    } : props.template.query),
+    } : (props.template.query as (httpClient: HttpClient) => (offset: number, limit: number, search: string) => Promise<Response<ListResult<TemplateOption>>>)),
     historyList: props.template.history && (props.template.history.mapList ? (client: HttpClient) => {
         const method = props.template.history!.list(client)
         return async (limit: number) => mapResponse(await method(limit), d => d.map(props.template.history!.mapList!))
-    } : props.template.history.list),
+    } : (props.template.history.list as (httpClient: HttpClient) => (limit: number) => Promise<Response<TemplateOption[]>>)),
     historyPush: props.template.history?.push,
     mapOption: (item: TemplateOption) => ({label: item.label, value: `${item.value}`}),
     onPick: (item: TemplateOption) => {
@@ -68,7 +67,7 @@ const removeItem = (index: number) => {
 }
 
 const tagLineStyle = computed(() => props.template.displayStyle === "normal" || props.template.displayStyle === undefined ? "none" : undefined)
-const tagBrackets = computed(() => props.template.displayStyle === "annotation" ? "[]" : undefined)
+const tagBrackets = computed(() => props.template.displayStyle === "anno" ? "[]" : undefined)
 
 </script>
 

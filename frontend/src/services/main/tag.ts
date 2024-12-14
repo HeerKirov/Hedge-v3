@@ -2,7 +2,6 @@ import { computed, watch } from "vue"
 import { useCreatingHelper, useFetchEndpoint, useFetchHelper, useFetchReactive, useRetrieveHelper } from "@/functions/fetch"
 import { DetailViewState, useRouteStorageViewState } from "@/services/base/detail-view-state"
 import { TagAddressType, TagCreateForm, TagGroupType, TagLink } from "@/functions/http-client/api/tag"
-import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { SimpleIllust } from "@/functions/http-client/api/illust"
 import { useLocalStorage } from "@/functions/app"
@@ -119,8 +118,6 @@ export function useTagCreatePane() {
                     message.showOkMessage("error", "选择的作为链接的标签不存在。", `错误项: ${ids}`)
                 }else if(type === "examples") {
                     message.showOkMessage("error", "选择的示例项不存在。", `错误项: ${ids}`)
-                }else if(type === "annotations") {
-                    message.showOkMessage("error", "选择的注解不存在。", `错误项: ${ids}`)
                 }else if(type === "site") {
                     message.showOkMessage("error", `选择的来源站点不存在。`, `错误项: ${ids}`)
                 }else if(type === "sourceTagType") {
@@ -134,9 +131,6 @@ export function useTagCreatePane() {
                 const [type, ids] = e.info
                 if(type === "examples") {
                     message.showOkMessage("error", "选择的示例不可用。", `只能选择图像而非集合类型的项目作为示例。`)
-                }else if(type === "annotations") {
-                    const content = ids.map(id => form.value.annotations?.find(i => i.id === id)?.name ?? "unknown").join(", ")
-                    message.showOkMessage("error", "选择的注解不可用。", `选择的注解的导出目标设置使其无法导出至标签。错误项: ${content}`)
                 }else if(type === "links") {
                     const content = ids.map(id => form.value.links?.find(i => i.id === id)?.name ?? "unknown").join(", ")
                     message.showOkMessage("error", "选择的作为链接的标签不可用。", `虚拟地址段不能用作链接。错误项: ${content}`)
@@ -246,23 +240,6 @@ export function useTagDetailPane() {
         })
     }
 
-    const setAnnotations = async (annotations: SimpleAnnotation[]) => {
-        return objects.deepEquals(annotations, data.value?.annotations) || await setData({ annotations: annotations.map(a => a.id) }, e => {
-            if(e.code === "NOT_EXIST") {
-                const [type, ids] = e.info
-                if(type === "annotations") {
-                    message.showOkMessage("error", "选择的注解不存在。", `错误项: ${ids}`)
-                }
-            }else if(e.code === "NOT_SUITABLE") {
-                const [, ids] = e.info
-                const content = ids.map(id => annotations.find(i => i.id === id)?.name ?? "unknown").join(", ")
-                message.showOkMessage("error", "选择的注解不可用。", `选择的注解的导出目标设置使其无法导出至标签。错误项: ${content}`)
-            }else{
-                return e
-            }
-        })
-    }
-
     const setDescription = async (description: string) => {
         return description === data.value?.description || await setData({ description })
     }
@@ -336,7 +313,7 @@ export function useTagDetailPane() {
         })
     }
 
-    return {data, addressInfo, isRootNode, setName, setAnnotations, setDescription, setType, setGroup, setLinks, setMappingSourceTags, setExamples}
+    return {data, addressInfo, isRootNode, setName, setDescription, setType, setGroup, setLinks, setMappingSourceTags, setExamples}
 }
 
 interface TagCreateFormData {
@@ -348,7 +325,6 @@ interface TagCreateFormData {
     type: TagAddressType
     group: TagGroupType,
     description: string,
-    annotations: SimpleAnnotation[],
     links: TagLink[],
     mappingSourceTags: MappingSourceTag[],
     examples: SimpleIllust[]
@@ -363,7 +339,6 @@ function mapTemplateToCreateForm(template: TagCreateTemplate | null, defaultAddr
         otherNames: [],
         group: "NO",
         links: [],
-        annotations: [],
         description: "",
         color: null,
         mappingSourceTags: [],
@@ -380,7 +355,6 @@ function mapCreateFormToHelper(form: TagCreateFormData): TagCreateForm {
         otherNames: form.otherNames,
         group: form.group,
         links: form.links.map(i => i.id),
-        annotations: form.annotations.map(a => a.id),
         description: form.description,
         color: form.color,
         mappingSourceTags: patchMappingSourceTagForm(form.mappingSourceTags.filter(t => t.site && t.code), []),

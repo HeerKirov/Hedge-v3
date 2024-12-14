@@ -3,7 +3,7 @@ import { computed } from "vue"
 import { Block, Icon, Tag, GridImages, Starlight } from "@/components/universal"
 import { Flex, Group } from "@/components/layout"
 import { SimpleMetaTagElement } from "@/components-business/element"
-import { DescriptionDisplay, RelatedAnnotationDisplay, SourceTagMappingDisplay } from "@/components-business/form-display"
+import { DescriptionDisplay, MetaKeywordDisplay, SourceTagMappingDisplay } from "@/components-business/form-display"
 import { Illust } from "@/functions/http-client/api/illust"
 import { DetailTopic } from "@/functions/http-client/api/topic"
 import { TOPIC_TYPE_ICONS, TOPIC_TYPE_NAMES } from "@/constants/entity"
@@ -34,25 +34,22 @@ const more = () => router.routePush({routeName: "Illust", initializer: {topicNam
 
 <template>
     <Block class="p-3">
-        <p>
+        <div>
             <span :class="[{[`has-text-${data.color}`]: !!data.color}, 'is-font-size-h4', 'selectable']">
                 <Icon :icon="TOPIC_TYPE_ICONS[data.type]"/>
                 {{data.name}}
             </span>
             <span class="pl-2 has-text-secondary selectable">{{otherNameText}}</span>
-        </p>
-        <p class="mt-4">
+        </div>
+        <div class="mt-4">
             <Icon :icon="TOPIC_TYPE_ICONS[data.type]"/>
             {{TOPIC_TYPE_NAMES[data.type]}}
             <Starlight class="float-right" :value="data.score"/>
-        </p>
-        <p class="mt-1">
+        </div>
+        <div class="mt-1">
             <DescriptionDisplay :value="data.description"/>
-        </p>
-        <Group class="mt-1">
-            <RelatedAnnotationDisplay v-if="data.annotations.length > 0" :value="data.annotations"/>
-            <Tag v-for="keyword in data.keywords" color="secondary">{{keyword}}</Tag>
-        </Group>
+        </div>
+        <MetaKeywordDisplay class="mt-1" :value="data.keywords"/>
     </Block>
     <Block v-if="data.children?.length || data.parents.length" class="p-3 mt-2">
         <template v-if="data.parents.length">

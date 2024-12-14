@@ -18,7 +18,7 @@ const { form, setProperty, submit } = useAuthorCreatePanel()
 
     <Container>
         <AuthorDetailPanelForm :name="form.name" :other-names="form.otherNames" :type="form.type"
-                               :annotations="form.annotations" :keywords="form.keywords"
+                               :keywords="form.keywords"
                                :description="form.description" :score="form.score"
                                :mapping-source-tags="form.mappingSourceTags"
                                @set-property="setProperty"/>

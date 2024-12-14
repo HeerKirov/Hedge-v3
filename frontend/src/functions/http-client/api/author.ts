@@ -1,9 +1,8 @@
 import { UsefulColors } from "@/constants/ui"
 import { HttpInstance, Response } from "../instance"
 import { IdResponse, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
-import { SimpleAnnotation } from "./annotations"
 import { MappingSourceTag, MappingSourceTagForm } from "./source-tag-mapping"
-import { AlreadyExists, NotFound, ResourceNotExist, ResourceNotSuitable } from "../exceptions"
+import { AlreadyExists, NotFound, ResourceNotExist } from "../exceptions"
 
 export function createAuthorEndpoint(http: HttpInstance): AuthorEndpoint {
     return {
@@ -20,8 +19,7 @@ export function createAuthorEndpoint(http: HttpInstance): AuthorEndpoint {
 function mapFromAuthorFilter(data: AuthorFilter): any {
     return {
         ...data,
-        order: mapFromOrderList(data.order),
-        annotationIds: data.annotationIds?.length ? data.annotationIds.join(",") : undefined
+        order: mapFromOrderList(data.order)
     }
 }
 
@@ -36,8 +34,6 @@ export interface AuthorEndpoint {
     /**
      * 新建作者。
      * @exception ALREADY_EXISTS ("Author", "name", name) 作者重名
-     * @exception NOT_EXISTS ("annotations", id) 指定的资源不存在
-     * @exception NOT_SUITABLE ("annotations", id) 指定的资源不适用。对于annotations，此注解的target要求不能应用于此种类的tag
      */
     create(form: AuthorCreateForm): Promise<Response<IdResponse, AuthorExceptions["create"]>>
     /**
@@ -49,8 +45,6 @@ export interface AuthorEndpoint {
      * 更改作者。
      * @exception NOT_FOUND
      * @exception ALREADY_EXISTS ("Author", "name", name) 作者重名
-     * @exception NOT_EXISTS ("annotations", id) 指定的资源不存在
-     * @exception NOT_SUITABLE ("annotations", id) 指定的资源不适用。对于annotations，此注解的target要求不能应用于此种类的tag
      */
     update(id: number, form: AuthorUpdateForm): Promise<Response<null, AuthorExceptions["update"]>>
     /**
@@ -61,8 +55,8 @@ export interface AuthorEndpoint {
 }
 
 export interface AuthorExceptions {
-    "create": AlreadyExists<"Author", "name", string> | ResourceNotExist<"annotations", number[]> | ResourceNotSuitable<"annotations", number[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
-    "update": NotFound | AlreadyExists<"Author", "name", string> | ResourceNotExist<"annotations", number[]> | ResourceNotSuitable<"annotations", number[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
+    "create": AlreadyExists<"Author", "name", string> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
+    "update": NotFound | AlreadyExists<"Author", "name", string> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
 }
 
 export type AuthorType = "UNKNOWN" | "ARTIST" | "GROUP" | "SERIES"
@@ -92,10 +86,6 @@ export interface Author {
      * 标记为收藏。
      */
     favorite: boolean
-    /**
-     * 注解。
-     */
-    annotations: SimpleAnnotation[]
     /**
      * 评分。
      */
@@ -138,7 +128,6 @@ export interface AuthorCreateForm {
     type?: AuthorType
     description?: string
     keywords?: string[]
-    annotations?: (string | number)[] | null
     favorite?: boolean
     score?: number | null
     mappingSourceTags?: MappingSourceTagForm[] | null
@@ -150,7 +139,6 @@ export interface AuthorUpdateForm {
     type?: AuthorType
     description?: string
     keywords?: string[]
-    annotations?: (string | number)[] | null
     favorite?: boolean
     score?: number | null
     mappingSourceTags?: MappingSourceTagForm[] | null
@@ -163,5 +151,4 @@ export interface AuthorQueryFilter {
     order?: OrderList<"id" | "name" | "score" | "count" | "createTime" | "updateTime">
     type?: AuthorType
     favorite?: boolean
-    annotationIds?: number[]
 }

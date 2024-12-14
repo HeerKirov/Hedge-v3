@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { computed } from "vue"
 import { Block, Icon, Starlight } from "@/components/universal"
 import { Input, Select } from "@/components/form"
 import { Flex } from "@/components/layout"
-import { OtherNameEditor, ParentTopicEditor, DescriptionEditor, RelatedAnnotationEditor, SourceTagMappingEditor } from "@/components-business/form-editor"
+import { OtherNameEditor, ParentTopicEditor, DescriptionEditor, SourceTagMappingEditor, MetaKeywordEditor } from "@/components-business/form-editor"
 import { ParentTopic, TopicType } from "@/functions/http-client/api/topic"
-import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { TOPIC_TYPE_ICONS, TOPIC_TYPE_NAMES, TOPIC_TYPES } from "@/constants/entity"
 
@@ -14,32 +12,24 @@ interface Props {
     otherNames: string[]
     type: TopicType
     parent: ParentTopic | null
-    annotations: SimpleAnnotation[]
     keywords: string[]
     description: string
     score: number | null
     mappingSourceTags: MappingSourceTag[]
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 const emit = defineEmits<{
     <T extends keyof Props>(e: "set-property", key: T, value: Props[T]): void
 }>()
 
-const keywordText = computed(() => props.keywords.join(" "))
-
 const setName = (v: string) => emit("set-property", "name", v)
 const setOtherNames = (v: string[]) => emit("set-property", "otherNames", v)
 const setType = (v: TopicType) => emit("set-property", "type", v)
-const setKeywords = (v: string) => {
-    const s = v.trim()
-    const keywords = s ? s.split(/\s+/) : []
-    emit("set-property", "keywords", keywords)
-}
+const setKeywords = (v: string[]) => emit("set-property", "keywords", v)
 const setDescription = (v: string) => emit("set-property", "description", v)
 const setScore = (v: number | null) => emit("set-property", "score", v)
-const setAnnotations = (v: SimpleAnnotation[]) => emit("set-property", "annotations", v)
 const setParent = (v: ParentTopic | null) => emit("set-property", "parent", v)
 const setMappingSourceTags = (v: MappingSourceTag[]) => emit("set-property", "mappingSourceTags", v)
 
@@ -73,11 +63,7 @@ const TOPIC_TYPE_SELECT_ITEMS = TOPIC_TYPES.map(t => ({label: TOPIC_TYPE_NAMES[t
         <div class="mt-2">
             <label class="label">描述</label>
             <DescriptionEditor :value="description" @update:value="setDescription"/>
-            <Input class="mt-1" placeholder="描述关键字" width="fullwidth" :value="keywordText" @update:value="setKeywords"/>
-        </div>
-        <div class="mt-2">
-            <label class="label">注解</label>
-            <RelatedAnnotationEditor meta-type="TOPIC" :value="annotations" @update:value="setAnnotations"/>
+            <MetaKeywordEditor class="mt-1" meta-type="TOPIC" :value="keywords" @update:value="setKeywords"/>
         </div>
         <Flex class="mt-2" :width="40">
             <div>

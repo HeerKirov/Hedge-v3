@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Block, Icon, Tag, GridImages, Starlight } from "@/components/universal"
-import { Group } from "@/components/layout"
-import { DescriptionDisplay, RelatedAnnotationDisplay, SourceTagMappingDisplay } from "@/components-business/form-display"
+import { Block, Icon, GridImages, Starlight } from "@/components/universal"
+import { DescriptionDisplay, MetaKeywordDisplay, SourceTagMappingDisplay } from "@/components-business/form-display"
 import { DetailAuthor } from "@/functions/http-client/api/author"
 import { Illust } from "@/functions/http-client/api/illust"
 import { AUTHOR_TYPE_ICONS, AUTHOR_TYPE_NAMES } from "@/constants/entity"
@@ -44,10 +43,7 @@ const more = () => router.routePush({routeName: "Illust", initializer: {authorNa
         <p class="mt-1">
             <DescriptionDisplay :value="data.description"/>
         </p>
-        <Group class="mt-1">
-            <RelatedAnnotationDisplay v-if="data.annotations.length > 0" :value="data.annotations"/>
-            <Tag v-for="keyword in data.keywords" color="secondary">{{keyword}}</Tag>
-        </Group>
+        <MetaKeywordDisplay class="mt-1" :value="data.keywords"/>
     </Block>
     <Block v-if="data.mappingSourceTags?.length" class="p-3 mt-2">
         <label class="label mb-2"><Icon class="mr-1" icon="file-invoice"/>来源映射</label>

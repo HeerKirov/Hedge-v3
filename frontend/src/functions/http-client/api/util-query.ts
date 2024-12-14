@@ -3,7 +3,6 @@ import { HttpInstance, Response } from ".."
 import { TagAddressType } from "./tag"
 import { TopicType } from "./topic"
 import { AuthorType } from "./author"
-import { MetaType } from "./all"
 
 export function createUtilQueryEndpoint(http: HttpInstance): UtilQueryEndpoint {
     return {
@@ -50,14 +49,12 @@ export interface QueryPlan {
 
 export type ElementGroup
     = { type: "name", intersectItems: ElementItem<ElementString>[] }
-    | { type: "annotation", intersectItems: ElementItem<ElementAnnotation>[] }
     | { type: "meta-tag", intersectItems: ElementItem<ElementTopic | ElementAuthor | ElementTag>[] }
     | { type: "source-tag", intersectItems: ElementItem<ElementSourceTag>[] }
 export interface ElementItem<V> { exclude: boolean, unionItems: V[] }
-export type ElementValue = ElementString | ElementSourceTag | ElementAnnotation | ElementTopic | ElementAuthor | ElementTag
+export type ElementValue = ElementString | ElementSourceTag | ElementTopic | ElementAuthor | ElementTag
 interface ElementString { type: undefined, value: string, precise: boolean }
 export interface ElementSourceTag { type: "source-tag", id: number, name: string, code: string, otherName: string | null, site: string, sourceTagType: string }
-export interface ElementAnnotation { type: "annotation", id: number, name: string, annotationType: MetaType }
 export interface ElementTopic { type: "topic", id: number, name: string, otherNames: string[], tagType: TopicType, color: UsefulColors | null }
 export interface ElementAuthor { type: "author", id: number, name: string, otherNames: string[], tagType: AuthorType, color: UsefulColors | null }
 export interface ElementTag { type: "tag", id: number, name: string, tagType: TagAddressType, otherNames: string[], color: UsefulColors | null, realTags: { id: number, name: string, tagType: TagAddressType }[] }

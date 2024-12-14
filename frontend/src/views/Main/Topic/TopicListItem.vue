@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Block, Icon, Tag } from "@/components/universal"
+import { Block, Icon } from "@/components/universal"
+import { MetaKeywordDisplay } from "@/components-business/form-display"
 import { Flex, FlexItem } from "@/components/layout"
-import { AnnotationElement } from "@/components-business/element"
 import { TOPIC_TYPE_ICONS } from "@/constants/entity"
 import { Topic } from "@/functions/http-client/api/topic"
 import { useDraggable } from "@/modules/drag"
@@ -28,25 +28,17 @@ const otherNameText = computed(() => {
     return ""
 })
 
-const actualKeywordsAndAnnotations = computed(() => {
+const actualKeywords = computed(() => {
     const max = 6
-    const keywordsSize = props.item.keywords.length, annotationsSize = props.item.annotations.length
-    if(keywordsSize + annotationsSize <= max) {
+    const keywordsSize = props.item.keywords.length
+    if(keywordsSize <= max) {
         return {
             keywords: props.item.keywords,
-            annotations: props.item.annotations,
             more: false
-        }
-    }else if(annotationsSize < max) {
-        return {
-            keywords: props.item.keywords.slice(0, max - annotationsSize),
-            annotations: props.item.annotations,
-            more: true
         }
     }else{
         return {
-            keywords: [],
-            annotations: props.item.annotations.slice(0, max),
+            keywords: props.item.keywords.slice(0, max),
             more: true
         }
     }
@@ -85,10 +77,9 @@ const { hover, ...hoverEvents } = useMouseHover()
                 </div>
             </FlexItem>
             <FlexItem :width="45">
-                <div>
-                    <AnnotationElement v-for="a in actualKeywordsAndAnnotations.annotations" :key="a.id" :value="a" class="mr-1"/>
-                    <Tag v-for="k in actualKeywordsAndAnnotations.keywords" class="mr-1" color="secondary">{{k}}</Tag>
-                    <Tag v-if="actualKeywordsAndAnnotations.more" color="secondary">...</Tag>
+                <div class="flex">
+                    <MetaKeywordDisplay :value="actualKeywords.keywords" color="secondary" :multiline="false"/>
+                    <b v-if="actualKeywords.more" class="ml-1 has-text-secondary">...</b>
                 </div>
             </FlexItem>
             <FlexItem :shrink="0" :grow="0">

@@ -1,9 +1,8 @@
 import { UsefulColors } from "@/constants/ui"
 import { HttpInstance, Response } from "../instance"
 import { IdResponse, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
-import { SimpleAnnotation } from "./annotations"
 import { MappingSourceTag, MappingSourceTagForm } from "./source-tag-mapping"
-import { AlreadyExists, IllegalConstraintError, NotFound, RecursiveParentError, ResourceNotExist, ResourceNotSuitable } from "../exceptions"
+import { AlreadyExists, IllegalConstraintError, NotFound, RecursiveParentError, ResourceNotExist } from "../exceptions"
 
 export function createTopicEndpoint(http: HttpInstance): TopicEndpoint {
     return {
@@ -20,8 +19,7 @@ export function createTopicEndpoint(http: HttpInstance): TopicEndpoint {
 function mapFromTopicFilter(data: TopicFilter): any {
     return {
         ...data,
-        order: mapFromOrderList(data.order),
-        annotationIds: data.annotationIds?.length ? data.annotationIds.join(",") : undefined
+        order: mapFromOrderList(data.order)
     }
 }
 
@@ -36,8 +34,7 @@ export interface TopicEndpoint {
     /**
      * 新建主题。
      * @exception ALREADY_EXISTS ("Topic", "name", name) 主题重名
-     * @exception NOT_EXISTS ("annotations"|"parentId", id) 指定的资源不存在
-     * @exception NOT_SUITABLE ("annotations", id) 指定的资源不适用。对于annotations，此注解的target要求不能应用于此种类的tag
+     * @exception NOT_EXISTS ("parentId", id) 指定的资源不存在
      * @exception RECURSIVE_PARENT 在父标签检查中发现了闭环
      * @exception ILLEGAL_CONSTRAINT ("type", "parent", parentType) 当前主题的类型和父主题的类型不能兼容
      */
@@ -51,8 +48,7 @@ export interface TopicEndpoint {
      * 更改主题。
      * @exception NOT_FOUND
      * @exception ALREADY_EXISTS ("Topic", "name", name) 主题重名
-     * @exception NOT_EXISTS ("annotations"|"parentId", id) 指定的资源不存在
-     * @exception NOT_SUITABLE ("annotations", id) 指定的资源不适用。对于annotations，此注解的target要求不能应用于此种类的tag
+     * @exception NOT_EXISTS ("parentId", id) 指定的资源不存在
      * @exception RECURSIVE_PARENT 在父标签检查中发现了闭环
      * @exception ILLEGAL_CONSTRAINT ("type", "parent", parentType) 当前主题的类型和父主题的类型不能兼容
      */
@@ -65,8 +61,8 @@ export interface TopicEndpoint {
 }
 
 export interface TopicExceptions {
-    "create": AlreadyExists<"Topic", "name", string> | ResourceNotExist<"parentId", number> | ResourceNotExist<"annotations", number[]> | ResourceNotSuitable<"annotations", number[]> | RecursiveParentError | IllegalConstraintError<"type", "parent", TopicType[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
-    "update": NotFound | AlreadyExists<"Topic", "name", string> | ResourceNotExist<"parentId", number> | ResourceNotExist<"annotations", number[]> | ResourceNotSuitable<"annotations", number[]> | RecursiveParentError | IllegalConstraintError<"type", "parent" | "children", TopicType[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
+    "create": AlreadyExists<"Topic", "name", string> | ResourceNotExist<"parentId", number> | RecursiveParentError | IllegalConstraintError<"type", "parent", TopicType[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
+    "update": NotFound | AlreadyExists<"Topic", "name", string> | ResourceNotExist<"parentId", number> | RecursiveParentError | IllegalConstraintError<"type", "parent" | "children", TopicType[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
 }
 
 export type TopicType = "UNKNOWN" | "COPYRIGHT" | "IP" | "CHARACTER"
@@ -104,10 +100,6 @@ export interface Topic {
      * 标记为收藏。
      */
     favorite: boolean
-    /**
-     * 注解。
-     */
-    annotations: SimpleAnnotation[]
     /**
      * 评分。
      */
@@ -167,7 +159,6 @@ export interface TopicCreateForm {
     type?: TopicType
     description?: string
     keywords?: string[]
-    annotations?: (string | number)[] | null
     favorite?: boolean
     score?: number | null
     mappingSourceTags?: MappingSourceTagForm[] | null
@@ -180,7 +171,6 @@ export interface TopicUpdateForm {
     type?: TopicType
     description?: string
     keywords?: string[]
-    annotations?: (string | number)[] | null
     favorite?: boolean
     score?: number | null
     mappingSourceTags?: MappingSourceTagForm[] | null
@@ -194,5 +184,4 @@ export interface TopicQueryFilter {
     type?: TopicType
     favorite?: boolean
     parentId?: number
-    annotationIds?: number[]
 }

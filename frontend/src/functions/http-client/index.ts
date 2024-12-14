@@ -12,7 +12,6 @@ import { createFolderEndpoint, FolderEndpoint } from "./api/folder"
 import { createTagEndpoint, TagEndpoint } from "./api/tag"
 import { createAuthorEndpoint, AuthorEndpoint } from "./api/author"
 import { createTopicEndpoint, TopicEndpoint } from "./api/topic"
-import { createAnnotationEndpoint, AnnotationEndpoint } from "./api/annotations"
 import { createSourceDataEndpoint, SourceDataEndpoint } from "./api/source-data"
 import { createSourceTagMappingEndpoint, SourceTagMappingEndpoint } from "./api/source-tag-mapping"
 import { createFindSimilarEndpoint, FindSimilarEndpoint } from "./api/find-similar"
@@ -38,7 +37,6 @@ export interface HttpClient {
     tag: TagEndpoint
     author: AuthorEndpoint
     topic: TopicEndpoint
-    annotation: AnnotationEndpoint
     import: ImportEndpoint
     trash: TrashEndpoint
     stagingPost: StagingPostEndpoint
@@ -67,7 +65,6 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
         tag: createTagEndpoint(http),
         author: createAuthorEndpoint(http),
         topic: createTopicEndpoint(http),
-        annotation: createAnnotationEndpoint(http),
         import: createImportEndpoint(http),
         trash: createTrashEndpoint(http),
         stagingPost: createStagingPostEndpoint(http),

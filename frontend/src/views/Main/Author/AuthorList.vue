@@ -4,7 +4,6 @@ import { VirtualRowView } from "@/components/data"
 import { BrowserTeleport } from "@/components/logical"
 import { SearchBox, DataRouter, AttachFilter, AttachTemplate } from "@/components-business/top-bar"
 import { Author } from "@/functions/http-client/api/author"
-import { Annotation } from "@/functions/http-client/api/annotations"
 import { AUTHOR_TYPE_ICONS, AUTHOR_TYPE_NAMES, AUTHOR_TYPES_WITHOUT_UNKNOWN } from "@/constants/entity"
 import { installAuthorContext } from "@/services/main/author"
 import { usePopupMenu } from "@/modules/popup-menu"
@@ -28,23 +27,6 @@ const attachFilterTemplates: AttachTemplate[] = [
         label: "收藏",
         color: "danger",
         icon: "heart"
-    },
-    {type: "separator"},
-    {
-        type: "search",
-        field: "annotationIds",
-        label: "选择注解…",
-        multiSelection: true,
-        query: client => (offset, limit, search) => client.annotation.list({type: "AUTHOR", offset, limit, query: search}),
-        queryOne: client => id => client.annotation.get(id),
-        mapQuery: (item: Annotation) => ({label: item.name, value: item.id}),
-        mapQueryOne: (item: Annotation) => ({label: item.name, value: item.id}),
-        history: {
-            list: client => (_: number) => client.searchUtil.history.annotations("AUTHOR"),
-            push: client => item => client.searchUtil.history.push({type: "ANNOTATION:AUTHOR", id: item.value as number}),
-            mapList: (item: Annotation) => ({label: item.name, value: item.id})
-        },
-        displayStyle: "annotation"
     },
     {type: "separator"},
     {

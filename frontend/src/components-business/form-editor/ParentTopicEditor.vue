@@ -4,7 +4,7 @@ import { Tag } from "@/components/universal"
 import { ElementPopupCallout } from "@/components/interaction"
 import { SimpleMetaTagElement } from "@/components-business/element"
 import { HttpClient } from "@/functions/http-client"
-import { ParentTopic, Topic } from "@/functions/http-client/api/topic"
+import { ParentTopic, SimpleTopic } from "@/functions/http-client/api/topic"
 
 const props = defineProps<{
     value: ParentTopic | null
@@ -25,9 +25,9 @@ const searchProps = {
     autoFocus: true,
     query: (client: HttpClient) => (offset: number, limit: number, search: string) => client.topic.list({offset, limit, query: search, order: "-updateTime"}),
     historyList: (client: HttpClient) => client.searchUtil.history.topics,
-    historyPush: (client: HttpClient) => (item: Topic) => client.searchUtil.history.push({type: "TOPIC", id: item.id}),
-    mapOption: (item: Topic) => ({label: item.name, value: `${item.id}`}),
-    onPick: (item: Topic) => {
+    historyPush: (client: HttpClient) => (item: SimpleTopic) => client.searchUtil.history.push({type: "TOPIC", id: item.id}),
+    mapOption: (item: SimpleTopic) => ({label: item.name, value: `${item.id}`}),
+    onPick: (item: SimpleTopic) => {
         if(props.value?.id !== item.id) {
             emit("update:value", {id: item.id, name: item.name, type: item.type, color: item.color})
         }

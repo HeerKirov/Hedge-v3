@@ -3,7 +3,7 @@ import { computed } from "vue"
 import { Group, Flex } from "@/components/layout"
 import { Tag, Icon, Starlight } from "@/components/universal"
 import { SimpleMetaTagElement } from "@/components-business/element"
-import { DescriptionDisplay, RelatedAnnotationDisplay } from "@/components-business/form-display"
+import { DescriptionDisplay } from "@/components-business/form-display"
 import { TOPIC_TYPE_ICONS } from "@/constants/entity"
 import { toRef } from "@/utils/reactivity"
 import { useTopicDetailData } from "./context"
@@ -31,8 +31,7 @@ const otherNameText = computed(() => data.value !== null && data.value.otherName
         <Group v-if="data.parents.length" class="mb-2">
             <SimpleMetaTagElement v-for="topic in data.parents" :key="topic.id" type="topic" :value="topic"/>
         </Group>
-        <Flex v-if="data.annotations.length || data.keywords.length || data.score" :multiline="true" :spacing="1">
-            <RelatedAnnotationDisplay v-if="data.annotations.length > 0" :value="data.annotations"/>
+        <Flex v-if="data.keywords.length || data.score" :multiline="true" :spacing="1">
             <Tag v-for="keyword in data.keywords" color="secondary">{{keyword}}</Tag>
             <Starlight v-if="data.score" class="ml-auto" show-text editable :value="data.score" @update:value="setScore"/>
         </Flex>

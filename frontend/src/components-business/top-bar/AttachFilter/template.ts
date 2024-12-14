@@ -185,4 +185,4 @@ export interface TemplateOption {
 }
 
 export type ModeInButtons = "icon-only" | "label-only" | "icon-and-label"
-export type DisplayStyle = "normal" | "tag" | "annotation"
+export type DisplayStyle = "normal" | "tag" | "anno"

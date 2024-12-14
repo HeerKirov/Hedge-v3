@@ -2,7 +2,6 @@ import { CompileError, ElementGroup } from "@/functions/http-client/api/util-que
 
 export const QUERY_ELEMENT_TYPES: {[key in ElementGroup["type"]]: string} = {
     "name": "名称",
-    "annotation": "注解",
     "meta-tag": "标签",
     "source-tag": "来源标签"
 }

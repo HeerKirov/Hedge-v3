@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import { ref } from "vue"
 import { Input } from "@/components/form"
 import { HttpClient, Response, ListResult } from "@/functions/http-client"
@@ -18,14 +18,14 @@ const props = defineProps<{
     initSize?: number
     continueSize?: number
     historySize?: number
-    query?(httpClient: HttpClient): (offset: number, limit: number, search: string) => Promise<Response<ListResult<any>>>
-    historyList?(httpClient: HttpClient): (limit: number) => Promise<Response<any[]>>
-    historyPush?(httpClient: HttpClient): (item: any) => Promise<Response<unknown>>
-    mapOption?(item: any): {label: string, value: string}
+    query?(httpClient: HttpClient): (offset: number, limit: number, search: string) => Promise<Response<ListResult<T>>>
+    historyList?(httpClient: HttpClient): (limit: number) => Promise<Response<T[]>>
+    historyPush?(httpClient: HttpClient): (item: T) => Promise<Response<unknown>>
+    mapOption?(item: T): {label: string, value: string}
 }>()
 
 const emit = defineEmits<{
-    (e: "pick", item: any): void
+    (e: "pick", item: T): void
 }>()
 
 const queryCompRef = ref<InstanceType<typeof SearchPickQuery>>()
@@ -79,6 +79,10 @@ const pick = (item: any) => {
     historyPush?.(item)
     emit("pick", item)
 }
+
+defineSlots<{
+    default(props: {item: T}): any
+}>()
 
 </script>
 

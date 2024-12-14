@@ -1,5 +1,4 @@
 import ThemeSelector from "./ThemeSelector.vue"
-import AnnotationTargetEditor from "./AnnotationTargetEditor.vue"
 import TagNameAndOtherEditor from "./TagNameAndOtherEditor.vue"
 import TagAddressTypeEditor from "./TagAddressTypeEditor.vue"
 import TagGroupTypeEditor from "./TagGroupTypeEditor.vue"
@@ -7,7 +6,7 @@ import TagLinkEditor from "./TagLinkEditor.vue"
 import TagExampleEditor from "./TagExampleEditor.vue"
 import OtherNameEditor from "./OtherNameEditor.vue"
 import DescriptionEditor from "./DescriptionEditor.vue"
-import RelatedAnnotationEditor from "./RelatedAnnotationEditor.vue"
+import MetaKeywordEditor from "./MetaKeywordEditor.vue"
 import RelatedTopicEditor from "./RelatedTopicEditor.vue"
 import RelatedAuthorEditor from "./RelatedAuthorEditor.vue"
 import ParentTopicEditor from "./ParentTopicEditor.vue"
@@ -31,10 +30,9 @@ import DateEditor from "./DateEditor.vue"
 import DateTimeEditor from "./DateTimeEditor.vue"
 
 export { ThemeSelector }
-export { AnnotationTargetEditor }
 export { TagNameAndOtherEditor, TagAddressTypeEditor, TagGroupTypeEditor, TagLinkEditor, TagExampleEditor }
 export { OtherNameEditor, DescriptionEditor }
-export { RelatedAnnotationEditor, ParentTopicEditor, RelatedTopicEditor, RelatedAuthorEditor }
+export { MetaKeywordEditor, ParentTopicEditor, RelatedTopicEditor, RelatedAuthorEditor }
 export { SourceIdentityEditor, SourceIdentityNoPartEditor, SourceDataSummaryEditor, SourceEditStatusEditor, SourceSiteSelectBox, SourceTagTypeSelectBox }
 export { SourceTagMappingEditor, SourceTagEditor, SourceBookEditor, SourceRelationEditor, SourceTagTypeListEditor, SourceLinkEditor, SourceAdditionalInfoEditor }
 export { TagmeEditor, DateEditor, DateTimeEditor, ScoreEditor, FavoriteEditor }

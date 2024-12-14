@@ -1,7 +1,7 @@
 import { HttpInstance, Response } from ".."
 import { SimpleFolder } from "./folder"
-import { Annotation } from "./annotations"
 import { MetaType, SimpleAuthor, SimpleTopic } from "./all"
+import { datetime, LocalDateTime } from "@/utils/datetime"
 
 export function createUtilSearchEndpoint(http: HttpInstance): UtilSearchEndpoint {
     return {
@@ -9,9 +9,18 @@ export function createUtilSearchEndpoint(http: HttpInstance): UtilSearchEndpoint
             folders: http.createRequest("/api/utils/picker/history/folders"),
             topics: http.createRequest("/api/utils/picker/history/topics"),
             authors: http.createRequest("/api/utils/picker/history/authors"),
-            annotations: http.createPathRequest(type => `/api/utils/picker/history/annotations/${type}`),
+            metaKeywords: http.createQueryRequest("/api/utils/picker/history/meta-keywords", "GET", {
+                parseResponse: (data: any[]) => data.map(mapToKeywordInfo)
+            }),
             push: http.createDataRequest("/api/utils/picker/history", "POST")
         }
+    }
+}
+
+function mapToKeywordInfo(data: any): KeywordInfo {
+    return {
+        ...data,
+        lastUsedTime: datetime.of(<string>data["lastUsedTime"])
     }
 }
 
@@ -36,9 +45,9 @@ export interface UtilSearchEndpoint {
          */
         authors(): Promise<Response<SimpleAuthor[]>>,
         /**
-         * annotation的最近使用记录。
+         * 查询keywords。
          */
-        annotations(metaType: MetaType): Promise<Response<Annotation[]>>
+        metaKeywords(filter: MetaKeywordFilter): Promise<Response<KeywordInfo[]>>
         /**
          * 添加最近使用记录。
          */
@@ -46,8 +55,20 @@ export interface UtilSearchEndpoint {
     }
 }
 
+export interface KeywordInfo {
+    tagType: MetaType
+    keyword: string
+    tagCount: number
+    lastUsedTime: LocalDateTime
+}
+
 interface HistoryPushForm {
-    type: "FOLDER" | "TOPIC" | "AUTHOR" | `ANNOTATION:${MetaType}`
+    type: "FOLDER" | "TOPIC" | "AUTHOR"
     id: number
 }
 
+interface MetaKeywordFilter {
+    tagType: MetaType
+    search?: string
+    limit?: number
+}

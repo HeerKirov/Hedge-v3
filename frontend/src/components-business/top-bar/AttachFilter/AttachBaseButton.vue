@@ -7,7 +7,7 @@ import { ModeInButtons } from "./template"
 const props = withDefaults(defineProps<{
     items: {label?: string, color?: Colors, icon?: string}[]
     modeInButtons?: ModeInButtons
-    displayStyle?: "normal" | "tag" | "annotation"
+    displayStyle?: "normal" | "tag" | "anno"
     disableAnyRadius?: boolean
 }>(), {
     modeInButtons: "icon-and-label",
@@ -33,7 +33,7 @@ defineExpose({
         <Tag v-else-if="displayStyle === 'tag'" v-for="item in items" :class="$style.item" :color="item.color" :icon="item.icon && (modeInButtons === 'icon-only' || modeInButtons === 'icon-and-label') ? item.icon : undefined">
             {{modeInButtons === 'label-only' || modeInButtons === 'icon-and-label' ? item.label : ''}}
         </Tag>
-        <Tag v-else-if="displayStyle === 'annotation'" v-for="item in items" :class="$style.item" :color="item.color" :icon="item.icon && (modeInButtons === 'icon-only' || modeInButtons === 'icon-and-label') ? item.icon : undefined" brackets="[]">
+        <Tag v-else-if="displayStyle === 'anno'" v-for="item in items" :class="$style.item" :color="item.color" :icon="item.icon && (modeInButtons === 'icon-only' || modeInButtons === 'icon-and-label') ? item.icon : undefined" brackets="[]">
             {{modeInButtons === 'label-only' || modeInButtons === 'icon-and-label' ? item.label : ''}}
         </Tag>
     </div>

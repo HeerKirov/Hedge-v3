@@ -3,7 +3,6 @@ import { useLocalStorage } from "@/functions/app"
 import { ErrorHandler, QueryListview, useCreatingHelper, useFetchEndpoint, useFetchHelper, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import { Author, DetailAuthor, AuthorCreateForm, AuthorUpdateForm, AuthorExceptions, AuthorQueryFilter, AuthorType } from "@/functions/http-client/api/author"
-import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { useNavigationItem } from "@/services/base/side-nav-records"
 import { useListViewContext } from "@/services/base/list-view-context"
@@ -160,19 +159,13 @@ export function useAuthorCreatePanel() {
                 message.showOkMessage("prompt", "该名称已存在。")
             }else if(e.code === "NOT_EXIST") {
                 const [type, id] = e.info
-                if(type === "annotations") {
-                    message.showOkMessage("error", "选择的注解不存在。", `错误项: ${id}`)
-                }else if(type === "site") {
+                if(type === "site") {
                     message.showOkMessage("error", `选择的来源站点不存在。`, `错误项: ${id}`)
                 }else if(type === "sourceTagType") {
                     message.showOkMessage("error", `选择的来源标签类型不存在。`, `错误项: ${id.join(", ")}`)
                 }else{
                     message.showOkMessage("error", `选择的资源${type}不存在。`, `错误项: ${id}`)
                 }
-            }else if(e.code === "NOT_SUITABLE") {
-                const [, ids] = e.info
-                const content = ids.map(id => form.value.annotations?.find(i => i.id === id)?.name ?? "unknown").join(", ")
-                message.showOkMessage("error", "选择的注解不可用。", `选择的注解的导出目标设置使其无法导出至当前作者类型。错误项: ${content}`)
             }else{
                 return e
             }
@@ -277,7 +270,6 @@ function useAuthorDetailPanelEditor(data: Readonly<Ref<DetailAuthor | null>>, se
         if(form.value && data.value) {
             const updateForm: AuthorUpdateForm = {
                 type: form.value.type !== data.value.type ? form.value.type : undefined,
-                annotations: !objects.deepEquals(form.value.annotations.map(i => i.id), data.value.annotations.map(i => i.id)) ? form.value.annotations.map(i => i.id) : undefined,
                 keywords: !objects.deepEquals(form.value.keywords, data.value.keywords) ? form.value.keywords : undefined,
                 description: form.value.description !== data.value.description ? form.value.description : undefined,
                 score: form.value.score !== data.value.score ? form.value.score : undefined,
@@ -306,20 +298,13 @@ function useAuthorDetailPanelEditor(data: Readonly<Ref<DetailAuthor | null>>, se
                     message.showOkMessage("prompt", "该名称已存在。")
                 }else if(e.code === "NOT_EXIST") {
                     const [type, id] = e.info
-                    if(type === "annotations") {
-                        message.showOkMessage("error", "选择的注解不存在。", `错误项: ${id}`)
-                    }else if(type === "site") {
+                    if(type === "site") {
                         message.showOkMessage("error", `选择的来源站点不存在。`, `错误项: ${id}`)
                     }else if(type === "sourceTagType") {
                         message.showOkMessage("error", `选择的来源标签类型不存在。`, `错误项: ${id.join(", ")}`)
                     }else{
                         message.showOkMessage("error", `选择的资源${type}不存在。`, `错误项: ${id}`)
                     }
-                }else if(e.code === "NOT_SUITABLE") {
-                    const [, id] = e.info
-                    const content = id.map(id => form.value?.annotations?.find(i => i.id === id)?.name ?? "unknown").join(", ")
-
-                    message.showOkMessage("error", "选择的注解不可用。", `选择的注解的导出目标设置使其无法导出至当前作者类型。错误项: ${content}`)
                 }else{
                     return e
                 }
@@ -341,7 +326,6 @@ interface AuthorUpdateFormData {
     name: string
     otherNames: string[]
     type: AuthorType
-    annotations: SimpleAnnotation[]
     keywords: string[]
     description: string
     score: number | null
@@ -356,7 +340,6 @@ function mapTemplateToCreateForm(template: Partial<DetailAuthor> | null, default
         description: template?.description ?? "",
         keywords: template?.keywords ?? [],
         favorite: template?.favorite ?? false,
-        annotations: template?.annotations ?? [],
         score: template?.score ?? null,
         mappingSourceTags: template?.mappingSourceTags ?? []
     }
@@ -370,7 +353,6 @@ function mapCreateFormToHelper(form: AuthorCreateFormData): AuthorCreateForm {
         description: form.description,
         keywords: form.keywords,
         favorite: form.favorite,
-        annotations: form.annotations.map(a => a.id),
         score: form.score,
         mappingSourceTags: patchMappingSourceTagForm(form.mappingSourceTags, [])
     }
@@ -383,7 +365,6 @@ function mapDataToUpdateForm(data: DetailAuthor): AuthorUpdateFormData {
         type: data.type,
         description: data.description,
         keywords: data.keywords,
-        annotations: data.annotations,
         score: data.score,
         mappingSourceTags: data.mappingSourceTags
     }

@@ -14,6 +14,7 @@ const props = defineProps<{
     visible?: boolean
     popupBlockColor?: Colors
     popupBlockMode?: "std" | "transparent" | "light" | "filled" | "shadow"
+    popupFullwidth?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -46,7 +47,7 @@ onOutsideClick(divRef, () => {
 <template>
     <div ref="divRef" :class="$style.root">
         <slot :visible="visible" :click="click"/>
-        <Block v-if="visible" :class="$style.popup" :mode="popupBlockMode" :color="popupBlockColor">
+        <Block v-if="visible" :class="[$style.popup, popupFullwidth ? 'w-100': undefined]" :mode="popupBlockMode" :color="popupBlockColor">
             <slot name="popup"/>
         </Block>
     </div>

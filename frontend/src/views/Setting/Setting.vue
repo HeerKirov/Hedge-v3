@@ -27,7 +27,6 @@ import { Container, SideLayout, SideBar, TopBarLayout } from "@/components/layou
                         <NavMenuItem route-name="SettingDBFindSimilar" label="相似项查找" icon="grin-squint"/>
                     </MenuScope>
                     <MenuScope id="dim" label="数据库">
-                        <NavMenuItem route-name="SettingDimAnnotation" label="注解" icon="code"/>
                         <NavMenuItem route-name="SettingDimSource" label="来源站点" icon="file-invoice"/>
                     </MenuScope>
                     <MenuScope id="advanced" label="高级选项">

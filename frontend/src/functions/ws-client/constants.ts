@@ -15,8 +15,7 @@ export type AllEvents = AppEvents | EntityEvents | SettingEvents
 type AppEvents = AppStatusChanged | HomepageInfoUpdated | HomepageStateChanged | QuickFindChanged | StagingPostChanged | BackgroundTaskChanged
 
 type EntityEvents
-    = AnnotationCreated | AnnotationUpdated | AnnotationDeleted
-    | MetaTagCreated | MetaTagUpdated | MetaTagDeleted
+    = MetaTagCreated | MetaTagUpdated | MetaTagDeleted
     | IllustCreated | IllustUpdated | IllustDeleted | IllustSourceDataUpdated | IllustRelatedItemsUpdated | IllustImagesChanged
     | BookCreated | BookUpdated | BookDeleted | BookImagesChanged
     | FolderCreated | FolderUpdated | FolderDeleted | FolderPinChanged | FolderImagesChanged
@@ -45,15 +44,9 @@ export interface BackgroundTaskChanged extends BaseWsEvent<"app/background-task/
 
 //== 实体类相关的变更通知 ==
 
-export interface AnnotationCreated extends BaseWsEvent<"entity/annotation/created"> { annotationId: number, type: MetaType }
-
-export interface AnnotationUpdated extends BaseWsEvent<"entity/annotation/updated"> { annotationId: number, type: MetaType }
-
-export interface AnnotationDeleted extends BaseWsEvent<"entity/annotation/deleted"> { annotationId: number, type: MetaType }
-
 export interface MetaTagCreated extends BaseWsEvent<"entity/meta-tag/created"> { metaId: number, metaType: MetaType }
 
-export interface MetaTagUpdated extends BaseWsEvent<"entity/meta-tag/updated"> { metaId: number, metaType: MetaType, listUpdated: boolean, detailUpdated: boolean, annotationSot: boolean, parentSot: boolean, sourceTagMappingSot: boolean }
+export interface MetaTagUpdated extends BaseWsEvent<"entity/meta-tag/updated"> { metaId: number, metaType: MetaType, listUpdated: boolean, detailUpdated: boolean, parentSot: boolean, sourceTagMappingSot: boolean }
 
 export interface MetaTagDeleted extends BaseWsEvent<"entity/meta-tag/deleted"> { metaId: number, metaType: MetaType }
 

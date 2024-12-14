@@ -6,5 +6,6 @@ import Radio from "./Radio.vue"
 import Select from "./Select.vue"
 import SelectList from "./SelectList.vue"
 import ColorPicker from "./ColorPicker.vue"
+import SuggestInput from "./SuggestInput.vue"
 
-export { Input, NumberInput, RangeInput, CheckBox, Radio, Select, SelectList, ColorPicker }
+export { Input, NumberInput, RangeInput, SuggestInput, CheckBox, Radio, Select, SelectList, ColorPicker }

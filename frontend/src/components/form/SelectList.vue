@@ -37,25 +37,17 @@ const clear = () => {
 
 <template>
     <div :class="$style.select" @click="clear">
-        <template v-if="!!$slots.default">
-            <slot v-for="(item, idx) in items" 
-                :key="`${item.value}`"
-                :index="idx"
-                :value="item.value"
-                :label="item.label"
-                :selected="index !== undefined ? (idx === index) : value !== undefined ? (item.value === value) : false"
-                :click="(e: MouseEvent) => select(e, item.value, idx)"
-            />
-        </template>
-        <template v-else>
-            <div v-for="(item, idx) in items" 
-                :key="`${item.value}`" 
-                :index="idx"
-                :class="{[$style.item]: true, [$style.selected]: index !== undefined ? (idx === index) : value !== undefined ? (item.value === value) : false}" 
-                @click="select($event, item.value, idx)">
+        <slot v-for="(item, idx) in items"
+              :key="`${item.value}`"
+              :index="idx"
+              :value="item.value"
+              :label="item.label"
+              :selected="index !== undefined ? (idx === index) : value !== undefined ? (item.value === value) : false"
+              :click="(e: MouseEvent) => select(e, item.value, idx)">
+            <div :class="{[$style.item]: true, [$style.selected]: index !== undefined ? (idx === index) : value !== undefined ? (item.value === value) : false}" @click="select($event, item.value, idx)">
                 {{item.label}}
             </div>
-        </template>
+        </slot>
     </div>
 </template>
 

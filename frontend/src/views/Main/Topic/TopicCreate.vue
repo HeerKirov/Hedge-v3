@@ -19,7 +19,7 @@ const { form, setProperty, submit } = useTopicCreatePanel()
     <Container>
         <TopicDetailPanelForm :name="form.name" :other-names="form.otherNames"
                               :type="form.type" :parent="form.parent"
-                              :annotations="form.annotations" :keywords="form.keywords"
+                              :keywords="form.keywords"
                               :description="form.description" :score="form.score"
                               :mapping-source-tags="form.mappingSourceTags"
                               @set-property="setProperty"/>

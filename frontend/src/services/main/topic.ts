@@ -3,7 +3,6 @@ import { useLocalStorage } from "@/functions/app"
 import { useCreatingHelper, useFetchEndpoint, useRetrieveHelper, ErrorHandler, QueryListview, usePostFetchHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import { DetailTopic, ParentTopic, Topic, TopicCreateForm, TopicUpdateForm, TopicExceptions, TopicQueryFilter, TopicType } from "@/functions/http-client/api/topic"
-import { SimpleAnnotation } from "@/functions/http-client/api/annotations"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { useNavigationItem } from "@/services/base/side-nav-records"
 import { useListViewContext } from "@/services/base/list-view-context"
@@ -145,9 +144,7 @@ export function useTopicCreatePanel() {
                 message.showOkMessage("prompt", "该名称已存在。")
             }else if(e.code === "NOT_EXIST") {
                 const [type, id] = e.info
-                if(type === "annotations") {
-                    message.showOkMessage("error", "选择的注解不存在。", `错误项: ${id}`)
-                }else if(type === "parentId") {
+                if(type === "parentId") {
                     message.showOkMessage("error", "选择的父主题不存在。", `错误项: ${id}`)
                 }else if(type === "site") {
                     message.showOkMessage("error", `选择的来源站点不存在。`, `错误项: ${id}`)
@@ -156,10 +153,6 @@ export function useTopicCreatePanel() {
                 }else{
                     message.showOkMessage("error", `选择的资源${type}不存在。`, `错误项: ${id}`)
                 }
-            }else if(e.code === "NOT_SUITABLE") {
-                const [, ids] = e.info
-                const content = ids.map(id => form.value.annotations?.find(i => i.id === id)?.name ?? "unknown").join(", ")
-                message.showOkMessage("error", "选择的注解不可用。", `选择的注解的导出目标设置使其无法导出至当前主题类型。错误项: ${content}`)
             }else if(e.code === "RECURSIVE_PARENT") {
                 message.showOkMessage("prompt", "无法应用此父主题。", "此父主题与当前主题存在闭环。")
             }else if(e.code === "ILLEGAL_CONSTRAINT") {
@@ -289,7 +282,6 @@ function useTopicDetailPanelEditor(data: Readonly<Ref<DetailTopic | null>>, setD
             const updateForm: TopicUpdateForm = {
                 type: form.value.type !== data.value.type ? form.value.type : undefined,
                 parentId: (form.value.parent?.id ?? null) !== data.value.parentId ? (form.value.parent?.id ?? null) : undefined,
-                annotations: !objects.deepEquals(form.value.annotations.map(i => i.id), data.value.annotations.map(i => i.id)) ? form.value.annotations.map(i => i.id) : undefined,
                 keywords: !objects.deepEquals(form.value.keywords, data.value.keywords) ? form.value.keywords : undefined,
                 description: form.value.description !== data.value.description ? form.value.description : undefined,
                 score: form.value.score !== data.value.score ? form.value.score : undefined,
@@ -318,9 +310,7 @@ function useTopicDetailPanelEditor(data: Readonly<Ref<DetailTopic | null>>, setD
                     message.showOkMessage("prompt", "该名称已存在。")
                 }else if(e.code === "NOT_EXIST") {
                     const [type, id] = e.info
-                    if(type === "annotations") {
-                        message.showOkMessage("error", "选择的注解不存在。", `错误项: ${id}`)
-                    }else if(type === "parentId") {
+                    if(type === "parentId") {
                         message.showOkMessage("error", "选择的父主题不存在。", `错误项: ${id}`)
                     }else if(type === "site") {
                         message.showOkMessage("error", `选择的来源站点不存在。`, `错误项: ${id}`)
@@ -329,11 +319,6 @@ function useTopicDetailPanelEditor(data: Readonly<Ref<DetailTopic | null>>, setD
                     }else{
                         message.showOkMessage("error", `选择的资源${type}不存在。`, `错误项: ${id}`)
                     }
-                }else if(e.code === "NOT_SUITABLE") {
-                    const [, id] = e.info
-                    const content = id.map(id => form.value?.annotations?.find(i => i.id === id)?.name ?? "unknown").join(", ")
-
-                    message.showOkMessage("error", "选择的注解不可用。", `选择的注解的导出目标设置使其无法导出至当前主题类型。错误项: ${content}`)
                 }else if(e.code === "RECURSIVE_PARENT") {
                     message.showOkMessage("prompt", "无法应用此父主题。", "此父主题与当前主题存在闭环。")
                 }else if(e.code === "ILLEGAL_CONSTRAINT") {
@@ -360,7 +345,6 @@ interface TopicUpdateFormData {
     otherNames: string[]
     type: TopicType
     parent: ParentTopic | null
-    annotations: SimpleAnnotation[]
     keywords: string[]
     description: string
     score: number | null
@@ -376,7 +360,6 @@ function mapTemplateToCreateForm(template: Partial<DetailTopic> | null, defaultT
         description: template?.description ?? "",
         keywords: template?.keywords ?? [],
         favorite: template?.favorite ?? false,
-        annotations: template?.annotations ?? [],
         score: template?.score ?? null,
         mappingSourceTags: template?.mappingSourceTags ?? []
     }
@@ -391,7 +374,6 @@ function mapCreateFormToHelper(form: TopicCreateFormData): TopicCreateForm {
         description: form.description,
         keywords: form.keywords,
         favorite: form.favorite,
-        annotations: form.annotations.map(a => a.id),
         score: form.score,
         mappingSourceTags: patchMappingSourceTagForm(form.mappingSourceTags, [])
     }
@@ -405,7 +387,6 @@ function mapDataToUpdateForm(data: DetailTopic): TopicUpdateFormData {
         type: data.type,
         description: data.description,
         keywords: data.keywords,
-        annotations: data.annotations,
         score: data.score,
         mappingSourceTags: data.mappingSourceTags
     }

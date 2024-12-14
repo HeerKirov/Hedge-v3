@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { Block, Icon, Tag } from "@/components/universal"
-import { Flex, FlexItem, Group } from "@/components/layout"
-import { AnnotationElement } from "@/components-business/element"
+import { Block, Icon } from "@/components/universal"
+import { MetaKeywordDisplay } from "@/components-business/form-display"
+import { Flex, FlexItem } from "@/components/layout"
 import { Author } from "@/functions/http-client/api/author"
 import { AUTHOR_TYPE_ICONS } from "@/constants/entity"
 import { useAssets } from "@/functions/app"
@@ -34,25 +34,17 @@ const otherNameText = computed(() => {
     return ""
 })
 
-const actualKeywordsAndAnnotations = computed(() => {
+const actualKeywords = computed(() => {
     const max = 12
-    const keywordsSize = props.item.keywords.length, annotationsSize = props.item.annotations.length
-    if(keywordsSize + annotationsSize <= max) {
+    const keywordsSize = props.item.keywords.length
+    if(keywordsSize <= max) {
         return {
             keywords: props.item.keywords,
-            annotations: props.item.annotations,
             more: false
-        }
-    }else if(annotationsSize < max) {
-        return {
-            keywords: props.item.keywords.slice(0, max - annotationsSize),
-            annotations: props.item.annotations,
-            more: true
         }
     }else{
         return {
-            keywords: [],
-            annotations: props.item.annotations.slice(0, max),
+            keywords: props.item.keywords.slice(0, max),
             more: true
         }
     }
@@ -90,11 +82,10 @@ const { hover, ...hoverEvents } = useMouseHover()
                 </div>
             </FlexItem>
             <FlexItem :width="40">
-                <Group class="pt-2 is-overflow-y-auto">
-                    <AnnotationElement v-for="a in actualKeywordsAndAnnotations.annotations" :key="a.id" :value="a"/>
-                    <Tag v-for="k in actualKeywordsAndAnnotations.keywords" color="secondary">{{k}}</Tag>
-                    <Tag v-if="actualKeywordsAndAnnotations.more" color="secondary">...</Tag>
-                </Group>
+                <div class="pt-2 flex multiline is-overflow-y-auto">
+                    <MetaKeywordDisplay :value="actualKeywords.keywords" color="secondary"/>
+                    <b v-if="actualKeywords.more" class="ml-1 has-text-secondary">...</b>
+                </div>
             </FlexItem>
             <FlexItem :shrink="0" :grow="0">
                 <div :class="$style['score-and-count']">
