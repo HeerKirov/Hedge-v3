@@ -40,11 +40,10 @@ interface SequenceBody : IndexedSemanticNode
 data class Element(val prefix: Symbol?, val items: List<SFP>, override val beginIndex: Int, override val endIndex: Int) : SequenceBody
 
 /**
- * 注解。
- * @param prefix 注解的前缀符号，包括(@ # $)。
- * @param items 注解的内容项，彼此之间通过或(|)连接。
+ * 括号标记。
+ * @param items 内容项，彼此之间通过空格分开。
  */
-data class Annotation(val prefix: Symbol?, val items: List<Str>, override val beginIndex: Int, override val endIndex: Int) : SequenceBody
+data class Bracket(val items: List<Str>, override val beginIndex: Int, override val endIndex: Int) : SequenceBody
 
 /**
  * 主系表结构。
@@ -72,7 +71,6 @@ interface Predicative : IndexedSemanticNode
 
 /**
  * 形式为a.b.c的字符串项。
- * @param items 字符串的项列表。
  */
 abstract class StrList : Subject, Predicative {
     abstract val items: List<Str>
@@ -106,7 +104,6 @@ data class Range(val from: Str, val to: Str, val includeFrom: Boolean, val inclu
 
 /**
  * 排序列表。
- * @param items 排序列表的项，彼此之间通过(,)连接。
  */
 abstract class SortList : Predicative {
     abstract val items: List<SortItem>

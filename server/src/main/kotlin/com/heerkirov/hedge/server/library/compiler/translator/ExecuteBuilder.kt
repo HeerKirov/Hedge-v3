@@ -21,12 +21,12 @@ interface ExecuteBuilder {
         throw UnsupportedOperationException("Unsupported element type 'name'.")
     }
 
-    fun mapSourceTagElement(unionItems: List<ElementSourceTag>, exclude: Boolean) {
-        throw UnsupportedOperationException("Unsupported element type 'source-tag'.")
+    fun mapCommentElement(unionItems: List<ElementString>, exclude: Boolean) {
+        throw UnsupportedOperationException("Unsupported element type 'description'.")
     }
 
-    fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean) {
-        throw UnsupportedOperationException("Unsupported element type 'annotation'.")
+    fun mapSourceTagElement(unionItems: List<ElementSourceTag>, exclude: Boolean) {
+        throw UnsupportedOperationException("Unsupported element type 'source-tag'.")
     }
 
     fun mapTopicElement(unionItems: List<ElementTopic>, exclude: Boolean) {

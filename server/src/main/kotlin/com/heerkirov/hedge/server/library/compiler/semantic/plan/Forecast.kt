@@ -6,8 +6,8 @@ sealed interface Forecast {
     val endIndex: Int
 }
 
-data class ForecastAnnotationElement(val item: MetaString, val metaType: MetaType?, val isForMeta: Boolean, override val beginIndex: Int, override val endIndex: Int) : Forecast {
-    override val type get() = "annotation"
+data class ForecastKeywordElement(val item: MetaString, val metaType: MetaType, override val beginIndex: Int, override val endIndex: Int) : Forecast {
+    override val type get() = "keyword"
 }
 
 data class ForecastMetaTagElement(val address: MetaAddress, override val type: String, override val beginIndex: Int, override val endIndex: Int) : Forecast {

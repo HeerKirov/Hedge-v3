@@ -87,13 +87,13 @@ object StrTemplate {
         if (lastIndex < sql.length) {
             result.add(sql.substring(lastIndex))
         }
-        return result.asSequence().map { trimAnyAnnotation(it) }.map { trimWhitespace(it) }.filter { it.isNotEmpty() }.toList()
+        return result.asSequence().map { trimAnyComment(it) }.map { trimWhitespace(it) }.filter { it.isNotEmpty() }.toList()
     }
 
     /**
      * 去除SQL语句内的任何注释。
      */
-    private fun trimAnyAnnotation(s: String): String {
+    private fun trimAnyComment(s: String): String {
         var str = s
         val stack: MutableList<Int> = LinkedList()
         var lastIndex = -1

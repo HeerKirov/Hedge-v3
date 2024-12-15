@@ -4,8 +4,7 @@ import com.heerkirov.hedge.server.library.compiler.grammar.GrammarAnalyzer
 import com.heerkirov.hedge.server.library.compiler.lexical.LexicalAnalyzer
 import com.heerkirov.hedge.server.library.compiler.semantic.*
 import com.heerkirov.hedge.server.library.compiler.semantic.dialect.BookDialect
-import com.heerkirov.hedge.server.library.compiler.semantic.dialect.AnnotationDialect
-import com.heerkirov.hedge.server.library.compiler.semantic.dialect.AuthorAndTopicDialect
+import com.heerkirov.hedge.server.library.compiler.semantic.dialect.AuthorDialect
 import com.heerkirov.hedge.server.library.compiler.semantic.dialect.IllustDialect
 import com.heerkirov.hedge.server.library.compiler.semantic.framework.QueryDialect
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.*
@@ -235,91 +234,45 @@ class SemanticAnalyzerTest {
             elements = listOf(
                 nameElementOf(MetaString("hello"))
             )
-        )), parse("hello", AuthorAndTopicDialect::class))
-        assertEquals(AnalysisResult(QueryPlan(
-            sorts = emptyList(),
-            filters = emptyList(),
-            elements = listOf(
-                nameElementOf(MetaString("hello"))
-            )
-        )), parse("hello", AnnotationDialect::class))
-        assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            ElementPrefixNotRequired("name", 0, 6)
-        )), parse("@hello", AnnotationDialect::class))
-        assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            ElementValueNotRequired("name", 0, 7)
-        )), parse("hello:1", AnnotationDialect::class))
+        )), parse("hello", AuthorDialect::class))
     }
 
     @Test
-    fun testAnnotation() {
+    fun testComment() {
         assertEquals(AnalysisResult(QueryPlan(
             sorts = emptyList(),
             filters = emptyList(),
             elements = listOf(
-                annotationElementOf(MetaString("a"), metaType = null)
+                commentElementOf(MetaString("a"))
             )
         )), parse("[a]", IllustDialect::class))
-        //测试注解前缀
-        assertEquals(AnalysisResult(QueryPlan(
-            sorts = emptyList(),
-            filters = emptyList(),
-            elements = listOf(
-                annotationElementOf(MetaString("a"), metaType = MetaType.AUTHOR)
-            )
-        )), parse("[@a]", IllustDialect::class))
-        assertEquals(AnalysisResult(QueryPlan(
-            sorts = emptyList(),
-            filters = emptyList(),
-            elements = listOf(
-                annotationElementOf(MetaString("a"), metaType = MetaType.TOPIC)
-            )
-        )), parse("[#a]", IllustDialect::class))
-        assertEquals(AnalysisResult(QueryPlan(
-            sorts = emptyList(),
-            filters = emptyList(),
-            elements = listOf(
-                annotationElementOf(MetaString("a"), metaType = MetaType.TAG)
-            )
-        )), parse("[${'$'}a]", IllustDialect::class))
         //测试排除和错误的source
         assertEquals(AnalysisResult(QueryPlan(
             sorts = emptyList(),
             filters = emptyList(),
             elements = listOf(
-                annotationElementOf(MetaString("a"), metaType = null, exclude = true)
+                commentElementOf(MetaString("a"), exclude = true)
             )
         )), parse("-[a]", IllustDialect::class))
         assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            AnnotationCannotHaveSourceFlag(0, 4)
+            BracketCannotHaveSourceFlag(0, 4)
         )), parse("^[a]", IllustDialect::class))
-        //测试注解关系
+        //测试多个字符串
         assertEquals(AnalysisResult(QueryPlan(
             sorts = emptyList(),
             filters = emptyList(),
             elements = listOf(
-                annotationElementOf(MetaString("a"), MetaString("b", precise = true), metaType = null)
+                commentElementOf(MetaString("a"), MetaString("b", precise = true))
             )
-        )), parse("[a|`b`]", IllustDialect::class))
+        )), parse("[a `b`]", IllustDialect::class))
         assertEquals(AnalysisResult(QueryPlan(
             sorts = emptyList(),
             filters = emptyList(),
             elements = listOf(
-                annotationElementOf(MetaString("a", precise = true), MetaString("b"), metaType = null),
-                annotationElementOf(MetaString("updating"), metaType = MetaType.TOPIC)
+                commentElementOf(MetaString("a", precise = true), MetaString("b")),
+                commentElementOf(MetaString("updating"))
             )
-        )), parse("[`a`|b][#updating]", IllustDialect::class))
-        //测试其他方言的注解
-        assertEquals(AnalysisResult(QueryPlan(
-            sorts = emptyList(),
-            filters = emptyList(),
-            elements = listOf(
-                metaAnnotationElementOf(MetaString("a"))
-            )
-        )), parse("[a]", AuthorAndTopicDialect::class))
-        assertEquals(AnalysisResult<QueryPlan, SemanticError<*>>(null, errors = listOf(
-            ElementPrefixNotRequired("annotation", 0, 4)
-        )), parse("[@a]", AuthorAndTopicDialect::class))
+        )), parse("[`a` b][updating]", IllustDialect::class))
     }
 
     @Test
@@ -679,9 +632,7 @@ class SemanticAnalyzerTest {
 
     private fun tagElementOf(vararg items: MetaValue, metaType: MetaType? = null, exclude: Boolean = false) = TagElementImpl(items.toList(), metaType, exclude)
 
-    private fun annotationElementOf(vararg items: MetaString, metaType: MetaType?, exclude: Boolean = false) = AnnotationElement(items.toList(), metaType, exclude)
-
-    private fun metaAnnotationElementOf(vararg items: MetaString, exclude: Boolean = false) = AnnotationElementForMeta(items.toList(), exclude)
+    private fun commentElementOf(vararg items: MetaString, exclude: Boolean = false) = CommentElementForMeta(items.toList(), exclude)
 
     private fun sourceElementOf(vararg items: SimpleMetaValue, exclude: Boolean = false) = SourceTagElement(items.toList(), exclude)
 

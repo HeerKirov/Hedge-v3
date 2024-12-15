@@ -1,7 +1,7 @@
 package com.heerkirov.hedge.server.library.compiler.semantic
 
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.*
-import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Annotation as SemanticAnnotation
+import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Bracket as SemanticBracket
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Element as SemanticElement
 import com.heerkirov.hedge.server.library.compiler.semantic.dialect.*
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.Forecast
@@ -20,7 +20,7 @@ import kotlin.reflect.full.memberProperties
  * 语义分析。执行语义树 -> 查询计划的步骤。
  */
 object SemanticAnalyzer {
-    private val dialects = arrayOf(IllustDialect, BookDialect, AuthorAndTopicDialect, AnnotationDialect, SourceDataDialect).associate { it::class to DialectStructure(it) }
+    private val dialects = arrayOf(IllustDialect, BookDialect, AuthorDialect, TopicDialect, SourceDataDialect).associate { it::class to DialectStructure(it) }
 
     /**
      * 执行语义分析。
@@ -106,14 +106,14 @@ object SemanticAnalyzer {
                         else -> collector.error(IdentifiesAndElementsCannotBeMixed(sequenceItem.body.beginIndex, sequenceItem.body.endIndex))
                     }
                 }
-                is SemanticAnnotation -> {
-                    //项是注解元素
+                is SemanticBracket -> {
+                    //项是括号标记
                     if(sequenceItem.source) {
-                        collector.error(AnnotationCannotHaveSourceFlag(sequenceItem.beginIndex, sequenceItem.endIndex))
+                        collector.error(BracketCannotHaveSourceFlag(sequenceItem.beginIndex, sequenceItem.endIndex))
                         continue
                     }
                     try {
-                        val result = dialect.annotationElementGenerator.generate(sequenceItem.body, sequenceItem.minus)
+                        val result = dialect.bracketElementGenerator.generate(sequenceItem.body, sequenceItem.minus)
                         elements.add(result)
                     }catch (e: ThrowsSemanticError) {
                         e.errors.forEach { collector.error(it) }
@@ -177,9 +177,9 @@ object SemanticAnalyzer {
                     return null
                 }
             }
-            is SemanticAnnotation -> {
+            is SemanticBracket -> {
                 return try {
-                    dialect.annotationElementGenerator.forecast(sequenceItem.body, sequenceItem.minus, cursorIndex)
+                    dialect.bracketElementGenerator.forecast(sequenceItem.body, sequenceItem.minus, cursorIndex)
                 }catch (e: ThrowsSemanticError) {
                     null
                 }
@@ -229,9 +229,9 @@ object SemanticAnalyzer {
         val sourceElementGenerator: ElementFieldByElement = dialect.elements.asSequence().filterIsInstance<ElementFieldByElement>().filter { it.forSourceFlag }.firstOrNull() ?: DefaultSourceElementField
 
         /**
-         * 此方言对annotation类型元素的生成方案。
+         * 此方言对bracket类型元素的生成方案。
          */
-        val annotationElementGenerator: ElementFieldByAnnotation = dialect.elements.asSequence().filterIsInstance<ElementFieldByAnnotation>().firstOrNull() ?: DefaultAnnotationElementField
+        val bracketElementGenerator: ElementFieldByBracket = dialect.elements.asSequence().filterIsInstance<ElementFieldByBracket>().firstOrNull() ?: DefaultBracketElementField
 
         /**
          * 此方言对identify的生成方案。key是toString后的alias，value是生成器。
@@ -282,12 +282,12 @@ object SemanticAnalyzer {
     }
 
     /**
-     * 如果方言没有定义对注解元素的生成方案的默认值。
+     * 如果方言没有定义对bracket元素的生成方案的默认值。
      */
-    object DefaultAnnotationElementField : ElementFieldByAnnotation() {
+    object DefaultBracketElementField : ElementFieldByBracket() {
         override val itemName = "unknown"
-        override fun generate(annotation: SemanticAnnotation, minus: Boolean) = semanticError(UnsupportedSemanticStructure(UnsupportedSemanticStructure.SemanticType.ANNOTATION, annotation.beginIndex, annotation.endIndex))
+        override fun generate(bracket: SemanticBracket, minus: Boolean) = semanticError(UnsupportedSemanticStructure(UnsupportedSemanticStructure.SemanticType.BRACKET, bracket.beginIndex, bracket.endIndex))
 
-        override fun forecast(annotation: SemanticAnnotation, minus: Boolean, cursorIndex: Int) = null
+        override fun forecast(bracket: SemanticBracket, minus: Boolean, cursorIndex: Int) = null
     }
 }

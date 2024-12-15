@@ -22,7 +22,7 @@ class QueryManager(private val appdata: AppDataManager, private val data: DataRe
     private val executePlanCache = CacheMap<DialectAndText, QuerySchema>(100)
 
     init {
-        //监听meta tag、annotation、source tag的变化，刷新缓存
+        //监听meta tag、source tag的变化，刷新缓存
         bus.on(arrayOf(MetaTagEntityEvent::class, SourceTagUpdated::class), ::flushCacheByEvent)
         //监听query option的变化，刷新查询选项
         bus.on(SettingQueryChanged::class) { options.flushOptionsByEvent() }
@@ -44,8 +44,8 @@ class QueryManager(private val appdata: AppDataManager, private val data: DataRe
             val semanticResult = SemanticAnalyzer.parse(grammarResult.result, when (key.dialect) {
                 Dialect.ILLUST -> IllustDialect::class
                 Dialect.BOOK -> BookDialect::class
-                Dialect.AUTHOR, Dialect.TOPIC -> AuthorAndTopicDialect::class
-                Dialect.ANNOTATION -> AnnotationDialect::class
+                Dialect.AUTHOR -> AuthorDialect::class
+                Dialect.TOPIC -> TopicDialect::class
                 Dialect.SOURCE_DATA -> SourceDataDialect::class
             })
             if(semanticResult.result == null) {
@@ -54,9 +54,8 @@ class QueryManager(private val appdata: AppDataManager, private val data: DataRe
             val builder = when (key.dialect) {
                 Dialect.ILLUST -> IllustExecutePlanBuilder(data.db)
                 Dialect.BOOK -> BookExecutePlanBuilder(data.db)
-                Dialect.AUTHOR -> AuthorExecutePlanBuilder(data.db)
-                Dialect.TOPIC -> TopicExecutePlanBuilder(data.db)
-                Dialect.ANNOTATION -> AnnotationExecutePlanBuilder()
+                Dialect.AUTHOR -> AuthorExecutePlanBuilder()
+                Dialect.TOPIC -> TopicExecutePlanBuilder()
                 Dialect.SOURCE_DATA -> SourceDataExecutePlanBuilder(data.db)
             }
             val translatorResult = Translator.parse(semanticResult.result, queryer, builder, options)
@@ -85,8 +84,8 @@ class QueryManager(private val appdata: AppDataManager, private val data: DataRe
             grammarResult.result, cursorIndex ?: text.length, when (dialect) {
                 Dialect.ILLUST -> IllustDialect::class
                 Dialect.BOOK -> BookDialect::class
-                Dialect.AUTHOR, Dialect.TOPIC -> AuthorAndTopicDialect::class
-                Dialect.ANNOTATION -> AnnotationDialect::class
+                Dialect.AUTHOR -> AuthorDialect::class
+                Dialect.TOPIC -> TopicDialect::class
                 Dialect.SOURCE_DATA -> SourceDataDialect::class
             }
         ) ?: return null
@@ -116,9 +115,9 @@ class QueryManager(private val appdata: AppDataManager, private val data: DataRe
         queryer.flushCacheOf(cacheType)
     }
 
-    enum class Dialect { ILLUST, BOOK, TOPIC, AUTHOR, ANNOTATION, SOURCE_DATA }
+    enum class Dialect { ILLUST, BOOK, TOPIC, AUTHOR, SOURCE_DATA }
 
-    enum class CacheType { TAG, TOPIC, AUTHOR, ANNOTATION, SOURCE_TAG }
+    enum class CacheType { TAG, TOPIC, AUTHOR, SOURCE_TAG }
 
     data class QuerySchema(val visualQueryPlan: VisualQueryPlan?, val executePlan: ExecutePlan?, val warnings: List<CompileError<*>>, val errors: List<CompileError<*>>)
 

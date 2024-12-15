@@ -13,7 +13,7 @@ data class QueryPlan(
      */
     val filters: IntersectFilters,
     /**
-     * 连接元素项。不由关键字导出的元素集合，包括标签、注解等。
+     * 连接元素项。不由关键字导出的元素集合，如标签。
      */
     val elements: Elements
 ) {

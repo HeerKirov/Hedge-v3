@@ -1,6 +1,6 @@
 package com.heerkirov.hedge.server.library.compiler.semantic.framework
 
-import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Annotation
+import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Bracket
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Element as SemanticElement
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Family
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Predicative
@@ -48,18 +48,18 @@ interface GeneratedByElement<R : Any> {
 }
 
 /**
- * 此element从一个注解元素生成。
+ * 此element从一个括号标记元素生成。
  */
-interface GeneratedByAnnotation<R : Any> {
+interface GeneratedByBracket<R : Any> {
     /**
-     * 从一整个注解构造结果。
+     * 从一整个bracket构造结果。
      */
-    fun generate(annotation: Annotation, minus: Boolean): R
+    fun generate(bracket: Bracket, minus: Boolean): R
 
     /**
-     * 从注解进行光标位置的预测。
+     * 从bracket进行光标位置的预测。
      */
-    fun forecast(annotation: Annotation, minus: Boolean, cursorIndex: Int): Forecast?
+    fun forecast(bracket: Bracket, minus: Boolean, cursorIndex: Int): Forecast?
 }
 
 /**
@@ -106,9 +106,9 @@ abstract class FilterFieldByIdentify<V : FilterValue> : FilterFieldDefinition<V>
 abstract class ElementFieldByElement : ElementFieldDefinition, GeneratedByElement<Element<*>>
 
 /**
- * 用注解元素生成JoinElement。
+ * 用括号标记元素生成JoinElement。
  */
-abstract class ElementFieldByAnnotation : ElementFieldDefinition, GeneratedByAnnotation<Element<*>>
+abstract class ElementFieldByBracket : ElementFieldDefinition, GeneratedByBracket<Element<*>>
 
 /**
  * 从关键字指示的项生成Filter。

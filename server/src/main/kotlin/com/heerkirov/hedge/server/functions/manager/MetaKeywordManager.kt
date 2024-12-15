@@ -68,7 +68,7 @@ class MetaKeywordManager(private val data: DataRepository) {
             .select()
             .whereWithConditions {
                 it += Keywords.tagType eq metaType
-                if(!prefix.isNullOrEmpty()) Keywords.keyword like "$prefix%"
+                if(!prefix.isNullOrEmpty()) it += Keywords.keyword like "$prefix%"
             }
             .orderBy(Keywords.lastUsedTime.desc())
             .limit(limit)

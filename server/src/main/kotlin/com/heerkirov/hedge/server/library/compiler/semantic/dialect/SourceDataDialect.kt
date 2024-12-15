@@ -9,7 +9,7 @@ object SourceDataDialect : QueryDialect<SourceDataDialect.SortItem> {
         item(SortItem.SOURCE_ID, "source-id", "id")
         item(SortItem.PUBLISH_TIME, "publish-time", "publish", "bt")
     }
-    override val elements: Array<out ElementFieldDefinition> = arrayOf(SourceTagElementField(false))
+    override val elements: Array<out ElementFieldDefinition> = arrayOf(DescriptionFilterElementField(), SourceTagElementField(false))
 
     val sourceSite = stringField("SOURCE_SITE", "source", "src", "site")
     val sourceId = patternStringField("SOURCE_ID", "source-id", "id", exact = true)

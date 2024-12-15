@@ -40,14 +40,9 @@ enum class MetaType {
 data class NameElementForMeta(override val items: List<MetaString>, override val exclude: Boolean) : Element<MetaString>
 
 /**
- * 实现为注解的连接元素。注解元素的每一个子项都是一个简单的String。这是为author/topic dialect准备的注解元素，没有元素类型。
+ * 实现为描述信息的连接元素。
  */
-data class AnnotationElementForMeta(override val items: List<MetaString>, override val exclude: Boolean) : Element<MetaString>
-
-/**
- * 实现为注解的连接元素。注解元素的每一个子项都是一个简单的String。它可以指定多个连接目标类型。
- */
-data class AnnotationElement(override val items: List<MetaString>, val metaType: MetaType?, override val exclude: Boolean) : Element<MetaString>
+data class CommentElementForMeta(override val items: List<MetaString>, override val exclude: Boolean) : Element<MetaString>
 
 /**
  * 实现为源标签的连接元素。

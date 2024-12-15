@@ -1,6 +1,7 @@
 package com.heerkirov.hedge.server.functions.manager.query
 
 import com.heerkirov.hedge.server.dao.Annotations
+import com.heerkirov.hedge.server.dao.Keywords
 import com.heerkirov.hedge.server.dao.MetaTagTable
 import com.heerkirov.hedge.server.dao.SourceTags
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.MetaAddress
@@ -25,17 +26,6 @@ internal object MetaParserUtil {
         }else{
             val value = mapMatchToSqlLike(metaString.value)
             (metaTag.name escapeLike value) or (metaTag.otherNames escapeLike "%|$value|%")
-        }
-    }
-
-    /**
-     * 将metaString的值编译为对annotation的等价或比较操作。
-     */
-    fun compileNameString(metaString: MetaString, annotation: Annotations): BinaryExpression<Boolean> {
-        return if(metaString.precise) {
-            annotation.name eq metaString.value
-        }else{
-            Annotations.name like mapMatchToSqlLike(metaString.value)
         }
     }
 
@@ -84,13 +74,13 @@ internal object MetaParserUtil {
     }
 
     /**
-     * 将metaString的值编译为对annotation的等价或比较操作。该函数用于预测查询。
+     * 将metaString的值编译为对keyword的等价或比较操作。该函数用于预测查询。
      */
-    fun forecastNameString(metaString: MetaString, annotation: Annotations): BinaryExpression<Boolean> {
+    fun forecastNameString(metaString: MetaString, keyword: Keywords): BinaryExpression<Boolean> {
         return if(metaString.precise) {
-            annotation.name like '%' + mapMatchToSqlLike(metaString.value, escape = false) + '%'
+            keyword.keyword like '%' + mapMatchToSqlLike(metaString.value, escape = false) + '%'
         } else {
-            annotation.name like '%' + mapMatchToSqlLike(metaString.value) + '%'
+            keyword.keyword like '%' + mapMatchToSqlLike(metaString.value) + '%'
         }
     }
 

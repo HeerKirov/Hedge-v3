@@ -34,6 +34,7 @@ class ElementMatchedButNotGroup(item: String, goal: MatchGoal) : TranslatorError
 /**
  * (warning)此注解的匹配结果是不能被导出的，因此在illust/book查询中无法引用此注解。此项会被忽略。
  */
+@Deprecated("Annotation is deprecated.")
 class ElementCannotBeExported(item: String) : TranslatorError<String>(4006, "Annotation '$item' cannot be exported, so it cannot be used in illust/book query.", info = item)
 
 /**

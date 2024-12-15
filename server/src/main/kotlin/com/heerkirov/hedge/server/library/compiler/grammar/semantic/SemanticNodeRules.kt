@@ -39,10 +39,10 @@ class SemanticNodeRules {
 
     @ForExpressions([
         ForExpression("SEQUENCE_BODY -> ELEMENT"),
-        ForExpression("SEQUENCE_BODY -> ANNOTATION")
+        ForExpression("SEQUENCE_BODY -> BRACKET")
     ])
-    fun eval8And9(elementOrAnnotation: SequenceBody): SequenceBody {
-        return elementOrAnnotation
+    fun eval8And9(elementOrBracket: SequenceBody): SequenceBody {
+        return elementOrBracket
     }
 
     @ForExpression("ELEMENT -> ELEMENT_ITEM")
@@ -55,40 +55,32 @@ class SemanticNodeRules {
         return Element(symbol, items.toList(), symbol.beginIndex, items.endIndex)
     }
 
-    @ForExpression("ANNOTATION -> [ ANNOTATION_ITEM ]")
-    fun eval12(begin: Symbol, items: MutList<Str>, end: Symbol): Annotation {
-        return Annotation(null, items.toList(), begin.beginIndex, end.endIndex)
-    }
-
-    @ForExpression("ANNOTATION -> [ ELEMENT_PREFIX ANNOTATION_ITEM ]")
-    fun eval13(begin: Symbol, symbol: Symbol, items: MutList<Str>, end: Symbol): Annotation {
-        return Annotation(symbol, items.toList(), begin.beginIndex, end.endIndex)
-    }
-
     @ForExpressions([
         ForExpression("ELEMENT_PREFIX -> @"),
         ForExpression("ELEMENT_PREFIX -> #"),
         ForExpression("ELEMENT_PREFIX -> $")
     ])
-    fun eval14And15And16(symbol: Symbol): Symbol {
+    fun eval12And13And14(symbol: Symbol): Symbol {
         return symbol
     }
 
-    @ForExpression("ANNOTATION_ITEM -> str")
-    fun eval17(str: Str): MutList<Str> {
+    @ForExpression("BRACKET -> [ BRACKET_ITEM ]")
+    fun eval15(begin: Symbol, items: MutList<Str>, end: Symbol): Bracket {
+        return Bracket(items.toList(), begin.beginIndex, end.endIndex)
+    }
+
+    @ForExpression("BRACKET_ITEM -> str")
+    fun eval16(str: Str): MutList<Str> {
         return MutList(mutableListOf(str))
     }
 
-    @ForExpressions([
-        ForExpression("ANNOTATION_ITEM -> ANNOTATION_ITEM | str", args = [0, 2]),
-        ForExpression("ANNOTATION_ITEM -> ANNOTATION_ITEM / str", args = [0, 2])
-    ])
-    fun eval18And19(mutList: MutList<Str>, str: Str): MutList<Str> {
+    @ForExpression("BRACKET_ITEM -> BRACKET_ITEM str")
+    fun eval17(mutList: MutList<Str>, str: Str): MutList<Str> {
         return mutList.add(str)
     }
 
     @ForExpression("ELEMENT_ITEM -> SFP")
-    fun eval20(sfp: SFP): MutList<SFP> {
+    fun eval18(sfp: SFP): MutList<SFP> {
         return MutList(mutableListOf(sfp))
     }
 
@@ -96,27 +88,27 @@ class SemanticNodeRules {
         ForExpression("ELEMENT_ITEM -> ELEMENT_ITEM | SFP", args = [0, 2]),
         ForExpression("ELEMENT_ITEM -> ELEMENT_ITEM / SFP", args = [0, 2])
     ])
-    fun eval21And22(mutList: MutList<SFP>, sfp: SFP): MutList<SFP> {
+    fun eval19And20(mutList: MutList<SFP>, sfp: SFP): MutList<SFP> {
         return mutList.add(sfp)
     }
 
     @ForExpression("SFP -> SUBJECT")
-    fun eval23(subject: Subject): SFP {
+    fun eval21(subject: Subject): SFP {
         return SFP(subject, null, null, subject.beginIndex, subject.endIndex)
     }
 
     @ForExpression("SFP -> SUBJECT UNARY_FAMILY")
-    fun eval24(subject: Subject, family: Family): SFP {
+    fun eval22(subject: Subject, family: Family): SFP {
         return SFP(subject, family, null, subject.beginIndex, family.endIndex)
     }
 
     @ForExpression("SFP -> SUBJECT FAMILY PREDICATIVE")
-    fun eval25(subject: Subject, family: Family, predicative: Predicative): SFP {
+    fun eval23(subject: Subject, family: Family, predicative: Predicative): SFP {
         return SFP(subject, family, predicative, subject.beginIndex, predicative.endIndex)
     }
 
     @ForExpression("SUBJECT -> STRING")
-    fun eval26(strList: StrList): Subject {
+    fun eval24(strList: StrList): Subject {
         return strList
     }
 
@@ -130,7 +122,7 @@ class SemanticNodeRules {
         ForExpression("FAMILY -> <="),
         ForExpression("FAMILY -> ~")
     ])
-    fun eval27To34(symbol: Symbol): Family {
+    fun eval25To32(symbol: Symbol): Family {
         return Family(symbol.value, symbol.beginIndex, symbol.endIndex)
     }
 
@@ -140,43 +132,43 @@ class SemanticNodeRules {
         ForExpression("PREDICATIVE -> RANGE"),
         ForExpression("PREDICATIVE -> SORT_LIST")
     ])
-    fun eval35To38(predicative: Predicative): Predicative {
+    fun eval33To36(predicative: Predicative): Predicative {
         return predicative
     }
 
     @ForExpression("STRING -> str")
-    fun eval39(str: Str): StrList {
+    fun eval37(str: Str): StrList {
         return StrListImpl(mutableListOf(str), str.beginIndex, str.endIndex)
     }
 
     @ForExpression("STRING -> STRING . str", args = [0, 2])
-    fun eval40(strListImpl: StrListImpl, str: Str): StrList {
+    fun eval38(strListImpl: StrListImpl, str: Str): StrList {
         return strListImpl.add(str)
     }
 
 
     @ForExpression("COLLECTION -> { }")
-    fun eval41(begin: Symbol, end: Symbol): Col {
+    fun eval39(begin: Symbol, end: Symbol): Col {
         return Col(emptyList(), begin.beginIndex, end.endIndex)
     }
 
     @ForExpression("COLLECTION -> { COLLECTION_ITEM }")
-    fun eval42(begin: Symbol, mutList: MutList<Str>, end: Symbol): Col {
+    fun eval40(begin: Symbol, mutList: MutList<Str>, end: Symbol): Col {
         return Col(mutList.toList(), begin.beginIndex, end.endIndex)
     }
 
     @ForExpression("COLLECTION_ITEM -> str")
-    fun eval43(str: Str): MutList<Str> {
+    fun eval41(str: Str): MutList<Str> {
         return MutList(mutableListOf(str))
     }
 
     @ForExpression("COLLECTION_ITEM -> COLLECTION_ITEM , str", args = [0, 2])
-    fun eval44(mutList: MutList<Str>, str: Str): MutList<Str> {
+    fun eval42(mutList: MutList<Str>, str: Str): MutList<Str> {
         return mutList.add(str)
     }
 
     @ForExpression("RANGE -> RANGE_BEGIN str , str RANGE_END", args = [0, 1, 3, 4])
-    fun eval45(beginSymbol: Symbol, beginStr: Str, endStr: Str, endSymbol: Symbol): Range {
+    fun eval43(beginSymbol: Symbol, beginStr: Str, endStr: Str, endSymbol: Symbol): Range {
         return Range(beginStr, endStr, includeFrom = beginSymbol.value == "[", includeTo = endSymbol.value == "]", beginSymbol.beginIndex, endSymbol.endIndex)
     }
 
@@ -186,22 +178,22 @@ class SemanticNodeRules {
         ForExpression("RANGE_END -> ]"),
         ForExpression("RANGE_END -> )")
     ])
-    fun eval46To49(symbol: Symbol): Symbol {
+    fun eval44To47(symbol: Symbol): Symbol {
         return symbol
     }
 
     @ForExpression("SORT_LIST -> ORDERED_SORT_ITEM")
-    fun eval50(sortItem: SortItem): SortList {
+    fun eval48(sortItem: SortItem): SortList {
         return SortListImpl(mutableListOf(sortItem), sortItem.beginIndex, sortItem.endIndex)
     }
 
     @ForExpression("SORT_LIST -> SORT_LIST , ORDERED_SORT_ITEM", args = [0, 2])
-    fun eval51(sortListImpl: SortListImpl, sortItem: SortItem): SortList {
+    fun eval49(sortListImpl: SortListImpl, sortItem: SortItem): SortList {
         return sortListImpl.add(sortItem)
     }
 
     @ForExpression("ORDERED_SORT_ITEM -> SORT_ITEM")
-    fun eval52(sortItem: SortItem): SortItem {
+    fun eval50(sortItem: SortItem): SortItem {
         return sortItem
     }
 
@@ -209,7 +201,7 @@ class SemanticNodeRules {
         ForExpression("ORDERED_SORT_ITEM -> + SORT_ITEM"),
         ForExpression("ORDERED_SORT_ITEM -> - SORT_ITEM")
     ])
-    fun eval53And54(symbol: Symbol, sortItem: SortItem): SortItem {
+    fun eval51And52(symbol: Symbol, sortItem: SortItem): SortItem {
         val direction = when (symbol.value) {
             "+" -> 1
             "-" -> -1
@@ -219,12 +211,12 @@ class SemanticNodeRules {
     }
 
     @ForExpression("SORT_ITEM -> str")
-    fun eval55(str: Str): SortItem {
+    fun eval53(str: Str): SortItem {
         return SortItem(str, false, 0, str.beginIndex, str.endIndex)
     }
 
     @ForExpression("SORT_ITEM -> ^ str")
-    fun eval56(symbol: Symbol, str: Str): SortItem {
+    fun eval54(symbol: Symbol, str: Str): SortItem {
         return SortItem(str, true, 0, symbol.beginIndex, str.endIndex)
     }
 }

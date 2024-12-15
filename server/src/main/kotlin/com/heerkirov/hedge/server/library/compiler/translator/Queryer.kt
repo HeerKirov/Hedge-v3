@@ -15,8 +15,6 @@ interface Queryer {
 
     fun findAuthor(metaValue: SingleMetaValue, collector: ErrorCollector<TranslatorError<*>>): List<ElementAuthor>
 
-    fun findAnnotation(metaString: MetaString, metaType: MetaType?, isForMeta: Boolean, collector: ErrorCollector<TranslatorError<*>>): List<ElementAnnotation>
-
     fun findSourceTag(metaString: SimpleMetaValue, collector: ErrorCollector<TranslatorError<*>>): List<ElementSourceTag>
 
     fun flatUnionTag(tags: List<ElementTag>): List<ElementTag> = tags
@@ -29,7 +27,7 @@ interface Queryer {
 
     fun forecastAuthor(metaAddress: MetaAddress): List<ElementAuthor>
 
-    fun forecastAnnotation(metaString: MetaString, metaType: MetaType?, isForMeta: Boolean): List<ElementAnnotation>
+    fun forecastKeyword(metaString: MetaString, metaType: MetaType): List<String>
 
     fun forecastSourceTag(metaAddress: MetaAddress): List<ElementSourceTag>
 }

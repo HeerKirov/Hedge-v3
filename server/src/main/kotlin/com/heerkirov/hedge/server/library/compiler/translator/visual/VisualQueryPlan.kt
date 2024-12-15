@@ -1,6 +1,5 @@
 package com.heerkirov.hedge.server.library.compiler.translator.visual
 
-import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAddressType
 import com.heerkirov.hedge.server.enums.TagAuthorType
 import com.heerkirov.hedge.server.enums.TagTopicType
@@ -61,10 +60,6 @@ sealed interface ElementMeta : ElementValue {
 
 data class ElementSourceTag(override val id: Int, val site: String, val sourceTagType: String, override val name: String, val code: String, val otherName: String?) : ElementMeta {
     override val type: String get() = "source-tag"
-}
-
-data class ElementAnnotation(override val id: Int, override val name: String, val annotationType: MetaType) : ElementMeta {
-    override val type: String get() = "annotation"
 }
 
 data class ElementTopic(override val id: Int, override val name: String, val otherNames: List<String>, val tagType: TagTopicType, val color: String?, val parentRoot: ParentRootTopic?) : ElementMeta {

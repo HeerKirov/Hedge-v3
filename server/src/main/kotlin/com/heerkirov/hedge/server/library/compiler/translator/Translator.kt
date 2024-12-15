@@ -47,36 +47,30 @@ object Translator {
         val visualElements = queryPlan.elements.groupBy {
             when (it) {
                 is NameElementForMeta -> "name"
-                is AnnotationElement, is AnnotationElementForMeta -> "annotation"
+                is CommentElementForMeta -> "description"
                 is TagElement -> "meta-tag"
                 is SourceTagElement -> "source-tag"
                 else -> throw RuntimeException("Unsupported element type ${it::class.simpleName}.")
             }
         }.map { (type, elements) ->
             Element(type, elements.map { element ->
-                if(element is AnnotationElement) {
-                    val items = mapAnnotationElement(element, queryer, collector, options).also { joinDepth += 1 }
-                    executeBuilder.mapAnnotationElement(items, element.exclude)
-                    ElementItem(element.exclude, items)
-                }else{
-                    ElementItem(element.exclude, when (element) {
-                        is NameElementForMeta -> element.items.map { ElementString(it.value, it.precise) }.also { executeBuilder.mapNameElement(it, element.exclude) }
-                        is AnnotationElementForMeta -> mapAnnotationElementForMeta(element, queryer, collector, options).also { joinDepth += 1 }.also { executeBuilder.mapAnnotationElement(it, element.exclude) }
-                        is SourceTagElement -> mapSourceTagElement(element, queryer, collector, options).also { joinDepth += 1 }.also { executeBuilder.mapSourceTagElement(it, element.exclude) }
-                        is TagElement -> {
-                            val (r, t) = mapTagElement(element, queryer, collector, options)
-                            @Suppress("UNCHECKED_CAST")
-                            when(t) {
-                                "tag" -> executeBuilder.mapTagElement(r as List<ElementTag>, element.exclude)
-                                "author" -> executeBuilder.mapAuthorElement(r as List<ElementAuthor>, element.exclude)
-                                "topic" -> executeBuilder.mapTopicElement(r as List<ElementTopic>, element.exclude)
-                            }
-                            joinDepth += 1
-                            r
+                ElementItem(element.exclude, when (element) {
+                    is NameElementForMeta -> element.items.map { ElementString(it.value, it.precise) }.also { executeBuilder.mapNameElement(it, element.exclude) }
+                    is CommentElementForMeta -> element.items.map { ElementString(it.value, it.precise) }.also { joinDepth += 1 }.also { executeBuilder.mapCommentElement(it, element.exclude) }
+                    is SourceTagElement -> mapSourceTagElement(element, queryer, collector, options).also { joinDepth += 1 }.also { executeBuilder.mapSourceTagElement(it, element.exclude) }
+                    is TagElement -> {
+                        val (r, t) = mapTagElement(element, queryer, collector, options)
+                        @Suppress("UNCHECKED_CAST")
+                        when(t) {
+                            "tag" -> executeBuilder.mapTagElement(r as List<ElementTag>, element.exclude)
+                            "author" -> executeBuilder.mapAuthorElement(r as List<ElementAuthor>, element.exclude)
+                            "topic" -> executeBuilder.mapTopicElement(r as List<ElementTopic>, element.exclude)
                         }
-                        else -> throw RuntimeException("Unsupported element type $type.")
-                    })
-                }
+                        joinDepth += 1
+                        r
+                    }
+                    else -> throw RuntimeException("Unsupported element type $type.")
+                })
             })
         }
         if(options != null && joinDepth >= options.warningLimitOfIntersectItems) collector.warning(NumberOfIntersectItemExceed(options.warningLimitOfIntersectItems))
@@ -114,30 +108,10 @@ object Translator {
                 val suggestions = queryer.forecastSourceTag(forecast.items).map { VisualForecastSuggestion(it.name, if(it.code != it.name || it.otherName != null) { listOfNotNull(if(it.code != it.name) it.code else null, it.otherName) } else emptyList(), listOf(it.site)) }
                 VisualForecast("source-tag", forecast.items.last().value, suggestions, forecast.beginIndex, forecast.endIndex)
             }
-            is ForecastAnnotationElement -> {
-                val suggestions = queryer.forecastAnnotation(forecast.item, forecast.metaType, forecast.isForMeta).map { VisualForecastSuggestion(it.name, emptyList(), emptyList()) }
-                VisualForecast("annotation", forecast.item.value, suggestions, forecast.beginIndex, forecast.endIndex)
+            is ForecastKeywordElement -> {
+                val suggestions = queryer.forecastKeyword(forecast.item, forecast.metaType).map { VisualForecastSuggestion(it, emptyList(), emptyList()) }
+                VisualForecast("keyword", forecast.item.value, suggestions, forecast.beginIndex, forecast.endIndex)
             }
-        }
-    }
-
-    /**
-     * 处理一个AnnotationElement的翻译。
-     */
-    private fun mapAnnotationElement(element: AnnotationElement, queryer: Queryer, collector: ErrorCollector<TranslatorError<*>>, options: TranslatorOptions?): List<ElementAnnotation> {
-        return element.items.flatMap { queryer.findAnnotation(it, element.metaType, false, collector) }.also { result ->
-            if(result.isEmpty()) collector.warning(WholeElementMatchesNone(element.items.map { it.revertToQueryString() }))
-            else if(options!= null && result.size >= options.warningLimitOfUnionItems) collector.warning(NumberOfUnionItemExceed(element.items.map { it.revertToQueryString() }, options.warningLimitOfUnionItems))
-        }
-    }
-
-    /**
-     * 处理一个AnnotationElementForMeta的翻译。
-     */
-    private fun mapAnnotationElementForMeta(element: AnnotationElementForMeta, queryer: Queryer, collector: ErrorCollector<TranslatorError<*>>, options: TranslatorOptions?): List<ElementAnnotation> {
-        return element.items.flatMap { queryer.findAnnotation(it, null, true, collector) }.also { result ->
-            if(result.isEmpty()) collector.warning(WholeElementMatchesNone(element.items.map { it.revertToQueryString() }))
-            else if(options!= null && result.size >= options.warningLimitOfUnionItems) collector.warning(NumberOfUnionItemExceed(element.items.map { it.revertToQueryString() }, options.warningLimitOfUnionItems))
         }
     }
 

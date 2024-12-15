@@ -1,10 +1,9 @@
 package com.heerkirov.hedge.server.library.compiler.semantic.framework
 
 import com.heerkirov.hedge.server.library.compiler.grammar.semantic.*
-import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Annotation
+import com.heerkirov.hedge.server.library.compiler.grammar.semantic.Bracket
 import com.heerkirov.hedge.server.library.compiler.semantic.*
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.Forecast
-import com.heerkirov.hedge.server.library.compiler.semantic.plan.ForecastAnnotationElement
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.ForecastMetaTagElement
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.ForecastSourceTagElement
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.*
@@ -199,30 +198,20 @@ object MetaTagElementField : ElementFieldByElement() {
 }
 
 /**
- * 从annotation生成annotation的生成器。被使用在illust/book中。
+ * 从bracket生成description filter的生成器。被使用在illust/book/author&topic中。
  */
-object AnnotationElementField : ElementFieldByAnnotation() {
-    override val itemName = "annotation"
+class DescriptionFilterElementField(private val forecastKeywordType: MetaType? = null) : ElementFieldByBracket() {
+    override val itemName = "description"
 
-    override fun generate(annotation: Annotation, minus: Boolean): AnnotationElement {
-        val metaType = annotation.prefix?.let(::mapPrefixToMetaType)
-        val items = annotation.items.map(::mapStrToMetaString)
-        return AnnotationElement(items, metaType, minus)
+    override fun generate(bracket: Bracket, minus: Boolean): CommentElementForMeta {
+        val items = bracket.items.map(::mapStrToMetaString)
+        return CommentElementForMeta(items, minus)
     }
 
-    override fun forecast(annotation: Annotation, minus: Boolean, cursorIndex: Int): Forecast? {
-        val metaType = annotation.prefix?.let(::mapPrefixToMetaType)
-        val item = annotation.items.firstOrNull { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex } ?: return null
-        return ForecastAnnotationElement(mapStrToMetaString(item), metaType, false, item.beginIndex, item.endIndex)
-    }
-
-    private fun mapPrefixToMetaType(symbol: Symbol): MetaType {
-        return when (symbol.value) {
-            "@" -> MetaType.AUTHOR
-            "#" -> MetaType.TOPIC
-            "$" -> MetaType.TAG
-            else -> throw RuntimeException("Unsupported annotation prefix ${symbol.value}.")
-        }
+    override fun forecast(bracket: Bracket, minus: Boolean, cursorIndex: Int): Forecast? {
+        if(forecastKeywordType == null) return null
+        val item = bracket.items.firstOrNull { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex } ?: return null
+        return ForecastKeywordElement(mapStrToMetaString(item), forecastKeywordType, item.beginIndex, item.endIndex)
     }
 
     /**
@@ -296,7 +285,7 @@ class SourceTagElementField(override val forSourceFlag: Boolean) : ElementFieldB
 }
 
 /**
- * 从element生成name filter的生成器。被使用在author&topic/annotation中。
+ * 从element生成name filter的生成器。被使用在author&topic中。
  */
 object NameFilterElementField : ElementFieldByElement() {
     override val itemName = "name"
@@ -321,30 +310,5 @@ object NameFilterElementField : ElementFieldByElement() {
         if(sfp.subject !is StrList) throw RuntimeException("Unsupported subject type ${sfp.subject::class.simpleName}.")
         if(sfp.subject.items.size > 1) semanticError(ValueCannotBeAddress(sfp.subject.beginIndex, sfp.subject.endIndex))
         return MetaString(sfp.subject.items.first().value, sfp.subject.items.first().type == Str.Type.BACKTICKS)
-    }
-}
-
-/**
- * 从annotation生成annotation的生成器。被使用在author&topic dialect中。
- */
-object MetaAnnotationElementField : ElementFieldByAnnotation() {
-    override val itemName = "annotation"
-
-    override fun generate(annotation: Annotation, minus: Boolean): AnnotationElementForMeta {
-        if(annotation.prefix != null) semanticError(ElementPrefixNotRequired(itemName, annotation.beginIndex, annotation.endIndex))
-        val items = annotation.items.map(::mapStrToMetaString)
-        return AnnotationElementForMeta(items, minus)
-    }
-
-    override fun forecast(annotation: Annotation, minus: Boolean, cursorIndex: Int): Forecast? {
-        val item = annotation.items.firstOrNull { cursorIndex >= it.beginIndex && cursorIndex <= it.endIndex } ?: return null
-        return ForecastAnnotationElement(mapStrToMetaString(item), null, true, item.beginIndex, item.endIndex)
-    }
-
-    /**
-     * 将单个字符串转换为一个MetaString。
-     */
-    private fun mapStrToMetaString(str: Str): MetaString {
-        return MetaString(str.value, str.type == Str.Type.BACKTICKS)
     }
 }

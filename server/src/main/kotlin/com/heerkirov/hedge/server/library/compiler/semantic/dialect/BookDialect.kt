@@ -10,7 +10,7 @@ object BookDialect : QueryDialect<BookDialect.BookSortItem> {
         item(BookSortItem.CREATE_TIME, "create-time", "create", "ct")
         item(BookSortItem.UPDATE_TIME, "update-time", "update", "ut")
     }
-    override val elements: Array<out ElementFieldDefinition> = arrayOf(MetaTagElementField, AnnotationElementField)
+    override val elements: Array<out ElementFieldDefinition> = arrayOf(MetaTagElementField, DescriptionFilterElementField())
 
     val favorite = flagField("FAVORITE", "favorite", "f")
     val id = patternNumberField("ID", "id")

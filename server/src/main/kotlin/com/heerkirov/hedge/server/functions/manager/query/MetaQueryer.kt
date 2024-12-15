@@ -11,7 +11,6 @@ import com.heerkirov.hedge.server.library.compiler.translator.*
 import com.heerkirov.hedge.server.library.compiler.translator.visual.*
 import com.heerkirov.hedge.server.library.compiler.utils.ErrorCollector
 import com.heerkirov.hedge.server.library.compiler.utils.TranslatorError
-import com.heerkirov.hedge.server.model.Annotation
 import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.structs.CacheMap
@@ -324,41 +323,6 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
         }
     }
 
-    override fun findAnnotation(metaString: MetaString, metaType: MetaType?, isForMeta: Boolean, collector: ErrorCollector<TranslatorError<*>>): List<ElementAnnotation> {
-        if(metaString.value.isBlank()) {
-            //元素内容为空时抛出空警告并直接返回
-            collector.warning(BlankElement())
-            return emptyList()
-        }
-        return annotationCacheMap.computeIfAbsent(annotationKeyOf(metaString, metaType)) {
-            data.db.from(Annotations).select()
-                .whereWithConditions {
-                    it += parser.compileNameString(metaString, Annotations)
-                    if(metaType != null) {
-                        it += Annotations.type eq MetaParserUtil.translateMetaType(metaType)
-                    }
-                }
-                .limit(0, queryLimit)
-                .map { Annotations.createEntity(it) }
-        }.let { annotations ->
-            if(annotations.isEmpty()) {
-                //查询结果为空时抛出无匹配警告
-                collector.warning(ElementMatchesNone(metaString.revertToQueryString()))
-                emptyList()
-            }else if(!isForMeta) {
-                val result = annotations.filter { it.canBeExported }.map { ElementAnnotation(it.id, it.name, it.type) }
-                result.ifEmpty {
-                    //如果canBeExported的结果为空，那么提出警告
-                    collector.warning(ElementCannotBeExported(metaString.revertToQueryString()))
-                    emptyList()
-                }
-            }else{
-                //区分forMeta时的情况。当forMeta时，不需要canBeExported检查，可以直接输出
-                annotations.map { ElementAnnotation(it.id, it.name, it.type) }
-            }
-        }
-    }
-
     override fun findSourceTag(metaString: SimpleMetaValue, collector: ErrorCollector<TranslatorError<*>>): List<ElementSourceTag> {
         if(metaString.value.any { it.value.isBlank() }) {
             //元素内容为空时抛出空警告并直接返回
@@ -450,27 +414,14 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
             .map { ElementAuthor(it[Authors.id]!!, it[Authors.name]!!, it[Authors.otherNames]!!, it[Authors.type]!!, colors[it[Authors.type]!!]) }
     }
 
-    override fun forecastAnnotation(metaString: MetaString, metaType: MetaType?, isForMeta: Boolean): List<ElementAnnotation> {
+    override fun forecastKeyword(metaString: MetaString, metaType: MetaType): List<String> {
         if(metaString.value.isBlank()) return emptyList()
 
-        return data.db.from(Annotations).select()
-            .whereWithConditions {
-                it += parser.forecastNameString(metaString, Annotations)
-                if(metaType != null) {
-                    it += Annotations.type eq MetaParserUtil.translateMetaType(metaType)
-                }
-            }
+        return data.db.from(Keywords).select(Keywords.keyword)
+            .where { (Keywords.tagType eq MetaParserUtil.translateMetaType(metaType)) and (parser.forecastNameString(metaString, Keywords)) }
             .limit(0, queryLimit)
-            .map { Annotations.createEntity(it) }
-            .let { annotations ->
-                if(annotations.isEmpty()) {
-                    emptyList()
-                }else if(!isForMeta) {
-                    annotations.filter { it.canBeExported }.map { ElementAnnotation(it.id, it.name, it.type) }
-                }else{
-                    annotations.map { ElementAnnotation(it.id, it.name, it.type) }
-                }
-            }
+            .map { it[Keywords.keyword]!! }
+
     }
 
     override fun forecastSourceTag(metaAddress: MetaAddress): List<ElementSourceTag> {
@@ -545,9 +496,6 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
                 tagChildrenPool.clear()
                 tagByStringPool.clear()
             }
-            QueryManager.CacheType.ANNOTATION -> {
-                annotationCacheMap.clear()
-            }
             QueryManager.CacheType.SOURCE_TAG -> {
                 sourceTagCacheMap.clear()
             }
@@ -563,11 +511,6 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
      * 缓存author查询的最终结果。
      */
     private val authorCacheMap = CacheMap<MetaString, List<ElementAuthor>>(256)
-
-    /**
-     * 缓存annotation查询的最终结果。
-     */
-    private val annotationCacheMap = CacheMap<AnnotationCacheKey, List<Annotation>>(256)
 
     /**
      * 缓存source tag的查询的最终结果。
@@ -607,10 +550,4 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
     private data class TopicItem(override val id: Int, override val name: String, override val otherNames: List<String>, override val parentId: Int?, val parentRootId: Int?, val type: TagTopicType) : ItemInterfaceWithParent
 
     private data class TagItem(override val id: Int, override val name: String, override val otherNames: List<String>, override val parentId: Int?, val type: TagAddressType, val isGroup: TagGroupType, val color: String?) : ItemInterfaceWithParent
-
-    private data class AnnotationCacheKey(val precise: Boolean, val value: String, val metaType: MetaType?)
-
-    private fun annotationKeyOf(metaString: MetaString, metaType: MetaType?): AnnotationCacheKey {
-        return AnnotationCacheKey(metaString.precise, metaString.value, metaType)
-    }
 }

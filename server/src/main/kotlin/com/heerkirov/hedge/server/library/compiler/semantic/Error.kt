@@ -147,7 +147,7 @@ class EnumTypeCastError(value: String, type: String, expected: List<String>, beg
  * 当前方言不支持这个种类的语义。[begin, end)标记整个element。
  */
 class UnsupportedSemanticStructure(type: SemanticType, beginIndex: Int, endIndex: Int) : SemanticError<UnsupportedSemanticStructure.SemanticType>(3021, "Unsupported semantic structure $type.", range(beginIndex, endIndex), type) {
-    enum class SemanticType { ELEMENT, ELEMENT_WITH_SOURCE, ANNOTATION }
+    enum class SemanticType { ELEMENT, ELEMENT_WITH_SOURCE, BRACKET }
 }
 
 /**
@@ -166,6 +166,6 @@ class ThisIdentifyCannotHaveSourceFlag(key: String, beginIndex: Int, endIndex: I
 class ThisIdentifyMustHaveSourceFlag(key: String, beginIndex: Int, endIndex: Int) : SemanticError<String>(3024, "Identify $key must have source flag.", range(beginIndex, endIndex), key)
 
 /**
- * 注解类项目是不能标记为from source(^)的。[begin, end)标记整个body。
+ * 括号标记是不能标记为from source(^)的。[begin, end)标记整个body。
  */
-class AnnotationCannotHaveSourceFlag(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3025, "Annotation cannot have source flag.", range(beginIndex, endIndex))
+class BracketCannotHaveSourceFlag(beginIndex: Int, endIndex: Int) : SemanticError<Nothing>(3025, "Bracket cannot have source flag.", range(beginIndex, endIndex))

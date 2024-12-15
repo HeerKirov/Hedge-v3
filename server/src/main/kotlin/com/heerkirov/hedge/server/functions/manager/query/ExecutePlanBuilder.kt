@@ -137,7 +137,6 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, S
     private val excludeTags: MutableCollection<Int> = mutableSetOf()
     private val excludeTopics: MutableCollection<Int> = mutableSetOf()
     private val excludeAuthors: MutableCollection<Int> = mutableSetOf()
-    private val excludeAnnotations: MutableCollection<Int> = mutableSetOf()
     private val excludeSourceTags: MutableCollection<Int> = mutableSetOf()
 
     private val orderDeclareMapping = mapOf(
@@ -288,22 +287,16 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, S
         }
     }
 
-    override fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean) {
-        when {
-            exclude -> excludeAnnotations.addAll(unionItems.map { it.id })
-            unionItems.isEmpty() -> alwaysFalseFlag = true
-            else -> {
-                val j = IllustAnnotationRelations.aliased("IR_${++joinCount}")
-                val condition = if(unionItems.size == 1) {
-                    j.annotationId eq unionItems.first().id
-                }else{
-                    needDistinct = true
-                    j.annotationId inList unionItems.map { it.id }
-                }
-
-                joins.add(ExecutePlan.Join(j, j.illustId eq Illusts.id and condition))
-            }
+    override fun mapCommentElement(unionItems: List<ElementString>, exclude: Boolean) {
+        //一个comment bracket下可以包含多个str，在查找时会将这多个str组合成一个有序查找串，要求一个字段同时满足整个查找串
+        val condition = if(unionItems.size == 1 && unionItems.first().precise) {
+            //如果其中只存在一个precise字符串，则使其仅完全匹配整个description
+            Illusts.description eq unionItems.first().value
+        }else{
+            val matchFilter = MetaParserUtil.compileMatchFilter(unionItems.joinToString("*") { it.value })
+            Illusts.description like matchFilter
         }
+        wheres.add(condition.let { if(exclude) it.not() else it })
     }
 
     override fun mapSourceTagElement(unionItems: List<ElementSourceTag>, exclude: Boolean) {
@@ -342,11 +335,6 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, S
                 if(excludeAuthors.size == 1) IllustAuthorRelations.authorId eq excludeAuthors.first() else IllustAuthorRelations.authorId inList excludeAuthors
             })
         }
-        if(excludeAnnotations.isNotEmpty()) {
-            wheres.add(Illusts.id notInList db.from(IllustAnnotationRelations).select(IllustAnnotationRelations.illustId).where {
-                if(excludeAnnotations.size == 1) IllustAnnotationRelations.annotationId eq excludeAnnotations.first() else IllustAnnotationRelations.annotationId inList excludeAnnotations
-            })
-        }
         if(excludeSourceTags.isNotEmpty()) {
             wheres.add(Illusts.id notInList db.from(Illusts)
                 .innerJoin(SourceTagRelations, SourceTagRelations.sourceDataId eq Illusts.sourceDataId)
@@ -377,7 +365,6 @@ class BookExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, Sor
     private val excludeTags: MutableCollection<Int> = mutableSetOf()
     private val excludeTopics: MutableCollection<Int> = mutableSetOf()
     private val excludeAuthors: MutableCollection<Int> = mutableSetOf()
-    private val excludeAnnotations: MutableCollection<Int> = mutableSetOf()
 
     private val orderDeclareMapping = mapOf(
         BookDialect.BookSortItem.ID to SortByColumn.ColumnDefinition(Books.id),
@@ -473,22 +460,16 @@ class BookExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, Sor
         }
     }
 
-    override fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean) {
-        when {
-            exclude -> excludeAnnotations.addAll(unionItems.map { it.id })
-            unionItems.isEmpty() -> alwaysFalseFlag = true
-            else -> {
-                val j = BookAnnotationRelations.aliased("AR_${++joinCount}")
-                val condition = if(unionItems.size == 1) {
-                    j.annotationId eq unionItems.first().id
-                }else{
-                    needDistinct = true
-                    j.annotationId inList unionItems.map { it.id }
-                }
-
-                joins.add(ExecutePlan.Join(j, j.bookId eq Books.id and condition))
-            }
+    override fun mapCommentElement(unionItems: List<ElementString>, exclude: Boolean) {
+        //一个comment bracket下可以包含多个str，在查找时会将这多个str组合成一个有序查找串，要求一个字段同时满足整个查找串
+        val condition = if(unionItems.size == 1 && unionItems.first().precise) {
+            //如果其中只存在一个precise字符串，则使其仅完全匹配整个title或description
+            (Books.description eq unionItems.first().value) or (Books.title eq unionItems.first().value)
+        }else{
+            val matchFilter = MetaParserUtil.compileMatchFilter(unionItems.joinToString("*") { it.value })
+            (Books.description like matchFilter) or (Books.title like matchFilter)
         }
+        wheres.add(condition.let { if(exclude) it.not() else it })
     }
 
     override fun build(): ExecutePlan {
@@ -510,30 +491,13 @@ class BookExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, Sor
                 if(excludeAuthors.size == 1) BookAuthorRelations.authorId eq excludeAuthors.first() else BookAuthorRelations.authorId inList excludeAuthors
             })
         }
-        if(excludeAnnotations.isNotEmpty()) {
-            wheres.add(Books.id notInList db.from(BookAnnotationRelations).select(BookAnnotationRelations.bookId).where {
-                if(excludeAnnotations.size == 1) BookAnnotationRelations.annotationId eq excludeAnnotations.first() else BookAnnotationRelations.annotationId inList excludeAnnotations
-            })
-        }
         return ExecutePlan(wheres, joins, orders, needDistinct)
     }
 }
 
-class AuthorExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder {
+class AuthorExecutePlanBuilder : ExecutePlanBuilder {
     private val wheres: MutableList<ColumnDeclaring<Boolean>> = ArrayList()
     private val joins: MutableList<ExecutePlan.Join> = ArrayList()
-
-    //在连接查询中，如果遇到一整层查询的项为空，这一层按逻辑不会产生任何结果匹配，那么相当于结果恒为空。使用这个flag来优化这种情况。
-    private var alwaysFalseFlag: Boolean = false
-
-    //在连接查询中，如果一层中有复数项，那么需要做去重。
-    private var needDistinct: Boolean = false
-
-    //在连接查询中，出现多次连接时需要alias dao，使用count做计数。
-    private var joinCount = 0
-
-    //在exclude连接查询中，具有相同类型的连接会被联合成同一个where nested查询来实现，在这里存储这个信息。
-    private val excludeAnnotations: MutableCollection<Int> = mutableSetOf()
 
     override fun mapNameElement(unionItems: List<ElementString>, exclude: Boolean) {
         wheres.add(unionItems.map {
@@ -541,59 +505,34 @@ class AuthorExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder {
                 Authors.name eq it.value
             }else{
                 val matchFilter = MetaParserUtil.compileMatchFilter(it.value)
-                (Authors.name like matchFilter) or (Authors.otherNames like matchFilter) or (Authors.keywords like matchFilter)
+                (Authors.name like matchFilter) or (Authors.otherNames like matchFilter)
             }
         }.reduce { a, b -> a or b }.let {
             if(exclude) it.not() else it
         })
     }
 
-    override fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean) {
-        when {
-            exclude -> excludeAnnotations.addAll(unionItems.map { it.id })
-            unionItems.isEmpty() -> alwaysFalseFlag = true
-            else -> {
-                val j = AuthorAnnotationRelations.aliased("IR_${++joinCount}")
-                val condition = if(unionItems.size == 1) {
-                    j.annotationId eq unionItems.first().id
-                }else{
-                    needDistinct = true
-                    j.annotationId inList unionItems.map { it.id }
-                }
-
-                joins.add(ExecutePlan.Join(j, j.authorId eq Authors.id and condition))
-            }
+    override fun mapCommentElement(unionItems: List<ElementString>, exclude: Boolean) {
+        //一个comment bracket下可以包含多个str，在查找时会将这多个str组合成一个有序查找串，要求一个字段同时满足整个查找串
+        val condition = if(unionItems.size == 1 && unionItems.first().precise) {
+            //如果其中只存在一个precise字符串，则使其仅完全匹配keyword或整个description
+            val matchFilter = "%|${MetaParserUtil.compileMatchFilter(unionItems.first().value, exact = true)}|%"
+            (Authors.keywords like matchFilter) or (Authors.description eq unionItems.first().value)
+        }else{
+            val matchFilter = MetaParserUtil.compileMatchFilter(unionItems.joinToString("*") { it.value })
+            (Authors.keywords like matchFilter) or (Authors.description like matchFilter)
         }
+        wheres.add(condition.let { if(exclude) it.not() else it })
     }
 
     override fun build(): ExecutePlan {
-        if(alwaysFalseFlag) {
-            return ExecutePlan(listOf(ArgumentExpression(false, BooleanSqlType)), emptyList(), emptyList(), false)
-        }
-        if(excludeAnnotations.isNotEmpty()) {
-            wheres.add(Authors.id notInList db.from(AuthorAnnotationRelations).select(AuthorAnnotationRelations.authorId).where {
-                if(excludeAnnotations.size == 1) AuthorAnnotationRelations.annotationId eq excludeAnnotations.first() else AuthorAnnotationRelations.annotationId inList excludeAnnotations
-            })
-        }
-        return ExecutePlan(wheres, joins, emptyList(), needDistinct)
+        return ExecutePlan(wheres, joins, emptyList(), false)
     }
 }
 
-class TopicExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder {
+class TopicExecutePlanBuilder : ExecutePlanBuilder {
     private val wheres: MutableList<ColumnDeclaring<Boolean>> = ArrayList()
     private val joins: MutableList<ExecutePlan.Join> = ArrayList()
-
-    //在连接查询中，如果遇到一整层查询的项为空，这一层按逻辑不会产生任何结果匹配，那么相当于结果恒为空。使用这个flag来优化这种情况。
-    private var alwaysFalseFlag: Boolean = false
-
-    //在连接查询中，如果一层中有复数项，那么需要做去重。
-    private var needDistinct: Boolean = false
-
-    //在连接查询中，出现多次连接时需要alias dao，使用count做计数。
-    private var joinCount = 0
-
-    //在exclude连接查询中，具有相同类型的连接会被联合成同一个where nested查询来实现，在这里存储这个信息。
-    private val excludeAnnotations: MutableCollection<Int> = mutableSetOf()
 
     override fun mapNameElement(unionItems: List<ElementString>, exclude: Boolean) {
         wheres.add(unionItems.map {
@@ -601,61 +540,28 @@ class TopicExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder {
                 Topics.name eq it.value
             }else{
                 val matchFilter = MetaParserUtil.compileMatchFilter(it.value)
-                (Topics.name like matchFilter) or (Topics.otherNames like matchFilter) or (Topics.keywords like matchFilter)
+                (Topics.name like matchFilter) or (Topics.otherNames like matchFilter)
             }
         }.reduce { a, b -> a or b }.let {
             if(exclude) it.not() else it
         })
     }
 
-    override fun mapAnnotationElement(unionItems: List<ElementAnnotation>, exclude: Boolean) {
-        when {
-            exclude -> excludeAnnotations.addAll(unionItems.map { it.id })
-            unionItems.isEmpty() -> alwaysFalseFlag = true
-            else -> {
-                val j = TopicAnnotationRelations.aliased("IR_${++joinCount}")
-                val condition = if(unionItems.size == 1) {
-                    j.annotationId eq unionItems.first().id
-                }else{
-                    needDistinct = true
-                    j.annotationId inList unionItems.map { it.id }
-                }
-
-                joins.add(ExecutePlan.Join(j, j.topicId eq Topics.id and condition))
-            }
+    override fun mapCommentElement(unionItems: List<ElementString>, exclude: Boolean) {
+        //一个comment bracket下可以包含多个str，在查找时会将这多个str组合成一个有序查找串，要求一个字段同时满足整个查找串
+        val condition = if(unionItems.size == 1 && unionItems.first().precise) {
+            //如果其中只存在一个precise字符串，则使其仅完全匹配keyword
+            val matchFilter = "%|${MetaParserUtil.compileMatchFilter(unionItems.first().value, exact = true)}|%"
+            (Topics.keywords like matchFilter) or (Topics.description eq unionItems.first().value)
+        }else{
+            val matchFilter = MetaParserUtil.compileMatchFilter(unionItems.joinToString("*") { it.value })
+            (Topics.keywords like matchFilter) or (Topics.description like matchFilter)
         }
+        wheres.add(condition.let { if(exclude) it.not() else it })
     }
 
     override fun build(): ExecutePlan {
-        if(alwaysFalseFlag) {
-            return ExecutePlan(listOf(ArgumentExpression(false, BooleanSqlType)), emptyList(), emptyList(), false)
-        }
-        if(excludeAnnotations.isNotEmpty()) {
-            wheres.add(Topics.id notInList db.from(TopicAnnotationRelations).select(TopicAnnotationRelations.topicId).where {
-                if(excludeAnnotations.size == 1) TopicAnnotationRelations.annotationId eq excludeAnnotations.first() else TopicAnnotationRelations.annotationId inList excludeAnnotations
-            })
-        }
-        return ExecutePlan(wheres, joins, emptyList(), needDistinct)
-    }
-}
-
-class AnnotationExecutePlanBuilder : ExecutePlanBuilder {
-    private val wheres: MutableList<ColumnDeclaring<Boolean>> = ArrayList()
-
-    override fun mapNameElement(unionItems: List<ElementString>, exclude: Boolean) {
-        wheres.add(unionItems.map {
-            if(it.precise) {
-                Annotations.name eq it.value
-            }else{
-                Annotations.name like MetaParserUtil.compileMatchFilter(it.value)
-            }
-        }.reduce { a, b -> a or b }.let {
-            if(exclude) it.not() else it
-        })
-    }
-
-    override fun build(): ExecutePlan {
-        return ExecutePlan(wheres, emptyList(), emptyList(), false)
+        return ExecutePlan(wheres, joins, emptyList(), false)
     }
 }
 
@@ -705,6 +611,18 @@ class SourceDataExecutePlanBuilder(private val db: Database): ExecutePlanBuilder
 
     override fun addWhereCondition(whereCondition: ColumnDeclaring<Boolean>) {
         wheres.add(whereCondition)
+    }
+
+    override fun mapCommentElement(unionItems: List<ElementString>, exclude: Boolean) {
+        //一个comment bracket下可以包含多个str，在查找时会将这多个str组合成一个有序查找串，要求一个字段同时满足整个查找串
+        val condition = if(unionItems.size == 1 && unionItems.first().precise) {
+            //如果其中只存在一个precise字符串，则使其仅完全匹配整个title或description
+            (SourceDatas.description eq unionItems.first().value) or (SourceDatas.title eq unionItems.first().value)
+        }else{
+            val matchFilter = MetaParserUtil.compileMatchFilter(unionItems.joinToString("*") { it.value })
+            (SourceDatas.description like matchFilter) or (SourceDatas.title like matchFilter)
+        }
+        wheres.add(condition.let { if(exclude) it.not() else it })
     }
 
     override fun mapSourceTagElement(unionItems: List<ElementSourceTag>, exclude: Boolean) {

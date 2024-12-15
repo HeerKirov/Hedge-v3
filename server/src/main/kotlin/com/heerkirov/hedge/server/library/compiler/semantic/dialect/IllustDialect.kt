@@ -14,7 +14,7 @@ object IllustDialect : QueryDialect<IllustDialect.IllustSortItem> {
         item(IllustSortItem.SOURCE_SITE, "^site", "source-site")
         item(IllustSortItem.SOURCE_PUBLISH_TIME, "^publish-time", "source-publish-time", "^publish", "^bt")
     }
-    override val elements: Array<out ElementFieldDefinition> = arrayOf(MetaTagElementField, AnnotationElementField, SourceTagElementField(true))
+    override val elements: Array<out ElementFieldDefinition> = arrayOf(MetaTagElementField, DescriptionFilterElementField(), SourceTagElementField(true))
 
     val favorite = flagField("FAVORITE", "favorite", "f")
     val bookMember = flagField("BOOK_MEMBER", "book-member", "bm")
