@@ -68,8 +68,6 @@ pub struct TagBulkForm {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub links: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub annotations: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<String>,
     #[serde(rename = "mappingSourceTags", alias = "mapping_source_tags", alias = "mapping", skip_serializing_if = "Option::is_none")]
     pub mapping_source_tags: Option<Vec<MappingSourceTagForm>>,
@@ -91,8 +89,6 @@ pub struct TopicBulkForm {
     pub keywords: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub annotations: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub favorite: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -117,8 +113,6 @@ pub struct AuthorBulkForm {
     pub keywords: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub annotations: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub favorite: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
