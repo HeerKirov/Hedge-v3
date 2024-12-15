@@ -58,7 +58,7 @@ const popupMenu = usePopupMenu<Author>([
 
 <template>
     <BrowserTeleport to="top-bar">
-        <SearchBox placeholder="在此处搜索" v-model:value="queryFilter.query"/>
+        <SearchBox placeholder="在此处搜索" dialect="AUTHOR" v-model:value="queryFilter.query"/>
         <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="queryFilter"/>
         <Separator/>
         <DataRouter :state="state" @navigate="navigateTo"/>

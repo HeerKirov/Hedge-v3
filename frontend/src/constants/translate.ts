@@ -2,6 +2,7 @@ import { CompileError, ElementGroup } from "@/functions/http-client/api/util-que
 
 export const QUERY_ELEMENT_TYPES: {[key in ElementGroup["type"]]: string} = {
     "name": "名称",
+    "description": "文本",
     "meta-tag": "标签",
     "source-tag": "来源标签"
 }
@@ -70,13 +71,12 @@ export function queryCompileErrorTranslate(e: CompileError): string {
         case 3022: return `元素和字段不能在同一个合取项中混写。`
         case 3023: return `关键字"${e.info}"不能添加来源标记(^)，没有这个对应的来源字段。`
         case 3024: return `关键字"${e.info}"必须添加来源标记(^)，没有这个对应的字段。`
-        case 3025: return `注解不能添加来源标记(^)。`
+        case 3025: return `评论项不能添加来源标记(^)。`
         case 4001: return `元素项的字面值给出了空串。`
         case 4002: return `元素项'${e.info}'没有匹配到任何实现。`
         case 4003: return `整个元素项'${e.info.join("|")}'都没有匹配到任何实现，这将导致查询不到任何结果。`
         case 4004: return `区间元素'${e.info}'没有匹配到任何实现，这将导致区间选择器的范围发生不合期望的溢出。`
         case 4005: return `元素'${e.info.item}'已匹配，但匹配结果并不是期望中的组类型，因此此项会被忽略。`
-        case 4006: return `注解'${e.info}'已标记为"不能导出"，因此在查询中无法引用此注解，此项会被忽略。`
         case 4007: return `查询中的或连接(|)数量已达到警告值${e.info.warningLimit}。过多的查询项目可能拖慢查询速度。`
         case 4008: return `查询中的与连接(&)数量已达到警告值${e.info}。过多的连接查询层数可能严重拖慢查询速度。`
     }

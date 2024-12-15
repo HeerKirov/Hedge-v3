@@ -28,7 +28,7 @@ export interface UtilQueryEndpoint {
     }
 }
 
-export type Dialect = "ILLUST" | "BOOK" | "SOURCE_DATA" | "TOPIC" | "AUTHOR" | "ANNOTATION"
+export type Dialect = "ILLUST" | "BOOK" | "SOURCE_DATA" | "TOPIC" | "AUTHOR"
 
 export interface QueryForm {
     text: string
@@ -49,6 +49,7 @@ export interface QueryPlan {
 
 export type ElementGroup
     = { type: "name", intersectItems: ElementItem<ElementString>[] }
+    | { type: "description", intersectItems: ElementItem<ElementString>[] }
     | { type: "meta-tag", intersectItems: ElementItem<ElementTopic | ElementAuthor | ElementTag>[] }
     | { type: "source-tag", intersectItems: ElementItem<ElementSourceTag>[] }
 export interface ElementItem<V> { exclude: boolean, unionItems: V[] }
@@ -82,7 +83,7 @@ export type ForecastRes = {
 }
 
 export interface VisualForecast {
-    type: "source-tag" | "annotation" | "tag" | "topic" | "author" | "filter" | "sort"
+    type: "source-tag" | "keyword" | "tag" | "topic" | "author" | "filter" | "sort"
     context: string
     suggestions: {name: string, aliases: string[], address: string[] | null}[]
     beginIndex: number
@@ -122,13 +123,12 @@ export type CompileError = NormalCharacterEscaped
     | IdentifiesAndElementsCannotBeMixed
     | ThisIdentifyCannotHaveSourceFlag
     | ThisIdentifyMustHaveSourceFlag
-    | AnnotationCannotHaveSourceFlag
+    | BracketCannotHaveSourceFlag
     | BlankElement
     | ElementMatchesNone
     | WholeElementMatchesNone
     | RangeElementNotFound
     | ElementMatchedButNotGroup
-    | ElementCannotBeExported
     | NumberOfUnionItemExceed
     | NumberOfIntersectItemExceed
 
@@ -319,7 +319,7 @@ type EnumTypeCastError = CompileErrorTemplate<3020, {value: string, type: string
  * 当前方言不支持这个种类的语义。[begin, end)标记整个element。
  * info: 语义类型名称
  */
-type UnsupportedSemanticStructure = CompileErrorTemplate<3021, "ELEMENT" | "ELEMENT_WITH_SOURCE" | "ANNOTATION">
+type UnsupportedSemanticStructure = CompileErrorTemplate<3021, "ELEMENT" | "ELEMENT_WITH_SOURCE" | "BRACKET">
 
 /**
  * 元素和关键字项不能在同一个合取项中混写。[begin, end)标记整个element。
@@ -339,14 +339,14 @@ type ThisIdentifyCannotHaveSourceFlag = CompileErrorTemplate<3023, string>
 type ThisIdentifyMustHaveSourceFlag = CompileErrorTemplate<3024, string>
 
 /**
- * 注解类项目是不能标记为from source(^)的。[begin, end)标记整个body。
+ * bracket项目是不能标记为from source(^)的。[begin, end)标记整个body。
  */
-type AnnotationCannotHaveSourceFlag = CompileErrorTemplate<3025, null>
+type BracketCannotHaveSourceFlag = CompileErrorTemplate<3025, null>
 
 //=== 执行计划翻译 ===
 
 /**
- * (warning)元素类的meta tag或annotation的字面值给出了空串。
+ * (warning)元素类的meta tag的字面值给出了空串。
  */
 type BlankElement = CompileErrorTemplate<4001, null>
 
@@ -357,7 +357,7 @@ type BlankElement = CompileErrorTemplate<4001, null>
 type ElementMatchesNone = CompileErrorTemplate<4002, string>
 
 /**
- * (warning)元素类的meta tag或annotation的一个合取项匹配了数量为0的实现。这将导致整个匹配表达式为false。
+ * (warning)元素类的meta tag的一个合取项匹配了数量为0的实现。这将导致整个匹配表达式为false。
  * info: 所有项的内容列表
  */
 type WholeElementMatchesNone = CompileErrorTemplate<4003, string[]>
@@ -375,19 +375,13 @@ type RangeElementNotFound = CompileErrorTemplate<4004, string>
 type ElementMatchedButNotGroup = CompileErrorTemplate<4005, {item: string, goal: "GROUP" | "SEQUENCE_GROUP" | "SEQUENCE_GROUP_MEMBER"}>
 
 /**
- * (warning)此注解的匹配结果是不能被导出的，因此在illust/book查询中无法引用此注解。此项会被忽略。
- * info: 注解内容
- */
-type ElementCannotBeExported = CompileErrorTemplate<4006, string>
-
-/**
- * (warning)元素类的meta tag或annotation查询所对应的项的数量达到了警告阈值。这意味着一个连接查询中的or项目可能过多，拖慢查询速度。
+ * (warning)元素类的meta tag查询所对应的项的数量达到了警告阈值。这意味着一个连接查询中的or项目可能过多，拖慢查询速度。
  * info: items: 项内容列表; warningLimit: 限制数量
  */
 type NumberOfUnionItemExceed = CompileErrorTemplate<4007, {items: string[], warningLimit: number}>
 
 /**
- * (warning)元素类的meta tag或annotation查询的合取项的数量达到了警告阈值。这意味着连接查询的层数可能过多，严重拖慢查询速度。
+ * (warning)元素类的meta tag查询的合取项的数量达到了警告阈值。这意味着连接查询的层数可能过多，严重拖慢查询速度。
  * info: 限制数量
  */
 type NumberOfIntersectItemExceed = CompileErrorTemplate<4008, number>

@@ -1,18 +1,17 @@
 此章节以较为严谨的方式给出HQL的语法定义。当然，这只是便于从上到下地完整阅览HQL的写法，更严谨的定义，请参考最后的文法产生式。
 * 根句子  
     根句子指一句完整的查询语句，也是一个完整的合取范式。根句子用AND连接每一个句项，每一个句项的条件都成立时，对象匹配才成立。  
-    句项则是一个合取项。它会是一个标签项、注解项或关键字项。除此之外，它还可以携带^标记或NOT标记。  
+    句项则是一个合取项。它会是一个标签项、评论项或关键字项。除此之外，它还可以携带^标记或NOT标记。  
     `^`: 该项是来源属性。携带此标记时，后续的属性匹配进入来源域。  
     `-`: 该项是否定项。
     ```
     根句子 = 句项 (&) 句项 ...
-    句项 = (-) (^) 标签项/注解项/关键字项
+    句项 = (-) (^) 标签项/评论项/关键字项
     ```
-* 注解项  
-    匹配一个或多个注解，用OR连接。它包含多个注解字符串形成的列表，还可以包含类型前缀。  
+* 评论项  
+    匹配一个或多个评论类文本，用AND连接。它包含多个文本字符串形成的列表。  
     ```
-    注解项 = [ (@/#/$) 注解 | 注解 ... ]
-    注解 = 字符串
+    评论项 = [ 字符串 | 字符串 ... ]
     ```
 * 标签项  
     匹配一个或多个标签，用OR连接。  
@@ -71,27 +70,25 @@ SEQUENCE_ITEM -> ^ SEQUENCE_BODY
 SEQUENCE_ITEM -> - SEQUENCE_BODY
 SEQUENCE_ITEM -> - ^ SEQUENCE_BODY
 
--- body，下推为元素或注解
+-- body，下推为元素或括号标记
 SEQUENCE_BODY -> ELEMENT
-SEQUENCE_BODY -> ANNOTATION
+SEQUENCE_BODY -> BRACKET
 
 -- 元素，下推为元素项以及元素项前缀
 ELEMENT -> ELEMENT_ITEM
 ELEMENT -> ELEMENT_PREFIX ELEMENT_ITEM
-
--- 注解，由中括号括起，并包含注解项以及元素项前缀
-ANNOTATION -> [ ANNOTATION_ITEM ]
-ANNOTATION -> [ ELEMENT_PREFIX ANNOTATION_ITEM ]
 
 -- 元素项前缀，包括以下3类前缀
 ELEMENT_PREFIX -> @
 ELEMENT_PREFIX -> #
 ELEMENT_PREFIX -> $
 
--- 注解项，下推为任意数量的str的|组合
-ANNOTATION_ITEM -> str
-ANNOTATION_ITEM -> ANNOTATION_ITEM | str
-ANNOTATION_ITEM -> ANNOTATION_ITEM / str
+-- 括号标记，由中括号括起，包含一定量的字符串内容
+BRACKET -> [ BRACKET_ITEM ]
+
+-- 括号标记项，下推为任意数量的str的|组合
+BRACKET_ITEM -> str
+BRACKET_ITEM -> BRACKET_ITEM str
 
 -- 元素项，下推为任意数量的SFP的|组合
 ELEMENT_ITEM -> SFP
