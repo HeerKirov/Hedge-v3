@@ -81,6 +81,7 @@ const popupMenu = usePopupMenu(computed(() => [
 
             <PlayBoard v-if="data !== null" :src="assetsUrl(data.filePath.original)" :zoom-value="zoomValue" v-model:zoom-enabled="zoomEnabled" @contextmenu="popupMenu.popup()"/>
             <CollapsedButton v-if="collapsed" :has-darwin-border="hasDarwinBorder" @click:collapsed="collapsed = $event"/>
+            <ZoomController v-if="collapsed" class="is-display-none" :disabled="!zoomEnabled" v-model:value="zoomValue"/>
         </TopBarCollapseLayout>
 
         <template #pane>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { watch } from "vue"
 import { IllustType } from "@/functions/http-client/api/illust"
 import { useRouteStorage, useSessionStorage } from "@/functions/app"
 import { useInterceptedKey } from "@/modules/keyboard"
@@ -33,6 +34,12 @@ useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Digit3"], e => {
     if(e.key === "Digit1") tabType.value = "info"
     else if(e.key === "Digit2") tabType.value = "related"
     else if(e.key === "Digit3" && type === "IMAGE") tabType.value = "source"
+})
+
+watch(() => type, type => {
+    if(type === "COLLECTION" && tabType.value === "source") {
+        tabType.value = "info"
+    }
 })
 
 </script>

@@ -120,8 +120,6 @@ const keypress = (e: KeyEvent) => {
 
 const focus = () => active.value = true
 
-const blur = () => stopForecastTimer()
-
 const compositionEnd = (e: CompositionEvent) => {
     if(e.data.length) {
         startForecastTimer()
@@ -194,7 +192,7 @@ const clear = () => {
                 :class="{[$style.input]: true, [$style.focus]: active, [$style['has-value']]: hasValue, [$style['has-warning']]: schema && (schema.warnings.length || schema.errors.length)}"
                 :placeholder="placeholder" v-model:value="textValue" update-on-input
                 focus-on-keypress="Meta+KeyF" blur-on-keypress="Escape"
-                @keypress="keypress" @focus="focus" @blur="blur" @input="input"
+                @keypress="keypress" @focus="focus" @input="input"
                 @compositionend="compositionEnd" @click="click"
             />
             <Button
