@@ -2,7 +2,8 @@
 import { computed, Ref } from "vue"
 import { Group } from "@/components/layout"
 import { SimpleMetaTagElement } from "@/components-business/element"
-import { TopicChildrenNode, TopicType } from "@/functions/http-client/api/topic"
+import { SimpleTopic, TopicChildrenNode, TopicType } from "@/functions/http-client/api/topic"
+import { useDraggableDynamic } from "@/modules/drag"
 
 const props = defineProps<{
     children: TopicChildrenNode[]
@@ -35,17 +36,24 @@ const list: Ref<{[key in TopicType]: TopicChildrenNode[]}> = computed(() => {
     }
 })
 
+const dragEvents = useDraggableDynamic("topic")
+
+function childrenNodeToSimple(node: TopicChildrenNode): SimpleTopic {
+    const { children, ...topic } = node
+    return topic
+}
+
 </script>
 
 <template>
     <Group>
-        <SimpleMetaTagElement v-for="child in list['IP']" type="topic" :value="child" clickable @click="$emit('click', child.id)"/>
+        <SimpleMetaTagElement v-for="child in list['IP']" type="topic" :value="child" clickable @click="$emit('click', child.id)" draggable v-bind="dragEvents(() => childrenNodeToSimple(child))"/>
     </Group>
     <Group>
-        <SimpleMetaTagElement v-for="child in list['CHARACTER']" type="topic" :value="child" clickable @click="$emit('click', child.id)"/>
+        <SimpleMetaTagElement v-for="child in list['CHARACTER']" type="topic" :value="child" clickable @click="$emit('click', child.id)" draggable v-bind="dragEvents(() => childrenNodeToSimple(child))"/>
     </Group>
     <Group>
-        <SimpleMetaTagElement v-for="child in list['UNKNOWN']" type="topic" :value="child" clickable @click="$emit('click', child.id)"/>
+        <SimpleMetaTagElement v-for="child in list['UNKNOWN']" type="topic" :value="child" clickable @click="$emit('click', child.id)" draggable v-bind="dragEvents(() => childrenNodeToSimple(child))"/>
     </Group>
 </template>
 

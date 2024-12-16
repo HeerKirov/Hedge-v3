@@ -41,8 +41,9 @@ const [installGlobalKeyManager, useGlobalKeyManager] = installation(function() {
             }
         }
 
-        //类似Space、方向键一类按键具有默认导航行为。键盘事件的target如果是body，则阻止其默认行为。
-        if((consumer.target as Element | null)?.nodeName === "BODY" && preventDefaultValidator(consumer)) {
+        //类似Space、方向键一类按键具有默认导航行为。键盘事件的target如果是body/button，则阻止其默认行为。
+        const nodeName = (consumer.target as Element | null)?.nodeName
+        if((nodeName === "BODY" || nodeName === "BUTTON") && preventDefaultValidator(consumer)) {
             consumer.preventDefault()
         }
     }

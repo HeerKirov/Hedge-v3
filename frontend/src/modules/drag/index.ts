@@ -40,6 +40,30 @@ export function useDraggable<T extends keyof TypeDefinition>(type: T | Ref<T>, d
     return {onDragstart, onDragend}
 }
 
+/**
+ * 它提供一组函数，用于直接实现拖拽功能，同时还负责自动注入拖拽的传递数据。而数据在事件构造时生成。
+ */
+export function useDraggableDynamic<T extends keyof TypeDefinition>(type: T | Ref<T>) {
+    const onDragend = (e: DragEvent) => {
+        if(e.dataTransfer) {
+            e.dataTransfer.clearData("type")
+            e.dataTransfer.clearData("data")
+        }
+    }
+
+    return (data: TypeDefinition[T] | (() => TypeDefinition[T])) => {
+        const onDragstart = (e: DragEvent) => {
+            const unrefData = typeof data === "function" ? JSON.stringify(data()) : JSON.stringify(data)
+            if(e.dataTransfer) {
+                e.dataTransfer.setData("type", unref(type))
+                e.dataTransfer.setData("data", unrefData)
+            }
+        }
+
+        return {onDragstart, onDragend}
+    }
+}
+
 interface Droppable {
     dragover: Readonly<Ref<boolean>>
     onDragenter(): void
