@@ -86,6 +86,7 @@ class HttpServerImpl(private val health: Health,
                 Aspect(appStatus),
                 Authentication(token, appdata),
                 StaticFileHandler(archive, options),
+                HttpLog(),
                 ErrorHandler(),
                 WsRoutes(lifetime, eventBus)
             )
