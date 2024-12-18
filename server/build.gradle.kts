@@ -12,7 +12,7 @@ var targetPlatform: String? = project.findProperty("targetPlatform")?.toString()
 
 dependencies {
     val kotlinVersion = "2.0.21"
-    val javalinVersion = "6.3.0"
+    val javalinVersion = "6.4.0"
     val ktormVersion = "4.1.1"
     val sqliteVersion = "3.47.0.0"
     val jacksonVersion = "2.18.1"

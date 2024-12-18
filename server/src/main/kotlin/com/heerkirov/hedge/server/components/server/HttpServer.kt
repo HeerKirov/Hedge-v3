@@ -53,8 +53,8 @@ class HttpServerImpl(private val health: Health,
                 }
                 it.registerPlugin(CorsPlugin { plugin ->
                     plugin.addRule { rule ->
-                        rule.anyHost()
                         rule.allowCredentials = true
+                        rule.reflectClientOrigin = true
                     }
                 })
                 it.jsonMapper(JavalinJackson(Json.objectMapper()))
