@@ -236,7 +236,8 @@ class IllustManager(private val appdata: AppDataManager,
 
             updateSubImages(collectionId, nextImages, specifyPartitionTime, specifyInsertPosition = Pair(insertBegin, insertEnd))
         }else{
-            val nextImages = currentChildren.filter { it.id !in addImageIds } + addImages
+            //这里需要按照orderTime排序，以保证插入项的位置与现有项的相对位置正确。如果不排序，那么插入项就只会在最后面了。
+            val nextImages = (currentChildren.filter { it.id !in addImageIds } + addImages).sortedBy { it.orderTime }
 
             val (fileId, scoreFromSub, favoriteFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(nextImages, specifyPartitionTime)
 
@@ -1153,7 +1154,8 @@ class IllustManager(private val appdata: AppDataManager,
                     prev.partitionTime //使用两侧项的时间分区
                 }
             }
-            val targetPartitionImages = images.filter { it.partitionTime == partitionTime }
+            //选定时间分区后，选择原本就在当前集合中的项，从中找出最大和最小orderTime，用这两个时间点生成接下来要赋给当前时间分区和即将插入的项的时间点序列
+            val targetPartitionImages = images.filter { it.partitionTime == partitionTime && it.parentId == collectionId }
             val min = targetPartitionImages.minOf { it.orderTime }
             val max = targetPartitionImages.maxOf { it.orderTime }
             val items = images.filterIndexed { index, it -> it.partitionTime == partitionTime || (index in insertBegin..<insertEnd) }
