@@ -241,6 +241,7 @@ function collectSourceData(): Result<SourceDataUpdateForm, string> {
     if(tagListDiv) {
         const trList = tagListDiv.querySelectorAll<HTMLTableRowElement>("tr")
         for(const tr of trList) {
+            if(tr.childElementCount <= 0) continue
             let type: string
             const typeTd = tr.querySelector("td.tc")
             if(typeTd && typeTd.textContent) {
