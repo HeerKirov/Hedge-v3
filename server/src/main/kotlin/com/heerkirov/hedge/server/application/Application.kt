@@ -35,6 +35,7 @@ fun runApplication(options: ApplicationOptions) {
         val services = run {
             val taskCounter = TaskCounterModule(bus)
             val taskScheduler = define { TaskSchedulerModule(appStatus, appdata, bus, options) }
+            val homepageProcessor = define { HomepageProcessorImpl(appdata, repo, taskScheduler) }
 
             val sourceSiteManager = SourceSiteManager(appdata, repo, bus)
             val sourceAnalyzeManager = SourceAnalyzeManager(appdata, bus, sourceSiteManager)
@@ -68,11 +69,10 @@ fun runApplication(options: ApplicationOptions) {
 
             define { EventCompositorImpl(repo, bus, backendExporter) }
             define { FileGeneratorImpl(appStatus, appdata, repo, bus, taskCounter, taskScheduler, trashManager) }
-            define { DailyProcessorImpl(appdata, repo, bus, taskScheduler) }
             define { ImportProcessorImpl(appdata, repo, bus, taskScheduler, similarFinder, illustManager, sourceAnalyzeManager, sourceSiteManager, sourceDataManager, sourceMappingManager) }
 
             AllServices(
-                homepage = HomepageService(appdata, repo, stagingPostManager, taskCounter),
+                homepage = HomepageService(appdata, repo, stagingPostManager, taskCounter, homepageProcessor),
                 illust = IllustService(appdata, repo, bus, illustKit, illustManager, associateManager, sourceSiteManager, sourceDataManager, queryManager),
                 book = BookService(appdata, repo, bus, bookKit, bookManager, illustManager, queryManager),
                 folder = FolderService(repo, bus, folderKit, folderManager, illustManager),

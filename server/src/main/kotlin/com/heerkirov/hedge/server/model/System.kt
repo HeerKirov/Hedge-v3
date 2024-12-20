@@ -60,15 +60,9 @@ data class ExporterRecord(val id: Int,
 /**
  * app主页内容持久化记录表。
  */
-data class HomepageRecord(val date: LocalDate, val content: Content) {
-    data class Content(val todayImageIds: List<Int>,
-                       val todayBookIds: List<Int>,
-                       val todayAuthorAndTopicIds: List<AuthorOrTopic>,
-                       val historyImages: List<HistoryImage>)
+data class HomepageRecord(val date: LocalDate, val page: Int, val content: Content) {
 
-    data class AuthorOrTopic(val type: String, val id: Int)
-
-    data class HistoryImage(val date: LocalDate, val imageIds: List<Int>)
+    data class Content(val illusts: List<Int>, val extras: List<Int>, val partitions: List<LocalDate>, val extraType: String)
 }
 
 /**

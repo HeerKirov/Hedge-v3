@@ -40,10 +40,12 @@ object ExporterRecords : BaseTable<ExporterRecord>("exporter_record", schema = "
 
 object HomepageRecords : BaseTable<HomepageRecord>("homepage_record", schema = "system_db") {
     val date = instantDate("date").primaryKey()
+    val page = int("page")
     val content = json("content", typeRef<HomepageRecord.Content>())
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = HomepageRecord(
         date = row[date]!!,
+        page = row[page]!!,
         content = row[content]!!
     )
 }

@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.functions.service.HomepageService
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.config.JavalinConfig
 import io.javalin.http.Context
+import io.javalin.http.queryParamAsClass
 
 class HomepageRoutes(private val service: HomepageService) : Routes {
     override fun handle(javalin: JavalinConfig) {
@@ -19,7 +20,8 @@ class HomepageRoutes(private val service: HomepageService) : Routes {
     }
 
     private fun homepage(ctx: Context) {
-        ctx.json(service.getHomepageInfo())
+        val page = ctx.queryParamAsClass<Int>("page").getOrDefault(0)
+        ctx.json(service.getHomepageInfo(page))
     }
 
     private fun homepageState(ctx: Context) {
