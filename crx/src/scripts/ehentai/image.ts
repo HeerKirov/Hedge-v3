@@ -72,25 +72,18 @@ function initializeUI(sourcePath: SourceDataPath) {
         return
     }
     let downloadURL: string
-    if(i6.childElementCount === 4) {
-        //4个元素表明此图像有original，最后一个元素的下载链接就是original的链接
-        const anchor = document.querySelector<HTMLAnchorElement>("#i6 div:last-child a")
-        if(!anchor) {
-            console.warn("[initializeUI] Cannot find #i6 div a.")
-            return
-        }
-        downloadURL = anchor.href
-    }else if(i6.childElementCount === 3) {
-        //只有3个元素表明此图像没有original，使用直接使用图像地址
+    const i6a = document.querySelector<HTMLAnchorElement>("#i6 div:last-child a")
+    if(i6a?.innerText.startsWith("Download original")) {
+        //在i6中找到的最后一个元素是Download original，则表示此图像有original，使用anchor的下载链接
+        downloadURL = i6a.href
+    }else{
+        //否则表明此图像没有original，使用直接使用图像地址
         const img = document.querySelector<HTMLImageElement>("#img")
         if(!img) {
             console.warn("[initializeUI] Cannot find #img.")
             return
         }
         downloadURL = img.src
-    }else{
-        console.warn(`[initializeUI] div#i6 has ${i6.childElementCount} div. it is unexpect.`)
-        return
     }
     imageToolbar.config({locale: "ehentai-image"})
     imageToolbar.add([{index: sourcePath.sourcePart!, element: i3, sourcePath, downloadURL}])

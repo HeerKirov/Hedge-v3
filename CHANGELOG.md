@@ -14,6 +14,7 @@
 * 修复在ImageView页面下，当UI折叠时，无法使用快捷键调整缩放的问题。
 * 修复当焦点在按钮元素上时，SPACE等快捷键会使快捷键效果和按钮一同触发的问题。现已禁用按钮元素的普通按键响应。
 * **[CRX]** 修复E-Hentai画廊没有tag时会造成来源数据收集异常的问题。
+* **[CRX]** 修复E-Hentai的image toolbar在某些特定情况下会使用sample URL下载的问题。
 ### Optimized
 * 主题详情页的子主题标签现在可以拖拽了。
 * **[SERVER]** 尝试引入了HTTP log。现在会在日志中打印unsafe method HTTP log了。
