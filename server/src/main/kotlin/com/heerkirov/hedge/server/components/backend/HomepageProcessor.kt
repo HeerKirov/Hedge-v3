@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.IllustModelType
+import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.library.framework.Component
 import com.heerkirov.hedge.server.model.HomepageRecord
 import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
@@ -13,6 +14,7 @@ import org.ktorm.entity.filter
 import org.ktorm.entity.firstOrNull
 import org.ktorm.entity.map
 import org.ktorm.entity.sequenceOf
+import org.ktorm.schema.BaseTable
 import org.ktorm.schema.ColumnDeclaring
 import org.ktorm.support.sqlite.random
 import java.time.Instant
@@ -30,6 +32,11 @@ interface HomepageProcessor {
      * @param page 指定页码
      */
     fun getHomepageInfo(page: Int, date: LocalDate? = null): HomepageRecord
+
+    /**
+     * 重设主页内容。
+     */
+    fun resetHomepageInfo()
 }
 
 class HomepageProcessorImpl(private val appdata: AppDataManager, private val data: DataRepository, taskScheduler: TaskSchedulerModule) : HomepageProcessor, Component {
@@ -59,6 +66,20 @@ class HomepageProcessorImpl(private val appdata: AppDataManager, private val dat
 
         //删除1天之前的所有主页记录
         data.db.delete(HomepageRecords) { it.date less todayDate.minusDays(1) }
+    }
+
+    override fun resetHomepageInfo() {
+        val todayDate = Instant.now().toPartitionDate(appdata.setting.server.timeOffsetHour)
+
+        data.db.delete(HomepageRecords) { it.date eq todayDate }
+
+        records.clear()
+
+        cacheAllPartitions.clear()
+        cacheAllPartitions.addAll(selectAllPartition())
+
+        getHomepageInfo(0, todayDate)
+        getHomepageInfo(1, todayDate)
     }
 
     override fun getHomepageInfo(page: Int, date: LocalDate?): HomepageRecord {
@@ -110,9 +131,9 @@ class HomepageProcessorImpl(private val appdata: AppDataManager, private val dat
         }
 
         val extras = when(extraType) {
-            "TOPIC" -> selectRandTopics(6)
-            "AUTHOR" -> selectRandAuthors(6)
-            "BOOK" -> selectRandBooks(6)
+            "TOPIC" -> selectRandTopics()
+            "AUTHOR" -> selectRandAuthors()
+            "BOOK" -> selectRandBooks()
             else -> throw RuntimeException("Unsupported type $extraType.")
         }
 
@@ -122,63 +143,94 @@ class HomepageProcessorImpl(private val appdata: AppDataManager, private val dat
     private fun selectAllPartition(): List<LocalDate> {
         return data.db.from(Illusts)
             .select(Illusts.partitionTime)
-            .where { (Illusts.score greaterEq 2) and (Illusts.cachedBookCount eq 0) }
+            .where { (Illusts.cachedBookCount eq 0) and ((Illusts.type eq IllustModelType.COLLECTION) or (Illusts.type eq IllustModelType.IMAGE)) }
             .groupBy(Illusts.partitionTime)
             .orderBy(Illusts.partitionTime.asc())
             .map { it[Illusts.partitionTime]!! }
     }
 
     private fun selectRandIllusts(limit: Int, partition: LocalDate): List<Int> {
-        TODO()
-        //(it.cachedBookCount eq 0) and (it.score greaterEq 2)
+        //illust的权重计算时，将无评分记作1，1分记作0
+        val items = data.db.from(Illusts)
+            .select(Illusts.id, Illusts.type, Illusts.exportedScore)
+            .where { (Illusts.partitionTime eq partition) and (Illusts.cachedBookCount eq 0) and ((Illusts.type eq IllustModelType.COLLECTION) or (Illusts.type eq IllustModelType.IMAGE)) }
+            .map { Triple(it[Illusts.id]!!, it[Illusts.type]!!, it[Illusts.exportedScore]) }
+
+        val totalWeight = items.sumOf { (_, _, s) -> ILLUST_WEIGHTS[s ?: 0] }
+        val cumulativeWeights = items.map { (_, _, s) -> ILLUST_WEIGHTS[s ?: 0].toDouble() / totalWeight }.scan(0.0) { acc, weight -> acc + weight }
+        val sampled = mutableSetOf<Int>()
+        var missing = 0
+
+        while(sampled.size < limit && sampled.size < items.size) {
+            if(missing <= 5) {
+                //使用轮盘赌算法加权抽样
+                val rand = Random.nextDouble()
+                val (id, _, _) = items[cumulativeWeights.indexOfFirst { it >= rand } - 1]
+                if(id !in sampled) {
+                    sampled.add(id)
+                }else{
+                    missing += 1
+                }
+            }else{
+                //如果累计5次抽样都MISS掉，就认为取样密度已经不足以支撑随机抽样了，更改抽样算法为直接依次选取
+                val (id, _, _) = items.firstOrNull { (id, _, _) -> id !in sampled } ?: break
+                sampled.add(id)
+            }
+        }
+
+        return items.filter { (id, _, _) -> id in sampled }.sortedByDescending { (_, _, s) -> s ?: 0 }.map { (id, type, score) ->
+            if(type == IllustModelType.COLLECTION) {
+                //如果抽选项是一个集合，则查询一个它的children作为替代
+                data.db.from(Illusts).select(Illusts.id)
+                    .whereWithConditions {
+                        it += Illusts.parentId.eq(id)
+                        if(score != null) it += Illusts.exportedScore.isNotNull() and Illusts.exportedScore.greaterEq(score)
+                    }
+                    .map { it[Illusts.id]!! }
+                    .randomOrNull() ?: id
+            }else{
+                id
+            }
+        }
     }
 
-    private fun selectRandTopics(limit: Int): List<Int> {
-        TODO()
+    private fun selectRandTopics(): List<Int> {
+        val limit = 5
+        val exists = records.values.filter { it.content.extraType == "TOPIC" }.flatMap { it.content.extras }
+        val ret = mutableListOf<Int>()
+        ret.addAll(selectRand(Topics, Random.nextInt(2, 6)) { it.type eq TagTopicType.CHARACTER and (it.cachedCount greaterEq 3) and (it.id notInList exists) and it.favorite })
+        ret.addAll(selectRand(Topics, limit - ret.size) { (it.cachedCount greaterEq 3) and (it.id notInList exists) and it.favorite.not() })
+        return ret
     }
 
-    private fun selectRandAuthors(limit: Int): List<Int> {
-        TODO()
+    private fun selectRandAuthors(): List<Int> {
+        val limit = 5
+        val exists = records.values.filter { it.content.extraType == "AUTHOR" }.flatMap { it.content.extras }
+        val ret = mutableListOf<Int>()
+        ret.addAll(selectRand(Authors, Random.nextInt(2, 5)) { (it.cachedCount greaterEq 3) and (it.id notInList exists) and it.favorite })
+        ret.addAll(selectRand(Authors, Random.nextInt(1, limit - ret.size + 1)) { (it.cachedCount greaterEq 3) and (it.id notInList exists) and it.favorite.not() and it.score.isNotNull() and it.score.greaterEq(3) })
+        ret.addAll(selectRand(Authors, limit - ret.size) { (it.cachedCount greaterEq 3) and (it.id notInList exists) and it.favorite.not() and (it.score.isNull() or it.score.less(3)) })
+        return ret
     }
 
-    private fun selectRandBooks(limit: Int): List<Int> {
-        TODO()
+    private fun selectRandBooks(): List<Int> {
+        val limit = 9
+        val exists = records.values.filter { it.content.extraType == "BOOK" }.flatMap { it.content.extras }
+        val ret = mutableListOf<Int>()
+        ret.addAll(selectRand(Books, Random.nextInt(2, 5)) { (it.cachedCount greaterEq 1) and (it.id notInList exists) and it.score.isNotNull() and it.score.greaterEq(4) })
+        ret.addAll(selectRand(Books, Random.nextInt(1, limit - ret.size + 1)) { (it.cachedCount greaterEq 1) and (it.id notInList exists) and it.favorite.not() and it.score.isNotNull() and it.score.greaterEq(3) and it.score.less(4) })
+        ret.addAll(selectRand(Books, limit - ret.size) { (it.cachedCount greaterEq 1) and (it.id notInList exists) and it.favorite.not() and (it.score.isNull() or it.score.less(3)) })
+        return ret
     }
 
-    private inline fun queryImage(limit: Int, onlyImage: Boolean = false, condition: (Illusts) -> ColumnDeclaring<Boolean>): List<Int> {
-        return if(limit <= 0) emptyList() else data.db.from(Illusts)
-            .select(Illusts.id)
-            .where { if(onlyImage) { (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) }else{ (Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.COLLECTION) } and condition(Illusts) }
+    private fun <D, T> selectRand(dao: D, limit: Int, condition: (D) -> ColumnDeclaring<Boolean>): List<Int> where D : BaseTable<T> {
+        if(limit <= 0) return emptyList()
+        val pk = dao.primaryKeys.first()
+        return data.db.from(dao).select(pk)
+            .where { condition(dao) }
             .orderBy(random().asc())
             .limit(limit)
-            .map { it[Illusts.id]!! }
-    }
-
-    private inline fun queryBook(limit: Int, condition: (Books) -> ColumnDeclaring<Boolean>): List<Int> {
-        return if(limit <= 0) emptyList() else data.db.from(Books)
-            .select(Books.id)
-            .where { (Books.cachedCount greater 0) and condition(Books) }
-            .orderBy(random().asc())
-            .limit(limit)
-            .map { it[Books.id]!! }
-    }
-
-    private inline fun queryAuthor(limit: Int, condition: (Authors) -> ColumnDeclaring<Boolean>): List<Int> {
-        return if(limit <= 0) emptyList() else data.db.from(Authors)
-            .select(Authors.id)
-            .where { (Authors.cachedCount greater 0) and condition(Authors) }
-            .orderBy(random().asc())
-            .limit(limit)
-            .map { it[Authors.id]!! }
-    }
-
-    private inline fun queryTopic(limit: Int, condition: (Topics) -> ColumnDeclaring<Boolean>): List<Int> {
-        return if(limit <= 0) emptyList() else data.db.from(Topics)
-            .select(Topics.id)
-            .where { (Topics.cachedCount greater 0) and condition(Topics) }
-            .orderBy(random().asc())
-            .limit(limit)
-            .map { it[Topics.id]!! }
+            .map { it[pk]!! as Int }
     }
 
     private fun MutableList<LocalDate>.randomPopOrNull(): LocalDate? {
@@ -189,3 +241,5 @@ class HomepageProcessorImpl(private val appdata: AppDataManager, private val dat
 }
 
 private val EXTRA_TYPES = listOf("TOPIC", "AUTHOR", "BOOK")
+
+private val ILLUST_WEIGHTS = listOf(1L, 0L, 4L, 9L, 16L, 25L)

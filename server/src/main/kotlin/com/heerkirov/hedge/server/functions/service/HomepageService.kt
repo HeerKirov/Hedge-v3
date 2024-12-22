@@ -44,6 +44,8 @@ class HomepageService(private val appdata: AppDataManager,
 
     fun cleanCompletedBackgroundTask() = taskCounter.cleanCompleted()
 
+    fun resetHomepageInfo() = homepageProcessor.resetHomepageInfo()
+
     private fun mapToHomepage(record: HomepageRecord): HomepageRes {
         val illusts = if(record.content.illusts.isEmpty()) emptyList() else {
             data.db.from(Illusts)
@@ -72,8 +74,8 @@ class HomepageService(private val appdata: AppDataManager,
                             .innerJoin(IllustTopicRelations, IllustTopicRelations.illustId eq Illusts.id)
                             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
                             .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
-                            .where { (IllustTopicRelations.topicId eq id) and (Illusts.type notEq IllustModelType.IMAGE_WITH_PARENT) }
-                            .orderBy(Illusts.orderTime.desc())
+                            .where { (IllustTopicRelations.topicId eq id) and (Illusts.type.eq(IllustModelType.IMAGE) or Illusts.type.eq(IllustModelType.COLLECTION)) }
+                            .orderBy(IllustTopicRelations.illustId.desc()) //这里使用ID倒序。如果使用其他(如orderTime)，会导致使用其他索引而大幅降低查询效率
                             .limit(3)
                             .map { IllustSimpleRes(it[Illusts.id]!!, filePathFrom(it)) }
                         HomepageRes.Extra(id, topic.name, topic.type.toString(), topic.color, images, null, null, null, null)
@@ -92,8 +94,8 @@ class HomepageService(private val appdata: AppDataManager,
                             .innerJoin(IllustAuthorRelations, IllustAuthorRelations.illustId eq Illusts.id)
                             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
                             .select(Illusts.id, FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
-                            .where { (IllustAuthorRelations.authorId eq id) and (Illusts.type notEq IllustModelType.IMAGE_WITH_PARENT) }
-                            .orderBy(Illusts.orderTime.desc())
+                            .where { (IllustAuthorRelations.authorId eq id) and (Illusts.type.eq(IllustModelType.IMAGE) or Illusts.type.eq(IllustModelType.COLLECTION)) }
+                            .orderBy(IllustAuthorRelations.illustId.desc())
                             .limit(3)
                             .map { IllustSimpleRes(it[Illusts.id]!!, filePathFrom(it)) }
                         HomepageRes.Extra(id, author.name, author.type.toString(), author.color, images, null, null, null, null)

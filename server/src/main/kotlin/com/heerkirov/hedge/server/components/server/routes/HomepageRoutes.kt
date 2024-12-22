@@ -12,6 +12,7 @@ class HomepageRoutes(private val service: HomepageService) : Routes {
         javalin.router.apiBuilder {
             path("api/homepage") {
                 get(::homepage)
+                post("reset", ::resetHomepage)
                 get("state", ::homepageState)
                 get("background-tasks", ::backgroundTasks)
                 post("background-tasks/clean", ::cleanCompletedBackgroundTask)
@@ -22,6 +23,11 @@ class HomepageRoutes(private val service: HomepageService) : Routes {
     private fun homepage(ctx: Context) {
         val page = ctx.queryParamAsClass<Int>("page").getOrDefault(0)
         ctx.json(service.getHomepageInfo(page))
+    }
+
+    private fun resetHomepage(ctx: Context) {
+        service.resetHomepageInfo()
+        ctx.status(204)
     }
 
     private fun homepageState(ctx: Context) {

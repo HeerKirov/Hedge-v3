@@ -10,6 +10,10 @@ import io.javalin.Javalin
 import io.javalin.http.Context
 import io.javalin.http.HttpStatus
 import io.javalin.http.util.SeekableWriter
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import kotlin.io.path.Path
@@ -19,13 +23,20 @@ class StaticFileHandler(private val archive: FileManager, private val options: A
     private val prefix = "/archives"
     private val prefixLocal = "/archives-for-local"
 
+    private val httpClient = if(options.storageProxy != null) HttpClient.newHttpClient() else null
+
     init {
         SeekableWriter.chunkSize = 1000 * 1000 * 4
     }
 
     override fun handle(javalin: Javalin) {
-        javalin.get("$prefix/*", ::handle)
-        javalin.get("$prefixLocal/*", ::handleLocal)
+        if(options.storageProxy != null) {
+            javalin.get("$prefix/*", ::proxyHandle)
+            javalin.get("$prefixLocal/*", ::proxyHandleLocal)
+        }else{
+            javalin.get("$prefix/*", ::handle)
+            javalin.get("$prefixLocal/*", ::handleLocal)
+        }
     }
 
     private fun handle(ctx: Context) {
@@ -89,5 +100,36 @@ class StaticFileHandler(private val archive: FileManager, private val options: A
         resource.inputStream.use { fis -> Files.copy(fis, dest, StandardCopyOption.REPLACE_EXISTING) }
 
         ctx.status(204)
+    }
+
+    private fun proxyHandle(ctx: Context) {
+        ctx.redirect("${options.storageProxy}${ctx.path()}", HttpStatus.TEMPORARY_REDIRECT)
+    }
+
+    private fun proxyHandleLocal(ctx: Context) {
+        if(options.remoteMode) throw be(OnlyForLocal)
+
+        val target = ctx.path().removePrefix(prefixLocal).trimStart('/')
+        val splits = target.split("/", limit = 3)
+        if(splits.size < 3) {
+            ctx.status(HttpStatus.NOT_FOUND)
+            return
+        }
+
+        val request = HttpRequest.newBuilder()
+            .uri(URI.create("${options.storageProxy}/archives/$target"))
+            .build()
+
+        val response = httpClient!!.send(request, HttpResponse.BodyHandlers.ofInputStream())
+        if(response.statusCode() == 200) {
+            response.body().use { input ->
+                val dest = Path(options.serverDir, "../caches", target)
+                dest.createDirectories()
+                Files.copy(input, dest, StandardCopyOption.REPLACE_EXISTING)
+            }
+            ctx.status(204)
+        }else{
+            ctx.status(response.statusCode())
+        }
     }
 }

@@ -25,6 +25,11 @@ class ApplicationOptions(parameters: Parameters) {
     val storageDir: String? = parameters["--storage-dir"]
 
     /**
+     * 当访问storage时，转发到此地址。这是只读的。用于在开发模式安全地复用生产数据。
+     */
+    val storageProxy: String? = parameters["--storage-proxy"]
+
+    /**
      * 使用指定端口启动server。用于在开发模式下固定端口，以及在远程模式下必须指定启动参数。
      */
     val port: Int? = parameters["--port"]?.toInt() ?: if(this.remoteMode) throw IllegalArgumentException("'--port' is required in remote mode.") else null
