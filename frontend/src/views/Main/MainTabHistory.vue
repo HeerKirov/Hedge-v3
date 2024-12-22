@@ -26,6 +26,8 @@ installGlobalKeyStack(active)
     top: 0
     width: 100%
     height: 100%
+    container-type: inline-size
+    container-name: tab
     &:not(:last-child)
         visibility: hidden
 </style>

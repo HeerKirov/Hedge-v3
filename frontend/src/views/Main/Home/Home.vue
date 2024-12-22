@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useRouter } from "vue-router"
-import { Block, Icon } from "@/components/universal"
+import { BrowserTeleport } from "@/components/logical"
+import { Block, Button, Icon, LazyImg } from "@/components/universal"
 import { BookCard } from "@/components-business/element"
 import { useAssets } from "@/functions/app"
 import { useHomepageContext } from "@/services/main/homepage"
@@ -10,72 +10,58 @@ import { AUTHOR_TYPE_ICONS, TOPIC_TYPE_ICONS } from "@/constants/entity"
 const { assetsUrl } = useAssets()
 
 const { 
-    loading, data,
+    loading, data, hasNext, next, reset, scroll, scrollRef,
     openImport, openBook,
-    openPartition, openIllustOfPartition, 
+    openIllustOfPartition,
     openAuthorOrTopic, openIllustOfAuthorOrTopic
 } = useHomepageContext()
-
-const router = useRouter()
 
 </script>
 
 <template>
-    <div v-if="loading || !data?.ready" :class="[$style.root, $style.loading]">
-        <label :class="$style.header">随便看看</label>
-        <div :class="$style['primary-scroll-area']">
-            <div v-for="() in 28" :class="$style.image"/>
-            <div class="h-100"/>
-            <Block v-for="() in 3" :class="$style.block">
-                <div :class="$style['example-area']"/>
-            </Block>
-        </div>
-        <label :class="$style.header">画集推荐</label>
-        <div :class="$style['book-scroll-area']">
-            <Block v-for="() in 6" :class="$style.book"/>
-        </div>
-        <label :class="$style.header">最近添加</label>
-        <div :class="$style['secondary-scroll-area']">
-            <div v-for="() in 8" :class="$style.image"/>
-        </div>
+    <BrowserTeleport to="top-bar">
+        <Button class="flex-item no-grow-shrink" icon="rotate" square @click="reset"/>
+    </BrowserTeleport>
+    <div v-if="loading && data.length === 0" class="absolute center has-text-centered pb-6">
+        <div class="has-text-centered p-2 w-100"><Icon icon="circle-notch" size="2x" spin/></div>
     </div>
-    <div v-else-if="data && (data.todayImages.length || data.todayAuthorAndTopics.length || data.todayBooks.length || data.recentImages.length || data.historyImages.length)" :class="$style.root">
-        <template v-if="data.todayImages.length > 0 || data.todayAuthorAndTopics.length > 0">
-            <label :class="$style.header">随便看看</label>
-            <div :class="$style['primary-scroll-area']">
-                <img v-for="i in data.todayImages" :class="$style.image" :src="assetsUrl(i.filePath.thumbnail)" @click="openIllustOfPartition(i.partitionTime, i.id)"/>
-                <div class="h-100"/>
-                <Block v-for="i in data.todayAuthorAndTopics" :class="$style.block">
-                    <div :class="[$style['title-area'], `has-text-${i.color}`]" @click="openAuthorOrTopic(i.metaType, i.name)">
-                        <Icon class="mr-1" :icon="i.metaType === 'AUTHOR' ? AUTHOR_TYPE_ICONS[i.type] : TOPIC_TYPE_ICONS[i.type]"/>{{ i.name }}
+    <div v-else-if="data.length > 0 && data[0].illusts.length > 0" ref="scrollRef" :class="$style.root" @scroll="scroll">
+        <template v-for="record in data">
+            <div :class="$style['sampled-illusts']">
+                <LazyImg v-for="i in record.illusts" :class="$style.image" :src="assetsUrl(i.filePath.thumbnail)" alt="" @click="openIllustOfPartition(i.partitionTime, i.id)"/>
+            </div>
+            <div v-if="record.extraType === 'AUTHOR'" :class="$style.extras">
+                <Block v-for="i in record.extras.slice(0, 5)" :class="$style.block">
+                    <div :class="[$style['title-area'], `has-text-${i.color}`]" @click="openAuthorOrTopic('AUTHOR', i.name)">
+                        <Icon class="mr-1" :icon="AUTHOR_TYPE_ICONS[i.type]"/>{{ i.name }}
                     </div>
                     <div :class="$style['example-area']">
-                        <img v-for="j in i.images" :class="$style.example" :src="assetsUrl(j.filePath.thumbnail)" @click="openIllustOfAuthorOrTopic(i.metaType, i.name, j.id)"/>
+                        <LazyImg v-for="j in i.images" :class="$style.example" :src="assetsUrl(j.filePath.thumbnail)" alt="" @click="openIllustOfAuthorOrTopic('AUTHOR', i.name, j.id)"/>
                         <template v-if="i.images.length < 3">
                             <div v-for="() in (3 - i.images.length)" :class="$style['empty-example']"/>
                         </template>
                     </div>
                 </Block>
             </div>
-        </template>
-        <template v-if="data.todayBooks.length">
-            <label :class="$style.header">画集推荐</label>
-            <div :class="$style['book-scroll-area']">
-                <BookCard v-for="b in data.todayBooks" :class="$style.book" :item="b" @click="openBook(b.id)"/>
+            <div v-else-if="record.extraType === 'TOPIC'" :class="$style.extras">
+                <Block v-for="i in record.extras.slice(0, 5)" :class="$style.block">
+                    <div :class="[$style['title-area'], `has-text-${i.color}`]" @click="openAuthorOrTopic('TOPIC', i.name)">
+                        <Icon class="mr-1" :icon="TOPIC_TYPE_ICONS[i.type]"/>{{ i.name }}
+                    </div>
+                    <div :class="$style['example-area']">
+                        <LazyImg v-for="j in i.images" :class="$style.example" :src="assetsUrl(j.filePath.thumbnail)" alt="" @click="openIllustOfAuthorOrTopic('TOPIC', i.name, j.id)"/>
+                        <template v-if="i.images.length < 3">
+                            <div v-for="() in (3 - i.images.length)" :class="$style['empty-example']"/>
+                        </template>
+                    </div>
+                </Block>
+            </div>
+            <div v-else :class="$style.books">
+                <BookCard v-for="b in record.extras" :class="$style.book" :item="b" @click="openBook(b.id)"/>
             </div>
         </template>
-        <template v-if="data.recentImages.length">
-            <label :class="$style.header">最近添加</label>
-            <div :class="$style['secondary-scroll-area']">
-                <img v-for="i in data.recentImages" :class="$style.image" :src="assetsUrl(i.filePath.thumbnail)" @click="openIllustOfPartition(i.partitionTime, i.id)"/>
-            </div>
-        </template>
-        <template v-for="h in data.historyImages">
-            <label :class="[$style.header, 'is-cursor-pointer']" @click="openPartition(h.date)">{{ h.date.year }}年{{ h.date.month }}月{{ h.date.day }}日</label>
-            <div :class="$style['secondary-scroll-area']">
-                <img v-for="i in h.images" :class="$style.image" :src="assetsUrl(i.filePath.thumbnail)" @click="openIllustOfPartition(h.date, i.id)"/>
-            </div>
-        </template>
+        <div v-if="loading" class="has-text-centered p-2 w-100"><Icon icon="circle-notch" size="2x" spin/></div>
+        <Button v-else-if="hasNext" class="w-100" @click="next">查看更多…</Button>
     </div>
     <div v-else class="absolute center has-text-centered pb-6">
         <p class="pl-4 mb-4 is-font-size-large">现在没有任何内容…</p>
@@ -88,52 +74,49 @@ const router = useRouter()
 @use "@/styles/base/size"
 @use "@/styles/base/color"
 
-$margin-x: size.$spacing-4
-
 .root
     width: 100%
     height: 100%
     overflow-y: auto
 
     box-sizing: border-box
-    padding: $margin-x 0
-    &::-webkit-scrollbar,
-    *::-webkit-scrollbar
-        display: none
+    padding: size.$spacing-2
 
-.header
-    font-weight: 700
-    display: block
-    margin-left: size.$spacing-3
-    margin-bottom: size.$spacing-2
-    &:not(:first-child)
-        margin-top: size.$spacing-2
+    --illust-column-num: 8
+    --extra-column-num: 5
+    --book-column-num: 9
+    @container tab (max-width: 1400px)
+        --illust-column-num: 6
+    @container tab (max-width: 840px)
+        --illust-column-num: 4
+        --extra-column-num: 3
+        --book-column-num: 3
 
-.primary-scroll-area
-    $image-width: 8vw
-    $image-gap: size.$spacing-1
-    $image-column-num: 4
-    $block-column-num: 3
-    height: calc(#{$image-width * $image-column-num} + #{$image-gap * ($image-column-num - 1)})
-    padding: 0 $margin-x
-    overflow-x: auto
+.sampled-illusts
+    $column-num: var(--illust-column-num)
+    $gap: size.$spacing-1
     display: flex
     flex-wrap: wrap
-    flex-direction: column
-    align-content: flex-start
-    gap: $image-gap
-
-    > .image
-        flex-shrink: 0
-        width: $image-width
-        height: $image-width
+    gap: $gap
+    margin: size.$spacing-3
+    > img
+        width: calc((100% - ($column-num - 1) * $gap) / $column-num)
+        //border-radius: size.$radius-size-std
+        aspect-ratio: 1 / 1
         object-fit: cover
         object-position: center
-        cursor: pointer
+
+.extras
+    $column-num: var(--extra-column-num)
+    $example-num: 3
+    $gap: size.$spacing-1
+    display: flex
+    flex-wrap: wrap
+    gap: $gap
     > .block
         flex-shrink: 0
-        height: calc((#{$image-width * $image-column-num} + #{$image-gap * ($image-column-num - $block-column-num)}) / 3)
-        padding: size.$spacing-2
+        width: calc((100% - ($column-num - 1) * $gap) / $column-num)
+        padding: size.$spacing-1 size.$spacing-2 size.$spacing-5 size.$spacing-2
         > .title-area
             height: size.$element-height-small
             line-height: size.$element-height-tiny
@@ -143,56 +126,35 @@ $margin-x: size.$spacing-4
             text-overflow: ellipsis
             cursor: pointer
         > .example-area
-            $example-height: calc((#{$image-width * $image-column-num} + #{$image-gap * ($image-column-num - $block-column-num)}) / 3 - #{size.$element-height-small} - #{size.$spacing-2 * 2} - 2px)
-            height: $example-height
-            width: calc(#{$example-height} * 3 + #{$image-gap * 2})
             display: flex
-            gap: $image-gap
+            gap: $gap
             > .example
-                height: $example-height
-                width: $example-height
+                width: calc((100% - $gap * ($example-num - 1)) / $example-num)
+                aspect-ratio: 1 / 1
                 border-radius: 2px
                 box-sizing: border-box
                 object-fit: cover
                 object-position: center
                 cursor: pointer
             > .empty-example
-                width: $example-height
-                height: $example-height
+                width: calc(100% - $gap * 2 / 3)
+                aspect-ratio: 1 / 1
                 border: dashed 1px darkgrey
                 border-radius: 2px
                 box-sizing: border-box
 
-.secondary-scroll-area
-    $image-width: 8vw
-    $image-gap: size.$spacing-1
-    padding: 0 $margin-x
-    overflow-x: auto
+.books
+    $column-num: var(--book-column-num)
+    $gap: size.$spacing-3
     display: flex
-    gap: $image-gap
-
-    > .image
-        flex-shrink: 0
-        width: $image-width
-        height: $image-width
-        object-fit: cover
-        object-position: center
-        cursor: pointer
-
-.book-scroll-area
-    $book-width: 12vw
-    $book-aspect: 1.3333
-    $book-gap: size.$spacing-1
-    padding: 0 $margin-x
-    overflow-x: auto
-    display: flex
-    gap: $book-gap
-
+    flex-wrap: wrap
+    gap: $gap
     > .book
         flex-shrink: 0
         position: relative
-        width: $book-width
-        height: #{$book-width * $book-aspect}
+        width: calc((100% - ($column-num - 1) * $gap) / $column-num)
+        aspect-ratio: 3 / 4
+        margin: 0
 
 .loading
     overflow-y: hidden

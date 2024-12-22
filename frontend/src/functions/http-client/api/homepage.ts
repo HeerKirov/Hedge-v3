@@ -8,36 +8,27 @@ import { FilePath } from "./all"
 
 export function createHomepageEndpoint(http: HttpInstance): HomepageEndpoint {
     return {
-        homepage: http.createRequest("/api/homepage", "GET", {
-            parseResponse: mapToHomepageInfo
+        homepage: http.createQueryRequest("/api/homepage", "GET", {
+            parseResponse: mapToHomepageRes
         }),
         state: http.createRequest("/api/homepage/state", "GET", {
             parseResponse: mapToHomepageState
         }),
         backgroundTasks: http.createRequest("/api/homepage/background-tasks", "GET"),
         cleanCompletedBackgroundTasks: http.createRequest("/api/homepage/background-tasks/clean", "POST"),
+        resetHomepage: http.createRequest("/api/homepage/reset", "POST"),
     }
 }
 
-function mapToHomepageInfo(data: any): HomepageInfo {
+function mapToHomepageRes(data: any): HomepageRes {
     return {
-        ready: <boolean>data["ready"],
+        ...data,
         date: date.of(<string>data["date"]),
-        todayImages: (<any[]>data["todayImages"]).map(data => ({
+        page: <number>data["page"],
+        illusts: (<any[]>data["illusts"]).map(data => ({
             id: <number>data["id"],
             filePath: <FilePath>data["filePath"],
             partitionTime: date.of(<string>data["partitionTime"])
-        })),
-        todayBooks: <Book[]>data["todayBooks"],
-        todayAuthorAndTopics: <AuthorAndTopic[]>data["todayAuthorAndTopics"],
-        recentImages: (<any[]>data["recentImages"]).map(data => ({
-            id: <number>data["id"],
-            filePath: <FilePath>data["filePath"],
-            partitionTime: date.of(<string>data["partitionTime"])
-        })),
-        historyImages: (<any[]>data["historyImages"]).map(data => ({
-            images: <SimpleIllust[]>data["images"],
-            date: date.of(<string>data["date"])
         }))
     }
 }
@@ -53,7 +44,7 @@ export interface HomepageEndpoint {
     /**
      * 获得主页信息。
      */
-    homepage(): Promise<Response<HomepageInfo>>
+    homepage(filter: {page: number}): Promise<Response<HomepageRes>>
     /**
      * 查看主要状态类信息。
      */
@@ -66,6 +57,10 @@ export interface HomepageEndpoint {
      * 清理已完成的后台任务项，将其从列表中移除。
      */
     cleanCompletedBackgroundTasks(): Promise<Response<undefined>>
+    /**
+     * 重设主页内容。
+     */
+    resetHomepage(): Promise<Response<undefined>>
 }
 
 export type BackgroundTaskType
@@ -85,15 +80,11 @@ interface HomepageState {
     stagingPostCount: number
 }
 
-interface HomepageInfo {
-    ready: boolean
+export type HomepageRes = {
     date: LocalDate
-    todayImages: Illust[]
-    todayBooks: Book[]
-    todayAuthorAndTopics: AuthorAndTopic[]
-    recentImages: Illust[]
-    historyImages: HistoryImage[]
-}
+    page: number
+    illusts: SampledIllust[]
+} & ({extraType: "TOPIC", extras: ExtraTopic[]} | {extraType: "AUTHOR", extras: ExtraAuthor[]} | {extraType: "BOOK", extras: ExtraBook[]})
 
 export interface BackgroundTask {
     type: BackgroundTaskType
@@ -101,23 +92,23 @@ export interface BackgroundTask {
     maxValue: number
 }
 
-type AuthorAndTopic = {
-    metaType: "TOPIC"
+interface ExtraTopic {
+    id: number
+    name: string
     type: TopicType
-    id: number
-    name: string
-    color: UsefulColors | null
-    images: SimpleIllust[]
-} | {
-    metaType: "AUTHOR"
-    type: AuthorType
-    id: number
-    name: string
     color: UsefulColors | null
     images: SimpleIllust[]
 }
 
-interface Book {
+interface ExtraAuthor {
+    id: number
+    name: string
+    type: AuthorType
+    color: UsefulColors | null
+    images: SimpleIllust[]
+}
+
+interface ExtraBook {
     id: number
     title: string
     filePath: FilePath | null
@@ -125,11 +116,6 @@ interface Book {
     imageCount: number
 }
 
-interface Illust extends SimpleIllust {
+interface SampledIllust extends SimpleIllust {
     partitionTime: LocalDate
-}
-
-interface HistoryImage {
-    date: LocalDate
-    images: SimpleIllust[]
 }
