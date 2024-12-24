@@ -3,12 +3,13 @@ import { Button, Icon } from "@/components/universal"
 import { TagmeEditor } from "@/components-business/form-editor"
 import { META_TYPE_ICONS } from "@/constants/entity"
 import { useEditorContext } from "./context"
+import { CheckBox } from "@/components/form";
 
 defineProps<{
     allowTagme: boolean
 }>()
 
-const { typeFilter, tab, tabDBType, form: { tagme, setTagme } } = useEditorContext()
+const { identity, typeFilter, tab, tabDBType, form: { tagme, setTagme, overwriteMode } } = useEditorContext()
 
 const clickAuthorFilter = () => {
     if(typeFilter.value.author && !typeFilter.value.tag && !typeFilter.value.topic) {
@@ -49,5 +50,6 @@ const clickTagFilter = () => {
     <Button :type="typeFilter.tag ? 'primary' : 'secondary'" @click="clickTagFilter" @contextmenu="typeFilter.tag = !typeFilter.tag">
         <Icon :icon="META_TYPE_ICONS['TAG']"/>标签
     </Button>
+    <CheckBox v-if="identity?.type === 'ILLUST_LIST'" class="mx-2" v-model:value="overwriteMode">覆盖原有标签</CheckBox>
     <TagmeEditor v-if="allowTagme" class="float-right" direction="horizontal" :value="tagme" @update:value="setTagme"/>
 </template>

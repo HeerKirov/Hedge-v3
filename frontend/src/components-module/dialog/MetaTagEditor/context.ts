@@ -1,16 +1,16 @@
-import { ref, Ref, shallowRef } from "vue"
-import { Response } from "@/functions/http-client"
+import { Ref } from "vue"
+import { SetDataForm, SetDataFormSingle } from "@/components-module/data"
+import { mapResponse, Response } from "@/functions/http-client"
 import { ConflictingGroupMembersError, NotFound, ResourceNotExist, ResourceNotSuitable } from "@/functions/http-client/exceptions"
 import { MetaUtilIdentity } from "@/functions/http-client/api/util-meta"
 import { RelatedSimpleTopic } from "@/functions/http-client/api/topic"
 import { RelatedSimpleAuthor } from "@/functions/http-client/api/author"
 import { RelatedSimpleTag } from "@/functions/http-client/api/tag"
-import { MetaTagTypes, MetaTagValues, SourceTagPath } from "@/functions/http-client/api/all"
 import { Tagme } from "@/functions/http-client/api/illust"
 import { useFetchEndpoint, usePostFetchHelper } from "@/functions/fetch"
-import { installKeyDeclaration, useInterceptedKey } from "@/modules/keyboard"
+import { useToast } from "@/modules/toast"
 import { useMessageBox } from "@/modules/message-box"
-import { computedMutable, toRef } from "@/utils/reactivity"
+import { toRef } from "@/utils/reactivity"
 import { Push } from "../context"
 
 export interface MetaTagEditor {
@@ -21,7 +21,7 @@ export interface MetaTagEditor {
     /**
      * 打开面板，对指定的内容列表进行编辑，并返回编辑后的结果列表。如果取消编辑，则返回undefined。
      */
-    editBatch(illustIds: number[], updateMode?: "APPEND" | "OVERRIDE" | "REMOVE", onUpdated?: () => void): void
+    editBatch(illustIds: number[], onUpdated?: () => void): void
 }
 
 export type MetaTagEditorProps = {
@@ -44,14 +44,6 @@ export interface CommonData {
     tagme?: Tagme[]
 }
 
-export interface CommonForm {
-    tags?: number[]
-    topics?: number[]
-    authors?: number[]
-    mappings?: SourceTagPath[]
-    tagme?: Tagme[]
-}
-
 type CommonException = NotFound | ResourceNotExist<"topics" | "authors" | "tags", number[]> | ResourceNotSuitable<"tags", number[]> | ConflictingGroupMembersError
 
 export function useMetaTagEditor(push: Push): MetaTagEditor {
@@ -62,16 +54,17 @@ export function useMetaTagEditor(push: Push): MetaTagEditor {
                 props: {mode: "identity", identity, onUpdated}
             })
         },
-        editBatch(illustIds, updateMode, onUpdated) {
+        editBatch(illustIds, onUpdated) {
             push({
                 type: "metaTagEditor",
-                props: {mode: "batch", identity: {type: "ILLUST_LIST", illustIds}, updateMode, onUpdated}
+                props: {mode: "batch", identity: {type: "ILLUST_LIST", illustIds}, onUpdated}
             })
         }
     }
 }
 
 export function useMetaTagEditorData(props: Ref<MetaTagEditorProps>, updated: () => void) {
+    const toast = useToast()
     const message = useMessageBox()
     const identity = toRef(props, "identity")
 
@@ -83,7 +76,7 @@ export function useMetaTagEditorData(props: Ref<MetaTagEditorProps>, updated: ()
                     ? client.illust.get(id)
                     : client.book.get(id)
             },
-            update: client => async ({ type, id }, form: CommonForm): Promise<Response<null, CommonException>> => {
+            update: client => async ({ type, id }, form: SetDataFormSingle): Promise<Response<null, CommonException>> => {
                 return type === "IMAGE" || type === "COLLECTION"
                     ? await client.illust.update(id, form)
                     : await client.book.update(id, form)
@@ -91,7 +84,11 @@ export function useMetaTagEditorData(props: Ref<MetaTagEditorProps>, updated: ()
             afterUpdate: updated
         })
 
-        const setValue = async (form: CommonForm): Promise<boolean> => {
+        const setValue = async (form: SetDataForm): Promise<boolean> => {
+            if(form.mode !== "SINGLE") {
+                toast.handleError("内部错误", "对单模式的编辑器提供了一个非对单的表单。")
+                return false
+            }
             return await setData(form, e => {
                 if(e.code === "NOT_EXIST") {
                     const [type, list] = e.info
@@ -110,8 +107,10 @@ export function useMetaTagEditorData(props: Ref<MetaTagEditorProps>, updated: ()
         return {data, identity, setValue}
     }else if(props.value.mode === "batch") {
         const target = props.value.identity.illustIds
-        const tagUpdateMode = props.value.updateMode
-        const data = shallowRef<CommonData | null>(null)
+        const { data } = useFetchEndpoint({
+            path: identity as Ref<BatchIdentity>,
+            get: client => async ({ illustIds }) => mapResponse(await client.illust.summaryByIds(illustIds), r => ({tags: r.tags, topics: r.topics, authors: r.authors, tagme: r.tagme})),
+        })
 
         const fetch = usePostFetchHelper({
             request: client => client.illust.batchUpdate,
@@ -132,50 +131,30 @@ export function useMetaTagEditorData(props: Ref<MetaTagEditorProps>, updated: ()
             }
         })
 
-        const setValue = async (form: CommonForm): Promise<boolean> => {
-            const ok = await fetch({target, tags: form.tags, topics: form.topics, authors: form.authors, mappingSourceTags: form.mappings, tagUpdateMode})
-            if(ok) updated()
-            return ok
+        const setValue = async (form: SetDataForm): Promise<boolean> => {
+            if(form.mode === "OVERWRITE") {
+                const ok = await fetch({target, tags: form.tags, topics: form.topics, authors: form.authors, mappingSourceTags: form.mappings, tagUpdateMode: "OVERRIDE"})
+                if(ok) updated()
+                return ok
+            }else if(form.mode === "BATCH") {
+                if(form.removeTags.length || form.removeTopics.length || form.removeAuthors.length) {
+                    const ok = await fetch({target, tags: form.removeTags, topics: form.removeTopics, authors: form.removeAuthors, tagUpdateMode: "REMOVE"})
+                    if(!ok) return false
+                }
+                if(form.appendTags.length || form.appendAuthors.length || form.appendTopics.length || form.appendMappings.length) {
+                    const ok = await fetch({target, tags: form.appendTags, topics: form.appendTopics, authors: form.appendAuthors, mappingSourceTags: form.appendMappings, tagUpdateMode: "APPEND"})
+                    if(!ok) return false
+                }
+                updated()
+                return true
+            }else{
+                toast.handleError("内部错误", "批量模式的编辑器提供了一个对单的表单。")
+                return false
+            }
         }
 
         return {data, identity, setValue}
     }else{
         throw new Error(`Unsupported props ${props.value}.`)
     }
-}
-
-export function useRemoveModeData(illustIds: Ref<number[]>, fetchSave: (form: {tags?: number[], topics?: number[], authors?: number[]}) => Promise<boolean>) {
-    const { data } = useFetchEndpoint({
-        path: illustIds,
-        get: client => client.illust.summaryByIds
-    })
-
-    const form = computedMutable<{key: string, type: MetaTagTypes, value: MetaTagValues, removed: boolean}[]>(() => data.value !== null ? [
-        ...data.value.authors.filter(t => !t.isExported).map(t => ({type: "author" as const, key: `author-${t.id}`, value: t, removed: false})),
-        ...data.value.topics.filter(t => !t.isExported).map(t => ({type: "topic" as const, key: `topic-${t.id}`, value: t, removed: false})),
-        ...data.value.tags.filter(t => !t.isExported).map(t => ({type: "tag" as const, key: `tag-${t.id}`, value: t, removed: false})),
-    ] : [])
-
-    const saveLoading = ref(false)
-
-    const removeAt = (index: number) => {
-        form.value[index].removed = !form.value[index].removed
-    }
-
-    const save = async () => {
-        if(!saveLoading.value) {
-            saveLoading.value = true
-            await fetchSave({
-                tags: form.value.filter(i => i.type === "tag" && i.removed).map(i => i.value.id),
-                topics: form.value.filter(i => i.type === "topic" && i.removed).map(i => i.value.id),
-                authors: form.value.filter(i => i.type === "author" && i.removed).map(i => i.value.id),
-            })
-            saveLoading.value = false
-        }
-    }
-
-    useInterceptedKey("Meta+KeyS", save)
-    installKeyDeclaration("Meta+KeyS")
-
-    return {form, removeAt, save, saveLoading}
 }

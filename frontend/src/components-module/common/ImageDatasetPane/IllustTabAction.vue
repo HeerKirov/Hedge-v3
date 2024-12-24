@@ -18,11 +18,6 @@ const { selected, selectedIndex, parent } = toRefs(props)
 
 const { actives, form, editMetaTag, setScore, setFavorite, setDescription, setTagme, editOrderTimeRange, editPartitionTime, submitOrderTimeRange, submitPartitionTime, partitionTimeAction, orderTimeAction, ordinalAction } = useSideBarAction(selected, selectedIndex, parent)
 
-const metaTagMenuItems = <MenuItem<undefined>[]>[
-    {type: "normal", label: "覆盖原有标签…", click: () => editMetaTag("OVERRIDE")},
-    {type: "normal", label: "移除选定标签…", click: () => editMetaTag("REMOVE")},
-]
-
 const partitionTimeEllipsisMenuItems = <MenuItem<undefined>[]>[
     {type: "normal", label: "设置日期…", click: editPartitionTime},
     {type: "separator"},
@@ -74,20 +69,17 @@ const ordinalEllipsisMenuItems = <MenuItem<undefined>[]>[
             <DescriptionEditor :value="value" @update:value="setValue"/>
         </template>
     </FormEditKit>
-    <FormEditKit class="mt-1" :value="form.tagme" :set-value="setTagme" allow-single-click>
+    <div class="mt-1">
+        <Button class="w-100 has-text-left" size="small" icon="tag" @click="editMetaTag">编辑标签…</Button>
+    </div>
+    <FormEditKit :value="form.tagme" :set-value="setTagme" allow-single-click>
         <template #default="{ value }">
-            <Button class="w-100 has-text-left" size="small" icon="flag">TAGME<span class="float-right has-text-primary"><Icon v-for="tagme in value" :icon="TAGME_TYPE_ICONS[tagme]"/></span></Button>
+            <Button class="w-100 has-text-left" size="small" icon="flag">设置TAGME<span class="float-right has-text-primary"><Icon v-for="tagme in value" :icon="TAGME_TYPE_ICONS[tagme]"/></span></Button>
         </template>
         <template #edit="{ value, setValue }">
             <TagmeEditor :value="value" @update:value="setValue"/>
         </template>
     </FormEditKit>
-    <div class="flex">
-        <Button class="w-100 has-text-left" size="small" icon="tag" @click="editMetaTag('APPEND')">添加标签…</Button>
-        <ElementPopupMenu class="flex-item no-grow-shrink" :items="metaTagMenuItems" position="bottom" align="center" v-slot="{ popup, setEl, attrs }">
-            <Button :ref="setEl" v-bind="attrs" square size="small" icon="ellipsis-v" @click="popup"/>
-        </ElementPopupMenu>
-    </div>
     <ElementPopupMenu :items="partitionTimeEllipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
         <Button :ref="setEl" class="w-100 has-text-left" size="small" icon="calendar-alt" end-icon="ellipsis-v" @click="popup">设置时间分区</Button>
     </ElementPopupMenu>

@@ -7,6 +7,8 @@ import StagingPostDataset from "./ImageDataset/StagingPostDataset.vue"
 import MetaTagSummaryEditor from "./MetaTagSummaryEditor/MetaTagSummaryEditor.vue"
 import ImageCompareTable from "./ImageCompareTable/ImageCompareTable.vue"
 
+export type { SetDataForm, SetDataFormBatch, SetDataFormOverwrite, SetDataFormSingle } from "./MetaTagSummaryEditor/context"
+
 export { TagTree, FolderTable }
 export { ImportImageDataset, IllustImageDataset, TrashedImageDataset, StagingPostDataset }
 export { MetaTagSummaryEditor }

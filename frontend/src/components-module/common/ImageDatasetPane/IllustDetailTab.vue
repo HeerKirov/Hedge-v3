@@ -28,7 +28,7 @@ const { detailId, type, tabScope } = defineProps<{
 
 const tabType = tabScope
     ? useSessionStorage<"info" | "source" | "related">(`illust/detail/tab-type/${tabScope}`, "info")
-    : useRouteStorage<"info" | "source" | "related">(`illust/detail/tab-type/${tabScope}`, "info")
+    : useRouteStorage<"info" | "source" | "related">(`illust/detail/tab-type`, "info")
 
 useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Digit3"], e => {
     if(e.key === "Digit1") tabType.value = "info"

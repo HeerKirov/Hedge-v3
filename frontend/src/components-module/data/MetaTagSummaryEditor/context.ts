@@ -23,13 +23,34 @@ export type BatchIdentity = {type: "ILLUST_LIST", illustIds: number[]}
 
 export type MetaTagEditorIdentity = MetaUtilIdentity | BatchIdentity
 
-export interface SetDataForm {
+export interface SetDataFormSingle {
+    mode: "SINGLE"
     topics?: number[]
     authors?: number[]
     tags?: number[]
-    mappings?: SourceTagPath[]
     tagme?: Tagme[]
 }
+
+export interface SetDataFormBatch {
+    mode: "BATCH"
+    appendTopics: number[]
+    appendAuthors: number[]
+    appendTags: number[]
+    appendMappings: SourceTagPath[]
+    removeTags: number[]
+    removeTopics: number[]
+    removeAuthors: number[]
+}
+
+export interface SetDataFormOverwrite {
+    mode: "OVERWRITE"
+    topics: number[]
+    authors: number[]
+    tags: number[]
+    mappings: SourceTagPath[]
+}
+
+export type SetDataForm = SetDataFormSingle | SetDataFormBatch | SetDataFormOverwrite
 
 export interface UpdateDataForm {
     topics?: RelatedSimpleTopic[]
@@ -94,11 +115,13 @@ function useFormData(context: InstallEditorContext) {
     const topics = ref<SimpleTopic[]>([])
     const authors = ref<SimpleAuthor[]>([])
     const mappings = ref<BatchQueryResult[]>([])
+    const exists = ref<(MetaTagTypeValue & {removed: boolean})[]>([])
     const tagme = ref<Tagme[]>([])
-    const changed = reactive({tag: false, topic: false, author: false, mapping: false, tagme: false})
+    const changed = reactive({tag: false, topic: false, author: false, mapping: false, exists: false, tagme: false})
+    const overwriteMode = ref(false)
 
     const submittable = computed(() =>
-        (changed.tag || changed.topic || changed.author || changed.tagme || changed.mapping) &&
+        (changed.tag || changed.topic || changed.author || changed.tagme || changed.mapping || changed.exists) &&
         (validation.validationResults.value == undefined || (!validation.validationResults.value.forceConflictingMembers.length && !validation.validationResults.value.notSuitable.length)))
     const submitting = ref(false)
 
@@ -106,16 +129,29 @@ function useFormData(context: InstallEditorContext) {
     const validation = useFormValidation(tags, topics, authors, context.data)
 
     watch(context.data, d => {
-        tags.value = d?.tags?.filter(t => !t.isExported) ?? []
-        topics.value = d?.topics?.filter(t => !t.isExported) ?? []
-        authors.value = d?.authors?.filter(t => !t.isExported) ?? []
-        tagme.value = d?.tagme ?? []
+        if(context.identity.value?.type === "ILLUST_LIST") {
+            tags.value = []
+            topics.value = []
+            authors.value = []
+            exists.value = [
+                ...d.authors.filter(t => !t.isExported).map(a => ({type: "author", value: a, removed: false} as const)),
+                ...d.topics.filter(t => !t.isExported).map(a => ({type: "topic", value: a, removed: false} as const)),
+                ...d.tags.filter(t => !t.isExported).map(a => ({type: "tag", value: a, removed: false} as const)),
+            ]
+        }else{
+            tags.value = d.tags.filter(t => !t.isExported) ?? []
+            topics.value = d.topics.filter(t => !t.isExported) ?? []
+            authors.value = d.authors.filter(t => !t.isExported) ?? []
+            exists.value = []
+        }
+        tagme.value = d.tagme
         mappings.value = []
         changed.tag = false
         changed.topic = false
         changed.author = false
         changed.tagme = false
         changed.mapping = false
+        changed.exists = false
     }, {immediate: true})
 
     const setTagme = (value: Tagme[]) => {
@@ -185,7 +221,7 @@ function useFormData(context: InstallEditorContext) {
         }
     }
 
-    const removeAt = (type: keyof MetaTagReflection | "mapping", index: number) => {
+    const removeAt = (type: keyof MetaTagReflection | "mapping" | "exists", index: number) => {
         if(type === "tag") {
             const [tag] = tags.value.splice(index, 1)
             history.addRecord({type: "tag", value: tag, action: "remove", index})
@@ -200,6 +236,9 @@ function useFormData(context: InstallEditorContext) {
             changed.author = true
         }else if(type === "mapping") {
             mappings.value.splice(index, 1)
+        }else if(type === "exists") {
+            exists.value[index].removed = !exists.value[index].removed
+            changed.exists = true
         }
     }
 
@@ -210,12 +249,27 @@ function useFormData(context: InstallEditorContext) {
             if(context.setValue) {
                 submitting.value = true
 
-                const ok = await context.setValue({
+                const ok = await context.setValue(context.identity.value?.type !== "ILLUST_LIST" ? {
+                    mode: "SINGLE",
                     tags: changed.tag ? tags.value.map(i => i.id) : undefined,
                     topics: changed.topic ? topics.value.map(i => i.id) : undefined,
                     authors: changed.author ? authors.value.map(i => i.id) : undefined,
-                    mappings: changed.mapping ? mappings.value.map(i => ({sourceSite: i.site, sourceTagType: i.type, sourceTagCode: i.code})) : undefined,
                     tagme: changed.tagme ? tagme.value : undefined
+                } : overwriteMode.value ? {
+                    mode: "OVERWRITE",
+                    tags: changed.tag ? tags.value.map(i => i.id) : [],
+                    topics: changed.topic ? topics.value.map(i => i.id) : [],
+                    authors: changed.author ? authors.value.map(i => i.id) : [],
+                    mappings: changed.mapping ? mappings.value.map(i => ({sourceSite: i.site, sourceTagType: i.type, sourceTagCode: i.code})) : [],
+                } : {
+                    mode: "BATCH",
+                    appendTags: changed.tag ? tags.value.map(i => i.id) : [],
+                    appendTopics: changed.topic ? topics.value.map(i => i.id) : [],
+                    appendAuthors: changed.author ? authors.value.map(i => i.id) : [],
+                    appendMappings: changed.mapping ? mappings.value.map(i => ({sourceSite: i.site, sourceTagType: i.type, sourceTagCode: i.code})) : [],
+                    removeTags: exists.value.filter(t => t.removed && t.type === "tag").map(t => t.value.id),
+                    removeTopics: exists.value.filter(t => t.removed && t.type === "topic").map(t => t.value.id),
+                    removeAuthors: exists.value.filter(t => t.removed && t.type === "author").map(t => t.value.id),
                 })
 
                 if(ok) {
@@ -246,7 +300,7 @@ function useFormData(context: InstallEditorContext) {
     useInterceptedKey("Meta+KeyS", submit)
     installKeyDeclaration("Meta+KeyS")
 
-    return {tags, topics, authors, tagme, mappings, setTagme, add, addAll, removeAt, submittable, submitting, submit, validation, history}
+    return {tags, topics, authors, tagme, mappings, exists, overwriteMode, setTagme, add, addAll, removeAt, submittable, submitting, submit, validation, history}
 }
 
 function useFormValidation(tags: Ref<SimpleTag[]>, topics: Ref<SimpleTopic[]>, authors: Ref<SimpleAuthor[]>, data: Ref<Data>) {

@@ -337,8 +337,8 @@ export function useSideBarAction(selected: Ref<number[]>, selectedIndex: Ref<(nu
         if(form.orderTime) form.orderTime = null
     })
 
-    const editMetaTag = async (updateMode: "APPEND" | "OVERRIDE" | "REMOVE") => {
-        metaTagEditor.editBatch(selected.value, updateMode, () => toast.toast("批量编辑完成", "info", "已完成标签的更改。"))
+    const editMetaTag = async () => {
+        metaTagEditor.editBatch(selected.value, () => toast.toast("批量编辑完成", "info", "已完成标签的更改。"))
     }
 
     const setScore = (score: number | null) => {

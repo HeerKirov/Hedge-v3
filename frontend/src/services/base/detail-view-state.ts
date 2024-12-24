@@ -1,5 +1,5 @@
 import { computed, ref, Ref } from "vue"
-import { useRouteStorage } from "@/functions/app";
+import { useRouteStorage } from "@/functions/app"
 
 /**
  * 提供一组detail view视图控制器。detail view视图通常用于页面上list视图的内嵌视图，在list视图中提供新建和详情页面功能。

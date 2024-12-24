@@ -740,7 +740,7 @@ export interface IllustSummary {
     topics: RelatedSimpleTopic[]
     tags: RelatedSimpleTag[]
     authors: RelatedSimpleAuthor[]
-    tagme: Tagme
+    tagme: Tagme[]
     description: string
     favorite: boolean
     scoreMin: number | null

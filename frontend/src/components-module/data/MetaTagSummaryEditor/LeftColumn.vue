@@ -10,7 +10,7 @@ const {
     typeFilter,
     form: {
         submit, submittable, submitting, removeAt,
-        tags, topics, authors, mappings,
+        tags, topics, authors, mappings, exists, overwriteMode,
         validation: { exportedResults, validationResults },
         history: { canRedo, canUndo, undo, redo }
     }
@@ -66,6 +66,14 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues) => {
                 <SimpleMetaTagElement v-for="author in exportedResults.authors" :key="author.id" class="mt-1" type="author" :value="author" wrapped-by-div @click="click($event, 'author', author)"/>
                 <SimpleMetaTagElement v-for="topic in exportedResults.topics" :key="topic.id" class="mt-1" type="topic" :value="topic" wrapped-by-div @click="click($event, 'topic', topic)"/>
                 <SimpleMetaTagElement v-for="tag in exportedResults.tags" :key="tag.id" class="mt-1" type="tag" :value="tag" wrapped-by-div @click="click($event, 'tag', tag)"/>
+            </template>
+            <template v-if="exists.length > 0">
+                <i class="label mt-3">已持有</i>
+                <SimpleMetaTagElement v-for="(t, idx) in exists" :key="t.value.id" :class="{'mt-1': true, 'has-text-del': t.removed || overwriteMode}" :type="t.type" :value="t.value" :color="t.removed || overwriteMode ? 'secondary' : undefined" wrapped-by-div @click="click($event, t.type, t.value)">
+                    <template #behind>
+                        <Tag v-if="!overwriteMode" class="ml-half" line-style="none" icon="close" :color="t.removed ? 'secondary' : undefined" clickable @click="removeAt('exists', idx)"/>
+                    </template>
+                </SimpleMetaTagElement>
             </template>
         </div>
 
