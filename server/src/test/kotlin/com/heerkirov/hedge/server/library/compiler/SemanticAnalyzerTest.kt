@@ -584,9 +584,9 @@ class SemanticAnalyzerTest {
         //预热
         parseAndTestPerformance("""hello""", IllustDialect::class)
         //高复杂度
-        parseAndTestPerformance("""[@fav|like][updating] -$'rather'.`than`.x rating:[A, C)|D~E|G~+|rating>=G type:{jpg, jpeg} ^id:4396???? sort:+partition,-^id""", IllustDialect::class)
+        parseAndTestPerformance("""[ fav like][updating] -$'rather'.`than`.x rating:[A, C)|D~E|G~+|rating>=G type:{jpg, jpeg} ^id:4396???? sort:+partition,-^id""", IllustDialect::class)
         //中复杂度
-        parseAndTestPerformance("""[@fav|like][updating] -$'rather'.`than`.x ^id:4396???? sort:+partition,-^id""", IllustDialect::class)
+        parseAndTestPerformance("""[ fav like][updating] -$'rather'.`than`.x ^id:4396???? sort:+partition,-^id""", IllustDialect::class)
         //低复杂度
         parseAndTestPerformance("""[updating] $'rather' sort:+partition""", IllustDialect::class)
     }
