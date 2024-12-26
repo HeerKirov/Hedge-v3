@@ -87,6 +87,7 @@ useInterceptedKey(["Meta+Minus", "Meta+Equal", "Meta+Digit0"], e => {
     right: -1px
     padding-left: 0.125rem
     border-radius: size.$radius-size-large
+    z-index: 1
 
     display: flex
     flex-wrap: nowrap

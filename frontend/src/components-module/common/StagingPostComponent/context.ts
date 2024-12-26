@@ -1,12 +1,10 @@
 import { ComponentPublicInstance, computed, onUnmounted, ref } from "vue"
 import { useLocalStorage } from "@/functions/app"
-import { useFetchHelper, usePostFetchHelper } from "@/functions/fetch"
+import { usePostFetchHelper } from "@/functions/fetch"
 import { mapResponse } from "@/functions/http-client"
-import { useToast } from "@/modules/toast"
 import { useDroppable } from "@/modules/drag"
 import { useMessageBox } from "@/modules/message-box"
 import { isBrowserEnvironment, useActivateTabRoute, useBrowserTabs } from "@/modules/browser"
-import { useDialogService } from "@/components-module/dialog"
 import { useHomepageState } from "@/services/main/homepage"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { toRef, toRefNullable } from "@/utils/reactivity"
@@ -111,9 +109,6 @@ export function useCalloutContext() {
 
 export function useDataContext(close: () => void) {
     const browserTabs = isBrowserEnvironment() ? useBrowserTabs() : undefined
-    const toast = useToast()
-    const dialog = useDialogService()
-    const fetchListAll = useFetchHelper(client => client.stagingPost.list)
     const fetchUpdate = usePostFetchHelper(client => client.stagingPost.update)
 
     const isBrowserEnv = browserTabs !== undefined
@@ -136,36 +131,6 @@ export function useDataContext(close: () => void) {
         }
     })
 
-    const createCollection = async () => {
-        const items = await fetchListAll({})
-        if(items !== undefined && items.total > 0) {
-            dialog.creatingCollection.createCollection(items.result.map(i => i.id), (_, newCollection) => {
-                toast.toast(newCollection ? "已创建" : "已合并", "success",  newCollection ? "已创建新集合。" : "已将图像合并至指定集合。")
-                clear()
-            })
-        }
-    }
-
-    const createBook = async () => {
-        const items = await fetchListAll({})
-        if(items !== undefined && items.total > 0) {
-            dialog.creatingBook.createBook(items.result.map(i => i.id), () => {
-                toast.toast("已创建", "success", "已创建新画集。")
-                clear()
-            })
-        }
-    }
-
-    const addToFolder = async () => {
-        const items = await fetchListAll({})
-        if(items !== undefined && items.total > 0) {
-            dialog.addToFolder.addToFolder(items.result.map(i => i.id), () => {
-                toast.toast("已添加", "success", "已将图像添加到指定目录。")
-                clear()
-            })
-        }
-    }
-
     const clear = () => {
         fetchUpdate({action: "CLEAR"}).finally()
         close()
@@ -176,5 +141,5 @@ export function useDataContext(close: () => void) {
         close()
     }
     
-    return {listview, isBrowserEnv, createCollection, createBook, addToFolder, clear, openDetailView}
+    return {listview, isBrowserEnv, clear, openDetailView}
 }
