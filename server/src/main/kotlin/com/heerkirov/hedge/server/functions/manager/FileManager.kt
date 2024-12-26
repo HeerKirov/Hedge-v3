@@ -153,7 +153,7 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
 
         val target = try {
             temp.outputStream().use { src.inputStream.writeTo(it) }
-            convertFormatExecutor.submit { Graphics.convertFormat(temp, extension) }.get() as File?
+            convertFormatExecutor.submit<File?> { Graphics.convertFormat(temp, extension) }.get()
         } catch (e: ExecutionException) {
             throw e.cause ?: e
         } finally {
