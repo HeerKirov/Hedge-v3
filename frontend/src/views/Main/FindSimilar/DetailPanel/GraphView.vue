@@ -3,11 +3,13 @@ import { FindSimilarResultDetailImage } from "@/functions/http-client/api/find-s
 import { useFindSimilarDetailPanel, useGraphView } from "@/services/main/find-similar"
 import { useDynamicPopupMenu } from "@/modules/popup-menu"
 
-const { operators: { allBooks, allCollections, modifyFavorite, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, openImageInPartition } } = useFindSimilarDetailPanel()
+const { operators: { allBooks, allCollections, modifyFavorite, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, openImageInPartition, openDetailByClick, openPreviewBySpace } } = useFindSimilarDetailPanel()
 
 const { chartDom } = useGraphView({
     menu: useDynamicPopupMenu<FindSimilarResultDetailImage>(illust => [
-        {type: "normal", label: "预览"},
+        {type: "normal", label: "打开", click: i => openDetailByClick(i.id)},
+        {type: "normal", label: "预览", click: i => openPreviewBySpace(i)},
+        {type: "separator"},
         {type: "normal", label: "暂存", click: i => addToStagingPost(i)},
         {type: "separator"},
         {type: "normal", label: "在时间分区显示", click: i => openImageInPartition(i.id, i.partitionTime)},

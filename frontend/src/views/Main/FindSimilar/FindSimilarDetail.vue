@@ -3,7 +3,7 @@ import { Button, Separator } from "@/components/universal"
 import { BrowserTeleport } from "@/components/logical"
 import { PaneLayout } from "@/components/layout"
 import { EmbedPreview } from "@/components-module/preview"
-import { ColumnNumButton, FitTypeButton } from "@/components-business/top-bar"
+import { ColumnNumButton, FitTypeButton, LockOnButton } from "@/components-business/top-bar"
 import { installFindSimilarDetailPanel } from "@/services/main/find-similar"
 import CompareTable from "./DetailPanel/CompareTable.vue"
 import GraphView from "./DetailPanel/GraphView.vue"
@@ -17,6 +17,7 @@ const { data, viewMode, listviewController, operators: { complete } } = installF
 <template>
     <BrowserTeleport to="top-bar">
         <template v-if="viewMode === 'grid'">
+            <LockOnButton v-model:value="listviewController.editableLockOn.value"/>
             <FitTypeButton class="mr-1" v-model:value="listviewController.fitType.value"/>
             <ColumnNumButton v-model:value="listviewController.columnNum.value"/>
             <Separator/>

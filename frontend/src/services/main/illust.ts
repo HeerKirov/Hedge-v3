@@ -11,14 +11,7 @@ import { usePreviewService } from "@/components-module/preview"
 import { useDialogService } from "@/components-module/dialog"
 import { useToast } from "@/modules/toast"
 import { MessageBoxManager, useMessageBox } from "@/modules/message-box"
-import {
-    isBrowserEnvironment,
-    useBrowserTabs,
-    useDocumentTitle,
-    useInitializer,
-    usePath,
-    useTabRoute
-} from "@/modules/browser"
+import { isBrowserEnvironment, useBrowserTabs, useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
@@ -500,6 +493,8 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
     }
 
     const relatedOperators = useRelatedOperators(path)
+
+    useSettingSite()
 
     return {data, id: path, setDescription, setScore, setFavorite, setTime, setTagme, openMetaTagEditor, setSourceDataPath, ...relatedOperators}
 }

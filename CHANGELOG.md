@@ -20,6 +20,8 @@
 * **[CRX]** 修复E-Hentai的image toolbar在某些特定情况下会使用sample URL下载的问题。
 ### Optimized
 * 主题详情页的子主题标签现在可以拖拽了。
+* 相似项查找结果页面的网格模式现在和图库一样支持拖放图像来排序了。
+* 相似项查找结果页面的网格模式、图模式现在也支持"打开"以进入ImageView页面了。
 * **[SERVER]** 尝试引入了HTTP log。现在会在日志中打印unsafe method HTTP log了。
 
 ## [0.11.1] - 2024-12-11

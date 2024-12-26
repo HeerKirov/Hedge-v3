@@ -8,12 +8,14 @@ const {
     listview,
     paginationData: { data, state, setState, navigateTo },
     selector: { selected, selectedIndex, lastSelected, update: updateSelect },
-    listviewController: { fitType, columnNum }, 
-    operators: { allBooks, allCollections, modifyFavorite, addToStagingPost, addToCollection, addToBook, markIgnored, deleteItem, cloneImage, openPreviewBySpace, openImageInPartition }
+    listviewController: { fitType, columnNum, editableLockOn },
+    operators: { allBooks, allCollections, modifyFavorite, addToStagingPost, addToCollection, addToBook, markIgnored, deleteItem, cloneImage, openPreviewBySpace, openDetailByEnter, openDetailByClick, openImageInPartition, dataDrop }
 } = useFindSimilarDetailPanel()
 
 const menu = useDynamicPopupMenu<FindSimilarResultDetailImage>(illust => [
+    {type: "normal", label: "打开", click: i => openDetailByClick(i.id)},
     {type: "normal", label: "预览", click: i => openPreviewBySpace(i)},
+    {type: "separator"},
     {type: "normal", label: "暂存", click: i => addToStagingPost(i)},
     {type: "separator"},
     {type: "normal", label: "在时间分区显示", click: i => openImageInPartition(i.id, i.partitionTime)},
@@ -37,7 +39,9 @@ const menu = useDynamicPopupMenu<FindSimilarResultDetailImage>(illust => [
 
 <template>
     <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy"
-                        view-mode="grid" :fit-type="fitType" :column-num="columnNum"
+                        view-mode="grid" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn" @drop="dataDrop"
                         :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" @select="updateSelect"
-                        @update:state="setState" @navigate="navigateTo" @space="openPreviewBySpace" @contextmenu="menu.popup"/>
+                        @update:state="setState" @navigate="navigateTo"
+                        @dblclick="openDetailByClick" @enter="openDetailByEnter"
+                        @space="openPreviewBySpace" @contextmenu="menu.popup"/>
 </template>

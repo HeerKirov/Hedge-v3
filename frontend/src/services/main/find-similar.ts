@@ -3,9 +3,9 @@ import { GraphChart, GraphSeriesOption } from "echarts/charts"
 import { CanvasRenderer } from "echarts/renderers"
 import { TooltipComponent, TooltipComponentOption } from "echarts/components"
 import { computed, onBeforeUnmount, onMounted, ref, Ref, shallowRef, watch } from "vue"
-import { installEmbedPreviewService, usePreviewService } from "@/components-module/preview"
+import { usePreviewService } from "@/components-module/preview"
 import { useDialogService } from "@/components-module/dialog"
-import { QueryListview, useFetchEndpoint, useFetchHelper, usePaginationDataView, usePathFetchHelper, usePostFetchHelper, usePostPathFetchHelper, useQueryListview } from "@/functions/fetch"
+import { PaginationDataView, QueryListview, useFetchEndpoint, useFetchHelper, usePaginationDataView, usePathFetchHelper, usePostPathFetchHelper, useQueryListview } from "@/functions/fetch"
 import { FindSimilarDetailResult, FindSimilarResult, FindSimilarResultDetailImage, FindSimilarResultResolveAction, FindSimilarResultResolveForm, QuickFindResult, SimilarityRelationCoverage } from "@/functions/http-client/api/find-similar"
 import { FilePath } from "@/functions/http-client/api/all"
 import { CommonIllust } from "@/functions/http-client/api/illust"
@@ -163,7 +163,7 @@ export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = instal
 
     const selector = useSelectedState({queryListview: listview, keyOf: item => item.id})
 
-    const operators = useOperators(data, selector, listviewController, listview, resolve, clear)
+    const operators = useOperators(data, selector, listviewController, listview, paginationData, resolve, clear)
 
     installIllustListviewContext({listview: {listview}, selector, listviewController})
 
@@ -176,17 +176,19 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
                       selector: SelectedState<number>, 
                       listviewController: IllustViewController, 
                       listview: QueryListview<FindSimilarResultDetailImage, number>,
+                      paginationData: PaginationDataView<FindSimilarResultDetailImage>,
                       resolve: (f: FindSimilarResultResolveForm) => Promise<boolean>, 
                       clear: () => Promise<boolean>) {
     const router = useTabRoute()
     const browserTabs = useBrowserTabs()
     const message = useMessageBox()
     const dialog = useDialogService()
-    const preview = installEmbedPreviewService()
     const gridMode = shallowRef<"grid">("grid")
 
-    const fetchStagingPostUpdate = usePostFetchHelper(client => client.stagingPost.update)
-    const fetchIllustBatchUpdate = usePostFetchHelper(client => client.illust.batchUpdate)
+    const { dataDrop, modifyFavorite, addToStagingPost, openPreviewBySpace, openDetailByClick, openDetailByEnter } = useImageDatasetOperators({
+        listview, listviewController: {...listviewController, viewMode: gridMode}, selector, paginationData, embedPreview: "auto",
+        dataDrop: {dropInType: "illust", querySchema: ref(null), queryFilter: ref({type: "IMAGE", order: ["orderTime"]})}
+    })
 
     const allCollections = computed(() => {
         if(data.value !== null) {
@@ -214,16 +216,6 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
 
     const getEffectedItems = (currentImageId?: number) => {
         return currentImageId === undefined || selector.selected.value.includes(currentImageId) ? selector.selected.value : [currentImageId]
-    }
-
-    const modifyFavorite = async (illust: CommonIllust, favorite: boolean) => {
-        const items = getEffectedItems(illust.id)
-        await fetchIllustBatchUpdate({target: items, favorite})
-    }
-
-    const addToStagingPost = async (illust: CommonIllust) => {
-        const images = getEffectedItems(illust.id)
-        await fetchStagingPostUpdate({action: "ADD", images})
     }
 
     const addToCollection = async (collectionId: number | "new", currentImageId?: number) => {
@@ -278,38 +270,13 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
         }
     }
 
-    const openPreviewBySpace = (illust?: CommonIllust | number) => {
-        if(illust !== undefined) {
-            const illustId = typeof illust === "object" ? illust.id : illust
-            //如果指定项已选中，那么将最后选中项重新指定为指定项；如果未选中，那么将单独选中此项
-            if(selector.lastSelected.value !== illustId) {
-                if(selector.selected.value.includes(illustId)) {
-                    selector.update(selector.selected.value, illustId)
-                }else{
-                    selector.update([illustId], illustId)
-                }
-            }
-        }
-        if(selector.selected.value.length > 0) preview.show({
-            preview: "image", 
-            type: "listview", 
-            listview: listview,
-            columnNum: listviewController.columnNum,
-            viewMode: gridMode,
-            selected: selector.selected,
-            selectedIndex: selector.selectedIndex,
-            lastSelected: selector.lastSelected,
-            updateSelect: selector.update
-        })
-    }
-
     const openImageInPartition = async (currentImageId: number, partitionTime: LocalDate, at?: "NEW_TAB" | "NEW_WINDOW") => {
         if(at === "NEW_TAB") browserTabs.newTab({routeName: "PartitionDetail", path: partitionTime, initializer: {locateId: currentImageId}})
         else if(at === "NEW_WINDOW") browserTabs.newWindow({routeName: "PartitionDetail", path: partitionTime, initializer: {locateId: currentImageId}})
         else router.routePush({routeName: "PartitionDetail", path: partitionTime, initializer: {locateId: currentImageId}})
     }
 
-    return {allCollections, allBooks, modifyFavorite, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, complete, openPreviewBySpace, openImageInPartition}
+    return {allCollections, allBooks, modifyFavorite, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, complete, openPreviewBySpace, openDetailByEnter, openDetailByClick, openImageInPartition, dataDrop}
 }
 
 export function useGraphView({ menu }: {menu: (i: FindSimilarResultDetailImage) => void}) {
