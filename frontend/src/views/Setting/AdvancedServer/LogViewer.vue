@@ -53,7 +53,7 @@ const openInExternal = () => {
         </template>
 
         <div ref="content" :class="$style.content">
-            <pre>{{ data }}</pre>
+            <pre class="selectable">{{ data }}</pre>
         </div>
     </PaneLayout>
 </template>
