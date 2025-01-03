@@ -58,8 +58,9 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
         const sourceDataPath = getSourceDataPath()
         if(sourceDataPath !== null) {
             collectSourceData().then(sourceData => {
-                const file = document.querySelector<HTMLImageElement>("a#image-link img#image")
-                similarFinder.quickFind(file?.src, sourceDataPath, sourceData)
+                const images = [...document.querySelectorAll<HTMLImageElement>(".post__files .post__thumbnail .fileThumb img")]
+                const img = images.length >= 2 ? images[1] : images.length >= 1 ? images[0] : null
+                similarFinder.quickFind(img?.src, sourceDataPath, sourceData)
             })
             return true
         }
