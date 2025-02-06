@@ -1,6 +1,7 @@
 ## [Unreleased]
 ### Fixed
 * **[CRX]** 修复Kemono站点无法使用相似项查找的问题。
+* **[CRX]** 修复FANBOX站点中错误的页码标注。
 ### Optimized
 * 核心服务-日志视图现在可以选择文本了。
 

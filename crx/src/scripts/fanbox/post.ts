@@ -44,7 +44,7 @@ function initializeUI(sourcePath: SourceDataPath) {
         const callbackWithProcessor = (nodes: HTMLImageElement[]) => {
             if(imgList === undefined) imgList = [...document.querySelectorAll<HTMLImageElement>("article img")]
             const ret = nodes.filter(node => node.parentElement?.parentElement instanceof HTMLAnchorElement).map(node => {
-                const index = imgList!.indexOf(node) + 1
+                const index = imgList!.indexOf(node)
                 const downloadURL = (node.parentElement!.parentElement as HTMLAnchorElement).href
                 return {index, downloadURL, sourcePath: {...sourcePath, sourcePart: index}, element: node.parentElement!.parentElement!.parentElement as HTMLDivElement}
             })
