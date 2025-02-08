@@ -1,4 +1,6 @@
 ## [Unreleased]
+### Added
+* **[CRX]** 全部下载功能: 在FANBOX站点右键菜单添加下载全部图像的功能。
 ### Fixed
 * **[CRX]** 修复Kemono站点无法使用相似项查找的问题。
 * **[CRX]** 修复FANBOX站点中错误的页码标注。

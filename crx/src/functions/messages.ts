@@ -38,7 +38,7 @@ export type ContentScriptCallbackTypes = Extract<ContentScriptMessagesList, MsgT
 
 //== 联合消息列表 ==
 
-export type ServiceSenderMessagesList = ReportSourceData | ReportPageInfo | QuickFindSimilar
+export type ServiceSenderMessagesList = ReportSourceData | ReportPageInfo | QuickFindSimilar | DownloadAll
 
 export type ContentScriptMessagesList = SubmitPageInfo | SubmitSourceData | GetSourceData | CollectSourceData | DownloadURL | CreateNotification | CaptureVisibleTab | FetchRequest
 
@@ -52,6 +52,8 @@ type ReportSourceData = MsgTemplateWithCallback<"REPORT_SOURCE_DATA", undefined,
 type ReportPageInfo = MsgTemplateWithCallback<"REPORT_PAGE_INFO", undefined, {path: SourceDataPath | null}>
 
 type QuickFindSimilar = MsgTemplate<"QUICK_FIND_SIMILAR", undefined>
+
+type DownloadAll = MsgTemplate<"DOWNLOAD_ALL", undefined>
 
 //== content script发送至service worker的消息类型定义
 

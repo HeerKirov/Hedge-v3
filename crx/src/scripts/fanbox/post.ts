@@ -4,7 +4,7 @@ import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { FANBOX_CONSTANTS } from "@/functions/sites"
 import { imageToolbar, similarFinder } from "@/scripts/utils"
 import { onDOMContentLoaded } from "@/utils/document"
-import { Result } from "@/utils/primitives"
+import { Result, sleep } from "@/utils/primitives"
 
 onDOMContentLoaded(async () => {
     if(FANBOX_CONSTANTS.REGEXES.POST_PATHNAME.test(document.location.pathname)) {
@@ -30,9 +30,33 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
             const file = document.querySelector<HTMLImageElement>("article img")
             similarFinder.quickFind(file?.src, sourceDataPath, sourceData)
         })
+    }else if(type === "DOWNLOAD_ALL") {
+        const sourceDataPath = getSourceDataPath()
+        downloadAll(sourceDataPath).finally()
     }
     return false
 })
+
+async function downloadAll(sourcePath: SourceDataPath) {
+    const imgList = [...document.querySelectorAll<HTMLImageElement>("article img")].filter(node => node.parentElement?.parentElement instanceof HTMLAnchorElement)
+    if(imgList.length <= 0) {
+        sendMessage("NOTIFICATION", {title: "全部下载", message: "在该页面发现了0个项。"})
+        return
+    }
+
+    const links = imgList.map(node => {
+        const index = imgList!.indexOf(node)
+        const downloadURL = (node.parentElement!.parentElement as HTMLAnchorElement).href
+        return {index, downloadURL, sourcePath: {...sourcePath, sourcePart: index}, element: node.parentElement!.parentElement!.parentElement as HTMLDivElement}
+    })
+
+    sendMessage("NOTIFICATION", {title: "全部下载", message: `在该页面发现了${links.length}个项。立刻开始全部下载。`})
+
+    for(const link of links) {
+        sendMessage("DOWNLOAD_URL", {url: link.downloadURL, sourcePath: link.sourcePath, collectSourceData: true})
+        await sleep(100)
+    }
+}
 
 /**
  * 进行image-toolbar, find-similar相关的UI初始化。
