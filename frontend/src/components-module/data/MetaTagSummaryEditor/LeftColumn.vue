@@ -9,7 +9,7 @@ import { useEditorContext } from "./context"
 const {
     typeFilter,
     form: {
-        submit, submittable, submitting, removeAt,
+        submit, submittable, submitting, removeAt, add,
         tags, topics, authors, mappings, exists, overwriteMode,
         validation: { exportedResults, validationResults },
         history: { canRedo, canUndo, undo, redo }
@@ -69,7 +69,13 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues) => {
             </template>
             <template v-if="exists.length > 0">
                 <i class="label mt-3">已持有</i>
-                <SimpleMetaTagElement v-for="(t, idx) in exists" :key="t.value.id" :class="{'mt-1': true, 'has-text-del': t.removed || overwriteMode}" :type="t.type" :value="t.value" :color="t.removed || overwriteMode ? 'secondary' : undefined" wrapped-by-div @click="click($event, t.type, t.value)">
+                <SimpleMetaTagElement v-for="(t, idx) in exists" :key="t.value.id"
+                                      :class="{'mt-1': true, 'has-text-del': t.removed || overwriteMode}"
+                                      :type="t.type" :value="t.value"
+                                      :color="t.removed || overwriteMode ? 'secondary' : undefined"
+                                      wrapped-by-div
+                                      @click="click($event, t.type, t.value)"
+                                      @dblclick="add(t.type, t.value)">
                     <template #behind>
                         <Tag v-if="!overwriteMode" class="ml-half" line-style="none" icon="close" :color="t.removed ? 'secondary' : undefined" clickable @click="removeAt('exists', idx)"/>
                     </template>

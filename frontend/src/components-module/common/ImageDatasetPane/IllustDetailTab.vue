@@ -40,7 +40,7 @@ watch(() => type, type => {
     if(type === "COLLECTION" && tabType.value === "source") {
         tabType.value = "info"
     }
-})
+}, {immediate: true})
 
 </script>
 
