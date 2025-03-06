@@ -120,6 +120,10 @@ interface Toolkit {
          */
         enabled: boolean
         /**
+         * 启用针对附件类文件的标注重命名功能。
+         */
+        enabledAttachment: boolean
+        /**
          * 启用Referrer Policy注入。
          */
         referrerPolicy: boolean
@@ -189,6 +193,7 @@ export function defaultSetting(): Setting {
             },
             determiningFilename: {
                 enabled: true,
+                enabledAttachment: true,
                 referrerPolicy: true,
                 autoCollectSourceData: true,
                 rules: [],
@@ -283,6 +288,10 @@ const migrations: {[version: string]: Migrate<MigrateContext>} = {
         delete val["server"]
         delete val["tool"]
         delete val["sourceData"]
+    },
+    async "0.12.1"(ctx) {
+        const val = ctx.setting as any
+        val["toolkit"]["determiningFilename"].enabledAttachment = val["toolkit"]["determiningFilename"].enabled
     }
 }
 

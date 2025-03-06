@@ -1,3 +1,4 @@
+import { SourceDataPath } from "@/functions/server/api-all"
 
 export const EHENTAI_CONSTANTS = {
     SITE_NAME: "ehentai",
@@ -143,6 +144,21 @@ export const DETERMINING_RULES: Readonly<DeterminingRule[]> = [
 ]
 
 /**
+ * 在此处集中声明附件重命名建议机制的默认规则集。
+ */
+export const ATTACHMENT_RULES: Readonly<AttachmentRule[]> = [
+    {
+        siteName: FANBOX_CONSTANTS.SITE_NAME,
+        referrer: /^https:\/\/([^.]+)\.fanbox\.cc\/([^/]+\/)posts\/(?<ID>\d+)\/?$/
+    },
+    {
+        siteName: KEMONO_CONSTANTS.SITE_NAME,
+        referrer: /^https:\/\/kemono\.su\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<ID>\S+)(\/revision\/\d+)?\/?$/,
+        sourcePath: args => ({sourceSite: args["SITE"], sourceId: `${args["UID"]}.${args["ID"]}`, sourcePart: null, sourcePartName: null})
+    }
+]
+
+/**
  * 集中声明站点的定义。
  */
 interface WebsiteConstant {
@@ -186,4 +202,34 @@ interface DeterminingRule {
      * 对于此规则，是否应该收集其来源数据。
      */
     collectSourceData?: boolean
+}
+
+/**
+ * 附件重命名建议规则。
+ */
+interface AttachmentRule {
+    /**
+     * 使用的source site名称。
+     */
+    siteName: string
+    /**
+     * 对referrer匹配。
+     */
+    referrer?: RegExp
+    /**
+     * 对url匹配。
+     */
+    url?: RegExp
+    /**
+     * 对不包括扩展名部分的文件名匹配。
+     */
+    filename?: RegExp
+    /**
+     * 生成sourcePath的规则。
+     */
+    sourcePath?: (args: Record<string, string>) => SourceDataPath
+    /**
+     * 生成前缀的规则。
+     */
+    prefix?: (args: Record<string, string>) => string
 }

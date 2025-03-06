@@ -45,7 +45,7 @@ async function downloadAll(sourcePath: SourceDataPath) {
     }
 
     const links = imgList.map(node => {
-        const index = imgList!.indexOf(node)
+        const index = imgList!.indexOf(node) + 1
         const downloadURL = (node.parentElement!.parentElement as HTMLAnchorElement).href
         return {index, downloadURL, sourcePath: {...sourcePath, sourcePart: index}, element: node.parentElement!.parentElement!.parentElement as HTMLDivElement}
     })
@@ -66,9 +66,9 @@ function initializeUI(sourcePath: SourceDataPath) {
         let imgList: HTMLImageElement[] | undefined
 
         const callbackWithProcessor = (nodes: HTMLImageElement[]) => {
-            if(imgList === undefined) imgList = [...document.querySelectorAll<HTMLImageElement>("article img")]
+            if(imgList === undefined) imgList = [...document.querySelectorAll<HTMLImageElement>("article img")].filter(n => n.src?.startsWith("https://downloads.fanbox.cc"))
             const ret = nodes.filter(node => node.parentElement?.parentElement instanceof HTMLAnchorElement).map(node => {
-                const index = imgList!.indexOf(node)
+                const index = imgList!.indexOf(node) + 1
                 const downloadURL = (node.parentElement!.parentElement as HTMLAnchorElement).href
                 return {index, downloadURL, sourcePath: {...sourcePath, sourcePart: index}, element: node.parentElement!.parentElement!.parentElement as HTMLDivElement}
             })

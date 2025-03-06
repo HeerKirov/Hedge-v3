@@ -79,7 +79,13 @@
 			"run_at": "document_start"
 		},
 		{
-			"matches": ["https://www.pixiv.net/artworks/*", "https://danbooru.donmai.us/posts/*", "https://gelbooru.com/*"],
+			"matches": [
+				"https://www.pixiv.net/artworks/*",
+				"https://danbooru.donmai.us/posts/*",
+				"https://gelbooru.com/*",
+				"https://kemono.su/*",
+				"https://www.fanbox.cc/*/posts/*", "https://*.fanbox.cc/posts/*"
+			],
 			"js": ["src/scripts/utils/referrer-policy.ts"],
 			"run_at": "document_start"
 		}

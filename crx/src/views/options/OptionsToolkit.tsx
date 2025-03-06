@@ -71,7 +71,7 @@ export function OptionsToolkitPanel(props: OptionsToolkitPanelProps) {
 
         <Separator spacing={[4, 1]}/>
         <Header>文件下载重命名</Header>
-        <p>在受支持的网站中，当下载符合格式的文件时，自动对其进行重命名。</p>
+        <p>在受支持的网站中，当下载符合格式的文件时，自动对其进行重命名，使其符合来源数据识别的默认格式。</p>
         <IconDisplayDiv>
             <Label>支持的网站</Label>
             <img src={PixivIcon} alt="pixiv icon"/><span>Pixiv</span>
@@ -94,6 +94,19 @@ export function OptionsToolkitPanel(props: OptionsToolkitPanelProps) {
             <SecondaryText>添加额外的可以触发文件重命名的扩展名。以逗号(,)分隔多个扩展名。</SecondaryText>
             <Input value={editor.determiningFilename.extensions.join(", ")} onUpdateValue={v => setDeterminingFilename("extensions", v.split(",").map(s => s.trim()).filter(s => !!s))}/>
         </div>
+
+        <Separator spacing={[4, 1]}/>
+        <Header>附件下载重命名标注</Header>
+        <p>在受支持的网站中，当下载符合格式的附件时，自动在其文件名前添加<code>[ID]</code>作为标注。</p>
+        <SecondaryText>支持的扩展名：ZIP, 7Z, PSD, CLIP</SecondaryText>
+        <IconDisplayDiv>
+            <Label>支持的网站</Label>
+            <img src={FanboxIcon} alt="fanbox icon"/><span>FANBOX</span>
+            <img src={KemonoIcon} alt="kemono icon"/><span>Kemono</span>
+        </IconDisplayDiv>
+        <LayouttedDiv mt={1}>
+            <CheckBox checked={editor.determiningFilename.enabledAttachment} onUpdateChecked={v => setDeterminingFilename("enabledAttachment", v)}>启用附件下载重命名标注</CheckBox>
+        </LayouttedDiv>
 
         <Separator spacing={[4, 1]}/>
         <Header>来源数据收集</Header>
