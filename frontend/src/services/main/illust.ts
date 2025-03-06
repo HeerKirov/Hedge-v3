@@ -206,6 +206,7 @@ export function useIllustDetailPane() {
             preview: "image", 
             type: "listview", 
             listview: listview.listview,
+            paginationData: listview.paginationData,
             columnNum: listviewController.columnNum,
             viewMode: listviewController.viewMode,
             selected: selector.selected,

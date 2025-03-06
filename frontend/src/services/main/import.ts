@@ -4,7 +4,13 @@ import { flatResponse } from "@/functions/http-client"
 import { ImportRecord, ImportQueryFilter } from "@/functions/http-client/api/import"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
 import { SourceDataPath } from "@/functions/http-client/api/all"
-import { QueryListview, useFetchEndpoint, useFetchHelper, usePostFetchHelper } from "@/functions/fetch"
+import {
+    PaginationDataView,
+    QueryListview,
+    useFetchEndpoint,
+    useFetchHelper,
+    usePostFetchHelper
+} from "@/functions/fetch"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
@@ -25,7 +31,7 @@ export const [installImportContext, useImportContext] = installation(function ()
     const selector = useSelectedState({queryListview: listview.listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("import-image")
     const listviewController = useImportImageViewController()
-    const operators = useOperators(listview.listview, listview.queryFilter, selector, listviewController, importService.addFiles)
+    const operators = useOperators(listview.listview, listview.paginationData, listview.queryFilter, selector, listviewController, importService.addFiles)
 
     useDroppingFileListener(importService.addFiles)
     useSettingSite()
@@ -115,7 +121,7 @@ function useListView() {
     })
 }
 
-function useOperators(listview: QueryListview<ImportRecord, number>, queryFilter: Ref<ImportQueryFilter>, selector: SelectedState<number>, listviewController: ImportImageViewController, addFiles: (f: string[]) => void) {
+function useOperators(listview: QueryListview<ImportRecord, number>, paginationData: PaginationDataView<ImportRecord>, queryFilter: Ref<ImportQueryFilter>, selector: SelectedState<number>, listviewController: ImportImageViewController, addFiles: (f: string[]) => void) {
     const toast = useToast()
     const message = useMessageBox()
     const router = useTabRoute()
@@ -186,6 +192,7 @@ function useOperators(listview: QueryListview<ImportRecord, number>, queryFilter
             preview: "image", 
             type: "listview", 
             listview: listview,
+            paginationData: paginationData,
             columnNum: listviewController.columnNum,
             viewMode: listviewController.viewMode,
             selected: selector.selected,
@@ -263,6 +270,7 @@ export function useImportDetailPane() {
             preview: "image", 
             type: "listview", 
             listview: listview.listview,
+            paginationData: listview.paginationData,
             columnNum: listviewController.columnNum,
             viewMode: listviewController.viewMode,
             selected: selector.selected,

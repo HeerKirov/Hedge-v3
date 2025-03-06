@@ -25,6 +25,6 @@
     "typescript": "5.7.2",
     "vite": "5.4.10",
     "vite-plugin-md": "0.21.5",
-    "vue-tsc": "2.1.10"
+    "vue-tsc": "2.2.8"
   }
 }

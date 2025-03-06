@@ -165,7 +165,7 @@ export const [installFindSimilarDetailPanel, useFindSimilarDetailPanel] = instal
 
     const operators = useOperators(data, selector, listviewController, listview, paginationData, resolve, clear)
 
-    installIllustListviewContext({listview: {listview}, selector, listviewController})
+    installIllustListviewContext({listview: {listview, paginationData}, selector, listviewController})
 
     useDocumentTitle(() => viewMode.value === "graph" ? "相似关系图" : viewMode.value === "grid" ? "相似项列表" : "相似项对比")
 
@@ -535,7 +535,7 @@ export function useGraphView({ menu }: {menu: (i: FindSimilarResultDetailImage) 
 
 export function useDetailPane() {
     const preview = usePreviewService()
-    const { data, listview, selector, listviewController, viewMode } = useFindSimilarDetailPanel()
+    const { data, listview, paginationData, selector, listviewController, viewMode } = useFindSimilarDetailPanel()
 
     const path = computed(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
 
@@ -548,6 +548,7 @@ export function useDetailPane() {
                     preview: "image", 
                     type: "listview", 
                     listview: listview,
+                    paginationData: paginationData,
                     columnNum: listviewController.columnNum,
                     viewMode: listviewController.viewMode,
                     selected: selector.selected,

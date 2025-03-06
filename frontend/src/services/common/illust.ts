@@ -362,6 +362,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
             preview: "image", 
             type: "listview", 
             listview: listview,
+            paginationData: paginationData,
             columnNum: listviewController.columnNum,
             viewMode: listviewController.viewMode,
             selected: selector.selected,
@@ -698,6 +699,7 @@ export function useLocateId<T extends CommonIllust>(options: LocateIdOptions<T>)
 interface IllustListviewContextOptions {
     listview: {
         listview: QueryListview<CommonIllust, number>
+        paginationData: PaginationDataView<CommonIllust>
     }
     selector: SelectedState<number>
     listviewController: {
