@@ -1,4 +1,4 @@
-## [Unreleased]
+## [0.12.1] - 2025-03-06
 ### Added
 * Gumroad站点: 已添加Gumroad站点内置支持。
 * **[CRX]** Kemono Gumroad支持: 已支持在Kemono站点中收集Gumroad的来源。

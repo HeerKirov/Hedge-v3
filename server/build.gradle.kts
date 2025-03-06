@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.heerkirov.hedge"
-version = "0.12.0"
+version = "0.12.1"
 
 var targetPlatform: String? = project.findProperty("targetPlatform")?.toString()
 

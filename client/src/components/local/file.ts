@@ -181,6 +181,29 @@ function createRemoteMode(server: ServerManager, subLevel: () => AbstractSubleve
         try {
             const stat = await statOrNull(localCachePath)
             if(stat === null || stat.size <= 0) {
+                const extname = path.extname(filepath).substring(1).toLowerCase()
+                if(["mp4", "webm", "ogv"].includes(extname)) {
+                    //在文件是视频的情况下，需要做一个预检，检查文件的大小
+                    const response = await server.service.axiosRequest({
+                        url: path.join("archives", filepath),
+                        headers: {"Range": `bytes=0-${1024 * 1024 * 10 - 1}`},
+                        method: "GET",
+                        responseType: "stream"
+                    })
+                    if(response.status === 200) {
+                        const matcher = (response.headers["Content-Range"] as string).match(/^bytes (\d+)-(\d+)\/(\d+)$/)
+                        if(matcher) {
+                            const begin = parseInt(matcher[1]), end = parseInt(matcher[2]), max = parseInt(matcher[3])
+                            if(max > 1024 * 1024 * 10) {
+                                //这表示文件超出10M的大小，不应该等它下载完成，而是应该直连
+                            }
+                        }
+                    }else if(response.status === 404) {
+                        return {ok: false, code: "FILE_NOT_FOUND"}
+                    }else{
+                        return {ok: false, code: undefined, message: response.statusText}
+                    }
+                }
                 await mkdir(path.dirname(localCachePath))
                 const r = await downloadFile(path.join("archives", filepath), localCachePath)
                 if(!r.ok) return r

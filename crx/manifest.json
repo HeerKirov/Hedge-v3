@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Hedge v3 Helper (Dev)",
+    "name": "Hedge v3 Helper",
     "version": "0.12.1",
     "description": "在各个图源网站上提供Hedge直连功能，并提供易用性优化的扩展工具。",
     "icons": {
