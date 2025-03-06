@@ -117,9 +117,14 @@ async function collectSourceData(): Promise<Result<SourceDataUpdateForm, string>
  * 获得当前页面的SourceDataPath。
  */
 function getSourceDataPath(): SourceDataPath | null {
-    const { site, pid } = getIdentityInfo()
+    const { site, uid, pid } = getIdentityInfo()
     if(KEMONO_CONSTANTS.AVAILABLE_SERVICES.includes(site as any)) {
-        return {sourceSite: site, sourceId: pid, sourcePart: null, sourcePartName: null}
+        if(site === "gumroad") {
+            //gumroad的id结构相比之下比较特殊，它的pid不是全站唯一的，因此必须添加uid加以限制
+            return {sourceSite: site, sourceId: `${uid}.${pid}`, sourcePart: null, sourcePartName: null}
+        }else{
+            return {sourceSite: site, sourceId: pid, sourcePart: null, sourcePartName: null}
+        }
     }else{
         return null
     }

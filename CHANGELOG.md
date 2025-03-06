@@ -1,6 +1,7 @@
 ## [Unreleased]
 ### Added
 * Gumroad站点: 已添加Gumroad站点内置支持。
+* **[CRX]** Kemono Gumroad支持: 已支持在Kemono站点中收集Gumroad的来源。
 * **[CRX]** 全部下载功能: 在FANBOX站点右键菜单添加下载全部图像的功能。
 ### Fixed
 * 修复图库侧边栏在来源数据面板下由无选择项状态切换选择到集合项目时，没有自动切回主面板的问题。
