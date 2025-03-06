@@ -159,7 +159,7 @@ function useOperators(listview: QueryListview<ImportRecord, number>, queryFilter
             filters: [
                 {
                     name: "支持的文件格式(*.jpeg, *.jpg, *.png, *.gif, *.mp4, *.webm, *.ogv)",
-                    extensions: ["jpeg", "jpg", "png", "gif", "mp4", "webm", "ogv"]
+                    extensions: ["jpeg", "jpe", "jpg", "png", "gif", "mp4", "webm", "ogv"]
                 }
             ],
             properties: ["openFile", "multiSelections", "createDirectory"]

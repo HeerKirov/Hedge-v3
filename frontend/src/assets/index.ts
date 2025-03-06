@@ -9,8 +9,9 @@ import nijieIcon from "./sites/nijie.ico"
 import patreonIcon from "./sites/patreon.ico"
 import pixivIcon from "./sites/pixiv.ico"
 import sankakuIcon from "./sites/sankaku.ico"
+import gumroadIcon from "./sites/gumroad.ico"
 import xIcon from "./sites/x.ico"
 import emptyFile from "./empty-file.jpg"
 
-export { danbooruIcon, ehentaiIcon, fanboxIcon, fantiaIcon, gelbooruIcon, imhentaiIcon, konachanIcon, nijieIcon, patreonIcon, pixivIcon, sankakuIcon, xIcon }
+export { danbooruIcon, ehentaiIcon, fanboxIcon, fantiaIcon, gelbooruIcon, imhentaiIcon, konachanIcon, nijieIcon, patreonIcon, pixivIcon, sankakuIcon, xIcon, gumroadIcon }
 export { emptyFile }

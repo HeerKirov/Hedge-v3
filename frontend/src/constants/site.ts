@@ -1,4 +1,4 @@
-import { danbooruIcon, ehentaiIcon, fanboxIcon, fantiaIcon, gelbooruIcon, imhentaiIcon, konachanIcon, nijieIcon, patreonIcon, pixivIcon, sankakuIcon, xIcon } from "@/assets"
+import { danbooruIcon, ehentaiIcon, fanboxIcon, fantiaIcon, gelbooruIcon, imhentaiIcon, konachanIcon, nijieIcon, patreonIcon, pixivIcon, sankakuIcon, xIcon, gumroadIcon } from "@/assets"
 
 export const SITE_ICONS: Record<string, string> = {
     "danbooru": danbooruIcon,
@@ -13,6 +13,7 @@ export const SITE_ICONS: Record<string, string> = {
     "pixiv": pixivIcon,
     "sankakucomplex": sankakuIcon,
     "twitter": xIcon,
+    "gumroad": gumroadIcon,
 }
 
 export const SITE_FEATURES: Record<string, SITE_FEATURE[]> = {
@@ -28,6 +29,7 @@ export const SITE_FEATURES: Record<string, SITE_FEATURE[]> = {
     "pixiv": ["MIXED_SET_II"],
     "sankakucomplex": ["MIXED_SET_I"],
     "twitter": [],
+    "gumroad": []
 }
 
 export const SITE_FEATURE_DESCRIPTIONS: Record<SITE_FEATURE, string> = {
