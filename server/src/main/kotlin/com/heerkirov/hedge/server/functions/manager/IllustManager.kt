@@ -1130,6 +1130,7 @@ class IllustManager(private val appdata: AppDataManager,
             if(specifiedImages.isEmpty()) throw be(ResourceNotExist("specifyPartitionTime", specifyPartitionTime))
             val min = specifiedImages.minOf { it.orderTime }
             val max = specifiedImages.maxOf { it.orderTime }
+            //TODO 这里存在一个问题，位于指定时间分区内的图像不一定是连续的，如果是这个情况，此处理就会导致跨项断序
             processSpecifyItems(min, max, images, specifyPartitionTime)
         }else if(specifyInsertPosition != null) {
             //在没有触发排序时间整理的情况下，可能会有插入整理

@@ -135,11 +135,19 @@ val BUILTIN_SITES = listOf(
         additionalInfo = emptyList()
     ),
     SourceSiteRes(
-        name = "twitter", title = "Twitter", isBuiltin = true,
+        name = "twitter", title = "X", isBuiltin = true,
         idMode = SourceOption.SiteIdMode.STRING, partMode = SourceOption.SitePartMode.PAGE,
         sourceLinkRules = emptyList(),
         tagTypes = listOf("user"),
         tagTypeMappings = mapOf("user" to TagAuthorType.ARTIST.name),
+        additionalInfo = emptyList()
+    ),
+    SourceSiteRes(
+        name = "gumroad", title = "Gumroad", isBuiltin = true,
+        idMode = SourceOption.SiteIdMode.STRING, partMode = SourceOption.SitePartMode.PAGE,
+        sourceLinkRules = emptyList(),
+        tagTypes = listOf("artist", "tag"),
+        tagTypeMappings = mapOf("artist" to TagAuthorType.ARTIST.name),
         additionalInfo = emptyList()
     ),
 )

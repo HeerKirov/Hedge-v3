@@ -33,7 +33,7 @@ import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
 
 class FileManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus): Component {
-    private val extensions = arrayOf("jpeg", "jpg", "png", "gif", "mp4", "webm")
+    private val extensions = arrayOf("jpeg", "jpe", "jpg", "png", "gif", "mp4", "webm")
 
     private val nextBlock = NextBlock()
 
@@ -210,12 +210,14 @@ class FileManager(private val appdata: AppDataManager, private val data: DataRep
     }
 
     /**
-     * 检查并纠正一个文件的扩展名。扩展名必须是受支持的扩展名，且统一转换为小写。
+     * 检查并纠正一个文件的扩展名。扩展名必须是受支持的扩展名，且统一转换为小写。JPEG/JPE等扩展名还会被统一转换为JPG
      * @throws IllegalFileExtensionError (extension) 此文件扩展名不受支持
      */
     private fun validateExtension(extension: String): String {
-        return extension.lowercase().apply {
-            if(this !in extensions) throw be(IllegalFileExtensionError(extension))
+        return when(val ext = extension.lowercase()) {
+            !in extensions -> throw be(IllegalFileExtensionError(extension))
+            "jpeg", "jpe" -> "jpg"
+            else -> ext
         }
     }
 

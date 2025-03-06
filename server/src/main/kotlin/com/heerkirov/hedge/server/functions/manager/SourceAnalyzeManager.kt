@@ -130,7 +130,7 @@ class SourceAnalyzeManager(private val appdata: AppDataManager, bus: EventBus, p
 
     private fun generateBuiltinRules(): List<ImportOption.SourceAnalyseRule> {
         return siteManager.list().filter { it.isBuiltin }.map {
-            val id = if(it.idMode == SourceOption.SiteIdMode.NUMBER) "_(?<ID>\\d+)" else "_(?<ID>[A-Za-z0-9]+)"
+            val id = if(it.idMode == SourceOption.SiteIdMode.NUMBER) "_(?<ID>\\d+)" else "_(?<ID>[A-Za-z0-9_\\-:/.]+)"
             val part = when(it.partMode) {
                 SourceOption.SitePartMode.PAGE_WITH_NAME -> "_(?<P>\\d+)(_(?<PN>[A-Za-z0-9]+))?"
                 SourceOption.SitePartMode.PAGE -> "_(?<P>\\d+)"
