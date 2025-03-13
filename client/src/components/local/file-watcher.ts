@@ -5,6 +5,7 @@ import { StateManager, AppState } from "@/components/state"
 import { readdir, statOrNull } from "@/utils/fs"
 import { createEmitter, Emitter } from "@/utils/emitter"
 import { showNotification } from "@/utils/notification"
+import { ExpireSet } from "@/utils/primitive"
 import { FileManager } from "./file"
 
 export interface FileWatcher {
@@ -43,8 +44,7 @@ export function createFileWatcher(appdata: AppDataDriver, state: StateManager, f
     let errors: {path: string, error: PathWatcherErrorReason}[] = []
     let moveMode = false
     let watcher: FSWatcher | null = null
-
-    state.stateChangedEvent.addEventListener(loadWhenStateReady)
+    const expireSet: ExpireSet<string> = new ExpireSet<string>(3000)
 
     function loadWhenStateReady({ state: s }: {state: AppState}) {
         if(s === "READY" && appdata.getAppData().storageOption.autoFileWatch) {
@@ -55,6 +55,8 @@ export function createFileWatcher(appdata: AppDataDriver, state: StateManager, f
             state.stateChangedEvent.removeEventListener(loadWhenStateReady)
         }
     }
+
+    state.stateChangedEvent.addEventListener(loadWhenStateReady)
 
     async function startWatcher() {
         statisticCount = 0
@@ -76,11 +78,14 @@ export function createFileWatcher(appdata: AppDataDriver, state: StateManager, f
             }
         }
         try {
-            watcher = watch(accessPaths, {persistent: true, depth: 0, ignoreInitial: true, awaitWriteFinish: {stabilityThreshold: 500, pollInterval: 250}})
+            watcher = watch(accessPaths, {persistent: true, depth: 0, ignoreInitial: true, awaitWriteFinish: {stabilityThreshold: 600, pollInterval: 100}})
             watcher.on("add", (filepath) => {
                 //tips: 有必要再做一层路径检查，chokidar的相关选项不保险。在使用macOS归档工具或其他压缩App解压文件时，事件响应会穿透depth限制。
                 if(accessPaths.includes(path.dirname(filepath))) {
-                    importFile(filepath)
+                    if(!expireSet.has(filepath)) {
+                        expireSet.add(filepath)
+                        importFile(filepath)
+                    }
                 }
             })
         }catch(e) {
