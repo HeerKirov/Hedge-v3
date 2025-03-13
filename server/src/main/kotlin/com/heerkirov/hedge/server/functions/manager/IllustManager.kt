@@ -154,7 +154,7 @@ class IllustManager(private val appdata: AppDataManager,
             throw RuntimeException("Illust insert failed. generatedKey is $id but queried verify id is $verifyId.")
         }
 
-        updateSubImages(id, images, specifyPartitionTime)
+        updateSubImages(id, images, specifyPartitionTime = specifyPartitionTime)
 
         if(formFavorite != null) {
             data.db.update(Illusts) {
@@ -188,7 +188,9 @@ class IllustManager(private val appdata: AppDataManager,
             set(it.updateTime, Instant.now())
         }
 
-        val oldImageIds = updateSubImages(collectionId, images.sortedBy { it.orderTime }, specifyPartitionTime)
+        val oldImageIds = data.db.from(Illusts).select(Illusts.id).where { Illusts.parentId eq collectionId }.map { it[Illusts.id]!! }.toSet()
+
+        updateSubImages(collectionId, images.sortedBy { it.orderTime }, oldImageIds, specifyPartitionTime = specifyPartitionTime)
 
         kit.refreshAllMeta(collectionId, copyFromChildren = true)
 
@@ -234,7 +236,7 @@ class IllustManager(private val appdata: AppDataManager,
                 set(it.updateTime, Instant.now())
             }
 
-            updateSubImages(collectionId, nextImages, specifyPartitionTime, specifyInsertPosition = Pair(insertBegin, insertEnd))
+            updateSubImages(collectionId, nextImages, specifyPartitionTime = specifyPartitionTime, specifyInsertPosition = Pair(insertBegin, insertEnd))
         }else{
             //这里需要按照orderTime排序，以保证插入项的位置与现有项的相对位置正确。如果不排序，那么插入项就只会在最后面了。
             val nextImages = (currentChildren.filter { it.id !in addImageIds } + addImages).sortedBy { it.orderTime }
@@ -252,7 +254,7 @@ class IllustManager(private val appdata: AppDataManager,
                 set(it.updateTime, Instant.now())
             }
 
-            updateSubImages(collectionId, nextImages, specifyPartitionTime)
+            updateSubImages(collectionId, nextImages, specifyPartitionTime = specifyPartitionTime)
         }
 
         kit.refreshAllMeta(collectionId, copyFromChildren = true)
@@ -288,7 +290,9 @@ class IllustManager(private val appdata: AppDataManager,
             set(it.updateTime, Instant.now())
         }
 
-        val oldImageIds = updateSubImages(collectionId, nextImages, null)
+        val oldImageIds = data.db.from(Illusts).select(Illusts.id).where { Illusts.parentId eq collectionId }.map { it[Illusts.id]!! }.toSet()
+
+        updateSubImages(collectionId, nextImages, oldImageIds)
 
         kit.refreshAllMeta(collectionId, copyFromChildren = true)
 
@@ -1085,9 +1089,9 @@ class IllustManager(private val appdata: AppDataManager,
      * @throws ResourceNotExist ("specifyPartitionTime", LocalDate) 在指定的时间分区下没有存在的图像
      * @return oldImageIds
      */
-    private fun updateSubImages(collectionId: Int, images: List<Illust>, specifyPartitionTime: LocalDate?, specifyInsertPosition: Pair<Int, Int>? = null): Set<Int> {
+    private fun updateSubImages(collectionId: Int, images: List<Illust>, oldImages: Set<Int>? = null, specifyPartitionTime: LocalDate? = null, specifyInsertPosition: Pair<Int, Int>? = null) {
         val imageIds = images.map { it.id }.toSet()
-        val oldImageIds = data.db.from(Illusts).select(Illusts.id)
+        val oldImageIds = oldImages ?: data.db.from(Illusts).select(Illusts.id)
             .where { Illusts.parentId eq collectionId }
             .map { it[Illusts.id]!! }
             .toSet()
@@ -1128,10 +1132,18 @@ class IllustManager(private val appdata: AppDataManager,
             //若开启相关选项，则需要对排序时间做整理。当存在不在指定分区的图像时，将它们集中到指定分区内
             val specifiedImages = images.filter { it.partitionTime == specifyPartitionTime }
             if(specifiedImages.isEmpty()) throw be(ResourceNotExist("specifyPartitionTime", specifyPartitionTime))
-            val min = specifiedImages.minOf { it.orderTime }
-            val max = specifiedImages.maxOf { it.orderTime }
-            //TODO 这里存在一个问题，位于指定时间分区内的图像不一定是连续的，如果是这个情况，此处理就会导致跨项断序
+            val targetPartitionImages = specifiedImages.filter { it.parentId == collectionId }
+            val (min, max) = if(targetPartitionImages.isNotEmpty()) {
+                //若指定分区中存在已在当前集合内的项，就仅在当前集合内的项中寻找极值
+                //这是为了防止出现乱序bug。如果addImages同时包含与当前集合同分区和不同分区的项，就会进入此分支，并使得选取极值时有可能跨项，最终导致跨项乱序
+                Pair(targetPartitionImages.minOf { it.orderTime }, targetPartitionImages.maxOf { it.orderTime })
+            }else{
+                Pair(specifiedImages.minOf { it.orderTime }, specifiedImages.maxOf { it.orderTime })
+            }
             processSpecifyItems(min, max, images, specifyPartitionTime)
+            //tips: 这里和下面的对项的选取排序等操作显然改变了parent collection的orderTime等属性，但并没有从这里反映到collection上。
+            //这些属性后续是由event触发了对parent collection的重新导出而传递，使其正确的。
+            //其实最好还是能在一次更新事务内手动完成此操作。
         }else if(specifyInsertPosition != null) {
             //在没有触发排序时间整理的情况下，可能会有插入整理
             val (insertBegin, insertEnd) = specifyInsertPosition
@@ -1172,8 +1184,6 @@ class IllustManager(private val appdata: AppDataManager,
                 processCollectionChildrenChanged(parentId, -images.size, now)
                 bus.emit(IllustImagesChanged(parentId, emptyList(), images.map { it.id }))
             }
-
-        return oldImageIds
     }
 
     /**

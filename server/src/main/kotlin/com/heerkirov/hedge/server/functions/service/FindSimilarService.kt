@@ -284,8 +284,8 @@ class FindSimilarService(private val data: DataRepository,
                 val (imageIds, specifyPartitionTime) = p
                 when (collectionId) {
                     is Int -> {
-                        val images = illustManager.unfoldImages(imageIds + listOf(collectionId), sorted = false)
-                        illustManager.updateImagesInCollection(collectionId, images, specifyPartitionTime)
+                        val images = illustManager.unfoldImages(imageIds, sorted = false)
+                        illustManager.addImagesToCollection(collectionId, images, insertIndex = null, specifyPartitionTime = specifyPartitionTime)
                     }
                     is String -> if(imageIds.isNotEmpty()) {
                         //collectionId可以设置为string，表示会创建新collection，相同字符串的会被创建到同一个collection中
