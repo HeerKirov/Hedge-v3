@@ -71,7 +71,15 @@ interface FilterByColumn : ExecuteBuilder {
                     is EqualFilter<*> -> {
                         val c = (column as ColumnDeclaring<Any>)
                         val values = filter.values.map { mapFilterSpecial(filter.field, it.equalValue) }
-                        if (values.size == 1) { c eq values.first() } else { c inList values }
+                        if (values.size == 1) {
+                            c eq values.first()
+                        } else {
+                            c inList values
+                        }
+                    }
+                    is IsNullFilter<*> -> {
+                        val c = (column as ColumnDeclaring<Any>)
+                        if(filter.isNull) { c.isNull() }else{ c.isNotNull() }
                     }
                     is RangeFilter<*> -> {
                         val c = (column as ColumnDeclaring<Comparable<Any>>)

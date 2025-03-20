@@ -14,7 +14,7 @@ object BookDialect : QueryDialect<BookDialect.BookSortItem> {
 
     val favorite = flagField("FAVORITE", "favorite", "f")
     val id = patternNumberField("ID", "id")
-    val score = numberField("SCORE", "score")
+    val score = numberField("SCORE", "score", "s", nullable = true)
     val imageCount = numberField("IMAGE_COUNT", "count", "image-count")
     val createTime = datetimeField("CREATE_TIME", "create", "create-time", "ct")
     val updateTime = datetimeField("UPDATE_TIME", "update", "update-time", "ut")

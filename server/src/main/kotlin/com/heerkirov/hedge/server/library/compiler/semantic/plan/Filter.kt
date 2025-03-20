@@ -35,6 +35,11 @@ data class CompositionFilter<V : EquableValue<*>>(override val field: FilterFiel
 data class EqualFilter<V : EquableValue<*>>(override val field: FilterFieldDefinition<V>, val values: Collection<V>) : Filter<V>
 
 /**
+ * 空值过滤器。判断此属性是否为空。
+ */
+data class IsNullFilter<V : EquableValue<*>>(override val field: FilterFieldDefinition<V>, val isNull: Boolean) : Filter<V>
+
+/**
  * 匹配过滤器。此属性必须与目标值按匹配规则模糊匹配。目标值可给出1或多个，满足任一即达成判定条件。
  */
 data class MatchFilter<V : MatchableValue<*>>(override val field: FilterFieldDefinition<V>, val values: Collection<V>, val exact: Boolean) : Filter<V>

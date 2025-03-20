@@ -35,7 +35,7 @@ object Translator {
                         is CompositionFilter -> (filter as CompositionFilter<*>).values.map { FilterEqual(it.equalValue) }
                         is MatchFilter -> (filter as MatchFilter<*>).values.map { FilterMatch(it.matchValue) }
                         is RangeFilter -> (filter as RangeFilter<*>).let { listOf(FilterRange(it.begin?.compareValue, it.end?.compareValue, it.includeBegin, it.includeEnd)) }
-                        is FlagFilter -> emptyList()
+                        is FlagFilter, is IsNullFilter -> emptyList()
                         else -> throw RuntimeException("Unsupported filter type ${filter::class.simpleName}.")
                     }
                 })

@@ -69,9 +69,15 @@ class EquableField<V>(override val key: String, override val alias: Array<out St
 /**
  * 对关键字项进行标准解析的field。处理等价和集合运算，以及区间和比较运算。使用组合解析器指定对str的解析策略。
  */
-class ComparableField<V>(override val key: String, override val alias: Array<out String>, private val strTypeParser: StrTypeParser<V>) : FilterFieldByIdentify<V>() where V: ComparableValue<*>, V: EquableValue<*> {
+class ComparableField<V>(override val key: String, override val alias: Array<out String>, private val nullable: Boolean, private val strTypeParser: StrTypeParser<V>) : FilterFieldByIdentify<V>() where V: ComparableValue<*>, V: EquableValue<*> {
     override fun generate(subject: StrList, family: Family?, predicative: Predicative?): Filter<V>? {
-        if(family == null || predicative == null) semanticError(FilterValueRequired(key, subject.beginIndex, subject.endIndex))
+        if(family == null || predicative == null) {
+            if(nullable && family == null && predicative == null) {
+                return IsNullFilter(this, false)
+            }else{
+                semanticError(FilterValueRequired(key, subject.beginIndex, subject.endIndex))
+            }
+        }
 
         return when (family.value) {
             ":" -> when(predicative) {
@@ -468,7 +474,7 @@ class CompositionField<V>(override val key: String, override val alias: Array<ou
 /**
  * 数值型关键字项。
  */
-fun numberField(key: String, vararg alias: String, timesValue: Boolean = false): FilterFieldDefinition<FilterNumberValue> = ComparableField(key, alias, if(timesValue) TimesNumberParser else NumberParser)
+fun numberField(key: String, vararg alias: String, timesValue: Boolean = false, nullable: Boolean = false): FilterFieldDefinition<FilterNumberValue> = ComparableField(key, alias, nullable, if(timesValue) TimesNumberParser else NumberParser)
 
 /**
  * 数值且可匹配的关键字项。
@@ -478,7 +484,7 @@ fun patternNumberField(key: String, vararg alias: String): FilterFieldDefinition
 /**
  * 比值型关键字项。
  */
-fun ratioField(key: String, vararg alias: String): FilterFieldDefinition<FilterFloatNumberValue> = ComparableField(key, alias, RatioParser)
+fun ratioField(key: String, vararg alias: String): FilterFieldDefinition<FilterFloatNumberValue> = ComparableField(key, alias, false, RatioParser)
 
 /**
  * 日期型关键字项。
@@ -493,12 +499,12 @@ fun datetimeField(key: String, vararg alias: String): FilterFieldDefinition<Filt
 /**
  * 带有byte单位的大小类型关键字项。
  */
-fun byteSizeField(key: String, vararg alias: String): FilterFieldDefinition<FilterSizeValue> = ComparableField(key, alias, ByteSizeParser)
+fun byteSizeField(key: String, vararg alias: String): FilterFieldDefinition<FilterSizeValue> = ComparableField(key, alias, false, ByteSizeParser)
 
 /**
  * 带有duration单位的大小类型关键字项。
  */
-fun durationSizeField(key: String, vararg alias: String): FilterFieldDefinition<FilterSizeValue> = ComparableField(key, alias, DurationSizeParser)
+fun durationSizeField(key: String, vararg alias: String): FilterFieldDefinition<FilterSizeValue> = ComparableField(key, alias, false, DurationSizeParser)
 
 /**
  * 字符串型关键字项，对精确的字符串进行等价判断，非精确字符串模糊匹配。

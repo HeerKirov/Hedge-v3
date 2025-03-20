@@ -19,7 +19,7 @@ object IllustDialect : QueryDialect<IllustDialect.IllustSortItem> {
     val favorite = flagField("FAVORITE", "favorite", "f")
     val bookMember = flagField("BOOK_MEMBER", "book-member", "bm")
     val id = patternNumberField("ID", "id")
-    val score = numberField("SCORE", "score", "s")
+    val score = numberField("SCORE", "score", "s", nullable = true)
     val partition = dateField("PARTITION", "partition", "pt")
     val orderTime = datetimeField("ORDER_TIME", "order", "order-time", "ot")
     val createTime = datetimeField("CREATE_TIME", "create", "create-time", "ct")
