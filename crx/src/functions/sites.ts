@@ -1,4 +1,5 @@
 import { SourceDataPath } from "@/functions/server/api-all"
+import { sessions } from "@/functions/storage"
 
 export const EHENTAI_CONSTANTS = {
     SITE_NAME: "ehentai",
@@ -60,6 +61,21 @@ export const FANBOX_CONSTANTS = {
     }
 }
 
+export const FANTIA_CONSTANTS = {
+    SITE_NAME: "fantia",
+    HOSTS: ["fantia.jp"],
+    PATTERNS: {
+        POST_PATHNAME: (sourceId: string) => [
+            `https://fantia.jp/posts/${sourceId}`,
+        ]
+    },
+    REGEXES: {
+        POST_PATHNAME: /^\/posts\/(?<PID>\d+)\/?$/,
+        PHOTO_PATHNAME: /^\/posts\/(?<PID>\d+)\/post_content_photo\/(?<PNAME>\d+)\/?$/,
+        USER_PATHNAME: /^\/fanclubs\/(?<UID>\d+)\/?/
+    }
+}
+
 export const KEMONO_CONSTANTS = {
     SITE_NAME: "kemono",
     HOSTS: ["kemono.su"],
@@ -115,6 +131,14 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
         ],
         sourceDataPages: FANBOX_CONSTANTS.PATTERNS.POST_PATHNAME
     },
+    [FANTIA_CONSTANTS.SITE_NAME]: {
+        host: FANTIA_CONSTANTS.HOSTS,
+        activeTabPages: [
+            FANTIA_CONSTANTS.REGEXES.POST_PATHNAME,
+            FANTIA_CONSTANTS.REGEXES.PHOTO_PATHNAME
+        ],
+        sourceDataPages: FANTIA_CONSTANTS.PATTERNS.POST_PATHNAME
+    },
     [KEMONO_CONSTANTS.SITE_NAME]: {
         host: KEMONO_CONSTANTS.HOSTS,
         activeTabPages: [
@@ -132,6 +156,20 @@ export const DETERMINING_RULES: Readonly<DeterminingRule[]> = [
         referrer: /^https:\/\/www\.pixiv\.net\//,
         filename: /(?<ID>\d+)_p(?<PART>\d+)/,
         collectSourceData: true
+    },
+    {
+        siteName: FANTIA_CONSTANTS.SITE_NAME,
+        referrer: /^https:\/\/fantia\.jp\/posts\/(?<ID>\d+)\/post_content_photo\/(?<PNAME>\d+)\/?/,
+        collectSourceData: true,
+        sourcePath: async args => {
+            const page = await sessions.cache.fantiaPageNum.get({pid: args["ID"], pname: args["PNAME"]})
+            // console.log("get fantiaPageNum", {pid: args["ID"], pname: args["PNAME"]}, page)
+            if(page) {
+                return {sourceSite: FANTIA_CONSTANTS.SITE_NAME, sourceId: args["ID"], sourcePart: page.page, sourcePartName: args["PNAME"]}
+            }else{
+                return {sourceSite: FANTIA_CONSTANTS.SITE_NAME, sourceId: args["ID"], sourcePart: null, sourcePartName: args["PNAME"]}
+            }
+        }
     },
     {
         siteName: DANBOORU_CONSTANTS.SITE_NAME,
@@ -202,6 +240,10 @@ interface DeterminingRule {
      * 对于此规则，是否应该收集其来源数据。
      */
     collectSourceData?: boolean
+    /**
+     * 生成sourcePath的规则。
+     */
+    sourcePath?: (args: Record<string, string>) => Promise<SourceDataPath>
 }
 
 /**

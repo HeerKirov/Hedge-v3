@@ -44,6 +44,8 @@ export const imageToolbar = {
             }else if(config.locale === "kemono") {
                 rootElement.setAttribute("style", "position: absolute; right: -10px; bottom: 4px; transform: translateX(100%)")
                 item.element.style.position = "relative"
+            }else if(config.locale === "fantia") {
+                rootElement.setAttribute("style", "position: absolute; right: 0; bottom: 10px")
             }
 
             ReactDOM.createRoot(body).render(
@@ -59,7 +61,7 @@ export const imageToolbar = {
     }
 }
 
-type LocaleSite = "pixiv" | "ehentai-image" | "ehentai-mpv" | "sankaku" | "fanbox" | "kemono"
+type LocaleSite = "pixiv" | "ehentai-image" | "ehentai-mpv" | "sankaku" | "fanbox" | "kemono" | "fantia"
 
 interface RegisterItem {
     index: number | null
@@ -90,22 +92,33 @@ function ToolBar(props: Omit<RegisterItem, "element">) {
         }
     }
 
+    const prevent = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.stopPropagation()
+    }
+
     return <ToolBarDiv $style={config.locale}>
-        <DoubleFlipButton $style={config.locale} onClick={downloadClick}>
+        {config.locale === "fantia" ? <DoubleFlipAnchor $style={config.locale} href={props.downloadURL as string} target="_blank" onClick={prevent}>
             {favicon === null ? <b>{props.index}</b> : <LayouttedDiv padding={1}><img src={favicon} alt="favicon"/></LayouttedDiv>}
             {
                 status === "DN" ? <FormattedText><Icon icon="download"/></FormattedText>
                 : status === "ING" ? <FormattedText><Icon icon="circle-notch" spin/></FormattedText>
                 : <FormattedText color="success"><Icon icon="check"/></FormattedText>
             }
-        </DoubleFlipButton>
+        </DoubleFlipAnchor> : <DoubleFlipButton $style={config.locale} onClick={downloadClick}>
+            {favicon === null ? <b>{props.index}</b> : <LayouttedDiv padding={1}><img src={favicon} alt="favicon"/></LayouttedDiv>}
+            {
+                status === "DN" ? <FormattedText><Icon icon="download"/></FormattedText>
+                : status === "ING" ? <FormattedText><Icon icon="circle-notch" spin/></FormattedText>
+                : <FormattedText color="success"><Icon icon="check"/></FormattedText>
+            }
+        </DoubleFlipButton>}
     </ToolBarDiv>
 }
 
 const ToolBarDiv = styled.div<{ $style?: LocaleSite }>`
     width: 60px;
     height: 30px;
-    ${p => p.$style === "pixiv" || p.$style === "fanbox" ? css`
+    ${p => p.$style === "pixiv" || p.$style === "fanbox" || p.$style === "fantia" ? css`
         border-top-left-radius: 15px;
         border-bottom-left-radius: 15px;
         color: rgb(31, 31, 31);
@@ -157,6 +170,42 @@ const DoubleFlipButton = styled.button<{ $style?: LocaleSite }>`
         cursor: pointer;
         background-color: rgba(179, 179, 179, 25%);
         ${p => p.$style === "pixiv" && css`
+            @media (prefers-color-scheme: dark) {
+                background-color: rgba(255, 255, 255, 25%);
+            }
+        `}
+    }
+    
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    > * {
+        width: 50%;
+    }
+    img {
+        width: 100%;
+        height: 100%;
+    }
+`
+
+const DoubleFlipAnchor = styled.a<{ $style?: LocaleSite }>`
+    width: 100%;
+    height: 100%;
+    padding: 2px;
+    box-sizing: border-box;
+    background-color: transparent;
+    text-align: center;
+    
+    ${p => p.$style === "fantia"  ? css`
+        border-top-left-radius: 15px;
+        border-bottom-left-radius: 15px;
+    ` : undefined}
+    
+    &:hover {
+        cursor: pointer;
+        background-color: rgba(179, 179, 179, 25%);
+        ${p => p.$style === "fantia" && css`
             @media (prefers-color-scheme: dark) {
                 background-color: rgba(255, 255, 255, 25%);
             }

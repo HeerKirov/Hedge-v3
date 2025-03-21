@@ -5,7 +5,7 @@ import { defaultSetting, Setting } from "@/functions/setting"
 import { sessions } from "@/functions/storage"
 import { useAsyncLoading, useEditor, usePartialSet } from "@/utils/reactivity"
 import { SPACINGS } from "@/styles"
-import { DanbooruIcon, EHentaiIcon, FanboxIcon, GelbooruIcon, KemonoIcon, PixivIcon, SankakuIcon } from "@/styles/assets"
+import { DanbooruIcon, EHentaiIcon, FanboxIcon, FantiaIcon, GelbooruIcon, KemonoIcon, PixivIcon, SankakuIcon } from "@/styles/assets"
 
 interface OptionsToolkitPanelProps {
     toolkit: Setting["toolkit"] | null | undefined
@@ -75,6 +75,7 @@ export function OptionsToolkitPanel(props: OptionsToolkitPanelProps) {
         <IconDisplayDiv>
             <Label>支持的网站</Label>
             <img src={PixivIcon} alt="pixiv icon"/><span>Pixiv</span>
+            <img src={FantiaIcon} alt="fantia icon"/><span>Fantia</span>
             <img src={DanbooruIcon} alt="danbooru icon"/><span>Danbooru</span>
             <img src={GelbooruIcon} alt="gelbooru icon"/><span>Gelbooru</span>
         </IconDisplayDiv>
@@ -116,6 +117,7 @@ export function OptionsToolkitPanel(props: OptionsToolkitPanelProps) {
             <img src={EHentaiIcon} alt="e-hentai icon"/><span>E-Hentai</span>
             <img src={PixivIcon} alt="pixiv icon"/><span>Pixiv</span>
             <img src={FanboxIcon} alt="fanbox icon"/><span>FANBOX</span>
+            <img src={FantiaIcon} alt="fantia icon"/><span>Fantia</span>
             <img src={KemonoIcon} alt="kemono icon"/><span>Kemono(部分)</span>
             <img src={SankakuIcon} alt="sankaku icon"/><span>Sankaku</span>
         </IconDisplayDiv>

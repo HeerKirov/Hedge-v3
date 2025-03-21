@@ -74,6 +74,16 @@
 			"run_at": "document_start"
 		},
 		{
+			"matches": ["https://fantia.jp/posts/*"],
+			"js": ["src/scripts/fantia/post.ts"],
+			"run_at": "document_start"
+		},
+		{
+			"matches": ["https://fantia.jp/posts/*/post_content_photo/*"],
+			"js": ["src/scripts/fantia/post_content_photo.ts"],
+			"run_at": "document_start"
+		},
+		{
 			"matches": ["https://kemono.su/*/user/*/post/*"],
 			"js": ["src/scripts/kemono/post.ts"],
 			"run_at": "document_start"
@@ -84,7 +94,8 @@
 				"https://danbooru.donmai.us/posts/*",
 				"https://gelbooru.com/*",
 				"https://kemono.su/*",
-				"https://www.fanbox.cc/*/posts/*", "https://*.fanbox.cc/posts/*"
+				"https://www.fanbox.cc/*/posts/*", "https://*.fanbox.cc/posts/*",
+				"https://cc.fantia.jp/*", "https://fantia.jp/*"
 			],
 			"js": ["src/scripts/utils/referrer-policy.ts"],
 			"run_at": "document_start"

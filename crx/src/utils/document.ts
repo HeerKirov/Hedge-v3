@@ -14,6 +14,47 @@ export function onDOMContentLoaded(callback: () => void) {
     }
 }
 
+export function onDOMContentObserved(options: {
+    observe?: MutationObserverInit,
+    mutation: (record: MutationRecord) => boolean,
+    init: () => boolean,
+    preCondition?: () => boolean
+}, callback: () => void, callback2?: (() => void)) {
+    onDOMContentLoaded(() => {
+        if(options.preCondition === undefined || options.preCondition()) {
+            if(callback2 !== undefined) callback()
+
+            let once = true
+            const load = async () => {
+                if(once) {
+                    once = false
+                    observer.disconnect()
+                    if(callback2 !== undefined) {
+                        callback2()
+                    }else{
+                        callback()
+                    }
+                }
+            }
+
+            const observer = new MutationObserver(mutationsList => {
+                for(const mutation of mutationsList) {
+                    if(options.mutation(mutation)) {
+                        load().finally()
+                        break
+                    }
+                }
+            })
+
+            observer.observe(document.body, options.observe)
+
+            if(options.init()) {
+                load().finally()
+            }
+        }
+    })
+}
+
 export function getEnvironmentType(): EnvironmentType {
     if(environmentType === undefined) {
         if(typeof window !== "undefined") {

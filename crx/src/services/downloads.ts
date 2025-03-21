@@ -47,7 +47,7 @@ export function determiningFilename(downloadItem: chrome.downloads.DownloadItem,
                 return
             }
             if(setting.toolkit.determiningFilename.enabled && (BUILTIN_EXTENSIONS.includes(extension) || setting.toolkit.determiningFilename.extensions.includes(extension))) {
-                const result = matchRulesAndArgs(downloadItem.referrer, url, filenameWithoutExt, setting)
+                const result = await matchRulesAndArgs(downloadItem.referrer, url, filenameWithoutExt, setting)
                 if(result !== null) {
                     suggest({filename: result.determining + (extension ? "." + extension : "")})
                     if(result.sourcePath !== null && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
@@ -85,7 +85,7 @@ function splitNameAndExtension(filename: string): [string, string | null] {
 /**
  * 对给出的项，逐规则进行匹配，发现完成匹配的规则，根据此规则生成的建议名称，以及sourcePath。
  */
-function matchRulesAndArgs(referrer: string, url: string, filename: string, setting: Setting): {determining: string, sourcePath: SourceDataPath | null} | null {
+async function matchRulesAndArgs(referrer: string, url: string, filename: string, setting: Setting): Promise<{ determining: string, sourcePath: SourceDataPath | null } | null> {
     function match(re: RegExp, goal: string, args: Record<string, string>): boolean {
         const matches = re.exec(goal)
         if(matches) {
@@ -102,7 +102,7 @@ function matchRulesAndArgs(referrer: string, url: string, filename: string, sett
         if(rule.url && !match(rule.url, url, args)) continue
         if(rule.filename && !match(rule.filename, filename, args)) continue
 
-        const sourcePath: SourceDataPath = {sourceSite: args["SITE"] ?? rule.siteName, sourceId: args["ID"], sourcePart: args["PART"] ? parseInt(args["PART"]) : null, sourcePartName: args["PNAME"] ?? null}
+        const sourcePath: SourceDataPath = rule.sourcePath ? await rule.sourcePath?.(args) : {sourceSite: args["SITE"] ?? rule.siteName, sourceId: args["ID"], sourcePart: args["PART"] ? parseInt(args["PART"]) : null, sourcePartName: args["PNAME"] ?? null}
         const determining = generateSourceName(sourcePath)
         return {determining, sourcePath: rule.collectSourceData ? sourcePath : null}
     }
