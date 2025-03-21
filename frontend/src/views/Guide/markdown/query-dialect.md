@@ -15,7 +15,7 @@
 * **ID**: `id`  
     根据项目ID。运算对象为patternNumber。
 * **评分**: `score`  
-    根据评分。运算对象为number。
+    根据评分。运算对象为number。也可以为无，此时将按照评分有无进行过滤。
 * **分区时间**: `partition`, `pt`  
     根据分区时间。运算对象为date。
 * **排序时间**: `order-time`, `order`, `ot`  
@@ -76,8 +76,8 @@
     筛选收藏或非收藏项。无运算符和运算对象。
 * **ID**: `id`  
     根据项目ID。运算对象为patternNumber。
-* **评分**: `score`  
-    根据评分。运算对象为number。
+* **评分**: `score`, `s`  
+    根据评分。运算对象为number。也可以为无，此时将按照评分有无进行过滤。
 * **图像数量**: `image-count`, `count`  
     根据画集内的图像数量。运算对象为number。
 * **创建时间**: `create-time`, `create`, `ct`  
