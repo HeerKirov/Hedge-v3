@@ -80,7 +80,7 @@ val BUILTIN_SITES = listOf(
     ),
     SourceSiteRes(
         name = "fantia", title = "Fantia", isBuiltin = true,
-        idMode = SourceOption.SiteIdMode.NUMBER, partMode = SourceOption.SitePartMode.PAGE,
+        idMode = SourceOption.SiteIdMode.NUMBER, partMode = SourceOption.SitePartMode.PAGE_WITH_NAME,
         sourceLinkRules = emptyList(),
         tagTypes = listOf("artist", "tag"),
         tagTypeMappings = mapOf("artist" to TagAuthorType.ARTIST.name),
