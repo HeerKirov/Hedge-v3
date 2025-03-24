@@ -4,6 +4,7 @@ import { useMouseHover } from "@/utils/sensors"
 import BackButton from "@/components-module/stackedview/BackButton.vue";
 
 defineProps<{
+    hasWinButton: boolean
     hasDarwinBorder: boolean
 }>()
 
@@ -18,7 +19,7 @@ const { hover, ...mouseEvents } = useMouseHover()
 <template>
     <div :class="{[$style['hover-area']]: true, [$style['has-darwin-button']]: hasDarwinBorder}" v-bind="mouseEvents">
         <BackButton v-if="hover" :class="$style['back-button']"/>
-        <Button v-if="hover" :class="{[$style['collapse-button']]: true, [$style['darwin-border-button']]: hasDarwinBorder}" square icon="fa-down-left-and-up-right-to-center" @click="$emit('click:collapsed', false)"/>
+        <Button v-if="hover" :class="{[$style['collapse-button']]: true, [$style['darwin-border-button']]: hasDarwinBorder, [$style['has-win-button']]: hasWinButton}" square icon="fa-down-left-and-up-right-to-center" @click="$emit('click:collapsed', false)"/>
     </div>
 </template>
 
@@ -47,4 +48,6 @@ $content-margin-size: math.div(size.$title-bar-height - size.$element-height-std
     right: size.$spacing-1
     &.darwin-border-button
         border-top-right-radius: size.$radius-size-very-large
+    &.has-win-button
+        right: #{size.$spacing-1 + size.$win-buttons-width}
 </style>

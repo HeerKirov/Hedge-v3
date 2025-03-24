@@ -6,6 +6,7 @@ import { TopBar } from "@/components/layout"
 
 defineProps<{
     collapsed?: boolean
+    isEmbed?: boolean
 }>()
 
 </script>
@@ -15,7 +16,7 @@ defineProps<{
         <div :class="{[$style['main-content']]: true, [$style.collapsed]: collapsed}">
             <slot/>
         </div>
-        <TopBar :class="{[$style['top-bar']]: true, [$style.collapsed]: collapsed}" :show-side-collapse-button="false" :is-side-open="false">
+        <TopBar :class="{[$style['top-bar']]: true, [$style.collapsed]: collapsed}" :show-side-collapse-button="false" :is-side-open="false" :isEmbed>
             <slot name="top-bar"/>
         </TopBar>
     </div>

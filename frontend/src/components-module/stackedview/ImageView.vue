@@ -6,7 +6,7 @@ import { Button, Separator } from "@/components/universal"
 import { PaneLayout, BasePane, TopBarCollapseLayout, MiddleLayout, Flex, FlexItem } from "@/components/layout"
 import { IllustDetailTab, } from "@/components-module/common"
 import { ZoomController } from "@/components-business/top-bar"
-import { useAssets, useDarwinWindowed } from "@/functions/app"
+import {useAppEnv, useAssets, useDarwinWindowed} from "@/functions/app"
 import { Illust } from "@/functions/http-client/api/illust"
 import { AllSlice, ListIndexSlice, SliceOrPath } from "@/functions/fetch"
 import { MenuItem, usePopupMenu } from "@/modules/popup-menu"
@@ -32,7 +32,13 @@ const {
 
 const { assetsUrl } = useAssets()
 
+const { platform } = useAppEnv()
+
 const hasDarwinBorder = useDarwinWindowed()
+
+const hasWinButton = platform !== "darwin"
+
+console.log(hasWinButton)
 
 const externalMenuItems = <MenuItem<undefined>[]>[
     {type: "normal", label: "在新窗口中打开", click: openInNewWindow},
@@ -63,7 +69,7 @@ const popupMenu = usePopupMenu(computed(() => [
 
 <template>
     <PaneLayout scope-name="stacked-view" :show-pane="!collapsed">
-        <TopBarCollapseLayout :collapsed="collapsed">
+        <TopBarCollapseLayout :collapsed="collapsed" is-embed>
             <template #top-bar>
                 <MiddleLayout>
                     <template #left>
@@ -76,11 +82,22 @@ const popupMenu = usePopupMenu(computed(() => [
                         <p v-if="subMetrics" class="secondary-text">{{subMetrics.current + 1}} / {{subMetrics.total}}</p>
                     </div>
                     <Button square icon="angle-right" @click="next"/>
+
+                    <template #right>
+                        <template v-if="hasWinButton">
+                            <ElementPopupMenu :items="externalMenuItems" position="bottom" align="left" v-slot="{ setEl, popup, attrs }">
+                              <Button :ref="setEl" v-bind="attrs" square icon="external-link-alt" @click="popup"/>
+                            </ElementPopupMenu>
+                            <ZoomController :disabled="!zoomEnabled" v-model:value="zoomValue"/>
+                            <Separator/>
+                            <Button square icon="fa-up-right-and-down-left-from-center" @click="collapsed = !collapsed"/>
+                        </template>
+                    </template>
                 </MiddleLayout>
             </template>
 
             <PlayBoard v-if="data !== null" :src="assetsUrl(data.filePath.original)" :zoom-value="zoomValue" v-model:zoom-enabled="zoomEnabled" @contextmenu="popupMenu.popup()"/>
-            <CollapsedButton v-if="collapsed" :has-darwin-border="hasDarwinBorder" @click:collapsed="collapsed = $event"/>
+            <CollapsedButton v-if="collapsed" :hasWinButton :hasDarwinBorder @click:collapsed="collapsed = $event"/>
             <ZoomController v-if="collapsed" class="is-display-none" :disabled="!zoomEnabled" v-model:value="zoomValue"/>
         </TopBarCollapseLayout>
 
@@ -89,13 +106,15 @@ const popupMenu = usePopupMenu(computed(() => [
                 <template #title>
                     <Flex :class="{[$style['right-top-bar']]: true, [$style['has-darwin-border']]: hasDarwinBorder}" horizontal="stretch" :shrink="0">
                         <Button square icon="heart" :type="data?.favorite ? 'danger' : 'secondary'" @click="toggleFavorite"/>
-                        <FlexItem :shrink="1" :width="100"><div/></FlexItem>
-                        <ElementPopupMenu :items="externalMenuItems" position="bottom" align="left" v-slot="{ setEl, popup, attrs }">
-                            <Button :ref="setEl" v-bind="attrs" square icon="external-link-alt" @click="popup"/>
-                        </ElementPopupMenu>
-                        <ZoomController :disabled="!zoomEnabled" v-model:value="zoomValue"/>
-                        <Separator/>
-                        <Button square icon="fa-up-right-and-down-left-from-center" @click="collapsed = !collapsed"/>
+                        <template v-if="!hasWinButton">
+                            <FlexItem :shrink="1" :width="100"><div/></FlexItem>
+                            <ElementPopupMenu :items="externalMenuItems" position="bottom" align="left" v-slot="{ setEl, popup, attrs }">
+                              <Button :ref="setEl" v-bind="attrs" square icon="external-link-alt" @click="popup"/>
+                            </ElementPopupMenu>
+                            <ZoomController :disabled="!zoomEnabled" v-model:value="zoomValue"/>
+                            <Separator/>
+                            <Button square icon="fa-up-right-and-down-left-from-center" @click="collapsed = !collapsed"/>
+                        </template>
                     </Flex>
                 </template>
 

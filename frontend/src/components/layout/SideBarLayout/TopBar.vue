@@ -10,6 +10,7 @@ import { useAppEnv, useFullscreen } from "@/functions/app"
 
 const props = withDefaults(defineProps<{
     isSideOpen?: boolean
+    isEmbed?: boolean
     showSideCollapseButton?: boolean
 }>(), {
     showSideCollapseButton: true
@@ -25,10 +26,12 @@ const fullscreen = useFullscreen()
 
 const hasDarwinButton = computed(() => platform === "darwin" && !props.isSideOpen && !fullscreen.value)
 
+const hasWinButton = computed(() => platform === "win32" && !props.isEmbed && !fullscreen.value)
+
 </script>
 
 <template>
-    <div :class="[{[$style['has-darwin-button']]: hasDarwinButton}, $style['top-bar']]">
+    <div :class="[{[$style['has-darwin-button']]: hasDarwinButton, [$style['has-win-button']]: hasWinButton}, $style['top-bar']]">
         <transition v-if="showSideCollapseButton" :enter-from-class="$style['transition-enter-from']" :leave-to-class="$style['transition-leave-to']" :enter-active-class="$style['transition-enter-active']" :leave-active-class="$style['transition-leave-active']">
             <Button v-if="!isSideOpen" :class="$style['collapse-button']" square icon="bars" @click="$emit('update:isSideOpen', true)"/>
         </transition>
@@ -61,6 +64,10 @@ $content-margin-size: math.div(size.$title-bar-height - size.$element-height-std
     //macOS平台的内容区域布局。左侧留出红绿灯的宽度
     &.has-darwin-button
         padding-left: size.$macos-buttons-width
+
+    //windows平台的内容布局区域，右侧留出控制按钮的宽度
+    &.has-win-button
+      padding-right: size.$win-buttons-width
 
 .collapse-button
     -webkit-app-region: none
@@ -96,4 +103,10 @@ $content-margin-size: math.div(size.$title-bar-height - size.$element-height-std
     //在侧边栏展开时，不显示折叠按钮，不用留出空隙
     &:not(.has-cl-button) 
         left: #{$content-margin-size + size.$macos-buttons-width}
+
+.top-bar:not(.has-win-button) > .content
+    right: $content-margin-size
+
+.top-bar.has-win-button > .content
+    right: #{$content-margin-size + size.$win-buttons-width}
 </style>
