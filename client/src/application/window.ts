@@ -84,9 +84,14 @@ export function createWindowManager(state: StateManager, theme: ThemeManager, st
                 preload: path.join(__dirname, 'preload.js'),
             },
             autoHideMenuBar: true,
-            titleBarStyle: options.platform === "darwin" ? "hiddenInset" : "default",
+            titleBarStyle: options.platform === "darwin" ? "hiddenInset" : "hidden",
+            titleBarOverlay: options.platform !== "darwin" ? {
+                height: 41,
+                color: theme.getRuntimeTheme() === "dark" ? "#16181E" : "#FFFFFF",
+                symbolColor: theme.getRuntimeTheme() === "dark" ? "#F6F6F6" : "#4C4C52",
+            } : undefined,
             trafficLightPosition: options.platform === "darwin" ? {x: 12, y: 13} : undefined,
-            backgroundColor: theme.getRuntimeTheme() === "dark" ? "#111417" : "#FFFFFF",
+            backgroundColor: theme.getRuntimeTheme() === "dark" ? "#16181E" : "#FFFFFF",
             ...windowBound,
             ...config
         })

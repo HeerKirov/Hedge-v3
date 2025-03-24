@@ -9,7 +9,7 @@ Hedge是一个图库程序，它为图像管理提供高复杂度的元数据管
 * 记忆和管理图像的来源；
 * 进行复杂的查询，处理重复和相似项。
 
-支持的平台: macOS, Linux
+支持的平台: macOS, Linux, Windows
 
 ## Development
 

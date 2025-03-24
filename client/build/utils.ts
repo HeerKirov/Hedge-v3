@@ -1,7 +1,7 @@
 import fs from "fs"
 import path from "path"
 import child from "child_process"
-import { PackageJson } from "type-fest";
+import { PackageJson } from "type-fest"
 
 export function writePackageFile(packageConfig: PackageJson, merge: Partial<PackageJson> | undefined, dest: string) {
     if(merge) {
@@ -44,7 +44,7 @@ export function renderPListTemplate(templateFile: string, dest: string, dict: Re
 
 export function getServerVersion(): Promise<string | null> {
     return new Promise((resolve, reject) => {
-        child.exec("./gradlew printVersion -q", {cwd: "../server"}, (err, stdout) => {
+        child.exec(`.${path.sep}gradlew printVersion -q`, {cwd: `..${path.sep}server`}, (err, stdout) => {
             if(err) {
                 reject(err)
             }else if(stdout.trim()) {

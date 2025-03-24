@@ -26,6 +26,7 @@
     "electron": "33.2.0",
     "esbuild": "0.24.0",
     "esbuild-runner": "^2.2.2",
+    "rcedit": "^4.0.1",
     "type-fest": "^4.26.1",
     "typescript": "5.6.3",
     "vite": "^5.4.10",

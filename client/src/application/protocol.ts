@@ -5,14 +5,14 @@ import { WindowManager } from "@/application/window"
 import { StateManager, AppState } from "@/components/state"
 import { LocalManager } from "@/components/local"
 import { maps } from "@/utils/types"
+import { getNodePlatform } from "@/utils/process"
 
 export function registerProtocol(stateManager: StateManager, windowManager: WindowManager) {
-    //FUTURE 处理其他平台的协议注册事件
     app.setAsDefaultProtocolClient("hedge")
 
     let cachePool: string[] | undefined
 
-    app.on("open-url", (_, originUrl) => {
+    function processDeepLink(originUrl: string) {
         if(stateManager.state() === "READY") {
             processUrl(originUrl, windowManager)
         }else if(cachePool === undefined) {
@@ -28,7 +28,22 @@ export function registerProtocol(stateManager: StateManager, windowManager: Wind
         }else{
             cachePool.push(originUrl)
         }
-    })
+    }
+
+    if(getNodePlatform() === "darwin") {
+        app.on("open-url", (_, originUrl) => processDeepLink(originUrl))
+    }else{
+        const gotTheLock = app.requestSingleInstanceLock()
+        if (!gotTheLock) {
+            app.quit()
+            return
+        } else {
+            app.on('second-instance', (_, commandLine, _) => {
+                const originUrl = commandLine.pop()!
+                processDeepLink(originUrl)
+            })
+        }
+    }
 
     protocol.registerSchemesAsPrivileged([
         { scheme: 'archive', privileges: { stream: true } }
@@ -41,6 +56,10 @@ function processUrl(originUrl: string, windowManager: WindowManager) {
         const existWin = windowManager.getAllWindows().find(win => new URL(win.webContents.getURL()).hash.substring(1) === "/main")
         if(existWin !== undefined) {
             existWin.webContents.send("/remote/tabs/control", {type: "NEW_TAB", ...maps.parse([...url.searchParams.entries()])})
+            if(getNodePlatform() !== "darwin") {
+                if(existWin.isMinimized()) existWin.restore()
+                existWin.focus()
+            }
         }else{
             windowManager.createWindow(`/main${url.search}`)
         }

@@ -1,6 +1,7 @@
 import fs from "fs"
 import path from "path"
 import child from "child_process"
+import rcedit from "rcedit"
 import type { PackageJson } from "type-fest"
 import { renderPListTemplate, copyDependencies, writePackageFile } from "./utils"
 
@@ -29,18 +30,36 @@ function makePackage(config: MakePackageConfig) {
         if(fs.existsSync(config.target)) fs.rmSync(config.target, { recursive: true, force: true })
         fs.mkdirSync(config.target, { recursive: true })
 
-        //tips: cp函数的拷贝行为与cp命令不同，在拷贝Electron.app时会造成文件损坏。因此，在这里依旧使用了更底层的cp命令。
-        child.spawnSync("cp", ["-R", env.ELECTRON_PATH, APP_PATH])
+        if(process.platform === "win32") {
+            fs.cpSync(env.ELECTRON_PATH, APP_PATH, { recursive: true, force: true })
+        }else{
+            //tips: cp函数的拷贝行为与cp命令不同，在拷贝Electron.app时会造成文件损坏。因此，在这里依旧使用了更底层的cp命令。
+            child.spawnSync("cp", ["-R", env.ELECTRON_PATH, APP_PATH])
+        }
         //移除默认asar文件
         fs.rmSync(path.join(RESOURCE_PATH, "default_app.asar"))
         //添加icon图标
-        fs.cpSync(path.join("build/resources", env.APP_ICON_NAME), path.join(RESOURCE_PATH, env.APP_ICON_NAME))
+        fs.cpSync(path.join("build", "resources", env.APP_ICON_NAME), path.join(RESOURCE_PATH, env.APP_ICON_NAME))
         //修改可执行文件名称
         fs.renameSync(path.join(APP_PATH, env.ELECTRON_BINARY), path.join(APP_PATH, env.APP_BINARY))
         //创建asar打包目录
         fs.mkdirSync(ASAR_PATH, { recursive: true })
 
-        if(process.platform === "darwin") {
+        if(process.platform === "win32") {
+            rcedit(path.join(APP_PATH, env.APP_BINARY), {
+                icon: path.join("build", "resources", env.APP_ICON_NAME),
+                "version-string": {
+                    CompanyName: 'heerkirov.com',
+                    FileDescription: 'Image management app',
+                    ProductName: 'Hedge',
+                    LegalCopyright: '',
+                    OriginalFilename: 'hedge.exe',
+                    InternalFilename: 'Hedge'
+                },
+                "product-version": packageConfig["version"],
+                "file-version": packageConfig["version"],
+            },)
+        }else if(process.platform === "darwin") {
             fs.rmSync(path.join(RESOURCE_PATH, "electron.icns"))
             renderPListTemplate("build/resources/Info.template.plist", path.join(APP_PATH, "Contents/Info.plist"), {"version": packageConfig.version ?? "<unknown version>"})
         }
@@ -63,8 +82,10 @@ function makePackage(config: MakePackageConfig) {
     }
 
     function packAsar() {
-        child.spawnSync("npx", ["asar", "p", "app", "app.asar", ...(config.asarUnpack ? ["--unpack", config.asarUnpack] : [])], {cwd: RESOURCE_PATH})
-        fs.rmSync(ASAR_PATH, { recursive: true })
+        if(process.platform !== "win32") {
+            child.spawnSync("npx", ["asar", "p", "app", "app.asar", ...(config.asarUnpack ? ["--unpack", config.asarUnpack] : [])], {cwd: RESOURCE_PATH})
+            fs.rmSync(ASAR_PATH, { recursive: true })
+        }
     }
 
     installElectronApp()
@@ -115,6 +136,14 @@ const PLATFORM: Record<string, PlatformEnvironment> = {
         ELECTRON_RESOURCE: "resources",
         ELECTRON_BINARY: "electron",
         APP_BINARY: "hedge",
+    },
+    "win32": {
+        APP_NAME: "Hedge",
+        APP_ICON_NAME: "hedge.ico",
+        ELECTRON_PATH: "node_modules\\electron\\dist",
+        ELECTRON_RESOURCE: "resources",
+        ELECTRON_BINARY: "electron.exe",
+        APP_BINARY: "hedge.exe",
     }
 }
 
@@ -122,15 +151,15 @@ makePackage({
     target: "dist",
     asarFiles: [
         {src: "dist-electron", dest: "client"},
-        {src: "../frontend/dist", dest: "frontend"},
+        {src: path.join("..", "frontend", "dist"), dest: "frontend"},
     ],
     resourceFiles: [
-        {src: "../server/build/image.zip", dest: "server.zip"}
+        {src: path.join("..", "server", "build", "image.zip"), dest: "server.zip"}
     ],
     dependencies: ["classic-level"],
     asarUnpack: "*.node",
     package: {
         productName: "Hedge-v3",
-        main: "client/main.js"
+        main: path.join("client", "main.js")
     }
 })
