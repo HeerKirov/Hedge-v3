@@ -192,7 +192,7 @@ export const ATTACHMENT_RULES: Readonly<AttachmentRule[]> = [
     {
         siteName: KEMONO_CONSTANTS.SITE_NAME,
         referrer: /^https:\/\/kemono\.su\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<ID>\S+)(\/revision\/\d+)?\/?$/,
-        sourcePath: args => ({sourceSite: args["SITE"], sourceId: `${args["UID"]}.${args["ID"]}`, sourcePart: null, sourcePartName: null})
+        sourcePath: args => ({sourceSite: args["SITE"], sourceId: args["SITE"] === "gumroad" ? `${args["UID"]}.${args["ID"]}` : args["ID"], sourcePart: null, sourcePartName: null})
     }
 ]
 
