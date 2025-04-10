@@ -80,7 +80,7 @@ export const KEMONO_CONSTANTS = {
     SITE_NAME: "kemono",
     HOSTS: ["kemono.su"],
     REGEXES: {
-        POST_PATHNAME: /^\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<PID>\S+)(\/revision\/\d+)?\/?$/
+        POST_PATHNAME: /^\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<PID>[^/]+)(\/revision\/\d+)?\/?$/
     },
     AVAILABLE_SERVICES: ["fanbox", "fantia", "patreon", "gumroad"] as const
 }
@@ -191,7 +191,7 @@ export const ATTACHMENT_RULES: Readonly<AttachmentRule[]> = [
     },
     {
         siteName: KEMONO_CONSTANTS.SITE_NAME,
-        referrer: /^https:\/\/kemono\.su\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<ID>\S+)(\/revision\/\d+)?\/?$/,
+        referrer: /^https:\/\/kemono\.su\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<ID>[^/]+)(\/revision\/\d+)?\/?$/,
         sourcePath: args => ({sourceSite: args["SITE"], sourceId: args["SITE"] === "gumroad" ? `${args["UID"]}.${args["ID"]}` : args["ID"], sourcePart: null, sourcePartName: null})
     }
 ]
