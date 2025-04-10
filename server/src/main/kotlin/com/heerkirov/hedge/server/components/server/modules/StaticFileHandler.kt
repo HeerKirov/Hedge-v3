@@ -94,8 +94,10 @@ class StaticFileHandler(private val archive: FileManager, private val options: A
             return
         }
 
-        val dest = Path(options.serverDir, "../caches", target)
-        dest.createDirectories()
+        val suffix = ctx.queryParam("suffix")
+
+        val dest = Path(options.serverDir, "../caches", if(suffix.isNullOrBlank()) target else "$target.$suffix")
+        dest.parent.createDirectories()
 
         resource.inputStream.use { fis -> Files.copy(fis, dest, StandardCopyOption.REPLACE_EXISTING) }
 
@@ -120,11 +122,12 @@ class StaticFileHandler(private val archive: FileManager, private val options: A
             .uri(URI.create("${options.storageProxy}/archives/$target"))
             .build()
 
+        val suffix = ctx.queryParam("suffix")
         val response = httpClient!!.send(request, HttpResponse.BodyHandlers.ofInputStream())
         if(response.statusCode() == 200) {
             response.body().use { input ->
-                val dest = Path(options.serverDir, "../caches", target)
-                dest.createDirectories()
+                val dest = Path(options.serverDir, "../caches", if(suffix.isNullOrBlank()) target else "$target.$suffix")
+                dest.parent.createDirectories()
                 Files.copy(input, dest, StandardCopyOption.REPLACE_EXISTING)
             }
             ctx.status(204)
