@@ -1,5 +1,6 @@
 import path from "path"
 import Ws from "ws"
+import { net } from "electron"
 import { kill as killProcess } from "process"
 import { spawn } from "child_process"
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
@@ -94,6 +95,11 @@ interface ServiceManager {
      * @param config
      */
     axiosRequest<T = any, R = AxiosResponse<T>, D = any>(config: AxiosRequestConfig<D>): Promise<R>
+
+    /**
+     * 向服务器发送一个net.fetch请求。
+     */
+    netFetch(url: string, config: RequestInit): Promise<Response>
 
     /**
      * 加载状态发生改变的事件。
@@ -414,6 +420,12 @@ function createServiceManager(connectionManager: ConnectionManager): ServiceMana
         return axios.request({...config, baseURL: `http://${host}`, headers: {'Authorization': `Bearer ${token}`, ...config.headers}})
     }
 
+    function netFetch(url: string, init: RequestInit): Promise<Response> {
+        const token = connectionManager.connectionInfo()!.token
+        const host = connectionManager.connectionInfo()!.host
+        return net.fetch(`http://${host}/${url}`, {...init, headers: {'Authorization': `Bearer ${token}`, ...init.headers}})
+    }
+
     connectionManager.statusChangedEvent.addEventListener(({ status, info, appLoadStatus  }) => {
         if(status === "OPEN" && info !== null) {
             //connection可用时，主动请求一次状态
@@ -441,7 +453,8 @@ function createServiceManager(connectionManager: ConnectionManager): ServiceMana
         statusChangedEvent,
         appInitialize,
         request,
-        axiosRequest
+        axiosRequest,
+        netFetch
     }
 }
 

@@ -76,6 +76,7 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
         local: {
             importFile: f => local.file.importFile({filepath: f}),
             loadFile: local.file.loadFile,
+            checkAndLoadFile: local.file.checkAndLoadFile,
             downloadExportFile: local.file.downloadExportFile,
             cacheStatus: local.file.cacheStatus,
             cleanAllCacheFiles: local.file.cleanAllCacheFiles,

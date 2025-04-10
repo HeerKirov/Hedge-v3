@@ -1,6 +1,4 @@
-import fs from "fs"
-import path from "path"
-import { app, protocol, net } from "electron"
+import { app, protocol } from "electron"
 import { WindowManager } from "@/application/window"
 import { StateManager, AppState } from "@/components/state"
 import { LocalManager } from "@/components/local"
@@ -38,7 +36,7 @@ export function registerProtocol(stateManager: StateManager, windowManager: Wind
             app.quit()
             return
         } else {
-            app.on('second-instance', (_, commandLine, _) => {
+            app.on('second-instance', (_, commandLine, __) => {
                 const originUrl = commandLine.pop()!
                 processDeepLink(originUrl)
             })
@@ -72,38 +70,13 @@ export function registerRendererProtocol(local: LocalManager) {
     const prefix = 'archive://'
     protocol.handle('archive', async req => {
         const url = req.url.substring(prefix.length)
-        const r = await local.file.loadFile(url)
+        const rangeText = req.headers.get("range")
+        const range = rangeText ? parseRangeRequests(rangeText) : null
+        const r = await local.file.loadStream(url, range ?? undefined)
         if(r.ok) {
             //ISSUE: https://github.com/electron/electron/issues/38749
             //Electron的handle API存在bug，无法正确对视频进行seek，因此进行手动处理
-            const extname = path.extname(r.data).substring(1).toLowerCase()
-            if(VIDEO_EXTNAME.includes(extname)) {
-                const headers = new Headers()
-                headers.set("Accept-Ranges", "bytes")
-                headers.set("Content-Type", `video/${extname}`)
-
-                const stats = await fs.promises.stat(r.data)
-                const rangeText = req.headers.get("range")
-
-                let status = 200
-                let stream: fs.ReadStream
-                if (rangeText) {
-                    const ranges = parseRangeRequests(rangeText, stats.size)
-
-                    const [start, end] = ranges[0]
-                    headers.set("Content-Length", `${end - start + 1}`)
-                    headers.set("Content-Range", `bytes ${start}-${end}/${stats.size}`)
-                    status = 206
-                    stream = fs.createReadStream(r.data, { start, end })
-                } else {
-                    headers.set("Content-Length", `${stats.size}`)
-                    stream = fs.createReadStream(r.data)
-                }
-
-                return new Response(stream as any, {headers, status})
-            }else{
-                return net.fetch(`file://${r.data}`)
-            }
+            return r.data
         }else if(r.code === "FILE_NOT_FOUND") {
             return new Response("File not found.", {
                 status: 404,
@@ -118,39 +91,23 @@ export function registerRendererProtocol(local: LocalManager) {
     })
 }
 
-const VIDEO_EXTNAME = ["mp4", "webm", "ogv"]
-
-function parseRangeRequests(text: string, size: number) {
+function parseRangeRequests(text: string): {start: number, end: number} | null {
     const token = text.split("=")
-    if (token.length !== 2 || token[0] !== "bytes") return []
+    if (token.length !== 2 || token[0] !== "bytes") return null
 
-    return token[1]
-        .split(",")
-        .map((v) => parseRange(v, size))
-        .filter(([start, end]) => !isNaN(start) && !isNaN(end) && start <= end)
-}
+    function parseRange(text: string) {
+        const token = text.split("-")
+        if (token.length !== 2) return [NaN, NaN]
 
-function parseRange(text: string, size: number) {
-    const token = text.split("-")
-    if (token.length !== 2) return [NaN, NaN]
+        const startText = token[0].trim()
+        const endText = token[1].trim()
 
-    const startText = token[0].trim()
-    const endText = token[1].trim()
-
-    if (startText === "") {
-        if (endText === "") {
-            return [NaN, NaN]
-        } else {
-            const start = size - Number(endText)
-            return [start < 0 ? 0 : start, size - 1]
-        }
-    } else {
-        if (endText === "") {
-            const start = Number(startText)
-            return [start, size - 1]
-        } else {
-            const end = Number(endText)
-            return [Number(startText), end >= size ? size - 1 : end]
-        }
+        return [startText === "" ? NaN : Number(startText), endText === "" ? NaN : Number(endText)]
     }
+
+    //此处只取了ranges中的首段
+    const first = token[1].split(",")[0]
+    const [start, end] = parseRange(first)
+
+    return (isNaN(start) && isNaN(end)) ? null : {start, end}
 }

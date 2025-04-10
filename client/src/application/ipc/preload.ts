@@ -40,6 +40,9 @@ function createRemoteIpcClient(): IpcClient {
             async loadFile(path) {
                 return await ipcRenderer.invoke("/local/load-file", path)
             },
+            async checkAndLoadFile(path) {
+                return await ipcRenderer.invoke("/local/check-and-load-file", path)
+            },
             async downloadExportFile(form) {
                 return await ipcRenderer.invoke("/local/download-export-file", form)
             },
