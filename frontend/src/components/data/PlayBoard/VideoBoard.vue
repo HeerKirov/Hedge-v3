@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from "vue"
+import { remoteIpcClient } from "@/functions/ipc-client"
+import { useHttpClient } from "@/functions/app"
 import { useInterceptedKey } from "@/modules/keyboard"
+import { computedAsync } from "@/utils/reactivity"
 import { usePlayControl, useVolumeControl } from "./video"
 import VideoControls from "./VideoControls.vue"
 
-defineProps<{
+const props = defineProps<{
     src: string
 }>()
 
@@ -16,6 +19,22 @@ const state = reactive({
     muted: false,
     currentTime: 0,
     duration: NaN
+})
+
+const client = useHttpClient()
+
+const src = computedAsync<string | undefined>(undefined, async () => {
+    if(props.src) {
+        const matcher = props.src.match(/archive:\/\/(.*)/)
+        if(matcher && matcher) {
+            const path = matcher[1]
+            const r = await remoteIpcClient.local.checkAndLoadFile(path)
+            if(r.ok && !r.data) {
+                return client.static.assetsUrl(path)
+            }
+        }
+    }
+    return props.src
 })
 
 const { playOrPause, fastForward, fastRewind, seek, pausedEvent, playingEvent, durationChangeEvent, timeUpdateEvent } = usePlayControl(videoRef, state)
