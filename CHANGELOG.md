@@ -1,8 +1,9 @@
-## [Unreleased]
+## [0.12.3] - 2025-04-12
 ### Added
 * Windows系统支持: 为App添加Windows系统支持，但仅限于remote mode。
 ### Fixed
 * **[CRX]** 修复Kemono站点中下载文件触发的来源收集总是按Gumroad格式组织ID的问题。
+* **[CRX]** 修复Kemono站点中，revision页面下无法正常收集来源数据的问题。
 ### Performance
 * 大视频文件加载优化: 较大的视频文件会使用实时网络流，不再需要等待本地缓存下载完毕。此外，客户端的本地文件缓存模块已调整实现方式，预计将消除下载不完全导致的加载问题。
 

@@ -295,7 +295,7 @@ function createRemoteMode(server: ServerManager, cacheDir: string) {
 
     const loadFile: FileManager["loadFile"] = async (filepath) => {
         const localCachePath = path.join(cacheDir, filepath)
-        await mkdir(path.dirname(filepath))
+        await mkdir(path.dirname(localCachePath))
         const r = await downloadFile(path.join("archives", filepath), `${localCachePath}.downloading`)
         if(!r.ok) return r
         else return {ok: true, data: filepath}
