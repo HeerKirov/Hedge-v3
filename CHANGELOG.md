@@ -1,3 +1,9 @@
+## [Unreleased]
+### Changed
+* **[CRX]** Pixiv标签: 将"AI生成"、"R-18"、"R-18G"作为meta类型的标签加入来源数据收集范围。
+### Fixed
+* **[CRX]** 修复Pixiv站点加载脚本的问题，修复由于Pixiv网站变动导致的初次来源数据加载失败。
+
 ## [0.12.3] - 2025-04-12
 ### Added
 * Windows系统支持: 为App添加Windows系统支持，但仅限于remote mode。

@@ -4,21 +4,23 @@ import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { PIXIV_CONSTANTS } from "@/functions/sites"
 import { similarFinder } from "@/scripts/utils"
 import { Result } from "@/utils/primitives"
-import { onDOMContentLoaded } from "@/utils/document"
+import { onDOMContentObserved } from "@/utils/document"
 
-/**
- * 前置的预加载数据额外收集器。
- * 根据观察，偶尔会存在既不存在meta，也不存在DOM的瞬间。为了解决这个问题，在脚本预载时缓存meta内容，供后续使用。
- */
-const collectSourceDataInCache = (function () {
-    const cacheData = document.querySelector("meta#meta-preload-data") ? collectSourceDataFromPreloadData() : undefined
-    return () => cacheData
-})()
-
-onDOMContentLoaded(() => {
+onDOMContentObserved({
+    observe: { subtree: true, childList: true },
+    mutation: mutation => {
+        if(document.querySelector<HTMLAnchorElement>("aside > section > h2 > div > div > a")) {
+            console.log(mutation)
+            return true
+        }
+        return false
+    },
+    init: () => document.querySelector<HTMLAnchorElement>("aside > section > h2 > div > div > a") !== null
+}, async () => {
     console.log("[Hedge v3 Helper] pixiv/artworks script loaded.")
     const sourceDataPath = getSourceDataPath()
     const sourceData = collectSourceData()
+    console.log("sourceData", sourceData)
     sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
     sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
 })
@@ -41,64 +43,6 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
  * 收集来源数据。
  */
 function collectSourceData(): Result<SourceDataUpdateForm, string> {
-    //pixiv在初始状态下不包含DOM结构，而是包含preload-data。因此在初次加载时可以从这里解析数据。
-    //而加载完成后preload-data会被移除，因此可以转而从DOM获取数据。
-    const cache = collectSourceDataInCache()
-    if(cache?.ok) {
-        return cache
-    }else if(document.querySelector("meta#meta-preload-data")) {
-        return collectSourceDataFromPreloadData()
-    }else{
-        return collectSourceDataFromDOM()
-    }
-}
-
-/**
- * 从预加载数据收集来源数据。
- */
-function collectSourceDataFromPreloadData(): Result<SourceDataUpdateForm, string> {
-    const preloadData = JSON.parse(document.querySelector<HTMLMetaElement>("meta#meta-preload-data")!.content)
-    const illustData = Object.values(preloadData["illust"])[0] as any
-
-    const tags: SourceTagForm[] = []
-
-    //查找作者，作为tag写入。作者的type固定为"artist"，code为"{UID}"
-    for(const userData of Object.values(preloadData["user"])) {
-        const userId = (userData as any)["userId"]
-        const artistName = (userData as any)["name"]
-        tags.push({code: userId, name: artistName, type: "artist"})
-    }
-
-    //查找标签列表，作为tag写入。标签的type固定为"tag"，code为"{NAME}"
-    for(const tag of illustData["tags"]["tags"]) {
-        const name = tag["tag"]
-        const otherName = tag["translation"]?.["en"] ?? undefined
-        if(name !== "R-18") tags.push({code: name, name, otherName, type: "tag"})
-    }
-
-    const title = illustData["title"] ?? undefined
-
-    let description: string | undefined
-    if(illustData["description"]) {
-        description = illustData["description"].replaceAll(/<br\s*\/?>/g, "\n")
-    }
-
-    let publishTime: string | undefined
-    if(illustData["createDate"]) {
-        const date = new Date(illustData["createDate"])
-        publishTime = date.toISOString()
-    }
-
-    return {
-        ok: true,
-        value: {tags, title, description, publishTime}
-    }
-}
-
-/**
- * 从DOM结构收集来源数据。
- */
-function collectSourceDataFromDOM(): Result<SourceDataUpdateForm, string> {
     const tags: SourceTagForm[] = []
 
     //查找作者，作为tag写入。作者的type固定为"artist"，code为"{UID}"
@@ -121,6 +65,7 @@ function collectSourceDataFromDOM(): Result<SourceDataUpdateForm, string> {
     }
 
     //查找标签列表，作为tag写入。标签的type固定为"tag"，code为"{NAME}"
+    //AI生成标记与R-18标记作为tag写入，type固定为"meta"
     const tagSpanList = document.querySelectorAll("figcaption footer ul > li > span")
     for(let i = 0; i < tagSpanList.length; ++i) {
         const tagSpan = tagSpanList[i]
@@ -141,8 +86,18 @@ function collectSourceDataFromDOM(): Result<SourceDataUpdateForm, string> {
                 return {ok: false, err: `Tag[${i}]: tag name is empty.`}
             }
             tags.push({code: name, name, type: "tag"})
+        }else{
+            const anchor = tagSpan.getElementsByTagName("a")
+            if(anchor.length > 0) {
+                if(anchor[0].textContent === "R-18" || anchor[0].href === "/tags/R-18/artworks") {
+                    tags.push({code: "R-18", type: "meta"})
+                }else if(anchor[0].textContent === "R-18G" || anchor[0].href === "/tags/R-18G/artworks") {
+                    tags.push({code: "R-18G", type: "meta"})
+                }else if(anchor[0].textContent?.startsWith("AI")) {
+                    tags.push({code: "AI-CREATED", name: "AI生成", type: "meta"})
+                }
+            }
         }
-        //没有span的可能是R-18标记
     }
 
     let description: string | undefined
