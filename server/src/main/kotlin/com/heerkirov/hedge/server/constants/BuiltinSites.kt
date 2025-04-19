@@ -11,7 +11,7 @@ val BUILTIN_SITES = listOf(
         name = "pixiv", title = "Pixiv", isBuiltin = true,
         idMode = SourceOption.SiteIdMode.NUMBER, partMode = SourceOption.SitePartMode.PAGE,
         sourceLinkRules = listOf("https://www.pixiv.net/artworks/{{id}}"),
-        tagTypes = listOf("artist", "tag"),
+        tagTypes = listOf("artist", "tag", "meta"),
         tagTypeMappings = mapOf("artist" to TagAuthorType.ARTIST.name),
         additionalInfo = emptyList()
     ),
