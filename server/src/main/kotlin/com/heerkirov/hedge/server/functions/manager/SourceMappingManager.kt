@@ -57,7 +57,7 @@ class SourceMappingManager(private val appdata: AppDataManager, private val data
             .innerJoin(SourceTags, (SourceTags.site eq SourceTagMappings.sourceSite) and (SourceTags.id eq SourceTagMappings.sourceTagId))
             .select(SourceTags.code, SourceTags.name, SourceTags.otherName, SourceTags.type, SourceTags.site)
             .where { SourceTagMappings.targetMetaType eq metaType and (SourceTagMappings.targetMetaId eq metaId) }
-            .map { MappingSourceTagDto(it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.code]!!, it[SourceTags.name]!!, it[SourceTags.otherName]) }
+            .map { MappingSourceTagDto(it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.code]!!, it[SourceTags.name], it[SourceTags.otherName]) }
     }
 
     /**

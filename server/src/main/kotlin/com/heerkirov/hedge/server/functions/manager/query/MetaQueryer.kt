@@ -333,7 +333,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
             data.db.from(SourceTags).select(SourceTags.id, SourceTags.site, SourceTags.type, SourceTags.name, SourceTags.code, SourceTags.otherName)
                 .where { parser.compileNameString(address, SourceTags) }
                 .limit(0, queryLimit)
-                .map { ElementSourceTag(it[SourceTags.id]!!, it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.name]!!, it[SourceTags.code]!!, it[SourceTags.otherName]) }
+                .map { ElementSourceTag(it[SourceTags.id]!!, it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.name] ?: it[SourceTags.code]!!, it[SourceTags.code]!!, it[SourceTags.otherName]) }
         }.also {
             if(it.isEmpty()) {
                 //查询结果为空时抛出无匹配警告
@@ -430,7 +430,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
         return data.db.from(SourceTags).select(SourceTags.id, SourceTags.site, SourceTags.type, SourceTags.name, SourceTags.code, SourceTags.otherName)
             .where { parser.forecastNameString(metaAddress, SourceTags) }
             .limit(0, queryLimit)
-            .map { ElementSourceTag(it[SourceTags.id]!!, it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.name]!!, it[SourceTags.code]!!, it[SourceTags.otherName]) }
+            .map { ElementSourceTag(it[SourceTags.id]!!, it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.name] ?: it[SourceTags.code]!!, it[SourceTags.code]!!, it[SourceTags.otherName]) }
     }
 
     private fun validateTopics(topics: List<TopicItem>, address: MetaAddress): List<ElementTopic> {

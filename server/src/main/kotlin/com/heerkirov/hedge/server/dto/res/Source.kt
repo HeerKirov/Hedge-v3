@@ -44,4 +44,4 @@ data class SourceMappingTargetItemDetail(val metaType: MetaType, val metaTag: An
 
 data class SourceMappingTargetItem(val metaType: MetaType, val metaId: Int)
 
-data class MappingSourceTagDto(val site: String, val type: String, val code: String, val name: String, val otherName: String?)
+data class MappingSourceTagDto(val site: String, val type: String, val code: String, val name: String?, val otherName: String?)
