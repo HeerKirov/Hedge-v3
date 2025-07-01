@@ -161,7 +161,7 @@ export interface DetailSourceData extends BasicSourceData {
 export interface SourceTag {
     code: string
     type: string
-    name: string
+    name: string | null
     otherName: string | null
 }
 
@@ -196,7 +196,7 @@ export interface SourceDataUpdateForm {
 export interface SourceTagForm {
     code: string
     type: string
-    name?: string
+    name?: string | null
     otherName?: string | null
 }
 

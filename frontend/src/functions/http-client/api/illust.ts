@@ -6,7 +6,16 @@ import {
     ParamNotRequired, ParamRequired,
     ResourceNotExist, ResourceNotSuitable
 } from "../exceptions"
-import { FilePath, IdResponse, LimitAndOffsetFilter, ListResult, OrderList, SourceDataPath, SourceTagPath } from "./all"
+import {
+    FilePath,
+    IdResponse,
+    LimitAndOffsetFilter,
+    ListResult,
+    OrderList,
+    PatchUnit,
+    SourceDataPath,
+    SourceTagPath
+} from "./all"
 import { SimpleBook } from "./book"
 import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
@@ -814,6 +823,7 @@ export interface IllustBatchUpdateForm {
     mappingSourceTags?: SourceTagPath[]
     tagUpdateMode?: "APPEND" | "OVERRIDE" | "REMOVE"
     tagme?: Tagme[]
+    tagmePatch?: PatchUnit<Tagme[]>[]
     partitionTime?: LocalDate
     orderTimeBegin?: LocalDateTime
     orderTimeEnd?: LocalDateTime

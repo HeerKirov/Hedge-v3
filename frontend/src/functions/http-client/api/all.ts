@@ -14,6 +14,11 @@ export type MetaType = "TOPIC" | "AUTHOR" | "TAG"
 
 export type IdentityType = "IMAGE" | "COLLECTION" | "BOOK"
 
+export interface PatchUnit<T> {
+    plusOrMinus: boolean
+    value: T
+}
+
 export interface LimitFilter {
     limit?: number
 }

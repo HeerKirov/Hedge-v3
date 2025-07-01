@@ -28,7 +28,7 @@ const groupedTags = computed(() => {
 
 const menu = useDynamicPopupMenu<SourceTag>(st => [
     {type: "normal", "label": `复制"${st.code}"到剪贴板`, click: () => writeClipboard(st.code)},
-    ...(st.name !== st.code ? [{type: "normal", "label": `复制"${st.name}"到剪贴板`, click: () => writeClipboard(st.name)} as const] : []),
+    ...(st.name !== null && st.name !== st.code ? [{type: "normal", "label": `复制"${st.name}"到剪贴板`, click: () => writeClipboard(st.name!)} as const] : []),
     ...(st.otherName && st.otherName !== st.code && st.otherName !== st.name ? [{type: "normal", "label": `复制"${st.otherName}"到剪贴板`, click: () => writeClipboard(st.otherName!)} as const] : []),
 ])
 

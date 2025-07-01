@@ -2,7 +2,7 @@
 import { toRefs } from "vue"
 import { Icon, Button, Separator, Starlight } from "@/components/universal"
 import { DescriptionDisplay } from "@/components-business/form-display"
-import { TagmeEditor, DescriptionEditor, DateEditor, DateTimeEditor, FavoriteEditor } from "@/components-business/form-editor"
+import { DescriptionEditor, DateEditor, DateTimeEditor, FavoriteEditor, TagmePatchEditor } from "@/components-business/form-editor"
 import { TAGME_TYPE_ICONS } from "@/constants/entity"
 import { useSideBarAction } from "@/services/main/illust"
 import { ElementPopupMenu, FormEditKit } from "@/components/interaction"
@@ -74,10 +74,10 @@ const ordinalEllipsisMenuItems = <MenuItem<undefined>[]>[
     </div>
     <FormEditKit :value="form.tagme" :set-value="setTagme" allow-single-click>
         <template #default="{ value }">
-            <Button class="w-100 has-text-left" size="small" icon="flag">设置TAGME<span class="float-right has-text-primary"><Icon v-for="tagme in value" :icon="TAGME_TYPE_ICONS[tagme]"/></span></Button>
+            <Button class="w-100 has-text-left" size="small" icon="flag">设置TAGME<span class="float-right has-text-primary"><Icon v-for="tagme in value" :icon="TAGME_TYPE_ICONS[tagme.value]"/></span></Button>
         </template>
         <template #edit="{ value, setValue }">
-            <TagmeEditor :value="value" @update:value="setValue"/>
+            <TagmePatchEditor :value="value" @update:value="setValue"/>
         </template>
     </FormEditKit>
     <ElementPopupMenu :items="partitionTimeEllipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">

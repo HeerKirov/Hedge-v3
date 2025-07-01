@@ -20,7 +20,7 @@ const emit = defineEmits<{
 const detailId = toRef(props, "detailId")
 const illustType = toRef(props, "type")
 
-const { data, openCollection, openAssociate, openAssociateInViewStack, openBook, openFolder } = useSideBarRelatedItems(detailId, illustType, () => emit("backTab"))
+const { data, openCollection, openAssociate, openAssociateInViewStack, openBook, openFolder } = useSideBarRelatedItems(detailId, illustType, props.scene, () => emit("backTab"))
 
 const { assetsUrl } = useAssets()
 

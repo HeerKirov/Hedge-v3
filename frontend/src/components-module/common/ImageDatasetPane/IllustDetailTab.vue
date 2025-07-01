@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch } from "vue"
+import { watch, useTemplateRef } from "vue"
 import { IllustType } from "@/functions/http-client/api/illust"
 import { useRouteStorage, useSessionStorage } from "@/functions/app"
 import { useInterceptedKey } from "@/modules/keyboard"
@@ -30,10 +30,12 @@ const tabType = tabScope
     ? useSessionStorage<"info" | "source" | "related">(`illust/detail/tab-type/${tabScope}`, "info")
     : useRouteStorage<"info" | "source" | "related">(`illust/detail/tab-type`, "info")
 
+const detailInfoRef = useTemplateRef<{anyRelatedItems: boolean, anySource: boolean}>("detailInfoRef")
+
 useInterceptedKey(["Meta+Digit1", "Meta+Digit2", "Meta+Digit3"], e => {
     if(e.key === "Digit1") tabType.value = "info"
-    else if(e.key === "Digit2") tabType.value = "related"
-    else if(e.key === "Digit3" && type === "IMAGE") tabType.value = "source"
+    else if(e.key === "Digit2" && (detailInfoRef.value === null || detailInfoRef.value.anyRelatedItems)) tabType.value = "related"
+    else if(e.key === "Digit3" && type === "IMAGE" && (detailInfoRef.value === null || detailInfoRef.value.anySource)) tabType.value = "source"
 })
 
 watch(() => type, type => {
@@ -46,7 +48,7 @@ watch(() => type, type => {
 
 <template>
     <KeepAlive>
-        <IllustTabDetailInfo v-if="tabType === 'info'" :detailId :scene @set-tab="tabType = $event"/>
+        <IllustTabDetailInfo v-if="tabType === 'info'" ref="detailInfoRef" :detailId :scene @set-tab="tabType = $event"/>
         <IllustTabRelatedItems v-else-if="tabType === 'related'" :detailId :scene :type @back-tab="tabType = 'info'"/>
         <IllustTabSourceData v-else-if="tabType === 'source'" :detailId :type @back-tab="tabType = 'info'"/>
     </KeepAlive>

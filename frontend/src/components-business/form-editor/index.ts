@@ -26,6 +26,7 @@ import SourceAdditionalInfoEditor from "./SourceAdditionalInfoEditor.vue"
 import ScoreEditor from "./ScoreEditor.vue"
 import FavoriteEditor from "./FavoriteEditor.vue"
 import TagmeEditor from "./TagmeEditor.vue"
+import TagmePatchEditor from "./TagmePatchEditor.vue"
 import DateEditor from "./DateEditor.vue"
 import DateTimeEditor from "./DateTimeEditor.vue"
 
@@ -35,4 +36,4 @@ export { OtherNameEditor, DescriptionEditor }
 export { MetaKeywordEditor, ParentTopicEditor, RelatedTopicEditor, RelatedAuthorEditor }
 export { SourceIdentityEditor, SourceIdentityNoPartEditor, SourceDataSummaryEditor, SourceEditStatusEditor, SourceSiteSelectBox, SourceTagTypeSelectBox }
 export { SourceTagMappingEditor, SourceTagEditor, SourceBookEditor, SourceRelationEditor, SourceTagTypeListEditor, SourceLinkEditor, SourceAdditionalInfoEditor }
-export { TagmeEditor, DateEditor, DateTimeEditor, ScoreEditor, FavoriteEditor }
+export { TagmeEditor, TagmePatchEditor, DateEditor, DateTimeEditor, ScoreEditor, FavoriteEditor }

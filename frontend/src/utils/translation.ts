@@ -16,8 +16,8 @@ export function patchMappingSourceTagForm(items: MappingSourceTag[], oldItems: M
                 site: item.site,
                 type: item.type,
                 code: item.code,
-                name: (item.name || null) !== (oldItem.name || null) ? (item.name || "") : undefined,
-                otherName: (item.otherName || null) !== (oldItem.otherName || null) ? (item.otherName || "") : undefined,
+                name: (item.name || null) !== (oldItem.name || null) ? (item.name || null) : undefined,
+                otherName: (item.otherName || null) !== (oldItem.otherName || null) ? (item.otherName || null) : undefined,
             }
         }
     })
@@ -37,7 +37,7 @@ export function patchSourceTagForm(items: SourceTag[], oldItems: SourceTag[]): S
             return {
                 type: item.type,
                 code: item.code,
-                name: (item.name || null) !== (oldItem.name || null) ? (item.name || "") : undefined,
+                name: (item.name || null) !== (oldItem.name || null) ? (item.name || null) : undefined,
                 otherName: (item.otherName || null) !== (oldItem.otherName || null) ? (item.otherName || null) : undefined,
             }
         }

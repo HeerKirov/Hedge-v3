@@ -43,6 +43,11 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
     {type: "normal", label: "在新窗口打开此文件夹", enabled: !!openFolder, click: f => openFolder!(f, "newWindow")}
 ])
 
+defineExpose({
+    anyRelatedItems,
+    anySource: computed(() => !!data.value?.source)
+})
+
 </script>
 
 <template>

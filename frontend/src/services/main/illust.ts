@@ -2,7 +2,7 @@ import { computed, onActivated, reactive, ref, Ref, watch } from "vue"
 import { mapResponse } from "@/functions/http-client"
 import { QueryListview, useFetchEndpoint, useFetchHelper, usePostFetchHelper, usePostPathFetchHelper } from "@/functions/fetch"
 import { CollectionRelatedItems, CommonIllust, Illust, IllustExceptions, IllustQueryFilter, ImageRelatedItems, Tagme } from "@/functions/http-client/api/illust"
-import { FilePath, SourceDataPath } from "@/functions/http-client/api/all"
+import { FilePath, PatchUnit, SourceDataPath } from "@/functions/http-client/api/all"
 import { SimpleBook } from "@/functions/http-client/api/book"
 import { SimpleFolder } from "@/functions/http-client/api/folder"
 import { SourceEditStatus } from "@/functions/http-client/api/source-data"
@@ -306,7 +306,7 @@ export function useSideBarAction(selected: Ref<number[]>, selectedIndex: Ref<(nu
         score: number | null,
         favorite: boolean | null,
         description: string,
-        tagme: Tagme[],
+        tagme: PatchUnit<Tagme[]>[],
         partitionTime: LocalDate | null,
         orderTime: {
             begin: LocalDateTime,
@@ -357,10 +357,9 @@ export function useSideBarAction(selected: Ref<number[]>, selectedIndex: Ref<(nu
         return true
     }
 
-    const setTagme = async (tagme: Tagme[]): Promise<boolean> => {
+    const setTagme = async (tagme: PatchUnit<Tagme[]>[]): Promise<boolean> => {
         if(!objects.deepEquals(tagme, form.tagme)) {
-            form.tagme = tagme
-            return await batchFetch({target: selected.value, tagme})
+            return await batchFetch({target: selected.value, tagmePatch: tagme})
         }
         return true
     }
@@ -500,7 +499,7 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
     return {data, id: path, setDescription, setScore, setFavorite, setTime, setTagme, openMetaTagEditor, setSourceDataPath, ...relatedOperators}
 }
 
-export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref<"IMAGE" | "COLLECTION">, backTab: () => void) {
+export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref<"IMAGE" | "COLLECTION">, scene: "CollectionDetail" | "CollectionPane" | undefined, backTab: () => void) {
     const { data, loading } = useFetchEndpoint({
         path,
         get: client => async path => {
@@ -514,7 +513,7 @@ export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref
         afterRetrieve(path, data) {
             //在无数据时，离开当前选项卡
             if(path !== null) {
-                if(data === null || (data.associates.length <= 0 && data.books.length <= 0 && data.childrenCount <= 0 && data.collection === null && data.folders.length <= 0)) {
+                if(data === null || (data.associates.length <= 0 && data.books.length <= 0 && (data.childrenCount <= 0 || scene === "CollectionDetail") && (data.collection === null || scene === "CollectionPane") && data.folders.length <= 0)) {
                     backTab()
                 }
             }
@@ -524,7 +523,7 @@ export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref
     onActivated(() => {
         //由于选项卡会被KeepAlive缓存，它在第二次切换至选项卡时不会发生retrieve，需要在activate事件也做检测
         if(!loading.value && path.value !== null) {
-            if(data.value === null || (data.value.associates.length <= 0 && data.value.books.length <= 0 && data.value.childrenCount <= 0 && data.value.collection === null && data.value.folders.length <= 0)) {
+            if(data.value === null || (data.value.associates.length <= 0 && data.value.books.length <= 0 && (data.value.childrenCount <= 0 || scene === "CollectionDetail") && (data.value.collection === null || scene === "CollectionPane") && data.value.folders.length <= 0)) {
                 backTab()
             }
         }
