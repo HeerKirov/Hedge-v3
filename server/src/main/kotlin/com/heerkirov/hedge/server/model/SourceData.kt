@@ -111,7 +111,7 @@ data class SourceTag(val id: Int,
                      /**
                       * 标签的显示名称。
                       */
-                     val name: String,
+                     val name: String?,
                      /**
                       * 标签的其他名称。
                       */

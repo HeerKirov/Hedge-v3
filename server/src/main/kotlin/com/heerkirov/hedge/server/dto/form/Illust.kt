@@ -59,6 +59,7 @@ class IllustBatchUpdateForm(val target: List<Int>,
                             val mappingSourceTags: Opt<List<SourceTagPath>> = undefined(),
                             val tagUpdateMode: TagUpdateMode = TagUpdateMode.APPEND,
                             val tagme: Opt<Illust.Tagme> = undefined(),
+                            val tagmePatch: Opt<List<TagmePatchUnit>> = undefined(),
                             val timeInsertBegin: Opt<Int> = undefined(),
                             val timeInsertEnd: Opt<Int> = undefined(),
                             val timeInsertAt: String? = null,
@@ -82,6 +83,9 @@ class IllustBatchUpdateForm(val target: List<Int>,
         SET_ORDER_TIME_BY_BOOK_ORDINAL,
         SET_ORDER_TIME_BY_FOLDER_ORDINAL,
     }
+
+    //tips: 当value为泛型参数时，想从kType中提取真实类型有点困难，为了避免这一步就不使用泛型了
+    data class TagmePatchUnit(val plusOrMinus: Boolean, val value: Illust.Tagme)
 
     enum class TagUpdateMode {
         APPEND, OVERRIDE, REMOVE

@@ -32,7 +32,7 @@ data class SourceDataAnalyseResult(val filename: String, val source: SourceDataP
 
 data class SourceDataAdditionalInfoDto(val field: String, val label: String, val value: String)
 
-data class SourceTagDto(val code: String, val type: String, val name: String, val otherName: String?)
+data class SourceTagDto(val code: String, val type: String, val name: String?, val otherName: String?)
 
 data class SourceBookDto(val code: String, val title: String, val otherTitle: String?)
 

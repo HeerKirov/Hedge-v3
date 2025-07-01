@@ -33,6 +33,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         register.useSQL("0.10.0.1")
         register.useSQL("0.12.0", ::processAnnotationRemoving)
         register.useSQL("0.12.0.1")
+        register.useSQL("0.12.4")
     }
 
     /**

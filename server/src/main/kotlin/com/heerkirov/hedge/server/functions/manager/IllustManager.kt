@@ -581,9 +581,29 @@ class IllustManager(private val appdata: AppDataManager,
         }
 
         //tagme
-        if(form.tagme.isPresent) {
-            data.db.update(Illusts) {
-                where { it.id inList form.target }
+        if(form.tagmePatch.isPresent) {
+            //patch模式下，对tagme的每个组成部分单独处理
+            val all = collections + images + childrenOfCollections
+            if(all.isNotEmpty()) data.db.batchUpdate(Illusts) {
+                for (illust in all) {
+                    var tagme = illust.tagme
+                    for (unit in form.tagmePatch.value) {
+                        if(unit.plusOrMinus) {
+                            tagme += unit.value
+                        }else{
+                            tagme -= unit.value
+                        }
+                    }
+                    item {
+                        where { it.id eq illust.id }
+                        set(it.tagme, tagme)
+                    }
+                }
+            }
+        }else if(form.tagme.isPresent) {
+            val allId = (collections + images + childrenOfCollections).map { it.id }
+            if(allId.isNotEmpty()) data.db.update(Illusts) {
+                where { it.id inList allId }
                 set(it.tagme, form.tagme.value)
             }
         }else if(metaResponses.isNotEmpty() && form.tagUpdateMode != IllustBatchUpdateForm.TagUpdateMode.REMOVE) {

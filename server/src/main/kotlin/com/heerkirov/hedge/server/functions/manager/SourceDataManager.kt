@@ -184,7 +184,7 @@ class SourceDataManager(private val data: DataRepository,
     fun generateLinks(rules: List<String>, sourceId: String, sourceTags: List<SourceTagDto>, additionalInfo: List<SourceDataAdditionalInfoDto>): List<String> {
         val arguments = mutableMapOf<String, String>()
         arguments["id"] = sourceId
-        arguments.putAll(sourceTags.groupBy { it.type }.filter { it.value.size == 1 }.map { (_, v) -> v.first() }.flatMap { listOf("${it.type}.code" to it.code, "${it.type}.name" to it.name) }.toMap())
+        arguments.putAll(sourceTags.groupBy { it.type }.filter { it.value.size == 1 }.map { (_, v) -> v.first() }.flatMap { listOf("${it.type}.code" to it.code, "${it.type}.name" to (it.name ?: it.code)) }.toMap())
         arguments.putAll(additionalInfo.associate { it.field to it.value })
         return rules.mapNotNull { rule ->
             try {

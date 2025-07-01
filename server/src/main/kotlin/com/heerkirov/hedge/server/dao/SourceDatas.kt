@@ -84,7 +84,7 @@ object SourceTags : BaseTable<SourceTag>("source_tag", schema = "source_db") {
         site = row[site]!!,
         type = row[type]!!,
         code = row[code]!!,
-        name = row[name]!!,
+        name = row[name],
         otherName = row[otherName]
     )
 }

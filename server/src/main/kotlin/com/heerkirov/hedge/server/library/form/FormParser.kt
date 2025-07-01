@@ -21,6 +21,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import kotlin.reflect.KTypeParameter
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.primaryConstructor
 
@@ -53,8 +54,11 @@ inline fun <reified T : Any> Context.bodyAsListForm(): List<T> {
  * @throws ClassCastException 类型转换上遇到了错误
  */
 private fun <T : Any> mapAny(jsonNode: JsonNode, kType: KType): Any? {
-    @Suppress("UNCHECKED_CAST")
-    val kClass = kType.classifier as KClass<*>
+    val kClass: KClass<*> = when (kType.classifier) {
+        is KClass<*> -> kType.classifier as KClass<*>
+        is KTypeParameter -> (kType.classifier as KTypeParameter).variance.declaringJavaClass.kotlin
+        else -> throw ClassCastException("kType is ${kType.classifier}.")
+    }
 
     @Suppress("UNCHECKED_CAST")
     return when {
@@ -163,9 +167,12 @@ private fun <T : Any> mapAny(jsonNode: JsonNode, kType: KType): Any? {
  * 执行将作为map key的string类型按照kType定义转换为任意object的过程。
  */
 private fun mapStringKey(string: String, kType: KType): Any? {
-    @Suppress("UNCHECKED_CAST")
-    val kClass = kType.classifier as KClass<*>
-    @Suppress("UNCHECKED_CAST")
+    val kClass: KClass<*> = when (kType.classifier) {
+        is KClass<*> -> kType.classifier as KClass<*>
+        is KTypeParameter -> (kType.classifier as KTypeParameter).variance.declaringJavaClass.kotlin
+        else -> throw ClassCastException("kType is ${kType.classifier}.")
+    }
+
     return when {
         kClass == String::class -> string
         kClass == Int::class -> string.toIntOrNull() ?: throw ClassCastException("Expected number type of Int.")
