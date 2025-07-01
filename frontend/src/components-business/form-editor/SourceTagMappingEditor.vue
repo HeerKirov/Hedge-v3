@@ -60,7 +60,7 @@ watchEffect(async () => {
         form.value = {
             site: item.site || null,
             code: item.code,
-            name: item.name,
+            name: item.name || "",
             otherName: item.otherName || "",
             type: item.type
         }

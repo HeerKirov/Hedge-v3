@@ -74,7 +74,7 @@ const ordinalEllipsisMenuItems = <MenuItem<undefined>[]>[
     </div>
     <FormEditKit :value="form.tagme" :set-value="setTagme" allow-single-click>
         <template #default="{ value }">
-            <Button class="w-100 has-text-left" size="small" icon="flag">设置TAGME<span class="float-right has-text-primary"><Icon v-for="tagme in value" :icon="TAGME_TYPE_ICONS[tagme.value]"/></span></Button>
+            <Button class="w-100 has-text-left" size="small" icon="flag">设置TAGME<span class="float-right has-text-primary"><Icon v-for="tagme in value" :icon="TAGME_TYPE_ICONS[tagme.value[0]]"/></span></Button>
         </template>
         <template #edit="{ value, setValue }">
             <TagmePatchEditor :value="value" @update:value="setValue"/>
