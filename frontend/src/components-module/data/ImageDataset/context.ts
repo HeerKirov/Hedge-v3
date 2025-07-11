@@ -237,7 +237,7 @@ function useSelector<T>(options: SelectorOptions<T>): Selector {
 }
 
 function useKeyboardEvents({ moveSelect, lastSelected }: Selector, enter: (illustId: number) => void, space: (illustId: number) => void) {
-    useInterceptedKey(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "Space"], e => {
+    useInterceptedKey(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Shift+ArrowLeft", "Shift+ArrowRight", "Shift+ArrowUp", "Shift+ArrowDown", "Enter"], e => {
         if(e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
             moveSelect(e.key, e.shiftKey).finally()
         }else if(e.key === "Enter") {

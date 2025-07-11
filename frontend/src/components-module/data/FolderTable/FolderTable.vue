@@ -14,9 +14,17 @@ const props = defineProps<{
      */
     createPosition?: {parentId: number | null, ordinal: number}
     /**
-     * 已选择项的id。
+     * 选择器：已选择项。
      */
-    selected?: number | null | undefined
+    selected?: number[]
+    /**
+     * 选择器：已选择项索引。
+     */
+    selectedIndex?: (number | undefined)[]
+    /**
+     * 选择器：最后一个选择项。
+     */
+    lastSelected?: number | null
     /**
      * 是否允许编辑类操作。这将开启右键菜单的编辑类选项。
      */
@@ -34,10 +42,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-    (e: "update:selected", folderId: number | null): void
+    (e: "select", selected: number[], lastSelected: number | null): void
     (e: "update:createPosition", position: {parentId: number | null, ordinal: number} | undefined): void
     (e: "update:pinned", folder: FolderTreeNode, pin: boolean): void
-    (e: "enter", folder: FolderTreeNode, parentId: number | null, ordinal: number, at: "newTab" | "newWindow" | undefined): void
+    (e: "enter", folder: FolderTreeNode, at: "newTab" | "newWindow" | undefined): void
     (e: "create", v: FolderCreateForm): void
     (e: "move", folder: FolderTreeNode, moveToParentId: number | null | undefined, moveToOrdinal: number): void
     (e: "delete", folder: FolderTreeNode, parentId: number | null, ordinal: number): void
@@ -46,15 +54,17 @@ const emit = defineEmits<{
 const { elementRefs } = installFolderTreeContext({
     data: toRef(props, "folders"),
     createPosition: toRef(props, "createPosition"),
-    selected: computed(() => props.selected ?? null),
+    selected: computed(() => props.selected ?? []),
+    selectedIndex: computed(() => props.selectedIndex ?? []),
+    lastSelected: computed(() => props.lastSelected ?? null),
     editable: toRef(props, "editable"),
     droppable: toRef(props, "droppable"),
     mode: computed(() => props.mode ?? "std"),
     emit: {
-        updateSelected: (folderId) => emit("update:selected", folderId),
+        select: (s, l) => emit("select", s, l),
         updateCreatePosition: (position) => emit("update:createPosition", position),
         updatePinned: (folder, pin) => emit("update:pinned", folder, pin),
-        enter: (folder, parentId, ordinal, newWindow) => emit("enter", folder, parentId, ordinal, newWindow),
+        enter: (folder, newWindow) => emit("enter", folder, newWindow),
         create: (form) => emit("create", form),
         move: (tag, p, o) => emit("move", tag, p, o),
         delete: (tag, parentId, ordinal) => emit("delete", tag, parentId, ordinal),

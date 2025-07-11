@@ -18,6 +18,8 @@ export function createFolderEndpoint(http: HttpInstance): FolderEndpoint {
         }),
         update: http.createPathDataRequest(id => `/api/folders/${id}`, "PATCH"),
         delete: http.createPathRequest(id => `/api/folders/${id}`, "DELETE"),
+        batchUpdate: http.createDataRequest("/api/folders/batch-update", "POST"),
+        batchDelete: http.createDataRequest("/api/folders/batch-delete", "POST"),
         images: {
             get: http.createPathQueryRequest(id => `/api/folders/${id}/images`, "GET", {
                 parseResponse: ({ total, result }: ListResult<any>) => ({total, result: result.map(mapToFolderImage)})
@@ -99,6 +101,14 @@ export interface FolderEndpoint {
      * 删除目录。
      */
     delete(folderId: number): Promise<Response<null, NotFound>>
+    /**
+     * 批量修改目录。
+     */
+    batchUpdate(form: FolderBatchUpdateForm): Promise<Response<null, FolderExceptions["update"]>>
+    /**
+     * 批量删除目录。
+     */
+    batchDelete(target: number[]): Promise<Response<null, FolderExceptions["batchDelete"]>>
     images: {
         /**
          * 查询下属images。
@@ -134,6 +144,7 @@ export interface FolderEndpoint {
 export interface FolderExceptions {
     "create": AlreadyExists<"Folder", "name", string> | ResourceNotExist<"images", number[]> | ResourceNotExist<"parentId", number> | ResourceNotSuitable<"parentId", number>
     "update": NotFound | AlreadyExists<"Folder", "name", string> | ResourceNotExist<"parentId", number> | ResourceNotSuitable<"parentId", number> | RecursiveParentError
+    "batchDelete": ResourceNotExist<"target", number>
     "images.update": NotFound | Reject | ResourceNotExist<"images", number[]>
     "images.partialUpdate": NotFound | Reject | ResourceNotExist<"images", number[]>
 }
@@ -215,6 +226,12 @@ export interface FolderCreateForm {
 
 export interface FolderUpdateForm {
     title?: string
+    parentId?: number | null
+    ordinal?: number
+}
+
+export interface FolderBatchUpdateForm {
+    target: number[]
     parentId?: number | null
     ordinal?: number
 }

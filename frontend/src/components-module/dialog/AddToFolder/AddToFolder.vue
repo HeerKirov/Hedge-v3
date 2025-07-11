@@ -37,7 +37,7 @@ const { tabType, folderTree, recentFolders, checkExists, selectedId, submit, cho
                         <Button :type="tabType === 'all' ? 'primary' : undefined" icon="database" @click="tabType = 'all'">所有目录</Button>
                     </Flex>
                     <div :class="$style['scroll-content']">
-                        <FolderTable v-if="tabType === 'all'" :folders="folderTree" mode="simple" v-model:selected="selectedId"/>
+                        <FolderTable v-if="tabType === 'all'" :folders="folderTree" mode="simple" :selected="selectedId !== null ? [selectedId] : []" :last-selected="selectedId" @select="(s, l) => selectedId = l"/>
                         <table v-else class="table hover round standard-td w-100">
                             <tbody>
                                 <tr v-for="row in recentFolders" :class="{'selected': selectedId === row.id}" @click="selectedId = row.id">

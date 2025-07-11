@@ -5,6 +5,7 @@ import { FolderTreeNode } from "@/functions/http-client/api/folder"
 import { datetime } from "@/utils/datetime"
 import { useFolderDraggable, useFolderDroppable, useFolderTreeContext } from "./context"
 import RowList from "./RowList.vue"
+import { platform } from "@/functions/ipc-client";
 
 const props = defineProps<{
     row: FolderTreeNode
@@ -12,7 +13,7 @@ const props = defineProps<{
     indent: number
 }>()
 
-const { selected, createPosition, expandedState, elementRefs, indexedData, menu, emit, mode } = useFolderTreeContext()
+const { selected, selector, createPosition, expandedState, elementRefs, indexedData, menu, emit, mode } = useFolderTreeContext()
 
 const expanded = computed({
     get: () => expandedState.get(props.row.id),
@@ -20,24 +21,30 @@ const expanded = computed({
 })
 
 const isJumpTarget = computed(() => elementRefs.jumpTarget.value === props.row.id)
-const isSelected = computed(() => createPosition.value === undefined && selected.value === props.row.id)
+const isSelected = computed(() => createPosition.value === undefined && selected.value.includes(props.row.id))
 
 const { gapState, topDropEvents, bottomDropEvents } = useFolderDroppable(toRef(props, "row"), toRef(props, "indent"), expanded)
 
 const dragEvents = useFolderDraggable(toRef(props, "row"))
 
-const click = () => {
+const click = (e: MouseEvent) => {
     if(elementRefs.jumpTarget.value === props.row.id) {
         elementRefs.jumpTarget.value = null
     }
-    emit.updateSelected(props.row.id)
+    if(e.shiftKey) {
+        selector.shiftSelect(props.row.id).finally()
+    }else if((e.metaKey && platform === "darwin") || (e.ctrlKey && platform !== "darwin")) {
+        selector.appendSelect(props.row.id)
+    }else{
+        selector.select(props.row.id)
+    }
     if(createPosition.value !== undefined) emit.updateCreatePosition(undefined)
 }
 
 const dblclick = () => {
     const indexed = indexedData.indexedData.value[props.row.id]
     if(indexed) {
-        emit.enter(props.row, indexed.parentId, indexed.ordinal, undefined)
+        emit.enter(props.row, undefined)
     }
 }
 

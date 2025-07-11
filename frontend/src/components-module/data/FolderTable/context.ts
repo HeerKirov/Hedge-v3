@@ -3,22 +3,28 @@ import { FolderCreateForm, FolderTreeNode } from "@/functions/http-client/api/fo
 import { useMessageBox } from "@/modules/message-box"
 import { useDynamicPopupMenu } from "@/modules/popup-menu"
 import { useDraggable, useDroppable } from "@/modules/drag"
+import { useToast } from "@/modules/toast"
+import { useInterceptedKey } from "@/modules/keyboard"
 import { installation } from "@/utils/reactivity"
 import { objects } from "@/utils/primitives"
 import { sleep } from "@/utils/process"
 
+const SELECTED_MAX = 100
+
 interface FolderTreeContextOptions {
     data: Ref<FolderTreeNode[] | undefined>
     createPosition: Ref<{parentId: number | null, ordinal: number} | undefined>
-    selected: Ref<number | null>
+    selected: Ref<number[]>
+    selectedIndex: Ref<(number | undefined)[]>
+    lastSelected: Ref<number | null>
     editable: Ref<boolean | undefined>
     droppable: Ref<boolean | undefined>
     mode: Ref<"std" | "simple">
     emit: {
         updateCreatePosition(position: {parentId: number | null, ordinal: number} | undefined): void
-        updateSelected(folderId: number | null): void
+        select(selected: number[], lastSelected: number | null): void
         updatePinned(folder: FolderTreeNode, pin: boolean): void
-        enter(folder: FolderTreeNode, parentId: number | null, ordinal: number, at: "newTab" | "newWindow" | undefined): void
+        enter(folder: FolderTreeNode, at: "newTab" | "newWindow" | undefined): void
         create(form: FolderCreateForm): void
         move(folder: FolderTreeNode, moveToParentId: number | null | undefined, moveToOrdinal: number): void
         delete(folder: FolderTreeNode, parentId: number | null, ordinal: number): void
@@ -44,17 +50,42 @@ export interface IndexedFolder {
     ordinal: number
 }
 
+interface SelectorOptions {
+    data: Ref<FolderTreeNode[] | undefined>
+    indexedData: Ref<Record<number, IndexedFolder>>
+    expandedState: ReturnType<typeof useExpandedState>
+    selected: Ref<number[]>
+    selectedIndex: Ref<(number | undefined)[]>
+    lastSelected: Ref<number | null>
+    navigate(offset: number): void
+    select(selected: number[], lastSelected: number | null): void
+}
+
+export interface Selector {
+    select(illustId: number): void
+    appendSelect(illustId: number): void
+    shiftSelect(illustId: number): Promise<void>
+    moveSelect(arrow: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", shift: boolean): Promise<void>
+    selected: Ref<number[]>
+    selectedIndex: Ref<(number | undefined)[]>
+    lastSelected: Ref<number | null>
+}
+
 export const [installFolderTreeContext, useFolderTreeContext] = installation(function (options: FolderTreeContextOptions) {
-    const { emit, editable, droppable, createPosition, selected, mode } = options
+    const { emit, editable, droppable, createPosition, selected, data, lastSelected, selectedIndex, mode } = options
     const indexedData = useIndexedData(options.data)
 
     const expandedState = useExpandedState(indexedData.indexedData)
 
     const elementRefs = useElementRefs(expandedState)
 
+    const selector = useSelector({data, indexedData: indexedData.indexedData, expandedState, selected, lastSelected, selectedIndex, select: emit.select, navigate: () => {}  })
+
     const menu = useMenu(options, indexedData.indexedData, expandedState)
 
-    return {expandedState, elementRefs, menu, indexedData, emit, editable, droppable, createPosition, selected, mode}
+    useKeyboardEvents(selector, indexedData.indexedData, options.emit.enter)
+
+    return {expandedState, elementRefs, menu, indexedData, emit, editable, droppable, createPosition, selected, selector, mode}
 })
 
 function useIndexedData(requestedData: Ref<FolderTreeNode[] | undefined>) {
@@ -360,16 +391,13 @@ function useMenu(options: FolderTreeContextOptions, indexedData: Ref<{[key: numb
     const message = useMessageBox()
 
     const openDetail = (folder: FolderTreeNode) => {
-        const indexedInfo = indexedData.value[folder.id]
-        if(indexedInfo) options.emit.enter(folder, indexedInfo.parentId, indexedInfo.ordinal, undefined)
+        options.emit.enter(folder, undefined)
     }
     const openDetailInNewTab = (folder: FolderTreeNode) => {
-        const indexedInfo = indexedData.value[folder.id]
-        if(indexedInfo) options.emit.enter(folder, indexedInfo.parentId, indexedInfo.ordinal, "newTab")
+        options.emit.enter(folder, "newTab")
     }
     const openDetailInNewWindow = (folder: FolderTreeNode) => {
-        const indexedInfo = indexedData.value[folder.id]
-        if(indexedInfo) options.emit.enter(folder, indexedInfo.parentId, indexedInfo.ordinal, "newWindow")
+        options.emit.enter(folder, "newWindow")
     }
 
     const togglePinned = (folder: FolderTreeNode) => {
@@ -380,7 +408,7 @@ function useMenu(options: FolderTreeContextOptions, indexedData: Ref<{[key: numb
         const indexedInfo = indexedData.value[folder.id]
         if(indexedInfo) {
             options.emit.updateCreatePosition({parentId: folder.id, ordinal: folder.children?.length ?? 0})
-            if(options.selected.value !== null) options.emit.updateSelected(null)
+            if(options.selected.value !== null) options.emit.select([], null)
         }
     }
 
@@ -388,7 +416,7 @@ function useMenu(options: FolderTreeContextOptions, indexedData: Ref<{[key: numb
         const indexedInfo = indexedData.value[folder.id]
         if(indexedInfo) {
             options.emit.updateCreatePosition({parentId: indexedInfo.parentId, ordinal: indexedInfo.ordinal})
-            if(options.selected.value !== null) options.emit.updateSelected(null)
+            if(options.selected.value !== null) options.emit.select([], null)
         }
     }
 
@@ -396,7 +424,7 @@ function useMenu(options: FolderTreeContextOptions, indexedData: Ref<{[key: numb
         const indexedInfo = indexedData.value[folder.id]
         if(indexedInfo) {
             options.emit.updateCreatePosition({parentId: indexedInfo.parentId, ordinal: indexedInfo.ordinal + 1})
-            if(options.selected.value !== null) options.emit.updateSelected(null)
+            if(options.selected.value !== null) options.emit.select([], null)
         }
     }
 
@@ -432,6 +460,183 @@ function useMenu(options: FolderTreeContextOptions, indexedData: Ref<{[key: numb
     ])
 
     return menu.popup
+}
+
+function useKeyboardEvents({ moveSelect, lastSelected }: Selector, indexedData: Ref<{[key: number]: IndexedFolder}>, enter: (folder: FolderTreeNode, at: "newTab" | "newWindow" | undefined) => void) {
+    useInterceptedKey(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Shift+ArrowLeft", "Shift+ArrowRight", "Shift+ArrowUp", "Shift+ArrowDown", "Enter"], e => {
+        if(e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+            moveSelect(e.key, e.shiftKey).finally()
+        }else if(e.key === "Enter") {
+            if(lastSelected.value !== null) {
+                enter(indexedData.value[lastSelected.value].folder, undefined)
+            }
+        }
+    })
+}
+
+function useSelector(options: SelectorOptions): Selector {
+    const { toast } = useToast()
+    const { data, indexedData, expandedState, selected, selectedIndex, lastSelected, select: onSelect, navigate } = options
+
+    const select = (folderId: number) => {
+        // 单击一个项时，只选择此项
+        onSelect([folderId], folderId)
+    }
+
+    const appendSelect = (folderId: number) => {
+        // 按住CTRL/CMD单击一个项时，如果没有选择此项，则将此项加入选择列表；否则将此项从选择列表移除
+        const find = selected.value.findIndex(i => i === folderId)
+        if(find >= 0) {
+            onSelect([...selected.value.slice(0, find), ...selected.value.slice(find + 1)], null)
+        }else{
+            if(selected.value.length + 1 > SELECTED_MAX) {
+                toast("选择上限", "warning", `选择的数量超过上限: 最多可选择${SELECTED_MAX}项。`)
+                return
+            }
+            onSelect([...selected.value, folderId], folderId)
+        }
+    }
+
+    const shiftSelect = async (folderId: number) => {
+        // 按住SHIFT单击一个项时，
+        // - 如果没有last selected(等价于没有选择项)，则选择此项；
+        // - 如果last selected不是自己，那么将从自己到last selected之间的所有项加入选择列表；否则无动作
+        if(lastSelected.value === null) {
+            onSelect([folderId], folderId)
+        }else if(lastSelected.value !== folderId) {
+            const result = getShiftSelectItems(folderId, lastSelected.value)
+            if(result === null) {
+                toast("选择失败", "warning", "内部错误: 无法正确获取选择项。")
+                return
+            }
+            const ret: number[] = []
+            for(const id of selected.value) {
+                if(!result.includes(id)) {
+                    ret.push(id)
+                }
+            }
+            ret.push(...result)
+
+            if(ret.length > SELECTED_MAX) {
+                toast("选择上限", "warning", `选择的数量超过上限: 最多可选择${SELECTED_MAX}项。`)
+                return
+            }
+            onSelect(ret, folderId)
+        }
+    }
+
+    const moveSelect = async (arrow: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight", shift: boolean) => {
+        if(lastSelected.value !== null) {
+            const offset = getMoveOffset(arrow)
+            const result = getArrowSelectItem(lastSelected.value, offset)
+            if (result !== null) {
+                if(shift) {
+                    console.log("shift", result)
+                    await shiftSelect(result)
+                }else{
+                    onSelect([result], result)
+                    navigate(result)
+                }
+            }
+        }
+    }
+
+    const getMoveOffset = (arrow: "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight") => {
+        return arrow === "ArrowLeft" ? -1 : arrow === "ArrowRight" ? 1 : arrow === "ArrowUp" ? -1 : 1
+    }
+
+    function getShiftSelectItems(selectId: number, lastSelectId: number): number[] {
+        if(selectId === lastSelectId) return []
+        const current = indexedData.value[selectId], last = indexedData.value[lastSelectId]
+
+        function getPublicParent(current: IndexedFolder, last: IndexedFolder): [number | null, number, number] {
+            //比对两者的address，寻找共同祖先节点。如果不存在共同祖先，则共同祖先为根
+            const a = [...current.address, {id: current.folder.id, title: current.folder.title}]
+            const b = [...last.address, {id: last.folder.id, title: last.folder.title}]
+            for(let i = a.length - 1; i >= 0; i--) {
+                for(let j = b.length - 1; j >= 0; j--) {
+                    if(a[i].id === b[j].id) {
+                        return [a[i].id, i >= a.length - 1 ? current.folder.id : a[i + 1].id, j >= b.length - 1 ? last.folder.id : b[j + 1].id]
+                    }
+                }
+            }
+            return [null, a.length > 0 ? a[0].id : current.folder.id, b.length > 0 ? b[0].id : last.folder.id]
+        }
+
+        //寻找共同祖先节点
+        const [publicParentId, aFirstId, bFirstId] = getPublicParent(current, last)
+        const parentChildren = publicParentId !== null ? indexedData.value[publicParentId].folder.children! : data.value!
+        //判断两个首层子节点的先后顺序
+        const aIndex = parentChildren.findIndex(i => i.id === aFirstId), bIndex = parentChildren.findIndex(i => i.id === bFirstId)
+        //将a、b节点address中所有未打开的折叠打开
+        expandedState.setAllForParent(selectId, true)
+        expandedState.setAllForParent(lastSelectId, true)
+        //根据先后顺序，使用ArrowSelect逐步迭代所有选择项
+        const selectList: number[] = []
+        let [startId, endId] = aIndex < bIndex ? [selectId, lastSelectId] : [lastSelectId, selectId]
+        selectList.push(startId)
+        while(true) {
+            const next = getArrowSelectItem(startId, 1)
+            if(next === null) {
+                selectList.push(endId)
+                break
+            }
+            selectList.push(next)
+            startId = next
+            if(next === endId) {
+                selectList.push(endId)
+                break
+            }
+        }
+        return selectList
+    }
+
+    function getArrowSelectItem(lastSelectId: number, offset: number, ignoreChildren: boolean = false): number | null {
+        //上: 访问上一个子节点；如果上一个节点开启，则迭代访问上一个节点的最后一个子节点
+        //    如果上一个节点关闭，则访问它
+        //    如果本身就是第一个子节点，则访问父节点
+        const node = indexedData.value[lastSelectId]
+        if(offset > 0) {
+            if(!ignoreChildren && expandedState.get(lastSelectId) && node.folder.children?.length) {
+                //如果当前节点开启且有子节点，则直接返回第一个子节点
+                return node.folder.children[0].id
+            }else{
+                //否则，尝试找到后一个兄弟节点
+                const parentChildren = node.parentId !== null ? indexedData.value[node.parentId].folder.children! : data.value!
+                if(node.ordinal + 1 < parentChildren.length) {
+                    //存在后一个兄弟节点时，直接返回它
+                    return parentChildren[node.ordinal + 1].id
+                }else{
+                    //不存在任何兄弟节点时，寻找其父节点的后一个兄弟节点
+                    if(node.parentId !== null) {
+                        return getArrowSelectItem(node.parentId, offset, true)
+                    }else{
+                        return null
+                    }
+                }
+            }
+        }else{
+            if(node.ordinal <= 0) {
+                //如果当前节点没有前一个兄弟节点，则直接返回它的父节点，或者父节点不存在时返回null
+                return node.parentId
+            }else{
+                //查找前一个兄弟节点
+                const parentChildren = node.parentId !== null ? indexedData.value[node.parentId].folder.children! : data.value!
+                let prev = indexedData.value[parentChildren[node.ordinal - 1].id]
+                while(true) {
+                    if(expandedState.get(prev.folder.id) && prev.folder.children?.length) {
+                        //如果此节点开启，则查找此节点的最后一个子节点，且根据此节点的开启情况迭代
+                        prev = indexedData.value[prev.folder.children[prev.folder.children.length - 1].id]
+                    }else{
+                        //如果此节点关闭，则直接返回此节点
+                        return prev.folder.id
+                    }
+                }
+            }
+        }
+    }
+
+    return {select, appendSelect, shiftSelect, moveSelect, lastSelected, selected, selectedIndex}
 }
 
 export function useFolderDraggable(row: Ref<FolderTreeNode>) {

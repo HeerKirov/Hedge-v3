@@ -1,4 +1,4 @@
-import { computed, Ref, ref } from "vue"
+import { computed, Ref, ref, watch } from "vue"
 import { FolderCreateForm, FolderTreeNode } from "@/functions/http-client/api/folder"
 import {
     useFetchEndpoint, useFetchHelper, useFetchReactive, useFetchSinglePathEndpoint,
@@ -8,9 +8,8 @@ import { useLocalStorage } from "@/functions/app"
 import { mapResponse } from "@/functions/http-client"
 import { useMessageBox } from "@/modules/message-box"
 import { useBrowserTabs, useDocumentTitle, usePath, useTabRoute } from "@/modules/browser"
-import { DetailViewState, useRouteStorageViewState } from "@/services/base/detail-view-state"
 import { useListViewContext } from "@/services/base/list-view-context"
-import { useSelectedState } from "@/services/base/selected-state"
+import { SelectedState, useSelectedState } from "@/services/base/selected-state"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useIllustViewController } from "@/services/base/view-controller"
 import { useNavigationItem } from "@/services/base/side-nav-records"
@@ -19,17 +18,19 @@ import { useFolderTableSearch } from "@/services/common/folder"
 import { installation } from "@/utils/reactivity"
 
 export const [installFolderContext, useFolderContext] = installation(function () {
-    const paneState = useRouteStorageViewState<number>()
-
     const listview = useFolderListview()
 
-    const operators = useOperators(listview.data, paneState)
+    const selector = useFolderSelectedState(listview.data)
+
+    const paneState = useSelectedPaneState("folder")
+
+    const operators = useOperators(listview.data, selector)
 
     const search = useFolderTableSearch(listview.data)
 
     const editableLockOn = useLocalStorage("folder/list/editable", false)
 
-    return {paneState, listview, operators, search, editableLockOn}
+    return {paneState, listview, selector, operators, search, editableLockOn}
 })
 
 function useFolderListview() {
@@ -41,7 +42,38 @@ function useFolderListview() {
     return {loading, data, refresh}
 }
 
-function useOperators(data: Ref<FolderTreeNode[] | undefined>, paneState: DetailViewState<number>) {
+function useFolderSelectedState(listview: Ref<FolderTreeNode[] | undefined>) {
+    const selector = useSelectedState<number, FolderTreeNode>()
+
+    watch(listview, (data, oldData) => {
+        if(data && oldData) {
+            //将两棵树展平成id列表进行比对
+            const flattenTree = (nodes: FolderTreeNode[]): number[] => {
+                const result: number[] = []
+                for(const node of nodes) {
+                    result.push(node.id)
+                    if(node.children) {
+                        result.push(...flattenTree(node.children))
+                    }
+                }
+                return result
+            }
+
+            const newIds = new Set(flattenTree(data))
+            const oldIds = new Set(flattenTree(oldData))
+
+            //找出在新树中不存在但在旧树中存在的id
+            const removedIds = [...oldIds].filter(id => !newIds.has(id))
+            for(let removedId of removedIds) {
+                selector.remove(removedId)
+            }
+        }
+    })
+
+    return selector
+}
+
+function useOperators(data: Ref<FolderTreeNode[] | undefined>, selector: SelectedState<number>) {
     const browserTabs = useBrowserTabs()
     const router = useTabRoute()
     const message = useMessageBox()
@@ -98,7 +130,7 @@ function useOperators(data: Ref<FolderTreeNode[] | undefined>, paneState: Detail
         }
     }
 
-    const openDetail = (folder: FolderTreeNode, _: number | null, __: number, at: "newTab" | "newWindow" | undefined) => {
+    const openDetail = (folder: FolderTreeNode, at: "newTab" | "newWindow" | undefined) => {
         if(at === "newWindow") {
             browserTabs.newWindow({routeName: "FolderDetail", path: folder.id})
         }else if(at === "newTab") {
@@ -120,7 +152,7 @@ function useOperators(data: Ref<FolderTreeNode[] | undefined>, paneState: Detail
         const res = await fetchCreate(form)
         if(res !== undefined) {
             createPosition.value = undefined
-            paneState.openDetailView(res.id)
+            selector.update([res.id], res.id)
         }
     }
 
@@ -129,11 +161,7 @@ function useOperators(data: Ref<FolderTreeNode[] | undefined>, paneState: Detail
     }
 
     const deleteItem = async (folder: FolderTreeNode) => {
-        if(await helper.deleteData(folder.id)) {
-            if(paneState.detailPath.value === folder.id) {
-                paneState.closeView()
-            }
-        }
+        await helper.deleteData(folder.id)
     }
 
     return {openCreatePosition, createItem, moveItem, deleteItem, setPinned, createPosition, openDetail}
@@ -142,19 +170,16 @@ function useOperators(data: Ref<FolderTreeNode[] | undefined>, paneState: Detail
 export function useFolderPane() {
     const router = useTabRoute()
     const message = useMessageBox()
-    const { paneState } = useFolderContext()
+    const { selector } = useFolderContext()
+
+    const path = computed<number | null>(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
 
     const { data, setData } = useFetchEndpoint({
-        path: paneState.detailPath,
+        path,
         get: client => client.folder.get,
         update: client => client.folder.update,
         delete: client => client.folder.delete,
-        eventFilter: c => event => (event.eventType === "entity/folder/updated" || event.eventType === "entity/folder/deleted") && event.folderId === c.path,
-        afterRetrieve(path, data) {
-            if(path !== null && data === null) {
-                paneState.closeView()
-            }
-        }
+        eventFilter: c => event => (event.eventType === "entity/folder/updated" || event.eventType === "entity/folder/deleted") && event.folderId === c.path
     })
 
     const { data: exampleData } = useFetchSinglePathEndpoint({
@@ -193,8 +218,8 @@ export function useFolderPane() {
     }
 
     const openDetail = () => {
-        if(paneState.detailPath.value !== null) {
-            router.routePush({routeName: "FolderDetail", path: paneState.detailPath.value})
+        if(path.value !== null) {
+            router.routePush({routeName: "FolderDetail", path: path.value})
         }
     }
 

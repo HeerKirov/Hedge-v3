@@ -2,26 +2,27 @@
 import { Button, Block, Separator } from "@/components/universal"
 import { PaneLayout, BasePane } from "@/components/layout"
 import { BrowserTeleport } from "@/components/logical"
+import { ElementPopupMenu } from "@/components/interaction"
 import { SearchBox, SearchResultInfo, LockOnButton } from "@/components-business/top-bar"
 import { FolderTable } from "@/components-module/data"
+import { MenuItem } from "@/modules/popup-menu"
 import { installFolderContext } from "@/services/main/folder"
 import FolderListPane from "./FolderListPane.vue"
 
 const {
     paneState,
     listview: { loading, data },
+    selector: { selected, selectedIndex, lastSelected, update: updateSelect },
     editableLockOn,
     operators: { createPosition, openCreatePosition, createItem, setPinned, moveItem, deleteItem, openDetail },
     search: { searchText, searchInfo, folderTableRef, next, prev }
 } = installFolderContext()
 
-const updateSelected = (folderId: number | null) => {
-    if(folderId !== null) {
-        paneState.openDetailView(folderId)
-    }else if(paneState.detailPath.value !== null) {
-        paneState.closeView()
-    }
-}
+const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
+    {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
+    {type: "separator"},
+    {type: "checkbox", label: "解除编辑锁定", checked: editableLockOn.value, click: () => editableLockOn.value = !editableLockOn.value},
+]
 
 </script>
 
@@ -31,11 +32,14 @@ const updateSelected = (folderId: number | null) => {
         <SearchResultInfo v-if="searchInfo !== null" :current="searchInfo.current" :total="searchInfo.total" @prev="prev" @next="next"/>
         <Separator/>
         <LockOnButton v-model:value="editableLockOn"/>
+        <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">
+            <Button :ref="setEl" class="flex-item no-grow-shrink" square icon="ellipsis-v" @click="popup"/>
+        </ElementPopupMenu>
     </BrowserTeleport>
 
-    <PaneLayout scope-name="folder" :show-pane="paneState.opened.value">
+    <PaneLayout scope-name="folder" :show-pane="paneState.visible.value">
         <template #pane>
-            <BasePane @close="paneState.closeView()">
+            <BasePane @close="paneState.visible.value = false">
                 <FolderListPane/>
             </BasePane>
         </template>
@@ -43,8 +47,8 @@ const updateSelected = (folderId: number | null) => {
         <div :class="$style.root">
             <Block :class="$style['table-block']">
                 <FolderTable v-if="!loading && (data?.length || createPosition)" ref="folderTableRef" :folders="data" editable :droppable="editableLockOn" v-model:create-position="createPosition"
-                             :selected="paneState.detailPath.value ?? undefined"
-                             @update:selected="updateSelected" @update:pinned="setPinned"
+                             :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected"
+                             @select="updateSelect" @update:pinned="setPinned"
                              @create="createItem" @move="moveItem" @delete="deleteItem" @enter="openDetail"/>
                 <Button v-else-if="!loading" size="small" type="success" icon="plus" @click="openCreatePosition">创建第一个节点或目录</Button>
             </Block>
