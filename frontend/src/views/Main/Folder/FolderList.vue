@@ -14,7 +14,7 @@ const {
     listview: { loading, data },
     selector: { selected, selectedIndex, lastSelected, update: updateSelect },
     editableLockOn,
-    operators: { createPosition, openCreatePosition, createItem, setPinned, moveItem, deleteItem, openDetail },
+    operators: { editPosition, openCreatePosition, createItem, renameItem, setPinned, moveItem, deleteItem, openDetail },
     search: { searchText, searchInfo, folderTableRef, next, prev }
 } = installFolderContext()
 
@@ -46,10 +46,10 @@ const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
 
         <div :class="$style.root">
             <Block :class="$style['table-block']">
-                <FolderTable v-if="!loading && (data?.length || createPosition)" ref="folderTableRef" :folders="data" editable :droppable="editableLockOn" v-model:create-position="createPosition"
+                <FolderTable v-if="!loading && (data?.length || editPosition)" ref="folderTableRef" :folders="data" editable :droppable="editableLockOn" v-model:edit-position="editPosition"
                              :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected"
                              @select="updateSelect" @update:pinned="setPinned"
-                             @create="createItem" @move="moveItem" @delete="deleteItem" @enter="openDetail"/>
+                             @create="createItem" @rename="renameItem" @move="moveItem" @delete="deleteItem" @enter="openDetail"/>
                 <Button v-else-if="!loading" size="small" type="success" icon="plus" @click="openCreatePosition">创建第一个节点或目录</Button>
             </Block>
         </div>

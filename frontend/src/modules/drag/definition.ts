@@ -11,5 +11,5 @@ export interface TypeDefinition {
     illusts: DraggingIllust[]
     importImages: ImportRecord[]
     books: Book[]
-    folder: SimpleFolder
+    folders: SimpleFolder[]
 }

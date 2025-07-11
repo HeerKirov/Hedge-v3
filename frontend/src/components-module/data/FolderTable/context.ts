@@ -1,5 +1,6 @@
 import { ComponentPublicInstance, computed, nextTick, ref, Ref, toRaw, watch } from "vue"
-import { FolderCreateForm, FolderTreeNode } from "@/functions/http-client/api/folder"
+import { useLocalStorage } from "@/functions/app"
+import { FolderCreateForm, FolderTreeNode, FolderType, SimpleFolder } from "@/functions/http-client/api/folder"
 import { useMessageBox } from "@/modules/message-box"
 import { useDynamicPopupMenu } from "@/modules/popup-menu"
 import { useDraggable, useDroppable } from "@/modules/drag"
@@ -13,7 +14,7 @@ const SELECTED_MAX = 100
 
 interface FolderTreeContextOptions {
     data: Ref<FolderTreeNode[] | undefined>
-    createPosition: Ref<{parentId: number | null, ordinal: number} | undefined>
+    editPosition: Ref<EditPosition | undefined>
     selected: Ref<number[]>
     selectedIndex: Ref<(number | undefined)[]>
     lastSelected: Ref<number | null>
@@ -21,15 +22,19 @@ interface FolderTreeContextOptions {
     droppable: Ref<boolean | undefined>
     mode: Ref<"std" | "simple">
     emit: {
-        updateCreatePosition(position: {parentId: number | null, ordinal: number} | undefined): void
+        updateEditPosition(position: EditPosition | undefined): void
         select(selected: number[], lastSelected: number | null): void
         updatePinned(folder: FolderTreeNode, pin: boolean): void
         enter(folder: FolderTreeNode, at: "newTab" | "newWindow" | undefined): void
         create(form: FolderCreateForm): void
-        move(folder: FolderTreeNode, moveToParentId: number | null | undefined, moveToOrdinal: number): void
-        delete(folder: FolderTreeNode, parentId: number | null, ordinal: number): void
+        move(folderIds: number[], moveToParentId: number | null | undefined, moveToOrdinal: number | undefined): void
+        rename(folderId: number, newTitle: string): void
+        delete(folderIds: number[], parentId: number | null, ordinal: number): void
     }
 }
+
+export type EditPosition = {action: "create", parentId: number | null, ordinal: number, type?: FolderType}
+    | {action: "edit", parentId: number | null, id: number}
 
 export interface IndexedFolder {
     /**
@@ -54,6 +59,7 @@ interface SelectorOptions {
     data: Ref<FolderTreeNode[] | undefined>
     indexedData: Ref<Record<number, IndexedFolder>>
     expandedState: ReturnType<typeof useExpandedState>
+    editPosition: Ref<EditPosition | undefined>
     selected: Ref<number[]>
     selectedIndex: Ref<(number | undefined)[]>
     lastSelected: Ref<number | null>
@@ -72,20 +78,20 @@ export interface Selector {
 }
 
 export const [installFolderTreeContext, useFolderTreeContext] = installation(function (options: FolderTreeContextOptions) {
-    const { emit, editable, droppable, createPosition, selected, data, lastSelected, selectedIndex, mode } = options
+    const { emit, editable, droppable, editPosition, selected, data, lastSelected, selectedIndex, mode } = options
     const indexedData = useIndexedData(options.data)
 
     const expandedState = useExpandedState(indexedData.indexedData)
 
     const elementRefs = useElementRefs(expandedState)
 
-    const selector = useSelector({data, indexedData: indexedData.indexedData, expandedState, selected, lastSelected, selectedIndex, select: emit.select, navigate: () => {}  })
+    const selector = useSelector({data, indexedData: indexedData.indexedData, expandedState, editPosition, selected, lastSelected, selectedIndex, select: emit.select, navigate: () => {}  })
 
     const menu = useMenu(options, indexedData.indexedData, expandedState)
 
     useKeyboardEvents(selector, indexedData.indexedData, options.emit.enter)
 
-    return {expandedState, elementRefs, menu, indexedData, emit, editable, droppable, createPosition, selected, selector, mode}
+    return {expandedState, elementRefs, menu, indexedData, emit, editable, droppable, editPosition, selected, selector, mode}
 })
 
 function useIndexedData(requestedData: Ref<FolderTreeNode[] | undefined>) {
@@ -302,11 +308,21 @@ function useIndexedData(requestedData: Ref<FolderTreeNode[] | undefined>) {
 }
 
 function useExpandedState(indexedData: Ref<{[key: number]: IndexedFolder}>) {
-    const expandedState = ref<{[key: number]: boolean}>({})
+    const expandedState = useLocalStorage<{[key: number]: boolean}>("folder-table/expanded-state", {})
 
     const get = (key: number): boolean => expandedState.value[key] ?? true
 
     const set = (key: number, value: boolean) => expandedState.value[key] = value
+
+    const clear = (keys: number[]) => {
+        for(const key of keys) {
+            delete expandedState.value[key]
+            const node = indexedData.value[key]
+            if(node.folder.children?.length) {
+                clear(node.folder.children.map(i => i.id))
+            }
+        }
+    }
 
     const setAllForParent = (key: number, value: boolean) => {
         const deepSet = (folder: IndexedFolder, value: boolean) => {
@@ -338,7 +354,7 @@ function useExpandedState(indexedData: Ref<{[key: number]: IndexedFolder}>) {
         if(info) deepSet(info.folder, value)
     }
 
-    return {get, set, setAllForParent, setAllForChildren}
+    return {get, set, clear, setAllForParent, setAllForChildren}
 }
 
 function useElementRefs(expandedState: ReturnType<typeof useExpandedState>) {
@@ -404,36 +420,38 @@ function useMenu(options: FolderTreeContextOptions, indexedData: Ref<{[key: numb
         options.emit.updatePinned(folder, !folder.pinned)
     }
 
-    const createChild = (folder: FolderTreeNode) => {
+    const createChild = (folder: FolderTreeNode, type: FolderType) => {
         const indexedInfo = indexedData.value[folder.id]
         if(indexedInfo) {
-            options.emit.updateCreatePosition({parentId: folder.id, ordinal: folder.children?.length ?? 0})
+            options.emit.updateEditPosition({action: "create", parentId: folder.id, ordinal: folder.children?.length ?? 0, type})
+            if(options.selected.value !== null) options.emit.select([], null)
+            if(!expandedState.get(folder.id)) expandedState.set(folder.id, true)
+        }
+    }
+
+    const createAfter = (folder: FolderTreeNode, type: FolderType) => {
+        const indexedInfo = indexedData.value[folder.id]
+        if(indexedInfo) {
+            options.emit.updateEditPosition({action: "create", parentId: indexedInfo.parentId, ordinal: indexedInfo.ordinal + 1, type})
             if(options.selected.value !== null) options.emit.select([], null)
         }
     }
 
-    const createBefore = (folder: FolderTreeNode) => {
+    const renameItem = (folder: FolderTreeNode) => {
         const indexedInfo = indexedData.value[folder.id]
         if(indexedInfo) {
-            options.emit.updateCreatePosition({parentId: indexedInfo.parentId, ordinal: indexedInfo.ordinal})
-            if(options.selected.value !== null) options.emit.select([], null)
-        }
-    }
-
-    const createAfter = (folder: FolderTreeNode) => {
-        const indexedInfo = indexedData.value[folder.id]
-        if(indexedInfo) {
-            options.emit.updateCreatePosition({parentId: indexedInfo.parentId, ordinal: indexedInfo.ordinal + 1})
-            if(options.selected.value !== null) options.emit.select([], null)
+            options.emit.updateEditPosition({action: "edit", parentId: indexedInfo.parentId, id: folder.id})
         }
     }
 
     const deleteItem = async (folder: FolderTreeNode) => {
+        const items = options.selected.value.includes(folder.id) ? options.selected.value : [folder.id]
         const indexedInfo = indexedData.value[folder.id]
         if(indexedInfo) {
-            const hasChildren = !!indexedInfo.folder.children?.length
+            const hasChildren = !!indexedInfo.folder.children?.length || items.length > 1
             if(await message.showYesNoMessage("warn", "确定要删除此项吗？", hasChildren ? "此操作将级联删除从属的所有子节点，且不可撤回。" : "此操作不可撤回。")) {
-                options.emit.delete(folder, indexedInfo.parentId, indexedInfo.ordinal)
+                expandedState.clear(items)
+                options.emit.delete(items, indexedInfo.parentId, indexedInfo.ordinal)
             }
         }
     }
@@ -451,9 +469,15 @@ function useMenu(options: FolderTreeContextOptions, indexedData: Ref<{[key: numb
         ] as const),
         ...(options.editable.value ? [
             {type: "separator"},
-            ...(folder.type === "NODE" ? [{type: "normal", label: "在节点下新建", click: createChild}] as const : []),
-            {type: "normal", label: "在此节点之前新建", click: createBefore},
-            {type: "normal", label: "在此节点之后新建", click: createAfter},
+            ...(folder.type === "NODE" ? [
+                {type: "normal", label: "在节点下新建节点", click: () => createChild(folder, "NODE")},
+                {type: "normal", label: "在节点下新建目录", click: () => createChild(folder, "FOLDER")},
+                {type: "separator"},
+            ] as const : []),
+            {type: "normal", label: "新建节点", click: () => createAfter(folder, "NODE")},
+            {type: "normal", label: "新建目录", click: () => createAfter(folder, "FOLDER")},
+            {type: "separator"},
+            {type: "normal", label: "重命名", click: renameItem},
             {type: "separator"},
             {type: "normal", label: `删除此${folder.type === "FOLDER" ? "目录" : "节点"}`, click: deleteItem}
         ] as const : [])
@@ -531,7 +555,6 @@ function useSelector(options: SelectorOptions): Selector {
             const result = getArrowSelectItem(lastSelected.value, offset)
             if (result !== null) {
                 if(shift) {
-                    console.log("shift", result)
                     await shiftSelect(result)
                 }else{
                     onSelect([result], result)
@@ -578,13 +601,13 @@ function useSelector(options: SelectorOptions): Selector {
         while(true) {
             const next = getArrowSelectItem(startId, 1)
             if(next === null) {
-                selectList.push(endId)
+                if(!selectList.includes(endId)) selectList.push(endId)
                 break
             }
             selectList.push(next)
             startId = next
             if(next === endId) {
-                selectList.push(endId)
+                if(!selectList.includes(endId)) selectList.push(endId)
                 break
             }
         }
@@ -640,10 +663,14 @@ function useSelector(options: SelectorOptions): Selector {
 }
 
 export function useFolderDraggable(row: Ref<FolderTreeNode>) {
-    const { indexedData } = useFolderTreeContext()
-    return useDraggable("folder", () => {
-        const info = indexedData.indexedData.value[row.value.id]!
-        return {id: row.value.id, type: row.value.type, address: info.address.map(a => a.title)}
+    const { indexedData, selected } = useFolderTreeContext()
+    return useDraggable("folders", () => {
+        if(selected.value.includes(row.value.id)) {
+            return selected.value.map(id => indexedData.indexedData.value[id]!).map(i => ({id: i.folder.id, type: i.folder.type, address: i.address.map(a => a.title)}))
+        }else{
+            const info = indexedData.indexedData.value[row.value.id]!
+            return [{id: row.value.id, type: row.value.type, address: info.address.map(a => a.title)}]
+        }
     })
 }
 
@@ -668,43 +695,47 @@ export function useFolderDroppable(row: Ref<FolderTreeNode>, indent: Ref<number>
 
     /**
      * 将指定的节点移动到标定的插入位置。
-     * @param folderId 指定节点的folder id。
+     * @param folders 指定节点组。
      * @param insertParentId 插入目标节点的id。null表示插入到根列表。
      * @param insertOrdinal 插入目标节点后的排序顺位。null表示默认操作(追加到节点末尾，或者对于相同parent不执行移动)
      */
-    const move = (folderId: number, insertParentId: number | null, insertOrdinal: number | null) => {
-        const info = indexedData.indexedData.value[folderId]
-        if(!info) {
-            console.error(`Error occurred while moving folder ${folderId}: cannot find indexed info.`)
-            return
-        }
-        const target = getTarget(info.parentId, info.ordinal, insertParentId, insertOrdinal)
+    const move = (folders: SimpleFolder[], insertParentId: number | null, insertOrdinal: number | null) => {
+        if(folders.length > 1) {
+            emit.move(folders.map(i => i.id), insertParentId, insertOrdinal ?? undefined)
+        }else{
+            const info = indexedData.indexedData.value[folders[0].id]
+            if(!info) {
+                console.error(`Error occurred while moving folder ${folders[0].id}: cannot find indexed info.`)
+                return
+            }
+            const target = getTarget(info.parentId, info.ordinal, insertParentId, insertOrdinal)
 
-        if(target.parentId === info.parentId && target.ordinal === info.ordinal || folderId === target.parentId) {
-            //没有变化，或插入目标是其自身时，跳过操作
-            return
-        }
+            if(target.parentId === info.parentId && target.ordinal === info.ordinal || folders[0].id === target.parentId) {
+                //没有变化，或插入目标是其自身时，跳过操作
+                return
+            }
 
-        emit.move(info.folder, target.parentId === info.parentId ? undefined : target.parentId, target.ordinal)
+            emit.move([folders[0].id], target.parentId === info.parentId ? undefined : target.parentId, target.ordinal)
+        }
     }
 
-    const { dragover: topDragover, ...topDropEvents } = useDroppable("folder", folder => {
+    const { dragover: topDragover, ...topDropEvents } = useDroppable("folders", folders => {
         if(droppable.value) {
             const info = indexedData.indexedData.value[row.value.id]
             if(info) {
-                move(folder.id, info.parentId, info.ordinal)
+                move(folders, info.parentId, info.ordinal)
             }
         }
     })
 
-    const { dragover: bottomDragover, ...bottomDropEvents } = useDroppable("folder", folder => {
+    const { dragover: bottomDragover, ...bottomDropEvents } = useDroppable("folders", folders => {
         if(droppable.value) {
             if(row.value.type === "NODE" && expanded.value) {
-                move(folder.id, row.value.id, 0)
+                move(folders, row.value.id, 0)
             }else{
                 const info = indexedData.indexedData.value[row.value.id]
                 if(info) {
-                    move(folder.id, info.parentId, info.ordinal + 1)
+                    move(folders, info.parentId, info.ordinal + 1)
                 }
             }
         }

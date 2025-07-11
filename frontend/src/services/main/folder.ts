@@ -16,6 +16,7 @@ import { useNavigationItem } from "@/services/base/side-nav-records"
 import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
 import { useFolderTableSearch } from "@/services/common/folder"
 import { installation } from "@/utils/reactivity"
+import { EditPosition } from "@/components-module/data/FolderTable/context";
 
 export const [installFolderContext, useFolderContext] = installation(function () {
     const listview = useFolderListview()
@@ -121,22 +122,53 @@ function useOperators(data: Ref<FolderTreeNode[] | undefined>, selector: Selecte
 
     const fetchSetPin = usePostPathFetchHelper(client => client.folder.pin.set)
     const fetchUnsetPin = usePostFetchHelper(client => client.folder.pin.unset)
+    const fetchBatchUpdate = usePostFetchHelper({
+        request: client => client.folder.batchUpdate,
+        handleErrorInRequest(e) {
+            if(e.code === "ALREADY_EXISTS") {
+                message.showOkMessage("prompt", "该标题的节点或目录已存在。")
+            }else if(e.code === "NOT_EXIST") {
+                const [_, list] = e.info
+                message.showOkMessage("error", "选择的父节点不存在。", `父节点：${list}`)
+            }else if(e.code === "NOT_SUITABLE") {
+                const [_, id] = e.info
+                message.showOkMessage("error", "选择的父节点类型不适用。", `父节点：${id}`)
+            }else if(e.code === "RECURSIVE_PARENT") {
+                message.showOkMessage("prompt", "无法移动到此位置。", "无法将目录移动到其子目录下。")
+            }else{
+                return e
+            }
+        }
+    })
+    const fetchBatchDelete = usePostFetchHelper({
+        request: client => client.folder.batchDelete,
+        handleErrorInRequest(e) {
+            if(e.code === "NOT_EXIST") {
+                const [_, list] = e.info
+                message.showOkMessage("error", "选择的节点不存在。", `父节点：${list}`)
+            }else{
+                return e
+            }
+        }
+    })
 
-    const createPosition = ref<{parentId: number | null, ordinal: number}>()
+    const editPosition = ref<EditPosition>()
 
     const openCreatePosition = () => {
         if(data.value !== undefined) {
-            createPosition.value = {parentId: null, ordinal: data.value.length}
+            editPosition.value = {action: "create", parentId: null, ordinal: data.value.length}
         }
     }
 
     const openDetail = (folder: FolderTreeNode, at: "newTab" | "newWindow" | undefined) => {
-        if(at === "newWindow") {
-            browserTabs.newWindow({routeName: "FolderDetail", path: folder.id})
-        }else if(at === "newTab") {
-            browserTabs.newTab({routeName: "FolderDetail", path: folder.id})
-        }else{
-            router.routePush({routeName: "FolderDetail", path: folder.id})
+        if(folder.type === "FOLDER") {
+            if(at === "newWindow") {
+                browserTabs.newWindow({routeName: "FolderDetail", path: folder.id})
+            }else if(at === "newTab") {
+                browserTabs.newTab({routeName: "FolderDetail", path: folder.id})
+            }else{
+                router.routePush({routeName: "FolderDetail", path: folder.id})
+            }
         }
     }
 
@@ -151,20 +183,36 @@ function useOperators(data: Ref<FolderTreeNode[] | undefined>, selector: Selecte
     const createItem = async (form: FolderCreateForm) => {
         const res = await fetchCreate(form)
         if(res !== undefined) {
-            createPosition.value = undefined
+            editPosition.value = undefined
             selector.update([res.id], res.id)
         }
     }
 
-    const moveItem = async (folder: FolderTreeNode, targetParentId: number | null | undefined, targetOrdinal: number) => {
-        await helper.setData(folder.id, {parentId: targetParentId, ordinal: targetOrdinal})
+    const renameItem = async (folderId: number, title: string) => {
+        const res = await helper.setData(folderId, {title})
+        if(res !== undefined) {
+            editPosition.value = undefined
+            selector.update([folderId], folderId)
+        }
     }
 
-    const deleteItem = async (folder: FolderTreeNode) => {
-        await helper.deleteData(folder.id)
+    const moveItem = async (folders: number[], targetParentId: number | null | undefined, targetOrdinal: number | undefined) => {
+        if(folders.length > 1) {
+            await fetchBatchUpdate({target: folders, parentId: targetParentId, ordinal: targetOrdinal})
+        }else{
+            await helper.setData(folders[0], {parentId: targetParentId, ordinal: targetOrdinal})
+        }
     }
 
-    return {openCreatePosition, createItem, moveItem, deleteItem, setPinned, createPosition, openDetail}
+    const deleteItem = async (folders: number[]) => {
+        if(folders.length > 1) {
+            await fetchBatchDelete(folders)
+        }else{
+            await helper.deleteData(folders[0])
+        }
+    }
+
+    return {openCreatePosition, createItem, renameItem, moveItem, deleteItem, setPinned, editPosition, openDetail}
 }
 
 export function useFolderPane() {

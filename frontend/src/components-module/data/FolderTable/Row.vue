@@ -13,7 +13,7 @@ const props = defineProps<{
     indent: number
 }>()
 
-const { selected, selector, createPosition, expandedState, elementRefs, indexedData, menu, emit, mode } = useFolderTreeContext()
+const { selected, selector, editPosition, expandedState, elementRefs, indexedData, menu, emit, mode } = useFolderTreeContext()
 
 const expanded = computed({
     get: () => expandedState.get(props.row.id),
@@ -21,7 +21,7 @@ const expanded = computed({
 })
 
 const isJumpTarget = computed(() => elementRefs.jumpTarget.value === props.row.id)
-const isSelected = computed(() => createPosition.value === undefined && selected.value.includes(props.row.id))
+const isSelected = computed(() => editPosition.value === undefined && selected.value.includes(props.row.id))
 
 const { gapState, topDropEvents, bottomDropEvents } = useFolderDroppable(toRef(props, "row"), toRef(props, "indent"), expanded)
 
@@ -38,7 +38,7 @@ const click = (e: MouseEvent) => {
     }else{
         selector.select(props.row.id)
     }
-    if(createPosition.value !== undefined) emit.updateCreatePosition(undefined)
+    if(editPosition.value !== undefined) emit.updateEditPosition(undefined)
 }
 
 const dblclick = () => {
@@ -59,7 +59,7 @@ const contextmenu = () => {
 
 <template>
     <tr :class="{'selected': isSelected}" @click="click" @dblclick="dblclick" @contextmenu="contextmenu">
-        <td class="w-50 pl-1" :ref="el => elementRefs.setElement(row.id, el)" :draggable="true" v-bind="dragEvents">
+        <td class="w-50 pl-1 py-half" :ref="el => elementRefs.setElement(row.id, el)" :draggable="true" v-bind="dragEvents">
             <div :class="$style['top-drop-area']" :style="{'margin-left': `calc(${indent * 1.7}em + 1.5rem)`}" v-bind="topDropEvents"/>
             <div :class="$style['bottom-drop-area']" :style="{'margin-left': `calc(${indent * 1.7}em + 1.5rem)`}" v-bind="bottomDropEvents"/>
             <div v-if="gapState !== null" :class="$style.gap" :style="{'left': `${gapState.indent * 1.7}em`, 'top': gapState.position === 'top' ? '-2px' : undefined, 'bottom': gapState.position === 'bottom' ? '-2px' : undefined}"/>

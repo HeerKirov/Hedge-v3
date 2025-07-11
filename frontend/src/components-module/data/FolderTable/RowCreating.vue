@@ -6,11 +6,13 @@ import { ElementPopupMenu } from "@/components/interaction"
 import { useMessageBox } from "@/modules/message-box"
 import { MenuItem } from "@/modules/popup-menu"
 import { FolderType } from "@/functions/http-client/api/folder"
+import { computedMutable } from "@/utils/reactivity"
 import { useFolderTreeContext } from "./context"
 
 const props = defineProps<{
     parentId: number | null
     ordinal: number
+    type: FolderType | undefined
     indent: number
 }>()
 
@@ -25,7 +27,7 @@ const selectMenuItems = <MenuItem<undefined>[]>[
 
 const title = ref<string>("")
 
-const type = ref<FolderType>("FOLDER")
+const type = computedMutable<FolderType>(() => props.type ?? "FOLDER")
 
 const submit = () => {
     if(!title.value.trim()) {
@@ -35,18 +37,18 @@ const submit = () => {
     emit.create({title: title.value, type: type.value, parentId: props.parentId, ordinal: props.ordinal})
 }
 
-const cancel = () => emit.updateCreatePosition(undefined)
+const cancel = () => emit.updateEditPosition(undefined)
 
 </script>
 
 <template>
     <tr class="selected">
         <td :colspan="mode === 'std' ? 5 : 3">
-            <span :style="{'padding-left': `${indent * 1.7}em`}" :class="{'mr-m1': indent > 0}"/>
+            <span :style="{'padding-left': `${indent * 1.7}em`}" class="mr-mhalf"/>
             <ElementPopupMenu :items="selectMenuItems" position="bottom" align="left" v-slot="{ setEl, popup }">
-                <Button :ref="setEl" size="small" @click="popup" :icon="type === 'FOLDER' ? 'folder' : 'angle-right'">{{type === "FOLDER" ? "目录" : "节点"}}</Button>
+                <Button :ref="setEl" size="small" @click="popup" square :icon="type === 'FOLDER' ? 'folder' : 'angle-right'"/>
             </ElementPopupMenu>
-            <Input class="ml-1" size="small" :placeholder="`${type === 'FOLDER' ? '目录' : '节点'}标题`" v-model:value="title" @enter="submit"/>
+            <Input size="small" :placeholder="`${type === 'FOLDER' ? '目录' : '节点'}标题`" v-model:value="title" @enter="submit" auto-focus/>
             <Button class="ml-2" size="small" icon="check" @click="submit">保存</Button>
             <Button class="ml-1" size="small" icon="times" @click="cancel">取消</Button>
         </td>

@@ -11,6 +11,12 @@ const { data, exampleThumbnailFiles, setTitle, openDetail } = useFolderPane()
 
 <template>
     <template v-if="data !== null">
+        <p class="mb-1">
+            <template v-for="(a, i) in data.parentAddress" :key="i">
+                <span v-if="i > 0" class="mx-1">/</span>
+                <span class="selectable">{{a}}</span>
+            </template>
+        </p>
         <FormEditKit :value="data.title" :set-value="setTitle">
             <template #default="{ value }">
                 <span class="is-font-size-large">{{value}}</span>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, toRef } from "vue"
 import { FolderCreateForm, FolderTreeNode } from "@/functions/http-client/api/folder"
-import { installFolderTreeContext } from "./context"
+import { EditPosition, installFolderTreeContext } from "./context"
 import RowList from "./RowList.vue"
 
 const props = defineProps<{
@@ -12,7 +12,7 @@ const props = defineProps<{
     /**
      * 创建占位符。指定此属性时，在指定位置插入创建操作占位符。
      */
-    createPosition?: {parentId: number | null, ordinal: number}
+    editPosition?: EditPosition
     /**
      * 选择器：已选择项。
      */
@@ -43,17 +43,18 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: "select", selected: number[], lastSelected: number | null): void
-    (e: "update:createPosition", position: {parentId: number | null, ordinal: number} | undefined): void
+    (e: "update:editPosition", position: EditPosition | undefined): void
     (e: "update:pinned", folder: FolderTreeNode, pin: boolean): void
     (e: "enter", folder: FolderTreeNode, at: "newTab" | "newWindow" | undefined): void
     (e: "create", v: FolderCreateForm): void
-    (e: "move", folder: FolderTreeNode, moveToParentId: number | null | undefined, moveToOrdinal: number): void
-    (e: "delete", folder: FolderTreeNode, parentId: number | null, ordinal: number): void
+    (e: "rename", folderId: number, newTitle: string): void
+    (e: "move", folders: number[], moveToParentId: number | null | undefined, moveToOrdinal: number | undefined): void
+    (e: "delete", folders: number[], parentId: number | null, ordinal: number): void
 }>()
 
 const { elementRefs } = installFolderTreeContext({
     data: toRef(props, "folders"),
-    createPosition: toRef(props, "createPosition"),
+    editPosition: toRef(props, "editPosition"),
     selected: computed(() => props.selected ?? []),
     selectedIndex: computed(() => props.selectedIndex ?? []),
     lastSelected: computed(() => props.lastSelected ?? null),
@@ -62,10 +63,11 @@ const { elementRefs } = installFolderTreeContext({
     mode: computed(() => props.mode ?? "std"),
     emit: {
         select: (s, l) => emit("select", s, l),
-        updateCreatePosition: (position) => emit("update:createPosition", position),
+        updateEditPosition: (position) => emit("update:editPosition", position),
         updatePinned: (folder, pin) => emit("update:pinned", folder, pin),
         enter: (folder, newWindow) => emit("enter", folder, newWindow),
         create: (form) => emit("create", form),
+        rename: (f, t) => emit("rename", f, t),
         move: (tag, p, o) => emit("move", tag, p, o),
         delete: (tag, parentId, ordinal) => emit("delete", tag, parentId, ordinal),
     }
