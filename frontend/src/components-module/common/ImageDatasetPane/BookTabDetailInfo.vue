@@ -39,8 +39,8 @@ const { setTitle, setScore, setFavorite, setDescription, openMetaTagEditor } = u
             <template #default="{ value }">
                 <DescriptionDisplay :value="value"/>
             </template>
-            <template #edit="{ value, setValue }">
-                <DescriptionEditor :value="value" @update:value="setValue"/>
+            <template #edit="{ value, setValue, save }">
+                <DescriptionEditor :value="value" @update:value="setValue" enter-to-save @enter="save"/>
             </template>
         </FormEditKit>
         <TimeGroupDisplay class="mt-2" :update-time="data.updateTime" :create-time="data.createTime"/>

@@ -36,6 +36,10 @@ const props = defineProps<{
      */
     updateOnInput?: boolean
     /**
+     * 在textarea中，反转Enter的作用，使得Enter能够正常触发enter事件；取而代之的是Shift+Enter/Cmd+Enter，它们会造成原本的换行效果
+     */
+    flipEnter?: boolean
+    /**
      * 按下此快捷键时，聚焦到此文本框。
      */
     focusOnKeypress?: KeyPress
@@ -49,6 +53,7 @@ const emit = defineEmits<{
     (e: "update:value", value: string): void
     (e: "keypress", event: KeyEvent): void
     (e: "enter", event: KeyEvent): void
+    (e: "escape", event: KeyEvent): void
 }>()
 
 watch(() => props.value, () => { value.value = props.value ?? "" })
@@ -64,9 +69,10 @@ const onUpdate = (e: InputEvent) => {
 const keyDeclaration = useKeyDeclaration()
 //失焦事件
 const blurKeyDeclaration = createPrimitiveKeyEventValidator(props.blurOnKeypress)
+//反转Enter
+const flipEnterKeyDeclaration = props.flipEnter ? createPrimitiveKeyEventValidator(["Shift+Enter", "Meta+Enter"]) : null
 
-//对于Enter按键，有一个快捷事件作响应
-
+//对于Enter/Escape按键，有一个快捷事件作响应
 const onKeydown = (e: KeyboardEvent) => {
     if(!keyDeclaration.primitiveValidator(e)) {
         e.stopPropagation()
@@ -77,11 +83,26 @@ const onKeydown = (e: KeyboardEvent) => {
         emit("keypress", keyEvent)
         if(!e.defaultPrevented) {
             //在input中按下Enter时，会直接触发update:value事件，然后触发一个enter事件用于快速处理。
-            if(props.type !== "textarea" && USUAL_PRIMITIVE_KEY_VALIDATORS.Enter(e)) {
-                value.value = (e.target as HTMLInputElement).value
-                emit("update:value", value.value)
-                emit("enter", keyEvent)
+            //在input中按下Escape时，会触发一个escape事件用于快速处理
+            if(USUAL_PRIMITIVE_KEY_VALIDATORS.Enter(e)) {
+                if(props.type !== "textarea" || flipEnterKeyDeclaration !== null) {
+                    value.value = (e.target as HTMLInputElement).value
+                    emit("update:value", value.value)
+                    emit("enter", keyEvent)
+                    e.preventDefault()
+                }
+            }else if(USUAL_PRIMITIVE_KEY_VALIDATORS.Escape(e)) {
+                emit("escape", keyEvent)
                 e.preventDefault()
+            }else if(flipEnterKeyDeclaration?.(e)) {
+                e.preventDefault()
+                const el = e.target as HTMLInputElement
+
+                const start = el.selectionStart ?? 0
+                const end = el.selectionEnd ?? 0
+                el.value = el.value.substring(0, start) + "\n" + el.value.substring(end)
+                el.selectionStart = el.selectionEnd = start + "\n".length
+                el.dispatchEvent(new Event("input", { bubbles: true }))
             }else if(blurKeyDeclaration(e)) {
                 (e.target as HTMLInputElement).blur()
             }

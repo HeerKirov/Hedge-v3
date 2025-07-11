@@ -67,8 +67,8 @@ defineExpose({
                     <template #default="{ value }">
                         <DescriptionDisplay :value="value" :exported="!data.originDescription" new-skin/>
                     </template>
-                    <template #edit="{ value, setValue }">
-                        <DescriptionEditor :value="value" @update:value="setValue"/>
+                    <template #edit="{ value, setValue, save }">
+                        <DescriptionEditor :value="value" @update:value="setValue" enter-to-save @enter="save"/>
                     </template>
                 </FormEditKit>
                 <FileInfoDisplay v-if="scene !== 'CollectionDetail'" class="mt-2" :extension="data.extension" :file-size="data.size" :resolution-height="data.resolutionHeight" :resolution-width="data.resolutionWidth" :video-duration="data.videoDuration"/>

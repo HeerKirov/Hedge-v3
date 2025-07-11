@@ -65,8 +65,8 @@ const ordinalEllipsisMenuItems = <MenuItem<undefined>[]>[
         <template #default="{ value }">
             <DescriptionDisplay :value="value" placeholder="编辑描述…"/>
         </template>
-        <template #edit="{ value, setValue }">
-            <DescriptionEditor :value="value" @update:value="setValue"/>
+        <template #edit="{ value, setValue, save }">
+            <DescriptionEditor :value="value" @update:value="setValue" enter-to-save @enter="save"/>
         </template>
     </FormEditKit>
     <div class="mt-1">
