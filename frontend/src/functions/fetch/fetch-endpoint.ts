@@ -194,7 +194,9 @@ export function useFetchEndpoint<PATH, MODEL, FORM, GE extends BasicException, U
                 // 节流器也会在update操作完成后被调用，在那之后的短时间内也不允许更新操作。
                 const pathValue = path.value
                 updatingThrottleMod(async () => {
+                    if(path.value !== pathValue) return
                     const res = await method.get(pathValue)
+                    if(path.value !== pathValue) return
                     if(res.ok) {
                         data.value = res.data
                         options.afterRetrieve?.(pathValue, data.value, "EVENT")
