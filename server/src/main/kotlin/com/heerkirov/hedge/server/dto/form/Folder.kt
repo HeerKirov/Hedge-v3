@@ -14,8 +14,11 @@ data class FolderCreateForm(@NotBlank val title: String,
 
 data class FolderUpdateForm(@NotBlank val title: Opt<String>,
                             val parentId: Opt<Int?>,
-                            @Min(0) val ordinal: Opt<Int>
-)
+                            @Min(0) val ordinal: Opt<Int>)
+
+data class FolderBatchUpdateForm(val target: List<Int>,
+                                 val parentId: Opt<Int?>,
+                                 @Min(0) val ordinal: Opt<Int>)
 
 data class FolderImagesPartialUpdateForm(val action: BatchAction,
                                          /** 添加新的images/移动或删除images，指定其id */

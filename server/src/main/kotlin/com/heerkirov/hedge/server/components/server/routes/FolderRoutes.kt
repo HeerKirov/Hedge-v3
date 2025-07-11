@@ -5,10 +5,7 @@ import com.heerkirov.hedge.server.exceptions.ParamTypeError
 import com.heerkirov.hedge.server.dto.filter.FolderImagesFilter
 import com.heerkirov.hedge.server.dto.filter.FolderQueryFilter
 import com.heerkirov.hedge.server.dto.filter.FolderTreeFilter
-import com.heerkirov.hedge.server.dto.form.FolderCreateForm
-import com.heerkirov.hedge.server.dto.form.FolderImagesPartialUpdateForm
-import com.heerkirov.hedge.server.dto.form.FolderPinForm
-import com.heerkirov.hedge.server.dto.form.FolderUpdateForm
+import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.IdRes
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.functions.service.FolderService
@@ -26,6 +23,8 @@ class FolderRoutes(private val folderService: FolderService) : Routes {
             path("api/folders") {
                 get(::list)
                 post(::create)
+                post("batch-update", ::batchUpdate)
+                post("batch-delete", ::batchDelete)
                 get("tree", ::tree)
                 path("pin") {
                     get(::pinList)
@@ -73,6 +72,18 @@ class FolderRoutes(private val folderService: FolderService) : Routes {
         val id = ctx.pathParamAsClass<Int>("id").get()
         val form = ctx.bodyAsForm<FolderUpdateForm>()
         folderService.update(id, form)
+    }
+
+    private fun batchUpdate(ctx: Context) {
+        val form = ctx.bodyAsForm<FolderBatchUpdateForm>()
+        folderService.batchUpdate(form)
+    }
+
+    private fun batchDelete(ctx: Context) {
+        val target = try { ctx.bodyAsClass<List<Int>>() } catch (e: Exception) {
+            throw be(ParamTypeError("target", e.message ?: "cannot convert to List<Int>"))
+        }
+        folderService.batchDelete(target)
     }
 
     private fun delete(ctx: Context) {

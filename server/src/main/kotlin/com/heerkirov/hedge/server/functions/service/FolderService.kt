@@ -19,12 +19,12 @@ import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.FolderKit
 import com.heerkirov.hedge.server.functions.manager.FolderManager
 import com.heerkirov.hedge.server.functions.manager.IllustManager
-import com.heerkirov.hedge.server.model.Folder
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.applyIf
 import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import com.heerkirov.hedge.server.utils.business.toListResult
+import com.heerkirov.hedge.server.utils.duplicateCount
 import com.heerkirov.hedge.server.utils.ktorm.OrderTranslator
 import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
@@ -327,33 +327,154 @@ class FolderService(private val data: DataRepository,
     }
 
     /**
+     * @throws AlreadyExists ("Folder", "name", string) 此名称的folder已存在
+     * @throws ResourceNotExist ("target", number[]) folderId不存在
+     * @throws ResourceNotSuitable ("parentId", number) parentId适用，它不是NODE类型
+     * @throws RecursiveParentError parent存在闭环
+     */
+    fun batchUpdate(form: FolderBatchUpdateForm) {
+        data.db.transaction {
+            val target = data.db.sequenceOf(Folders).filter { it.id inList form.target }.toList().also { records ->
+                if(records.size < form.target.size) {
+                    throw be(ResourceNotExist("target", form.target.toSet() - records.map { it.id }.toSet()))
+                }
+            }
+
+            if(form.parentId.isPresent) {
+                val newParentId = form.parentId.value
+                val newParent = if(newParentId != null) data.db.sequenceOf(Folders).filter { it.id eq newParentId }.firstOrNull() ?: throw be(ResourceNotExist("parentId", newParentId)) else null
+                if(newParent != null) {
+                    //可用性检查
+                    if(newParent.type != FolderType.NODE) throw be(ResourceNotSuitable("parentId", newParentId))
+                    //闭环检查，从parentId开始上溯，只要发现target中的节点，则判定存在闭环
+                    //需要注意的是，闭环检查是从parentId的parent开始的，因此允许parentID本身存在于选择项之中
+                    if(newParent.parentId != null) {
+                        tailrec fun recursiveCheckParent(id: Int) {
+                            if(id in form.target) {
+                                //发现了重复的id，判定存在闭环
+                                throw be(RecursiveParentError())
+                            }
+                            val parent = data.db.from(Folders)
+                                .select(Folders.parentId)
+                                .where { Folders.id eq id }
+                                .limit(0, 1)
+                                .map { it[Folders.parentId] }
+                                .firstOrNull() //检查parent是否存在
+                            if(parent != null) recursiveCheckParent(parent)
+                        }
+
+                        recursiveCheckParent(newParent.parentId)
+                    }
+                }
+
+                //冗余项检查。target项中，为其他target项的子项的，或者就是parentId本身的，从列表中排除
+                val filteredTarget = target.filter {
+                    tailrec fun recursiveCheckParent(id: Int): Boolean {
+                        val parent = data.db.from(Folders)
+                            .select(Folders.parentId)
+                            .where { Folders.id eq id }
+                            .limit(0, 1)
+                            .map { row -> row[Folders.parentId] }
+                            .firstOrNull() //检查parent是否存在
+                        return if (parent == null) true
+                        else if(target.any { t -> t.id == parent }) false
+                        else recursiveCheckParent(parent)
+                    }
+
+                    if(it.id == newParentId) false else recursiveCheckParent(it.id)
+                }
+
+                //重名检查。过滤后的target项与现存于parent下的项不能有任何名称相同
+                val currentChildren = data.db.sequenceOf(Folders).filter { if(newParentId != null) { it.parentId eq newParentId }else{ it.parentId.isNull() } }.sortedBy { it.ordinal }.toList()
+                val existingItems = currentChildren.filter { it.id in filteredTarget.map { t -> t.id } }
+                val notExistingItems = filteredTarget.filter { it.id !in existingItems.map { e -> e.id } }
+                val duplicateCount = (notExistingItems + currentChildren).map { it.title }.duplicateCount().filterValues { it > 1 }
+                if(duplicateCount.isNotEmpty()) throw be(AlreadyExists("Folder", "title", duplicateCount.keys.first()))
+
+                //开始迁移项的位置
+                //第一步:将原本就在当前parent节点下的节点抽离出来,将其他子项的ordinal向前递推
+
+                if(existingItems.isNotEmpty()) {
+                    //对于每个要移除的项,将其后面的ordinal都减1
+                    for (item in existingItems) {
+                        data.db.update(Folders) {
+                            where { if(newParentId != null) { it.parentId eq newParentId }else{ it.parentId.isNull() } and (it.ordinal greater item.ordinal) }
+                            set(it.ordinal, it.ordinal - 1)
+                        }
+                    }
+                }
+
+                //第二步:将插入位置之后的子项向后推。计算在插入位置之前被移除的项的数量,这些项会导致插入位置前移
+                val insertOrdinal = if(form.ordinal.isPresent) form.ordinal.value - existingItems.count { it.ordinal < form.ordinal.value } else currentChildren.size - existingItems.size
+                data.db.update(Folders) {
+                    where { if(newParentId != null) { it.parentId eq newParentId }else{ it.parentId.isNull() } and (it.ordinal greaterEq insertOrdinal) }
+                    set(it.ordinal, it.ordinal + filteredTarget.size)
+                }
+
+                //第三步:将所有要插入的项按照target的顺序插入
+                val parentAddress = if(newParent != null) (newParent.parentAddress ?: emptyList()) + newParent.title else emptyList()
+                for ((index, item) in filteredTarget.withIndex()) {
+                    data.db.update(Folders) {
+                        where { it.id eq item.id }
+                        set(it.parentId, newParentId)
+                        set(it.ordinal, insertOrdinal + index)
+                        set(it.parentAddress, parentAddress)
+                    }
+                }
+
+                //第四步:处理所有原本不属于当前parent的节点的原位置
+
+                for (item in notExistingItems) {
+                    //对于每个要移除的项的原位置,将其后面的ordinal都减1
+                    data.db.update(Folders) {
+                        where { if(item.parentId != null) { it.parentId eq item.parentId }else{ it.parentId.isNull() } and (it.ordinal greater item.ordinal) }
+                        set(it.ordinal, it.ordinal - 1)
+                    }
+                }
+
+                //发送事件通知
+                bus.emit(filteredTarget.map { FolderUpdated(it.id, it.type) })
+            }else if(form.ordinal.isPresent) {
+                throw be(ParamNotRequired("ordinal"))
+            }
+        }
+    }
+
+    /**
+     * @throws ResourceNotExist ("target", number[]) folderId不存在
+     */
+    fun batchDelete(target: List<Int>) {
+        data.db.transaction {
+            //验证目标folder是否存在
+            val folders = data.db.sequenceOf(Folders).filter { it.id inList target }.toList()
+            if(folders.size < target.size) {
+                val exists = folders.map { it.id }.toSet()
+                throw be(ResourceNotExist("target", target.filter { it !in exists }))
+            }
+
+            //对每个folder，处理其后面邻近记录的ordinal，然后递归删除
+            for (folder in folders) {
+                data.db.update(Folders) {
+                    where { if(folder.parentId != null) { it.parentId eq folder.parentId }else{ it.parentId.isNull() } and (it.ordinal greater folder.ordinal) }
+                    set(it.ordinal, it.ordinal - 1)
+                }
+                folderManager.recursiveDelete(folder)
+            }
+        }
+    }
+
+    /**
      * @throws NotFound 请求对象不存在
      */
     fun delete(id: Int) {
-        fun recursiveDelete(folder: Folder) {
-            val imageIds = data.db.from(FolderImageRelations).select(FolderImageRelations.imageId).where { FolderImageRelations.folderId eq folder.id }.map { it[FolderImageRelations.imageId]!! }
-            data.db.delete(Folders) { it.id eq folder.id }
-            data.db.delete(FolderImageRelations) { it.folderId eq folder.id }
-
-            //删除folder时，也需要发送pinChanged事件
-            if(folder.pin != null) bus.emit(FolderPinChanged(folder.id, false, null))
-            bus.emit(FolderDeleted(folder.id, folder.type))
-            imageIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, folderUpdated = true)) }
-
-            val children = data.db.sequenceOf(Folders).filter { it.parentId eq folder.id }
-            for (child in children) {
-                recursiveDelete(child)
-            }
-        }
         data.db.transaction {
             val folder = data.db.sequenceOf(Folders).firstOrNull { it.id eq id } ?: throw be(NotFound())
-
             //删除folder时，处理后面邻近记录ordinal
             data.db.update(Folders) {
                 where { if(folder.parentId != null) { it.parentId eq folder.parentId }else{ it.parentId.isNull() } and (it.ordinal greater folder.ordinal) }
                 set(it.ordinal, it.ordinal - 1)
             }
-            recursiveDelete(folder)
+            folderManager.recursiveDelete(folder)
         }
     }
 

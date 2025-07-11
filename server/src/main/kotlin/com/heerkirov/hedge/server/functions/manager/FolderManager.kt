@@ -7,9 +7,12 @@ import com.heerkirov.hedge.server.dao.Folders
 import com.heerkirov.hedge.server.dao.Illusts
 import com.heerkirov.hedge.server.dao.SourceDatas
 import com.heerkirov.hedge.server.enums.IllustType
+import com.heerkirov.hedge.server.events.FolderDeleted
 import com.heerkirov.hedge.server.events.FolderImagesChanged
+import com.heerkirov.hedge.server.events.FolderPinChanged
 import com.heerkirov.hedge.server.events.IllustRelatedItemsUpdated
 import com.heerkirov.hedge.server.functions.kit.FolderKit
+import com.heerkirov.hedge.server.model.Folder
 import org.ktorm.dsl.*
 import org.ktorm.entity.filter
 import org.ktorm.entity.sequenceOf
@@ -137,6 +140,25 @@ class FolderManager(private val data: DataRepository, private val bus: EventBus,
                 bus.emit(FolderImagesChanged(folderId, imageIds, emptyList(), emptyList()))
             }
             bus.emit(IllustRelatedItemsUpdated(imageId, IllustType.IMAGE, folderUpdated = true))
+        }
+    }
+
+    /**
+     * 递归删除。
+     */
+    fun recursiveDelete(folder: Folder) {
+        val imageIds = data.db.from(FolderImageRelations).select(FolderImageRelations.imageId).where { FolderImageRelations.folderId eq folder.id }.map { it[FolderImageRelations.imageId]!! }
+        data.db.delete(Folders) { it.id eq folder.id }
+        data.db.delete(FolderImageRelations) { it.folderId eq folder.id }
+
+        //删除folder时，也需要发送pinChanged事件
+        if(folder.pin != null) bus.emit(FolderPinChanged(folder.id, false, null))
+        bus.emit(FolderDeleted(folder.id, folder.type))
+        imageIds.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, folderUpdated = true)) }
+
+        val children = data.db.sequenceOf(Folders).filter { it.parentId eq folder.id }
+        for (child in children) {
+            recursiveDelete(child)
         }
     }
 }
