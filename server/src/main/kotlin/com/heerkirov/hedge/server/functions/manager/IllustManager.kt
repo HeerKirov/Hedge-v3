@@ -907,7 +907,7 @@ class IllustManager(private val appdata: AppDataManager,
 
         if(!disableEvent) {
             val timeSot = anyOpt(form.partitionTime, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
-            val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
+            val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.tagmePatch, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
             for (record in records) {
                 val thisMetaTagSot = metaResponses[record.id]?.first?.let { it != Illust.Tagme.EMPTY } ?: false
                 val thisDetailUpdated = listUpdated || thisMetaTagSot || anyOpt(form.description, form.partitionTime)
@@ -921,6 +921,7 @@ class IllustManager(private val appdata: AppDataManager,
                         scoreSot = form.score.isPresent,
                         descriptionSot = form.description.isPresent,
                         favoriteSot = form.favorite.isPresent,
+                        tagmeSot = form.tagme.isPresent || form.tagmePatch.isPresent,
                         timeSot = timeSot))
                 }
             }
@@ -1086,6 +1087,7 @@ class IllustManager(private val appdata: AppDataManager,
                 descriptionSot = props.description,
                 scoreSot = props.score,
                 favoriteSot = props.favorite,
+                tagmeSot = props.tagme,
                 timeSot = props.orderTime || props.partitionTime
             ))
         }

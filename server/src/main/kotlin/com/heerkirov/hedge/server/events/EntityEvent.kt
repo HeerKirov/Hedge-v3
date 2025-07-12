@@ -37,6 +37,7 @@ data class IllustCreated(override val illustId: Int, override val illustType: Il
  * @param descriptionSot 描述变更。
  * @param scoreSot 评分变更。
  * @param favoriteSot 收藏状态变更。
+ * @param tagmeSot tagme状态变更。
  * @param timeSot partitionTime/orderTime变更。
  */
 data class IllustUpdated(override val illustId: Int, override val illustType: IllustType,
@@ -45,6 +46,7 @@ data class IllustUpdated(override val illustId: Int, override val illustType: Il
                          val descriptionSot: Boolean = false,
                          val scoreSot: Boolean = false,
                          val favoriteSot: Boolean = false,
+                         val tagmeSot: Boolean = false,
                          val timeSot: Boolean = false,
                          val metaTagSot: Boolean = false) : BaseBusEventImpl("entity/illust/updated"), IllustEntityEvent
 

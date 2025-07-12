@@ -12,10 +12,13 @@ import com.heerkirov.hedge.server.utils.migrations.*
 import org.ktorm.database.Database
 import org.ktorm.database.Transaction
 import org.ktorm.dsl.*
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.ZoneId
 
 object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
+    private val log = LoggerFactory.getLogger(DatabaseMigrationStrategy::class.java)
+
     override fun migrations(register: MigrationRegister<Database>) {
         register.useSQL("0.1.0")
         register.useSQLTemplate("0.1.3", ::generateTimestampOffset)
@@ -34,6 +37,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         register.useSQL("0.12.0", ::processAnnotationRemoving)
         register.useSQL("0.12.0.1")
         register.useSQL("0.12.4")
+        register.useFunc("0.13.0", ::processCollectionTagme)
     }
 
     /**
@@ -46,6 +50,19 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
             }else{
                 Resources.getResourceAsText("migrations/v$version.sql")
             }.let { StrTemplate.splitSQL(it) }.forEach { stat.execute(it) }
+        }
+    }
+
+    /**
+     * 向database应用仅一个处理函数。
+     */
+    private fun MigrationRegister<Database>.useFunc(version: String, addonFunc: (Database, Transaction) -> Unit): MigrationRegister<Database> {
+        return this.map(version) { db ->
+            db.apply {
+                transactionWithCtx {
+                    addonFunc(this, it)
+                }
+            }
         }
     }
 
@@ -260,5 +277,36 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
                 }
             }
         }
+    }
+
+    /**
+     * 由于调整了Collection的Tagme含义，需要统一跑一遍数据处理，使所有的Collection具有根据其子项计算的正确Tagme。
+     */
+    private fun processCollectionTagme(db: Database, t: Transaction) {
+        val limit = 1000
+        var offset = 0
+        while(true) {
+            val ids = db.from(Illusts).select(Illusts.id)
+                .where { Illusts.type eq IllustModelType.COLLECTION }
+                .limit(limit).offset(offset)
+                .map { it[Illusts.id]!! }
+            if(ids.isEmpty()) break
+            offset += ids.size
+            val groups = db.from(Illusts).select(Illusts.parentId, Illusts.tagme)
+                .where { Illusts.type eq IllustModelType.IMAGE_WITH_PARENT and (Illusts.parentId inList ids) }
+                .map { Pair(it[Illusts.parentId]!!, it[Illusts.tagme]!!) }
+                .groupBy({ it.first }) { it.second }
+                .mapValues { it.value.reduce { acc, tagme -> acc + tagme } }
+            db.batchUpdate(Illusts) {
+                for ((id, tagme) in groups) {
+                    item {
+                        where { it.id eq id }
+                        set(it.tagme, tagme)
+                    }
+                }
+            }
+            log.info("processCollectionTagme: $offset processed.")
+        }
+        log.info("processCollectionTagme: process completed.")
     }
 }

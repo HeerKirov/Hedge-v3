@@ -633,20 +633,22 @@ class IllustService(private val appdata: AppDataManager,
                 }
             }
 
-            if(anyOpt(newPartitionTime, form.orderTime, form.favorite)) {
+            if(anyOpt(newPartitionTime, form.orderTime, form.favorite, form.tagme)) {
                 //这些属性是代理属性，将直接更改其children
+                //FUTURE 这里使用的是form.tagme而非newTagme，因此编辑collection的metaTag造成的tagme变更暂且不同步到children，这要等到metaTag的语义也变更后
                 data.db.update(Illusts) {
                     where { it.parentId eq id }
                     form.favorite.applyOpt { set(it.favorite, this) }
+                    form.tagme.applyOpt { set(it.tagme, this) }
                     newPartitionTime.applyOpt { set(it.partitionTime, this) }
                     form.orderTime.applyOpt { set(it.orderTime, this.toEpochMilli()) }
                 }
 
-                val childrenListUpdated = anyOpt(form.orderTime, newPartitionTime, form.favorite)
+                val childrenListUpdated = anyOpt(form.orderTime, newPartitionTime, form.favorite, form.tagme)
                 if(childrenListUpdated) {
                     val children = data.db.from(Illusts).select(Illusts.id).where { Illusts.parentId eq id }.map { it[Illusts.id]!! }
                     //tips: 此处并没有设置timeSot/favoriteSot，尽管发生了变更。主要是考虑到设置sot会触发一次children->parent的重导出，比较浪费，而实际场景里此处没有刷新事件可能不太有影响
-                    bus.emit(children.map { IllustUpdated(it, IllustType.IMAGE, listUpdated = true, detailUpdated = true, timeSot = false, favoriteSot = false) })
+                    bus.emit(children.map { IllustUpdated(it, IllustType.IMAGE, listUpdated = true, detailUpdated = true, timeSot = false, favoriteSot = false, tagmeSot = false) })
                 }
             }
 
@@ -769,6 +771,7 @@ class IllustService(private val appdata: AppDataManager,
                     scoreSot = form.score.isPresent,
                     descriptionSot = form.description.isPresent,
                     favoriteSot = form.favorite.isPresent,
+                    tagmeSot = newTagme.isPresent,
                     timeSot = form.orderTime.isPresent || newPartitionTime.isPresent
                 ))
             }

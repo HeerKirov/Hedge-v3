@@ -102,7 +102,7 @@ class EventCompositorImpl(private val data: DataRepository,
                 //collection的相关属性变化时，重新导出其children的属性
                 exportImageMetadataOfCollection(events)
             }
-            all/*<IllustUpdated>*/({ e -> e.illustType == IllustType.IMAGE && (e.metaTagSot || e.scoreSot || e.timeSot || e.favoriteSot) }) { events ->
+            all/*<IllustUpdated>*/({ e -> e.illustType == IllustType.IMAGE && (e.metaTagSot || e.scoreSot || e.timeSot || e.favoriteSot || e.tagmeSot) }) { events ->
                 //image相关属性变化时，重新导出其parent的属性
                 exportCollectionMetadataOfImages(events)
             }
@@ -153,7 +153,7 @@ class EventCompositorImpl(private val data: DataRepository,
     }
 
     private fun exportCollectionMetadata(collectionId: Int) {
-        backendExporter.add(IllustMetadataExporterTask(collectionId, exportScore = true, exportMetaTag = true, exportFavorite = true, exportFirstCover = true))
+        backendExporter.add(IllustMetadataExporterTask(collectionId, exportScore = true, exportMetaTag = true, exportFavorite = true, exportTagme = true, exportFirstCover = true))
     }
 
     private fun exportImageMetadataOfCollection(events: Collection<IllustUpdated>) {
@@ -186,7 +186,8 @@ class EventCompositorImpl(private val data: DataRepository,
             val exportScore = related.any { it?.scoreSot ?: false }
             val exportFirstCover = related.any { it?.timeSot ?: false }
             val exportFavorite = related.any { it?.favoriteSot ?: false }
-            backendExporter.add(IllustMetadataExporterTask(parentId, exportScore = exportScore, exportMetaTag = exportMetaTag, exportFavorite = exportFavorite, exportFirstCover = exportFirstCover))
+            val exportTagme = related.any { it?.tagmeSot ?: false }
+            backendExporter.add(IllustMetadataExporterTask(parentId, exportScore = exportScore, exportMetaTag = exportMetaTag, exportFavorite = exportFavorite, exportTagme = exportTagme, exportFirstCover = exportFirstCover))
         }
     }
 
