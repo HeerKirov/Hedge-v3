@@ -797,8 +797,9 @@ class IllustManager(private val appdata: AppDataManager,
                 setOrderTimeByRange(orderTimeBegin.toInstant(), orderTimeEnd.toInstant(), excludeBeginAndEnd = true)
 
             }else if(form.timeInsertAt != null) {
-                //如果未指定end但指定了at，那么按at的值behind/after决定是插入到begin项目的之前还是之后
-                //端点是集合时的选取逻辑同上；所选项在指定方向上以1s为间隔排布
+                //如果未指定end但指定了at，那么按at的值before/after决定是插入到begin项目的之前还是之后
+                //端点是集合时的选取逻辑同上
+                //会检查端点的前/后距离最近的项的间隔，如果间隔太近会将其作为end插入这两者之间，否则在指定方向上以1s为间隔排布
                 val a = data.db.from(Illusts).select(Illusts.type, Illusts.orderTime)
                     .where { Illusts.id eq beginId }.firstOrNull()
                     ?.let { Pair(it[Illusts.type]!!, it[Illusts.orderTime]!!) }
@@ -807,8 +808,14 @@ class IllustManager(private val appdata: AppDataManager,
                 val orderTimeBegin: Long
                 val orderTimeEnd: Long
                 when (form.timeInsertAt) {
-                    "behind" -> {
-                        orderTimeBegin = a.second - (orderTimeSeq.size + 1) * 1000
+                    "before" -> {
+                        val prevItemOrderTime = data.db.from(Illusts).select(Illusts.orderTime)
+                            .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.orderTime less a.second) and (Illusts.orderTime greaterEq (a.second - (orderTimeSeq.size + 1) * 1000)) }
+                            .orderBy(Illusts.orderTime.desc(), Illusts.id.desc())
+                            .limit(1)
+                            .firstOrNull()
+                            ?.get(Illusts.orderTime)
+                        orderTimeBegin = prevItemOrderTime ?: (a.second - (orderTimeSeq.size + 1) * 1000)
                         orderTimeEnd = a.second
                     }
                     "after" -> {
@@ -818,7 +825,13 @@ class IllustManager(private val appdata: AppDataManager,
                                 .where { Illusts.parentId eq beginId }
                                 .firstOrNull()?.getLong("ord") ?: a.second
                         }
-                        orderTimeEnd = orderTimeBegin + (orderTimeSeq.size + 1) * 1000
+                        val nextItemOrderTime = data.db.from(Illusts).select(Illusts.orderTime)
+                            .where { ((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.orderTime greater orderTimeBegin) and (Illusts.orderTime lessEq (orderTimeBegin + (orderTimeSeq.size + 1) * 1000)) }
+                            .orderBy(Illusts.orderTime.asc(), Illusts.id.asc())
+                            .limit(1)
+                            .firstOrNull()
+                            ?.get(Illusts.orderTime)
+                        orderTimeEnd = nextItemOrderTime ?: (orderTimeBegin + (orderTimeSeq.size + 1) * 1000)
                     }
                     else -> throw be(ParamError("timeInsertAt"))
                 }
