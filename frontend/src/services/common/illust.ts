@@ -581,18 +581,18 @@ function useDataDrop<T extends CommonIllust>(dataDropOptions: ImageDatasetOperat
             const partitionTime = dataDropOptions.dropInType === "partition" ? unref(dataDropOptions.path) ?? undefined : undefined
             if(finalInsertIndex === 0) {
                 const afterItem = listview.proxy.sync.retrieve(finalInsertIndex)!
-                const timeInsertAt = getCurrentOrderDirection() === "asc" ? "behind" : "after"
-                await fetchIllustBatchUpdate({target, timeInsertBegin: afterItem.id, timeInsertAt, orderTimeExclude: true, partitionTime})
+                const timeInsertAt = getCurrentOrderDirection() === "asc" ? "before" : "after"
+                await fetchIllustBatchUpdate({target, timeInsertBegin: afterItem.id, timeInsertAt, partitionTime})
                 return true
             }else if(finalInsertIndex !== null && finalInsertIndex === listview.proxy.sync.count()) {
-                const behindItem = listview.proxy.sync.retrieve(finalInsertIndex - 1)!
-                const timeInsertAt = getCurrentOrderDirection() === "asc" ? "after" : "behind"
-                await fetchIllustBatchUpdate({target, timeInsertBegin: behindItem.id, timeInsertAt, orderTimeExclude: true, partitionTime})
+                const beforeItem = listview.proxy.sync.retrieve(finalInsertIndex - 1)!
+                const timeInsertAt = getCurrentOrderDirection() === "asc" ? "after" : "before"
+                await fetchIllustBatchUpdate({target, timeInsertBegin: beforeItem.id, timeInsertAt, partitionTime})
                 return true
             }else if(finalInsertIndex !== null) {
-                const behindItem = listview.proxy.sync.retrieve(finalInsertIndex - 1)!
+                const beforeItem = listview.proxy.sync.retrieve(finalInsertIndex - 1)!
                 const afterItem = listview.proxy.sync.retrieve(finalInsertIndex)!
-                await fetchIllustBatchUpdate({target, timeInsertBegin: behindItem.id, timeInsertEnd: afterItem.id, partitionTime})
+                await fetchIllustBatchUpdate({target, timeInsertBegin: beforeItem.id, timeInsertEnd: afterItem.id, partitionTime})
                 return true
             }
             return false

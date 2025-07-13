@@ -831,7 +831,7 @@ export interface IllustBatchUpdateForm {
     orderTimeList?: LocalDateTime[]
     timeInsertBegin?: number
     timeInsertEnd?: number
-    timeInsertAt?: "behind" | "after"
+    timeInsertAt?: "before" | "after"
     action?: BatchUpdateAction
     actionBy?: number
 }
