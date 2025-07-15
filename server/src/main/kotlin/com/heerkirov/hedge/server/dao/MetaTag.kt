@@ -2,35 +2,11 @@ package com.heerkirov.hedge.server.dao
 
 import com.heerkirov.hedge.server.enums.*
 import com.heerkirov.hedge.server.model.*
-import com.heerkirov.hedge.server.model.Annotation
-import com.heerkirov.hedge.server.utils.ktorm.type.composition
 import com.heerkirov.hedge.server.utils.ktorm.type.enum
 import com.heerkirov.hedge.server.utils.ktorm.type.json
 import com.heerkirov.hedge.server.utils.ktorm.type.unionList
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.schema.*
-
-@Deprecated("annotation is deprecated.")
-open class Annotations(alias: String? = null) : BaseTable<Annotation>("annotation", schema = "meta_db", alias = alias) {
-    companion object : Annotations(null)
-    override fun aliased(alias: String) = Annotations(alias)
-
-    val id = int("id").primaryKey()
-    val name = varchar("name")
-    val canBeExported = boolean("can_be_exported")
-    val type = enum("type", typeRef<MetaType>())
-    val target = composition<Annotation.AnnotationTarget>("target")
-    val createTime = timestamp("create_time")
-
-    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = Annotation(
-        id = row[id]!!,
-        name = row[name]!!,
-        canBeExported = row[canBeExported]!!,
-        type = row[type]!!,
-        target = row[target]!!,
-        createTime = row[createTime]!!
-    )
-}
 
 object Keywords : BaseTable<Keyword>("keyword", schema = "meta_db") {
     val id = int("id").primaryKey()
@@ -55,6 +31,7 @@ object Tags : MetaTagTable<Tag>("tag", schema = "meta_db") {
     val parentId = int("parent_id")
     override val name = varchar("name")
     override val otherNames = unionList("other_names")
+    override val implicitNames = unionList("implicit_names")
     val type = enum("type", typeRef<TagAddressType>())
     val isGroup = enum("is_group", typeRef<TagGroupType>())
     val description = varchar("description")
@@ -73,6 +50,7 @@ object Tags : MetaTagTable<Tag>("tag", schema = "meta_db") {
         parentId = row[parentId],
         name = row[name]!!,
         otherNames = row[otherNames]!!,
+        implicitNames = row[implicitNames]!!,
         type = row[type]!!,
         isGroup = row[isGroup]!!,
         description = row[description]!!,
@@ -93,6 +71,7 @@ open class Topics(alias: String?) : MetaTagTable<Topic>("topic", schema = "meta_
     override val id = int("id").primaryKey()
     override val name = varchar("name")
     override val otherNames = unionList("other_names")
+    override val implicitNames = unionList("implicit_names")
     val keywords = unionList("keywords")
     val parentId = int("parent_id")
     val parentRootId = int("parent_root_id")
@@ -101,7 +80,6 @@ open class Topics(alias: String?) : MetaTagTable<Topic>("topic", schema = "meta_
     val favorite = boolean("favorite")
     val description = varchar("description")
     override val cachedCount = int("cached_count")
-    val cachedAnnotations = json("cached_annotations", typeRef<List<Topic.CachedAnnotation>>())
     val createTime = timestamp("create_time")
     override val updateTime = timestamp("update_time")
 
@@ -109,6 +87,7 @@ open class Topics(alias: String?) : MetaTagTable<Topic>("topic", schema = "meta_
         id = row[id]!!,
         name = row[name]!!,
         otherNames = row[otherNames]!!,
+        implicitNames = row[implicitNames]!!,
         keywords = row[keywords]!!,
         parentId = row[parentId],
         parentRootId = row[parentRootId],
@@ -117,7 +96,6 @@ open class Topics(alias: String?) : MetaTagTable<Topic>("topic", schema = "meta_
         favorite = row[favorite]!!,
         description = row[description]!!,
         cachedCount = row[cachedCount]!!,
-        cachedAnnotations = row[cachedAnnotations],
         createTime = row[createTime]!!,
         updateTime = row[updateTime]!!
     )
@@ -127,13 +105,13 @@ object Authors : MetaTagTable<Author>("author", schema = "meta_db") {
     override val id = int("id").primaryKey()
     override val name = varchar("name")
     override val otherNames = unionList("other_names")
+    override val implicitNames = unionList("implicit_names")
     val keywords = unionList("keywords")
     val type = enum("type", typeRef<TagAuthorType>())
     val score = int("score")
     val favorite = boolean("favorite")
     val description = varchar("description")
     override val cachedCount = int("cached_count")
-    val cachedAnnotations = json("cached_annotations", typeRef<List<Author.CachedAnnotation>>())
     val createTime = timestamp("create_time")
     override val updateTime = timestamp("update_time")
 
@@ -141,62 +119,14 @@ object Authors : MetaTagTable<Author>("author", schema = "meta_db") {
         id = row[id]!!,
         name = row[name]!!,
         otherNames = row[otherNames]!!,
+        implicitNames = row[implicitNames]!!,
         keywords = row[keywords]!!,
         type = row[type]!!,
         score = row[score],
         favorite = row[favorite]!!,
         description = row[description]!!,
         cachedCount = row[cachedCount]!!,
-        cachedAnnotations = row[cachedAnnotations],
         createTime = row[createTime]!!,
         updateTime = row[updateTime]!!
-    )
-}
-
-@Deprecated("annotation is deprecated.")
-object TagAnnotationRelations : MetaAnnotationRelationTable<TagAnnotationRelation>("tag_annotation_relation", schema = "meta_db") {
-    val tagId = int("tag_id")
-    val annotationId = int("annotation_id")
-
-    override fun metaId(): Column<Int> = tagId
-    override fun annotationId(): Column<Int> = annotationId
-
-    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = TagAnnotationRelation(
-        tagId = row[tagId]!!,
-        annotationId = row[annotationId]!!
-    )
-}
-
-@Deprecated("annotation is deprecated.")
-open class TopicAnnotationRelations(alias: String?) : MetaAnnotationRelationTable<TopicAnnotationRelation>("topic_annotation_relation", schema = "meta_db", alias = alias) {
-    companion object : TopicAnnotationRelations(null)
-    override fun aliased(alias: String) = TopicAnnotationRelations(alias)
-
-    val topicId = int("topic_id")
-    val annotationId = int("annotation_id")
-
-    override fun metaId(): Column<Int> = topicId
-    override fun annotationId(): Column<Int> = annotationId
-
-    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = TopicAnnotationRelation(
-        topicId = row[topicId]!!,
-        annotationId = row[annotationId]!!
-    )
-}
-
-@Deprecated("annotation is deprecated.")
-open class AuthorAnnotationRelations(alias: String?) : MetaAnnotationRelationTable<AuthorAnnotationRelation>("author_annotation_relation", schema = "meta_db", alias = alias) {
-    companion object : AuthorAnnotationRelations(null)
-    override fun aliased(alias: String) = AuthorAnnotationRelations(alias)
-
-    val authorId = int("author_id")
-    val annotationId = int("annotation_id")
-
-    override fun metaId(): Column<Int> = authorId
-    override fun annotationId(): Column<Int> = annotationId
-
-    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = AuthorAnnotationRelation(
-        authorId = row[authorId]!!,
-        annotationId = row[annotationId]!!
     )
 }

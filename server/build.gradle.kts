@@ -19,6 +19,7 @@ dependencies {
     val thumbnailatorVersion = "0.4.20"
     val twelvemonkeysVersion = "3.12.0"
     val javeVersion = "3.5.0"
+    val pinyin4jVersion = "2.5.1"
     val logbackVersion = "1.5.12"
     val junitVersion = "5.11.3"
     val javePlatform = if(targetPlatform != null) {
@@ -62,6 +63,7 @@ dependencies {
     implementation(group = "com.twelvemonkeys.imageio", name = "imageio-jpeg", version = twelvemonkeysVersion)  //ImageIO扩展，增强jpeg格式处理，兼容各种错误情况
     implementation(group = "ws.schild", name = "jave-core", version = javeVersion)                              //视频处理库，用于缩略图生成
     implementation(group = "ws.schild", name = "jave-$javePlatform", version = javeVersion)                     //视频处理库的平台相关驱动包
+    implementation(group = "com.belerweb", name = "pinyin4j", version = pinyin4jVersion)                        //拼音转换库
     implementation(group = "ch.qos.logback", name = "logback-core", version = logbackVersion)                   //日志
     implementation(group = "ch.qos.logback", name = "logback-classic", version = logbackVersion)                //日志
     testImplementation(group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version = kotlinVersion)     //测试

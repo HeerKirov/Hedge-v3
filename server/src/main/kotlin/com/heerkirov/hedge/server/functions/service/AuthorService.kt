@@ -81,6 +81,7 @@ class AuthorService(private val appdata: AppDataManager,
         data.db.transaction {
             val name = kit.validateName(form.name)
             val otherNames = kit.validateOtherNames(form.otherNames)
+            val implicitNames = kit.generateImplicitNames(name, otherNames)
             val keywords = kit.validateKeywords(form.keywords)
 
             val createTime = Instant.now()
@@ -88,6 +89,7 @@ class AuthorService(private val appdata: AppDataManager,
             val id = data.db.insertAndGenerateKey(Authors) {
                 set(it.name, name)
                 set(it.otherNames, otherNames)
+                set(it.implicitNames, implicitNames)
                 set(it.keywords, keywords)
                 set(it.description, form.description)
                 set(it.type, form.type)
@@ -143,6 +145,8 @@ class AuthorService(private val appdata: AppDataManager,
             val newFavorite = form.favorite.isPresentThen { it != record.favorite }
             val newScore = form.score.isPresentThen { it != record.score }
 
+            val newImplicitName = if(newName.isPresent || newOtherNames.isPresent) { optOf(kit.generateImplicitNames(newName.unwrapOr { record.name }, newOtherNames.unwrapOr { record.otherNames })) }else{ undefined() }
+
             val sourceTagMappingSot = form.mappingSourceTags.letOpt { sourceMappingManager.update(MetaType.AUTHOR, id, it ?: emptyList()) }.unwrapOr { false }
 
             if(newKeywords.isPresent) keywordManager.updateByKeywords(MetaType.AUTHOR, newKeywords.value, record.keywords)
@@ -152,6 +156,7 @@ class AuthorService(private val appdata: AppDataManager,
                     where { it.id eq id }
                     newName.applyOpt { set(it.name, this) }
                     newOtherNames.applyOpt { set(it.otherNames, this) }
+                    newImplicitName.applyOpt { set(it.implicitNames, this) }
                     newKeywords.applyOpt { set(it.keywords, this) }
                     newType.applyOpt { set(it.type, this) }
                     newDescription.applyOpt { set(it.description, this) }

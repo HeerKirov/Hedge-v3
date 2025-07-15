@@ -21,6 +21,7 @@ module com.heerkirov.hedge.server {
     requires ch.qos.logback.classic;
     requires org.eclipse.jetty.server;
     requires org.eclipse.jetty.util;
+    requires pinyin4j;
 
     opens com.heerkirov.hedge.server.components.health;
     opens com.heerkirov.hedge.server.components.appdata;

@@ -13,7 +13,7 @@ data class TagRes(val id: Int, val ordinal: Int, val parentId: Int?,
 
 data class TagSimpleRes(val id: Int, val name: String, val color: String?, val isExported: Boolean)
 
-data class TagTreeNode(val id: Int, val name: String, val otherNames: List<String>,
+data class TagTreeNode(val id: Int, val name: String, val otherNames: List<String>, val implicitNames: List<String>,
                        val type: TagAddressType, val group: TagGroupType, val color: String?,
                        val children: List<TagTreeNode>?)
 
@@ -63,7 +63,7 @@ data class KeywordInfo(val tagType: MetaType, val keyword: String, val count: In
 
 fun newTagRes(tag: Tag) = TagRes(tag.id, tag.ordinal, tag.parentId, tag.name, tag.otherNames, tag.type, tag.isGroup, tag.color)
 
-fun newTagTreeNode(tag: Tag, children: List<TagTreeNode>?) = TagTreeNode(tag.id, tag.name, tag.otherNames, tag.type, tag.isGroup, tag.color, children)
+fun newTagTreeNode(tag: Tag, children: List<TagTreeNode>?) = TagTreeNode(tag.id, tag.name, tag.otherNames, tag.implicitNames, tag.type, tag.isGroup, tag.color, children)
 
 fun newTagDetailRes(tag: Tag, parents: List<TagDetailRes.Parent>,
                     links: List<TagDetailRes.Link>,

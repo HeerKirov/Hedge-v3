@@ -6,6 +6,7 @@ import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import com.heerkirov.hedge.server.utils.Resources
 import com.heerkirov.hedge.server.utils.StrTemplate
+import com.heerkirov.hedge.server.utils.Texture
 import com.heerkirov.hedge.server.utils.duplicateCount
 import com.heerkirov.hedge.server.utils.ktorm.type.StringUnionListType
 import com.heerkirov.hedge.server.utils.migrations.*
@@ -38,6 +39,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         register.useSQL("0.12.0.1")
         register.useSQL("0.12.4")
         register.useFunc("0.13.0", ::processCollectionTagme)
+        register.useSQL("0.13.0.1", ::generateImplicitNames)
     }
 
     /**
@@ -308,5 +310,40 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
             log.info("processCollectionTagme: $offset processed.")
         }
         log.info("processCollectionTagme: process completed.")
+    }
+
+    /**
+     * 由于新增了implicitNames字段，需要计算初始值。
+     */
+    private fun generateImplicitNames(db: Database, t: Transaction) {
+        fun <R, T : MetaTagTable<R>> process(dao: T) {
+            val limit = 1000
+            var offset = 0
+            while(true) {
+                val records = db.from(dao).select(dao.id, dao.name, dao.otherNames).limit(limit).offset(offset).map { Triple(it[dao.id]!!, it[dao.name]!!, it[dao.otherNames]!!) }
+                if(records.isEmpty()) break
+                offset += records.size
+                val result = records.map { (id, name, otherNames) ->
+                    val names = if(name in otherNames) otherNames else (otherNames + name)
+                    val filtered = names.filter { Texture.containChinese(it) }
+                    val result = (filtered.map { Texture.toPinyin(it) } + filtered.map { Texture.toPinyinInitials(it) }).filter { it !in names }.distinct()
+                    id to result
+                }.filter { it.second.isNotEmpty() }
+                if(result.isNotEmpty()) {
+                    db.batchUpdate(dao) {
+                        for((id, n) in result) {
+                            item {
+                                where { it.id eq id }
+                                set(it.implicitNames, n)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        process(Tags)
+        process(Topics)
+        process(Authors)
     }
 }

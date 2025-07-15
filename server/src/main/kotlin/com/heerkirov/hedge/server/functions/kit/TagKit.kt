@@ -10,6 +10,7 @@ import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.exceptions.ResourceNotSuitable
 import com.heerkirov.hedge.server.exceptions.be
 import com.heerkirov.hedge.server.model.Tag
+import com.heerkirov.hedge.server.utils.Texture
 import com.heerkirov.hedge.server.utils.business.checkTagName
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.inList
@@ -36,6 +37,15 @@ class TagKit(private val data: DataRepository) {
         return newOtherNames.let { if(it.isNullOrEmpty()) emptyList() else it.map(String::trim) }.apply {
             if(any { !checkTagName(it) }) throw be(ParamError("otherNames"))
         }
+    }
+
+    /**
+     * 根据name和otherNames生成新的隐式名称列表。
+     */
+    fun generateImplicitNames(name: String, otherNames: List<String>): List<String> {
+        val names = if(name in otherNames) otherNames else (otherNames + name)
+        val filtered = names.filter { Texture.containChinese(it) }
+        return (filtered.map { Texture.toPinyin(it) } + filtered.map { Texture.toPinyinInitials(it) }).filter { it !in names }.distinct()
     }
 
     /**

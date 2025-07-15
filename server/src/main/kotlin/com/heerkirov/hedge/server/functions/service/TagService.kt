@@ -48,7 +48,7 @@ class TagService(private val data: DataRepository,
                 if(filter.parent != null) { it += Tags.parentId eq filter.parent }
                 if(filter.type != null) { it += Tags.type eq filter.type }
                 if(filter.group != null) { it += if(filter.group) Tags.isGroup notEq TagGroupType.NO else Tags.isGroup eq TagGroupType.NO }
-                if(filter.search != null) { it += (Tags.name like "%${filter.search}%") or (Tags.otherNames like "%${filter.search}%") }
+                if(filter.search != null) { it += (Tags.name like "%${filter.search}%") or (Tags.otherNames like "%${filter.search}%") or (Tags.implicitNames like "%${filter.search}%") }
             }
             .orderBy(orderTranslator, filter.order, default = ascendingOrderItem("ordinal"))
             .limit(filter.offset, filter.limit)
@@ -130,11 +130,14 @@ class TagService(private val data: DataRepository,
                 }
             }
 
+            val implicitNames = kit.generateImplicitNames(name, otherNames)
+
             val createTime = Instant.now()
 
             val id = data.db.insertAndGenerateKey(Tags) {
                 set(it.name, name)
                 set(it.otherNames, otherNames)
+                set(it.implicitNames, implicitNames)
                 set(it.globalOrdinal, tagCountInGlobal)
                 set(it.ordinal, ordinal)
                 set(it.parentId, form.parentId)
@@ -208,6 +211,8 @@ class TagService(private val data: DataRepository,
             val newDescription = form.description.isPresentThen { it != record.description }
             val newType = form.type.isPresentThen { it != record.type }
             val newGroup = form.group.isPresentThen { it != record.isGroup }
+
+            val newImplicitName = if(newName.isPresent || newOtherNames.isPresent) { optOf(kit.generateImplicitNames(newName.unwrapOr { record.name }, newOtherNames.unwrapOr { record.otherNames })) }else{ undefined() }
 
             val (newParentId, newOrdinal) = if(form.parentId.isPresent && form.parentId.value != record.parentId) {
                 //parentId发生了变化
@@ -340,6 +345,7 @@ class TagService(private val data: DataRepository,
 
                     newName.applyOpt { set(it.name, this) }
                     newOtherNames.applyOpt { set(it.otherNames, this) }
+                    newImplicitName.applyOpt { set(it.implicitNames, this) }
                     newType.applyOpt { set(it.type, this) }
                     newDescription.applyOpt { set(it.description, this) }
                     newGroup.applyOpt { set(it.isGroup, this) }

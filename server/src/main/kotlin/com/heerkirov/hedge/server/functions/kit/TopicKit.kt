@@ -6,6 +6,7 @@ import com.heerkirov.hedge.server.dto.res.TopicChildrenNode
 import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.model.Topic
+import com.heerkirov.hedge.server.utils.Texture
 import com.heerkirov.hedge.server.utils.business.checkTagName
 import com.heerkirov.hedge.server.utils.runIf
 import com.heerkirov.hedge.server.utils.tuples.Tuple2
@@ -54,6 +55,15 @@ class TopicKit(private val data: DataRepository) {
         return newKeywords.let { if(it.isNullOrEmpty()) emptyList() else it.map(String::trim).filter(String::isNotEmpty).distinct() }.apply {
             if(any { !checkTagName(it) }) throw be(ParamError("keywords"))
         }
+    }
+
+    /**
+     * 根据name和otherNames生成新的隐式名称列表。
+     */
+    fun generateImplicitNames(name: String, otherNames: List<String>): List<String> {
+        val names = if(name in otherNames) otherNames else (otherNames + name)
+        val filtered = names.filter { Texture.containChinese(it) }
+        return (filtered.map { Texture.toPinyin(it) } + filtered.map { Texture.toPinyinInitials(it) }).filter { it !in names }.distinct()
     }
 
     /**

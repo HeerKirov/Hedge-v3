@@ -29,21 +29,7 @@ abstract class MetaTagTable<T : Any>(tableName: String, schema: String? = null, 
     abstract val id: Column<Int>
     abstract val name: Column<String>
     abstract val otherNames: Column<List<String>>
+    abstract val implicitNames: Column<List<String>>
     abstract val cachedCount: Column<Int>
     abstract val updateTime: Column<Instant>
-}
-
-/**
- * 标签和注解类型的关系表的抽象表。
- */
-@Deprecated("annotation is deprecated.")
-abstract class MetaAnnotationRelationTable<T : Any>(tableName: String, schema: String? = null, alias: String? = null) : BaseTable<T>(tableName = tableName, schema = schema, alias = alias) {
-    /**
-     * 关联的metaTag的id。
-     */
-    abstract fun metaId(): Column<Int>
-    /**
-     * 另一端关联的注解的id。
-     */
-    abstract fun annotationId(): Column<Int>
 }

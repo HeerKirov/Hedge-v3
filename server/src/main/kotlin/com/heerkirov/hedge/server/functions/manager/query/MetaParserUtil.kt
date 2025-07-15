@@ -1,6 +1,5 @@
 package com.heerkirov.hedge.server.functions.manager.query
 
-import com.heerkirov.hedge.server.dao.Annotations
 import com.heerkirov.hedge.server.dao.Keywords
 import com.heerkirov.hedge.server.dao.MetaTagTable
 import com.heerkirov.hedge.server.dao.SourceTags
@@ -25,19 +24,19 @@ internal object MetaParserUtil {
             metaTag.name eq metaString.value
         }else{
             val value = mapMatchToSqlLike(metaString.value)
-            (metaTag.name escapeLike value) or (metaTag.otherNames escapeLike "%|$value|%")
+            (metaTag.name escapeLike value) or (metaTag.otherNames escapeLike "%|$value|%") or (metaTag.implicitNames escapeLike "%|$value|%")
         }
     }
 
     /**
      * 将metaString的值编译为对sourceTag的等价或比较操作。
      */
-    fun compileNameString(metaAddress: MetaAddress, metaTag: SourceTags): BinaryExpression<Boolean> {
+    fun compileNameString(metaAddress: MetaAddress, sourceTag: SourceTags): BinaryExpression<Boolean> {
         val tag = if(metaAddress.last().precise) {
-            (metaTag.code eq metaAddress.last().value) or (metaTag.name eq metaAddress.last().value)
+            (sourceTag.code eq metaAddress.last().value) or (sourceTag.name eq metaAddress.last().value)
         }else{
             val value = mapMatchToSqlLike(metaAddress.last().value)
-            (metaTag.code escapeLike value) or (metaTag.name escapeLike value) or (metaTag.otherName escapeLike value)
+            (sourceTag.code escapeLike value) or (sourceTag.name escapeLike value) or (sourceTag.otherName escapeLike value)
         }
 
         val site = if(metaAddress.size < 2) null else if(metaAddress.first().precise) {
@@ -69,7 +68,7 @@ internal object MetaParserUtil {
             metaTag.name like '%' + mapMatchToSqlLike(metaString.value, escape = false) + '%'
         }else{
             val value = '%' + mapMatchToSqlLike(metaString.value) + '%'
-            (metaTag.name escapeLike value) or (metaTag.otherNames escapeLike value)
+            (metaTag.name escapeLike value) or (metaTag.otherNames escapeLike value) or (metaTag.implicitNames escapeLike value)
         }
     }
 

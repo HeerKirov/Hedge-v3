@@ -1,68 +1,8 @@
 package com.heerkirov.hedge.server.model
 
 import com.heerkirov.hedge.server.enums.*
-import com.heerkirov.hedge.server.utils.composition.Composition
 import java.time.Instant
 
-/**
- * 注解。
- * 注解系统相当于是“给标签的标签”，直接关联到tag、topic或author。
- * 不能直接关联到illust等，因为它不是标签。不过，标记为导出的注解会以导出的形式关联到illust，此时可以使用注解查询语法。
- * 非导出注解不会导出给images，因此只能用于标签查询。在image查询中也可用，但因为会严重拖慢性能而受到限制。
- */
-@Deprecated("annotation is deprecated.")
-data class Annotation(val id: Int,
-                      /**
-                       * 注解名称。
-                       */
-                      val name: String,
-                      /**
-                       * 可导出至image的注解。
-                       */
-                      val canBeExported: Boolean,
-                      /**
-                       * 此注解的分类。
-                       */
-                      val type: MetaType,
-                      /**
-                       * 此注解的详细适用范围。
-                       * 详细限定此注解只能适用于什么类型的标签。
-                       */
-                      val target: AnnotationTarget,
-                      /**
-                       * 此注解创建的时间。
-                       */
-                      val createTime: Instant) {
-
-    open class AnnotationTarget(value: Int) : Composition<AnnotationTarget>(AnnotationTarget::class, value) {
-        object TAG : AnnotationTarget(AnnotationTargetValues.TAG)
-        object ARTIST : AnnotationTarget(AnnotationTargetValues.ARTIST)
-        object GROUP : AnnotationTarget(AnnotationTargetValues.GROUP)
-        object SERIES : AnnotationTarget(AnnotationTargetValues.SERIES)
-        object COPYRIGHT : AnnotationTarget(AnnotationTargetValues.COPYRIGHT)
-        object IP : AnnotationTarget(AnnotationTargetValues.IP)
-        object CHARACTER : AnnotationTarget(AnnotationTargetValues.CHARACTER)
-        object EMPTY : AnnotationTarget(0b0)
-
-        companion object {
-            val baseElements by lazy { listOf(TAG, ARTIST, GROUP, SERIES, COPYRIGHT, IP, CHARACTER) }
-            val empty by lazy { EMPTY }
-            val tagElements by lazy { listOf(TAG) }
-            val authorElements by lazy { listOf(ARTIST, GROUP, SERIES) }
-            val topicElements by lazy { listOf(COPYRIGHT, IP, CHARACTER) }
-        }
-    }
-
-    private object AnnotationTargetValues {
-        const val TAG = 0b1
-        const val ARTIST = 0b10
-        const val GROUP = 0b100
-        const val SERIES = 0b1000
-        const val COPYRIGHT = 0b10000
-        const val IP = 0b100000
-        const val CHARACTER = 0b1000000
-    }
-}
 
 /**
  * 关键字缓存列表。
@@ -110,6 +50,10 @@ data class Tag(val id: Int,
                 */
                val otherNames: List<String>,
                /**
+                * 隐式名称。指通过名称派生出的隐藏名称，可用于搜索。
+                */
+               val implicitNames: List<String>,
+               /**
                 * 标签类型。
                 */
                val type: TagAddressType,
@@ -153,12 +97,6 @@ data class Tag(val id: Int,
                val updateTime: Instant)
 
 /**
- * 注解与tag的关联。
- */
-@Deprecated("annotation is deprecated.")
-data class TagAnnotationRelation(val tagId: Int, val annotationId: Int)
-
-/**
  * 作者标签。
  */
 data class Author(val id: Int,
@@ -170,6 +108,10 @@ data class Author(val id: Int,
                    * 其他名称。
                    */
                   val otherNames: List<String>,
+                  /**
+                   * 隐式名称。指通过名称派生出的隐藏名称，可用于搜索。
+                   */
+                  val implicitNames: List<String>,
                   /**
                    * 关键字。作用是一个更突出更简练的description。
                    */
@@ -195,28 +137,13 @@ data class Author(val id: Int,
                    */
                   val cachedCount: Int = 0,
                   /**
-                   * [cache field]冗余存储关联的注解。在author列表中会用到，防止N+1查询。
-                   */
-                  @Deprecated("annotation is deprecated.")
-                  val cachedAnnotations: List<CachedAnnotation>? = null,
-                  /**
                    * 此标签创建的时间。
                    */
                   val createTime: Instant,
                   /**
                    * 此标签关联的image项上次发生更新的时间。
                    */
-                  val updateTime: Instant) {
-
-    @Deprecated("annotation is deprecated.")
-    data class CachedAnnotation(val id: Int, val name: String)
-}
-
-/**
- * 注解与author的关联。
- */
-@Deprecated("annotation is deprecated.")
-data class AuthorAnnotationRelation(val authorId: Int, val annotationId: Int)
+                  val updateTime: Instant)
 
 /**
  * 主题标签。
@@ -230,6 +157,10 @@ data class Topic(val id: Int,
                   * 其他名称。
                   */
                  val otherNames: List<String>,
+                 /**
+                  * 隐式名称。指通过名称派生出的隐藏名称，可用于搜索。
+                  */
+                 val implicitNames: List<String>,
                  /**
                   * 关键字。作用是一个更突出更简练的description。
                   */
@@ -267,25 +198,10 @@ data class Topic(val id: Int,
                   */
                  val cachedCount: Int = 0,
                  /**
-                  * [cache field]冗余存储关联的注解。在author列表中会用到，防止N+1查询。
-                  */
-                 @Deprecated("annotation is deprecated.")
-                 val cachedAnnotations: List<CachedAnnotation>? = null,
-                 /**
                   * 此标签创建的时间。
                   */
                  val createTime: Instant,
                  /**
                   * 此标签关联的image项上次发生更新的时间。
                   */
-                 val updateTime: Instant) {
-
-    @Deprecated("annotation is deprecated.")
-    data class CachedAnnotation(val id: Int, val name: String)
-}
-
-/**
- * 注解与topic的关联。
- */
-@Deprecated("annotation is deprecated.")
-data class TopicAnnotationRelation(val topicId: Int, val annotationId: Int)
+                 val updateTime: Instant)
