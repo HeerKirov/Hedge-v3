@@ -24,8 +24,8 @@ CREATE TABLE meta_db.new_tag(
     update_time 	TIMESTAMP NOT NULL              -- 对标签的关联image项进行更新的时间
 );
 
-INSERT INTO meta_db.new_tag(id, global_ordinal, ordinal, name, other_names, implicit_names, type, is_group, description, color, links, examples, exported_score, cached_count, create_time, update_time)
-SELECT id, global_ordinal, ordinal, name, other_names, '', type, is_group, description, color, links, examples, exported_score, cached_count, create_time, update_time FROM meta_db.tag;
+INSERT INTO meta_db.new_tag(id, global_ordinal, ordinal, parent_id, name, other_names, implicit_names, type, is_group, description, color, links, examples, exported_score, cached_count, create_time, update_time)
+SELECT id, global_ordinal, ordinal, parent_id, name, other_names, '', type, is_group, description, color, links, examples, exported_score, cached_count, create_time, update_time FROM meta_db.tag;
 
 ALTER TABLE meta_db.tag RENAME TO old_tag;
 ALTER TABLE meta_db.new_tag RENAME TO tag;
