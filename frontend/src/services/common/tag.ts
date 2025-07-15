@@ -8,7 +8,7 @@ import { TagTree } from "@/components-module/data"
  * {searchInfo}可告知搜索结果(数量和当前位置)，{next}和{prev}则可调整导航位置。
  */
 export function useTagTreeSearch(data: Ref<TagTreeNode[] | undefined>) {
-    const searchText = ref("")
+    const searchText = ref<string>()
 
     const searchInfo = ref<{total: number, current: number} | null>(null)
 
@@ -51,17 +51,17 @@ export function useTagTreeSearch(data: Ref<TagTreeNode[] | undefined>) {
     }
 
     watch(searchText, searchText => {
-        const searchValue = searchText.trim().toLowerCase()
+        const searchValue = searchText?.trim()?.toLowerCase()
         if(searchValue) {
             const result: TagTreeNode[] = []
 
             function condition(node: TagTreeNode, text: string) {
-                return node.name.toLowerCase().includes(text) || node.otherNames.some(n => n.toLowerCase().includes(text))
+                return node.name.toLowerCase().includes(text) || node.otherNames.some(n => n.toLowerCase().includes(text)) || node.implicitNames.some(n => n.includes(text))
             }
 
             function searchInNodeList(nodes: TagTreeNode[]) {
                 for(const node of nodes) {
-                    if(condition(node, searchValue)) result.push(node)
+                    if(condition(node, searchValue!)) result.push(node)
                     if(node.children?.length) searchInNodeList(node.children)
                 }
             }

@@ -143,6 +143,7 @@ export interface TagTreeNode {
     id: number
     name: string
     otherNames: string[]
+    implicitNames: string[]
     type: TagAddressType
     group: TagGroupType
     color: UsefulColors | null
