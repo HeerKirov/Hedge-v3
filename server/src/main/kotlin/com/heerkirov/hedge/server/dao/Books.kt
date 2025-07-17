@@ -40,23 +40,6 @@ object BookImageRelations : BaseTable<BookImageRelation>("book_image_relation") 
     )
 }
 
-@Deprecated("annotation is deprecated.")
-open class BookAnnotationRelations(alias: String?) : EntityAnnotationRelationTable<BookAnnotationRelation>("book_annotation_relation", alias = alias) {
-    companion object : BookAnnotationRelations(null)
-    override fun aliased(alias: String) = BookAnnotationRelations(alias)
-
-    val bookId = int("book_id")
-    val annotationId = int("annotation_id")
-
-    override fun entityId(): Column<Int> = bookId
-    override fun annotationId(): Column<Int> = annotationId
-
-    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = BookAnnotationRelation(
-        bookId = row[bookId]!!,
-        annotationId = row[annotationId]!!
-    )
-}
-
 open class BookTagRelations(alias: String?) : EntityMetaRelationTable<BookTagRelation>("book_tag_relation", alias = alias) {
     companion object : BookTagRelations(null)
     override fun aliased(alias: String) = BookTagRelations(alias)

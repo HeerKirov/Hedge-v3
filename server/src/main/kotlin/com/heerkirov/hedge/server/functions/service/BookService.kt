@@ -205,7 +205,6 @@ class BookService(private val appdata: AppDataManager,
             data.db.delete(BookTagRelations) { it.bookId eq id }
             data.db.delete(BookTopicRelations) { it.bookId eq id }
             data.db.delete(BookAuthorRelations) { it.bookId eq id }
-            data.db.delete(BookAnnotationRelations) { it.bookId eq id }
             data.db.delete(BookImageRelations) { it.bookId eq id }
 
             bus.emit(BookDeleted(id))

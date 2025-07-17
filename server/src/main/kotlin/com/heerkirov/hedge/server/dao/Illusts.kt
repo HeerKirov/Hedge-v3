@@ -77,23 +77,6 @@ object AssociateRelations : BaseTable<AssociateRelation>("associate_relation") {
     )
 }
 
-@Deprecated("annotation is deprecated.")
-open class IllustAnnotationRelations(alias: String?) : EntityAnnotationRelationTable<IllustAnnotationRelation>("illust_annotation_relation", alias = alias) {
-    companion object : IllustAnnotationRelations(null)
-    override fun aliased(alias: String) = IllustAnnotationRelations(alias)
-
-    val illustId = int("illust_id")
-    val annotationId = int("annotation_id")
-
-    override fun entityId(): Column<Int> = illustId
-    override fun annotationId(): Column<Int> = annotationId
-
-    override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = IllustAnnotationRelation(
-        illustId = row[illustId]!!,
-        annotationId = row[annotationId]!!
-    )
-}
-
 open class IllustTagRelations(alias: String?) : EntityMetaRelationTable<IllustTagRelation>("illust_tag_relation", alias = alias) {
     companion object : IllustTagRelations(null)
     override fun aliased(alias: String) = IllustTagRelations(alias)

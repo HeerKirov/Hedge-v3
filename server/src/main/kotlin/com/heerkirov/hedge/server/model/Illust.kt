@@ -148,12 +148,6 @@ data class Illust(val id: Int,
 data class AssociateRelation(val illustId: Int, val relatedIllustId: Int)
 
 /**
- * 可导出的注解与illust的关联。
- */
-@Deprecated("annotation is deprecated.")
-data class IllustAnnotationRelation(val illustId: Int, val annotationId: Int)
-
-/**
  * illust和author的关联关系。
  */
 data class IllustAuthorRelation(val illustId: Int, val authorId: Int, /** 由规则导出而非用户编写的标签。 */val isExported: Boolean)

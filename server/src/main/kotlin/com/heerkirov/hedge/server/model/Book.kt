@@ -53,12 +53,6 @@ data class BookImageRelation(val bookId: Int,
                              val ordinal: Int)
 
 /**
- * 可导出的注解与book的关联。
- */
-@Deprecated("annotation is deprecated.")
-data class BookAnnotationRelation(val bookId: Int, val annotationId: Int)
-
-/**
  * book和author的关联关系。
  */
 data class BookAuthorRelation(val bookId: Int, val authorId: Int,/** 由规则导出而非用户编写的标签。 */val isExported: Boolean)

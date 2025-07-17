@@ -5,15 +5,6 @@ import org.ktorm.schema.Column
 import java.time.Instant
 
 /**
- * 实体和注解类型的关系表的抽象表。
- */
-@Deprecated("annotation is deprecated.")
-abstract class EntityAnnotationRelationTable<T : Any>(tableName: String, schema: String? = null, alias: String? = null) : BaseTable<T>(tableName = tableName, schema = schema, alias = alias) {
-    abstract fun entityId(): Column<Int>
-    abstract fun annotationId(): Column<Int>
-}
-
-/**
  * 实体和标签关系表的抽象表。
  */
 abstract class EntityMetaRelationTable<T : Any>(tableName: String, schema: String? = null, alias: String? = null) : BaseTable<T>(tableName = tableName, schema = schema, alias = alias) {
