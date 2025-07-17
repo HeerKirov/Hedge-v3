@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.dao
 
+import com.heerkirov.hedge.server.enums.ExportType
 import org.ktorm.schema.BaseTable
 import org.ktorm.schema.Column
 import java.time.Instant
@@ -10,7 +11,7 @@ import java.time.Instant
 abstract class EntityMetaRelationTable<T : Any>(tableName: String, schema: String? = null, alias: String? = null) : BaseTable<T>(tableName = tableName, schema = schema, alias = alias) {
     abstract fun entityId(): Column<Int>
     abstract fun metaId(): Column<Int>
-    abstract fun exported(): Column<Boolean>
+    abstract fun exported(): Column<ExportType>
 }
 
 /**

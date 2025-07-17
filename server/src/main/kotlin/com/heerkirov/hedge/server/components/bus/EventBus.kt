@@ -55,6 +55,7 @@ class EventBusImpl : EventBus {
     private val eventHoarder = EventHoarder<String>(::sendToConsumer)
 
     override fun emit(e: BaseBusEvent) {
+        println("emit: $e")
         val timestamp = Instant.now().toEpochMilli()
 
         val packagedEvent = ItemBusEvent(e, timestamp)
@@ -74,6 +75,7 @@ class EventBusImpl : EventBus {
             val timestamp = Instant.now().toEpochMilli()
 
             for (baseBusEvent in e) {
+                println("emit: $baseBusEvent")
                 val packagedEvent = ItemBusEvent(baseBusEvent, timestamp)
                 eventHoarder.collect(baseBusEvent.eventType, packagedEvent)
 
@@ -125,7 +127,6 @@ class EventBusImpl : EventBus {
     override fun <T : BaseBusEvent> on(clazz: KClass<T>, consumer: (PackagedBusEvent) -> Unit) {
         val set = classMap.computeIfAbsent(clazz) { mutableSetOf() }
         synchronized(set) {
-            @Suppress("UNCHECKED_CAST")
             set.add(consumer)
         }
     }

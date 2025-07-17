@@ -1,10 +1,7 @@
 package com.heerkirov.hedge.server.model
 
 import com.heerkirov.hedge.server.dto.res.SourceDataPath
-import com.heerkirov.hedge.server.enums.FileStatus
-import com.heerkirov.hedge.server.enums.FingerprintStatus
-import com.heerkirov.hedge.server.enums.IllustModelType
-import com.heerkirov.hedge.server.enums.ImportStatus
+import com.heerkirov.hedge.server.enums.*
 import com.heerkirov.hedge.server.utils.composition.Composition
 import java.time.Instant
 import java.time.LocalDate
@@ -150,17 +147,17 @@ data class AssociateRelation(val illustId: Int, val relatedIllustId: Int)
 /**
  * illust和author的关联关系。
  */
-data class IllustAuthorRelation(val illustId: Int, val authorId: Int, /** 由规则导出而非用户编写的标签。 */val isExported: Boolean)
+data class IllustAuthorRelation(val illustId: Int, val authorId: Int, /** 由规则导出而非用户编写的标签。 */val isExported: ExportType)
 
 /**
  * illust和tag的关联关系。
  */
-data class IllustTagRelation(val illustId: Int, val tagId: Int, /** 由规则导出而非用户编写的标签。 */val isExported: Boolean)
+data class IllustTagRelation(val illustId: Int, val tagId: Int, /** 由规则导出而非用户编写的标签。 */val isExported: ExportType)
 
 /**
  * illust和topic的关联关系。
  */
-data class IllustTopicRelation(val illustId: Int, val topicId: Int, /** 由规则导出而非用户编写的标签。 */val isExported: Boolean)
+data class IllustTopicRelation(val illustId: Int, val topicId: Int, /** 由规则导出而非用户编写的标签。 */val isExported: ExportType)
 
 /**
  * 导入记录。

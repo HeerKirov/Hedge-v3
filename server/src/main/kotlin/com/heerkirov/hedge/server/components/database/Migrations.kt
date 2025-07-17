@@ -40,6 +40,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         register.useSQL("0.12.4")
         register.useFunc("0.13.0", ::processCollectionTagme)
         register.useSQL("0.13.0.1", ::generateImplicitNames)
+        register.useSQL("0.13.0.2")
     }
 
     /**

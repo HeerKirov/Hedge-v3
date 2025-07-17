@@ -6,6 +6,7 @@ import com.heerkirov.hedge.server.components.backend.TaskCounterModule
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.res.*
+import com.heerkirov.hedge.server.enums.ExportType
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.ImportStatus
 import com.heerkirov.hedge.server.exceptions.ParamError
@@ -66,7 +67,7 @@ class HomepageService(private val appdata: AppDataManager,
                     .map {
                         val topicType = it[Topics.type]!!
                         val color = appdata.setting.meta.topicColors[topicType]
-                        TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, false, color)
+                        TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, ExportType.NO, color)
                     }
                     .associateBy { it.id }
                     .mapValues { (id, topic) ->
@@ -86,7 +87,7 @@ class HomepageService(private val appdata: AppDataManager,
                     .map {
                         val authorType = it[Authors.type]!!
                         val color = appdata.setting.meta.authorColors[authorType]
-                        AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, false, color)
+                        AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, ExportType.NO, color)
                     }
                     .associateBy { it.id }
                     .mapValues { (id, author) ->

@@ -8,10 +8,7 @@ import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.filter.*
 import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.*
-import com.heerkirov.hedge.server.enums.IllustModelType
-import com.heerkirov.hedge.server.enums.IllustType
-import com.heerkirov.hedge.server.enums.SourceEditStatus
-import com.heerkirov.hedge.server.enums.TagAddressType
+import com.heerkirov.hedge.server.enums.*
 import com.heerkirov.hedge.server.events.IllustImagesChanged
 import com.heerkirov.hedge.server.events.IllustRelatedItemsUpdated
 import com.heerkirov.hedge.server.events.IllustUpdated
@@ -157,35 +154,35 @@ class IllustService(private val appdata: AppDataManager,
 
         val topics = data.db.from(Topics)
             .innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id)
-            .select(Topics.id, Topics.name, Topics.type, (sum(iif(IllustTopicRelations.isExported, 0, 1)) lessEq 0).aliased("isExported"))
+            .select(Topics.id, Topics.name, Topics.type, (sum(iif(IllustTopicRelations.isExported notEq ExportType.NO, 0, 1)) lessEq 0).aliased("isExported"))
             .where { IllustTopicRelations.illustId inList illustIds }
             .groupBy(Topics.id)
             .orderBy(Topics.type.asc(), Topics.id.asc())
             .map {
                 val topicType = it[Topics.type]!!
                 val color = topicColors[topicType]
-                TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, it.getBoolean("isExported"), color)
+                TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, if(it.getBoolean("isExported")) ExportType.YES else ExportType.NO, color)
             }
 
         val authors = data.db.from(Authors)
             .innerJoin(IllustAuthorRelations, IllustAuthorRelations.authorId eq Authors.id)
-            .select(Authors.id, Authors.name, Authors.type, (sum(iif(IllustAuthorRelations.isExported, 0, 1)) lessEq 0).aliased("isExported"))
+            .select(Authors.id, Authors.name, Authors.type, (sum(iif(IllustAuthorRelations.isExported notEq ExportType.NO, 0, 1)) lessEq 0).aliased("isExported"))
             .where { IllustAuthorRelations.illustId inList illustIds }
             .groupBy(Authors.id)
             .orderBy(Authors.type.asc(), Authors.id.asc())
             .map {
                 val authorType = it[Authors.type]!!
                 val color = authorColors[authorType]
-                AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, it.getBoolean("isExported"), color)
+                AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, if(it.getBoolean("isExported")) ExportType.YES else ExportType.NO, color)
             }
 
         val tags = data.db.from(Tags)
             .innerJoin(IllustTagRelations, IllustTagRelations.tagId eq Tags.id)
-            .select(Tags.id, Tags.name, Tags.color, (sum(iif(IllustTagRelations.isExported, 0, 1)) lessEq 0).aliased("isExported"))
+            .select(Tags.id, Tags.name, Tags.color, (sum(iif(IllustTagRelations.isExported notEq ExportType.NO, 0, 1)) lessEq 0).aliased("isExported"))
             .where { (IllustTagRelations.illustId inList illustIds) and (Tags.type eq TagAddressType.TAG) }
             .groupBy(Tags.id)
             .orderBy(Tags.globalOrdinal.asc())
-            .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], it.getBoolean("isExported")) }
+            .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], if(it.getBoolean("isExported")) ExportType.YES else ExportType.NO) }
 
         val description = allRows.map { (_, d, _) -> d }.mostCount()
         val tagme = allRows.map { (_, _, t) -> t }.reduce { a, b -> a + b }

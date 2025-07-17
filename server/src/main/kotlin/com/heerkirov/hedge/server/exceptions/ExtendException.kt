@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.exceptions
 
+import com.heerkirov.hedge.server.enums.ExportType
 import com.heerkirov.hedge.server.utils.tuples.Tuple3
 import com.heerkirov.hedge.server.utils.tuples.t3
 
@@ -88,7 +89,7 @@ class ConflictingGroupMembersError(conflictingMembers: List<ConflictingMembers>)
     conflictingMembers) {
 
     data class ConflictingMembers(val group: Member, val force: Boolean, val members: List<Member>)
-    data class Member(val id: Int, val name: String, val color: String?, val isExported: Boolean)
+    data class Member(val id: Int, val name: String, val color: String?, val isExported: ExportType)
 }
 
 /**

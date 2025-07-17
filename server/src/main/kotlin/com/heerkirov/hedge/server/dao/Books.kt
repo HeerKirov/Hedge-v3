@@ -1,6 +1,8 @@
 package com.heerkirov.hedge.server.dao
 
+import com.heerkirov.hedge.server.enums.ExportType
 import com.heerkirov.hedge.server.model.*
+import com.heerkirov.hedge.server.utils.ktorm.type.enum
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.schema.*
 
@@ -46,11 +48,11 @@ open class BookTagRelations(alias: String?) : EntityMetaRelationTable<BookTagRel
 
     val bookId = int("book_id")
     val tagId = int("tag_id")
-    val isExported = boolean("is_exported")
+    val isExported = enum("is_exported", typeRef<ExportType>())
 
     override fun entityId(): Column<Int> = bookId
     override fun metaId(): Column<Int> = tagId
-    override fun exported(): Column<Boolean> = isExported
+    override fun exported(): Column<ExportType> = isExported
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = BookTagRelation(
         bookId = row[bookId]!!,
@@ -65,11 +67,11 @@ open class BookTopicRelations(alias: String?) : EntityMetaRelationTable<BookTopi
 
     val bookId = int("book_id")
     val topicId = int("topic_id")
-    val isExported = boolean("is_exported")
+    val isExported = enum("is_exported", typeRef<ExportType>())
 
     override fun entityId(): Column<Int> = bookId
     override fun metaId(): Column<Int> = topicId
-    override fun exported(): Column<Boolean> = isExported
+    override fun exported(): Column<ExportType> = isExported
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = BookTopicRelation(
         bookId = row[bookId]!!,
@@ -84,11 +86,11 @@ open class BookAuthorRelations(alias: String?) : EntityMetaRelationTable<BookAut
 
     val bookId = int("book_id")
     val authorId = int("author_id")
-    val isExported = boolean("is_exported")
+    val isExported = enum("is_exported", typeRef<ExportType>())
 
     override fun entityId(): Column<Int> = bookId
     override fun metaId(): Column<Int> = authorId
-    override fun exported(): Column<Boolean> = isExported
+    override fun exported(): Column<ExportType> = isExported
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = BookAuthorRelation(
         bookId = row[bookId]!!,

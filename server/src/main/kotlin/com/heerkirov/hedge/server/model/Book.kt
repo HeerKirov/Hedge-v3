@@ -1,5 +1,6 @@
 package com.heerkirov.hedge.server.model
 
+import com.heerkirov.hedge.server.enums.ExportType
 import java.time.Instant
 
 /**
@@ -55,14 +56,14 @@ data class BookImageRelation(val bookId: Int,
 /**
  * book和author的关联关系。
  */
-data class BookAuthorRelation(val bookId: Int, val authorId: Int,/** 由规则导出而非用户编写的标签。 */val isExported: Boolean)
+data class BookAuthorRelation(val bookId: Int, val authorId: Int,/** 由规则导出而非用户编写的标签。 */val isExported: ExportType)
 
 /**
  * book和tag的关联关系。
  */
-data class BookTagRelation(val bookId: Int, val tagId: Int,/** 由规则导出而非用户编写的标签。 */val isExported: Boolean)
+data class BookTagRelation(val bookId: Int, val tagId: Int,/** 由规则导出而非用户编写的标签。 */val isExported: ExportType)
 
 /**
  * book和topic的关联关系。
  */
-data class BookTopicRelation(val bookId: Int, val topicId: Int,/** 由规则导出而非用户编写的标签。 */val isExported: Boolean)
+data class BookTopicRelation(val bookId: Int, val topicId: Int,/** 由规则导出而非用户编写的标签。 */val isExported: ExportType)

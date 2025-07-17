@@ -11,7 +11,7 @@ data class TagRes(val id: Int, val ordinal: Int, val parentId: Int?,
                   val name: String, val otherNames: List<String>,
                   val type: TagAddressType, val group: TagGroupType, val color: String?)
 
-data class TagSimpleRes(val id: Int, val name: String, val color: String?, val isExported: Boolean)
+data class TagSimpleRes(val id: Int, val name: String, val color: String?, val isExported: ExportType)
 
 data class TagTreeNode(val id: Int, val name: String, val otherNames: List<String>, val implicitNames: List<String>,
                        val type: TagAddressType, val group: TagGroupType, val color: String?,
@@ -36,7 +36,7 @@ data class TopicRes(val id: Int, val name: String, val parentRoot: TopicParent?,
                     val type: TagTopicType, val favorite: Boolean,
                     val score: Int?, val count: Int, val color: String?)
 
-data class TopicSimpleRes(val id: Int, val name: String, val type: TagTopicType, val isExported: Boolean, val color: String?)
+data class TopicSimpleRes(val id: Int, val name: String, val type: TagTopicType, val isExported: ExportType, val color: String?)
 
 data class TopicDetailRes(val id: Int, val name: String, val parentRoot: TopicParent?, val parentId: Int?, val parents: List<TopicParent>, val children: List<TopicChildrenNode>?,
                           val otherNames: List<String>, val keywords: List<String>, val description: String,
@@ -52,7 +52,7 @@ data class AuthorRes(val id: Int, val name: String, val otherNames: List<String>
                      val type: TagAuthorType, val favorite: Boolean,
                      val score: Int?, val count: Int, val color: String?)
 
-data class AuthorSimpleRes(val id: Int, val name: String, val type: TagAuthorType, val isExported: Boolean, val color: String?)
+data class AuthorSimpleRes(val id: Int, val name: String, val type: TagAuthorType, val isExported: ExportType, val color: String?)
 
 data class AuthorDetailRes(val id: Int, val name: String, val otherNames: List<String>, val keywords: List<String>, val description: String,
                            val type: TagAuthorType, val favorite: Boolean,

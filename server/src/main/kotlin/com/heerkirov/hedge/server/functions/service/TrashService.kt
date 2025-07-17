@@ -6,6 +6,7 @@ import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.filter.TrashFilter
 import com.heerkirov.hedge.server.dto.res.*
+import com.heerkirov.hedge.server.enums.ExportType
 import com.heerkirov.hedge.server.enums.TagAddressType
 import com.heerkirov.hedge.server.exceptions.NotFound
 import com.heerkirov.hedge.server.exceptions.be
@@ -95,7 +96,7 @@ class TrashService(private val appdata: AppDataManager, private val data: DataRe
             .map {
                 val topicType = it[Topics.type]!!
                 val color = topicColors[topicType]
-                TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, false, color)
+                TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, ExportType.NO, color)
             }
 
         val authors = if(metadata.authors.isEmpty()) emptyList() else data.db.from(Authors)
@@ -105,14 +106,14 @@ class TrashService(private val appdata: AppDataManager, private val data: DataRe
             .map {
                 val authorType = it[Authors.type]!!
                 val color = authorColors[authorType]
-                AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, false, color)
+                AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, ExportType.NO, color)
             }
 
         val tags = if(metadata.tags.isEmpty()) emptyList() else data.db.from(Tags)
             .select(Tags.id, Tags.name, Tags.color)
             .where { (Tags.id inList metadata.tags) and (Tags.type eq TagAddressType.TAG) }
             .orderBy(Tags.globalOrdinal.asc())
-            .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], false) }
+            .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], ExportType.NO) }
 
         val parent = if(parentId == null) null else data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)

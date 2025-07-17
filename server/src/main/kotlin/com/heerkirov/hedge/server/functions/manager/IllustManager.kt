@@ -8,6 +8,7 @@ import com.heerkirov.hedge.server.dto.form.IllustBatchUpdateForm
 import com.heerkirov.hedge.server.dto.form.IllustImageCreateForm
 import com.heerkirov.hedge.server.dto.form.ImagePropsCloneForm
 import com.heerkirov.hedge.server.dto.res.*
+import com.heerkirov.hedge.server.enums.ExportType
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.enums.TagTopicType
@@ -296,9 +297,8 @@ class IllustManager(private val appdata: AppDataManager,
 
         kit.refreshAllMeta(collectionId, copyFromChildren = true)
 
-        val deleted = (oldImageIds - images.toSet()).toList()
-        bus.emit(IllustImagesChanged(collectionId, emptyList(), deleted))
-        deleted.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }
+        bus.emit(IllustImagesChanged(collectionId, emptyList(), images))
+        images.forEach { bus.emit(IllustRelatedItemsUpdated(it, IllustType.IMAGE, collectionSot = true)) }
     }
 
     /**
@@ -1011,23 +1011,23 @@ class IllustManager(private val appdata: AppDataManager,
 
         if(props.metaTags) {
             val tagIds = data.db.from(IllustTagRelations).select(IllustTagRelations.tagId)
-                .where { (IllustTagRelations.illustId eq fromIllust.id) and IllustTagRelations.isExported.not() }
+                .where { (IllustTagRelations.illustId eq fromIllust.id) and (IllustTagRelations.isExported eq ExportType.NO) }
                 .map { it[IllustTagRelations.tagId]!! }
             val topicIds = data.db.from(IllustTopicRelations).select(IllustTopicRelations.topicId)
-                .where { (IllustTopicRelations.illustId eq fromIllust.id) and IllustTopicRelations.isExported.not() }
+                .where { (IllustTopicRelations.illustId eq fromIllust.id) and (IllustTopicRelations.isExported eq ExportType.NO) }
                 .map { it[IllustTopicRelations.topicId]!! }
             val authorIds = data.db.from(IllustAuthorRelations).select(IllustAuthorRelations.authorId)
-                .where { (IllustAuthorRelations.illustId eq fromIllust.id) and IllustAuthorRelations.isExported.not() }
+                .where { (IllustAuthorRelations.illustId eq fromIllust.id) and (IllustAuthorRelations.isExported eq ExportType.NO) }
                 .map { it[IllustAuthorRelations.authorId]!! }
             if(merge) {
                 val originTagIds = data.db.from(IllustTagRelations).select(IllustTagRelations.tagId)
-                    .where { (IllustTagRelations.illustId eq toIllust.id) and IllustTagRelations.isExported.not() }
+                    .where { (IllustTagRelations.illustId eq toIllust.id) and (IllustTagRelations.isExported eq ExportType.NO) }
                     .map { it[IllustTagRelations.tagId]!! }
                 val originTopicIds = data.db.from(IllustTopicRelations).select(IllustTopicRelations.topicId)
-                    .where { (IllustTopicRelations.illustId eq toIllust.id) and IllustTopicRelations.isExported.not() }
+                    .where { (IllustTopicRelations.illustId eq toIllust.id) and (IllustTopicRelations.isExported eq ExportType.NO) }
                     .map { it[IllustTopicRelations.topicId]!! }
                 val originAuthorIds = data.db.from(IllustAuthorRelations).select(IllustAuthorRelations.authorId)
-                    .where { (IllustAuthorRelations.illustId eq toIllust.id) and IllustAuthorRelations.isExported.not() }
+                    .where { (IllustAuthorRelations.illustId eq toIllust.id) and (IllustAuthorRelations.isExported eq ExportType.NO) }
                     .map { it[IllustAuthorRelations.authorId]!! }
 
                 kit.updateMeta(toIllust.id,

@@ -12,6 +12,7 @@ import com.heerkirov.hedge.server.dto.res.AuthorSimpleRes
 import com.heerkirov.hedge.server.dto.res.FolderSimpleRes
 import com.heerkirov.hedge.server.dto.res.KeywordInfo
 import com.heerkirov.hedge.server.dto.res.TopicSimpleRes
+import com.heerkirov.hedge.server.enums.ExportType
 import com.heerkirov.hedge.server.enums.FolderType
 import com.heerkirov.hedge.server.exceptions.ParamError
 import com.heerkirov.hedge.server.exceptions.be
@@ -45,7 +46,7 @@ class PickerUtilService(private val appdata: AppDataManager, private val data: D
                 val id = it[Topics.id]!!
                 val type = it[Topics.type]!!
                 val color = topicColors[type]
-                id to TopicSimpleRes(id, it[Topics.name]!!, type, false, color)
+                id to TopicSimpleRes(id, it[Topics.name]!!, type, ExportType.NO, color)
             }
         return topicIds.mapNotNull(result::get)
     }
@@ -60,7 +61,7 @@ class PickerUtilService(private val appdata: AppDataManager, private val data: D
                 val id = it[Authors.id]!!
                 val type = it[Authors.type]!!
                 val color = authorColors[type]
-                id to AuthorSimpleRes(id, it[Authors.name]!!, type, false, color)
+                id to AuthorSimpleRes(id, it[Authors.name]!!, type, ExportType.NO, color)
             }
         return authorIds.mapNotNull(result::get)
     }

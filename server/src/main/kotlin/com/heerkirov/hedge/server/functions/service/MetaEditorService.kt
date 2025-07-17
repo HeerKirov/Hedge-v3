@@ -8,10 +8,7 @@ import com.heerkirov.hedge.server.dto.form.MetaUtilIdentityForm
 import com.heerkirov.hedge.server.dto.form.MetaUtilMetaForm
 import com.heerkirov.hedge.server.dto.form.MetaUtilValidateForm
 import com.heerkirov.hedge.server.dto.res.*
-import com.heerkirov.hedge.server.enums.IdentityType
-import com.heerkirov.hedge.server.enums.IllustModelType
-import com.heerkirov.hedge.server.enums.MetaType
-import com.heerkirov.hedge.server.enums.TagAddressType
+import com.heerkirov.hedge.server.enums.*
 import com.heerkirov.hedge.server.exceptions.ConflictingGroupMembersError
 import com.heerkirov.hedge.server.exceptions.NotFound
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
@@ -50,7 +47,7 @@ class MetaEditorService(private val appdata: AppDataManager,
                 throw be(ResourceNotExist("tags", form.tags.toSet() - tags.asSequence().map { it.id }.toSet()))
             }
             //只允许设定类型为TAG的标签，不允许地址段。
-            notSuitable = tags.filter { it.type != TagAddressType.TAG }.map { TagSimpleRes(it.id, it.name, it.color, false) }
+            notSuitable = tags.filter { it.type != TagAddressType.TAG }.map { TagSimpleRes(it.id, it.name, it.color, ExportType.NO) }
             //导出，检查冲突组限制，提出警告和错误
             val (exported, tagExportError) = metaManager.exportTagModel(tags)
             val (forceConflicting, conflicting) = tagExportError?.info?.filterInto { it.force } ?: (emptyList<ConflictingGroupMembersError.ConflictingMembers>() to emptyList())
@@ -233,7 +230,7 @@ class MetaEditorService(private val appdata: AppDataManager,
                         val id = it[Topics.id]!!
                         val type = it[Topics.type]!!
                         val color = topicColors[type]
-                        id to TopicSimpleRes(id, it[Topics.name]!!, type, false, color)
+                        id to TopicSimpleRes(id, it[Topics.name]!!, type, ExportType.NO, color)
                     }
                 topicIds.mapNotNull(result::get)
             }
@@ -249,7 +246,7 @@ class MetaEditorService(private val appdata: AppDataManager,
                         val id = it[Authors.id]!!
                         val type = it[Authors.type]!!
                         val color = authorColors[type]
-                        id to AuthorSimpleRes(id, it[Authors.name]!!, type, false, color)
+                        id to AuthorSimpleRes(id, it[Authors.name]!!, type, ExportType.NO, color)
                     }
                 authorIds.mapNotNull(result::get)
             }
@@ -262,7 +259,7 @@ class MetaEditorService(private val appdata: AppDataManager,
                     .where { Tags.id inList tagIds }
                     .associate {
                         val id = it[Tags.id]!!
-                        id to TagSimpleRes(id, it[Tags.name]!!, it[Tags.color], false)
+                        id to TagSimpleRes(id, it[Tags.name]!!, it[Tags.color], ExportType.NO)
                     }
                 tagIds.mapNotNull(result::get)
             }

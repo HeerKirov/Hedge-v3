@@ -7,6 +7,7 @@ import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.form.MappingSourceTagForm
 import com.heerkirov.hedge.server.dto.form.SourceTagForm
 import com.heerkirov.hedge.server.dto.res.*
+import com.heerkirov.hedge.server.enums.ExportType
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAddressType
 import com.heerkirov.hedge.server.events.SourceTagMappingUpdated
@@ -183,7 +184,7 @@ class SourceMappingManager(private val appdata: AppDataManager, private val data
                 .where { Authors.id inList authorIds }
                 .map {
                     val type = it[Authors.type]!!
-                    AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, type, false, authorColors[type])
+                    AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, type, ExportType.NO, authorColors[type])
                 }
         }?.associate { SourceMappingTargetItem(MetaType.AUTHOR, it.id) to SourceMappingTargetItemDetail(MetaType.AUTHOR, it) } ?: emptyMap()
         val topics = metas[MetaType.TOPIC]?.let { topicIds ->
@@ -191,13 +192,13 @@ class SourceMappingManager(private val appdata: AppDataManager, private val data
                 .where { Topics.id inList topicIds }
                 .map {
                     val type = it[Topics.type]!!
-                    TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, type, false, topicColors[type])
+                    TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, type, ExportType.NO, topicColors[type])
                 }
         }?.associate { SourceMappingTargetItem(MetaType.TOPIC, it.id) to SourceMappingTargetItemDetail(MetaType.TOPIC, it) } ?: emptyMap()
         val tags = metas[MetaType.TAG]?.let { tagIds ->
             data.db.from(Tags).select(Tags.id, Tags.name, Tags.color)
                 .where { (Tags.id inList tagIds) and (Tags.type eq TagAddressType.TAG) }
-                .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], false) }
+                .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], ExportType.NO) }
         }?.associate { SourceMappingTargetItem(MetaType.TAG, it.id) to SourceMappingTargetItemDetail(MetaType.TAG, it) } ?: emptyMap()
 
         return authors + topics + tags

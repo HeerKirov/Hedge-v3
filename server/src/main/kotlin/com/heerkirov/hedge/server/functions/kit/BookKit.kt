@@ -2,6 +2,7 @@ package com.heerkirov.hedge.server.functions.kit
 
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
+import com.heerkirov.hedge.server.enums.ExportType
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.manager.MetaManager
 import com.heerkirov.hedge.server.model.BookImageRelation
@@ -30,47 +31,47 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
      */
     fun updateMeta(thisId: Int, newTags: Opt<List<Int>>, newTopics: Opt<List<Int>>, newAuthors: Opt<List<Int>>,
                    creating: Boolean = false) {
-        //检出每种tag的数量。这个数量指新设定的值或已存在的值中notExported的数量
-        val tagCount = if(newTags.isPresent) newTags.value.size else if(creating) 0 else metaManager.getNotExportedMetaCount(thisId, IllustTagRelations)
-        val topicCount = if(newTopics.isPresent) newTopics.value.size else if(creating) 0 else metaManager.getNotExportedMetaCount(thisId, IllustTopicRelations)
-        val authorCount = if(newAuthors.isPresent) newAuthors.value.size else if(creating) 0 else metaManager.getNotExportedMetaCount(thisId, IllustAuthorRelations)
+        //1. 取出所有现有的tag
+        //2. 检查是否newTag与当前notExported列表确实不一致
+        //3. 对newTag列表进行validate校验
+        //4. 重新导出之后需要从RELATED重新获取关联项，从关联项中移除在validate中的结果
+        //5. 组合validate与RELATED的结果，应用给实体
+        if(newTags.isPresent) {
+            val exist = metaManager.getMetaTags(thisId, BookTagRelations, Tags)
+            val notExportedIds = exist.mapNotNull { (i, e) -> if(e == ExportType.NO) i.id else null }.toSet()
+            if(notExportedIds != newTags.value.toSet()) {
+                val validated = if(newTags.value.isEmpty()) emptyList() else metaManager.validateAndExportTag(newTags.value)
+                val validatedIds = validated.map { (i, _) -> i }.toSet()
 
-        //注释说明见IllustKit的相同功能
-        if(tagCount == 0 && topicCount == 0 && authorCount == 0) {
-            if(newTags.isPresent) metaManager.deleteMetaTags(thisId, BookTagRelations, Tags, false)
-            if(newAuthors.isPresent) metaManager.deleteMetaTags(thisId, BookAuthorRelations, Authors, false)
-            if(newTopics.isPresent) metaManager.deleteMetaTags(thisId, BookTopicRelations, Topics, false)
-            //从children拷贝全部notExported的metaTag，然后做导出
-            copyAllMetaFromImages(thisId)
-        }else if(newTags.isPresent || newAuthors.isPresent || newTopics.isPresent){
-            //存在任意一项已修改
-            if((newAuthors.isPresent || authorCount == 0)
-                && (newTopics.isPresent || topicCount == 0)
-                && (newTags.isPresent || tagCount == 0)) {
-                //若发现未修改列表数量都为0，已修改至少一项不为0: 此时从"从依赖项获得exportedTag"的状态转向"自己持有tag"的状态，清除所有metaTag
-                //tips: 不修改统计计数
-                metaManager.deleteMetaTags(thisId, IllustTagRelations, Tags, analyseStatisticCount = false, remainNotExported = true)
-                metaManager.deleteMetaTags(thisId, IllustAuthorRelations, Authors, analyseStatisticCount = false, remainNotExported = true)
-                metaManager.deleteMetaTags(thisId, IllustTopicRelations, Topics, analyseStatisticCount = false, remainNotExported = true)
+                val relatedIds = getOneMetaFromImages(thisId, BookTagRelations, 0.3)
+                val filteredRelatedIds = (relatedIds - validatedIds).map { it to ExportType.FROM_RELATED }
+                metaManager.processMetaTags(thisId, creating, analyseStatisticCount = false, Tags, BookTagRelations, validated + filteredRelatedIds)
             }
+        }
 
-            newTags.alsoOpt {
-                metaManager.processMetaTags(thisId, creating, false,
-                    metaTag = Tags,
-                    metaRelations = BookTagRelations,
-                    newTagIds = metaManager.validateAndExportTag(it))
+        if(newTags.isPresent) {
+            val exist = metaManager.getMetaTags(thisId, BookTopicRelations, Topics)
+            val notExportedIds = exist.mapNotNull { (i, e) -> if(e == ExportType.NO) i.id else null }.toSet()
+            if(notExportedIds != newTopics.value.toSet()) {
+                val validated = if(newTopics.value.isEmpty()) emptyList() else metaManager.validateAndExportTopicModel(newTopics.value)
+                val validatedIds = validated.map { (i, _) -> i.id }.toSet()
+
+                val relatedIds = getOneMetaFromImages(thisId, BookTopicRelations, 0.05)
+                val filteredRelatedIds = (relatedIds - validatedIds).map { it to ExportType.FROM_RELATED }
+                metaManager.processMetaTags(thisId, creating, analyseStatisticCount = false, Topics, BookTopicRelations, validated.map { (i, e) -> i.id to e } + filteredRelatedIds)
             }
-            newTopics.alsoOpt {
-                metaManager.processMetaTags(thisId, creating, false,
-                    metaTag = Topics,
-                    metaRelations = BookTopicRelations,
-                    newTagIds = metaManager.validateAndExportTopic(it))
-            }
-            newAuthors.alsoOpt {
-                metaManager.processMetaTags(thisId, creating, false,
-                    metaTag = Authors,
-                    metaRelations = BookAuthorRelations,
-                    newTagIds = metaManager.validateAndExportAuthor(it))
+        }
+
+        if(newAuthors.isPresent) {
+            val exist = metaManager.getMetaTags(thisId, BookAuthorRelations, Authors)
+            val notExportedIds = exist.mapNotNull { (i, e) -> if(e == ExportType.NO) i.id else null }.toSet()
+            if(notExportedIds != newAuthors.value.toSet()) {
+                val validated = if(newAuthors.value.isEmpty()) emptyList() else metaManager.validateAndExportAuthor(newAuthors.value)
+                val validatedIds = validated.map { (i, _) -> i }.toSet()
+
+                val relatedIds = getOneMetaFromImages(thisId, BookAuthorRelations, 0.05)
+                val filteredRelatedIds = (relatedIds - validatedIds).map { it to ExportType.FROM_RELATED }
+                metaManager.processMetaTags(thisId, creating, analyseStatisticCount = false, Authors, BookAuthorRelations, validated + filteredRelatedIds)
             }
         }
     }
@@ -79,78 +80,55 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
      * 在没有更新的情况下，强制重新导出meta tag。
      */
     fun refreshAllMeta(thisId: Int) {
-        val tags = metaManager.getNotExportMetaTags(thisId, BookTagRelations, Tags)
-        val topics = metaManager.getNotExportMetaTags(thisId, BookTopicRelations, Topics)
-        val authors = metaManager.getNotExportMetaTags(thisId, BookAuthorRelations, Authors)
+        //取出所有现有的meta tag
+        val oldTags = metaManager.getMetaTags(thisId, BookTagRelations, Tags)
+        val oldTopics = metaManager.getMetaTags(thisId, BookTopicRelations, Topics)
+        val oldAuthors = metaManager.getMetaTags(thisId, BookAuthorRelations, Authors)
 
-        val tagCount = tags.size
-        val topicCount = topics.size
-        val authorCount = authors.size
+        //取出子项的meta tag
+        val relatedTagIds = getOneMetaFromImages(thisId, BookTagRelations, 0.3)
+        val relatedTopicIds = getOneMetaFromImages(thisId, BookTopicRelations, 0.05)
+        val relatedAuthorIds = getOneMetaFromImages(thisId, BookAuthorRelations, 0.05)
+        val relatedTags = if(relatedTagIds.isNotEmpty()) data.db.sequenceOf(Tags).filter { it.id inList relatedTagIds }.toList() else emptyList()
+        val relatedTopics = if(relatedTopicIds.isNotEmpty()) data.db.sequenceOf(Topics).filter { it.id inList relatedTopicIds }.toList() else emptyList()
+        val relatedAuthors = if(relatedAuthorIds.isNotEmpty()) data.db.sequenceOf(Authors).filter { it.id inList relatedAuthorIds }.toList() else emptyList()
 
-        fun deleteAllMeta(remainNotExported: Boolean = false) {
-            if(tagCount == 0) metaManager.deleteMetaTags(thisId, BookTagRelations, Tags, false, remainNotExported)
-            if(authorCount == 0) metaManager.deleteMetaTags(thisId, BookAuthorRelations, Authors, false, remainNotExported)
-            if(topicCount == 0) metaManager.deleteMetaTags(thisId, BookTopicRelations, Topics, false, remainNotExported)
-        }
+        val validatedTags = metaManager.exportTag(oldTags.mapNotNull { (i, e) -> if(e == ExportType.NO) i else null }).first //直接忽略任何冲突组错误
+        val validatedTopics = metaManager.exportTopic(oldTopics.mapNotNull { (i, e) -> if(e == ExportType.NO) i else null })
+        val validatedAuthors = metaManager.exportAuthor(oldAuthors.mapNotNull { (i, e) -> if(e == ExportType.NO) i else null })
+        val oldTagIds = validatedTags.map { (i, _) -> i }.toSet()
+        val oldTopicIds = validatedTags.map { (i, _) -> i }.toSet()
+        val oldAuthorIds = validatedTags.map { (i, _) -> i }.toSet()
 
-        if(tagCount == 0 && topicCount == 0 && authorCount == 0) {
-            //若发现当前列表数全部为0，那么从依赖项拷贝tag。在拷贝之前，清空全列表，防止duplicated key。
-            deleteAllMeta()
-            copyAllMetaFromImages(thisId)
-        }else{
-            //至少一个列表不为0时，清空所有为0的列表的全部tag
-            deleteAllMeta(remainNotExported = true)
+        //之后从新的related项中去掉在导出列表中已有的项，组合这两者形成新列表
+        val newTags = validatedTags + relatedTags.filter { it.id !in oldTagIds }.map { it.id to ExportType.FROM_RELATED }
+        val newTopics = validatedTopics + relatedTopics.filter { it.id !in oldTopicIds }.map { it.id to ExportType.FROM_RELATED }
+        val newAuthors = validatedAuthors + relatedAuthors.filter { it.id !in oldAuthorIds }.map { it.id to ExportType.FROM_RELATED }
 
-            metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = false,
-                metaTag = Tags,
-                metaRelations = BookTagRelations,
-                newTagIds = metaManager.exportTag(tags).first) //直接忽略任何冲突组错误
-            metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = false,
-                metaTag = Topics,
-                metaRelations = BookTopicRelations,
-                newTagIds = metaManager.exportTopic(topics))
-            metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = false,
-                metaTag = Authors,
-                metaRelations = BookAuthorRelations,
-                newTagIds = metaManager.exportAuthor(authors))
-        }
+        //将新列表应用到实体
+        metaManager.processMetaTags(thisId, false, analyseStatisticCount = false, Tags, BookTagRelations, newTags)
+        metaManager.processMetaTags(thisId, false, analyseStatisticCount = false, Topics, BookTopicRelations, newTopics)
+        metaManager.processMetaTags(thisId, false, analyseStatisticCount = false, Authors, BookAuthorRelations, newAuthors)
     }
 
     /**
-     * 从所有子项拷贝meta并处理合并，统一设定为exported。
-     * book的子项合并和collection不同，它按照一个出现频率的阈值取一部分tag。
+     * 从所有子项获取meta。注意统一设定exportType=FROM_RELATED。
      */
-    private fun copyAllMetaFromImages(thisId: Int) {
-        fun <IR : EntityMetaRelationTable<*>, AR:EntityMetaRelationTable<*>> copyOneMeta(imageTagRelations: IR, bookTagRelations: AR, conditionRate: Double) {
-            val metaTags = data.db.from(BookImageRelations)
-                .innerJoin(Illusts, BookImageRelations.imageId eq Illusts.id)
-                .innerJoin(imageTagRelations, imageTagRelations.entityId() eq Illusts.id)
-                .select(imageTagRelations.metaId(), count(imageTagRelations.entityId()).aliased("count"))
-                .where { BookImageRelations.bookId eq thisId }
-                .groupBy(imageTagRelations.metaId())
-                .map { it[imageTagRelations.metaId()]!! to it.getInt("count") }
-            if(metaTags.isNotEmpty()) {
-                //存在一个临界阈值，仅当出现频数超过最大频数的这个比率时，标签才会被选入。
-                val conditionCount = (metaTags.maxOf { (_, count) -> count } * conditionRate).toInt()
-                val selectedTags = metaTags.filter { (_, count) -> count >= conditionCount }.map { (id, _) -> id }
-                if(selectedTags.isNotEmpty()) {
-                    data.db.batchInsert(bookTagRelations) {
-                        for (tagId in selectedTags) {
-                            item {
-                                set(it.entityId(), thisId)
-                                set(it.metaId(), tagId)
-                                set(it.exported(), true)
-                            }
-                        }
-                    }
-                }
-            }
+    private fun <IR : EntityMetaRelationTable<*>> getOneMetaFromImages(thisId: Int, imageTagRelations: IR, conditionRate: Double): List<Int> {
+        val metaTags = data.db.from(BookImageRelations)
+            .innerJoin(Illusts, BookImageRelations.imageId eq Illusts.id)
+            .innerJoin(imageTagRelations, imageTagRelations.entityId() eq Illusts.id)
+            .select(imageTagRelations.metaId(), count(imageTagRelations.entityId()).aliased("count"))
+            .where { BookImageRelations.bookId eq thisId }
+            .groupBy(imageTagRelations.metaId())
+            .map { it[imageTagRelations.metaId()]!! to it.getInt("count") }
+        if(metaTags.isNotEmpty()) {
+            //存在一个临界阈值，仅当出现频数超过最大频数的这个比率时，标签才会被选入
+            val conditionCount = (metaTags.maxOf { (_, count) -> count } * conditionRate).toInt()
+            val selectedTags = metaTags.filter { (_, count) -> count >= conditionCount }.map { (id, _) -> id }
+            return selectedTags
         }
-
-        //tag的临界阈值是30%，而author/topic的是5%
-        copyOneMeta(IllustTagRelations, BookTagRelations, 0.3)
-        copyOneMeta(IllustAuthorRelations, BookAuthorRelations, 0.05)
-        copyOneMeta(IllustTopicRelations, BookTopicRelations, 0.05)
+        return emptyList()
     }
 
     /**

@@ -3,6 +3,7 @@ package com.heerkirov.hedge.server.functions.manager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.EntityMetaRelationTable
 import com.heerkirov.hedge.server.dao.*
+import com.heerkirov.hedge.server.enums.ExportType
 import com.heerkirov.hedge.server.enums.TagAddressType
 import com.heerkirov.hedge.server.enums.TagGroupType
 import com.heerkirov.hedge.server.exceptions.ConflictingGroupMembersError
@@ -32,7 +33,7 @@ class MetaManager(private val data: DataRepository) {
      * @throws ResourceNotSuitable ("tags", number[]) 部分tags资源不适用。地址段不适用于此项。给出不适用的tag id列表
      * @throws ConflictingGroupMembersError 发现标签冲突组。此方法会直接把冲突组问题作为异常抛出，而不是继续在参数里传递
      */
-    fun validateAndExportTag(tagIds: List<Int>, ignoreError: Boolean = false): List<Pair<Int, Boolean>> {
+    fun validateAndExportTag(tagIds: List<Int>, ignoreError: Boolean = false): List<Pair<Int, ExportType>> {
         return validateAndExportTagModel(tagIds, ignoreError).map { (t, e) -> t.id to e }
     }
 
@@ -44,7 +45,7 @@ class MetaManager(private val data: DataRepository) {
      * @throws ResourceNotSuitable ("tags", number[]) 部分tags资源不适用。地址段不适用于此项。给出不适用的tag id列表
      * @throws ConflictingGroupMembersError 发现标签冲突组。此方法会直接把冲突组问题作为异常抛出，而不是继续在参数里传递
      */
-    fun validateAndExportTagModel(tagIds: List<Int>, ignoreError: Boolean = false): List<Pair<Tag, Boolean>> {
+    fun validateAndExportTagModel(tagIds: List<Int>, ignoreError: Boolean = false): List<Pair<Tag, ExportType>> {
         val set = tagIds.toSet()
         val tags = data.db.sequenceOf(Tags).filter { it.id inList set }.toList()
         if(!ignoreError && tags.size < set.size) {
@@ -72,7 +73,7 @@ class MetaManager(private val data: DataRepository) {
      * @return 一组topic。Int表示topic id，Boolean表示此topic是否为导出tag。
      * @throws ResourceNotExist ("topics", number[]) 部分topics资源不存在。给出不存在的topic id列表
      */
-    fun validateAndExportTopic(topicIds: List<Int>, ignoreError: Boolean = false): List<Pair<Int, Boolean>> {
+    fun validateAndExportTopic(topicIds: List<Int>, ignoreError: Boolean = false): List<Pair<Int, ExportType>> {
         return validateAndExportTopicModel(topicIds, ignoreError).map { (t, e) -> t.id to e }
     }
 
@@ -82,7 +83,7 @@ class MetaManager(private val data: DataRepository) {
      * @return 一组topic。Int表示topic id，Boolean表示此topic是否为导出tag。
      * @throws ResourceNotExist ("topics", number[]) 部分topics资源不存在。给出不存在的topic id列表
      */
-    fun validateAndExportTopicModel(topicIds: List<Int>, ignoreError: Boolean = false): List<Pair<Topic, Boolean>> {
+    fun validateAndExportTopicModel(topicIds: List<Int>, ignoreError: Boolean = false): List<Pair<Topic, ExportType>> {
         val set = topicIds.toSet()
         val topics = data.db.sequenceOf(Topics).filter { it.id inList set }.toList()
         if(!ignoreError && topics.size < set.size) {
@@ -98,7 +99,7 @@ class MetaManager(private val data: DataRepository) {
      * @return 一组author。Int表示tag id，Boolean表示此tag是否为导出tag。
      * @throws ResourceNotExist ("authors", number[]) 部分authors资源不存在。给出不存在的author id列表
      */
-    fun validateAndExportAuthor(authors: List<Int>, ignoreError: Boolean = false): List<Pair<Int, Boolean>> {
+    fun validateAndExportAuthor(authors: List<Int>, ignoreError: Boolean = false): List<Pair<Int, ExportType>> {
         return validateAndExportAuthorModel(authors, ignoreError).map { (t, e) -> t.id to e }
     }
 
@@ -108,7 +109,7 @@ class MetaManager(private val data: DataRepository) {
      * @return 一组author。Int表示tag id，Boolean表示此tag是否为导出tag。
      * @throws ResourceNotExist ("authors", number[]) 部分authors资源不存在。给出不存在的author id列表
      */
-    fun validateAndExportAuthorModel(authors: List<Int>, ignoreError: Boolean = false): List<Pair<Author, Boolean>> {
+    fun validateAndExportAuthorModel(authors: List<Int>, ignoreError: Boolean = false): List<Pair<Author, ExportType>> {
         val set = authors.toSet()
         val result = data.db.from(Authors).select().where { Authors.id inList set }.map { Authors.createEntity(it) }
         if(!ignoreError && result.size < set.size) {
@@ -116,14 +117,14 @@ class MetaManager(private val data: DataRepository) {
         }
 
         //author类型的标签没有导出机制，因此直接返回结果。
-        return result.map { it to false }
+        return result.map { it to ExportType.NO }
     }
 
     /**
      * 对tag进行导出。结果是id。
      * @return 返回一个结果和检查错误的双元组。检查错误是不会打断结果输出的。
      */
-    fun exportTag(tags: List<Tag>): Pair<List<Pair<Int, Boolean>>, ConflictingGroupMembersError?> {
+    fun exportTag(tags: List<Tag>): Pair<List<Pair<Int, ExportType>>, ConflictingGroupMembersError?> {
         val (result, e) = exportTagModel(tags)
         return result.map { (tag, isExported) -> tag.id to isExported } to e
     }
@@ -131,22 +132,22 @@ class MetaManager(private val data: DataRepository) {
     /**
      * 对topic进行导出。结果是id。
      */
-    fun exportTopic(topics: List<Topic>): List<Pair<Int, Boolean>> {
+    fun exportTopic(topics: List<Topic>): List<Pair<Int, ExportType>> {
         return exportTopicModel(topics).map { (topic, isExported) -> topic.id to isExported }
     }
 
     /**
      * 对author进行导出。结果是id。
      */
-    fun exportAuthor(authors: List<Author>): List<Pair<Int, Boolean>> {
-        return authors.map { it.id to false }
+    fun exportAuthor(authors: List<Author>): List<Pair<Int, ExportType>> {
+        return authors.map { it.id to ExportType.NO }
     }
 
     /**
      * 对tag进行导出。
      * @return 返回一个结果和检查错误的双元组。检查错误是不会打断结果输出的。
      */
-    fun exportTagModel(tags: List<Tag>): Pair<List<Pair<Tag, Boolean>>, ConflictingGroupMembersError?> {
+    fun exportTagModel(tags: List<Tag>): Pair<List<Pair<Tag, ExportType>>, ConflictingGroupMembersError?> {
         //记下所有访问过的节点父子关系
         val childrenMap = HashMap<Int, MutableSet<Int>>().apply { for (tag in tags) if(tag.parentId != null) computeIfAbsent(tag.parentId) { mutableSetOf() }.apply { add(tag.id) } }
         //已经访问过的节点。原tags列表的节点直接进去了
@@ -173,7 +174,7 @@ class MetaManager(private val data: DataRepository) {
             }
         }
 
-        val result = (tags.asSequence().map { it to false } + exportedTags.asSequence().map { it to true }).toList()
+        val result = (tags.asSequence().map { it to ExportType.NO } + exportedTags.asSequence().map { it to ExportType.YES }).toList()
 
         //冲突组检查
         val isExportedMap = result.associate { (tag, isExported) -> tag.id to isExported }
@@ -182,9 +183,9 @@ class MetaManager(private val data: DataRepository) {
             .filter { (id, members) -> members.size > 1 && been[id]!!.isGroup != TagGroupType.NO }
             .map { (groupId, members) ->
                 val groupTag = been[groupId]!!
-                val groupMember = ConflictingGroupMembersError.Member(groupTag.id, groupTag.name, groupTag.color, isExportedMap.getOrDefault(groupId, true))
+                val groupMember = ConflictingGroupMembersError.Member(groupTag.id, groupTag.name, groupTag.color, isExportedMap.getOrDefault(groupId, ExportType.YES))
                 val force = groupTag.isGroup == TagGroupType.FORCE || groupTag.isGroup == TagGroupType.FORCE_AND_SEQUENCE
-                ConflictingGroupMembersError.ConflictingMembers(groupMember, force, members.map { ConflictingGroupMembersError.Member(it, been[it]!!.name, been[it]!!.color, isExportedMap.getOrDefault(it, true)) })
+                ConflictingGroupMembersError.ConflictingMembers(groupMember, force, members.map { ConflictingGroupMembersError.Member(it, been[it]!!.name, been[it]!!.color, isExportedMap.getOrDefault(it, ExportType.YES)) })
             }
             .toList()
 
@@ -194,7 +195,7 @@ class MetaManager(private val data: DataRepository) {
     /**
      * 对topic进行导出。
      */
-    fun exportTopicModel(topics: List<Topic>): List<Pair<Topic, Boolean>> {
+    fun exportTopicModel(topics: List<Topic>): List<Pair<Topic, ExportType>> {
         val been = HashSet<Int>(topics.size * 2).apply { addAll(topics.map { it.id }) }
         val queue = LinkedList<Int>().apply { addAll(topics.mapNotNull { it.parentId }) }
         val exportedTopics = LinkedList<Topic>()
@@ -211,27 +212,35 @@ class MetaManager(private val data: DataRepository) {
             }
         }
 
-        return topics.map { it to false } + exportedTopics.map { it to true }
+        return topics.map { it to ExportType.NO } + exportedTopics.map { it to ExportType.YES }
     }
 
     /**
      * 对author进行导出。
      */
-    fun exportAuthorModel(authors: List<Author>): List<Pair<Author, Boolean>> {
-        return authors.map { it to false }
+    fun exportAuthorModel(authors: List<Author>): List<Pair<Author, ExportType>> {
+        return authors.map { it to ExportType.NO }
     }
 
     /**
-     * 检验并处理某一种类的meta tag。
+     * 检验并处理某一种类的meta tag。此方法将给出的newTagIds以声明式应用到指定的实体。
+     * @param thisId 此实体的id
+     * @param creating 正处于此实体的创建过程，因此不需要查询此实体现有的标签，因为不存在
+     * @param analyseStatisticCount 将此次变化记录到对应标签的数量变化上。只有对图像进行更新时，才应该应用此变化
+     * @param newTags 给出的新标签列表，以及此标签现在的导出方式
+     * @param oldTags 如果调用方已持有全部tag列表，可传递此列表减少查询
+     * @param metaTag 此meta tag的DAO
+     * @param metaRelations 此实体与meta tag的关联DAO
      */
     fun <T, R> processMetaTags(thisId: Int, creating: Boolean = false, analyseStatisticCount: Boolean,
-                               newTagIds: List<Pair<Int, Boolean>>,
-                               metaTag: T, metaRelations: R)
+                               metaTag: T, metaRelations: R,
+                               newTags: List<Pair<Int, ExportType>>,
+                               oldTags: Map<Int, ExportType>? = null)
     where T: MetaTagTable<*>, R: EntityMetaRelationTable<*> {
         val now = Instant.now()
 
-        val tagIds = newTagIds.toMap()
-        val oldTagIds = if(creating) emptyMap() else {
+        val tagIds = newTags.toMap()
+        val oldTagIds = oldTags ?: if(creating) emptyMap() else {
             data.db.from(metaRelations).select(metaRelations.metaId(), metaRelations.exported())
                 .where { metaRelations.entityId() eq thisId }
                 .asSequence()
@@ -288,42 +297,13 @@ class MetaManager(private val data: DataRepository) {
     }
 
     /**
-     * 删除此关系关联的全部tag。
-     * @param remainNotExported 保留not exported的tag，也就是只删除exported tag。
-     */
-    fun <R : EntityMetaRelationTable<*>, T : MetaTagTable<*>> deleteMetaTags(id: Int, metaRelations: R, metaTag: T, analyseStatisticCount: Boolean, remainNotExported: Boolean = false) {
-        val condition = (metaRelations.entityId() eq id).runIf(remainNotExported) { this and metaRelations.exported() }
-        if(analyseStatisticCount) {
-            val ids = data.db.from(metaRelations).select(metaRelations.metaId()).where { condition }.map { it[metaRelations.metaId()]!! }
-            data.db.delete(metaRelations) { condition }
-            //修改统计计数
-            data.db.update(metaTag) {
-                where { it.id inList ids }
-                set(it.cachedCount, it.cachedCount minus 1)
-                set(it.updateTime, Instant.now())
-            }
-        }else{
-            data.db.delete(metaRelations) { condition }
-        }
-    }
-
-    /**
      * 取得此关联对象的关系上的全部not exported的关联标签。
      */
-    fun <R : EntityMetaRelationTable<*>, T : MetaTagTable<M>, M : Any> getNotExportMetaTags(id: Int, metaRelations: R, metaTag: T): List<M> {
+    fun <R : EntityMetaRelationTable<*>, T : MetaTagTable<M>, M : Any> getMetaTags(id: Int, metaRelations: R, metaTag: T, exportType: ExportType? = null): List<Pair<M, ExportType>> {
         return data.db.from(metaRelations)
             .innerJoin(metaTag, metaRelations.metaId() eq metaTag.id)
-            .select(metaTag.columns)
-            .where { (metaRelations.entityId() eq id) and (metaRelations.exported().not()) }
-            .map { metaTag.createEntity(it) }
-    }
-
-    /**
-     * 判断此关系直接关联(not exported)的对象是否存在。存在任意一个即返回true。
-     */
-    fun <R> getNotExportedMetaCount(id: Int, metaRelations: R): Int where R: EntityMetaRelationTable<*> {
-        return data.db.from(metaRelations).select(count().aliased("count"))
-            .where { (metaRelations.entityId() eq id) and (metaRelations.exported().not()) }
-            .firstOrNull()?.getInt("count") ?: 0
+            .select(metaTag.columns + metaRelations.exported())
+            .where { (metaRelations.entityId() eq id).runIf(exportType != null) { this and (metaRelations.exported() eq exportType!!) } }
+            .map { Pair(metaTag.createEntity(it), it[metaRelations.exported()]!!) }
     }
 }

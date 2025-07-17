@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.components.backend.exporter.IllustMetadataExpo
 import com.heerkirov.hedge.server.components.bus.EventBus
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
+import com.heerkirov.hedge.server.enums.ExportType
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.events.IllustCreated
@@ -36,17 +37,17 @@ class TrashManager(private val data: DataRepository,
     fun trashImage(illust: Illust) {
         val topics = data.db.from(IllustTopicRelations)
             .select(IllustTopicRelations.topicId)
-            .where { (IllustTopicRelations.illustId eq illust.id) and IllustTopicRelations.isExported.not() }
+            .where { (IllustTopicRelations.illustId eq illust.id) and (IllustTopicRelations.isExported eq ExportType.NO) }
             .map { it[IllustTopicRelations.topicId]!! }
 
         val authors = data.db.from(IllustAuthorRelations)
             .select(IllustAuthorRelations.authorId)
-            .where { (IllustAuthorRelations.illustId eq illust.id) and IllustAuthorRelations.isExported.not() }
+            .where { (IllustAuthorRelations.illustId eq illust.id) and (IllustAuthorRelations.isExported eq ExportType.NO) }
             .map { it[IllustAuthorRelations.authorId]!! }
 
         val tags = data.db.from(IllustTagRelations)
             .select(IllustTagRelations.tagId)
-            .where { (IllustTagRelations.illustId eq illust.id) and IllustTagRelations.isExported.not() }
+            .where { (IllustTagRelations.illustId eq illust.id) and (IllustTagRelations.isExported eq ExportType.NO) }
             .map { it[IllustTagRelations.tagId]!! }
 
         val books = data.db.from(BookImageRelations)

@@ -1,9 +1,6 @@
 package com.heerkirov.hedge.server.dao
 
-import com.heerkirov.hedge.server.enums.FileStatus
-import com.heerkirov.hedge.server.enums.FingerprintStatus
-import com.heerkirov.hedge.server.enums.IllustModelType
-import com.heerkirov.hedge.server.enums.ImportStatus
+import com.heerkirov.hedge.server.enums.*
 import com.heerkirov.hedge.server.model.*
 import com.heerkirov.hedge.server.model.FileFingerprint
 import com.heerkirov.hedge.server.utils.ktorm.type.*
@@ -83,11 +80,11 @@ open class IllustTagRelations(alias: String?) : EntityMetaRelationTable<IllustTa
 
     val illustId = int("illust_id")
     val tagId = int("tag_id")
-    val isExported = boolean("is_exported")
+    val isExported = enum("is_exported", typeRef<ExportType>())
 
     override fun entityId(): Column<Int> = illustId
     override fun metaId(): Column<Int> = tagId
-    override fun exported(): Column<Boolean> = isExported
+    override fun exported(): Column<ExportType> = isExported
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = IllustTagRelation(
         illustId = row[illustId]!!,
@@ -102,11 +99,11 @@ open class IllustTopicRelations(alias: String?) : EntityMetaRelationTable<Illust
 
     val illustId = int("illust_id")
     val topicId = int("topic_id")
-    val isExported = boolean("is_exported")
+    val isExported = enum("is_exported", typeRef<ExportType>())
 
     override fun entityId(): Column<Int> = illustId
     override fun metaId(): Column<Int> = topicId
-    override fun exported(): Column<Boolean> = isExported
+    override fun exported(): Column<ExportType> = isExported
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = IllustTopicRelation(
         illustId = row[illustId]!!,
@@ -121,11 +118,11 @@ open class IllustAuthorRelations(alias: String?) : EntityMetaRelationTable<Illus
 
     val illustId = int("illust_id")
     val authorId = int("author_id")
-    val isExported = boolean("is_exported")
+    val isExported = enum("is_exported", typeRef<ExportType>())
 
     override fun entityId(): Column<Int> = illustId
     override fun metaId(): Column<Int> = authorId
-    override fun exported(): Column<Boolean> = isExported
+    override fun exported(): Column<ExportType> = isExported
 
     override fun doCreateEntity(row: QueryRowSet, withReferences: Boolean) = IllustAuthorRelation(
         illustId = row[illustId]!!,
