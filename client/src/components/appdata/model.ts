@@ -2,6 +2,7 @@ export interface AppData {
     version: string
     loginOption: LoginOption
     appearanceOption: AppearanceOption
+    behaviourOption: BehaviourOption
     storageOption: StorageOption
 }
 
@@ -31,7 +32,21 @@ interface LoginOption {
 }
 
 interface AppearanceOption {
+    /**
+     * 主题。
+     */
     theme: NativeTheme
+}
+
+interface BehaviourOption {
+    /**
+     * 自定义浏览器列表。
+     */
+    customBrowserList: {name: string, path: string}[]
+    /**
+     * 打开外部链接时使用的浏览器。null表示不指定，使用默认浏览器。
+     */
+    externalBrowser: string | null
 }
 
 interface StorageOption {
@@ -70,6 +85,10 @@ export function defaultValue(): AppData {
         },
         appearanceOption: {
             theme: "system"
+        },
+        behaviourOption: {
+            customBrowserList: [],
+            externalBrowser: null
         },
         storageOption: {
             cacheCleanIntervalDay: 7,

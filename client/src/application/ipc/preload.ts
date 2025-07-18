@@ -82,6 +82,14 @@ function createRemoteIpcClient(): IpcClient {
                     await ipcRenderer.invoke("/setting/appearance/set", value)
                 }
             },
+            behaviour: {
+                async get() {
+                    return await ipcRenderer.invoke("/setting/behaviour")
+                },
+                async set(value) {
+                    await ipcRenderer.invoke("/setting/behaviour/set", value)
+                }
+            },
             auth: {
                 async get() {
                     return await ipcRenderer.invoke("/setting/auth")

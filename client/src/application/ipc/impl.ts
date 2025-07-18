@@ -109,6 +109,17 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
                     await theme.setTheme(value.theme)
                 }
             },
+            behaviour: {
+                async get() {
+                    return appdata.getAppData().behaviourOption
+                },
+                async set(value) {
+                    await appdata.saveAppData(d => {
+                        d.behaviourOption.customBrowserList = value.customBrowserList
+                        d.behaviourOption.externalBrowser = value.externalBrowser
+                    })
+                }
+            },
             auth: {
                 async get() {
                     return appdata.getAppData().loginOption

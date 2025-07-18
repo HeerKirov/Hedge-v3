@@ -17,6 +17,15 @@ const migrations: {[version: string]: Migrate<MigrateContext>} = {
                 fileWatchInitialize: true
             }
         }
+    },
+    async "0.13.0"(context) {
+        const data = context.appData as any
+        if(!data.behaviourOption) {
+            data.behaviourOption = {
+                customBrowserList: [],
+                externalBrowser: null
+            }
+        }
     }
 }
 

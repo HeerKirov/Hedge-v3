@@ -1,4 +1,5 @@
 import { BrowserWindow, dialog, ipcMain, IpcMainEvent, IpcMainInvokeEvent, Menu, MessageBoxOptions, OpenDialogOptions, shell } from "electron"
+import open, { apps } from "open"
 import { ThemeManager } from "@/application/theme"
 import { WindowManager } from "@/application/window"
 import { MenuManager, UpdateStateOptions } from "@/application/menu"
@@ -77,6 +78,8 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
     ipcHandleSync("/window/open-note", impl.window.openNote)
     ipcHandle("/setting/appearance", impl.setting.appearance.get)
     ipcHandle("/setting/appearance/set", impl.setting.appearance.set)
+    ipcHandle("/setting/behaviour", impl.setting.behaviour.get)
+    ipcHandle("/setting/behaviour/set", impl.setting.behaviour.set)
     ipcHandle("/setting/auth", impl.setting.auth.get)
     ipcHandle("/setting/auth/set", impl.setting.auth.set)
     ipcHandle("/setting/storage", impl.setting.storage.get)
@@ -128,7 +131,21 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
         const window = BrowserWindow.fromWebContents(e.sender)!
         menu.popup({window, ...(options || {})})
     })
-    ipcHandleSync("/remote/shell/open-external", (url: string) => { shell.openExternal(url).catch(reason => dialog.showErrorBox("打开链接时发生错误", reason)) })
+    ipcHandleSync("/remote/shell/open-external", (url: string) => {
+        const externalBrowser = appdata.getAppData().behaviourOption.externalBrowser
+        let name: string | readonly string[] | undefined = undefined
+        if(externalBrowser !== null) {
+            if(externalBrowser in ["edge", "chrome", "brave", "firefox"]) {
+                name = apps[externalBrowser as "edge" | "chrome" | "brave" | "firefox"]
+            }else if(externalBrowser === "safari") {
+                name = "safari"
+            }else{
+                const found = appdata.getAppData().behaviourOption.customBrowserList.find(i => i.name === externalBrowser)
+                if(found) name = found.path
+            }
+        }
+        open(url, name ? {app: {name}} : undefined).catch(reason => dialog.showErrorBox("打开链接时发生错误", reason))
+    })
     ipcHandleSync("/remote/shell/open-path", (url: string) => { shell.openPath(url).catch(reason => dialog.showErrorBox("打开链接时发生错误", reason)) })
     ipcHandleSync("/remote/shell/open-path-in-folder", (url: string) => { shell.showItemInFolder(url) })
     ipcHandleSync("/remote/shell/start-drag-file", ({ thumbnail, filepath }: {thumbnail: string, filepath: string | string[]}, e) => {
