@@ -8,6 +8,8 @@ CREATE TABLE new_illust_tag_relation(
 INSERT INTO new_illust_tag_relation(tag_id, illust_id, is_exported) SELECT tag_id, illust_id, iif(is_exported, 1, 0) FROM illust_tag_relation;
 DROP TABLE illust_tag_relation;
 ALTER TABLE new_illust_tag_relation RENAME TO illust_tag_relation;
+UPDATE illust_tag_relation SET is_exported = 2 WHERE illust_id IN (SELECT illust_id FROM illust_tag_relation GROUP BY illust_id HAVING SUM(1 - is_exported) <= 0);
+
 
 CREATE TABLE new_book_tag_relation(
     tag_id 		INTEGER NOT NULL,
@@ -17,6 +19,8 @@ CREATE TABLE new_book_tag_relation(
 INSERT INTO new_book_tag_relation(tag_id, book_id, is_exported) SELECT tag_id, book_id, iif(is_exported, 1, 0) FROM book_tag_relation;
 DROP TABLE book_tag_relation;
 ALTER TABLE new_book_tag_relation RENAME TO book_tag_relation;
+UPDATE book_tag_relation SET is_exported = 2 WHERE book_id IN (SELECT book_id FROM book_tag_relation GROUP BY book_id HAVING SUM(1 - is_exported) <= 0);
+
 
 CREATE TABLE new_illust_author_relation(
     author_id   INTEGER NOT NULL,
@@ -26,6 +30,8 @@ CREATE TABLE new_illust_author_relation(
 INSERT INTO new_illust_author_relation(author_id, illust_id, is_exported) SELECT author_id, illust_id, iif(is_exported, 1, 0) FROM illust_author_relation;
 DROP TABLE illust_author_relation;
 ALTER TABLE new_illust_author_relation RENAME TO illust_author_relation;
+UPDATE illust_author_relation SET is_exported = 2 WHERE illust_id IN (SELECT illust_id FROM illust_author_relation GROUP BY illust_id HAVING SUM(1 - is_exported) <= 0);
+
 
 CREATE TABLE new_book_author_relation(
     author_id 	INTEGER NOT NULL,
@@ -35,6 +41,7 @@ CREATE TABLE new_book_author_relation(
 INSERT INTO new_book_author_relation(author_id, book_id, is_exported) SELECT author_id, book_id, iif(is_exported, 1, 0) FROM book_author_relation;
 DROP TABLE book_author_relation;
 ALTER TABLE new_book_author_relation RENAME TO book_author_relation;
+UPDATE book_author_relation SET is_exported = 2 WHERE book_id IN (SELECT book_id FROM book_author_relation GROUP BY book_id HAVING SUM(1 - is_exported) <= 0);
 
 
 CREATE TABLE new_illust_topic_relation(
@@ -45,6 +52,7 @@ CREATE TABLE new_illust_topic_relation(
 INSERT INTO new_illust_topic_relation(topic_id, illust_id, is_exported) SELECT topic_id, illust_id, iif(is_exported, 1, 0) FROM illust_topic_relation;
 DROP TABLE illust_topic_relation;
 ALTER TABLE new_illust_topic_relation RENAME TO illust_topic_relation;
+UPDATE illust_topic_relation SET is_exported = 2 WHERE illust_id IN (SELECT illust_id FROM illust_topic_relation GROUP BY illust_id HAVING SUM(1 - is_exported) <= 0);
 
 
 CREATE TABLE new_book_topic_relation(
@@ -55,6 +63,7 @@ CREATE TABLE new_book_topic_relation(
 INSERT INTO new_book_topic_relation(topic_id, book_id, is_exported) SELECT topic_id, book_id, iif(is_exported, 1, 0) FROM book_topic_relation;
 DROP TABLE book_topic_relation;
 ALTER TABLE new_book_topic_relation RENAME TO book_topic_relation;
+UPDATE book_topic_relation SET is_exported = 2 WHERE book_id IN (SELECT book_id FROM book_topic_relation GROUP BY book_id HAVING SUM(1 - is_exported) <= 0);
 
 
 CREATE UNIQUE INDEX illust_tag__index ON illust_tag_relation(tag_id, illust_id);

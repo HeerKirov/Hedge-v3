@@ -95,10 +95,8 @@ class IllustRoutes(private val illustService: IllustService) : Routes {
     }
 
     private fun summaryByIds(ctx: Context) {
-        val images = try { ctx.bodyAsClass<List<Int>>() } catch (e: Exception) {
-            throw be(ParamTypeError("images", e.message ?: "cannot convert to List<Int>"))
-        }
-        ctx.json(illustService.summaryByIds(images))
+        val form = ctx.bodyAsForm<IllustSummaryForm>()
+        ctx.json(illustService.summaryByIds(form))
     }
 
     private fun findImageLocation(ctx: Context) {

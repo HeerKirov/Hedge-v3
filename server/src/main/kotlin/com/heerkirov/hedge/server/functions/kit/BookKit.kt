@@ -43,20 +43,20 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
                 val validated = if(newTags.value.isEmpty()) emptyList() else metaManager.validateAndExportTag(newTags.value)
                 val validatedIds = validated.map { (i, _) -> i }.toSet()
 
-                val relatedIds = getOneMetaFromImages(thisId, BookTagRelations, 0.3)
+                val relatedIds = getOneMetaFromImages(thisId, IllustTagRelations, 0.3)
                 val filteredRelatedIds = (relatedIds - validatedIds).map { it to ExportType.FROM_RELATED }
                 metaManager.processMetaTags(thisId, creating, analyseStatisticCount = false, Tags, BookTagRelations, validated + filteredRelatedIds)
             }
         }
 
-        if(newTags.isPresent) {
+        if(newTopics.isPresent) {
             val exist = metaManager.getMetaTags(thisId, BookTopicRelations, Topics)
             val notExportedIds = exist.mapNotNull { (i, e) -> if(e == ExportType.NO) i.id else null }.toSet()
             if(notExportedIds != newTopics.value.toSet()) {
                 val validated = if(newTopics.value.isEmpty()) emptyList() else metaManager.validateAndExportTopicModel(newTopics.value)
                 val validatedIds = validated.map { (i, _) -> i.id }.toSet()
 
-                val relatedIds = getOneMetaFromImages(thisId, BookTopicRelations, 0.05)
+                val relatedIds = getOneMetaFromImages(thisId, IllustTopicRelations, 0.05)
                 val filteredRelatedIds = (relatedIds - validatedIds).map { it to ExportType.FROM_RELATED }
                 metaManager.processMetaTags(thisId, creating, analyseStatisticCount = false, Topics, BookTopicRelations, validated.map { (i, e) -> i.id to e } + filteredRelatedIds)
             }
@@ -69,7 +69,7 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
                 val validated = if(newAuthors.value.isEmpty()) emptyList() else metaManager.validateAndExportAuthor(newAuthors.value)
                 val validatedIds = validated.map { (i, _) -> i }.toSet()
 
-                val relatedIds = getOneMetaFromImages(thisId, BookAuthorRelations, 0.05)
+                val relatedIds = getOneMetaFromImages(thisId, IllustAuthorRelations, 0.05)
                 val filteredRelatedIds = (relatedIds - validatedIds).map { it to ExportType.FROM_RELATED }
                 metaManager.processMetaTags(thisId, creating, analyseStatisticCount = false, Authors, BookAuthorRelations, validated + filteredRelatedIds)
             }
@@ -116,8 +116,7 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
      */
     private fun <IR : EntityMetaRelationTable<*>> getOneMetaFromImages(thisId: Int, imageTagRelations: IR, conditionRate: Double): List<Int> {
         val metaTags = data.db.from(BookImageRelations)
-            .innerJoin(Illusts, BookImageRelations.imageId eq Illusts.id)
-            .innerJoin(imageTagRelations, imageTagRelations.entityId() eq Illusts.id)
+            .innerJoin(imageTagRelations, imageTagRelations.entityId() eq BookImageRelations.imageId)
             .select(imageTagRelations.metaId(), count(imageTagRelations.entityId()).aliased("count"))
             .where { BookImageRelations.bookId eq thisId }
             .groupBy(imageTagRelations.metaId())

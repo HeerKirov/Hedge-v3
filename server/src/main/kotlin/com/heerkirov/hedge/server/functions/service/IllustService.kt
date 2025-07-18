@@ -134,15 +134,20 @@ class IllustService(private val appdata: AppDataManager,
             .let { r -> imageIds.map { r[it] } }
     }
 
-    fun summaryByIds(illustIds: List<Int>): IllustSummaryRes {
+    fun summaryByIds(form: IllustSummaryForm): IllustSummaryRes {
         val authorColors = appdata.setting.meta.authorColors
         val topicColors = appdata.setting.meta.topicColors
 
-        val allRows = data.db.from(Illusts)
-            .select(Illusts.id, Illusts.description, Illusts.tagme)
-            .where { Illusts.id inList illustIds }
-            .map { Triple(it[Illusts.id]!!, it[Illusts.description]!!, it[Illusts.tagme]!!) }
-            .ifEmpty { throw be(ResourceNotExist("images", illustIds)) }
+        val allRows = if(form.unfold) {
+            illustManager.unfoldImages(form.illustIds, "illustIds").map { Triple(it.id, it.description, it.tagme) }
+        }else{
+            data.db.from(Illusts)
+                .select(Illusts.id, Illusts.description, Illusts.tagme)
+                .where { Illusts.id inList form.illustIds }
+                .map { Triple(it[Illusts.id]!!, it[Illusts.description]!!, it[Illusts.tagme]!!) }
+                .ifEmpty { throw be(ResourceNotExist("images", form.illustIds)) }
+        }
+        val illustIds = if(form.unfold) allRows.map { (id, _, _) -> id } else form.illustIds
 
         val aggregatedRow = data.db.from(Illusts)
             .select(

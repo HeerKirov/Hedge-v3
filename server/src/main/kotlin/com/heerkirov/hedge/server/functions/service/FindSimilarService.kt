@@ -17,7 +17,6 @@ import com.heerkirov.hedge.server.functions.manager.BookManager
 import com.heerkirov.hedge.server.functions.manager.IllustManager
 import com.heerkirov.hedge.server.model.FindSimilarIgnored
 import com.heerkirov.hedge.server.model.FindSimilarResult
-import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.Fs
 import com.heerkirov.hedge.server.utils.Similarity
@@ -289,7 +288,7 @@ class FindSimilarService(private val data: DataRepository,
                     }
                     is String -> if(imageIds.isNotEmpty()) {
                         //collectionId可以设置为string，表示会创建新collection，相同字符串的会被创建到同一个collection中
-                        newCollectionIds[collectionId] = illustManager.newCollection(imageIds, "", null, null, Illust.Tagme.EMPTY, specifyPartitionTime)
+                        newCollectionIds[collectionId] = illustManager.newCollection(imageIds, "", null, null, null, specifyPartitionTime)
                     }
                     else -> throw be(ParamTypeError("config.collectionId", "must be number or string."))
                 }

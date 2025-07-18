@@ -300,7 +300,7 @@ class IllustUtilService(private val appdata: AppDataManager, private val data: D
                             null
                         }
                     }else null
-                    illustManager.newCollection(illustIds, "", null, null, Illust.Tagme.EMPTY, specifyPartitionTime)
+                    illustManager.newCollection(illustIds, "", null, null, null, specifyPartitionTime)
                 }
             }
         }

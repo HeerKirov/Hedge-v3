@@ -27,7 +27,7 @@ data class IllustCollectionCreateForm(val images: List<Int>,
                                       val description: String? = null,
                                       val score: Int? = null,
                                       val favorite: Boolean? = null,
-                                      val tagme: Illust.Tagme = Illust.Tagme.EMPTY,
+                                      val tagme: Illust.Tagme? = null,
                                       val specifyPartitionTime: LocalDate? = null)
 
 open class IllustUpdateForm(val topics: Opt<List<Int>>, val authors: Opt<List<Int>>, val tags: Opt<List<Int>>,
@@ -108,3 +108,5 @@ class ImagePropsCloneForm(val props: Props, val merge: Boolean = false, val dele
         val source: Boolean = false
     )
 }
+
+data class IllustSummaryForm(val illustIds: List<Int>, val unfold: Boolean = false)

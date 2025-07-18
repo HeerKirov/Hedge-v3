@@ -116,10 +116,10 @@ class IllustManager(private val appdata: AppDataManager,
      * 创建新的collection。
      * @throws ResourceNotExist ("images", number[]) 给出的部分images不存在。给出不存在的image id列表
      */
-    fun newCollection(illustIds: List<Int>, formDescription: String, formScore: Int?, formFavorite: Boolean?, formTagme: Illust.Tagme, specifyPartitionTime: LocalDate?): Int {
+    fun newCollection(illustIds: List<Int>, formDescription: String, formScore: Int?, formFavorite: Boolean?, formTagme: Illust.Tagme?, specifyPartitionTime: LocalDate?): Int {
         if(illustIds.isEmpty()) throw be(ParamError("images"))
         val images = unfoldImages(illustIds, sorted = false)
-        val (fileId, scoreFromSub, favorite, partitionTime, orderTime) = kit.getExportedPropsFromList(images, specifyPartitionTime)
+        val (fileId, scoreFromSub, favorite, tagme, partitionTime, orderTime) = kit.getExportedPropsFromList(images, specifyPartitionTime)
         val (cachedBookIds, cachedFolderIds) = kit.getCachedBookAndFolderFromImages(images)
 
         val createTime = Instant.now()
@@ -141,7 +141,7 @@ class IllustManager(private val appdata: AppDataManager,
             set(it.description, formDescription)
             set(it.score, formScore)
             set(it.favorite, formFavorite ?: favorite)
-            set(it.tagme, formTagme)
+            set(it.tagme, formTagme ?: tagme)
             set(it.exportedDescription, formDescription)
             set(it.exportedScore, formScore ?: scoreFromSub)
             set(it.partitionTime, partitionTime)
@@ -176,7 +176,7 @@ class IllustManager(private val appdata: AppDataManager,
      * 设置一个collection的image列表。
      */
     fun updateImagesInCollection(collectionId: Int, images: List<Illust>, specifyPartitionTime: LocalDate?, originScore: Int? = null) {
-        val (fileId, scoreFromSub, favoriteFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(images, specifyPartitionTime)
+        val (fileId, scoreFromSub, favoriteFromSub, tagmeFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(images, specifyPartitionTime)
 
         data.db.update(Illusts) {
             where { it.id eq collectionId }
@@ -184,6 +184,7 @@ class IllustManager(private val appdata: AppDataManager,
             set(it.cachedChildrenCount, images.size)
             set(it.exportedScore, originScore ?: scoreFromSub)
             set(it.favorite, favoriteFromSub)
+            set(it.tagme, tagmeFromSub)
             set(it.partitionTime, partitionTime)
             set(it.orderTime, orderTime)
             set(it.updateTime, Instant.now())
@@ -224,7 +225,7 @@ class IllustManager(private val appdata: AppDataManager,
                 }
             }
 
-            val (fileId, scoreFromSub, favoriteFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(nextImages, specifyPartitionTime)
+            val (fileId, scoreFromSub, favoriteFromSub, tagmeFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(nextImages, specifyPartitionTime)
 
             data.db.update(Illusts) {
                 where { it.id eq collectionId }
@@ -232,6 +233,7 @@ class IllustManager(private val appdata: AppDataManager,
                 set(it.cachedChildrenCount, nextImages.size)
                 set(it.exportedScore, originScore ?: scoreFromSub)
                 set(it.favorite, favoriteFromSub)
+                set(it.tagme, tagmeFromSub)
                 set(it.partitionTime, partitionTime)
                 set(it.orderTime, orderTime)
                 set(it.updateTime, Instant.now())
@@ -242,7 +244,7 @@ class IllustManager(private val appdata: AppDataManager,
             //这里需要按照orderTime排序，以保证插入项的位置与现有项的相对位置正确。如果不排序，那么插入项就只会在最后面了。
             val nextImages = (currentChildren.filter { it.id !in addImageIds } + addImages).sortedBy { it.orderTime }
 
-            val (fileId, scoreFromSub, favoriteFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(nextImages, specifyPartitionTime)
+            val (fileId, scoreFromSub, favoriteFromSub, tagmeFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(nextImages, specifyPartitionTime)
 
             data.db.update(Illusts) {
                 where { it.id eq collectionId }
@@ -250,6 +252,7 @@ class IllustManager(private val appdata: AppDataManager,
                 set(it.cachedChildrenCount, nextImages.size)
                 set(it.exportedScore, originScore ?: scoreFromSub)
                 set(it.favorite, favoriteFromSub)
+                set(it.tagme, tagmeFromSub)
                 set(it.partitionTime, partitionTime)
                 set(it.orderTime, orderTime)
                 set(it.updateTime, Instant.now())
@@ -278,7 +281,7 @@ class IllustManager(private val appdata: AppDataManager,
             return
         }
 
-        val (fileId, scoreFromSub, favoriteFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(nextImages, null)
+        val (fileId, scoreFromSub, favoriteFromSub, tagmeFromSub, partitionTime, orderTime) = kit.getExportedPropsFromList(nextImages, null)
 
         data.db.update(Illusts) {
             where { it.id eq collectionId }
@@ -286,6 +289,7 @@ class IllustManager(private val appdata: AppDataManager,
             set(it.cachedChildrenCount, images.size)
             set(it.exportedScore, originScore ?: scoreFromSub)
             set(it.favorite, favoriteFromSub)
+            set(it.tagme, tagmeFromSub)
             set(it.partitionTime, partitionTime)
             set(it.orderTime, orderTime)
             set(it.updateTime, Instant.now())
@@ -513,7 +517,8 @@ class IllustManager(private val appdata: AppDataManager,
             val mappings = form.mappingSourceTags.unwrapOrNull()?.let { sourceMappingManager.batchQuery(it) }?.associateBy { SourceTagPath(it.site, it.type, it.code) }
 
             //由于meta tag的更新实在复杂，不必在这里搞batch优化了，就挨个处理就好了
-            for (illust in images) {
+            //tips: 根据新的collection语义，在批量处理中对collection的metaTag编辑总是穿透至其子项
+            for (illust in images + childrenOfCollections) {
                 val (tags, topics, authors) = if(mappings != null && illust.sourceDataId != null) {
                     //提取标签映射。查询sourceData对应的全部sourceTag，然后从mappings中取存在的那部分，最后按类别分类并与表单参数合并
                     val sourceTags = data.db.from(SourceTags)
@@ -567,14 +572,6 @@ class IllustManager(private val appdata: AppDataManager,
                     IllustBatchUpdateForm.TagUpdateMode.OVERRIDE -> kit.updateMeta(illust.id, newTags = tags.elseOr { emptyList() }, newAuthors = authors.elseOr { emptyList() }, newTopics = topics.elseOr { emptyList() }, copyFromParent = illust.parentId)
                     IllustBatchUpdateForm.TagUpdateMode.APPEND -> kit.appendMeta(illust.id, appendTags = tags.unwrapOr { emptyList() }, appendAuthors = authors.unwrapOr { emptyList() }, appendTopics = topics.unwrapOr { emptyList() }, isCollection = false)
                     IllustBatchUpdateForm.TagUpdateMode.REMOVE -> kit.removeMeta(illust.id, removeTags = tags.unwrapOr { emptyList() }, removeAuthors = authors.unwrapOr { emptyList() }, removeTopics = topics.unwrapOr { emptyList() }, copyFromParent = illust.parentId)
-                }
-                if(metaResponse != Illust.Tagme.EMPTY) metaResponses[illust.id] = metaResponse to illust.tagme
-            }
-            for (illust in collections) {
-                val metaResponse = when (form.tagUpdateMode) {
-                    IllustBatchUpdateForm.TagUpdateMode.OVERRIDE -> kit.updateMeta(illust.id, newTags = form.tags.elseOr { emptyList() }, newAuthors = form.authors.elseOr { emptyList() }, newTopics = form.topics.elseOr { emptyList() }, copyFromChildren = true)
-                    IllustBatchUpdateForm.TagUpdateMode.APPEND -> kit.appendMeta(illust.id, appendTags = form.tags.unwrapOr { emptyList() }, appendAuthors = form.authors.unwrapOr { emptyList() }, appendTopics = form.topics.unwrapOr { emptyList() }, isCollection = true)
-                    IllustBatchUpdateForm.TagUpdateMode.REMOVE -> kit.removeMeta(illust.id, removeTags = form.tags.unwrapOr { emptyList() }, removeAuthors = form.authors.unwrapOr { emptyList() }, removeTopics = form.topics.unwrapOr { emptyList() }, copyFromChildren = true)
                 }
                 if(metaResponse != Illust.Tagme.EMPTY) metaResponses[illust.id] = metaResponse to illust.tagme
             }
@@ -921,7 +918,7 @@ class IllustManager(private val appdata: AppDataManager,
         if(!disableEvent) {
             val timeSot = anyOpt(form.partitionTime, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
             val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.tagmePatch, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
-            for (record in records) {
+            for (record in images + childrenOfCollections) {
                 val thisMetaTagSot = metaResponses[record.id]?.first?.let { it != Illust.Tagme.EMPTY } ?: false
                 val thisDetailUpdated = listUpdated || thisMetaTagSot || anyOpt(form.description, form.partitionTime)
                 if(listUpdated || thisDetailUpdated) {
@@ -934,7 +931,7 @@ class IllustManager(private val appdata: AppDataManager,
                         scoreSot = form.score.isPresent,
                         descriptionSot = form.description.isPresent,
                         favoriteSot = form.favorite.isPresent,
-                        tagmeSot = form.tagme.isPresent || form.tagmePatch.isPresent,
+                        tagmeSot = form.tagme.isPresent || form.tagmePatch.isPresent || (thisMetaTagSot && form.tagUpdateMode != IllustBatchUpdateForm.TagUpdateMode.REMOVE),
                         timeSot = timeSot))
                 }
             }

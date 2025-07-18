@@ -309,10 +309,11 @@ class IllustKit(private val appdata: AppDataManager,
      * @throws ResourceNotExist ("specifyPartitionTime", LocalDate) 在指定的时间分区下没有存在的图像
      * @return (fileId, score, favorite, partitionTime, orderTime)
      */
-    fun getExportedPropsFromList(images: List<Illust>, specifyPartitionTime: LocalDate?): Tuple5<Int, Int?, Boolean, LocalDate, Long> {
+    fun getExportedPropsFromList(images: List<Illust>, specifyPartitionTime: LocalDate?): Tuple6<Int, Int?, Boolean, Illust.Tagme, LocalDate, Long> {
         val fileId = images.minBy { it.orderTime }.fileId
         val score = images.asSequence().mapNotNull { it.score }.average().run { if(isNaN()) null else this }?.roundToInt()
         val favorite = images.any { it.favorite }
+        val tagme = images.map { it.tagme }.reduce { acc, tagme -> acc + tagme }
         val partitionTime: LocalDate
         val orderTime: Long
         if(appdata.setting.meta.centralizeCollection && specifyPartitionTime != null) {
@@ -323,7 +324,7 @@ class IllustKit(private val appdata: AppDataManager,
             orderTime = images.filter { it.partitionTime == partitionTime }.minOf { it.orderTime }
         }
 
-        return Tuple5(fileId, score, favorite, partitionTime, orderTime)
+        return Tuple6(fileId, score, favorite, tagme, partitionTime, orderTime)
     }
 
     /**
