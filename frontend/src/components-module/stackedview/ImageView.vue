@@ -38,8 +38,6 @@ const hasDarwinBorder = useDarwinWindowed()
 
 const hasWinButton = platform !== "darwin"
 
-console.log(hasWinButton)
-
 const externalMenuItems = <MenuItem<undefined>[]>[
     {type: "normal", label: "在新窗口中打开", click: openInNewWindow},
     {type: "separator"},
