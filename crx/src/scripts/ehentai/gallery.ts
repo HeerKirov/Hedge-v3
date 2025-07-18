@@ -354,7 +354,7 @@ function getGalleryPageNum(): number {
 function getGalleryImageCount(): number {
     const p = document.querySelector<HTMLParagraphElement>(".gtb > .gpc")
     if(!p) throw new Error("Cannot find div.gtb > p.gpc.")
-    const m = p.textContent?.match(/^Showing \d+ - \d+ of (?<COUNT>\d+) images$/)
+    const m = p.textContent?.match(/^Showing [\d,]+ - [\d,]+ of (?<COUNT>[\d,]+) images$/)
     if(!m || !m.groups) throw new Error(`Cannot analyse div.gtb > p.gpc textContent '${p.textContent}'.`)
-    return parseInt(m.groups["COUNT"])
+    return parseInt(m.groups["COUNT"].replaceAll(",", ""))
 }
