@@ -86,9 +86,9 @@ class BookKit(private val data: DataRepository, private val metaManager: MetaMan
         val oldAuthors = metaManager.getMetaTags(thisId, BookAuthorRelations, Authors)
 
         //取出子项的meta tag
-        val relatedTagIds = getOneMetaFromImages(thisId, BookTagRelations, 0.3)
-        val relatedTopicIds = getOneMetaFromImages(thisId, BookTopicRelations, 0.05)
-        val relatedAuthorIds = getOneMetaFromImages(thisId, BookAuthorRelations, 0.05)
+        val relatedTagIds = getOneMetaFromImages(thisId, IllustTagRelations, 0.3)
+        val relatedTopicIds = getOneMetaFromImages(thisId, IllustTopicRelations, 0.05)
+        val relatedAuthorIds = getOneMetaFromImages(thisId, IllustAuthorRelations, 0.05)
         val relatedTags = if(relatedTagIds.isNotEmpty()) data.db.sequenceOf(Tags).filter { it.id inList relatedTagIds }.toList() else emptyList()
         val relatedTopics = if(relatedTopicIds.isNotEmpty()) data.db.sequenceOf(Topics).filter { it.id inList relatedTopicIds }.toList() else emptyList()
         val relatedAuthors = if(relatedAuthorIds.isNotEmpty()) data.db.sequenceOf(Authors).filter { it.id inList relatedAuthorIds }.toList() else emptyList()
