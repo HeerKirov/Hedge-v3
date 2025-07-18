@@ -1,6 +1,6 @@
 import { computed, onMounted, ref, toRaw, watch } from "vue"
 import { remoteIpcClient } from "@/functions/ipc-client"
-import { AuthSetting, StorageSetting } from "@/functions/ipc-client/constants"
+import { AuthSetting, BehaviourSetting, StorageSetting } from "@/functions/ipc-client/constants"
 import { ServerOption, MetaOption, QueryOption, ImportOption, FindSimilarOption, StorageOption } from "@/functions/http-client/api/setting"
 import { useFetchReactive, usePathFetchHelper } from "@/functions/fetch"
 import { useAppEnv, useServerStatus } from "@/functions/app"
@@ -37,6 +37,20 @@ export function useSettingAuth() {
     watch(value, async (_, o) => {
         if(o !== undefined && value.value !== undefined) {
             await remoteIpcClient.setting.auth.set(toRaw(value.value))
+        }
+    }, {deep: true})
+
+    return {data: value}
+}
+
+export function useSettingBehaviour() {
+    const value = ref<BehaviourSetting>()
+
+    onMounted(async () => value.value = await remoteIpcClient.setting.behaviour.get())
+
+    watch(value, async (_, o) => {
+        if(o !== undefined && value.value !== undefined) {
+            await remoteIpcClient.setting.behaviour.set(toRaw(value.value))
         }
     }, {deep: true})
 

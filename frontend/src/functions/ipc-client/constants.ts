@@ -37,6 +37,10 @@ export interface IpcClient {
             get(): Promise<AppearanceSetting>
             set(value: AppearanceSetting): Promise<void>
         }
+        behaviour: {
+            get(): Promise<BehaviourSetting>
+            set(value: BehaviourSetting): Promise<void>
+        }
         auth: {
             get(): Promise<AuthSetting>
             set(value: AuthSetting): Promise<void>
@@ -145,6 +149,11 @@ export interface AuthSetting {
 
 export interface AppearanceSetting {
     theme: NativeTheme
+}
+
+export interface BehaviourSetting {
+    customBrowserList: {name: string, path: string}[]
+    externalBrowser: string | null
 }
 
 export interface StorageSetting {

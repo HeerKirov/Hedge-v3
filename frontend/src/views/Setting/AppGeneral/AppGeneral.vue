@@ -8,6 +8,7 @@ import { useSettingAuth, useSettingServer } from "@/services/setting"
 import { usePropertySot } from "@/utils/forms"
 import { toRefNullable } from "@/utils/reactivity"
 import AppGeneralPasswordBox from "./AppGeneralPasswordBox.vue"
+import AppGeneralBrowserBox from "./AppGeneralBrowserBox.vue"
 
 const { platform } = useAppEnv()
 
@@ -47,4 +48,6 @@ const [timeOffsetHour, timeOffsetHourSot, saveTimeOffsetHour] = usePropertySot(t
         </Group>
         <p class="secondary-text">0点之后，延迟一定时间内的时间点仍然视作前一天。这个偏移作用于包括导入、时间分区、主页的方方面面。</p>
     </template>
+    <label class="label mt-6">外部链接</label>
+    <AppGeneralBrowserBox class="mt-1"/>
 </template>
