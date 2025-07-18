@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Icon, Starlight, WrappedText } from "@/components/universal"
-import { TagmeInfo, MetaTagListDisplay, PartitionTimeDisplay, TimeGroupDisplay, FileInfoDisplay } from "@/components-business/form-display"
+import { TagmeInfo, MetaTagListDisplay, PartitionTimeDisplay, FileInfoDisplay } from "@/components-business/form-display"
 import { ImageData } from "./context"
 
 defineProps<{
@@ -37,10 +37,10 @@ defineProps<{
             <WrappedText v-if="value !== null" :value="value.description"/>
         </td>
     </tr>
-    <tr v-if="values.some(i => i?.tags.length || i?.topics.length || i?.authors.length)">
+    <tr v-if="values.some(i => i?.tags.some(i => i.isExported !== 'FROM_RELATED') || i?.topics.some(i => i.isExported !== 'FROM_RELATED') || i?.authors.some(i => i.isExported !== 'FROM_RELATED'))">
         <td>标签</td>
         <td v-for="value in values">
-            <MetaTagListDisplay v-if="value !== null" :max="5" :tags="value.tags" :topics="value.topics" :authors="value.authors" direction="horizontal"/>
+            <MetaTagListDisplay v-if="value !== null" :max="5" :tags="value.tags" :topics="value.topics" :authors="value.authors" self-is="IMAGE" category="self" direction="horizontal"/>
         </td>
     </tr>
     <tr v-if="values.some(i => i?.tagme.length)">

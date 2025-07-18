@@ -134,14 +134,14 @@ function useFormData(context: InstallEditorContext) {
             topics.value = []
             authors.value = []
             exists.value = [
-                ...d.authors.filter(t => !t.isExported).map(a => ({type: "author", value: a, removed: false} as const)),
-                ...d.topics.filter(t => !t.isExported).map(a => ({type: "topic", value: a, removed: false} as const)),
-                ...d.tags.filter(t => !t.isExported).map(a => ({type: "tag", value: a, removed: false} as const)),
+                ...d.authors.filter(t => t.isExported === "NO").map(a => ({type: "author", value: a, removed: false} as const)),
+                ...d.topics.filter(t => t.isExported === "NO").map(a => ({type: "topic", value: a, removed: false} as const)),
+                ...d.tags.filter(t => t.isExported === "NO").map(a => ({type: "tag", value: a, removed: false} as const)),
             ]
         }else{
-            tags.value = d.tags.filter(t => !t.isExported) ?? []
-            topics.value = d.topics.filter(t => !t.isExported) ?? []
-            authors.value = d.authors.filter(t => !t.isExported) ?? []
+            tags.value = d.tags.filter(t => t.isExported === "NO") ?? []
+            topics.value = d.topics.filter(t => t.isExported === "NO") ?? []
+            authors.value = d.authors.filter(t => t.isExported === "NO") ?? []
             exists.value = []
         }
         tagme.value = d.tagme
@@ -286,9 +286,9 @@ function useFormData(context: InstallEditorContext) {
             }
 
             context.updateValue({
-                tags: changed.tag ? tags.value.map(i => ({...i, isExported: false})) : undefined,
-                topics: changed.topic ? topics.value.map(i => ({...i, isExported: false})) : undefined,
-                authors: changed.author ? authors.value.map(i => ({...i, isExported: false})) : undefined,
+                tags: changed.tag ? tags.value.map(i => ({...i, isExported: "NO"})) : undefined,
+                topics: changed.topic ? topics.value.map(i => ({...i, isExported: "NO"})) : undefined,
+                authors: changed.author ? authors.value.map(i => ({...i, isExported: "NO"})) : undefined,
                 mappings: changed.mapping ? mappings.value : undefined,
                 tagme: changed.tagme ? tagme.value : undefined
             })
@@ -360,13 +360,13 @@ function useFormValidation(tags: Ref<SimpleTag[]>, topics: Ref<SimpleTopic[]>, a
                     conflictingMembers: res.conflictingMembers,
                     forceConflictingMembers: res.forceConflictingMembers
                 }
-                exportedResults.value.tags = res.tags.filter(i => i.isExported)
+                exportedResults.value.tags = res.tags.filter(i => i.isExported !== "NO")
             }
             if(flag.topic) {
-                exportedResults.value.topics = res.topics.filter(i => i.isExported)
+                exportedResults.value.topics = res.topics.filter(i => i.isExported !== "NO")
             }
             if(flag.author) {
-                exportedResults.value.authors = res.authors.filter(i => i.isExported)
+                exportedResults.value.authors = res.authors.filter(i => i.isExported !== "NO")
             }
         }else{
             if(flag.tag) {
@@ -646,7 +646,7 @@ export function useDatabaseData() {
     watch(topicSearchText, topicReset)
 
     watch(tabDBType, t => {
-        searchText.value = t === "author" ? authorSearchText.value : t === "topic" ? topicSearchText.value : tagSearch.searchText.value
+        searchText.value = (t === "author" ? authorSearchText.value : t === "topic" ? topicSearchText.value : tagSearch.searchText.value) ?? ""
         selectedIndex.value = null
     })
 

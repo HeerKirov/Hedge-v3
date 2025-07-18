@@ -14,6 +14,8 @@ export type MetaType = "TOPIC" | "AUTHOR" | "TAG"
 
 export type IdentityType = "IMAGE" | "COLLECTION" | "BOOK"
 
+export type ExportType = "NO" | "YES" | "FROM_RELATED"
+
 export interface PatchUnit<T> {
     plusOrMinus: boolean
     value: T
@@ -29,10 +31,6 @@ export interface LimitAndOffsetFilter extends LimitFilter {
 
 export interface IdResponse {
     id: number
-}
-
-export interface IdResponseWithWarnings extends IdResponse {
-    warnings: ErrorResult[]
 }
 
 export interface ListResult<T> {

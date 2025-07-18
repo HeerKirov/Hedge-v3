@@ -7,12 +7,15 @@ import { TitleDisplay, DescriptionDisplay, TimeGroupDisplay, MetaTagListDisplay 
 import { DescriptionEditor, FavoriteEditor, ScoreEditor } from "@/components-business/form-editor"
 import { DetailBook } from "@/functions/http-client/api/book"
 import { useSideBarDetailInfo } from "@/services/main/book"
+import { computedEffect } from "@/utils/reactivity";
 
 const props = defineProps<{book: DetailBook | null}>()
 
 const data = toRef(props, "book")
 
 const { setTitle, setScore, setFavorite, setDescription, openMetaTagEditor } = useSideBarDetailInfo(data)
+
+const anyFromRelatedMetaTags = computedEffect(() => data.value?.authors.some(i => i.isExported === "FROM_RELATED") || data.value?.topics.some(i => i.isExported === "FROM_RELATED") || data.value?.tags.some(i => i.isExported === "FROM_RELATED"))
 
 </script>
 
@@ -45,6 +48,10 @@ const { setTitle, setScore, setFavorite, setDescription, openMetaTagEditor } = u
         </FormEditKit>
         <TimeGroupDisplay class="mt-2" :update-time="data.updateTime" :create-time="data.createTime"/>
         <Separator direction="horizontal" :spacing="2"/>
-        <MetaTagListDisplay :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
+        <MetaTagListDisplay :topics="data.topics" :authors="data.authors" :tags="data.tags" self-is="COLLECTION" category="self" @edit="openMetaTagEditor"/>
+        <template v-if="anyFromRelatedMetaTags">
+            <Separator direction="horizontal" :spacing="2"/>
+            <MetaTagListDisplay :topics="data.topics" :authors="data.authors" :tags="data.tags" self-is="COLLECTION" category="related"/>
+        </template>
     </template>
 </template>

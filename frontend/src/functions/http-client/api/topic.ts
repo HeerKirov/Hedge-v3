@@ -1,6 +1,6 @@
 import { UsefulColors } from "@/constants/ui"
 import { HttpInstance, Response } from "../instance"
-import { IdResponse, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
+import { ExportType, IdResponse, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
 import { MappingSourceTag, MappingSourceTagForm } from "./source-tag-mapping"
 import { AlreadyExists, IllegalConstraintError, NotFound, RecursiveParentError, ResourceNotExist } from "../exceptions"
 
@@ -149,7 +149,7 @@ export interface ParentTopic extends SimpleTopic {
 }
 
 export interface RelatedSimpleTopic extends SimpleTopic {
-    isExported: boolean
+    isExported: ExportType
 }
 
 export interface TopicCreateForm {

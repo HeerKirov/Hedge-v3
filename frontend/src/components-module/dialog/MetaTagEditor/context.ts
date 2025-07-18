@@ -109,7 +109,7 @@ export function useMetaTagEditorData(props: Ref<MetaTagEditorProps>, updated: ()
         const target = props.value.identity.illustIds
         const { data } = useFetchEndpoint({
             path: identity as Ref<BatchIdentity>,
-            get: client => async ({ illustIds }) => mapResponse(await client.illust.summaryByIds(illustIds), r => ({tags: r.tags, topics: r.topics, authors: r.authors, tagme: r.tagme})),
+            get: client => async ({ illustIds }) => mapResponse(await client.illust.summaryByIds({illustIds, unfold: true}), r => ({tags: r.tags, topics: r.topics, authors: r.authors, tagme: r.tagme})),
         })
 
         const fetch = usePostFetchHelper({

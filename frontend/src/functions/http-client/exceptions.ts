@@ -1,4 +1,5 @@
 import { UsefulColors } from "@/constants/ui"
+import { ExportType } from "@/functions/http-client/api/all";
 
 /*
  * 异常机制阐述：
@@ -116,5 +117,5 @@ export type InvalidRegexError = BadRequestException<"INVALID_REGEX", string>
 export type InvalidRuleIndexError = BadRequestException<"INVALID_RULE_INDEX", [string, string, string]>
 
 interface ConflictingMembers { group: Member, force: boolean, members: Member[] }
-interface Member { id: number, name: string, color: UsefulColors | null, isExported: boolean }
+interface Member { id: number, name: string, color: UsefulColors | null, isExported: ExportType }
 

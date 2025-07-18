@@ -59,7 +59,7 @@ const remain = (remainingTime: number | null) => {
             </template>
             <Separator direction="horizontal" :spacing="2"/>
             <TagmeInfo v-if="data.tagme.length > 0" class="mt-1" :value="data.tagme"/>
-            <MetaTagListDisplay v-if="data.topics.length || data.authors.length || data.tags.length" :topics="data.topics" :authors="data.authors" :tags="data.tags"/>
+            <MetaTagListDisplay v-if="data.topics.length || data.authors.length || data.tags.length" :topics="data.topics" :authors="data.authors" :tags="data.tags" self-is="IMAGE" category="self"/>
         </template>
     </BasePane>
 </template>

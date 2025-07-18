@@ -281,7 +281,7 @@ export interface IllustEndpoint {
     /**
      * 根据id列表，查询所有项的概括属性。
      */
-    summaryByIds(imageIds: number[]): Promise<Response<IllustSummary>>
+    summaryByIds(filter: IllustSummaryForm): Promise<Response<IllustSummary>>
     /**
      * 查询指定图像在指定查询条件下的列表中的位置下标。
      */
@@ -902,6 +902,11 @@ export interface IllustLocationFilter extends IllustQueryFilter {
      * 要查询的image。
      */
     imageId: number
+}
+
+export interface IllustSummaryForm {
+    illustIds: number[]
+    unfold?: boolean
 }
 
 export interface IllustDeleteOptions {

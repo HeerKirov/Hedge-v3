@@ -1,6 +1,6 @@
 import { UsefulColors } from "@/constants/ui"
 import { HttpInstance, Response } from "../instance"
-import { IdResponse, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
+import { ExportType, IdResponse, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
 import { MappingSourceTag, MappingSourceTagForm } from "./source-tag-mapping"
 import { AlreadyExists, NotFound, ResourceNotExist } from "../exceptions"
 
@@ -119,7 +119,7 @@ export interface SimpleAuthor {
 }
 
 export interface RelatedSimpleAuthor extends SimpleAuthor {
-    isExported: boolean
+    isExported: ExportType
 }
 
 export interface AuthorCreateForm {

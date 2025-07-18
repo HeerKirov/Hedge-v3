@@ -150,7 +150,11 @@ defineExpose({
                         <TagmeEditor :value="value" @update:value="setValue"/>
                     </template>
                 </FormEditKit>
-                <MetaTagListDisplay class="mt-1" :topics="data.topics" :authors="data.authors" :tags="data.tags" @dblclick="openMetaTagEditor"/>
+                <MetaTagListDisplay class="mt-1" :topics="data.topics" :authors="data.authors" :tags="data.tags" :category="data.type === 'COLLECTION' ? 'related' : 'self'" :self-is="data.type" @edit="openMetaTagEditor"/>
+                <template v-if="data.type === 'COLLECTION' || (data.parent !== null && scene !== 'CollectionPane')">
+                    <Separator :class="$style.separator" direction="horizontal" :spacing="2"/>
+                    <MetaTagListDisplay class="mt-1" :topics="data.topics" :authors="data.authors" :tags="data.tags" :category="data.type === 'COLLECTION' ? 'self' : 'related'" :self-is="data.type" @edit="openMetaTagEditor"/>
+                </template>
             </div>
         </div>
     </template>

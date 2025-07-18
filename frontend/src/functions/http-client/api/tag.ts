@@ -1,6 +1,6 @@
 import { UsefulColors } from "@/constants/ui"
 import { HttpInstance, Response } from "../instance"
-import { IdResponse, LimitAndOffsetFilter, ListResult, OrderList } from "./all"
+import { ExportType, IdResponse, LimitAndOffsetFilter, ListResult, OrderList } from "./all"
 import { SimpleIllust } from "./illust"
 import { MappingSourceTag, MappingSourceTagForm } from "./source-tag-mapping"
 import {
@@ -157,7 +157,7 @@ export interface SimpleTag {
 }
 
 export interface RelatedSimpleTag extends SimpleTag {
-    isExported: boolean
+    isExported: ExportType
 }
 
 export interface TagLink {

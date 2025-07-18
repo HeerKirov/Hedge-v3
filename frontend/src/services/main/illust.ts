@@ -480,9 +480,15 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
             orderTime: orderTimeSot ? orderTime : undefined
         })
     }
-    const openMetaTagEditor = () => {
+    const openMetaTagEditor = (category: "self" | "related" = "self") => {
         if(data.value !== null) {
-            dialog.metaTagEditor.editIdentity({type: data.value.type, id: data.value.id})
+            if(category === "self") {
+                dialog.metaTagEditor.editIdentity({type: data.value.type, id: data.value.id})
+            }else if(data.value.type === "IMAGE") {
+                if(data.value.parent !== null) dialog.metaTagEditor.editIdentity({type: "COLLECTION", id: data.value.parent.id})
+            }else{
+                dialog.metaTagEditor.editBatch([data.value.id])
+            }
         }
     }
     const setSourceDataPath = async (source: SourceDataPath | null) => {
