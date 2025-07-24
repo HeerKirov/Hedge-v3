@@ -79,7 +79,7 @@ export const arrays = {
         })
         return <{[key in T]: R}>ret
     },
-    toTupleMap<T, K extends string, R>(arr: readonly T[], generator: (value: T, index: number) => [K, R]): {[key in K]: R} {
+    toTupleMap<T, K extends string, R>(arr: readonly T[], generator: (value: T, index: number) => readonly [K, R]): {[key in K]: R} {
         const ret: {[key: string]: R} = {}
         arr.forEach((t, i) => {
             const [k, v] = generator(t, i)

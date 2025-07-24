@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue"
 import { Button, Separator } from "@/components/universal"
 import { VirtualRowView } from "@/components/data"
 import { BrowserTeleport } from "@/components/logical"
@@ -13,6 +14,11 @@ const {
     listview: { queryFilter, paginationData: { data, state, setState, navigateTo } },
     operators: { openCreateView, openDetailView, toggleFavorite, createByTemplate, deleteItem, findSimilarOfAuthor, openIllustsOfAuthor }
 } = installAuthorContext()
+
+const query = computed({
+    get: () => queryFilter.value.query,
+    set: value => queryFilter.value = {...queryFilter.value, query: value}
+})
 
 const attachFilterTemplates: AttachTemplate[] = [
     {
@@ -58,7 +64,7 @@ const popupMenu = usePopupMenu<Author>([
 
 <template>
     <BrowserTeleport to="top-bar">
-        <SearchBox placeholder="在此处搜索" dialect="AUTHOR" v-model:value="queryFilter.query"/>
+        <SearchBox placeholder="在此处搜索" dialect="AUTHOR" v-model:value="query"/>
         <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="queryFilter"/>
         <Separator/>
         <DataRouter :state="state" @navigate="navigateTo"/>

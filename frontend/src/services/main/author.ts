@@ -8,7 +8,7 @@ import { useNavigationItem } from "@/services/base/side-nav-records"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useMessageBox } from "@/modules/message-box"
 import { useToast } from "@/modules/toast"
-import { useInitializer, usePath, useTabRoute, useDocumentTitle } from "@/modules/browser"
+import { useInitializer, usePath, useTabRoute, useDocumentTitle, useParam } from "@/modules/browser"
 import { checkTagName } from "@/utils/validation"
 import { patchMappingSourceTagForm } from "@/utils/translation"
 import { installation } from "@/utils/reactivity"
@@ -25,8 +25,10 @@ export const [installAuthorContext, useAuthorContext] = installation(function ()
 })
 
 function useListView() {
+    const filter = useParam<AuthorQueryFilter>("filter", () => ({order: "-updateTime"}), true)
+
     return useListViewContext({
-        defaultFilter: <AuthorQueryFilter>{order: "-updateTime"},
+        filter,
         request: client => (offset, limit, filter) => client.author.list({offset, limit, ...filter}),
         keyOf: item => item.id,
         eventFilter: {

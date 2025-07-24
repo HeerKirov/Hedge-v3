@@ -1,4 +1,4 @@
-import { RouteDefinition } from "@/modules/browser"
+import { RouteDefinition, GuardDefinition } from "@/modules/browser"
 
 export default {
     routes: <RouteDefinition[]>[
@@ -130,5 +130,15 @@ export default {
         ["FindSimilar", "FindSimilarDetail", "CollectionDetail"],
         ["Folder", "FolderDetail"],
         ["Folder", "FolderDetail", "CollectionDetail"],
+    ],
+    guardDefinitions: <GuardDefinition[]>[
+        {
+            routeName: ["Illust", "Partition", "PartitionDetail"],
+            beforeEnter(to, from) {
+                if(["Illust", "Partition", "PartitionDetail"].includes(from.routeName) && from.params.query !== undefined) {
+                    return {...to, params: {...to.params, query: from.params.query}}
+                }
+            }
+        }
     ]
 }

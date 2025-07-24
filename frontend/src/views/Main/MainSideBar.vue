@@ -13,7 +13,7 @@ import { useHomepageState } from "@/services/main/homepage"
 import { useNavigationRecords } from "@/services/base/side-nav-records"
 
 const { newTab } = useBrowserTabs()
-const { histories, forwards, routeBack, routeForward } = useActivateTabRoute()
+const { hasHistories, hasForwards, routeBack, routeForward } = useActivateTabRoute()
 
 const { data: homepageState } = useHomepageState()
 
@@ -60,9 +60,9 @@ const folderPinnedContextMenu: NavContextMenuDefinition = ctx => <MenuItem<undef
 <template>
     <SideBar :scrollable="false">
         <template #top-bar>
-            <template v-if="histories.length > 0 || forwards.length > 0">
-                <Button :class="{'no-app-region': true, 'opacity-50': histories.length <= 0}" square icon="arrow-left" :disabled="histories.length <= 0" @click="routeBack"/>
-                <Button :class="{'no-app-region': true, 'opacity-50': forwards.length <= 0}" square icon="arrow-right" :disabled="forwards.length <= 0" @click="routeForward"/>
+            <template v-if="hasHistories || hasForwards">
+                <Button :class="{'no-app-region': true, 'opacity-50': !hasHistories}" square icon="arrow-left" :disabled="!hasHistories" @click="routeBack"/>
+                <Button :class="{'no-app-region': true, 'opacity-50': !hasForwards}" square icon="arrow-right" :disabled="!hasForwards" @click="routeForward"/>
             </template>
         </template>
 

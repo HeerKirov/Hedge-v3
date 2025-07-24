@@ -9,6 +9,10 @@ export interface BrowserViewOptions {
      * 定义所有栈缓存模式。
      */
     stackDefinitions?: string[][]
+    /**
+     * 定义所有路由守卫。
+     */
+    guardDefinitions?: GuardDefinition[]
 }
 
 export interface RouteDefinition {
@@ -24,6 +28,12 @@ export interface RouteDefinition {
      * 此页面的默认标题。
      */
     defaultTitle?: string
+}
+
+export interface GuardDefinition {
+    routeName: string | string[]
+    beforeEnter?(to: Route, from: Route): Route | void
+    beforeLeave?(from: Route, to: Route): Route | void
 }
 
 export interface BrowserTabs {
@@ -65,6 +75,14 @@ export interface BrowserRoute {
      * 当前页面的当前路由信息。是页面的路由信息而不是标签页的，因此在Page内使用时，它将是当前page的路由信息。
      */
     route: Readonly<Ref<Route>>
+    /**
+     * 当前标签页是否有历史记录。
+     */
+    hasHistories: Readonly<Ref<boolean>>
+    /**
+     * 当前标签页是否有前进记录。
+     */
+    hasForwards: Readonly<Ref<boolean>>
     /**
      * 当前标签页的历史记录列表。
      */
@@ -167,6 +185,13 @@ export interface InternalPage {
     title: string | null
     route: Route
     storage: Record<string, any>
+    histories: InternalHash[]
+    forwards: InternalHash[]
+}
+
+export interface InternalHash {
+    title: string | null
+    params: Record<string, any>
 }
 
 export interface BrowserTabStack {

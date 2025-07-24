@@ -1,13 +1,13 @@
 import { ComponentPublicInstance, computed, nextTick, ref, Ref, toRaw, watch } from "vue"
 import { installation } from "@/utils/reactivity"
 import { TagTreeNode } from "@/functions/http-client/api/tag"
+import { useLocalStorage } from "@/functions/app"
 import { usePopupMenu } from "@/modules/popup-menu"
 import { useMessageBox } from "@/modules/message-box"
 import { useDroppable } from "@/modules/drag"
 import { UsefulColors } from "@/constants/ui"
 import { objects } from "@/utils/primitives"
 import { sleep } from "@/utils/process"
-import { useTabStorage } from "@/functions/app"
 
 interface TagTreeContextOptions {
     data: Ref<TagTreeNode[] | undefined>
@@ -305,7 +305,7 @@ function useIndexedData(requestedData: Ref<TagTreeNode[] | undefined>) {
 }
 
 function useExpandedState(indexedData: Ref<{[key: number]: IndexedTag}>) {
-    const expandedState = useTabStorage<{[key: number]: boolean}>("tag-tree/expanded-state", {})
+    const expandedState = useLocalStorage<{[key: number]: boolean}>("tag-tree/expanded-state", {})
 
     const get = (key: number): boolean => expandedState.value[key] ?? false
 

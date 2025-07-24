@@ -1,18 +1,43 @@
 import { computed, onMounted, ref, Ref, watch } from "vue"
 import { useTabRoute } from "./api"
 
-export function useParam<P>(paramName: string): Ref<P | null> {
-    const { route } = useTabRoute()
+export function useParam<P>(paramName: string): Ref<P | null>
+export function useParam<P>(paramName: string, defaultValue: P): Ref<P>
+export function useParam<P>(paramName: string, defaultValue: () => P, defaultFunction: true): Ref<P>
+export function useParam<P>(paramName: string, defaultValue?: P | (() => P), defaultFunction?: boolean): Ref<P | null> {
+    const { route, routePush } = useTabRoute()
 
-    const data: Ref<P | null> = ref(null)
+    let data: Ref<P>
+    if(defaultFunction && defaultValue instanceof Function) {
+        data = ref<P>(defaultValue()) as Ref<P>
+    }else if(defaultValue !== undefined) {
+        data = ref<P>(defaultValue as P) as Ref<P>
+    }else{
+        data = ref<P | null>(null) as Ref<P>
+    }
 
-    watch(() => route.value.params[paramName], (newData = null) => {if(newData !== data.value) data.value = newData}, {immediate: true, deep: true})
+    watch(() => route.value.params[paramName], nd => {
+        let newData: P
+        if(nd === undefined) {
+            if(defaultFunction && defaultValue instanceof Function) {
+                newData = defaultValue()
+            }else if(defaultValue !== undefined) {
+                newData = defaultValue as P
+            }else{
+                newData = null as P
+            }
+        }else{
+            newData = nd
+        }
+
+        if(newData !== data.value) data.value = newData
+    }, {immediate: true, deep: true})
 
     return computed({
         get: () => data.value,
         set: value => {
             data.value = value
-            route.value.params[paramName] = value
+            routePush({routeName: route.value.routeName, path: route.value.path, params: {...route.value.params, [paramName]: value}})
         }
     })
 }
@@ -20,7 +45,7 @@ export function useParam<P>(paramName: string): Ref<P | null> {
 export function usePath<P>(): Ref<P>
 export function usePath<P, O>(from: (o: O) => P, to: (p: P) => O): Ref<P>
 export function usePath<P, O>(from?: (o: O) => P, to?: (p: P) => O): Ref<P> {
-    const { route } = useTabRoute()
+    const { route, routePush } = useTabRoute()
 
     if(from && to) {
         const data: Ref<O> = ref(route.value.path as any)
@@ -29,7 +54,7 @@ export function usePath<P, O>(from?: (o: O) => P, to?: (p: P) => O): Ref<P> {
 
         return computed({
             get: () => from(data.value),
-            set: value => route.value.path = data.value = to(value)
+            set: value => routePush({routeName: route.value.routeName, path: data.value = to(value)})
         })
     }else{
         const data: Ref<P> = ref(route.value.path as any)
@@ -38,10 +63,7 @@ export function usePath<P, O>(from?: (o: O) => P, to?: (p: P) => O): Ref<P> {
 
         return computed({
             get: () => data.value,
-            set: value => {
-                data.value = value
-                route.value.path = value
-            }
+            set: value => routePush({routeName: route.value.routeName, path: data.value = value})
         })
     }
 }

@@ -10,13 +10,16 @@ import {
     InternalTab, NewRoute, Route, RouteDefinition, Tab, BrowserTabEvent
 } from "./definition"
 
+const PAGE_HISTORY_MAX = 5, HASH_HISTORY_MAX = 20
+
 export const [installBrowserView, useBrowserView] = installationNullable(function (options: BrowserViewOptions) {
     const vueRoute = useRoute()
 
     const defaultRouteDefinition = options.routes[0]
     const routeMaps = arrays.toTupleMap(options.routes, route => [route.routeName, route])
+    const guardEnterMaps = arrays.toTupleMap(options.guardDefinitions?.filter(it => !!it.beforeEnter)?.flatMap(i => typeof i.routeName === "string" ? [[i.routeName, i.beforeEnter!!] as const] : i.routeName.map(n => [n, i.beforeEnter!!] as const)) ?? [], g => g)
+    const guardLeaveMaps = arrays.toTupleMap(options.guardDefinitions?.filter(it => !!it.beforeLeave)?.flatMap(i => typeof i.routeName === "string" ? [[i.routeName, i.beforeLeave!!] as const] : i.routeName.map(n => [n, i.beforeLeave!!] as const)) ?? [], g => g)
     const componentCaches: Record<string, Component | DefineComponent> = {}
-    const historyMax = 5
 
     const views = ref<InternalTab[]>([]), activeIndex = ref(0), event = useRefEmitter<BrowserTabEvent>()
     let nextTabIdVal = 1, nextHistoryIdVal = 1
@@ -57,6 +60,14 @@ export const [installBrowserView, useBrowserView] = installationNullable(functio
         return defaultRouteDefinition
     }
 
+    function getGuardDefinition(routeName: string, direction: "enter" | "leave"): ((a: Route, b: Route) => Route | void) | undefined {
+        if(direction === "enter") {
+            return guardEnterMaps[routeName]
+        }else{
+            return guardLeaveMaps[routeName]
+        }
+    }
+
     function getComponentOrNull(routeName: string) : Component | DefineComponent | null {
         return componentCaches[routeName] ?? null
     }
@@ -76,21 +87,27 @@ export const [installBrowserView, useBrowserView] = installationNullable(functio
             const routeDef = getRouteDefinition(routeName)
             const route: Route = {routeName: routeDef.routeName, path, params, initializer}
 
-            views.value.push({id: nextTabId(), memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}}, histories: [], forwards: []})
+            views.value.push({id: nextTabId(), memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, histories: [], forwards: []}, histories: [], forwards: []})
         }else{
             const routeDef = getRouteDefinition()
             const route: Route = {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
 
-            views.value.push({id: nextTabId(), memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}}, histories: [], forwards: []})
+            views.value.push({id: nextTabId(), memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, histories: [], forwards: []}, histories: [], forwards: []})
         }
     })
 
-    const browserTabs = installBrowserTabs(views, activeIndex, getRouteDefinition, nextTabId, nextHistoryId, historyMax, event)
+    const browserTabs = installBrowserTabs(views, activeIndex, getRouteDefinition, getGuardDefinition, nextTabId, nextHistoryId, event)
 
-    return {views, activeIndex, historyMax, event, nextTabId, nextHistoryId, matchStacks, getRouteDefinition, loadComponent, getComponentOrNull, browserTabs}
+    return {views, activeIndex, event, nextTabId, nextHistoryId, matchStacks, getRouteDefinition, getGuardDefinition, loadComponent, getComponentOrNull, browserTabs}
 })
 
-function installBrowserTabs(views: Ref<InternalTab[]>, activeIndex: Ref<number>, getRouteDefinition: (routeName?: string) => RouteDefinition, nextTabId: () => number, nextHistoryId: () => number, historyMax: number, event: SendRefEmitter<BrowserTabEvent>): BrowserTabs {
+function installBrowserTabs(views: Ref<InternalTab[]>,
+                            activeIndex: Ref<number>,
+                            getRouteDefinition: (routeName?: string) => RouteDefinition,
+                            getGuardDefinition: (routeName: string, direction: "enter" | "leave") => ((a: Route, b: Route) => Route | void) | undefined,
+                            nextTabId: () => number,
+                            nextHistoryId: () => number,
+                            event: SendRefEmitter<BrowserTabEvent>): BrowserTabs {
     const tabs = computed<Tab[]>(() => views.value.map(({ id, current: { title } }, index) => ({id, index, title, active: activeIndex.value === index})))
 
     const lastAccessed: number[] = []
@@ -108,7 +125,7 @@ function installBrowserTabs(views: Ref<InternalTab[]>, activeIndex: Ref<number>,
         const routeDef = getRouteDefinition(args?.routeName)
         const route: Route = args !== undefined ? {routeName: args.routeName, path: args.path, params: args.params ?? {}, initializer: args.initializer ?? {}} : {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
         const id = nextTabId()
-        views.value.push({id, memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}}, histories: [], forwards: []})
+        views.value.push({id, memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, histories: [], forwards: []}, histories: [], forwards: []})
         activeIndex.value = views.value.length - 1
         event.emit({type: "TabCreated", id})
     }
@@ -199,10 +216,17 @@ function installBrowserTabs(views: Ref<InternalTab[]>, activeIndex: Ref<number>,
 
     function routeBack() {
         const view = {value: views.value[activeIndex.value]}
-        if(view.value.histories.length > 0) {
+        if(view.value.current.histories.length > 0) {
+            //在存在hash历史的情况下，先迭代hash历史
+            const [history] = view.value.current.histories.splice(view.value.current.histories.length - 1, 1)
+            view.value.current.forwards.push({title: view.value.current.title, params: view.value.current.route.params})
+            view.value.current.title = history.title
+            view.value.current.route.params = history.params
+            event.emit({type: "Routed", operation: "Back", id: view.value.id, historyId: view.value.current.historyId})
+        }else if(view.value.histories.length > 0) {
             const [history] = view.value.histories.splice(view.value.histories.length - 1, 1)
             view.value.forwards.push(view.value.current)
-            if(view.value.forwards.length > historyMax) view.value.forwards.shift()
+            if(view.value.forwards.length > PAGE_HISTORY_MAX) view.value.forwards.shift()
             view.value.current = history
             event.emit({type: "Routed", operation: "Back", id: view.value.id, historyId: view.value.current.historyId})
         }
@@ -210,10 +234,16 @@ function installBrowserTabs(views: Ref<InternalTab[]>, activeIndex: Ref<number>,
 
     function routeForward() {
         const view = {value: views.value[activeIndex.value]}
-        if(view.value.forwards.length > 0) {
+        if(view.value.current.forwards.length > 0) {
+            const [forward] = view.value.current.forwards.splice(view.value.current.forwards.length - 1, 1)
+            view.value.current.histories.push({title: view.value.current.title, params: view.value.current.route.params})
+            view.value.current.title = forward.title
+            view.value.current.route.params = forward.params
+            event.emit({type: "Routed", operation: "Forward", id: view.value.id, historyId: view.value.current.historyId})
+        }else if(view.value.forwards.length > 0) {
             const [forward] = view.value.forwards.splice(view.value.forwards.length - 1, 1)
             view.value.histories.push(view.value.current)
-            if(view.value.histories.length > historyMax) view.value.histories.shift()
+            if(view.value.histories.length > PAGE_HISTORY_MAX) view.value.histories.shift()
             view.value.current = forward
             event.emit({type: "Routed", operation: "Forward", id: view.value.id, historyId: view.value.current.historyId})
         }
@@ -280,54 +310,118 @@ export function useBrowserTabs(): BrowserTabs {
 }
 
 function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): BrowserRoute {
-    const { views, activeIndex, getRouteDefinition, nextHistoryId, historyMax, event } = useBrowserView()!
+    const { views, activeIndex, getRouteDefinition, getGuardDefinition, nextHistoryId, event } = useBrowserView()!
 
     const route = computed(() => page?.value.route ?? view.value.current.route)
+
+    const hasHistories = computed(() => view.value.current.histories.length > 0 || view.value.histories.length > 0)
+
+    const hasForwards = computed(() => view.value.current.forwards.length > 0 || view.value.forwards.length > 0)
 
     const histories = computed(() => view.value.histories)
 
     const forwards = computed(() => view.value.forwards)
 
-    function routePush(route: NewRoute) {
-        const routeDef = getRouteDefinition(route.routeName)
-        view.value.forwards.splice(0, view.value.forwards.length)
-        view.value.histories.push(view.value.current)
-        if(view.value.histories.length > historyMax) view.value.histories.shift()
-        view.value.current = {
-            historyId: nextHistoryId(),
-            title: routeDef.defaultTitle ?? null,
-            route: {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}},
-            storage: {}
+    function routePush(route: NewRoute, disableGuard?: "DISABLE_LEAVE" | "DISABLE") {
+        if(view.value.current.route.routeName === route.routeName && objects.deepEquals(view.value.current.route.path, route.path)) {
+            //在routePush的路由是同一个的情况下，视作hash push，记录params的变更
+            const current = view.value.current
+            current.forwards.splice(0, current.forwards.length)
+            current.histories.push({title: current.title, params: current.route.params})
+            if(current.histories.length > HASH_HISTORY_MAX) current.histories.shift()
+            current.route.params = route.params ?? {}
+        }else{
+            const nextRoute = {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}}
+            if(disableGuard !== "DISABLE_LEAVE" && disableGuard !== "DISABLE") {
+                const guardLeaveResult = getGuardDefinition(view.value.current.route.routeName, "leave")?.(view.value.current.route, nextRoute)
+                if(guardLeaveResult !== undefined) {
+                    routePush(guardLeaveResult, guardLeaveResult.routeName === nextRoute.routeName && objects.deepEquals(guardLeaveResult.path, nextRoute.path) ? "DISABLE_LEAVE" : undefined)
+                    return
+                }
+            }
+            if(disableGuard !== "DISABLE") {
+                const guardEnterResult = getGuardDefinition(route.routeName, "enter")?.(nextRoute, view.value.current.route)
+                if(guardEnterResult !== undefined) {
+                    routePush(guardEnterResult, guardEnterResult.routeName === nextRoute.routeName && objects.deepEquals(guardEnterResult.path, nextRoute.path) ? "DISABLE" : "DISABLE_LEAVE")
+                    return
+                }
+            }
+
+            const routeDef = getRouteDefinition(route.routeName)
+            if(view.value.forwards.length > 0) view.value.forwards.splice(0, view.value.forwards.length)
+            view.value.histories.push(view.value.current)
+            if(view.value.histories.length > PAGE_HISTORY_MAX) view.value.histories.shift()
+            view.value.current = {
+                historyId: nextHistoryId(),
+                title: routeDef.defaultTitle ?? null,
+                route: nextRoute,
+                storage: {},
+                histories: [], forwards: []
+            }
         }
         event.emit({type: "Routed", operation: "Push", id: view.value.id, historyId: view.value.current.historyId})
     }
 
-    function routeReplace(route: NewRoute) {
-        const routeDef = getRouteDefinition(route.routeName)
-        view.value.current = {
-            historyId: nextHistoryId(),
-            title: routeDef.defaultTitle ?? null,
-            route: {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}},
-            storage: {}
+    function routeReplace(route: NewRoute, disableGuard?: "DISABLE_LEAVE") {
+        if(view.value.current.route.routeName === route.routeName && objects.deepEquals(view.value.current.route.path, route.path)) {
+            //在routePush的路由是同一个的情况下，视作hash push，记录params的变更
+            const current = view.value.current
+            current.route.params = route.params ?? {}
+        }else{
+            const nextRoute = {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}}
+            if(disableGuard !== "DISABLE_LEAVE") {
+                const guardLeaveResult = getGuardDefinition(view.value.current.route.routeName, "leave")?.(view.value.current.route, nextRoute)
+                if(guardLeaveResult !== undefined) {
+                    routePush(guardLeaveResult, guardLeaveResult.routeName === nextRoute.routeName && objects.deepEquals(guardLeaveResult.path, nextRoute.path) ? "DISABLE_LEAVE" : undefined)
+                    return
+                }
+            }
+            const guardEnterResult = getGuardDefinition(route.routeName, "enter")?.(nextRoute, view.value.current.route)
+            if(guardEnterResult !== undefined) {
+                routePush(guardEnterResult, guardEnterResult.routeName === nextRoute.routeName && objects.deepEquals(guardEnterResult.path, nextRoute.path) ? "DISABLE" : "DISABLE_LEAVE")
+                return
+            }
+
+            const routeDef = getRouteDefinition(route.routeName)
+            view.value.current = {
+                historyId: nextHistoryId(),
+                title: routeDef.defaultTitle ?? null,
+                route: {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}},
+                storage: {},
+                histories: [], forwards: []
+            }
         }
         event.emit({type: "Routed", operation: "Replace", id: view.value.id, historyId: view.value.current.historyId})
     }
 
     function routeBack() {
-        if(view.value.histories.length > 0) {
+        if(view.value.current.histories.length > 0) {
+            //在存在hash历史的情况下，先迭代hash历史
+            const [history] = view.value.current.histories.splice(view.value.current.histories.length - 1, 1)
+            view.value.current.forwards.push({title: view.value.current.title, params: view.value.current.route.params})
+            view.value.current.title = history.title
+            view.value.current.route.params = history.params
+            event.emit({type: "Routed", operation: "Back", id: view.value.id, historyId: view.value.current.historyId})
+        }else if(view.value.histories.length > 0) {
             const [history] = view.value.histories.splice(view.value.histories.length - 1, 1)
             view.value.forwards.push(view.value.current)
-            if(view.value.forwards.length > historyMax) view.value.forwards.shift()
+            if(view.value.forwards.length > PAGE_HISTORY_MAX) view.value.forwards.shift()
             view.value.current = history
             event.emit({type: "Routed", operation: "Back", id: view.value.id, historyId: view.value.current.historyId})
         }
     }
 
     function routeForward() {
-        if(view.value.forwards.length > 0) {
+        if(view.value.current.forwards.length > 0) {
+            const [forward] = view.value.current.forwards.splice(view.value.current.forwards.length - 1, 1)
+            view.value.current.histories.push({title: view.value.current.title, params: view.value.current.route.params})
+            view.value.current.title = forward.title
+            view.value.current.route.params = forward.params
+            event.emit({type: "Routed", operation: "Forward", id: view.value.id, historyId: view.value.current.historyId})
+        }else if(view.value.forwards.length > 0) {
             const [forward] = view.value.forwards.splice(view.value.forwards.length - 1, 1)
             view.value.histories.push(view.value.current)
-            if(view.value.histories.length > historyMax) view.value.histories.shift()
+            if(view.value.histories.length > PAGE_HISTORY_MAX) view.value.histories.shift()
             view.value.current = forward
             event.emit({type: "Routed", operation: "Forward", id: view.value.id, historyId: view.value.current.historyId})
         }
@@ -356,7 +450,7 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
         }
     }
 
-    return {route, histories, forwards, routePush, routeReplace, routeBack, routeForward, routeClose}
+    return {route, histories, forwards, hasHistories, hasForwards, routePush, routeReplace, routeBack, routeForward, routeClose}
 }
 
 export function useActivateTabRoute(): BrowserRoute {
