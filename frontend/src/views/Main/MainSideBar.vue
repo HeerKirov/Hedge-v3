@@ -2,7 +2,7 @@
 import { computed, watch } from "vue"
 import { BrowserNavMenu, NavContextMenuDefinition, MenuScope, NavMenuItem, NavMenuItems, NavMenuItemsByHistory } from "@/components/interaction"
 import { Button, Separator } from "@/components/universal"
-import { Flex, FlexItem, SideBar } from "@/components/layout"
+import { SideBar } from "@/components/layout"
 import { BackgroundTaskButton, StagingPostButton } from "@/components-module/common"
 import { windowManager } from "@/modules/window"
 import { MenuItem } from "@/modules/popup-menu"
@@ -104,19 +104,17 @@ const folderPinnedContextMenu: NavContextMenuDefinition = ctx => <MenuItem<undef
         </div>
 
         <template #bottom>
-            <Flex>
+            <div class="flex">
                 <Button :class="{[$style['darwin-border-button']]: hasDarwinBorder}" square icon="gear" @click="windowManager.openSetting"/>
                 <Button class="ml-1" square icon="circle-question-regular" @click="windowManager.openGuide"/>
                 <Button class="ml-1" square icon="note-sticky" @click="windowManager.openNote"/>
                 <BackgroundTaskButton/>
 
-                <FlexItem :shrink="0">
-                    <div class="ml-auto">
-                        <Separator size="large"/>
-                        <StagingPostButton/>
-                    </div>
-                </FlexItem>
-            </Flex>
+                <div class="ml-auto flex-item shrink-0">
+                    <Separator size="large"/>
+                    <StagingPostButton/>
+                </div>
+            </div>
         </template>
     </SideBar>
 </template>

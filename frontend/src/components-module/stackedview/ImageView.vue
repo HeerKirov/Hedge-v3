@@ -107,11 +107,11 @@ const popupMenu = usePopupMenu(computed(() => [
                         <template v-if="!hasWinButton">
                             <FlexItem :shrink="1" :width="100"><div/></FlexItem>
                             <ElementPopupMenu :items="externalMenuItems" position="bottom" align="left" v-slot="{ setEl, popup, attrs }">
-                              <Button :ref="setEl" v-bind="attrs" square icon="external-link-alt" @click="popup"/>
+                              <Button :ref="setEl" v-bind="attrs"  class="flex-item no-shrink" square icon="external-link-alt" @click="popup"/>
                             </ElementPopupMenu>
                             <ZoomController :disabled="!zoomEnabled" v-model:value="zoomValue"/>
                             <Separator/>
-                            <Button square icon="fa-up-right-and-down-left-from-center" @click="collapsed = !collapsed"/>
+                            <Button class="flex-item no-shrink" square icon="fa-up-right-and-down-left-from-center" @click="collapsed = !collapsed"/>
                         </template>
                     </Flex>
                 </template>

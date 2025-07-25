@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { TransitionGroup } from "vue"
 import { useStackedView } from "./context"
 import ViewContainer from "./ViewContainer.vue"
 
@@ -8,13 +7,13 @@ const { current } = useStackedView()
 </script>
 
 <template>
-    <TransitionGroup :enter-from-class="$style['transition-enter-from']"
+    <transition-group :enter-from-class="$style['transition-enter-from']"
                      :leave-to-class="$style['transition-leave-to']"
                      :enter-active-class="$style['transition-enter-active']"
                      :leave-active-class="$style['transition-leave-active']">
         <div v-if="!!current" :class="$style['background-cover']"/>
         <ViewContainer v-if="!!current" :class="$style.container" :stack-view-info="current"/>
-    </TransitionGroup>
+    </transition-group>
 </template>
 
 <style module lang="sass">
