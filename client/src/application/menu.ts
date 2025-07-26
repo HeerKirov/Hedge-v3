@@ -16,7 +16,7 @@ export interface MenuManager {
 
 export interface UpdateStateOptions { enabled: boolean }
 
-export type TabControlEvent = {type: "CLONE_TAB" | "PREV_TAB" | "NEXT_TAB" | "CLOSE_TAB" | "ROUTE_BACK" | "ROUTE_FORWARD"}
+export type TabControlEvent = {type: "CLONE_TAB" | "PREV_TAB" | "NEXT_TAB" | "CLOSE_TAB" | "RESUME_TAB" | "ROUTE_BACK" | "ROUTE_FORWARD"}
     | {type: "NEW_TAB", routeName?: string, path?: string, params?: string, initializer?: string}
 
 type GeneralEvent = {type: "TOGGLE_AUTO_IMPORT", value: boolean}
@@ -102,6 +102,7 @@ function registerAppMenu(windowManager: WindowManager, tabControlEvent: SendEmit
                 {label: "复制标签页", id: "TAB_CLONE", enabled: false, click() { tabControlEvent.emit({type: "CLONE_TAB"}) }},
                 {label: "新建标签页", id: "TAB_NEW", enabled: false, accelerator: isDarwin ? "Command+T" : "Ctrl+T", click() { tabControlEvent.emit({type: "NEW_TAB"}) }},
                 {label: "关闭标签页", accelerator: isDarwin ? "Command+W" : "Ctrl+W", click() { tabControlEvent.emit({type: "CLOSE_TAB"}) }},
+                {label: "重新打开关闭的标签页", accelerator: isDarwin ? "Command+Shift+T" : "Ctrl+Shift+T", click() { tabControlEvent.emit({type: "RESUME_TAB"}) }},
                 {type: "separator"},
                 {label: "后退", id: "TAB_BACK", enabled: false, accelerator: isDarwin ? "Command+Left" : "Ctrl+Left", click() { tabControlEvent.emit({type: "ROUTE_BACK"}) }},
                 {label: "前进", id: "TAB_FORWARD", enabled: false, accelerator: isDarwin ? "Command+Right" : "Ctrl+Right", click() { tabControlEvent.emit({type: "ROUTE_FORWARD"}) }}
