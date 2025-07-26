@@ -18,6 +18,7 @@ import { useHomepageState } from "@/services/main/homepage"
 import { computedEffect, computedWatch, installation } from "@/utils/reactivity"
 import { LocalDate, date, getDaysOfMonth } from "@/utils/datetime"
 import { arrays, numbers } from "@/utils/primitives"
+import { translateQuerySchemaToString } from "@/utils/translation"
 
 export const [installPartitionContext, usePartitionContext] = installation(function() {
     const router = useTabRoute()
@@ -33,7 +34,7 @@ export const [installPartitionContext, usePartitionContext] = installation(funct
         }
     })
 
-    useDocumentTitle(() => (querySchema.query.value !== undefined ? `${querySchema.query.value} | ` : "") + (partition.viewMode.value === "calendar" ? "日历" : "时间线"))
+    useDocumentTitle(() => [partition.viewMode.value === "calendar" ? "日历" : "时间线", translateQuerySchemaToString(querySchema.schema.value)])
 
     return {partition, querySchema, listviewController, openDetail}
 })
@@ -328,7 +329,7 @@ export function useDetailIllustContext() {
         return {name, badge: today ? "TODAY" : undefined}
     })
 
-    useDocumentTitle(() => (querySchema.query.value !== undefined ? `${querySchema.query.value} | ` : "") + `${path.value.year}年${path.value.month}月${path.value.day}日`)
+    useDocumentTitle(() => [`${path.value.year}年${path.value.month}月${path.value.day}日`, translateQuerySchemaToString(querySchema.schema.value)])
 
     return {path, listview, selector, paneState, operators, querySchema, listviewController}
 }

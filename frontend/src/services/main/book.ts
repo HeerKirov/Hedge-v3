@@ -13,6 +13,7 @@ import { useNavigationItem } from "@/services/base/side-nav-records"
 import { useSelectedPaneState } from "@/services/base/selected-pane-state"
 import { useSelectedState, useSingleSelectedState } from "@/services/base/selected-state"
 import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
+import { translateQuerySchemaToString } from "@/utils/translation"
 
 export const [installBookContext, useBookContext] = installation(function () {
     const querySchema = useQuerySchema("BOOK")
@@ -34,7 +35,7 @@ export const [installBookContext, useBookContext] = installation(function () {
         }
     })
 
-    useDocumentTitle(() => (querySchema.query.value !== undefined ? `${querySchema.query.value} | ` : "") + "画集")
+    useDocumentTitle(() => translateQuerySchemaToString(querySchema.schema.value), {asSuffix: true})
 
     return {listview, querySchema, listviewController, selector, paneState, operators}
 })

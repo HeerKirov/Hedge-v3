@@ -10,7 +10,7 @@ import { useMessageBox } from "@/modules/message-box"
 import { useToast } from "@/modules/toast"
 import { useInitializer, usePath, useTabRoute, useDocumentTitle, useParam } from "@/modules/browser"
 import { checkTagName } from "@/utils/validation"
-import { patchMappingSourceTagForm } from "@/utils/translation"
+import { patchMappingSourceTagForm, translateAuthorQueryFilterToString } from "@/utils/translation"
 import { installation } from "@/utils/reactivity"
 import { objects } from "@/utils/primitives"
 
@@ -20,6 +20,8 @@ export const [installAuthorContext, useAuthorContext] = installation(function ()
     const operators = useOperators(listview.listview)
 
     const thumbnailLoadingCache = useListThumbnailLoadingCache()
+
+    useDocumentTitle(() => translateAuthorQueryFilterToString(listview.queryFilter.value, {order: "-updateTime"}), {asSuffix: true})
 
     return {listview, operators, thumbnailLoadingCache}
 })

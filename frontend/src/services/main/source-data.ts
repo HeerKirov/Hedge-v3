@@ -10,6 +10,7 @@ import { useSettingSite } from "@/services/setting"
 import { useBrowserTabs, useDocumentTitle, useTabRoute } from "@/modules/browser"
 import { useMessageBox } from "@/modules/message-box"
 import { installation } from "@/utils/reactivity"
+import { translateQuerySchemaToString } from "@/utils/translation"
 
 export const [installSourceDataContext, useSourceDataContext] = installation(function () {
     const paneState = useRouteStorageViewState<SourceDataIdentity>()
@@ -19,7 +20,7 @@ export const [installSourceDataContext, useSourceDataContext] = installation(fun
 
     useSettingSite()
 
-    useDocumentTitle(() => (querySchema.query.value !== undefined ? `${querySchema.query.value} | ` : "") + "来源数据")
+    useDocumentTitle(() => translateQuerySchemaToString(querySchema.schema.value), {asSuffix: true})
 
     return {listview, operators, paneState, querySchema}
 })

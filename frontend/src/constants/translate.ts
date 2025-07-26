@@ -39,6 +39,15 @@ export const QUERY_FIELD_NAMES: {[key: string]: string} = {
     "STATUS": "状态"
 }
 
+export const QUERY_FILTER_ORDER_NAMES: {[key: string]: string} = {
+    "id": "ID",
+    "name": "名称",
+    "score": "评分",
+    "count": "数量",
+    "createTime": "创建顺序",
+    "updateTime": "修改顺序",
+}
+
 export function queryCompileErrorTranslate(e: CompileError): string {
     switch(e.code) {
         case 1001: return `转义了一个普通字符${e.info}，它并不是可被转义的符号。`

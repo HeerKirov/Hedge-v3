@@ -9,6 +9,7 @@ import { TOPIC_TYPE_ICONS, TOPIC_TYPE_NAMES, TOPIC_TYPES_WITHOUT_UNKNOWN } from 
 import { useTopicContext } from "@/services/main/topic"
 import { usePopupMenu } from "@/modules/popup-menu"
 import TopicListItem from "./TopicListItem.vue"
+import { QUERY_FILTER_ORDER_NAMES } from "@/constants/translate";
 
 const {
     listview: { queryFilter, paginationData: { data, state, setState, navigateTo } },
@@ -54,13 +55,7 @@ const attachFilterTemplates: AttachTemplate[] = [
     {type: "separator"},
     {
         type: "order",
-        items: [
-            {label: "按名称", value: "name"},
-            {label: "按评分", value: "score"},
-            {label: "按项目数量", value: "count"},
-            {label: "按创建顺序", value: "createTime"},
-            {label: "按修改顺序", value: "updateTime"}
-        ],
+        items: Object.entries(QUERY_FILTER_ORDER_NAMES).map(([value, name]) => ({label: `按${name}`, value})),
         defaultValue: "updateTime",
         defaultDirection: "descending"
     }

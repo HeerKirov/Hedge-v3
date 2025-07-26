@@ -23,6 +23,7 @@ import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 import { arrays, objects } from "@/utils/primitives"
 import { useListeningEvent } from "@/utils/emitter"
 import { toRef } from "@/utils/reactivity"
+import { translateQuerySchemaToString } from "@/utils/translation"
 
 export function useIllustContext() {
     const querySchema = useQuerySchema("ILLUST")
@@ -65,7 +66,7 @@ export function useIllustContext() {
         locateId.catchLocateId(params.locateId)
     })
 
-    useDocumentTitle(() => (querySchema.query.value !== undefined ? `${querySchema.query.value} | ` : "") + "图库")
+    useDocumentTitle(() => translateQuerySchemaToString(querySchema.schema.value), {asSuffix: true})
 
     return {paneState, listview, selector, listviewController, querySchema, operators}
 }

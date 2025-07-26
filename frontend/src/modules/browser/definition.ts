@@ -132,25 +132,10 @@ export interface BrowserDocument {
      * 当前标签页的标题。这是一个可更改的选项，可以由标签页内部动态地更改它。
      */
     title: Ref<string | null>
-}
-
-export interface HistoryRecord {
     /**
-     * 历史记录的标题。
+     * 获得当前标签页的默认标题。
      */
-    title: string | null
-    /**
-     * 该历史记录的路由信息。
-     */
-    route: Route
-    /**
-     * 从属于此历史记录的hash历史记录。
-     */
-    histories: {title: string | null}[]
-    /**
-     * 从属于此历史记录的hash向前记录。
-     */
-    forwards: {title: string | null}[]
+    defaultTitle(): string | null
 }
 
 export interface Tab {
@@ -204,6 +189,7 @@ export interface InternalTab {
 export interface InternalPage {
     historyId: number
     title: string | null
+    defaultTitle: string | null
     route: Route
     storage: Record<string, any>
     histories: InternalHash[]

@@ -87,16 +87,16 @@ export const [installBrowserView, useBrowserView] = installationNullable(functio
             const routeDef = getRouteDefinition(routeName)
             const route: Route = {routeName: routeDef.routeName, path, params, initializer}
 
-            views.value.push({id: nextTabId(), memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, histories: [], forwards: []}, histories: [], forwards: []})
+            views.value.push({id: nextTabId(), memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, defaultTitle: routeDef.defaultTitle ?? null, route, storage: {}, histories: [], forwards: []}, histories: [], forwards: []})
         }else{
             const routeDef = getRouteDefinition()
             const route: Route = {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
 
-            views.value.push({id: nextTabId(), memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, histories: [], forwards: []}, histories: [], forwards: []})
+            views.value.push({id: nextTabId(), memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, defaultTitle: routeDef.defaultTitle ?? null, route, storage: {}, histories: [], forwards: []}, histories: [], forwards: []})
         }
     })
 
-    const browserTabs = installBrowserTabs(views, activeIndex, getRouteDefinition, getGuardDefinition, nextTabId, nextHistoryId, event)
+    const browserTabs = installBrowserTabs(views, activeIndex, getRouteDefinition, nextTabId, nextHistoryId, event)
 
     return {views, activeIndex, event, nextTabId, nextHistoryId, matchStacks, getRouteDefinition, getGuardDefinition, loadComponent, getComponentOrNull, browserTabs}
 })
@@ -104,7 +104,6 @@ export const [installBrowserView, useBrowserView] = installationNullable(functio
 function installBrowserTabs(views: Ref<InternalTab[]>,
                             activeIndex: Ref<number>,
                             getRouteDefinition: (routeName?: string) => RouteDefinition,
-                            getGuardDefinition: (routeName: string, direction: "enter" | "leave") => ((a: Route, b: Route) => Route | void) | undefined,
                             nextTabId: () => number,
                             nextHistoryId: () => number,
                             event: SendRefEmitter<BrowserTabEvent>): BrowserTabs {
@@ -125,7 +124,7 @@ function installBrowserTabs(views: Ref<InternalTab[]>,
         const routeDef = getRouteDefinition(args?.routeName)
         const route: Route = args !== undefined ? {routeName: args.routeName, path: args.path, params: args.params ?? {}, initializer: args.initializer ?? {}} : {routeName: routeDef.routeName, path: undefined, params: {}, initializer: {}}
         const id = nextTabId()
-        views.value.push({id, memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, route, storage: {}, histories: [], forwards: []}, histories: [], forwards: []})
+        views.value.push({id, memoryStorage: {}, current: {historyId: nextHistoryId(), title: routeDef.defaultTitle ?? null, defaultTitle: routeDef.defaultTitle ?? null, route, storage: {}, histories: [], forwards: []}, histories: [], forwards: []})
         activeIndex.value = views.value.length - 1
         event.emit({type: "TabCreated", id})
     }
@@ -390,6 +389,7 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
             view.value.current = {
                 historyId: nextHistoryId(),
                 title: routeDef.defaultTitle ?? null,
+                defaultTitle: routeDef.defaultTitle ?? null,
                 route: nextRoute,
                 storage: {},
                 histories: [], forwards: []
@@ -422,6 +422,7 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
             view.value.current = {
                 historyId: nextHistoryId(),
                 title: routeDef.defaultTitle ?? null,
+                defaultTitle: routeDef.defaultTitle ?? null,
                 route: {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}},
                 storage: {},
                 histories: [], forwards: []
@@ -562,18 +563,43 @@ function useDocument(): BrowserDocument {
         set: value => page.value.title = value
     })
 
-    return {title}
+    const defaultTitle = () => page.value.defaultTitle
+
+    return {title, defaultTitle}
 }
 
-export function useDocumentTitle(titleChanged: Ref<string | {name: string} | {title: string} | {id: number} | null | undefined> | (() => (string | {name: string} | {title: string} | {id: number} | null | undefined))) {
+type DocumentTitleChanged = Ref<string | (string | null | undefined)[] | {name: string} | {title: string} | {id: number} | null | undefined> | (() => (string | (string | null | undefined)[] | {name: string} | {title: string} | {id: number} | null | undefined))
+
+type DocumentTitleOptions = {asPrefix?: boolean, asSuffix?: boolean, separator?: string}
+
+export function useDocumentTitle(titleChanged: DocumentTitleChanged, { asPrefix = false, asSuffix = false, separator = " - "}: DocumentTitleOptions = {}) {
     const document = useDocument()
-    watch(titleChanged, tc => {
+
+    function generateTitle(tc: string | (string | null | undefined)[] | {name: string} | {title: string} | {id: number} | null | undefined): string | null {
         if(tc !== null && tc !== undefined) {
             if(typeof tc === "string") {
-                document.title.value = tc
+                return tc
             }else if(typeof tc === "object") {
-                document.title.value = (tc as {name: string}).name || (tc as {title: string}).title || (tc as {id: number}).id.toString()
+                if(tc instanceof Array) {
+                    return tc.length > 0 ? tc.filter(i => i !== null && i !== undefined).join(separator) : null
+                }else{
+                    return (tc as {name: string}).name || (tc as {title: string}).title || (tc as {id: number}).id.toString()
+                }
+            }else{
+                throw new Error(`Unsupported documentTitle type: ${typeof tc}`)
             }
+        }
+        return null
+    }
+
+    watch(titleChanged, tc => {
+        const title = generateTitle(tc)
+        if(asPrefix) {
+            document.title.value = title !== null ? title + separator + document.defaultTitle() : document.defaultTitle()
+        }else if(asSuffix) {
+            document.title.value = title !== null ? document.defaultTitle() + separator + title : document.defaultTitle()
+        }else{
+            document.title.value = title ?? document.defaultTitle()
         }
     }, {immediate: true})
 }

@@ -10,13 +10,15 @@ import { useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/module
 import { useMessageBox } from "@/modules/message-box"
 import { useToast } from "@/modules/toast"
 import { checkTagName } from "@/utils/validation"
-import { patchMappingSourceTagForm } from "@/utils/translation"
+import { patchMappingSourceTagForm, translateTopicQueryFilterToString } from "@/utils/translation"
 import { objects } from "@/utils/primitives"
 
 export function useTopicContext() {
     const listview = useListView()
 
     const operators = useOperators(listview.listview)
+
+    useDocumentTitle(() => translateTopicQueryFilterToString(listview.queryFilter.value, {order: "-updateTime"}), {asSuffix: true})
 
     return {listview, operators}
 }

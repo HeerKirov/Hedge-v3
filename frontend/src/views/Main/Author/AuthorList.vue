@@ -9,6 +9,7 @@ import { AUTHOR_TYPE_ICONS, AUTHOR_TYPE_NAMES, AUTHOR_TYPES_WITHOUT_UNKNOWN } fr
 import { installAuthorContext } from "@/services/main/author"
 import { usePopupMenu } from "@/modules/popup-menu"
 import AuthorListItem from "./AuthorListItem.vue"
+import { QUERY_FILTER_ORDER_NAMES } from "@/constants/translate";
 
 const {
     listview: { queryFilter, paginationData: { data, state, setState, navigateTo } },
@@ -37,13 +38,7 @@ const attachFilterTemplates: AttachTemplate[] = [
     {type: "separator"},
     {
         type: "order",
-        items: [
-            {label: "按名称", value: "name"},
-            {label: "按评分", value: "score"},
-            {label: "按项目数量", value: "count"},
-            {label: "按创建顺序", value: "createTime"},
-            {label: "按修改顺序", value: "updateTime"}
-        ],
+        items: Object.entries(QUERY_FILTER_ORDER_NAMES).map(([value, name]) => ({label: `按${name}`, value})),
         defaultValue: "updateTime",
         defaultDirection: "descending"
     }
