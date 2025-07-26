@@ -67,7 +67,7 @@ export type NativeTheme = "system" | "light" | "dark"
 
 export type Platform = "win32" | "darwin" | "linux"
 
-export type TabControlEvent = {type: "CLONE_TAB" | "PREV_TAB" | "NEXT_TAB" | "CLOSE_TAB" | "ROUTE_BACK" | "ROUTE_FORWARD"}
+export type TabControlEvent = {type: "CLONE_TAB" | "PREV_TAB" | "NEXT_TAB" | "CLOSE_TAB" | "RESUME_TAB" | "ROUTE_BACK" | "ROUTE_FORWARD"}
     | {type: "NEW_TAB", routeName?: string, path?: string, params?: string, initializer?: string}
 
 export interface UpdateStateOptions { enabled: boolean }

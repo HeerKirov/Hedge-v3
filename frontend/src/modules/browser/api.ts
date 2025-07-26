@@ -1,16 +1,18 @@
-import { Component, computed, DefineComponent, markRaw, onBeforeMount, Ref, ref, watch } from "vue"
+import { Component, DefineComponent, Ref, computed, markRaw, onBeforeMount, ref, watch, toRaw } from "vue"
 import { useRoute } from "vue-router"
+import { createLocalStorage } from "@/functions/app/storage"
 import { useApplicationMenuTabs } from "@/functions/app/app-menu"
 import { windowManager } from "@/modules/window"
 import { arrays, objects } from "@/utils/primitives"
 import { installationNullable } from "@/utils/reactivity"
+import { useWindowEventListener } from "@/utils/sensors"
 import { SendRefEmitter, useListeningEvent, useRefEmitter } from "@/utils/emitter"
 import {
     BrowserDocument, BrowserRoute, BrowserTabStack, BrowserTabs, BrowserViewOptions, InternalPage,
-    InternalTab, NewRoute, Route, RouteDefinition, Tab, BrowserTabEvent
+    InternalTab, NewRoute, Route, RouteDefinition, Tab, BrowserTabEvent, BrowserClosedTabs
 } from "./definition"
 
-const PAGE_HISTORY_MAX = 10, HASH_HISTORY_MAX = 20
+const PAGE_HISTORY_MAX = 10, HASH_HISTORY_MAX = 20, CLOSED_HISTORY_MAX = 15
 
 export const [installBrowserView, useBrowserView] = installationNullable(function (options: BrowserViewOptions) {
     const vueRoute = useRoute()
@@ -96,9 +98,13 @@ export const [installBrowserView, useBrowserView] = installationNullable(functio
         }
     })
 
+    const closedTabs = installClosedTabs(views, activeIndex, nextTabId, nextHistoryId, event, defaultRouteDefinition)
+
     const browserTabs = installBrowserTabs(views, activeIndex, getRouteDefinition, nextTabId, nextHistoryId, event)
 
-    return {views, activeIndex, event, nextTabId, nextHistoryId, matchStacks, getRouteDefinition, getGuardDefinition, loadComponent, getComponentOrNull, browserTabs}
+    useApplicationMenuTabs({newTab: browserTabs.newTab, duplicateTab: browserTabs.duplicateTab, closeTab: browserTabs.closeTab, nextTab: browserTabs.nextTab, prevTab: browserTabs.prevTab, routeBack: browserTabs.routeBack, routeForward: browserTabs.routeForward, resumeTab: closedTabs.resume})
+
+    return {views, activeIndex, event, nextTabId, nextHistoryId, matchStacks, getRouteDefinition, getGuardDefinition, loadComponent, getComponentOrNull, browserTabs, closedTabs}
 })
 
 function installBrowserTabs(views: Ref<InternalTab[]>,
@@ -197,7 +203,7 @@ function installBrowserTabs(views: Ref<InternalTab[]>,
                     activeIndex.value -= 1
                 }
             }
-            event.emit({type: "TabClosed", id: view.id})
+            event.emit({type: "TabClosed", tab: toRaw(view)})
         }
     }
 
@@ -248,9 +254,67 @@ function installBrowserTabs(views: Ref<InternalTab[]>,
         }
     }
 
-    useApplicationMenuTabs({newTab, duplicateTab, closeTab, nextTab, prevTab, routeBack, routeForward})
+    return {tabs, activeTab, newTab, moveTab, closeTab, duplicateTab, nextTab, prevTab, routeBack, routeForward, newWindow}
+}
 
-    return {tabs, activeTab, newTab, moveTab, closeTab, duplicateTab, newWindow}
+function installClosedTabs(views: Ref<InternalTab[]>,
+                           activeIndex: Ref<number>,
+                           nextTabId: () => number,
+                           nextHistoryId: () => number,
+                           event: SendRefEmitter<BrowserTabEvent>,
+                           defaultRouteDefinition: RouteDefinition): BrowserClosedTabs {
+    const localStorage = createLocalStorage<InternalTab[]>("browser/closed-tabs")
+
+    const closedTabs: InternalTab[] = localStorage.get() ?? []
+
+    function record(closedTab: InternalTab) {
+        function mapPage(page: InternalPage): InternalPage {
+            return {historyId: page.historyId, title: page.title, defaultTitle: page.defaultTitle, storage: {}, route: page.route, histories: page.histories, forwards: page.forwards}
+        }
+
+        function mapTab(tab: InternalTab): InternalTab {
+            return {id: tab.id, memoryStorage: {}, current: mapPage(tab.current), histories: tab.histories.map(mapPage), forwards: tab.forwards.map(mapPage)}
+        }
+
+        closedTabs.push(mapTab(closedTab))
+
+        if(closedTabs.length > CLOSED_HISTORY_MAX) closedTabs.shift()
+    }
+
+    function tabs(): Readonly<(string | null)[]> {
+        return closedTabs.toReversed().map(i => i.current.title)
+    }
+
+    function resume(index: number = 0) {
+        console.log("resume", index)
+        if(index >= 0 && index < closedTabs.length) {
+            //由于tabs对外提供的列表是反向的，所以此处的index也要反向
+            const [tab] = closedTabs.splice(closedTabs.length - index - 1, 1)
+
+            const id = nextTabId()
+            views.value.push({...tab, id, current: {...tab.current, historyId: nextHistoryId()}})
+            activeIndex.value = views.value.length - 1
+            event.emit({type: "TabCreated", id})
+        }
+    }
+
+    useListeningEvent(event, e => {
+        if(e.type === "TabClosed") {
+            record(e.tab)
+        }
+    })
+
+    useWindowEventListener("beforeunload", () => {
+        //在窗口关闭之前，会将当前选项卡列表写入closed列表，但是丢弃其所有导航历史，仅保留当前状态
+        for(const internalTab of views.value) {
+            if(internalTab.current.route.routeName !== defaultRouteDefinition.routeName) {
+                closedTabs.push({id: internalTab.id, memoryStorage: {}, current: {historyId: internalTab.current.historyId, route: internalTab.current.route, storage: {}, title: internalTab.current.title, defaultTitle: internalTab.current.defaultTitle, histories: [], forwards: []}, histories: [], forwards: []})
+            }
+        }
+        localStorage.set(closedTabs)
+    })
+
+    return {tabs, resume}
 }
 
 export const [installCurrentTab, useCurrentTab] = installationNullable(function (props: {id: number, historyId: number}) {
@@ -308,8 +372,12 @@ export function useBrowserTabs(): BrowserTabs {
     return useBrowserView()!.browserTabs
 }
 
+export function useClosedTabs(): BrowserClosedTabs {
+    return useBrowserView()!.closedTabs
+}
+
 function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): BrowserRoute {
-    const { views, activeIndex, getRouteDefinition, getGuardDefinition, nextHistoryId, event } = useBrowserView()!
+    const { browserTabs, getRouteDefinition, getGuardDefinition, nextHistoryId, event } = useBrowserView()!
 
     const route = computed(() => page?.value.route ?? view.value.current.route)
 
@@ -516,16 +584,7 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
             view.value.current = history
             event.emit({type: "Routed", operation: "Close", id: view.value.id, historyId: view.value.current.historyId})
         }else{
-            const index = views.value.findIndex(v => v.id === view.value.id)
-            if(index >= 0) {
-                const [view] = views.value.splice(index, 1)
-                if(views.value.length <= 0) {
-                    window.close()
-                }else if(index < activeIndex.value || (index === activeIndex.value && activeIndex.value > 0)) {
-                    activeIndex.value -= 1
-                }
-                event.emit({type: "TabClosed", id: view.id})
-            }
+            browserTabs.closeTab({id: view.value.id})
         }
     }
 

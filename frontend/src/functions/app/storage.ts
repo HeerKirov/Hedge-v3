@@ -3,6 +3,44 @@ import { remoteIpcClient } from "@/functions/ipc-client"
 import { useCurrentTab } from "@/modules/browser"
 import { installation } from "@/utils/reactivity"
 
+export interface StorageAccessor<T> {
+    get(): T
+    set(value: T): void
+}
+
+export function createLocalStorage<T>(bucketName: string): StorageAccessor<T | null>
+export function createLocalStorage<T>(bucketName: string, defaultValue: T): StorageAccessor<T>
+export function createLocalStorage<T>(bucketName: string, defaultValue: () => T, defaultFunction: true): StorageAccessor<T>
+
+/**
+ * 创建一个local storage存储器。
+ */
+export function createLocalStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): StorageAccessor<T | null> {
+    const storageName = `com.heerkirov.hedge.v3(${remoteIpcClient.setting.channel.getCurrent()})${bucketName}`
+
+    return {
+        get(): T | null {
+            const initValue = window.localStorage.getItem(storageName)
+            if(initValue !== null) {
+                return JSON.parse(initValue)
+            }else if(defaultFunction && defaultValue instanceof Function) {
+                return defaultValue()
+            }else if(defaultValue !== undefined) {
+                return defaultValue as T
+            }else{
+                return null
+            }
+        },
+        set(value: T): void {
+            if(value !== null) {
+                window.localStorage.setItem(storageName, JSON.stringify(value))
+            }else{
+                window.localStorage.removeItem(storageName)
+            }
+        }
+    }
+}
+
 export function useLocalStorage<T>(bucketName: string): Ref<T | null>
 export function useLocalStorage<T>(bucketName: string, defaultValue: T): Ref<T>
 export function useLocalStorage<T>(bucketName: string, defaultValue: () => T, defaultFunction: true): Ref<T>
@@ -16,26 +54,11 @@ export function useLocalStorage<T>(bucketName: string, defaultValue: () => T, de
  * @return 存储的响应式数据。null表示无值，其他表示有值
  */
 export function useLocalStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): Ref<T | null> {
-    const storageName = `com.heerkirov.hedge.v3(${remoteIpcClient.setting.channel.getCurrent()})${bucketName}`
+    const accessor = createLocalStorage<T>(bucketName, defaultValue, defaultFunction)
 
-    const data: Ref<T | null> = ref(null)
+    const data: Ref<T | null> = ref(accessor.get())
 
-    const initValue = window.localStorage.getItem(storageName)
-    if(initValue !== null) {
-        data.value = JSON.parse(initValue)
-    }else if(defaultFunction && defaultValue instanceof Function) {
-        data.value = defaultValue()
-    }else if(defaultValue !== undefined) {
-        data.value = defaultValue as T
-    }
-
-    watch(data, value => {
-        if(value !== null) {
-            window.localStorage.setItem(storageName, JSON.stringify(value))
-        }else{
-            window.localStorage.removeItem(storageName)
-        }
-    }, {deep: true})
+    watch(data, value => accessor.set(value), {deep: true})
 
     return data
 }

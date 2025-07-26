@@ -5,6 +5,7 @@ import { TabControlEvent } from "@/functions/ipc-client/constants-model"
 interface ApplicationMenuTabsOptions {
     newTab?(route?: {routeName: string, path?: unknown, params?: Record<string, any>, initializer?: Record<string, any>}): void
     closeTab?(): void
+    resumeTab?(): void
     duplicateTab?(): void
     nextTab?(): void
     prevTab?(): void
@@ -25,6 +26,7 @@ export function useApplicationMenuTabs(options: ApplicationMenuTabsOptions) {
             options.newTab?.(newRoute)
         }
         else if(e.type === "CLOSE_TAB") options.closeTab?.()
+        else if(e.type === "RESUME_TAB") options.resumeTab?.()
         else if(e.type === "CLONE_TAB") options.duplicateTab?.()
         else if(e.type === "PREV_TAB") options.prevTab?.()
         else if(e.type === "NEXT_TAB") options.nextTab?.()

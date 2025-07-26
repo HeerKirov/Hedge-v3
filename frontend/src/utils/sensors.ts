@@ -1,5 +1,21 @@
-import { ComponentPublicInstance, onMounted, onUnmounted, ref, Ref, watch } from "vue"
+import { ComponentPublicInstance, onBeforeUnmount, onMounted, onUnmounted, ref, Ref, watch } from "vue"
 import { sleep } from "@/utils/process"
+
+/**
+ * 用于便捷挂载document事件。事件将在mounted时挂载，并在beforeUnmount时被卸载。
+ */
+export function useDocumentEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any) {
+    onMounted(() => document.addEventListener(type, listener))
+    onBeforeUnmount(() => document.removeEventListener(type, listener))
+}
+
+/**
+ * 用于便捷挂载document事件。事件将在mounted时挂载，并在beforeUnmount时被卸载。
+ */
+export function useWindowEventListener<K extends keyof WindowEventMap>(type: K, listener: (this: Window, ev: WindowEventMap[K]) => any) {
+    onMounted(() => window.addEventListener(type, listener))
+    onBeforeUnmount(() => window.removeEventListener(type, listener))
+}
 
 /**
  * 提供一个observer，监视一个Element的Resize事件。

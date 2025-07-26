@@ -67,16 +67,44 @@ export interface BrowserTabs {
     /**
      * 复制一个标签页。复制时，克隆上一个标签页的所有路由数据和storage数据。
      */
-    duplicateTab(args: {id?: number, index?: number}): void
+    duplicateTab(args?: {id?: number, index?: number}): void
     /**
      * 关闭一个标签页。
      * @param args 提供id或index，以指明要关闭的标签页。
      */
-    closeTab(args: {id?: number, index?: number}): void
+    closeTab(args?: {id?: number, index?: number}): void
     /**
      * 创建一个新窗口。
      */
     newWindow(args?: NewRoute): void
+    /**
+     * 后一个标签页。
+     */
+    nextTab(): void
+    /**
+     * 前一个标签页。
+     */
+    prevTab(): void
+    /**
+     * 路由回退。
+     */
+    routeBack(): void
+    /**
+     * 路由前进。
+     */
+    routeForward(): void
+}
+
+export interface BrowserClosedTabs {
+    /**
+     * 所有已关闭的标签页列表。这个列表只能提供一个标题。
+     */
+    tabs(): Readonly<(string | null)[]>
+    /**
+     * 恢复一个已关闭的页面。这将把此页面从列表中移除，并重新打开它。
+     * @param index
+     */
+    resume(index?: number): void
 }
 
 export interface BrowserRoute {
@@ -207,8 +235,11 @@ export interface BrowserTabStack {
 }
 
 export type BrowserTabEvent = {
-    type: "TabCreated" | "TabClosed" | "TabMoved" | "TabActiveChanged"
+    type: "TabCreated" | "TabMoved" | "TabActiveChanged"
     id: number
+} | {
+    type: "TabClosed"
+    tab: InternalTab
 } | {
     type: "Routed"
     operation: "Push" | "Replace" | "Back" | "Forward" | "Close"
