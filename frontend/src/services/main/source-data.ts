@@ -7,7 +7,7 @@ import { useDialogService } from "@/components-module/dialog"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { QuerySchemaContext, useQuerySchema } from "@/services/base/query-schema"
 import { useSettingSite } from "@/services/setting"
-import { useBrowserTabs, useTabRoute } from "@/modules/browser"
+import { useBrowserTabs, useDocumentTitle, useTabRoute } from "@/modules/browser"
 import { useMessageBox } from "@/modules/message-box"
 import { installation } from "@/utils/reactivity"
 
@@ -18,6 +18,8 @@ export const [installSourceDataContext, useSourceDataContext] = installation(fun
     const operators = useOperators(paneState)
 
     useSettingSite()
+
+    useDocumentTitle(() => (querySchema.query.value !== undefined ? `${querySchema.query.value} | ` : "") + "来源数据")
 
     return {listview, operators, paneState, querySchema}
 })

@@ -34,6 +34,8 @@ export const [installBookContext, useBookContext] = installation(function () {
         }
     })
 
+    useDocumentTitle(() => (querySchema.query.value !== undefined ? `${querySchema.query.value} | ` : "") + "画集")
+
     return {listview, querySchema, listviewController, selector, paneState, operators}
 })
 

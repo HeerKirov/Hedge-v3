@@ -39,10 +39,12 @@ installDraggingContext({activeTab, moveTab})
     flex: 0 0 auto
     align-self: center
 
+.transition-enter-from
+    transform: translateY(-30px)
+
 .transition-enter-from,
 .transition-leave-to
     opacity: 0
-    transform: translateY(-30px)
 
 .transition-enter-active,
 .transition-leave-active,

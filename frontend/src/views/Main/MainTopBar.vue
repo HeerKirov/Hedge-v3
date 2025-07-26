@@ -17,6 +17,7 @@ const hasDarwinBorder = useDarwinWindowed()
 @use "@/styles/base/size"
 
 .tab-bar
+    position: relative
     display: flex
     flex-wrap: nowrap
     height: 100%

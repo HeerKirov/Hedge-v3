@@ -31,8 +31,17 @@ export interface RouteDefinition {
 }
 
 export interface GuardDefinition {
+    /**
+     * 此守卫应用给的路由。
+     */
     routeName: string | string[]
+    /**
+     * 在进入此路由时执行。
+     */
     beforeEnter?(to: Route, from: Route): Route | void
+    /**
+     * 在离开此路由时执行。
+     */
     beforeLeave?(from: Route, to: Route): Route | void
 }
 
@@ -86,11 +95,11 @@ export interface BrowserRoute {
     /**
      * 当前标签页的历史记录列表。
      */
-    histories: Readonly<Ref<HistoryRecord[]>>
+    getHistories(limit?: number): {title: string | null, i: number | null, j: number | null}[]
     /**
      * 当前标签页的前进列表。
      */
-    forwards: Readonly<Ref<HistoryRecord[]>>
+    getForwards(limit?: number): {title: string | null, i: number | null, j: number | null}[]
     /**
      * 当前标签页导航到指定的路由。
      */
@@ -107,6 +116,10 @@ export interface BrowserRoute {
      * 前进一条历史记录。
      */
     routeForward(): void
+    /**
+     * 跳转到指定的历史记录。
+     */
+    routeHistoryTo(direction: "back" | "forward", pageIndex: number | null, hashIndex: number | null): void
     /**
      * 关闭当前page。这会后退到后一条历史记录，且不会留下前进记录。如果已经没有了历史记录，则关闭当前标签页。
      * 如果当前page不是正在显示的page，那么它的行为和back会不同，将删除历史记录中的page，不去动当前page。
@@ -130,6 +143,14 @@ export interface HistoryRecord {
      * 该历史记录的路由信息。
      */
     route: Route
+    /**
+     * 从属于此历史记录的hash历史记录。
+     */
+    histories: {title: string | null}[]
+    /**
+     * 从属于此历史记录的hash向前记录。
+     */
+    forwards: {title: string | null}[]
 }
 
 export interface Tab {

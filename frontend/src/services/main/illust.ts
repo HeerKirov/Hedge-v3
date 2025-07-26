@@ -65,6 +65,8 @@ export function useIllustContext() {
         locateId.catchLocateId(params.locateId)
     })
 
+    useDocumentTitle(() => (querySchema.query.value !== undefined ? `${querySchema.query.value} | ` : "") + "图库")
+
     return {paneState, listview, selector, listviewController, querySchema, operators}
 }
 

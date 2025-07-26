@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { computed, watch } from "vue"
-import { BrowserNavMenu, NavContextMenuDefinition, MenuScope, NavMenuItem, NavMenuItems, NavMenuItemsByHistory } from "@/components/interaction"
+import {
+    BrowserNavMenu,
+    NavContextMenuDefinition,
+    MenuScope,
+    NavMenuItem,
+    NavMenuItems,
+    NavMenuItemsByHistory,
+    ElementPopupMenu
+} from "@/components/interaction"
 import { Button, Separator } from "@/components/universal"
 import { SideBar } from "@/components/layout"
 import { BackgroundTaskButton, StagingPostButton } from "@/components-module/common"
@@ -13,7 +21,7 @@ import { useHomepageState } from "@/services/main/homepage"
 import { useNavigationRecords } from "@/services/base/side-nav-records"
 
 const { newTab } = useBrowserTabs()
-const { hasHistories, hasForwards, routeBack, routeForward } = useActivateTabRoute()
+const { hasHistories, hasForwards, getHistories, getForwards, routeBack, routeForward, routeHistoryTo } = useActivateTabRoute()
 
 const { data: homepageState } = useHomepageState()
 
@@ -55,14 +63,22 @@ const folderRecentContextMenu: NavContextMenuDefinition = ctx => <MenuItem<undef
 
 const folderPinnedContextMenu: NavContextMenuDefinition = ctx => <MenuItem<undefined>[]>[{type: "normal", label: "取消固定到侧边栏", click: () => fetchUnsetPin(ctx.routePath as number)}]
 
+const historyContextMenu = () => getHistories().map(i => (<MenuItem<undefined>>{type: "normal", label: i.title, click: () => routeHistoryTo("back", i.i, i.j) }))
+
+const forwardContextMenu = () => getForwards().map(i => (<MenuItem<undefined>>{type: "normal", label: i.title, click: () => routeHistoryTo("forward", i.i, i.j) }))
+
 </script>
 
 <template>
     <SideBar :scrollable="false">
         <template #top-bar>
             <template v-if="hasHistories || hasForwards">
-                <Button :class="{'no-app-region': true, 'opacity-50': !hasHistories}" square icon="arrow-left" :disabled="!hasHistories" @click="routeBack"/>
-                <Button :class="{'no-app-region': true, 'opacity-50': !hasForwards}" square icon="arrow-right" :disabled="!hasForwards" @click="routeForward"/>
+                <ElementPopupMenu position="bottom" :items="historyContextMenu" v-slot="{ popup, setEl }">
+                    <Button :ref="setEl" :class="{'no-app-region': true, 'opacity-50': !hasHistories}" square icon="arrow-left" :disabled="!hasHistories" @click="routeBack" @contextmenu="popup"/>
+                </ElementPopupMenu>
+                <ElementPopupMenu position="bottom" :items="forwardContextMenu" v-slot="{ popup, setEl }">
+                    <Button :ref="setEl" :class="{'no-app-region': true, 'opacity-50': !hasForwards}" square icon="arrow-right" :disabled="!hasForwards" @click="routeForward" @contextmenu="popup"/>
+                </ElementPopupMenu>
             </template>
         </template>
 

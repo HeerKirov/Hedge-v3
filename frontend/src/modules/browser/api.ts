@@ -10,7 +10,7 @@ import {
     InternalTab, NewRoute, Route, RouteDefinition, Tab, BrowserTabEvent
 } from "./definition"
 
-const PAGE_HISTORY_MAX = 5, HASH_HISTORY_MAX = 20
+const PAGE_HISTORY_MAX = 10, HASH_HISTORY_MAX = 20
 
 export const [installBrowserView, useBrowserView] = installationNullable(function (options: BrowserViewOptions) {
     const vueRoute = useRoute()
@@ -318,9 +318,45 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
 
     const hasForwards = computed(() => view.value.current.forwards.length > 0 || view.value.forwards.length > 0)
 
-    const histories = computed(() => view.value.histories)
+    function getHistories(limit: number = 20) {
+        const returns: {title: string | null, i: number | null, j: number | null}[] = []
+        for(let j = view.value.current.histories.length - 1; j >= 0; j--) {
+            returns.push({title: view.value.current.histories[j].title, i: null, j})
+            if(returns.length >= limit) break
+        }
+        if(returns.length < limit) {
+            loop: for(let i = view.value.histories.length - 1; i >= 0; i--) {
+                const page = view.value.histories[i]
+                returns.push({title: page.title, i, j: null})
+                if(returns.length >= limit) break
+                for(let j = page.histories.length - 1; j >= 0; j--) {
+                    returns.push({title: page.histories[j].title, i, j})
+                    if(returns.length >= limit) break loop
+                }
+            }
+        }
+        return returns
+    }
 
-    const forwards = computed(() => view.value.forwards)
+    function getForwards(limit: number = 20) {
+        const returns: {title: string | null, i: number | null, j: number | null}[] = []
+        for(let j = 0; j < view.value.current.forwards.length; j++) {
+            returns.push({title: view.value.current.forwards[j].title, i: null, j})
+            if(returns.length >= limit) break
+        }
+        if(returns.length < limit) {
+            loop: for(let i = 0; i < view.value.forwards.length; i++) {
+                const page = view.value.forwards[i]
+                returns.push({title: page.title, i, j: null})
+                if(returns.length >= limit) break
+                for(let j = 0; j < page.forwards.length; j++) {
+                    returns.push({title: page.forwards[j].title, i, j})
+                    if(returns.length >= limit) break loop
+                }
+            }
+        }
+        return returns
+    }
 
     function routePush(route: NewRoute, disableGuard?: "DISABLE_LEAVE" | "DISABLE") {
         if(view.value.current.route.routeName === route.routeName && objects.deepEquals(view.value.current.route.path, route.path)) {
@@ -358,8 +394,8 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
                 storage: {},
                 histories: [], forwards: []
             }
+            event.emit({type: "Routed", operation: "Push", id: view.value.id, historyId: view.value.current.historyId})
         }
-        event.emit({type: "Routed", operation: "Push", id: view.value.id, historyId: view.value.current.historyId})
     }
 
     function routeReplace(route: NewRoute, disableGuard?: "DISABLE_LEAVE") {
@@ -390,22 +426,20 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
                 storage: {},
                 histories: [], forwards: []
             }
+            event.emit({type: "Routed", operation: "Replace", id: view.value.id, historyId: view.value.current.historyId})
         }
-        event.emit({type: "Routed", operation: "Replace", id: view.value.id, historyId: view.value.current.historyId})
     }
 
     function routeBack() {
         if(view.value.current.histories.length > 0) {
             //在存在hash历史的情况下，先迭代hash历史
             const [history] = view.value.current.histories.splice(view.value.current.histories.length - 1, 1)
-            view.value.current.forwards.push({title: view.value.current.title, params: view.value.current.route.params})
+            view.value.current.forwards.splice(0, 0, {title: view.value.current.title, params: view.value.current.route.params})
             view.value.current.title = history.title
             view.value.current.route.params = history.params
-            event.emit({type: "Routed", operation: "Back", id: view.value.id, historyId: view.value.current.historyId})
         }else if(view.value.histories.length > 0) {
             const [history] = view.value.histories.splice(view.value.histories.length - 1, 1)
-            view.value.forwards.push(view.value.current)
-            if(view.value.forwards.length > PAGE_HISTORY_MAX) view.value.forwards.shift()
+            view.value.forwards.splice(0, 0, view.value.current)
             view.value.current = history
             event.emit({type: "Routed", operation: "Back", id: view.value.id, historyId: view.value.current.historyId})
         }
@@ -413,17 +447,61 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
 
     function routeForward() {
         if(view.value.current.forwards.length > 0) {
-            const [forward] = view.value.current.forwards.splice(view.value.current.forwards.length - 1, 1)
+            const [forward] = view.value.current.forwards.splice(0, 1)
             view.value.current.histories.push({title: view.value.current.title, params: view.value.current.route.params})
             view.value.current.title = forward.title
             view.value.current.route.params = forward.params
-            event.emit({type: "Routed", operation: "Forward", id: view.value.id, historyId: view.value.current.historyId})
         }else if(view.value.forwards.length > 0) {
-            const [forward] = view.value.forwards.splice(view.value.forwards.length - 1, 1)
+            const [forward] = view.value.forwards.splice(0, 1)
             view.value.histories.push(view.value.current)
-            if(view.value.histories.length > PAGE_HISTORY_MAX) view.value.histories.shift()
             view.value.current = forward
             event.emit({type: "Routed", operation: "Forward", id: view.value.id, historyId: view.value.current.historyId})
+        }
+    }
+
+    function routeHistoryTo(direction: "back" | "forward", pageIndex: number | null, hashIndex: number | null): void {
+        if(pageIndex === null) {
+            //此次导航仅在当前页面的hash内进行
+            if(direction === "back") {
+                const [history, ...items] = view.value.current.histories.splice(hashIndex!, view.value.current.histories.length - hashIndex!)
+                view.value.current.forwards.splice(0, 0, ...items, {title: view.value.current.title, params: view.value.current.route.params})
+                view.value.current.title = history.title
+                view.value.current.route.params = history.params
+            }else{
+                const items = view.value.current.forwards.splice(0, hashIndex! + 1)
+                const forward = items.pop()!
+                view.value.current.histories.push({title: view.value.current.title, params: view.value.current.route.params}, ...items)
+                view.value.current.title = forward.title
+                view.value.current.route.params = forward.params
+            }
+        }else{
+            //此次导航跨Page
+            if(direction === "back") {
+                //如果当前页面仍有back hash，则全部压入forward
+                if(view.value.current.histories.length > 0) routeHistoryTo("back", null, 0)
+
+                const [history, ...items] = view.value.histories.splice(pageIndex, view.value.histories.length - pageIndex)
+                view.value.forwards.splice(0, 0, ...items, view.value.current)
+                view.value.current = history
+
+                //如果有hashIndex，在此处处理
+                if(hashIndex !== null) routeHistoryTo("back", null, hashIndex)
+
+                event.emit({type: "Routed", operation: "Back", id: view.value.id, historyId: view.value.current.historyId})
+            }else{
+                //如果当前页面仍有forward hash，则全部压入back
+                if(view.value.current.forwards.length > 0) routeHistoryTo("forward", null, view.value.current.forwards.length - 1)
+
+                const items = view.value.forwards.splice(0, pageIndex + 1)
+                const forward = items.pop()!
+                view.value.histories.push(view.value.current, ...items)
+                view.value.current = forward
+
+                //如果有hashIndex，在此处处理
+                if(hashIndex !== null) routeHistoryTo("forward", null, hashIndex)
+
+                event.emit({type: "Routed", operation: "Back", id: view.value.id, historyId: view.value.current.historyId})
+            }
         }
     }
 
@@ -450,7 +528,7 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
         }
     }
 
-    return {route, histories, forwards, hasHistories, hasForwards, routePush, routeReplace, routeBack, routeForward, routeClose}
+    return {route, getHistories, getForwards, hasHistories, hasForwards, routePush, routeReplace, routeBack, routeForward, routeHistoryTo, routeClose}
 }
 
 export function useActivateTabRoute(): BrowserRoute {

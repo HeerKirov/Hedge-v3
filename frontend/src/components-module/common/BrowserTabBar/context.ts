@@ -62,6 +62,7 @@ export const [installDraggingContext, useDraggingContext] = installation(functio
                     }
                 }
             }
+            e.preventDefault()
         }else if(!tab.active) {
             if(dragDistance === undefined) {
                 dragDistance = {lastX: e.x, lastY: e.y, distance: 0}
@@ -75,7 +76,6 @@ export const [installDraggingContext, useDraggingContext] = installation(functio
                 }
             }
         }
-        e.preventDefault()
     }
 
     const dragStart = (tab: Tab) => {

@@ -48,6 +48,7 @@ const mouseUp = (e: MouseEvent) => {
     padding: 0 5px 0 size.$spacing-2
     border-radius: size.$radius-size-large
     width: 180px
+    height: #{size.$title-bar-height - size.$spacing-1 * 2}
     font-weight: 700
 
     &.active

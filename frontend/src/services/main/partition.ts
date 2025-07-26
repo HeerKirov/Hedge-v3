@@ -33,7 +33,7 @@ export const [installPartitionContext, usePartitionContext] = installation(funct
         }
     })
 
-    useDocumentTitle(() => partition.viewMode.value === "calendar" ? "日历" : "时间线")
+    useDocumentTitle(() => (querySchema.query.value !== undefined ? `${querySchema.query.value} | ` : "") + (partition.viewMode.value === "calendar" ? "日历" : "时间线"))
 
     return {partition, querySchema, listviewController, openDetail}
 })
@@ -328,7 +328,7 @@ export function useDetailIllustContext() {
         return {name, badge: today ? "TODAY" : undefined}
     })
 
-    useDocumentTitle(() => `${path.value.year}年${path.value.month}月${path.value.day}日`)
+    useDocumentTitle(() => (querySchema.query.value !== undefined ? `${querySchema.query.value} | ` : "") + `${path.value.year}年${path.value.month}月${path.value.day}日`)
 
     return {path, listview, selector, paneState, operators, querySchema, listviewController}
 }
