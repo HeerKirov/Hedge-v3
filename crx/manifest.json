@@ -85,7 +85,7 @@
 			"run_at": "document_start"
 		},
 		{
-			"matches": ["https://kemono.su/*/user/*/post/*"],
+			"matches": ["https://kemono.su/*/user/*/post/*", "https://kemono.cr/*/user/*/post/*"],
 			"js": ["src/scripts/kemono/post.ts"],
 			"run_at": "document_start"
 		},
@@ -94,7 +94,7 @@
 				"https://www.pixiv.net/artworks/*",
 				"https://danbooru.donmai.us/posts/*",
 				"https://gelbooru.com/*",
-				"https://kemono.su/*",
+				"https://kemono.su/*", "https://kemono.cr/*",
 				"https://www.fanbox.cc/*/posts/*", "https://*.fanbox.cc/posts/*",
 				"https://cc.fantia.jp/*", "https://fantia.jp/*"
 			],

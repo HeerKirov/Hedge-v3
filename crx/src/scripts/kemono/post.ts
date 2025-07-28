@@ -41,6 +41,8 @@ onDOMContentLoaded(() => {
             console.log(sourcePath, sourceData)
             sendMessage("SUBMIT_PAGE_INFO", {path: sourcePath})
             sendMessage("SUBMIT_SOURCE_DATA", {path: sourcePath, data: sourceData})
+        }else{
+            sendMessage("NOTIFICATION", {title: "来源数据收集异常", message: `无法从${document.location.pathname}找到来源数据，请检查控制台。`})
         }
 
         initializeUI(sourcePath)
