@@ -87,6 +87,15 @@ export const arrays = {
         })
         return <{[key in K]: R}>ret
     },
+    groupByTuple<T, K extends string, R>(arr: readonly T[], generator: (value: T, index: number) => readonly [K, R]): {[key in K]: R[]} {
+        const ret: {[key: string]: R[]} = {}
+        arr.forEach((t, i) => {
+            const [k, v] = generator(t, i)
+            if(k in ret) ret[k].push(v)
+            else ret[k] = [v]
+        })
+        return <{[key in K]: R[]}>ret
+    },
     equals<T>(a: readonly T[], b: readonly T[], equalsBy: (a: T, b: T) => boolean = (a, b) => a === b): boolean {
         if (a.length !== b.length) {
             return false

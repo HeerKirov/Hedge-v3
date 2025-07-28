@@ -135,8 +135,25 @@ export default {
         {
             routeName: ["Illust", "Partition", "PartitionDetail"],
             beforeEnter(to, from) {
-                if(["Illust", "Partition", "PartitionDetail"].includes(from.routeName) && from.params.query !== undefined) {
+                if(to.routeName !== from.routeName && ["Illust", "Partition", "PartitionDetail"].includes(from.routeName) && from.params.query !== undefined) {
                     return {...to, params: {...to.params, query: from.params.query}}
+                }
+            }
+        },
+        {
+            routeName: ["Illust", "Book"],
+            beforeEnter(to, _) {
+                //initializer对query的更改已迁移至Guard进行。已经不能在页面内再重新设置query了，这会造成一次路由。在此处理使得路由跳转更加清晰
+                if(to.initializer.tagName || to.initializer.authorName || to.initializer.topicName || to.initializer.source) {
+                    //在这里处理initializer对query的更改。对于meta tag，将其简单地转换为DSL的一部分。
+                    //FUTURE 当然这其实是有问题的，对于topic/tag，还应该使用地址去限制它们。
+                    const query = [
+                        to.initializer.tagName ? `$\`${to.initializer.tagName}\`` : undefined,
+                        to.initializer.topicName ? `#\`${to.initializer.topicName}\`` : undefined,
+                        to.initializer.authorName ? `@\`${to.initializer.authorName}\`` : undefined,
+                        to.initializer.source ? `^SITE:${to.initializer.source.site} ^ID:${to.initializer.source.id}` : undefined
+                    ].filter(i => i !== undefined).join(" ")
+                    return {...to, params: {...to.params, query}}
                 }
             }
         }

@@ -28,12 +28,6 @@ export const [installPartitionContext, usePartitionContext] = installation(funct
 
     const openDetail = (date: LocalDate) => router.routePush({routeName: "PartitionDetail", path: date})
 
-    useInitializer(params => {
-        if(params.query) {
-            querySchema.queryInputText.value = params.query
-        }
-    })
-
     useDocumentTitle(() => [partition.viewMode.value === "calendar" ? "日历" : "时间线", translateQuerySchemaToString(querySchema.schema.value)])
 
     return {partition, querySchema, listviewController, openDetail}
@@ -170,8 +164,8 @@ export function useCalendarContext() {
     const openPartition = (item: {day: number, count: number | null}, at?: "NEW_TAB" | "NEW_WINDOW") => {
         if(calendarDate.value !== null && item.count) {
             const path = date.ofDate(calendarDate.value.year, calendarDate.value.month, item.day)
-            if(at === "NEW_TAB") browserTabs.newTab({routeName: "PartitionDetail", path, initializer: {query: querySchema.query.value}})
-            else if(at === "NEW_WINDOW") browserTabs.newWindow({routeName: "PartitionDetail", path, initializer: {query: querySchema.query.value}})
+            if(at === "NEW_TAB") browserTabs.newTab({routeName: "PartitionDetail", path, params: {query: querySchema.query.value}})
+            else if(at === "NEW_WINDOW") browserTabs.newWindow({routeName: "PartitionDetail", path, params: {query: querySchema.query.value}})
             else openDetail(path)
         }
     }
@@ -253,8 +247,8 @@ export function useTimelineContext() {
     }
 
     const openPartition = (date: LocalDate, at?: "NEW_TAB" | "NEW_WINDOW") => {
-        if(at === "NEW_TAB") browserTabs.newTab({routeName: "PartitionDetail", path: date, initializer: {query: querySchema.query.value}})
-        else if(at === "NEW_WINDOW") browserTabs.newWindow({routeName: "PartitionDetail", path: date, initializer: {query: querySchema.query.value}})
+        if(at === "NEW_TAB") browserTabs.newTab({routeName: "PartitionDetail", path: date, params: {query: querySchema.query.value}})
+        else if(at === "NEW_WINDOW") browserTabs.newWindow({routeName: "PartitionDetail", path: date, params: {query: querySchema.query.value}})
         else {
             if(calendarDate.value === null || calendarDate.value.year !== date.year || calendarDate.value.month !== date.month) {
                 selectMonth({year: date.year, month: date.month}).finally()
@@ -313,15 +307,7 @@ export function useDetailIllustContext() {
 
     useSettingSite()
 
-    useInitializer(params => {
-        if(params.query) {
-            querySchema.queryInputText.value = params.query
-        }else if(params.locateId !== undefined && querySchema.queryInputText.value) {
-            //若提供了Locate，则应该清空现有的查询条件
-            querySchema.queryInputText.value = undefined
-        }
-        locateId.catchLocateId(params.locateId)
-    })
+    useInitializer(params => locateId.catchLocateId(params.locateId))
 
     useNavigationItem(() => {
         const name = `${path.value.year}年${path.value.month}月${path.value.day}日`

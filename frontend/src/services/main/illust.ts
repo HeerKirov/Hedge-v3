@@ -43,25 +43,8 @@ export function useIllustContext() {
     useSettingSite()
 
     useInitializer(params => {
-        if(params.query) {
-            querySchema.queryInputText.value = params.query
-        }else if(params.tagName || params.authorName || params.topicName || params.source) {
-            //监听router event。只监听Illust的，Partition没有。对于meta tag，将其简单地转换为DSL的一部分。
-            //FUTURE 当然这其实是有问题的，对于topic/tag，还应该使用地址去限制它们。
-            querySchema.queryInputText.value = [
-                params.tagName ? `$\`${params.tagName}\`` : undefined,
-                params.topicName ? `#\`${params.topicName}\`` : undefined,
-                params.authorName ? `@\`${params.authorName}\`` : undefined,
-                params.source ? `^SITE:${params.source.site} ^ID:${params.source.id}` : undefined
-            ].filter(i => i !== undefined).join(" ")
-
-            //对于source，需要将collectionMode转为IMAGE，否则有可能看不到搜索结果
-            if(params.source) listviewController.collectionMode.value = "IMAGE"
-
-        }else if(params.locateId !== undefined && querySchema.queryInputText.value) {
-            //若提供了Locate，则应该清空现有的查询条件，除非上面也提供了别的查询条件
-            querySchema.queryInputText.value = undefined
-        }
+        //对于source，需要将collectionMode转为IMAGE，否则有可能看不到搜索结果
+        if(params.source) listviewController.collectionMode.value = "IMAGE"
 
         locateId.catchLocateId(params.locateId)
     })

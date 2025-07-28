@@ -19,8 +19,8 @@ export const [installBrowserView, useBrowserView] = installationNullable(functio
 
     const defaultRouteDefinition = options.routes[0]
     const routeMaps = arrays.toTupleMap(options.routes, route => [route.routeName, route])
-    const guardEnterMaps = arrays.toTupleMap(options.guardDefinitions?.filter(it => !!it.beforeEnter)?.flatMap(i => typeof i.routeName === "string" ? [[i.routeName, i.beforeEnter!!] as const] : i.routeName.map(n => [n, i.beforeEnter!!] as const)) ?? [], g => g)
-    const guardLeaveMaps = arrays.toTupleMap(options.guardDefinitions?.filter(it => !!it.beforeLeave)?.flatMap(i => typeof i.routeName === "string" ? [[i.routeName, i.beforeLeave!!] as const] : i.routeName.map(n => [n, i.beforeLeave!!] as const)) ?? [], g => g)
+    const guardEnterMaps = arrays.groupByTuple(options.guardDefinitions?.filter(it => !!it.beforeEnter)?.flatMap(i => typeof i.routeName === "string" ? [[i.routeName, i.beforeEnter!!] as const] : i.routeName.map(n => [n, i.beforeEnter!!] as const)) ?? [], g => g)
+    const guardLeaveMaps = arrays.groupByTuple(options.guardDefinitions?.filter(it => !!it.beforeLeave)?.flatMap(i => typeof i.routeName === "string" ? [[i.routeName, i.beforeLeave!!] as const] : i.routeName.map(n => [n, i.beforeLeave!!] as const)) ?? [], g => g)
     const componentCaches: Record<string, Component | DefineComponent> = {}
 
     const views = ref<InternalTab[]>([]), activeIndex = ref(0), event = useRefEmitter<BrowserTabEvent>()
@@ -63,11 +63,21 @@ export const [installBrowserView, useBrowserView] = installationNullable(functio
     }
 
     function getGuardDefinition(routeName: string, direction: "enter" | "leave"): ((a: Route, b: Route) => Route | void) | undefined {
-        if(direction === "enter") {
-            return guardEnterMaps[routeName]
-        }else{
-            return guardLeaveMaps[routeName]
+        const list = direction === "enter" ? guardEnterMaps[routeName] : guardLeaveMaps[routeName]
+        if(list) {
+            if(list.length === 1) {
+                return list[0]
+            }else{
+                return (a, b) => {
+                    let x = a
+                    for(const func of list) {
+                        x = func(x, b) ?? x
+                    }
+                    return x
+                }
+            }
         }
+        return undefined
     }
 
     function getComponentOrNull(routeName: string) : Component | DefineComponent | null {
@@ -426,6 +436,22 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
     }
 
     function routePush(route: NewRoute, disableGuard?: "DISABLE_LEAVE" | "DISABLE") {
+        const nextRoute = {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}}
+        if(disableGuard !== "DISABLE_LEAVE" && disableGuard !== "DISABLE") {
+            const guardLeaveResult = getGuardDefinition(view.value.current.route.routeName, "leave")?.(view.value.current.route, nextRoute)
+            if(guardLeaveResult !== undefined) {
+                routePush(guardLeaveResult, guardLeaveResult.routeName === nextRoute.routeName && objects.deepEquals(guardLeaveResult.path, nextRoute.path) ? "DISABLE_LEAVE" : undefined)
+                return
+            }
+        }
+        if(disableGuard !== "DISABLE") {
+            const guardEnterResult = getGuardDefinition(route.routeName, "enter")?.(nextRoute, view.value.current.route)
+            if(guardEnterResult !== undefined) {
+                routePush(guardEnterResult, guardEnterResult.routeName === nextRoute.routeName && objects.deepEquals(guardEnterResult.path, nextRoute.path) ? "DISABLE" : "DISABLE_LEAVE")
+                return
+            }
+        }
+
         if(view.value.current.route.routeName === route.routeName && objects.deepEquals(view.value.current.route.path, route.path)) {
             //在routePush的路由是同一个的情况下，视作hash push，记录params的变更
             const current = view.value.current
@@ -434,22 +460,6 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
             if(current.histories.length > HASH_HISTORY_MAX) current.histories.shift()
             current.route.params = route.params ?? {}
         }else{
-            const nextRoute = {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}}
-            if(disableGuard !== "DISABLE_LEAVE" && disableGuard !== "DISABLE") {
-                const guardLeaveResult = getGuardDefinition(view.value.current.route.routeName, "leave")?.(view.value.current.route, nextRoute)
-                if(guardLeaveResult !== undefined) {
-                    routePush(guardLeaveResult, guardLeaveResult.routeName === nextRoute.routeName && objects.deepEquals(guardLeaveResult.path, nextRoute.path) ? "DISABLE_LEAVE" : undefined)
-                    return
-                }
-            }
-            if(disableGuard !== "DISABLE") {
-                const guardEnterResult = getGuardDefinition(route.routeName, "enter")?.(nextRoute, view.value.current.route)
-                if(guardEnterResult !== undefined) {
-                    routePush(guardEnterResult, guardEnterResult.routeName === nextRoute.routeName && objects.deepEquals(guardEnterResult.path, nextRoute.path) ? "DISABLE" : "DISABLE_LEAVE")
-                    return
-                }
-            }
-
             const routeDef = getRouteDefinition(route.routeName)
             if(view.value.forwards.length > 0) view.value.forwards.splice(0, view.value.forwards.length)
             view.value.histories.push(view.value.current)
@@ -467,25 +477,25 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
     }
 
     function routeReplace(route: NewRoute, disableGuard?: "DISABLE_LEAVE") {
-        if(view.value.current.route.routeName === route.routeName && objects.deepEquals(view.value.current.route.path, route.path)) {
+        const nextRoute = {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}}
+        if(disableGuard !== "DISABLE_LEAVE") {
+            const guardLeaveResult = getGuardDefinition(view.value.current.route.routeName, "leave")?.(view.value.current.route, nextRoute)
+            if(guardLeaveResult !== undefined) {
+                routePush(guardLeaveResult, guardLeaveResult.routeName === nextRoute.routeName && objects.deepEquals(guardLeaveResult.path, nextRoute.path) ? "DISABLE_LEAVE" : undefined)
+                return
+            }
+        }
+        const guardEnterResult = getGuardDefinition(route.routeName, "enter")?.(nextRoute, view.value.current.route)
+        if(guardEnterResult !== undefined) {
+            routePush(guardEnterResult, guardEnterResult.routeName === nextRoute.routeName && objects.deepEquals(guardEnterResult.path, nextRoute.path) ? "DISABLE" : "DISABLE_LEAVE")
+            return
+        }
+
+        if(view.value.current.route.routeName === route.routeName && objects.deepEquals(view.value.current.route.path, route.path) && (!route.initializer || Object.keys(route.initializer).length <= 0)) {
             //在routePush的路由是同一个的情况下，视作hash push，记录params的变更
             const current = view.value.current
             current.route.params = route.params ?? {}
         }else{
-            const nextRoute = {routeName: route.routeName, path: route.path, params: route.params ?? {}, initializer: route.initializer ?? {}}
-            if(disableGuard !== "DISABLE_LEAVE") {
-                const guardLeaveResult = getGuardDefinition(view.value.current.route.routeName, "leave")?.(view.value.current.route, nextRoute)
-                if(guardLeaveResult !== undefined) {
-                    routePush(guardLeaveResult, guardLeaveResult.routeName === nextRoute.routeName && objects.deepEquals(guardLeaveResult.path, nextRoute.path) ? "DISABLE_LEAVE" : undefined)
-                    return
-                }
-            }
-            const guardEnterResult = getGuardDefinition(route.routeName, "enter")?.(nextRoute, view.value.current.route)
-            if(guardEnterResult !== undefined) {
-                routePush(guardEnterResult, guardEnterResult.routeName === nextRoute.routeName && objects.deepEquals(guardEnterResult.path, nextRoute.path) ? "DISABLE" : "DISABLE_LEAVE")
-                return
-            }
-
             const routeDef = getRouteDefinition(route.routeName)
             view.value.current = {
                 historyId: nextHistoryId(),

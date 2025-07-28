@@ -1,4 +1,4 @@
-import { ref, Ref, watch } from "vue"
+import { computed, ref, Ref, watch } from "vue"
 import { Dialect, QueryRes } from "@/functions/http-client/api/util-query"
 import { useFetchHelper } from "@/functions/fetch"
 import { useRouteStorage } from "@/functions/app"
@@ -32,27 +32,32 @@ export function useQuerySchema(dialect: Dialect): QuerySchemaContext {
     const schema = useRouteStorage<QueryRes>(`query-schema/${dialect}/schema`)
     const status = ref<{loading: boolean, timeCost: number | null}>({loading: false, timeCost: null})
 
-    const queryInputText = ref<string | undefined>(query.value)
-
-    watch(query, query => { if(query !== queryInputText.value) queryInputText.value = query })
-
-    watch(queryInputText, async queryInputText => {
-        const text = queryInputText?.trim()
-        if(!text) {
-            if(query.value !== undefined) {
-                query.value = undefined
-                schema.value = null
-                status.value = {loading: false, timeCost: null}
-            }
-        }else if(text !== query.value) {
+    watch(query, async query => {
+        if(query === undefined) {
+            schema.value = null
+            status.value = {loading: false, timeCost: null}
+        }else{
             status.value = {loading: true, timeCost: null}
             const t1 = Date.now()
-            const res = await fetch({dialect, text}, toast.handleException)
+            const res = await fetch({dialect, text: query}, toast.handleException)
             if(res !== undefined) {
                 schema.value = res
-                query.value = text
             }
             status.value = {loading: false, timeCost: Date.now() - t1}
+        }
+    }, {immediate: true})
+
+    const queryInputText = computed({
+        get: () => query.value,
+        set: queryInputText => {
+            const text = queryInputText?.trim()
+            if(!text) {
+                if(query.value !== undefined) {
+                    query.value = undefined
+                }
+            }else if(text !== query.value) {
+                query.value = text
+            }
         }
     })
 

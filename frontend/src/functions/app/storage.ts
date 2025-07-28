@@ -54,11 +54,11 @@ export function useLocalStorage<T>(bucketName: string, defaultValue: () => T, de
  * @return 存储的响应式数据。null表示无值，其他表示有值
  */
 export function useLocalStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): Ref<T | null> {
-    const accessor = createLocalStorage<T>(bucketName, defaultValue, defaultFunction)
+    const accessor = createLocalStorage<T>(bucketName, defaultValue as any, defaultFunction as any)
 
-    const data: Ref<T | null> = ref(accessor.get())
+    const data: Ref<T | null> = ref(accessor.get()) as Ref<T | null>
 
-    watch(data, value => accessor.set(value), {deep: true})
+    watch(data, value => accessor.set(value as T), {deep: true})
 
     return data
 }
