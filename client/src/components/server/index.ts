@@ -7,7 +7,7 @@ import axios, { AxiosRequestConfig, AxiosResponse } from "axios"
 import { AppDataDriver, AppDataStatus } from "@/components/appdata"
 import { DATA_FILE, RESOURCE_FILE } from "@/constants/file"
 import { createEmitter, Emitter } from "@/utils/emitter"
-import { sleep } from "@/utils/process"
+import { Platform, sleep } from "@/utils/process"
 import { readFile } from "@/utils/fs"
 import {
     AppInitializeForm, ServerConnectionError, ServerConnectionInfo, ServerConnectionStatus,
@@ -119,6 +119,7 @@ interface ServerManagerOptions {
      * app频道。
      */
     channel: string
+    platform: Platform
     /**
      * 在调试模式运行。
      */
@@ -146,9 +147,10 @@ export function createServerManager(appdata: AppDataDriver, options: ServerManag
 
 function createConnectionManager(appdata: AppDataDriver, options: ServerManagerOptions) {
     const debugMode = !!options.debug
+
     const serverBinPath = options.debug?.serverFromFolder
-        ? path.resolve(options.debug?.serverFromFolder, RESOURCE_FILE.SERVER.BIN)
-        : path.resolve(options.userDataPath, DATA_FILE.RESOURCE.SERVER_FOLDER, RESOURCE_FILE.SERVER.BIN)
+        ? path.resolve(options.debug?.serverFromFolder, options.platform === "win32" ?  RESOURCE_FILE.SERVER.BIN_WIN32 : RESOURCE_FILE.SERVER.BIN_UNIX)
+        : path.resolve(options.userDataPath, DATA_FILE.RESOURCE.SERVER_FOLDER, options.platform === "win32" ?  RESOURCE_FILE.SERVER.BIN_WIN32 : RESOURCE_FILE.SERVER.BIN_UNIX)
     const serverDir = path.resolve(options.userDataPath, DATA_FILE.APPDATA.CHANNEL_FOLDER, options.channel, DATA_FILE.APPDATA.CHANNEL.SERVER_DIR)
     const serverPIDPath = path.resolve(serverDir, DATA_FILE.APPDATA.CHANNEL.SERVER_PID)
 
@@ -537,6 +539,7 @@ function startServerProcess(serverDir: string, debugMode: boolean, serverBinPath
     const baseArgs = ['--dir', serverDir]
     const debugModeArgs = debugMode ? ['--token', 'dev'] : []
     const args = [...baseArgs, ...debugModeArgs]
+    console.log("spawn", serverBinPath, args.join(" "))
     const s = spawn(serverBinPath, args, {
         detached: true,
         stdio: ["ignore", "ignore", "ignore"]

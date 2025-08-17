@@ -28,7 +28,8 @@ export const DATA_FILE = {
 
 export const RESOURCE_FILE = {
     SERVER: {
-        BIN: path.join("bin", "hedge-v3-server.bat")
+        BIN_WIN32: path.join("bin", "hedge-v3-server.bat"),
+        BIN_UNIX: path.join("bin", "hedge-v3-server")
     },
     FRONTEND: {
         INDEX: "index.html"
