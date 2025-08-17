@@ -1,5 +1,4 @@
 import { readonly, Ref, ref, watch } from "vue"
-import { useLocalStorage } from "@/functions/app"
 import { ErrorHandler, QueryListview, useCreatingHelper, useFetchEndpoint, useFetchHelper, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import { Author, DetailAuthor, AuthorCreateForm, AuthorUpdateForm, AuthorExceptions, AuthorQueryFilter, AuthorType } from "@/functions/http-client/api/author"
@@ -134,9 +133,8 @@ export function useListThumbnail(authorId: Ref<number>) {
 export function useAuthorCreatePanel() {
     const router = useTabRoute()
     const message = useMessageBox()
-    const cacheStorage = useLocalStorage<{cacheType: AuthorType}>("author/create-panel", {cacheType: "ARTIST"})
 
-    const form = ref(mapTemplateToCreateForm(null, cacheStorage.value.cacheType))
+    const form = ref(mapTemplateToCreateForm(null, "ARTIST"))
 
     const setProperty = <T extends keyof AuthorCreateFormData>(key: T, value: AuthorCreateFormData[T]) => {
         form.value[key] = value
@@ -179,13 +177,7 @@ export function useAuthorCreatePanel() {
         }
     })
 
-    watch(() => form.value.type, authorType => {
-        if(authorType !== cacheStorage.value.cacheType) {
-            cacheStorage.value.cacheType = authorType
-        }
-    })
-
-    useInitializer(params => {if(params.createTemplate) form.value = mapTemplateToCreateForm(params.createTemplate, cacheStorage.value.cacheType)})
+    useInitializer(params => {if(params.createTemplate) form.value = mapTemplateToCreateForm(params.createTemplate, "ARTIST")})
 
     return {form, setProperty, submit}
 }

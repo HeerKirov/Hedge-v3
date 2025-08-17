@@ -1,4 +1,5 @@
 import { RouteDefinition, GuardDefinition } from "@/modules/browser"
+import { objects } from "@/utils/primitives";
 
 export default {
     routes: <RouteDefinition[]>[
@@ -135,7 +136,7 @@ export default {
         {
             routeName: ["Illust", "Partition", "PartitionDetail"],
             beforeEnter(to, from) {
-                if(to.routeName !== from.routeName && ["Illust", "Partition", "PartitionDetail"].includes(from.routeName) && from.params.query !== undefined) {
+                if(from.params.query !== undefined && (to.routeName !== from.routeName || !objects.deepEquals(to.path, from.path)) && ["Illust", "Partition", "PartitionDetail"].includes(from.routeName)) {
                     return {...to, params: {...to.params, query: from.params.query}}
                 }
             }

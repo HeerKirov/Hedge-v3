@@ -1,4 +1,4 @@
-import { readonly, Ref, ref, watch } from "vue"
+import { readonly, Ref, ref } from "vue"
 import { useLocalStorage } from "@/functions/app"
 import { useCreatingHelper, useFetchEndpoint, useRetrieveHelper, ErrorHandler, QueryListview, usePostFetchHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
@@ -117,9 +117,8 @@ function useOperators(listview: QueryListview<Topic, number>) {
 export function useTopicCreatePanel() {
     const router = useTabRoute()
     const message = useMessageBox()
-    const cacheStorage = useLocalStorage<{cacheType: TopicType}>("topic/create-panel", {cacheType: "IP"})
 
-    const form = ref(mapTemplateToCreateForm(null, cacheStorage.value.cacheType))
+    const form = ref(mapTemplateToCreateForm(null, "CHARACTER"))
 
     const setProperty = <T extends keyof TopicCreateFormData>(key: T, value: TopicCreateFormData[T]) => {
         form.value[key] = value
@@ -168,13 +167,7 @@ export function useTopicCreatePanel() {
         }
     })
 
-    watch(() => form.value.type, topicType => {
-        if(topicType !== cacheStorage.value.cacheType) {
-            cacheStorage.value.cacheType = topicType
-        }
-    })
-
-    useInitializer(params => {if(params.createTemplate) form.value = mapTemplateToCreateForm(params.createTemplate, cacheStorage.value.cacheType)})
+    useInitializer(params => {if(params.createTemplate) form.value = mapTemplateToCreateForm(params.createTemplate, "CHARACTER")})
 
     return {form, setProperty, submit}
 }
