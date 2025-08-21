@@ -19,7 +19,7 @@ val BUILTIN_SITES = listOf(
         name = "ehentai", title = "E-Hentai", isBuiltin = true,
         idMode = SourceOption.SiteIdMode.NUMBER, partMode = SourceOption.SitePartMode.PAGE_WITH_NAME,
         sourceLinkRules = listOf("https://e-hentai.org/g/{{id}}/{{token}}/"),
-        tagTypes = listOf("artist", "group", "parody", "category", "character", "language", "reclass", "male", "female", "mixed", "other", "temp"),
+        tagTypes = listOf("artist", "group", "parody", "category", "character", "language", "reclass", "male", "female", "mixed", "other", "location", "temp"),
         tagTypeMappings = mapOf(
             "artist" to TagAuthorType.ARTIST.name,
             "group" to TagAuthorType.GROUP.name,
@@ -32,6 +32,7 @@ val BUILTIN_SITES = listOf(
             "female" to MetaType.TAG.name,
             "mixed" to MetaType.TAG.name,
             "other" to MetaType.TAG.name,
+            "location" to MetaType.TAG.name,
             "temp" to MetaType.TAG.name
         ),
         additionalInfo = listOf(SourceOption.AvailableAdditionalInfo("token", "Token"))
