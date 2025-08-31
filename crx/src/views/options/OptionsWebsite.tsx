@@ -3,7 +3,7 @@ import { Button, CheckBox, Header, Icon, LayouttedDiv, SecondaryText, Separator,
 import { defaultSetting, Setting } from "@/functions/setting"
 import { useEditor, usePartialSet } from "@/utils/reactivity"
 import { SPACINGS } from "@/styles"
-import { SankakuIcon, EHentaiIcon, FanboxIcon } from "@/styles/assets"
+import { SankakuIcon, EHentaiIcon, FanboxIcon, KemonoIcon } from "@/styles/assets"
 
 interface OptionsWebsitePanelProps {
     website: Setting["website"] | null | undefined
@@ -16,6 +16,8 @@ export function OptionsWebsitePanel(props: OptionsWebsitePanelProps) {
         updateValue: props.onUpdateWebsite,
         default: () => defaultSetting().website
     })
+
+    const setKemono = usePartialSet(editor.kemono, v => setProperty("kemono", v))
 
     const setSankakucomplex = usePartialSet(editor.sankakucomplex, v => setProperty("sankakucomplex", v))
 
@@ -95,6 +97,13 @@ export function OptionsWebsitePanel(props: OptionsWebsitePanelProps) {
                 <StyledSaveButton mode="filled" width="10em" type="primary" onClick={save}><Icon icon="save" mr={2}/>保存</StyledSaveButton>
             </>}
         </LayouttedDiv>
+
+        <Separator spacing={[4, 1]}/>
+        <Header><IconImg src={KemonoIcon} alt="kemono icon"/>Kemono</Header>
+        <StyledDiv>
+            <CheckBox checked={editor.kemono.enableLinkReplace} onUpdateChecked={v => setKemono("enableLinkReplace", v)}>替换文章中指向原站点的链接</CheckBox>
+            <SecondaryText>将文本中指向原站点的其他post的链接替换为指向Kemono。一部分非链接的文本型URL也会被附加站内链接。</SecondaryText>
+        </StyledDiv>
     </>
 }
 

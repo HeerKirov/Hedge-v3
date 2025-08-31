@@ -92,6 +92,15 @@ interface Website {
          */
         enableUIOptimize: boolean
     }
+    /**
+     * kemono的扩展工具。
+     */
+    kemono: {
+        /**
+         * 启用内嵌链接自动替换。
+         */
+        enableLinkReplace: boolean
+    }
 }
 
 /**
@@ -184,6 +193,9 @@ export function defaultSetting(): Setting {
             },
             fanbox: {
                 enableUIOptimize: true,
+            },
+            kemono: {
+                enableLinkReplace: true,
             }
         },
         toolkit: {
@@ -292,6 +304,12 @@ const migrations: {[version: string]: Migrate<MigrateContext>} = {
     async "0.12.1"(ctx) {
         const val = ctx.setting as any
         val["toolkit"]["determiningFilename"].enabledAttachment = val["toolkit"]["determiningFilename"].enabled
+    },
+    async "0.14.2"(ctx) {
+        const val = ctx.setting as any
+        val["website"]["kemono"] = {
+            enableLinkReplace: true
+        }
     }
 }
 

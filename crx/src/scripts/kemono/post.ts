@@ -2,7 +2,8 @@ import { tz } from "moment-timezone"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
-import { KEMONO_CONSTANTS } from "@/functions/sites"
+import { FANBOX_CONSTANTS, KEMONO_CONSTANTS } from "@/functions/sites"
+import { settings } from "@/functions/setting"
 import { imageToolbar, similarFinder } from "@/scripts/utils"
 import { onDOMContentLoaded } from "@/utils/document"
 import { Result } from "@/utils/primitives"
@@ -35,6 +36,7 @@ onDOMContentLoaded(() => {
 
     observeMainInitialize(async () => {
         console.log("[Hedge v3 Helper] kemono/post script loaded.")
+        const setting = await settings.get()
         const sourcePath = getSourceDataPath()
         if(sourcePath !== null) {
             const sourceData = await collectSourceData()
@@ -46,6 +48,9 @@ onDOMContentLoaded(() => {
         }
 
         initializeUI(sourcePath)
+
+        if(setting.website.kemono.enableLinkReplace) enableLinkReplace()
+        enablePasswordTableEnhance()
     })
 
 })
@@ -83,6 +88,112 @@ function initializeUI(sourceDataPath: SourceDataPath | null) {
         sourcePath: sourceDataPath !== null ? {...sourceDataPath, sourcePart: index} : null,
         downloadURL: node.querySelector<HTMLAnchorElement>(".fileThumb")!.href
     })))
+}
+
+/**
+ * 功能：将指向原网站的内嵌链接替换为指向K站。
+ */
+function enableLinkReplace() {
+    const { site, uid } = getIdentityInfo()
+    if(site === "fanbox") {
+        function processAnchor(anchor: HTMLAnchorElement) {
+            const url = new URL(anchor.href)
+            if(url.host.match(FANBOX_CONSTANTS.REGEXES.HOST)) {
+                const matcher = url.pathname.match(FANBOX_CONSTANTS.REGEXES.POST_PATHNAME)
+                if(matcher && matcher.groups) {
+                    const pid = matcher.groups["PID"]
+                    anchor.href = `${location.protocol}//${location.host}/${site}/user/${uid}/post/${pid}`
+                    console.log("replace anchor to", anchor.href)
+                }
+            }
+        }
+        function processSpan(span: HTMLSpanElement | HTMLParagraphElement) {
+            if(span.textContent && span.textContent.startsWith("https://"))
+            try {
+                const url = new URL(span.textContent)
+                if(url.host.match(FANBOX_CONSTANTS.REGEXES.HOST)) {
+                    const matcher = url.pathname.match(FANBOX_CONSTANTS.REGEXES.POST_PATHNAME)
+                    if(matcher && matcher.groups) {
+                        const pid = matcher.groups["PID"]
+                        const anchor = document.createElement("a")
+                        anchor.href = `${location.protocol}//${location.host}/${site}/user/${uid}/post/${pid}`
+                        anchor.innerText = "(Link in Kemono)"
+                        console.log("append anchor to", anchor.href)
+                        span.appendChild(anchor)
+                    }
+                }
+            }catch(e) {
+                console.error(e)
+            }
+        }
+        const observer = new MutationObserver(mutationsList => {
+            for(const mutation of mutationsList) {
+                for(const addedNode of mutation.addedNodes) {
+                    if(addedNode instanceof HTMLAnchorElement) {
+                        processAnchor(addedNode)
+                    }else if(addedNode instanceof HTMLSpanElement || addedNode instanceof HTMLParagraphElement) {
+                        processSpan(addedNode)
+                    }else if(addedNode instanceof HTMLElement && addedNode.querySelector("a")) {
+                        const anchors = addedNode.querySelectorAll("a")
+                        for(const addedNode of anchors) {
+                            processAnchor(addedNode)
+                        }
+                    }else if(addedNode instanceof HTMLElement && (addedNode.querySelector("span") || addedNode.querySelector("p"))) {
+                        const spans = addedNode.querySelectorAll("span")
+                        for(const addedNode of spans) processSpan(addedNode)
+                        const ps = addedNode.querySelectorAll("p")
+                        for(const addedNode of ps) processSpan(addedNode)
+                    }
+
+                }
+            }
+        })
+        observer.observe(document.querySelector("main")!, { childList: true, subtree: true })
+
+        const anchorList = [...document.querySelectorAll<HTMLAnchorElement>(".post__content a")]
+        for(const anchor of anchorList) processAnchor(anchor)
+        const spanList = [...document.querySelectorAll<HTMLAnchorElement>(".post__content span")]
+        for(const span of spanList) processSpan(span)
+        const pList = [...document.querySelectorAll<HTMLAnchorElement>(".post__content p")]
+        for(const p of pList) processSpan(p)
+    }
+}
+
+/**
+ * 功能：密码表增强。仅针对某一个特定ARTIST的一个品质级改动。
+ */
+function enablePasswordTableEnhance() {
+    const { site, uid } = getIdentityInfo()
+    if(site === "fanbox" && uid === "7904682") {
+        function processParagraph(p: HTMLParagraphElement) {
+            if(p.textContent && (p.textContent.startsWith("#1 ▷") || p.textContent.startsWith("#2 ▷") || p.textContent.startsWith("#3 ▷") || p.textContent.startsWith("#4 ▷") || p.textContent.startsWith("#5 ▷"))) {
+                const span = p.querySelector("span")
+                if(span) {
+                    span.style.fontWeight = "700"
+                    span.style.color = "yellow"
+                }
+            }
+        }
+        const observer = new MutationObserver(mutationsList => {
+            for(const mutation of mutationsList) {
+                for(const addedNode of mutation.addedNodes) {
+                    if(addedNode instanceof HTMLParagraphElement) {
+                        processParagraph(addedNode)
+                    }else if(addedNode instanceof HTMLElement && addedNode.querySelector("p")) {
+                        const anchors = addedNode.querySelectorAll("p")
+                        for(const addedNode of anchors) {
+                            processParagraph(addedNode)
+                        }
+                    }
+                }
+            }
+        })
+        observer.observe(document.querySelector("main")!, { childList: true, subtree: true })
+        const pList = [...document.querySelectorAll<HTMLParagraphElement>(".post__content p")]
+        for(const p of pList) {
+            processParagraph(p)
+        }
+    }
 }
 
 /**

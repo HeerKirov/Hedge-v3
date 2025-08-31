@@ -1,4 +1,7 @@
 ## [Unreleased]
+### Added
+* **[CRX]** Kemono站点扩展功能: 原站点post链接自动替换为指向站内的链接。
+* **[CRX]** Kemono站点扩展功能: 针对特定创作者的文章视觉增强。
 ### Changed
 * E-Hentai站点: 添加location类型的标签的支持。
 
