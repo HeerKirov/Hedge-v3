@@ -10,7 +10,7 @@ import { Result } from "@/utils/primitives"
 
 onDOMContentLoaded(() => {
     function observeMainInitialize(callback: () => void) {
-        if(document.querySelector("main") && document.querySelector("meta[name=\"published\"]")) {
+        if(document.querySelector("main") && document.querySelector("meta[name=\"id\"]")) {
             callback()
             return
         }
@@ -20,7 +20,7 @@ onDOMContentLoaded(() => {
                 for(const addedNode of mutation.addedNodes) {
                     if(addedNode instanceof Element && addedNode.querySelector("main")) {
                         ready.main = true
-                    }else if(addedNode instanceof HTMLMetaElement && addedNode.name === "published") {
+                    }else if(addedNode instanceof HTMLMetaElement && addedNode.name === "id") {
                         ready.metaTime = true
                     }
                     if(ready.metaTime && ready.main) {
@@ -215,10 +215,13 @@ async function collectSourceData(): Promise<Result<SourceDataUpdateForm, string>
     const description = contentDiv?.innerText?.trim() || undefined
 
     const publishedMeta = document.querySelector<HTMLMetaElement>("meta[name=\"published\"]")
+    let publishTime: string | undefined
     if(!publishedMeta) {
-        return {ok: false, err: `Cannot find meta[name=published].`}
+        console.warn("Cannot find meta[name=published].")
+        publishTime = undefined
+    }else{
+        publishTime = tz(publishedMeta.content, "UTC").toDate().toISOString()
     }
-    const publishTime = tz(publishedMeta.content, "UTC").toDate().toISOString()
 
     return {
         ok: true,

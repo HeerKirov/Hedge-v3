@@ -4,6 +4,8 @@
 * **[CRX]** Kemono站点扩展功能: 针对特定创作者的文章视觉增强。
 ### Changed
 * E-Hentai站点: 添加location类型的标签的支持。
+### Fixed
+* **[CRX]** Kemono站点: 修复当post没有publish time时，无法正确初始化扩展脚本的问题。
 
 ## [0.14.1] - 2025-08-17
 ### Fixed
