@@ -93,7 +93,7 @@ export function SourceInfo(props: {source: SourceDataPath | null}) {
 }
 
 export function PartitionTimeDisplay(props: {partitionTime: string, orderTime: string}) {
-    const pt = new Date(props.partitionTime)
+    const pt = new Date(`${props.partitionTime} 00:00:00`)
     const ot = new Date(props.orderTime)
 
     const ten = (i: number) => i >= 10 ? i : `0${i}`
