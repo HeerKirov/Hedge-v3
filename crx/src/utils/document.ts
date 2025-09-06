@@ -1,4 +1,6 @@
-
+/**
+ * 当DOMContentLoaded时，调用事件。或者此事件注册时，若已初始化完毕，则直接调用事件。
+ */
 export function onDOMContentLoaded(callback: () => void) {
     const call = () => {
         try {
@@ -14,6 +16,9 @@ export function onDOMContentLoaded(callback: () => void) {
     }
 }
 
+/**
+ * 更复杂的DOMContentLoaded侦测，在侦测到某种特定元素加载后，才视作文档加载完成。适用于注入异步启动的前端框架。
+ */
 export function onDOMContentObserved(options: {
     observe?: MutationObserverInit,
     mutation: (record: MutationRecord) => boolean,
@@ -50,6 +55,40 @@ export function onDOMContentObserved(options: {
 
             if(options.init()) {
                 load().finally()
+            }
+        }
+    })
+}
+
+/**
+ * 适用于动态内容加载的侦听事件。用于在动态加载框架中，立即以及持续地检索出新增的DOM，并返回这些DOM用于处理。
+ */
+export function onObserving<E extends Element>(options: {
+    target?: Node,
+    observe?: MutationObserverInit,
+    mutation: (record: MutationRecord) => E[] | undefined,
+    init?: () => E[] | NodeListOf<E> | undefined,
+    preCondition?: () => boolean
+}, callback: (element: E, index: number) => void) {
+    onDOMContentLoaded(() => {
+        if(options.preCondition === undefined || options.preCondition()) {
+
+            const observer = new MutationObserver(mutationsList => {
+                const result: E[] = []
+                for(const mutation of mutationsList) {
+                    const r = options.mutation(mutation)
+                    if(r && r.length > 0) result.push(...r)
+                }
+                if(result.length > 0) {
+                    result.forEach((elem: E, index) => callback(elem, index))
+                }
+            })
+
+            observer.observe(options.target ?? document.body, options.observe)
+
+            const init = [...(options.init?.() ?? [])]
+            if(init.length > 0) {
+                init.forEach((elem: E, index) => callback(elem, index))
             }
         }
     })

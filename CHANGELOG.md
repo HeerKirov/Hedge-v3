@@ -6,6 +6,7 @@
 * E-Hentai站点: 添加location类型的标签的支持。
 ### Fixed
 * **[CRX]** Kemono站点: 修复当post没有publish time时，无法正确初始化扩展脚本的问题。
+* **[CRX]** Kemono站点: 修复当切换revision时，切换后的页面中的图像不会附带扩展工具栏的问题。
 
 ## [0.14.1] - 2025-08-17
 ### Fixed

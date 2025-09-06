@@ -5,7 +5,7 @@ import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { FANBOX_CONSTANTS, KEMONO_CONSTANTS } from "@/functions/sites"
 import { settings } from "@/functions/setting"
 import { imageToolbar, similarFinder } from "@/scripts/utils"
-import { onDOMContentLoaded } from "@/utils/document"
+import { onDOMContentLoaded, onObserving } from "@/utils/document"
 import { Result } from "@/utils/primitives"
 
 onDOMContentLoaded(() => {
@@ -79,15 +79,35 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
  * 进行image-toolbar, find-similar相关的UI初始化。
  */
 function initializeUI(sourceDataPath: SourceDataPath | null) {
-    const imageLinks = [...document.querySelectorAll<HTMLDivElement>(".post__files .post__thumbnail")]
-
     imageToolbar.config({locale: "kemono", collectSourceData: sourceDataPath !== null})
-    imageToolbar.add(imageLinks.map((node, index) => ({
-        index,
-        element: node,
-        sourcePath: sourceDataPath !== null ? {...sourceDataPath, sourcePart: index} : null,
-        downloadURL: node.querySelector<HTMLAnchorElement>(".fileThumb")!.href
-    })))
+
+    function deploy() {
+        const imageLinks = [...document.querySelectorAll<HTMLDivElement>(".post__files .post__thumbnail")]
+        imageToolbar.add(imageLinks.map((node, index) => ({
+            index,
+            element: node,
+            sourcePath: sourceDataPath !== null ? {...sourceDataPath, sourcePart: index} : null,
+            downloadURL: node.querySelector<HTMLAnchorElement>(".fileThumb")!.href
+        })))
+    }
+
+    deploy()
+
+    onObserving<HTMLDivElement>({
+        target: document.querySelector("main")!,
+        observe: { childList: true, subtree: true },
+        mutation: mutation => {
+            const returns = []
+            for(const addedNode of mutation.addedNodes) {
+                if(addedNode instanceof HTMLDivElement && addedNode.classList.contains(".post__body")) {
+                    returns.push(addedNode)
+                }else if(addedNode instanceof HTMLElement && addedNode.querySelector(".post__body")) {
+                    returns.push(addedNode.querySelector(".post__body"))
+                }
+            }
+            return returns
+        },
+    }, deploy)
 }
 
 /**
@@ -96,66 +116,65 @@ function initializeUI(sourceDataPath: SourceDataPath | null) {
 function enableLinkReplace() {
     const { site, uid } = getIdentityInfo()
     if(site === "fanbox") {
-        function processAnchor(anchor: HTMLAnchorElement) {
-            const url = new URL(anchor.href)
-            if(url.host.match(FANBOX_CONSTANTS.REGEXES.HOST)) {
-                const matcher = url.pathname.match(FANBOX_CONSTANTS.REGEXES.POST_PATHNAME)
-                if(matcher && matcher.groups) {
-                    const pid = matcher.groups["PID"]
-                    anchor.href = `${location.protocol}//${location.host}/${site}/user/${uid}/post/${pid}`
-                    console.log("replace anchor to", anchor.href)
+        onObserving<HTMLSpanElement | HTMLAnchorElement | HTMLParagraphElement>({
+            target: document.querySelector("main")!,
+            observe: { childList: true, subtree: true },
+            mutation: mutation => {
+                const returns: (HTMLSpanElement | HTMLAnchorElement | HTMLParagraphElement)[] = []
+                for(const addedNode of mutation.addedNodes) {
+                    if(addedNode instanceof HTMLAnchorElement) {
+                        returns.push(addedNode)
+                    }else if(addedNode instanceof HTMLSpanElement || addedNode instanceof HTMLParagraphElement) {
+                        returns.push(addedNode)
+                    }else if(addedNode instanceof HTMLElement && addedNode.querySelector("a")) {
+                        const anchors = addedNode.querySelectorAll("a")
+                        returns.push(...anchors)
+                    }else if(addedNode instanceof HTMLElement && (addedNode.querySelector("span") || addedNode.querySelector("p"))) {
+                        const spans = addedNode.querySelectorAll("span")
+                        returns.push(...spans)
+                        const ps = addedNode.querySelectorAll("p")
+                        returns.push(...ps)
+                    }
                 }
-            }
-        }
-        function processSpan(span: HTMLSpanElement | HTMLParagraphElement) {
-            if(span.textContent && span.textContent.startsWith("https://"))
-            try {
-                const url = new URL(span.textContent)
+                return returns
+            },
+            init: () => [
+                ...document.querySelectorAll<HTMLAnchorElement>(".post__content a"),
+                ...document.querySelectorAll<HTMLSpanElement>(".post__content span"),
+                ...document.querySelectorAll<HTMLParagraphElement>(".post__content p"),
+            ],
+        }, element => {
+            if(element instanceof HTMLAnchorElement) {
+                const url = new URL(element.href)
                 if(url.host.match(FANBOX_CONSTANTS.REGEXES.HOST)) {
                     const matcher = url.pathname.match(FANBOX_CONSTANTS.REGEXES.POST_PATHNAME)
                     if(matcher && matcher.groups) {
                         const pid = matcher.groups["PID"]
-                        const anchor = document.createElement("a")
-                        anchor.href = `${location.protocol}//${location.host}/${site}/user/${uid}/post/${pid}`
-                        anchor.innerText = "(Link in Kemono)"
-                        console.log("append anchor to", anchor.href)
-                        span.appendChild(anchor)
+                        element.href = `${location.protocol}//${location.host}/${site}/user/${uid}/post/${pid}`
+                        console.log("replace anchor to", element.href)
                     }
                 }
-            }catch(e) {
-                console.error(e)
-            }
-        }
-        const observer = new MutationObserver(mutationsList => {
-            for(const mutation of mutationsList) {
-                for(const addedNode of mutation.addedNodes) {
-                    if(addedNode instanceof HTMLAnchorElement) {
-                        processAnchor(addedNode)
-                    }else if(addedNode instanceof HTMLSpanElement || addedNode instanceof HTMLParagraphElement) {
-                        processSpan(addedNode)
-                    }else if(addedNode instanceof HTMLElement && addedNode.querySelector("a")) {
-                        const anchors = addedNode.querySelectorAll("a")
-                        for(const addedNode of anchors) {
-                            processAnchor(addedNode)
+            }else if(element instanceof HTMLSpanElement || element instanceof HTMLParagraphElement) {
+                if(element.textContent && element.textContent.startsWith("https://")) {
+                    try {
+                        const url = new URL(element.textContent)
+                        if(url.host.match(FANBOX_CONSTANTS.REGEXES.HOST)) {
+                            const matcher = url.pathname.match(FANBOX_CONSTANTS.REGEXES.POST_PATHNAME)
+                            if(matcher && matcher.groups) {
+                                const pid = matcher.groups["PID"]
+                                const anchor = document.createElement("a")
+                                anchor.href = `${location.protocol}//${location.host}/${site}/user/${uid}/post/${pid}`
+                                anchor.innerText = "(Link in Kemono)"
+                                console.log("append anchor to", anchor.href)
+                                element.appendChild(anchor)
+                            }
                         }
-                    }else if(addedNode instanceof HTMLElement && (addedNode.querySelector("span") || addedNode.querySelector("p"))) {
-                        const spans = addedNode.querySelectorAll("span")
-                        for(const addedNode of spans) processSpan(addedNode)
-                        const ps = addedNode.querySelectorAll("p")
-                        for(const addedNode of ps) processSpan(addedNode)
+                    }catch(e) {
+                        console.error(e)
                     }
-
                 }
             }
         })
-        observer.observe(document.querySelector("main")!, { childList: true, subtree: true })
-
-        const anchorList = [...document.querySelectorAll<HTMLAnchorElement>(".post__content a")]
-        for(const anchor of anchorList) processAnchor(anchor)
-        const spanList = [...document.querySelectorAll<HTMLAnchorElement>(".post__content span")]
-        for(const span of spanList) processSpan(span)
-        const pList = [...document.querySelectorAll<HTMLAnchorElement>(".post__content p")]
-        for(const p of pList) processSpan(p)
     }
 }
 
