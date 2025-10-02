@@ -68,9 +68,23 @@ function initializeUI(sourcePath: SourceDataPath) {
         const callbackWithProcessor = (nodes: HTMLImageElement[]) => {
             if(imgList === undefined) imgList = [...document.querySelectorAll<HTMLImageElement>("article img")].filter(n => n.src?.startsWith("https://downloads.fanbox.cc"))
             const ret = nodes.filter(node => node.parentElement?.parentElement instanceof HTMLAnchorElement).map(node => {
-                const index = imgList!.indexOf(node) + 1
+                let index = imgList!.indexOf(node) + 1
                 const downloadURL = (node.parentElement!.parentElement as HTMLAnchorElement).href
-                return {index, downloadURL, sourcePath: {...sourcePath, sourcePart: index}, element: node.parentElement!.parentElement!.parentElement as HTMLDivElement}
+                const element = node.parentElement!.parentElement!.parentElement as HTMLDivElement
+                const wrapper = element.parentElement!.parentElement!.parentElement! as HTMLDivElement
+                const parent = wrapper.parentElement! as HTMLDivElement
+                //tips: 由于fanbox懒加载，一次加载的索引不再能视为序号。尝试通过确定wrapper在parent中的顺位，来确定当前序号
+                if(parent.className.includes("styled__FullWidthWrapper")) {
+                    let i = 1
+                    for(let childNode of parent.childNodes) {
+                        if(childNode === wrapper) {
+                            index = i
+                        }else{
+                            i += 1
+                        }
+                    }
+                }
+                return {index, downloadURL, sourcePath: {...sourcePath, sourcePart: index}, element}
             })
             callback(ret)
         }
