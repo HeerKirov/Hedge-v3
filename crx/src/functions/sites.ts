@@ -187,7 +187,7 @@ export const DETERMINING_RULES: Readonly<DeterminingRule[]> = [
 export const ATTACHMENT_RULES: Readonly<AttachmentRule[]> = [
     {
         siteName: FANBOX_CONSTANTS.SITE_NAME,
-        referrer: /^https:\/\/([^.]+)\.fanbox\.cc\/([^/]+\/)posts\/(?<ID>\d+)\/?$/
+        referrer: /^https:\/\/([^.]+)\.fanbox\.cc\/([^/]+\/)?posts\/(?<ID>\d+)\/?$/
     },
     {
         siteName: KEMONO_CONSTANTS.SITE_NAME,

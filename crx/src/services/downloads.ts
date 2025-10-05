@@ -49,6 +49,7 @@ export function determiningFilename(downloadItem: chrome.downloads.DownloadItem,
             if(setting.toolkit.determiningFilename.enabled && (BUILTIN_EXTENSIONS.includes(extension) || setting.toolkit.determiningFilename.extensions.includes(extension))) {
                 const result = await matchRulesAndArgs(downloadItem.referrer, url, filenameWithoutExt, setting)
                 if(result !== null) {
+                    console.log(`[determiningFilename] matched determining ${result.determining}`)
                     suggest({filename: result.determining + (extension ? "." + extension : "")})
                     if(result.sourcePath !== null && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
                         await sourceDataManager.collect({...result.sourcePath, type: "auto"})
@@ -59,6 +60,7 @@ export function determiningFilename(downloadItem: chrome.downloads.DownloadItem,
             if(setting.toolkit.determiningFilename.enabledAttachment && EXTENDED_EXTENSIONS.includes(extension)) {
                 const result = matchAttachmentRulesAndArgs(downloadItem.referrer, url, filenameWithoutExt)
                 if(result !== null) {
+                    console.log(`[determiningFilename] matched prefix ${result.prefix}`)
                     suggest({filename: result.prefix + filenameWithoutExt + (extension ? "." + extension : "")})
                     if(result.sourcePath !== null && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
                         await sourceDataManager.collect({...result.sourcePath, type: "auto"})
