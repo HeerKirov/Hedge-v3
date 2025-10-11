@@ -39,9 +39,9 @@ class IllustKit(private val appdata: AppDataManager,
 
     /**
      * 检验给出的tags/topics/authors的正确性，将其追加到现有列表中，处理导出并应用其更改。
-     * @return 返回一个Tagme用以标示此次更新涉及了对哪些类型的更改，可以直接用于Tagme属性的更新。需要注意它会受到setting中相关选项的影响。
+     * @return 返回两个Tagme。第一个用以标示此次更新涉及了对哪些类型的更改，可以直接用于Tagme属性的更新。需要注意它会受到setting中相关选项的影响。第二个则是表示更改，且不受其他选项影响，可以用于标签变更联动。
      */
-    fun appendMeta(thisId: Int, appendTags: List<Int>, appendTopics: List<Int>, appendAuthors: List<Int>, isCollection: Boolean = false, ignoreNotExist: Boolean = false): Illust.Tagme {
+    fun appendMeta(thisId: Int, appendTags: List<Int>, appendTopics: List<Int>, appendAuthors: List<Int>, isCollection: Boolean = false, ignoreNotExist: Boolean = false): Pair<Illust.Tagme, Illust.Tagme> {
         //1. 取出所有tag
         //2. 过滤append，确认是否真的存在新的项
         //3. 将原有的notExported tag与append tag一起进行validate，获得导出结果
@@ -60,7 +60,7 @@ class IllustKit(private val appdata: AppDataManager,
             }else false
         }else false
 
-        val topicChanged = if(appendTopics.isNotEmpty()) {
+        val (topicChanged, topicChanged2) = if(appendTopics.isNotEmpty()) {
             val existTopics = metaManager.getMetaTags(thisId, IllustTopicRelations, Topics)
             val notExportedIds = existTopics.mapNotNull { (i, e) -> if(e == ExportType.NO) i.id else null }
             val appendIds = appendTopics.filter { it !in notExportedIds }
@@ -70,9 +70,9 @@ class IllustKit(private val appdata: AppDataManager,
                 val newTopics = validatedTopics.map { (i, e) -> i.id to e } + existTopics.mapNotNull { (i, e) -> if(e == ExportType.FROM_RELATED && i.id !in validatedIds) i.id to e else null }
                 metaManager.processMetaTags(thisId, creating = false, analyseStatisticCount = !isCollection, Topics, IllustTopicRelations, newTopics)
 
-                if(appdata.setting.meta.onlyCharacterTopic) { validatedTopics.any { (i, e) -> e == ExportType.NO && i.type == TagTopicType.CHARACTER } }else true
-            }else false
-        }else false
+                Pair(if(appdata.setting.meta.onlyCharacterTopic) { validatedTopics.any { (i, e) -> e == ExportType.NO && i.type == TagTopicType.CHARACTER } }else true, true)
+            }else Pair(false, false)
+        }else Pair(false, false)
 
         val authorChanged = if(appendAuthors.isNotEmpty()) {
             val existAuthors = metaManager.getMetaTags(thisId, IllustAuthorRelations, Authors)
@@ -87,7 +87,10 @@ class IllustKit(private val appdata: AppDataManager,
             }else false
         }else false
 
-        return (Illust.Tagme.EMPTY as Illust.Tagme).letIf(appdata.setting.meta.autoCleanTagme) { r -> r.letIf(tagChanged) { it + Illust.Tagme.TAG }.letIf(authorChanged) { it + Illust.Tagme.AUTHOR }.letIf(topicChanged) { it + Illust.Tagme.TOPIC } }
+        return Pair(
+            (Illust.Tagme.EMPTY as Illust.Tagme).letIf(appdata.setting.meta.autoCleanTagme) { r -> r.letIf(tagChanged) { it + Illust.Tagme.TAG }.letIf(authorChanged) { it + Illust.Tagme.AUTHOR }.letIf(topicChanged) { it + Illust.Tagme.TOPIC } },
+            (Illust.Tagme.EMPTY as Illust.Tagme).letIf(appdata.setting.meta.autoCleanTagme) { r -> r.letIf(tagChanged) { it + Illust.Tagme.TAG }.letIf(authorChanged) { it + Illust.Tagme.AUTHOR }.letIf(topicChanged2) { it + Illust.Tagme.TOPIC } }
+        )
     }
 
     /**
@@ -100,10 +103,10 @@ class IllustKit(private val appdata: AppDataManager,
      * @throws ResourceNotExist ("tags", number[]) 部分tags资源不存在。给出不存在的tag id列表
      * @throws ResourceNotSuitable ("tags", number[]) 部分tags资源不适用。地址段不适用于此项。给出不适用的tag id列表
      * @throws ConflictingGroupMembersError 发现标签冲突组
-     * @return 返回一个Tagme用以标示此次更新涉及了对哪些类型的更改，可以直接用于Tagme属性的更新。需要注意它会受到setting中相关选项的影响。
+     * @return 返回两个Tagme。第一个用以标示此次更新涉及了对哪些类型的更改，可以直接用于Tagme属性的更新。需要注意它会受到setting中相关选项的影响。第二个则是表示更改，且不受其他选项影响，可以用于标签变更联动。
      */
     fun updateMeta(thisId: Int, newTags: Opt<List<Int>>, newTopics: Opt<List<Int>>, newAuthors: Opt<List<Int>>,
-                   creating: Boolean = false, copyFromParent: Int? = null, copyFromChildren: Boolean = false, ignoreNotExist: Boolean = false): Illust.Tagme {
+                   creating: Boolean = false, copyFromParent: Int? = null, copyFromChildren: Boolean = false, ignoreNotExist: Boolean = false): Pair<Illust.Tagme, Illust.Tagme> {
         //1. 取出所有现有的tag
         //2. 检查是否newTag与当前notExported列表确实不一致
         //3. 对newTag列表进行validate校验
@@ -124,7 +127,7 @@ class IllustKit(private val appdata: AppDataManager,
             }else false
         }else false
 
-        val topicChanged = if(newTopics.isPresent) {
+        val (topicChanged, topicChanged2) = if(newTopics.isPresent) {
             val exist = metaManager.getMetaTags(thisId, IllustTopicRelations, Topics)
             val notExportedIds = exist.mapNotNull { (i, e) -> if(e == ExportType.NO) i.id else null }.toSet()
             if(notExportedIds != newTopics.value.toSet()) {
@@ -135,9 +138,9 @@ class IllustKit(private val appdata: AppDataManager,
                 val filteredRelatedIds = (relatedIds - validatedIds).map { it to ExportType.FROM_RELATED }
                 metaManager.processMetaTags(thisId, creating, !copyFromChildren, Topics, IllustTopicRelations, validated.map { (i, e) -> i.id to e } + filteredRelatedIds)
 
-                if(appdata.setting.meta.onlyCharacterTopic) { validated.any { (i, e) -> e == ExportType.NO && i.type == TagTopicType.CHARACTER } }else true
-            }else false
-        }else false
+                Pair(if(appdata.setting.meta.onlyCharacterTopic) { validated.any { (i, e) -> e == ExportType.NO && i.type == TagTopicType.CHARACTER } }else true, true)
+            }else Pair(false, false)
+        }else Pair(false, false)
 
         val authorChanged = if(newAuthors.isPresent) {
             val exist = metaManager.getMetaTags(thisId, IllustAuthorRelations, Authors)
@@ -154,7 +157,10 @@ class IllustKit(private val appdata: AppDataManager,
             }else false
         }else false
 
-        return (Illust.Tagme.EMPTY as Illust.Tagme).letIf(appdata.setting.meta.autoCleanTagme) { r -> r.letIf(tagChanged) { it + Illust.Tagme.TAG }.letIf(authorChanged) { it + Illust.Tagme.AUTHOR }.letIf(topicChanged) { it + Illust.Tagme.TOPIC } }
+        return Pair(
+            (Illust.Tagme.EMPTY as Illust.Tagme).letIf(appdata.setting.meta.autoCleanTagme) { r -> r.letIf(tagChanged) { it + Illust.Tagme.TAG }.letIf(authorChanged) { it + Illust.Tagme.AUTHOR }.letIf(topicChanged) { it + Illust.Tagme.TOPIC } },
+            (Illust.Tagme.EMPTY as Illust.Tagme).letIf(appdata.setting.meta.autoCleanTagme) { r -> r.letIf(tagChanged) { it + Illust.Tagme.TAG }.letIf(authorChanged) { it + Illust.Tagme.AUTHOR }.letIf(topicChanged2) { it + Illust.Tagme.TOPIC } }
+        )
     }
 
     /**

@@ -614,7 +614,7 @@ class IllustService(private val appdata: AppDataManager,
                 else undefined()
             val newDescription = form.description.letOpt { it ?: "" }
             val metaResponse = if(anyOpt(form.tags, form.authors, form.topics)) {
-                kit.updateMeta(id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromChildren = true)
+                kit.updateMeta(id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromChildren = true).first
             }else null
 
             val newTagme = if(form.tagme.isPresent) form.tagme else if(metaResponse != null && metaResponse != Illust.Tagme.EMPTY) Opt(illust.tagme - metaResponse) else undefined()
@@ -739,7 +739,7 @@ class IllustService(private val appdata: AppDataManager,
             val newExportedScore = form.score.letOpt { it ?: parent?.score }
             //处理metaTag导出
             val metaResponse = if(anyOpt(form.tags, form.authors, form.topics)) {
-                kit.updateMeta(id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromParent = illust.parentId)
+                kit.updateMeta(id, newTags = form.tags, newAuthors = form.authors, newTopics = form.topics, copyFromParent = illust.parentId).first
             }else null
             //处理tagme变化
             val newTagme = if(form.tagme.isPresent) form.tagme else if(metaResponse != null && metaResponse != Illust.Tagme.EMPTY) Opt(illust.tagme - metaResponse) else undefined()

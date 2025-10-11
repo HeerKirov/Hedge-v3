@@ -512,7 +512,8 @@ class IllustManager(private val appdata: AppDataManager,
         }
 
         //meta tag
-        val metaResponses = mutableMapOf<Int, Pair<Illust.Tagme, Illust.Tagme>>()
+        //metaResponses记录meta的更改。key为illustId，value则包含3个部分：tagme的更改、仅表示类型的更改、原本的tagme。
+        val metaResponses = mutableMapOf<Int, Triple<Illust.Tagme, Illust.Tagme, Illust.Tagme>>()
         if(anyOpt(form.tags, form.topics, form.authors, form.mappingSourceTags)) {
             val mappings = form.mappingSourceTags.unwrapOrNull()?.let { sourceMappingManager.batchQuery(it) }?.associateBy { SourceTagPath(it.site, it.type, it.code) }
 
@@ -568,12 +569,15 @@ class IllustManager(private val appdata: AppDataManager,
                     Triple(form.tags, form.topics, form.authors)
                 }
 
-                val metaResponse = when (form.tagUpdateMode) {
+                val (tagmeChanges, metaChanges) = when (form.tagUpdateMode) {
                     IllustBatchUpdateForm.TagUpdateMode.OVERRIDE -> kit.updateMeta(illust.id, newTags = tags.elseOr { emptyList() }, newAuthors = authors.elseOr { emptyList() }, newTopics = topics.elseOr { emptyList() }, copyFromParent = illust.parentId)
                     IllustBatchUpdateForm.TagUpdateMode.APPEND -> kit.appendMeta(illust.id, appendTags = tags.unwrapOr { emptyList() }, appendAuthors = authors.unwrapOr { emptyList() }, appendTopics = topics.unwrapOr { emptyList() }, isCollection = false)
-                    IllustBatchUpdateForm.TagUpdateMode.REMOVE -> kit.removeMeta(illust.id, removeTags = tags.unwrapOr { emptyList() }, removeAuthors = authors.unwrapOr { emptyList() }, removeTopics = topics.unwrapOr { emptyList() }, copyFromParent = illust.parentId)
+                    IllustBatchUpdateForm.TagUpdateMode.REMOVE -> {
+                        val r = kit.removeMeta(illust.id, removeTags = tags.unwrapOr { emptyList() }, removeAuthors = authors.unwrapOr { emptyList() }, removeTopics = topics.unwrapOr { emptyList() }, copyFromParent = illust.parentId)
+                        Pair(r, r)
+                    }
                 }
-                if(metaResponse != Illust.Tagme.EMPTY) metaResponses[illust.id] = metaResponse to illust.tagme
+                if(tagmeChanges != Illust.Tagme.EMPTY || metaChanges != Illust.Tagme.EMPTY) metaResponses[illust.id] = Triple(tagmeChanges, metaChanges, illust.tagme)
             }
         }
 
@@ -607,7 +611,7 @@ class IllustManager(private val appdata: AppDataManager,
             //metaResponse反映的是标签种类的变化情况，可以同时当作tagme的变化情况，但在remove操作时不行，这时并不需要消除tagme
             data.db.batchUpdate(Illusts) {
                 for ((recordId, pair) in metaResponses) {
-                    val (minusTagme, originTagme) = pair
+                    val (minusTagme, _, originTagme) = pair
                     item {
                         where { it.id eq recordId }
                         set(it.tagme, originTagme - minusTagme)
@@ -919,7 +923,8 @@ class IllustManager(private val appdata: AppDataManager,
             val timeSot = anyOpt(form.partitionTime, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
             val listUpdated = anyOpt(form.favorite, form.score, form.tagme, form.tagmePatch, form.orderTimeList, form.orderTimeBegin, form.timeInsertBegin) || form.action != null
             for (record in images + childrenOfCollections) {
-                val thisMetaTagSot = metaResponses[record.id]?.first?.let { it != Illust.Tagme.EMPTY } ?: false
+                val thisMetaTagSot = metaResponses[record.id]?.second?.let { it != Illust.Tagme.EMPTY } ?: false
+                val thisTagmeSot = metaResponses[record.id]?.first?.let { it != Illust.Tagme.EMPTY } ?: false
                 val thisDetailUpdated = listUpdated || thisMetaTagSot || anyOpt(form.description, form.partitionTime)
                 if(listUpdated || thisDetailUpdated) {
                     //tips: 此处使用了偷懒的手法。并没有对受partition/orderTime变更影响的children进行处理
@@ -931,7 +936,7 @@ class IllustManager(private val appdata: AppDataManager,
                         scoreSot = form.score.isPresent,
                         descriptionSot = form.description.isPresent,
                         favoriteSot = form.favorite.isPresent,
-                        tagmeSot = form.tagme.isPresent || form.tagmePatch.isPresent || (thisMetaTagSot && form.tagUpdateMode != IllustBatchUpdateForm.TagUpdateMode.REMOVE),
+                        tagmeSot = form.tagme.isPresent || form.tagmePatch.isPresent || (thisTagmeSot && form.tagUpdateMode != IllustBatchUpdateForm.TagUpdateMode.REMOVE),
                         timeSot = timeSot))
                 }
             }

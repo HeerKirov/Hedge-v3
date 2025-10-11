@@ -5,6 +5,7 @@
 ### Changed
 * E-Hentai站点: 添加location类型的标签的支持。
 ### Fixed
+* 修复了一个子项到集合未能成功导出的问题。先前此问题表现为如果在开启了"仅将CHARACTER视作主题更改"的选项时，对子项的更改仅包括主题IP、COPYRIGHT，则此次更改不会被导出到集合。
 * **[CRX]** Kemono站点: 修复当post没有publish time时，无法正确初始化扩展脚本的问题。
 * **[CRX]** Kemono站点: 修复当切换revision时，切换后的页面中的图像不会附带扩展工具栏的问题。
 * **[CRX]** Fanbox站点: 修复由于懒加载导致的图像序号错误问题。
