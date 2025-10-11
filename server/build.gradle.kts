@@ -1,6 +1,6 @@
 plugins {
     application
-    kotlin("jvm").version("2.0.21")
+    kotlin("jvm").version("2.2.20")
     id("org.beryx.jlink").version("3.0.1")
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
@@ -11,17 +11,17 @@ version = "0.14.0"
 var targetPlatform: String? = project.findProperty("targetPlatform")?.toString()
 
 dependencies {
-    val kotlinVersion = "2.0.21"
-    val javalinVersion = "6.4.0"
+    val kotlinVersion = "2.2.20"
+    val javalinVersion = "6.7.0"
     val ktormVersion = "4.1.1"
-    val sqliteVersion = "3.47.0.0"
-    val jacksonVersion = "2.18.1"
+    val sqliteVersion = "3.50.3.0"
+    val jacksonVersion = "2.20.0"
     val thumbnailatorVersion = "0.4.20"
     val twelvemonkeysVersion = "3.12.0"
     val javeVersion = "3.5.0"
     val pinyin4jVersion = "2.5.1"
-    val logbackVersion = "1.5.12"
-    val junitVersion = "5.11.3"
+    val logbackVersion = "1.5.19"
+    val junitVersion = "5.14.0"
     val javePlatform = if(targetPlatform != null) {
         when(targetPlatform) {
             "mac" -> "nativebin-osx64"
