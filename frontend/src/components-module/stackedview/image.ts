@@ -81,7 +81,12 @@ function useSubSlice(slice: SliceDataView<Illust>) {
 
     //根据slice currentIndex的变更调整方向
     watch(slice.currentIndex, (sliceIndex, oldSliceIndex) => {
-        if(sliceIndex > oldSliceIndex) {
+        //tips: 当首尾循环时，使用大小比较的判定方式就不正确了。不过现在的实现方式也并非100%正确，因为首尾循环还会存在SHIFT一次跨5项的情况，但考虑到使用较少以及改动较大就使用以下方式简单实现了
+        if(sliceIndex === 0) {
+            defaultLocation.value = "first"
+        }else if(slice.count.value !== null && sliceIndex === slice.count.value - 1) {
+            defaultLocation.value = "last"
+        }else if(sliceIndex > oldSliceIndex) {
             defaultLocation.value = "first"
         }else if(sliceIndex < oldSliceIndex) {
             defaultLocation.value = "last"
