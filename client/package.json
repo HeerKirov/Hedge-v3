@@ -1,7 +1,7 @@
 {
   "name": "hedge-v3",
   "productName": "Hedge-v3-development",
-  "version": "0.14.1",
+  "version": "0.14.2",
   "main": "dist-electron/main.js",
   "author": "Heer Kirov",
   "license": "MIT",
