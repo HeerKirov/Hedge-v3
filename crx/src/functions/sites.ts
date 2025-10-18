@@ -79,6 +79,12 @@ export const FANTIA_CONSTANTS = {
 export const KEMONO_CONSTANTS = {
     SITE_NAME: "kemono",
     HOSTS: ["kemono.su", "kemono.cr"],
+    PATTERNS: {
+        POST_PATHNAME: (site: string, sourceId: string) => [
+            `https://kemono.cr/${site}/user/*/posts/${sourceId}`,
+            `https://kemono.cr/${site}/user/*/posts/${sourceId}/revision/*`,
+        ]
+    },
     REGEXES: {
         POST_PATHNAME: /^\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<PID>[^/]+)(\/revision\/\d+)?\/?$/
     },
@@ -129,7 +135,10 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
         activeTabPages: [
             FANBOX_CONSTANTS.REGEXES.POST_PATHNAME
         ],
-        sourceDataPages: FANBOX_CONSTANTS.PATTERNS.POST_PATHNAME
+        sourceDataPages: s => [
+            ...FANBOX_CONSTANTS.PATTERNS.POST_PATHNAME(s),
+            ...KEMONO_CONSTANTS.PATTERNS.POST_PATHNAME("fanbox", s)
+        ]
     },
     [FANTIA_CONSTANTS.SITE_NAME]: {
         host: FANTIA_CONSTANTS.HOSTS,
@@ -137,7 +146,10 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
             FANTIA_CONSTANTS.REGEXES.POST_PATHNAME,
             FANTIA_CONSTANTS.REGEXES.PHOTO_PATHNAME
         ],
-        sourceDataPages: FANTIA_CONSTANTS.PATTERNS.POST_PATHNAME
+        sourceDataPages: s => [
+            ...FANTIA_CONSTANTS.PATTERNS.POST_PATHNAME(s),
+            ...KEMONO_CONSTANTS.PATTERNS.POST_PATHNAME("fantia", s)
+        ]
     },
     [KEMONO_CONSTANTS.SITE_NAME]: {
         host: KEMONO_CONSTANTS.HOSTS,

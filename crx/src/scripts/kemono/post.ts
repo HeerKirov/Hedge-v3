@@ -5,54 +5,54 @@ import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { FANBOX_CONSTANTS, KEMONO_CONSTANTS } from "@/functions/sites"
 import { settings } from "@/functions/setting"
 import { imageToolbar, similarFinder } from "@/scripts/utils"
-import { onDOMContentLoaded, onObserving } from "@/utils/document"
+import { onDOMContentObserved, onObserving } from "@/utils/document"
 import { Result } from "@/utils/primitives"
 
-onDOMContentLoaded(() => {
-    function observeMainInitialize(callback: () => void) {
-        if(document.querySelector("main") && document.querySelector("meta[name=\"id\"]")) {
-            callback()
-            return
-        }
-        const ready = {main: false, metaTime: false}
-        const observer = new MutationObserver(mutationsList => {
-            for(const mutation of mutationsList) {
-                for(const addedNode of mutation.addedNodes) {
-                    if(addedNode instanceof Element && addedNode.querySelector("main")) {
-                        ready.main = true
-                    }else if(addedNode instanceof HTMLMetaElement && addedNode.name === "id") {
-                        ready.metaTime = true
-                    }
-                    if(ready.metaTime && ready.main) {
-                        callback()
-                        observer.disconnect()
-                        return
-                    }
+onDOMContentObserved({
+    target: document,
+    observe: { childList: true, subtree: true },
+    mutation: [
+        record => {
+            for(const addedNode of record.addedNodes) {
+                if(addedNode instanceof Element && addedNode.querySelector("main")) {
+                    return true
                 }
             }
-        })
-        observer.observe(document, { childList: true, subtree: true })
+            return false
+        },
+        record => {
+            for(const addedNode of record.addedNodes) {
+                if(addedNode instanceof HTMLMetaElement && addedNode.name === "id") {
+                    return true
+                }else if(addedNode instanceof Element && addedNode.querySelector("meta")?.name === "id") {
+                    return true
+                }
+            }
+            return false
+        }
+    ],
+    init: [
+        () => !!document.querySelector("main"),
+        () => !!document.querySelector("meta[name=\"id\"]")
+    ]
+}, async () => {
+    console.log("[Hedge v3 Helper] kemono/post script loaded.")
+    const setting = await settings.get()
+    const sourcePath = getSourceDataPath()
+    if(sourcePath !== null) {
+        const sourceData = await collectSourceData()
+        console.log(sourcePath, sourceData)
+        sendMessage("SUBMIT_PAGE_INFO", {path: sourcePath})
+        sendMessage("SUBMIT_SOURCE_DATA", {path: sourcePath, data: sourceData})
+        enableDownloadOrdinal(sourcePath)
+    }else{
+        sendMessage("NOTIFICATION", {title: "来源数据收集异常", message: `无法从${document.location.pathname}找到来源数据，请检查控制台。`})
     }
 
-    observeMainInitialize(async () => {
-        console.log("[Hedge v3 Helper] kemono/post script loaded.")
-        const setting = await settings.get()
-        const sourcePath = getSourceDataPath()
-        if(sourcePath !== null) {
-            const sourceData = await collectSourceData()
-            console.log(sourcePath, sourceData)
-            sendMessage("SUBMIT_PAGE_INFO", {path: sourcePath})
-            sendMessage("SUBMIT_SOURCE_DATA", {path: sourcePath, data: sourceData})
-        }else{
-            sendMessage("NOTIFICATION", {title: "来源数据收集异常", message: `无法从${document.location.pathname}找到来源数据，请检查控制台。`})
-        }
+    initializeUI(sourcePath)
+    if(setting.website.kemono.enableLinkReplace) enableLinkReplace()
 
-        initializeUI(sourcePath)
-
-        if(setting.website.kemono.enableLinkReplace) enableLinkReplace()
-        enablePasswordTableEnhance()
-    })
-
+    enablePasswordTableEnhance()
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
@@ -108,6 +108,56 @@ function initializeUI(sourceDataPath: SourceDataPath | null) {
             return returns
         },
     }, deploy)
+}
+
+/**
+ * 功能: 将直接列出的下载资源添加一个直接下载为可识别名称的链接。
+ */
+function enableDownloadOrdinal(sourcePath: SourceDataPath) {
+    onObserving<HTMLAnchorElement>({
+        target: document.querySelector("main")!,
+        observe: { childList: true, subtree: true },
+        mutation: mutation => {
+            const returns: HTMLAnchorElement[] = []
+            for(const addedNode of mutation.addedNodes) {
+                if(addedNode instanceof HTMLAnchorElement && addedNode.className.includes("post__attachment-link")) {
+                    returns.push(addedNode)
+                }else if(addedNode instanceof HTMLElement && addedNode.querySelector("a.post__attachment-link")) {
+                    const anchors = addedNode.querySelectorAll<HTMLAnchorElement>("a.post__attachment-link")
+                    returns.push(...anchors)
+                }
+            }
+            return returns
+        },
+        init: () => document.querySelectorAll<HTMLAnchorElement>(".post__attachments a.post__attachment-link"),
+    }, element => {
+        if(element instanceof HTMLAnchorElement) {
+            if(element.href.endsWith(".mp4") || element.href.endsWith(".webm")) {
+                if(element.parentElement?.parentElement?.className.includes("post__attachments")) {
+                    let i = 1, index: number | null = null
+                    for(const childNode of element.parentElement.parentElement.childNodes) {
+                        if(childNode === element.parentElement) {
+                            index = i
+                            break
+                        }else{
+                            i += 1
+                        }
+                    }
+
+                    const fIdx = element.href.lastIndexOf("?f=")
+                    const ext = element.href.substring(element.href.lastIndexOf(".") + 1)
+                    const anchor = document.createElement("a")
+                    anchor.href = element.href.substring(0, fIdx >= 0 ? fIdx : element.href.length) + `?f=${sourcePath.sourceSite}_${sourcePath.sourceId}_${index}.${ext}`
+                    anchor.download = `${sourcePath.sourceSite}_${sourcePath.sourceId}_${index}.${ext}`
+                    anchor.innerText = `(Link of ${sourcePath.sourceSite}_${sourcePath.sourceId} p${index})`
+                    const span = document.createElement("span")
+                    span.style.marginLeft = "8px"
+                    span.appendChild(anchor)
+                    element.parentElement.appendChild(span)
+                }
+            }
+        }
+    })
 }
 
 /**

@@ -5,6 +5,7 @@ import { WEBSITES } from "@/functions/sites"
 import { notify, NOTIFICATIONS } from "@/services/notification"
 import { sendMessageToTab } from "@/services/messages"
 import { Result } from "@/utils/primitives"
+import { queryTabs } from "@/utils/chrome"
 
 export const sourceDataManager = {
     /**
@@ -31,7 +32,7 @@ export const sourceDataManager = {
 
         //tips: 偶尔会有一种情况，get获取来源数据时内容为null。尚不清楚原因，没有任何错误抛出，也无法复现。
         //为了解决这个问题，暂且加回了主动拉取的能力，在这种没有数据的情况下主动去页面请求数据。
-        console.warn(`[sourceDataManager] ${path.sourceSite}-${path.sourceId} source data not found in cache. Try to pull it from tab.`)
+        console.error(`[sourceDataManager] ${path.sourceSite}-${path.sourceId} source data not found in cache. Try to pull it from tab.`)
         const website = WEBSITES[path.sourceSite]
         const pageURL = website?.sourceDataPages?.(path.sourceId)
         if(pageURL === undefined) {
@@ -39,16 +40,16 @@ export const sourceDataManager = {
                 title: "来源数据收集异常",
                 message: `${path.sourceSite}-${path.sourceId}: 无法正确生成提取页面的URL。`
             })
-            console.warn(`[sourceDataManager] ${path.sourceSite}-${path.sourceId} cannot generate pattern URL.`)
+            console.error(`[sourceDataManager] ${path.sourceSite}-${path.sourceId} cannot generate pattern URL.`)
             return null
         }
-        const tabs = await chrome.tabs.query({currentWindow: true, url: pageURL})
+        const tabs = await queryTabs({currentWindow: true, url: pageURL})
         if(tabs.length <= 0 || tabs[0].id === undefined) {
             notify({
                 title: "来源数据收集异常",
                 message: `${path.sourceSite}-${path.sourceId}: 未找到用于提取数据的页面。`
             })
-            console.warn(`[sourceDataManager] Page '${pageURL}' not found.`)
+            console.error(`[sourceDataManager] Page '${pageURL}' not found.`)
             return null
         }
         const reportResult = await sendMessageToTab(tabs[0].id, "REPORT_SOURCE_DATA", undefined)

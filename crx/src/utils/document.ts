@@ -21,9 +21,10 @@ export function onDOMContentLoaded(callback: () => void) {
  */
 export function onDOMContentObserved(options: {
     observe?: MutationObserverInit,
-    mutation: (record: MutationRecord) => boolean,
-    init: () => boolean,
-    preCondition?: () => boolean
+    mutation: ((record: MutationRecord) => boolean) | ((record: MutationRecord) => boolean)[],
+    init: (() => boolean) | (() => boolean)[],
+    preCondition?: () => boolean,
+    target?: Node
 }, callback: () => void, callback2?: (() => void)) {
     onDOMContentLoaded(() => {
         if(options.preCondition === undefined || options.preCondition()) {
@@ -42,18 +43,39 @@ export function onDOMContentObserved(options: {
                 }
             }
 
+            const conditionList = options.mutation instanceof Array ? [...options.mutation] : [options.mutation]
+
             const observer = new MutationObserver(mutationsList => {
                 for(const mutation of mutationsList) {
-                    if(options.mutation(mutation)) {
+                    if(conditionList.length <= 0) {
+                        load().finally()
+                        break
+                    }
+                    for(let i = conditionList.length - 1; i >= 0; i--) {
+                        const condition = conditionList[i]
+                        if(condition(mutation)) {
+                            conditionList.splice(i, 1)
+                        }
+                    }
+                    if(conditionList.length <= 0) {
                         load().finally()
                         break
                     }
                 }
             })
 
-            observer.observe(document.body, options.observe)
+            observer.observe(options.target ?? document.body, options.observe)
 
-            if(options.init()) {
+            if(options.init instanceof Array) {
+                for(let i = options.init.length - 1; i >= 0; i--) {
+                    if(options.init[i]()) {
+                        conditionList.splice(i, 1)
+                    }
+                }
+                if(conditionList.length <= 0) {
+                    load().finally()
+                }
+            }else if(options.init()) {
                 load().finally()
             }
         }
