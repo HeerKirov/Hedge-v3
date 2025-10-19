@@ -9,6 +9,7 @@ import VideoControls from "./VideoControls.vue"
 
 const props = defineProps<{
     src: string
+    immersive: boolean
 }>()
 
 const videoRef = ref<HTMLMediaElement>()
@@ -51,7 +52,7 @@ watch(videoRef, dom => {
     }
 })
 
-useInterceptedKey(["Space", "ArrowLeft", "ArrowRight"], e => {
+useInterceptedKey(["Space", props.immersive ? "ArrowLeft" : "Meta+ArrowLeft", props.immersive ? "ArrowRight" : "Meta+ArrowRight"], e => {
     if(e.key === "Space") {
         playOrPause()
     }else if(e.key === "ArrowLeft") {

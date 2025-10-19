@@ -59,6 +59,9 @@ const { volumeHover, volumeHoverEvents, volumeBarStyle, mousemove, mousedown } =
             </div>
             <div :class="$style['play-button']" @click="playOrPause"><Icon :icon="playing ? 'pause' : 'play'"/></div>
         </template>
+        <div v-else :class="$style['bottom-progress-bar']">
+            <div v-if="progressPercent !== null" :class="$style.progressing" :style="progressBarStyle"/>
+        </div>
     </div>
 </template>
 
@@ -88,6 +91,16 @@ const { volumeHover, volumeHoverEvents, volumeBarStyle, mousemove, mousedown } =
         bottom: -0.125rem
         width: 100%
         height: 0.5rem
+    > .progressing
+        height: 100%
+        background-color: color.$blue
+
+.bottom-progress-bar
+    position: absolute
+    bottom: 0
+    left: 0
+    right: 0
+    height: 0.25rem
     > .progressing
         height: 100%
         background-color: color.$blue

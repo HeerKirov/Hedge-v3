@@ -24,7 +24,7 @@ const detailId = toRef(props, "detailId")
 
 const { assetsUrl } = useAssets()
 
-const { data, setScore, setFavorite, setDescription, openMetaTagEditor, setTime, setTagme, setSourceDataPath, openCollection, openBook, openFolder, openAssociate } = useSideBarDetailInfo(detailId)
+const { data, loading, setScore, setFavorite, setDescription, openMetaTagEditor, setTime, setTagme, setSourceDataPath, openCollection, openBook, openFolder, openAssociate } = useSideBarDetailInfo(detailId)
 
 const anyRelatedItems = computed(() => data.value !== null && ((data.value.parent && props.scene !== 'CollectionPane') || (data.value.children?.length && props.scene !== 'CollectionDetail') || data.value.books.length || data.value.folders.length || data.value.associateCount))
 
@@ -158,6 +158,9 @@ defineExpose({
             </div>
         </div>
     </template>
+    <div v-else-if="!loading" class="has-text-centered">
+        <i>该内容已被删除</i>
+    </div>
 </template>
 
 <style module lang="sass">

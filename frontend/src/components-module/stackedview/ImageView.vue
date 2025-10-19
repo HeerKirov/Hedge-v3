@@ -94,7 +94,7 @@ const popupMenu = usePopupMenu(computed(() => [
                 </MiddleLayout>
             </template>
 
-            <PlayBoard v-if="data !== null" :src="assetsUrl(data.filePath.original)" :zoom-value="zoomValue" v-model:zoom-enabled="zoomEnabled" @contextmenu="popupMenu.popup()"/>
+            <PlayBoard v-if="data !== null" :src="assetsUrl(data.filePath.original)" :zoom-value="zoomValue" v-model:zoom-enabled="zoomEnabled" immersive @contextmenu="popupMenu.popup()"/>
             <CollapsedButton v-if="collapsed" :hasWinButton :hasDarwinBorder @click:collapsed="collapsed = $event"/>
             <ZoomController v-if="collapsed" class="is-display-none" :disabled="!zoomEnabled" v-model:value="zoomValue"/>
         </TopBarCollapseLayout>

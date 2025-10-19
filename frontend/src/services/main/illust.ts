@@ -439,7 +439,7 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
     const message = useMessageBox()
     const dialog = useDialogService()
     const fetchSourceUpdate = usePostPathFetchHelper(client => client.illust.image.sourceData.update)
-    const { data, setData } = useFetchEndpoint({
+    const { data, setData, loading } = useFetchEndpoint({
         path,
         get: client => client.illust.get,
         update: client => client.illust.update,
@@ -488,7 +488,7 @@ export function useSideBarDetailInfo(path: Ref<number | null>) {
 
     useSettingSite()
 
-    return {data, id: path, setDescription, setScore, setFavorite, setTime, setTagme, openMetaTagEditor, setSourceDataPath, ...relatedOperators}
+    return {data, loading, id: path, setDescription, setScore, setFavorite, setTime, setTagme, openMetaTagEditor, setSourceDataPath, ...relatedOperators}
 }
 
 export function useSideBarRelatedItems(path: Ref<number | null>, illustType: Ref<"IMAGE" | "COLLECTION">, scene: "CollectionDetail" | "CollectionPane" | undefined, backTab: () => void) {

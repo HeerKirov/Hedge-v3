@@ -7,6 +7,7 @@ const props = defineProps<{
     src: string
     zoomEnabled?: boolean
     zoomValue?: number
+    immersive?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -37,5 +38,5 @@ watch(type, type => emit("update:zoom-enabled", type === "Image"), {immediate: t
 
 <template>
     <ImageBoard v-if="type === 'Image'" :src="src" :zoom-value="zoomValue ?? 100"/>
-    <VideoBoard v-else-if="type === 'Video'" :src="src"/>
+    <VideoBoard v-else-if="type === 'Video'" :src="src" :immersive="immersive ?? false"/>
 </template>

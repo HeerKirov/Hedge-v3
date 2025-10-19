@@ -5,7 +5,7 @@ import { useStackedView } from "./context"
 
 const { isRootView, closeView } = useStackedView()
 
-useInterceptedKey(["Escape", "Backspace", "Meta+ArrowLeft"], closeView, {preventDefault: true})
+useInterceptedKey(["Escape", "Backspace", "Meta+BracketLeft"], closeView, {preventDefault: true})
 
 </script>
 
