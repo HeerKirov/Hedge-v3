@@ -104,8 +104,8 @@ function registerAppMenu(windowManager: WindowManager, tabControlEvent: SendEmit
                 {label: "关闭标签页", accelerator: isDarwin ? "Command+W" : "Ctrl+W", click() { tabControlEvent.emit({type: "CLOSE_TAB"}) }},
                 {label: "重新打开关闭的标签页", accelerator: isDarwin ? "Command+Shift+T" : "Ctrl+Shift+T", click() { tabControlEvent.emit({type: "RESUME_TAB"}) }},
                 {type: "separator"},
-                {label: "后退", id: "TAB_BACK", enabled: false, accelerator: isDarwin ? "Command+Left" : "Ctrl+Left", click() { tabControlEvent.emit({type: "ROUTE_BACK"}) }},
-                {label: "前进", id: "TAB_FORWARD", enabled: false, accelerator: isDarwin ? "Command+Right" : "Ctrl+Right", click() { tabControlEvent.emit({type: "ROUTE_FORWARD"}) }}
+                {label: "后退", id: "TAB_BACK", enabled: false, accelerator: isDarwin ? "Command+[" : "Ctrl+[", click() { tabControlEvent.emit({type: "ROUTE_BACK"}) }},
+                {label: "前进", id: "TAB_FORWARD", enabled: false, accelerator: isDarwin ? "Command+]" : "Ctrl+]", click() { tabControlEvent.emit({type: "ROUTE_FORWARD"}) }}
             ]
         },
         {
