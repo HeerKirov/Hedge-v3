@@ -10,17 +10,19 @@ import com.heerkirov.hedge.server.dto.res.SourceMappingTargetItem
 import com.heerkirov.hedge.server.dto.res.SourceMappingTargetItemDetail
 import com.heerkirov.hedge.server.dto.res.SourceTagPath
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
+import com.heerkirov.hedge.server.functions.manager.IllustManager
 import com.heerkirov.hedge.server.functions.manager.SourceMappingManager
 import org.ktorm.dsl.*
 
-class SourceMappingService(private val data: DataRepository, private val sourceMappingManager: SourceMappingManager) {
+class SourceMappingService(private val data: DataRepository, private val illustManager: IllustManager, private val sourceMappingManager: SourceMappingManager) {
 
     fun batchQueryByIllusts(illustIds: List<Int>): List<SourceMappingBatchQueryResult> {
+        val imageIds = illustManager.unfoldImages(illustIds, sorted = false).map { it.id }
         val sourceTags = data.db.from(Illusts)
             .innerJoin(SourceTagRelations, SourceTagRelations.sourceDataId eq Illusts.sourceDataId)
             .innerJoin(SourceTags, SourceTags.id eq SourceTagRelations.sourceTagId)
             .select(SourceTags.site, SourceTags.type, SourceTags.code)
-            .where { (Illusts.id inList illustIds) and (Illusts.sourceDataId.isNotNull()) }
+            .where { (Illusts.id inList imageIds) and (Illusts.sourceDataId.isNotNull()) }
             .groupBy(SourceTags.id)
             .map { SourceTagPath(it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.code]!!) }
 

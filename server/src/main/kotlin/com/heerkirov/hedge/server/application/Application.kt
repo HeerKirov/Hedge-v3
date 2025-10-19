@@ -83,7 +83,7 @@ fun runApplication(options: ApplicationOptions) {
                 stagingPost = StagingPostService(illustManager, stagingPostManager),
                 trash = TrashService(appdata, repo, trashManager),
                 sourceData = SourceDataService(repo, sourceSiteManager, sourceDataManager, sourceAnalyzeManager, queryManager),
-                sourceMapping = SourceMappingService(repo, sourceMappingManager),
+                sourceMapping = SourceMappingService(repo, illustManager, sourceMappingManager),
                 note = NoteService(repo, bus),
                 query = QueryService(repo, queryManager, historyRecordManager),
                 findSimilar = FindSimilarService(repo, bus, similarFinder, illustManager, bookManager),
