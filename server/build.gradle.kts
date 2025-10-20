@@ -15,6 +15,7 @@ dependencies {
     val javalinVersion = "6.7.0"
     val ktormVersion = "4.1.1"
     val sqliteVersion = "3.50.3.0"
+    val dbcpVersion = "2.13.0"
     val jacksonVersion = "2.20.0"
     val thumbnailatorVersion = "0.4.20"
     val twelvemonkeysVersion = "3.12.0"
@@ -58,6 +59,7 @@ dependencies {
     implementation(group = "org.xerial", name = "sqlite-jdbc", version = sqliteVersion)                         //sqlite数据库驱动
     implementation(group = "org.ktorm", name = "ktorm-core", version = ktormVersion)                            //dao层
     implementation(group = "org.ktorm", name = "ktorm-support-sqlite", version = ktormVersion)                  //dao层sqlite方言支持
+    implementation(group = "org.apache.commons", name = "commons-dbcp2", version = dbcpVersion)                 //数据库连接池
     implementation(group = "io.javalin", name = "javalin", version = javalinVersion)                            //http服务器
     implementation(group = "net.coobird", name = "thumbnailator", version = thumbnailatorVersion)               //图像处理库，用于缩略图生成
     implementation(group = "com.twelvemonkeys.imageio", name = "imageio-jpeg", version = twelvemonkeysVersion)  //ImageIO扩展，增强jpeg格式处理，兼容各种错误情况

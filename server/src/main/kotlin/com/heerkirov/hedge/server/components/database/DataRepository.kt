@@ -5,12 +5,13 @@ import com.heerkirov.hedge.server.constants.Filename
 import com.heerkirov.hedge.server.library.framework.Component
 import com.heerkirov.hedge.server.utils.ktorm.HedgeDialect
 import com.heerkirov.hedge.server.utils.migrations.VersionFileMigrator
+import org.apache.commons.dbcp2.BasicDataSource
 import org.ktorm.database.Database
 import org.ktorm.database.Transaction
 import org.ktorm.database.TransactionIsolation
 import java.lang.RuntimeException
-import java.sql.Connection
-import java.sql.DriverManager
+import kotlin.math.max
+
 
 /**
  * 对接数据库的实现。包括sqlite DB和setting部分。
@@ -23,42 +24,40 @@ interface DataRepository : Component {
 }
 
 class DataRepositoryImpl(private val serverPath: String) : DataRepository, ControlledAppStatusDevice {
-    private var _conn: Connection? = null
+    private var _pool: BasicDataSource? = null
     private var _db: Database? = null
 
     override val db: Database get() = _db ?: throw RuntimeException("DB is not loaded yet.")
 
     override fun load(migrator: VersionFileMigrator) {
-        val connection = DriverManager.getConnection("jdbc:sqlite:$serverPath/${Filename.DATA_SQLITE}")
-        connection.attach("$serverPath/${Filename.META_SQLITE}", "meta_db")
-        connection.attach("$serverPath/${Filename.FILE_SQLITE}", "file_db")
-        connection.attach("$serverPath/${Filename.SOURCE_SQLITE}", "source_db")
-        connection.attach("$serverPath/${Filename.SYSTEM_SQLITE}", "system_db")
-
-        _conn = connection
-        _db = Database.connect(dialect = HedgeDialect()) {
-            object : Connection by connection {
-                override fun close() { /* do nothing */ }
-            }
+        val core = Runtime.getRuntime().availableProcessors()
+        _pool = BasicDataSource().apply {
+            driverClassName = "org.sqlite.JDBC"
+            url = "jdbc:sqlite:$serverPath/${Filename.DATA_SQLITE}?journal_mode=WAL"
+            initialSize = 1
+            maxTotal = core
+            maxIdle = max((core + 1) / 2, 2)
+            minIdle = 2
+            connectionInitSqls = listOf(
+                attachSql("$serverPath/${Filename.META_SQLITE}", "meta_db"),
+                attachSql("$serverPath/${Filename.FILE_SQLITE}", "file_db"),
+                attachSql("$serverPath/${Filename.SOURCE_SQLITE}", "source_db"),
+                attachSql("$serverPath/${Filename.SYSTEM_SQLITE}", "system_db")
+            )
         }
+
+        _db = Database.connect(_pool!!, dialect = HedgeDialect())
 
         migrator.migrate("[Database]", _db!!, DatabaseMigrationStrategy)
     }
 
     override fun close() {
-        _conn?.close()
+        _pool?.close()
     }
 }
 
-/**
- * 向connection附加一个数据库。
- */
-private fun Connection.attach(path: String, name: String) {
-    prepareStatement("attach database ? as ?").use { stat ->
-        stat.setString(1, path)
-        stat.setString(2, name)
-        stat.execute()
-    }
+private fun attachSql(path: String, name: String): String {
+    return "attach database '$path' as '$name'"
 }
 
 /**

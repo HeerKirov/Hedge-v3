@@ -1,8 +1,5 @@
 module com.heerkirov.hedge.server {
-    requires java.base;
-    requires java.sql;
     requires java.desktop;
-    requires java.management;
     requires java.net.http;
     requires kotlin.stdlib;
     requires kotlin.reflect;
@@ -22,6 +19,8 @@ module com.heerkirov.hedge.server {
     requires org.eclipse.jetty.server;
     requires org.eclipse.jetty.util;
     requires pinyin4j;
+    requires org.apache.commons.dbcp2;
+    requires java.management;
 
     opens com.heerkirov.hedge.server.components.health;
     opens com.heerkirov.hedge.server.components.appdata;
