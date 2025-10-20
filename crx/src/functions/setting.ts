@@ -100,6 +100,10 @@ interface Website {
          * 启用内嵌链接自动替换。
          */
         enableLinkReplace: boolean
+        /**
+         * 启用附件下载链接优化。
+         */
+        enableAttachmentLinkRename: boolean
     }
 }
 
@@ -196,6 +200,7 @@ export function defaultSetting(): Setting {
             },
             kemono: {
                 enableLinkReplace: true,
+                enableAttachmentLinkRename: true,
             }
         },
         toolkit: {
@@ -310,6 +315,10 @@ const migrations: {[version: string]: Migrate<MigrateContext>} = {
         val["website"]["kemono"] = {
             enableLinkReplace: true
         }
+    },
+    async "0.14.3"(ctx) {
+        const val = ctx.setting as any
+        val["website"]["kemono"]["enableAttachmentLinkRename"] = true
     }
 }
 

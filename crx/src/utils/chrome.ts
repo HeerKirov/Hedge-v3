@@ -54,7 +54,7 @@ function matchUrlPattern(url: string, pattern: string): boolean {
 
 export async function queryTabs({ url, ...options }: chrome.tabs.QueryInfo): Promise<chrome.tabs.Tab[]> {
     try {
-
+        const urlPatterns = url instanceof Array ? url : url !== undefined ? [url] : []
         // 预处理URL模式
         const processedPatterns = preprocessUrlPatterns(urlPatterns)
 

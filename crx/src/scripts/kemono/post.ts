@@ -44,7 +44,7 @@ onDOMContentObserved({
         console.log(sourcePath, sourceData)
         sendMessage("SUBMIT_PAGE_INFO", {path: sourcePath})
         sendMessage("SUBMIT_SOURCE_DATA", {path: sourcePath, data: sourceData})
-        enableDownloadOrdinal(sourcePath)
+        if(setting.website.kemono.enableAttachmentLinkRename) enableDownloadOrdinal(sourcePath)
     }else{
         sendMessage("NOTIFICATION", {title: "来源数据收集异常", message: `无法从${document.location.pathname}找到来源数据，请检查控制台。`})
     }

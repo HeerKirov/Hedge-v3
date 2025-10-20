@@ -104,6 +104,10 @@ export function OptionsWebsitePanel(props: OptionsWebsitePanelProps) {
             <CheckBox checked={editor.kemono.enableLinkReplace} onUpdateChecked={v => setKemono("enableLinkReplace", v)}>替换文章中指向原站点的链接</CheckBox>
             <SecondaryText>将文本中指向原站点的其他post的链接替换为指向Kemono。一部分非链接的文本型URL也会被附加站内链接。</SecondaryText>
         </StyledDiv>
+        <StyledDiv>
+            <CheckBox checked={editor.kemono.enableAttachmentLinkRename} onUpdateChecked={v => setKemono("enableAttachmentLinkRename", v)}>附件下载链接增强</CheckBox>
+            <SecondaryText>附件下载链接会被附加一个额外链接，用于直接下载可被Hedge读取的文件名的附件。</SecondaryText>
+        </StyledDiv>
     </>
 }
 
