@@ -194,7 +194,7 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository, p
 
     fun add(tasks: List<T>) {
         val now = Instant.now()
-        synchronized(this) {
+        data.db.transaction {
             //锁定thread时，处于对models的读写合并状态，以排斥线程任务对相同内容的修改
 
             val finalTasks = analyseMergeTasks(tasks)
