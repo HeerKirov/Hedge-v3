@@ -11,6 +11,8 @@ export type StackViewInfo = {
     modifiedCallback?: (illustId: number) => void
 }
 
+export type StackedViewContext = ReturnType<typeof installStackedView>
+
 export const [installStackedView, useStackedView] = installation(function (options?: {isRootView: boolean}) {
     const { isRootView = false } = options ?? {}
 

@@ -6,14 +6,16 @@ import { installStackedView, StackedView } from "@/components-module/stackedview
 import { ServerStatScreen } from "@/components-module/common"
 import { installBrowserView } from "@/modules/browser"
 import { installHomepageState } from "@/services/main/homepage"
+import { installGesture } from "@/modules/gesture"
 import MainRootView from "./MainRootView.vue"
 import routes from "./routes"
 
-installBrowserView({...routes})
+const stackedView = installStackedView()
+const browserView = installBrowserView({...routes, stackedView})
+installGesture({browserView})
 installDialogService()
 installCalloutService()
 installPreviewService()
-installStackedView()
 installHomepageState()
 
 </script>

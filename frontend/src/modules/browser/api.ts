@@ -11,8 +11,11 @@ import {
     BrowserDocument, BrowserRoute, BrowserTabStack, BrowserTabs, BrowserViewOptions, InternalPage,
     InternalTab, NewRoute, Route, RouteDefinition, Tab, BrowserTabEvent, BrowserClosedTabs
 } from "./definition"
+import { StackedViewContext } from "@/components-module/stackedview"
 
 const PAGE_HISTORY_MAX = 10, HASH_HISTORY_MAX = 20, CLOSED_HISTORY_MAX = 15
+
+export type BrowserViewContext = ReturnType<typeof installBrowserView>
 
 export const [installBrowserView, useBrowserView] = installationNullable(function (options: BrowserViewOptions) {
     const vueRoute = useRoute()
@@ -110,7 +113,7 @@ export const [installBrowserView, useBrowserView] = installationNullable(functio
 
     const closedTabs = installClosedTabs(views, activeIndex, nextTabId, nextHistoryId, event, defaultRouteDefinition)
 
-    const browserTabs = installBrowserTabs(views, activeIndex, getRouteDefinition, nextTabId, nextHistoryId, event)
+    const browserTabs = installBrowserTabs(views, activeIndex, getRouteDefinition, nextTabId, nextHistoryId, event, options.stackedView)
 
     useApplicationMenuTabs({newTab: browserTabs.newTab, duplicateTab: browserTabs.duplicateTab, closeTab: browserTabs.closeTab, nextTab: browserTabs.nextTab, prevTab: browserTabs.prevTab, routeBack: browserTabs.routeBack, routeForward: browserTabs.routeForward, resumeTab: closedTabs.resume})
 
@@ -122,7 +125,8 @@ function installBrowserTabs(views: Ref<InternalTab[]>,
                             getRouteDefinition: (routeName?: string) => RouteDefinition,
                             nextTabId: () => number,
                             nextHistoryId: () => number,
-                            event: SendRefEmitter<BrowserTabEvent>): BrowserTabs {
+                            event: SendRefEmitter<BrowserTabEvent>,
+                            stackedViewContext: StackedViewContext | undefined): BrowserTabs {
     const tabs = computed<Tab[]>(() => views.value.map(({ id, current: { title } }, index) => ({id, index, title, active: activeIndex.value === index})))
 
     const lastAccessed: number[] = []
@@ -230,6 +234,12 @@ function installBrowserTabs(views: Ref<InternalTab[]>,
     }
 
     function routeBack() {
+        if(stackedViewContext) {
+            if(!stackedViewContext.isRootView && stackedViewContext.current.value !== null) {
+                stackedViewContext.closeView()
+                return
+            }
+        }
         const view = {value: views.value[activeIndex.value]}
         if(view.value.current.histories.length > 0) {
             //在存在hash历史的情况下，先迭代hash历史

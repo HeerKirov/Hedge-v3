@@ -1,3 +1,4 @@
+import { StackedViewContext } from "@/components-module/stackedview"
 import { Component, DefineComponent, Ref } from "vue"
 
 export interface BrowserViewOptions {
@@ -13,6 +14,10 @@ export interface BrowserViewOptions {
      * 定义所有路由守卫。
      */
     guardDefinitions?: GuardDefinition[]
+    /**
+     * StackedView的钩子。
+     */
+    stackedView?: StackedViewContext
 }
 
 export interface RouteDefinition {
