@@ -1,4 +1,4 @@
-## [Unreleased]
+## [0.14.3] - 2025-10-20
 ### Added
 * **[CRX]** Kemono站点扩展功能: Attachment附件区域的视频类型的文件下载支持直接重命名为标准格式。
 ### Changed
