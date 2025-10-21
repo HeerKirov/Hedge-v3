@@ -81,8 +81,8 @@ export const KEMONO_CONSTANTS = {
     HOSTS: ["kemono.su", "kemono.cr"],
     PATTERNS: {
         POST_PATHNAME: (site: string, sourceId: string) => [
-            `https://kemono.cr/${site}/user/*/posts/${sourceId}`,
-            `https://kemono.cr/${site}/user/*/posts/${sourceId}/revision/*`,
+            `https://kemono.cr/${site}/user/*/post/${sourceId}`,
+            `https://kemono.cr/${site}/user/*/post/${sourceId}/revision/*`,
         ]
     },
     REGEXES: {
