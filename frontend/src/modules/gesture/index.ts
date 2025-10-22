@@ -169,7 +169,14 @@ export function installGesture(options: GestureOptions) {
     let isGestureActive: boolean = false
     let gesturePath: { x: number; y: number, t: number }[] = []
     let originalTarget: EventTarget | null = null
-    let lastMouseEvent: { clientX: number; clientY: number } | null = null
+    let lastMouseEvent: { 
+        clientX: number
+        clientY: number
+        ctrlKey: boolean
+        shiftKey: boolean
+        altKey: boolean
+        metaKey: boolean
+    } | null = null
     
     // 用于标记我们自己触发的 contextmenu 事件
     const allowedContextMenuEvents = new WeakSet<MouseEvent>()
@@ -194,7 +201,14 @@ export function installGesture(options: GestureOptions) {
         isGestureActive = true
         gesturePath = [{x: e.clientX, y: e.clientY, t: Date.now()}]
         originalTarget = e.target  // 保存原始触发目标
-        lastMouseEvent = { clientX: e.clientX, clientY: e.clientY }
+        lastMouseEvent = { 
+            clientX: e.clientX, 
+            clientY: e.clientY,
+            ctrlKey: e.ctrlKey,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            metaKey: e.metaKey
+        }
 
         // 开始绘制轨迹视觉反馈
         showGestureFeedback(e.clientX, e.clientY)
@@ -258,6 +272,10 @@ export function installGesture(options: GestureOptions) {
                 buttons: 2,
                 clientX: lastMouseEvent.clientX,
                 clientY: lastMouseEvent.clientY,
+                ctrlKey: lastMouseEvent.ctrlKey,
+                shiftKey: lastMouseEvent.shiftKey,
+                altKey: lastMouseEvent.altKey,
+                metaKey: lastMouseEvent.metaKey
             })
             
             // 将此事件标记为允许通过的事件
