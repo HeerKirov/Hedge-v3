@@ -329,7 +329,7 @@ class IllustManager(private val appdata: AppDataManager,
             if(appdata.setting.meta.autoCleanTagme && tagme != null && Illust.Tagme.SOURCE in tagme) set(it.tagme, tagme - Illust.Tagme.SOURCE)
         }
 
-        bus.emit(IllustUpdated(imageId, IllustType.IMAGE, listUpdated = true, detailUpdated = true))
+        bus.emit(IllustUpdated(imageId, IllustType.IMAGE, listUpdated = true, detailUpdated = true, tagmeSot = appdata.setting.meta.autoCleanTagme && tagme != null && Illust.Tagme.SOURCE in tagme))
     }
 
     /**
