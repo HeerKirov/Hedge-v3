@@ -64,11 +64,13 @@ class SimilarFinderImpl(private val appStatus: AppStatusDriver,
 
     override fun add(selector: FindSimilarTask.TaskSelector, config: FindSimilarTask.TaskConfig?): Int {
         synchronized(workerThread) {
-            val id = data.db.insertAndGenerateKey(FindSimilarTasks) {
-                set(it.selector, selector)
-                set(it.config, config ?: appdata.setting.findSimilar.defaultTaskConf)
-                set(it.recordTime, Instant.now())
-            } as Int
+            val id = data.db.transaction {
+                data.db.insertAndGenerateKey(FindSimilarTasks) {
+                    set(it.selector, selector)
+                    set(it.config, config ?: appdata.setting.findSimilar.defaultTaskConf)
+                    set(it.recordTime, Instant.now())
+                } as Int
+            }
 
             counter.addTotal(1)
 

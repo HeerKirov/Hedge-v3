@@ -225,24 +225,22 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository, p
         return if(merge != null) {
             //在merge生效时，处理合并问题
             val groupedNewTasks = tasks.groupBy { merge.keyof(it) }
-            data.db.transaction {
-                val groupedDbTasks = data.db.sequenceOf(ExporterRecords)
-                    .filter { (it.key inList groupedNewTasks.keys) and (it.type eq typeIndex) }
-                    .map { Tuple3(it.id, it.key, worker.deserialize(it.content)) }
-                    .groupBy { it.f2 }
-                if(groupedNewTasks.values.any { it.size > 1 } || groupedDbTasks.isNotEmpty()) {
-                    //newTasks存在超过1个相同key，或从数据库中查出的内容不为空，就认为存在需要merge的项，执行merge过程
-                    val deleteIds = groupedDbTasks.values.flatten().map { (id, _) -> id }
-                    data.db.delete(ExporterRecords) { it.id inList deleteIds }
-                    counter?.addTotal(-deleteIds.size)
+            val groupedDbTasks = data.db.sequenceOf(ExporterRecords)
+                .filter { (it.key inList groupedNewTasks.keys) and (it.type eq typeIndex) }
+                .map { Tuple3(it.id, it.key, worker.deserialize(it.content)) }
+                .groupBy { it.f2 }
+            if(groupedNewTasks.values.any { it.size > 1 } || groupedDbTasks.isNotEmpty()) {
+                //newTasks存在超过1个相同key，或从数据库中查出的内容不为空，就认为存在需要merge的项，执行merge过程
+                val deleteIds = groupedDbTasks.values.flatten().map { (id, _) -> id }
+                data.db.delete(ExporterRecords) { it.id inList deleteIds }
+                counter?.addTotal(-deleteIds.size)
 
-                    groupedNewTasks.map { (key, newTasks) ->
-                        val dbTasks = groupedDbTasks[key]?.map { it.f3 } ?: emptyList()
-                        merge.merge(newTasks + dbTasks)
-                    }
-                }else{
-                    tasks
+                groupedNewTasks.map { (key, newTasks) ->
+                    val dbTasks = groupedDbTasks[key]?.map { it.f3 } ?: emptyList()
+                    merge.merge(newTasks + dbTasks)
                 }
+            }else{
+                tasks
             }
         }else{
             tasks
@@ -260,7 +258,7 @@ class ExporterWorkerThread<T : ExporterTask>(private val data: DataRepository, p
             }
         }
 
-        val model = synchronized(this) {
+        val model = data.db.transaction {
             //锁定thread时，处于对一个model的数据库读写状态，以排斥add指令对相同内容的修改
             val model = data.db.sequenceOf(ExporterRecords).firstOrNull { it.type eq typeIndex }
             if(model == null) {
