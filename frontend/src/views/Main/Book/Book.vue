@@ -24,8 +24,6 @@ const {
 
 const { creatingBook } = useDialogService()
 
-const bookGridStyle = computed(() => ({"--column-num": columnNum.value}))
-
 const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
     {type: "separator"},
@@ -58,7 +56,7 @@ const menu = useDynamicPopupMenu<Book>(book => [
     </BrowserTeleport>
 
     <PaneLayout scope-name="book" :show-pane="paneState.visible.value">
-        <VirtualGridView :style="bookGridStyle" :column-count="columnNum" :padding="{top: 1, bottom: 4, left: 4, right: 4}" :aspect-ratio="5 / 7"
+        <VirtualGridView :column-count="columnNum" :padding="{top: 1, bottom: 4, left: 4, right: 4}" :aspect-ratio="5 / 7"
                          @update:state="setState" :metrics="data.metrics" :state="state">
             <div v-for="item in data.items" :key="item.id" :class="$style.item">
                 <BookCard :item="item"

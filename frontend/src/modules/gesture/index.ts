@@ -256,7 +256,7 @@ export function installGesture(options: GestureOptions) {
         // 4. 转换为手势字符串
         const gestureString = filtered.join('')
         
-        console.log('Recognized gesture:', gestureString, gesturePath, segments)
+        console.log('Recognized gesture:', gestureString)
         
         executeGesture(gestureString, options.browserView)
     }

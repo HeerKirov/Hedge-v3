@@ -64,15 +64,6 @@ function useOperators(listview: QueryListview<Author, number>) {
 
     const openDetailView = (authorId: number) => router.routePush({routeName: "AuthorDetail", path: authorId})
 
-    const createByTemplate = (author: Author) => {
-        listview.proxy.findByKey(author.id).then(idx => {
-            if(idx != undefined) {
-                const author = listview.proxy.sync.retrieve(idx)
-                router.routePush({routeName: "AuthorCreate", initializer: {createTemplate: author}})
-            }
-        })
-    }
-
     const deleteItem = async (author: Author) => {
         if(await message.showYesNoMessage("warn", "确定要删除此项吗？", "此操作不可撤回。")) {
             await retrieveHelper.deleteData(author.id)
@@ -92,13 +83,19 @@ function useOperators(listview: QueryListview<Author, number>) {
         router.routePush({routeName: "Illust", initializer: {authorName: author.name}})
     }
 
-    return {openCreateView, openDetailView, createByTemplate, deleteItem, toggleFavorite, findSimilarOfAuthor, openIllustsOfAuthor}
+    const openBooksOfAuthor = (author: Author) => {
+        router.routePush({routeName: "Book", initializer: {authorName: author.name}})
+    }
+
+    return {openCreateView, openDetailView, deleteItem, toggleFavorite, findSimilarOfAuthor, openIllustsOfAuthor, openBooksOfAuthor}
 }
 
 function useListThumbnailLoadingCache() {
+    const exampleCount = 5
+
     const loadingCache: Record<number, string[]> = {}
 
-    const fetch = useFetchHelper(client => (id: number) => client.illust.list({type: "COLLECTION", order: "-orderTime", limit: 3, author: id}))
+    const fetch = useFetchHelper(client => (id: number) => client.illust.list({type: "COLLECTION", order: "-orderTime", limit: exampleCount, author: id}))
 
     const fetchThumbnailFiles = async (id: number) => {
         const res = await fetch(id)
@@ -115,11 +112,11 @@ function useListThumbnailLoadingCache() {
         return res
     }
 
-    return {getThumbnailFiles}
+    return {getThumbnailFiles, exampleCount}
 }
 
 export function useListThumbnail(authorId: Ref<number>) {
-    const { thumbnailLoadingCache: { getThumbnailFiles } } = useAuthorContext()
+    const { thumbnailLoadingCache: { getThumbnailFiles, exampleCount } } = useAuthorContext()
 
     const thumbnailFiles = ref<string[]>([])
 
@@ -127,7 +124,7 @@ export function useListThumbnail(authorId: Ref<number>) {
         thumbnailFiles.value = await getThumbnailFiles(authorId)
     }, {immediate: true})
 
-    return {thumbnailFiles}
+    return {thumbnailFiles, exampleCount}
 }
 
 export function useAuthorCreatePanel() {

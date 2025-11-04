@@ -1,4 +1,4 @@
-import { ComponentPublicInstance, onBeforeUnmount, onMounted, onUnmounted, ref, Ref, watch } from "vue"
+import { ComponentPublicInstance, computed, onBeforeUnmount, onMounted, onUnmounted, ref, Ref, watch } from "vue"
 import { sleep } from "@/utils/process"
 
 /**
@@ -224,4 +224,29 @@ export function useElementRect(elementRef: Ref<HTMLElement | undefined>, options
     }, {nullable: true, ...options})
 
     return rect
+}
+
+/**
+ * 获得对指定元素的容器查询结果。
+ * 实现方式是进行元素尺寸计算，并非原生的容器查询，不过也能用。
+ * @param query 根据元素宽度返回的结果。default表示无任何有效值时的默认值，base从0开始的基础值，其他档位的数值表示达到此宽度后给出的值。
+ */
+export function useElementContainerQuery<T>(elementRef: Ref<HTMLElement | ComponentPublicInstance | null | undefined>, query: Record<number | "base" | "default", T>) {
+    const values: (readonly [number, T])[] = Object.entries(query).flatMap(([k, v]) => k === "base" ? [[0, v] as const] : k !== "default" ? [[Number(k), v] as const] : []).sort((a, b) => b[0] - a[0])
+
+    const queryRef = ref<T>(query.default)
+    
+    const internalRef = computed<HTMLElement | undefined>(() => {
+        if(elementRef.value instanceof HTMLElement) return elementRef.value
+        else if(elementRef.value !== undefined) return (elementRef.value as any).$el
+        else return undefined
+    })
+
+    onElementResize(internalRef, value => {
+        const width = value?.width
+        const takeValue = width !== undefined ? values.find(([k, v]) => k <= width)?.[1] : undefined
+        queryRef.value = takeValue ?? query.default
+    }, {nullable: true, immediate: true})
+
+    return queryRef
 }

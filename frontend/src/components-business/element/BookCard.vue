@@ -46,10 +46,10 @@ export interface BookCardItem {
 <template>
     <Block :class="{[$style.root]: true, [$style.selected]: selected}" @click="click" @dblclick="dblclick" @contextmenu="contextmenu">
         <img ref="imgRef"
-             :class="{[$style.img]: true, [$style.blur]: imgAspectRatio >= 1}"
+             :class="{[$style.img]: true, [$style.blur]: imgAspectRatio >= 1 && item.filePath?.thumbnail}"
              :src="assetsUrl(item.filePath?.thumbnail)" :alt="item.title"
              @load="imageLoad"/>
-        <img v-if="imgAspectRatio >= 1"
+        <img v-if="imgAspectRatio >= 1 && item.filePath?.thumbnail"
              :class="$style['horizontal-img']"
              :style="{ 'top': `${numbers.round2decimal(40 - 27.5 / imgAspectRatio)}%` }"
              :src="assetsUrl(item.filePath?.thumbnail)" :alt="item.title"/>

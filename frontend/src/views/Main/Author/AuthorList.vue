@@ -1,19 +1,20 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { ComponentPublicInstance, computed, ref, useTemplateRef } from "vue"
 import { Button, Separator } from "@/components/universal"
 import { VirtualRowView } from "@/components/data"
 import { BrowserTeleport } from "@/components/logical"
 import { SearchBox, DataRouter, AttachFilter, AttachTemplate } from "@/components-business/top-bar"
 import { Author } from "@/functions/http-client/api/author"
 import { AUTHOR_TYPE_ICONS, AUTHOR_TYPE_NAMES, AUTHOR_TYPES_WITHOUT_UNKNOWN } from "@/constants/entity"
+import { QUERY_FILTER_ORDER_NAMES } from "@/constants/translate"
 import { installAuthorContext } from "@/services/main/author"
 import { usePopupMenu } from "@/modules/popup-menu"
+import { useElementContainerQuery } from "@/utils/sensors"
 import AuthorListItem from "./AuthorListItem.vue"
-import { QUERY_FILTER_ORDER_NAMES } from "@/constants/translate";
 
 const {
     listview: { queryFilter, paginationData: { data, state, setState, navigateTo } },
-    operators: { openCreateView, openDetailView, toggleFavorite, createByTemplate, deleteItem, findSimilarOfAuthor, openIllustsOfAuthor }
+    operators: { openCreateView, openDetailView, toggleFavorite, deleteItem, findSimilarOfAuthor, openIllustsOfAuthor, openBooksOfAuthor }
 } = installAuthorContext()
 
 const query = computed({
@@ -47,13 +48,17 @@ const attachFilterTemplates: AttachTemplate[] = [
 const popupMenu = usePopupMenu<Author>([
     {type: "normal", label: "查看详情", click: a => openDetailView(a.id)},
     {type: "separator"},
-    {type: "normal", label: "以此为模板新建", click: createByTemplate},
+    {type: "normal", label: "在图库搜索", click: openIllustsOfAuthor},
+    {type: "normal", label: "在画集搜索", click: openBooksOfAuthor},
     {type: "separator"},
-    {type: "normal", label: "在图库查看此作者的所有项目", click: openIllustsOfAuthor},
-    {type: "normal", label: "在此作者范围内查找相似项", click: findSimilarOfAuthor},
+    {type: "normal", label: "查找此作者的相似项", click: findSimilarOfAuthor},
     {type: "separator"},
     {type: "normal", label: "删除此作者", click: deleteItem},
 ])
+
+const viewRef = ref<ComponentPublicInstance>()
+
+const columnCount = useElementContainerQuery(viewRef, {default: 3, base: 1, 600: 2, 800: 3, 1200: 4, 1800: 5, 2400: 6})
 
 </script>
 
@@ -66,10 +71,11 @@ const popupMenu = usePopupMenu<Author>([
         <Button class="flex-item no-grow-shrink" icon="plus" square @click="openCreateView"/>
     </BrowserTeleport>
 
-    <VirtualRowView :row-height="80" :padding="6" :metrics="data.metrics" :state="state" @update:state="setState">
+    <VirtualRowView ref="viewRef" :row-height="190" :column-count="columnCount" :padding="6" :metrics="data.metrics" :state="state" @update:state="setState">
         <AuthorListItem v-for="item in data.items" :key="item.id" :item="item"
                         @update:favorite="toggleFavorite(item, $event)"
                         @click="openDetailView(item.id)"
+                        @click:illusts="openIllustsOfAuthor"
                         @contextmenu="popupMenu.popup(item)"/>
     </VirtualRowView>
 </template>

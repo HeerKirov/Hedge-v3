@@ -56,7 +56,7 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
         <div class="bold my-1">集合子项</div>
         <div :class="$style['children-items']" @click="openCollection?.(detailId)" @contextmenu="collectionPopupMenu.popup(detailId)">
             <Block v-for="item in data.children" :key="item.id">
-                <img :src="assetsUrl(item.filePath.sample)" :alt="`child item ${item.id}`"/>
+                <img :src="assetsUrl(item.filePath.sample)" :alt="`child item ${item.id}`"  draggable="false"/>
             </Block>
             <div v-if="data.children.length < data.childrenCount" class="secondary-text has-text-centered">等{{data.childrenCount}}项</div>
         </div>
@@ -65,7 +65,7 @@ const folderPopupMenu = usePopupMenu<SimpleFolder>([
         <div class="bold my-1">所属画集</div>
         <Block v-for="book in data.books" :key="book.id" :class="$style['book-item']" @click="openBook?.(book)" @contextmenu="bookPopupMenu.popup(book)">
             <div :class="$style.info">{{book.title}}</div>
-            <img v-if="book.filePath !== null" :src="assetsUrl(book.filePath.thumbnail)" :alt="book.title"/>
+            <img v-if="book.filePath !== null" :src="assetsUrl(book.filePath.thumbnail)" :alt="book.title"  draggable="false"/>
         </Block>
         <div class="mb-2"/>
     </template>

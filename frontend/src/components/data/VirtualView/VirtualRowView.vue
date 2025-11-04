@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { toRef, watch } from "vue"
+import { computed, toRef, watch } from "vue"
 import { useListeningEvent } from "@/utils/emitter"
 import { Padding, useVirtualViewContext } from "./context"
+import { computedEffect } from "@/utils/reactivity";
 
 // == Virtual Row View 虚拟滚动网格组件 ==
 // 虚拟滚动组件，且按照Row行的排布模式计算滚动。虚拟滚动要求每个行的高度固定，剩下的会自动计算。
@@ -18,6 +19,10 @@ const props = withDefaults(defineProps<{
      */
     rowHeight?: number
     /**
+     * 每行的列数。默认为1。
+     */
+    columnCount?: number
+    /**
      * 当前提供的数据的内容。
      */
     metrics?: {offset: number, limit: number}
@@ -27,7 +32,8 @@ const props = withDefaults(defineProps<{
     state?: {total: number, offset: number, limit: number} | null
 }>(), {
     padding: 0,
-    rowHeight: 0
+    rowHeight: 0,
+    columnCount: 1
 })
 
 const emit = defineEmits<{
@@ -37,15 +43,20 @@ const emit = defineEmits<{
 const metrics = toRef(props, "metrics")
 const state = toRef(props, "state")
 
-const { scrollState, navigateEvent, bindDiv } = useVirtualViewContext(props.padding)
+const { scrollState, navigateEvent, bindDiv } = useVirtualViewContext(props.padding, toRef(props, "columnCount"))
+
+//由于数据可能不是直接对齐行首的，因此需要计算前置空缺数量，然后补上
+const prefixCount = computedEffect(() => (metrics.value?.offset ?? 0) % props.columnCount)
+//前置空缺div的CSS。宽度要保留一点，因为在宽度快速变化时，实时布局立即生效，在一个异步事件后才进行js计算，这会导致出现闪烁
+const prefixDivStyle = computed(() => prefixCount.value > 0 ? {width: `${prefixCount.value * props.rowHeight * 0.95}px`, height: `${props.rowHeight}px`} : undefined)
 
 //scroll滚动位置发生变化时，计算为state属性，并通过事件上报
 watch(() => [scrollState.value.top, scrollState.value.height], ([top, height]) => {
     if(top !== null && height !== null) {
         const offset = Math.floor(top / props.rowHeight)
         const limit = Math.ceil((top + height) / props.rowHeight) - offset
-        if(!state.value || offset !== state.value.offset || limit !== state.value.limit) {
-            emit("update:state", offset, limit)
+        if(!state.value || offset !== Math.floor(state.value.offset / props.columnCount) || limit !== Math.ceil((state.value.limit + state.value.offset) / props.columnCount) - Math.floor(state.value.offset / props.columnCount)) {
+            emit("update:state", offset * props.columnCount, limit * props.columnCount)
         }
     }
 })
@@ -53,31 +64,36 @@ watch(() => [scrollState.value.top, scrollState.value.height], ([top, height]) =
 //上层的metrics属性，计算为本层的数据区域填充值
 watch(metrics, metrics => {
     if(metrics) {
-        scrollState.value.actualTop = metrics.offset * props.rowHeight
-        scrollState.value.actualHeight = metrics.limit * props.rowHeight
+        const offset = Math.floor(metrics.offset / props.columnCount), limit = Math.ceil((metrics.offset + metrics.limit) / props.columnCount) - offset
+        scrollState.value.actualTop = offset * props.rowHeight
+        scrollState.value.actualHeight = limit * props.rowHeight
     }
 }, {deep: true})
 
 //上层的state属性，计算为本层的scroll滚动位置
 watch(state, state => {
     if(state) {
-        scrollState.value.totalHeight = state.total * props.rowHeight
-        if(scrollState.value.top === null || state.offset !== Math.floor(scrollState.value.top / props.rowHeight)) scrollState.value.top = state.offset * props.rowHeight
+        //计算数据区域的总高度
+        scrollState.value.totalHeight = Math.ceil(state.total / props.columnCount) * props.rowHeight
+        //计算按行计数的offset和limit
+        const offset = Math.floor(state.offset / props.columnCount) , limit = Math.ceil((state.offset + state.limit) / props.columnCount) - offset
+        if(scrollState.value.top === null || offset !== Math.floor(scrollState.value.top / props.rowHeight)) scrollState.value.top = offset * props.rowHeight
         // 仅应该当height为null时，才能此处设置height，因为这种情况下需要以state作为初始值初始化滚动状态。
         // 其余情况下，它应当始终由组件内部根据高度获得，否则有可能固定到一个错误的limit上无法变更
-        if(scrollState.value.height === null) scrollState.value.height = state.limit * props.rowHeight
+        if(scrollState.value.height === null) scrollState.value.height = limit * props.rowHeight
     }
 }, {deep: true, immediate: true})
 
 //监听并处理导航事件
 useListeningEvent(navigateEvent, offset => {
+    const row = Math.floor(offset / props.columnCount)
     if(state.value && scrollState.value.top !== null && scrollState.value.height !== null) {
         //计算出此时完全在视口范围内的行的上下限
         const innerFirst = Math.ceil(scrollState.value.top / props.rowHeight), innerLast = Math.floor((scrollState.value.top + scrollState.value.height) / props.rowHeight)
-        if(offset < innerFirst) {
-            scrollState.value.top = offset * props.rowHeight
-        }else if(offset >= innerLast) {
-            scrollState.value.top = (offset + 1) * props.rowHeight - scrollState.value.height
+        if(row < innerFirst) {
+            scrollState.value.top = row * props.rowHeight
+        }else if(row >= innerLast) {
+            scrollState.value.top = (row + 1) * props.rowHeight - scrollState.value.height
         }
     }
 })
@@ -87,6 +103,7 @@ useListeningEvent(navigateEvent, offset => {
 <template>
     <div v-bind="bindDiv()">
         <div :class="$style.content">
+            <div v-if="prefixCount > 0" :style="prefixDivStyle"/>
             <slot/>
         </div>
     </div>
@@ -98,5 +115,5 @@ useListeningEvent(navigateEvent, offset => {
     flex-flow: wrap
     align-items: stretch
     > *
-        width: 100%
+        width: calc(100% / var(--column-num))
 </style>

@@ -43,7 +43,7 @@ const emit = defineEmits<{
 const metrics = toRef(props, "metrics")
 const state = toRef(props, "state")
 
-const { scrollState, navigateEvent, bindDiv } = useVirtualViewContext(props.padding)
+const { scrollState, navigateEvent, bindDiv } = useVirtualViewContext(props.padding, toRef(props, "columnCount"))
 
 //每行的高度，由单元格的宽度计算得来
 const unitHeight = computed(() => (scrollState.value.contentWidth ?? window.innerWidth) / props.columnCount / props.aspectRatio)

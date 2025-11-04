@@ -1,10 +1,10 @@
-import { computed, onMounted, ref, watch } from "vue"
+import { computed, onMounted, Ref, ref, watch } from "vue"
 import { onElementResize } from "@/utils/sensors"
 import { optionalInstallation } from "@/utils/reactivity"
 import { useRefEmitter } from "@/utils/emitter"
 import style from "./style.module.sass"
 
-export function useVirtualViewContext(optionPadding: Padding | number) {
+export function useVirtualViewContext(optionPadding: Padding | number, columnCount: Ref<number>) {
     const { padding, paddingStyle } = getPaddingProperties(optionPadding)
 
     const { navigateEvent } = useVirtualViewNavigationConsumer()
@@ -58,6 +58,7 @@ export function useVirtualViewContext(optionPadding: Padding | number) {
 
     const scrollDivStyle = computed(() => ({
         ...paddingStyle,
+        "--column-num": columnCount.value,
         "--scroll-content-height": actualOffsetStyle.value.height,
         "--scroll-content-padding-top": actualOffsetStyle.value.paddingTop,
         "--scroll-content-padding-bottom": actualOffsetStyle.value.paddingBottom,
