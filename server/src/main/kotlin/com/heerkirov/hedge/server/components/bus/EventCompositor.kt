@@ -41,9 +41,13 @@ class EventCompositorImpl(private val data: DataRepository,
                     sendAssociateUpdatedEvent(e.illustId)
                 }
             }
-            is ImportUpdated, is ImportDeleted,
+            is ImportUpdated -> {
+                //import状态变更时，发送homepage state的更新事件
+                if(e.status != null) sendHomepageStateChangedEvent()
+            }
+            is ImportDeleted,
             is SimilarFinderResultCreated, is SimilarFinderResultDeleted -> {
-                //find similar数量变化、import删除、import状态变更时，发送homepage state的更新事件
+                //find similar数量变化、import删除，发送homepage state的更新事件
                 sendHomepageStateChangedEvent()
             }
             is StagingPostChanged -> {

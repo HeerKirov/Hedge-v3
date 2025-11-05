@@ -282,7 +282,7 @@ class IllustService(private val appdata: AppDataManager,
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
             .select(
                 FileRecords.id, FileRecords.block, FileRecords.status, FileRecords.extension, FileRecords.size,
-                FileRecords.resolutionWidth, FileRecords.resolutionHeight, FileRecords.videoDuration,
+                FileRecords.resolutionWidth, FileRecords.resolutionHeight, FileRecords.videoDuration, FileRecords.originFilename,
                 Illusts.type, Illusts.parentId, Illusts.description, Illusts.score,
                 Illusts.cachedChildrenCount, Illusts.cachedBookIds, Illusts.cachedFolderIds,
                 Illusts.exportedDescription, Illusts.exportedScore, Illusts.favorite, Illusts.tagme,
@@ -293,6 +293,7 @@ class IllustService(private val appdata: AppDataManager,
             ?: throw be(NotFound())
 
         val filePath = filePathFrom(row)
+        val fileName = row[FileRecords.originFilename]!!
         val extension = row[FileRecords.extension]!!
         val size = row[FileRecords.size]!!
         val resolutionWidth = row[FileRecords.resolutionWidth]!!
@@ -396,7 +397,7 @@ class IllustService(private val appdata: AppDataManager,
         val associateCount = associateManager.getAssociateCountOfIllust(id)
 
         return IllustDetailRes(
-            id, finalType, childrenCount, filePath,
+            id, finalType, childrenCount, filePath, fileName,
             extension, size, resolutionWidth, resolutionHeight, videoDuration,
             topics, authors, tags,
             description, score, favorite, tagme,

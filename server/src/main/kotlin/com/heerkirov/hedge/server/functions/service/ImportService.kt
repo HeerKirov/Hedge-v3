@@ -13,6 +13,7 @@ import com.heerkirov.hedge.server.enums.ImportStatus
 import com.heerkirov.hedge.server.enums.TagAddressType
 import com.heerkirov.hedge.server.events.FileCreated
 import com.heerkirov.hedge.server.events.ImportDeleted
+import com.heerkirov.hedge.server.events.ImportUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.manager.*
 import com.heerkirov.hedge.server.model.ImportRecord
@@ -222,6 +223,18 @@ class ImportService(private val appdata: AppDataManager,
                 }
 
                 bus.emit(records.filter { !it.deleted && it.status == ImportStatus.COMPLETED }.map { ImportDeleted(it.id) })
+            }
+
+            if(form.rename != null) {
+                data.db.update(ImportRecords) {
+                    where { it.id inList records.map(ImportRecord::id) }
+                    set(it.fileName, form.rename)
+                }
+                data.db.update(FileRecords) {
+                    where { it.id inList records.map(ImportRecord::fileId) }
+                    set(it.originFilename, form.rename)
+                }
+                bus.emit(records.map { ImportUpdated(it.id, fileName = form.rename) })
             }
 
             if(form.retry) {

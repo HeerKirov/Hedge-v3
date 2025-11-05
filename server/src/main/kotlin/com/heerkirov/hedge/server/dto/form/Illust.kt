@@ -80,6 +80,7 @@ class IllustBatchUpdateForm(val target: List<Int>,
         SET_ORDER_TIME_REVERSE,
         SET_ORDER_TIME_UNIFORMLY,
         SET_ORDER_TIME_BY_SOURCE_ID,
+        SET_ORDER_TIME_BY_FILENAME,
         SET_ORDER_TIME_BY_BOOK_ORDINAL,
         SET_ORDER_TIME_BY_FOLDER_ORDINAL,
     }

@@ -20,8 +20,7 @@ data class ImportBatchForm(val target: List<Int>? = null,
                            val retry: Boolean = false,
                            val retryAndAllowNoSource: Boolean = false,
                            val retryWithManualSource: SourceDataPath? = null,
+                           val rename: String? = null,
                            val clearCompleted: Boolean = false,
                            val delete: Boolean = false,
                            val deleteDeleted: Boolean = false)
-
-class ImportWatcherForm(val isOpen: Boolean)

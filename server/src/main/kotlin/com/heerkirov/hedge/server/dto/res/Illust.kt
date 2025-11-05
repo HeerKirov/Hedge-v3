@@ -18,7 +18,7 @@ data class IllustRes(val id: Int, val type: IllustType, val childrenCount: Int?,
 
 data class IllustSimpleRes(val id: Int, val filePath: FilePath)
 
-data class IllustDetailRes(val id: Int, val type: IllustType, val childrenCount: Int?, val filePath: FilePath,
+data class IllustDetailRes(val id: Int, val type: IllustType, val childrenCount: Int?, val filePath: FilePath, val fileName: String,
                            val extension: String, val size: Long, val resolutionWidth: Int, val resolutionHeight: Int, val videoDuration: Long,
                            val topics: List<TopicSimpleRes>, val authors: List<AuthorSimpleRes>, val tags: List<TagSimpleRes>,
                            val description: String, val score: Int?, val favorite: Boolean, val tagme: Illust.Tagme,

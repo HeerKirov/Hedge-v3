@@ -886,6 +886,22 @@ class IllustManager(private val appdata: AppDataManager,
                     val seq = orderTimeSeq.map { (id, _, _) -> idToTimes[id]!! }
                     setOrderTimeBySeq(seq)
                 }
+                IllustBatchUpdateForm.Action.SET_ORDER_TIME_BY_FILENAME -> {
+                    //为了按照文件名排序，需要先取出所有图像的文件名信息
+                    val fileNameMap = data.db.from(FileRecords)
+                        .select(FileRecords.id, FileRecords.originFilename)
+                        .where { (FileRecords.id inList (images.map { it.fileId } + childrenOfCollections.map { it.fileId })) }
+                        .associateBy({ it[FileRecords.id]!! }) { it[FileRecords.originFilename]!! }
+                    //将所有image/children按照fileName排序，然后把所有的orderTime取出排序，依次选取
+                    val sortedIds = (images + childrenOfCollections)
+                        .map { Pair(it.id, fileNameMap[it.fileId]!!) }
+                        .sortedBy { (_, f) -> f }
+                        .map { (id, _) -> id }
+                    val sortedTimes = orderTimeSeq.map { (_, _, ot) -> ot }.sorted()
+                    val idToTimes = sortedIds.zip(sortedTimes).toMap()
+                    val seq = orderTimeSeq.map { (id, _, _) -> idToTimes[id]!! }
+                    setOrderTimeBySeq(seq)
+                }
                 IllustBatchUpdateForm.Action.SET_ORDER_TIME_BY_BOOK_ORDINAL -> {
                     //将所有images按在book中的顺序排序，然后把所有的orderTime取出来，依次选取
                     if(form.actionBy == null) throw be(ParamRequired("actionBy"))

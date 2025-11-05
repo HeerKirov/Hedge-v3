@@ -95,7 +95,8 @@ interface ImportEntityEvent : EntityEvent { val importId: Int }
 data class ImportCreated(override val importId: Int) : BaseBusEventImpl("entity/import/created"), ImportEntityEvent
 
 data class ImportUpdated(override val importId: Int,
-                         val status: ImportStatus,
+                         val fileName: String? = null,
+                         val status: ImportStatus? = null,
                          val thumbnailError: Boolean = false,
                          val fingerprintError: Boolean = false,
                          val sourceAnalyseError: Boolean = false,
