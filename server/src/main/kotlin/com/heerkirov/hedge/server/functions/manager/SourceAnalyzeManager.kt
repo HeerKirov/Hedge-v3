@@ -138,7 +138,7 @@ class SourceAnalyzeManager(private val appdata: AppDataManager, bus: EventBus, p
             }
             val partGroup = if(it.partMode != SourceOption.SitePartMode.NO) "P" else null
             val partNameGroup = if(it.partMode == SourceOption.SitePartMode.PAGE_WITH_NAME) "PN" else null
-            ImportOption.SourceAnalyseRule(it.name, "${it.name}$id$part", "ID", partGroup, partNameGroup, null)
+            ImportOption.SourceAnalyseRule(it.name, "\\[?${it.name}$id$part(\\].*)?", "ID", partGroup, partNameGroup, null)
         }
     }
 
