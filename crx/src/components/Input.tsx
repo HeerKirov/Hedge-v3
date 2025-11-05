@@ -47,7 +47,7 @@ export const Input = React.forwardRef(function (props: InputProps, ref: React.Fo
     const onCompositionend = () => compositionRef.current = false
 
     //自动聚焦
-    const localRef = useRef<HTMLElement | null>()
+    const localRef = useRef<HTMLElement | null>(undefined)
     const setRef = (el: HTMLInputElement | HTMLTextAreaElement | null) => {
         if(ref !== null) {
             if(typeof ref === "function") ref(el)

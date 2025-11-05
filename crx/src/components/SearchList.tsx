@@ -36,7 +36,7 @@ export const SearchList = memo(forwardRef(function<T>(props: SearchListProps<T>,
 
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
 
-    const queryTimer = useRef<NodeJS.Timeout>()
+    const queryTimer = useRef<NodeJS.Timeout>(undefined)
 
     const rootRef = useRef<HTMLDivElement | null>(null)
 

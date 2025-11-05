@@ -9,7 +9,7 @@ export function notificationButtonClicked(notificationId: string, buttonIndex: n
 }
 
 export function notify(context: {notificationId?: string, title: string, message: string, buttons?: [{title: string}]}) {
-    const options: chrome.notifications.NotificationOptions<true> = {
+    const options: chrome.notifications.NotificationCreateOptions = {
         type: "basic",
         iconUrl: "/public/favicon.png",
         title: context.title,

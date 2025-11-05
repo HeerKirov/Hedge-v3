@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "types": ["chrome", "@types/wicg-file-system-access"],
+    "types": ["vite/client", "chrome", "@types/wicg-file-system-access"],
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable", "webworker"],
     "module": "ESNext",

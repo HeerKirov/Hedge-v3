@@ -25,7 +25,7 @@ export async function downloadURL(options: {url: string, sourcePath?: SourceData
  * 附加信息中存在sourcePath时，将其作为downloadToolbar的下载项处理。此时仅根据来源信息按照固定模板重命名，并且根据选项收集来源数据。
  * 不存在sourcePath时，走determiningFilename功能，首先经扩展名过滤，其次经规则匹配后，对其进行重命名。
  */
-export function determiningFilename(downloadItem: chrome.downloads.DownloadItem, suggest: (suggestion?: chrome.downloads.DownloadFilenameSuggestion) => void): boolean | void {
+export function determiningFilename(downloadItem: chrome.downloads.DownloadItem, suggest: (suggestion?: chrome.downloads.FilenameSuggestion) => void): boolean | void {
     const [ filenameWithoutExt, extension ] = splitNameAndExtension(downloadItem.filename)
 
     settings.get().then(async setting => {

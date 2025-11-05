@@ -5,7 +5,7 @@ import { analyseShortcut } from "@/utils/shortcut"
  * 注册一个document级别的快捷键，使用的是CRX API中的某个按键。
  */
 export function useChromeExtensionShortcut(command: string, callback: (e: KeyboardEvent) => void) {
-    const callerRef = useRef<(e: KeyboardEvent) => boolean>()
+    const callerRef = useRef<(e: KeyboardEvent) => boolean>(undefined)
 
     chrome.runtime.getPlatformInfo().then(async platform => {
         const commands = await chrome.commands.getAll()

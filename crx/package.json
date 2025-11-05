@@ -10,30 +10,31 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^6.4.2",
-    "@fortawesome/free-regular-svg-icons": "^6.4.2",
-    "@fortawesome/free-solid-svg-icons": "^6.4.2",
-    "@fortawesome/react-fontawesome": "^0.2.0",
-    "moment-timezone": "^0.5.45",
-    "polished": "^4.2.2",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "styled-components": "^6.0.7"
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-regular-svg-icons": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/react-fontawesome": "^3.1.0",
+    "moment-timezone": "^0.6.0",
+    "polished": "^4.3.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "styled-components": "^6.1.19"
   },
   "devDependencies": {
-    "@crxjs/vite-plugin": "^1.0.14",
-    "@types/chrome": "^0.0.243",
+    "@crxjs/vite-plugin": "^2.2.1",
+    "@types/chrome": "^0.1.1",
     "@types/node": "^20.5.0",
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.7",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
     "@types/wicg-file-system-access": "^2020.9.6",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
-    "@vitejs/plugin-react": "^4.0.3",
+    "@vitejs/plugin-react": "^5.1.0",
     "eslint": "^8.45.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.3",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.5"
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.0",
+    "vite-plugin-zip-pack": "^1.2.4"
   }
 }

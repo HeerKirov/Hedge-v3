@@ -2,7 +2,7 @@
 /**
  * 解析一个快捷键文本，将其转换为函数调用的形式。快捷键文本来自CRX API.
  */
-export function analyseShortcut(shortcut: string, platform: chrome.runtime.PlatformOs) {
+export function analyseShortcut(shortcut: string, platform: `${chrome.runtime.PlatformOs}`) {
     const keys = shortcut.split("+")
 
     const keyEvent: KeyEvent = {
