@@ -6,7 +6,7 @@ import { DetailTopic, ParentTopic, Topic, TopicCreateForm, TopicUpdateForm, Topi
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { useNavigationItem } from "@/services/base/side-nav-records"
 import { useListViewContext } from "@/services/base/list-view-context"
-import { useDocumentTitle, useInitializer, usePath, useTabRoute } from "@/modules/browser"
+import { useDocumentTitle, useInitializer, useParam, usePath, useTabRoute } from "@/modules/browser"
 import { useMessageBox } from "@/modules/message-box"
 import { useToast } from "@/modules/toast"
 import { checkTagName } from "@/utils/validation"
@@ -24,8 +24,10 @@ export function useTopicContext() {
 }
 
 function useListView() {
+    const filter = useParam<TopicQueryFilter>("filter", () => ({order: "-updateTime"}), true)
+    
     return useListViewContext({
-        defaultFilter: <TopicQueryFilter>{order: "-updateTime"},
+        filter,
         request: client => (offset, limit, filter) => client.topic.list({offset, limit, ...filter}),
         keyOf: item => item.id,
         eventFilter: {
