@@ -1,7 +1,7 @@
 import { SourceDataPath } from "@/functions/server/api-all"
 import { Setting, settings } from "@/functions/setting"
 import { sessions } from "@/functions/storage"
-import { ATTACHMENT_RULES, DETERMINING_RULES } from "@/functions/sites"
+import { ATTACHMENT_RULES, DETERMINING_RULES, EHENTAI_CONSTANTS } from "@/functions/sites"
 import { sourceDataManager } from "@/services/source-data"
 import { notify } from "@/services/notification"
 
@@ -34,7 +34,7 @@ export function determiningFilename(downloadItem: chrome.downloads.DownloadItem,
         if(info) {
             //在从info提取获得文件名时，此文件是通过download API指定下载的。使用已准备好的文件名。
             console.log(`[determiningFilename] url=[${url}], filename=[${filenameWithoutExt}]`)
-            const filename = generateSourceName(info.sourcePath)
+            const filename = generateSourceName(info.sourcePath, filenameWithoutExt)
             suggest({filename: filename + (extension ? "." + extension : "")})
             if(info.collectSourceData && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
                 await sourceDataManager.collect({...info.sourcePath, type: "auto"})
@@ -58,15 +58,20 @@ export function determiningFilename(downloadItem: chrome.downloads.DownloadItem,
                 }
             }
             if(setting.toolkit.determiningFilename.enabledAttachment && EXTENDED_EXTENSIONS.includes(extension)) {
-                const result = matchAttachmentRulesAndArgs(downloadItem.referrer, url, filenameWithoutExt)
-                if(result !== null) {
-                    console.log(`[determiningFilename] matched prefix ${result.prefix}`)
-                    suggest({filename: result.prefix + filenameWithoutExt + (extension ? "." + extension : "")})
-                    if(result.sourcePath !== null && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
-                        await sourceDataManager.collect({...result.sourcePath, type: "auto"})
+                if(filenameWithoutExt.match(/\[\S+_\S+(_\d+)?(_\S+)?].*/)) {
+                    console.log(`[determiningFilename] This file already has a prefix, skipped.`)
+                }else{
+                    const result = matchAttachmentRulesAndArgs(downloadItem.referrer, url, filenameWithoutExt)
+                    if(result !== null) {
+                        console.log(`[determiningFilename] matched prefix ${result.prefix}`)
+                        suggest({filename: result.prefix + filenameWithoutExt + (extension ? "." + extension : "")})
+                        if(result.sourcePath !== null && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
+                            await sourceDataManager.collect({...result.sourcePath, type: "auto"})
+                        }
+                        return
                     }
-                    return
                 }
+
             }
             suggest()
         }
@@ -105,7 +110,7 @@ async function matchRulesAndArgs(referrer: string, url: string, filename: string
         if(rule.filename && !match(rule.filename, filename, args)) continue
 
         const sourcePath: SourceDataPath = rule.sourcePath ? await rule.sourcePath?.(args) : {sourceSite: args["SITE"] ?? rule.siteName, sourceId: args["ID"], sourcePart: args["PART"] ? parseInt(args["PART"]) : null, sourcePartName: args["PNAME"] ?? null}
-        const determining = generateSourceName(sourcePath)
+        const determining = generateSourceName(sourcePath, filename)
         return {determining, sourcePath: rule.collectSourceData ? sourcePath : null}
     }
     for(const rule of setting.toolkit.determiningFilename.rules) {
@@ -159,10 +164,15 @@ function replaceWithArgs(template: string, args: Record<string, string>): string
 /**
  * 将sourcePath拼接成标准文件名。
  */
-function generateSourceName(sourcePath: SourceDataPath): string {
-    return `${sourcePath.sourceSite}_${sourcePath.sourceId}`
+function generateSourceName(sourcePath: SourceDataPath, filename: string): string {
+    const std = `${sourcePath.sourceSite}_${sourcePath.sourceId}`
         + (sourcePath.sourcePart !== null ? `_${sourcePath.sourcePart}` : '')
         + (sourcePath.sourcePartName !== null ? `_${sourcePath.sourcePartName}` : '')
+    //新功能：类似EH这样的站点，原文件名是有意义的，因此使用新的文件名结构，保留原文件名
+    if(sourcePath.sourceSite === EHENTAI_CONSTANTS.SITE_NAME) {
+        return `[${std}]${filename}`
+    }
+    return std
 }
 
 const BUILTIN_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp", "webm", "mp4", "ogv"]

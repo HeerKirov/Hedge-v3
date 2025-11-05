@@ -145,11 +145,12 @@ function enableDownloadOrdinal(sourcePath: SourceDataPath) {
                     }
 
                     const fIdx = element.href.lastIndexOf("?f=")
-                    const ext = element.href.substring(element.href.lastIndexOf(".") + 1)
+                    const filename = element.href.substring(fIdx + "?f=".length)
+                    const determiningFilename = `[${sourcePath.sourceSite}_${sourcePath.sourceId}_${index}]${filename}`
                     const anchor = document.createElement("a")
-                    anchor.href = element.href.substring(0, fIdx >= 0 ? fIdx : element.href.length) + `?f=${sourcePath.sourceSite}_${sourcePath.sourceId}_${index}.${ext}`
-                    anchor.download = `${sourcePath.sourceSite}_${sourcePath.sourceId}_${index}.${ext}`
-                    anchor.innerText = `(Link of ${sourcePath.sourceSite}_${sourcePath.sourceId} p${index})`
+                    anchor.href = element.href.substring(0, fIdx >= 0 ? fIdx : element.href.length) + `?f=${determiningFilename}`
+                    anchor.download = determiningFilename
+                    anchor.innerText = `(Download with [${sourcePath.sourceSite}_${sourcePath.sourceId}_${index}])`
                     const span = document.createElement("span")
                     span.style.marginLeft = "8px"
                     span.appendChild(anchor)
