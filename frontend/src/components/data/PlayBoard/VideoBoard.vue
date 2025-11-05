@@ -4,7 +4,7 @@ import { remoteIpcClient } from "@/functions/ipc-client"
 import { useHttpClient } from "@/functions/app"
 import { useInterceptedKey } from "@/modules/keyboard"
 import { computedAsync } from "@/utils/reactivity"
-import { usePlayControl, useVolumeControl } from "./video"
+import { usePlayControl, useVideoPositionMemory, useVolumeControl } from "./video"
 import VideoControls from "./VideoControls.vue"
 
 const props = defineProps<{
@@ -42,6 +42,8 @@ const { playOrPause, fastForward, fastRewind, seek, pausedEvent, playingEvent, d
 
 const { updateVolume, updateMuted } = useVolumeControl(videoRef, state)
 
+useVideoPositionMemory(videoRef, state, src)
+
 watch(videoRef, dom => {
     if(dom !== undefined) {
         state.playing = !dom.paused
@@ -52,7 +54,7 @@ watch(videoRef, dom => {
     }
 })
 
-useInterceptedKey(["Space", props.immersive ? "ArrowLeft" : "Meta+ArrowLeft", props.immersive ? "ArrowRight" : "Meta+ArrowRight"], e => {
+useInterceptedKey(props.immersive ? ["Space", "ArrowLeft", "ArrowRight"] : ["Meta+ArrowLeft", "Meta+ArrowRight"], e => {
     if(e.key === "Space") {
         playOrPause()
     }else if(e.key === "ArrowLeft") {

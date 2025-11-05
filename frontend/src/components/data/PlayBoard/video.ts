@@ -1,5 +1,5 @@
-import { computed, onBeforeMount, onUnmounted, Ref, watch } from "vue"
-import { useLocalStorage } from "@/functions/app"
+import { computed, onBeforeMount, onBeforeUnmount, onUnmounted, Ref, watch } from "vue"
+import { createMemoryStorage, useLocalStorage } from "@/functions/app"
 import { numbers } from "@/utils/primitives"
 import { sleep } from "@/utils/process"
 import { useMouseHover } from "@/utils/sensors"
@@ -165,5 +165,44 @@ export interface State {
     muted: boolean
     currentTime: number
     duration: number
+}
+
+export function useVideoPositionMemory(videoRef: Ref<HTMLMediaElement | undefined>, state: State, src: Ref<string | undefined>) {
+    const videoPositions = createMemoryStorage<Record<string, number>>("play-board/video/positions", () => ({}), true)
+
+    // 保存当前视频的播放位置
+    const saveCurrentPosition = (videoSrc: string | undefined) => {
+        if(videoSrc && !isNaN(state.currentTime) && state.currentTime > 0) {
+            const positions = videoPositions.get()
+            videoPositions.set({...positions, [videoSrc]: state.currentTime})
+        }
+    }
+
+    // 当src改变时，保存旧视频的位置并重置duration
+    watch(src, (newSrc, oldSrc) => {
+        if(oldSrc && oldSrc !== newSrc) {
+            saveCurrentPosition(oldSrc)
+            // 重置duration，以便新视频加载后触发恢复逻辑
+            state.duration = NaN
+        }
+    })
+
+    // 恢复上次播放位置
+    watch(() => state.duration, (duration, oldDuration) => {
+        if(!isNaN(duration) && duration !== Infinity && isNaN(oldDuration) && src.value && videoRef.value) {
+            const positions = videoPositions.get()
+            const savedPosition = positions[src.value]
+            if(savedPosition !== undefined && savedPosition > 0 && savedPosition < duration) {
+                videoRef.value.currentTime = savedPosition
+            }
+        }
+    })
+
+    // 组件卸载时保存播放位置
+    onBeforeUnmount(() => {
+        if(src.value) {
+            saveCurrentPosition(src.value)
+        }
+    })
 }
 

@@ -67,9 +67,38 @@ export function useLocalStorage<T>(bucketName: string, defaultValue?: T | (() =>
  * 单次取出一个local storage存储的值。
  */
 export function getLocalStorage<T>(bucketName: string): T | null {
-    const storageName = `com.heerkirov.hedge.v3(${remoteIpcClient.setting.channel.getCurrent()})${bucketName}`
-    const initValue = window.localStorage.getItem(storageName)
-    return initValue !== null ? JSON.parse(initValue) : null
+    return createLocalStorage<T>(bucketName).get()
+}
+
+export function createSessionStorage<T>(bucketName: string): StorageAccessor<T | null>
+export function createSessionStorage<T>(bucketName: string, defaultValue: T): StorageAccessor<T>
+export function createSessionStorage<T>(bucketName: string, defaultValue: () => T, defaultFunction: true): StorageAccessor<T>
+
+/**
+ * 创建一个session storage存储器。
+ */
+export function createSessionStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): StorageAccessor<T | null> {
+    return {
+        get(): T | null {
+            const initValue = window.sessionStorage.getItem(bucketName)
+            if(initValue !== null) {
+                return JSON.parse(initValue)
+            }else if(defaultFunction && defaultValue instanceof Function) {
+                return defaultValue()
+            }else if(defaultValue !== undefined) {
+                return defaultValue as T
+            }else{
+                return null
+            }
+        },
+        set(value: T): void {
+            if(value !== null) {
+                window.sessionStorage.setItem(bucketName, JSON.stringify(value))
+            }else{
+                window.sessionStorage.removeItem(bucketName)
+            }
+        }
+    }
 }
 
 export function useSessionStorage<T>(bucketName: string): Ref<T | null>
@@ -80,26 +109,53 @@ export function useSessionStorage<T>(bucketName: string, defaultValue: () => T, 
  * 引用一个session storage存储器。它的特点是只存活到窗口关闭为止。
  */
 export function useSessionStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): Ref<T | null> {
-    const data: Ref<T | null> = ref(null)
+    const accessor = createSessionStorage<T>(bucketName, defaultValue as any, defaultFunction as any)
 
-    const initValue = window.sessionStorage.getItem(bucketName)
-    if(initValue !== null) {
-        data.value = JSON.parse(initValue)
-    }else if(defaultFunction && defaultValue instanceof Function) {
-        data.value = defaultValue()
-    }else if(defaultValue !== undefined) {
-        data.value = defaultValue as T
-    }
+    const data: Ref<T | null> = ref(accessor.get()) as Ref<T | null>
 
-    watch(data, value => {
-        if(value !== null) {
-            window.sessionStorage.setItem(bucketName, JSON.stringify(value))
-        }else{
-            window.sessionStorage.removeItem(bucketName)
-        }
-    }, {deep: true})
+    watch(data, value => accessor.set(value as T), {deep: true})
 
     return data
+}
+
+/**
+ * 单次取出一个session storage存储的值。
+ */
+export function getSessionStorage<T>(bucketName: string): T | null {
+    return createSessionStorage<T>(bucketName).get()
+}
+
+export function createMemoryStorage<T>(bucketName: string): StorageAccessor<T | null>
+export function createMemoryStorage<T>(bucketName: string, defaultValue: T): StorageAccessor<T>
+export function createMemoryStorage<T>(bucketName: string, defaultValue: () => T, defaultFunction: true): StorageAccessor<T>
+
+/**
+ * 创建一个memory storage存储器。
+ */
+export function createMemoryStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): StorageAccessor<T | null> {
+    const { memory } = useMemoryStorageManager()
+
+    return {
+        get(): T | null {
+            const initValue = memory.get(bucketName)
+            if(initValue !== undefined) {
+                return initValue as T
+            }else if(defaultFunction && defaultValue instanceof Function) {
+                return defaultValue()
+            }else if(defaultValue !== undefined) {
+                return defaultValue as T
+            }else{
+                return null
+            }
+        },
+        set(value: T): void {
+            if(value !== null) {
+                memory.set(bucketName, value)
+            }else{
+                memory.delete(bucketName)
+            }
+        }
+    }
 }
 
 export function useMemoryStorage<T>(bucketName: string): Ref<T | null>
@@ -110,28 +166,55 @@ export function useMemoryStorage<T>(bucketName: string, defaultValue: () => T, d
  * 引用一个memory storage存储器。它使用内存实现，刷新就会丢失数据。
  */
 export function useMemoryStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): Ref<T | null> {
-    const { memory } = useMemoryStorageManager()
+    const accessor = createMemoryStorage<T>(bucketName, defaultValue as any, defaultFunction as any)
 
-    const data: Ref<T | null> = ref(null)
+    const data: Ref<T | null> = ref(accessor.get()) as Ref<T | null>
 
-    const initValue = memory.get(bucketName)
-    if(initValue !== undefined) {
-        data.value = initValue as T
-    }else if(defaultFunction && defaultValue instanceof Function) {
-        data.value = defaultValue()
-    }else if(defaultValue !== undefined) {
-        data.value = defaultValue as T
-    }
-
-    watch(data, value => {
-        if(value !== null) {
-            memory.set(bucketName, value)
-        }else{
-            memory.delete(bucketName)
-        }
-    }, {deep: true})
+    watch(data, value => accessor.set(value as T), {deep: true})
 
     return data
+}
+
+/**
+ * 单次取出一个memory storage存储的值。
+ */
+export function getMemoryStorage<T>(bucketName: string): T | null {
+    return createMemoryStorage<T>(bucketName).get()
+}
+
+export function createTabStorage<T>(bucketName: string): StorageAccessor<T | null>
+export function createTabStorage<T>(bucketName: string, defaultValue: T): StorageAccessor<T>
+export function createTabStorage<T>(bucketName: string, defaultValue: () => T, defaultFunction: true): StorageAccessor<T>
+
+/**
+ * 创建一个tab storage存储器。
+ */
+export function createTabStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): StorageAccessor<T | null> {
+    const currentTab = useCurrentTab()
+    if(currentTab === undefined) return createMemoryStorage(bucketName, defaultValue as any, defaultFunction as any)
+    const memory = currentTab.view.value.memoryStorage
+
+    return {
+        get(): T | null {
+            const initValue = memory[bucketName]
+            if(initValue !== undefined) {
+                return initValue as T
+            }else if(defaultFunction && defaultValue instanceof Function) {
+                return defaultValue()
+            }else if(defaultValue !== undefined) {
+                return defaultValue as T
+            }else{
+                return null
+            }
+        },
+        set(value: T): void {
+            if(value !== null) {
+                memory[bucketName] = value
+            }else{
+                delete memory[bucketName]
+            }
+        }
+    }
 }
 
 export function useTabStorage<T>(bucketName: string): Ref<T | null>
@@ -145,37 +228,61 @@ export function useTabStorage<T>(bucketName: string, defaultValue: () => T, defa
 export function useTabStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): Ref<T | null> {
     const currentTab = useCurrentTab()
     if(currentTab === undefined) return useMemoryStorage(bucketName, defaultValue as any, defaultFunction as any)
-    const memory = currentTab.view.value.memoryStorage
-
-    const data: Ref<T | null> = ref(null)
-
-    const initValue = memory[bucketName]
-    if(initValue !== undefined) {
-        data.value = initValue as T
-    }else if(defaultFunction && defaultValue instanceof Function) {
-        data.value = defaultValue()
-    }else if(defaultValue !== undefined) {
-        data.value = defaultValue as T
-    }
+    
+    const accessor = createTabStorage<T>(bucketName, defaultValue as any, defaultFunction as any)
+    const data: Ref<T | null> = ref(accessor.get()) as Ref<T | null>
 
     watch(currentTab.active, active => {
         if(active) {
-            const initValue = memory[bucketName]
-            if(initValue !== undefined) {
-                data.value = initValue as T
-            }
+            data.value = accessor.get() as T | null
         }
     })
 
-    watch(data, value => {
-        if(value !== null) {
-            memory[bucketName] = value
-        }else{
-            delete memory[bucketName]
-        }
-    }, {deep: true})
+    watch(data, value => accessor.set(value as T), {deep: true})
 
     return data
+}
+
+/**
+ * 单次取出一个tab storage存储的值。
+ */
+export function getTabStorage<T>(bucketName: string): T | null {
+    return createTabStorage<T>(bucketName).get()
+}
+
+export function createRouteStorage<T>(bucketName: string): StorageAccessor<T | null>
+export function createRouteStorage<T>(bucketName: string, defaultValue: T): StorageAccessor<T>
+export function createRouteStorage<T>(bucketName: string, defaultValue: () => T, defaultFunction: true): StorageAccessor<T>
+
+/**
+ * 创建一个route storage存储器。
+ */
+export function createRouteStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): StorageAccessor<T | null> {
+    const currentTab = useCurrentTab()
+    if(currentTab === undefined) return createMemoryStorage(bucketName, defaultValue as any, defaultFunction as any)
+    const memory = currentTab.page.value.storage
+
+    return {
+        get(): T | null {
+            const initValue = memory[bucketName]
+            if(initValue !== undefined) {
+                return initValue as T
+            }else if(defaultFunction && defaultValue instanceof Function) {
+                return defaultValue()
+            }else if(defaultValue !== undefined) {
+                return defaultValue as T
+            }else{
+                return null
+            }
+        },
+        set(value: T): void {
+            if(value !== null) {
+                memory[bucketName] = value
+            }else{
+                delete memory[bucketName]
+            }
+        }
+    }
 }
 
 export function useRouteStorage<T>(bucketName: string): Ref<T | null>
@@ -189,28 +296,20 @@ export function useRouteStorage<T>(bucketName: string, defaultValue: () => T, de
 export function useRouteStorage<T>(bucketName: string, defaultValue?: T | (() => T), defaultFunction?: boolean): Ref<T | null> {
     const currentTab = useCurrentTab()
     if(currentTab === undefined) return useMemoryStorage(bucketName, defaultValue as any, defaultFunction as any)
-    const memory = currentTab.page.value.storage
+    
+    const accessor = createRouteStorage<T>(bucketName, defaultValue as any, defaultFunction as any)
+    const data: Ref<T | null> = ref(accessor.get()) as Ref<T | null>
 
-    const data: Ref<T | null> = ref(null)
-
-    const initValue = memory[bucketName]
-    if(initValue !== undefined) {
-        data.value = initValue as T
-    }else if(defaultFunction && defaultValue instanceof Function) {
-        data.value = defaultValue()
-    }else if(defaultValue !== undefined) {
-        data.value = defaultValue as T
-    }
-
-    watch(data, value => {
-        if(value !== null) {
-            memory[bucketName] = value
-        }else{
-            delete memory[bucketName]
-        }
-    }, {deep: true})
+    watch(data, value => accessor.set(value as T), {deep: true})
 
     return data
+}
+
+/**
+ * 单次取出一个route storage存储的值。
+ */
+export function getRouteStorage<T>(bucketName: string): T | null {
+    return createRouteStorage<T>(bucketName).get()
 }
 
 const [installMemoryStorageManager, useMemoryStorageManager] = installation(function () {

@@ -3,7 +3,12 @@ import { installWsClient, useWsClient, useWsListeningEvent } from "./ws-client"
 import { installFullscreen, useFullscreen, useAppearance, useDarwinWindowed } from "./app-runtime"
 import { installAppBase, useAppState, useAppEnv, useServerStatus } from "./app-base"
 import { useAppInitializer } from "./app-initialize"
-import { useLocalStorage, useSessionStorage, useMemoryStorage, useTabStorage, useRouteStorage, installMemoryStorageManager, getLocalStorage } from "./storage"
+import { 
+    createLocalStorage, createSessionStorage, createMemoryStorage, createTabStorage, createRouteStorage, 
+    useLocalStorage, useSessionStorage, useMemoryStorage, useTabStorage, useRouteStorage, 
+    getLocalStorage, getSessionStorage, getMemoryStorage, getTabStorage, getRouteStorage,
+    installMemoryStorageManager
+} from "./storage"
 
 interface AppServiceOptions {
     handleError(title: string, message: string): void
@@ -33,16 +38,13 @@ export {
     useHttpClient,
     useWsClient,
     useWsListeningEvent,
-    useLocalStorage,
-    useSessionStorage,
-    useMemoryStorage,
-    useTabStorage,
-    useRouteStorage,
     useAppInitializer,
     useAppState,
     useAppEnv,
     useServerStatus,
     useAssets,
     useDarwinWindowed,
-    getLocalStorage
+    createLocalStorage, createSessionStorage, createMemoryStorage, createTabStorage, createRouteStorage,
+    useLocalStorage, useSessionStorage, useMemoryStorage, useTabStorage, useRouteStorage,
+    getLocalStorage, getSessionStorage, getMemoryStorage, getTabStorage, getRouteStorage,
 }
