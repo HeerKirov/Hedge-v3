@@ -176,6 +176,7 @@ export interface ImportBatchForm {
     retry?: boolean
     retryAndAllowNoSource?: boolean
     retryWithManualSource?: SourceDataPath
+    rename?: string
     clearCompleted?: boolean
     delete?: boolean
     deleteDeleted?: boolean

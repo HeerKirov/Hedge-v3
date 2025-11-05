@@ -21,10 +21,11 @@ import ImportSourcePreferencesDisplay from "./ImportSourcePreferencesDisplay.vue
 import MetaTagListDisplay from "./MetaTagListDisplay.vue"
 import FileInfoDisplay from "./FileInfoDisplay.vue"
 import TagmeInfo from "./TagmeInfo.vue"
+import IdAndFileNameDisplay from "./IdAndFileNameDisplay.vue"
 
 export { TagNameAndOtherDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay, PartitionTimeDisplay, TagLinkDisplay, TagExampleDisplay }
 export { TitleDisplay, DescriptionDisplay, TimeGroupDisplay, MetaKeywordDisplay }
 export { SourceInfo, SourceLinksDisplay, SourceAdditionalInfoDisplay, SourceTagMappingDisplay, SourceTagsDisplay, SourceBooksDisplay, SourceRelationsDisplay }
 export { SourceEditStatusDisplay, ImportPreferencesDisplay, ImportSourcePreferencesDisplay }
 export { TagmeInfo, MetaTagListDisplay }
-export { FileInfoDisplay }
+export { FileInfoDisplay, IdAndFileNameDisplay }

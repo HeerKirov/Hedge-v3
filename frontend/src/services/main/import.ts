@@ -239,6 +239,8 @@ export function useImportDetailPane() {
         eventFilter: c => event => ((event.eventType === "entity/import/updated" || event.eventType === "entity/import/deleted") && event.importId === c.path) || ((event.eventType === "entity/illust/deleted" || event.eventType === "entity/illust/updated") && event.illustType === "IMAGE" && event.illustId === c.data?.illust?.id)
     })
 
+    const setFileName = (fileName: string) => batchFetch({target: [path.value], rename: fileName})
+
     const analyseTime = async (timeType?: OrderTimeType) => {
         const res = await batchFetch({target: [path.value], analyseTime: true, analyseTimeBy: timeType})
         if(res !== undefined) toast.toast("已重新生成", "success", "已从导入记录重新生成项目的时间属性。")
@@ -280,5 +282,5 @@ export function useImportDetailPane() {
         })
     }
 
-    return {path, data, selector, gotoIllust, showStatusInfoMessage, openImagePreview, analyseTime, retryAllowNoSource, retryWithSource}
+    return {path, data, selector, gotoIllust, showStatusInfoMessage, openImagePreview, analyseTime, retryAllowNoSource, retryWithSource, setFileName}
 }

@@ -2,6 +2,8 @@
 import { ref } from "vue"
 import { BasePane } from "@/components/layout"
 import { Icon, Block, Button, Separator, ThumbnailImage } from "@/components/universal"
+import { Input } from "@/components/form"
+import { FormEditKit } from "@/components/interaction"
 import { SourceInfo, FileInfoDisplay } from "@/components-business/form-display"
 import { SourceIdentityEditor } from "@/components-business/form-editor"
 import { SourceDataPath } from "@/functions/http-client/api/all"
@@ -13,7 +15,7 @@ defineEmits<{
     (e: "close"): void
 }>()
 
-const { data, selector: { selected }, gotoIllust, showStatusInfoMessage, openImagePreview, analyseTime, retryAllowNoSource, retryWithSource } = useImportDetailPane()
+const { data, selector: { selected }, gotoIllust, showStatusInfoMessage, openImagePreview, analyseTime, retryAllowNoSource, retryWithSource, setFileName } = useImportDetailPane()
 
 const sourceDataEditorSwitch = ref(false)
 const sourceDataPathEditor = ref<SourceDataPath | null>(null)
@@ -53,7 +55,14 @@ const sourceAnalyseNoneMenu = usePopupMenu([
         </template>
 
         <template v-if="!!data">
-            <p v-if="data.fileName" class="selectable word-wrap-anywhere mb-1">{{data.fileName}}</p>
+            <FormEditKit class="my-1" :value="data.fileName" :set-value="setFileName">
+                <template #default="{ value }">
+                    <p class="selectable word-wrap-anywhere">{{value}}</p>
+                </template>
+                <template #edit="{ value, setValue, save }">
+                    <Input class="w-100" placeholder="文件名" :value="value" @update:value="setValue" @enter="save" auto-focus/>
+                </template>
+            </FormEditKit>
             <p v-if="data.fileCreateTime" class="secondary-text mt-2" @contextmenu="analyseTimeMenu.popup()">文件创建时间 {{datetime.toSimpleFormat(data.fileCreateTime)}}</p>
             <p v-if="data.fileUpdateTime" class="secondary-text" @contextmenu="analyseTimeMenu.popup()">文件修改时间 {{datetime.toSimpleFormat(data.fileUpdateTime)}}</p>
             <p v-if="data.importTime" class="secondary-text" @contextmenu="analyseTimeMenu.popup()">文件导入时间 {{datetime.toSimpleFormat(data.importTime)}}</p>

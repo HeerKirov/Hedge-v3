@@ -80,7 +80,7 @@ export interface FolderImagesChanged extends BaseWsEvent<"entity/folder/images/c
 
 export interface ImportCreated extends BaseWsEvent<"entity/import/created"> { importId: number }
 
-export interface ImportUpdated extends BaseWsEvent<"entity/import/updated"> { importId: number, status: ImportStatus, thumbnailFileError: boolean | null, fingerprintError: boolean | null, sourceAnalyseError: boolean | null, sourceAnalyseNone: boolean | null }
+export interface ImportUpdated extends BaseWsEvent<"entity/import/updated"> { importId: number, fileName: string | null, status: ImportStatus | null, thumbnailFileError: boolean | null, fingerprintError: boolean | null, sourceAnalyseError: boolean | null, sourceAnalyseNone: boolean | null }
 
 export interface ImportDeleted extends BaseWsEvent<"entity/import/deleted"> { importId: number }
 

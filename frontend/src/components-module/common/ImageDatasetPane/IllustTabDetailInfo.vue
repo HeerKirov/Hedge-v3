@@ -2,7 +2,7 @@
 import { computed, toRef } from "vue"
 import { FormEditKit } from "@/components/interaction"
 import { Separator, Icon, Block, NumBadge } from "@/components/universal"
-import { TagmeInfo, DescriptionDisplay, PartitionTimeDisplay, MetaTagListDisplay, FileInfoDisplay, SourceInfo } from "@/components-business/form-display"
+import { TagmeInfo, DescriptionDisplay, PartitionTimeDisplay, MetaTagListDisplay, FileInfoDisplay, SourceInfo, IdAndFileNameDisplay } from "@/components-business/form-display"
 import { DateEditor, DateTimeEditor, FavoriteEditor, ScoreEditor, SourceIdentityEditor, TagmeEditor } from "@/components-business/form-editor"
 import { DescriptionEditor } from "@/components-business/form-editor"
 import { SimpleBook } from "@/functions/http-client/api/book"
@@ -52,10 +52,10 @@ defineExpose({
 
 <template>
     <template v-if="!!data">
-        <p class="my-1">
-            <Icon icon="id-card"/><b class="ml-1 selectable">{{ data.id }}</b>
-            <span v-if="data.type === 'COLLECTION'" class="float-right"><Icon class="mr-1" icon="images"/>{{ data.childrenCount }}项</span>
-        </p>
+        <div class="my-1 flex jc-between">
+            <IdAndFileNameDisplay :id="data.id" :fileName="data.fileName"/>
+            <span v-if="data.type === 'COLLECTION'" class="flex-item no-grow-shrink ml-2"><Icon class="mr-1" icon="images"/>{{ data.childrenCount }}项</span>
+        </div>
         <Separator direction="horizontal"/>
         <div :class="$style.container">
             <div :class="$style.item">

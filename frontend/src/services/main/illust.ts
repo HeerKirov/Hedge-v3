@@ -400,7 +400,7 @@ export function useSideBarAction(selected: Ref<number[]>, selectedIndex: Ref<(nu
         batchFetch({target: selected.value, action: `SET_PARTITION_TIME_${action}`})
     }
 
-    const orderTimeAction = (action: "NOW" | "REVERSE" | "UNIFORMLY" | "MOST" | "BY_SOURCE_ID" | "BY_ORDINAL") => {
+    const orderTimeAction = (action: "NOW" | "REVERSE" | "UNIFORMLY" | "MOST" | "BY_SOURCE_ID" | "BY_FILENAME" | "BY_ORDINAL") => {
         if(action === "BY_ORDINAL") {
             if(parent?.value?.type === "book") {
                 batchFetch({target: selected.value, action: "SET_ORDER_TIME_BY_BOOK_ORDINAL", actionBy: parent.value.bookId})

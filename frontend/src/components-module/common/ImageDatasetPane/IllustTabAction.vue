@@ -31,13 +31,14 @@ const partitionTimeEllipsisMenuItems = <MenuItem<undefined>[]>[
 const orderTimeEllipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "normal", label: "设置时间范围…", click: editOrderTimeRange},
     {type: "separator"},
+    {type: "normal", label: "设为当前时间", click: () => orderTimeAction("NOW")},
+    {type: "separator"},
     {type: "normal", label: "集中在分布最多的那天", click: () => orderTimeAction("MOST")},
     {type: "normal", label: "倒置排序时间", click: () => orderTimeAction("REVERSE")},
     {type: "normal", label: "均匀分布排序时间", click: () => orderTimeAction("UNIFORMLY")},
     {type: "separator"},
-    {type: "normal", label: "设为当前时间", click: () => orderTimeAction("NOW")},
-    {type: "separator"},
     {type: "normal", label: "按来源顺序重设排序时间", click: () => orderTimeAction("BY_SOURCE_ID")},
+    {type: "normal", label: "按文件名顺序重设排序时间", click: () => orderTimeAction("BY_FILENAME")},
     ...(parent?.value ? [{type: "normal", label: `按${parent.value.type === "book" ? "画集" : "目录"}内排序顺序重设排序时间`, click: () => orderTimeAction("BY_ORDINAL")}] : []),
 ]
 

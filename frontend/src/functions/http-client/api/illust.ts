@@ -137,6 +137,7 @@ function mapToIllust(data: any): Illust {
 function mapToDetailIllust(data: any): DetailIllust {
     return {
         ...mapToIllust(data),
+        fileName: <string>data["fileName"],
         extension: <string>data["extension"],
         size: <number>data["size"],
         resolutionWidth: <number>data["resolutionWidth"],
@@ -477,7 +478,7 @@ export type Tagme = "TAG" | "AUTHOR" | "TOPIC" | "SOURCE"
 
 export type BatchUpdateAction = "SET_PARTITION_TIME_TODAY" | "SET_PARTITION_TIME_EARLIEST" | "SET_PARTITION_TIME_LATEST" | "SET_PARTITION_TIME_MOST"
     | "SET_ORDER_TIME_NOW" | "SET_ORDER_TIME_REVERSE" | "SET_ORDER_TIME_UNIFORMLY" | "SET_ORDER_TIME_MOST"
-    | "SET_ORDER_TIME_BY_SOURCE_ID" | "SET_ORDER_TIME_BY_BOOK_ORDINAL" | "SET_ORDER_TIME_BY_FOLDER_ORDINAL"
+    | "SET_ORDER_TIME_BY_SOURCE_ID" | "SET_ORDER_TIME_BY_FILENAME" | "SET_ORDER_TIME_BY_BOOK_ORDINAL" | "SET_ORDER_TIME_BY_FOLDER_ORDINAL"
 
 /**
  * 所有Illust的公共结构，包括Illust, BookIllust, FolderIllust, StagingPostIllust等，只要是在Dataset展示的数据，都是它的子类型。
@@ -564,6 +565,10 @@ export interface Illust extends CommonIllust {
 }
 
 export interface DetailIllust extends Illust {
+    /**
+     * 文件名。
+     */
+    fileName: string
     /**
      * 扩展名。
      */
