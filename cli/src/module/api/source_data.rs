@@ -2,7 +2,7 @@ use std::error::Error;
 use reqwest::Method;
 use serde::{Serialize, Deserialize};
 use serde_json::json;
-use crate::module::import::SourceDataPath;
+// use crate::module::import::SourceDataPath;
 use crate::module::server::{ServerManager, ListResult};
 
 
@@ -11,7 +11,7 @@ pub struct SourceDataModule<'t> {
 }
 
 impl <'t> SourceDataModule<'t> {
-    pub fn new(server_manager: &'t ServerManager) -> SourceDataModule {
+    pub fn new(server_manager: &'t ServerManager) -> SourceDataModule<'t> {
         SourceDataModule { server_manager }        
     }
     pub async fn query(&mut self, hql: Option<&str>, status: Option<Vec<&str>>, site: Option<Vec<&str>>, offset: Option<u32>, limit: Option<u32>) -> Result<ListResult<SourceDataRes>, Box<dyn Error>> {
@@ -56,71 +56,71 @@ pub struct SourceDataRes {
     pub book_count: i32,
     #[serde(rename = "relationCount")]
     pub relation_count: i32,
-    pub empty: bool,
     pub status: String,
-    #[serde(rename = "createTime")]
-    pub create_time: String,
-    #[serde(rename = "updateTime")]
-    pub update_time: String
+    // pub empty: bool,
+    // #[serde(rename = "createTime")]
+    // pub create_time: String,
+    // #[serde(rename = "updateTime")]
+    // pub update_time: String
 }
 
 #[derive(Deserialize)]
 pub struct SourceDataDetailRes {
-    #[serde(rename = "sourceSite")]
-    pub site: String,
-    #[serde(rename = "sourceSiteName")]
-    pub site_name: String,
-    #[serde(rename = "sourceId")]
-    pub source_id: i64,
-    pub title: String,
-    pub description: String,
-    pub tags: Vec<SourceTagDto>,
-    pub books: Vec<SourceBookDto>,
-    pub relations: Vec<i64>,
-    pub links: Vec<String>,
-    #[serde(rename = "additionalInfo")] 
-    pub additional_info: Vec<AdditionalInfoDto>,
-    pub empty: bool,
+    // #[serde(rename = "sourceSite")]
+    // pub site: String,
+    // #[serde(rename = "sourceSiteName")]
+    // pub site_name: String,
+    // #[serde(rename = "sourceId")]
+    // pub source_id: i64,
+    // pub title: String,
+    // pub description: String,
+    // pub tags: Vec<SourceTagDto>,
+    // pub books: Vec<SourceBookDto>,
+    // pub relations: Vec<i64>,
+    // pub links: Vec<String>,
+    // #[serde(rename = "additionalInfo")] 
+    // pub additional_info: Vec<AdditionalInfoDto>,
+    // pub empty: bool,
     pub status: String,
-    #[serde(rename = "createTime")]
-    pub create_time: String,
-    #[serde(rename = "updateTime")]
-    pub update_time: String
+    // #[serde(rename = "createTime")]
+    // pub create_time: String,
+    // #[serde(rename = "updateTime")]
+    // pub update_time: String
 }
 
 #[derive(Deserialize)]
 pub struct SourceDataAnalyseResult {
-    pub filename: String,
-    pub source: Option<SourceDataPath>,
+    // pub filename: String,
+    // pub source: Option<SourceDataPath>,
     #[serde(rename = "imageId")] 
     pub image_id: Option<i32>,
     pub error: Option<String>
 }
 
-#[derive(Deserialize)]
-pub struct SourceTagDto {
-    pub code: String,
-    pub name: String,
-    #[serde(rename = "otherName")]
-    pub other_name: Option<String>,
-    #[serde(rename = "type")]
-    pub tag_type: Option<String>
-}
+// #[derive(Deserialize)]
+// pub struct SourceTagDto {
+//     pub code: String,
+//     pub name: String,
+//     #[serde(rename = "otherName")]
+//     pub other_name: Option<String>,
+//     #[serde(rename = "type")]
+//     pub tag_type: Option<String>
+// }
 
-#[derive(Deserialize)]
-pub struct SourceBookDto {
-    pub code: String,
-    pub title: String,
-    #[serde(rename = "otherTitle")]
-    pub other_title: Option<String>
-}
+// #[derive(Deserialize)]
+// pub struct SourceBookDto {
+//     pub code: String,
+//     pub title: String,
+//     #[serde(rename = "otherTitle")]
+//     pub other_title: Option<String>
+// }
 
-#[derive(Deserialize)]
-pub struct AdditionalInfoDto {
-    pub field: String,
-    pub label: String,
-    pub value: String
-}
+// #[derive(Deserialize)]
+// pub struct AdditionalInfoDto {
+//     pub field: String,
+//     pub label: String,
+//     pub value: String
+// }
 
 #[derive(Serialize)]
 pub struct SourceDataUpdateForm {

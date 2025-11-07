@@ -9,7 +9,7 @@ pub struct BulkModule<'t> {
 }
 
 impl <'t> BulkModule<'t> {
-    pub fn new(server_manager: &'t ServerManager) -> BulkModule {
+    pub fn new(server_manager: &'t ServerManager) -> BulkModule<'t> {
         BulkModule { server_manager }        
     }
     pub async fn source_data_bulk_update(&mut self, bulks: &Vec<SourceDataBulkForm>) -> Result<BulkResult<SourceDataIdentity>, Box<dyn Error>> {

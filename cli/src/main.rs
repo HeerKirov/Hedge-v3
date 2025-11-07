@@ -20,7 +20,7 @@ async fn main() {
     let mut server_manager = ServerManager::new(&config, &channel_manager);
     let mut context = command::Context {
         config,
-        local_data_manager: &local_data_manager,
+        // local_data_manager: &local_data_manager,
         channel_manager: &channel_manager,
         server_manager: &mut server_manager
     };

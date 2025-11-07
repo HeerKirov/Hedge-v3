@@ -9,30 +9,30 @@ pub struct SettingModule<'t> {
 }
 
 impl <'t> SettingModule<'t> {
-    pub fn new(server_manager: &'t ServerManager) -> SettingModule {
+    pub fn new(server_manager: &'t ServerManager) -> SettingModule<'t> {
         SettingModule { server_manager }        
     }
-    pub async fn _get_server_option(&mut self) -> Result<ServerOption, Box<dyn Error>> {
-        self.server_manager.req(Method::GET, "/api/setting/server").await
-    }
-    pub async fn _get_storage_option(&mut self) -> Result<StorageOption, Box<dyn Error>> {
-        self.server_manager.req(Method::GET, "/api/setting/file").await
-    }
-    pub async fn _get_find_similar_option(&mut self) -> Result<FindSimilarOption, Box<dyn Error>> {
-        self.server_manager.req(Method::GET, "/api/setting/find-similar").await
-    }
-    pub async fn _get_query_option(&mut self) -> Result<QueryOption, Box<dyn Error>> {
-        self.server_manager.req(Method::GET, "/api/setting/query").await
-    }
-    pub async fn _get_meta_option(&mut self) -> Result<MetaOption, Box<dyn Error>> {
-        self.server_manager.req(Method::GET, "/api/setting/meta").await
-    }
-    pub async fn _get_import_option(&mut self) -> Result<ImportOption, Box<dyn Error>> {
-        self.server_manager.req(Method::GET, "/api/setting/import").await
-    }
-    pub async fn _get_source_sites(&mut self) -> Result<Vec<SourceSite>, Box<dyn Error>> {
-        self.server_manager.req(Method::GET, "/api/setting/source/sites").await
-    }
+    // pub async fn _get_server_option(&mut self) -> Result<ServerOption, Box<dyn Error>> {
+    //     self.server_manager.req(Method::GET, "/api/setting/server").await
+    // }
+    // pub async fn _get_storage_option(&mut self) -> Result<StorageOption, Box<dyn Error>> {
+    //     self.server_manager.req(Method::GET, "/api/setting/file").await
+    // }
+    // pub async fn _get_find_similar_option(&mut self) -> Result<FindSimilarOption, Box<dyn Error>> {
+    //     self.server_manager.req(Method::GET, "/api/setting/find-similar").await
+    // }
+    // pub async fn _get_query_option(&mut self) -> Result<QueryOption, Box<dyn Error>> {
+    //     self.server_manager.req(Method::GET, "/api/setting/query").await
+    // }
+    // pub async fn _get_meta_option(&mut self) -> Result<MetaOption, Box<dyn Error>> {
+    //     self.server_manager.req(Method::GET, "/api/setting/meta").await
+    // }
+    // pub async fn _get_import_option(&mut self) -> Result<ImportOption, Box<dyn Error>> {
+    //     self.server_manager.req(Method::GET, "/api/setting/import").await
+    // }
+    // pub async fn _get_source_sites(&mut self) -> Result<Vec<SourceSite>, Box<dyn Error>> {
+    //     self.server_manager.req(Method::GET, "/api/setting/source/sites").await
+    // }
     pub async fn set_server_option(&mut self, bulks: &ServerOptionUpdateForm) -> Result<(), Box<dyn Error>> {
         let body = serde_json::to_value(bulks)?;
         self.server_manager.req_without_res(Method::PATCH, "/api/setting/server", body).await
@@ -63,115 +63,115 @@ impl <'t> SettingModule<'t> {
     }
 }
 
-#[derive(Deserialize)]
-pub struct ServerOption {
-    #[serde(rename = "port")]
-    pub port: Option<String>,
-    #[serde(rename = "token")]
-    pub token: Option<String>,
-    #[serde(rename = "timeOffsetHour")]
-    pub time_offset_hour: Option<i32>
-}
+// #[derive(Deserialize)]
+// pub struct ServerOption {
+//     #[serde(rename = "port")]
+//     pub port: Option<String>,
+//     #[serde(rename = "token")]
+//     pub token: Option<String>,
+//     #[serde(rename = "timeOffsetHour")]
+//     pub time_offset_hour: Option<i32>
+// }
 
-#[derive(Deserialize)]
-pub struct StorageOption {
-    #[serde(rename = "storagePath")]
-    pub storage_path: Option<String>,
-    #[serde(rename = "autoCleanTrashes")]
-    pub auto_clean_trashes: bool,
-    #[serde(rename = "autoCleanTrashesIntervalDay")]
-    pub auto_clean_trashes_interval_day: i32,
-    #[serde(rename = "blockMaxSizeMB")]
-    pub block_max_size: i64,
-    #[serde(rename = "blockMaxCount")]
-    pub block_max_count: i32
-}
+// #[derive(Deserialize)]
+// pub struct StorageOption {
+//     #[serde(rename = "storagePath")]
+//     pub storage_path: Option<String>,
+//     #[serde(rename = "autoCleanTrashes")]
+//     pub auto_clean_trashes: bool,
+//     #[serde(rename = "autoCleanTrashesIntervalDay")]
+//     pub auto_clean_trashes_interval_day: i32,
+//     #[serde(rename = "blockMaxSizeMB")]
+//     pub block_max_size: i64,
+//     #[serde(rename = "blockMaxCount")]
+//     pub block_max_count: i32
+// }
 
-#[derive(Deserialize)]
-pub struct FindSimilarOption {
-    #[serde(rename = "autoFindSimilar")]
-    pub auto_find_similar: bool,
-    #[serde(rename = "autoTaskConf")]
-    pub auto_task_conf: Option<FindSimilarTaskConfig>,
-    #[serde(rename = "defaultTaskConf")]
-    pub default_task_conf: FindSimilarTaskConfig,
-}
+// #[derive(Deserialize)]
+// pub struct FindSimilarOption {
+//     #[serde(rename = "autoFindSimilar")]
+//     pub auto_find_similar: bool,
+//     #[serde(rename = "autoTaskConf")]
+//     pub auto_task_conf: Option<FindSimilarTaskConfig>,
+//     #[serde(rename = "defaultTaskConf")]
+//     pub default_task_conf: FindSimilarTaskConfig,
+// }
 
-#[derive(Deserialize)]
-pub struct QueryOption {
-    #[serde(rename = "chineseSymbolReflect")]
-    pub chinese_symbol_reflect: bool,
-    #[serde(rename = "translateUnderscoreToSpace")]
-    pub translate_underscore_to_space: bool,
-    #[serde(rename = "queryLimitOfQueryItems")]
-    pub query_limit_of_query_items: i32,
-    #[serde(rename = "warningLimitOfUnionItems")]
-    pub warning_limit_of_union_items: i32,
-    #[serde(rename = "warningLimitOfIntersectItems")]
-    pub warning_limit_of_intersect_items: i32
-}
+// #[derive(Deserialize)]
+// pub struct QueryOption {
+//     #[serde(rename = "chineseSymbolReflect")]
+//     pub chinese_symbol_reflect: bool,
+//     #[serde(rename = "translateUnderscoreToSpace")]
+//     pub translate_underscore_to_space: bool,
+//     #[serde(rename = "queryLimitOfQueryItems")]
+//     pub query_limit_of_query_items: i32,
+//     #[serde(rename = "warningLimitOfUnionItems")]
+//     pub warning_limit_of_union_items: i32,
+//     #[serde(rename = "warningLimitOfIntersectItems")]
+//     pub warning_limit_of_intersect_items: i32
+// }
 
-#[derive(Deserialize)]
-pub struct MetaOption {
-    #[serde(rename = "autoCleanTagme")]
-    pub auto_clean_tagme: bool,
-    #[serde(rename = "onlyCharacterTopic")]
-    pub only_character_topic: bool,
-    #[serde(rename = "resolveTagConflictByParent")]
-    pub resolve_tag_conflict_by_parent: bool,
-    #[serde(rename = "bindingPartitionWithOrderTime")]
-    pub binding_partition_with_order_time: bool,
-    #[serde(rename = "tuningOrderTime")]
-    pub tuning_order_time: bool,
-    #[serde(rename = "centralizeCollection")]
-    pub centralize_collection: bool,
-    #[serde(rename = "topicColors")]
-    pub topic_colors: HashMap<String, String>,
-    #[serde(rename = "authorColors")]
-    pub author_colors: HashMap<String, String>
-}
+// #[derive(Deserialize)]
+// pub struct MetaOption {
+//     #[serde(rename = "autoCleanTagme")]
+//     pub auto_clean_tagme: bool,
+//     #[serde(rename = "onlyCharacterTopic")]
+//     pub only_character_topic: bool,
+//     #[serde(rename = "resolveTagConflictByParent")]
+//     pub resolve_tag_conflict_by_parent: bool,
+//     #[serde(rename = "bindingPartitionWithOrderTime")]
+//     pub binding_partition_with_order_time: bool,
+//     #[serde(rename = "tuningOrderTime")]
+//     pub tuning_order_time: bool,
+//     #[serde(rename = "centralizeCollection")]
+//     pub centralize_collection: bool,
+//     #[serde(rename = "topicColors")]
+//     pub topic_colors: HashMap<String, String>,
+//     #[serde(rename = "authorColors")]
+//     pub author_colors: HashMap<String, String>
+// }
 
-#[derive(Deserialize)]
-pub struct ImportOption {
-    #[serde(rename = "autoAnalyseSourceData")]
-    pub auto_analyse_source_data: bool,
-    #[serde(rename = "preventNoneSourceData")]
-    pub prevent_none_source_data: bool,
-    #[serde(rename = "autoReflectMetaTag")]
-    pub auto_reflect_meta_tag: bool,
-    #[serde(rename = "reflectMetaTagType")]
-    pub reflect_meta_tag_type: Vec<String>,
-    #[serde(rename = "autoConvertFormat")]
-    pub auto_convert_format: bool,
-    #[serde(rename = "autoConvertPNGThresholdSizeMB")]
-    pub auto_convert_png_threshold_size_mb: i64,
-    #[serde(rename = "setTagmeOfTag")]
-    pub set_tagme_of_tag: bool,
-    #[serde(rename = "setTagmeOfSource")]
-    pub set_tagme_of_source: bool,
-    #[serde(rename = "setOrderTimeBy")]
-    pub set_order_time_by: String,
-    #[serde(rename = "sourceAnalyseRules")]
-    pub source_analyse_rules: Vec<SourceAnalyseRule>
-}
+// #[derive(Deserialize)]
+// pub struct ImportOption {
+//     #[serde(rename = "autoAnalyseSourceData")]
+//     pub auto_analyse_source_data: bool,
+//     #[serde(rename = "preventNoneSourceData")]
+//     pub prevent_none_source_data: bool,
+//     #[serde(rename = "autoReflectMetaTag")]
+//     pub auto_reflect_meta_tag: bool,
+//     #[serde(rename = "reflectMetaTagType")]
+//     pub reflect_meta_tag_type: Vec<String>,
+//     #[serde(rename = "autoConvertFormat")]
+//     pub auto_convert_format: bool,
+//     #[serde(rename = "autoConvertPNGThresholdSizeMB")]
+//     pub auto_convert_png_threshold_size_mb: i64,
+//     #[serde(rename = "setTagmeOfTag")]
+//     pub set_tagme_of_tag: bool,
+//     #[serde(rename = "setTagmeOfSource")]
+//     pub set_tagme_of_source: bool,
+//     #[serde(rename = "setOrderTimeBy")]
+//     pub set_order_time_by: String,
+//     #[serde(rename = "sourceAnalyseRules")]
+//     pub source_analyse_rules: Vec<SourceAnalyseRule>
+// }
 
-#[derive(Deserialize)]
-pub struct SourceSite {
-    pub name: String,
-    pub title: String,
-    #[serde(rename = "idMode")]
-    pub id_mode: String,
-    #[serde(rename = "partMode")]
-    pub part_mode: String,
-    #[serde(rename = "additionalInfo")]
-    pub additional_info: Vec<AdditionalInfo>,
-    #[serde(rename = "sourceLinkRules")]
-    pub source_link_rules: Vec<String>,
-    #[serde(rename = "tagTypes")]
-    pub tag_types: Vec<String>,
-    #[serde(rename = "tagTypeMappings")]
-    pub tag_type_mappings: Vec<HashMap<String, String>>
-}
+// #[derive(Deserialize)]
+// pub struct SourceSite {
+//     pub name: String,
+//     pub title: String,
+//     #[serde(rename = "idMode")]
+//     pub id_mode: String,
+//     #[serde(rename = "partMode")]
+//     pub part_mode: String,
+//     #[serde(rename = "additionalInfo")]
+//     pub additional_info: Vec<AdditionalInfo>,
+//     #[serde(rename = "sourceLinkRules")]
+//     pub source_link_rules: Vec<String>,
+//     #[serde(rename = "tagTypes")]
+//     pub tag_types: Vec<String>,
+//     #[serde(rename = "tagTypeMappings")]
+//     pub tag_type_mappings: Vec<HashMap<String, String>>
+// }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]

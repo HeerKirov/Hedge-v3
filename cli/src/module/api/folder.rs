@@ -1,6 +1,6 @@
 use std::error::Error;
 use reqwest::Method;
-use serde::{Serialize, Deserialize};
+use serde::Serialize;
 use crate::module::server::{ServerManager, IdRes};
 
 
@@ -9,7 +9,7 @@ pub struct FolderModule<'t> {
 }
 
 impl <'t> FolderModule<'t> {
-    pub fn new(server_manager: &'t ServerManager) -> FolderModule {
+    pub fn new(server_manager: &'t ServerManager) -> FolderModule<'t> {
         FolderModule { server_manager }        
     }
     pub async fn create(&mut self, form: &FolderCreateForm) -> Result<IdRes, Box<dyn Error>> {
@@ -26,21 +26,21 @@ impl <'t> FolderModule<'t> {
     }
 }
 
-#[derive(Deserialize)]
-pub struct FolderRes {
-    pub id: i32,
-    pub title: String,
-    #[serde(rename = "type")]
-    pub folder_type: String,
-    #[serde(rename = "imageCount")]
-    pub image_count: Option<i32>,
-    pub pinned: bool,
-    pub children: Option<Vec<FolderRes>>,
-    #[serde(rename = "createTime")]
-    pub create_time: String,
-    #[serde(rename = "updateTime")]
-    pub update_time: String
-}
+// #[derive(Deserialize)]
+// pub struct FolderRes {
+//     pub id: i32,
+//     pub title: String,
+//     #[serde(rename = "type")]
+//     pub folder_type: String,
+//     #[serde(rename = "imageCount")]
+//     pub image_count: Option<i32>,
+//     pub pinned: bool,
+//     pub children: Option<Vec<FolderRes>>,
+//     #[serde(rename = "createTime")]
+//     pub create_time: String,
+//     #[serde(rename = "updateTime")]
+//     pub update_time: String
+// }
 
 
 #[derive(Serialize)]

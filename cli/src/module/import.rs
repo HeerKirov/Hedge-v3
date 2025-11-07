@@ -90,26 +90,26 @@ pub struct SourceDataPath {
     pub source_part_name: Option<String>
 }
 
-#[derive(Deserialize)]
-pub struct NullableFilePath {
-    pub original: String,
-    pub thumbnail: Option<String>,
-    pub sample: Option<String>
-}
+// #[derive(Deserialize)]
+// pub struct NullableFilePath {
+//     pub original: String,
+//     pub thumbnail: Option<String>,
+//     pub sample: Option<String>
+// }
 
 #[derive(Deserialize)]
 pub struct ImportImageRes {
     pub id: i32,
-    #[serde(rename = "filePath")]
-    pub file_path: NullableFilePath,
-    pub source: Option<SourceDataPath>,
-    pub tagme: Vec<String>,
+    // #[serde(rename = "filePath")]
+    // pub file_path: NullableFilePath,
+    // pub source: Option<SourceDataPath>,
+    // pub tagme: Vec<String>,
     #[serde(rename = "originFileName")]
     pub file_name: Option<String>,
     #[serde(rename = "partitionTime")]
     pub partition_time: String,
-    #[serde(rename = "orderTime")]
-    pub order_time: String
+    // #[serde(rename = "orderTime")]
+    // pub order_time: String
 }
 
 #[derive(Deserialize)]
