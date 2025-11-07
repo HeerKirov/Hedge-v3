@@ -28,16 +28,16 @@ impl DownloadModule {
         for ele in &config.download.available_sites {
             available_sites.insert(ele.site.clone(), ele.rule.clone());
         }
-        
+
         DownloadModule { 
             adapter,
             available_sites
         }
     }
-    pub async fn download(&self, site: &str, source_id: i64, _additional_info: Option<&HashMap<String, String>>) -> Result<(DownloadResult, DownloadAttachInfo), Box<dyn Error>> {
+    pub async fn download(&self, site: &str, source_id: &str, _additional_info: Option<&HashMap<String, String>>) -> Result<(DownloadResult, DownloadAttachInfo), Box<dyn Error>> {
         if let Some(rule) = self.available_sites.get(site) {
             if rule == "sankakucomplex" {
-                download_for_sankakucomplex(&self.adapter, source_id).await
+                download_for_sankakucomplex(&self.adapter, source_id.parse().unwrap()).await
             }else{
                 Result::Err(Box::new(ApplicationError::new(&format!("Unsupported rule type {}.", rule))))
             }

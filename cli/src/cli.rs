@@ -59,7 +59,10 @@ pub enum Server {
     #[command(about = "Force kill service")]
     Kill,
     #[command(about = "Print server.log")]
-    Log
+    Log {
+        #[arg(help = "Log file date. Default today")]
+        date: Option<String>
+    }
 }
 
 #[derive(Subcommand)]

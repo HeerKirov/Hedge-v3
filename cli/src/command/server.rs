@@ -1,4 +1,4 @@
-use crate::{module::server::ServerStatusType, utils::error::ApplicationError};
+use crate::{module::{api::log::LogModule, server::ServerStatusType}, utils::error::ApplicationError};
 
 use super::Context;
 
@@ -64,6 +64,21 @@ pub async fn kill(context: &mut Context<'_>) {
     }
 }
 
-pub fn log(context: &Context<'_>) {
-    context.server_manager.log();
+pub async fn log(context: &mut Context<'_>, date: Option<String>) {
+    if let Err(e) = context.server_manager.waiting_for_start().await {
+        eprintln!("Cannot establish connection to server. {}", e);
+        return
+    }
+
+    let mut log_module = LogModule::new(context.server_manager);
+    
+    match log_module.get(date).await {
+        Ok(log) => {
+            println!("{}", log);
+        },
+        Err(e) => {
+            eprintln!("Error occurred when getting log. {}", e);
+            return
+        }
+    }
 }

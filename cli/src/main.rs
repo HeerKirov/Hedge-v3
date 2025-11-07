@@ -35,7 +35,7 @@ async fn main() {
             Server::Start => command::server::start(&mut context).await,
             Server::Stop => command::server::stop(&mut context).await,
             Server::Kill => command::server::kill(&mut context).await,
-            Server::Log => command::server::log(&context)
+            Server::Log{ date } => command::server::log(&mut context, date).await
         }
         Cli::Apply(apply) => {
             let mut input: Vec<ApplyInputType> = Vec::new();

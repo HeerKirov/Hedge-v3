@@ -1,4 +1,4 @@
-use std::{path::PathBuf, fs, fmt, process::{Command, Stdio}, time::Duration, error::Error, sync::Arc, io::{BufReader, prelude::BufRead}};
+use std::{path::PathBuf, fs, fmt, process::{Command, Stdio}, time::Duration, error::Error, sync::Arc};
 use sysinfo::{System, SystemExt, Pid, Signal, ProcessExt};
 use reqwest::{Method, IntoUrl};
 use serde::{Deserialize, Serialize};
@@ -159,22 +159,6 @@ impl ServerManager {
         }
         return Result::Ok(())
     }
-    pub fn log(&self) {
-        let log_path = self.appdata_path.join("channel").join(&self.channel).join("server.log");
-        match fs::File::open(&log_path) {
-            Err(e) => if e.kind() == std::io::ErrorKind::NotFound {
-                return
-            }else{
-                panic!("Read log file {} failed. {}", log_path.to_str().unwrap(), e)
-            },
-            Ok(b) => {
-                let buf = BufReader::new(b);
-                for line in buf.lines() {
-                    println!("{}", line.unwrap());
-                }
-            }
-        }
-    }
     async fn single_signal(&self, interval: i64) -> Result<(), Box<dyn Error>> {
         let body = serde_json::json!({
             "interval": interval,
@@ -314,6 +298,22 @@ impl ServerManager {
         let res = b.send().await?;
         if res.status().is_success() || res.status().is_redirection() {
             Result::Ok(())
+        }else{
+            let text = res.text().await?;
+            let err: ErrorResult = serde_json::from_str(&text)?;
+            Result::Err(Box::new(ApiResultError::new(&err.code, &err.message)))
+        }
+    }
+    pub async fn req_with_plaintext<U>(&self, method: Method, path: U) -> Result<String, Box<dyn std::error::Error>> where U: IntoUrl {
+        let url = self.access.address.as_ref().map(|address| format!("{}{}", address, path.as_str())).unwrap_or_else(|| path.as_str().to_string());
+        let mut b = self.client.request(method, url);
+        if let Some(token) = &self.access.token {
+            b = b.header("Authorization", format!("Bearer {}", token));
+        }
+        let res = b.send().await.unwrap();
+        if res.status().is_success() || res.status().is_redirection() {
+            let text = res.text().await?;
+            Result::Ok(text)
         }else{
             let text = res.text().await?;
             let err: ErrorResult = serde_json::from_str(&text)?;

@@ -69,7 +69,7 @@ pub async fn download(context: &mut Context<'_>) {
     let mut failed = 0;
     for item in &r.result {
         //tips: 暂时没有需要additional info的实现。如果有实现，需要根据config的配置，决定哪些需要附加信息，然后对此site查询详情
-        let dn = download_module.download(&item.site, item.source_id, Option::None).await;
+        let dn = download_module.download(&item.site, &item.source_id, Option::None).await;
 
         let date = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
         print!("{} | {:>rc_len$}/{} \x1b[1;33m| {:16} | {:>12} |\x1b[0m", date, index, result_count, item.site, item.source_id, rc_len = result_count_str_len);
@@ -78,7 +78,7 @@ pub async fn download(context: &mut Context<'_>) {
             Ok((result, info)) => {
                 let form = result.to_update_form();
 
-                match source_data_module.update(&item.site, item.source_id, &form).await {
+                match source_data_module.update(&item.site, &item.source_id, &form).await {
                     Ok(()) => {
                         println!("\x1b[1;32m Success (in {:.2}s, retry {} time(s))\x1b[0m", (info.time_cost as f64) / 1000.0, info.retry_count);
                         success += 1;
@@ -154,7 +154,7 @@ pub async fn connect(context: &mut Context<'_>, split: &Vec<String>, limit: Opti
                 Ok(result) => {
                     let (site, id, _) = &identity.unwrap();
                     let form = result.to_update_form();
-                    match source_data_module.create(site, *id, &form).await {
+                    match source_data_module.create(site, &id, &form).await {
                         Ok(_) => {
                             println!("\x1b[1;32m Created. {}\x1b[0m", result.info());
                             success += 1;
@@ -162,7 +162,7 @@ pub async fn connect(context: &mut Context<'_>, split: &Vec<String>, limit: Opti
                         Err(e) => if let Some(e) = e.downcast_ref::<ApiResultError>() {
                             if e.code == "ALREADY_EXISTS" {
                                 if update {
-                                    match source_data_module.update(site, *id, &form).await {
+                                    match source_data_module.update(site, &id, &form).await {
                                         Ok(_) => {
                                             println!("\x1b[1;32m Updated. {}\x1b[0m", result.info());
                                             success += 1;
@@ -174,10 +174,10 @@ pub async fn connect(context: &mut Context<'_>, split: &Vec<String>, limit: Opti
                                         }
                                     }
                                 }else{
-                                    match source_data_module.get(site, *id).await {
+                                    match source_data_module.get(site, &id).await {
                                         Ok(sd) => {
                                             if sd.status == "NOT_EDITED" {
-                                                match source_data_module.update(site, *id, &form).await {
+                                                match source_data_module.update(site, &id, &form).await {
                                                     Ok(_) => {
                                                         println!("\x1b[1;32m NOT_EDITED exists, Updated. {}\x1b[0m", result.info());
                                                         success += 1;

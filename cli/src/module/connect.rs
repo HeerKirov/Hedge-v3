@@ -76,7 +76,7 @@ impl <'t> Statement <'t> {
     fn new(stat: sqlite::Statement<'t>, config: &'t Connect, site_col_name: String, pid_col_name: String, underscore_translator: HashMap<String, UnderscoreTranslator>) -> Statement<'t> {
         Statement { config, stat, site_col_name, pid_col_name, underscore_translator }
     }
-    pub fn next(&mut self) -> Option<(Option<(String, i64, Option<i32>)>, Result<DownloadResult, Box<dyn Error>>)> {
+    pub fn next(&mut self) -> Option<(Option<(String, String, Option<i32>)>, Result<DownloadResult, Box<dyn Error>>)> {
         if let Ok(sqlite::State::Row) = self.stat.next() {
             let (identity, result) = self.process_row();
             Option::Some((identity, result))
@@ -84,7 +84,7 @@ impl <'t> Statement <'t> {
             Option::None
         }
     }
-    fn process_row(&self) -> (Option<(String, i64, Option<i32>)>, Result<DownloadResult, Box<dyn Error>>) {
+    fn process_row(&self) -> (Option<(String, String, Option<i32>)>, Result<DownloadResult, Box<dyn Error>>) {
         let origin_site: String = match self.stat.read(self.site_col_name.as_str()) {
             Ok(r) => r,
             Err(e) => return (Option::None, Result::Err(Box::new(e)))
@@ -124,13 +124,13 @@ fn generate_download_result(stat: &sqlite::Statement, parser: &ConnectParser, un
     Result::Ok(result)
 }
 
-fn parse_origin_pid(pid: &str) -> Result<(i64, Option<i32>), Box<dyn Error>> {
+fn parse_origin_pid(pid: &str) -> Result<(String, Option<i32>), Box<dyn Error>> {
     if let Some(idx) = pid.find(|c| c == '_') {
-        let id: i64 = pid[..idx].parse()?;
+        let id: String = pid[..idx].to_string();
         let part: i32 = pid[idx + 1..].trim_matches('p').parse()?;
         Result::Ok((id, Option::Some(part)))
     }else{
-        let id: i64 = pid.parse()?;
+        let id: String = pid.to_string();
         Result::Ok((id, Option::None))
     }
 }

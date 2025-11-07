@@ -23,16 +23,16 @@ impl <'t> SourceDataModule<'t> {
         if let Some(offset) = offset { query.push(("offset", offset.to_string())) }
         self.server_manager.req_with_query(Method::GET, "/api/source-data", &query).await
     }
-    pub async fn get(&mut self, source_site: &str, source_id: i64) -> Result<SourceDataDetailRes, Box<dyn Error>> {
+    pub async fn get(&mut self, source_site: &str, source_id: &str) -> Result<SourceDataDetailRes, Box<dyn Error>> {
         self.server_manager.req(Method::GET, format!("/api/source-data/{source_site}/{source_id}")).await
     }
-    pub async fn create(&mut self, source_site: &str, source_id: i64, form: &SourceDataUpdateForm) -> Result<(), Box<dyn Error>> {
+    pub async fn create(&mut self, source_site: &str, source_id: &str, form: &SourceDataUpdateForm) -> Result<(), Box<dyn Error>> {
         let mut body = serde_json::to_value(form)?;
         body["sourceSite"] = json!(source_site);
         body["sourceId"] = json!(source_id);
         self.server_manager.req_without_res(Method::POST, format!("/api/source-data"), body).await
     }
-    pub async fn update(&mut self, source_site: &str, source_id: i64, form: &SourceDataUpdateForm) -> Result<(), Box<dyn Error>> {
+    pub async fn update(&mut self, source_site: &str, source_id: &str, form: &SourceDataUpdateForm) -> Result<(), Box<dyn Error>> {
         let body = serde_json::to_value(form)?;
         self.server_manager.req_without_res(Method::PATCH, format!("/api/source-data/{source_site}/{source_id}"), body).await
     }
@@ -49,7 +49,7 @@ pub struct SourceDataRes {
     #[serde(rename = "sourceSiteName")]
     pub site_name: String,
     #[serde(rename = "sourceId")]
-    pub source_id: i64,
+    pub source_id: String,
     #[serde(rename = "tagCount")]
     pub tag_count: i32,
     #[serde(rename = "bookCount")]
