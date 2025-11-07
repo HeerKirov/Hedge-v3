@@ -6,14 +6,14 @@ import { BrowserTeleport } from "@/components/logical"
 import { DataRouter, AttachFilter, AttachTemplate, SearchBox } from "@/components-business/top-bar"
 import { DetailTopic, Topic } from "@/functions/http-client/api/topic"
 import { TOPIC_TYPE_ICONS, TOPIC_TYPE_NAMES, TOPIC_TYPES_WITHOUT_UNKNOWN } from "@/constants/entity"
+import { QUERY_FILTER_ORDER_NAMES } from "@/constants/translate"
 import { useTopicContext } from "@/services/main/topic"
 import { usePopupMenu } from "@/modules/popup-menu"
 import TopicListItem from "./TopicListItem.vue"
-import { QUERY_FILTER_ORDER_NAMES } from "@/constants/translate";
 
 const {
     listview: { queryFilter, paginationData: { data, state, setState, navigateTo } },
-    operators: { openCreateView, openDetailView, toggleFavorite, deleteItem, createByTemplate, createChildOfTemplate, findSimilarOfTopic, openIllustsOfTopic }
+    operators: { openCreateView, openDetailView, toggleFavorite, deleteItem, createChildOfTemplate, findSimilarOfTopic, openIllustsOfTopic, openBooksOfTopic }
 } = useTopicContext()
 
 const query = computed({
@@ -64,11 +64,12 @@ const attachFilterTemplates: AttachTemplate[] = [
 const popupMenu = usePopupMenu<Topic>([
     {type: "normal", label: "查看详情", click: t => openDetailView(t.id)},
     {type: "separator"},
-    {type: "normal", label: "以此为父主题新建", click: createChildOfTemplate},
-    {type: "normal", label: "以此为模板新建", click: createByTemplate},
+    {type: "normal", label: "在图库搜索", click: openIllustsOfTopic},
+    {type: "normal", label: "在画集搜索", click: openBooksOfTopic},
     {type: "separator"},
-    {type: "normal", label: "在图库查看此主题的所有项目", click: openIllustsOfTopic},
-    {type: "normal", label: "在此主题范围内查找相似项", click: findSimilarOfTopic},
+    {type: "normal", label: "以此为父主题新建", click: createChildOfTemplate},
+    {type: "separator"},
+    {type: "normal", label: "查找此主题的相似项", click: findSimilarOfTopic},
     {type: "separator"},
     {type: "normal", label: "删除此主题", click: deleteItem},
 ])

@@ -57,44 +57,32 @@ const { hover, ...hoverEvents } = useMouseHover()
 </script>
 
 <template>
-    <Block :class="$style.item" v-bind="hoverEvents">
-        <Flex horizontal="stretch" align="center">
-            <FlexItem :width="55">
-                <div @click="$emit('click')">
-                    <Icon :class="{[`has-text-${item.color}`]: !!item.color, 'mr-1': true}" :icon="TOPIC_TYPE_ICONS[item.type]"/>
-                    <span :class="{[`has-text-${item.color}`]: !!item.color}" draggable="true" v-bind="dragEvents">{{item.name}}</span>
-                    <span class="secondary-text ml-1">{{otherNameText}}</span>
-                    <div v-if="item.parentRoot !== null" class="float-right is-font-size-small">
-                        <Icon class="mr-1" :icon="TOPIC_TYPE_ICONS[item.parentRoot.type]"/>
-                        <span>{{item.parentRoot.name}}</span>
-                    </div>
-                </div>
-            </FlexItem>
-            <FlexItem :shrink="0" :grow="0">
-                <div :class="$style.favorite">
-                    <Icon v-if="item.favorite" class="has-text-danger" icon="heart" @click="$emit('update:favorite', false)"/>
-                    <Icon v-else-if="hover" class="has-text-secondary" icon="heart" @click="$emit('update:favorite', true)"/>
-                </div>
-            </FlexItem>
-            <FlexItem :width="45">
-                <div class="flex">
-                    <MetaKeywordDisplay :value="actualKeywords.keywords" color="secondary" :multiline="false"/>
-                    <b v-if="actualKeywords.more" class="ml-1 has-text-secondary">...</b>
-                </div>
-            </FlexItem>
-            <FlexItem :shrink="0" :grow="0">
-                <div :class="$style.score">
-                    <template v-if="item.score !== null">
-                        {{item.score ?? 0}}<Icon class="ml-1" icon="star"/>
-                    </template>
-                </div>
-            </FlexItem>
-            <FlexItem :shrink="0" :grow="0">
-                <div :class="$style.count">
-                    {{item.count ? `${item.count}项` : ''}}
-                </div>
-            </FlexItem>
-        </Flex>
+    <Block :class="[$style.item, 'flex', 'jc-between', 'align-center']" v-bind="hoverEvents">
+        <div class="flex-item w-40 no-shrink" @click="$emit('click')">
+            <Icon :class="{[`has-text-${item.color}`]: !!item.color, 'mr-1': true}" :icon="TOPIC_TYPE_ICONS[item.type]"/>
+            <span :class="{[`has-text-${item.color}`]: !!item.color}" draggable="true" v-bind="dragEvents">{{item.name}}</span>
+            <span class="secondary-text ml-1">{{otherNameText}}</span>
+            <div v-if="item.parentRoot !== null" class="float-right is-font-size-small">
+                <Icon class="mr-1" :icon="TOPIC_TYPE_ICONS[item.parentRoot.type]"/>
+                <span>{{item.parentRoot.name}}</span>
+            </div>
+        </div>
+        <div :class="[$style.favorite, 'flex-item', 'no-grow-shrink']">
+            <Icon v-if="item.favorite" class="has-text-danger" icon="heart" @click="$emit('update:favorite', false)"/>
+            <Icon v-else-if="hover" class="has-text-secondary" icon="heart" @click="$emit('update:favorite', true)"/>
+        </div>
+        <div :class="[$style.score, 'flex-item', 'no-grow-shrink']">
+            <template v-if="item.score !== null">
+                {{item.score ?? 0}}<Icon class="ml-1" icon="star"/>
+            </template>
+        </div>
+        <div :class="[$style.count, 'flex-item', 'no-grow-shrink', 'mr-2']">
+            {{item.count ? `${item.count}项` : ''}}
+        </div>
+        <div class="flex flex-item w-60 no-wrap overflow-ellipsis">
+            <MetaKeywordDisplay :value="actualKeywords.keywords" color="secondary" :multiline="false"/>
+            <b v-if="actualKeywords.more" class="ml-1 has-text-secondary">...</b>
+        </div>
     </Block>
 </template>
 
@@ -106,16 +94,13 @@ const { hover, ...hoverEvents } = useMouseHover()
     padding: 0 size.$spacing-2
     margin-bottom: 4px
 
-    > div
-        height: 100%
-
-        > .favorite
-            width: 48px
-            text-align: center
-        > .score
-            width: 40px
-            text-align: right
-        > .count
-            width: 75px
-            text-align: right
+    > .favorite
+        width: 30px
+        text-align: center
+    > .score
+        width: 40px
+        text-align: right
+    > .count
+        width: 75px
+        text-align: right
 </style>

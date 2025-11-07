@@ -62,15 +62,6 @@ function useOperators(listview: QueryListview<Topic, number>) {
 
     const openDetailView = (topicId: number) => router.routePush({routeName: "TopicDetail", path: topicId})
 
-    const createByTemplate = (topic: Topic) => {
-        listview.proxy.findByKey(topic.id).then(idx => {
-            if(idx != undefined) {
-                const topic = listview.proxy.sync.retrieve(idx)
-                router.routePush({routeName: "TopicCreate", initializer: {createTemplate: topic}})
-            }
-        })
-    }
-
     const createChildOfTemplate = (topic: Topic) => {
         listview.proxy.findByKey(topic.id).then(idx => {
             if(idx != undefined) {
@@ -113,7 +104,11 @@ function useOperators(listview: QueryListview<Topic, number>) {
         router.routePush({routeName: "Illust", initializer: {topicName: topic.name}})
     }
 
-    return {openCreateView, openDetailView, createByTemplate, createChildOfTemplate, deleteItem, toggleFavorite, findSimilarOfTopic, openIllustsOfTopic}
+    const openBooksOfTopic = (topic: Topic) => {
+        router.routePush({routeName: "Book", initializer: {topicName: topic.name}})
+    }
+
+    return {openCreateView, openDetailView, createChildOfTemplate, deleteItem, toggleFavorite, findSimilarOfTopic, openIllustsOfTopic, openBooksOfTopic}
 }
 
 export function useTopicCreatePanel() {
