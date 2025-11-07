@@ -58,7 +58,8 @@ const popupMenu = usePopupMenu<Author>([
 
 const viewRef = ref<ComponentPublicInstance>()
 
-const columnCount = useElementContainerQuery(viewRef, {default: 3, base: 1, 600: 2, 800: 3, 1200: 4, 1800: 5, 2400: 6})
+//超过3的列数有些过于拥挤。此外，当默认值与第一次触发的值不一致时，由于数据加载基于默认值，可能造成计算的state与实际所需不一致，比如列数超过3时首屏数据不全
+const columnCount = useElementContainerQuery(viewRef, {default: 3, base: 1, 600: 2, 1100: 3})
 
 </script>
 
@@ -71,7 +72,7 @@ const columnCount = useElementContainerQuery(viewRef, {default: 3, base: 1, 600:
         <Button class="flex-item no-grow-shrink" icon="plus" square @click="openCreateView"/>
     </BrowserTeleport>
 
-    <VirtualRowView ref="viewRef" :row-height="190" :column-count="columnCount" :padding="6" :metrics="data.metrics" :state="state" @update:state="setState">
+    <VirtualRowView ref="viewRef" :row-height="220" :column-count="columnCount" :padding="6" :metrics="data.metrics" :state="state" @update:state="setState">
         <AuthorListItem v-for="item in data.items" :key="item.id" :item="item"
                         @update:favorite="toggleFavorite(item, $event)"
                         @click="openDetailView(item.id)"

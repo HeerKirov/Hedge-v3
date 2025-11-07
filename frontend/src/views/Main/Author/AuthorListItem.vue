@@ -107,10 +107,10 @@ const { hover, ...hoverEvents } = useMouseHover()
 @use "@/styles/base/color"
 
 $example-count: 5
-$example-size: 60px
+$example-size: 80px
 
 .item
-    $height: 190px
+    $height: 220px
     $padding: size.$spacing-2
     $content-height: $height - $padding * 2 - 1px * 2
     height: $height
