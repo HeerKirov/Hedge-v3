@@ -136,7 +136,7 @@ function registerAppMenu(windowManager: WindowManager, tabControlEvent: SendEmit
 }
 
 function registerDockMenu(windowManager: WindowManager, isDarwin: boolean) {
-    if(isDarwin) {
+    if(isDarwin && app.dock !== undefined) {
         app.dock.setMenu(Menu.buildFromTemplate([
             {label: "新建窗口", click() { windowManager.createWindow() }}
         ]))

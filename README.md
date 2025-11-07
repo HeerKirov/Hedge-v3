@@ -32,6 +32,11 @@ yarn
 > export ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"
 > ```
 
+在安装完成后，需要重建原生模块：
+```
+npx electron-rebuild
+```
+
 客户端使用vite搭建开发环境。复制一份`.env.development`到`.env.development.local`作为开发模式下的连接参数。
 ```sh
 # 在调试模式启动，启用devtool。指定此参数，下列其他参数才有效。
