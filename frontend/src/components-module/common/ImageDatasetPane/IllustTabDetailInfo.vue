@@ -53,7 +53,7 @@ defineExpose({
 <template>
     <template v-if="!!data">
         <div class="my-1 flex jc-between">
-            <IdAndFileNameDisplay :id="data.id" :fileName="data.fileName"/>
+            <IdAndFileNameDisplay :id="data.id" :fileName="data.fileName" :lock-in="scene === 'CollectionDetail' ? 'id' : undefined"/>
             <span v-if="data.type === 'COLLECTION'" class="flex-item no-grow-shrink ml-2"><Icon class="mr-1" icon="images"/>{{ data.childrenCount }}项</span>
         </div>
         <Separator direction="horizontal"/>
