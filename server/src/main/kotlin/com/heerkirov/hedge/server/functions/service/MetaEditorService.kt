@@ -17,7 +17,6 @@ import com.heerkirov.hedge.server.functions.kit.MetaUtilKit
 import com.heerkirov.hedge.server.functions.manager.HistoryRecordManager
 import com.heerkirov.hedge.server.functions.manager.MetaManager
 import com.heerkirov.hedge.server.model.HistoryRecord
-import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
@@ -40,7 +39,6 @@ class MetaEditorService(private val appdata: AppDataManager,
     fun validate(form: MetaUtilValidateForm): MetaUtilValidateRes {
         val notSuitable: List<TagSimpleRes>
         val conflictingMembers: List<ConflictingGroupMembersError.ConflictingMembers>
-        val forceConflictingMembers: List<ConflictingGroupMembersError.ConflictingMembers>
         val exportedTags = if(!form.tags.isNullOrEmpty()) {
             val tags = data.db.sequenceOf(Tags).filter { it.id inList form.tags }.toList()
             if(tags.size < form.tags.size) {
@@ -50,14 +48,11 @@ class MetaEditorService(private val appdata: AppDataManager,
             notSuitable = tags.filter { it.type != TagAddressType.TAG }.map { TagSimpleRes(it.id, it.name, it.color, ExportType.NO) }
             //导出，检查冲突组限制，提出警告和错误
             val (exported, tagExportError) = metaManager.exportTagModel(tags)
-            val (forceConflicting, conflicting) = tagExportError?.info?.filterInto { it.force } ?: (emptyList<ConflictingGroupMembersError.ConflictingMembers>() to emptyList())
-            conflictingMembers = conflicting
-            forceConflictingMembers = forceConflicting
+            conflictingMembers = tagExportError?.info ?: emptyList()
             exported.filter { (t, _) -> t.type == TagAddressType.TAG }
         }else{
             notSuitable = emptyList()
             conflictingMembers = emptyList()
-            forceConflictingMembers = emptyList()
             emptyList()
         }
 
@@ -100,8 +95,7 @@ class MetaEditorService(private val appdata: AppDataManager,
                 .map { (tag, isExported) -> TagSimpleRes(tag.id, tag.name, tag.color, isExported) }
                 .toList(),
             notSuitable,
-            conflictingMembers,
-            forceConflictingMembers)
+            conflictingMembers)
     }
 
     /**

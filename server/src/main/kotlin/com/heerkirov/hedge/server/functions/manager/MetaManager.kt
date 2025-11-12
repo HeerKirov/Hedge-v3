@@ -5,7 +5,6 @@ import com.heerkirov.hedge.server.dao.EntityMetaRelationTable
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.ExportType
 import com.heerkirov.hedge.server.enums.TagAddressType
-import com.heerkirov.hedge.server.enums.TagGroupType
 import com.heerkirov.hedge.server.exceptions.ConflictingGroupMembersError
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.exceptions.ResourceNotSuitable
@@ -44,7 +43,7 @@ class MetaManager(private val data: DataRepository) {
      * @throws ResourceNotSuitable ("tags", number[]) 部分tags资源不适用。地址段不适用于此项。给出不适用的tag id列表
      * @throws ConflictingGroupMembersError 发现标签冲突组。此方法会直接把冲突组问题作为异常抛出，而不是继续在参数里传递
      */
-    fun validateAndExportTagModel(tagIds: List<Int>, ignoreError: Boolean = false): List<Pair<Tag, ExportType>> {
+    private fun validateAndExportTagModel(tagIds: List<Int>, ignoreError: Boolean = false): List<Pair<Tag, ExportType>> {
         val set = tagIds.toSet()
         val tags = data.db.sequenceOf(Tags).filter { it.id inList set }.toList()
         if(!ignoreError && tags.size < set.size) {
@@ -55,14 +54,7 @@ class MetaManager(private val data: DataRepository) {
             if(isNotEmpty()) throw be(ResourceNotSuitable("tags", map { it.id }))
         }
 
-        val (result, e) = exportTagModel(tags)
-        if(!ignoreError && e != null) {
-            //此方法只检出强制冲突组
-            val forceInfo = e.info.filter { it.force }
-            if(forceInfo.isNotEmpty()) {
-                throw be(ConflictingGroupMembersError(forceInfo))
-            }
-        }
+        val (result, _) = exportTagModel(tags)
         return result
     }
 
@@ -108,7 +100,7 @@ class MetaManager(private val data: DataRepository) {
      * @return 一组author。Int表示tag id，Boolean表示此tag是否为导出tag。
      * @throws ResourceNotExist ("authors", number[]) 部分authors资源不存在。给出不存在的author id列表
      */
-    fun validateAndExportAuthorModel(authors: List<Int>, ignoreError: Boolean = false): List<Pair<Author, ExportType>> {
+    private fun validateAndExportAuthorModel(authors: List<Int>, ignoreError: Boolean = false): List<Pair<Author, ExportType>> {
         val set = authors.toSet()
         val result = data.db.from(Authors).select().where { Authors.id inList set }.map { Authors.createEntity(it) }
         if(!ignoreError && result.size < set.size) {
@@ -177,14 +169,13 @@ class MetaManager(private val data: DataRepository) {
 
         //冲突组检查
         val isExportedMap = result.associate { (tag, isExported) -> tag.id to isExported }
-        //筛选出所有的强制冲突组
+        //筛选出所有的冲突组
         val conflictingMembers = childrenMap.asSequence()
-            .filter { (id, members) -> members.size > 1 && been[id]!!.isGroup != TagGroupType.NO }
+            .filter { (id, members) -> members.size > 1 && been[id]!!.isSequenceGroup }
             .map { (groupId, members) ->
                 val groupTag = been[groupId]!!
                 val groupMember = ConflictingGroupMembersError.Member(groupTag.id, groupTag.name, groupTag.color, isExportedMap.getOrDefault(groupId, ExportType.YES))
-                val force = groupTag.isGroup == TagGroupType.FORCE || groupTag.isGroup == TagGroupType.FORCE_AND_SEQUENCE
-                ConflictingGroupMembersError.ConflictingMembers(groupMember, force, members.map { ConflictingGroupMembersError.Member(it, been[it]!!.name, been[it]!!.color, isExportedMap.getOrDefault(it, ExportType.YES)) })
+                ConflictingGroupMembersError.ConflictingMembers(groupMember, members.map { ConflictingGroupMembersError.Member(it, been[it]!!.name, been[it]!!.color, isExportedMap.getOrDefault(it, ExportType.YES)) })
             }
             .toList()
 

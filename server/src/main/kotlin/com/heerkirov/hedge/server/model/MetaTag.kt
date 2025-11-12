@@ -58,10 +58,13 @@ data class Tag(val id: Int,
                 */
                val type: TagAddressType,
                /**
-                * 组功能标记。
-                * 组标记使一个地址段/标签的直接子节点被视作组员，建议只出现最多其一(添加二级子节点会推导出直接子节点，因此同样有效)。
+                * 标记为排序组。
                 */
-               val isGroup: TagGroupType,
+               val isSequenceGroup: Boolean,
+               /**
+                * 标记为覆盖组。
+                */
+               val isOverrideGroup: Boolean,
                /**
                 * 描述。
                 */
@@ -149,6 +152,14 @@ data class Author(val id: Int,
  * 主题标签。
  */
 data class Topic(val id: Int,
+                 /**
+                  * 全局排序下标，由系统维护且无需对外展示，用于保持从标签树取出的部分列表的整体有序。从0开始。
+                  */
+                 val globalOrdinal: Int,
+                 /**
+                  * 排序下标，由系统维护，同一父标签一组从0开始。
+                  */
+                 val ordinal: Int,
                  /**
                   * 标签名。
                   */

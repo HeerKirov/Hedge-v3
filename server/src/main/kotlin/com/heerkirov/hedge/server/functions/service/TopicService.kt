@@ -28,8 +28,7 @@ import com.heerkirov.hedge.server.utils.tuples.Tuple2
 import com.heerkirov.hedge.server.utils.tuples.Tuple3
 import com.heerkirov.hedge.server.utils.types.*
 import org.ktorm.dsl.*
-import org.ktorm.entity.firstOrNull
-import org.ktorm.entity.sequenceOf
+import org.ktorm.entity.*
 import java.time.Instant
 
 class TopicService(private val appdata: AppDataManager,
@@ -44,6 +43,7 @@ class TopicService(private val appdata: AppDataManager,
         "name" to Topics.name
         "score" to Topics.score nulls last
         "count" to Topics.cachedCount nulls last
+        "ordinal" to Topics.ordinal
         "createTime" to Topics.createTime
         "updateTime" to Topics.updateTime
     }
@@ -91,9 +91,36 @@ class TopicService(private val appdata: AppDataManager,
             val implicitNames = kit.generateImplicitNames(name, otherNames)
             val keywords = kit.validateKeywords(form.keywords)
 
+            val topicCountInParent by lazy {
+                data.db.sequenceOf(Topics)
+                    .filter { if(form.parentId != null) { Topics.parentId eq form.parentId }else{ Topics.parentId.isNull() } }
+                    .count()
+            }
+
+            //未指定ordinal时，将其排在序列的末尾，相当于当前的序列长度
+            //已指定ordinal时，按照指定的ordinal排序，并且不能超出[0, count]的范围
+            //自己作为根标签时，不需要调整ordinal，直接设定为0
+            val ordinal = if(parentRootId == null) {
+                0
+            }else if(form.ordinal == null) {
+                topicCountInParent
+            }else when {
+                form.ordinal <= 0 -> 0
+                form.ordinal >= topicCountInParent -> topicCountInParent
+                else -> form.ordinal
+            }.also { ordinal ->
+                data.db.update(Topics) {
+                    //同parent下，ordinal>=newOrdinal的那些topic，向后顺延一位
+                    where { if(form.parentId != null) { Topics.parentId eq form.parentId }else{ Topics.parentId.isNull() } and (it.ordinal greaterEq ordinal)  }
+                    set(it.ordinal, it.ordinal + 1)
+                }
+            }
+
             val createTime = Instant.now()
 
             val id = data.db.insertAndGenerateKey(Topics) {
+                set(it.globalOrdinal, ordinal)
+                set(it.ordinal, ordinal)
                 set(it.name, name)
                 set(it.otherNames, otherNames)
                 set(it.implicitNames, implicitNames)
@@ -150,16 +177,76 @@ class TopicService(private val appdata: AppDataManager,
 
             val newType = form.type.isPresentThen { it != record.type }.alsoOpt { type -> kit.checkChildrenType(id, type) }
 
-            val newParentId = if(form.parentId.isPresentAnd { it != record.parentId } || newType.isPresent) {
+            val newParentTuple = if(form.parentId.isPresentAnd { it != record.parentId } || newType.isPresent) {
+                //parent的值发生了变化，或者其类型发生了改变
                 val parentId = form.parentId.unwrapOr { record.parentId }
+                //在这种情况下，重新校验生成parentId
                 if(parentId != null) optOf(kit.validateParent(parentId, newType.unwrapOr { record.type }, id))
                 else optOf(Tuple2(null, null))
             }else undefined()
 
-            val newName = if(form.name.isPresentAnd { it != record.name } || newParentId.isPresent || newType.isPresent) {
+            val newOrdinal = if(newParentTuple.isPresentAnd { (parentId, _) -> parentId != record.parentId }) {
+                //parentId发生了变化
+                val (newParentId, newParentRootId) = newParentTuple.value
+                //如果旧的parent存在且parentRoot存在，则调整旧的parent下的元素顺序。parentRoot如果不存在，表示当前节点不在树下，因此不应该调整
+                if(record.parentId != null && record.parentRootId != null) {
+                    data.db.update(Topics) {
+                        where { Topics.parentId eq record.parentId and (it.ordinal greater record.ordinal) }
+                        set(it.ordinal, it.ordinal - 1)
+                    }
+                }
+                //如果新的parent存在且parentRoot存在，则计算新的ordinal。parentRoot如果不存在，表示当前节点不在树下，因此不需要计算
+                if(newParentId != null && newParentRootId != null) {
+                    val topicCountInNewParent = data.db.sequenceOf(Topics)
+                        .filter { Topics.parentId eq newParentId }
+                        .count()
+                    form.ordinal.letOpt { ordinal ->
+                        //指定了新的ordinal
+                        val newOrdinal = if(ordinal > topicCountInNewParent) topicCountInNewParent else ordinal
+                        //调整新的parent下的元素顺序
+                        data.db.update(Topics) {
+                            where { Topics.parentId eq newParentId and (it.ordinal greaterEq newOrdinal) }
+                            set(it.ordinal, it.ordinal + 1)
+                        }
+                        newOrdinal
+                    }.elseOr {
+                        topicCountInNewParent
+                    }
+                }else if(record.ordinal != 0) {
+                    //如果不在树下，则将顺序调整至0
+                    optOf(0)
+                }else{
+                    undefined()
+                }
+            }else if(form.ordinal.isPresentAnd { it != record.ordinal && record.parentRootId != null && record.parentId != null }) {
+                //parent没有变化，且ordinal变化，则只在当前范围内变动。前提是parentRoot存在，如果不存在则和上述一样，ordinal没有意义
+                val topicCountInParent = data.db.sequenceOf(Topics)
+                    .filter { Topics.parentId eq record.parentId!! }
+                    .count()
+                val newOrdinal = if(form.ordinal.value > topicCountInParent) topicCountInParent else form.ordinal.value
+                if(newOrdinal > record.ordinal) {
+                    //插入位置在原位置之后时，实际上会使夹在中间的项前移，为了保证插入顺位与想要的顺位保持不变，因此final ordinal位置是要-1的。
+                    data.db.update(Topics) {
+                        where { Topics.parentId eq record.parentId!! and (it.ordinal greater record.ordinal) and (it.ordinal lessEq (newOrdinal - 1)) }
+                        set(it.ordinal, it.ordinal - 1)
+                    }
+                    optOf(newOrdinal - 1)
+                }else{
+                    //插入位置在原位置之前，则不需要final ordinal变更
+                    data.db.update(Topics) {
+                        where { Topics.parentId eq record.parentId!! and (it.ordinal greaterEq newOrdinal) and (it.ordinal less record.ordinal) }
+                        set(it.ordinal, it.ordinal + 1)
+                    }
+                    optOf(newOrdinal)
+                }
+            }else{
+                undefined()
+            }
+
+            val newName = if(form.name.isPresentAnd { it != record.name } || newParentTuple.isPresent || newType.isPresent) {
                 //name/parentId/type变化时，需要重新校验名称重复
                 val name = form.name.unwrapOr { record.name }
-                val parentRootId = if(newParentId.isPresent) newParentId.unwrap { f2 } else record.parentRootId
+                val parentRootId = if(newParentTuple.isPresent) newParentTuple.unwrap { f2 } else record.parentRootId
                 val type = form.type.unwrapOr { record.type }
                 val validatedName = kit.validateName(name, type, parentRootId, id)
                 //校验通过。只有在name确实变化时，才提交一个opt以更改值
@@ -177,13 +264,14 @@ class TopicService(private val appdata: AppDataManager,
 
             if(newKeywords.isPresent) keywordManager.updateByKeywords(MetaType.TOPIC, newKeywords.value, record.keywords)
 
-            if(anyOpt(newName, newOtherNames, newKeywords, newParentId, newType, newDescription, newFavorite, newScore)) {
+            if(anyOpt(newOrdinal, newName, newOtherNames, newKeywords, newParentTuple, newType, newDescription, newFavorite, newScore)) {
                 data.db.update(Topics) {
                     where { it.id eq id }
+                    newOrdinal.applyOpt { set(it.ordinal, this) }
                     newName.applyOpt { set(it.name, this) }
                     newOtherNames.applyOpt { set(it.otherNames, this) }
                     newImplicitName.applyOpt { set(it.implicitNames, this) }
-                    newParentId.applyOpt {
+                    newParentTuple.applyOpt {
                         set(it.parentId, this.f1)
                         set(it.parentRootId, this.f2)
                     }
@@ -195,12 +283,12 @@ class TopicService(private val appdata: AppDataManager,
                 }
             }
 
-            if(newParentId.isPresent || newType.isPresent) {
+            if(newParentTuple.isPresent || newType.isPresent) {
                 //当parent/type变化时，需要重新导出所有children的parentRootId
-                kit.exportChildren(id, newType.unwrapOr { record.type }, newParentId.map { it.f1 }.unwrapOr { record.parentId })
+                kit.exportChildren(id, newType.unwrapOr { record.type }, newParentTuple.map { it.f1 }.unwrapOr { record.parentId })
             }
 
-            val parentSot = newParentId.isPresent && newParentId.value.f1 != record.parentId
+            val parentSot = newParentTuple.isPresentAnd { (p, _) -> p != record.parentId } || newOrdinal.isPresentAnd { o -> o != record.ordinal }
             val listUpdated = anyOpt(newName, newOtherNames, newKeywords, newType, newFavorite, newScore)
             val detailUpdated = listUpdated || parentSot || sourceTagMappingSot || newDescription.isPresent
             if(listUpdated || detailUpdated) {
@@ -227,6 +315,14 @@ class TopicService(private val appdata: AppDataManager,
                 set(it.parentId, null)
             }
 
+            //处理后面邻近记录ordinal
+            if(record.parentId != null && record.parentRootId != null) {
+                data.db.update(Topics) {
+                    where { it.parentId eq record.parentId and (it.ordinal greater record.ordinal) }
+                    set(it.ordinal, it.ordinal - 1)
+                }
+            }
+
             bus.emit(MetaTagDeleted(id, MetaType.TOPIC))
         }
     }
@@ -236,30 +332,50 @@ class TopicService(private val appdata: AppDataManager,
      */
     fun bulk(bulks: List<TopicBulkForm>): BulkResult<String> {
         return collectBulkResult({ it.name }) {
-            fun recursive(bulks: List<TopicBulkForm>, parentId: Int?) {
-                for (form in bulks) {
-                    val id = item(form) {
-                        //在定位目标时，采取的方案是唯一地址定位，即只有name逐级符合的项会被确认为目标项，其他重名或任何因素都不予理睬
-                        val record = data.db.sequenceOf(Topics).firstOrNull { (it.name eq form.name) and if(parentId != null) it.parentId eq parentId else it.parentId.isNull() }
+            fun recursive(bulks: List<TopicBulkForm>, parentId: Int?, parentRoot: Pair<Int, TagTopicType>?) {
+                bulks.forEachIndexed { index, form ->
+                    val res = item(form) {
+                        //在定位目标时，采取的方案是符合topic的根节点定位，即name符合、根标签相同的项会被确认为目标项
+                        val record = data.db.sequenceOf(Topics).firstOrNull { (it.name eq form.name) and if(parentRoot != null) (it.parentRootId eq parentRoot.first) else (it.parentRootId.isNull()) }
+
                         if(record == null) {
                             //当给出rename字段时，此操作被强制为更新操作，因此当走到这里时要报NotFound
-                            if(form.rename.isPresent) throw be(NotFound()) else create(TopicCreateForm(
-                                form.name, form.otherNames.unwrapOrNull(), parentId, form.type.unwrapOr { TagTopicType.UNKNOWN },
+                            val id = if(form.rename.isPresent) throw be(NotFound()) else create(TopicCreateForm(
+                                form.name, form.otherNames.unwrapOrNull(), index, parentId, form.type.unwrapOr { TagTopicType.UNKNOWN },
                                 form.keywords.unwrapOrNull(), form.description.unwrapOr { "" },
                                 form.favorite.unwrapOr { false }, form.score.unwrapOrNull(), form.mappingSourceTags.unwrapOrNull()
                             ))
+                            Pair(id, form.type.unwrapOr { TagTopicType.UNKNOWN })
                         }else{
-                            update(record.id, TopicUpdateForm(form.rename, form.otherNames, undefined(), form.type, form.keywords, form.description, form.favorite, form.score, form.mappingSourceTags))
-                            record.id
+                            val formOrdinal = if(parentId != null && record.ordinal != index) optOf(index) else undefined()
+                            update(record.id, TopicUpdateForm(
+                                form.rename, form.otherNames, formOrdinal, optOf(parentId), form.type,
+                                form.keywords, form.description,
+                                form.favorite, form.score, form.mappingSourceTags
+                            ))
+                            Pair(record.id, form.type.unwrapOr { record.type })
                         }
                     }
-                    if(id != null && !form.children.isNullOrEmpty()) {
-                        recursive(form.children, id)
+                    if(res != null && !form.children.isNullOrEmpty()) {
+                        //检查是否要为下一级更替parentRoot。
+                        //如果当前已存在IP类型的root，则不会进行任何更替；
+                        //如果当前已存在COPYRIGHT类型的root，且当前节点为IP类型，则更替为当前节点；
+                        //如果当前不存在root，且当前节点为IP/COPYRIGHT类型，则更替为当前节点。
+                        //否则不进行更替。
+                        recursive(form.children, res.first, if(parentRoot?.second == TagTopicType.IP) {
+                            parentRoot
+                        }else if(parentRoot?.second == TagTopicType.COPYRIGHT && res.second == TagTopicType.IP) {
+                            res
+                        }else if(parentRoot == null && (res.second == TagTopicType.IP || res.second == TagTopicType.COPYRIGHT)) {
+                            res
+                        }else{
+                            parentRoot
+                        })
                     }
                 }
             }
 
-            recursive(bulks, null)
+            recursive(bulks, null, null)
         }
     }
 }

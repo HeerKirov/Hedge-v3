@@ -4,7 +4,6 @@ import com.heerkirov.hedge.server.components.appdata.AppDataManager
 import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.TagAddressType
-import com.heerkirov.hedge.server.enums.TagGroupType
 import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.*
 import com.heerkirov.hedge.server.library.compiler.translator.*
@@ -35,11 +34,11 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
                 tagId == null -> false
                 else -> {
                     val tag = tagItemsPool.computeIfAbsent(tagId) {
-                        data.db.from(Tags).select(Tags.id, Tags.name, Tags.otherNames, Tags.parentId, Tags.type, Tags.isGroup, Tags.color)
+                        data.db.from(Tags).select(Tags.id, Tags.name, Tags.otherNames, Tags.parentId, Tags.type, Tags.isSequenceGroup, Tags.color)
                             .where { Tags.id eq tagId }
                             .limit(0, 1)
                             .first()
-                            .let { TagItem(it[Tags.id]!!, it[Tags.name]!!, it[Tags.otherNames]!!, it[Tags.parentId], it[Tags.type]!!, it[Tags.isGroup]!!, it[Tags.color]) }
+                            .let { TagItem(it[Tags.id]!!, it[Tags.name]!!, it[Tags.otherNames]!!, it[Tags.parentId], it[Tags.type]!!, it[Tags.isSequenceGroup]!!, it[Tags.color]) }
                     }
                     isAddressMatches(tag.parentId, address, if(parser.isNameEqualOrMatch(address[nextAddr], tag)) { nextAddr - 1 }else{ nextAddr })
                 }
@@ -52,10 +51,10 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
         fun findTagsByMetaString(metaString: MetaString): List<TagItem> {
             return tagByStringPool.computeIfAbsent(metaString) {
                 data.db.from(Tags)
-                    .select(Tags.id, Tags.name, Tags.otherNames, Tags.parentId, Tags.type, Tags.isGroup, Tags.color)
+                    .select(Tags.id, Tags.name, Tags.otherNames, Tags.parentId, Tags.type, Tags.isSequenceGroup, Tags.color)
                     .where { parser.compileNameString(metaString, Tags) }
                     .limit(0, queryLimit)
-                    .map { TagItem(it[Tags.id]!!, it[Tags.name]!!, it[Tags.otherNames]!!, it[Tags.parentId], it[Tags.type]!!, it[Tags.isGroup]!!, it[Tags.color]) }
+                    .map { TagItem(it[Tags.id]!!, it[Tags.name]!!, it[Tags.otherNames]!!, it[Tags.parentId], it[Tags.type]!!, it[Tags.isSequenceGroup]!!, it[Tags.color]) }
                     .onEach { tagItemsPool[it.id] = it }
             }
         }
@@ -66,11 +65,11 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
         fun findTagById(tagId: Int): TagItem {
             return tagItemsPool.computeIfAbsent(tagId) {
                 data.db.from(Tags)
-                    .select(Tags.id, Tags.name, Tags.otherNames, Tags.parentId, Tags.type, Tags.isGroup, Tags.color)
+                    .select(Tags.id, Tags.name, Tags.otherNames, Tags.parentId, Tags.type, Tags.isSequenceGroup, Tags.color)
                     .where { Tags.id eq it }
                     .limit(0, 1)
                     .first()
-                    .let { TagItem(it[Tags.id]!!, it[Tags.name]!!, it[Tags.otherNames]!!, it[Tags.parentId], it[Tags.type]!!, it[Tags.isGroup]!!, it[Tags.color]) }
+                    .let { TagItem(it[Tags.id]!!, it[Tags.name]!!, it[Tags.otherNames]!!, it[Tags.parentId], it[Tags.type]!!, it[Tags.isSequenceGroup]!!, it[Tags.color]) }
             }
         }
 
@@ -80,10 +79,10 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
         fun findChildrenTags(parentId: Int): List<TagItem> {
             return tagChildrenPool.computeIfAbsent(parentId) {
                 data.db.from(Tags)
-                    .select(Tags.id, Tags.name, Tags.otherNames, Tags.parentId, Tags.type, Tags.isGroup, Tags.color)
+                    .select(Tags.id, Tags.name, Tags.otherNames, Tags.parentId, Tags.type, Tags.isSequenceGroup, Tags.color)
                     .where { Tags.parentId eq parentId }
                     .orderBy(Tags.ordinal.asc())
-                    .map { TagItem(it[Tags.id]!!, it[Tags.name]!!, it[Tags.otherNames]!!, it[Tags.parentId], it[Tags.type]!!, it[Tags.isGroup]!!, it[Tags.color]) }
+                    .map { TagItem(it[Tags.id]!!, it[Tags.name]!!, it[Tags.otherNames]!!, it[Tags.parentId], it[Tags.type]!!, it[Tags.isSequenceGroup]!!, it[Tags.color]) }
                     .onEach { tagItemsPool[it.id] = it }
             }
         }
@@ -106,22 +105,17 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
         }
 
         /**
-         * 从序列中过滤出类型是group的tag，并且只取第一项返回。如果存在结果但没有group，那么发出警告。
-         * @param sequence 要求是sequence group。
+         * 从序列中过滤出类型是sequence group的tag，并且只取第一项返回。如果存在结果但没有group，那么发出警告。
          */
-        fun Sequence<TagItem>.filterGroupAndWarn(metaAddress: MetaAddress, sequence: Boolean = false): Sequence<TagItem> {
-            val (yes, no) = if(sequence) {
-                partition { it.isGroup == TagGroupType.SEQUENCE || it.isGroup == TagGroupType.FORCE_AND_SEQUENCE }
-            }else{
-                partition { it.isGroup != TagGroupType.NO }
-            }
+        fun Sequence<TagItem>.filterGroupAndWarn(metaAddress: MetaAddress): Sequence<TagItem> {
+            val (yes, no) = partition { it.isSequenceGroup }
             return if(yes.isNotEmpty()) {
                 sequenceOf(yes.first())
             }else{
                 if(no.isNotEmpty()) {
                     collector.warning(ElementMatchedButNotGroup(
                         metaAddress.joinToString(".") { it.revertToQueryString() },
-                        if (sequence) ElementMatchedButNotGroup.MatchGoal.SEQUENCE_GROUP else ElementMatchedButNotGroup.MatchGoal.GROUP
+                        ElementMatchedButNotGroup.MatchGoal.GROUP
                     ))
                 }
                 emptySequence()
@@ -132,7 +126,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
          * 从序列中过滤出其parent是sequence group的tag，并只取第一项返回。如果存在结果但没有group member，那么发出警告。
          */
         fun Sequence<TagItem>.filterGroupMemberAndWarn(metaAddress: MetaAddress): Sequence<TagItem> {
-            val (yes, no) = partition { it.parentId != null && findTagById(it.parentId).run { isGroup == TagGroupType.SEQUENCE || isGroup == TagGroupType.FORCE_AND_SEQUENCE } }
+            val (yes, no) = partition { it.parentId != null && findTagById(it.parentId).run { isSequenceGroup } }
 
             return if(yes.isNotEmpty()) {
                 sequenceOf(yes.first())
@@ -140,7 +134,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
                 if(no.isNotEmpty()) {
                     collector.warning(ElementMatchedButNotGroup(
                         metaAddress.joinToString(".") { it.revertToQueryString() },
-                        ElementMatchedButNotGroup.MatchGoal.SEQUENCE_GROUP_MEMBER
+                        ElementMatchedButNotGroup.MatchGoal.MEMBER
                     ))
                 }
                 emptySequence()
@@ -175,7 +169,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
                 findTagsByMetaString(metaValue.tag.last()) //查找与最后一节对应的tag
                     .asSequence()
                     .filter { isAddressMatches(it.parentId, metaValue.tag, metaValue.tag.size - 2) } //过滤匹配address
-                    .filterGroupAndWarn(metaValue.tag, sequence = false) //过滤group
+                    .filterGroupAndWarn(metaValue.tag) //过滤sequence group
                     .flatMap { parentTag -> findChildrenTags(parentTag.id) } //将group转为children group，并直接展平
                     .filter { childrenValues.any { metaString -> parser.isNameEqualOrMatch(metaString, it) } } //children按照values做任一匹配
             }
@@ -194,7 +188,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
                 findTagsByMetaString(metaValue.tag.last()) //查找与最后一节对应的tag
                     .asSequence()
                     .filter { isAddressMatches(it.parentId, metaValue.tag, metaValue.tag.size - 2) } //过滤匹配address
-                    .filterGroupAndWarn(metaValue.tag, sequence = true) //过滤sequence group
+                    .filterGroupAndWarn(metaValue.tag) //过滤sequence group
                     .map { parentTag -> findChildrenTags(parentTag.id) } //将group转为children group
                     .flatMap { childrenGroup -> //children group找出begin end然后取中间
                         val beginOrdinal = (if(metaValue.begin == null || metaValue.begin.value.isBlank()) null else childrenGroup.indexOfFirst { parser.isNameEqualOrMatch(metaValue.begin, it) }.let {
@@ -369,11 +363,12 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
                 tagId == null -> false
                 else -> {
                     val tag = tagItemsPool.computeIfAbsent(tagId) {
-                        data.db.from(Tags).select(Tags.id, Tags.name, Tags.otherNames, Tags.parentId, Tags.type, Tags.isGroup, Tags.color)
+                        data.db.from(Tags)
+                            .select(Tags.id, Tags.name, Tags.otherNames, Tags.parentId, Tags.type, Tags.isSequenceGroup, Tags.color)
                             .where { Tags.id eq tagId }
                             .limit(0, 1)
                             .first()
-                            .let { TagItem(it[Tags.id]!!, it[Tags.name]!!, it[Tags.otherNames]!!, it[Tags.parentId], it[Tags.type]!!, it[Tags.isGroup]!!, it[Tags.color]) }
+                            .let { TagItem(it[Tags.id]!!, it[Tags.name]!!, it[Tags.otherNames]!!, it[Tags.parentId], it[Tags.type]!!, it[Tags.isSequenceGroup]!!, it[Tags.color]) }
                     }
                     isAddressMatches(tag.parentId, address, if(parser.isNameEqualOrMatch(address[nextAddr], tag)) { nextAddr - 1 }else{ nextAddr })
                 }
@@ -381,10 +376,10 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
         }
 
         return data.db.from(Tags)
-            .select(Tags.id, Tags.name, Tags.otherNames, Tags.parentId, Tags.type, Tags.isGroup, Tags.color)
+            .select(Tags.id, Tags.name, Tags.otherNames, Tags.parentId, Tags.type, Tags.isSequenceGroup, Tags.color)
             .where { parser.forecastNameString(metaAddress.last(), Tags) }
             .limit(0, queryLimit)
-            .map { TagItem(it[Tags.id]!!, it[Tags.name]!!, it[Tags.otherNames]!!, it[Tags.parentId], it[Tags.type]!!, it[Tags.isGroup]!!, it[Tags.color]) }
+            .map { TagItem(it[Tags.id]!!, it[Tags.name]!!, it[Tags.otherNames]!!, it[Tags.parentId], it[Tags.type]!!, it[Tags.isSequenceGroup]!!, it[Tags.color]) }
             .asSequence()
             .filter { isAddressMatches(it.parentId, metaAddress, metaAddress.size - 2) }
             .map { ElementTag(it.id, it.name, it.otherNames, it.type, it.color,  null) }
@@ -549,5 +544,5 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
 
     private data class TopicItem(override val id: Int, override val name: String, override val otherNames: List<String>, override val parentId: Int?, val parentRootId: Int?, val type: TagTopicType) : ItemInterfaceWithParent
 
-    private data class TagItem(override val id: Int, override val name: String, override val otherNames: List<String>, override val parentId: Int?, val type: TagAddressType, val isGroup: TagGroupType, val color: String?) : ItemInterfaceWithParent
+    private data class TagItem(override val id: Int, override val name: String, override val otherNames: List<String>, override val parentId: Int?, val type: TagAddressType, val isSequenceGroup: Boolean, val color: String?) : ItemInterfaceWithParent
 }

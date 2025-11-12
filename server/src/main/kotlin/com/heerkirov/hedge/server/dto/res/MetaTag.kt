@@ -9,27 +9,26 @@ import java.time.Instant
 
 data class TagRes(val id: Int, val ordinal: Int, val parentId: Int?,
                   val name: String, val otherNames: List<String>,
-                  val type: TagAddressType, val group: TagGroupType, val color: String?)
+                  val type: TagAddressType, val isSequenceGroup: Boolean, val isOverrideGroup: Boolean, val color: String?)
 
 data class TagSimpleRes(val id: Int, val name: String, val color: String?, val isExported: ExportType)
 
 data class TagTreeNode(val id: Int, val name: String, val otherNames: List<String>, val implicitNames: List<String>,
-                       val type: TagAddressType, val group: TagGroupType, val color: String?,
+                       val type: TagAddressType, val isSequenceGroup: Boolean, val isOverrideGroup: Boolean, val color: String?,
                        val children: List<TagTreeNode>?)
 
 data class TagDetailRes(val id: Int, val ordinal: Int, val parentId: Int?, val parents: List<Parent>,
                         val name: String, val otherNames: List<String>,
-                        val type: TagAddressType, val group: TagGroupType, val links: List<Link>,
+                        val type: TagAddressType, val isSequenceGroup: Boolean, val isOverrideGroup: Boolean, val links: List<Link>,
                         val description: String, val color: String?,
                         val examples: List<IllustSimpleRes>,
                         val score: Int?, val count: Int,
                         val mappingSourceTags: List<MappingSourceTagDto>) {
 
-    data class Link(val id: Int, val name: String, val type: TagAddressType, val group: TagGroupType, val color: String?)
+    data class Link(val id: Int, val name: String, val type: TagAddressType, val isSequenceGroup: Boolean, val isOverrideGroup: Boolean, val color: String?)
 
-    data class Parent(val id: Int, val name: String, val type: TagAddressType, val group: TagGroupType)
+    data class Parent(val id: Int, val name: String, val type: TagAddressType, val isSequenceGroup: Boolean, val isOverrideGroup: Boolean)
 }
-
 
 data class TopicRes(val id: Int, val name: String, val parentRoot: TopicParent?, val parentId: Int?,
                     val otherNames: List<String>, val keywords: List<String>,
@@ -61,16 +60,16 @@ data class AuthorDetailRes(val id: Int, val name: String, val otherNames: List<S
 
 data class KeywordInfo(val tagType: MetaType, val keyword: String, val count: Int, val lastUsedTime: Instant)
 
-fun newTagRes(tag: Tag) = TagRes(tag.id, tag.ordinal, tag.parentId, tag.name, tag.otherNames, tag.type, tag.isGroup, tag.color)
+fun newTagRes(tag: Tag) = TagRes(tag.id, tag.ordinal, tag.parentId, tag.name, tag.otherNames, tag.type, tag.isSequenceGroup, tag.isOverrideGroup, tag.color)
 
-fun newTagTreeNode(tag: Tag, children: List<TagTreeNode>?) = TagTreeNode(tag.id, tag.name, tag.otherNames, tag.implicitNames, tag.type, tag.isGroup, tag.color, children)
+fun newTagTreeNode(tag: Tag, children: List<TagTreeNode>?) = TagTreeNode(tag.id, tag.name, tag.otherNames, tag.implicitNames, tag.type, tag.isSequenceGroup, tag.isOverrideGroup, tag.color, children)
 
 fun newTagDetailRes(tag: Tag, parents: List<TagDetailRes.Parent>,
                     links: List<TagDetailRes.Link>,
                     examples: List<IllustSimpleRes>,
                     mappingSourceTags: List<MappingSourceTagDto>) = TagDetailRes(
     tag.id, tag.ordinal, tag.parentId, parents,
-    tag.name, tag.otherNames, tag.type, tag.isGroup,
+    tag.name, tag.otherNames, tag.type, tag.isSequenceGroup, tag.isOverrideGroup,
     links, tag.description, tag.color,
     examples, tag.exportedScore, tag.cachedCount, mappingSourceTags)
 

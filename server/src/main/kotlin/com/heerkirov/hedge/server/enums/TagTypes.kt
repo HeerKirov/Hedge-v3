@@ -19,32 +19,6 @@ enum class TagAddressType {
 }
 
 /**
- * Tag.isGroup: 标记tag的组属性类型。
- */
-enum class TagGroupType {
-    /**
-     * 默认不开启。
-     */
-    NO,
-    /**
-     * 开启组标记。
-     */
-    YES,
-    /**
-     * 强制组：使建议升级为强制。但对推导无效。
-     */
-    FORCE,
-    /**
-     * 序列化组：使组员的ordinal排序具有实际意义，可以使用比较查询来查询组员。
-     */
-    SEQUENCE,
-    /**
-     * 强制+序列化组。
-     */
-    FORCE_AND_SEQUENCE
-}
-
-/**
  * Author.type: author的类型。
  */
 enum class TagAuthorType {

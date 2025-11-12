@@ -24,11 +24,11 @@ class WholeElementMatchesNone(items: List<String>) : TranslatorError<List<String
 class RangeElementNotFound(item: String) : TranslatorError<String>(4004, "Range element '$item' cannot match any item.", info = item)
 
 /**
- * (warning)此项的目标是匹配一个组/序列化组/序列化组成员，但查询得到的结果标签却并不是期望中的类型。这样的话此项会被忽略。
+ * (warning)此项的目标是匹配一个排序组/排序组成员，但查询得到的结果标签却并不是期望中的类型。这样的话此项会被忽略。
  */
 class ElementMatchedButNotGroup(item: String, goal: MatchGoal) : TranslatorError<ElementMatchedButNotGroup.Info>(4005, "Element '$item' matched, but result is not a $goal.", info = Info(item, goal)) {
     data class Info(val item: String, val goal: MatchGoal)
-    enum class MatchGoal { GROUP, SEQUENCE_GROUP, SEQUENCE_GROUP_MEMBER }
+    enum class MatchGoal { GROUP, MEMBER }
 }
 
 /**

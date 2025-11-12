@@ -68,6 +68,10 @@ class TopicKit(private val data: DataRepository) {
 
     /**
      * 给出parentId时，对其进行校验，并获取根标签。报告parentId不存在的错误，报告当前type和此parent不兼容的错误。
+     * 根标签: 在标签树中，IP、CHARACTER、GROUP会寻找最顶层的那一个IP，或者CHARACTER会在不存在父IP时寻找最近的一个COPYRIGHT，作为根标签。
+     *        根标签作为一个根节点，使其下属的标签树构成一个有序树，在内部执行排序。
+     *        同时，同一个根节点下的名称不能重复。
+     * 当parentId不为NULL时，parentRootId仍然可能为NULL，也就是说，根标签自己是IP时，可能存在父标签COPYRIGHT，但此时不会参与任何排序。
      * @throws RecursiveParentError parentId出现闭环
      * @throws ResourceNotExist ("parentId", number) 给出的parent不存在。给出parentId
      * @throws IllegalConstraintError ("type", "parent", TopicType[]) 当前的type与parent的type不兼容。给出parent的type
@@ -78,7 +82,7 @@ class TopicKit(private val data: DataRepository) {
         if(!isLegalTypeConstraint(parent.type, type)) throw be(IllegalConstraintError("type", "parent", listOf(parent.type)))
 
         //闭环校验以及推定parent root id
-        var rootItem: Tuple2<Int, TagTopicType>? = null
+        var rootItem: Int? = null
         tailrec fun recursiveCheckParent(id: Int) {
             //在过去经历过的parent中发现了重复的id，判定存在闭环
             if(id == thisId) throw be(RecursiveParentError())
@@ -86,26 +90,25 @@ class TopicKit(private val data: DataRepository) {
             val (pid, tp) = data.db.from(Topics).select(Topics.parentId, Topics.type)
                 .where { Topics.id eq id }
                 .limit(1)
-                .map { Tuple2(it[Topics.parentId], it[Topics.type]!!) }
+                .map { Pair(it[Topics.parentId], it[Topics.type]!!) }
                 .firstOrNull()
                 ?: throw be(ResourceNotExist("parentId", id))
 
-            if(type == TagTopicType.CHARACTER) {
-                //仅对character类型，追溯其parent root
-                if(tp == TagTopicType.IP) {
-                    //ip类型的parent可以放心覆盖任何rootItem的历史记录，这样rootItem总是最上层的那个ip
-                    rootItem = Tuple2(id, tp)
-                }else if(tp == TagTopicType.COPYRIGHT) {
-                    //只有之前不存在任何rootItem时，才能取copyright，因为默认copyright是不能覆盖work的，只有没有ip时采用copyright
-                    if(rootItem == null) rootItem = Tuple2(id, tp)
-                }
+            //追溯parent root。虽然可以取最临近parent的parentRoot，不过闭环检查会走完整个parent链，也就没必要这么优化了
+            if(tp == TagTopicType.IP) {
+                //ip类型的parent可以放心覆盖任何rootItem的历史记录，这样rootItem总是最上层的那个ip
+                rootItem = id
+            }else if(tp == TagTopicType.COPYRIGHT && type == TagTopicType.CHARACTER) {
+                //只有之前不存在任何rootItem时，才能取copyright，因为默认copyright是不能覆盖work的，只有没有ip时采用copyright
+                //并且，只有CHARACTER能获取copyright作为根，IP不可以
+                if(rootItem == null) rootItem = id
             }
 
             if(pid != null) recursiveCheckParent(pid)
         }
         recursiveCheckParent(parentId)
 
-        return Tuple2(parentId, rootItem?.f1)
+        return Tuple2(parentId, rootItem)
     }
 
     /**
@@ -131,7 +134,7 @@ class TopicKit(private val data: DataRepository) {
         fun generateNodeList(parentId: Int): List<TopicChildrenNode>? {
             return data.db.from(Topics).select(Topics.id, Topics.name, Topics.type)
                 .where { Topics.parentId eq parentId }
-                .orderBy(Topics.type.asc(), Topics.createTime.asc())
+                .orderBy(Topics.globalOrdinal.asc(), Topics.type.asc(), Topics.createTime.asc())
                 .map { Tuple3(it[Topics.id]!!, it[Topics.name]!!, it[Topics.type]!!) }
                 .map { (id, name, type) -> TopicChildrenNode(id, name, type, topicColors[type], generateNodeList(id)) }
                 .ifEmpty { null }
@@ -156,9 +159,9 @@ class TopicKit(private val data: DataRepository) {
      */
     fun exportChildren(thisId: Int, type: TagTopicType, parentId: Int?) {
         //首先从自己出发推断下属应有的parent root id
-        var rootItem: Tuple2<Int, TagTopicType>? = null
+        var rootItem: Int? = null
         //如果自己是work或character，那么自己也是其中一环
-        if(type == TagTopicType.COPYRIGHT || type == TagTopicType.IP) rootItem = Tuple2(thisId, type)
+        if(type == TagTopicType.COPYRIGHT || type == TagTopicType.IP) rootItem = thisId
 
         if(parentId != null) {
             tailrec fun recursiveCheckParent(id: Int) {
@@ -171,10 +174,10 @@ class TopicKit(private val data: DataRepository) {
 
                 if(tp == TagTopicType.IP) {
                     //ip类型的parent可以放心覆盖任何rootItem的历史记录，这样rootItem总是最上层的那个work
-                    rootItem = Tuple2(id, tp)
+                    rootItem = id
                 }else if(tp == TagTopicType.COPYRIGHT) {
                     //只有之前不存在任何rootItem时，才能取copyright，因为默认copyright是不能覆盖work的，只有没有work时采用copyright
-                    if(rootItem == null) rootItem = Tuple2(id, tp)
+                    if(rootItem == null) rootItem = id
                 }
 
                 if(pid != null) recursiveCheckParent(pid)
@@ -182,7 +185,7 @@ class TopicKit(private val data: DataRepository) {
             recursiveCheckParent(parentId)
         }
 
-        val parentRootId = rootItem?.f1
+        val parentRootId = rootItem
 
         //然后遍历所有子标签，修改它们的属性
         fun recursionUpdateProps(parentId: Int) {
@@ -190,7 +193,7 @@ class TopicKit(private val data: DataRepository) {
                 where { (it.parentId eq parentId) and (it.type eq TagTopicType.CHARACTER) }
                 set(it.parentRootId, parentRootId)
             }
-            data.db.from(Topics).select(Topics.id).where { Topics.parentId eq parentId }.map { it[Topics.id]!! }.forEach(::recursionUpdateProps)
+            data.db.from(Topics).select(Topics.id).where { Topics.parentId eq parentId }.map { it[Topics.id]!! }.forEach { recursionUpdateProps(it) }
         }
 
         recursionUpdateProps(thisId)

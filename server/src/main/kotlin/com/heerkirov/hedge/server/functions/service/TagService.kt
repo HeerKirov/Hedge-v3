@@ -14,7 +14,6 @@ import com.heerkirov.hedge.server.dto.form.*
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAddressType
-import com.heerkirov.hedge.server.enums.TagGroupType
 import com.heerkirov.hedge.server.events.MetaTagCreated
 import com.heerkirov.hedge.server.events.MetaTagDeleted
 import com.heerkirov.hedge.server.events.MetaTagUpdated
@@ -47,7 +46,7 @@ class TagService(private val data: DataRepository,
             .whereWithConditions {
                 if(filter.parent != null) { it += Tags.parentId eq filter.parent }
                 if(filter.type != null) { it += Tags.type eq filter.type }
-                if(filter.group != null) { it += if(filter.group) Tags.isGroup notEq TagGroupType.NO else Tags.isGroup eq TagGroupType.NO }
+                if(filter.group != null) { it += if(filter.group) Tags.isSequenceGroup else Tags.isSequenceGroup.not() }
                 if(filter.search != null) { it += (Tags.name like "%${filter.search}%") or (Tags.otherNames like "%${filter.search}%") or (Tags.implicitNames like "%${filter.search}%") }
             }
             .orderBy(orderTranslator, filter.order, default = ascendingOrderItem("ordinal"))
@@ -142,7 +141,8 @@ class TagService(private val data: DataRepository,
                 set(it.ordinal, ordinal)
                 set(it.parentId, form.parentId)
                 set(it.type, form.type)
-                set(it.isGroup, form.group)
+                set(it.isSequenceGroup, form.isSequenceGroup)
+                set(it.isOverrideGroup, form.isOverrideGroup)
                 set(it.description, form.description)
                 set(it.color, parent?.color ?: form.color)
                 set(it.links, links)
@@ -178,9 +178,9 @@ class TagService(private val data: DataRepository,
             .where { Illusts.id inList tag.examples }
             .map { IllustSimpleRes(it[Illusts.id]!!, filePathFrom(it)) }
 
-        val links = if(tag.links.isNullOrEmpty()) emptyList() else data.db.sequenceOf(Tags).filter { it.id inList tag.links }.map { TagDetailRes.Link(it.id, it.name, it.type, it.isGroup, it.color) }
+        val links = if(tag.links.isNullOrEmpty()) emptyList() else data.db.sequenceOf(Tags).filter { it.id inList tag.links }.map { TagDetailRes.Link(it.id, it.name, it.type, it.isSequenceGroup, it.isOverrideGroup, it.color) }
 
-        val parents = kit.getAllParents(tag).map { TagDetailRes.Parent(it.id, it.name, it.type, it.isGroup) }
+        val parents = kit.getAllParents(tag).map { TagDetailRes.Parent(it.id, it.name, it.type, it.isSequenceGroup, it.isOverrideGroup) }
 
         val mappingSourceTags = sourceMappingManager.query(MetaType.TAG, id)
 
@@ -210,11 +210,12 @@ class TagService(private val data: DataRepository,
             val newExamples = form.examples.isPresentThen { it?.ifEmpty { null } != record.examples?.ifEmpty { null } }.runOpt { kit.validateExamples(this) }
             val newDescription = form.description.isPresentThen { it != record.description }
             val newType = form.type.isPresentThen { it != record.type }
-            val newGroup = form.group.isPresentThen { it != record.isGroup }
+            val newSequenceGroup = form.isSequenceGroup.isPresentThen { it != record.isSequenceGroup }
+            val newOverrideGroup = form.isOverrideGroup.isPresentThen { it != record.isOverrideGroup }
 
             val newImplicitName = if(newName.isPresent || newOtherNames.isPresent) { optOf(kit.generateImplicitNames(newName.unwrapOr { record.name }, newOtherNames.unwrapOr { record.otherNames })) }else{ undefined() }
 
-            val (newParentId, newOrdinal) = if(form.parentId.isPresent && form.parentId.value != record.parentId) {
+            val (newParentId, newOrdinal) = if(form.parentId.isPresentAnd { it != record.parentId }) {
                 //parentId发生了变化
                 val newParentId = form.parentId.value
 
@@ -339,7 +340,7 @@ class TagService(private val data: DataRepository,
                 recursionUpdateColor(id)
             }
 
-            if(anyOpt(newName, newOtherNames, newDescription, newType, newGroup, newLinks, newExamples, newParentId, newOrdinal, newColor)) {
+            if(anyOpt(newName, newOtherNames, newDescription, newType, newSequenceGroup, newOverrideGroup, newLinks, newExamples, newParentId, newOrdinal, newColor)) {
                 data.db.update(Tags) {
                     where { it.id eq id }
 
@@ -348,7 +349,8 @@ class TagService(private val data: DataRepository,
                     newImplicitName.applyOpt { set(it.implicitNames, this) }
                     newType.applyOpt { set(it.type, this) }
                     newDescription.applyOpt { set(it.description, this) }
-                    newGroup.applyOpt { set(it.isGroup, this) }
+                    newSequenceGroup.applyOpt { set(it.isSequenceGroup, this) }
+                    newOverrideGroup.applyOpt { set(it.isOverrideGroup, this) }
                     newLinks.applyOpt { set(it.links, this) }
                     newExamples.applyOpt { set(it.examples, this) }
                     newParentId.applyOpt { set(it.parentId, this) }
@@ -358,7 +360,7 @@ class TagService(private val data: DataRepository,
             }
 
             val parentSot = anyOpt(newParentId, newOrdinal)
-            val listUpdated = anyOpt(newName, newColor, newType, newGroup)
+            val listUpdated = anyOpt(newName, newColor, newType, newSequenceGroup, newOverrideGroup)
             val detailUpdated = listUpdated || parentSot || sourceTagMappingSot || anyOpt(newOtherNames, newDescription, newLinks, newExamples)
             if(listUpdated || detailUpdated) {
                 bus.emit(MetaTagUpdated(id, MetaType.TAG, listUpdated = listUpdated, detailUpdated = true, parentSot = parentSot, sourceTagMappingSot = sourceTagMappingSot))
@@ -410,7 +412,8 @@ class TagService(private val data: DataRepository,
                             if(form.rename.isPresent) throw be(NotFound()) else create(TagCreateForm(
                                 form.name, form.otherNames.unwrapOrNull(), index, parentId,
                                 form.type.unwrapOr { TagAddressType.VIRTUAL_ADDR },
-                                form.group.unwrapOr { TagGroupType.NO },
+                                form.isSequenceGroup.unwrapOr { false },
+                                form.isOverrideGroup.unwrapOr { false },
                                 null,
                                 form.description.unwrapOr { "" },
                                 form.color.unwrapOrNull(), null,
@@ -418,7 +421,7 @@ class TagService(private val data: DataRepository,
                             ))
                         }else{
                             val formOrdinal = if(parentId != null && record.ordinal != index) optOf(index) else undefined()
-                            update(record.id, TagUpdateForm(form.rename, form.otherNames, formOrdinal, undefined(), form.type, form.group, undefined(), form.description, form.color, undefined(), form.mappingSourceTags))
+                            update(record.id, TagUpdateForm(form.rename, form.otherNames, formOrdinal, undefined(), form.type, form.isSequenceGroup, form.isOverrideGroup, undefined(), form.description, form.color, undefined(), form.mappingSourceTags))
                             record.id
                         }
                     }
@@ -487,7 +490,7 @@ class TagService(private val data: DataRepository,
             for ((id, form) in linkRecords) {
                 item(form, calc = false) {
                     val links = form.links.value!!.map { addressRecords.computeIfAbsent(it, ::getIdByAddress) }
-                    update(id, TagUpdateForm(undefined(), undefined(), undefined(), undefined(), undefined(), undefined(), optOf(links), undefined(), undefined(), undefined(), undefined()))
+                    update(id, TagUpdateForm(undefined(), undefined(), undefined(), undefined(), undefined(), undefined(), undefined(), optOf(links), undefined(), undefined(), undefined(), undefined()))
                 }
             }
         }

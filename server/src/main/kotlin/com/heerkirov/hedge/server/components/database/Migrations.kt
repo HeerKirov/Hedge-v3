@@ -3,13 +3,16 @@ package com.heerkirov.hedge.server.components.database
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.MetaType
+import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import com.heerkirov.hedge.server.utils.Resources
 import com.heerkirov.hedge.server.utils.StrTemplate
 import com.heerkirov.hedge.server.utils.Texture
 import com.heerkirov.hedge.server.utils.duplicateCount
+import com.heerkirov.hedge.server.utils.ktorm.asSequence
 import com.heerkirov.hedge.server.utils.ktorm.type.StringUnionListType
 import com.heerkirov.hedge.server.utils.migrations.*
+import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import org.ktorm.database.Database
 import org.ktorm.database.Transaction
 import org.ktorm.dsl.*
@@ -41,6 +44,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         register.useFunc("0.13.0", ::processCollectionTagme)
         register.useSQL("0.13.0.1", ::generateImplicitNames)
         register.useSQL("0.13.0.2")
+        register.useSQL("0.16.0", ::generateTopicTreeStruct)
     }
 
     /**
@@ -346,5 +350,49 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         process(Tags)
         process(Topics)
         process(Authors)
+    }
+
+    /**
+     * 由于进行了Topic结构调整，需要为其重新计算parentRoot，以及从头开始计算ordinal、globalOrdinal。
+     */
+    private fun generateTopicTreeStruct(db: Database, t: Transaction) {
+        val records = db.from(Topics).select(Topics.id, Topics.type, Topics.parentId).orderBy(Topics.createTime.asc()).asSequence().groupBy({ it[Topics.parentId] }) { Pair(it[Topics.id]!!, it[Topics.type]!!) }
+        val globalOrdinals = mutableMapOf<Int, Int>()
+
+        suspend fun SequenceScope<Tuple4<Int, Int, Int, Int>>.traverse(parentId: Int? = null, parentRoot: Pair<Int, TagTopicType>? = null) {
+            val topics = records[parentId]
+            if(!topics.isNullOrEmpty()) {
+                topics.forEachIndexed { index, res ->
+                    if(parentRoot != null) {
+                        val globalOrdinal = globalOrdinals.compute(parentRoot.first) { _, v -> (v ?: -1) + 1 }!!
+                        yield(Tuple4(res.first, parentRoot.first, index, globalOrdinal))
+                    }
+
+                    //迭代下一层。此处parentRoot的计算逻辑与bulk topic中的一致
+                    this.traverse(res.first, if(parentRoot?.second == TagTopicType.IP) {
+                        parentRoot
+                    }else if(parentRoot?.second == TagTopicType.COPYRIGHT && res.second == TagTopicType.IP) {
+                        res
+                    }else if(parentRoot == null && (res.second == TagTopicType.IP || res.second == TagTopicType.COPYRIGHT)) {
+                        res
+                    }else{
+                        parentRoot
+                    })
+                }
+            }
+        }
+        val items = sequence(SequenceScope<Tuple4<Int, Int, Int, Int>>::traverse).toList()
+        if(items.isNotEmpty()) {
+            db.batchUpdate(Topics) {
+                for ((id, pr, ord, glob) in items) {
+                    item {
+                        where { it.id eq id }
+                        set(it.parentRootId, pr)
+                        set(it.ordinal, ord)
+                        set(it.globalOrdinal, glob)
+                    }
+                }
+            }
+        }
     }
 }

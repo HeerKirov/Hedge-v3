@@ -64,13 +64,19 @@ class EventCompositorImpl(private val data: DataRepository,
             each<MetaTagUpdated> { e ->
                 if(e.metaType == MetaType.TAG && e.parentSot) {
                     //tag的parent发生变化时，重新导出global tag ordinal
-                    exportTagGlobal()
+                    exportTagGlobal(MetaType.TAG)
+                }else if(e.metaType == MetaType.TOPIC && e.parentSot) {
+                    //topic的parent发生变化时，重新导出topic ordinal
+                    exportTagGlobal(MetaType.TOPIC, e.metaId)
                 }
             }
             each<MetaTagCreated> { e ->
                 if(e.metaType == MetaType.TAG) {
                     //tag新建时，重新导出global tag ordinal
-                    exportTagGlobal()
+                    exportTagGlobal(MetaType.TAG)
+                }else if(e.metaType == MetaType.TOPIC) {
+                    //topic新建时，重新导出topic ordinal
+                    exportTagGlobal(MetaType.TOPIC, e.metaId)
                 }
             }
             each<IllustRelatedItemsUpdated>({ e -> e.illustType == IllustType.IMAGE }) { e ->
@@ -136,8 +142,8 @@ class EventCompositorImpl(private val data: DataRepository,
         bus.emit(HomepageStateChanged)
     }
 
-    private fun exportTagGlobal() {
-        backendExporter.add(TagGlobalSortExporterTask)
+    private fun exportTagGlobal(metaType: MetaType, metaId: Int? = null) {
+        backendExporter.add(TagGlobalSortExporterTask(metaType, if(metaId != null) listOf(metaId) else emptyList()))
     }
 
     private fun exportImageBookRelation(imageId: Int) {

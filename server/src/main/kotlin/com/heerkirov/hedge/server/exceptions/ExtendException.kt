@@ -85,10 +85,10 @@ class IllegalConstraintError<V>(paramName: String, relation: String, relationVal
  */
 class ConflictingGroupMembersError(conflictingMembers: List<ConflictingMembers>) : BadRequestException<List<ConflictingGroupMembersError.ConflictingMembers>>(
     "CONFLICTING_GROUP_MEMBERS",
-    "Tags ${conflictingMembers.joinToString { (groupId, _, members) -> "$groupId: [${members.joinToString { "${it.name}(${it.id})" }}]" }} are in same conflicting group.",
+    "Tags ${conflictingMembers.joinToString { (groupId, members) -> "$groupId: [${members.joinToString { "${it.name}(${it.id})" }}]" }} are in same conflicting group.",
     conflictingMembers) {
 
-    data class ConflictingMembers(val group: Member, val force: Boolean, val members: List<Member>)
+    data class ConflictingMembers(val group: Member, val members: List<Member>)
     data class Member(val id: Int, val name: String, val color: String?, val isExported: ExportType)
 }
 
