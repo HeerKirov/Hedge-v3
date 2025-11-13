@@ -58,20 +58,20 @@ export function determiningFilename(downloadItem: chrome.downloads.DownloadItem,
                 }
             }
             if(setting.toolkit.determiningFilename.enabledAttachment && EXTENDED_EXTENSIONS.includes(extension)) {
-                if(filenameWithoutExt.match(/\[\S+_\S+(_\d+)?(_\S+)?].*/)) {
-                    console.log(`[determiningFilename] This file already has a prefix, skipped.`)
-                }else{
-                    const result = matchAttachmentRulesAndArgs(downloadItem.referrer, url, filenameWithoutExt)
-                    if(result !== null) {
-                        console.log(`[determiningFilename] matched prefix ${result.prefix}`)
+                const result = matchAttachmentRulesAndArgs(downloadItem.referrer, url, filenameWithoutExt)
+                if(result !== null) {
+                    console.log(`[determiningFilename] matched prefix ${result.prefix}`)
+                    if(filenameWithoutExt.match(/\[\S+_\S+(_\d+)?(_\S+)?].*/)) {
+                        console.log(`[determiningFilename] This file already has a prefix, skipped.`)
+                        suggest()
+                    }else{
                         suggest({filename: result.prefix + filenameWithoutExt + (extension ? "." + extension : "")})
-                        if(result.sourcePath !== null && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
-                            await sourceDataManager.collect({...result.sourcePath, type: "auto"})
-                        }
-                        return
                     }
+                    if(result.sourcePath !== null && setting.toolkit.downloadToolbar.autoCollectSourceData && !await sessions.cache.closeAutoCollect()) {
+                        await sourceDataManager.collect({...result.sourcePath, type: "auto"})
+                    }
+                    return
                 }
-
             }
             suggest()
         }
