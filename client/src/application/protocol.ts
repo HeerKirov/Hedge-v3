@@ -1,4 +1,4 @@
-import { app, protocol } from "electron"
+import { app, net, protocol } from "electron"
 import { WindowManager } from "@/application/window"
 import { StateManager, AppState } from "@/components/state"
 import { LocalManager } from "@/components/local"
@@ -44,7 +44,7 @@ export function registerProtocol(stateManager: StateManager, windowManager: Wind
     }
 
     protocol.registerSchemesAsPrivileged([
-        { scheme: 'archive', privileges: { stream: true } }
+        { scheme: 'archive', privileges: { stream: true, supportFetchAPI: true, standard: true } }
     ])
 }
 
@@ -70,44 +70,19 @@ export function registerRendererProtocol(local: LocalManager) {
     const prefix = 'archive://'
     protocol.handle('archive', async req => {
         const url = req.url.substring(prefix.length)
-        const rangeText = req.headers.get("range")
-        const range = rangeText ? parseRangeRequests(rangeText) : null
-        const r = await local.file.loadStream(url, range ?? undefined)
-        if(r.ok) {
-            //ISSUE: https://github.com/electron/electron/issues/38749
-            //Electron的handle API存在bug，无法正确对视频进行seek，因此进行手动处理
-            return r.data
-        }else if(r.code === "FILE_NOT_FOUND") {
+        const res = await local.file.loadFile(url)
+        if(res.ok) {
+            return net.fetch(`file://${res.data}`, req)
+        }else if(res.code === "FILE_NOT_FOUND") {
             return new Response("File not found.", {
                 status: 404,
                 headers: { 'content-type': 'text/plain' }
             })
         }else{
-            return new Response(r.message, {
+            return new Response(res.message, {
                 status: 500,
                 headers: { 'content-type': 'text/plain' }
             })
         }
     })
-}
-
-function parseRangeRequests(text: string): {start: number, end: number} | null {
-    const token = text.split("=")
-    if (token.length !== 2 || token[0] !== "bytes") return null
-
-    function parseRange(text: string) {
-        const token = text.split("-")
-        if (token.length !== 2) return [NaN, NaN]
-
-        const startText = token[0].trim()
-        const endText = token[1].trim()
-
-        return [startText === "" ? NaN : Number(startText), endText === "" ? NaN : Number(endText)]
-    }
-
-    //此处只取了ranges中的首段
-    const first = token[1].split(",")[0]
-    const [start, end] = parseRange(first)
-
-    return (isNaN(start) && isNaN(end)) ? null : {start, end}
 }

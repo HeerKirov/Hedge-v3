@@ -1,7 +1,6 @@
 import path from "path"
 import fs from "fs"
 import FormData from "form-data"
-import { net } from "electron"
 import { AxiosRequestConfig } from "axios"
 import { AppDataDriver, AppDataStatus } from "@/components/appdata"
 import { ServerManager } from "@/components/server"
@@ -29,14 +28,6 @@ export interface FileManager {
      * @return 此文件的本地路径
      */
     loadFile(filepath: string): Promise<IResponse<string, "FILE_NOT_FOUND">>
-    /**
-     * 通过客户端的缓存机制访问一项来自server的文件资源。该访问首先将文件资源下载到本地缓存目录，随后提供此文件的流。
-     * 该方法相比loadFile存在range机制。
-     * @param filepath 文件资源地址，以type开头
-     * @param range 选取范围
-     * @return 此文件的流
-     */
-    loadStream(filepath: string, range?: {start: number, end: number}): Promise<IResponse<Promise<Response>, "FILE_NOT_FOUND">>
     /**
      * 预检一个文件是否已在本地存在缓存。如果该文件不存在，返回false，并立刻load此文件(不等待文件load完成)。
      * 此方法的用途是video组件在播放之前预检测src是否已在本地，如果不在本地则需要先使用网络流，并后台预载文件。
@@ -174,15 +165,6 @@ export function createFileManager(appdata: AppDataDriver, state: StateManager, l
         }
     }
 
-    const loadStream: FileManager["loadStream"] = async (filepath, range) => {
-        const r = await loadFile(filepath)
-        if(r.ok) {
-            return await localFileToStream(r.data, range)
-        }else{
-            return r
-        }
-    }
-
     const checkAndLoadFile: FileManager["checkAndLoadFile"] = async (filepath) => {
         if(downloading.has(filepath)) {
             //如果此文件正在下载池中，那么必然是没有准备完毕的，返回false
@@ -233,7 +215,6 @@ export function createFileManager(appdata: AppDataDriver, state: StateManager, l
         cleanAllCacheFiles,
         importFile: (f) => module.importFile(f),
         loadFile,
-        loadStream,
         checkAndLoadFile,
         downloadExportFile: f => module.downloadExportFile(f)
     }
@@ -372,42 +353,3 @@ function createLocalMode(server: ServerManager) {
 
     return {importFile, loadFile, downloadExportFile}
 }
-
-async function localFileToStream(localCachePath: string, range: {start: number, end: number} | undefined, stat: fs.Stats | null = null): Promise<IResponse<Promise<Response>, "FILE_NOT_FOUND">> {
-    const extname = path.extname(localCachePath).substring(1).toLowerCase()
-    if(range && VIDEO_EXTENSIONS.includes(extname)) {
-        if(stat === null) stat = await statOrNull(localCachePath)
-        const size = stat!.size
-        const { start, end } = validateRange(range, size)
-        const stream = fs.createReadStream(localCachePath, {start, end})
-        const headers = new Headers()
-        headers.set("Accept-Ranges", "bytes")
-        headers.set("Content-Type", `video/${extname}`)
-        headers.set("Content-Length", `${end - start + 1}`)
-        headers.set("Content-Range", `bytes ${start}-${end}/${size}`)
-        return {ok: true, data: new Promise(resolve => resolve(new Response(stream as any, {headers, status: 206})))}
-    }else{
-        return {ok: true, data: net.fetch(`file://${localCachePath}`)}
-    }
-}
-
-function validateRange(range: {start: number, end: number}, size: number): {start: number, end: number} {
-    if(isNaN(range.start)) {
-        if(isNaN(range.end)) {
-            return {start: NaN, end: NaN}
-        }else{
-            const start = size - range.end
-            return {start: start < 0 ? 0 : start, end: size - 1}
-        }
-    }else{
-        if(isNaN(range.end)) {
-            // const end = range.start + DEFAULT_CHUNK_SIZE
-            // return {start: range.start, end: end >= size ? size - 1 : end}
-            return {start: range.start, end: size - 1}
-        }else{
-            return {start: range.start, end: range.end >= size ? size - 1 : range.end}
-        }
-    }
-}
-
-const VIDEO_EXTENSIONS = ["mp4", "webm", "ogv"]
