@@ -1,7 +1,7 @@
 import { computed, watch } from "vue"
 import { useCreatingHelper, useFetchEndpoint, useFetchHelper, useFetchReactive, useRetrieveHelper } from "@/functions/fetch"
 import { DetailViewState, useRouteStorageViewState } from "@/services/base/detail-view-state"
-import { TagAddressType, TagCreateForm, TagGroupType, TagLink } from "@/functions/http-client/api/tag"
+import { TagAddressType, TagCreateForm, TagLink } from "@/functions/http-client/api/tag"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { SimpleIllust } from "@/functions/http-client/api/illust"
 import { useLocalStorage } from "@/functions/app"
@@ -160,8 +160,8 @@ export function useTagCreatePane() {
             const parent = await fetch(form.value.parentId)
             if(parent !== undefined) {
                 const address = parent.parents.map(t => t.name).concat(parent.name).join(".")
-                const member = parent.group !== "NO"
-                const memberIndex = parent.group === "SEQUENCE" ? (form.value.ordinal ?? 0) + 1 : null
+                const member = parent.isSequenceGroup || parent.isOverrideGroup
+                const memberIndex = parent.isSequenceGroup ? (form.value.ordinal ?? 0) + 1 : null
                 return {address, member, memberIndex}
             }
         }
@@ -200,8 +200,8 @@ export function useTagDetailPane() {
         if(data.value !== null && data.value.parents.length) {
             const address = data.value.parents.map(i => i.name).join(".")
             const parent = data.value.parents[data.value.parents.length - 1]
-            const member = parent.group !== "NO"
-            const memberIndex = parent.group === "SEQUENCE" || parent.group === "FORCE_AND_SEQUENCE" ? data.value.ordinal + 1 : undefined
+            const member = parent.isSequenceGroup || parent.isOverrideGroup
+            const memberIndex = parent.isSequenceGroup ? data.value.ordinal + 1 : undefined
 
             return {address, member, memberIndex}
         }else{
@@ -248,8 +248,8 @@ export function useTagDetailPane() {
         return type === data.value?.type || await setData({ type })
     }
 
-    const setGroup = async (group: TagGroupType) => {
-        return group === data.value?.group || await setData({ group })
+    const setGroup = async ([sequenceGroup, overrideGroup]: [boolean, boolean]) => {
+        return objects.deepEquals([sequenceGroup, overrideGroup], [data.value?.isSequenceGroup, data.value?.isOverrideGroup]) || await setData({ isSequenceGroup: sequenceGroup, isOverrideGroup: overrideGroup })
     }
 
     const setLinks = async (links: TagLink[]) => {
@@ -323,7 +323,8 @@ interface TagCreateFormData {
     otherNames: string[],
     color: UsefulColors | null,
     type: TagAddressType
-    group: TagGroupType,
+    isSequenceGroup: boolean,
+    isOverrideGroup: boolean,
     description: string,
     links: TagLink[],
     mappingSourceTags: MappingSourceTag[],
@@ -337,7 +338,8 @@ function mapTemplateToCreateForm(template: TagCreateTemplate | null, defaultAddr
         ordinal: template?.ordinal ?? null,
         type: defaultAddressType,
         otherNames: [],
-        group: "NO",
+        isSequenceGroup: false,
+        isOverrideGroup: false,
         links: [],
         description: "",
         color: null,
@@ -353,7 +355,8 @@ function mapCreateFormToHelper(form: TagCreateFormData): TagCreateForm {
         ordinal: form.ordinal,
         type: form.type,
         otherNames: form.otherNames,
-        group: form.group,
+        isSequenceGroup: form.isSequenceGroup,
+        isOverrideGroup: form.isOverrideGroup,
         links: form.links.map(i => i.id),
         description: form.description,
         color: form.color,

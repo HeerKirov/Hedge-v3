@@ -31,7 +31,7 @@ const otherNameText = computed(() => data.value !== null && data.value.otherName
         </p>
         <Flex class="mb-2" :spacing="1">
             <TagAddressTypeDisplay :value="data.type"/>
-            <TagGroupTypeDisplay :value="data.group" :member="addressInfo.member" :member-index="addressInfo.memberIndex"/>
+            <TagGroupTypeDisplay :is-sequence-group="data.isSequenceGroup" :is-override-group="data.isOverrideGroup" :member="addressInfo.member" :member-index="addressInfo.memberIndex"/>
         </Flex>
         <div class="mb-2"/>
         <p v-if="data.description">

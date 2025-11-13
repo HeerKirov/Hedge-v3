@@ -73,7 +73,7 @@ const contextmenu = () => {
     > .expanded-button
         position: absolute
         left: 0
-        transform: translateX(-100%)
+        transform: translate(-100%, 4px)
 
 .jump-target
     border-radius: size.$radius-size-std

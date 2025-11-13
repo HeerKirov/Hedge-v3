@@ -372,7 +372,7 @@ type RangeElementNotFound = CompileErrorTemplate<4004, string>
  * (warning)此项的目标是匹配一个组/序列化组/序列化组成员，但查询得到的结果标签却并不是期望中的类型。这样的话此项会被忽略。
  * info: item: 项内容; goal: 期望匹配到的类型
  */
-type ElementMatchedButNotGroup = CompileErrorTemplate<4005, {item: string, goal: "GROUP" | "SEQUENCE_GROUP" | "SEQUENCE_GROUP_MEMBER"}>
+type ElementMatchedButNotGroup = CompileErrorTemplate<4005, {item: string, goal: "GROUP" | "MEMBER"}>
 
 /**
  * (warning)元素类的meta tag查询所对应的项的数量达到了警告阈值。这意味着一个连接查询中的or项目可能过多，拖慢查询速度。

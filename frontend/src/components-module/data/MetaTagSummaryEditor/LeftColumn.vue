@@ -91,19 +91,11 @@ const click = (e: MouseEvent, type: MetaTagTypes, value: MetaTagValues) => {
                     <Tag :color="item.color">{{item.name}}</Tag>
                     不能被用作关联对象，它的类型是地址段。
                 </div>
-                <div v-for="item in validationResults.forceConflictingMembers" class="mb-1">
-                    <Icon icon="exclamation-triangle" class="has-text-danger"/>
-                    标签
-                    <Tag v-for="member in item.members" :color="member.color" class="mr-half">{{member.name}}</Tag>
-                    不能被同时应用于一个项目，它们隶属同一个强制冲突组
-                    <Tag :color="item.group.color">{{item.group.name}}</Tag>
-                    。
-                </div>
                 <div v-for="item in validationResults.conflictingMembers" class="mb-1">
                     <Icon icon="exclamation-triangle" class="has-text-warning"/>
                     标签
                     <Tag v-for="member in item.members" :color="member.color" class="mr-half">{{member.name}}</Tag>
-                    不建议同时应用于一个项目，它们隶属同一个冲突组
+                    不建议同时应用于一个项目，它们属于同一个组
                     <Tag :color="item.group.color">{{item.group.name}}</Tag>
                     。
                 </div>

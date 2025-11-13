@@ -41,16 +41,7 @@ export interface IndexedTag {
      * tag在其父标签下的顺位，从0开始。
      */
     ordinal: number
-    /**
-     * tag是否是group的成员。
-     */
-    isGroupMember: IsGroupMember
 }
-
-/**
- * 在indexedInfo中，有关group成员的类型。在此处并不关心它是否是force的，因此只有另外几种类型。
- */
-type IsGroupMember = "YES" | "SEQUENCE" | "NO"
 
 export const [installTagTreeContext, useTagTreeContext] = installation(function (options: TagTreeContextOptions) {
     const { emit, editable, droppable, draggable, createPosition } = options
@@ -90,19 +81,15 @@ function useIndexedData(requestedData: Ref<TagTreeNode[] | undefined>) {
         indexedData.value = newIndexedInfo
     }, {immediate: true})
 
-    function loadTagNode(info: {[key: number]: IndexedTag}, tag: TagTreeNode, ordinal: number, isGroupMember: IsGroupMember = "NO", address: {id: number, name: string}[] = []) {
+    function loadTagNode(info: {[key: number]: IndexedTag}, tag: TagTreeNode, ordinal: number, address: {id: number, name: string}[] = []) {
         const parentId = address.length ? address[address.length - 1].id : null
 
-        info[tag.id] = {tag, address, parentId, ordinal, isGroupMember}
+        info[tag.id] = {tag, address, parentId, ordinal}
 
         if(tag.children?.length) {
             const nextAddress = [...address, {id: tag.id, name: tag.name}]
-            const isGroupMember: IsGroupMember
-                = tag.group === "FORCE_AND_SEQUENCE" || tag.group === "SEQUENCE" ? "SEQUENCE"
-                : tag.group === "YES" || tag.group === "FORCE" ? "YES"
-                    : "NO"
             for (let i = 0; i < tag.children.length; ++i) {
-                loadTagNode(info, tag.children[i], i, isGroupMember, nextAddress)
+                loadTagNode(info, tag.children[i], i, nextAddress)
             }
         }
     }
@@ -138,10 +125,6 @@ function useIndexedData(requestedData: Ref<TagTreeNode[] | undefined>) {
             const parentInfo = indexedData.value[parentId]
             if(parentInfo) {
                 const nextAddress = [...toRaw(parentInfo.address), {id: parentInfo.tag.id, name: parentInfo.tag.name}]
-                const isGroupMember: IsGroupMember
-                    = parentInfo.tag.group === "FORCE_AND_SEQUENCE" || parentInfo.tag.group === "SEQUENCE" ? "SEQUENCE"
-                    : parentInfo.tag.group === "YES" || parentInfo.tag.group === "FORCE" ? "YES"
-                        : "NO"
                 if(parentInfo.tag.children == null) {
                     parentInfo.tag.children = []
                 }
@@ -152,7 +135,7 @@ function useIndexedData(requestedData: Ref<TagTreeNode[] | undefined>) {
                 //然后更新其在indexed info中的索引
                 //从列表再取一次是为了使其获得响应性
                 const nodeRef = parentInfo.tag.children[ordinal]
-                loadTagNode(indexedData.value, nodeRef, ordinal, isGroupMember, nextAddress)
+                loadTagNode(indexedData.value, nodeRef, ordinal, nextAddress)
             }else{
                 console.error(`Error occurred while adding tag ${node.id}: cannot find parent tag ${parentId} in indexed info.`)
             }
@@ -286,10 +269,6 @@ function useIndexedData(requestedData: Ref<TagTreeNode[] | undefined>) {
             const parentInfo = parentId != null ? indexedData.value[parentId]! : null
             info.parentId = parentId
             info.ordinal = ordinal
-            info.isGroupMember = parentInfo == null ? "NO"
-                : parentInfo.tag.group === "FORCE_AND_SEQUENCE" || parentInfo.tag.group === "SEQUENCE" ? "SEQUENCE"
-                    : parentInfo.tag.group === "YES" || parentInfo.tag.group === "FORCE" ? "YES"
-                        : "NO"
 
             const address = parentInfo == null ? [] : [...toRaw(parentInfo.address), {id: parentInfo.tag.id, name: parentInfo.tag.name}]
             const color = parentInfo == null ? info.tag.color : parentInfo.tag.color

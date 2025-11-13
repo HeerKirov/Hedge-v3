@@ -29,7 +29,7 @@ const fetch = useFetchHelper({
 const add = async ({ id }: SimpleTag) => {
     const tag = await fetch(id)
     if(tag) {
-        emit("update:value", [...props.value, {id: tag.id, color: tag.color, group: tag.group, name: tag.name, type: tag.type}])
+        emit("update:value", [...props.value, {id: tag.id, color: tag.color, isSequenceGroup: tag.isSequenceGroup, isOverrideGroup: tag.isOverrideGroup, name: tag.name, type: tag.type}])
     }else{
         message.showOkMessage("error", "选择的作为链接的标签不存在。", `错误项: ${id}`)
     }

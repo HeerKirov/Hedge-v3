@@ -89,7 +89,6 @@ export interface MetaUtilValidation {
     tags: RelatedSimpleTag[]
     notSuitable: RelatedSimpleTag[]
     conflictingMembers: ConflictingMembers[]
-    forceConflictingMembers: ConflictingMembers[]
 }
 
 interface ConflictingMembers {

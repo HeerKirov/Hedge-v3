@@ -122,7 +122,7 @@ function useFormData(context: InstallEditorContext) {
 
     const submittable = computed(() =>
         (changed.tag || changed.topic || changed.author || changed.tagme || changed.mapping || changed.exists) &&
-        (validation.validationResults.value == undefined || (!validation.validationResults.value.forceConflictingMembers.length && !validation.validationResults.value.notSuitable.length)))
+        (validation.validationResults.value == undefined || !validation.validationResults.value.notSuitable.length))
     const submitting = ref(false)
 
     const history = useDataHistory(tags, topics, authors, context.data)
@@ -313,8 +313,7 @@ function useFormValidation(tags: Ref<SimpleTag[]>, topics: Ref<SimpleTopic[]>, a
 
     const validationResults = ref<{
         notSuitable: MetaUtilValidation["notSuitable"],
-        conflictingMembers: MetaUtilValidation["conflictingMembers"],
-        forceConflictingMembers: MetaUtilValidation["forceConflictingMembers"]
+        conflictingMembers: MetaUtilValidation["conflictingMembers"]
     }>()
     const exportedResults = ref<{
         tags: SimpleTag[],
@@ -357,8 +356,7 @@ function useFormValidation(tags: Ref<SimpleTag[]>, topics: Ref<SimpleTopic[]>, a
             if(flag.tag) {
                 validationResults.value = {
                     notSuitable: res.notSuitable,
-                    conflictingMembers: res.conflictingMembers,
-                    forceConflictingMembers: res.forceConflictingMembers
+                    conflictingMembers: res.conflictingMembers
                 }
                 exportedResults.value.tags = res.tags.filter(i => i.isExported !== "NO")
             }

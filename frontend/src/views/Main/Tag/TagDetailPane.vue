@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Starlight } from "@/components/universal"
+import { Starlight, Separator } from "@/components/universal"
 import { FormEditKit } from "@/components/interaction"
 import {
     TagNameAndOtherDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay, TagLinkDisplay, TagExampleDisplay,
@@ -38,28 +38,32 @@ const { data, addressInfo, isRootNode, setName, setType, setGroup, setDescriptio
             </template>
         </FormEditKit>
 
-        <FormEditKit :value="data.group" :set-value="setGroup">
-            <template #default="{ value }">
-                <TagGroupTypeDisplay :value="value" :member="addressInfo.member" :member-index="addressInfo.memberIndex"/>
+        <FormEditKit class="mt-1" :value="[data.isSequenceGroup, data.isOverrideGroup] as const" :set-value="setGroup">
+            <template #default="{ value: [isSequenceGroup, isOverrideGroup] }">
+                <TagGroupTypeDisplay :is-sequence-group="isSequenceGroup" :is-override-group="isOverrideGroup" :member="addressInfo.member" :member-index="addressInfo.memberIndex"/>
             </template>
-            <template #edit="{ value, setValue }">
-                <TagGroupTypeEditor :value="value" @update:value="setValue"/>
+            <template #edit="{ value: [isSequenceGroup, isOverrideGroup], setValue }">
+                <TagGroupTypeEditor :is-sequence-group="isSequenceGroup" :is-override-group="isOverrideGroup" @update:is-sequence-group="v => setValue([v, isOverrideGroup])" @update:is-override-group="v => setValue([isSequenceGroup, v])"/>
             </template>
         </FormEditKit>
 
-        <FormEditKit class="mt-4" :value="data.description" :set-value="setDescription">
+        <Separator direction="horizontal" :spacing="2"/>
+
+        <FormEditKit :value="data.description" :set-value="setDescription">
             <template #default="{ value }">
-                <DescriptionDisplay :value="value"/>
+                <DescriptionDisplay :value="value" new-skin/>
             </template>
             <template #edit="{ value, setValue, save }">
                 <DescriptionEditor :value="value" @update:value="setValue" @save="save"/>
             </template>
         </FormEditKit>
 
+        <Separator direction="horizontal" :spacing="2"/>
+        
         <Starlight v-if="data.score !== null" class="is-inline-block mt-4" :value="data.score"/>
 
-        <label class="mt-5 label is-font-size-small">标签链接</label>
-        <FormEditKit :value="data.links" :set-value="setLinks">
+        <label class="label is-font-size-small">标签链接</label>
+        <FormEditKit class="mt-2" :value="data.links" :set-value="setLinks">
             <template #default="{ value }">
                 <TagLinkDisplay :value="value"/>
             </template>

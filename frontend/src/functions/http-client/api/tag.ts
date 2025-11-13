@@ -71,7 +71,6 @@ export interface TagExceptions {
 }
 
 export type TagAddressType = "TAG" | "ADDR" | "VIRTUAL_ADDR"
-export type TagGroupType = "NO" | "YES" | "FORCE" | "SEQUENCE" | "FORCE_AND_SEQUENCE"
 
 export interface Tag {
     /**
@@ -99,9 +98,13 @@ export interface Tag {
      */
     type: TagAddressType
     /**
-     * 标签的组属性。
+     * 排序组。
      */
-    group: TagGroupType
+    isSequenceGroup: boolean
+    /**
+     * 覆盖组。
+     */
+    isOverrideGroup: boolean
     /**
      * 标签的颜色。颜色有与父标签同步的特性，因此只有根标签可以设置color，非根标签设置会抛出异常。
      */
@@ -145,7 +148,8 @@ export interface TagTreeNode {
     otherNames: string[]
     implicitNames: string[]
     type: TagAddressType
-    group: TagGroupType
+    isSequenceGroup: boolean
+    isOverrideGroup: boolean
     color: UsefulColors | null
     children: TagTreeNode[] | null
 }
@@ -164,7 +168,8 @@ export interface TagLink {
     id: number
     name: string
     type: TagAddressType
-    group: TagGroupType
+    isSequenceGroup: boolean
+    isOverrideGroup: boolean
     color: UsefulColors | null
 }
 
@@ -172,7 +177,8 @@ export interface TagParent {
     id: number
     name: string
     type: TagAddressType
-    group: TagGroupType
+    isSequenceGroup: boolean
+    isOverrideGroup: boolean
 }
 
 export interface TagCreateForm {
@@ -181,7 +187,8 @@ export interface TagCreateForm {
     parentId: number | null
     otherNames?: string[] | null
     ordinal?: number | null
-    group?: TagGroupType
+    isSequenceGroup?: boolean
+    isOverrideGroup?: boolean
     links?: number[]
     description?: string
     color?: UsefulColors | null
@@ -195,7 +202,8 @@ export interface TagUpdateForm {
     ordinal?: number
     parentId?: number | null
     type?: TagAddressType
-    group?: TagGroupType
+    isSequenceGroup?: boolean
+    isOverrideGroup?: boolean
     links?: number[] | null
     description?: string
     color?: UsefulColors

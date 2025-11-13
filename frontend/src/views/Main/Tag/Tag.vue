@@ -54,9 +54,10 @@ const onDelete = (tag: TagTreeNode) => operators.deleteItem(tag.id)
 </template>
 
 <style module lang="sass">
+@use "@/styles/base/size"
 .content
     height: 100%
     overflow-y: auto
-    padding: 2px 6px
+    padding: size.$spacing-3 size.$spacing-4
     box-sizing: border-box
 </style>

@@ -62,8 +62,8 @@ export function useTagDetailData(path: Ref<number>) {
         if(data.value !== null && data.value.parents.length) {
             const address = data.value.parents.map(i => i.name).join(".")
             const parent = data.value.parents[data.value.parents.length - 1]
-            const member = parent.group !== "NO"
-            const memberIndex = parent.group === "SEQUENCE" || parent.group === "FORCE_AND_SEQUENCE" ? data.value.ordinal + 1 : undefined
+            const member = parent.isSequenceGroup || parent.isOverrideGroup
+            const memberIndex = parent.isSequenceGroup ? data.value.ordinal + 1 : undefined
 
             return {address, member, memberIndex}
         }else{

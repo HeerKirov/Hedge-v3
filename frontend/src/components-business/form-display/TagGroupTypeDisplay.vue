@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Icon } from "@/components/universal"
-import { TagGroupType } from "@/functions/http-client/api/tag"
 
 defineProps<{
-    value: TagGroupType
+    isSequenceGroup: boolean
+    isOverrideGroup: boolean
     member?: boolean
     memberIndex?: number
 }>()
@@ -12,13 +12,12 @@ defineProps<{
 
 <template>
     <p>
-        <template v-if="value === 'NO'">
+        <template v-if="!isSequenceGroup && !isOverrideGroup">
             <Icon class="mr-1 has-text-secondary" icon="object-group"/><span class="secondary-text">非组</span>
         </template>
         <template v-else>
-            <Icon class="mr-1" icon="object-group"/>组
-            <template v-if="value  === 'SEQUENCE' || value === 'FORCE_AND_SEQUENCE'"><Icon class="mx-1" icon="sort-alpha-down"/>排序组</template>
-            <template v-if="value  === 'FORCE' || value === 'FORCE_AND_SEQUENCE'"><b class="mx-1">!</b>强制唯一组</template>
+            <span v-if="isSequenceGroup" class="mr-1"><Icon class="mr-1" icon="sort-alpha-down"/>排序组</span>
+            <span v-if="isOverrideGroup" class="mr-1"><Icon class="mr-1" icon="object-group"/>覆盖组</span>
         </template>
         <template v-if="member"><Icon class="ml-3 mr-1" icon="object-ungroup"/>组成员</template>
         <template v-if="memberIndex"><Icon class="mx-1" icon="sort-alpha-down"/>成员顺序<code>{{memberIndex}}</code></template>

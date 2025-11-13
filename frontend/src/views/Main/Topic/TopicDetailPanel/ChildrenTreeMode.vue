@@ -13,27 +13,11 @@ const emit = defineEmits<{
     (e: "click", topicId: number): void
 }>()
 
-const splits = computed(() => {
-    const [characters, others] = arrays.filterInto(props.children, i => i.type === "CHARACTER")
-    return {characters, others}
-})
-const anyChildren = computed(() => splits.value.others.some(child => child.children?.length))
-
 </script>
 
 <template>
-    <div v-if="anyChildren">
-        <div>
-            <Group v-for="child in splits.others" :key="child.id">
-                <ChildrenTreeModeItem :child="child" @click="$emit('click', $event)"/>
-            </Group>
-        </div>
-        <Group v-if="splits.characters.length > 0">
-            <ChildrenTreeModeItem v-for="child in splits.characters" :key="child.id" :child="child" @click="$emit('click', $event)"/>
-        </Group>
+    <div class="flex multiline gap-half">
+        <ChildrenTreeModeItem v-for="child in children" :key="child.id" :child="child" @click="$emit('click', $event)"/>
     </div>
-    <Group v-else>
-        <ChildrenTreeModeItem v-for="child in [...splits.others, ...splits.characters]" :key="child.id" :child="child" @click="$emit('click', $event)"/>
-    </Group>
 </template>
 

@@ -21,10 +21,10 @@ const dragEvents = useDraggable("topic", () => {
 
 <template>
     <template v-if="child.type !== 'CHARACTER' && !!child.children?.length">
-        <p>
+        <div class="flex-item w-100">
             <SimpleMetaTagElement type="topic" :value="child" clickable @click="$emit('click', child.id)" draggable v-bind="dragEvents"/>
-            <ChildrenTreeMode class="mt-2 ml-6" :children="child.children" @click="$emit('click', $event)"/>
-        </p>
+            <ChildrenTreeMode class="mt-1 ml-6" :children="child.children" @click="$emit('click', $event)"/>
+        </div>
     </template>
     <SimpleMetaTagElement v-else type="topic" :value="child" clickable @click="$emit('click', child.id)" draggable v-bind="dragEvents"/>
 </template>

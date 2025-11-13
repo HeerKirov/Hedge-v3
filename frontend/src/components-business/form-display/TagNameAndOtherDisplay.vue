@@ -10,7 +10,7 @@ defineProps<{
 </script>
 
 <template>
-    <b :class="{[`has-text-${color}`]: !!color, 'is-font-size-large': true}">{{name}}</b>
+    <b :class="{[`has-text-${color}`]: !!color, 'is-font-size-h3': true}">{{name}}</b>
     <i class="secondary-text ml-1">{{otherNames.join(" / ")}}</i>
 </template>
 

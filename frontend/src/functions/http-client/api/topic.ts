@@ -156,6 +156,7 @@ export interface TopicCreateForm {
     name: string
     otherNames?: string[] | null
     parentId?: number | null
+    ordinal?: number
     type?: TopicType
     description?: string
     keywords?: string[]
@@ -168,6 +169,7 @@ export interface TopicUpdateForm {
     name?: string
     otherNames?: string[] | null
     parentId?: number | null
+    ordinal?: number
     type?: TopicType
     description?: string
     keywords?: string[]
