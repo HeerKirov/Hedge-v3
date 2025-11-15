@@ -4,16 +4,19 @@ import { Icon, Block } from "@/components/universal"
 import { Group } from "@/components/layout"
 import { SimpleMetaTagElement } from "@/components-business/element"
 import { useCalloutService } from "@/components-module/callout"
-import { ExportType, MetaTagTypes, MetaTagTypeValue, MetaTagValues, SimpleAuthor, SimpleTag, SimpleTopic } from "@/functions/http-client/api/all"
+import { MetaTagTypes, MetaTagTypeValue, MetaTagValues } from "@/functions/http-client/api/all"
+import { RelatedSimpleAuthor } from "@/functions/http-client/api/author"
+import { RelatedSimpleTopic } from "@/functions/http-client/api/topic"
+import { RelatedSimpleTag } from "@/functions/http-client/api/tag"
 import { IllustType } from "@/functions/http-client/api/illust"
 import { usePopupMenu } from "@/modules/popup-menu"
 import { isBrowserEnvironment, useBrowserTabs, useTabRoute } from "@/modules/browser"
 import { writeClipboard } from "@/modules/others"
 
 const props = withDefaults(defineProps<{
-    authors: (SimpleAuthor & { isExported?: ExportType })[]
-    topics: (SimpleTopic & { isExported?: ExportType })[]
-    tags: (SimpleTag & { isExported?: ExportType })[]
+    authors: RelatedSimpleAuthor[]
+    topics: RelatedSimpleTopic[]
+    tags: RelatedSimpleTag[]
     direction?: "vertical" | "horizontal"
     category?: "self" | "related"
     selfIs?: IllustType
@@ -35,8 +38,8 @@ const router = hasBrowser ? useTabRoute() : undefined
 
 const expand = ref(false)
 
-const filteredTags = computed(() => props.tags.filter(props.category === "self" ? i => i.isExported !== "FROM_RELATED" : i => i.isExported === "FROM_RELATED"))
-const filteredTopics = computed(() => props.topics.filter(props.category === "self" ? i => i.isExported !== "FROM_RELATED" : i => i.isExported === "FROM_RELATED"))
+const filteredTags = computed(() => props.tags.filter(i => i.visibility).filter(props.category === "self" ? i => i.isExported !== "FROM_RELATED" : i => i.isExported === "FROM_RELATED"))
+const filteredTopics = computed(() => props.topics.filter(i => i.visibility).filter(props.category === "self" ? i => i.isExported !== "FROM_RELATED" : i => i.isExported === "FROM_RELATED"))
 const filteredAuthors = computed(() => props.authors.filter(props.category === "self" ? i => i.isExported !== "FROM_RELATED" : i => i.isExported === "FROM_RELATED"))
 
 const tags = computed(() => props.max !== undefined && !expand.value && filteredTags.value.length > props.max ? filteredTags.value.slice(0, props.max) : (filteredTags.value ?? []))

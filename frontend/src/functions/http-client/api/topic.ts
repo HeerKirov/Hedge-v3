@@ -150,6 +150,7 @@ export interface ParentTopic extends SimpleTopic {
 
 export interface RelatedSimpleTopic extends SimpleTopic {
     isExported: ExportType
+    visibility: boolean
 }
 
 export interface TopicCreateForm {

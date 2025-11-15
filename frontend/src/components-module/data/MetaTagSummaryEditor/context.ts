@@ -286,9 +286,9 @@ function useFormData(context: InstallEditorContext) {
             }
 
             context.updateValue({
-                tags: changed.tag ? tags.value.map(i => ({...i, isExported: "NO"})) : undefined,
-                topics: changed.topic ? topics.value.map(i => ({...i, isExported: "NO"})) : undefined,
-                authors: changed.author ? authors.value.map(i => ({...i, isExported: "NO"})) : undefined,
+                tags: changed.tag ? tags.value.map(i => ({...i, isExported: "NO", visibility: true})) : undefined,
+                topics: changed.topic ? topics.value.map(i => ({...i, isExported: "NO", visibility: true})) : undefined,
+                authors: changed.author ? authors.value.map(i => ({...i, isExported: "NO", visibility: true})) : undefined,
                 mappings: changed.mapping ? mappings.value : undefined,
                 tagme: changed.tagme ? tagme.value : undefined
             })

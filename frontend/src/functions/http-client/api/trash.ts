@@ -1,10 +1,13 @@
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 import { NotFound } from "../exceptions"
 import { HttpInstance, Response } from "../instance"
-import { FilePath, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList, SimpleAuthor, SimpleTag, SimpleTopic, SourceDataPath } from "./all"
+import { FilePath, LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList, SourceDataPath } from "./all"
 import { SimpleCollection, SimpleIllust, Tagme } from "./illust"
 import { SimpleFolder } from "./folder"
 import { SimpleBook } from "./book"
+import { RelatedSimpleTopic } from "./topic"
+import { RelatedSimpleAuthor } from "./author"
+import { RelatedSimpleTag } from "./tag"
 
 export function createTrashEndpoint(http: HttpInstance): TrashEndpoint {
     return {
@@ -85,9 +88,9 @@ export interface DetailTrashedImage extends TrashedImage {
     resolutionHeight: number
     resolutionWidth: number
     videoDuration: number
-    topics: SimpleTopic[]
-    authors: SimpleAuthor[]
-    tags: SimpleTag[]
+    topics: RelatedSimpleTopic[]
+    authors: RelatedSimpleAuthor[]
+    tags: RelatedSimpleTag[]
     collection: SimpleCollection | null
     books: SimpleBook[]
     folders: SimpleFolder[]

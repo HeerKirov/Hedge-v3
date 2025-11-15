@@ -162,6 +162,7 @@ export interface SimpleTag {
 
 export interface RelatedSimpleTag extends SimpleTag {
     isExported: ExportType
+    visibility: boolean
 }
 
 export interface TagLink {
