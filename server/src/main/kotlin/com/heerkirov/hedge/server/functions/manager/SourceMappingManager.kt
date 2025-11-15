@@ -10,6 +10,7 @@ import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.ExportType
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagAddressType
+import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.events.SourceTagMappingUpdated
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.exceptions.NotFound
@@ -186,7 +187,7 @@ class SourceMappingManager(private val appdata: AppDataManager, private val data
         }?.associate { SourceMappingTargetItem(MetaType.AUTHOR, it.id) to SourceMappingTargetItemDetail(MetaType.AUTHOR, it) } ?: emptyMap()
         val topics = metas[MetaType.TOPIC]?.let { topicIds ->
             data.db.from(Topics).select(Topics.id, Topics.name, Topics.type)
-                .where { Topics.id inList topicIds }
+                .where { (Topics.id inList topicIds) and (Topics.type notEq TagTopicType.NODE) }
                 .toTopicSimpleList(topicColors, isExported = ExportType.NO, removeOverrideItem = false)
         }?.associate { SourceMappingTargetItem(MetaType.TOPIC, it.id) to SourceMappingTargetItemDetail(MetaType.TOPIC, it) } ?: emptyMap()
         val tags = metas[MetaType.TAG]?.let { tagIds ->

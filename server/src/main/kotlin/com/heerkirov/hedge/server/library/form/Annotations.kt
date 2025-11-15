@@ -65,3 +65,10 @@ annotation class Range(val min: Int, val max: Int)
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.VALUE_PARAMETER)
 annotation class Min(val value: Int)
+
+/**
+ * Valid注解：此String字段必须非空
+ */
+@Retention(AnnotationRetention.RUNTIME)
+@Target(AnnotationTarget.VALUE_PARAMETER)
+annotation class ExcludeEnum(val excludes: Array<String>)

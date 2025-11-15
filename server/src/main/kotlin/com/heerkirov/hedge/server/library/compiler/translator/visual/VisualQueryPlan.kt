@@ -62,7 +62,7 @@ data class ElementSourceTag(override val id: Int, val site: String, val sourceTa
     override val type: String get() = "source-tag"
 }
 
-data class ElementTopic(override val id: Int, override val name: String, val otherNames: List<String>, val tagType: TagTopicType, val color: String?, val parentRoot: ParentRootTopic?) : ElementMeta {
+data class ElementTopic(override val id: Int, override val name: String, val otherNames: List<String>, val tagType: TagTopicType, val color: String?, val parentRoot: ParentRootTopic?, val realTopics: List<ParentRootTopic>?) : ElementMeta {
     override val type: String get() = "topic"
 
     data class ParentRootTopic(val id: Int, val name: String, val tagType: TagTopicType)

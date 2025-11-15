@@ -1,10 +1,7 @@
 package com.heerkirov.hedge.server.dto.filter
 
 import com.heerkirov.hedge.server.enums.*
-import com.heerkirov.hedge.server.library.form.Limit
-import com.heerkirov.hedge.server.library.form.Offset
-import com.heerkirov.hedge.server.library.form.Order
-import com.heerkirov.hedge.server.library.form.Search
+import com.heerkirov.hedge.server.library.form.*
 import com.heerkirov.hedge.server.utils.types.OrderItem
 import java.time.LocalDate
 
@@ -74,7 +71,7 @@ data class TopicFilter(@Limit val limit: Int,
                        @Search val query: String?,
                        @Order(options = ["id", "name", "score", "count", "createTime", "updateTime"])
                        val order: List<OrderItem>? = null,
-                       val type: TagTopicType? = null,
+                       @ExcludeEnum(["NODE"]) val type: TagTopicType? = null,
                        val favorite: Boolean? = null,
                        val parentId: Int? = null)
 

@@ -58,9 +58,9 @@ class TopicService(private val appdata: AppDataManager,
             .let { schema?.joinConditions?.fold(it) { acc, join -> if(join.left) acc.leftJoin(join.table, join.condition) else acc.innerJoin(join.table, join.condition) } ?: it }
             .select(*Topics.columns.toTypedArray(), rootAliased.id, rootAliased.name, rootAliased.type)
             .whereWithConditions {
+                it += if(filter.type != null) { Topics.type eq filter.type }else{ Topics.type notEq TagTopicType.NODE }
                 if(filter.favorite != null) { it += Topics.favorite eq filter.favorite }
-                if(filter.type != null) { it += Topics.type eq filter.type }
-                if(filter.parentId != null) { it += Topics.parentId eq filter.parentId }
+                if(filter.parentId != null) { it += (Topics.parentId eq filter.parentId) or (Topics.parentRootId eq filter.parentId) }
                 if(schema != null && schema.whereConditions.isNotEmpty()) {
                     it.addAll(schema.whereConditions)
                 }

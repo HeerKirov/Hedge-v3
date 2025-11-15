@@ -5,6 +5,7 @@ import com.heerkirov.hedge.server.dao.EntityMetaRelationTable
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.ExportType
 import com.heerkirov.hedge.server.enums.TagAddressType
+import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.exceptions.ConflictingGroupMembersError
 import com.heerkirov.hedge.server.exceptions.ResourceNotExist
 import com.heerkirov.hedge.server.exceptions.ResourceNotSuitable
@@ -73,12 +74,17 @@ class MetaManager(private val data: DataRepository) {
      * @param ignoreError 忽略产生的错误，对于缺少/不适用的项，将其跳过。
      * @return 一组topic。Int表示topic id，Boolean表示此topic是否为导出tag。
      * @throws ResourceNotExist ("topics", number[]) 部分topics资源不存在。给出不存在的topic id列表
+     * @throws ResourceNotSuitable ("topics", number[]]) 部分topics资源不适用。节点不能用于附加在项目上。给不不适用的topic id列表
      */
     fun validateAndExportTopicModel(topicIds: List<Int>, ignoreError: Boolean = false): List<Pair<Topic, ExportType>> {
         val set = topicIds.toSet()
         val topics = data.db.sequenceOf(Topics).filter { it.id inList set }.toList()
         if(!ignoreError && topics.size < set.size) {
             throw be(ResourceNotExist("topics", set - topics.asSequence().map { it.id }.toSet()))
+        }
+        if(!ignoreError) topics.filter { it.type == TagTopicType.NODE }.run {
+            //不允许设定类型为NODE的主题
+            if(isNotEmpty()) throw be(ResourceNotSuitable("topics", map { it.id }))
         }
 
         return exportTopicModel(topics)
@@ -195,7 +201,8 @@ class MetaManager(private val data: DataRepository) {
             if(nextId !in been) {
                 val topic = data.db.sequenceOf(Topics).firstOrNull { it.id eq nextId }
                 if(topic != null) {
-                    exportedTopics.add(topic)
+                    //NODE类型不会导出到关系表
+                    if(topic.type != TagTopicType.NODE) exportedTopics.add(topic)
                     if(topic.parentId != null) queue.add(topic.parentId)
                 }
                 been.add(nextId)

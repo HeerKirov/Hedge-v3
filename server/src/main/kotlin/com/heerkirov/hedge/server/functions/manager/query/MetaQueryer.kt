@@ -278,6 +278,36 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
             return emptyList()
         }
 
+
+        /**
+         * 查找指定parentId的子标签，且与metaString列表符合的tag items。
+         */
+        fun findChildrenTopics(parentId: Int): List<TopicItem> {
+            return data.db.from(Topics)
+                .select(Topics.id, Topics.name, Topics.otherNames, Topics.parentId, Topics.parentRootId, Topics.type)
+                .where { Topics.parentId eq parentId }
+                .orderBy(Topics.ordinal.asc())
+                .map { TopicItem(it[Topics.id]!!, it[Topics.name]!!, it[Topics.otherNames]!!, it[Topics.parentId], it[Topics.parentRootId], it[Topics.type]!!) }
+                .onEach { topicItemsPool[it.id] = it }
+        }
+
+        /**
+         * 查找指定标签的真实标签。用于当目标标签是NODE时。
+         */
+        fun findRealTopics(tagId: Int): List<ElementTopic.ParentRootTopic> {
+            val result = ArrayList<TopicItem>()
+            val queue = LinkedList<Int>().apply { add(tagId) }
+            //从tagId开始迭代，查找子标签列表，将实体标签加入结果，并继续迭代虚拟标签，直到全部迭代为实体
+            while (queue.isNotEmpty()) {
+                val id = queue.poll()
+                val (virtualChildren, children) = findChildrenTopics(id).partition { it.type == TagTopicType.NODE }
+                result.addAll(children)
+                queue.addAll(virtualChildren.map { it.id })
+            }
+
+            return result.map { ElementTopic.ParentRootTopic(it.id, it.name, it.type) }
+        }
+
         return topicCacheMap.computeIfAbsent(metaValue.value) { address ->
             val lastAddr = address.last()
             val topics = data.db.from(Topics).select(Topics.id, Topics.name, Topics.otherNames, Topics.parentId, Topics.parentRootId, Topics.type)
@@ -287,7 +317,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
 
             topicItemsPool.putAll(topics.map { it.id to it })
 
-            validateTopics(topics, address)
+            validateTopics(topics, address).map { if(it.tagType == TagTopicType.NODE) ElementTopic(it.id, it.name, it.otherNames, it.tagType, it.color, it.parentRoot, findRealTopics(it.id)) else it }
         }.also {
             if(it.isEmpty()) {
                 //查询结果为空时抛出无匹配警告
@@ -457,7 +487,7 @@ class MetaQueryer(private val appdata: AppDataManager, private val data: DataRep
 
         return topics.asSequence()
             .filter { isAddressMatches(it.parentId, address, address.size - 2) }
-            .map { ElementTopic(it.id, it.name, it.otherNames, it.type, colors[it.type], it.parentRootId?.let(::getTopic)?.let { p -> ElementTopic.ParentRootTopic(p.id, p.name, p.type) }) }
+            .map { ElementTopic(it.id, it.name, it.otherNames, it.type, colors[it.type], it.parentRootId?.let(::getTopic)?.let { p -> ElementTopic.ParentRootTopic(p.id, p.name, p.type) }, null) }
             .toList()
     }
 

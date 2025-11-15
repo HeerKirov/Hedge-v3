@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeType
 import com.heerkirov.hedge.server.exceptions.ParamRequired
 import com.heerkirov.hedge.server.exceptions.ParamTypeError
 import com.heerkirov.hedge.server.exceptions.be
-import com.heerkirov.hedge.server.utils.*
 import com.heerkirov.hedge.server.utils.composition.Composition
 import com.heerkirov.hedge.server.utils.composition.CompositionGenerator
 import com.heerkirov.hedge.server.utils.DateTime.parseDate
@@ -80,7 +79,9 @@ private fun <T : Any> mapAny(jsonNode: JsonNode, kType: KType): Any? {
             val keyType = kType.arguments[0].type!!
             val valueType = kType.arguments[1].type!!
 
-            try { jsonNode.fields().map { entry -> Pair(mapStringKey(entry.key, keyType), mapAny<Any>(entry.value, valueType)) }.toMap() }catch (e: NullPointerException) {
+            try {
+                jsonNode.properties().associate { entry -> Pair(mapStringKey(entry.key, keyType), mapAny<Any>(entry.value, valueType)) }
+            }catch (e: NullPointerException) {
                 throw ClassCastException("Value of object cannot be null.")
             }
         }
@@ -285,20 +286,32 @@ fun <T : Any> mapForm(jsonNode: JsonNode, formClass: KClass<T>): T {
  * 解析附带的validation检验注解，并执行检验。
  */
 private fun analyseValidation(annotations: List<Annotation>, value: Any) {
-    if(value is String) {
-        (annotations.firstOrNull { it is NotBlank } as NotBlank?)?.let {
-            if(value.isBlank()) throw Exception("cannot be blank.")
+    when (value) {
+        is String -> {
+            (annotations.firstOrNull { it is NotBlank } as NotBlank?)?.let {
+                if(value.isBlank()) throw Exception("cannot be blank.")
+            }
+            (annotations.firstOrNull { it is Length } as Length?)?.let {
+                if(value.length > it.value) throw Exception("cannot longer than ${value.length}.")
+            }
         }
-        (annotations.firstOrNull { it is Length } as Length?)?.let {
-            if(value.length > it.value) throw Exception("cannot longer than ${value.length}.")
+
+        is Number -> {
+            val i = value.toInt()
+            (annotations.firstOrNull { it is Range } as Range?)?.let {
+                if(i > it.max || i < it.min) throw Exception("must be in range [${it.min}, ${it.max}].")
+            }
+            (annotations.firstOrNull { it is Min } as Min?)?.let {
+                if(i < it.value) throw Exception("must be greater than ${it.value}.")
+            }
         }
-    }else if(value is Number) {
-        val i = value.toInt()
-        (annotations.firstOrNull { it is Range } as Range?)?.let {
-            if(i > it.max || i < it.min) throw Exception("must be in range [${it.min}, ${it.max}].")
-        }
-        (annotations.firstOrNull { it is Min } as Min?)?.let {
-            if(i < it.value) throw Exception("must be greater than ${it.value}.")
+
+        is Enum<*> -> {
+            (annotations.firstOrNull { it is ExcludeEnum } as ExcludeEnum?)?.let {
+                for(exclude in it.excludes) {
+                    if(value.name.equals(exclude, ignoreCase = true)) throw Exception("cannot be excluded value '$value'.")
+                }
+            }
         }
     }
 }

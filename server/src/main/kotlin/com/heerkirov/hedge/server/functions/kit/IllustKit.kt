@@ -102,6 +102,7 @@ class IllustKit(private val appdata: AppDataManager,
      * @throws ResourceNotExist ("authors", number[]) 部分authors资源不存在。给出不存在的author id列表
      * @throws ResourceNotExist ("tags", number[]) 部分tags资源不存在。给出不存在的tag id列表
      * @throws ResourceNotSuitable ("tags", number[]) 部分tags资源不适用。地址段不适用于此项。给出不适用的tag id列表
+     * @throws ResourceNotSuitable ("topics", number[]]) 部分topics资源不适用。节点不能用于附加在项目上。给不不适用的topic id列表
      * @throws ConflictingGroupMembersError 发现标签冲突组
      * @return 返回两个Tagme。第一个用以标示此次更新涉及了对哪些类型的更改，可以直接用于Tagme属性的更新。需要注意它会受到setting中相关选项的影响。第二个则是表示更改，且不受其他选项影响，可以用于标签变更联动。
      */

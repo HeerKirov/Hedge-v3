@@ -2,9 +2,11 @@ package com.heerkirov.hedge.server.functions.manager.query
 
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.TagAddressType
+import com.heerkirov.hedge.server.enums.TagTopicType
 import com.heerkirov.hedge.server.library.compiler.semantic.dialect.BookDialect
 import com.heerkirov.hedge.server.library.compiler.semantic.dialect.IllustDialect
 import com.heerkirov.hedge.server.library.compiler.semantic.dialect.SourceDataDialect
+import com.heerkirov.hedge.server.library.compiler.semantic.dialect.TopicDialect
 import com.heerkirov.hedge.server.library.compiler.semantic.framework.FilterFieldDefinition
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.*
 import com.heerkirov.hedge.server.library.compiler.semantic.plan.FilterValue
@@ -244,16 +246,17 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, S
     }
 
     override fun mapTopicElement(unionItems: List<ElementTopic>, exclude: Boolean) {
+        val ids = unionItems.flatMap { if(it.tagType == TagTopicType.NODE && it.realTopics != null) it.realTopics.map { t -> t.id } else listOf(it.id) }
         when {
-            exclude -> excludeTopics.addAll(unionItems.map { it.id })
-            unionItems.isEmpty() -> alwaysFalseFlag = true
+            exclude -> excludeTopics.addAll(ids)
+            ids.isEmpty() -> alwaysFalseFlag = true
             else -> {
                 val j = IllustTopicRelations.aliased("IR_${++joinCount}")
-                val condition = if(unionItems.size == 1) {
-                    j.topicId eq unionItems.first().id
+                val condition = if(ids.size == 1) {
+                    j.topicId eq ids.first()
                 }else{
                     needDistinct = true
-                    j.topicId inList unionItems.map { it.id }
+                    j.topicId inList ids
                 }
                 joins.add(ExecutePlan.Join(j, j.illustId eq Illusts.id and condition))
             }
@@ -538,9 +541,21 @@ class AuthorExecutePlanBuilder : ExecutePlanBuilder {
     }
 }
 
-class TopicExecutePlanBuilder : ExecutePlanBuilder {
+class TopicExecutePlanBuilder : ExecutePlanBuilder, FilterByColumn {
     private val wheres: MutableList<ColumnDeclaring<Boolean>> = ArrayList()
     private val joins: MutableList<ExecutePlan.Join> = ArrayList()
+
+    private val filterDeclareMapping = mapOf(
+        TopicDialect.parent to Topics.aliased("tr").name
+    )
+
+    override fun getFilterDeclareMapping(field: FilterFieldDefinition<*>): ColumnDeclaring<*> {
+        return filterDeclareMapping[field]!!
+    }
+
+    override fun addWhereCondition(whereCondition: ColumnDeclaring<Boolean>) {
+        wheres.add(whereCondition)
+    }
 
     override fun mapNameElement(unionItems: List<ElementString>, exclude: Boolean) {
         wheres.add(unionItems.map {

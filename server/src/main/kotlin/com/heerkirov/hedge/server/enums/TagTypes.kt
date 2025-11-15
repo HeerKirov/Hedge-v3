@@ -59,5 +59,9 @@ enum class TagTopicType {
     /**
      * 角色。
      */
-    CHARACTER
+    CHARACTER,
+    /**
+     * 虚拟节点。仅用于组织主题树，不具备实际功能。
+     */
+    NODE
 }

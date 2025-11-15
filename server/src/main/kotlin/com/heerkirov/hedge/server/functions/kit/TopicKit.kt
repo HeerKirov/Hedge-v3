@@ -201,10 +201,16 @@ class TopicKit(private val data: DataRepository) {
 
     /**
      * 校验child和parent之间的类型约束是否合法。
+     * - 当child/parent任意为UNKNOWN时，不进行任何约束校验；
+     * - child为IP，parent为IP、COPYRIGHT；
+     * - child为CHARACTER，parent为IP、COPYRIGHT、CHARACTER、NODE任一；
+     * - child为NODE，parent为IP、CHARACTER、NODE任一；
+     * - 其他任何关系类型都是不合法的。
      */
     private fun isLegalTypeConstraint(parent: TagTopicType, child: TagTopicType): Boolean {
         return child == TagTopicType.UNKNOWN || parent == TagTopicType.UNKNOWN
                 || (child == TagTopicType.IP && (parent == TagTopicType.IP || parent == TagTopicType.COPYRIGHT))
-                || (child == TagTopicType.CHARACTER && (parent == TagTopicType.IP || parent == TagTopicType.COPYRIGHT || parent == TagTopicType.CHARACTER))
+                || (child == TagTopicType.CHARACTER && (parent == TagTopicType.IP || parent == TagTopicType.COPYRIGHT || parent == TagTopicType.CHARACTER || parent == TagTopicType.NODE))
+                || (child == TagTopicType.NODE && (parent == TagTopicType.IP || parent == TagTopicType.CHARACTER || parent == TagTopicType.NODE))
     }
 }
