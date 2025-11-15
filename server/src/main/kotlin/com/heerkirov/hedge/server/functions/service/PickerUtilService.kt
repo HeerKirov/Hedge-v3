@@ -8,10 +8,7 @@ import com.heerkirov.hedge.server.dao.Folders
 import com.heerkirov.hedge.server.dao.Topics
 import com.heerkirov.hedge.server.dto.filter.MetaKeywordsFilter
 import com.heerkirov.hedge.server.dto.form.HistoryPushForm
-import com.heerkirov.hedge.server.dto.res.AuthorSimpleRes
-import com.heerkirov.hedge.server.dto.res.FolderSimpleRes
-import com.heerkirov.hedge.server.dto.res.KeywordInfo
-import com.heerkirov.hedge.server.dto.res.TopicSimpleRes
+import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.ExportType
 import com.heerkirov.hedge.server.enums.FolderType
 import com.heerkirov.hedge.server.exceptions.ParamError
@@ -42,12 +39,8 @@ class PickerUtilService(private val appdata: AppDataManager, private val data: D
         val result = data.db.from(Topics)
             .select(Topics.id, Topics.name, Topics.type)
             .where { Topics.id inList topicIds }
-            .associate {
-                val id = it[Topics.id]!!
-                val type = it[Topics.type]!!
-                val color = topicColors[type]
-                id to TopicSimpleRes(id, it[Topics.name]!!, type, ExportType.NO, color)
-            }
+            .toTopicSimpleList(topicColors, isExported = ExportType.NO, removeOverrideItem = false)
+            .associateBy { it.id }
         return topicIds.mapNotNull(result::get)
     }
 
@@ -57,12 +50,8 @@ class PickerUtilService(private val appdata: AppDataManager, private val data: D
         val result = data.db.from(Authors)
             .select(Authors.id, Authors.name, Authors.type)
             .where { Authors.id inList authorIds }
-            .associate {
-                val id = it[Authors.id]!!
-                val type = it[Authors.type]!!
-                val color = authorColors[type]
-                id to AuthorSimpleRes(id, it[Authors.name]!!, type, ExportType.NO, color)
-            }
+            .toAuthorSimpleList(authorColors, isExported = ExportType.NO)
+            .associateBy { it.id }
         return authorIds.mapNotNull(result::get)
     }
 

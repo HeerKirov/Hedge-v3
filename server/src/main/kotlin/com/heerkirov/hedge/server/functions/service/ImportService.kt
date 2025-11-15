@@ -133,32 +133,24 @@ class ImportService(private val appdata: AppDataManager,
 
             val topics = data.db.from(Topics)
                 .innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id)
-                .select(Topics.id, Topics.name, Topics.type, IllustTopicRelations.isExported)
+                .select(Topics.id, Topics.name, Topics.type, Topics.parentId, IllustTopicRelations.isExported)
                 .where { IllustTopicRelations.illustId eq illustId }
                 .orderBy(Topics.type.asc(), Topics.id.asc())
-                .map {
-                    val topicType = it[Topics.type]!!
-                    val color = topicColors[topicType]
-                    TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, it[IllustTopicRelations.isExported]!!, color)
-                }
+                .toTopicSimpleList(topicColors, isExportedColumn = IllustTopicRelations.isExported)
 
             val authors = data.db.from(Authors)
                 .innerJoin(IllustAuthorRelations, IllustAuthorRelations.authorId eq Authors.id)
                 .select(Authors.id, Authors.name, Authors.type, IllustAuthorRelations.isExported)
                 .where { IllustAuthorRelations.illustId eq illustId }
-                .orderBy(Authors.type.asc(), Authors.id.asc())
-                .map {
-                    val authorType = it[Authors.type]!!
-                    val color = authorColors[authorType]
-                    AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, it[IllustAuthorRelations.isExported]!!, color)
-                }
+                .orderBy(Authors.type.desc(), Authors.id.asc())
+                .toAuthorSimpleList(authorColors, isExportedColumn = IllustAuthorRelations.isExported)
 
             val tags = data.db.from(Tags)
                 .innerJoin(IllustTagRelations, IllustTagRelations.tagId eq Tags.id)
-                .select(Tags.id, Tags.name, Tags.color, IllustTagRelations.isExported)
+                .select(Tags.id, Tags.name, Tags.color, Tags.parentId, Tags.isOverrideGroup, IllustTagRelations.isExported)
                 .where { (IllustTagRelations.illustId eq illustId) and (Tags.type eq TagAddressType.TAG) }
                 .orderBy(Tags.globalOrdinal.asc())
-                .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], it[IllustTagRelations.isExported]!!) }
+                .toTagSimpleList(isExportedColumn = IllustTagRelations.isExported)
 
             ImportImageDetailRes.ImportIllust(
                 illustId,

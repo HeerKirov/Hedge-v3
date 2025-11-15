@@ -220,12 +220,8 @@ class MetaEditorService(private val appdata: AppDataManager,
                 val result = data.db.from(Topics)
                     .select(Topics.id, Topics.name, Topics.type)
                     .where { Topics.id inList topicIds }
-                    .associate {
-                        val id = it[Topics.id]!!
-                        val type = it[Topics.type]!!
-                        val color = topicColors[type]
-                        id to TopicSimpleRes(id, it[Topics.name]!!, type, ExportType.NO, color)
-                    }
+                    .toTopicSimpleList(topicColors, isExported = ExportType.NO, removeOverrideItem = false)
+                    .associateBy { it.id }
                 topicIds.mapNotNull(result::get)
             }
         }
@@ -236,12 +232,8 @@ class MetaEditorService(private val appdata: AppDataManager,
                 val result = data.db.from(Authors)
                     .select(Authors.id, Authors.name, Authors.type)
                     .where { Authors.id inList authorIds }
-                    .associate {
-                        val id = it[Authors.id]!!
-                        val type = it[Authors.type]!!
-                        val color = authorColors[type]
-                        id to AuthorSimpleRes(id, it[Authors.name]!!, type, ExportType.NO, color)
-                    }
+                    .toAuthorSimpleList(authorColors, isExported = ExportType.NO)
+                    .associateBy { it.id }
                 authorIds.mapNotNull(result::get)
             }
         }
@@ -251,10 +243,8 @@ class MetaEditorService(private val appdata: AppDataManager,
                 val result = data.db.from(Tags)
                     .select(Tags.id, Tags.name, Tags.color)
                     .where { Tags.id inList tagIds }
-                    .associate {
-                        val id = it[Tags.id]!!
-                        id to TagSimpleRes(id, it[Tags.name]!!, it[Tags.color], ExportType.NO)
-                    }
+                    .toTagSimpleList(isExported = ExportType.NO, removeOverrideItem = false)
+                    .associateBy { it.id }
                 tagIds.mapNotNull(result::get)
             }
         }

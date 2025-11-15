@@ -90,30 +90,22 @@ class TrashService(private val appdata: AppDataManager, private val data: DataRe
         val topicColors = appdata.setting.meta.topicColors
 
         val topics = if(metadata.topics.isEmpty()) emptyList() else data.db.from(Topics)
-            .select(Topics.id, Topics.name, Topics.type)
+            .select(Topics.id, Topics.name, Topics.type, Topics.parentId)
             .where { Topics.id inList metadata.topics }
             .orderBy(Topics.type.asc(), Topics.id.asc())
-            .map {
-                val topicType = it[Topics.type]!!
-                val color = topicColors[topicType]
-                TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, ExportType.NO, color)
-            }
+            .toTopicSimpleList(topicColors, isExported = ExportType.NO)
 
         val authors = if(metadata.authors.isEmpty()) emptyList() else data.db.from(Authors)
             .select(Authors.id, Authors.name, Authors.type)
             .where { Authors.id inList metadata.authors }
-            .orderBy(Authors.type.asc(), Authors.id.asc())
-            .map {
-                val authorType = it[Authors.type]!!
-                val color = authorColors[authorType]
-                AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, ExportType.NO, color)
-            }
+            .orderBy(Authors.type.desc(), Authors.id.asc())
+            .toAuthorSimpleList(authorColors, isExported = ExportType.NO)
 
         val tags = if(metadata.tags.isEmpty()) emptyList() else data.db.from(Tags)
-            .select(Tags.id, Tags.name, Tags.color)
+            .select(Tags.id, Tags.name, Tags.color, Tags.parentId, Tags.isOverrideGroup)
             .where { (Tags.id inList metadata.tags) and (Tags.type eq TagAddressType.TAG) }
             .orderBy(Tags.globalOrdinal.asc())
-            .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], ExportType.NO) }
+            .toTagSimpleList(isExported = ExportType.NO)
 
         val parent = if(parentId == null) null else data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)

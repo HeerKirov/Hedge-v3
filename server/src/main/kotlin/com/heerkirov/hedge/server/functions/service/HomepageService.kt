@@ -64,11 +64,7 @@ class HomepageService(private val appdata: AppDataManager,
                 "TOPIC" -> data.db.from(Topics)
                     .select(Topics.id, Topics.name, Topics.type)
                     .where { Topics.id inList record.content.extras }
-                    .map {
-                        val topicType = it[Topics.type]!!
-                        val color = appdata.setting.meta.topicColors[topicType]
-                        TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, ExportType.NO, color)
-                    }
+                    .toTopicSimpleList(appdata.setting.meta.topicColors, isExported = ExportType.NO, removeOverrideItem = false)
                     .associateBy { it.id }
                     .mapValues { (id, topic) ->
                         val images = data.db.from(Illusts)
@@ -84,11 +80,7 @@ class HomepageService(private val appdata: AppDataManager,
                 "AUTHOR" -> data.db.from(Authors)
                     .select(Authors.id, Authors.name, Authors.type)
                     .where { Authors.id inList record.content.extras }
-                    .map {
-                        val authorType = it[Authors.type]!!
-                        val color = appdata.setting.meta.authorColors[authorType]
-                        AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, ExportType.NO, color)
-                    }
+                    .toAuthorSimpleList(appdata.setting.meta.authorColors, isExported = ExportType.NO)
                     .associateBy { it.id }
                     .mapValues { (id, author) ->
                         val images = data.db.from(Illusts)

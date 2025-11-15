@@ -30,15 +30,11 @@ class MetaUtilKit(private val appdata: AppDataManager, private val data: DataRep
         val topics = data.db.from(Topics)
             .innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id)
             .innerJoin(Illusts, Illusts.id eq IllustTopicRelations.illustId)
-            .select(Topics.id, Topics.name, Topics.type, IllustTopicRelations.isExported)
+            .select(Topics.id, Topics.name, Topics.type, Topics.parentId, IllustTopicRelations.isExported)
             .where { Illusts.parentId eq collectionId }
             .groupBy(Topics.id)
             .orderBy(Topics.type.asc(), Topics.id.asc())
-            .map {
-                val topicType = it[Topics.type]!!
-                val color = topicColors[topicType]
-                TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, it[IllustTopicRelations.isExported]!!, color)
-            }
+            .toTopicSimpleList(topicColors, isExportedColumn = IllustTopicRelations.isExported)
 
         val authors = data.db.from(Authors)
             .innerJoin(IllustAuthorRelations, IllustAuthorRelations.authorId eq Authors.id)
@@ -46,21 +42,17 @@ class MetaUtilKit(private val appdata: AppDataManager, private val data: DataRep
             .select(Authors.id, Authors.name, Authors.type, IllustAuthorRelations.isExported)
             .where { Illusts.parentId eq collectionId }
             .groupBy(Authors.id)
-            .orderBy(Authors.type.asc(), Authors.id.asc())
-            .map {
-                val authorType = it[Authors.type]!!
-                val color = authorColors[authorType]
-                AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, it[IllustAuthorRelations.isExported]!!, color)
-            }
+            .orderBy(Authors.type.desc(), Authors.id.asc())
+            .toAuthorSimpleList(authorColors, isExportedColumn = IllustAuthorRelations.isExported)
 
         val tags = data.db.from(Tags)
             .innerJoin(IllustTagRelations, IllustTagRelations.tagId eq Tags.id)
             .innerJoin(Illusts, Illusts.id eq IllustTagRelations.illustId)
-            .select(Tags.id, Tags.name, Tags.color, IllustTagRelations.isExported)
+            .select(Tags.id, Tags.name, Tags.color, Tags.parentId, Tags.isOverrideGroup, IllustTagRelations.isExported)
             .where { (Illusts.parentId eq collectionId) and (Tags.type eq TagAddressType.TAG) }
             .groupBy(Tags.id)
             .orderBy(Tags.globalOrdinal.asc())
-            .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], it[IllustTagRelations.isExported]!!) }
+            .toTagSimpleList(isExportedColumn = IllustTagRelations.isExported)
 
         return MetaUtilSuggestionByChildren(topics, authors, tags)
     }
@@ -75,15 +67,11 @@ class MetaUtilKit(private val appdata: AppDataManager, private val data: DataRep
         val topics = data.db.from(Topics)
             .innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id)
             .innerJoin(BookImageRelations, BookImageRelations.imageId eq IllustTopicRelations.illustId)
-            .select(Topics.id, Topics.name, Topics.type, IllustTopicRelations.isExported)
+            .select(Topics.id, Topics.name, Topics.type, Topics.parentId, IllustTopicRelations.isExported)
             .where { BookImageRelations.bookId eq bookId }
             .groupBy(Topics.id)
             .orderBy(Topics.type.asc(), Topics.id.asc())
-            .map {
-                val topicType = it[Topics.type]!!
-                val color = topicColors[topicType]
-                TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, it[IllustTopicRelations.isExported]!!, color)
-            }
+            .toTopicSimpleList(topicColors, isExportedColumn = IllustTopicRelations.isExported)
 
         val authors = data.db.from(Authors)
             .innerJoin(IllustAuthorRelations, IllustAuthorRelations.authorId eq Authors.id)
@@ -91,21 +79,17 @@ class MetaUtilKit(private val appdata: AppDataManager, private val data: DataRep
             .select(Authors.id, Authors.name, Authors.type, IllustAuthorRelations.isExported)
             .where { BookImageRelations.bookId eq bookId }
             .groupBy(Authors.id)
-            .orderBy(Authors.type.asc(), Authors.id.asc())
-            .map {
-                val authorType = it[Authors.type]!!
-                val color = authorColors[authorType]
-                AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, it[IllustAuthorRelations.isExported]!!, color)
-            }
+            .orderBy(Authors.type.desc(), Authors.id.asc())
+            .toAuthorSimpleList(authorColors, isExportedColumn = IllustAuthorRelations.isExported)
 
         val tags = data.db.from(Tags)
             .innerJoin(IllustTagRelations, IllustTagRelations.tagId eq Tags.id)
             .innerJoin(BookImageRelations, BookImageRelations.imageId eq IllustTagRelations.illustId)
-            .select(Tags.id, Tags.name, Tags.color, IllustTagRelations.isExported)
+            .select(Tags.id, Tags.name, Tags.color, Tags.parentId, Tags.isOverrideGroup, IllustTagRelations.isExported)
             .where { (BookImageRelations.bookId eq bookId) and (Tags.type eq TagAddressType.TAG) }
             .groupBy(Tags.id)
             .orderBy(Tags.globalOrdinal.asc())
-            .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], it[IllustTagRelations.isExported]!!) }
+            .toTagSimpleList(isExportedColumn = IllustTagRelations.isExported)
 
         return MetaUtilSuggestionByChildren(topics, authors, tags)
     }
@@ -120,15 +104,11 @@ class MetaUtilKit(private val appdata: AppDataManager, private val data: DataRep
         val topics = data.db.from(Topics)
             .innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id)
             .innerJoin(AssociateRelations, AssociateRelations.relatedIllustId eq IllustTopicRelations.illustId)
-            .select(Topics.id, Topics.name, Topics.type, IllustTopicRelations.isExported)
+            .select(Topics.id, Topics.name, Topics.type, Topics.parentId, IllustTopicRelations.isExported)
             .where { AssociateRelations.illustId eq illustId }
             .groupBy(Topics.id)
             .orderBy(Topics.type.asc(), Topics.id.asc())
-            .map {
-                val topicType = it[Topics.type]!!
-                val color = topicColors[topicType]
-                TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, it[IllustTopicRelations.isExported]!!, color)
-            }
+            .toTopicSimpleList(topicColors, isExportedColumn = IllustTopicRelations.isExported)
 
         val authors = data.db.from(Authors)
             .innerJoin(IllustAuthorRelations, IllustAuthorRelations.authorId eq Authors.id)
@@ -136,21 +116,17 @@ class MetaUtilKit(private val appdata: AppDataManager, private val data: DataRep
             .select(Authors.id, Authors.name, Authors.type, IllustAuthorRelations.isExported)
             .where { AssociateRelations.illustId eq illustId }
             .groupBy(Authors.id)
-            .orderBy(Authors.type.asc(), Authors.id.asc())
-            .map {
-                val authorType = it[Authors.type]!!
-                val color = authorColors[authorType]
-                AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, it[IllustAuthorRelations.isExported]!!, color)
-            }
+            .orderBy(Authors.type.desc(), Authors.id.asc())
+            .toAuthorSimpleList(authorColors, isExportedColumn = IllustAuthorRelations.isExported)
 
         val tags = data.db.from(Tags)
             .innerJoin(IllustTagRelations, IllustTagRelations.tagId eq Tags.id)
             .innerJoin(AssociateRelations, AssociateRelations.relatedIllustId eq IllustTagRelations.illustId)
-            .select(Tags.id, Tags.name, Tags.color, IllustTagRelations.isExported)
+            .select(Tags.id, Tags.name, Tags.color, Tags.parentId, Tags.isOverrideGroup, IllustTagRelations.isExported)
             .where { (AssociateRelations.illustId eq illustId) and (Tags.type eq TagAddressType.TAG) }
             .groupBy(Tags.id)
             .orderBy(Tags.globalOrdinal.asc())
-            .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], it[IllustTagRelations.isExported]!!) }
+            .toTagSimpleList(isExportedColumn = IllustTagRelations.isExported)
 
         return MetaUtilSuggestionByAssociate(topics, authors, tags)
     }
@@ -181,32 +157,24 @@ class MetaUtilKit(private val appdata: AppDataManager, private val data: DataRep
 
         val topics = data.db.from(Topics)
             .innerJoin(IllustTopicRelations, IllustTopicRelations.topicId eq Topics.id)
-            .select(Topics.id, Topics.name, Topics.type, IllustTopicRelations.isExported)
+            .select(Topics.id, Topics.name, Topics.type, Topics.parentId, IllustTopicRelations.isExported)
             .where { IllustTopicRelations.illustId eq illustId }
             .orderBy(Topics.type.asc(), Topics.id.asc())
-            .map {
-                val topicType = it[Topics.type]!!
-                val color = topicColors[topicType]
-                TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, it[IllustTopicRelations.isExported]!!, color)
-            }
+            .toTopicSimpleList(topicColors, isExportedColumn = IllustTopicRelations.isExported)
 
         val authors = data.db.from(Authors)
             .innerJoin(IllustAuthorRelations, IllustAuthorRelations.authorId eq Authors.id)
             .select(Authors.id, Authors.name, Authors.type, IllustAuthorRelations.isExported)
             .where { IllustAuthorRelations.illustId eq illustId }
-            .orderBy(Authors.type.asc(), Authors.id.asc())
-            .map {
-                val authorType = it[Authors.type]!!
-                val color = authorColors[authorType]
-                AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, it[IllustAuthorRelations.isExported]!!, color)
-            }
+            .orderBy(Authors.type.desc(), Authors.id.asc())
+            .toAuthorSimpleList(authorColors, isExportedColumn = IllustAuthorRelations.isExported)
 
         val tags = data.db.from(Tags)
             .innerJoin(IllustTagRelations, IllustTagRelations.tagId eq Tags.id)
-            .select(Tags.id, Tags.name, Tags.color, IllustTagRelations.isExported)
+            .select(Tags.id, Tags.name, Tags.color, Tags.parentId, Tags.isOverrideGroup, IllustTagRelations.isExported)
             .where { (IllustTagRelations.illustId eq illustId) and (Tags.type eq TagAddressType.TAG) }
             .orderBy(Tags.globalOrdinal.asc())
-            .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], it[IllustTagRelations.isExported]!!) }
+            .toTagSimpleList(isExportedColumn = IllustTagRelations.isExported)
 
         return MetaUtilRes(topics, authors, tags)
     }
@@ -220,32 +188,24 @@ class MetaUtilKit(private val appdata: AppDataManager, private val data: DataRep
 
         val topics = data.db.from(Topics)
             .innerJoin(BookTopicRelations, BookTopicRelations.topicId eq Topics.id)
-            .select(Topics.id, Topics.name, Topics.type, BookTopicRelations.isExported)
+            .select(Topics.id, Topics.name, Topics.type, Topics.parentId, BookTopicRelations.isExported)
             .where { BookTopicRelations.bookId eq bookId }
             .orderBy(Topics.type.asc(), Topics.id.asc())
-            .map {
-                val topicType = it[Topics.type]!!
-                val color = topicColors[topicType]
-                TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, it[BookTopicRelations.isExported]!!, color)
-            }
+            .toTopicSimpleList(topicColors, isExportedColumn = BookTopicRelations.isExported)
 
         val authors = data.db.from(Authors)
             .innerJoin(BookAuthorRelations, BookAuthorRelations.authorId eq Authors.id)
             .select(Authors.id, Authors.name, Authors.type, BookAuthorRelations.isExported)
             .where { BookAuthorRelations.bookId eq bookId }
-            .orderBy(Authors.type.asc(), Authors.id.asc())
-            .map {
-                val authorType = it[Authors.type]!!
-                val color = authorColors[authorType]
-                AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, it[BookAuthorRelations.isExported]!!, color)
-            }
+            .orderBy(Authors.type.desc(), Authors.id.asc())
+            .toAuthorSimpleList(authorColors, isExportedColumn = BookAuthorRelations.isExported)
 
         val tags = data.db.from(Tags)
             .innerJoin(BookTagRelations, BookTagRelations.tagId eq Tags.id)
-            .select(Tags.id, Tags.name, Tags.color, BookTagRelations.isExported)
+            .select(Tags.id, Tags.name, Tags.color, Tags.parentId, Tags.isOverrideGroup, BookTagRelations.isExported)
             .where { (BookTagRelations.bookId eq bookId) and (Tags.type eq TagAddressType.TAG) }
             .orderBy(Tags.globalOrdinal.asc())
-            .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], it[BookTagRelations.isExported]!!) }
+            .toTagSimpleList(isExportedColumn = BookTagRelations.isExported)
 
         return MetaUtilRes(topics, authors, tags)
     }

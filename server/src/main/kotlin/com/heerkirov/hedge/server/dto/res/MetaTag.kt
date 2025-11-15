@@ -1,17 +1,24 @@
 package com.heerkirov.hedge.server.dto.res
 
+import com.heerkirov.hedge.server.dao.Authors
+import com.heerkirov.hedge.server.dao.Tags
+import com.heerkirov.hedge.server.dao.Topics
 import com.heerkirov.hedge.server.enums.*
 import com.heerkirov.hedge.server.model.Author
 import com.heerkirov.hedge.server.model.Topic
 import com.heerkirov.hedge.server.model.Tag
 import com.heerkirov.hedge.server.utils.tuples.Tuple3
+import org.ktorm.dsl.Query
+import org.ktorm.dsl.map
+import org.ktorm.dsl.mapTo
+import org.ktorm.schema.Column
 import java.time.Instant
 
 data class TagRes(val id: Int, val ordinal: Int, val parentId: Int?,
                   val name: String, val otherNames: List<String>,
                   val type: TagAddressType, val isSequenceGroup: Boolean, val isOverrideGroup: Boolean, val color: String?)
 
-data class TagSimpleRes(val id: Int, val name: String, val color: String?, val isExported: ExportType)
+data class TagSimpleRes(val id: Int, val name: String, val color: String?, val isExported: ExportType, val visibility: Boolean = true)
 
 data class TagTreeNode(val id: Int, val name: String, val otherNames: List<String>, val implicitNames: List<String>,
                        val type: TagAddressType, val isSequenceGroup: Boolean, val isOverrideGroup: Boolean, val color: String?,
@@ -35,7 +42,7 @@ data class TopicRes(val id: Int, val name: String, val parentRoot: TopicParent?,
                     val type: TagTopicType, val favorite: Boolean,
                     val score: Int?, val count: Int, val color: String?)
 
-data class TopicSimpleRes(val id: Int, val name: String, val type: TagTopicType, val isExported: ExportType, val color: String?)
+data class TopicSimpleRes(val id: Int, val name: String, val type: TagTopicType, val isExported: ExportType, val color: String?, val visibility: Boolean = true)
 
 data class TopicDetailRes(val id: Int, val name: String, val parentRoot: TopicParent?, val parentId: Int?, val parents: List<TopicParent>, val children: List<TopicChildrenNode>?,
                           val otherNames: List<String>, val keywords: List<String>, val description: String,
@@ -59,6 +66,59 @@ data class AuthorDetailRes(val id: Int, val name: String, val otherNames: List<S
                            val mappingSourceTags: List<MappingSourceTagDto>)
 
 data class KeywordInfo(val tagType: MetaType, val keyword: String, val count: Int, val lastUsedTime: Instant)
+
+fun Query.toTagSimpleList(isExported: ExportType? = null, isExportedColumn: Column<ExportType>? = null, removeOverrideItem: Boolean = true): List<TagSimpleRes> {
+    val overrideGroup = mutableMapOf<Int, Boolean>()
+    val result = mutableListOf<TagSimpleRes>()
+    mapTo(result) {
+        if(removeOverrideItem) {
+            if(it[Tags.isOverrideGroup]!!) {
+                overrideGroup[it[Tags.id]!!] = false
+            }
+            it[Tags.parentId]?.let { parentId ->
+                if(overrideGroup[parentId] == false) {
+                    overrideGroup[parentId] = true
+                }
+            }
+        }
+        val exportedValue = isExported ?: isExportedColumn?.run { it[this]!! } ?: if(it.getBoolean("isExported")) ExportType.YES else ExportType.NO
+        TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], exportedValue)
+    }
+    val override = overrideGroup.filterValues { it }.keys
+    return result.map { if(it.id !in override) it else TagSimpleRes(it.id, it.name, it.color, it.isExported, visibility = false) }
+}
+
+fun Query.toTopicSimpleList(topicColors: Map<TagTopicType, String>, isExported: ExportType? = null, isExportedColumn: Column<ExportType>? = null, removeOverrideItem: Boolean = true): List<TopicSimpleRes> {
+    val overrideGroup = mutableMapOf<Int, Boolean>()
+    val result = mutableListOf<TopicSimpleRes>()
+    mapTo(result) {
+        val id = it[Topics.id]!!
+        val topicType = it[Topics.type]!!
+        if(removeOverrideItem && topicType == TagTopicType.CHARACTER) {
+            overrideGroup[id] = false
+            it[Topics.parentId]?.let { parentId ->
+                if(overrideGroup[parentId] == false) {
+                    overrideGroup[parentId] = true
+                }
+            }
+        }
+
+        val color = topicColors[topicType]
+        val exportedValue = isExported ?: isExportedColumn?.run { it[this]!! } ?: if(it.getBoolean("isExported")) ExportType.YES else ExportType.NO
+        TopicSimpleRes(id, it[Topics.name]!!, topicType, exportedValue, color)
+    }
+    val override = overrideGroup.filterValues { it }.keys
+    return result.map { if(it.id !in override) it else TopicSimpleRes(it.id, it.name, it.type, it.isExported, it.color, visibility = false) }
+}
+
+fun Query.toAuthorSimpleList(authorColors: Map<TagAuthorType, String>, isExported: ExportType? = null, isExportedColumn: Column<ExportType>? = null): List<AuthorSimpleRes> {
+    return map {
+        val authorType = it[Authors.type]!!
+        val color = authorColors[authorType]
+        val exportedValue = isExported ?: isExportedColumn?.run { it[this]!! } ?: if(it.getBoolean("isExported")) ExportType.YES else ExportType.NO
+        AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, exportedValue, color)
+    }
+}
 
 fun newTagRes(tag: Tag) = TagRes(tag.id, tag.ordinal, tag.parentId, tag.name, tag.otherNames, tag.type, tag.isSequenceGroup, tag.isOverrideGroup, tag.color)
 

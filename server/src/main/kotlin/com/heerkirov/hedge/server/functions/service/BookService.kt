@@ -124,32 +124,24 @@ class BookService(private val appdata: AppDataManager,
 
         val topics = data.db.from(Topics)
             .innerJoin(BookTopicRelations, BookTopicRelations.topicId eq Topics.id)
-            .select(Topics.id, Topics.name, Topics.type, BookTopicRelations.isExported)
+            .select(Topics.id, Topics.name, Topics.type, Topics.parentId, BookTopicRelations.isExported)
             .where { BookTopicRelations.bookId eq id }
             .orderBy(Topics.type.asc(), Topics.id.asc())
-            .map {
-                val topicType = it[Topics.type]!!
-                val color = topicColors[topicType]
-                TopicSimpleRes(it[Topics.id]!!, it[Topics.name]!!, topicType, it[BookTopicRelations.isExported]!!, color)
-            }
+            .toTopicSimpleList(topicColors, isExportedColumn = BookTopicRelations.isExported)
 
         val authors = data.db.from(Authors)
             .innerJoin(BookAuthorRelations, BookAuthorRelations.authorId eq Authors.id)
             .select(Authors.id, Authors.name, Authors.type, BookAuthorRelations.isExported)
             .where { BookAuthorRelations.bookId eq id }
-            .orderBy(Authors.type.asc(), Authors.id.asc())
-            .map {
-                val authorType = it[Authors.type]!!
-                val color = authorColors[authorType]
-                AuthorSimpleRes(it[Authors.id]!!, it[Authors.name]!!, authorType, it[BookAuthorRelations.isExported]!!, color)
-            }
+            .orderBy(Authors.type.desc(), Authors.id.asc())
+            .toAuthorSimpleList(authorColors, isExportedColumn = BookAuthorRelations.isExported)
 
         val tags = data.db.from(Tags)
             .innerJoin(BookTagRelations, BookTagRelations.tagId eq Tags.id)
-            .select(Tags.id, Tags.name, Tags.color, BookTagRelations.isExported)
+            .select(Tags.id, Tags.name, Tags.color, Tags.parentId, Tags.isOverrideGroup, BookTagRelations.isExported)
             .where { (BookTagRelations.bookId eq id) and (Tags.type eq TagAddressType.TAG) }
             .orderBy(Tags.globalOrdinal.asc())
-            .map { TagSimpleRes(it[Tags.id]!!, it[Tags.name]!!, it[Tags.color], it[BookTagRelations.isExported]!!) }
+            .toTagSimpleList(isExportedColumn = BookTagRelations.isExported)
 
         return BookDetailRes(id, title, imageCount, filePath, topics, authors, tags, description, score, favorite, createTime, updateTime)
     }
