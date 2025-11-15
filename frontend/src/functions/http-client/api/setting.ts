@@ -387,7 +387,7 @@ export interface Site {
     /**
      * 此站点的标签类型向元数据类型的映射。
      */
-    tagTypeMappings: Record<string, Exclude<TopicType, "UNKNOWN"> | Exclude<AuthorType, "UNKNOWN"> | "TAG">
+    tagTypeMappings: Record<string, Exclude<TopicType, "UNKNOWN" | "NODE"> | Exclude<AuthorType, "UNKNOWN"> | "TAG">
 }
 
 export interface SiteCreateForm extends SiteUpdateForm {

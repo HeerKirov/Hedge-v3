@@ -17,13 +17,15 @@ const list: Ref<{[key in TopicType]: TopicChildrenNode[]}> = computed(() => {
     const ipList: TopicChildrenNode[] = []
     const characterList: TopicChildrenNode[] = []
     const unknownList: TopicChildrenNode[] = []
+    const nodeList: TopicChildrenNode[] = []
 
     function recursive(children: TopicChildrenNode[]) {
         for (const child of children) {
             if(child.type === "IP") ipList.push(child)
             else if(child.type === "CHARACTER") characterList.push(child)
             else if(child.type === "UNKNOWN") unknownList.push(child)
-            if(child.type !== "CHARACTER" && child.children?.length) recursive(child.children)
+            else if(child.type === "NODE") nodeList.push(child)
+            if(child.children?.length) recursive(child.children)
         }
     }
     recursive(props.children)
@@ -32,7 +34,8 @@ const list: Ref<{[key in TopicType]: TopicChildrenNode[]}> = computed(() => {
         "COPYRIGHT": [],
         "IP": ipList,
         "CHARACTER": characterList,
-        "UNKNOWN": unknownList
+        "UNKNOWN": unknownList,
+        "NODE": nodeList
     }
 })
 
@@ -54,6 +57,9 @@ function childrenNodeToSimple(node: TopicChildrenNode): SimpleTopic {
     </Group>
     <Group>
         <SimpleMetaTagElement v-for="child in list['UNKNOWN']" type="topic" :value="child" clickable @click="$emit('click', child.id)" draggable v-bind="dragEvents(() => childrenNodeToSimple(child))"/>
+    </Group>
+    <Group>
+        <SimpleMetaTagElement v-for="child in list['NODE']" type="topic" :value="child" clickable @click="$emit('click', child.id)" draggable v-bind="dragEvents(() => childrenNodeToSimple(child))"/>
     </Group>
 </template>
 

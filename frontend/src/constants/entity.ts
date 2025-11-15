@@ -15,7 +15,7 @@ export const META_TYPE_NAMES: {[key in MetaType]: string} = {
     "TAG": "标签"
 }
 
-export const TOPIC_TYPES_WITHOUT_UNKNOWN = ["COPYRIGHT", "IP", "CHARACTER"] as const
+export const TOPIC_TYPES_WITHOUT_UNKNOWN = ["COPYRIGHT", "IP", "CHARACTER", "NODE"] as const
 
 export const TOPIC_TYPES = ["UNKNOWN", ...TOPIC_TYPES_WITHOUT_UNKNOWN] as const
 
@@ -23,14 +23,16 @@ export const TOPIC_TYPE_ICONS: {[key in TopicType]: string} = {
     "UNKNOWN": "question",
     "COPYRIGHT": "copyright",
     "IP": "bookmark",
-    "CHARACTER": "user-ninja"
+    "CHARACTER": "user-ninja",
+    "NODE": "tree"
 }
 
 export const TOPIC_TYPE_NAMES: {[key in TopicType]: string} = {
     "UNKNOWN": "未知类型",
     "COPYRIGHT": "版权方",
     "IP": "作品",
-    "CHARACTER": "角色"
+    "CHARACTER": "角色",
+    "NODE": "节点"
 }
 
 export const AUTHOR_TYPES_WITHOUT_UNKNOWN = ["ARTIST", "GROUP", "SERIES"] as const

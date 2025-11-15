@@ -65,7 +65,7 @@ export interface TopicExceptions {
     "update": NotFound | AlreadyExists<"Topic", "name", string> | ResourceNotExist<"parentId", number> | RecursiveParentError | IllegalConstraintError<"type", "parent" | "children", TopicType[]> | ResourceNotExist<"site", string> | ResourceNotExist<"sourceTagType", string[]>
 }
 
-export type TopicType = "UNKNOWN" | "COPYRIGHT" | "IP" | "CHARACTER"
+export type TopicType = "UNKNOWN" | "COPYRIGHT" | "IP" | "CHARACTER" | "NODE"
 
 export interface Topic {
     /**
