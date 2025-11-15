@@ -54,10 +54,12 @@ export interface RelatedSimpleAuthor extends SimpleAuthor {
 
 export interface RelatedSimpleTopic extends SimpleTopic {
     isExported: boolean
+    visibility: boolean
 }
 
 export interface RelatedSimpleTag extends SimpleTag {
     isExported: boolean
+    visibility: boolean
 }
 
 export interface FilePath {

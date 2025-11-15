@@ -13,9 +13,9 @@ import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
 import { FindSimilarResultDetailImage } from "@/functions/server/api-find-similar"
 import { createEventTrigger, EventTrigger } from "@/utils/emitter"
 import { files, Result } from "@/utils/primitives"
+import { nativeApp } from "@/utils/document"
 import { DARK_MODE_COLORS, GlobalStyle, LIGHT_MODE_COLORS, SPACINGS, ThemeColors } from "@/styles"
 import { fontAwesomeCSS } from "@/styles/fontawesome"
-import { nativeApp } from "@/utils/document.ts";
 
 export const similarFinder = {
     /**
