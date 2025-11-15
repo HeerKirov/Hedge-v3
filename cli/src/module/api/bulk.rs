@@ -61,8 +61,10 @@ pub struct TagBulkForm {
     pub other_names: Option<Vec<String>>,
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub tag_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub group: Option<String>,
+    #[serde(rename = "isSequenceGroup", alias = "is_sequence_group", skip_serializing_if = "Option::is_none")]
+    pub is_sequence_group: Option<bool>,
+    #[serde(rename = "isOverrideGroup", alias = "is_override_group", skip_serializing_if = "Option::is_none")]
+    pub is_override_group: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
