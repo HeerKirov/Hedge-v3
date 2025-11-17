@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeMount, onUnmounted, useCssModule, watch } from "vue"
 import { Icon } from "@/components/universal"
-import { popupMenu } from "@/modules/popup-menu"
+import { useDynamicPopupMenu } from "@/modules/popup-menu"
 import { ContextMenuDefinition, installParentContext, MenuBadge, useMenuContext, useParentContext } from "./context"
 
 const props = defineProps<{
@@ -11,11 +11,6 @@ const props = defineProps<{
     badge?: MenuBadge
     disabled?: boolean
     contextMenu?: ContextMenuDefinition
-}>()
-
-const emit = defineEmits<{
-    (e: "click", event: MouseEvent): void
-    (e: "contextmenu", event: MouseEvent): void
 }>()
 
 const { itemStatus, selected, setSelected, commonContextMenu } = useMenuContext()
@@ -35,19 +30,6 @@ const click = (e: MouseEvent) => {
     if(!currentSelected.value) {
         setSelected(props.id)
     }
-    emit("click", e)
-}
-
-const rightClick = (e: MouseEvent) => {
-    const ctx = {id: props.id, label: props.label}
-    const contextMenu = commonContextMenu(ctx)
-    const selfContextMenu = props.contextMenu?.(ctx)
-    if(contextMenu?.length || selfContextMenu?.length) popupMenu([
-        ...(contextMenu ?? []),
-        ...(contextMenu?.length && selfContextMenu?.length ? [{type: "separator"} as const] : []),
-        ...(selfContextMenu ?? [])
-    ])
-    emit("contextmenu", e)
 }
 
 const clickCollapse = (e: MouseEvent) => {
@@ -65,6 +47,17 @@ const badges = computed(() => {
     }else{
         return [props.badge]
     }
+})
+
+const contextMenu = useDynamicPopupMenu(() => {
+    const ctx = {id: props.id, label: props.label}
+    const contextMenu = commonContextMenu(ctx)
+    const selfContextMenu = props.contextMenu?.(ctx)
+    return [
+        ...(contextMenu ?? []),
+        ...(contextMenu?.length && selfContextMenu?.length ? [{type: "separator"} as const] : []),
+        ...(selfContextMenu ?? [])
+    ]
 })
 
 const style = useCssModule()
@@ -93,7 +86,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <button :class="divClass" @click="click" @contextmenu="rightClick">
+    <button :class="divClass" @click="click" @contextmenu="contextMenu.popup(undefined)">
         <Icon v-if="icon" class="flex-item no-grow-shrink" :icon="icon"/>
         <span class="ml-2 flex-item w-100">{{label}}</span>
         <span v-for="badge in badges" :class="[$style.badge, $style[badge.type]]">{{ badge.count }}</span>

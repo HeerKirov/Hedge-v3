@@ -68,7 +68,8 @@ export interface IpcClient {
             onFullscreenChanged(func: (fullscreen: boolean) => void): void
         }
         menu: {
-            popup(options: PopupMenuOptions): void
+            popup(options: PopupMenuOptions): number
+            popupResponseEvent: Emitter<{requestId: number, eventId: number}>
         }
         dialog: {
             openDialog(options: OpenDialogOptions): Promise<string[] | null>
@@ -165,7 +166,7 @@ export interface StorageSetting {
 }
 
 export interface PopupMenuOptions {
-    items: MenuTemplate[]
+    items: MenuTemplateInIpc[]
     x?: number
     y?: number
 }
@@ -186,7 +187,7 @@ export interface MessageOptions {
     detail?: string
 }
 
-export type MenuTemplate = NormalMenuTemplate | CheckboxMenuTemplate | RadioMenuTemplate | SeparatorMenuTemplate | SubMenuTemplate
+export type MenuTemplateInIpc = Omit<NormalMenuTemplate, "click"> & {eventId?: number} | Omit<CheckboxMenuTemplate, "click"> & {eventId?: number} | Omit<RadioMenuTemplate, "click"> & {eventId?: number} | SeparatorMenuTemplate | SubMenuTemplateInIpc
 
 export interface NormalMenuTemplate {
     label: string
@@ -211,9 +212,9 @@ export interface RadioMenuTemplate {
 export interface SeparatorMenuTemplate {
     type: "separator"
 }
-export interface SubMenuTemplate {
+export interface SubMenuTemplateInIpc {
     label: string
     enabled?: boolean
     type: "submenu"
-    submenu: MenuTemplate[]
+    submenu: MenuTemplateInIpc[]
 }

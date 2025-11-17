@@ -1,5 +1,6 @@
-import { isReactive, isRef, ref, Ref, unref } from "vue"
-import { remoteIpcClient, MenuTemplate } from "@/functions/ipc-client"
+import { isReactive, isRef, onBeforeUnmount, onMounted, ref, Ref, unref } from "vue"
+import { remoteIpcClient } from "@/functions/ipc-client"
+import { MenuTemplateInIpc } from "@/functions/ipc-client/constants"
 
 //== popup menu定义结构 ==
 
@@ -37,78 +38,67 @@ interface SubMenuItem<P> {
 type ClickFunction<T> = (args: T) => void
 
 
-//== 基础popup menu的实现，直接提供「打开popup menu」的方法 ==
-
-interface PopupOptions<P> {
-    items: MenuItem<P>[]
-    scale?: PopupScale
-    args?: P
-}
+//== 基础popup menu的实现 ==
 
 interface PopupScale {
     x: number
     y: number
 }
 
-/**
- * 打开一个popup menu。
- */
-export function popupMenu(menuItems: MenuItem<undefined>[]): void
-
-/**
- * 打开一个popup menu，并提供一个参数作为所有事件的参数。
- * @param obj
- * @param menuItems
- */
-export function popupMenu<P = undefined>(obj: P, menuItems: MenuItem<P>[]): void
-
-/**
- * 提供更复杂的popup menu启动参数。
- * @param options
- */
-export function popupMenu<P = undefined>(options: PopupOptions<P>): void
-
-export function popupMenu<P>(a: MenuItem<P>[] | PopupOptions<P> | P, b?: MenuItem<P>[]) {
-    if(b !== undefined) {
-        popupNativeMenu(b, undefined, a as P)
-    }else if(a instanceof Array) {
-        popupNativeMenu(a, undefined, undefined)
-    }else{
-        popupNativeMenu((a as PopupOptions<P>).items, (a as PopupOptions<P>).scale, (a as PopupOptions<P>).args)
+function useNativePopupMenu<P>() {
+    const popupRequests = new Map<number, (eventId: number) => void>()
+    
+    function listener(event: {requestId: number, eventId: number}) {
+        //FUTURE: 现阶段接收的事件会下发至所有的useNativePopupMenu，由每个use自己对requestId进行筛选。后续可以进行优化，固定每个use的reuquestId，并进行固定分发
+        popupRequests.get(event.requestId)?.(event.eventId)
+        popupRequests.clear()
     }
-}
 
-function popupNativeMenu<P>(items: MenuItem<P>[], scale: PopupScale | undefined, obj: P | undefined) {
-    let localArgument: P | undefined = obj
+    function createMenuTemplate(item: MenuItem<P>[], obj: P | undefined): [MenuTemplateInIpc[], (() => void)[]] {
+        let localArgument: P | undefined = obj
+        const eventMap: (() => void)[] = []
 
-    function mapMenuItems(menuItems: MenuItem<P>[]): MenuTemplate[] {
-        return menuItems.map(item => {
-            if(item.type === "normal" || item.type === "checkbox" || item.type === "radio") {
-                return {
-                    ...item,
-                    click() {
-                        item.click?.(localArgument!)
+        function mapMenuItems(menuItems: MenuItem<P>[]): MenuTemplateInIpc[] {
+            return menuItems.map(item => {
+                if(item.type === "normal" || item.type === "checkbox" || item.type === "radio") {
+                    const { click, ...leave } = item
+                    eventMap.push(() => {
+                        click?.(localArgument!)
                         localArgument = undefined
+                        eventMap.splice(0, eventMap.length)
+                    })
+                    return {
+                        ...leave,
+                        eventId: eventMap.length - 1
                     }
+                }else if(item.type === "submenu") {
+                    return {
+                        ...item,
+                        submenu: mapMenuItems(item.submenu)
+                    }
+                }else{
+                    return item
                 }
-            }else if(item.type === "submenu") {
-                return {
-                    ...item,
-                    submenu: mapMenuItems(item.submenu)
-                }
-            }else{
-                return item
-            }
-        })
+            })
+        }
+
+        return [mapMenuItems(item), eventMap]
     }
 
-    const popupOptions = {
-        items: mapMenuItems(items),
-        x: scale?.x,
-        y: scale?.y
-    }
 
-    remoteIpcClient.remote.menu.popup(popupOptions)
+    onMounted(() => remoteIpcClient.remote.menu.popupResponseEvent.addEventListener(listener))
+    onBeforeUnmount(() => {
+        remoteIpcClient.remote.menu.popupResponseEvent.removeEventListener(listener)
+        popupRequests.clear()
+    })
+
+    return {
+        popup(items: MenuItem<P>[], scale: PopupScale | undefined, obj: P | undefined) {
+            const [menuItems, eventList] = createMenuTemplate(items, obj)
+            const requestId = remoteIpcClient.remote.menu.popup({items: menuItems, x: scale?.x, y: scale?.y})
+            popupRequests.set(requestId, (eventId: number) => eventList[eventId]?.())
+        }
+    }
 }
 
 //== 一级包装的popup menu: 提供根据响应式变化生成的菜单 ==
@@ -130,23 +120,25 @@ export function usePopupMenu(items: MenuItem<undefined>[] | Ref<MenuItem<undefin
 export function usePopupMenu<P>(items: MenuItem<P>[] | Ref<MenuItem<P>[]> | (() => MenuItem<P>[])): { popup(args: P, scale?: PopupScale): void }
 
 export function usePopupMenu<P = undefined>(menuItems: MenuItem<P>[] | Ref<MenuItem<P>[]> | (() => MenuItem<P>[])) {
+    const native = useNativePopupMenu<P>()
+
     if(typeof menuItems === "function") {
         return {
             popup(args: P, scale?: PopupScale) {
-                popupMenu({items: menuItems(), scale, args})
+                native.popup(menuItems(), scale, args)
             }
         }
     }else if(isReactive(menuItems) || isRef(menuItems)) {
         return {
             popup(args: P, scale?: PopupScale) {
-                popupMenu({items: unref(menuItems), scale, args})
+                native.popup(unref(menuItems), scale, args)
             }
         }
     }else{
         const items = unref(menuItems)
         return {
             popup(args: P, scale?: PopupScale) {
-                popupMenu({items, scale, args})
+                native.popup(items, scale, args)
             }
         }
     }
@@ -159,10 +151,12 @@ export function usePopupMenu<P = undefined>(menuItems: MenuItem<P>[] | Ref<MenuI
  * @param generator
  */
 export function useDynamicPopupMenu<P>(generator: (value: P, param: DynamicAttachParameter) => (MenuItem<P> | null | undefined)[]) {
+    const native = useNativePopupMenu<P>()
+
     function popup(args: P, param?: DynamicAttachParameter) {
         const items = generator(args, param ?? {}).filter(item => item != null) as MenuItem<P>[]
         const scale = param?.x !== undefined && param?.y !== undefined ? {x: param.x, y: param.y} : undefined
-        popupMenu({items, scale, args})
+        native.popup(items, scale, args)
     }
 
     return {popup}
