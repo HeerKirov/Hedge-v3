@@ -472,6 +472,7 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
         }else{
             const routeDef = getRouteDefinition(route.routeName)
             if(view.value.forwards.length > 0) view.value.forwards.splice(0, view.value.forwards.length)
+            if(view.value.current.forwards.length > 0) view.value.current.forwards.splice(0, view.value.current.forwards.length)
             view.value.histories.push(view.value.current)
             if(view.value.histories.length > PAGE_HISTORY_MAX) view.value.histories.shift()
             view.value.current = {
