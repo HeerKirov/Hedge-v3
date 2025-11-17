@@ -1,7 +1,7 @@
 import { ipcRenderer, contextBridge, webUtils } from "electron"
 import { getNodePlatform } from "@/utils/process"
 import { createProxyEmitter } from "@/utils/emitter"
-import { IpcClient, MenuTemplate, MenuTemplateInIpc } from "./constants"
+import { IpcClient } from "./constants"
 
 /**
  * IPC API Client在前端的实现。这部分代码通过electron preload注入到前端。
@@ -146,32 +146,16 @@ function createRemoteIpcClient(): IpcClient {
             },
             menu: {
                 popup(options) {
-                    const callbacks: (() => void)[] = []
-
-                    function mapItem(item: MenuTemplate): MenuTemplateInIpc {
-                        if((item.type === "normal" || item.type === "radio" || item.type === "checkbox") && item.click !== undefined) {
-                            const { click, ...leave } = item
-                            callbacks.push(click)
-                            return { ...leave, eventId: callbacks.length - 1 }
-                        }else if(item.type === "submenu" && item.submenu.length > 0) {
-                            const { submenu, ...leave } = item
-                            return { ...leave, submenu: submenu.map(mapItem) }
-                        }else{
-                            return item
-                        }
-                    }
-
-                    const refItems = options.items.map(mapItem)
-                    const refOptions = options && options.x != null && options.y != null ? { x: options.x, y: options.y } : undefined
-
                     const requestId = ++popupRequestId
-                    ipcRenderer.send("/remote/menu/popup", {requestId, items: refItems, options: refOptions})
-                    ipcRenderer.once(`/remote/menu/popup/response/${requestId}`, (_, eventId: number | undefined) => {
-                        if(eventId !== undefined) {
-                            callbacks[eventId]?.()
-                        }
+                    const refOptions = options && options.x != null && options.y != null ? { x: options.x, y: options.y } : undefined
+                    ipcRenderer.invoke("/remote/menu/popup", {requestId, items: options.items, options: refOptions})
+                    return requestId
+                },
+                popupResponseEvent: createProxyEmitter(emit => {
+                    ipcRenderer.on("/remote/menu/popup/response", (_, arg) => {
+                        emit(arg)
                     })
-                }
+                })
             },
             dialog: {
                 async openDialog(options) {

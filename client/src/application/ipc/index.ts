@@ -8,10 +8,8 @@ import { Channel } from "@/components/channel"
 import { ServerManager } from "@/components/server"
 import { StateManager } from "@/components/state"
 import { LocalManager } from "@/components/local"
-import { sleep } from "@/utils/process"
 import { Emitter } from "@/utils/emitter"
-import { MenuTemplate, MenuTemplateInIpc } from "./constants"
-import { createIpcClientImpl, IpcRemoteOptions } from "./impl"
+import { createIpcClientImpl, createMenuImpl, IpcRemoteOptions } from "./impl"
 
 
 /**
@@ -52,10 +50,21 @@ function ipcEventFocus<T>(channel: string, emitter: Emitter<T>) {
 }
 
 /**
+ * 从客户端主动发送的ipc通信。发送到指定的窗口。
+ */
+function ipcEventWindow<T>(channel: string, emitter: Emitter<T & {window: BrowserWindow}>) {
+    emitter.addEventListener(e => {
+        const { window, ...context } = e
+        window.webContents.send(channel, context)
+    })
+}
+
+/**
  * 注册全局的IPC远程事件实现。
  */
 export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: Channel, server: ServerManager, state: StateManager, local: LocalManager, theme: ThemeManager, menu: MenuManager, window: WindowManager, options: IpcRemoteOptions) {
     const impl = createIpcClientImpl(appdata, channel, server, state, local, theme, window, options)
+    const menuImpl = createMenuImpl()
 
     ipcHandleSync("/app/env", impl.app.env)
     ipcHandleSync("/app/initialize", impl.app.initialize)
@@ -97,40 +106,8 @@ export function registerGlobalIpcRemoteEvents(appdata: AppDataDriver, channel: C
     ipcHandle("/remote/dialog/open-dialog", (value: OpenDialogOptions, e) => dialog.showOpenDialog(BrowserWindow.fromWebContents(e.sender)!, value))
     ipcHandle("/remote/dialog/show-message", (value: MessageBoxOptions, e) => dialog.showMessageBox(BrowserWindow.fromWebContents(e.sender)!, value))
     ipcHandleSync("/remote/dialog/show-error", ({ title, message }: {title: string, message: string}) => { dialog.showErrorBox(title, message) })
-    ipcHandleSync("/remote/menu/popup", ({ requestId, items, options }: {requestId: number, items: MenuTemplateInIpc[], options?: { x: number; y: number }}, e) => {
-        let clicked = false
-
-        function mapItem(item: MenuTemplateInIpc): MenuTemplate {
-            if((item.type === "normal" || item.type === "radio" || item.type === "checkbox") && item.eventId != undefined) {
-                const { eventId, ...leave } = item
-                return {
-                    ...leave,
-                    click() {
-                        clicked = true
-                        e.sender.send(`/remote/menu/popup/response/${requestId}`, eventId)
-                    }
-                }
-            }else if(item.type === "submenu" && item.submenu.length > 0) {
-                const { submenu, ...leave} = item
-                return {...leave, submenu: submenu.map(mapItem)}
-            }else{
-                return item
-            }
-        }
-
-        const finalItems = items.map(mapItem)
-
-        const menu = Menu.buildFromTemplate(finalItems)
-        menu.once("menu-will-close", async () => {
-            await sleep(500)
-            if(!clicked) {
-                //在延时之后检测是否clicked，如果没有就发送一个内容为undefined的事件，防止渲染端内存泄露
-                e.sender.send(`/remote/menu/popup/response/${requestId}`, undefined)
-            }
-        })
-        const window = BrowserWindow.fromWebContents(e.sender)!
-        menu.popup({window, ...(options || {})})
-    })
+    ipcHandle("/remote/menu/popup", menuImpl.popup)
+    ipcEventWindow("/remote/menu/popup/response", menuImpl.emitter)
     ipcHandleSync("/remote/shell/open-external", (url: string) => {
         const externalBrowser = appdata.getAppData().behaviourOption.externalBrowser
         let name: string | readonly string[] | undefined = undefined

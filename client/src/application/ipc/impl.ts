@@ -1,4 +1,4 @@
-import { systemPreferences } from "electron"
+import { BrowserWindow, IpcMainInvokeEvent, Menu, systemPreferences } from "electron"
 import { ThemeManager } from "@/application/theme"
 import { WindowManager } from "@/application/window"
 import { AppDataDriver, AppDataStatus } from "@/components/appdata"
@@ -7,8 +7,8 @@ import { ServerManager } from "@/components/server"
 import { StateManager } from "@/components/state"
 import { LocalManager } from "@/components/local"
 import { Platform, sleep } from "@/utils/process"
-import { createProxyEmitter } from "@/utils/emitter"
-import { AppEnvironmentChangedEvent, IpcClient } from "./constants"
+import { createEmitter, createProxyEmitter } from "@/utils/emitter"
+import { AppEnvironmentChangedEvent, IpcClient, MenuTemplate, MenuTemplateInIpc } from "./constants"
 
 export interface IpcRemoteOptions {
     platform: Platform
@@ -157,4 +157,38 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
         },
         remote: <any>undefined
     }
+}
+
+export function createMenuImpl() {
+
+    async function popup( { requestId, items, options }: {requestId: number, items: MenuTemplateInIpc[], options?: { x: number; y: number }}, e: IpcMainInvokeEvent) {
+        const window = BrowserWindow.fromWebContents(e.sender)!
+
+        function mapItem(item: MenuTemplateInIpc): MenuTemplate {
+            if((item.type === "normal" || item.type === "radio" || item.type === "checkbox") && item.eventId != undefined) {
+                const { eventId, ...leave } = item
+                return {
+                    ...leave,
+                    click() {
+                        emitter.emit({requestId, eventId, window})
+                    }
+                }
+            }else if(item.type === "submenu" && item.submenu.length > 0) {
+                const { submenu, ...leave} = item
+                return {...leave, submenu: submenu.map(mapItem)}
+            }else{
+                return item
+            }
+        }
+
+        const finalItems = items.map(mapItem)
+
+        const menu = Menu.buildFromTemplate(finalItems)
+        
+        menu.popup({window, ...(options || {})})
+    }
+
+    const emitter = createEmitter<{requestId: number, eventId: number, window: BrowserWindow}>()
+
+    return {popup, emitter}
 }

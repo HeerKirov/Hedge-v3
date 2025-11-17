@@ -73,7 +73,8 @@ export interface IpcClient {
             onFullscreenChanged(func: (fullscreen: boolean) => void): void
         }
         menu: {
-            popup(options: PopupMenuOptions): void
+            popup(options: PopupMenuOptions): number
+            popupResponseEvent: Emitter<{requestId: number, eventId: number}>
         }
         dialog: {
             openDialog(options: OpenDialogOptions): Promise<string[] | null>
@@ -150,7 +151,7 @@ interface StorageSetting {
 }
 
 export interface PopupMenuOptions {
-    items: MenuTemplate[]
+    items: MenuTemplateInIpc[]
     x?: number
     y?: number
 }
