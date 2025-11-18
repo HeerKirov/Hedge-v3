@@ -1,5 +1,5 @@
-<script setup lang="ts" generic="T">
-import { onBeforeUnmount, ref } from "vue"
+<script setup lang="ts" generic="T, D = T">
+import { computed, onBeforeUnmount, ref } from "vue"
 import { objects } from "@/utils/primitives"
 import { onOutsideClick } from "@/utils/sensors"
 import { toRef } from "@/utils/reactivity"
@@ -15,13 +15,13 @@ const props = withDefaults(defineProps<{
      */
     value: T
     /**
-     * 编辑模式下使用的值。需要开启useEditValue。
+     * 展示模式下使用的值。需要开启useDisplayValue。
      */
-    editValue?: any
+    displayValue?: D
     /**
-     * 在编辑模式下，使用与显示模式不同的另一个数据。同时，编辑器的回调数据也以编辑模式数据为准。
+     * 在展示模式下，使用一个不同于编辑模式的value的值。
      */
-    useEditValue?: boolean
+    useDisplayValue?: boolean
     /**
      * 是否开启编辑。默认显然是开启的，可以在有需要时禁用编辑。
      */
@@ -65,18 +65,18 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-    default(props: {value: T, edit: typeof edit}): any
+    default(props: {value: D, edit: typeof edit}): any
     edit(props: {value: T, setValue: typeof setEditValue, save: typeof save}): any
 }>()
 
-const displayValue = toRef(props, "value")
+const displayValue = computed<D>(() => props.useDisplayValue ? props.displayValue! : (props.value as unknown as D))
 const editMode = ref(false)
 const editValue = ref<T>()
 
 const edit = () => {
     if(props.editable && !editMode.value) {
         editMode.value = true
-        editValue.value = objects.deepCopy(props.useEditValue ? props.editValue : props.value)
+        editValue.value = objects.deepCopy(props.value)
     }
 }
 

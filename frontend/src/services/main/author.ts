@@ -1,7 +1,7 @@
-import { readonly, Ref, ref, watch } from "vue"
-import { ErrorHandler, QueryListview, useCreatingHelper, useFetchEndpoint, useFetchHelper, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
+import { Ref, ref, watch } from "vue"
+import { QueryListview, useCreatingHelper, useFetchEndpoint, useFetchHelper, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
-import { Author, DetailAuthor, AuthorCreateForm, AuthorUpdateForm, AuthorExceptions, AuthorQueryFilter, AuthorType } from "@/functions/http-client/api/author"
+import { Author, DetailAuthor, AuthorCreateForm, AuthorQueryFilter, AuthorType } from "@/functions/http-client/api/author"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { useNavigationItem } from "@/services/base/side-nav-records"
 import { useListViewContext } from "@/services/base/list-view-context"
@@ -133,10 +133,6 @@ export function useAuthorCreatePanel() {
 
     const form = ref(mapTemplateToCreateForm(null, "ARTIST"))
 
-    const setProperty = <T extends keyof AuthorCreateFormData>(key: T, value: AuthorCreateFormData[T]) => {
-        form.value[key] = value
-    }
-
     const { submit } = useCreatingHelper({
         form,
         create: client => client.author.create,
@@ -176,12 +172,15 @@ export function useAuthorCreatePanel() {
 
     useInitializer(params => {if(params.createTemplate) form.value = mapTemplateToCreateForm(params.createTemplate, "ARTIST")})
 
-    return {form, setProperty, submit}
+    return {form, submit}
 }
 
 export function useAuthorDetailPanel() {
+    const toast = useToast()
     const router = useTabRoute()
     const message = useMessageBox()
+
+    const fetchFindSimilarTaskCreate = usePostFetchHelper(client => client.findSimilar.task.create)
 
     const path = usePath<number>()
 
@@ -198,23 +197,68 @@ export function useAuthorDetailPanel() {
         }
     })
 
-    const { data: exampleData } = useFetchEndpoint({
-        path,
-        get: client => async (author: number) => mapResponse(await client.illust.list({limit: 10, author, type: "COLLECTION", order: "-orderTime"}), r => r.result)
-    })
-
-    const editor = useAuthorDetailPanelEditor(data, setData)
-
     const toggleFavorite = async () => {
         if(data.value !== null) {
             await setData({favorite: !data.value.favorite})
         }
     }
 
-    const createByTemplate = () => {
-        if(data.value !== null) {
-            router.routePush({routeName: "AuthorCreate", initializer: {createTemplate: data.value}})
+    const setName = async ([name, otherNames]: [string, string[]]) => {
+        if(!checkTagName(name)) {
+            message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` | 字符。")
+            return false
         }
+        if(otherNames.some(n => !checkTagName(n))) {
+            message.showOkMessage("prompt", "不合法的别名。", "别名不能为空，且不能包含 ` | 字符。")
+            return false
+        }
+
+        const nameNotChanged = name === data.value?.name
+        const otherNamesNotChanged = objects.deepEquals(otherNames, data.value?.otherNames)
+
+        return (nameNotChanged && otherNamesNotChanged) || await setData({
+            name: nameNotChanged ? undefined : name,
+            otherNames: otherNamesNotChanged ? undefined : otherNames
+        }, e => {
+            if (e.code === "ALREADY_EXISTS") {
+                message.showOkMessage("prompt", "该名称已存在。")
+            } else {
+                return e
+            }
+        })
+    }
+
+    const setDescription = async (description: string) => {
+        return description === data.value?.description || await setData({ description })
+    }
+
+    const setKeywords = async (keywords: string[]) => {
+        return objects.deepEquals(keywords, data.value?.keywords) || await setData({ keywords })
+    }
+
+    const setScore = async (score: number | null) => {
+        return score === data.value?.score || await setData({ score })
+    }
+
+    const setType = async (type: AuthorType) => {
+        return type === data.value?.type || await setData({ type })
+    }
+
+    const setMappingSourceTags = async (mappingSourceTags: MappingSourceTag[]) => {
+        return objects.deepEquals(mappingSourceTags, data.value?.mappingSourceTags) || await setData({ mappingSourceTags })
+    }
+
+    const findSimilarOfAuthor = async () => {
+        await fetchFindSimilarTaskCreate({selector: {type: "author", authorIds: [data.value!.id]}})
+        toast.toast("已创建", "success", "相似项查找任务已创建完成。")
+    }
+
+    const openIllustsOfAuthor = () => {
+        router.routePush({routeName: "Illust", initializer: {authorName: data.value!.name}})
+    }
+
+    const openBooksOfAuthor = () => {
+        router.routePush({routeName: "Book", initializer: {authorName: data.value!.name}})
     }
 
     const openAuthorDetail = (authorId: number) => {
@@ -233,82 +277,11 @@ export function useAuthorDetailPanel() {
 
     useDocumentTitle(data)
 
-    return {data, exampleData, editor, operators: {toggleFavorite, createByTemplate, openAuthorDetail, deleteItem}}
-}
-
-function useAuthorDetailPanelEditor(data: Readonly<Ref<DetailAuthor | null>>, setData: (form: AuthorUpdateForm, handle: ErrorHandler<AuthorExceptions["update"]>) => Promise<boolean>) {
-    const message = useMessageBox()
-
-    const editMode = ref(false)
-
-    const form = ref<AuthorUpdateFormData | null>(null)
-
-    const setProperty = <T extends keyof AuthorUpdateFormData>(key: T, value: AuthorUpdateFormData[T]) => {
-        form.value![key] = value
+    return {
+        data, 
+        toggleFavorite, setName, setDescription, setKeywords, setScore, setType, setMappingSourceTags, 
+        findSimilarOfAuthor, openIllustsOfAuthor, openBooksOfAuthor, openAuthorDetail, deleteItem
     }
-
-    const edit = () => {
-        if(data.value !== null) {
-            form.value = mapDataToUpdateForm(data.value)
-            editMode.value = true
-        }
-    }
-
-    const cancel = () => {
-        editMode.value = false
-        form.value = null
-    }
-
-    const save = async () => {
-        if(form.value && data.value) {
-            const updateForm: AuthorUpdateForm = {
-                type: form.value.type !== data.value.type ? form.value.type : undefined,
-                keywords: !objects.deepEquals(form.value.keywords, data.value.keywords) ? form.value.keywords : undefined,
-                description: form.value.description !== data.value.description ? form.value.description : undefined,
-                score: form.value.score !== data.value.score ? form.value.score : undefined,
-                mappingSourceTags: !objects.deepEquals(form.value.mappingSourceTags, data.value.mappingSourceTags) ? patchMappingSourceTagForm(form.value.mappingSourceTags, data.value.mappingSourceTags) : undefined
-            }
-
-            if(form.value.name !== data.value.name) {
-                if(!checkTagName(form.value.name)) {
-                    message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` | 字符。")
-                    return
-                }
-                updateForm.name = form.value.name
-            }
-            if(!objects.deepEquals(form.value.otherNames, data.value.otherNames)) {
-                for(const otherName of form.value.otherNames) {
-                    if(!checkTagName(otherName)) {
-                        message.showOkMessage("prompt", "不合法的别名。", "别名不能为空，且不能包含 ` | 字符。")
-                        return
-                    }
-                }
-                updateForm.otherNames = form.value.otherNames
-            }
-
-            const r = !Object.values(form).filter(i => i !== undefined).length || await setData(updateForm, e => {
-                if(e.code === "ALREADY_EXISTS") {
-                    message.showOkMessage("prompt", "该名称已存在。")
-                }else if(e.code === "NOT_EXIST") {
-                    const [type, id] = e.info
-                    if(type === "site") {
-                        message.showOkMessage("error", `选择的来源站点不存在。`, `错误项: ${id}`)
-                    }else if(type === "sourceTagType") {
-                        message.showOkMessage("error", `选择的来源标签类型不存在。`, `错误项: ${id.join(", ")}`)
-                    }else{
-                        message.showOkMessage("error", `选择的资源${type}不存在。`, `错误项: ${id}`)
-                    }
-                }else{
-                    return e
-                }
-            })
-            if(r) {
-                editMode.value = false
-            }
-        }
-    }
-
-    return {editMode: readonly(editMode), form, setProperty, edit, cancel, save}
 }
 
 interface AuthorCreateFormData extends AuthorUpdateFormData {
@@ -351,14 +324,3 @@ function mapCreateFormToHelper(form: AuthorCreateFormData): AuthorCreateForm {
     }
 }
 
-function mapDataToUpdateForm(data: DetailAuthor): AuthorUpdateFormData {
-    return {
-        name: data.name,
-        otherNames: data.otherNames,
-        type: data.type,
-        description: data.description,
-        keywords: data.keywords,
-        score: data.score,
-        mappingSourceTags: data.mappingSourceTags
-    }
-}

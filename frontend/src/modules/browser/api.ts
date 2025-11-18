@@ -306,7 +306,6 @@ function installClosedTabs(views: Ref<InternalTab[]>,
     }
 
     function resume(index: number = 0) {
-        console.log("resume", index)
         if(index >= 0 && index < closedTabs.length) {
             //由于tabs对外提供的列表是反向的，所以此处的index也要反向
             const [tab] = closedTabs.splice(closedTabs.length - index - 1, 1)

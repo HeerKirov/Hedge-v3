@@ -1,8 +1,7 @@
-import { readonly, Ref, ref } from "vue"
-import { useLocalStorage } from "@/functions/app"
-import { useCreatingHelper, useFetchEndpoint, useRetrieveHelper, ErrorHandler, QueryListview, usePostFetchHelper } from "@/functions/fetch"
+import { ref } from "vue"
+import { useCreatingHelper, useFetchEndpoint, useRetrieveHelper, QueryListview, usePostFetchHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
-import { DetailTopic, ParentTopic, Topic, TopicCreateForm, TopicUpdateForm, TopicExceptions, TopicQueryFilter, TopicType } from "@/functions/http-client/api/topic"
+import { DetailTopic, ParentTopic, Topic, TopicCreateForm, TopicQueryFilter, TopicType } from "@/functions/http-client/api/topic"
 import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
 import { useNavigationItem } from "@/services/base/side-nav-records"
 import { useListViewContext } from "@/services/base/list-view-context"
@@ -117,10 +116,6 @@ export function useTopicCreatePanel() {
 
     const form = ref(mapTemplateToCreateForm(null, "CHARACTER"))
 
-    const setProperty = <T extends keyof TopicCreateFormData>(key: T, value: TopicCreateFormData[T]) => {
-        form.value[key] = value
-    }
-
     const { submit } = useCreatingHelper({
         form,
         create: client => client.topic.create,
@@ -166,12 +161,15 @@ export function useTopicCreatePanel() {
 
     useInitializer(params => {if(params.createTemplate) form.value = mapTemplateToCreateForm(params.createTemplate, "CHARACTER")})
 
-    return {form, setProperty, submit}
+    return {form, submit}
 }
 
 export function useTopicDetailPanel() {
+    const toast = useToast()
     const router = useTabRoute()
     const message = useMessageBox()
+
+    const fetchFindSimilarTaskCreate = usePostFetchHelper(client => client.findSimilar.task.create)
 
     const path = usePath<number>()
 
@@ -188,25 +186,72 @@ export function useTopicDetailPanel() {
         }
     })
 
-    const { data: exampleData } = useFetchEndpoint({
-        path,
-        get: client => async (topic: number) => mapResponse(await client.illust.list({limit: 10, topic, type: "COLLECTION", order: "-orderTime"}), r => r.result)
-    })
-
-    const childrenMode = useLocalStorage<"tree" | "list">("topic/detail-panel/children-view-mode", "tree")
-
-    const editor = useTopicDetailPanelEditor(data, setData)
-
     const toggleFavorite = async () => {
         if(data.value !== null) {
             await setData({favorite: !data.value.favorite})
         }
     }
 
-    const createByTemplate = () => {
-        if(data.value !== null) {
-            router.routePush({routeName: "TopicCreate", initializer: {createTemplate: data.value}})
+    const setName = async ([name, otherNames]: [string, string[]]) => {
+        if(!checkTagName(name)) {
+            message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` | 字符。")
+            return false
         }
+        if(otherNames.some(n => !checkTagName(n))) {
+            message.showOkMessage("prompt", "不合法的别名。", "别名不能为空，且不能包含 ` | 字符。")
+            return false
+        }
+
+        const nameNotChanged = name === data.value?.name
+        const otherNamesNotChanged = objects.deepEquals(otherNames, data.value?.otherNames)
+
+        return (nameNotChanged && otherNamesNotChanged) || await setData({
+            name: nameNotChanged ? undefined : name,
+            otherNames: otherNamesNotChanged ? undefined : otherNames
+        }, e => {
+            if (e.code === "ALREADY_EXISTS") {
+                message.showOkMessage("prompt", "该名称已存在。")
+            } else {
+                return e
+            }
+        })
+    }
+
+    const setDescription = async (description: string) => {
+        return description === data.value?.description || await setData({ description })
+    }
+
+    const setKeywords = async (keywords: string[]) => {
+        return objects.deepEquals(keywords, data.value?.keywords) || await setData({ keywords })
+    }
+
+    const setScore = async (score: number | null) => {
+        return score === data.value?.score || await setData({ score })
+    }
+
+    const setType = async (type: TopicType) => {
+        return type === data.value?.type || await setData({ type })
+    }
+
+    const setParent = async (parent: ParentTopic | null) => {
+        return parent?.id === data.value?.parentId || await setData({ parentId: parent?.id ?? null })
+    }
+
+    const setMappingSourceTags = async (mappingSourceTags: MappingSourceTag[]) => {
+        return objects.deepEquals(mappingSourceTags, data.value?.mappingSourceTags) || await setData({ mappingSourceTags })
+    }
+
+    const findSimilarOfTopic = async () => {
+        await fetchFindSimilarTaskCreate({selector: {type: "topic", topicIds: [data.value!.id]}})
+        toast.toast("已创建", "success", "相似项查找任务已创建完成。")
+    }
+
+    const openIllustsOfTopic = () => {
+        router.routePush({routeName: "Illust", initializer: {topicName: data.value!.name}})
+    }
+
+    const openBooksOfTopic = () => {
+        router.routePush({routeName: "Book", initializer: {topicName: data.value!.name}})
     }
 
     const createChildOfTemplate = () => {
@@ -243,89 +288,11 @@ export function useTopicDetailPanel() {
 
     useDocumentTitle(data)
 
-    return {data, childrenMode, exampleData, editor, operators: {toggleFavorite, createByTemplate, createChildOfTemplate, openTopicDetail, deleteItem}}
-}
-
-function useTopicDetailPanelEditor(data: Readonly<Ref<DetailTopic | null>>, setData: (form: TopicUpdateForm, handle: ErrorHandler<TopicExceptions["update"]>) => Promise<boolean>) {
-    const message = useMessageBox()
-    
-    const editMode = ref(false)
-
-    const form = ref<TopicUpdateFormData | null>(null)
-
-    const setProperty = <T extends keyof TopicUpdateFormData>(key: T, value: TopicUpdateFormData[T]) => {
-        form.value![key] = value
+    return {
+        data, 
+        toggleFavorite, setName, setDescription, setKeywords, setScore, setType, setParent, setMappingSourceTags, 
+        findSimilarOfTopic, openIllustsOfTopic, openBooksOfTopic, createChildOfTemplate, openTopicDetail, deleteItem
     }
-    
-    const edit = () => {
-        if(data.value !== null) {
-            form.value = mapDataToUpdateForm(data.value)
-            editMode.value = true
-        }
-    }
-
-    const cancel = () => {
-        editMode.value = false
-        form.value = null
-    }
-    
-    const save = async () => {
-        if(form.value && data.value) {
-            const updateForm: TopicUpdateForm = {
-                type: form.value.type !== data.value.type ? form.value.type : undefined,
-                parentId: (form.value.parent?.id ?? null) !== data.value.parentId ? (form.value.parent?.id ?? null) : undefined,
-                keywords: !objects.deepEquals(form.value.keywords, data.value.keywords) ? form.value.keywords : undefined,
-                description: form.value.description !== data.value.description ? form.value.description : undefined,
-                score: form.value.score !== data.value.score ? form.value.score : undefined,
-                mappingSourceTags: !objects.deepEquals(form.value.mappingSourceTags, data.value.mappingSourceTags) ? patchMappingSourceTagForm(form.value.mappingSourceTags, data.value.mappingSourceTags) : undefined
-            }
-            
-            if(form.value.name !== data.value.name) {
-                if(!checkTagName(form.value.name)) {
-                    message.showOkMessage("prompt", "不合法的名称。", "名称不能为空，且不能包含 ` | 字符。")
-                    return
-                }
-                updateForm.name = form.value.name
-            }
-            if(!objects.deepEquals(form.value.otherNames, data.value.otherNames)) {
-                for(const otherName of form.value.otherNames) {
-                    if(!checkTagName(otherName)) {
-                        message.showOkMessage("prompt", "不合法的别名。", "别名不能为空，且不能包含 ` | 字符。")
-                        return
-                    }
-                }
-                updateForm.otherNames = form.value.otherNames
-            }
-
-            const r = !Object.values(form).filter(i => i !== undefined).length || await setData(updateForm, e => {
-                if(e.code === "ALREADY_EXISTS") {
-                    message.showOkMessage("prompt", "该名称已存在。")
-                }else if(e.code === "NOT_EXIST") {
-                    const [type, id] = e.info
-                    if(type === "parentId") {
-                        message.showOkMessage("error", "选择的父主题不存在。", `错误项: ${id}`)
-                    }else if(type === "site") {
-                        message.showOkMessage("error", `选择的来源站点不存在。`, `错误项: ${id}`)
-                    }else if(type === "sourceTagType") {
-                        message.showOkMessage("error", `选择的来源标签类型不存在。`, `错误项: ${id.join(", ")}`)
-                    }else{
-                        message.showOkMessage("error", `选择的资源${type}不存在。`, `错误项: ${id}`)
-                    }
-                }else if(e.code === "RECURSIVE_PARENT") {
-                    message.showOkMessage("prompt", "无法应用此父主题。", "此父主题与当前主题存在闭环。")
-                }else if(e.code === "ILLEGAL_CONSTRAINT") {
-                    message.showOkMessage("prompt", "无法应用主题类型。", "当前主题的类型与其与父主题/子主题不能兼容。考虑更改父主题，或更改当前主题的类型。")
-                }else{
-                    return e
-                }
-            })
-            if(r) {
-                editMode.value = false
-            }
-        }
-    }
-
-    return {editMode: readonly(editMode), form, setProperty, edit, cancel, save}
 }
 
 interface TopicCreateFormData extends TopicUpdateFormData {
@@ -368,18 +335,5 @@ function mapCreateFormToHelper(form: TopicCreateFormData): TopicCreateForm {
         favorite: form.favorite,
         score: form.score,
         mappingSourceTags: patchMappingSourceTagForm(form.mappingSourceTags, [])
-    }
-}
-
-function mapDataToUpdateForm(data: DetailTopic): TopicUpdateFormData {
-    return {
-        name: data.name,
-        otherNames: data.otherNames,
-        parent: data.parents?.length ? data.parents[data.parents.length - 1] : null,
-        type: data.type,
-        description: data.description,
-        keywords: data.keywords,
-        score: data.score,
-        mappingSourceTags: data.mappingSourceTags
     }
 }

@@ -7,9 +7,11 @@ const props = withDefaults(defineProps<{
     value?: number | null
     showText?: boolean
     editable?: boolean
+    textPosition?: "left" | "right"
     mode?: "colorful" | "none"
 }>(), {
     showText: true,
+    textPosition: "right",
     mode: "colorful"
 })
 
@@ -42,10 +44,11 @@ const click = (value: number) => {
 
 <template>
     <span :class="{[$style.editable]: editable, [`has-text-${color}`]: !!color}">
+        <b v-if="showText && textPosition === 'left' && stdValue !== null" :class="[$style.text, 'pr-1']">{{ stdValue }}</b>
         <Icon v-for="i in cnt.count" icon="star" @click="click(i)"/>
         <Icon v-if="cnt.hasHalf" icon="star-half-stroke" @click="click(cnt.count + 1)"/>
         <Icon v-for="i in cnt.emptyCount" icon="star-regular" @click="click(cnt.count + i + (cnt.hasHalf ? 1 : 0))"/>
-        <b v-if="showText && stdValue !== null" :class="$style.text">{{stdValue}}</b>
+        <b v-if="showText && textPosition === 'right' && stdValue !== null" :class="[$style.text, 'pl-1']">{{ stdValue }}</b>
     </span>
 </template>
 
@@ -60,5 +63,4 @@ const click = (value: number) => {
     width: 1em
     text-align: center
     user-select: none
-    padding-left: size.$spacing-1
 </style>

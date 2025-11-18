@@ -7,7 +7,7 @@ import { UsefulColors } from "@/constants/ui"
 const props = defineProps<{
     name: string
     otherNames: string[]
-    color: UsefulColors | null
+    color?: UsefulColors | null
     colorEnabled?: boolean
 }>()
 
@@ -21,11 +21,11 @@ const emit = defineEmits<{
 
 const setName = (v: string) => {
     emit("update:name", v)
-    emit("update", [v, props.otherNames, props.color])
+    emit("update", [v, props.otherNames, props.color ?? null])
 }
 const setOtherNames = (v: string[]) => {
     emit("update:otherNames", v)
-    emit("update", [props.name, v, props.color])
+    emit("update", [props.name, v, props.color ?? null])
 }
 const setColor = (v: UsefulColors | null) => {
     emit("update:color", v)
@@ -37,7 +37,7 @@ const setColor = (v: UsefulColors | null) => {
 <template>
     <Flex class="mb-1">
         <ColorPicker v-if="colorEnabled" class="mr-1" :value="color ?? undefined" @update:value="setColor"/>
-        <Input placeholder="标签名称" width="fullwidth" :value="name" @update:value="setName" @enter="$emit('save')" auto-focus update-on-input/>
+        <Input placeholder="名称" width="fullwidth" :value="name" @update:value="setName" @enter="$emit('save')" auto-focus update-on-input/>
     </Flex>
-    <OtherNameEditor placeholder="标签别名" :value="otherNames" @update:value="setOtherNames"/>
+    <OtherNameEditor placeholder="别名" :value="otherNames" @update:value="setOtherNames"/>
 </template>

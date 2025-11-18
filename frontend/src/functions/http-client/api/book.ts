@@ -236,4 +236,6 @@ export interface BookQueryFilter {
     query?: string
     order?: OrderList<"id" | "score" | "createTime" | "updateTime">
     favorite?: boolean
+    topic?: number
+    author?: number
 }

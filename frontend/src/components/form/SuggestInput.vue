@@ -165,7 +165,7 @@ const input = (e: InputEvent) => {
 
 <template>
     <ElementPopupCallout popup-fullwidth v-model:visible="active">
-        <Input :value :placeholder :size :width :autoFocus :updateOnInput blur-on-keypress="Escape"
+        <Input :value :placeholder :size :width :auto-focus="autoFocus" :updateOnInput blur-on-keypress="Escape"
                @keypress="keypress" @enter="$emit('enter')" @update:value="$emit('update:value', $event)"
                @input="input" @compositionend="compositionEnd" @focus="focus"
         />

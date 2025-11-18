@@ -9,6 +9,7 @@ import { KeywordInfo } from "@/functions/http-client/api/util-picker"
 const props = defineProps<{
     value: string[]
     metaType: MetaType
+    autoFocus?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -42,7 +43,7 @@ const removeItem = (idx: number) => {
             <Tag brackets="[]" line-style="none">{{ item }}</Tag>
             <Tag icon="close" line-style="none" clickable @click="removeItem(idx)"/>
         </span>
-        <SuggestInput v-model:value="inputText" size="small" :query :mapOption placeholder="添加关键词" update-on-input @enter="enter"/>
+        <SuggestInput v-model:value="inputText" size="small" :query :mapOption placeholder="添加关键词" :auto-focus="autoFocus" update-on-input @enter="enter"/>
     </div>
 </template>
 

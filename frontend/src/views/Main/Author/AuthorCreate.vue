@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { Button, Separator } from "@/components/universal"
-import { BrowserTeleport } from "@/components/logical"
+import { Block, Button, Icon, Starlight, Separator } from "@/components/universal"
+import { Select } from "@/components/form"
 import { Container } from "@/components/layout"
+import { BrowserTeleport } from "@/components/logical"
+import { TagNameAndOtherEditor, DescriptionEditor, SourceTagMappingEditor, MetaKeywordEditor } from "@/components-business/form-editor"
 import { useAuthorCreatePanel } from "@/services/main/author"
-import AuthorDetailPanelForm from "./AuthorDetailPanel/AuthorDetailPanelForm.vue"
+import { AUTHOR_TYPE_NAMES, AUTHOR_TYPES, AUTHOR_TYPE_ICONS } from "@/constants/entity"
 
-const { form, setProperty, submit } = useAuthorCreatePanel()
+const { form, submit } = useAuthorCreatePanel()
+
+const AUTHOR_TYPE_SELECT_ITEMS = AUTHOR_TYPES.map(t => ({label: AUTHOR_TYPE_NAMES[t], value: t}))
 
 </script>
 
@@ -17,10 +21,25 @@ const { form, setProperty, submit } = useAuthorCreatePanel()
     </BrowserTeleport>
 
     <Container>
-        <AuthorDetailPanelForm :name="form.name" :other-names="form.otherNames" :type="form.type"
-                               :keywords="form.keywords"
-                               :description="form.description" :score="form.score"
-                               :mapping-source-tags="form.mappingSourceTags"
-                               @set-property="setProperty"/>
+        <Block class="p-3">
+            <div class="flex jc-between">
+                <div class="flex-item w-50">
+                    <label class="label">名称与别名</label>
+                    <TagNameAndOtherEditor v-model:name="form.name" v-model:other-names="form.otherNames"/>
+                    <label class="mt-2 label">类型</label>
+                    <span class="is-line-height-std mx-1"><Icon :icon="AUTHOR_TYPE_ICONS[form.type]"/></span>
+                    <Select :items="AUTHOR_TYPE_SELECT_ITEMS" v-model:value="form.type"/>
+                </div>
+                <div>
+                    <Starlight editable show-text text-position="left" v-model:value="form.score"/>
+                </div>
+            </div>
+            <DescriptionEditor class="mt-2" v-model:value="form.description"/>
+            <MetaKeywordEditor class="mt-2" meta-type="AUTHOR" v-model:value="form.keywords"/>
+        </Block>
+        <Block class="p-3 mt-2">
+            <label class="label">来源映射</label>
+            <SourceTagMappingEditor v-model:value="form.mappingSourceTags"/>
+        </Block>
     </Container>
 </template>

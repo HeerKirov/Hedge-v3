@@ -28,10 +28,10 @@ const {
     <div v-else-if="data.length > 0 && data[0].illusts.length > 0" ref="scrollRef" :class="$style.root" @scroll="scroll">
         <template v-for="record in data">
             <div :class="$style['sampled-illusts']">
-                <LazyImg v-for="i in record.illusts" :class="$style.image" :src="assetsUrl(i.filePath.thumbnail)" alt="" @click="openIllustOfPartition(i.partitionTime, i.id)"/>
+                <LazyImg v-for="i in record.illusts" :key="i.id" :class="$style.image" :src="assetsUrl(i.filePath.thumbnail)" alt="" @click="openIllustOfPartition(i.partitionTime, i.id)"/>
             </div>
             <div v-if="record.extraType === 'AUTHOR'" :class="$style.extras">
-                <Block v-for="i in record.extras.slice(0, 5)" :class="$style.block">
+                <Block v-for="i in record.extras.slice(0, 5)" :key="i.id" :class="$style.block">
                     <div :class="[$style['title-area'], `has-text-${i.color}`]" @click="openAuthorOrTopic('AUTHOR', i.name)">
                         <Icon class="mr-1" :icon="AUTHOR_TYPE_ICONS[i.type]"/>{{ i.name }}
                     </div>
@@ -44,7 +44,7 @@ const {
                 </Block>
             </div>
             <div v-else-if="record.extraType === 'TOPIC'" :class="$style.extras">
-                <Block v-for="i in record.extras.slice(0, 5)" :class="$style.block">
+                <Block v-for="i in record.extras.slice(0, 5)" :key="i.id" :class="$style.block">
                     <div :class="[$style['title-area'], `has-text-${i.color}`]" @click="openAuthorOrTopic('TOPIC', i.name)">
                         <Icon class="mr-1" :icon="TOPIC_TYPE_ICONS[i.type]"/>{{ i.name }}
                     </div>
@@ -57,7 +57,7 @@ const {
                 </Block>
             </div>
             <div v-else :class="$style.books">
-                <BookCard v-for="b in record.extras" :class="$style.book" :item="b" @click="openBook(b.id)"/>
+                <BookCard v-for="b in record.extras" :key="b.id" :class="$style.book" :item="b" @click="openBook(b.id)"/>
             </div>
         </template>
         <div v-if="loading" class="has-text-centered p-2 w-100"><Icon icon="circle-notch" size="2x" spin/></div>
