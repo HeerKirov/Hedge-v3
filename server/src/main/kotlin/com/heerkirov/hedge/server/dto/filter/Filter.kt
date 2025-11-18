@@ -39,6 +39,8 @@ data class BookQueryFilter(@Limit val limit: Int,
                             @Search val query: String?,
                             @Order(options = ["id", "score", "createTime", "updateTime"])
                             val order: List<OrderItem>? = null,
+                            val topic: Int? = null,
+                            val author: Int? = null,
                             val favorite: Boolean? = null)
 
 data class FolderQueryFilter(@Limit val limit: Int,
