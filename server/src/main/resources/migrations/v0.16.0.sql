@@ -24,7 +24,7 @@ CREATE TABLE meta_db.new_tag(
 );
 
 INSERT INTO meta_db.new_tag(id, global_ordinal, ordinal, parent_id, name, other_names, implicit_names, type, is_sequence_group, is_override_group, description, color, links, examples, exported_score, cached_count, create_time, update_time)
-SELECT id, global_ordinal, ordinal, parent_id, name, other_names, '', type, is_group > 0, FALSE, description, color, links, examples, exported_score, cached_count, create_time, update_time FROM meta_db.tag;
+SELECT id, global_ordinal, ordinal, parent_id, name, other_names, implicit_names, type, is_group > 0, FALSE, description, color, links, examples, exported_score, cached_count, create_time, update_time FROM meta_db.tag;
 
 ALTER TABLE meta_db.tag RENAME TO old_tag;
 ALTER TABLE meta_db.new_tag RENAME TO tag;
@@ -57,7 +57,7 @@ CREATE TABLE meta_db.new_topic(
 );
 
 INSERT INTO meta_db.new_topic(id, global_ordinal, ordinal, name, other_names, implicit_names, keywords, parent_id, parent_root_id, type, score, favorite, description, cached_count, create_time, update_time)
-SELECT id, 0, 0, name, other_names, '', keywords, parent_id, parent_root_id, type, score, favorite, description, cached_count, create_time, update_time FROM meta_db.topic;
+SELECT id, 0, 0, name, other_names, implicit_names, keywords, parent_id, parent_root_id, type, score, favorite, description, cached_count, create_time, update_time FROM meta_db.topic;
 
 ALTER TABLE meta_db.topic RENAME TO old_topic;
 ALTER TABLE meta_db.new_topic RENAME TO topic;
