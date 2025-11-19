@@ -46,16 +46,18 @@ const openBook = (id: number) => {
 
 <template>
     <div>
+        <template v-if="bookData?.result?.length">
+            <div class="flex jc-between mt-1">
+                <span><b>{{ bookData.total }}</b>个画集</span>
+                <a @click="openBookSearch()">搜索"{{ metaName }}"的全部画集<Icon class="ml-1" icon="angle-double-right"/></a>
+            </div>
+            <div :class="$style.books">
+                <BookCard v-for="b in bookData.result" :key="b.id" :class="$style.book" :item="b" @click="openBook(b.id)"/>
+            </div>
+        </template>
         <div class="flex jc-between mt-1">
-            <span><b>{{ bookData?.total ?? 0}}</b>个画集</span>
-            <a @click="openBookSearch()">搜索"{{metaName}}"的全部画集<Icon class="ml-1" icon="angle-double-right"/></a>
-        </div>
-        <div :class="$style.books">
-            <BookCard v-for="b in bookData?.result" :key="b.id" :class="$style.book" :item="b" @click="openBook(b.id)"/>
-        </div>
-        <div class="flex jc-between mt-1">
-            <span><b>{{ illustData?.total ?? 0}}</b>个图库项目</span>
-            <a @click="openIllust()">搜索"{{metaName}}"的全部图库项目<Icon class="ml-1" icon="angle-double-right"/></a>
+            <span><b>{{ illustData?.total ?? 0 }}</b>个图库项目</span>
+            <a @click="openIllust()">搜索"{{ metaName }}"的全部图库项目<Icon class="ml-1" icon="angle-double-right"/></a>
         </div>
         <GridImages v-if="illustImages.length" class="mt-2" :column-num="5" :images="illustImages" clickable @click="(_, i) => openIllust(i)"/>
     </div>
