@@ -22,6 +22,7 @@ import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.BookKit
 import com.heerkirov.hedge.server.functions.manager.BookManager
 import com.heerkirov.hedge.server.functions.manager.IllustManager
+import com.heerkirov.hedge.server.functions.manager.MetaManager
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
@@ -43,6 +44,7 @@ class BookService(private val appdata: AppDataManager,
                   private val kit: BookKit,
                   private val bookManager: BookManager,
                   private val illustManager: IllustManager,
+                  private val metaManager: MetaManager,
                   private val queryManager: QueryManager) {
     private val orderTranslator = OrderTranslator {
         "id" to Books.id
@@ -58,7 +60,7 @@ class BookService(private val appdata: AppDataManager,
         return data.db.from(Books)
             .leftJoin(FileRecords, Books.fileId eq FileRecords.id and FileRecords.deleted.not())
             .let { schema?.joinConditions?.fold(it) { acc, join -> if(join.left) acc.leftJoin(join.table, join.condition) else acc.innerJoin(join.table, join.condition) } ?: it }
-            .let { if(filter.topic == null) it else it.innerJoin(BookTopicRelations, (BookTopicRelations.bookId eq Books.id) and (BookTopicRelations.topicId eq filter.topic)) }
+            .let { if(filter.topic == null) it else it.innerJoin(BookTopicRelations, (BookTopicRelations.bookId eq Books.id) and (BookTopicRelations.topicId inList metaManager.getRealEntityTopics(listOf(filter.topic)))) }
             .let { if(filter.author == null) it else it.innerJoin(BookAuthorRelations, (BookAuthorRelations.bookId eq Books.id) and (BookAuthorRelations.authorId eq filter.author)) }
             .select(Books.id, Books.title, Books.cachedCount, Books.score, Books.favorite, Books.createTime, Books.updateTime,
                 FileRecords.status, FileRecords.block, FileRecords.id, FileRecords.extension)

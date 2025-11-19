@@ -10,7 +10,6 @@ import com.heerkirov.hedge.server.model.Tag
 import com.heerkirov.hedge.server.utils.tuples.Tuple3
 import org.ktorm.dsl.Query
 import org.ktorm.dsl.map
-import org.ktorm.dsl.mapTo
 import org.ktorm.schema.Column
 import java.time.Instant
 
@@ -69,8 +68,7 @@ data class KeywordInfo(val tagType: MetaType, val keyword: String, val count: In
 
 fun Query.toTagSimpleList(isExported: ExportType? = null, isExportedColumn: Column<ExportType>? = null, removeOverrideItem: Boolean = true): List<TagSimpleRes> {
     val overrideGroup = mutableMapOf<Int, Boolean>()
-    val result = mutableListOf<TagSimpleRes>()
-    mapTo(result) {
+    val result = map {
         if(removeOverrideItem) {
             if(it[Tags.isOverrideGroup]!!) {
                 overrideGroup[it[Tags.id]!!] = false
@@ -90,8 +88,7 @@ fun Query.toTagSimpleList(isExported: ExportType? = null, isExportedColumn: Colu
 
 fun Query.toTopicSimpleList(topicColors: Map<TagTopicType, String>, isExported: ExportType? = null, isExportedColumn: Column<ExportType>? = null, removeOverrideItem: Boolean = true): List<TopicSimpleRes> {
     val overrideGroup = mutableMapOf<Int, Boolean>()
-    val result = mutableListOf<TopicSimpleRes>()
-    mapTo(result) {
+    val result = map {
         val id = it[Topics.id]!!
         val topicType = it[Topics.type]!!
         if(removeOverrideItem && topicType == TagTopicType.CHARACTER) {
@@ -106,7 +103,7 @@ fun Query.toTopicSimpleList(topicColors: Map<TagTopicType, String>, isExported: 
         val color = topicColors[topicType]
         val exportedValue = isExported ?: isExportedColumn?.run { it[this]!! } ?: if(it.getBoolean("isExported")) ExportType.YES else ExportType.NO
         TopicSimpleRes(id, it[Topics.name]!!, topicType, exportedValue, color)
-    }
+    }.filter { it.type != TagTopicType.NODE }
     val override = overrideGroup.filterValues { it }.keys
     return result.map { if(it.id !in override) it else TopicSimpleRes(it.id, it.name, it.type, it.isExported, it.color, visibility = false) }
 }

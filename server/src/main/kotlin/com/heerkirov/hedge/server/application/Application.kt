@@ -73,8 +73,8 @@ fun runApplication(options: ApplicationOptions) {
 
             AllServices(
                 homepage = HomepageService(appdata, repo, stagingPostManager, taskCounter, homepageProcessor),
-                illust = IllustService(appdata, repo, bus, illustKit, illustManager, associateManager, sourceSiteManager, sourceDataManager, queryManager),
-                book = BookService(appdata, repo, bus, bookKit, bookManager, illustManager, queryManager),
+                illust = IllustService(appdata, repo, bus, illustKit, illustManager, associateManager, sourceSiteManager, sourceDataManager, metaManager, queryManager),
+                book = BookService(appdata, repo, bus, bookKit, bookManager, illustManager, metaManager, queryManager),
                 folder = FolderService(repo, bus, folderKit, folderManager, illustManager),
                 tag = TagService(repo, bus, tagKit, sourceMappingManager),
                 author = AuthorService(appdata, repo, bus, authorKit, queryManager, metaKeywordManager, sourceMappingManager),

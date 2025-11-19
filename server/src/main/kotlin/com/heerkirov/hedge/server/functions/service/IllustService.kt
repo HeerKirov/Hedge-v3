@@ -14,10 +14,7 @@ import com.heerkirov.hedge.server.events.IllustRelatedItemsUpdated
 import com.heerkirov.hedge.server.events.IllustUpdated
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.IllustKit
-import com.heerkirov.hedge.server.functions.manager.AssociateManager
-import com.heerkirov.hedge.server.functions.manager.IllustManager
-import com.heerkirov.hedge.server.functions.manager.SourceDataManager
-import com.heerkirov.hedge.server.functions.manager.SourceSiteManager
+import com.heerkirov.hedge.server.functions.manager.*
 import com.heerkirov.hedge.server.functions.manager.query.QueryManager
 import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
@@ -51,6 +48,7 @@ class IllustService(private val appdata: AppDataManager,
                     private val associateManager: AssociateManager,
                     private val sourceSiteManager: SourceSiteManager,
                     private val sourceManager: SourceDataManager,
+                    private val metaManager: MetaManager,
                     private val queryManager: QueryManager) {
     private val orderTranslator = OrderTranslator {
         "id" to Illusts.id
@@ -67,7 +65,7 @@ class IllustService(private val appdata: AppDataManager,
         return data.db.from(Illusts)
             .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
             .let { schema?.joinConditions?.fold(it) { acc, join -> if(join.left) acc.leftJoin(join.table, join.condition) else acc.innerJoin(join.table, join.condition) } ?: it }
-            .let { if(filter.topic == null) it else it.innerJoin(IllustTopicRelations, (IllustTopicRelations.illustId eq Illusts.id) and (IllustTopicRelations.topicId eq filter.topic)) }
+            .let { if(filter.topic == null) it else it.innerJoin(IllustTopicRelations, (IllustTopicRelations.illustId eq Illusts.id) and (IllustTopicRelations.topicId inList metaManager.getRealEntityTopics(listOf(filter.topic)))) }
             .let { if(filter.author == null) it else it.innerJoin(IllustAuthorRelations, (IllustAuthorRelations.illustId eq Illusts.id) and (IllustAuthorRelations.authorId eq filter.author)) }
             .select(Illusts.id, Illusts.type, Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.partitionTime, Illusts.orderTime, Illusts.cachedChildrenCount,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,

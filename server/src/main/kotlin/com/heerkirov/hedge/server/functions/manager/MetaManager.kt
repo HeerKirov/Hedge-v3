@@ -20,6 +20,7 @@ import org.ktorm.entity.sequenceOf
 import org.ktorm.entity.toList
 import java.time.Instant
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
@@ -302,5 +303,57 @@ class MetaManager(private val data: DataRepository) {
             .select(metaTag.columns + metaRelations.exported())
             .where { (metaRelations.entityId() eq id).runIf(exportType != null) { this and (metaRelations.exported() eq exportType!!) } }
             .map { Pair(metaTag.createEntity(it), it[metaRelations.exported()]!!) }
+    }
+
+    /**
+     * 对给出的tagIds进行下推，直到获得所有的非VIRTUAL节点。
+     */
+    fun getRealEntityTags(tagIds: Collection<Int>): List<Int> {
+        val result = ArrayList<Pair<Int, TagAddressType>>()
+        val queue = LinkedList<Int>()
+
+        run {
+            val initialTags = data.db.from(Tags).select(Tags.id, Tags.type).where { Tags.id inList tagIds }.map { Pair(it[Tags.id]!!, it[Tags.type]!!) }
+            val (virtual, real) = initialTags.partition { (_, type) -> type == TagAddressType.VIRTUAL_ADDR }
+            result.addAll(real)
+            queue.addAll(virtual.map { (id, _) -> id })
+        }
+
+        //从tagId开始迭代，查找子标签列表，将实体标签加入结果，并继续迭代虚拟标签，直到全部迭代为实体
+        while (queue.isNotEmpty()) {
+            val id = queue.poll()
+            val children = data.db.from(Tags).select(Tags.id, Tags.type).where { Tags.parentId eq id }.map { Pair(it[Tags.id]!!, it[Tags.type]!!) }
+            val (virtualChildren, realChildren) = children.partition { (_, type) -> type == TagAddressType.VIRTUAL_ADDR }
+            result.addAll(realChildren)
+            queue.addAll(virtualChildren.map { (id, _) -> id })
+        }
+
+        return result.map { (id, _) -> id }
+    }
+
+    /**
+     * 对给出的topicIds进行下推，直到获得所有的非VIRTUAL节点。
+     */
+    fun getRealEntityTopics(topicIds: Collection<Int>): List<Int> {
+        val result = ArrayList<Pair<Int, TagTopicType>>()
+        val queue = LinkedList<Int>()
+
+        run {
+            val initialTopics = data.db.from(Topics).select(Topics.id, Topics.type).where { Topics.id inList topicIds }.map { Pair(it[Topics.id]!!, it[Topics.type]!!) }
+            val (virtual, real) = initialTopics.partition { (_, type) -> type == TagTopicType.NODE }
+            result.addAll(real)
+            queue.addAll(virtual.map { (id, _) -> id })
+        }
+
+        //从topicId开始迭代，查找子标签列表，将实体标签加入结果，并继续迭代虚拟标签，直到全部迭代为实体
+        while (queue.isNotEmpty()) {
+            val id = queue.poll()
+            val children = data.db.from(Topics).select(Topics.id, Topics.type).where { Topics.parentId eq id }.map { Pair(it[Topics.id]!!, it[Topics.type]!!) }
+            val (virtualChildren, realChildren) = children.partition { (_, type) -> type == TagTopicType.NODE }
+            result.addAll(realChildren)
+            queue.addAll(virtualChildren.map { (id, _) -> id })
+        }
+
+        return result.map { (id, _) -> id }
     }
 }
