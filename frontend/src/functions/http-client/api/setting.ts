@@ -225,6 +225,10 @@ export interface MetaOption {
      */
     onlyCharacterTopic: boolean
     /**
+     * 以画师标签为主。如果存在ARTIST类型映射，则无视GROUP类型移除Tagme；如果不存在ARTIST类型，才会根据GROUP的映射移除Tagme。
+     */
+    mainlyByArtistAuthor: boolean
+    /**
      * 根据推导得到的父标签解决子标签冲突。用于解决character多义映射的情况。这个选项会在“导入自动映射”和“根据来源标签批量设置标签”功能中生效。
      */
     resolveTagConflictByParent: boolean

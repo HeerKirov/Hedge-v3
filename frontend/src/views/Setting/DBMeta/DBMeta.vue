@@ -45,13 +45,20 @@ const { data: settingMeta } = useSettingMeta()
             <CheckBox v-model:value="settingMeta.autoCleanTagme">自动清理Tagme</CheckBox>
             <p class="secondary-text">更改图库项目时，如果Tagme标记的部分发生变更，则自动去除这部分的Tagme标记。</p>
         </div>
-        <div class="mt-2">
+        <div v-if="settingMeta.autoCleanTagme" class="mt-2 pl-4">
+            <CheckBox v-model:value="settingMeta.mainlyByArtistAuthor">根据画师标签映射关系清理Tagme</CheckBox>
+            <p class="secondary-text">存在画师类型标签映射时，则只根据这部分标签是否满足清理要求来去除Tagme标记。</p>
+            <p class="secondary-text">仅适用于导入时的自动标签映射。</p>
+        </div>
+        <div v-if="settingMeta.autoCleanTagme" class="mt-2 pl-4">
             <CheckBox v-model:value="settingMeta.onlyCharacterTopic">以角色类型作为主题标签核心</CheckBox>
             <p class="secondary-text">仅在角色标签发生变更时，才自动去除Tagme标记。</p>
+            <p class="secondary-text">适用于自动标签映射或编辑标签等多种情况。</p>
         </div>
         <div class="mt-2">
-            <CheckBox v-model:value="settingMeta.resolveTagConflictByParent">推导时根据父标签解决子标签冲突</CheckBox>
-            <p class="secondary-text">对于映射多个角色标签的来源标签，根据映射得到的其他主题标签限定其中一或多个，以解决一对多映射冲突。</p>
+            <CheckBox v-model:value="settingMeta.resolveTagConflictByParent">推导时根据父主题限制角色主题</CheckBox>
+            <p class="secondary-text">存在角色类型标签映射时，仅当其父主题的标签映射也存在时，才允许推导得到该角色主题。</p>
+            <p class="secondary-text">适用于自动标签映射或编辑标签等多种情况。</p>
         </div>
     </template>
 </template>
