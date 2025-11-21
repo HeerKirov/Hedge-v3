@@ -8,21 +8,16 @@ import com.heerkirov.hedge.server.dto.form.IllustBatchUpdateForm
 import com.heerkirov.hedge.server.dto.form.IllustImageCreateForm
 import com.heerkirov.hedge.server.dto.form.ImagePropsCloneForm
 import com.heerkirov.hedge.server.dto.res.*
-import com.heerkirov.hedge.server.enums.ExportType
-import com.heerkirov.hedge.server.enums.IllustModelType
-import com.heerkirov.hedge.server.enums.IllustType
-import com.heerkirov.hedge.server.enums.TagTopicType
+import com.heerkirov.hedge.server.enums.*
 import com.heerkirov.hedge.server.events.*
 import com.heerkirov.hedge.server.exceptions.*
 import com.heerkirov.hedge.server.functions.kit.IllustKit
 import com.heerkirov.hedge.server.model.Illust
+import com.heerkirov.hedge.server.utils.*
 import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.DateTime.toPartitionDate
-import com.heerkirov.hedge.server.utils.filterInto
 import com.heerkirov.hedge.server.utils.ktorm.first
 import com.heerkirov.hedge.server.utils.ktorm.firstOrNull
-import com.heerkirov.hedge.server.utils.letIf
-import com.heerkirov.hedge.server.utils.mostCount
 import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import com.heerkirov.hedge.server.utils.types.anyOpt
 import com.heerkirov.hedge.server.utils.types.optOf
@@ -522,39 +517,46 @@ class IllustManager(private val appdata: AppDataManager,
             for (illust in images + childrenOfCollections) {
                 val (tags, topics, authors) = if(mappings != null && illust.sourceDataId != null) {
                     //提取标签映射。查询sourceData对应的全部sourceTag，然后从mappings中取存在的那部分，最后按类别分类并与表单参数合并
-                    val sourceTags = data.db.from(SourceTags)
+                    val (sourceTagIds, sourceTags) = data.db.from(SourceTags)
                         .innerJoin(SourceTagRelations, (SourceTags.id eq SourceTagRelations.sourceTagId) and (SourceTagRelations.sourceDataId eq illust.sourceDataId))
-                        .select(SourceTags.site, SourceTags.type, SourceTags.code)
-                        .map { SourceTagPath(it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.code]!!) }
+                        .select(SourceTags.id, SourceTags.site, SourceTags.type, SourceTags.code)
+                        .map { it[SourceTags.id]!! to SourceTagPath(it[SourceTags.site]!!, it[SourceTags.type]!!, it[SourceTags.code]!!) }
+                        .unzip()
                     val sourceTagMappings = sourceTags.mapNotNull { mappings[it] }
                     val mappedMetaTags = sourceTagMappings.flatMap { it.mappings }.map { it.metaTag }
-                    val conflictTopics = mutableSetOf<Int>().letIf(appdata.setting.meta.resolveTagConflictByParent) { conflictRet ->
-                        val conflicts = sourceTagMappings.filter { m -> m.mappings.size >= 2 && m.mappings.all { it.metaTag is TopicSimpleRes && it.metaTag.type == TagTopicType.CHARACTER } }
-                        if(conflicts.isNotEmpty()) {
-                            val resolveConflictParents = mappedMetaTags.filterIsInstance<TopicSimpleRes>().filter { it.type == TagTopicType.IP || it.type == TagTopicType.COPYRIGHT }.map { it.id }
-                            for (conflict in conflicts) {
-                                //当一个sourceTag存在至少2个映射目标，目标都是character，且符合resolveTagConflictByParent条件时，需要根据父标签限定选择其一
-                                for (mapping in conflict.mappings) {
-                                    val topic = mapping.metaTag as TopicSimpleRes
-                                    var cur: Triple<Int, Int?, Int?>? = null
-                                    var include = false
-                                    do {
-                                        //这里对每一个topic循环查询它的所有parent，当存在任意parent在resolveConflictParents集合内时，此映射有效
-                                        cur = data.db.from(Topics)
-                                            .select(Topics.id, Topics.parentId, Topics.parentRootId)
-                                            .where { Topics.id eq (cur?.second ?: topic.id) }
-                                            .map { Triple(it[Topics.id]!!, it[Topics.parentId], it[Topics.parentRootId]) }
-                                            .firstOrNull()
-                                        if(cur != null && (cur.second in resolveConflictParents || cur.third in resolveConflictParents)) {
-                                            include = true
+                    val conflictTopics = mutableSetOf<Int>().alsoIf(appdata.setting.meta.resolveTagConflictByParent) { conflictRet ->
+                        //开启此选项后，对于添加的Topic Character，如果此标签存在Parent IP且IP存在映射，那么要求所有父IP中至少要有1个也在Topic列表中
+                        val characters = sourceTagMappings
+                            .filter { m -> m.mappings.all { it.metaTag is TopicSimpleRes && it.metaTag.type == TagTopicType.CHARACTER } }
+                            .flatMap { m -> m.mappings }
+                            .map { m -> m.metaTag as TopicSimpleRes }
+                        if(characters.isNotEmpty()) {
+                            for (topic in characters) {
+                                var nextId: Int? = topic.id
+                                var include = true
+                                while(nextId != null) {
+                                    val (parentId, thisType) = data.db.from(Topics)
+                                        .select(Topics.parentId, Topics.type)
+                                        .where { Topics.id eq nextId!! }
+                                        .map { Pair(it[Topics.parentId], it[Topics.type]!!) }
+                                        .first()
+                                    //查询所有的parent，如果任一parent有mapping sourceTag并且此sourceTag不存在于此，则此映射不成立
+                                    if(nextId != topic.id && (thisType == TagTopicType.IP || thisType == TagTopicType.COPYRIGHT)) {
+                                        //查询当前节点所关联的sourceTag
+                                        val reflectedSourceTagIds = data.db.from(SourceTagMappings).select(SourceTagMappings.sourceTagId)
+                                            .where { (SourceTagMappings.sourceSite eq illust.sourceSite!!) and (SourceTagMappings.targetMetaType eq MetaType.TOPIC) and (SourceTagMappings.targetMetaId eq nextId!!) }
+                                            .map { it[SourceTagMappings.sourceTagId]!! }
+                                            .toList()
+                                        if(!sourceTagIds.containsAll(reflectedSourceTagIds)) {
+                                            include = false
                                             break
                                         }
-                                    } while (cur?.second != null)
-                                    if(!include) conflictRet.add(topic.id)
+                                    }
+                                    nextId = parentId
                                 }
+                                if(!include) conflictRet.add(topic.id)
                             }
                         }
-                        conflictRet
                     }
 
                     val mappedTags = mappedMetaTags.filterIsInstance<TagSimpleRes>().map { it.id }

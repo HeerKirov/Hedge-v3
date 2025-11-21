@@ -101,6 +101,7 @@ class SettingService(private val appdata: AppDataManager, private val bus: Event
         appdata.saveSetting {
             form.autoCleanTagme.alsoOpt { meta.autoCleanTagme = it }
             form.onlyCharacterTopic.alsoOpt { meta.onlyCharacterTopic = it }
+            form.mainlyByArtistAuthor.alsoOpt { meta.mainlyByArtistAuthor = it }
             form.resolveTagConflictByParent.alsoOpt { meta.resolveTagConflictByParent = it }
             form.centralizeCollection.alsoOpt { meta.centralizeCollection = it }
             form.bindingPartitionWithOrderTime.alsoOpt { meta.bindingPartitionWithOrderTime = it }

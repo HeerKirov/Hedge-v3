@@ -23,6 +23,7 @@ data class ImportOptionUpdateForm(val autoAnalyseSourceData: Opt<Boolean>,
 
 data class MetaOptionUpdateForm(val autoCleanTagme: Opt<Boolean>,
                                 val onlyCharacterTopic: Opt<Boolean>,
+                                val mainlyByArtistAuthor: Opt<Boolean>,
                                 val resolveTagConflictByParent: Opt<Boolean>,
                                 val bindingPartitionWithOrderTime: Opt<Boolean>,
                                 val tuningOrderTime: Opt<Boolean>,

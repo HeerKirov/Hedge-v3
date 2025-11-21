@@ -139,6 +139,16 @@ inline fun <T> T.applyIf(predicate: Boolean, block: T.() -> Unit): T {
 }
 
 /**
+ * 如果条件满足，将T作为callback函数参数，执行callback。
+ */
+inline fun <T> T.alsoIf(predicate: Boolean, block: (T) -> Unit): T {
+    if(predicate) {
+        block(this)
+    }
+    return this
+}
+
+/**
  * 如果条件满足，将T计算为另一个同类型的值，且将T作为callback函数的this。
  */
 inline fun <T> T.runIf(predicate: Boolean, block: T.() -> T): T {

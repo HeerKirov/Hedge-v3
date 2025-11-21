@@ -19,7 +19,7 @@ val BUILTIN_SITES = listOf(
         name = "ehentai", title = "E-Hentai", isBuiltin = true,
         idMode = SourceOption.SiteIdMode.NUMBER, partMode = SourceOption.SitePartMode.PAGE_WITH_NAME,
         sourceLinkRules = listOf("https://e-hentai.org/g/{{id}}/{{token}}/"),
-        tagTypes = listOf("artist", "group", "parody", "category", "character", "language", "reclass", "male", "female", "mixed", "other", "location", "temp"),
+        tagTypes = listOf("group", "artist", "parody", "category", "character", "language", "reclass", "male", "female", "mixed", "other", "location", "temp"),
         tagTypeMappings = mapOf(
             "artist" to TagAuthorType.ARTIST.name,
             "group" to TagAuthorType.GROUP.name,
@@ -41,7 +41,7 @@ val BUILTIN_SITES = listOf(
         name = "sankakucomplex", title = "Sankaku", isBuiltin = true,
         idMode = SourceOption.SiteIdMode.STRING, partMode = SourceOption.SitePartMode.NO,
         sourceLinkRules = listOf("https://chan.sankakucomplex.com/post/show/{{id}}"),
-        tagTypes = listOf("artist", "studio", "copyright", "character", "medium", "meta", "group", "general", "genre", "pose", "role", "anatomy", "fashion", "activity", "substance", "language", "flora", "setting", "automatic", "entity", "object", "fauna"),
+        tagTypes = listOf("studio", "artist", "copyright", "character", "medium", "meta", "group", "general", "genre", "pose", "role", "anatomy", "fashion", "activity", "substance", "language", "flora", "setting", "automatic", "entity", "object", "fauna"),
         tagTypeMappings = mapOf(
             "artist" to TagAuthorType.ARTIST.name,
             "studio" to TagAuthorType.GROUP.name,

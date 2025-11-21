@@ -29,6 +29,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
             meta = MetaOption(
                 autoCleanTagme = true,
                 onlyCharacterTopic = true,
+                mainlyByArtistAuthor = true,
                 resolveTagConflictByParent = true,
                 centralizeCollection = true,
                 bindingPartitionWithOrderTime = true,
@@ -89,6 +90,7 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
         register.map("0.6.0", ::addImportConvertArguments)
         register.map("0.8.0", ::addManyArguments)
         register.map("0.10.0", ::createBuiltinSites)
+        register.map("0.16.1", ::addMainlyByArtistAuthor)
     }
 
     /**
@@ -275,6 +277,18 @@ object AppDataMigrationStrategy : JsonObjectStrategy<AppData>(AppData::class) {
                 .upsertField("tuningOrderTime") { value -> if(value != null && value.isBoolean) value else true.toJsonNode() },
             "query" to json["query"],
             "source" to mapOf("sites" to sites).toJsonNode(),
+            "import" to json["import"],
+            "findSimilar" to json["findSimilar"]
+        ).toJsonNode()
+    }
+
+    private fun addMainlyByArtistAuthor(json: JsonNode): JsonNode {
+        return mapOf(
+            "server" to json["server"],
+            "storage" to json["storage"],
+            "meta" to json["meta"].upsertField("mainlyByArtistAuthor") { value -> if(value != null && value.isBoolean) value else false.toJsonNode() },
+            "query" to json["query"],
+            "source" to json["source"],
             "import" to json["import"],
             "findSimilar" to json["findSimilar"]
         ).toJsonNode()

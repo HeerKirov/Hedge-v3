@@ -271,10 +271,11 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
             .firstOrNull()?.get(SourceDatas.id)
         if(sourceDataId == null) return null
 
-        val sourceTags = data.db.from(SourceTags)
+        val (sourceTagIds, sourceTags) = data.db.from(SourceTags)
             .innerJoin(SourceTagRelations, (SourceTags.id eq SourceTagRelations.sourceTagId) and (SourceTagRelations.sourceDataId eq sourceDataId))
-            .select(SourceTags.type, SourceTags.code)
-            .map { SourceTagPath(site, it[SourceTags.type]!!, it[SourceTags.code]!!) }
+            .select(SourceTags.id, SourceTags.type, SourceTags.code)
+            .map { it[SourceTags.id]!! to SourceTagPath(site, it[SourceTags.type]!!, it[SourceTags.code]!!) }
+            .unzip()
         if(sourceTags.isEmpty()) return null
 
         val siteDetail = sourceSiteManager.get(site)!!
@@ -286,25 +287,35 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
         val enableTopic = MetaType.TOPIC in setting.import.reflectMetaTagType
         val enableAuthor = MetaType.AUTHOR in setting.import.reflectMetaTagType
         val mappingTags = sourceMappingManager.batchQuery(sourceTags)
-        val resolveConflictParents by lazy { mappingTags.asSequence().flatMap { it.mappings }.map { it.metaTag }.filterIsInstance<TopicSimpleRes>().filter { it.type == TagTopicType.COPYRIGHT || it.type == TagTopicType.IP }.map { it.id }.toSet() }
+
         for (mappingTag in mappingTags) {
-            if(mappingTag.mappings.size >= 2 && setting.meta.resolveTagConflictByParent && enableTopic && mappingTag.mappings.all { it.metaTag is TopicSimpleRes && it.metaTag.type == TagTopicType.CHARACTER }) {
-                //当一个sourceTag存在至少2个映射目标，目标都是character，且符合resolveTagConflictByParent条件时，需要根据父标签限定选择其一
+            if(setting.meta.resolveTagConflictByParent && enableTopic && mappingTag.mappings.all { it.metaTag is TopicSimpleRes && it.metaTag.type == TagTopicType.CHARACTER }) {
+                //目标都是character，开启resolveTagConflictByParent，则根据Parent IP进行限制
                 for (mapping in mappingTag.mappings) {
                     val topic = mapping.metaTag as TopicSimpleRes
-                    var cur: Triple<Int, Int?, Int?>? = null
-                    do {
-                        //这里对每一个topic循环查询它的所有parent，当存在任意parent在resolveConflictParents集合内时，此映射有效
-                        cur = data.db.from(Topics)
-                            .select(Topics.id, Topics.parentId, Topics.parentRootId)
-                            .where { Topics.id eq (cur?.second ?: topic.id) }
-                            .map { Triple(it[Topics.id]!!, it[Topics.parentId], it[Topics.parentRootId]) }
-                            .firstOrNull()
-                        if(cur != null && (cur.second in resolveConflictParents || cur.third in resolveConflictParents)) {
-                            resultTopics.add(topic.id)
-                            break
+                    var nextId: Int? = topic.id
+                    var include = true
+                    while(nextId != null) {
+                        val (parentId, thisType) = data.db.from(Topics)
+                            .select(Topics.parentId, Topics.type)
+                            .where { Topics.id eq nextId!! }
+                            .map { Pair(it[Topics.parentId], it[Topics.type]!!) }
+                            .first()
+                        //查询所有的parent，如果任一parent有mapping sourceTag并且此sourceTag不存在于此，则此映射不成立
+                        if(nextId != topic.id && (thisType == TagTopicType.IP || thisType == TagTopicType.COPYRIGHT)) {
+                            //查询当前节点所关联的sourceTag
+                            val reflectedSourceTagIds = data.db.from(SourceTagMappings).select(SourceTagMappings.sourceTagId)
+                                .where { (SourceTagMappings.sourceSite eq site) and (SourceTagMappings.targetMetaType eq MetaType.TOPIC) and (SourceTagMappings.targetMetaId eq nextId!!) }
+                                .map { it[SourceTagMappings.sourceTagId]!! }
+                                .toList()
+                            if(!sourceTagIds.containsAll(reflectedSourceTagIds)) {
+                                include = false
+                                break
+                            }
                         }
-                    } while (cur?.second != null)
+                        nextId = parentId
+                    }
+                    if(include) resultTopics.add(topic.id)
                 }
             }else{
                 for (mapping in mappingTag.mappings) {
@@ -325,15 +336,36 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
         //根据映射移除对应的tagme。映射从缓存获取，依次尝试topic、author和tag，获取它们在当前site下对应的所有sourceTagType
         //当某种类型的对应的sourceTagType的所有sourceTag全部有映射条目时，此tagme可以消除，因此加入minusTagme
         //开启onlyCharacterTopic时，就要求必须至少有一个CHARACTER
-        val minusTagme: Illust.Tagme = (Illust.Tagme.EMPTY as Illust.Tagme)
-            .letIf(setting.import.setTagmeOfTag) { tagme ->
-                tagme.letIf(enableTag && !notReflectForTag && getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.TAG).let { types -> mappingTags.filter { it.type in types } }.let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }) { it + Illust.Tagme.TAG }
-                    .letIf(enableAuthor && !notReflectForAuthor && getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.AUTHOR).let { types -> mappingTags.filter { it.type in types } }.let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }) { it + Illust.Tagme.AUTHOR }
-                    .letIf(enableTopic && !notReflectForTopic && getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.TOPIC)
+        //开启mainlyByArtistAuthor时，只要artist都存在映射，就无视group移除tagme；或者不存在artist时，则在group都存在映射时移除tagme
+        val minusTagme: Illust.Tagme = (Illust.Tagme.EMPTY as Illust.Tagme).letIf(setting.import.setTagmeOfTag) { tagme ->
+            tagme.letIf(enableTag && !notReflectForTag && getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.TAG)
+                    .let { types -> mappingTags.filter { it.type in types } }
+                    .let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }
+                ) { it + Illust.Tagme.TAG }
+                .letIf(enableAuthor && !notReflectForAuthor && if(setting.meta.mainlyByArtistAuthor) {
+                    val onlyArtist = getSiteMetaTypeToTagTypeMapping(siteDetail, TagAuthorType.ARTIST)
                         .let { types -> mappingTags.filter { it.type in types } }
-                        .let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } && if(setting.meta.onlyCharacterTopic) { it.flatMap { t -> t.mappings }.any { t -> t.metaTag is TopicSimpleRes && t.metaTag.type == TagTopicType.CHARACTER } }else true }
-                    ) { it + Illust.Tagme.TOPIC }
-            }
+                    if(onlyArtist.isNotEmpty()) {
+                        //只要存在ARTIST类型映射的来源标签，就以这些标签是否全部映射来决定是否移除tagme
+                        onlyArtist.all { t -> t.mappings.isNotEmpty() }
+                    }else{
+                        //否则，查询全部类型
+                        getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.AUTHOR)
+                            .let { types -> mappingTags.filter { it.type in types } }
+                            .let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }
+                    }
+                }else{
+                    getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.AUTHOR)
+                        .let { types -> mappingTags.filter { it.type in types } }
+                        .let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() } }
+                }
+                ) { it + Illust.Tagme.AUTHOR }
+                .letIf(enableTopic && !notReflectForTopic && getSiteMetaTypeToTagTypeMapping(siteDetail, MetaType.TOPIC)
+                    .let { types -> mappingTags.filter { it.type in types } }
+                    .let { it.isNotEmpty() && it.all { t -> t.mappings.isNotEmpty() }
+                            && if(setting.meta.onlyCharacterTopic) { it.flatMap { t -> t.mappings }.any { t -> t.metaTag is TopicSimpleRes && t.metaTag.type == TagTopicType.CHARACTER } }else true }
+                ) { it + Illust.Tagme.TOPIC }
+        }
 
         return if(minusTagme == Illust.Tagme.EMPTY && (resultTopics.isEmpty() || notReflectForTopic) && (resultAuthors.isEmpty() || notReflectForAuthor) && (resultTags.isEmpty() || notReflectForTag)) null
         else Tuple4(
@@ -361,6 +393,13 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
                 return site.tagTypeMappings.filter { (_, v) -> v in names }.map { (k, _) -> k }
             }
         }
+    }
+
+    /**
+     * 根据site的定义表，提取元数据标签类型对应的指定tagType类型。
+     */
+    private fun getSiteMetaTypeToTagTypeMapping(site: SourceSiteRes, authorType: TagAuthorType): List<String> {
+        return site.tagTypeMappings.filter { (_, v) -> v == authorType.name }.map { (k, _) -> k }
     }
 
     /**
