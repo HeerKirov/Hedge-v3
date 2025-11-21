@@ -232,6 +232,8 @@ pub struct MetaOptionUpdateForm {
     pub auto_clean_tagme: Option<bool>,
     #[serde(rename = "onlyCharacterTopic", alias = "only_character_topic", skip_serializing_if = "Option::is_none")]
     pub only_character_topic: Option<bool>,
+    #[serde(rename = "mainlyByArtistAuthor", alias = "mainly_by_artist_author", skip_serializing_if = "Option::is_none")]
+    pub mainly_by_artist_author: Option<bool>,
     #[serde(rename = "resolveTagConflictByParent", alias = "resolve_tag_conflict_by_parent", skip_serializing_if = "Option::is_none")]
     pub resolve_tag_conflict_by_parent: Option<bool>,
     #[serde(rename = "bindingPartitionWithOrderTime", alias = "binding_partition_with_order_time", skip_serializing_if = "Option::is_none")]
