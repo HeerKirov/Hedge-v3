@@ -4,6 +4,7 @@ import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.enums.MetaType
 import com.heerkirov.hedge.server.enums.TagTopicType
+import com.heerkirov.hedge.server.model.Illust
 import com.heerkirov.hedge.server.utils.Json.parseJSONObject
 import com.heerkirov.hedge.server.utils.Resources
 import com.heerkirov.hedge.server.utils.StrTemplate
@@ -41,10 +42,10 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         register.useSQL("0.12.0", ::processAnnotationRemoving)
         register.useSQL("0.12.0.1")
         register.useSQL("0.12.4")
-        register.useFunc("0.13.0", ::processCollectionTagme)
         register.useSQL("0.13.0.1", ::generateImplicitNames)
         register.useSQL("0.13.0.2")
         register.useSQL("0.16.0", ::generateTopicTreeStruct)
+        register.useFunc("0.16.2", ::processCollectionTagme)
     }
 
     /**
@@ -295,6 +296,7 @@ object DatabaseMigrationStrategy : SimpleStrategy<Database>() {
         while(true) {
             val ids = db.from(Illusts).select(Illusts.id)
                 .where { Illusts.type eq IllustModelType.COLLECTION }
+                .orderBy(Illusts.id.asc())
                 .limit(limit).offset(offset)
                 .map { it[Illusts.id]!! }
             if(ids.isEmpty()) break
