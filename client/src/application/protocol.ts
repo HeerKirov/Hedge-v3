@@ -1,9 +1,12 @@
-import { app, net, protocol } from "electron"
+import { createReadStream } from "fs"
+import { app, protocol } from "electron"
+import { lookup } from "mime-types"
 import { WindowManager } from "@/application/window"
 import { StateManager, AppState } from "@/components/state"
 import { LocalManager } from "@/components/local"
 import { maps } from "@/utils/types"
 import { getNodePlatform } from "@/utils/process"
+import { statOrNull } from "@/utils/fs"
 
 export function registerProtocol(stateManager: StateManager, windowManager: WindowManager) {
     app.setAsDefaultProtocolClient("hedge")
@@ -36,7 +39,7 @@ export function registerProtocol(stateManager: StateManager, windowManager: Wind
             app.quit()
             return
         } else {
-            app.on('second-instance', (_, commandLine, __) => {
+            app.on("second-instance", (_, commandLine, __) => {
                 const originUrl = commandLine.pop()!
                 processDeepLink(originUrl)
             })
@@ -44,7 +47,7 @@ export function registerProtocol(stateManager: StateManager, windowManager: Wind
     }
 
     protocol.registerSchemesAsPrivileged([
-        { scheme: 'archive', privileges: { stream: true, supportFetchAPI: true, standard: true } }
+        { scheme: "archive", privileges: { stream: true, supportFetchAPI: true, standard: true } }
     ])
 }
 
@@ -67,22 +70,64 @@ function processUrl(originUrl: string, windowManager: WindowManager) {
 }
 
 export function registerRendererProtocol(local: LocalManager) {
-    const prefix = 'archive://'
-    protocol.handle('archive', async req => {
+    const prefix = "archive://"
+    protocol.handle("archive", async req => {
         const url = req.url.substring(prefix.length)
         const res = await local.file.loadFile(url)
         if(res.ok) {
-            return net.fetch(`file://${res.data}`, req)
+            return seekableResponse(res.data, req)
+            // return net.fetch(`file://${res.data}`, req)
         }else if(res.code === "FILE_NOT_FOUND") {
             return new Response("File not found.", {
                 status: 404,
-                headers: { 'content-type': 'text/plain' }
+                headers: { "content-type": "text/plain" }
             })
         }else{
             return new Response(res.message, {
                 status: 500,
-                headers: { 'content-type': 'text/plain' }
+                headers: { "content-type": "text/plain" }
             })
         }
     })
+}
+
+async function seekableResponse(filePath: string, req: Request) {
+    try {
+        const mimeType = lookup(filePath) || "application/octet-stream"
+
+        const stat = (await statOrNull(filePath))!
+        const fileSize = stat.size
+        const range = req.headers.get("range")
+
+        const headers: Record<string, string> = {
+            "Content-Type": mimeType,
+            "Accept-Ranges": "bytes"
+        }
+
+        if (range) {
+            const parts = range.replace(/bytes=/, "").split("-")
+            const start = parseInt(parts[0], 10)
+            const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1
+
+            if (start >= fileSize || end >= fileSize) {
+                return new Response(null, { status: 416, headers })
+            }
+
+            const chunkSize = end - start + 1
+
+            const stream = createReadStream(filePath, { start, end })
+
+            headers["Content-Range"] = `bytes ${start}-${end}/${fileSize}`
+            headers["Content-Length"] = chunkSize.toString()
+
+            return new Response(stream as any, {status: 206, headers})
+        } else {
+            const stream = createReadStream(filePath)
+            headers["Content-Length"] = fileSize.toString()
+
+            return new Response(stream as any, {status: 200, headers})
+        }
+    } catch (error) {
+        return new Response("Internal Server Error: " + (error as Error).message, { status: 500 })
+    }
 }
