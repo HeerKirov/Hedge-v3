@@ -1,11 +1,11 @@
+import { parseOrder } from "@/components-business/top-bar/AttachFilter/utils"
 import { MappingSourceTag, MappingSourceTagForm } from "@/functions/http-client/api/source-tag-mapping"
 import { SourceBook, SourceBookForm, SourceTag, SourceTagForm } from "@/functions/http-client/api/source-data"
 import { AuthorQueryFilter } from "@/functions/http-client/api/author"
-import { AUTHOR_TYPE_NAMES, TOPIC_TYPE_NAMES } from "@/constants/entity";
-import { parseOrder } from "@/components-business/top-bar/AttachFilter/utils";
-import { QUERY_FIELD_NAMES, QUERY_FILTER_ORDER_NAMES } from "@/constants/translate";
-import { TopicQueryFilter } from "@/functions/http-client/api/topic";
-import { QueryRes } from "@/functions/http-client/api/util-query";
+import { TopicQueryFilter } from "@/functions/http-client/api/topic"
+import { QueryRes } from "@/functions/http-client/api/util-query"
+import { QUERY_FIELD_NAMES, QUERY_FILTER_ORDER_NAMES } from "@/constants/translate"
+import { AUTHOR_TYPE_NAMES, TOPIC_TYPE_NAMES } from "@/constants/entity"
 
 /**
  * 结合旧的和新的mapping source tag，patch出需要提交到server的表单内容。

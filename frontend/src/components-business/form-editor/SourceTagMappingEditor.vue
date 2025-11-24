@@ -24,8 +24,8 @@ const selectedIndex = ref<number>()
 const form = ref({
     site: <string | null>null,
     code: "",
-    name: "",
-    otherName: "",
+    name: <string | null>null,
+    otherName: <string | null>null,
     type: ""
 })
 
@@ -54,14 +54,15 @@ const remove = () => {
 let formLockFlag = true
 
 watchEffect(async () => {
+    //选择项发生变化时将其同步至表单
     if(selectedIndex.value !== undefined && selectedIndex.value >= 0 && selectedIndex.value < props.value.length) {
         formLockFlag = false
         const item = props.value[selectedIndex.value]
         form.value = {
             site: item.site || null,
             code: item.code,
-            name: item.name || "",
-            otherName: item.otherName || "",
+            name: item.name || null,
+            otherName: item.otherName || null,
             type: item.type
         }
         //tips: form的响应是异步触发的，因此需要使用nextTick将解锁操作推迟到vue的下次更新结束后，这才能保证watch被锁住从而跳过此次响应
@@ -71,12 +72,13 @@ watchEffect(async () => {
 })
 
 watch(form, form => {
+    //把表单内容实时同步至数据
     if(formLockFlag && selectedIndex.value !== undefined && selectedIndex.value >= 0 && selectedIndex.value < props.value.length) {
         const item = {
             site: form.site || "",
             code: form.code.trim(),
-            name: form.name.trim(),
-            otherName: form.otherName || null,
+            name: form.name?.trim() || null,
+            otherName: form.otherName?.trim() || null,
             type: form.type.trim()
         }
         emit("update:value", [...props.value.slice(0, selectedIndex.value), item, ...props.value.slice(selectedIndex.value + 1)])

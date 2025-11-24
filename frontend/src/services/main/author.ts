@@ -2,7 +2,7 @@ import { Ref, ref, watch } from "vue"
 import { QueryListview, useCreatingHelper, useFetchEndpoint, useFetchHelper, usePostFetchHelper, useRetrieveHelper } from "@/functions/fetch"
 import { flatResponse, mapResponse } from "@/functions/http-client"
 import { Author, DetailAuthor, AuthorCreateForm, AuthorQueryFilter, AuthorType } from "@/functions/http-client/api/author"
-import { MappingSourceTag } from "@/functions/http-client/api/source-tag-mapping"
+import { MappingSourceTag, MappingSourceTagForm } from "@/functions/http-client/api/source-tag-mapping"
 import { useNavigationItem } from "@/services/base/side-nav-records"
 import { useListViewContext } from "@/services/base/list-view-context"
 import { useMessageBox } from "@/modules/message-box"
@@ -245,7 +245,23 @@ export function useAuthorDetailPanel() {
     }
 
     const setMappingSourceTags = async (mappingSourceTags: MappingSourceTag[]) => {
-        return objects.deepEquals(mappingSourceTags, data.value?.mappingSourceTags) || await setData({ mappingSourceTags })
+        //由于mapping source tags的编辑模式，需要在提交之前做一次过滤
+        const final: MappingSourceTag[] = mappingSourceTags.filter(t => t.site && t.code)
+
+        return objects.deepEquals(final, data.value?.mappingSourceTags) || await setData({
+            mappingSourceTags: patchMappingSourceTagForm(mappingSourceTags, data.value?.mappingSourceTags ?? [])
+        }, e => {
+            if(e.code === "NOT_EXIST") {
+                const [type, id] = e.info
+                if(type === "site") {
+                    message.showOkMessage("error", `选择的来源站点不存在。`, `错误项: ${id}`)
+                }else if(type === "sourceTagType") {
+                    message.showOkMessage("error", `选择的来源标签类型不存在。`, `错误项: ${id.join(", ")}`)
+                }
+            }else{
+                return e
+            }
+        })
     }
 
     const findSimilarOfAuthor = async () => {

@@ -13,7 +13,7 @@ import { AUTHOR_TYPE_ICONS, AUTHOR_TYPE_NAMES, AUTHOR_TYPES } from "@/constants/
 const {
     data,
     toggleFavorite, setName, setDescription, setKeywords, setScore, setType, setMappingSourceTags,
-    findSimilarOfAuthor, openIllustsOfAuthor, openBooksOfAuthor, openAuthorDetail, deleteItem
+    findSimilarOfAuthor, openIllustsOfAuthor, openBooksOfAuthor, deleteItem
 } = useAuthorDetailPanel()
 
 const AUTHOR_TYPE_SELECT_ITEMS = AUTHOR_TYPES.map(t => ({label: AUTHOR_TYPE_NAMES[t], value: t}))

@@ -234,11 +234,42 @@ export function useTopicDetailPanel() {
     }
 
     const setParent = async (parent: ParentTopic | null) => {
-        return parent?.id === data.value?.parentId || await setData({ parentId: parent?.id ?? null })
+        return parent?.id === data.value?.parentId || await setData({ parentId: parent?.id ?? null }, e => {
+            if(e.code === "NOT_EXIST") {
+                const [type, id] = e.info
+                if(type === "parentId") {
+                    message.showOkMessage("error", "选择的父主题不存在。", `错误项: ${id}`)
+                }else{
+                    return e
+                }
+            }else if(e.code === "RECURSIVE_PARENT") {
+                message.showOkMessage("prompt", "无法应用此父主题。", "此父主题与当前主题存在闭环。")
+            }else if(e.code === "ILLEGAL_CONSTRAINT") {
+                message.showOkMessage("prompt", "无法应用主题类型。", "当前主题的类型与其与父主题/子主题不能兼容。考虑更改父主题，或更改当前主题的类型。")
+            }else{
+                return e
+            }
+        })
     }
 
     const setMappingSourceTags = async (mappingSourceTags: MappingSourceTag[]) => {
-        return objects.deepEquals(mappingSourceTags, data.value?.mappingSourceTags) || await setData({ mappingSourceTags })
+        //由于mapping source tags的编辑模式，需要在提交之前做一次过滤
+        const final: MappingSourceTag[] = mappingSourceTags.filter(t => t.site && t.code)
+
+        return objects.deepEquals(final, data.value?.mappingSourceTags) || await setData({
+            mappingSourceTags: patchMappingSourceTagForm(mappingSourceTags, data.value?.mappingSourceTags ?? [])
+        }, e => {
+            if(e.code === "NOT_EXIST") {
+                const [type, id] = e.info
+                if(type === "site") {
+                    message.showOkMessage("error", `选择的来源站点不存在。`, `错误项: ${id}`)
+                }else if(type === "sourceTagType") {
+                    message.showOkMessage("error", `选择的来源标签类型不存在。`, `错误项: ${id.join(", ")}`)
+                }
+            }else{
+                return e
+            }
+        })
     }
 
     const findSimilarOfTopic = async () => {
