@@ -26,9 +26,19 @@ const dragEvents = useDraggable("topic", () => {
             <ChildrenTreeMode class="mt-1 ml-6" :children="child.children" @click="$emit('click', $event)"/>
         </div>
     </template>
+    <template v-else-if="child.type === 'CHARACTER' && !!child.children?.length">
+        <SimpleMetaTagElement type="topic" :value="child" clickable @click="$emit('click', child.id)" draggable v-bind="dragEvents"/>
+        <div :class="$style['sub-characters']">
+            (<ChildrenTreeMode :children="child.children" @click="$emit('click', $event)"/>)
+        </div>
+    </template>
     <SimpleMetaTagElement v-else type="topic" :value="child" clickable @click="$emit('click', child.id)" draggable v-bind="dragEvents"/>
 </template>
 
 <style module lang="sass">
-
+.sub-characters
+    display: flex
+    flex-wrap: wrap
+    font-size: 0.9em
+    transform: translateY(0.2em)
 </style>

@@ -464,7 +464,8 @@ function useBrowserRoute(view: Ref<InternalTab>, page?: Ref<InternalPage>): Brow
         if(view.value.current.route.routeName === route.routeName && objects.deepEquals(view.value.current.route.path, route.path)) {
             //在routePush的路由是同一个的情况下，视作hash push，记录params的变更
             const current = view.value.current
-            current.forwards.splice(0, current.forwards.length)
+            if(view.value.forwards.length > 0) view.value.forwards.splice(0, view.value.forwards.length)
+            if(current.forwards.length > 0) current.forwards.splice(0, current.forwards.length)
             current.histories.push({title: current.title, params: current.route.params})
             if(current.histories.length > HASH_HISTORY_MAX) current.histories.shift()
             current.route.params = route.params ?? {}
