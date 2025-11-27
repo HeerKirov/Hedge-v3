@@ -880,7 +880,7 @@ class IllustManager(private val appdata: AppDataManager,
                         .associateBy({ it[SourceDatas.id]!! }) { it[SourceDatas.publishTime]!! }
                     //将所有image/children按source sortable path排序，然后把所有的orderTime取出排序，依次选取
                     val sortedIds = (images + childrenOfCollections)
-                        .map { Pair(it.id, if(it.sourceSite == null) null else SourceSortablePath(it.sourceSite, it.sortableSourceId, it.sourcePart, publishTimeMap[it.sourceDataId])) }
+                        .map { Pair(it.id, if(it.sourceSite == null) null else SourceSortablePath(it.sourceSite, it.sourceId!!, it.sortableSourceId, it.sourcePart, publishTimeMap[it.sourceDataId])) }
                         .sortedBy { (_, p) -> p }
                         .map { (id, _) -> id }
                     val sortedTimes = orderTimeSeq.map { (_, _, ot) -> ot }.sorted()

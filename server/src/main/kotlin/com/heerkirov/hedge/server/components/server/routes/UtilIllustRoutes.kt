@@ -45,7 +45,7 @@ class UtilIllustRoutes(private val illustUtilService: IllustUtilService) : Route
 
     private fun getOrganizationSituation(ctx: Context) {
         val form = ctx.bodyAsForm<OrganizationSituationForm>()
-        ctx.json(illustUtilService.getOrganizationSituation(form.illustIds, form.onlyNeighbours, form.gatherGroup, form.resortInGroup, form.resortAtAll))
+        ctx.json(illustUtilService.getOrganizationSituation(form))
     }
 
     private fun applyOrganizationSituation(ctx: Context) {

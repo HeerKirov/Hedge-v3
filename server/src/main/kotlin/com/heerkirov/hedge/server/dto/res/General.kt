@@ -50,7 +50,7 @@ data class SourceDataPath(val sourceSite: String, val sourceId: String, val sour
 /**
  * 包含来源数据的所有可排序字段的通用结构。
  */
-data class SourceSortablePath(val sourceSite: String, val sortableSourceId: Long?, val sourcePart: Int?, val publishTime: Instant?) : Comparable<SourceSortablePath> {
+data class SourceSortablePath(val sourceSite: String, val sourceId: String, val sortableSourceId: Long?, val sourcePart: Int?, val publishTime: Instant?) : Comparable<SourceSortablePath> {
     override fun compareTo(other: SourceSortablePath): Int = compareValuesBy(this, other, SourceSortablePath::sourceSite, SourceSortablePath::sortableSourceId, SourceSortablePath::publishTime, SourceSortablePath::sourcePart)
 }
 

@@ -7,6 +7,7 @@ import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.*
 import com.heerkirov.hedge.server.dto.form.IllustBatchUpdateForm
 import com.heerkirov.hedge.server.dto.form.OrganizationSituationApplyForm
+import com.heerkirov.hedge.server.dto.form.OrganizationSituationForm
 import com.heerkirov.hedge.server.dto.res.*
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.functions.manager.IllustManager
@@ -180,15 +181,12 @@ class IllustUtilService(private val appdata: AppDataManager, private val data: D
     /**
      * 对一组illust进行智能整理。整理的基本原则是将相似项划分为一个集合，搭配有一些其他的分组选项使用。
      * 此方法仅返回分组结果，分组的实施需要手动完成。
-     * @param illustIds 给出image
-     * @param onlyNeighbours 仅有相邻的图像会被划分为一个集合，当图像不相邻时就不会成组了。
-     * @param gatherGroup 分组划分完成后，进行重排序，使同一个组的项聚拢到一起，多个组的排序顺序由这个组中最靠前的项决定。onlyNeighbours开启时，此选项显然无意义。
-     * @param resortInGroup 分组划分完成后，进行重排序，在每个组内按照来源顺序重新组织排序时间。resortAtAll开启时，此选项显然无意义。
-     * @param resortAtAll 分组划分开始之前就进行一次全局重排序，按照来源顺序重新组织排序时间。
      * @return 多个组，每个组包含多个图像，用以指示哪些图像需要被成组。有些图像还带有orderTime，用以指示需要设置此图像的排序时间。
      */
-    fun getOrganizationSituation(illustIds: List<Int>, onlyNeighbours: Boolean = false, gatherGroup: Boolean = false, resortInGroup: Boolean = false, resortAtAll: Boolean = false): List<List<OrganizationSituationRes>> {
-        data class Row(val id: Int, val filePath: FilePath, val fingerprint: Fingerprint, val sourceSortablePath: SourceSortablePath?, val orderTime: Long, var newOrderTime: Long? = null)
+    fun getOrganizationSituation(form: OrganizationSituationForm): List<List<OrganizationSituationRes>> {
+        data class Row(val id: Int, val fileName: String, val filePath: FilePath, val fingerprint: Fingerprint, val sourceSortablePath: SourceSortablePath?, val orderTime: Long, var newOrderTime: Long? = null) : Comparable<Row> {
+            override fun compareTo(other: Row): Int = if(this.sourceSortablePath != null && other.sourceSortablePath != null) this.sourceSortablePath.compareTo(other.sourceSortablePath) else this.fileName.compareTo(other.fileName)
+        }
 
         val illusts = data.db.from(Illusts)
             .innerJoin(FileFingerprints, FileFingerprints.fileId eq Illusts.fileId)
@@ -196,77 +194,112 @@ class IllustUtilService(private val appdata: AppDataManager, private val data: D
             .leftJoin(SourceDatas, Illusts.sourceDataId eq SourceDatas.id)
             .select(Illusts.id, Illusts.orderTime, SourceDatas.publishTime,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sortableSourceId, Illusts.sourcePart, Illusts.sourcePartName,
-                FileRecords.id, FileRecords.status, FileRecords.extension, FileRecords.block,
+                FileRecords.id, FileRecords.status, FileRecords.extension, FileRecords.block, FileRecords.originFilename,
                 FileFingerprints.dHash, FileFingerprints.pHash, FileFingerprints.pHashSimple, FileFingerprints.dHashSimple)
-            .where { (Illusts.type eq IllustModelType.IMAGE and (Illusts.id inList illustIds)) or ((Illusts.type eq IllustModelType.IMAGE_WITH_PARENT and (Illusts.parentId inList illustIds))) }
+            .where { (Illusts.type eq IllustModelType.IMAGE and (Illusts.id inList form.illustIds)) or ((Illusts.type eq IllustModelType.IMAGE_WITH_PARENT and (Illusts.parentId inList form.illustIds))) }
             .orderBy(Illusts.orderTime.asc())
             .map {
                 val filePath = filePathFrom(it)
-                val s = if(it[Illusts.sourceSite] != null && it[Illusts.sourceId] != null) SourceSortablePath(it[Illusts.sourceSite]!!, it[Illusts.sortableSourceId], it[Illusts.sourcePart], it[SourceDatas.publishTime]) else null
+                val fileName = it[FileRecords.originFilename]!!
+                val s = if(it[Illusts.sourceSite] != null && it[Illusts.sourceId] != null) SourceSortablePath(it[Illusts.sourceSite]!!, it[Illusts.sourceId]!!, it[Illusts.sortableSourceId], it[Illusts.sourcePart], it[SourceDatas.publishTime]) else null
                 val f = Fingerprint(it[FileFingerprints.pHashSimple]!!, it[FileFingerprints.dHashSimple]!!, it[FileFingerprints.pHash]!!, it[FileFingerprints.dHash]!!)
-                Row(it[Illusts.id]!!, filePath, f, s, it[Illusts.orderTime]!!)
+                Row(it[Illusts.id]!!, fileName, filePath, f, s, it[Illusts.orderTime]!!)
             }
-            .letIf(resortAtAll) { it.sortedBy(Row::sourceSortablePath) }
 
-        val groups = mutableListOf<MutableList<Row>>()
-        if(onlyNeighbours) {
-            for (illust in illusts) {
-                if(groups.isEmpty() || Similarity.matchSimilarity(groups.last().last().fingerprint, illust.fingerprint) <= 0) {
-                    groups.add(mutableListOf(illust))
-                }else{
-                    groups.last().add(illust)
+        val sortedIllusts = when(form.organizeMode) {
+            OrganizationSituationForm.OrganizationMode.FULL_SORT_ORGANIZE -> illusts.sorted()
+            OrganizationSituationForm.OrganizationMode.FULL_ORGANIZE,
+            OrganizationSituationForm.OrganizationMode.PARTIAL_ORGANIZE -> illusts
+            OrganizationSituationForm.OrganizationMode.PARTIAL_SORT_ORGANIZE,
+            OrganizationSituationForm.OrganizationMode.SAME_SOURCE_ORGANIZE -> {
+                //以每个聚类的平均中心为基础顺序，进行聚类排序
+                //收集所有位置信息
+                val categoryData = mutableMapOf<String, Pair<MutableList<Int>, MutableList<Row>>>()
+                illusts.forEachIndexed { index, row ->
+                    //聚类直接使用 source site & id 拼接成字符串。没有来源信息的统一使用空串作为其聚类
+                    val category = if(row.sourceSortablePath != null) "${row.sourceSortablePath.sourceSite}_${row.sourceSortablePath.sortableSourceId}" else ""
+                    val (positions, items) = categoryData.getOrPut(category) { Pair(mutableListOf(), mutableListOf()) }
+                    positions.add(index)
+                    items.add(row)
                 }
-            }
-        }else{
-            val flag = illusts.indices.map { true }.toMutableList()
-            for(i in illusts.indices) {
-                if(flag[i]) {
-                    flag[i] = false
-                    val illust = illusts[i]
-                    val group = mutableListOf(illust)
-                    for(j in (i + 1) until illusts.size) {
-                        if(flag[j] && Similarity.matchSimilarity(illust.fingerprint, illusts[j].fingerprint) > 0) {
-                            flag[j] = false
-                            group.add(illusts[j])
-                        }
+
+                //计算所有聚类的中心位置
+                val categoryCenter = mutableMapOf<String, Double>()
+                categoryData.forEach { (category, data) ->
+                    categoryCenter[category] = data.first.average()
+                }
+
+                //按中心位置排序聚类
+                val sortedCategories = categoryCenter.keys.sortedBy { category -> categoryCenter[category] }
+
+                //构建结果
+                buildList {
+                    sortedCategories.forEach { category ->
+                        val groupItems = categoryData[category]!!.second
+                        // 组内排序
+                        addAll(groupItems.sorted())
                     }
-                    groups.add(group)
                 }
             }
         }
-
-        //开启后置组内排序(且没有开全局排序，因为没有意义)时，在每个组内，按照sourcePath对所有项排序
-        val sortedGroups = groups.letIf(resortInGroup && !resortAtAll) {
-            it.map { group -> group.sortedBy(Row::sourceSortablePath).toMutableList() }.toMutableList()
+        val groupedIllusts = when(form.organizeMode) {
+            OrganizationSituationForm.OrganizationMode.FULL_SORT_ORGANIZE,
+            OrganizationSituationForm.OrganizationMode.PARTIAL_SORT_ORGANIZE,
+            OrganizationSituationForm.OrganizationMode.PARTIAL_ORGANIZE -> {
+                //合并邻近相似项，每个项都只和它上一个项进行相似度比对，相似加入同组，不相似开辟新组
+                val groups = mutableListOf<MutableList<Row>>()
+                for (illust in sortedIllusts) {
+                    if(groups.isEmpty() || Similarity.matchSimilarity(groups.last().last().fingerprint, illust.fingerprint) <= 0) {
+                        groups.add(mutableListOf(illust))
+                    }else{
+                        groups.last().add(illust)
+                    }
+                }
+                groups
+            }
+            OrganizationSituationForm.OrganizationMode.FULL_ORGANIZE -> {
+                //合并相似项，进行二重循环以找出序列中的所有相似项分组
+                val groups = mutableListOf<MutableList<Row>>()
+                val flag = sortedIllusts.indices.map { true }.toMutableList()
+                for(i in sortedIllusts.indices) {
+                    if(flag[i]) {
+                        flag[i] = false
+                        val illust = sortedIllusts[i]
+                        val group = mutableListOf(illust)
+                        for(j in (i + 1) until sortedIllusts.size) {
+                            if(flag[j] && Similarity.matchSimilarity(illust.fingerprint, sortedIllusts[j].fingerprint) > 0) {
+                                flag[j] = false
+                                group.add(sortedIllusts[j])
+                            }
+                        }
+                        groups.add(group)
+                    }
+                }
+                groups
+            }
+            OrganizationSituationForm.OrganizationMode.SAME_SOURCE_ORGANIZE -> {
+                //合并邻近相同来源的项，当 source site | id 不同时开辟新组
+                val groups = mutableListOf<MutableList<Row>>()
+                for (illust in sortedIllusts) {
+                    if(groups.isEmpty() || groups.last().last().sourceSortablePath?.sourceSite != illust.sourceSortablePath?.sourceSite || groups.last().last().sourceSortablePath?.sourceId != illust.sourceSortablePath?.sourceId) {
+                        groups.add(mutableListOf(illust))
+                    }else{
+                        groups.last().add(illust)
+                    }
+                }
+                groups
+            }
         }
 
-        if(gatherGroup && !onlyNeighbours) {
-            //开启了组内聚合(且没有开仅相邻项判定，因为没有意义)时，将orderTime序列依次赋予给所有项。此处的赋予是组依次进行的，这样就会将同组的项分配到相邻的orderTime上
-            val orderTimeSeq = illusts.map { it.orderTime }.sorted().iterator()
-            for (group in sortedGroups) {
-                for (illust in group) {
-                    val ot = orderTimeSeq.next()
-                    illust.newOrderTime = if(ot != illust.orderTime) ot else null
-                }
-            }
-        }else if(resortAtAll) {
-            //若开启了全局重排序，那么此处应该将orderTime序列依次赋予所有项，但是赋予是按照经过重排序后的illust顺序进行的
-            val orderTimeSeq = illusts.map { it.orderTime }.sorted().iterator()
-            for(illust in illusts) {
+        val orderTimeSeq = illusts.map { it.orderTime }.sorted().iterator()
+        for (group in groupedIllusts) {
+            for (illust in group) {
                 val ot = orderTimeSeq.next()
                 illust.newOrderTime = if(ot != illust.orderTime) ot else null
             }
-        }else{
-            //最后，在每个组组内进行排序检查，以应用组内重排序
-            for (group in sortedGroups) {
-                val orderTimeSeq = group.map { it.orderTime }.sorted()
-                for ((illust, ot) in group.zip(orderTimeSeq)) {
-                    illust.newOrderTime = if(ot != illust.orderTime) ot else null
-                }
-            }
         }
 
-        return sortedGroups.map { group -> group.map { OrganizationSituationRes(it.id, it.filePath, it.orderTime.toInstant(), it.newOrderTime?.toInstant()) } }
+        return groupedIllusts.map { group -> group.map { OrganizationSituationRes(it.id, it.filePath, it.orderTime.toInstant(), it.newOrderTime?.toInstant()) } }
     }
 
     /**
