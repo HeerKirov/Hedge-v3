@@ -7,6 +7,7 @@ import { DraggingIllust, CommonIllust, Illust, IllustQueryFilter, BatchUpdateAct
 import { QueryRes } from "@/functions/http-client/api/util-query"
 import { Folder } from "@/functions/http-client/api/folder"
 import { Book } from "@/functions/http-client/api/book"
+import { OrganizationSituationForm } from "@/functions/http-client/api/util-illust"
 import { IllustViewController } from "@/services/base/view-controller"
 import { SelectedState } from "@/services/base/selected-state"
 import { useHomepageState } from "@/services/main/homepage"
@@ -16,6 +17,7 @@ import { useBrowserTabs, useTabRoute } from "@/modules/browser"
 import { useDialogService } from "@/components-module/dialog"
 import { useStackedView } from "@/components-module/stackedview"
 import { installEmbedPreviewService, PreviewService, usePreviewService } from "@/components-module/preview"
+import { ORGANIZE_MODE_TEXT } from "@/constants/enum"
 import { installation } from "@/utils/reactivity"
 import { LocalDate } from "@/utils/datetime"
 
@@ -174,6 +176,10 @@ export interface ImageDatasetOperators<T extends CommonIllust> {
      * @param noPreview 使用默认参数直接执行整理，而不进行预览
      */
     organizeOfImage(illust: T, noPreview?: boolean): void
+    /**
+     * 获得上次整理的模式。
+     */
+    getLastOrganizeMode(): {mode: OrganizationSituationForm["organizeMode"], text: string}
     /**
      * 将项目加入暂存区。
      */
@@ -488,6 +494,11 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
         else dialog.organizeIllust.organize(imageIds)
     }
 
+    const getLastOrganizeMode = () => {
+        const mode = dialog.organizeIllust.getDefaultMode()
+        return {mode, text: ORGANIZE_MODE_TEXT.find(i => i.mode === mode)?.title ?? "上次使用的整理模式。"}
+    }
+
     const fileEdit = async (illust: T | undefined, action: "convertFormat") => {
         const imageIds = illust !== undefined ? getEffectedItems(illust) : selector.selected.value
         if(imageIds.length > 0 && action === "convertFormat") dialog.fileEditor.convertFormat(imageIds)
@@ -526,7 +537,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
     return {
         openDetailByClick, openDetailByEnter, openCollectionDetail, openInNewWindow, openPreviewBySpace, modifyFavorite, batchUpdateTimeSeries,
         createCollection, splitToGenerateNewCollection, createBook, editAssociate, addToFolder, 
-        cloneImage, exportItem, findSimilarOfImage, organizeOfImage, fileEdit, addToStagingPost, popStagingPost, stagingPostCount,
+        cloneImage, exportItem, findSimilarOfImage, organizeOfImage, getLastOrganizeMode, fileEdit, addToStagingPost, popStagingPost, stagingPostCount,
         deleteItem, removeItemFromCollection, removeItemFromBook, removeItemFromFolder, getEffectedItems, dataDrop
     }
 }

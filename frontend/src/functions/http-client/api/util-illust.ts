@@ -215,21 +215,9 @@ export interface OrganizationSituationForm {
      */
     illustIds: number[]
     /**
-     * 仅有相邻的图像会被划分为一个集合，当图像不相邻时就不会成组了。
+     * 组织整理模式。
      */
-    onlyNeighbours?: boolean
-    /**
-     * 分组划分完成后，进行重排序，使同一个组的项聚拢到一起，多个组的排序顺序由这个组中最靠前的项决定。onlyNeighbours开启时，此选项显然无意义。
-     */
-    gatherGroup?: boolean
-    /**
-     * 分组划分完成后，进行重排序，在每个组内按照来源顺序重新组织排序时间。resortAtAll开启时，此选项显然无意义。
-     */
-    resortInGroup?: boolean
-    /**
-     * 分组划分开始之前就进行一次全局重排序，按照来源顺序重新组织排序时间。
-     */
-    resortAtAll?: boolean
+    organizeMode: "FULL_SORT_ORGANIZE" | "PARTIAL_SORT_ORGANIZE" | "FULL_ORGANIZE" | "PARTIAL_ORGANIZE" | "SAME_SOURCE_ORGANIZE"
 }
 
 export interface OrganizationSituationApplyForm {

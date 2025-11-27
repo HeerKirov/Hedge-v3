@@ -43,7 +43,7 @@ const menu = useDynamicPopupMenu<CommonIllust>((illust, { alt }) => [
     {type: "separator"},
     {type: "normal", label: "暂存", click: operators.addToStagingPost},
     {type: "separator"},
-    {type: "normal", label: alt ? "以推荐参数创建图像集合" : "创建图像集合", click: i => operators.createCollection(i, alt)},
+    {type: "normal", label: alt ? "以推荐参数创建集合" : "创建图像集合", click: i => operators.createCollection(i, alt)},
     {type: "normal", label: "创建画集…", click: operators.createBook},
     {type: "normal", label: "编辑关联组", click: operators.editAssociate},
     {type: "normal", label: "添加到目录…", click: operators.addToFolder},

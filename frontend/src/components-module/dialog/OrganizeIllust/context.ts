@@ -18,6 +18,10 @@ export interface OrganizeIllust {
      * @param onSucceed 如果成功保存，则执行回调。
      */
     organizeWithDefault(images?: number[], onSucceed?: () => void): void
+    /**
+     * 查看上次使用的整理模式。
+     */
+    getDefaultMode(): OrganizationSituationForm["organizeMode"]
 }
 
 export interface OrganizeIllustProps {
@@ -37,13 +41,16 @@ export function useOrganizeIllust(push: Push): OrganizeIllust {
             })
         },
         async organizeWithDefault(images, onSucceed) {
-            const args = getLocalStorage<Omit<OrganizationSituationForm, "illustIds">>("dialog/organize-illust/form") ?? {}
-            const res = await fetchOrganizationSituation({...args, illustIds: images ?? []})
+            const organizeMode = getLocalStorage<OrganizationSituationForm["organizeMode"]>("dialog/organize-illust/mode") ?? "PARTIAL_SORT_ORGANIZE"
+            const res = await fetchOrganizationSituation({organizeMode, illustIds: images ?? []})
             if(res !== undefined) {
                 const ok = await fetchApplyOrganizationSituation({groups: res.map(g => g.map(i => ({id: i.id, newOrderTime: i.newOrderTime})))})
                 if(ok && onSucceed) onSucceed()
             }
-        }
+        },
+        getDefaultMode() {
+            return getLocalStorage<OrganizationSituationForm["organizeMode"]>("dialog/organize-illust/mode") ?? "PARTIAL_SORT_ORGANIZE"
+        },
     }
 }
 
@@ -51,17 +58,17 @@ export function useOrganizeIllustContext(imageIds: Ref<number[]>, onSucceed: () 
     const fetchOrganizationSituation = useFetchHelper(client => client.illustUtil.getOrganizationSituation)
     const fetchApplyOrganizationSituation = usePostFetchHelper(client => client.illustUtil.applyOrganizationSituation)
 
-    const formStorage = useLocalStorage<Omit<OrganizationSituationForm, "illustIds">>("dialog/organize-illust/form", {})
+    const organizeModeStorage = useLocalStorage<OrganizationSituationForm["organizeMode"]>("dialog/organize-illust/mode", "PARTIAL_SORT_ORGANIZE")
 
-    const form = ref<Omit<OrganizationSituationForm, "illustIds">>({...formStorage.value})
+    const form = ref<Omit<OrganizationSituationForm, "illustIds">>({organizeMode: organizeModeStorage.value})
+
+    const formAnyChanged = ref(false)
+
+    const loading = ref(true)
 
     const data = shallowRef<OrganizationSituation[][]>()
 
     const images = shallowRef<OrganizationSituationImage[]>()
-
-    const loading = ref(true)
-
-    const formAnyChanged = ref(false)
 
     const fetchAndSetData = async () => {
         const res = await fetchOrganizationSituation({...form.value, illustIds: imageIds.value})
@@ -87,7 +94,7 @@ export function useOrganizeIllustContext(imageIds: Ref<number[]>, onSucceed: () 
 
     const reloadData = async () => {
         formAnyChanged.value = false
-        formStorage.value = {...form.value}
+        organizeModeStorage.value = form.value.organizeMode
         loading.value = true
         await fetchAndSetData()
         loading.value = false
@@ -97,7 +104,7 @@ export function useOrganizeIllustContext(imageIds: Ref<number[]>, onSucceed: () 
         if(data.value !== undefined && !loading.value) {
             loading.value = true
             if(formAnyChanged.value) {
-                formStorage.value = {...form.value}
+                organizeModeStorage.value = form.value.organizeMode
                 await fetchAndSetData()
             }
             const ok = await fetchApplyOrganizationSituation({groups: data.value.map(g => g.map(i => ({id: i.id, newOrderTime: i.newOrderTime})))})
@@ -112,7 +119,7 @@ export function useOrganizeIllustContext(imageIds: Ref<number[]>, onSucceed: () 
     return {images, loading, data, form, formAnyChanged, reloadData, apply}
 }
 
-interface OrganizationSituationImage extends OrganizationSituation {
+export interface OrganizationSituationImage extends OrganizationSituation {
     groupColor: UsefulColors | null
     groupFirst: boolean
     groupLast: boolean
