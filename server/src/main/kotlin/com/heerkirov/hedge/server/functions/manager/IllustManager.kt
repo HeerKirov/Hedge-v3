@@ -22,6 +22,7 @@ import com.heerkirov.hedge.server.utils.tuples.Tuple4
 import com.heerkirov.hedge.server.utils.types.anyOpt
 import com.heerkirov.hedge.server.utils.types.optOf
 import com.heerkirov.hedge.server.utils.types.optOrUndefined
+import com.heerkirov.hedge.server.utils.types.undefined
 import org.ktorm.dsl.*
 import org.ktorm.entity.*
 import org.ktorm.support.sqlite.bulkInsertReturning
@@ -966,59 +967,68 @@ class IllustManager(private val appdata: AppDataManager,
      * @throws ResourceNotExist ("from" | "to", number) 源或目标不存在
      * @throws ResourceNotSuitable ("from" | "to", number) 源或目标类型不适用，不能使用集合
      */
-    fun cloneProps(fromIllustId: Int, toIllustId: Int, props: ImagePropsCloneForm.Props, merge: Boolean, deleteFrom: Boolean): Pair<Int?, List<Int>?> {
-        val fromIllust = data.db.sequenceOf(Illusts).firstOrNull { it.id eq fromIllustId } ?: throw be(ResourceNotExist("from", fromIllustId))
-        val toIllust = data.db.sequenceOf(Illusts).firstOrNull { it.id eq toIllustId } ?: throw be(ResourceNotExist("to", toIllustId))
-        if(fromIllust.type == IllustModelType.COLLECTION) throw be(ResourceNotSuitable("from", fromIllustId))
-        if(toIllust.type == IllustModelType.COLLECTION) throw be(ResourceNotSuitable("to", toIllustId))
-        val ret = cloneProps(fromIllust, toIllust, props, merge)
+    fun cloneProps(replaceList: List<ImagePropsCloneForm.ReplaceList>, merge: Boolean, deleteFrom: Boolean): List<Pair<Int?, List<Int>?>> {
+        val returns: MutableList<Pair<Int?, List<Int>?>> = mutableListOf()
+        for (replaceItem in replaceList) {
+            val fromIllust = data.db.sequenceOf(Illusts).firstOrNull { it.id eq replaceItem.from } ?: throw be(ResourceNotExist("from", replaceItem.from))
+            val toIllust = data.db.sequenceOf(Illusts).firstOrNull { it.id eq replaceItem.to } ?: throw be(ResourceNotExist("to", replaceItem.to))
+            if(fromIllust.type == IllustModelType.COLLECTION) throw be(ResourceNotSuitable("from", replaceItem.from))
+            if(toIllust.type == IllustModelType.COLLECTION) throw be(ResourceNotSuitable("to", replaceItem.to))
+            
+            returns.add(cloneProps(fromIllust, toIllust, merge))
 
-        if(deleteFrom) {
-            delete(fromIllust)
+            if(deleteFrom) {
+                delete(fromIllust)
+            }
         }
 
-        return ret
+        return returns
     }
 
     /**
      * 复制属性。
      * @return (newCollectionId, newBookIds) 返回toIllust新加入的collection和book。
      */
-    private fun cloneProps(fromIllust: Illust, toIllust: Illust, props: ImagePropsCloneForm.Props, merge: Boolean): Pair<Int?, List<Int>?> {
+    private fun cloneProps(fromIllust: Illust, toIllust: Illust, merge: Boolean): Pair<Int?, List<Int>?> {
         //根据是否更改了parent，有两种不同的处理路径
-        val parentChanged = props.collection && fromIllust.parentId != toIllust.parentId
+        val parentChanged = fromIllust.parentId != toIllust.parentId
         val newParent = if(parentChanged && fromIllust.parentId != null) data.db.sequenceOf(Illusts).first { (it.id eq fromIllust.parentId) and (it.type eq IllustModelType.COLLECTION) } else null
         val parentId = if(parentChanged) toIllust.parentId else fromIllust.parentId
 
-        if(parentChanged || props.favorite || props.tagme || props.score || props.description || props.orderTime || props.partitionTime || props.source) {
+        val newScore = if(merge) { fromIllust.score ?: toIllust.score }else{ fromIllust.score }.let { if(it != toIllust.score) optOf(it) else undefined() }
+        val newDescription = if(merge) { fromIllust.description.ifEmpty { toIllust.description } }else{ fromIllust.description }.let { if(it != toIllust.description) optOf(it) else undefined() }
+        val newFavorite = if(merge) { fromIllust.favorite || toIllust.favorite }else{ fromIllust.favorite }.let { if(it != toIllust.favorite) optOf(it) else undefined() }
+        val newTagme = fromIllust.tagme.let { if(it != toIllust.tagme) optOf(it) else undefined() }
+        val newOrderTime = fromIllust.orderTime.let { if(it != toIllust.orderTime) optOf(it) else undefined() }
+        val newPartitionTime = fromIllust.partitionTime.let { if(it != toIllust.partitionTime) optOf(it) else undefined() }
+
+        if(parentChanged || newScore.isPresent || newDescription.isPresent || newFavorite.isPresent || newTagme.isPresent || newOrderTime.isPresent || newPartitionTime.isPresent) {
             data.db.update(Illusts) {
                 where { it.id eq toIllust.id }
                 if(parentChanged) {
                     set(it.parentId, newParent?.id)
                     set(it.type, if(newParent != null) IllustModelType.IMAGE_WITH_PARENT else IllustModelType.IMAGE)
-                    set(it.exportedScore, if(props.score) { if(merge) { fromIllust.score ?: toIllust.score }else{ fromIllust.score } }else{ toIllust.score } ?: newParent?.score)
-                    set(it.exportedDescription, if(props.description) { if(merge) { fromIllust.description.ifEmpty { toIllust.description } }else{ fromIllust.description } }else{ toIllust.description }.ifEmpty { newParent?.description ?: "" })
+                    newScore.applyOpt { set(it.exportedScore, this ?: newParent?.score) }
+                    newDescription.applyOpt { set(it.exportedDescription, this.ifEmpty { newParent?.description ?: "" }) }
                 }else{
-                    if(props.score) set(it.exportedScore, if(merge) { fromIllust.score ?: toIllust.score }else{ fromIllust.score })
-                    if(props.description) set(it.exportedDescription, if(merge) { fromIllust.description.ifEmpty { toIllust.description } }else{ fromIllust.description })
+                    newScore.applyOpt { set(it.exportedScore, this) }
+                    newDescription.applyOpt { set(it.exportedDescription, this) }
                 }
-                if(props.favorite) set(it.favorite, if(merge) { fromIllust.favorite || toIllust.favorite }else{ fromIllust.favorite })
-                if(props.tagme) set(it.tagme, fromIllust.tagme)
-                if(props.score) set(it.score, if(merge) { fromIllust.score ?: toIllust.score }else{ fromIllust.score })
-                if(props.description) set(it.description, if(merge) { fromIllust.description.ifEmpty { toIllust.description } }else{ fromIllust.description })
-                if(props.orderTime) set(it.orderTime, fromIllust.orderTime)
-                if(props.partitionTime && fromIllust.partitionTime != toIllust.partitionTime) {
-                    set(it.partitionTime, fromIllust.partitionTime)
-                }
+                newFavorite.applyOpt { set(it.favorite, this) }
+                newTagme.applyOpt { set(it.tagme, this) }
+                newScore.applyOpt { set(it.score, this) }
+                newDescription.applyOpt { set(it.description, this) }
+                newOrderTime.applyOpt { set(it.orderTime, this) }
+                newPartitionTime.applyOpt { set(it.partitionTime, this) }
 
-                if(props.source) {
-                    set(it.sourceSite, fromIllust.sourceSite)
-                    set(it.sourceId, fromIllust.sourceId)
-                    set(it.sortableSourceId, fromIllust.sortableSourceId)
-                    set(it.sourcePart, fromIllust.sourcePart)
-                    set(it.sourcePartName, fromIllust.sourcePartName)
-                    set(it.sourceDataId, fromIllust.sourceDataId)
-                }
+                /* source不是默认应该替换的属性
+                set(it.sourceSite, fromIllust.sourceSite)
+                set(it.sourceId, fromIllust.sourceId)
+                set(it.sortableSourceId, fromIllust.sortableSourceId)
+                set(it.sourcePart, fromIllust.sourcePart)
+                set(it.sourcePartName, fromIllust.sourcePartName)
+                set(it.sourceDataId, fromIllust.sourceDataId)
+                */
             }
         }
 
@@ -1029,7 +1039,7 @@ class IllustManager(private val appdata: AppDataManager,
             if(toIllust.parentId != null) processCollectionChildrenChanged(toIllust.parentId, -1, now)
         }
 
-        if(props.metaTags) {
+        val metaTagChanged = run {
             val tagIds = data.db.from(IllustTagRelations).select(IllustTagRelations.tagId)
                 .where { (IllustTagRelations.illustId eq fromIllust.id) and (IllustTagRelations.isExported eq ExportType.NO) }
                 .map { it[IllustTagRelations.tagId]!! }
@@ -1054,17 +1064,15 @@ class IllustManager(private val appdata: AppDataManager,
                     optOf((tagIds + originTagIds).distinct()),
                     optOf((topicIds + originTopicIds).distinct()),
                     optOf((authorIds + originAuthorIds).distinct()),
-                    copyFromParent = parentId)
+                    copyFromParent = parentId).second != Illust.Tagme.EMPTY
             }else{
-                kit.updateMeta(toIllust.id, optOf(tagIds), optOf(topicIds), optOf(authorIds), copyFromParent = parentId)
+                kit.updateMeta(toIllust.id, optOf(tagIds), optOf(topicIds), optOf(authorIds), copyFromParent = parentId).second != Illust.Tagme.EMPTY
             }
         }
 
-        if(props.associate) {
-            associateManager.copyAssociatesFromIllust(toIllust.id, fromIllust.id, merge)
-        }
+        val newAssociateCount = associateManager.copyAssociatesFromIllust(toIllust.id, fromIllust.id, merge)
 
-        val newBooks = if(props.books) {
+        val newBooks = run {
             val books = data.db.from(BookImageRelations)
                 .select(BookImageRelations.bookId, BookImageRelations.ordinal)
                 .where { BookImageRelations.imageId eq fromIllust.id }
@@ -1087,9 +1095,9 @@ class IllustManager(private val appdata: AppDataManager,
                 bookManager.addItemInBooks(toIllust.id, books)
                 books.map { (id, _) -> id }
             }
-        }else null
+        }
 
-        if(props.folders) {
+        val newFolderCount = run {
             val folders = data.db.from(FolderImageRelations)
                 .select(FolderImageRelations.folderId, FolderImageRelations.ordinal)
                 .where { FolderImageRelations.imageId eq fromIllust.id }
@@ -1104,31 +1112,30 @@ class IllustManager(private val appdata: AppDataManager,
 
                 val newFolders = folders.filter { (id, _) -> id !in existsFolders }
                 if(newFolders.isNotEmpty()) folderManager.addItemInFolders(toIllust.id, newFolders)
+                newFolders.size
             }else{
                 folderManager.removeItemFromAllFolders(toIllust.id)
                 folderManager.addItemInFolders(toIllust.id, folders)
+                folders.size
             }
         }
 
-        val listUpdated = parentChanged || props.favorite || props.score || props.orderTime || props.source
-        val detailUpdated = props.favorite || props.score || props.orderTime || props.description || props.partitionTime || props.metaTags
+        val listUpdated = parentChanged || newFavorite.isPresent || newScore.isPresent || newOrderTime.isPresent
+        val detailUpdated = listUpdated || newDescription.isPresent || newPartitionTime.isPresent || metaTagChanged
         if(listUpdated || detailUpdated) {
             bus.emit(IllustUpdated(toIllust.id, toIllust.type.toIllustType(),
-                listUpdated = listUpdated,
-                detailUpdated = detailUpdated,
-                metaTagSot = props.metaTags,
-                descriptionSot = props.description,
-                scoreSot = props.score,
-                favoriteSot = props.favorite,
-                tagmeSot = props.tagme,
-                timeSot = props.orderTime || props.partitionTime
+                    listUpdated = true,
+                    detailUpdated = true,
+                    metaTagSot = metaTagChanged,
+                    descriptionSot = newDescription.isPresent,
+                    scoreSot = newScore.isPresent,
+                    favoriteSot = newFavorite.isPresent,
+                    tagmeSot = newTagme.isPresent,
+                    timeSot = newOrderTime.isPresent || newPartitionTime.isPresent
             ))
         }
-        if(props.associate || props.books || props.folders || parentChanged) {
-            bus.emit(IllustRelatedItemsUpdated(toIllust.id, toIllust.type.toIllustType(), associateSot = props.associate, bookUpdated = props.books, folderUpdated = props.folders, collectionSot = parentChanged))
-        }
-        if(props.source) {
-            bus.emit(IllustSourceDataUpdated(toIllust.id))
+        if(newAssociateCount > 0 || newBooks != null || newFolderCount > 0 || parentChanged) {
+            bus.emit(IllustRelatedItemsUpdated(toIllust.id, toIllust.type.toIllustType(), associateSot = newAssociateCount > 0, bookUpdated = !newBooks.isNullOrEmpty(), folderUpdated = newFolderCount > 0, collectionSot = parentChanged))
         }
         if(parentChanged) {
             if(newParent != null) bus.emit(IllustImagesChanged(newParent.id, listOf(toIllust.id), emptyList()))

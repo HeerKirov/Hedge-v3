@@ -182,10 +182,14 @@ class FindSimilarService(private val data: DataRepository,
             for (action in form.actions) {
                 when(action) {
                     is FindSimilarResultResolveForm.CloneImageResolution -> {
-                        val (colId, bookIds) = illustManager.cloneProps(action.from, action.to, action.props, action.merge, false)
-                        if(action.deleteFrom) toBeDeleted.add(action.from)
-                        if(colId != null) imageClonedCollections.computeIfAbsent(colId) { mutableListOf() }.add(action.to)
-                        bookIds?.forEach { bookId -> imageCloneBooks.computeIfAbsent(bookId) { mutableListOf() }.add(action.to) }
+                        val r = illustManager.cloneProps(action.replaceList, merge = action.advancedOptions?.merge != false, deleteFrom = false)
+                        if(action.advancedOptions?.deleteFrom != false) toBeDeleted.addAll(action.replaceList.map { it.from })
+                        for ((rItem, replaceItem) in r.zip(action.replaceList)) {
+                            val (colId, bookIds) = rItem
+                            val (_, toId) = replaceItem
+                            if(colId != null) imageClonedCollections.computeIfAbsent(colId) { mutableListOf() }.add(toId)
+                            bookIds?.forEach { bookId -> imageCloneBooks.computeIfAbsent(bookId) { mutableListOf() }.add(toId) }
+                        }
                     }
                     is FindSimilarResultResolveForm.AddToCollectionResolution -> {
                         collectionToImages.compute(action.collectionId) { _, v -> v?.also { (l, _) -> l.addAll(action.imageIds) } ?: Pair(mutableListOf<Int>().also { it.addAll(action.imageIds) }, action.specifyPartitionTime) }

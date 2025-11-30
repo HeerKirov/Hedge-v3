@@ -75,8 +75,9 @@ class AssociateManager(private val data: DataRepository) {
 
     /**
      * 从另一个illust拷贝所需的associate。
+     * @return 拷贝的数量。
      */
-    fun copyAssociatesFromIllust(illustId: Int, fromIllustId: Int, merge: Boolean = false) {
+    fun copyAssociatesFromIllust(illustId: Int, fromIllustId: Int, merge: Boolean = false): Int {
         val fromAssociateIllusts = data.db.from(AssociateRelations)
             .select(AssociateRelations.relatedIllustId)
             .where { AssociateRelations.illustId eq fromIllustId }
@@ -85,5 +86,7 @@ class AssociateManager(private val data: DataRepository) {
         val illusts = if(merge) (fromAssociateIllusts + getAssociatesOfIllust(illustId).map { it.id }).distinct() else fromAssociateIllusts
 
         setAssociatesOfIllust(illustId, illusts)
+
+        return fromAssociateIllusts.size
     }
 }

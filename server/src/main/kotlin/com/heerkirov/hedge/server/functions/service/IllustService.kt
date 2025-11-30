@@ -883,7 +883,7 @@ class IllustService(private val appdata: AppDataManager,
      */
     fun cloneImageProps(form: ImagePropsCloneForm) {
         data.db.transaction {
-            illustManager.cloneProps(form.from, form.to, form.props, form.merge, form.deleteFrom)
+            illustManager.cloneProps(form.replaceList, merge = form.advancedOptions?.merge != false, deleteFrom = form.advancedOptions?.deleteFrom != false)
         }
     }
 

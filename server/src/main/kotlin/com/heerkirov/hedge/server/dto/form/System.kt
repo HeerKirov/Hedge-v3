@@ -28,7 +28,7 @@ data class FindSimilarResultResolveForm(val actions: List<Resolution>, val clear
 
     sealed interface ResolutionForMultipleImage : Resolution { val imageIds: List<Int> }
 
-    data class CloneImageResolution(override val from: Int, override val to: Int, val props: ImagePropsCloneForm.Props, val merge: Boolean = false, val deleteFrom: Boolean = false) : ResolutionForTwoImage
+    data class CloneImageResolution(val replaceList: List<ImagePropsCloneForm.ReplaceList>, val advancedOptions: ImagePropsCloneForm.Props?) : Resolution
 
     data class AddToCollectionResolution(override val imageIds: List<Int>, val collectionId: Any, val specifyPartitionTime: LocalDate? = null) : ResolutionForMultipleImage
 

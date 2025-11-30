@@ -93,21 +93,10 @@ class IllustBatchUpdateForm(val target: List<Int>,
     }
 }
 
-class ImagePropsCloneForm(val props: Props, val merge: Boolean = false, val deleteFrom: Boolean = false, val from: Int, val to: Int) {
-    data class Props(
-        val score: Boolean = false,
-        val favorite: Boolean = false,
-        val description: Boolean = false,
-        val tagme: Boolean = false,
-        val metaTags: Boolean = false,
-        val partitionTime: Boolean = false,
-        val orderTime: Boolean = false,
-        val collection: Boolean = false,
-        val books: Boolean = false,
-        val folders: Boolean = false,
-        val associate: Boolean = false,
-        val source: Boolean = false
-    )
+class ImagePropsCloneForm(val advancedOptions: Props? = null, val replaceList: List<ReplaceList>) {
+    data class Props(val merge: Boolean = true, val deleteFrom: Boolean = true)
+
+    data class ReplaceList(val from: Int, val to: Int)
 }
 
 data class IllustSummaryForm(val illustIds: List<Int>, val unfold: Boolean = false)
