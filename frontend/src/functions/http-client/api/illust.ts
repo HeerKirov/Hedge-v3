@@ -487,11 +487,12 @@ export interface CommonIllust {
     id: number
     filePath: FilePath
     favorite: boolean
-    orderTime: LocalDateTime
-    type?: IllustType
-    childrenCount?: number | null
     score: number | null
     source: SourceDataPath | null
+    type?: IllustType
+    childrenCount?: number | null
+    orderTime: LocalDateTime
+    partitionTime: LocalDate
 }
 
 /**

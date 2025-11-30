@@ -38,7 +38,7 @@ const menu = useDynamicPopupMenu<FindSimilarResultDetailImage>(illust => [
 </script>
 
 <template>
-    <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy"
+    <IllustImageDataset :data="data" :state="state" :query-instance="listview.proxy" partition-header
                         view-mode="grid" :fit-type="fitType" :column-num="columnNum" draggable :droppable="editableLockOn" @drop="dataDrop"
                         :selected="selected" :selected-index="selectedIndex" :last-selected="lastSelected" @select="updateSelect"
                         @update:state="setState" @navigate="navigateTo"

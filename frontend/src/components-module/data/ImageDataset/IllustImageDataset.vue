@@ -56,6 +56,10 @@ const props = defineProps<{
      */
     selectedCountBadge?: boolean
     /**
+     * 是否显示每个时间分区的头标识。
+     */
+    partitionHeader?: boolean
+    /**
      * 可拖曳开关：项允许被拖曳，被识别为指定的拖曳类型。
      */
     draggable?: boolean
@@ -135,11 +139,12 @@ installDatasetContext({
 
 <template>
     <div class="w-100 h-100 relative" :style="style">
-        <DatasetGridFramework v-if="viewMode === 'grid'" :key-of="keyOf" :column-num="columnNum!" v-slot="{ item, thumbType }">
+        <DatasetGridFramework v-if="viewMode === 'grid'" :key-of="keyOf" :column-num="columnNum!" v-slot="{ item, thumbType, isPartitionHeader }">
             <img :class="$style['grid-img']" :src="assetsUrl(item.filePath[thumbType])" :alt="`illust-${item.id}`"/>
             <Icon v-if="item.favorite" :class="$style['grid-favorite']" icon="heart"/>
             <Icon v-if="isVideoExtension(item.filePath.extension)" :class="$style['grid-video']" icon="video"/>
             <NumBadge v-if="item.childrenCount" fixed="right-top" :num="item.childrenCount"/>
+            <div v-if="partitionHeader && isPartitionHeader" :class="$style['grid-partition-header']">{{item.partitionTime.year}}年{{item.partitionTime.month}}月{{item.partitionTime.day}}日</div>
         </DatasetGridFramework>
         <DatasetRowFramework v-else :key-of="keyOf" :row-height="32" v-slot="{ item }">
             <Flex horizontal="stretch" align="center">
@@ -206,6 +211,16 @@ installDatasetContext({
     bottom: 0.25rem
     color: color.$dark-mode-text-color
     filter: drop-shadow(0 0 1px color.$dark-mode-background-color)
+
+.grid-partition-header
+    position: absolute
+    left: 0
+    top: 0
+    padding: 0 size.$spacing-1
+    border-bottom-right-radius: size.$radius-size-std
+    background-color: color.$light-mode-background-color
+    @media (prefers-color-scheme: dark)
+        background-color: color.$dark-mode-background-color
 
 .row-img
     margin-top: 1px

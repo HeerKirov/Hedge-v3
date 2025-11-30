@@ -1,6 +1,7 @@
-<script setup lang="ts" generic="T">
+<script setup lang="ts" generic="T extends CommonIllust">
 import { computed, ref, ComponentPublicInstance } from "vue"
 import { VirtualGridView } from "@/components/data"
+import { CommonIllust } from "@/functions/http-client/api/illust"
 import { useElementRect } from "@/utils/sensors"
 import { computedWatch, computedEffect } from "@/utils/reactivity"
 import { useDatasetContext } from "./context"
@@ -12,7 +13,7 @@ const props = defineProps<{
 }>()
 
 defineSlots<{
-    default(props: {item: T, index: number, selected: boolean, thumbType: "thumbnail" | "sample"}): any
+    default(props: {item: T, index: number, selected: boolean, thumbType: "thumbnail" | "sample", isPartitionHeader: boolean}): any
 }>()
 
 const { data, state, updateState, keyOf, summaryDropEvents } = useDatasetContext()
@@ -36,8 +37,8 @@ const thumbType = computedEffect(() => viewWidth.value !== undefined ? (viewWidt
 <template>
     <VirtualGridView ref="viewRef" class="w-100 h-100" :style="style" v-bind="summaryDropEvents" :state="state" :metrics="data.metrics" @update:state="updateState"
                      :column-count="columnNum" :padding="{top: 1, bottom: 1, left: 2, right: 2}">
-        <DatasetGridItem v-for="(item, idx) in data.items" :key="keyOf(item)" :item="item" :index="data.metrics.offset + idx" v-slot="{ selected }">
-            <slot :item="item as T" :index="data.metrics.offset + idx" :selected="selected" :thumbType="thumbType"/>
+        <DatasetGridItem v-for="(item, idx) in (data.items as T[])" :key="keyOf(item)" :item="item" :index="data.metrics.offset + idx" v-slot="{ selected }">
+            <slot :item="item" :index="data.metrics.offset + idx" :selected="selected" :thumbType="thumbType" :isPartitionHeader="idx > 0 ? item.partitionTime.timestamp !== (data.items[idx - 1] as T).partitionTime.timestamp : true"/>
         </DatasetGridItem>
     </VirtualGridView>
 </template>

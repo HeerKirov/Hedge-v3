@@ -4,8 +4,8 @@ import { FilePath, IdResponse, LimitAndOffsetFilter, ListResult, OrderList, Sour
 import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
 import { RelatedSimpleTag } from "./tag"
-import { Tagme } from "./illust"
-import { datetime, LocalDateTime } from "@/utils/datetime"
+import { CommonIllust, Tagme } from "./illust"
+import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 
 export function createBookEndpoint(http: HttpInstance): BookEndpoint {
     return {
@@ -59,7 +59,8 @@ function mapToBookImage(data: any): BookImage {
         favorite: <boolean>data["favorite"],
         tagme: <Tagme[]>data["tagme"],
         source: <SourceDataPath | null>data["source"],
-        orderTime: datetime.of(<string>data["orderTime"])
+        orderTime: datetime.of(<string>data["orderTime"]),
+        partitionTime: date.of(<string>data["partitionTime"])
     }
 }
 
@@ -174,14 +175,15 @@ export interface SimpleBook {
     filePath: FilePath | null
 }
 
-export interface BookImage {
+export interface BookImage extends CommonIllust {
     id: number
     filePath: FilePath
-    score: number | null
     favorite: boolean
-    tagme: Tagme[]
+    score: number | null
     source: SourceDataPath | null
+    tagme: Tagme[]
     orderTime: LocalDateTime
+    partitionTime: LocalDate
 }
 
 export interface BookCreateForm {
