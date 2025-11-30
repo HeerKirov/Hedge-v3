@@ -231,10 +231,10 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
 
     const cloneImage = async (currentImageId?: number) => {
         const imageIds = getEffectedItems(currentImageId)
-        if(imageIds.length !== 2) {
-            message.showOkMessage("warn", "克隆图像属性需要两个选择项。", "请选择两个图像。")
+        if(imageIds.length < 2) {
+            message.showOkMessage("warn", "图像数量不足", "选择的图像少于2个。")
         }else{
-            const form = await dialog.cloneImage.getCloneProps({from: imageIds[0], to: imageIds[1]})
+            const form = await dialog.cloneImage.getCloneProps(imageIds)
             if(form !== undefined) {
                 await resolve({actions: [{type: "CLONE_IMAGE", ...form}], clear: false})
             }

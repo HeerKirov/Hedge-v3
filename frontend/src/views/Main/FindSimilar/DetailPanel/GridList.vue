@@ -29,7 +29,7 @@ const menu = useDynamicPopupMenu<FindSimilarResultDetailImage>(illust => [
         {type: "normal", label: "创建新集合", click: () => addToCollection("new", illust.id)}
     ]},
     {type: "submenu", label: "加入画集", enabled: allBooks.value.length > 0, submenu: allBooks.value.map(b => ({type: "normal", label: b.title, click: () => addToBook(b.id, illust.id)} as const))},
-    {type: "normal", label: "克隆图像属性…", click: () => cloneImage(illust.id)},
+    {type: "normal", label: "图像替换…", click: () => cloneImage(illust.id)},
     {type: "normal", label: "添加忽略标记", click: () => markIgnored(illust.id)},
     {type: "separator"},
     {type: "normal", label: "删除此项目", click: () => deleteItem(illust.id)}

@@ -44,7 +44,7 @@ const addToCollectionMenuItems = () => <MenuItem<undefined>[]>[
     <ElementPopupMenu :items="addToBookMenuItems" position="bottom" v-slot="{ popup, setEl, attrs }">
         <Button :ref="setEl" v-bind="attrs" class="w-100 has-text-left" size="small" icon="clone" end-icon="ellipsis-v" :disabled="allBooks.length <= 0" @click="popup">加入画集</Button>
     </ElementPopupMenu>
-    <Button class="w-100 has-text-left" size="small" icon="copy" @click="cloneImage()">克隆图像属性</Button>
+    <Button class="w-100 has-text-left" size="small" icon="copy" @click="cloneImage()">图像替换</Button>
     <Button class="w-100 has-text-left" size="small" icon="link-slash" @click="markIgnored()">添加忽略标记</Button>
     <Button class="w-100 has-text-left" size="small" icon="trash" @click="deleteItem()">删除项目</Button>
 </template>

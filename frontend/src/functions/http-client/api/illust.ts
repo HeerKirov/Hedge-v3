@@ -842,22 +842,11 @@ export interface IllustBatchUpdateForm {
 }
 
 export interface ImagePropsCloneForm {
-    from: number
-    to: number
-    props: {
-        score?: boolean
-        favorite?: boolean
-        description?: boolean
-        tagme?: boolean
-        metaTags?: boolean
-        partitionTime?: boolean
-        orderTime?: boolean
-        collection?: boolean
-        books?: boolean
-        folders?: boolean
-        associate?: boolean
-        source?: boolean
-    }
+    replaceList: {from: number, to: number}[]
+    advancedOptions?: ImagePropsCloneAdvancedOptions
+}
+
+export interface ImagePropsCloneAdvancedOptions {
     merge?: boolean
     deleteFrom?: boolean
 }

@@ -49,7 +49,7 @@ const menu = useDynamicPopupMenu<Illust>((illust, { alt }) => [
     {type: "normal", label: "创建画集…", click: operators.createBook},
     {type: "normal", label: "编辑关联组", click: operators.editAssociate},
     {type: "normal", label: "添加到目录…", click: operators.addToFolder},
-    {type: "normal", label: "克隆图像属性…", click: operators.cloneImage},
+    {type: "normal", label: "图像替换…", click: operators.cloneImage},
     {type: "separator"},
     {type: "normal", label: alt ? `快捷整理: ${operators.getLastOrganizeMode().text}` : "快捷整理", enabled: selected.value.length > 1, click: i => operators.organizeOfImage(i, alt)},
     {type: "normal", label: alt ? "创建相似项查找任务" : "查找相似项", click: i => operators.findSimilarOfImage(i, alt)},

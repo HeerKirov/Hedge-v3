@@ -64,11 +64,11 @@ export function useDraggableDynamic<T extends keyof TypeDefinition>(type: T | Re
     }
 }
 
-interface Droppable {
+interface Droppable<P = undefined> {
     dragover: Readonly<Ref<boolean>>
     onDragenter(): void
     onDragleave(): void
-    onDrop(e: DragEvent): void
+    onDrop(e: DragEvent, params?: P): void
     onDragover(e: DragEvent): void
 }
 
@@ -79,26 +79,26 @@ interface DroppableOptions {
 /**
  * 提供一组对应的函数，用于直接实现拖放功能，同时还负责解析拖放获得的传递数据。
  */
-export function useDroppable<T extends keyof TypeDefinition>(byType: T | T[], event: (data: TypeDefinition[T], type: T) => void, options?: DroppableOptions) {
-    return useDroppableInternal<T>(typeof byType === "string" ? (data, type) => {
+export function useDroppable<T extends keyof TypeDefinition, P = undefined>(byType: T | T[], event: (data: TypeDefinition[T], type: T, params?: P) => void, options?: DroppableOptions) {
+    return useDroppableInternal<T, P>(typeof byType === "string" ? (data, type, params) => {
         if(byType === type) {
-            event(<TypeDefinition[T]>data, type)
+            event(<TypeDefinition[T]>data, type, params)
         }
-    } : (data, type) => {
+    } : (data, type, params) => {
         if(byType.includes(type)) {
-            event(<TypeDefinition[T]>data, type)
+            event(<TypeDefinition[T]>data, type, params)
         }
     }, options)
 }
 
-function useDroppableInternal<T extends keyof TypeDefinition>(event: (data: TypeDefinition[T], type: T) => void, options?: DroppableOptions): Droppable {
+function useDroppableInternal<T extends keyof TypeDefinition, P = undefined>(event: (data: TypeDefinition[T], type: T, params?: P) => void, options?: DroppableOptions): Droppable<P> {
     const fileListener = useOptionalDroppingFile()
 
     const dragover: Ref<boolean> = ref(false)
     const onDragenter = () => dragover.value = true
     const onDragleave = () => dragover.value = false
 
-    const onDrop = (e: DragEvent) => {
+    const onDrop = (e: DragEvent, params?: P) => {
         try {
             if(e.dataTransfer) {
                 e.preventDefault()
@@ -132,7 +132,7 @@ function useDroppableInternal<T extends keyof TypeDefinition>(event: (data: Type
                     return
                 }
 
-                event(data, type)
+                event(data, type, params)
             }
         }finally{
             dragover.value = false

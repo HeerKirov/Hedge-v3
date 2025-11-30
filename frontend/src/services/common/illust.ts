@@ -447,17 +447,11 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
 
     const cloneImage = async (illust: T) => {
         const items = getEffectedItems(illust)
-        if(items.length > 2) {
-            toast.toast("选择项过多", "warning", "选择项过多。属性克隆中，请使用1或2个选择项。")
+        if(items.length < 2) {
+            message.showOkMessage("warn", "图像数量不足", "选择的图像少于2个。")
             return
         }
-        dialog.cloneImage.clone({from: items[0], to: items.length >= 2 ? items[1] : undefined}, (_, __, deleted) => {
-            if(deleted) {
-                toast.toast("完成", "success", "已完成属性克隆。源图像已删除。")
-            }else{
-                toast.toast("完成", "success", "已完成属性克隆。")
-            }
-        })
+        dialog.cloneImage.clone(items, () => toast.toast("完成", "success", "已完成图像替换。"))
     }
 
     const addToStagingPost = async (illust: T) => {

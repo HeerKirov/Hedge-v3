@@ -47,7 +47,7 @@ const menu = useDynamicPopupMenu<CommonIllust>((illust, { alt }) => [
     {type: "normal", label: "创建画集…", click: operators.createBook},
     {type: "normal", label: "编辑关联组", click: operators.editAssociate},
     {type: "normal", label: "添加到目录…", click: operators.addToFolder},
-    {type: "normal", label: "克隆图像属性…", click: operators.cloneImage},
+    {type: "normal", label: "图像替换…", click: operators.cloneImage},
     {type: "separator"},
     {type: "submenu", label: "快捷排序", enabled: selected.value.length > 1, submenu: [
         {type: "normal", label: "将时间分区集中在最多的那天", click: i => operators.batchUpdateTimeSeries(i, "SET_PARTITION_TIME_MOST")},
