@@ -464,7 +464,7 @@ export function useImageDatasetOperators<T extends CommonIllust>(options: ImageD
         if(idx !== undefined) {
             const res = await fetchStagingPostListAll({})
             if(res !== undefined) {
-                const ok = await dataDrop(position === "before" ? idx : idx + 1, res.result.map(i => ({id: i.id, filePath: i.filePath, type: "IMAGE", childrenCount: null, orderTime: i.orderTime, favorite: i.favorite, score: i.score, source: i.source})), "ADD")
+                const ok = await dataDrop(position === "before" ? idx : idx + 1, res.result.map(i => ({id: i.id, filePath: i.filePath, type: "IMAGE", childrenCount: null, partitionTime: i.partitionTime, orderTime: i.orderTime, favorite: i.favorite, score: i.score, source: i.source})), "ADD")
                 if(ok) {
                     await fetchStagingPostUpdate({action: "CLEAR"})
                 }

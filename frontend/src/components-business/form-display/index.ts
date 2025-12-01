@@ -17,7 +17,6 @@ import SourceTagsDisplay from "./SourceTagsDisplay.vue"
 import SourceBooksDisplay from "./SourceBooksDisplay.vue"
 import SourceRelationsDisplay from "./SourceRelationsDisplay.vue"
 import SourceEditStatusDisplay from "./SourceEditStatusDisplay.vue"
-import ImportPreferencesDisplay from "./ImportPreferencesDisplay.vue"
 import ImportSourcePreferencesDisplay from "./ImportSourcePreferencesDisplay.vue"
 import MetaTagListDisplay from "./MetaTagListDisplay.vue"
 import FileInfoDisplay from "./FileInfoDisplay.vue"
@@ -27,6 +26,6 @@ import IdAndFileNameDisplay from "./IdAndFileNameDisplay.vue"
 export { TagNameAndOtherDisplay, TagAddressTypeDisplay, TagGroupTypeDisplay, PartitionTimeDisplay, TagLinkDisplay, TagExampleDisplay }
 export { TitleDisplay, DescriptionDisplay, TimeGroupDisplay, MetaKeywordDisplay, MetaTagExampleDisplay }
 export { SourceInfo, SourceLinksDisplay, SourceAdditionalInfoDisplay, SourceTagMappingDisplay, SourceTagsDisplay, SourceBooksDisplay, SourceRelationsDisplay }
-export { SourceEditStatusDisplay, ImportPreferencesDisplay, ImportSourcePreferencesDisplay }
+export { SourceEditStatusDisplay, ImportSourcePreferencesDisplay }
 export { TagmeInfo, MetaTagListDisplay }
 export { FileInfoDisplay, IdAndFileNameDisplay }

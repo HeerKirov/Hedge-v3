@@ -139,12 +139,12 @@ installDatasetContext({
 
 <template>
     <div class="w-100 h-100 relative" :style="style">
-        <DatasetGridFramework v-if="viewMode === 'grid'" :key-of="keyOf" :column-num="columnNum!" v-slot="{ item, thumbType, isPartitionHeader }">
+        <DatasetGridFramework v-if="viewMode === 'grid'" :key-of="keyOf" :column-num="columnNum!" v-slot="{ item, thumbType, prevItem }">
             <img :class="$style['grid-img']" :src="assetsUrl(item.filePath[thumbType])" :alt="`illust-${item.id}`"/>
             <Icon v-if="item.favorite" :class="$style['grid-favorite']" icon="heart"/>
             <Icon v-if="isVideoExtension(item.filePath.extension)" :class="$style['grid-video']" icon="video"/>
             <NumBadge v-if="item.childrenCount" fixed="right-top" :num="item.childrenCount"/>
-            <div v-if="partitionHeader && isPartitionHeader" :class="$style['grid-partition-header']">{{item.partitionTime.year}}年{{item.partitionTime.month}}月{{item.partitionTime.day}}日</div>
+            <div v-if="partitionHeader && (prevItem === null || (prevItem !== null && item.partitionTime?.timestamp !== prevItem.partitionTime?.timestamp))" :class="$style['grid-partition-header']">{{item.partitionTime.year}}年{{item.partitionTime.month}}月{{item.partitionTime.day}}日</div>
         </DatasetGridFramework>
         <DatasetRowFramework v-else :key-of="keyOf" :row-height="32" v-slot="{ item }">
             <Flex horizontal="stretch" align="center">

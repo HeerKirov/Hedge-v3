@@ -2,6 +2,7 @@ import { HttpInstance, Response } from ".."
 import { ResourceNotExist } from "../exceptions"
 import { FilePath, LimitAndOffsetFilter, ListResult, SourceDataPath } from "./all"
 import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
+import { CommonIllust } from "./illust"
 
 export function createStagingPostEndpoint(http: HttpInstance): StagingPostEndpoint {
     return {
@@ -19,7 +20,8 @@ function mapToStagingPostImage(data: any): StagingPostImage {
         score: <number | null>data["score"],
         favorite: <boolean>data["favorite"],
         source: <SourceDataPath | null>data["source"],
-        orderTime: datetime.of(<string>data["orderTime"])
+        orderTime: datetime.of(<string>data["orderTime"]),
+        partitionTime: date.of(<string>data["partitionTime"])
     }
 }
 
@@ -34,13 +36,14 @@ export interface StagingPostEndpoint {
     update(form: StagingPostUpdateForm): Promise<Response<null, ResourceNotExist<"images", number[]>>>
 }
 
-export interface StagingPostImage {
+export interface StagingPostImage extends CommonIllust {
     id: number
     filePath: FilePath
     score: number | null
     favorite: boolean
     source: SourceDataPath | null
     orderTime: LocalDateTime
+    partitionTime: LocalDate
 }
 
 export type StagingPostUpdateForm = {

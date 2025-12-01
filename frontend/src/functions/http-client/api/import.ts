@@ -5,7 +5,7 @@ import {
 } from "../exceptions"
 import { HttpInstance, Response } from "../instance"
 import { IdResponse, LimitAndOffsetFilter, ListResult, mapFromOrderList, NullableFilePath, OrderList, SourceDataPath } from "./all"
-import { ImagePropsCloneForm, Tagme } from "./illust"
+import { Tagme } from "./illust"
 import { RelatedSimpleTopic } from "./topic"
 import { RelatedSimpleAuthor } from "./author"
 import { RelatedSimpleTag } from "./tag"
@@ -116,17 +116,6 @@ export interface SourcePreference {
     tags: {code: string, type: string, name: string | null, otherName: string | null}[] | null
     books: {code: string, title: string | null, otherTitle: string | null}[] | null
     relations: string[] | null
-}
-
-export interface Preference {
-    cloneImage: PreferenceCloneImage | null
-}
-
-export interface PreferenceCloneImage {
-    fromImageId: number
-    props: ImagePropsCloneForm["props"]
-    merge: boolean
-    deleteFrom: boolean
 }
 
 export interface ImportRecord {

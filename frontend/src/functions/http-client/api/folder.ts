@@ -1,8 +1,8 @@
 import { HttpInstance, Response } from ".."
 import { AlreadyExists, NotFound, RecursiveParentError, Reject, ResourceNotExist, ResourceNotSuitable } from "../exceptions"
 import { FilePath, IdResponse, LimitAndOffsetFilter, ListResult, OrderList, SourceDataPath } from "./all"
-import { Tagme } from "./illust"
-import { datetime, LocalDateTime } from "@/utils/datetime"
+import { CommonIllust, Tagme } from "./illust"
+import { date, datetime, LocalDate, LocalDateTime } from "@/utils/datetime"
 
 export function createFolderEndpoint(http: HttpInstance): FolderEndpoint {
     return {
@@ -72,7 +72,8 @@ function mapToFolderImage(data: any): FolderImage {
         favorite: <boolean>data["favorite"],
         tagme: <Tagme[]>data["tagme"],
         source: <SourceDataPath | null>data["source"],
-        orderTime: datetime.of(<string>data["orderTime"])
+        orderTime: datetime.of(<string>data["orderTime"]),
+        partitionTime: date.of(<string>data["partitionTime"])
     }
 }
 
@@ -206,7 +207,7 @@ export interface SimpleFolder {
     type: FolderType
 }
 
-export interface FolderImage {
+export interface FolderImage extends CommonIllust {
     id: number
     filePath: FilePath
     score: number | null
@@ -214,6 +215,7 @@ export interface FolderImage {
     tagme: Tagme[]
     source: SourceDataPath | null
     orderTime: LocalDateTime
+    partitionTime: LocalDate
 }
 
 export interface FolderCreateForm {
