@@ -18,6 +18,7 @@ import io.javalin.Javalin
 import io.javalin.config.JavalinConfig
 import io.javalin.json.JavalinJackson
 import io.javalin.plugin.bundled.CorsPlugin
+import io.javalin.util.JavalinLogger
 import java.net.BindException
 import java.time.Duration
 
@@ -44,6 +45,7 @@ class HttpServerImpl(private val health: Health,
     private var server: Javalin? = null
 
     override fun load() {
+        JavalinLogger.startupInfo = false
         server = Javalin
             .create {
                 it.showJavalinBanner = false
