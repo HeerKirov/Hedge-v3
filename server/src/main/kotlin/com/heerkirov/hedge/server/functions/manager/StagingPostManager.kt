@@ -158,17 +158,18 @@ class StagingPostManager(private val data: DataRepository, private val bus: Even
         return data.db.from(Illusts)
             .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
             .select(
-                Illusts.id, Illusts.exportedScore, Illusts.favorite, Illusts.orderTime,
+                Illusts.id, Illusts.exportedScore, Illusts.favorite, Illusts.partitionTime, Illusts.orderTime,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { Illusts.type notEq IllustModelType.COLLECTION and (Illusts.id inList imageIds) }
             .map {
                 val itemId = it[Illusts.id]!!
                 val score = it[Illusts.exportedScore]
                 val favorite = it[Illusts.favorite]!!
+                val partitionTime = it[Illusts.partitionTime]!!
                 val orderTime = it[Illusts.orderTime]!!.toInstant()
                 val source = sourcePathOf(it)
                 val filePath = filePathFrom(it)
-                StagingPostImageRes(itemId, filePath, score, favorite, source, orderTime)
+                StagingPostImageRes(itemId, filePath, score, favorite, source, partitionTime, orderTime)
             }
             .associateBy { it.id }
             .let { res -> imageIds.mapNotNull(res::get) }

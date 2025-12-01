@@ -213,7 +213,7 @@ class BookService(private val appdata: AppDataManager,
             .leftJoin(Illusts, BookImageRelations.imageId eq Illusts.id)
             .leftJoin(FileRecords, Illusts.fileId eq FileRecords.id and FileRecords.deleted.not())
             .select(BookImageRelations.ordinal, Illusts.id,
-                Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.orderTime,
+                Illusts.exportedScore, Illusts.favorite, Illusts.tagme, Illusts.partitionTime, Illusts.orderTime,
                 Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName,
                 FileRecords.id, FileRecords.block, FileRecords.extension, FileRecords.status)
             .where { BookImageRelations.bookId eq id }
@@ -225,10 +225,11 @@ class BookService(private val appdata: AppDataManager,
                 val score = it[Illusts.exportedScore]
                 val favorite = it[Illusts.favorite]!!
                 val tagme = it[Illusts.tagme]!!
+                val partitionTime = it[Illusts.partitionTime]!!
                 val orderTime = it[Illusts.orderTime]!!.toInstant()
                 val filePath = filePathFrom(it)
                 val source = sourcePathOf(it)
-                BookImageRes(imageId, ordinal, filePath, score, favorite, tagme, source, orderTime)
+                BookImageRes(imageId, ordinal, filePath, score, favorite, tagme, source, partitionTime, orderTime)
             }
     }
 
