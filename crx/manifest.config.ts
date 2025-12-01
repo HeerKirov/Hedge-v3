@@ -9,7 +9,7 @@ export default defineManifest({
     icons: {
         "128": "public/favicon.png"
     },
-    permissions: ["downloads", "contextMenus", "notifications", "tabs", "activeTab", "storage"],
+    permissions: ["downloads", "contextMenus", "notifications", "tabs", "activeTab", "storage", "sidePanel"],
     host_permissions: [
         "*://localhost/"
     ],
@@ -24,6 +24,9 @@ export default defineManifest({
     ],
     action: {
         "default_popup": "popup.html"
+    },
+    side_panel: {
+        "default_path": "side-panel.html"
     },
     background: {
         "service_worker": "src/background.tsx",
