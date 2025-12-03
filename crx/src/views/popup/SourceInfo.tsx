@@ -1,13 +1,15 @@
 import { styled } from "styled-components"
-import { useTabSourceInfo } from "@/hooks/active-tab"
-import { Button, FormattedText, Icon, SecondaryText } from "@/components"
+import { Button, FormattedText, Icon, SecondaryText } from "@/components/universal"
+import { useTabSourceInfo } from "@/hooks/source-info"
+import { useTabStateOnce } from "@/hooks/tabs"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataCollectStatus, SourceEditStatus } from "@/functions/server/api-source-data"
 import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
 
 
 export function SourceInfoNotice() {
-    const { sourceInfo, collectStatus, manualCollectSourceData, quickFind } = useTabSourceInfo()
+    const tabState = useTabStateOnce()
+    const { sourceInfo, collectStatus, manualCollectSourceData, quickFind } = useTabSourceInfo(tabState)
 
     return sourceInfo ? <TabInfoDiv>
         <FormattedText size="small">{sourceInfo.host}</FormattedText>

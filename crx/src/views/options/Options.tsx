@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { styled } from "styled-components"
-import { Button, Icon, StandardSideLayout } from "@/components"
+import { Button, Icon } from "@/components/universal"
+import { StandardSideLayout } from "@/components/layouts"
 import { useSetting } from "@/hooks/setting"
 import { usePartialSet } from "@/utils/reactivity"
 import { SPACINGS } from "@/styles"

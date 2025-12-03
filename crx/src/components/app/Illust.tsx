@@ -1,6 +1,6 @@
 import { styled } from "styled-components"
 import { IconProp } from "@fortawesome/fontawesome-svg-core"
-import { FormattedText, Icon, LayouttedDiv } from "@/components"
+import { FormattedText, LayouttedDiv, Icon } from "@/components/universal"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { server } from "@/functions/server"
 import { useEndpoint } from "@/hooks/server"

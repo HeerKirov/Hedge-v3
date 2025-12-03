@@ -1,7 +1,7 @@
+import { ReactNode, useState } from "react"
 import { styled, css } from "styled-components"
-import { LayouttedDiv, Layoutted, Anchor, Icon } from "@/components"
+import { Anchor, Icon, LayouttedDiv, Layoutted } from "@/components/universal"
 import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, SPACINGS } from "@/styles"
-import React, { ReactNode, useState } from "react"
 
 interface StandardSideLayoutProps {
     left?: ReactNode

@@ -1,4 +1,4 @@
-import { useTabState } from "@/hooks/side-panel"
+import { useTabState } from "@/hooks/tabs"
 
 export function SidePanel() {
     const tabState = useTabState()

@@ -3,7 +3,7 @@ import { css, styled } from "styled-components"
 import { IconProp } from "@fortawesome/fontawesome-svg-core"
 import { DARK_MODE_COLORS, ELEMENT_HEIGHTS, FONT_SIZES, LIGHT_MODE_COLORS, MarginCSS, RADIUS_SIZES, SPACINGS, ThemeColors } from "@/styles"
 import { Icon } from "./Icon"
-import { Separator } from "./Styled"
+import { Separator } from "./styled"
 
 interface ButtonProps extends React.HTMLAttributes<HTMLButtonElement> {
     mode?: "transparent" | "filled"

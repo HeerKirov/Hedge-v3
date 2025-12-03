@@ -1,9 +1,10 @@
- import { useState } from "react"
+ import { useEffect, useState } from "react"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataCollectStatus } from "@/functions/server/api-source-data"
 import { WEBSITES } from "@/functions/sites"
 import { server } from "@/functions/server"
 import { sendMessage } from "@/functions/messages"
+import { TabState } from "@/hooks/tabs"
 import { setActiveTabBadgeByStatus } from "@/services/active-tab"
 import { sendMessageToTab } from "@/services/messages"
 import { useAsyncLoading } from "@/utils/reactivity"
@@ -18,19 +19,8 @@ export interface SourceInfo {
 /**
  * 解析当前页面是否属于受支持的网站，提供网站host，以及解析来源数据ID。
  */
-export function useTabSourceInfo() {
-    const [sourceInfo] = useAsyncLoading<SourceInfo | null>(async () => {
-        const tabs = await chrome.tabs.query({currentWindow: true, active: true})
-        if(tabs.length > 0 && tabs[0].url && tabs[0].id && tabs[0].id !== chrome.tabs.TAB_ID_NONE) {
-            const tabId = tabs[0].id
-            const strURL = tabs[0].url
-            const url = new URL(strURL)
-            const sourceInfo = await matchTabSourceData(tabId, url)
-            refreshCollectStatus(sourceInfo).finally()
-            return sourceInfo
-        }
-        return null
-    })
+export function useTabSourceInfo(tabState: TabState) {
+    const [sourceInfo, setSourceInfo] = useState<SourceInfo | null>(null)
 
     const [collectStatus, setCollectStatus] = useState<SourceDataCollectStatus | null>(null)
 
@@ -64,6 +54,18 @@ export function useTabSourceInfo() {
             window.close()
         }
     }
+
+    useEffect(() => {
+        if(tabState.tabId && tabState.url) {
+            const url = new URL(tabState.url)
+            matchTabSourceData(tabState.tabId, url).then(sourceInfo => {
+                refreshCollectStatus(sourceInfo).finally()
+                setSourceInfo(sourceInfo)
+            })
+        }else{
+            setSourceInfo(null)
+        }
+    }, [tabState])
 
     return {sourceInfo, collectStatus, manualCollectSourceData, quickFind}
 }

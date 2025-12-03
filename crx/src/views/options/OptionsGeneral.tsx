@@ -1,5 +1,6 @@
 import { styled } from "styled-components"
-import { Button, FormattedText, Icon, Input, Header, LayouttedDiv, SecondaryText } from "@/components"
+import { Button, FormattedText, Icon, Header, LayouttedDiv, SecondaryText } from "@/components/universal"
+import { Input } from "@/components/form"
 import { Setting, settings } from "@/functions/setting"
 import { notify } from "@/services/notification"
 import { useServerHealth } from "@/hooks/server"

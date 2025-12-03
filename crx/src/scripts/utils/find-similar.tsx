@@ -1,10 +1,9 @@
 import React, { SyntheticEvent, useCallback, useEffect, useRef, useState } from "react"
 import ReactDOM from "react-dom/client"
 import { css, styled, StyleSheetManager } from "styled-components"
-import {
-    AspectGrid, Button, FormattedText, Icon, Separator, LayouttedDiv,
-    PartitionTimeDisplay, FileInfoDisplay, SourceInfo, ThumbnailImage
-} from "@/components"
+import { Button, FormattedText, Icon, Separator, LayouttedDiv, ThumbnailImage } from "@/components/universal"
+import { AspectGrid } from "@/components/layouts"
+import { PartitionTimeDisplay, FileInfoDisplay, SourceInfo } from "@/components/app"
 import { server } from "@/functions/server"
 import { sendMessage } from "@/functions/messages"
 import { SimpleAuthor, SimpleTopic, SourceDataPath } from "@/functions/server/api-all"

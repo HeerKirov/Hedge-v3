@@ -1,6 +1,7 @@
 import { ReactNode, useCallback, useRef, useState } from "react"
 import { styled } from "styled-components"
-import { Button, FormattedText, Icon, Input, LayouttedDiv } from "@/components"
+import { Button, FormattedText, LayouttedDiv, Icon } from "@/components/universal"
+import { Input } from "@/components/form"
 import { SPACINGS } from "@/styles"
 
 interface DraggableEditListProps<T> {

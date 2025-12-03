@@ -1,5 +1,7 @@
 import { styled } from "styled-components"
-import { Button, CheckBox, Header, Icon, LayouttedDiv, SecondaryText, Separator, MultilineAddList, CollapsePanel } from "@/components"
+import { Button, Header, Icon, LayouttedDiv, SecondaryText, Separator } from "@/components/universal"
+import { CollapsePanel } from "@/components/layouts"
+import { CheckBox, MultilineAddList } from "@/components/form"
 import { defaultSetting, Setting } from "@/functions/setting"
 import { useEditor, usePartialSet } from "@/utils/reactivity"
 import { SPACINGS } from "@/styles"

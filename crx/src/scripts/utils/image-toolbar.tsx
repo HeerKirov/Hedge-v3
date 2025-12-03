@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react"
 import ReactDOM from "react-dom/client"
 import { css, styled, StyleSheetManager } from "styled-components"
-import { FormattedText, Icon, LayouttedDiv } from "@/components"
+import { FormattedText, Icon, LayouttedDiv } from "@/components/universal"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { sendMessage } from "@/functions/messages"
 import { GlobalStyle } from "@/styles"
