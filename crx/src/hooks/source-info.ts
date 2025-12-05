@@ -7,7 +7,6 @@ import { sendMessage } from "@/functions/messages"
 import { TabState } from "@/hooks/tabs"
 import { setActiveTabBadgeByStatus } from "@/services/active-tab"
 import { sendMessageToTab } from "@/services/messages"
-import { useAsyncLoading } from "@/utils/reactivity"
 
 export interface SourceInfo {
     tabId: number
@@ -19,7 +18,7 @@ export interface SourceInfo {
 /**
  * 解析当前页面是否属于受支持的网站，提供网站host，以及解析来源数据ID。
  */
-export function useTabSourceInfo(tabState: TabState) {
+export function useTabSourceInfo(tabState: TabState, scene?: "popup" | "sidePanel") {
     const [sourceInfo, setSourceInfo] = useState<SourceInfo | null>(null)
 
     const [collectStatus, setCollectStatus] = useState<SourceDataCollectStatus | null>(null)
@@ -51,7 +50,9 @@ export function useTabSourceInfo(tabState: TabState) {
         if(sourceInfo !== null) {
             sendMessageToTab(sourceInfo.tabId, "QUICK_FIND_SIMILAR", undefined)
             //关闭popup窗口
-            window.close()
+            if(scene === "popup") {
+                window.close()
+            }
         }
     }
 

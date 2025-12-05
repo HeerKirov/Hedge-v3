@@ -1,26 +1,26 @@
+import { memo } from "react"
 import { styled } from "styled-components"
-import { Button, FormattedText, Icon, SecondaryText } from "@/components/universal"
+import { Button, FormattedText, Icon, LayouttedDiv, SecondaryText } from "@/components/universal"
 import { useTabSourceInfo } from "@/hooks/source-info"
-import { useTabStateOnce } from "@/hooks/tabs"
+import { TabState } from "@/hooks/tabs"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataCollectStatus, SourceEditStatus } from "@/functions/server/api-source-data"
 import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
 
 
-export function SourceInfoNotice() {
-    const tabState = useTabStateOnce()
-    const { sourceInfo, collectStatus, manualCollectSourceData, quickFind } = useTabSourceInfo(tabState)
+export const SourceInfoPanel = memo(function SourceInfoPanel(props: {tabState: TabState, scene?: "popup" | "sidePanel"}) {
+    const { sourceInfo, collectStatus, manualCollectSourceData, quickFind } = useTabSourceInfo(props.tabState, props.scene)
 
-    return sourceInfo ? <TabInfoDiv>
-        <FormattedText size="small">{sourceInfo.host}</FormattedText>
+    return sourceInfo ? <RootDiv>
+        <LayouttedDiv size="small" mb={0.5}>{sourceInfo.host}</LayouttedDiv>
         {sourceInfo.sourceDataPath && <>
             <SourceDataPathNotice {...sourceInfo.sourceDataPath}/>
             {collectStatus !== null && <CollectStatusNotice {...collectStatus}/>}
             <Button size="small" onClick={manualCollectSourceData}><Icon icon="cloud-arrow-down" mr={1}/>{collectStatus?.collected ? "重新" : ""}收集来源数据</Button>
             <Button size="small" onClick={quickFind}><Icon icon="grin-squint" mr={1}/>查找相似项</Button>
         </>}
-    </TabInfoDiv> : undefined
-}
+    </RootDiv> : undefined
+})
 
 function SourceDataPathNotice(path: SourceDataPath) {
     return <SourceDataPathDiv>
@@ -65,7 +65,7 @@ const COLLECT_STATUS_DESCRIBE: {[status in SourceEditStatus]: string} = {
 }
 
 
-const TabInfoDiv = styled.div`
+const RootDiv = styled.div`
     margin: ${SPACINGS[1]} ${SPACINGS[2]};
     padding: ${SPACINGS[1]} 0;
     text-align: center;
