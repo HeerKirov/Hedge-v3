@@ -2,6 +2,25 @@
 export type Result<T, E> = {ok: true, value: T} | {ok: false, err: E}
 
 export const strings = {
+    indexOfAny(str: string, chars: string[], position?: number): [number, string | undefined] {
+        for(let i = position ?? 0; i < str.length; i++) {
+            for(const ch of chars) {
+                if(ch.length > 0 && ch[0] === str[i]) {
+                    let ok = true
+                    for(let j = 1; j < ch.length; j++) {
+                        if(ch[j] !== str[i + j]) {
+                            ok = false
+                            break
+                        }
+                    }
+                    if(ok) {
+                        return [i, ch]
+                    }
+                }
+            }
+        }
+        return [-1, undefined]
+    },
     removeSuffix(str: string, suffix: string | string[]): string {
         if(typeof suffix === "string") {
             if(str.endsWith(suffix)) {

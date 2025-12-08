@@ -1,18 +1,24 @@
 import { memo } from "react"
 import styled from "styled-components"
+import { Input } from "@/components/form"
 import { TabState } from "@/hooks/tabs"
-import { useBookmarkOfTab } from "@/hooks/bookmark"
+import { useAnalyticalBookmark, useBookmarkOfTab } from "@/hooks/bookmark"
 import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
 
 export const BookmarkPanel = memo(function BookmarkPanel(props: {tabState: TabState}) {
-    const bookmarkState = useBookmarkOfTab(props.tabState)
+    const { bookmarkState, updateBookmarkState } = useBookmarkOfTab(props.tabState)
+
+    const { bookmarkInfo } = useAnalyticalBookmark(bookmarkState)
 
     return <RootDiv>
-        <p>{bookmarkState?.title}</p>
+        <Input value={bookmarkState?.title} onUpdateValue={title => updateBookmarkState({title})}/>
         <p>{bookmarkState?.url}</p>
-        <p>{bookmarkState?.dateAdded?.toLocaleDateString()}</p>
-        <p>{bookmarkState?.dateLastUsed?.toLocaleDateString()}</p>
         <p>{bookmarkState?.parent?.title}</p>
+        <p>{bookmarkInfo?.title}</p>
+        <p>{bookmarkInfo?.otherTitles.join(", ")}</p>
+        <p>{bookmarkInfo?.labels.join(", ")}</p>
+        <p>{bookmarkInfo?.comments.join(", ")}</p>
+        <p>{bookmarkInfo?.lastUpdated?.post} / {bookmarkInfo?.lastUpdated?.date?.toLocaleDateString()}</p>
     </RootDiv>
 })
 

@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { TabState } from "./tabs"
+import { strings } from "@/utils/primitives"
 
 export interface BookmarkState {
     id: string
@@ -15,8 +16,37 @@ export interface BookmarkParent {
     title: string
 }
 
+export interface BookmarkUpdateInfo {
+    title?: string
+    parentId?: string
+    index?: number
+}
+
 export function useBookmarkOfTab(tabState: TabState) {
     const [bookmarkState, setBookmarkState] = useState<BookmarkState | null>(null)
+
+    const updateBookmarkState = useCallback(async (updateInfo: BookmarkUpdateInfo) => {
+        if(bookmarkState) {
+            //修改现有的书签
+            if(updateInfo.title !== undefined) {
+                await chrome.bookmarks.update(bookmarkState.id, {title: updateInfo.title})
+            }
+            if(updateInfo.parentId !== undefined) {
+                await chrome.bookmarks.move(bookmarkState.id, {parentId: updateInfo.parentId, index: updateInfo.index})
+            }
+        }else{
+            //新建书签
+            const tab = updateInfo.title === undefined && tabState.tabId !== undefined ? await chrome.tabs.get(tabState.tabId) : undefined
+            const title = updateInfo.title ?? tab?.title ?? tabState.url
+            await chrome.bookmarks.create({title , url: tabState.url, parentId: updateInfo.parentId, index: updateInfo.index})
+        }
+    }, [bookmarkState, tabState])
+
+    const removeBookmark = useCallback(async () => {
+        if(bookmarkState?.id) {
+            await chrome.bookmarks.remove(bookmarkState.id)
+        }
+    }, [bookmarkState])
     
     useEffect(() => {
         if(tabState.url !== undefined) {
@@ -84,7 +114,7 @@ export function useBookmarkOfTab(tabState: TabState) {
         }
     }, [bookmarkState, tabState])
 
-    return bookmarkState
+    return {bookmarkState, updateBookmarkState, removeBookmark}
 }
 
 async function getBookmarkById(id: string): Promise<chrome.bookmarks.BookmarkTreeNode | undefined> {
@@ -111,4 +141,141 @@ function bookmarkNodeToState(node: chrome.bookmarks.BookmarkTreeNode, parent: ch
         dateAdded: node.dateAdded ? new Date(node.dateAdded) : undefined,
         dateLastUsed: node.dateLastUsed ? new Date(node.dateLastUsed) : undefined
     }
+}
+
+export interface AnalysedBookmark {
+    title: string
+    otherTitles: string[]
+    labels: string[]
+    comments: string[]
+    lastUpdated: {date: Date | null, post: string | null} | null
+}
+
+export function useAnalyticalBookmark(bookmarkState: BookmarkState | null) {
+    const [bookmarkInfo, setBookmarkInfo] = useState<AnalysedBookmark | null>(bookmarkState?.title ? analyseBookmarkTitle(bookmarkState.title) : null)
+
+    useEffect(() => {
+        setBookmarkInfo(bookmarkState?.title ? analyseBookmarkTitle(bookmarkState.title) : null)
+    }, [bookmarkState])
+
+    return {bookmarkInfo}
+}
+
+function analyseBookmarkTitle(text: string): AnalysedBookmark {
+    const result: AnalysedBookmark = {
+        title: "",
+        otherTitles: [],
+        labels: [],
+        comments: [],
+        lastUpdated: null
+    }
+
+    if (!text) return result
+
+    const len = text.length
+    let pos = 0
+    let titleFinished = false
+    const lastUpdatedSegments: string[] = []
+
+    const appendToTitle = (text: string) => {
+        if (titleFinished) return
+        result.title += text
+    }
+
+    const extractBalanced = (start: number, open: string, close: string): {end: number, ok: boolean} => {
+        let depth = 1
+        let i = start + 1
+        while (i < len && depth > 0) {
+            const ch = text[i]
+            if (ch === open) depth++
+            else if (ch === close) depth--
+            i++
+        }
+        return {end: i, ok: depth === 0}
+    }
+
+    const isShortParenTitle = (content: string) => {
+        const words = content.trim().split(/\s+/)
+        return words.length > 0 && words.length <= 2 && words.every(word => /^[a-zA-Z]+$/.test(word))
+    }
+
+    while (pos < len) {
+        const [start, startChar] = strings.indexOfAny(text, ["<", "[", "(", "{"], pos)
+        if (start === -1) {
+            appendToTitle(text.substring(pos))
+            break
+        }
+
+        if (start > pos) appendToTitle(text.substring(pos, start))
+
+        if (startChar === "<") {
+            const { end, ok } = extractBalanced(start, "<", ">")
+            if (!ok) { appendToTitle(text.substring(start)); break }
+            titleFinished = true
+            result.otherTitles.push(text.substring(start + 1, end - 1))
+            pos = end
+        } else if (startChar === "[") {
+            const { end, ok } = extractBalanced(start, "[", "]")
+            if (!ok) { appendToTitle(text.substring(start)); break }
+            titleFinished = true
+            result.labels.push(text.substring(start + 1, end - 1))
+            pos = end
+        } else if (startChar === "{") {
+            const { end, ok } = extractBalanced(start, "{", "}")
+            if (!ok) { appendToTitle(text.substring(start)); break }
+            titleFinished = true
+            const content = text.substring(start + 1, end - 1)
+            lastUpdatedSegments.push(...content.split("|").map(part => part.trim()).filter(part => part.length > 0))
+            pos = end
+        } else {
+            const { end, ok } = extractBalanced(start, "(", ")")
+            if (!ok) { appendToTitle(text.substring(start)); break }
+            const content = text.substring(start + 1, end - 1)
+            const hasNested = content.includes("(")
+
+            if (!titleFinished && isShortParenTitle(content) && !hasNested) {
+                appendToTitle(text.substring(start, end))
+                pos = end
+                continue
+            }
+
+            titleFinished = true
+            if (hasNested) {
+                result.otherTitles.push(content)
+            } else {
+                result.comments.push(content)
+            }
+            pos = end
+        }
+    }
+
+    result.title = result.title.trim()
+
+    // 提取lastUpdated（花括号{}包裹的内容）
+    // 格式：{updated at post/yyyy-mm-dd}，其中前缀可能省略或错误，post或date部分分别可能省略
+    // 可能有多个，优先选择前缀为"updated at"的
+    let selected: {post: string | null, dateStr: string | null} | null = null
+
+    for (const candidate of lastUpdatedSegments) {
+        const hasPrefix = candidate.toLowerCase().startsWith("updated at")
+        const match = candidate.match(/(?<prefix>.* )?(?<post>[^/\s]+)?\/?(?<dateStr>\d{4}-\d{1,2}-\d{1,2})?/)
+        if (!match || !match.groups) continue
+        let hit
+        if(match.groups["post"].match(/^\d{4}-\d{1,2}-\d{1,2}$/)) {
+            hit = {post: null, dateStr: match.groups["post"] ?? null}
+        }else{
+            hit = {post: match.groups["post"] ?? null, dateStr: match.groups["dateStr"] ?? null}
+        }
+        if(hasPrefix || !selected) {
+            selected = hit
+            if (hasPrefix) break
+        }
+    }
+
+    if (selected) {
+        const date = selected.dateStr ? new Date(selected.dateStr + "T00:00:00") : null
+        result.lastUpdated = {date, post: selected.post}
+    }
+
+    return result
 }
