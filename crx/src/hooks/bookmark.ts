@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { TabState } from "./tabs"
-import { strings } from "@/utils/primitives"
+import { dates, objects, strings } from "@/utils/primitives"
+import { useWatch } from "@/utils/reactivity"
 
 export interface BookmarkState {
     id: string
@@ -28,10 +29,10 @@ export function useBookmarkOfTab(tabState: TabState) {
     const updateBookmarkState = useCallback(async (updateInfo: BookmarkUpdateInfo) => {
         if(bookmarkState) {
             //修改现有的书签
-            if(updateInfo.title !== undefined) {
+            if(updateInfo.title !== undefined && updateInfo.title !== bookmarkState.title) {
                 await chrome.bookmarks.update(bookmarkState.id, {title: updateInfo.title})
             }
-            if(updateInfo.parentId !== undefined) {
+            if(updateInfo.parentId !== undefined && updateInfo.parentId !== bookmarkState.parent?.id) {
                 await chrome.bookmarks.move(bookmarkState.id, {parentId: updateInfo.parentId, index: updateInfo.index})
             }
         }else{
@@ -151,14 +152,30 @@ export interface AnalysedBookmark {
     lastUpdated: {date: Date | null, post: string | null} | null
 }
 
-export function useAnalyticalBookmark(bookmarkState: BookmarkState | null) {
+export function useAnalyticalBookmark(bookmarkState: BookmarkState | null, updateBookmarkState: (updateInfo: BookmarkUpdateInfo) => Promise<void>) {
     const [bookmarkInfo, setBookmarkInfo] = useState<AnalysedBookmark | null>(bookmarkState?.title ? analyseBookmarkTitle(bookmarkState.title) : null)
 
-    useEffect(() => {
-        setBookmarkInfo(bookmarkState?.title ? analyseBookmarkTitle(bookmarkState.title) : null)
-    }, [bookmarkState])
+    const updateBookmarkInfo = useCallback(async (info: Partial<AnalysedBookmark>) => {
+        if(bookmarkInfo !== null) {
+            let anyChanged = false
+            for(const [key, value] of Object.entries(info)) {
+                if(value !== undefined && !objects.deepEquals(value, bookmarkInfo[key as keyof AnalysedBookmark])) {
+                    anyChanged = true
+                    break
+                }
+            }
+            if(anyChanged) {
+                const newTitle = generateBookmarkTitle(bookmarkInfo)
+                await updateBookmarkState({title: newTitle})
+            }
+        }
+    }, [bookmarkInfo, updateBookmarkState])
 
-    return {bookmarkInfo}
+    useWatch(() => {
+        setBookmarkInfo(bookmarkState?.title ? analyseBookmarkTitle(bookmarkState.title) : null)
+    }, [bookmarkState?.title ?? ""])
+
+    return {bookmarkInfo, updateBookmarkInfo}
 }
 
 function analyseBookmarkTitle(text: string): AnalysedBookmark {
@@ -273,9 +290,30 @@ function analyseBookmarkTitle(text: string): AnalysedBookmark {
     }
 
     if (selected) {
-        const date = selected.dateStr ? new Date(selected.dateStr + "T00:00:00") : null
+        const date = selected.dateStr ? new Date(`${selected.dateStr} 00:00:00`) : null
         result.lastUpdated = {date, post: selected.post}
     }
 
     return result
+}
+
+function generateBookmarkTitle(info: AnalysedBookmark): string {
+    let text = info.title
+
+    if(info.otherTitles.length > 0) {
+        text += " <" + info.otherTitles.join("><") + ">"
+    }
+    if(info.labels.length > 0) {
+        text += " [" + info.labels.join("][") + "]"
+    }
+    if(info.comments.length > 0) {
+        text += " (" + info.comments.join(")(") + ")"
+    }
+    if(info.lastUpdated !== null) {
+        const dateStr = info.lastUpdated.date ? dates.toFormatDate(info.lastUpdated.date) : ""
+        const str = info.lastUpdated.post ? `${info.lastUpdated.post}/${dateStr}` : dateStr
+        text += `{updated at ${str}}`
+    }
+
+    return text
 }

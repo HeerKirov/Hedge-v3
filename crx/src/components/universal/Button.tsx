@@ -6,9 +6,10 @@ import { Icon } from "./Icon"
 import { Separator } from "./styled"
 
 interface ButtonProps extends React.HTMLAttributes<HTMLButtonElement> {
-    mode?: "transparent" | "filled"
+    mode?: "transparent" | "filled" | "border"
     type?: ThemeColors
     size?: "tiny" | "std" | "small" | "large"
+    align?: "left" | "center" | "right"
     square?: boolean
     round?: boolean
     width?: string
@@ -34,8 +35,8 @@ interface AnchorProps {
 }
 
 export function Button(props: ButtonProps) {
-    const { mode, type, size, square, round, width, disabled, onClick, onContextMenu, children, ...attrs } = props
-    return <StyledButton {...attrs} $mode={mode} $type={type} $size={size} $square={square} $round={round} $width={width} disabled={disabled} onClick={onClick} onContextMenu={onContextMenu}>
+    const { mode, type, size, align, square, round, width, disabled, onClick, onContextMenu, children, ...attrs } = props
+    return <StyledButton {...attrs} $mode={mode} $align={align} $type={type} $size={size} $square={square} $round={round} $width={width} disabled={disabled} onClick={onClick} onContextMenu={onContextMenu}>
         {children}
     </StyledButton>
 }
@@ -58,9 +59,10 @@ export function Anchor(props: AnchorProps) {
 }
 
 const StyledButton = styled.button<{
-    $mode?: "transparent" | "filled"
+    $mode?: "transparent" | "filled" | "border"
     $type?: ThemeColors
     $size?: "tiny" | "std" | "small" | "large"
+    $align?: "left" | "center" | "right"
     $square?: boolean
     $round?: boolean
     $width?: string
@@ -79,6 +81,9 @@ const StyledButton = styled.button<{
     ` : p.$width ? css`
         width: ${p.$width};
     ` : null}
+    ${p => p.$align ? css`
+        text-align: ${p.$align};
+    ` : null}
     ${p => p.$mode === "filled" ? css`
         color: ${LIGHT_MODE_COLORS["text-inverted"]};
         background-color: ${p.$type ? LIGHT_MODE_COLORS[p.$type] : "default"};
@@ -95,8 +100,19 @@ const StyledButton = styled.button<{
             color: ${DARK_MODE_COLORS["text-inverted"]};
             background-color: ${p.$type ? DARK_MODE_COLORS[p.$type] : "default"};
         }
-    `
-    : css`
+    ` : p.$mode === "border" ? css`
+        &:hover:not([disabled]) {
+            background-color: rgba(45, 50, 55, 0.09);
+        }
+        &:active:not([disabled]) {
+            background-color: rgba(45, 50, 55, 0.13);
+        }
+        background-color: rgba(255, 255, 255, 0);
+        border: solid 1px ${p.$type ? LIGHT_MODE_COLORS[p.$type] : LIGHT_MODE_COLORS["border"]};
+        @media (prefers-color-scheme: dark) {
+            border-color: ${p.$type ? DARK_MODE_COLORS[p.$type] : DARK_MODE_COLORS["border"]};
+        }
+    ` : css`
         background-color: rgba(255, 255, 255, 0);
         &:hover:not([disabled]) {
             background-color: rgba(45, 50, 55, 0.09);
@@ -116,8 +132,7 @@ const StyledButton = styled.button<{
                 color: ${DARK_MODE_COLORS[p.$type]};
             ` : null}
         }
-    `
-}
+    `}
 `
 
 const StyledSeparatorButton = styled(Button)<{ $spacing: number, $margin?: number | [number, number] | [number, number, number, number] }>`

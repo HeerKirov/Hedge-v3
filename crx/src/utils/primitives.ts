@@ -52,8 +52,12 @@ export const dates = {
         }
     },
     toFormatDate(date: Date): string {
-        function fmt(n: number) { return n > 0 ? n : `0${n}`}
+        function fmt(n: number) { return n >= 10 ? n : `0${n}`}
         return `${date.getFullYear()}-${fmt(date.getMonth() + 1)}-${fmt(date.getDate())}`
+    },
+    toFormatDateTime(date: Date): string {
+        function fmt(n: number) { return n >= 10 ? n : `0${n}`}
+        return `${date.getFullYear()}-${fmt(date.getMonth() + 1)}-${fmt(date.getDate())} ${fmt(date.getHours())}:${fmt(date.getMinutes())}:${fmt(date.getSeconds())}`
     },
     compareTo(a: Date, b: Date): -1 | 0 | 1 {
         return numbers.compareTo(a.getTime(), b.getTime())

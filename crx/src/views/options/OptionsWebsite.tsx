@@ -1,5 +1,5 @@
 import { styled } from "styled-components"
-import { Button, Header, Icon, LayouttedDiv, SecondaryText, Separator } from "@/components/universal"
+import { Button, Header, Icon, IconImg, LayouttedDiv, SecondaryText, Separator } from "@/components/universal"
 import { CollapsePanel } from "@/components/layouts"
 import { CheckBox, MultilineAddList } from "@/components/form"
 import { defaultSetting, Setting } from "@/functions/setting"
@@ -112,14 +112,6 @@ export function OptionsWebsitePanel(props: OptionsWebsitePanelProps) {
         </StyledDiv>
     </>
 }
-
-const IconImg = styled.img`
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    margin-right: 4px;
-    transform: translateY(2px);
-`
 
 const TwoColDiv = styled.div`
     display: flex;

@@ -1,6 +1,6 @@
 import React, { ForwardedRef, forwardRef, memo, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { styled, css } from "styled-components"
-import { LayouttedDiv } from "@/components/universal/styled"
+import { LayouttedDiv } from "@/components/universal/Styled"
 import { Input } from "@/components/form"
 import { useWatch } from "@/utils/reactivity"
 import { useOutsideClick } from "@/utils/sensors"

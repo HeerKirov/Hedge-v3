@@ -3,6 +3,7 @@ import { mix } from "polished"
 import { styled, css } from "styled-components"
 import { useWatch } from "@/utils/reactivity"
 import { DARK_MODE_COLORS, ELEMENT_HEIGHTS, FONT_SIZES, FunctionalColors, LIGHT_MODE_COLORS, RADIUS_SIZES, ThemeColors } from "@/styles"
+import { dates } from "@/utils/primitives"
 
 interface InputProps {
     value?: string | null | undefined
@@ -12,6 +13,7 @@ interface InputProps {
     maxHeight?: string
     minHeight?: string
     rows?: number
+    theme?: "std" | "underline"
     borderColor?: ThemeColors | FunctionalColors
     width?: string
     placeholder?: string
@@ -28,18 +30,20 @@ interface InputProps {
 interface DateInputProps {
     value?: Date
     onUpdateValue?(value: Date | undefined): void
-    size?: "small" | "std" | "large"
-    textAlign?: "left" | "center" | "right"
+    mode?: "date" | "datetime"
+    theme?: "std" | "underline"
+    placeholder?: string
     borderColor?: ThemeColors | FunctionalColors
     errorBorderColor?: ThemeColors | FunctionalColors
+    size?: "small" | "std" | "large"
+    textAlign?: "left" | "center" | "right"
     width?: string
-    placeholder?: string
     disabled?: boolean
     autoFocus?: boolean
 }
 
 export const Input = React.forwardRef(function (props: InputProps, ref: React.ForwardedRef<HTMLElement>) {
-    const { type, size, width, textAlign, borderColor, placeholder, disabled, value, onUpdateValue } = props
+    const { type, size, width, textAlign, theme, borderColor, placeholder, disabled, value, onUpdateValue } = props
 
     //输入法合成器防抖
     const compositionRef = useRef(false)
@@ -76,14 +80,14 @@ export const Input = React.forwardRef(function (props: InputProps, ref: React.Fo
     
         if(type === "textarea") {
             return <StyledTextarea ref={setRef} 
-                $size={size ?? "std"} $width={width} $textAlign={textAlign} $borderColor={borderColor}
+                $size={size ?? "std"} $width={width} $textAlign={textAlign} $theme={theme} $borderColor={borderColor}
                 $maxHeight={props.maxHeight} $minHeight={props.minHeight} rows={props.rows}
                 disabled={disabled} placeholder={placeholder} value={value ?? undefined} 
                 onChange={onChange} onKeyDown={onKeydown} onBlur={props.onBlur} onFocus={props.onFocus}
                 onCompositionStart={onCompositionstart} onCompositionEnd={onCompositionend}/>
         }else{
             return <StyledInput ref={setRef} 
-                $size={size ?? "std"} $width={width} $textAlign={textAlign} $borderColor={borderColor}
+                $size={size ?? "std"} $width={width} $textAlign={textAlign} $theme={theme} $borderColor={borderColor}
                 type={type ?? "text"} disabled={disabled} placeholder={placeholder} value={value ?? undefined} 
                 onChange={onChange} onKeyDown={onKeydown} onBlur={props.onBlur} onFocus={props.onFocus}
                 onCompositionStart={onCompositionstart} onCompositionEnd={onCompositionend}/>
@@ -115,14 +119,14 @@ export const Input = React.forwardRef(function (props: InputProps, ref: React.Fo
 
         if(type === "textarea") {
             return <StyledTextarea ref={setRef} 
-                $size={size ?? "std"} $width={width} $textAlign={textAlign} $borderColor={borderColor}
+                $size={size ?? "std"} $width={width} $textAlign={textAlign} $theme={theme} $borderColor={borderColor}
                 $maxHeight={props.maxHeight} $minHeight={props.minHeight} rows={props.rows}
                 disabled={disabled} placeholder={placeholder} value={text} 
                 onChange={onChange} onBlur={onBlur} onKeyDown={onKeydown} 
                 onCompositionStart={onCompositionstart} onCompositionEnd={onCompositionend}/>
         }else{
             return <StyledInput ref={setRef} 
-                $size={size ?? "std"} type={type ?? "text"} $width={width} $textAlign={textAlign} $borderColor={borderColor}
+                $size={size ?? "std"} type={type ?? "text"} $width={width} $textAlign={textAlign} $theme={theme} $borderColor={borderColor}
                 disabled={disabled} placeholder={placeholder} value={text} 
                 onChange={onChange} onBlur={onBlur} onKeyDown={onKeydown} 
                 onCompositionStart={onCompositionstart} onCompositionEnd={onCompositionend}/>
@@ -131,23 +135,21 @@ export const Input = React.forwardRef(function (props: InputProps, ref: React.Fo
 })
 
 export const DateInput = React.memo(function (props: DateInputProps) {
-    const { value, onUpdateValue, placeholder = "YYYY/MM/DD HH:mm:SS", borderColor, errorBorderColor = "danger", ...attrs } = props
+    const { value, onUpdateValue, mode = "datetime", placeholder = mode === "date" ? "YYYY-MM-DD" : "YYYY-MM-DD HH:mm:SS", borderColor, errorBorderColor = "danger", ...attrs } = props
 
-    const fmt = (n: number) => n >= 10 ? n : `0${n}`
-
-    const [text, setText] = useState(() => value !== undefined ? `${value.getFullYear()}/${value.getMonth() + 1}/${value.getDate()} ${fmt(value.getHours())}:${fmt(value.getMinutes())}:${fmt(value.getSeconds())}` : "")
+    const [text, setText] = useState(() => value !== undefined ? (mode === "date" ? dates.toFormatDate(value) : dates.toFormatDateTime(value)) : "")
 
     const [error, setError] = useState(false)
 
-    useWatch(() => setText(value !== undefined ? `${value.getFullYear()}/${value.getMonth() + 1}/${value.getDate()} ${fmt(value.getHours())}:${fmt(value.getMinutes())}:${fmt(value.getSeconds())}` : ""), [value])
+    useWatch(() => setText(value !== undefined ? (mode === "date" ? dates.toFormatDate(value) : dates.toFormatDateTime(value)) : ""), [value])
 
     const submitValue = () => {
         const trimed = text.trim()
         if("today".startsWith(trimed.toLowerCase())) {
-            props.onUpdateValue?.(new Date())
+            props.onUpdateValue?.(mode === "date" ? new Date() : new Date(new Date().setHours(0, 0, 0, 0)))
             if(error) setError(false)
         }else if(trimed) {
-            const d = new Date(trimed)
+            const d = mode === "date" ? new Date(`${trimed} 00:00:00`) : new Date(trimed)
             if(isNaN(d.getTime())) {
                 if(!error) setError(true)
             }else{
@@ -166,6 +168,7 @@ interface StyledCSSProps {
     $size: "small" | "std" | "large"
     $width?: string
     $textAlign?: "left" | "center" | "right"
+    $theme?: "std" | "underline"
     $borderColor?: ThemeColors | FunctionalColors
 }
 
@@ -189,27 +192,49 @@ const StyledCSS = css<StyledCSSProps>`
     align-items: center;
     display: inline-flex;
     line-height: 1.2;
-    border-radius: ${RADIUS_SIZES["std"]};
-    border: 1px solid ${p => LIGHT_MODE_COLORS[p.$borderColor ?? "border"]};
     color: ${LIGHT_MODE_COLORS["text"]};
-    background-color: ${LIGHT_MODE_COLORS["block"]};
     font-size: ${p => FONT_SIZES[p.$size]};
     height: ${p => ELEMENT_HEIGHTS[p.$size]};
     ${p => p.$textAlign && css`text-align: ${p.$textAlign};`}
     ${p => p.$width && css` width: ${() => p.$width}; `}
-    &[disabled] {
-        color: ${mix(0.2, LIGHT_MODE_COLORS["text"], "#ffffff")};
-        background-color: m${mix(0.96, LIGHT_MODE_COLORS["block"], "#000000")};
-    }
-    @media (prefers-color-scheme: dark) {
-        color: ${DARK_MODE_COLORS["text"]};
-        background-color: ${DARK_MODE_COLORS["block"]};
-        border-color: ${p => DARK_MODE_COLORS[p.$borderColor ?? "border"]};
-        &[disabled] {
-            color: ${mix(0.2, DARK_MODE_COLORS["text"], "#ffffff")};
-        background-color: m${mix(0.96, DARK_MODE_COLORS["block"], "#000000")};
+    ${p => p.$theme === "underline" ? css`
+        border-top-right-radius: ${RADIUS_SIZES["std"]};
+        border-top-left-radius: ${RADIUS_SIZES["std"]};
+        border-width: 0 0 1px 0;
+        border-style: solid;
+        border-color: ${LIGHT_MODE_COLORS[p.$borderColor ?? "border"]};
+        background-color: transparent;
+        &:focus {
+            background-color: rgba(0, 0, 0, 0.03);
         }
-    }
+        &[disabled] {
+            color: ${mix(0.2, LIGHT_MODE_COLORS["text"], "#ffffff")};
+        }
+        @media (prefers-color-scheme: dark) {
+            color: ${DARK_MODE_COLORS["text"]};
+            border-bottom-color: ${DARK_MODE_COLORS[p.$borderColor ?? "border"]};
+            &:focus {
+                background-color: rgba(255, 255, 255, 0.04);
+            }
+        }
+    ` : css`
+        border-radius: ${RADIUS_SIZES["std"]};
+        border: 1px solid ${LIGHT_MODE_COLORS[p.$borderColor ?? "border"]};
+        background-color: ${LIGHT_MODE_COLORS["block"]};
+        &[disabled] {
+            color: ${mix(0.2, LIGHT_MODE_COLORS["text"], "#ffffff")};
+            background-color: ${mix(0.96, LIGHT_MODE_COLORS["block"], "#000000")};
+        }
+        @media (prefers-color-scheme: dark) {
+            color: ${DARK_MODE_COLORS["text"]};
+            background-color: ${DARK_MODE_COLORS["block"]};
+            border-color: ${DARK_MODE_COLORS[p.$borderColor ?? "border"]};
+            &[disabled] {
+                color: ${mix(0.2, DARK_MODE_COLORS["text"], "#ffffff")};
+                background-color: m${mix(0.96, DARK_MODE_COLORS["block"], "#000000")};
+            }
+        }
+    `}
 `
 
 const StyledInput = styled.input<StyledCSSProps>`
