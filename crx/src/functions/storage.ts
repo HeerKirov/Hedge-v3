@@ -1,6 +1,15 @@
 import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
 
+export const storages = {
+    ui: {
+        /**
+         * bookmark tree的折叠状态。
+         */
+        bookmarkCollapseState: createEndpointWithDefault<string[]>("local", "ui/bookmark/collapse-state", []),
+    }
+}
+
 /**
  * session会话存储。在这里的通常是各类临时缓存。
  */

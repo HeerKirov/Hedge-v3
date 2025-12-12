@@ -70,7 +70,7 @@ import { library } from "@fortawesome/fontawesome-svg-core"
 import {
     faArrowRight, faArrowDownWideShort, faArrowUpShortWide, faCloudArrowDown, faCopy, faCloudUpload, faCloudDownload,
     faCalendar, faCalendarCheck, faCalendarDay, faCalendarPlus, faCalendarWeek, faCaretDown, faCaretRight, faCaretUp, faCheck, faClose, faCircle,
-    faDownload, faEdit, faFile, faFileExport, faFileImport, faFileInvoice, faFolder, faPlus, faCalendarAlt,
+    faDownload, faEdit, faFile, faFileExport, faFileImport, faFileInvoice, faFolder, faFolderOpen, faPlus, faCalendarAlt,
     faRecordVinyl, faSave, faSearch, faServer, faStar, faToolbox, faTrash, faUpload, faWarning, faToggleOn, faUpRightFromSquare,
     faGrinSquint, faScrewdriverWrench, faTags, faIdCard, faImage, faBullseye, faPager, faClock, faBusinessTime, faCircleNotch
 } from "@fortawesome/free-solid-svg-icons"
@@ -81,7 +81,7 @@ import {
 library.add(
     faArrowRight, faArrowDownWideShort, faArrowUpShortWide, faCloudArrowDown, faCopy, faCloudUpload, faCloudDownload,
     faCalendar, faCalendarCheck, faCalendarDay, faCalendarPlus, faCalendarWeek, faCaretDown, faCaretRight, faCaretUp, faCheck, faClose, faCircle,
-    faDownload, faEdit, faFile, faFileExport, faFileImport, faFileInvoice, faFolder, faPlus, faCalendarAlt,
+    faDownload, faEdit, faFile, faFileExport, faFileImport, faFileInvoice, faFolder, faFolderOpen, faPlus, faCalendarAlt,
     faRecordVinyl, faSave, faSearch, faServer, faStar, faToolbox, faTrash, faUpload, faWarning, faToggleOn, faUpRightFromSquare,
     faGrinSquint, faScrewdriverWrench, faTags, faIdCard, faImage, faBullseye, faPager, faClock, faBusinessTime, faCircleNotch
 )

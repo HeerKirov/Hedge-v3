@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { TabState } from "./tabs"
 import { dates, objects, strings } from "@/utils/primitives"
 import { useWatch } from "@/utils/reactivity"
@@ -144,6 +144,159 @@ function bookmarkNodeToState(node: chrome.bookmarks.BookmarkTreeNode, parent: ch
     }
 }
 
+export interface BookmarkTreeNode {
+    id: string
+    title: string
+    parentId: string | undefined
+    children: BookmarkTreeNode[]
+}
+
+export function useBookmarkTree() {
+    const indexedRef = useRef<Record<string, BookmarkTreeNode | undefined>>({})
+
+    const [bookmarkTree, setBookmarkTree] = useState<BookmarkTreeNode[]>([])
+
+    useEffect(() => {
+        chrome.bookmarks.getTree().then(tree => {
+            const filterFolders = (nodes: chrome.bookmarks.BookmarkTreeNode[]): BookmarkTreeNode[] => {
+                const returns: BookmarkTreeNode[] = []
+                const allNodes = nodes.length === 1 && nodes[0].id === '0' ? nodes[0].children ?? [] : nodes
+                for(const node of allNodes) {
+                    if(!node.url) {
+                        const ret: BookmarkTreeNode = {
+                            id: node.id,
+                            title: node.title,
+                            parentId: node.parentId,
+                            children: node.children ? filterFolders(node.children) : []
+                        }
+                        indexedRef.current[ret.id] = ret
+                        returns.push(ret)
+                    }
+                }
+                return returns
+            }
+
+            setBookmarkTree(filterFolders(tree))
+        })
+    }, [])
+
+    useEffect(() => {
+        const getParents = (id: string): string[] => {
+            const ret: string[] = [id]
+            let node = indexedRef.current[id]
+            while(node?.parentId !== undefined) {
+                ret.push(node.parentId)
+                node = indexedRef.current[node.parentId]
+            }
+            return ret
+        }
+
+        const getRefreshedByChanged = (nodes: BookmarkTreeNode[], changedIds: string[]): BookmarkTreeNode[] => {
+            if(nodes.some(node => changedIds.includes(node.id))) {
+                return nodes.map(node => {
+                    if(changedIds.includes(node.id)) {
+                        const newNode = {...node, children: [...getRefreshedByChanged(node.children, changedIds)]}
+                        indexedRef.current[node.id] = newNode
+                        return newNode
+                    }else{
+                        return node
+                    }
+                })
+            }else{
+                return nodes
+            }
+        }
+
+        const createdEventHandler = async (_: string, node: chrome.bookmarks.BookmarkTreeNode) => {
+            if(!node.url) {
+                if(node.parentId !== undefined) {
+                    const parentNode = indexedRef.current[node.parentId]
+                    if(parentNode) {
+                        const index = node.index ?? parentNode.children.length
+                        parentNode.children = [...parentNode.children.slice(0, index), {id: node.id, title: node.title, parentId: node.parentId, children: []}, ...parentNode.children.slice(index)]
+                        indexedRef.current[node.id] = {id: node.id, title: node.title, parentId: node.parentId, children: []}
+                        setBookmarkTree(v => getRefreshedByChanged(v, getParents(parentNode.id)))
+                    }
+                }
+            }
+        }
+
+        const changedEventHandler = async (bookmarkId: string, changeInfo: chrome.bookmarks.UpdateChanges) => {
+            if(changeInfo.title !== undefined && changeInfo.url === undefined) {
+                const node = indexedRef.current[bookmarkId]
+                if(node) {
+                    node.title = changeInfo.title
+                    setBookmarkTree(v => getRefreshedByChanged(v, getParents(node.id)))
+                }
+            }
+        }
+
+        const childrenRecordedEventHandler = async (bookmarkId: string, reorderInfo: {childIds: string[]}) => {
+            const node = indexedRef.current[bookmarkId]
+            if(node && reorderInfo.childIds.some(id => indexedRef.current[id] !== undefined)) {
+                node.children = reorderInfo.childIds.filter(id => indexedRef.current[id] !== undefined).map(id => indexedRef.current[id]!)
+                setBookmarkTree(v => getRefreshedByChanged(v, getParents(node.id)))
+            }
+        }
+
+        const movedEventHandler = async (bookmarkId: string, moveInfo: {parentId: string, index: number, oldParentId: string, oldIndex: number}) => {
+            const node = indexedRef.current[bookmarkId]
+            if(node) {
+                const oldParentNode = indexedRef.current[moveInfo.oldParentId]
+                if(oldParentNode) {
+                    oldParentNode.children = oldParentNode.children.filter(child => child.id !== bookmarkId)
+                }
+                const newParentNode = indexedRef.current[moveInfo.parentId]
+                if(newParentNode) {
+                    const index = moveInfo.index
+                    newParentNode.children = [...newParentNode.children.slice(0, index), node, ...newParentNode.children.slice(index)]
+                }
+                node.parentId = moveInfo.parentId
+                setBookmarkTree(v => getRefreshedByChanged(v, [...oldParentNode ? getParents(oldParentNode.id) : [], ...newParentNode ? getParents(newParentNode.id) : []]))
+            }
+        }
+
+        const removedEventHandler = (bookmarkId: string) => {
+            const node = indexedRef.current[bookmarkId]
+            if(node) {
+                function removeIndexedNode(id: string) {
+                    const node = indexedRef.current[id]
+                    if(node) {
+                        for(const child of node.children) {
+                            removeIndexedNode(child.id)
+                        }
+                        indexedRef.current[id] = undefined
+                    }
+                }
+                removeIndexedNode(bookmarkId)
+
+                const parentNode = node.parentId !== undefined ? indexedRef.current[node.parentId] : undefined
+                if(parentNode) {
+                    parentNode.children = parentNode.children.filter(child => child.id !== bookmarkId)
+                    setBookmarkTree(v => getRefreshedByChanged(v, getParents(parentNode.id)))
+                }else{
+                    setBookmarkTree(v => v.filter(node => node.id !== bookmarkId))
+                }
+            }
+        }
+
+        chrome.bookmarks.onCreated.addListener(createdEventHandler)
+        chrome.bookmarks.onChanged.addListener(changedEventHandler)
+        chrome.bookmarks.onMoved.addListener(movedEventHandler)
+        chrome.bookmarks.onRemoved.addListener(removedEventHandler)
+        chrome.bookmarks.onChildrenReordered.addListener(childrenRecordedEventHandler)
+        return () => {
+            chrome.bookmarks.onCreated.removeListener(createdEventHandler)
+            chrome.bookmarks.onChanged.removeListener(changedEventHandler)
+            chrome.bookmarks.onMoved.removeListener(movedEventHandler)
+            chrome.bookmarks.onRemoved.removeListener(removedEventHandler)
+            chrome.bookmarks.onChildrenReordered.removeListener(childrenRecordedEventHandler)
+        }
+    }, [])
+
+    return {bookmarkTree, bookmarkIndexedRef: indexedRef}
+}
+
 export interface AnalysedBookmark {
     title: string
     otherTitles: string[]
@@ -165,7 +318,7 @@ export function useAnalyticalBookmark(bookmarkState: BookmarkState | null, updat
                 }
             }
             if(anyChanged) {
-                const newTitle = generateBookmarkTitle(bookmarkInfo)
+                const newTitle = generateBookmarkTitle({...bookmarkInfo, ...info})
                 await updateBookmarkState({title: newTitle})
             }
         }
@@ -300,14 +453,18 @@ function analyseBookmarkTitle(text: string): AnalysedBookmark {
 function generateBookmarkTitle(info: AnalysedBookmark): string {
     let text = info.title
 
+    if(info.otherTitles.length > 0 || info.labels.length > 0 || info.comments.length > 0) {
+        text += " "
+    }
+
     if(info.otherTitles.length > 0) {
-        text += " <" + info.otherTitles.join("><") + ">"
+        text += "<" + info.otherTitles.join("><") + ">"
     }
     if(info.labels.length > 0) {
-        text += " [" + info.labels.join("][") + "]"
+        text += "[" + info.labels.join("][") + "]"
     }
     if(info.comments.length > 0) {
-        text += " (" + info.comments.join(")(") + ")"
+        text += "(" + info.comments.join(")(") + ")"
     }
     if(info.lastUpdated !== null) {
         const dateStr = info.lastUpdated.date ? dates.toFormatDate(info.lastUpdated.date) : ""
