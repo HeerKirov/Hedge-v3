@@ -12,7 +12,6 @@ export { MarginCSS } from "./css"
 export const GlobalStyle = createGlobalStyle`
 
 body, #body {
-    -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     text-align: initial;

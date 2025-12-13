@@ -66,8 +66,8 @@ const COLLECT_STATUS_DESCRIBE: {[status in SourceEditStatus]: string} = {
 
 
 const RootDiv = styled.div`
-    margin: ${SPACINGS[1]} ${SPACINGS[2]};
     padding: ${SPACINGS[1]} 0;
+    box-sizing: border-box;
     text-align: center;
     border: solid 1px ${LIGHT_MODE_COLORS["border"]};
     border-radius: ${RADIUS_SIZES["std"]};

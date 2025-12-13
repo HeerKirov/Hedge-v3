@@ -1,4 +1,5 @@
 export { FileInfoDisplay, SourceInfo, PartitionTimeDisplay } from "./Illust"
 export { SourceInfoPanel } from "./SourceInfoPanel"
 export { BookmarkPanel } from "./BookmarkPanel"
+export { DownloadPanel } from "./DownloadPanel"
 export { ServerStatusNotice } from "./ServerStatusNotice"

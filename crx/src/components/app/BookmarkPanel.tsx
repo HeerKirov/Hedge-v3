@@ -123,8 +123,8 @@ const BookmarkTreeContext = createContext<{tree: BookmarkTreeNode[], indexedRef:
 const BookmarkPopupContext = createContext<{collapseState: Record<string, "OPEN" | "CLOSED" | "TEMP_OPEN">, setCollapseState: (id: string, value: boolean) => void}>({collapseState: {}, setCollapseState: () => {}})
 
 const RootDiv = styled.div`
-    margin: ${SPACINGS[1]} ${SPACINGS[2]};
     padding: ${SPACINGS[1]};
+    box-sizing: border-box;
     text-align: center;
     border: solid 1px ${LIGHT_MODE_COLORS["border"]};
     border-radius: ${RADIUS_SIZES["std"]};

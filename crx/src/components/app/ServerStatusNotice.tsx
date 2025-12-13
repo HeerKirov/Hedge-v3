@@ -14,8 +14,8 @@ export const ServerStatusNotice = memo(function ServerStatusNotice() {
 
 
 const HealthDiv = styled.div<{ $status: "NOT_INITIALIZED" | "INITIALIZING" | "LOADING" | "READY" | "DISCONNECTED" | "UNKNOWN" }>`
+    box-sizing: border-box;
     text-align: center;
-    margin: ${SPACINGS[1]} 0;
     color: ${LIGHT_MODE_COLORS["secondary-text"]};
     font-size: ${FONT_SIZES["small"]};
     > span {
