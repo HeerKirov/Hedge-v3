@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { TabState } from "./tabs"
+import { getTabStateWithTitle, TabState } from "@/hooks/tabs"
 import { dates, objects, strings } from "@/utils/primitives"
 import { useWatch } from "@/utils/reactivity"
 
@@ -19,7 +19,7 @@ export interface BookmarkParent {
 
 export interface BookmarkUpdateInfo {
     title?: string
-    parentId?: string
+    parent?: BookmarkParent
     index?: number
 }
 
@@ -32,14 +32,14 @@ export function useBookmarkOfTab(tabState: TabState) {
             if(updateInfo.title !== undefined && updateInfo.title !== bookmarkState.title) {
                 await chrome.bookmarks.update(bookmarkState.id, {title: updateInfo.title})
             }
-            if(updateInfo.parentId !== undefined && updateInfo.parentId !== bookmarkState.parent?.id) {
-                await chrome.bookmarks.move(bookmarkState.id, {parentId: updateInfo.parentId, index: updateInfo.index})
+            if(updateInfo.parent !== undefined && updateInfo.parent.id !== bookmarkState.parent?.id) {
+                await chrome.bookmarks.move(bookmarkState.id, {parentId: updateInfo.parent.id, index: updateInfo.index})
             }
         }else{
             //新建书签
             const tab = updateInfo.title === undefined && tabState.tabId !== undefined ? await chrome.tabs.get(tabState.tabId) : undefined
             const title = updateInfo.title ?? tab?.title ?? tabState.url
-            await chrome.bookmarks.create({title , url: tabState.url, parentId: updateInfo.parentId, index: updateInfo.index})
+            await chrome.bookmarks.create({title , url: tabState.url, parentId: updateInfo.parent?.id ?? undefined, index: updateInfo.index})
         }
     }, [bookmarkState, tabState])
 
@@ -329,6 +329,45 @@ export function useAnalyticalBookmark(bookmarkState: BookmarkState | null, updat
     }, [bookmarkState?.title ?? ""])
 
     return {bookmarkInfo, updateBookmarkInfo}
+}
+
+export function useBookmarkCreator(recentFolders: BookmarkParent[]) {
+    const [info, setInfo] = useState<AnalysedBookmark>(() => ({
+        title: "",
+        otherTitles: [],
+        labels: [],
+        comments: [],
+        lastUpdated: null
+    }))
+
+    const [state, setState] = useState<BookmarkState>({id: "", title: "", url: "", parent: undefined, dateAdded: undefined, dateLastUsed: undefined})
+
+    const [url, setUrl] = useState<string>()
+
+    const updateInfo = useCallback((info: Partial<AnalysedBookmark>) => setInfo(prev => ({...prev, ...info})), [])
+
+    const updateState = useCallback((info: BookmarkUpdateInfo) => setState(prev => ({...prev, ...info})), [])
+
+    const save = useCallback(async () => {
+        const newTitle = generateBookmarkTitle(info)
+        chrome.bookmarks.create({title: newTitle, url: url, parentId: state.parent?.id ?? undefined})
+    }, [info, url, state.parent?.id ?? ""])
+
+    useEffect(() => {
+        getTabStateWithTitle().then(tabState => {
+            setInfo(prev => ({...prev, title: tabState.title ?? ""}))
+            setUrl(tabState.url)
+        })
+    }, [])
+
+    useWatch(() => {
+        if(recentFolders.length > 0 && state.parent === undefined) {
+            setState(prev => ({...prev, parent: recentFolders[0]}))
+        }
+    }, [recentFolders, state.parent?.id ?? ""], {immediate: true})
+
+
+    return {info, state, updateInfo, updateState, save}
 }
 
 function analyseBookmarkTitle(text: string): AnalysedBookmark {

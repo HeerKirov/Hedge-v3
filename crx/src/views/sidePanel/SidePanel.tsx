@@ -1,10 +1,10 @@
 import { memo } from "react"
 import styled from "styled-components"
+import { LayouttedDiv } from "@/components/universal"
 import { SourceInfoPanel, BookmarkPanel, DownloadPanel, ServerStatusNotice } from "@/components/app"
 import { useTabState } from "@/hooks/tabs"
 import { SPACINGS } from "@/styles"
 import { useSetting } from "@/hooks/setting"
-import { LayouttedDiv } from "@/components/universal"
 
 export function SidePanel() {
     const tabState = useTabState()
@@ -39,6 +39,7 @@ const RootDiv = styled.div`
     }
 
     > div:last-child {
-        height: 100%;
+        flex: 1;
+        min-height: 0;
     }
 `

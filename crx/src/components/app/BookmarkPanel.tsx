@@ -3,9 +3,9 @@ import styled, { css } from "styled-components"
 import { Button, Icon, LayouttedDiv } from "@/components/universal"
 import { DateInput, DynamicInputList, Input, KeywordList } from "@/components/form"
 import { TabState } from "@/hooks/tabs"
-import { useBookmarkPopupState } from "@/hooks/data"
+import { useBookmarkPopupState, useBookmarkRecentFolders } from "@/hooks/data"
 import { Setting } from "@/functions/setting"
-import { AnalysedBookmark, BookmarkState, BookmarkTreeNode, BookmarkUpdateInfo, useAnalyticalBookmark, useBookmarkOfTab, useBookmarkTree } from "@/hooks/bookmark"
+import { AnalysedBookmark, BookmarkParent, BookmarkState, BookmarkTreeNode, BookmarkUpdateInfo, useAnalyticalBookmark, useBookmarkCreator, useBookmarkOfTab, useBookmarkTree } from "@/hooks/bookmark"
 import { useOutsideClick } from "@/utils/sensors"
 import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
 
@@ -16,35 +16,78 @@ export const BookmarkPanel = memo(function BookmarkPanel(props: {tabState: TabSt
 
     const { bookmarkTree, bookmarkIndexedRef } = useBookmarkTree()
 
+    const { recentFolders, pushRecentFolder } = useBookmarkRecentFolders()
+
     const bookmarkTreeContext = useMemo(() => ({tree: bookmarkTree, indexedRef: bookmarkIndexedRef}), [bookmarkTree])
+
+    const bookmarkRecentFoldersContext = useMemo(() => ({recentFolders, pushRecentFolder}), [recentFolders, pushRecentFolder])
 
     if(!isLegalDomain(props.tabState.url, props.setting.includeDomains, props.setting.excludeDomains)) {
         return null
     }
 
     return <BookmarkTreeContext.Provider value={bookmarkTreeContext}>
-        <RootDiv>
-            {bookmarkState === null || bookmarkInfo === null || bookmarkTree === null
-                ? <Empty/> 
-                : <Content state={bookmarkState} info={bookmarkInfo}
-                        updateBookmarkState={updateBookmarkState} updateBookmarkInfo={updateBookmarkInfo}/>
-            }
-        </RootDiv>
+        <BookmarkRecentFoldersContext.Provider value={bookmarkRecentFoldersContext}>
+            <RootDiv>
+                {bookmarkState === null || bookmarkInfo === null || bookmarkTree === null
+                    ? <Empty/> 
+                    : <Detail state={bookmarkState} info={bookmarkInfo} updateBookmarkState={updateBookmarkState} updateBookmarkInfo={updateBookmarkInfo}/>
+                }
+            </RootDiv>
+        </BookmarkRecentFoldersContext.Provider>
     </BookmarkTreeContext.Provider>
 })
 
 const Empty = memo(function Empty() {
+    const [createMode, setCreateMode] = useState<boolean>(false)
+
+    const onCancel = useCallback(() => setCreateMode(false), [])
+    
     return <>
-        <Button size="small" type="success" width="100%"><Icon icon="star" mr={1}/>当前页面添加为书签</Button>
+        {createMode ? <Creator onCancel={onCancel}/> : <Button size="small" width="100%" onClick={() => setCreateMode(true)}><Icon icon="star" mr={1}/>添加为书签</Button>}
     </>
+})
+
+const Creator = memo(function Creator({ onCancel }: {onCancel: () => void}) {
+    const { recentFolders, pushRecentFolder } = useContext(BookmarkRecentFoldersContext)
+
+    const { info, state, updateInfo, updateState, save: saveEmit } = useBookmarkCreator(recentFolders)
+
+    const save = useCallback(async () => {
+        await saveEmit()
+        if(state.parent !== undefined) {
+            pushRecentFolder(state.parent)
+        }
+    }, [pushRecentFolder, saveEmit, state.parent?.id ?? ""])
+
+    return <>
+        <Content state={state} info={info} updateBookmarkState={updateState} updateBookmarkInfo={updateInfo}/>
+        <LayouttedDiv display="flex">
+            <Button size="small" width="80%" type="success" onClick={save}><Icon icon="save" mr={1}/>保存书签</Button>
+            <Button size="small" width="20%" type="danger" onClick={onCancel}><Icon icon="close" mr={1}/>取消</Button>
+        </LayouttedDiv>
+    </>
+})
+
+const Detail = memo(function Detail(props: {state: BookmarkState, info: AnalysedBookmark, updateBookmarkState: (info: BookmarkUpdateInfo) => void, updateBookmarkInfo: (info: Partial<AnalysedBookmark>) => void}) {
+    const { state, info, updateBookmarkState: updateBookmarkStateEmit, updateBookmarkInfo } = props
+
+    const { pushRecentFolder } = useContext(BookmarkRecentFoldersContext)
+
+    const updateBookmarkState = useCallback((info: BookmarkUpdateInfo) => {
+        updateBookmarkStateEmit(info)
+        if(info.parent !== undefined) {
+            pushRecentFolder(info.parent)
+        }
+    }, [pushRecentFolder, updateBookmarkStateEmit])
+
+    return <Content state={state} info={info} updateBookmarkState={updateBookmarkState} updateBookmarkInfo={updateBookmarkInfo}/>
 })
 
 const Content = memo(function Content(props: {state: BookmarkState, info: AnalysedBookmark, updateBookmarkState: (info: BookmarkUpdateInfo) => void, updateBookmarkInfo: (info: Partial<AnalysedBookmark>) => void}) {
     const { state, info, updateBookmarkState, updateBookmarkInfo } = props
 
-    const onUpdateParent = useCallback((parentId: string) => {
-        updateBookmarkState({parentId})
-    }, [updateBookmarkState])
+    const onUpdateParent = useCallback((parent: BookmarkParent) => updateBookmarkState({parent}), [updateBookmarkState])
 
     const otherNameAndKeywordMode = info.otherTitles.length > 1 || info.labels.length > 1 ? "multiple" : "single"
 
@@ -69,26 +112,22 @@ const Content = memo(function Content(props: {state: BookmarkState, info: Analys
     </LayouttedDiv>
 })
 
-const FolderSelector = memo(function FolderSelector(props: {parent: BookmarkState["parent"], onUpdateParent: (parentId: string) => void}) {
+const FolderSelector = memo(function FolderSelector(props: {parent: BookmarkState["parent"], onUpdateParent: (parent: BookmarkParent) => void}) {
     const { parent, onUpdateParent } = props
 
     const [visible, setVisible] = useState(false)
 
-    const toggleVisible = useCallback(() => setVisible(v => !v), [])
-
-    const onSelect = useCallback((node: BookmarkTreeNode) => {
-        onUpdateParent(node.id)
-        setVisible(false)
-    }, [onUpdateParent])
+    const open = useCallback(() => setVisible(true), [])
+    const close = useCallback(() => setVisible(false), [])
 
     return <>
-        <Button mode="border" align="left" width="40%" onClick={toggleVisible}><Icon icon="folder" mr={1}/>{parent?.title ?? "(无目录)"}</Button>
-        {visible && <FolderSelectorPopup selectedId={parent?.id} onClose={toggleVisible} onSelect={onSelect}/>}
+        <Button mode="border" align="left" width="40%" onClick={open}><Icon icon="folder" mr={1}/>{parent?.title ?? "(无目录)"}</Button>
+        {visible && <FolderSelectorPopup selectedId={parent?.id} onClose={close} onSelect={onUpdateParent}/>}
     </>
 })
 
 const FolderSelectorPopup = memo(function FolderSelectorPopup(props: {selectedId: string | undefined, onSelect: (node: BookmarkTreeNode) => void, onClose: () => void}) {
-    const { selectedId, onClose, onSelect } = props
+    const { selectedId, onClose, onSelect: onSelectEmit } = props
 
     const { tree, indexedRef } = useContext(BookmarkTreeContext)
 
@@ -97,6 +136,11 @@ const FolderSelectorPopup = memo(function FolderSelectorPopup(props: {selectedId
     const divRef = useRef<HTMLDivElement>(null)
 
     useOutsideClick(divRef, onClose, true)
+
+    const onSelect = useCallback((node: BookmarkTreeNode) => {
+        onSelectEmit(node)
+        onClose()
+    }, [onSelectEmit, onClose])
 
     return <BookmarkPopupContext.Provider value={useMemo(() => ({collapseState, setCollapseState}), [collapseState])}>
         <FolderSelectorPopupDiv ref={divRef}>
@@ -141,6 +185,8 @@ function isLegalDomain(url: string | undefined, includeDomains: string[], exclud
     }
     return true
 }
+
+const BookmarkRecentFoldersContext = createContext<{recentFolders: BookmarkParent[], pushRecentFolder: (folder: BookmarkParent) => Promise<void>}>({recentFolders: [], pushRecentFolder: async (_: BookmarkParent) => {}})
 
 const BookmarkTreeContext = createContext<{tree: BookmarkTreeNode[], indexedRef: RefObject<Record<string, BookmarkTreeNode | undefined>>}>({tree: [], indexedRef: {current: {}}})
 

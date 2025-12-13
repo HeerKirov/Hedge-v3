@@ -7,6 +7,10 @@ export const storages = {
          * bookmark tree的折叠状态。
          */
         bookmarkCollapseState: createEndpointWithDefault<string[]>("local", "ui/bookmark/collapse-state", []),
+        /**
+         * bookmark 最近选用过的目录。
+         */
+        bookmarkRecentFolders: createEndpointWithDefault<string[]>("local", "ui/bookmark/recent-folders", []),
     }
 }
 

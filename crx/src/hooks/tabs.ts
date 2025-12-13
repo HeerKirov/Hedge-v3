@@ -8,6 +8,10 @@ export interface TabState {
     windowId: number | undefined
 }
 
+interface TabStateWithTitle extends TabState {
+    title: string | undefined
+}
+
 /**
  * 获取当前激活的标签页状态。该状态会响应onActivated和onUpdated事件，进行动态改变。
  */
@@ -56,16 +60,21 @@ export function useTabState() {
  * 获取当前标签页的状态。该获取是一次性的，一旦加载完毕就不会再更改。
  */
 export function useTabStateOnce() {
-    const [tabState] = useAsyncLoading<TabState>({
-        default: {status: "unloaded", tabId: undefined, url: undefined, windowId: undefined},
-        call: async () => {
-            const tabs = await chrome.tabs.query({currentWindow: true, active: true})
-            if(tabs.length > 0 && tabs[0].id && tabs[0].id !== chrome.tabs.TAB_ID_NONE) {
-                return {status: tabs[0].status ?? "unloaded", tabId: tabs[0].id, url: tabs[0].url, windowId: tabs[0].windowId} as const
-            }
-            return {status: "unloaded", tabId: undefined, url: undefined, windowId: undefined} as const
-        }
+    const [tabState] = useAsyncLoading<TabStateWithTitle>({
+        default: {status: "unloaded", tabId: undefined, url: undefined, windowId: undefined, title: undefined},
+        call: getTabStateWithTitle
     })
 
     return tabState
+}
+
+/**
+ * 查询标签页状态。
+ */
+export async function getTabStateWithTitle(): Promise<TabStateWithTitle> {
+    const tabs = await chrome.tabs.query({currentWindow: true, active: true})
+    if(tabs.length > 0 && tabs[0].id && tabs[0].id !== chrome.tabs.TAB_ID_NONE) {
+        return {status: tabs[0].status ?? "unloaded", tabId: tabs[0].id, url: tabs[0].url, windowId: tabs[0].windowId, title: tabs[0].title} as const
+    }
+    return {status: "unloaded", tabId: undefined, url: undefined, windowId: undefined, title: undefined} as const
 }

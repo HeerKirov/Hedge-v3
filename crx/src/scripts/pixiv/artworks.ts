@@ -10,7 +10,6 @@ onDOMContentObserved({
     observe: { subtree: true, childList: true },
     mutation: mutation => {
         if(document.querySelector<HTMLAnchorElement>("aside > section > h2 > div > div > a")) {
-            console.log(mutation)
             return true
         }
         return false
@@ -20,7 +19,6 @@ onDOMContentObserved({
     console.log("[Hedge v3 Helper] pixiv/artworks script loaded.")
     const sourceDataPath = getSourceDataPath()
     const sourceData = collectSourceData()
-    console.log("sourceData", sourceData)
     sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
     sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
 })

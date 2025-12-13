@@ -1,6 +1,6 @@
 import { useEffect, useState, RefObject, useCallback, useRef } from "react"
 import { storages } from "@/functions/storage"
-import { BookmarkTreeNode } from "./bookmark"
+import { BookmarkParent, BookmarkTreeNode } from "./bookmark"
 
 export function useBookmarkPopupState(currentId: string | undefined, indexedRef: RefObject<Record<string, BookmarkTreeNode | undefined>>) {
     const stateRef = useRef<Record<string, "OPEN" | "CLOSED" | "TEMP_OPEN">>({})
@@ -35,3 +35,30 @@ export function useBookmarkPopupState(currentId: string | undefined, indexedRef:
 
     return {collapseState, setCollapseState}
 }
+
+export function useBookmarkRecentFolders() {
+    const [recentFolders, setRecentFoldersInternal] = useState<BookmarkParent[]>([])
+
+    const pushRecentFolder = useCallback(async (folder: BookmarkParent) => {
+        const storage = await storages.ui.bookmarkRecentFolders()
+        const newValue = [folder.id, ...storage.filter(f => f !== folder.id).slice(0, MAX_RECENT_FOLDERS - 1)]
+        await storages.ui.bookmarkRecentFolders(newValue)
+        const bookmarks = await chrome.bookmarks.get(newValue as [string, ...string[]])
+        setRecentFoldersInternal(bookmarks.map(bookmark => ({id: bookmark.id, title: bookmark.title})))
+    }, [])
+
+    useEffect(() => {
+        storages.ui.bookmarkRecentFolders().then(async storage => {
+            if(storage.length > 0) {
+                const bookmarks = await chrome.bookmarks.get(storage as [string, ...string[]])
+                setRecentFoldersInternal(bookmarks.map(bookmark => ({id: bookmark.id, title: bookmark.title})))
+            }else{
+                setRecentFoldersInternal([])
+            }
+        })
+    }, [])
+
+    return {recentFolders, pushRecentFolder}
+}
+
+const MAX_RECENT_FOLDERS = 5

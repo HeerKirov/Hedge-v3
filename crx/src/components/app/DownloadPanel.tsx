@@ -138,6 +138,8 @@ const RootDiv = styled.div`
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+    height: 100%;
+    min-height: 0;
     border: solid 1px ${LIGHT_MODE_COLORS["border"]};
     border-radius: ${RADIUS_SIZES["std"]};
     @media (prefers-color-scheme: dark) {
@@ -164,7 +166,8 @@ const ToolBarDiv = styled.div`
 `
 
 const DownloadListdiv = styled.div`
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     padding: ${SPACINGS[1]};
     overflow-y: auto;
 `
