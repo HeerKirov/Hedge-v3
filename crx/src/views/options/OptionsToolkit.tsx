@@ -58,6 +58,9 @@ export function OptionsToolkitPanel(props: OptionsToolkitPanelProps) {
     }
 
     return <>
+        <p>扩展提供了用于增强下载与来源数据收集体验的一些功能。</p>
+
+        <Separator spacing={[4, 1]}/>
         <Header>下载工具栏</Header>
         <p>在受支持的网站中，为视图页主图像附加下载工具栏，通过此工具栏以以统一的方式下载文件，并自动对其进行重命名。</p>
         <IconDisplayDiv>

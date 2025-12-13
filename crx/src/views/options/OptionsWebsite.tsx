@@ -28,7 +28,7 @@ export function OptionsWebsitePanel(props: OptionsWebsitePanelProps) {
     const setFanbox = usePartialSet(editor.fanbox, v => setProperty("fanbox", v))
 
     return <>
-        <p>扩展提供了面向一些站点的优化增强功能。</p>
+        <p>扩展提供了面向站点的一些优化增强功能。</p>
 
         <Separator spacing={[4, 1]}/>
         <Header><IconImg src={EHentaiIcon} alt="e-hentai icon"/>E-Hentai</Header>
@@ -72,21 +72,6 @@ export function OptionsWebsitePanel(props: OptionsWebsitePanelProps) {
         </TwoColDiv>
 
         <Separator spacing={[4, 1]}/>
-        <Header><IconImg src={SankakuIcon} alt="sankaku icon"/>Sankaku Complex</Header>
-        <StyledDiv>
-            <CheckBox checked={editor.sankakucomplex.enableBlockAds} onUpdateChecked={v => setSankakucomplex("enableBlockAds", v)}>屏蔽部分广告和冗余UI</CheckBox>
-            <SecondaryText>屏蔽一些显眼的嵌入式广告与一些冗余的UI，让视野干净一些。</SecondaryText>
-        </StyledDiv>
-        <StyledDiv>
-            <CheckBox checked={editor.sankakucomplex.enableUIOptimize} onUpdateChecked={v => setSankakucomplex("enableUIOptimize", v)}>优化UI显示</CheckBox>
-            <SecondaryText>移除"查看原始图像"的notice提示。</SecondaryText>
-        </StyledDiv>
-        <StyledDiv>
-            <CheckBox checked={editor.sankakucomplex.enablePaginationEnhancement} onUpdateChecked={v => setSankakucomplex("enablePaginationEnhancement", v)}>增强翻页器</CheckBox>
-            <SecondaryText>使翻页可以突破最大页码上限。不过不能突破跳页限制，需要逐页翻页。</SecondaryText>
-        </StyledDiv>
-
-        <Separator spacing={[4, 1]}/>
         <Header><IconImg src={FanboxIcon} alt="fanbox icon"/>FANBOX</Header>
         <StyledDiv>
             <CheckBox checked={editor.fanbox.enableUIOptimize} onUpdateChecked={v => setFanbox("enableUIOptimize", v)}>优化UI显示</CheckBox>
@@ -109,6 +94,21 @@ export function OptionsWebsitePanel(props: OptionsWebsitePanelProps) {
         <StyledDiv>
             <CheckBox checked={editor.kemono.enableAttachmentLinkRename} onUpdateChecked={v => setKemono("enableAttachmentLinkRename", v)}>附件下载链接增强</CheckBox>
             <SecondaryText>附件下载链接会被附加一个额外链接，用于直接下载可被Hedge读取的文件名的附件。</SecondaryText>
+        </StyledDiv>
+
+        <Separator spacing={[4, 1]}/>
+        <Header><IconImg src={SankakuIcon} alt="sankaku icon"/>Sankaku Complex</Header>
+        <StyledDiv>
+            <CheckBox checked={editor.sankakucomplex.enableBlockAds} onUpdateChecked={v => setSankakucomplex("enableBlockAds", v)}>屏蔽部分广告和冗余UI</CheckBox>
+            <SecondaryText>屏蔽一些显眼的嵌入式广告与一些冗余的UI，让视野干净一些。</SecondaryText>
+        </StyledDiv>
+        <StyledDiv>
+            <CheckBox checked={editor.sankakucomplex.enableUIOptimize} onUpdateChecked={v => setSankakucomplex("enableUIOptimize", v)}>优化UI显示</CheckBox>
+            <SecondaryText>移除"查看原始图像"的notice提示。</SecondaryText>
+        </StyledDiv>
+        <StyledDiv>
+            <CheckBox checked={editor.sankakucomplex.enablePaginationEnhancement} onUpdateChecked={v => setSankakucomplex("enablePaginationEnhancement", v)}>增强翻页器</CheckBox>
+            <SecondaryText>使翻页可以突破最大页码上限。不过不能突破跳页限制，需要逐页翻页。</SecondaryText>
         </StyledDiv>
     </>
 }

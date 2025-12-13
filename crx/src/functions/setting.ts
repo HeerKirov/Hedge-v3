@@ -9,6 +9,7 @@ export interface Setting {
     general: General
     website: Website
     toolkit: Toolkit
+    extension: Extension
 }
 
 /**
@@ -172,6 +173,71 @@ interface Toolkit {
     }
 }
 
+/**
+ * 扩展选项功能，提供扩展的一些选项功能。
+ */
+interface Extension {
+    /**
+     * 边栏相关功能。
+     */
+    sidePanel: {
+        /**
+         * 通过点击Action按钮打开边栏。
+         */
+        openByActionButton: boolean
+        /**
+         * 启用服务器状态显示。
+         */
+        enableServerStatus: boolean
+        /**
+         * 启用书签面板。
+         */
+        enableBookmark: boolean
+        /**
+         * 启用来源信息显示。
+         */
+        enableSourceInfo: boolean
+        /**
+         * 启用下载项管理器。
+         */
+        enableDownloadManager: boolean
+    }
+    /**
+     * 书签管理器选项。
+     */
+    bookmarkManager: {
+        /**
+         * 排除的域名列表。
+         */
+        excludeDomains: string[]
+        /**
+         * 启用的域名列表。
+         */
+        includeDomains: string[]
+    }
+    /**
+     * 下载项管理器选项。
+     */
+    downloadManager: {
+        /**
+         * 清除按钮的操作。
+         */
+        clearButtonAction: "CANCELLED_AND_DELETED" | "CANCELLED_AND_COMPLETE" | "ALL_NOT_PROGRESSING"
+        /**
+         * 自动清除。
+         */
+        autoClear: boolean
+        /**
+         * 自动清除间隔。
+         */
+        autoClearIntervalSec: number
+        /**
+         * 自动清除操作。
+         */
+        autoClearAction: "CANCELLED_AND_DELETED" | "CANCELLED_AND_COMPLETE" | "ALL_NOT_PROGRESSING"
+    }
+}
+
 export function defaultSetting(): Setting {
     return {
         version,
@@ -216,6 +282,25 @@ export function defaultSetting(): Setting {
                 rules: [],
                 extensions: []
             }
+        },
+        extension: {
+            sidePanel: {
+                openByActionButton: false,
+                enableServerStatus: false,
+                enableBookmark: true,
+                enableSourceInfo: true,
+                enableDownloadManager: true
+            },
+            bookmarkManager: {
+                excludeDomains: [],
+                includeDomains: []
+            },
+            downloadManager: {
+                clearButtonAction: "CANCELLED_AND_DELETED",
+                autoClear: false,
+                autoClearIntervalSec: 30,
+                autoClearAction: "CANCELLED_AND_DELETED"
+            }
         }
     }
 }
@@ -238,6 +323,8 @@ export async function initialize(details: chrome.runtime.InstalledDetails) {
     }else{
         await chrome.storage.local.set({ "setting": defaultSetting() })
     }
+
+    await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: r?.extension.sidePanel.openByActionButton })
 }
 
 export const settings = {
@@ -245,8 +332,11 @@ export const settings = {
         const r = (await chrome.storage.local.get(["setting"]))["setting"] as Setting | undefined
         return r ?? defaultSetting()
     },
-    async set(setting: Setting) {
+    async set(setting: Setting, oldSetting?: Setting) {
         await chrome.storage.local.set({ "setting": setting })
+        if(oldSetting === undefined || oldSetting.extension.sidePanel.openByActionButton !== setting.extension.sidePanel.openByActionButton) {
+            await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: setting.extension.sidePanel.openByActionButton })
+        }
     },
     async importAndMigrate(content: any) {
         const { setting } = await migrate({setting: content}, migrations, {
@@ -319,6 +409,28 @@ const migrations: {[version: string]: Migrate<MigrateContext>} = {
     async "0.14.3"(ctx) {
         const val = ctx.setting as any
         val["website"]["kemono"]["enableAttachmentLinkRename"] = true
+    },
+    async "0.17.0"(ctx) {
+        const val = ctx.setting as any
+        val["extension"] = {
+            sidePanel: {
+                openByActionButton: false,
+                enableServerStatus: false,
+                enableBookmark: true,
+                enableSourceInfo: true,
+                enableDownloadManager: true
+            },
+            bookmarkManager: {
+                excludeDomains: [],
+                includeDomains: []
+            },
+            downloadManager: {
+                clearButtonAction: "CANCELLED_AND_DELETED",
+                autoClear: false,
+                autoClearIntervalSec: 30,
+                autoClearAction: "CANCELLED_AND_DELETED"
+            }
+        }
     }
 }
 

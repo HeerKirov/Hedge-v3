@@ -4,18 +4,25 @@ import { Button, Icon, LayouttedDiv } from "@/components/universal"
 import { DateInput, DynamicInputList, Input, KeywordList } from "@/components/form"
 import { TabState } from "@/hooks/tabs"
 import { useBookmarkPopupState } from "@/hooks/data"
+import { Setting } from "@/functions/setting"
 import { AnalysedBookmark, BookmarkState, BookmarkTreeNode, BookmarkUpdateInfo, useAnalyticalBookmark, useBookmarkOfTab, useBookmarkTree } from "@/hooks/bookmark"
 import { useOutsideClick } from "@/utils/sensors"
 import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
 
-export const BookmarkPanel = memo(function BookmarkPanel(props: {tabState: TabState}) {
+export const BookmarkPanel = memo(function BookmarkPanel(props: {tabState: TabState, setting: Setting["extension"]["bookmarkManager"]}) {
     const { bookmarkState, updateBookmarkState } = useBookmarkOfTab(props.tabState)
 
     const { bookmarkInfo, updateBookmarkInfo } = useAnalyticalBookmark(bookmarkState, updateBookmarkState)
 
     const { bookmarkTree, bookmarkIndexedRef } = useBookmarkTree()
 
-    return <BookmarkTreeContext.Provider value={useMemo(() => ({tree: bookmarkTree, indexedRef: bookmarkIndexedRef}), [bookmarkTree])}>
+    const bookmarkTreeContext = useMemo(() => ({tree: bookmarkTree, indexedRef: bookmarkIndexedRef}), [bookmarkTree])
+
+    if(!isLegalDomain(props.tabState.url, props.setting.includeDomains, props.setting.excludeDomains)) {
+        return null
+    }
+
+    return <BookmarkTreeContext.Provider value={bookmarkTreeContext}>
         <RootDiv>
             {bookmarkState === null || bookmarkInfo === null || bookmarkTree === null
                 ? <Empty/> 
@@ -117,6 +124,23 @@ const FolderSelectorNode = memo(function FolderSelectorNode(props: {node: Bookma
         {isOpen && node.children.map(child => <FolderSelectorNode key={child.id} node={child} layer={layer + 1} selectedId={selectedId} onSelect={onSelect}/>)}
     </>
 })
+
+function isLegalDomain(url: string | undefined, includeDomains: string[], excludeDomains: string[]): boolean {
+    if(!url) {
+        return false
+    }
+    const u = new URL(url)
+    if(u.protocol !== "https:" && u.protocol !== "http:") {
+        return false
+    }
+    if(includeDomains.length > 0 && !includeDomains.includes(u.hostname)) {
+        return false
+    }
+    if(excludeDomains.length > 0 && excludeDomains.includes(u.hostname)) {
+        return false
+    }
+    return true
+}
 
 const BookmarkTreeContext = createContext<{tree: BookmarkTreeNode[], indexedRef: RefObject<Record<string, BookmarkTreeNode | undefined>>}>({tree: [], indexedRef: {current: {}}})
 

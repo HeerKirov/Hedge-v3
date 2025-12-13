@@ -41,8 +41,10 @@ function ServerPanel(props: OptionsGeneralPanelProps) {
         <LayouttedDiv border radius="std" display="inline-block" padding={[1, 2]} mt={1}>
             <FormattedText color="secondary">SERVER STATUS: </FormattedText>
             <StyledHealth $status={health}>{health}</StyledHealth>
-            <FormattedText color="secondary" size="small">{STATUS_TO_DESCRIPTION[health]}</FormattedText>
-            <Button size="small" onClick={() => refreshHealth()}>刷新</Button>
+            <LayouttedDiv color="secondary" size="small" mt={1}>{STATUS_TO_DESCRIPTION[health]}</LayouttedDiv>
+            <LayouttedDiv float="right">
+                <Button size="small" onClick={() => refreshHealth()}>刷新</Button>
+            </LayouttedDiv>
         </LayouttedDiv>
         <StyledTable>
             <tbody>
@@ -52,7 +54,7 @@ function ServerPanel(props: OptionsGeneralPanelProps) {
             </tr>
             <tr>
                 <td><Input placeholder="连接Host" value={editor.host} onUpdateValue={v => setProperty("host", v)}/></td>
-                <td><Input placeholder="连接Token" value={editor.token} onUpdateValue={v => setProperty("token", v)}/></td>
+                <td><Input type="password" placeholder="连接Token" value={editor.token} onUpdateValue={v => setProperty("token", v)}/></td>
                 <td>{changed && <Button mode="filled" type="primary" onClick={save}><Icon icon="save" mr={2}/>保存</Button>}</td>
             </tr>
             </tbody>

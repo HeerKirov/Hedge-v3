@@ -9,7 +9,7 @@ export default defineManifest({
     icons: {
         "128": "public/favicon.png"
     },
-    permissions: ["bookmarks", "downloads", "contextMenus", "notifications", "tabs", "activeTab", "storage", "sidePanel"],
+    permissions: ["bookmarks", "downloads", "downloads.open", "contextMenus", "notifications", "tabs", "activeTab", "storage", "sidePanel"],
     host_permissions: [
         "*://localhost/"
     ],

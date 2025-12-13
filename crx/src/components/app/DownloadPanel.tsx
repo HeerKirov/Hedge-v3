@@ -2,12 +2,13 @@ import { memo, useCallback } from "react"
 import styled, { css } from "styled-components"
 import { Button, FormattedText, Icon, Separator } from "@/components/universal"
 import { DownloadItem, useDownloadList } from "@/hooks/download"
-import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
+import { Setting } from "@/functions/setting"
 import { numbers } from "@/utils/primitives"
 import { useAsyncLoading } from "@/utils/reactivity"
+import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
 
-export const DownloadPanel = memo(function DownloadPanel() {
-    const { downloadList, count, clear } = useDownloadList()
+export const DownloadPanel = memo(function DownloadPanel(props: {setting: Setting["extension"]["downloadManager"]}) {
+    const { downloadList, count, clear } = useDownloadList(props.setting)
 
     return <RootDiv>
         <ToolBar inProgressCount={count.inProgressCount} interruptedCount={count.interruptedCount} clear={clear}/>
@@ -35,9 +36,7 @@ const DownloadItemList = memo(function DownloadItemList({ downloadList }: { down
     </DownloadListdiv>
 })
 
-const DownloadItemComponent = memo(function DownloadItemComponent(props: {item: DownloadItem}) {
-    const { item } = props
-
+const DownloadItemComponent = memo(function DownloadItemComponent({ item }: { item: DownloadItem }) {
     const [icon] = useAsyncLoading(async () => {
         try {
             return await chrome.downloads.getFileIcon(item.id)
@@ -53,6 +52,8 @@ const DownloadItemComponent = memo(function DownloadItemComponent(props: {item: 
     const cancel = useCallback(() => chrome.downloads.cancel(item.id), [item.id])
 
     const erase = useCallback(() => chrome.downloads.erase({id: item.id}), [item.id])
+
+    const openFile = useCallback(() => chrome.downloads.open(item.id), [item.id])
 
     const openInFolder = useCallback(() => chrome.downloads.show(item.id), [item.id])
 
@@ -90,9 +91,11 @@ const DownloadItemComponent = memo(function DownloadItemComponent(props: {item: 
                 <Button square disabled={!item.canResume} onClick={resume}><Icon icon="play"/></Button>
                 <Button square onClick={erase}><Icon icon="close"/></Button>
             </> : item.state === "cancelled" ? <>
-                <Button square onClick={erase}><Icon icon="close"/></Button>
+                <Button className="hidden-able" square onClick={erase}><Icon icon="close"/></Button>
             </> : <>
-                <Button square disabled={!item.exists} onClick={openInFolder}><Icon icon="folder-open"/></Button>
+                <Button className="hidden-able" square disabled={!item.exists} onClick={openFile}><Icon icon="file"/></Button>
+                <Button className="hidden-able" square disabled={!item.exists} onClick={openInFolder}><Icon icon="folder-open"/></Button>
+                <Button className="hidden-able" square onClick={erase}><Icon icon="close"/></Button>
             </>}
         </div>
         {item.state === "in_progress" && <div className="progress"/>}
@@ -164,9 +167,6 @@ const DownloadListdiv = styled.div`
     height: 100%;
     padding: ${SPACINGS[1]};
     overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: ${SPACINGS[1]};
 `
 
 const DownloadItemDiv = styled.div<{ $progress: number, $deleted: boolean }>`
@@ -177,6 +177,9 @@ const DownloadItemDiv = styled.div<{ $progress: number, $deleted: boolean }>`
     
     &:hover {
         background-color: rgba(45, 50, 55, 0.09);
+    }
+    &:not(:hover) > .content .hidden-able {
+        visibility: hidden;
     }
 
     > .progress {

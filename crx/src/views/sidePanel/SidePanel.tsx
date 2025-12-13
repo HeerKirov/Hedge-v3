@@ -1,17 +1,29 @@
+import { memo } from "react"
 import styled from "styled-components"
-import { SourceInfoPanel, BookmarkPanel, DownloadPanel } from "@/components/app"
+import { SourceInfoPanel, BookmarkPanel, DownloadPanel, ServerStatusNotice } from "@/components/app"
 import { useTabState } from "@/hooks/tabs"
 import { SPACINGS } from "@/styles"
+import { useSetting } from "@/hooks/setting"
+import { LayouttedDiv } from "@/components/universal"
 
 export function SidePanel() {
     const tabState = useTabState()
+    const { setting } = useSetting()
 
-    return <RootDiv>
-        <SourceInfoPanel tabState={tabState} scene="sidePanel"/>
-        <BookmarkPanel tabState={tabState}/>
-        <DownloadPanel/>
+    return setting !== null && <RootDiv>
+        {setting.extension.sidePanel.enableServerStatus && <ServerStatusNotice/>}
+        {setting.extension.sidePanel.enableSourceInfo && <SourceInfoPanel tabState={tabState} scene="sidePanel"/>}
+        {setting.extension.sidePanel.enableBookmark && <BookmarkPanel tabState={tabState} setting={setting.extension.bookmarkManager}/>}
+        {setting.extension.sidePanel.enableDownloadManager && <DownloadPanel setting={setting.extension.downloadManager}/>}
+        {!setting.extension.sidePanel.enableBookmark && !setting.extension.sidePanel.enableSourceInfo && !setting.extension.sidePanel.enableDownloadManager && !setting.extension.sidePanel.enableServerStatus && <Empty/>}
     </RootDiv>
 }
+
+const Empty = memo(function Empty() {
+    return <LayouttedDiv textAlign="center">
+        <p>没有启用任何模块，请在扩展选项中启用。</p>
+    </LayouttedDiv>
+})
 
 const RootDiv = styled.div`
     user-select: none;

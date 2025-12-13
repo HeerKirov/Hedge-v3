@@ -24,6 +24,8 @@ export interface Formatted {
 export interface Layoutted {
     display?: "block" | "inline-block" | "inline" | "flex"
     position?: "relative" | "absolute" | "fixed"
+    width?: number | string
+    height?: number | string
     margin?: number | [number, number] | [number, number, number, number]
     padding?: number | [number, number] | [number, number, number, number]
     border?: boolean, radius?: RadiusSizes, borderColor?: ThemeColors | FunctionalColors
@@ -60,14 +62,14 @@ export function FormattedText(props: FormattedTextProps) {
 
 export const LayouttedDiv = forwardRef(function (props: LayouttedDivProps, ref: ForwardedRef<HTMLDivElement>) {
     const {
-        backgroundColor, color, display, radius, border, borderColor, float, whiteSpace,
+        backgroundColor, color, display, width, height, radius, border, borderColor, float, whiteSpace,
         bold, size, lineHeight, elementHeight, textAlign, userSelect, monospace, position,
         margin, padding, mr, ml, mt, mb, pr, pl, pt, pb,
         children, ...attrs
     } = props
 
     return <StyledLayouttedDiv {...attrs} ref={ref}
-                               $backgroundColor={backgroundColor} $display={display} $position={position}
+                               $backgroundColor={backgroundColor} $display={display} $position={position} $width={width} $height={height}
                                $radius={radius} $border={border} $borderColor={borderColor}
                                $bold={bold} $color={color} $size={size}  $textAlign={textAlign} $float={float} $whiteSpace={whiteSpace}
                                $lineHeight={lineHeight} $elementHeight={elementHeight} $userSelect={userSelect} $monospace={monospace}
@@ -116,6 +118,8 @@ const FormattedCSS = css<StyledFormattedProps>`
 const LayouttedCSS = css<StyledLayouttedProps>`
     ${p => p.$display && css`display: ${p.$display};`}
     ${p => p.$position && css`position: ${p.$position};`}
+    ${p => p.$width && css`width: ${p.$width};`}
+    ${p => p.$height && css`height: ${p.$height};`}
     ${p => p.$radius && css`border-radius: ${RADIUS_SIZES[p.$radius]};`}
     ${p => p.$border && css`
         border: solid 1px ${LIGHT_MODE_COLORS[p.$borderColor ?? "border"]};

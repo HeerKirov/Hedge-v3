@@ -1,3 +1,4 @@
+import { Setting } from "@/functions/setting"
 import { useCallback, useEffect, useState } from "react"
 
 export type DownloadItem = {
@@ -29,22 +30,31 @@ export type DownloadItem = {
     endTime: Date
 })
 
-export function useDownloadList() {
+export function useDownloadList(options: Setting["extension"]["downloadManager"]) {
     const [downloadList, setDownloadList] = useState<chrome.downloads.DownloadItem[]>([])
 
     const count = getCount(downloadList)
     
     const downloadListExternal = downloadList.map(toDownloadItem)
     
-    const needUpdate = downloadListExternal.some(item => item.state === "in_progress" && !item.paused)
+    const needUpdate = count.inProgressCount > 0 && downloadListExternal.some(item => item.state === "in_progress" && !item.paused)
 
-    const clear = useCallback(() => {
-        chrome.downloads.erase({state: "interrupted", error: "USER_CANCELED"})
-        chrome.downloads.erase({state: "interrupted", error: "USER_SHUTDOWN"})
-        chrome.downloads.search({state: "complete", exists: true}).then(() => {
-            chrome.downloads.erase({state: "complete", exists: false})
-        })
-    }, [])
+    const needAutoClear = options.autoClear && (
+        ((options.autoClearAction === "CANCELLED_AND_DELETED" || options.autoClearAction === "CANCELLED_AND_COMPLETE") && (count.cancelledCount > 0 || count.completeCount > 0 || count.deletedCount > 0)) ||
+        (options.autoClearAction === "ALL_NOT_PROGRESSING" && (count.cancelledCount > 0 || count.completeCount > 0 || count.deletedCount > 0 || count.interruptedCount > 0))
+    )
+
+    const clear = useCallback(() => clearDownloads(options.clearButtonAction), [options.clearButtonAction])
+
+    useEffect(() => {
+        if(needAutoClear) {
+            const interval = setInterval(() => {
+                console.log(`[DownloadManager] Auto clear downloads. Action: ${options.autoClearAction}`)
+                clearDownloads(options.autoClearAction)
+            }, options.autoClearIntervalSec * 1000)
+            return () => clearInterval(interval)
+        }
+    }, [needAutoClear, options.autoClearAction, options.autoClearIntervalSec])
 
     useEffect(() => {
         if(needUpdate) {
@@ -73,7 +83,6 @@ export function useDownloadList() {
             setDownloadList(v => [downloadItem, ...v])
         }
         const changedEventHandler = (downloadDelta: chrome.downloads.DownloadDelta) => {
-            console.log('onChanged 事件:', downloadDelta)
             setDownloadList(v => {
                 const index = v.findIndex(i => i.id === downloadDelta.id)
                 if(index >= 0) {
@@ -83,14 +92,12 @@ export function useDownloadList() {
                             (newItem as any)[key] = value.current
                         }
                     }
-                    console.log('更新后的下载项:', newItem)
                     return [...v.slice(0, index), newItem, ...v.slice(index + 1)]   
                 }
                 return v
             })
         }
         const erasedEventHandler = (downloadId: number) => {
-            console.log('onErased 事件，下载项 ID:', downloadId)
             setDownloadList(v => v.filter(i => i.id !== downloadId))
         }
 
@@ -105,6 +112,24 @@ export function useDownloadList() {
     }, [])
 
     return {downloadList: downloadListExternal, count, clear}
+}
+
+function clearDownloads(action: Setting["extension"]["downloadManager"]["clearButtonAction"]) {
+    if(action === "CANCELLED_AND_DELETED") {
+        chrome.downloads.erase({state: "interrupted", error: "USER_CANCELED"})
+        chrome.downloads.erase({state: "interrupted", error: "USER_SHUTDOWN"})
+        chrome.downloads.search({state: "complete", exists: true}).then(() => {
+            chrome.downloads.erase({state: "complete", exists: false})
+        })
+    }else if(action === "CANCELLED_AND_COMPLETE") {
+        chrome.downloads.erase({state: "interrupted", error: "USER_CANCELED"})
+        chrome.downloads.erase({state: "interrupted", error: "USER_SHUTDOWN"})
+        chrome.downloads.erase({state: "complete"})
+    }else{
+        chrome.downloads.erase({state: "interrupted"})
+        chrome.downloads.erase({state: "complete"})
+    }
+    
 }
 
 function toDownloadItem(item: chrome.downloads.DownloadItem): DownloadItem {

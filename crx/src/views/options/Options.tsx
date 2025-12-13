@@ -8,11 +8,12 @@ import { SPACINGS } from "@/styles"
 import { OptionsGeneralPanel } from "./OptionsGeneral"
 import { OptionsWebsitePanel } from "./OptionsWebsite"
 import { OptionsToolkitPanel } from "./OptionsToolkit"
+import { OptionsExtensionPanel } from "./OptionsExtension"
 
 export function Options() {
     const { setting, saveSetting } = useSetting()
 
-    const [panel, setPanel] = useState<"general" | "website" | "toolkit">("general")
+    const [panel, setPanel] = useState<"general" | "website" | "toolkit" | "extension">("general")
 
     const setSettingPartial = usePartialSet(setting, saveSetting)
 
@@ -21,12 +22,14 @@ export function Options() {
         <SecondaryHeader>工具配置与扩展选项</SecondaryHeader>
         <SideButtonDiv><Button width="100%" type={panel === "general" ? "primary" : undefined} onClick={() => setPanel("general")}><Icon icon="server" mr={2}/>通用选项</Button></SideButtonDiv>
         <SideButtonDiv><Button width="100%" type={panel === "website" ? "primary" : undefined} onClick={() => setPanel("website")}><Icon icon="toolbox" mr={2}/>网站增强</Button></SideButtonDiv>
-        <SideButtonDiv><Button width="100%" type={panel === "toolkit" ? "primary" : undefined} onClick={() => setPanel("toolkit")}><Icon icon="screwdriver-wrench" mr={2}/>扩展工具</Button></SideButtonDiv>
+        <SideButtonDiv><Button width="100%" type={panel === "toolkit" ? "primary" : undefined} onClick={() => setPanel("toolkit")}><Icon icon="download" mr={2}/>下载增强</Button></SideButtonDiv>
+        <SideButtonDiv><Button width="100%" type={panel === "extension" ? "primary" : undefined} onClick={() => setPanel("extension")}><Icon icon="gear" mr={2}/>扩展选项</Button></SideButtonDiv>
     </>
 
     const content = panel === "general" ? <OptionsGeneralPanel general={setting?.general} onUpdateGeneral={v => setSettingPartial("general", v)}/>
         : panel === "website" ? <OptionsWebsitePanel website={setting?.website} onUpdateWebsite={v => setSettingPartial("website", v)}/>
         : panel === "toolkit" ? <OptionsToolkitPanel toolkit={setting?.toolkit} onUpdateToolkit={v => setSettingPartial("toolkit", v)}/>
+        : panel === "extension" ? <OptionsExtensionPanel extension={setting?.extension} onUpdateExtension={v => setSettingPartial("extension", v)}/>
         :  undefined
 
     return <StandardSideLayout left={left} content={content} contentPadding={4}/>
