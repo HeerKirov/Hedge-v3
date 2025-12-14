@@ -91,9 +91,15 @@ const Content = memo(function Content(props: {state: BookmarkState, info: Analys
 
     const otherNameAndKeywordMode = info.otherTitles.length > 1 || info.labels.length > 1 ? "multiple" : "single"
 
+    const updateComments = useCallback((comments: string) => updateBookmarkInfo({comments: comments.split("\n").filter(comment => comment.trim().length > 0)}), [updateBookmarkInfo])
+
+    const updateLastUpdatedDate = useCallback((date: Date | undefined) => updateBookmarkInfo({lastUpdated: {date: date ?? null, post: info.lastUpdated?.post ?? null}}), [info.lastUpdated?.post ?? null, updateBookmarkInfo])
+
+    const updateLastUpdatedPost = useCallback((post: string | null) => updateBookmarkInfo({lastUpdated: {date: info.lastUpdated?.date ?? null, post: post ?? null}}), [info.lastUpdated?.date ?? null, updateBookmarkInfo])
+
     return <LayouttedDiv textAlign="left" margin={1}>
         <TitleRowDiv>
-            <Input theme="underline" width="60%" placeholder="名称" value={info.title} onUpdateValue={title => updateBookmarkInfo({title})}/>
+            <Input theme="underline" width="100%" placeholder="名称" value={info.title} onUpdateValue={title => updateBookmarkInfo({title})}/>
             <FolderSelector parent={state.parent} onUpdateParent={onUpdateParent}/>
         </TitleRowDiv>
         <OtherNameAndKeywordRowDiv $mode={otherNameAndKeywordMode}>
@@ -101,12 +107,12 @@ const Content = memo(function Content(props: {state: BookmarkState, info: Analys
             <KeywordList editable placeholder="新增关键词" inputTheme="underline" keywords={info.labels} onUpdateKeywords={labels => updateBookmarkInfo({labels})}/>
         </OtherNameAndKeywordRowDiv>
         <LayouttedDiv mt={1}>
-            <Input type="textarea" width="100%" minHeight="1.2em" placeholder="备注" value={info.comments.join("\n")} onUpdateValue={comments => updateBookmarkInfo({comments: comments.split("\n")})}/>
+            <Input type="textarea" width="100%" minHeight="1.2em" placeholder="备注" value={info.comments.join("\n")} onUpdateValue={updateComments}/>
         </LayouttedDiv>
         <LastUpdatedDiv>
-            <Input theme="underline"  size="small" width="50%" placeholder="最后收集的post" textAlign="right" value={info.lastUpdated?.post} onUpdateValue={v => updateBookmarkInfo({lastUpdated: {date: info.lastUpdated?.date ?? null, post: v}})}/>
+            <Input theme="underline"  size="small" width="50%" placeholder="最后收集的post" textAlign="right" value={info.lastUpdated?.post} onUpdateValue={updateLastUpdatedPost}/>
             <span>/</span>
-            <DateInput mode="date" theme="underline" size="small" width="50%" placeholder="最后收集的日期" value={info.lastUpdated?.date ?? undefined} onUpdateValue={date => updateBookmarkInfo({lastUpdated: {date: date ?? null, post: info.lastUpdated?.post ?? null}})}/>
+            <DateInput mode="date" theme="underline" size="small" width="50%" placeholder="最后收集的日期" value={info.lastUpdated?.date ?? undefined} onUpdateValue={updateLastUpdatedDate}/>
             {/* <Button size="small" mode="filled" type="success">更新</Button> */}
         </LastUpdatedDiv>
     </LayouttedDiv>
@@ -121,7 +127,7 @@ const FolderSelector = memo(function FolderSelector(props: {parent: BookmarkStat
     const close = useCallback(() => setVisible(false), [])
 
     return <>
-        <Button mode="border" align="left" width="40%" onClick={open}><Icon icon="folder" mr={1}/>{parent?.title ?? "(无目录)"}</Button>
+        <FolderSelectorButton mode="border" align="left" onClick={open}><Icon icon="folder" mr={1}/>{parent?.title ?? "(无目录)"}</FolderSelectorButton>
         {visible && <FolderSelectorPopup selectedId={parent?.id} onClose={close} onSelect={onUpdateParent}/>}
     </>
 })
@@ -238,6 +244,11 @@ const LastUpdatedDiv = styled.div`
     justify-content: space-between;
     align-items: center;
     gap: ${SPACINGS[1]};
+`
+
+const FolderSelectorButton = styled(Button)`
+    min-width: 40%;
+    flex: 1 0 auto;
 `
 
 const FolderSelectorPopupDiv = styled.div`

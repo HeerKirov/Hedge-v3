@@ -194,6 +194,9 @@ export const objects = {
         const typeB = b === null ? "null" : typeof b
 
         if(typeA === "object" && typeB === "object") {
+            if(a instanceof Date && b instanceof Date) {
+                return a.getTime() === b.getTime()
+            }
             const aIsArray = a instanceof Array, bIsArray = b instanceof Array
             if(aIsArray && bIsArray) {
                 if(arrays.equals(a, b, objects.deepEquals)) {

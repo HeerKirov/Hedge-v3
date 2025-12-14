@@ -492,7 +492,7 @@ function analyseBookmarkTitle(text: string): AnalysedBookmark {
 function generateBookmarkTitle(info: AnalysedBookmark): string {
     let text = info.title
 
-    if(info.otherTitles.length > 0 || info.labels.length > 0 || info.comments.length > 0) {
+    if(info.otherTitles.length > 0 || info.labels.length > 0 || info.comments.length > 0 || info.lastUpdated?.post || info.lastUpdated?.date) {
         text += " "
     }
 
@@ -505,9 +505,9 @@ function generateBookmarkTitle(info: AnalysedBookmark): string {
     if(info.comments.length > 0) {
         text += "(" + info.comments.join(")(") + ")"
     }
-    if(info.lastUpdated !== null) {
+    if(info.lastUpdated?.post || info.lastUpdated?.date) {
         const dateStr = info.lastUpdated.date ? dates.toFormatDate(info.lastUpdated.date) : ""
-        const str = info.lastUpdated.post ? `${info.lastUpdated.post}/${dateStr}` : dateStr
+        const str = info.lastUpdated.post && dateStr ? `${info.lastUpdated.post}/${dateStr}` : (dateStr || info.lastUpdated.post || "")
         text += `{updated at ${str}}`
     }
 

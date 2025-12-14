@@ -145,7 +145,7 @@ export const DateInput = React.memo(function (props: DateInputProps) {
 
     const submitValue = () => {
         const trimed = text.trim()
-        if("today".startsWith(trimed.toLowerCase())) {
+        if("today" === trimed.toLowerCase()) {
             props.onUpdateValue?.(mode === "date" ? new Date() : new Date(new Date().setHours(0, 0, 0, 0)))
             if(error) setError(false)
         }else if(trimed) {

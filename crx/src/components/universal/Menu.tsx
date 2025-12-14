@@ -1,7 +1,7 @@
 import React, { ReactNode, memo, useCallback, useState } from "react"
 import { css, styled } from "styled-components"
+import { Separator } from "@/components/universal"
 import { DARK_MODE_COLORS, ELEMENT_HEIGHTS, FunctionalColors, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS, ThemeColors } from "@/styles"
-import { Separator } from "./Styled"
 
 interface PopupMenuProps {
     items?: PopupMenuItem[] | (() => PopupMenuItem[])
