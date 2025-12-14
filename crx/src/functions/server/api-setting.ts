@@ -1,7 +1,27 @@
 import { createRequest } from "./impl"
 
 export const setting = {
-    sites: createRequest<Site[], never>("/api/setting/source/sites", "GET")
+    server: createRequest<ServerOption, never>("/api/setting/server", "GET"),
+    sites: createRequest<Site[], never>("/api/setting/source/sites", "GET"),
+}
+
+export interface ServerOption {
+    /**
+     * 后台服务建议使用的端口。
+     * null表示没有建议，由它自己选择端口。
+     * 使用整数+逗号(,)+横线(-)表示建议的范围。
+     * 这个参数没有强制检查，如果写错，则在检测时不生效。
+     */
+    port: string | null
+    /**
+     * 后台服务额外的固定Token。
+     * 此Token与生成Token并行可用。使用此Token可在其他位置访问后台服务。
+     */
+    token: string | null
+    /**
+     * 在各处有关日期的判定中，每天的日期范围的推迟时间量。
+     */
+    timeOffsetHour: number | null
 }
 
 export type SitePartMode = "NO" | "PAGE" | "PAGE_WITH_NAME"

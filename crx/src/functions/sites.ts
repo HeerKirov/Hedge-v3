@@ -8,6 +8,8 @@ export const EHENTAI_CONSTANTS = {
         GALLERY_PATHNAME: (sourceId: string) => [`https://e-hentai.org/g/${sourceId}/*`, `https://exhentai.org/g/${sourceId}/*`],
     },
     REGEXES: {
+        HOMEPAGE_PATHNAME: /^\/$/,
+        HOMEPAGE_TAG_PATHNAME: /^\/tag\//,
         GALLERY_PATHNAME: /^\/g\/(?<GID>\d+)\/(?<TOKEN>[a-zA-Z0-9]+)\/?$/,
         MPV_PATHNAME: /^\/mpv\/(?<GID>\d+)\/(?<TOKEN>[a-zA-Z0-9]+)\/?$/,
         IMAGE_PATHNAME: /^\/s\/(?<PHASH>[a-zA-Z0-9]+)\/(?<GID>\d+)-(?<PAGE>\d+)\/?$/
@@ -22,7 +24,10 @@ export const PIXIV_CONSTANTS = {
     },
     REGEXES: {
         ARTWORK_PATHNAME: /^\/artworks\/(?<PID>\d+)\/?$/,
-        USER_PATHNAME: /^\/users\/(?<UID>\d+)\/?/
+        USER_PATHNAME: /^\/users\/(?<UID>\d+)\/?/,
+        USER_ARTKWORKS_PATHNAME: /^\/users\/(?<UID>\d+)\/artworks\/?/,
+        USER_ILLUSTRATIONS_PATHNAME: /^\/users\/(?<UID>\d+)\/illustrations\/?/,
+        USER_MANGA_PATHNAME: /^\/users\/(?<UID>\d+)\/manga\/?/
     }
 }
 
@@ -41,6 +46,8 @@ export const SANKAKUCOMPLEX_CONSTANTS = {
         BOOK_PATHNAME: (bookId: number | string) => `/pool/show/${bookId}`
     },
     REGEXES: {
+        HOMEPAGE_PATHNAME: /^\/$/,
+        POSTS_PATHNAME: /^\/(\S+\/)?(post|posts)\/?$/,
         POST_PATHNAME: /^\/(\S+\/)?(post\/show|posts|posts\/show)\/(?<PID>[A-Za-z0-9]+)\/?$/
     }
 }
@@ -86,7 +93,8 @@ export const KEMONO_CONSTANTS = {
         ]
     },
     REGEXES: {
-        POST_PATHNAME: /^\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<PID>[^/]+)(\/revision\/\d+)?\/?$/
+        POST_PATHNAME: /^\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<PID>[^/]+)(\/revision\/\d+)?\/?$/,
+        USER_POSTS_PATHNAME: /^\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/?$/
     },
     AVAILABLE_SERVICES: ["fanbox", "fantia", "patreon", "gumroad"] as const
 }
@@ -112,6 +120,10 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
         activeTabPages: [
             SANKAKUCOMPLEX_CONSTANTS.REGEXES.POST_PATHNAME
         ],
+        artworksPages: [
+            SANKAKUCOMPLEX_CONSTANTS.REGEXES.HOMEPAGE_PATHNAME,
+            SANKAKUCOMPLEX_CONSTANTS.REGEXES.POSTS_PATHNAME
+        ],
         sourceDataPages: SANKAKUCOMPLEX_CONSTANTS.PATTERNS.POST_PATHNAME
     },
     [EHENTAI_CONSTANTS.SITE_NAME]: {
@@ -121,12 +133,22 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
             EHENTAI_CONSTANTS.REGEXES.MPV_PATHNAME,
             EHENTAI_CONSTANTS.REGEXES.IMAGE_PATHNAME
         ],
+        artworksPages: [
+            EHENTAI_CONSTANTS.REGEXES.HOMEPAGE_PATHNAME,
+            EHENTAI_CONSTANTS.REGEXES.HOMEPAGE_TAG_PATHNAME
+        ],
         sourceDataPages: EHENTAI_CONSTANTS.PATTERNS.GALLERY_PATHNAME
     },
     [PIXIV_CONSTANTS.SITE_NAME]: {
         host: PIXIV_CONSTANTS.HOSTS,
         activeTabPages: [
             PIXIV_CONSTANTS.REGEXES.ARTWORK_PATHNAME
+        ],
+        artworksPages: [
+            PIXIV_CONSTANTS.REGEXES.USER_PATHNAME,
+            PIXIV_CONSTANTS.REGEXES.USER_ARTKWORKS_PATHNAME,
+            PIXIV_CONSTANTS.REGEXES.USER_ILLUSTRATIONS_PATHNAME,
+            PIXIV_CONSTANTS.REGEXES.USER_MANGA_PATHNAME
         ],
         sourceDataPages: PIXIV_CONSTANTS.PATTERNS.ARTWORK_PATHNAME
     },
@@ -155,6 +177,9 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
         host: KEMONO_CONSTANTS.HOSTS,
         activeTabPages: [
             KEMONO_CONSTANTS.REGEXES.POST_PATHNAME
+        ],
+        artworksPages: [
+            KEMONO_CONSTANTS.REGEXES.USER_POSTS_PATHNAME
         ]
     }
 }
@@ -217,10 +242,15 @@ interface WebsiteConstant {
      */
     host: (string | RegExp)[]
     /**
-     * active-tab支持：此站点中，可以激活active-tab的信息播报的页面。这些页面会发送SUBMIT_PAGE_INFO信息，并响应REPORT_PAGE_INFO事件。
+     * 详情页支持：此站点中，可以激活画廊/作品详情页的信息播报的页面。这些页面会发送SUBMIT_PAGE_INFO信息，并响应REPORT_PAGE_INFO事件。
      * 由于其使用方式是对当前页面的pathname部分进行测试，因此提供的值应当是一组正则表达式，仅匹配pathname部分。
      */
     activeTabPages?: RegExp[]
+    /**
+     * 列表页支持：此站点中，可以激活作品列表页信息播报的页面。这些页面可以响应REPORT_LATEST_POST事件。
+     * 由于其使用方式是对当前页面的pathname部分进行测试，因此提供的值应当是一组正则表达式，仅匹配pathname部分。
+     */
+    artworksPages?: RegExp[]
     /**
      * source-data支持：此站点中，可以支持来源数据收集的页面。这些页面会发送SUBMIT_SOURCE_DATA信息，并响应REPORT_SOURCE_DATA事件。
      * 由于其使用方式是调用tab API进行通配，因此提供的值应当是一组通配符字符串，匹配完整的url。

@@ -38,7 +38,7 @@ export type ContentScriptCallbackTypes = Extract<ContentScriptMessagesList, MsgT
 
 //== 联合消息列表 ==
 
-export type ServiceSenderMessagesList = ReportSourceData | ReportPageInfo | QuickFindSimilar | DownloadAll
+export type ServiceSenderMessagesList = ReportSourceData | ReportArtworksInfo | ReportPageInfo | QuickFindSimilar | DownloadAll
 
 export type ContentScriptMessagesList = SubmitPageInfo | SubmitSourceData | GetSourceData | CollectSourceData | DownloadURL | CreateNotification | CaptureVisibleTab | FetchRequest
 
@@ -47,7 +47,12 @@ export type ContentScriptMessagesList = SubmitPageInfo | SubmitSourceData | GetS
 type ReportSourceData = MsgTemplateWithCallback<"REPORT_SOURCE_DATA", undefined, Result<SourceDataUpdateForm, string>>
 
 /**
- * 要求页面提交当前页面的部分基本信息。
+ * 要求页面提交当前列表页的部分信息。
+ */
+type ReportArtworksInfo = MsgTemplateWithCallback<"REPORT_ARTWORKS_INFO", undefined, Result<{latestPost: string, firstPage: boolean}, string>>
+
+/**
+ * 要求页面提交当前详情页的部分信息。
  */
 type ReportPageInfo = MsgTemplateWithCallback<"REPORT_PAGE_INFO", undefined, {path: SourceDataPath | null}>
 

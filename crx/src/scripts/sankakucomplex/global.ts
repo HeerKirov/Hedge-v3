@@ -1,11 +1,21 @@
+import { receiveMessageForTab } from "@/functions/messages"
 import { settings } from "@/functions/setting"
+import { SANKAKUCOMPLEX_CONSTANTS } from "@/functions/sites"
 import { onDOMContentLoaded } from "@/utils/document"
+import { Result } from "@/utils/primitives"
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] sankakucomplex/global script loaded.")
     const setting = await settings.get()
     if(setting.website.sankakucomplex.enableBlockAds) enableBlockAds()
     if(setting.website.sankakucomplex.enablePaginationEnhancement) enablePaginationEnhancement()
+})
+
+receiveMessageForTab(({ type, msg: _, callback }) => {
+    if(type === "REPORT_ARTWORKS_INFO") {
+        callback(getArtworksInfo())
+    }
+    return false
 })
 
 /**
@@ -97,4 +107,22 @@ function enablePaginationEnhancement() {
             }
         }
     }
+}
+
+function getArtworksInfo(): Result<{latestPost: string, firstPage: boolean}, string> {
+    const hrefs = [...document.querySelectorAll<HTMLAnchorElement>(".post-gallery-grid .post-preview a")].map(a => a.href)
+    if(hrefs.length <= 0) {
+        return {ok: false, err: "No latest post found."}
+    }
+    for(const href of hrefs) {
+        const url = new URL(href)
+        const match = url.pathname.match(SANKAKUCOMPLEX_CONSTANTS.REGEXES.POST_PATHNAME)
+        if(match && match.groups) {
+            const post = match.groups["PID"]
+            const urlParams = new URLSearchParams(window.location.search)
+            const firstPage = !urlParams.has("page") || parseInt(urlParams.get("page")!) === 1
+            return {ok: true, value: {latestPost: post, firstPage}}
+        }
+    }
+    return {ok: false, err: "No available post found."}
 }

@@ -2,7 +2,7 @@ import { DependencyList, useCallback, useEffect, useRef, useState } from "react"
 import { objects } from "@/utils/primitives"
 
 /**
- * 提供对某些state变化的响应。它看起来有点像useEffect，但作用并不相同，它不是副作用，在每次渲染期间就会执行。
+ * 提供对某些state变化的响应。它看起来有点像useEffect，但作用并不相同，它不是副作用，在每次渲染期间就会执行，实际用途为同步执行更改。
  */
 export function useWatch(func: () => void, dependencies: DependencyList, options?: {immediate: boolean}) {
     const [prevValue, setPrevValue] = useState(options?.immediate ? null : dependencies)

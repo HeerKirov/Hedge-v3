@@ -51,6 +51,11 @@ export default defineManifest({
             "run_at": "document_start"
         },
         {
+            "matches": ["https://e-hentai.org/", "https://e-hentai.org/?*", "https://e-hentai.org/tag/*", "https://exhentai.org/", "https://exhentai.org/?*", "https://exhentai.org/tag/*"],
+            "js": ["src/scripts/ehentai/global.ts"],
+            "run_at": "document_start"
+        },
+        {
             "matches": ["https://e-hentai.org/g/*", "https://exhentai.org/g/*"],
             "js": ["src/scripts/ehentai/gallery.ts"],
             "run_at": "document_start"
@@ -64,6 +69,11 @@ export default defineManifest({
             "matches": ["https://e-hentai.org/s/*", "https://exhentai.org/s/*"],
             "js": ["src/scripts/ehentai/image.ts"],
             "run_at": "document_start"
+        },
+        {
+            "matches": ["https://www.pixiv.net/users/*"],
+            js: ["src/scripts/pixiv/illustrations.ts"],
+            run_at: "document_start"
         },
         {
             "matches": ["https://www.pixiv.net/artworks/*"],
@@ -93,6 +103,11 @@ export default defineManifest({
         {
             "matches": ["https://kemono.su/*/user/*/post/*", "https://kemono.cr/*/user/*/post/*"],
             "js": ["src/scripts/kemono/post.ts"],
+            "run_at": "document_start"
+        },
+        {
+            "matches": ["https://kemono.su/*/user/*", "https://kemono.cr/*/user/*"],
+            "js": ["src/scripts/kemono/posts.ts"],
             "run_at": "document_start"
         },
         {

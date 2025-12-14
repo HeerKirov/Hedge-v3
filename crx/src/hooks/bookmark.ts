@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { getTabStateWithTitle, TabState } from "@/hooks/tabs"
 import { dates, objects, strings } from "@/utils/primitives"
 import { useWatch } from "@/utils/reactivity"
+import { WEBSITES } from "@/functions/sites"
+import { sendMessageToTab } from "@/services/messages"
+import { server } from "@/functions/server"
 
 export interface BookmarkState {
     id: string
@@ -512,4 +515,71 @@ function generateBookmarkTitle(info: AnalysedBookmark): string {
     }
 
     return text
+}
+
+export function useAutoUpdatePost(tabState: TabState) {
+    const [isArtworksPage, setIsArtworksPage] = useState(false)
+
+    const getAutoUpdateValue = useCallback(async (): Promise<{post: string, date: Date, notFirstPage: boolean} | null> => {
+        if(tabState.tabId !== undefined) {
+            const pageInfo = await sendMessageToTab(tabState.tabId, "REPORT_ARTWORKS_INFO", undefined)
+            if(pageInfo.ok) {
+                const { latestPost, firstPage } = pageInfo.value
+                const date = await getTodayByServerOffset()
+                return {post: latestPost, date, notFirstPage: !firstPage}
+            }
+        }
+        return null
+    }, [tabState.tabId])
+
+    useWatch(() => {
+        setIsArtworksPage(ifTabArtworksPage(tabState.url))
+    }, [tabState.url], {immediate: true})
+
+    return {isArtworksPage, getAutoUpdateValue}
+}
+
+function ifTabArtworksPage(urlString: string | undefined) {
+    if(urlString) {
+        const url = new URL(urlString)
+        for(const siteName in WEBSITES) {
+            const site = WEBSITES[siteName]
+            if(site.host.some(host => typeof host === "string" ? host === url.host : host.test(url.host))) {
+                if(site.artworksPages && site.artworksPages.some(i => i.test(url.pathname))) {
+                    return true
+                }
+            }
+        }
+    }
+    return false
+}
+
+async function getTodayByServerOffset(): Promise<Date> {
+    const serverOption = await server.setting.server()
+    if(serverOption.ok && serverOption.data.timeOffsetHour) {
+        const now = new Date()
+        // 当前本地今日0点
+        const todayZero = new Date(now.setHours(0, 0, 0, 0))
+        // 计算当前本地小时数（0-23）
+        const currentHour = new Date().getHours()
+        if (serverOption.data.timeOffsetHour > 0) {
+            // 当前小时数小于offset, 则视为“昨天”
+            if (currentHour < serverOption.data.timeOffsetHour) {
+                return new Date(todayZero.getTime() - 24 * 60 * 60 * 1000)
+            } else {
+                return todayZero
+            }
+        } else if (serverOption.data.timeOffsetHour < 0) {
+            // offset为负：即后推判为下一天； 若当前小时>= 24+offset, 视为“明天”
+            if (currentHour >= 24 + serverOption.data.timeOffsetHour) {
+                return new Date(todayZero.getTime() + 24 * 60 * 60 * 1000)
+            } else {
+                return todayZero
+            }
+        } else {
+            // offset为0
+            return todayZero
+        }
+    }
+    return new Date(new Date().setHours(0, 0, 0, 0))
 }

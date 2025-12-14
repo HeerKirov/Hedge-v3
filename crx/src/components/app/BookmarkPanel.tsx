@@ -1,13 +1,14 @@
 import { createContext, memo, RefObject, useCallback, useContext, useMemo, useRef, useState } from "react"
 import styled, { css } from "styled-components"
-import { Button, Icon, LayouttedDiv } from "@/components/universal"
+import { Button, FormattedText, Icon, LayouttedDiv } from "@/components/universal"
 import { DateInput, DynamicInputList, Input, KeywordList } from "@/components/form"
 import { TabState } from "@/hooks/tabs"
 import { useBookmarkPopupState, useBookmarkRecentFolders } from "@/hooks/data"
 import { Setting } from "@/functions/setting"
-import { AnalysedBookmark, BookmarkParent, BookmarkState, BookmarkTreeNode, BookmarkUpdateInfo, useAnalyticalBookmark, useBookmarkCreator, useBookmarkOfTab, useBookmarkTree } from "@/hooks/bookmark"
+import { AnalysedBookmark, BookmarkParent, BookmarkState, BookmarkTreeNode, BookmarkUpdateInfo, useAnalyticalBookmark, useAutoUpdatePost, useBookmarkCreator, useBookmarkOfTab, useBookmarkTree } from "@/hooks/bookmark"
 import { useOutsideClick } from "@/utils/sensors"
-import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
+import { DARK_MODE_COLORS, ELEMENT_HEIGHTS, FONT_SIZES, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
+import { dates } from "@/utils/primitives"
 
 export const BookmarkPanel = memo(function BookmarkPanel(props: {tabState: TabState, setting: Setting["extension"]["bookmarkManager"]}) {
     const { bookmarkState, updateBookmarkState } = useBookmarkOfTab(props.tabState)
@@ -30,25 +31,29 @@ export const BookmarkPanel = memo(function BookmarkPanel(props: {tabState: TabSt
         <BookmarkRecentFoldersContext.Provider value={bookmarkRecentFoldersContext}>
             <RootDiv>
                 {bookmarkState === null || bookmarkInfo === null || bookmarkTree === null
-                    ? <Empty/> 
-                    : <Detail state={bookmarkState} info={bookmarkInfo} updateBookmarkState={updateBookmarkState} updateBookmarkInfo={updateBookmarkInfo}/>
+                    ? <Empty tabState={props.tabState}/>
+                    : <Detail tabState={props.tabState} state={bookmarkState} info={bookmarkInfo} updateBookmarkState={updateBookmarkState} updateBookmarkInfo={updateBookmarkInfo}/>
                 }
             </RootDiv>
         </BookmarkRecentFoldersContext.Provider>
     </BookmarkTreeContext.Provider>
 })
 
-const Empty = memo(function Empty() {
+const Empty = memo(function Empty(props: {tabState: TabState}) {
+    const { tabState } = props
+
     const [createMode, setCreateMode] = useState<boolean>(false)
 
     const onCancel = useCallback(() => setCreateMode(false), [])
     
     return <>
-        {createMode ? <Creator onCancel={onCancel}/> : <Button size="small" width="100%" onClick={() => setCreateMode(true)}><Icon icon="star" mr={1}/>添加为书签</Button>}
+        {createMode ? <Creator tabState={tabState} onCancel={onCancel}/> : <Button size="small" width="100%" onClick={() => setCreateMode(true)}><Icon icon="star" mr={1}/>添加为书签</Button>}
     </>
 })
 
-const Creator = memo(function Creator({ onCancel }: {onCancel: () => void}) {
+const Creator = memo(function Creator(props: {tabState: TabState, onCancel: () => void}) {
+    const { tabState, onCancel } = props
+
     const { recentFolders, pushRecentFolder } = useContext(BookmarkRecentFoldersContext)
 
     const { info, state, updateInfo, updateState, save: saveEmit } = useBookmarkCreator(recentFolders)
@@ -61,7 +66,7 @@ const Creator = memo(function Creator({ onCancel }: {onCancel: () => void}) {
     }, [pushRecentFolder, saveEmit, state.parent?.id ?? ""])
 
     return <>
-        <Content state={state} info={info} updateBookmarkState={updateState} updateBookmarkInfo={updateInfo}/>
+        <Content tabState={tabState} state={state} info={info} updateBookmarkState={updateState} updateBookmarkInfo={updateInfo}/>
         <LayouttedDiv display="flex">
             <Button size="small" width="80%" type="success" onClick={save}><Icon icon="save" mr={1}/>保存书签</Button>
             <Button size="small" width="20%" type="danger" onClick={onCancel}><Icon icon="close" mr={1}/>取消</Button>
@@ -69,8 +74,8 @@ const Creator = memo(function Creator({ onCancel }: {onCancel: () => void}) {
     </>
 })
 
-const Detail = memo(function Detail(props: {state: BookmarkState, info: AnalysedBookmark, updateBookmarkState: (info: BookmarkUpdateInfo) => void, updateBookmarkInfo: (info: Partial<AnalysedBookmark>) => void}) {
-    const { state, info, updateBookmarkState: updateBookmarkStateEmit, updateBookmarkInfo } = props
+const Detail = memo(function Detail(props: {tabState: TabState, state: BookmarkState, info: AnalysedBookmark, updateBookmarkState: (info: BookmarkUpdateInfo) => void, updateBookmarkInfo: (info: Partial<AnalysedBookmark>) => void}) {
+    const { tabState, state, info, updateBookmarkState: updateBookmarkStateEmit, updateBookmarkInfo } = props
 
     const { pushRecentFolder } = useContext(BookmarkRecentFoldersContext)
 
@@ -81,21 +86,17 @@ const Detail = memo(function Detail(props: {state: BookmarkState, info: Analysed
         }
     }, [pushRecentFolder, updateBookmarkStateEmit])
 
-    return <Content state={state} info={info} updateBookmarkState={updateBookmarkState} updateBookmarkInfo={updateBookmarkInfo}/>
+    return <Content tabState={tabState} state={state} info={info} updateBookmarkState={updateBookmarkState} updateBookmarkInfo={updateBookmarkInfo}/>
 })
 
-const Content = memo(function Content(props: {state: BookmarkState, info: AnalysedBookmark, updateBookmarkState: (info: BookmarkUpdateInfo) => void, updateBookmarkInfo: (info: Partial<AnalysedBookmark>) => void}) {
-    const { state, info, updateBookmarkState, updateBookmarkInfo } = props
-
-    const onUpdateParent = useCallback((parent: BookmarkParent) => updateBookmarkState({parent}), [updateBookmarkState])
+const Content = memo(function Content(props: {tabState: TabState, state: BookmarkState, info: AnalysedBookmark, updateBookmarkState: (info: BookmarkUpdateInfo) => void, updateBookmarkInfo: (info: Partial<AnalysedBookmark>) => void}) {
+    const { tabState, state, info, updateBookmarkState, updateBookmarkInfo } = props
 
     const otherNameAndKeywordMode = info.otherTitles.length > 1 || info.labels.length > 1 ? "multiple" : "single"
+    
+    const onUpdateParent = useCallback((parent: BookmarkParent) => updateBookmarkState({parent}), [updateBookmarkState])
 
     const updateComments = useCallback((comments: string) => updateBookmarkInfo({comments: comments.split("\n").filter(comment => comment.trim().length > 0)}), [updateBookmarkInfo])
-
-    const updateLastUpdatedDate = useCallback((date: Date | undefined) => updateBookmarkInfo({lastUpdated: {date: date ?? null, post: info.lastUpdated?.post ?? null}}), [info.lastUpdated?.post ?? null, updateBookmarkInfo])
-
-    const updateLastUpdatedPost = useCallback((post: string | null) => updateBookmarkInfo({lastUpdated: {date: info.lastUpdated?.date ?? null, post: post ?? null}}), [info.lastUpdated?.date ?? null, updateBookmarkInfo])
 
     return <LayouttedDiv textAlign="left" margin={1}>
         <TitleRowDiv>
@@ -109,13 +110,51 @@ const Content = memo(function Content(props: {state: BookmarkState, info: Analys
         <LayouttedDiv mt={1}>
             <Input type="textarea" width="100%" minHeight="1.2em" placeholder="备注" value={info.comments.join("\n")} onUpdateValue={updateComments}/>
         </LayouttedDiv>
-        <LastUpdatedDiv>
-            <Input theme="underline"  size="small" width="50%" placeholder="最后收集的post" textAlign="right" value={info.lastUpdated?.post} onUpdateValue={updateLastUpdatedPost}/>
-            <span>/</span>
-            <DateInput mode="date" theme="underline" size="small" width="50%" placeholder="最后收集的日期" value={info.lastUpdated?.date ?? undefined} onUpdateValue={updateLastUpdatedDate}/>
-            {/* <Button size="small" mode="filled" type="success">更新</Button> */}
-        </LastUpdatedDiv>
+        <LayouttedDiv mt={1}>
+            <LastUpdatedEditor date={info.lastUpdated?.date ?? null} post={info.lastUpdated?.post ?? null} tabState={tabState} updateBookmarkInfo={updateBookmarkInfo}/>
+        </LayouttedDiv>
     </LayouttedDiv>
+})
+
+const LastUpdatedEditor = memo(function LastUpdatedEditor(props: {date: Date | null, post: string | null, tabState: TabState, updateBookmarkInfo: (info: Partial<AnalysedBookmark>) => void}) {
+    const { date, post, tabState, updateBookmarkInfo } = props
+
+    const [autoUpdateForm, setAutoUpdateForm] = useState<{post: string, date: Date, notFirstPage: boolean} | null>(null)
+
+    const { isArtworksPage, getAutoUpdateValue } = useAutoUpdatePost(tabState)
+
+    const updateLastUpdatedDate = useCallback((date: Date | undefined) => updateBookmarkInfo({lastUpdated: {date: date ?? null, post: post ?? null}}), [post ?? null, updateBookmarkInfo])
+
+    const updateLastUpdatedPost = useCallback((post: string | null) => updateBookmarkInfo({lastUpdated: {date: date ?? null, post: post ?? null}}), [date ?? null, updateBookmarkInfo])
+
+    const clickUpdate = useCallback(async () => {
+        const autoUpdateValue = await getAutoUpdateValue()
+        if(autoUpdateValue) {
+            setAutoUpdateForm(autoUpdateValue)
+        }
+    }, [getAutoUpdateValue])
+
+    const clickConfirm = useCallback(() => {
+        if(autoUpdateForm) {
+            updateBookmarkInfo({lastUpdated: {date: autoUpdateForm.date, post: autoUpdateForm.post}})
+            setAutoUpdateForm(null)
+        }
+    }, [autoUpdateForm, updateBookmarkInfo])
+
+    const autoUpdateFormDivRef = useRef<HTMLDivElement>(null)
+
+    useOutsideClick(autoUpdateFormDivRef, useCallback(() => setAutoUpdateForm(null), []), isArtworksPage && !!autoUpdateForm)
+
+    return (isArtworksPage && autoUpdateForm) ? <AutoUpdateFormDiv ref={autoUpdateFormDivRef} $notFirstPage={autoUpdateForm.notFirstPage}>
+        <div className="info">更新为: <span>{autoUpdateForm.post}</span> / <span>{dates.toFormatDate(autoUpdateForm.date)}</span></div>
+        <Button square size="small" mode="filled" type={autoUpdateForm.notFirstPage ? "warning" : "primary"} onClick={clickConfirm}><Icon icon="check"/></Button> 
+        {autoUpdateForm.notFirstPage && <div className="warning"><Icon icon="warning"/>当前页面并非列表的第一页，因此请注意信息的有效性。</div>}
+    </AutoUpdateFormDiv> : <LastUpdatedDiv>
+        <Input theme="underline" size="small" width="50%" placeholder="最后收集的post" textAlign="right" value={post} onUpdateValue={updateLastUpdatedPost}/>
+        <span>/</span>
+        <DateInput mode="date" theme="underline" size="small" width="50%" placeholder="最后收集的日期" value={date ?? undefined} onUpdateValue={updateLastUpdatedDate}/>
+        {isArtworksPage && <Button square size="small" mode="filled" type="success" onClick={clickUpdate}><Icon icon="sync"/></Button>}
+    </LastUpdatedDiv>
 })
 
 const FolderSelector = memo(function FolderSelector(props: {parent: BookmarkState["parent"], onUpdateParent: (parent: BookmarkParent) => void}) {
@@ -239,11 +278,41 @@ const OtherNameAndKeywordRowDiv = styled.div<{ $mode: "single" | "multiple" }>`
 `
 
 const LastUpdatedDiv = styled.div`
-    margin-top: ${SPACINGS[1]};
     display: flex;
     justify-content: space-between;
     align-items: center;
+    input {
+        font-family: monospace;
+    }
+    > button {
+        margin-left: ${SPACINGS[1]};
+    }
+`
+
+const AutoUpdateFormDiv = styled.div<{ $notFirstPage: boolean }>`
+    display: flex;
+    flex-wrap: wrap;
     gap: ${SPACINGS[1]};
+    > .info {
+        box-sizing: border-box;
+        width: calc(100% - ${ELEMENT_HEIGHTS["small"]} - ${SPACINGS[1]});
+        padding: ${SPACINGS[1]} ${SPACINGS[2]};
+        border-radius: ${RADIUS_SIZES["std"]};
+        background-color: ${p => p.$notFirstPage ? LIGHT_MODE_COLORS["warning"] : LIGHT_MODE_COLORS["primary"]};
+        color: ${LIGHT_MODE_COLORS["text-inverted"]};
+        @media (prefers-color-scheme: dark) {
+            background-color: ${p => p.$notFirstPage ? DARK_MODE_COLORS["warning"] : DARK_MODE_COLORS["primary"]};
+            color: ${DARK_MODE_COLORS["text-inverted"]};
+        }
+        > span {
+            font-family: monospace;
+        }
+    }
+
+    > .warning {
+        width: 100%;
+        font-size: ${FONT_SIZES["small"]};
+    }
 `
 
 const FolderSelectorButton = styled(Button)`
