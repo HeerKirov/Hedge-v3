@@ -11,7 +11,7 @@ export default defineManifest({
     },
     permissions: ["bookmarks", "downloads", "downloads.open", "contextMenus", "notifications", "tabs", "activeTab", "storage", "sidePanel"],
     host_permissions: [
-        "*://localhost/"
+        "<all_urls>"
     ],
     web_accessible_resources: [
         {

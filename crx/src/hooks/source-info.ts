@@ -1,4 +1,4 @@
- import { useEffect, useState } from "react"
+ import { useCallback, useEffect, useState } from "react"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataCollectStatus } from "@/functions/server/api-source-data"
 import { WEBSITES } from "@/functions/sites"
@@ -23,7 +23,7 @@ export function useTabSourceInfo(tabState: TabState, scene?: "popup" | "sidePane
 
     const [collectStatus, setCollectStatus] = useState<SourceDataCollectStatus | null>(null)
 
-    const refreshCollectStatus = async (sourceInfo: SourceInfo | null) => {
+    const refreshCollectStatus = useCallback(async (sourceInfo: SourceInfo | null) => {
         if(sourceInfo && sourceInfo.sourceDataPath) {
             const res = await server.sourceData.getCollectStatus([sourceInfo.sourceDataPath])
             if(res.ok) {
@@ -36,17 +36,17 @@ export function useTabSourceInfo(tabState: TabState, scene?: "popup" | "sidePane
         }else{
             setCollectStatus(null)
         }
-    }
+    }, [])
 
-    const manualCollectSourceData = async () => {
+    const manualCollectSourceData = useCallback(async () => {
         if(sourceInfo !== null && sourceInfo.sourceDataPath !== null) {
             const { sourceDataPath: { sourceSite, sourceId } } = sourceInfo
             const ok = await sendMessage("COLLECT_SOURCE_DATA", {sourceSite, sourceId})
             if(ok) refreshCollectStatus(sourceInfo).finally()
         }
-    }
+    }, [sourceInfo, refreshCollectStatus])
 
-    const quickFind = () => {
+    const quickFind = useCallback(() => {
         if(sourceInfo !== null) {
             sendMessageToTab(sourceInfo.tabId, "QUICK_FIND_SIMILAR", undefined)
             //关闭popup窗口
@@ -54,7 +54,7 @@ export function useTabSourceInfo(tabState: TabState, scene?: "popup" | "sidePane
                 window.close()
             }
         }
-    }
+    }, [sourceInfo, scene])
 
     useEffect(() => {
         if(tabState.tabId && tabState.url) {

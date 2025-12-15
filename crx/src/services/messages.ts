@@ -36,7 +36,7 @@ function onMessage<T extends ContentScriptMessagesList>(msg: T, sender: chrome.r
     }else if(msg.type === "NOTIFICATION") {
         notify(msg.msg)
     }else if(msg.type === "CAPTURE_VISIBLE_TAB") {
-        chrome.tabs.captureVisibleTab().then(dataURL => callback(dataURL))
+        chrome.tabs.captureVisibleTab().then(dataURL => callback(dataURL)).catch(err => console.error("Capture visible tab failed.", err))
         return true
     }else if(msg.type === "FETCH_REQUEST") {
         fetchRequestByMessage(msg.msg).then(r => callback(r))

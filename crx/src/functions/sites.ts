@@ -3,6 +3,7 @@ import { sessions } from "@/functions/storage"
 
 export const EHENTAI_CONSTANTS = {
     SITE_NAME: "ehentai",
+    SITE_TITLE: "E-Hentai",
     HOSTS: ["e-hentai.org", "exhentai.org"],
     PATTERNS: {
         GALLERY_PATHNAME: (sourceId: string) => [`https://e-hentai.org/g/${sourceId}/*`, `https://exhentai.org/g/${sourceId}/*`],
@@ -18,6 +19,7 @@ export const EHENTAI_CONSTANTS = {
 
 export const PIXIV_CONSTANTS = {
     SITE_NAME: "pixiv",
+    SITE_TITLE: "Pixiv",
     HOSTS: ["www.pixiv.net"],
     PATTERNS: {
         ARTWORK_PATHNAME: (sourceId: string) => [`https://www.pixiv.net/artworks/${sourceId}`]
@@ -33,6 +35,7 @@ export const PIXIV_CONSTANTS = {
 
 export const SANKAKUCOMPLEX_CONSTANTS = {
     SITE_NAME: "sankakucomplex",
+    SITE_TITLE: "Sankaku Complex",
     HOSTS: ["chan.sankakucomplex.com"],
     PATTERNS: {
         POST_PATHNAME: (pid: string) => [
@@ -54,6 +57,7 @@ export const SANKAKUCOMPLEX_CONSTANTS = {
 
 export const FANBOX_CONSTANTS = {
     SITE_NAME: "fanbox",
+    SITE_TITLE: "FANBOX",
     HOSTS: ["www.fanbox.cc"],
     PATTERNS: {
         POST_PATHNAME: (sourceId: string) => [
@@ -70,6 +74,7 @@ export const FANBOX_CONSTANTS = {
 
 export const FANTIA_CONSTANTS = {
     SITE_NAME: "fantia",
+    SITE_TITLE: "Fantia",
     HOSTS: ["fantia.jp"],
     PATTERNS: {
         POST_PATHNAME: (sourceId: string) => [
@@ -85,6 +90,7 @@ export const FANTIA_CONSTANTS = {
 
 export const KEMONO_CONSTANTS = {
     SITE_NAME: "kemono",
+    SITE_TITLE: "Kemono",
     HOSTS: ["kemono.su", "kemono.cr"],
     PATTERNS: {
         POST_PATHNAME: (site: string, sourceId: string) => [
@@ -101,12 +107,14 @@ export const KEMONO_CONSTANTS = {
 
 export const DANBOORU_CONSTANTS = {
     SITE_NAME: "danbooru",
+    SITE_TITLE: "Danbooru",
     HOSTS: ["danbooru.donmai.us"],
     REGEXES: {}
 }
 
 export const GELBOORU_CONSTANTS = {
     SITE_NAME: "gelbooru",
+    SITE_TITLE: "Gelbooru",
     HOSTS: ["gelbooru.com"],
     REGEXES: {}
 }
@@ -116,6 +124,7 @@ export const GELBOORU_CONSTANTS = {
  */
 export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
     [SANKAKUCOMPLEX_CONSTANTS.SITE_NAME]: {
+        siteTitle: SANKAKUCOMPLEX_CONSTANTS.SITE_TITLE,
         host: SANKAKUCOMPLEX_CONSTANTS.HOSTS,
         activeTabPages: [
             SANKAKUCOMPLEX_CONSTANTS.REGEXES.POST_PATHNAME
@@ -127,6 +136,7 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
         sourceDataPages: SANKAKUCOMPLEX_CONSTANTS.PATTERNS.POST_PATHNAME
     },
     [EHENTAI_CONSTANTS.SITE_NAME]: {
+        siteTitle: EHENTAI_CONSTANTS.SITE_TITLE,
         host: EHENTAI_CONSTANTS.HOSTS,
         activeTabPages: [
             EHENTAI_CONSTANTS.REGEXES.GALLERY_PATHNAME,
@@ -140,6 +150,7 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
         sourceDataPages: EHENTAI_CONSTANTS.PATTERNS.GALLERY_PATHNAME
     },
     [PIXIV_CONSTANTS.SITE_NAME]: {
+        siteTitle: PIXIV_CONSTANTS.SITE_TITLE,
         host: PIXIV_CONSTANTS.HOSTS,
         activeTabPages: [
             PIXIV_CONSTANTS.REGEXES.ARTWORK_PATHNAME
@@ -153,6 +164,7 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
         sourceDataPages: PIXIV_CONSTANTS.PATTERNS.ARTWORK_PATHNAME
     },
     [FANBOX_CONSTANTS.SITE_NAME]: {
+        siteTitle: FANBOX_CONSTANTS.SITE_TITLE,
         host: [...FANBOX_CONSTANTS.HOSTS, FANBOX_CONSTANTS.REGEXES.HOST],
         activeTabPages: [
             FANBOX_CONSTANTS.REGEXES.POST_PATHNAME
@@ -163,6 +175,7 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
         ]
     },
     [FANTIA_CONSTANTS.SITE_NAME]: {
+        siteTitle: FANTIA_CONSTANTS.SITE_TITLE,
         host: FANTIA_CONSTANTS.HOSTS,
         activeTabPages: [
             FANTIA_CONSTANTS.REGEXES.POST_PATHNAME,
@@ -174,6 +187,7 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
         ]
     },
     [KEMONO_CONSTANTS.SITE_NAME]: {
+        siteTitle: KEMONO_CONSTANTS.SITE_TITLE,
         host: KEMONO_CONSTANTS.HOSTS,
         activeTabPages: [
             KEMONO_CONSTANTS.REGEXES.POST_PATHNAME
@@ -237,6 +251,10 @@ export const ATTACHMENT_RULES: Readonly<AttachmentRule[]> = [
  * 集中声明站点的定义。
  */
 interface WebsiteConstant {
+    /**
+     * 站点的标题。
+     */
+    siteTitle: string
     /**
      * host：此站点包括哪些可用host。在active-tab识别中会用到。
      */
