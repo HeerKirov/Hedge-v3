@@ -52,7 +52,7 @@ const ellipsisMenuItems = <MenuItem<undefined>[]>[
                             <TagNameAndOtherDisplay :name="name" :other-names="otherNames" :color="data.color" :meta-type="data.type"/>
                         </template>
                         <template #edit="{ value: [name, otherNames], setValue, save }">
-                            <TagNameAndOtherEditor :name="name" :other-names="otherNames" @update:value="setValue" @save="save"/>
+                            <TagNameAndOtherEditor :name="name" :other-names="otherNames" @update="setValue" @save="save"/>
                         </template>
                     </FormEditKit>
                     <FormEditKit class="mt-2" :value="data.type" :set-value="setType">

@@ -4,7 +4,7 @@ import { Block, Button, Icon } from "@/components/universal"
 import { BottomLayout } from "@/components/layout"
 import { useAssets } from "@/functions/app"
 import { date } from "@/utils/datetime"
-import { CreatingCollectionProps, useCreatingCollectionContext } from "./context"
+import { CreateCollectionReturns, CreatingCollectionProps, useCreatingCollectionContext } from "./context"
 
 const props = defineProps<{
     p: CreatingCollectionProps
@@ -19,9 +19,14 @@ const onCreated = (collectionId: number, newCollection: boolean) => {
     emit("close")
 }
 
+const onlyGetReturns = props.p.onlyGetReturns && function(returns: CreateCollectionReturns | undefined) {
+    props.p.onlyGetReturns!(returns)
+    emit("close")
+}
+
 const { assetsUrl } = useAssets()
 
-const { situations, selected, submit } = useCreatingCollectionContext(computed(() => props.p.images), computed(() => props.p.situations), onCreated)
+const { situations, selected, submit } = useCreatingCollectionContext(computed(() => props.p.images), computed(() => props.p.situations), onCreated, onlyGetReturns)
 
 </script>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from "vue"
+import { reactive, ref, toRef, watch } from "vue"
 import { remoteIpcClient } from "@/functions/ipc-client"
 import { useHttpClient } from "@/functions/app"
 import { useInterceptedKey } from "@/modules/keyboard"
@@ -24,9 +24,11 @@ const state = reactive({
 
 const client = useHttpClient()
 
+const originSrc = toRef(props, "src")
+
 const src = computedAsync<string | undefined>(undefined, async () => {
-    if(props.src) {
-        const matcher = props.src.match(/archive:\/\/(.*)/)
+    if(originSrc.value) {
+        const matcher = originSrc.value.match(/archive:\/\/(.*)/)
         if(matcher && matcher) {
             const path = matcher[1]
             const r = await remoteIpcClient.local.checkAndLoadFile(path)
@@ -35,14 +37,14 @@ const src = computedAsync<string | undefined>(undefined, async () => {
             }
         }
     }
-    return props.src
+    return originSrc.value
 })
 
 const { playOrPause, fastForward, fastRewind, seek, pausedEvent, playingEvent, durationChangeEvent, timeUpdateEvent } = usePlayControl(videoRef, state)
 
 const { updateVolume, updateMuted } = useVolumeControl(videoRef, state)
 
-useVideoPositionMemory(videoRef, state, src)
+useVideoPositionMemory(videoRef, state, originSrc)
 
 watch(videoRef, dom => {
     if(dom !== undefined) {

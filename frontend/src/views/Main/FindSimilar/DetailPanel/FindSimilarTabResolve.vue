@@ -5,17 +5,11 @@ import { useDetailPaneTabResolve, useFindSimilarDetailPanel } from "@/services/m
 import { MenuItem } from "@/modules/popup-menu"
 import { numbers } from "@/utils/primitives"
 
-const { operators: { allBooks, allCollections, addToBook, addToCollection, markIgnored, cloneImage, deleteItem } } = useFindSimilarDetailPanel()
+const { operators: { allBooks, addToBook, addToCollection, markIgnored, cloneImage, deleteItem } } = useFindSimilarDetailPanel()
 
 const { existedRelations } = useDetailPaneTabResolve()
 
 const addToBookMenuItems = () => <MenuItem<undefined>[]>allBooks.value.map(b => ({type: "normal", label: b.title, click: () => addToBook(b.id)}))
-
-const addToCollectionMenuItems = () => <MenuItem<undefined>[]>[
-    ...allCollections.value.map(id => ({type: "normal", label: `集合:${id}`, click: () => addToCollection(id)})),
-    ...(allCollections.value.length > 0 ? [{type: "separator"}] : []),
-    {type: "normal", label: "创建新集合", click: () => addToCollection("new")}
-]
 
 </script>
 
@@ -38,9 +32,7 @@ const addToCollectionMenuItems = () => <MenuItem<undefined>[]>[
         <p v-else-if="r.type === 'IGNORED'" class="has-text-secondary"><Icon icon="check"/><b>已标记忽略</b></p>
     </template>
     <Separator v-if="existedRelations.length > 0" border-style="dashed" direction="horizontal"/>
-    <ElementPopupMenu :items="addToCollectionMenuItems" position="bottom" v-slot="{ popup, setEl, attrs }">
-        <Button :ref="setEl" v-bind="attrs" class="mt-1 w-100 has-text-left" size="small" icon="images" end-icon="ellipsis-v" @click="popup">加入集合</Button>
-    </ElementPopupMenu>
+    <Button class="mt-1 w-100 has-text-left" size="small" icon="images" @click="addToCollection()">加入集合</Button>
     <ElementPopupMenu :items="addToBookMenuItems" position="bottom" v-slot="{ popup, setEl, attrs }">
         <Button :ref="setEl" v-bind="attrs" class="w-100 has-text-left" size="small" icon="clone" end-icon="ellipsis-v" :disabled="allBooks.length <= 0" @click="popup">加入画集</Button>
     </ElementPopupMenu>

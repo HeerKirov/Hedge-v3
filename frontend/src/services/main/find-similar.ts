@@ -190,15 +190,6 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
         dataDrop: {dropInType: "illust", querySchema: ref(null), queryFilter: ref({type: "IMAGE", order: ["orderTime"]})}
     })
 
-    const allCollections = computed(() => {
-        if(data.value !== null) {
-            const ret = new Set<number>()
-            data.value.images.forEach(i => i.parentId && ret.add(i.parentId))
-            return [...ret.values()].sort()
-        }
-        return []
-    })
-
     const allBooks = computed(() => {
         if(data.value !== null) {
             const set = new Set<number>()
@@ -218,10 +209,10 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
         return currentImageId === undefined || selector.selected.value.includes(currentImageId) ? selector.selected.value : [currentImageId]
     }
 
-    const addToCollection = async (collectionId: number | "new", currentImageId?: number) => {
+    const addToCollection = async (currentImageId?: number) => {
         const imageIds = getEffectedItems(currentImageId)
-        const checkForm = await dialog.addIllust.checkExistsInCollection(imageIds, collectionId !== "new" ? collectionId : null, true)
-        if(checkForm !== undefined) await resolve({actions: [{type: "ADD_TO_COLLECTION", imageIds, collectionId, specifyPartitionTime: checkForm.specifyPartitionTime}], clear: false})
+        const form = await dialog.creatingCollection.getCreateCollectionReturns(imageIds)
+        if(form !== undefined) await resolve({actions: [{type: "ADD_TO_COLLECTION", ...form}], clear: false})
     }
 
     const addToBook = async (bookId: number, currentImageId?: number) => {
@@ -276,7 +267,7 @@ function useOperators(data: Ref<FindSimilarDetailResult | null>,
         else router.routePush({routeName: "PartitionDetail", path: partitionTime, initializer: {locateId: currentImageId}})
     }
 
-    return {allCollections, allBooks, modifyFavorite, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, complete, openPreviewBySpace, openDetailByEnter, openDetailByClick, openImageInPartition, dataDrop}
+    return {allBooks, modifyFavorite, addToStagingPost, addToCollection, addToBook, markIgnored, cloneImage, deleteItem, complete, openPreviewBySpace, openDetailByEnter, openDetailByClick, openImageInPartition, dataDrop}
 }
 
 export function useGraphView({ menu }: {menu: (i: FindSimilarResultDetailImage) => void}) {

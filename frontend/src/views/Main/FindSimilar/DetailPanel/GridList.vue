@@ -9,7 +9,7 @@ const {
     paginationData: { data, state, setState, navigateTo },
     selector: { selected, selectedIndex, lastSelected, update: updateSelect },
     listviewController: { fitType, columnNum, editableLockOn },
-    operators: { allBooks, allCollections, modifyFavorite, addToStagingPost, addToCollection, addToBook, markIgnored, deleteItem, cloneImage, openPreviewBySpace, openDetailByEnter, openDetailByClick, openImageInPartition, dataDrop }
+    operators: { allBooks, modifyFavorite, addToStagingPost, addToCollection, addToBook, markIgnored, deleteItem, cloneImage, openPreviewBySpace, openDetailByEnter, openDetailByClick, openImageInPartition, dataDrop }
 } = useFindSimilarDetailPanel()
 
 const menu = useDynamicPopupMenu<FindSimilarResultDetailImage>(illust => [
@@ -23,11 +23,7 @@ const menu = useDynamicPopupMenu<FindSimilarResultDetailImage>(illust => [
     {type: "separator"},
     {type: "checkbox", label: "标记为收藏", checked: illust.favorite, click: i => modifyFavorite(i, !i.favorite)},
     {type: "separator"},
-    {type: "submenu", label: "加入集合", submenu: [
-        ...allCollections.value.map(id => ({type: "normal", label: `集合:${id}`, click: () => addToCollection(id, illust.id) } as const)),
-        ...(allCollections.value.length > 0 ? [{type: "separator"} as const] : []),
-        {type: "normal", label: "创建新集合", click: () => addToCollection("new", illust.id)}
-    ]},
+    {type: "normal", label: "加入集合…", click: () => addToCollection(illust.id)},
     {type: "submenu", label: "加入画集", enabled: allBooks.value.length > 0, submenu: allBooks.value.map(b => ({type: "normal", label: b.title, click: () => addToBook(b.id, illust.id)} as const))},
     {type: "normal", label: "图像替换…", click: () => cloneImage(illust.id)},
     {type: "normal", label: "添加忽略标记", click: () => markIgnored(illust.id)},
