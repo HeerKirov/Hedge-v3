@@ -541,14 +541,14 @@ class IllustManager(private val appdata: AppDataManager,
                                         .where { Topics.id eq nextId!! }
                                         .map { Pair(it[Topics.parentId], it[Topics.type]!!) }
                                         .first()
-                                    //查询所有的parent，如果任一parent有mapping sourceTag并且此sourceTag不存在于此，则此映射不成立
+                                    //查询所有的parent，如果任一parent有mapping sourceTag，并且没有一个sourceTag存在于此，则此映射不成立
                                     if(nextId != topic.id && (thisType == TagTopicType.IP || thisType == TagTopicType.COPYRIGHT)) {
                                         //查询当前节点所关联的sourceTag
                                         val reflectedSourceTagIds = data.db.from(SourceTagMappings).select(SourceTagMappings.sourceTagId)
                                             .where { (SourceTagMappings.sourceSite eq illust.sourceSite!!) and (SourceTagMappings.targetMetaType eq MetaType.TOPIC) and (SourceTagMappings.targetMetaId eq nextId!!) }
                                             .map { it[SourceTagMappings.sourceTagId]!! }
                                             .toList()
-                                        if(!sourceTagIds.containsAll(reflectedSourceTagIds)) {
+                                        if(reflectedSourceTagIds.isNotEmpty() && reflectedSourceTagIds.none { it in sourceTagIds }) {
                                             include = false
                                             break
                                         }
