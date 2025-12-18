@@ -168,6 +168,16 @@ task("printVersion") {
     }
 }
 
+// 图像差分压缩验证工具运行任务
+// 使用方法: ./gradlew runImageDiffValidator --args="base.jpg img1.jpg img2.jpg ./output"
+tasks.register<JavaExec>("runImageDiffValidator") {
+    group = "application"
+    description = "运行图像差分压缩验证工具"
+    mainClass.set("com.heerkirov.hedge.server.utils.tools.ImageDiffValidatorKt")
+    classpath = sourceSets["main"].runtimeClasspath
+    // 参数通过命令行 --args="..." 传递，或在脚本中直接传递
+}
+
 tasks.register<Zip>("zip") {
     /* 在gradle更新后，jlinkZip产生了一个bug，从zip解压得到的程序在运行时无法使用Process相关API(不确定是否还有其他的)。
      * 发现手动压缩后的压缩包能够正常使用，因此编写此task，手动添加一个额外的zip步骤。
