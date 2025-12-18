@@ -76,7 +76,8 @@ import {
     faPlay, faPause, faStop, faGear, faSync
 } from "@fortawesome/free-solid-svg-icons"
 import {
-    faStar as faStarRegular, faSave as faSaveRegular
+    faStar as faStarRegular, faSave as faSaveRegular, faFile as faFileRegular, faFolderOpen as faFolderOpenRegular,
+    faTrashAlt as faTrashAltRegular
 } from "@fortawesome/free-regular-svg-icons"
 
 library.add(
@@ -87,4 +88,4 @@ library.add(
     faGrinSquint, faScrewdriverWrench, faTags, faIdCard, faImage, faBullseye, faPager, faClock, faBusinessTime, faCircleNotch,
     faPlay, faPause, faStop, faGear, faSync
 )
-library.add(faStarRegular, faSaveRegular)
+library.add(faStarRegular, faSaveRegular, faFileRegular, faFolderOpenRegular, faTrashAltRegular)

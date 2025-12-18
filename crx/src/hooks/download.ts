@@ -1,5 +1,6 @@
 import { Setting } from "@/functions/setting"
-import { useCallback, useEffect, useState } from "react"
+import { IconProp } from "@fortawesome/fontawesome-svg-core"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 export type DownloadItem = {
     id: number
@@ -234,6 +235,73 @@ function getCount(downloadList: chrome.downloads.DownloadItem[]) {
     }
 
     return count
+}
+
+/**
+ * 获取下载项图标的 hook，支持重试和文件名变化监听
+ */
+export function useDownloadItemIcon(item: DownloadItem): string | undefined {
+    const [icon, setIcon] = useState<string | undefined>(undefined)
+    const retryCountRef = useRef(0)
+    const lastFilenameRef = useRef<string | null>(null)
+    const timeoutRef = useRef<number | undefined>(undefined)
+
+    const fetchIcon = useCallback(async (retryDelay: number = 0) => {
+        console.log("fetchIcon", item.filename)
+        // 如果文件名还未确定（可能是 determiningFilename 状态），延迟重试
+        // 文件名未确定时通常为空字符串或只包含路径分隔符
+        const filenameDetermined = item.filename && item.filename.trim() !== '' && !item.filename.endsWith('/')
+        
+        if (!filenameDetermined) {
+            if (retryCountRef.current < 5) {
+                retryCountRef.current++
+                timeoutRef.current = window.setTimeout(() => {
+                    fetchIcon(500)
+                }, retryDelay || 500)
+            }
+            return
+        }
+
+        try {
+            const fileIcon = await chrome.downloads.getFileIcon(item.id)
+            if (fileIcon) {
+                setIcon(fileIcon)
+                retryCountRef.current = 0
+                lastFilenameRef.current = item.filename
+            } else if (retryCountRef.current < 3) {
+                // 如果返回 null，也进行重试
+                retryCountRef.current++
+                timeoutRef.current = window.setTimeout(() => {
+                    fetchIcon(1000)
+                }, retryDelay || 1000)
+            }
+        } catch (error) {
+            // 如果获取失败且重试次数未达上限，延迟重试
+            if (retryCountRef.current < 3) {
+                retryCountRef.current++
+                timeoutRef.current = window.setTimeout(() => {
+                    fetchIcon(1000)
+                }, retryDelay || 1000)
+            }
+        }
+    }, [item.id, item.filename])
+
+    useEffect(() => {
+        // 当文件名变化时，重置重试计数并重新获取
+        if (lastFilenameRef.current !== item.filename) {
+            retryCountRef.current = 0
+            setIcon(undefined) // 重置图标状态，显示后备图标
+            fetchIcon(0)
+        }
+
+        return () => {
+            if (timeoutRef.current !== undefined) {
+                clearTimeout(timeoutRef.current)
+            }
+        }
+    }, [item.filename, fetchIcon])
+
+    return icon
 }
 
 export const DANGER_SAFE_TYPES = [

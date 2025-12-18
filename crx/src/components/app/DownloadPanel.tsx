@@ -1,10 +1,9 @@
 import { memo, useCallback } from "react"
 import styled, { css } from "styled-components"
 import { Button, FormattedText, Icon, Separator } from "@/components/universal"
-import { DownloadItem, useDownloadList } from "@/hooks/download"
+import { DownloadItem, useDownloadItemIcon, useDownloadList } from "@/hooks/download"
 import { Setting } from "@/functions/setting"
 import { numbers } from "@/utils/primitives"
-import { useAsyncLoading } from "@/utils/reactivity"
 import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
 
 export const DownloadPanel = memo(function DownloadPanel(props: {setting: Setting["extension"]["downloadManager"]}) {
@@ -24,9 +23,9 @@ const ToolBar = memo(function ToolBar({ inProgressCount, interruptedCount, clear
         {inProgressCount > 0 && <FormattedText ml={2} size="small" color="info"><Icon icon="download" fade/> {inProgressCount}</FormattedText>}
         {interruptedCount > 0 && <FormattedText ml={2} size="small" color="danger"><Icon icon="warning"/> {interruptedCount}</FormattedText>}
         <div className="spacer"/>
-        <Button square onClick={clear}><Icon icon="trash"/></Button>
+        <Button square onClick={clear}><Icon icon={["far", "trash-alt"]}/></Button>
         <Separator direction="vertical" spacing={1}/>
-        <Button square onClick={showDefaultFolder}><Icon icon="folder-open"/></Button>
+        <Button square onClick={showDefaultFolder}><Icon icon={["far", "folder-open"]}/></Button>
     </ToolBarDiv>
 })
 
@@ -36,14 +35,9 @@ const DownloadItemList = memo(function DownloadItemList({ downloadList }: { down
     </DownloadListdiv>
 })
 
+
 const DownloadItemComponent = memo(function DownloadItemComponent({ item }: { item: DownloadItem }) {
-    const [icon] = useAsyncLoading(async () => {
-        try {
-            return await chrome.downloads.getFileIcon(item.id)
-        } catch (error) {
-            console.warn(`getFileIcon ${item.id} failed.`, error)
-        }
-    })
+    const icon = useDownloadItemIcon(item)
 
     const resume = useCallback(() => chrome.downloads.resume(item.id), [item.id])
 
@@ -61,7 +55,7 @@ const DownloadItemComponent = memo(function DownloadItemComponent({ item }: { it
 
     return <DownloadItemDiv $progress={progress} $deleted={item.state === "cancelled" || (item.state === "complete" && !item.exists)}>
         <div className="content">
-            <img className="file-icon" src={icon ?? undefined}/>
+            <img className="file-icon" src={icon}/>
             <div className="info">
                 <p className="filename">{item.filename}</p>
                 {item.state === "in_progress" ? 
@@ -93,8 +87,8 @@ const DownloadItemComponent = memo(function DownloadItemComponent({ item }: { it
             </> : item.state === "cancelled" ? <>
                 <Button className="hidden-able" square onClick={erase}><Icon icon="close"/></Button>
             </> : <>
-                <Button className="hidden-able" square disabled={!item.exists} onClick={openFile}><Icon icon="file"/></Button>
-                <Button className="hidden-able" square disabled={!item.exists} onClick={openInFolder}><Icon icon="folder-open"/></Button>
+                <Button className="hidden-able" square disabled={!item.exists} onClick={openFile}><Icon icon={["far", "file"]}/></Button>
+                <Button className="hidden-able" square disabled={!item.exists} onClick={openInFolder}><Icon icon={["far", "folder-open"]}/></Button>
                 <Button className="hidden-able" square onClick={erase}><Icon icon="close"/></Button>
             </>}
         </div>
@@ -182,7 +176,7 @@ const DownloadItemDiv = styled.div<{ $progress: number, $deleted: boolean }>`
         background-color: rgba(45, 50, 55, 0.09);
     }
     &:not(:hover) > .content .hidden-able {
-        visibility: hidden;
+        display: none;
     }
 
     > .progress {
@@ -211,9 +205,10 @@ const DownloadItemDiv = styled.div<{ $progress: number, $deleted: boolean }>`
         }
         > .info {
             flex: 1 1 auto;
+            min-width: 0;
             margin: ${SPACINGS[0.5]} 0 ${SPACINGS[1]} 0;
-            width: 100%;
             > .filename {
+                width: 100%;
                 line-height: 1.5rem;
                 overflow: hidden;
                 text-overflow: ellipsis;

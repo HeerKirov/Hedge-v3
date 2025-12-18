@@ -80,6 +80,10 @@ const RootDiv = styled.div`
     @media (prefers-color-scheme: dark) {
         border-color: ${DARK_MODE_COLORS["border"]};
     }
+    > div:first-child {
+        flex: 1;
+        min-width: 0;
+    }
     .buttons {
         flex: 0 0 auto;
         display: flex;
@@ -96,6 +100,10 @@ const RootDiv = styled.div`
 const SourceDataPathDiv = styled.div`
     margin-top: ${SPACINGS[1]};
     margin-bottom: ${SPACINGS[2]};
+    user-select: text;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 `
 
 const SourceIdBold = styled.b`
