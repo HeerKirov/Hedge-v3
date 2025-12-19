@@ -38,7 +38,7 @@ export function useForecast(inputRef: Ref<ComponentPublicInstance | undefined>, 
     function pickSuggestion(item: VisualForecast["suggestions"][number]) {
         if(inputRef.value?.$el && forecast.value) {
             const input = inputRef.value.$el as HTMLInputElement
-            const replaced = forecast.value.type === "source-tag" || forecast.value.type === "tag" || forecast.value.type === "topic"  || forecast.value.type === "author" ? "`" + item.name + "`" : item.name
+            const replaced = getReplacedValue(forecast.value, item)
             const newValue = input.value.substring(0, forecast.value.beginIndex) + replaced + input.value.substring(forecast.value.endIndex)
             input.value = newValue
             textValue.value = newValue
@@ -49,3 +49,17 @@ export function useForecast(inputRef: Ref<ComponentPublicInstance | undefined>, 
 
     return {startForecastTimer, stopForecastTimer, forecast, pickSuggestion}
 }
+
+function getReplacedValue(forecast: VisualForecast, item: VisualForecast["suggestions"][number]): string {
+    if(forecast.type === "source-tag" || forecast.type === "tag" || forecast.type === "topic"  || forecast.type === "author") {
+        if(ALL_SYMBOLS.some(sym => item.name.includes(sym))) {
+            const escaped = item.name.replace(/([\\`])/g, "\\$1")
+            return "`" + escaped + "`"
+        }else if(item.name.includes(" ")) {
+            return "\"" + item.name + "\""
+        }
+    }
+    return item.name
+}
+
+const ALL_SYMBOLS = ["~", "`", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "-", "=", "_", "+", "[", "]", "{", "}", ";", ":", "'", '"', ",", ".", "/", "\\", "|", "?", "<", ">"]

@@ -156,6 +156,19 @@ export function useTopicCreatePanel() {
         },
         afterCreate(result) {
             router.routeReplace({routeName: "TopicDetail", path: result.id})
+        },
+        validate: {
+            fields: ["name"],
+            beforeValidate(form): boolean | void {
+                if(form.name === "") return false
+            },
+            handleError(e) {
+                if(e.code === "ALREADY_EXISTS") {
+                    message.showOkMessage("prompt", "该名称已存在。")
+                }else{
+                    return e
+                }
+            }
         }
     })
 

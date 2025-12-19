@@ -195,6 +195,7 @@ export interface TagCreateForm {
     color?: UsefulColors | null
     examples?: number[] | null
     mappingSourceTags?: MappingSourceTagForm[] | null
+    dryRun?: boolean
 }
 
 export interface TagUpdateForm {

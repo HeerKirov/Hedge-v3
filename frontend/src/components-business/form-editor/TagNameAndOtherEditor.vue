@@ -37,7 +37,7 @@ const setColor = (v: UsefulColors | null) => {
 <template>
     <Flex class="mb-1">
         <ColorPicker v-if="colorEnabled" class="mr-1" :value="color ?? undefined" @update:value="setColor"/>
-        <Input placeholder="名称" width="fullwidth" :value="name" @update:value="setName" @enter="$emit('save')" auto-focus update-on-input/>
+        <Input placeholder="名称" width="fullwidth" :value="name" @update:value="setName" @enter="$emit('save')" auto-focus/>
     </Flex>
     <OtherNameEditor placeholder="别名" :value="otherNames" @update:value="setOtherNames"/>
 </template>

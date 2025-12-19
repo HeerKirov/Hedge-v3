@@ -167,6 +167,19 @@ export function useAuthorCreatePanel() {
         },
         afterCreate(result) {
             router.routeReplace({routeName: "AuthorDetail", path: result.id})
+        },
+        validate: {
+            fields: ["name"],
+            beforeValidate(form): boolean | void {
+                if(form.name === "") return false
+            },
+            handleError(e) {
+                if(e.code === "ALREADY_EXISTS") {
+                    message.showOkMessage("prompt", "该名称已存在。")
+                }else{
+                    return e
+                }
+            }
         }
     })
 

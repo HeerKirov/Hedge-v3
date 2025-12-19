@@ -164,6 +164,7 @@ export interface TopicCreateForm {
     favorite?: boolean
     score?: number | null
     mappingSourceTags?: MappingSourceTagForm[] | null
+    dryRun?: boolean
 }
 
 export interface TopicUpdateForm {
