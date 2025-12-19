@@ -105,6 +105,8 @@ class TagService(private val data: DataRepository,
             //存在example时，检查example的目标是否存在，以及限制illust不能是collection
             val examples = kit.validateExamples(form.examples)
 
+            if(form.dryRun) return -1
+
             val tagCountInGlobal = data.db.sequenceOf(Tags).count()
 
             val tagCountInParent by lazy {

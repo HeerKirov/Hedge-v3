@@ -38,7 +38,7 @@ class MetaTagRoutes(private val tagService: TagService) : Routes {
     private fun create(ctx: Context) {
         val form = ctx.bodyAsForm<TagCreateForm>()
         val id = tagService.create(form)
-        ctx.status(201).json(IdRes(id))
+        ctx.status(if(id >= 0) 201 else 202).json(IdRes(id))
     }
 
 

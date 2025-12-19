@@ -17,7 +17,8 @@ data class TagCreateForm(@NotBlank @Length(32) val name: String,
                          val description: String = "",
                          val color: String? = null,
                          val examples: List<Int>? = null,
-                         val mappingSourceTags: List<MappingSourceTagForm>? = null)
+                         val mappingSourceTags: List<MappingSourceTagForm>? = null,
+                         val dryRun: Boolean = false)
 
 data class TagUpdateForm(@NotBlank @Length(32) val name: Opt<String>,
                          val otherNames: Opt<List<String>?>,
@@ -53,7 +54,8 @@ data class TopicCreateForm(@NotBlank val name: String,
                            val description: String = "",
                            val favorite: Boolean = false,
                            val score: Int? = null,
-                           val mappingSourceTags: List<MappingSourceTagForm>? = null)
+                           val mappingSourceTags: List<MappingSourceTagForm>? = null,
+                           val dryRun: Boolean = false)
 
 data class TopicUpdateForm(@NotBlank val name: Opt<String>,
                            val otherNames: Opt<List<String>?>,
@@ -84,7 +86,8 @@ data class AuthorCreateForm(@NotBlank val name: String,
                             val description: String = "",
                             val favorite: Boolean = false,
                             val score: Int? = null,
-                            val mappingSourceTags: List<MappingSourceTagForm>? = null)
+                            val mappingSourceTags: List<MappingSourceTagForm>? = null,
+                            val dryRun: Boolean = false)
 
 data class AuthorUpdateForm(@NotBlank val name: Opt<String>,
                             val otherNames: Opt<List<String>?>,

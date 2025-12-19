@@ -88,8 +88,11 @@ class TopicService(private val appdata: AppDataManager,
 
             val name = kit.validateName(form.name, form.type, parentRootId)
             val otherNames = kit.validateOtherNames(form.otherNames)
-            val implicitNames = kit.generateImplicitNames(name, otherNames)
             val keywords = kit.validateKeywords(form.keywords)
+
+            if(form.dryRun) return -1
+
+            val implicitNames = kit.generateImplicitNames(name, otherNames)
 
             val topicCountInParent by lazy {
                 data.db.sequenceOf(Topics)

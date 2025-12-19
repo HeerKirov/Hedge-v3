@@ -81,9 +81,11 @@ class AuthorService(private val appdata: AppDataManager,
         data.db.transaction {
             val name = kit.validateName(form.name)
             val otherNames = kit.validateOtherNames(form.otherNames)
-            val implicitNames = kit.generateImplicitNames(name, otherNames)
             val keywords = kit.validateKeywords(form.keywords)
 
+            if(form.dryRun) return -1
+
+            val implicitNames = kit.generateImplicitNames(name, otherNames)
             val createTime = Instant.now()
 
             val id = data.db.insertAndGenerateKey(Authors) {

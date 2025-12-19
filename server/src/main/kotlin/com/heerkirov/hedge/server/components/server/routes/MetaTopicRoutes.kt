@@ -39,7 +39,7 @@ class MetaTopicRoutes(private val topicService: TopicService) : Routes {
     private fun create(ctx: Context) {
         val form = ctx.bodyAsForm<TopicCreateForm>()
         val id = topicService.create(form)
-        ctx.status(201).json(IdRes(id))
+        ctx.status(if(id >= 0) 201 else 202).json(IdRes(id))
     }
 
     private fun bulk(ctx: Context) {
