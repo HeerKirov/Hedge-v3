@@ -17,6 +17,7 @@ export const DATA_FILE = {
         CHANNEL_FOLDER: path.join("appdata", "channel"),
         CHANNEL: {
             CACHES_DIR: "caches",
+            DRAG_CACHES_DIR: path.join("caches", "_drag"),
             SERVER_DIR: "server",
             SERVER_PID: "PID",
             SERVER_LOG_DIR: "logs",

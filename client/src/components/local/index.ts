@@ -4,10 +4,12 @@ import { LevelManager } from "@/components/level"
 import { StateManager } from "@/components/state"
 import { createFileManager, FileManager } from "./file"
 import { createFileWatcher, FileWatcher } from "./file-watcher"
+import { createFileDragManager, FileDragManager } from "./file-drag"
 
 export interface LocalManager {
     file: FileManager
     fileWatcher: FileWatcher
+    fileDragManager: FileDragManager
 }
 
 export interface LocalOptions {
@@ -24,5 +26,6 @@ export interface LocalOptions {
 export function createLocalManager(appdata: AppDataDriver, level: LevelManager, server: ServerManager, state: StateManager, options: LocalOptions): LocalManager {
     const file = createFileManager(appdata, state, level, server, options)
     const fileWatcher = createFileWatcher(appdata, state, file)
-    return {file, fileWatcher}
+    const fileDragManager = createFileDragManager(file, options)
+    return {file, fileWatcher, fileDragManager}
 }

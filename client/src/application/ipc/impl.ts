@@ -78,6 +78,7 @@ export function createIpcClientImpl(appdata: AppDataDriver, channel: Channel, se
             loadFile: local.file.loadFile,
             checkAndLoadFile: local.file.checkAndLoadFile,
             downloadExportFile: local.file.downloadExportFile,
+            makeDragFile: local.fileDragManager.makeDragFile,
             cacheStatus: local.file.cacheStatus,
             cleanAllCacheFiles: local.file.cleanAllCacheFiles,
             fileWatcherStatus: async isOpen => {

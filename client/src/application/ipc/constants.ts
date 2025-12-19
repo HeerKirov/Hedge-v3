@@ -25,7 +25,8 @@ export interface IpcClient {
         importFile(filepath: string): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "STORAGE_NOT_ACCESSIBLE" | "ILLEGAL_FILE_EXTENSION">>
         loadFile(path: string): Promise<IResponse<string, "FILE_NOT_FOUND">>
         checkAndLoadFile(path: string): Promise<IResponse<boolean, "FILE_NOT_FOUND">>
-        downloadExportFile(form: { imageIds?: number[], bookId?: number, location: string, zip?: string }): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "FILE_ALREADY_EXISTS" | "LOCATION_NOT_ACCESSIBLE">>
+        downloadExportFile(form: { imageIds?: number[], bookId?: number, location: string, zip?: string, nameType?: "ORIGINAL_FILENAME" | "SOURCE" | "ID" }): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "FILE_ALREADY_EXISTS" | "LOCATION_NOT_ACCESSIBLE">>
+        makeDragFile(options: {filepath: string, originalFilename?: string}): Promise<string>
         cacheStatus(): Promise<CacheStatus>
         cleanAllCacheFiles(): Promise<void>
         fileWatcherStatus(isOpen?: boolean): Promise<FileWatcherStatus>

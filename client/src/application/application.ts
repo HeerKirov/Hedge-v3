@@ -11,7 +11,7 @@ import { panic } from "@/exceptions"
 import { getNodePlatform } from "@/utils/process"
 import { registerGlobalIpcRemoteEvents } from "./ipc"
 import { createMenuManager } from "./menu"
-import { registerAppEvents } from "./event"
+import { registerAppEvents, registerErrorHandler } from "./event"
 import { createThemeManager } from "./theme"
 import { createWindowManager } from "./window"
 import { registerProtocol, registerRendererProtocol } from "./protocol"
@@ -95,10 +95,9 @@ export async function createApplication(options?: AppOptions) {
         const menuManager = createMenuManager(stateManager, localManager, windowManager, platform)
 
         registerProtocol(stateManager, windowManager)
-        registerAppEvents(windowManager, serverManager, platform)
+        registerAppEvents(windowManager, serverManager, localManager, platform)
         registerGlobalIpcRemoteEvents(appDataDriver, channelManager, serverManager, stateManager, localManager, themeManager, menuManager, windowManager, {debugMode, userDataPath, platform})
-
-        if(debugMode) registerErrorHandler()
+        registerErrorHandler()
 
         await appDataDriver.load()
         await Promise.all([resourceManager.load(), localManager.file.load()])
@@ -116,20 +115,3 @@ export async function createApplication(options?: AppOptions) {
     }
 }
 
-function registerErrorHandler() {
-    process.on("uncaughtException", (error) => {
-        if (error.message.includes("ReadableStream is already closed")) {
-            console.log(`忽略 ReadableStream 关闭错误: ${error.message}`)
-            return
-        }
-        console.error("未捕获的异常:", error)
-    })
-    
-    process.on("unhandledRejection", (reason, promise) => {
-        if (reason instanceof Error && reason.message.includes("ReadableStream is already closed")) {
-            console.log(`忽略 ReadableStream Promise 拒绝: ${reason.message}`)
-            return
-        }
-        console.error("未处理的 Promise 拒绝:", reason)
-    })
-}

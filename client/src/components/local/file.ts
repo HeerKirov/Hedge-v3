@@ -11,6 +11,7 @@ import { existsFile, mkdir, statOrNull, unzip } from "@/utils/fs"
 import { lazy } from "@/utils/primitive"
 import { IResponse } from "@/utils/types"
 import { LocalOptions } from "."
+import { shell } from "electron"
 
 export interface FileManager {
     /**
@@ -37,9 +38,9 @@ export interface FileManager {
     checkAndLoadFile(filepath: string): Promise<IResponse<boolean, "FILE_NOT_FOUND">>
     /**
      * 根据提供的参数，将导出的文件下载到指定位置。
-     * @param form location: 导出位置; zip: 导出并保存为zip文件，该参数指定zip文件名称
+     * @param form location: 导出位置; zip: 导出并保存为zip文件，该参数指定zip文件名称; nameType: 导出文件名类型
      */
-    downloadExportFile(form: { imageIds?: number[], bookId?: number, location: string, zip?: string }): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "FILE_ALREADY_EXISTS" | "LOCATION_NOT_ACCESSIBLE">>
+    downloadExportFile(form: { imageIds?: number[], bookId?: number, location: string, zip?: string, nameType?: "ORIGINAL_FILENAME" | "SOURCE" | "ID" }): Promise<IResponse<undefined, "FILE_NOT_FOUND" | "FILE_ALREADY_EXISTS" | "LOCATION_NOT_ACCESSIBLE">>
     /**
      * 清理所有的本地缓存。
      */
@@ -207,6 +208,18 @@ export function createFileManager(appdata: AppDataDriver, state: StateManager, l
         return {ok: true, data: true}
     }
 
+    const downloadExportFile: FileManager["downloadExportFile"] = async (form) => {
+        const r = await module.downloadExportFile(form)
+        if(r.ok) {
+            if(form.zip) {
+                shell.showItemInFolder(path.join(form.location, `${form.zip}.zip`))
+            }else{
+                await shell.openPath(form.location)
+            }
+        }
+        return r
+    }
+
     return {
         load,
         async cacheStatus(): Promise<CacheStatus> {
@@ -216,7 +229,7 @@ export function createFileManager(appdata: AppDataDriver, state: StateManager, l
         importFile: (f) => module.importFile(f),
         loadFile,
         checkAndLoadFile,
-        downloadExportFile: f => module.downloadExportFile(f)
+        downloadExportFile
     }
 }
 
@@ -283,7 +296,7 @@ function createRemoteMode(server: ServerManager, cacheDir: string) {
     }
 
     const downloadExportFile: FileManager["downloadExportFile"] = async (form) => {
-        const formData = {imageIds: form.imageIds, bookId: form.bookId}
+        const formData = {imageIds: form.imageIds, bookId: form.bookId, nameType: form.nameType}
         if(!await existsFile(form.location)) return {ok: false, code: "LOCATION_NOT_ACCESSIBLE"}
         if(form.zip) {
             try {
@@ -340,7 +353,7 @@ function createLocalMode(server: ServerManager) {
     }
 
     const downloadExportFile: FileManager["downloadExportFile"] = async (form) => {
-        const formData = {imageIds: form.imageIds, bookId: form.bookId, location: form.location, packageName: form.zip}
+        const formData = {imageIds: form.imageIds, bookId: form.bookId, location: form.location, packageName: form.zip, nameType: form.nameType}
         if(!await existsFile(form.location)) return {ok: false, code: "LOCATION_NOT_ACCESSIBLE"}
         try {
             const r = await downloadFile({url: "/api/utils/export/download-local", method: "POST", data: formData})
