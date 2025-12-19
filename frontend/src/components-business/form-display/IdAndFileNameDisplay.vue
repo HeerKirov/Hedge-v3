@@ -18,9 +18,9 @@ const toggleStatus = props.lockIn === undefined ? () => {
 
 <template>
     <div v-if="lockIn === 'id' || (lockIn === undefined && status === 'id')">
-        <Icon class="{'is-cursor-alias': lockIn === undefined}" icon="id-card" @click="toggleStatus"/><b class="ml-1 selectable">{{ id }}</b>
+        <Icon :class="{'is-cursor-alias': lockIn === undefined}" icon="id-card" @click="toggleStatus"/><b class="ml-1 selectable">{{ id }}</b>
     </div>
     <div v-else-if="lockIn === 'fileName' || (lockIn === undefined && status === 'fileName')" class="flex">
-        <span><Icon class="{'is-cursor-alias': lockIn === undefined}" icon="file" @click="toggleStatus"/></span><b class="ml-1 selectable word-wrap-anywhere">{{ fileName }}</b>
+        <span><Icon :class="{'is-cursor-alias': lockIn === undefined}" icon="file" @click="toggleStatus"/></span><b class="ml-1 selectable word-wrap-anywhere">{{ fileName }}</b>
     </div>
 </template>  

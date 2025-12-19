@@ -59,7 +59,6 @@ interface SelectorOptions {
     data: Ref<FolderTreeNode[] | undefined>
     indexedData: Ref<Record<number, IndexedFolder>>
     expandedState: ReturnType<typeof useExpandedState>
-    editPosition: Ref<EditPosition | undefined>
     selected: Ref<number[]>
     selectedIndex: Ref<(number | undefined)[]>
     lastSelected: Ref<number | null>
@@ -85,7 +84,7 @@ export const [installFolderTreeContext, useFolderTreeContext] = installation(fun
 
     const elementRefs = useElementRefs(expandedState)
 
-    const selector = useSelector({data, indexedData: indexedData.indexedData, expandedState, editPosition, selected, lastSelected, selectedIndex, select: emit.select, navigate: () => {}  })
+    const selector = useSelector({data, indexedData: indexedData.indexedData, expandedState, selected, lastSelected, selectedIndex, select: emit.select, navigate: () => {}  })
 
     const menu = useMenu(options, indexedData.indexedData, expandedState)
 

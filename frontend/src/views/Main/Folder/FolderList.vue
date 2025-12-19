@@ -24,11 +24,15 @@ const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "解除编辑锁定", checked: editableLockOn.value, click: () => editableLockOn.value = !editableLockOn.value},
 ]
 
+const onSearchBoxEnter = (nv: boolean) => {
+    if(!nv) next()
+}
+
 </script>
 
 <template>
     <BrowserTeleport to="top-bar">
-        <SearchBox placeholder="在此处搜索" v-model:value="searchText" @enter="nv => { if(!nv) next() }"/>
+        <SearchBox placeholder="在此处搜索" v-model:value="searchText" @enter="onSearchBoxEnter"/>
         <SearchResultInfo v-if="searchInfo !== null" :current="searchInfo.current" :total="searchInfo.total" @prev="prev" @next="next"/>
         <Separator/>
         <LockOnButton v-model:value="editableLockOn"/>

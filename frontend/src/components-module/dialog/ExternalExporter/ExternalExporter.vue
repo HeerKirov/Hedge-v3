@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Button, Block } from "@/components/universal"
-import { Input, CheckBox } from "@/components/form"
+import { Input, CheckBox, Select } from "@/components/form"
 import { VirtualGridView } from "@/components/data"
 import { AspectGrid, BottomLayout, Flex, FlexItem } from "@/components/layout"
 import { DataRouter } from "@/components-business/top-bar"
@@ -19,12 +19,18 @@ const emit = defineEmits<{
 
 const { assetsUrl, assetsLocal } = useAssets()
 
-const { packageMode, packageName, externalLocation, preview, executing, openDialog, executeExport } = useExporterData(props.p, () => emit("close"))
+const { packageMode, packageName, externalLocation, nameType, preview, executing, openDialog, executeExport } = useExporterData(props.p, () => emit("close"))
 
 const onDragstart = async (e: DragEvent, item: SimpleIllust) => {
     e.preventDefault()
     startDragFile(await assetsLocal(item.filePath.sample), await assetsLocal(item.filePath.original))
 }
+
+const NAME_TYPE_OPTION_ITEMS = [
+    {label: "原始文件名", value: "ORIGINAL_FILENAME"},
+    {label: "来源数据", value: "SOURCE"},
+    {label: "ID", value: "ID"},
+] as const
 
 </script>
 
@@ -49,7 +55,8 @@ const onDragstart = async (e: DragEvent, item: SimpleIllust) => {
                         <Input width="fullwidth" size="small" v-model:value="packageName"/>
                     </template>
                 </template>
-                
+                <label class="mt-1 label">文件名类型</label>
+                <Select width="fullwidth" size="small" :items="NAME_TYPE_OPTION_ITEMS" v-model:value="nameType"/>
                 <template #bottom>
                     <Button class="mt-2 w-100" mode="filled" type="primary" :icon="executing ? 'circle-notch' : 'external-link-alt'" :icon-spin="executing" :disabled="executing" @click="executeExport">导出</Button>
                 </template>

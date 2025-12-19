@@ -51,7 +51,9 @@ const sourceAnalyseNoneMenu = usePopupMenu([
             </p>
         </template>
         <template #top>
-            <ThumbnailImage class="is-cursor-zoom-in" :aspect="1" :file="data?.filePath?.thumbnail" :draggable-file="data?.filePath?.original" :drag-icon-file="data?.filePath?.sample" @click="openImagePreview"/>
+            <ThumbnailImage class="is-cursor-zoom-in" :aspect="1" :file="data?.filePath?.thumbnail" 
+                            :draggable-file="data?.filePath?.original" :drag-icon-file="data?.filePath?.sample" 
+                            :original-filename="data?.fileName" @click="openImagePreview"/>
         </template>
 
         <template v-if="!!data">

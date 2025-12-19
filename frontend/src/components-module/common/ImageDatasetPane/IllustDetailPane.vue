@@ -34,7 +34,9 @@ const { detail, selector: { selected, selectedIndex }, parent, openImagePreview 
         </template>
 
         <template #top>
-            <ThumbnailImage class="is-cursor-zoom-in" :aspect="1" :file="detail?.filePath.thumbnail" :draggable-file="detail?.filePath.original" :drag-icon-file="detail?.filePath.sample" @click="openImagePreview"/>
+            <ThumbnailImage class="is-cursor-zoom-in" :aspect="1" 
+                            :file="detail?.filePath.thumbnail" :draggable-file="detail?.filePath.original" 
+                            :drag-icon-file="detail?.filePath.sample" @click="openImagePreview"/>
         </template>
 
         <IllustTabAction v-if="selected.length > 1" :selected :selectedIndex :parent/>

@@ -6,6 +6,7 @@ import {
 } from "@/functions/fetch"
 import { useLocalStorage } from "@/functions/app"
 import { mapResponse } from "@/functions/http-client"
+import { EditPosition } from "@/components-module/data/FolderTable/context"
 import { useMessageBox } from "@/modules/message-box"
 import { useBrowserTabs, useDocumentTitle, usePath, useTabRoute } from "@/modules/browser"
 import { useListViewContext } from "@/services/base/list-view-context"
@@ -16,7 +17,6 @@ import { useNavigationItem } from "@/services/base/side-nav-records"
 import { installIllustListviewContext, useImageDatasetOperators } from "@/services/common/illust"
 import { useFolderTableSearch } from "@/services/common/folder"
 import { installation } from "@/utils/reactivity"
-import { EditPosition } from "@/components-module/data/FolderTable/context";
 
 export const [installFolderContext, useFolderContext] = installation(function () {
     const listview = useFolderListview()

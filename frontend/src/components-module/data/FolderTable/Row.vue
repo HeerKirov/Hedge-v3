@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, toRef } from "vue"
 import { Icon } from "@/components/universal"
+import { platform } from "@/functions/ipc-client"
 import { FolderTreeNode } from "@/functions/http-client/api/folder"
 import { datetime } from "@/utils/datetime"
 import { useFolderDraggable, useFolderDroppable, useFolderTreeContext } from "./context"
 import RowList from "./RowList.vue"
-import { platform } from "@/functions/ipc-client";
 
 const props = defineProps<{
     row: FolderTreeNode

@@ -3,7 +3,7 @@ import { remoteIpcClient } from "@/functions/ipc-client"
 import { IllustType, SimpleIllust } from "@/functions/http-client/api/illust"
 import { useFetchHelper, useFetchReactive, usePaginationDataView, useQueryListview } from "@/functions/fetch"
 import { FilePath } from "@/functions/http-client/api/all"
-import { useLocalStorage } from "@/functions/app"
+import { createLocalStorage } from "@/functions/app"
 import { useMessageBox } from "@/modules/message-box"
 import { dialogManager } from "@/modules/dialog"
 import { useToast } from "@/modules/toast"
@@ -49,11 +49,13 @@ export function useExporterData(data: ExternalExporterProps, close: () => void) 
 
     const preview = useExporterPreview(data)
     
-    const localStorage = useLocalStorage<{externalLocation: string, packageMode: boolean}>("export/default-params", () => ({externalLocation: "", packageMode: false}), true)
+    const localStorageAccessor = createLocalStorage<{externalLocation: string, packageMode: boolean, nameType: "ORIGINAL_FILENAME" | "SOURCE" | "ID" | undefined}>("export/default-params", () => ({externalLocation: "", packageMode: false, nameType: undefined}), true)
     
-    const externalLocation = ref(localStorage.value.externalLocation)
-    const packageMode = ref(localStorage.value.packageMode)
+    const savedParams = localStorageAccessor.get()
+    const externalLocation = ref(savedParams.externalLocation)
+    const packageMode = ref(savedParams.packageMode)
     const packageName = ref("")
+    const nameType = ref<"ORIGINAL_FILENAME" | "SOURCE" | "ID">(savedParams.nameType ?? "ORIGINAL_FILENAME")
 
     if(preview.type === "BOOK") {
         watch(preview.book, book => {
@@ -61,6 +63,8 @@ export function useExporterData(data: ExternalExporterProps, close: () => void) 
                 packageName.value = book.title
             }
         }, {immediate: true})
+    }else{
+        packageName.value = "导出"
     }
 
     const openDialog = async () => {
@@ -89,14 +93,15 @@ export function useExporterData(data: ExternalExporterProps, close: () => void) 
             location: externalLocation.value.trim(),
             zip: preview.packagable.value && packageMode.value ? packageName.value.trim() : undefined,
             imageIds: preview.type === "ILLUST" ? preview.images.value.map(i => i.id) : undefined,
-            bookId: preview.type === "BOOK" ? preview.book.value!.id : undefined
+            bookId: preview.type === "BOOK" ? preview.book.value!.id : undefined,
+            nameType: nameType.value
         })
         executing.value = false
 
         if(res !== undefined) {
             if(res.ok) {
                 toast.toast("文件已导出", "success", `文件已成功导出到${externalLocation.value.trim()}.`)
-                localStorage.value = {externalLocation: externalLocation.value, packageMode: packageMode.value}
+                localStorageAccessor.set({externalLocation: externalLocation.value, packageMode: packageMode.value, nameType: nameType.value})
                 close()
             }else if(res.code === "FILE_NOT_FOUND") {
                 toast.toast(`文件导出错误`, "danger", "所选择的文件不存在。")
@@ -110,7 +115,7 @@ export function useExporterData(data: ExternalExporterProps, close: () => void) 
         }
     }
 
-    return {packageName, packageMode, externalLocation, executing, openDialog, executeExport, preview}
+    return {packageName, packageMode, externalLocation, nameType, executing, openDialog, executeExport, preview}
 }
 
 function useExporterPreview(data: ExternalExporterProps) {

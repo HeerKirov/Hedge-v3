@@ -45,7 +45,7 @@ export function useConvertFormat(data: FileEditorProps, close: () => void) {
         if(state.value === "CHECK") {
             for(const illust of illusts.value) {
                 illust.state = "FETCHING"
-                await fetchConvertFormat(illust.id)
+                await fetchConvertFormat({illustId: illust.id})
                 illust.state = "COMPLETE"
             }
             state.value = "COMPLETE"
