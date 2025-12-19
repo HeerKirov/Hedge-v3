@@ -5,6 +5,8 @@ import com.heerkirov.hedge.server.components.database.DataRepository
 import com.heerkirov.hedge.server.components.database.transaction
 import com.heerkirov.hedge.server.dao.FileRecords
 import com.heerkirov.hedge.server.dao.Illusts
+import com.heerkirov.hedge.server.dto.form.ConvertFormat
+import com.heerkirov.hedge.server.dto.res.FileInfo
 import com.heerkirov.hedge.server.enums.IllustType
 import com.heerkirov.hedge.server.events.IllustUpdated
 import com.heerkirov.hedge.server.exceptions.NotFound
@@ -16,14 +18,28 @@ import org.ktorm.dsl.*
 
 class FileUtilService(private val data: DataRepository, private val file: FileManager, private val bus: EventBus) {
     /**
+     * 查询文件的简单信息。
+     */
+    fun getFileInfo(fileId: Int): FileInfo {
+        val row = data.db.from(FileRecords)
+            .select(FileRecords.originFilename)
+            .where { FileRecords.id eq fileId }
+            .firstOrNull() ?: throw be(NotFound())
+
+        val fileName = row[FileRecords.originFilename]!!
+
+        return FileInfo(fileId, fileName)
+    }
+
+    /**
      * 将指定文件的类型做轻量化转换。
      */
-    fun convertFormat(illustId: Int) {
+    fun convertFormat(form: ConvertFormat) {
         data.db.transaction {
             val row = data.db.from(Illusts)
                 .innerJoin(FileRecords, FileRecords.id eq Illusts.fileId)
                 .select(FileRecords.id, FileRecords.extension)
-                .where { Illusts.id eq illustId }
+                .where { Illusts.id eq form.illustId }
                 .firstOrNull() ?: throw be(NotFound())
 
             val targetExtension = when(val extension = row[FileRecords.extension]!!) {
@@ -33,7 +49,7 @@ class FileUtilService(private val data: DataRepository, private val file: FileMa
 
             file.convertFileFormat(row[FileRecords.id]!!, targetExtension)
 
-            bus.emit(IllustUpdated(illustId, IllustType.IMAGE, detailUpdated = true))
+            bus.emit(IllustUpdated(form.illustId, IllustType.IMAGE, detailUpdated = true))
         }
     }
 }

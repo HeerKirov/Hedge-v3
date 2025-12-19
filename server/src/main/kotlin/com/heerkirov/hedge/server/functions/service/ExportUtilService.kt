@@ -7,6 +7,7 @@ import com.heerkirov.hedge.server.dao.Illusts
 import com.heerkirov.hedge.server.dto.form.ExportForm
 import com.heerkirov.hedge.server.dto.res.FilePath
 import com.heerkirov.hedge.server.dto.res.IllustSimpleRes
+import com.heerkirov.hedge.server.dto.res.SourceDataPath
 import com.heerkirov.hedge.server.enums.ArchiveType
 import com.heerkirov.hedge.server.enums.IllustModelType
 import com.heerkirov.hedge.server.exceptions.FileAlreadyExistsError
@@ -18,12 +19,14 @@ import com.heerkirov.hedge.server.utils.DateTime.toInstant
 import com.heerkirov.hedge.server.utils.business.filePathFrom
 import com.heerkirov.hedge.server.utils.business.sourcePathOf
 import com.heerkirov.hedge.server.utils.putEntry
-import com.heerkirov.hedge.server.utils.tuples.Tuple6
+import com.heerkirov.hedge.server.utils.tuples.Tuple3
 import com.heerkirov.hedge.server.utils.writeTo
 import org.ktorm.dsl.*
+import org.ktorm.entity.Tuple7
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.OutputStream
+import java.time.Instant
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
@@ -58,27 +61,21 @@ class ExportUtilService(private val data: DataRepository, private val archive: F
         val files = if(form.imageIds != null) {
             data.db.from(Illusts)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(Illusts.id, Illusts.orderTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName, FileRecords.id, FileRecords.block, FileRecords.extension)
+                .select(Illusts.id, Illusts.orderTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName, FileRecords.id, FileRecords.block, FileRecords.originFilename, FileRecords.extension)
                 .where { (((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.id inList form.imageIds)) or ((Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) and (Illusts.parentId inList form.imageIds)) }
-                .map { Tuple6(it[Illusts.id]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!, it[Illusts.orderTime]!!.toInstant(), sourcePathOf(it)) }
+                .map { Tuple7(it[Illusts.id]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!, it[FileRecords.originFilename]!!, it[Illusts.orderTime]!!.toInstant(), sourcePathOf(it)) }
         }else if(form.bookId != null) {
             data.db.from(BookImageRelations)
                 .innerJoin(Illusts, Illusts.id eq BookImageRelations.imageId)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(BookImageRelations.imageId, FileRecords.id, FileRecords.block, FileRecords.extension, Illusts.orderTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName)
+                .select(BookImageRelations.imageId, FileRecords.id, FileRecords.block, FileRecords.originFilename, FileRecords.extension, Illusts.orderTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName)
                 .where { BookImageRelations.bookId eq form.bookId }
-                .map { Tuple6(it[BookImageRelations.imageId]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!, it[Illusts.orderTime]!!.toInstant(), sourcePathOf(it)) }
+                .map { Tuple7(it[BookImageRelations.imageId]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!, it[FileRecords.originFilename]!!, it[Illusts.orderTime]!!.toInstant(), sourcePathOf(it)) }
         }else{
             throw be(ParamRequired("imageIds"))
         }
 
-        ZipOutputStream(outputStream).use { zos ->
-            for((id, block, fileId, ext, ot, _) in files) {
-                archive.readFile(ArchiveType.ORIGINAL, block, "$fileId.$ext")?.inputStream?.use { fis ->
-                    zos.putEntry(ZipEntry("$id.$ext").also { entry -> entry.time = ot.toEpochMilli() }, fis)
-                } ?: throw FileNotFoundException("File ${ArchiveType.ORIGINAL}/$block/$fileId.$ext not found in archive.")
-            }
-        }
+        intoZip(files, form.nameType, outputStream)
     }
 
     /**
@@ -88,16 +85,16 @@ class ExportUtilService(private val data: DataRepository, private val archive: F
         val files = if(form.imageIds != null) {
             data.db.from(Illusts)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(Illusts.id, Illusts.orderTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName, FileRecords.id, FileRecords.block, FileRecords.extension)
+                .select(Illusts.id, Illusts.orderTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName, FileRecords.id, FileRecords.block, FileRecords.originFilename, FileRecords.extension)
                 .where { (((Illusts.type eq IllustModelType.IMAGE) or (Illusts.type eq IllustModelType.IMAGE_WITH_PARENT)) and (Illusts.id inList form.imageIds)) or ((Illusts.type eq IllustModelType.IMAGE_WITH_PARENT) and (Illusts.parentId inList form.imageIds)) }
-                .map { Tuple6(it[Illusts.id]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!, it[Illusts.orderTime]!!.toInstant(), sourcePathOf(it)) }
+                .map { Tuple7(it[Illusts.id]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!, it[FileRecords.originFilename]!!, it[Illusts.orderTime]!!.toInstant(), sourcePathOf(it)) }
         }else if(form.bookId != null) {
             data.db.from(BookImageRelations)
                 .innerJoin(Illusts, Illusts.id eq BookImageRelations.imageId)
                 .innerJoin(FileRecords, Illusts.fileId eq FileRecords.id)
-                .select(BookImageRelations.imageId, FileRecords.id, FileRecords.block, FileRecords.extension, Illusts.orderTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName)
+                .select(BookImageRelations.imageId, FileRecords.id, FileRecords.block, FileRecords.originFilename, FileRecords.extension, Illusts.orderTime, Illusts.sourceSite, Illusts.sourceId, Illusts.sourcePart, Illusts.sourcePartName)
                 .where { BookImageRelations.bookId eq form.bookId }
-                .map { Tuple6(it[BookImageRelations.imageId]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!, it[Illusts.orderTime]!!.toInstant(), sourcePathOf(it)) }
+                .map { Tuple7(it[BookImageRelations.imageId]!!, it[FileRecords.block]!!, it[FileRecords.id]!!, it[FileRecords.extension]!!, it[FileRecords.originFilename]!!, it[Illusts.orderTime]!!.toInstant(), sourcePathOf(it)) }
         }else{
             throw be(ParamRequired("imageIds"))
         }
@@ -110,21 +107,45 @@ class ExportUtilService(private val data: DataRepository, private val archive: F
             if (packageFile.exists()) throw be(FileAlreadyExistsError("${form.packageName}.zip"))
 
             FileOutputStream(packageFile).use { fos ->
-                ZipOutputStream(fos).use { zos ->
-                    for ((id, block, fileId, ext, ot, _) in files) {
-                        archive.readFile(ArchiveType.ORIGINAL, block, "$fileId.$ext")?.inputStream?.use { fis ->
-                            zos.putEntry(ZipEntry("$id.$ext").also { entry -> entry.time = ot.toEpochMilli() }, fis)
-                        } ?: throw FileNotFoundException("File ${ArchiveType.ORIGINAL}/$block/$fileId.$ext not found in archive.")
-                    }
-                }
+                intoZip(files, form.nameType, fos)
             }
         }else{
-            for ((id, _, _, ext, _, _) in files) if(Path(form.location, "$id.$ext").exists()) throw be(FileAlreadyExistsError("$id.$ext"))
-            for ((id, block, fileId, ext, _, _) in files) {
+            intoLocal(files, form.nameType, form.location)
+        }
+    }
+
+    private fun intoZip(files: List<Tuple7<Int, String, Int, String, String, Instant, SourceDataPath?>>, nameType: ExportForm.NameType, outputStream: OutputStream) {
+        ZipOutputStream(outputStream).use { zos ->
+            for((id, block, fileId, ext, of, ot, s) in files) {
                 archive.readFile(ArchiveType.ORIGINAL, block, "$fileId.$ext")?.inputStream?.use { fis ->
-                    Path(form.location, "$id.$ext").toFile().outputStream().use { fos -> fis.writeTo(fos) }
+                    val finalFilename = getFinalFilename(nameType, id, ext, of, s)
+                    zos.putEntry(ZipEntry(finalFilename).also { entry -> entry.time = ot.toEpochMilli() }, fis)
                 } ?: throw FileNotFoundException("File ${ArchiveType.ORIGINAL}/$block/$fileId.$ext not found in archive.")
             }
+        }
+    }
+
+    private fun intoLocal(files: List<Tuple7<Int, String, Int, String, String, Instant, SourceDataPath?>>, nameType: ExportForm.NameType, location: String) {
+        val items = files.map { (id, block, fileId, ext, of, _, s) -> Tuple3(block, "$fileId.$ext", getFinalFilename(nameType, id, ext, of, s)) }
+        for ((_, _, ff) in items) if(Path(location, ff).exists()) throw be(FileAlreadyExistsError(ff))
+        for ((block, filename, finalFilename) in items) {
+            archive.readFile(ArchiveType.ORIGINAL, block, filename)?.inputStream?.use { fis ->
+                Path(location, finalFilename).toFile().outputStream().use { fos -> fis.writeTo(fos) }
+            } ?: throw FileNotFoundException("File ${ArchiveType.ORIGINAL}/$block/$filename not found in archive.")
+        }
+    }
+
+    private fun getFinalFilename(nameType: ExportForm.NameType, id: Int, ext: String, of: String, s: SourceDataPath?): String {
+        return when(nameType) {
+            ExportForm.NameType.ORIGINAL_FILENAME -> of
+            ExportForm.NameType.SOURCE -> {
+                if(s != null) {
+                    "${s.sourceSite}_${s.sourceId}" + (if(s.sourcePart != null) "_${s.sourcePart}" else "") + (if(s.sourcePartName != null) "_${s.sourcePartName}" else "") + ".$ext"
+                }else{
+                    of
+                }
+            }
+            ExportForm.NameType.ID -> "$id.$ext"
         }
     }
 }
