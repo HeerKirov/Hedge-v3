@@ -385,18 +385,20 @@ function useElementRefs(expandedState: ReturnType<typeof useExpandedState>) {
             jumpTarget.value = folderId
         },
         async setElement(key: number, el: Element | ComponentPublicInstance | null | undefined) {
-            if(el) {
-                elements[key] = el
-                if(targetKey === key) {
-                    //目前存在操作目标，那么采取操作
-                    await nextTick()
-                    targetKey = null
-                    //sleep是等待是为了等待目标展开的动画结束。这是一个magic行为
-                    await sleep(150)
-                    scrollIntoView(el)
+            if(elements[key] !== el) {
+                if(el) {
+                    elements[key] = el
+                    if(targetKey === key) {
+                        //目前存在操作目标，那么采取操作
+                        await nextTick()
+                        targetKey = null
+                        //sleep是等待是为了等待目标展开的动画结束。这是一个magic行为
+                        await sleep(150)
+                        scrollIntoView(el)
+                    }
+                }else{
+                    delete elements[key]
                 }
-            }else{
-                delete elements[key]
             }
         }
     }

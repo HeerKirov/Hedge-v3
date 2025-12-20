@@ -48,7 +48,7 @@ const { scrollState, navigateEvent, bindDiv } = useVirtualViewContext(props.padd
 //由于数据可能不是直接对齐行首的，因此需要计算前置空缺数量，然后补上
 const prefixCount = computedEffect(() => (metrics.value?.offset ?? 0) % props.columnCount)
 //前置空缺div的CSS。宽度要保留一点，因为在宽度快速变化时，实时布局立即生效，在一个异步事件后才进行js计算，这会导致出现闪烁
-const prefixDivStyle = computed(() => prefixCount.value > 0 ? {width: `${prefixCount.value * 0.95 / props.columnCount}%`, height: `${props.rowHeight}px`} : undefined)
+const prefixDivStyle = computed(() => prefixCount.value > 0 ? {width: `${prefixCount.value * 0.95 * 100 / props.columnCount}%`, height: `${props.rowHeight}px`} : undefined)
 
 //scroll滚动位置发生变化时，计算为state属性，并通过事件上报
 watch(() => [scrollState.value.top, scrollState.value.height], ([top, height]) => {

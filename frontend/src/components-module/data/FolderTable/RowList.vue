@@ -29,11 +29,12 @@ const createPositionInThis = computed(() => {
 </script>
 
 <template>
+    <!-- Tips: 此处修复了一个神奇的bug。由于editPosition发生变化时整个RowList的项一定被重新渲染，此时视图视口会跳转到最近的上一个项，也就是当前List的父节点。于是就会发生当父节点不在视口内尝试重命名或新建子项时，视口总是会跳转到父节点。 -->
+    <!-- 目前的修复方案是让editPosition之前的项的渲染固定下来，这样按照这个逻辑，视图视口会跳转到最近的上一个项，也就是新建/编辑项的前一个项，按这种逻辑是不会出现跳转了(邻近项总该在视口里吧？) -->
+    <Row v-for="child in (createPositionInThis !== null ? data.slice(0, createPositionInThis) : data)" :key="child.id" :indent="indent" :row="child" :parent-id="parentId"/>
     <template v-if="editPosition && createPositionInThis !== null">
-        <Row v-for="child in data.slice(0, createPositionInThis)" :key="child.id" :indent="indent" :row="child" :parent-id="parentId"/>
         <RowCreating v-if="editPosition.action === 'create'" :indent="indent" :parent-id="parentId" :ordinal="createPositionInThis" :type="editPosition.type"/>
         <RowEditing v-else :indent="indent" :parent-id="parentId" :row="data[createPositionInThis]"/>
         <Row v-for="child in data.slice(editPosition.action === 'create' ? createPositionInThis : createPositionInThis + 1)" :key="child.id" :indent="indent" :row="child" :parent-id="parentId"/>
     </template>
-    <Row v-else v-for="child in data" :key="child.id" :indent="indent" :row="child" :parent-id="parentId"/>
 </template>
