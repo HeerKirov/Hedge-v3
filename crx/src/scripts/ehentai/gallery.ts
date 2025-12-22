@@ -4,6 +4,7 @@ import { SourceAdditionalInfoForm, SourceDataUpdateForm, SourceTagForm } from "@
 import { settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { EHENTAI_CONSTANTS } from "@/functions/sites"
+import { artworksToolbar, type ThumbnailInfo } from "@/scripts/utils"
 import { numbers, Result } from "@/utils/primitives"
 import { documents, onDOMContentLoaded } from "@/utils/document"
 
@@ -25,6 +26,8 @@ onDOMContentLoaded(async () => {
                 setting.website.ehentai.enableCommentUserBlock ? setting.website.ehentai.commentBlockUsers : []
             )
         }
+
+        initializeUI(sourceDataPath)
     }
 })
 
@@ -36,6 +39,63 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
     }
     return false
 })
+
+/**
+ * 进行artworks-toolbar, find-similar相关的UI初始化。
+ */
+function initializeUI(sourcePath: SourceDataPath) {
+    const gdtElement = document.querySelector("#gdt")
+    if(!gdtElement) {
+        console.warn("[initializeUI] #gdt element not found.")
+        return
+    }
+    
+    const anchors = [...document.querySelectorAll<HTMLAnchorElement>("#gdt > a")]
+    const wrappedElements: Map<HTMLAnchorElement, HTMLDivElement> = new Map()
+    
+    // 为每个 <a> 标签包裹一个新的 <div>，使用包裹后的 <div> 作为挂载点，而不是直接使用 <a>
+    for(const anchor of anchors) {
+        const wrapperDiv = document.createElement("div")
+        const parentNode = anchor.parentNode
+        const nextSibling = anchor.nextSibling
+
+        parentNode?.removeChild(anchor)
+        wrapperDiv.appendChild(anchor)
+        if(nextSibling) {
+            parentNode?.insertBefore(wrapperDiv, nextSibling)
+        } else {
+            parentNode?.appendChild(wrapperDiv)
+        }
+        wrappedElements.set(anchor, wrapperDiv)
+    }
+    
+    const nodes = anchors.map(item => {
+        const url = new URL(item.href)
+        const match = url.pathname.match(EHENTAI_CONSTANTS.REGEXES.IMAGE_PATHNAME)
+        if(!match || !match.groups) {
+            console.warn(`[initializeUI] Cannot analyse URL for a[href=${item.href}].`)
+            return undefined
+        }
+        const index = parseInt(match.groups["PAGE"])
+        const pHash = match.groups["PHASH"]
+        const wrapperElement = wrappedElements.get(item)!
+        const sourceDataPath: SourceDataPath = {...sourcePath, sourcePart: index, sourcePartName: pHash}
+        const thumbnailSrc = () => {
+            // 获取item(anchor)下的div > div结构上的style，提取background中的url(...)
+            const innerDiv = item.querySelector("div > div")
+            if (innerDiv && innerDiv instanceof HTMLElement && innerDiv.hasAttribute("style")) {
+                const style = innerDiv.getAttribute("style") || ""
+                return parseThumbnailStyle(style, innerDiv)
+            }
+            return null
+        }
+        const downloadURL = async () => requestDownloadURLOfImage(item.href)
+        return {index, element: wrapperElement, sourceDataPath, thumbnailSrc, downloadURL}
+    }).filter(item => item !== undefined)
+    
+    artworksToolbar.config({locale: "ehentai-gallery"})
+    artworksToolbar.add(nodes)
+}
 
 /**
  * 功能：评论区屏蔽机制。
@@ -357,4 +417,104 @@ function getGalleryImageCount(): number {
     const m = p.textContent?.match(/^Showing [\d,]+ - [\d,]+ of (?<COUNT>[\d,]+) images$/)
     if(!m || !m.groups) throw new Error(`Cannot analyse div.gtb > p.gpc textContent '${p.textContent}'.`)
     return parseInt(m.groups["COUNT"].replaceAll(",", ""))
+}
+
+/**
+ * 从gallery anchor的style中提取缩略图信息。
+ */
+function parseThumbnailStyle(style: string, element: HTMLElement): ThumbnailInfo | null {
+    // 提取 background URL
+    const urlMatch = style.match(/background:[^;]*url\(([^)]+)\)/)
+    if (!urlMatch || !urlMatch[1]) {
+        return null
+    }
+    const url = urlMatch[1].trim().replace(/^["']|["']$/g, "")
+
+    // 提取背景位置（background-position）
+    // 在 background 简写属性中，位置值通常在 url() 之后
+    // 格式可能是: background: ... url(...) -200px 0 no-repeat
+    // 或者单独的: background-position: -200px 0
+    let offsetX = 0
+    let offsetY = 0
+    
+    // 先尝试匹配 background-position 属性（可能以分号结尾或后面有其他属性）
+    const positionMatch = style.match(/background-position:\s*(-?\d+)px\s+(-?\d+)px/i)
+    if (positionMatch) {
+        offsetX = parseInt(positionMatch[1])
+        offsetY = parseInt(positionMatch[2])
+    } else {
+        // 如果没有单独的 background-position，尝试从 background 简写属性中提取
+        // 匹配 url(...) 后面的位置值
+        // 注意：位置值可能是 -200px 0 或 -200px 0px，第二个值可能没有 px
+        const backgroundMatch = style.match(/url\([^)]+\)\s+(-?\d+)px\s+(-?\d+)(?:px)?/i)
+        if (backgroundMatch) {
+            offsetX = parseInt(backgroundMatch[1])
+            offsetY = parseInt(backgroundMatch[2])
+        }
+    }
+
+    // 从元素的 style 或计算样式中获取尺寸
+    const widthMatch = style.match(/width:\s*(\d+)px/)
+    const heightMatch = style.match(/height:\s*(\d+)px/)
+    let width = 0
+    let height = 0
+    
+    if (widthMatch) {
+        width = parseInt(widthMatch[1])
+    } else {
+        const computedStyle = window.getComputedStyle(element)
+        width = parseInt(computedStyle.width) || element.clientWidth
+    }
+    
+    if (heightMatch) {
+        height = parseInt(heightMatch[1])
+    } else {
+        const computedStyle = window.getComputedStyle(element)
+        height = parseInt(computedStyle.height) || element.clientHeight
+    }
+
+    if (width <= 0 || height <= 0) {
+        return null
+    }
+
+    console.log("parseThumbnailStyle", url, offsetX, offsetY, width, height)
+
+    return { url, offsetX, offsetY, width, height, _isThumbnailInfo: true as const }
+}
+
+/**
+ * 通过请求image页面HTML的方式，解析获得图像源文件下载链接。
+ */
+async function requestDownloadURLOfImage(href: string): Promise<string | null> {
+    const response = await fetch(href)
+    if(!response.ok) {
+        return null
+    }
+
+    const html = await response.text()
+
+    // 使用 DOMParser 将返回的 HTML 字符串解析为文档
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(html, "text/html")
+
+    // 参考 image.ts 的逻辑：优先使用 “Download original” 的链接，否则退回到图片本身的地址
+    const i6 = doc.querySelector<HTMLDivElement>("#i6")
+    if(!i6) {
+        console.warn("[requestDownloadURLOfImage] Cannot find div#i6.")
+        return null
+    }
+
+    const i6a = doc.querySelector<HTMLAnchorElement>("#i6 div:last-child a")
+    if(i6a?.textContent?.startsWith("Download original")) {
+        // 在 i6 中找到的最后一个元素是 Download original，则表示此图像有 original，使用 anchor 的下载链接
+        return i6a.href
+    }else{
+        // 否则表明此图像没有 original，使用图像地址本身
+        const img = doc.querySelector<HTMLImageElement>("#img")
+        if(!img) {
+            console.warn("[requestDownloadURLOfImage] Cannot find #img.")
+            return null
+        }
+        return img.src
+    }
 }

@@ -7,6 +7,20 @@ import { sendMessage } from "@/functions/messages"
 import { GlobalStyle } from "@/styles"
 import { fontAwesomeCSS } from "@/styles/fontawesome"
 
+type LocaleSite = "pixiv" | "ehentai-image" | "ehentai-mpv" | "sankaku" | "fanbox" | "kemono" | "fantia"
+
+interface RegisterItem {
+    index: number | null
+    downloadURL: string | (() => string | undefined)
+    sourcePath: SourceDataPath | null
+    element: HTMLElement
+}
+
+interface ToolbarConfig {
+    locale: LocaleSite | undefined
+    collectSourceData: boolean
+}
+
 export const imageToolbar = {
     config(newConfig: Partial<ToolbarConfig>) {
         if(newConfig.locale !== undefined) config.locale = newConfig.locale
@@ -27,25 +41,12 @@ export const imageToolbar = {
             body.setAttribute("style", "background: none")
             shadowRoot.appendChild(body)
 
-            if(config.locale === "pixiv") {
-                rootElement.setAttribute("style", "position: absolute; right: 0; top: 35px")
-                item.element.style.position = "relative"
-            }else if(config.locale === "ehentai-image" ) {
-                rootElement.setAttribute("style", "position: absolute; right: 0; bottom: 35px")
-                item.element.style.position = "relative"
-            }else if(config.locale === "ehentai-mpv") {
-                rootElement.setAttribute("style", "position: absolute; right: 0; bottom: 50px")
-                item.element.style.position = "relative"
-            }else if(config.locale === "sankaku") {
-                rootElement.setAttribute("style", "position: absolute; right: 5px; top: 0")
-                item.element.style.position = "relative"
-            }else if(config.locale === "fanbox") {
-                rootElement.setAttribute("style", "position: absolute; right: 0; top: 35px")
-            }else if(config.locale === "kemono") {
-                rootElement.setAttribute("style", "position: absolute; right: -10px; bottom: 4px; transform: translateX(100%)")
-                item.element.style.position = "relative"
-            }else if(config.locale === "fantia") {
-                rootElement.setAttribute("style", "position: absolute; right: 0; bottom: 10px")
+            const rootStyle = config.locale ? ROOT_STYLES[config.locale] : undefined
+            if(rootStyle) {
+                rootElement.setAttribute("style", rootStyle.style)
+                if(rootStyle.relativeItem) {
+                    item.element.style.position = "relative"
+                }
             }
 
             ReactDOM.createRoot(body).render(
@@ -59,20 +60,6 @@ export const imageToolbar = {
             )
         }
     }
-}
-
-type LocaleSite = "pixiv" | "ehentai-image" | "ehentai-mpv" | "sankaku" | "fanbox" | "kemono" | "fantia"
-
-interface RegisterItem {
-    index: number | null
-    downloadURL: string | (() => string | undefined)
-    sourcePath: SourceDataPath | null
-    element: HTMLElement
-}
-
-interface ToolbarConfig {
-    locale: LocaleSite | undefined
-    collectSourceData: boolean
 }
 
 const config: ToolbarConfig = {locale: undefined, collectSourceData: true}
@@ -100,7 +87,7 @@ function ToolBar(props: Omit<RegisterItem, "element">) {
         {config.locale === "fantia" ? <DoubleFlipAnchor $style={config.locale} href={props.downloadURL as string} target="_blank" onClick={prevent}>
             {favicon === null ? <b>{props.index}</b> : <LayouttedDiv padding={1}><img src={favicon} alt="favicon"/></LayouttedDiv>}
             {
-                status === "DN" ? <FormattedText><Icon icon="download"/></FormattedText>
+                status === "DN" ? <FormattedText><Icon icon="square-arrow-up-right"/></FormattedText>
                 : status === "ING" ? <FormattedText><Icon icon="circle-notch" spin/></FormattedText>
                 : <FormattedText color="success"><Icon icon="check"/></FormattedText>
             }
@@ -115,10 +102,21 @@ function ToolBar(props: Omit<RegisterItem, "element">) {
     </ToolBarDiv>
 }
 
+const ROOT_STYLES: Record<LocaleSite, {style: string, relativeItem: boolean}> = {
+    "pixiv": {style: "position: absolute; right: 0; top: 35px", relativeItem: true},
+    "ehentai-image": {style: "position: absolute; right: 0; bottom: 35px", relativeItem: true},
+    "ehentai-mpv": {style: "position: absolute; right: 0; bottom: 50px", relativeItem: true},
+    "sankaku": {style: "position: absolute; right: 5px; top: 0", relativeItem: true},
+    "fanbox": {style: "position: absolute; right: 0; top: 35px", relativeItem: false},
+    "kemono": {style: "position: absolute; right: -10px; bottom: 4px; transform: translateX(100%)", relativeItem: true},
+    "fantia": {style: "position: absolute; right: 0; bottom: 10px", relativeItem: false},
+}
+
 const ToolBarDiv = styled.div<{ $style?: LocaleSite }>`
     width: 60px;
     height: 30px;
     ${p => p.$style === "pixiv" || p.$style === "fanbox" || p.$style === "fantia" ? css`
+        //pixiv, fanbox, fantia采用内嵌在图像内紧贴右侧的样式，因此左侧圆角右侧平直
         border-top-left-radius: 15px;
         border-bottom-left-radius: 15px;
         color: rgb(31, 31, 31);
@@ -129,98 +127,86 @@ const ToolBarDiv = styled.div<{ $style?: LocaleSite }>`
                 background-color: rgb(0, 0, 0);
             }
         `}
+
+        > button, > a {
+            border-top-left-radius: 15px;
+            border-bottom-left-radius: 15px;
+        }
+
     ` : p.$style === "ehentai-image" || p.$style === "ehentai-mpv" ? css`
+        //ehentai采用非内嵌图像，而是内嵌图像外圈的外框的样式。其样式上也是左侧圆角右侧平直
         border-top-left-radius: 15px;
         border-bottom-left-radius: 15px;
         color: #5C0D11;
         background-color: #E3E0D1;
         ${p.$style === "ehentai-image" && css`
+            //ehentai image 页面外框有边框，因此配合设置了有边框的工具条样式
             border: 1px solid #5C0D12;
             border-right: none;
         `}
+
+        > button, > a {
+            border-top-left-radius: 15px;
+            border-bottom-left-radius: 15px;
+        }
+
     ` : p.$style === "sankaku" ? css`
+        //sankaku采用悬浮在图像行右侧的样式。样式上是圆角矩形
         background: #FAFAFA;
         border: 2px solid #DDD;
         text-align: center;
         border-radius: 10px;
         color: #FF761C;
-    ` : p.$style === "kemono" ? css`
+
+        > button, > a {
+            border-radius: 10px;
+        }
+
+        ` : p.$style === "kemono" ? css`
+        //kemono采用在图像外贴近右侧的样式。为配合整体风格采用了无圆角矩形
         text-align: center;
         background: transparent;
         border: 1px solid hsl(0, 0%, 45%);
         color: hsl(0, 0%, 70%);
+
     ` : undefined}
+`
+
+const DoubleFlipCSS = css<{ $style?: LocaleSite }>`
+    width: 100%;
+    height: 100%;
+    padding: 2px;
+    box-sizing: border-box;
+    background-color: transparent;
+
+    &:hover {
+        cursor: pointer;
+        background-color: rgba(179, 179, 179, 25%);
+        ${p => (p.$style === "pixiv" || p.$style === "fantia") && css`
+            @media (prefers-color-scheme: dark) {
+                background-color: rgba(255, 255, 255, 25%);
+            }
+        `}
+    }
+    
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    > * {
+        width: 50%;
+    }
+    img {
+        width: 100%;
+        height: 100%;
+    }
 `
 
 const DoubleFlipButton = styled.button<{ $style?: LocaleSite }>`
-    width: 100%;
-    height: 100%;
-    padding: 2px;
-    box-sizing: border-box;
-    background-color: transparent;
-    
-    ${p => p.$style === "pixiv" || p.$style === "fanbox" || p.$style === "ehentai-image" || p.$style === "ehentai-mpv" ? css`
-        border-top-left-radius: 15px;
-        border-bottom-left-radius: 15px;
-    ` : p.$style === "sankaku" ? css`
-        border-radius: 5px;
-    ` : undefined}
-    
-    &:hover {
-        cursor: pointer;
-        background-color: rgba(179, 179, 179, 25%);
-        ${p => p.$style === "pixiv" && css`
-            @media (prefers-color-scheme: dark) {
-                background-color: rgba(255, 255, 255, 25%);
-            }
-        `}
-    }
-    
-    display: flex;
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    align-items: center;
-    > * {
-        width: 50%;
-    }
-    img {
-        width: 100%;
-        height: 100%;
-    }
+    ${DoubleFlipCSS}
 `
 
 const DoubleFlipAnchor = styled.a<{ $style?: LocaleSite }>`
-    width: 100%;
-    height: 100%;
-    padding: 2px;
-    box-sizing: border-box;
-    background-color: transparent;
     text-align: center;
-    
-    ${p => p.$style === "fantia"  ? css`
-        border-top-left-radius: 15px;
-        border-bottom-left-radius: 15px;
-    ` : undefined}
-    
-    &:hover {
-        cursor: pointer;
-        background-color: rgba(179, 179, 179, 25%);
-        ${p => p.$style === "fantia" && css`
-            @media (prefers-color-scheme: dark) {
-                background-color: rgba(255, 255, 255, 25%);
-            }
-        `}
-    }
-    
-    display: flex;
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    align-items: center;
-    > * {
-        width: 50%;
-    }
-    img {
-        width: 100%;
-        height: 100%;
-    }
+    ${DoubleFlipCSS}
 `

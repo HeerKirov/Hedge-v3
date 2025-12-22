@@ -28,13 +28,13 @@ export function useTabState() {
             if(tabs.length > 0 && tabs[0].id && tabs[0].id !== chrome.tabs.TAB_ID_NONE) {
                 setTabState({status: tabs[0].status ?? "unloaded", tabId: tabs[0].id, url: tabs[0].url, windowId: tabs[0].windowId})
             }
-        })
+        }).catch(e => console.error(e))
 
         const activatedEventHandler = (activeInfo: chrome.tabs.OnActivatedInfo) => {
             if(activeInfo.windowId === windowIdRef.current) {
                 chrome.tabs.get(activeInfo.tabId).then((tab) => {
                     setTabState({status: tab.status ?? "unloaded", tabId: tab.id, url: tab.url, windowId: windowIdRef.current})
-                })
+                }).catch(e => console.error(e))
             }
         }
 

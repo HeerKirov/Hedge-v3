@@ -73,7 +73,7 @@ import {
     faDownload, faEdit, faFile, faFileExport, faFileImport, faFileInvoice, faFolder, faFolderOpen, faPlus, faCalendarAlt,
     faRecordVinyl, faSave, faSearch, faServer, faStar, faToolbox, faTrash, faUpload, faWarning, faToggleOn, faUpRightFromSquare,
     faGrinSquint, faScrewdriverWrench, faTags, faIdCard, faImage, faBullseye, faPager, faClock, faBusinessTime, faCircleNotch,
-    faPlay, faPause, faStop, faGear, faSync
+    faPlay, faPause, faStop, faGear, faSync, faSquareArrowUpRight, faEllipsisVertical
 } from "@fortawesome/free-solid-svg-icons"
 import {
     faStar as faStarRegular, faSave as faSaveRegular, faFile as faFileRegular, faFolderOpen as faFolderOpenRegular,
@@ -86,6 +86,6 @@ library.add(
     faDownload, faEdit, faFile, faFileExport, faFileImport, faFileInvoice, faFolder, faFolderOpen, faPlus, faCalendarAlt,
     faRecordVinyl, faSave, faSearch, faServer, faStar, faToolbox, faTrash, faUpload, faWarning, faToggleOn, faUpRightFromSquare,
     faGrinSquint, faScrewdriverWrench, faTags, faIdCard, faImage, faBullseye, faPager, faClock, faBusinessTime, faCircleNotch,
-    faPlay, faPause, faStop, faGear, faSync
+    faPlay, faPause, faStop, faGear, faSync, faSquareArrowUpRight, faEllipsisVertical
 )
 library.add(faStarRegular, faSaveRegular, faFileRegular, faFolderOpenRegular, faTrashAltRegular)

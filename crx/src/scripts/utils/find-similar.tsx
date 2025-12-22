@@ -1,4 +1,4 @@
-import React, { SyntheticEvent, useCallback, useEffect, useRef, useState } from "react"
+import React, { SyntheticEvent, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import ReactDOM from "react-dom/client"
 import { css, styled, StyleSheetManager } from "styled-components"
 import { Button, FormattedText, Icon, Separator, LayouttedDiv, ThumbnailImage } from "@/components/universal"
@@ -20,7 +20,7 @@ export const similarFinder = {
     /**
      * 执行快速查找。将src的图像上传到后端服务器，并根据sourceData的来源数据映射限定查找范围，查找相似项。
      */
-    quickFind(src: string | null | undefined, sourcePath: SourceDataPath, sourceData: Result<SourceDataUpdateForm, string>): void {
+    quickFind(src: string | ThumbnailInfo | null | undefined, sourcePath: SourceDataPath, sourceData: Result<SourceDataUpdateForm, string>): void {
         if(!sourceData.ok) {
             sendMessage("NOTIFICATION", {
                 title: "快速查找异常",
@@ -43,7 +43,19 @@ export const similarFinder = {
     }
 }
 
-let messageChannel: EventTrigger<{src: string, sourcePath: SourceDataPath, sourceData: SourceDataUpdateForm}> | undefined
+let messageChannel: EventTrigger<{src: string | ThumbnailInfo, sourcePath: SourceDataPath, sourceData: SourceDataUpdateForm}> | undefined
+
+/**
+ * 解析缩略图样式信息
+ */
+export interface ThumbnailInfo {
+    url: string
+    offsetX: number
+    offsetY: number
+    width: number
+    height: number
+    _isThumbnailInfo: true // 用于类型判断
+}
 
 /**
  * 初始化ReactUI。
@@ -72,9 +84,9 @@ function initializeUI() {
     )
 }
 
-export function QuickFindComponent({ channel }: {channel: EventTrigger<{src: string, sourcePath: SourceDataPath, sourceData: SourceDataUpdateForm}>}) {
+export function QuickFindComponent({ channel }: {channel: EventTrigger<{src: string | ThumbnailInfo, sourcePath: SourceDataPath, sourceData: SourceDataUpdateForm}>}) {
     const [status, setStatus] = useState<"CLOSE" | "CAPTURE" | "LOADING" | "COMPLETE">("CLOSE")
-    const [originData, setOriginData] = useState<{src: string, sourcePath: SourceDataPath, sourceData: SourceDataUpdateForm}>()
+    const [originData, setOriginData] = useState<{src: string | ThumbnailInfo, sourcePath: SourceDataPath, sourceData: SourceDataUpdateForm}>()
     const [dataURL, setDataURL] = useState<string>()
     const [tags, setTags] = useState<({ metaType: "AUTHOR", metaTag: SimpleAuthor } | { metaType: "TOPIC", metaTag: SimpleTopic })[]>([])
     const [result, setResult] = useState<{id: number, images: FindSimilarResultDetailImage[]}>()
@@ -98,7 +110,7 @@ export function QuickFindComponent({ channel }: {channel: EventTrigger<{src: str
     }, [])
 
     useEffect(() => {
-        const callback = async (originData: {src: string, sourcePath: SourceDataPath, sourceData: SourceDataUpdateForm}) => {
+        const callback = async (originData: {src: string | ThumbnailInfo, sourcePath: SourceDataPath, sourceData: SourceDataUpdateForm}) => {
             setOriginData(originData)
             setStatus("CAPTURE")
         }
@@ -120,13 +132,31 @@ export function QuickFindComponent({ channel }: {channel: EventTrigger<{src: str
     </>)
 }
 
-function QuickFindCapture(props: {src: string, onCompleted: (dataURL: string) => void}) {
+function QuickFindCapture(props: {src: string | ThumbnailInfo, onCompleted: (dataURL: string) => void}) {
     const [size, setSize] = useState<{width: number, height: number}>()
-    const imgRef = useRef<HTMLImageElement | null>(null)
+    const [imgNaturalSize, setImgNaturalSize] = useState<{width: number, height: number} | null>(null)
+    const containerRef = useRef<HTMLDivElement | null>(null)
+
+    // 判断是否是 ThumbnailInfo
+    const isThumbnailInfo = (src: string | ThumbnailInfo): src is ThumbnailInfo => {
+        return typeof src === "object" && "_isThumbnailInfo" in src
+    }
 
     const onLoad = size !== undefined ? undefined : (e: SyntheticEvent<HTMLImageElement>) => {
         const img = e.currentTarget
-        if(img.width > window.innerWidth * 0.8 || img.height > window.innerHeight * 0.8) {
+        setImgNaturalSize({width: img.naturalWidth, height: img.naturalHeight})
+        
+        if(isThumbnailInfo(props.src)) {
+            // 如果是 ThumbnailInfo，使用裁剪区域的尺寸
+            const cropWidth = props.src.width
+            const cropHeight = props.src.height
+            if(cropWidth > window.innerWidth * 0.8 || cropHeight > window.innerHeight * 0.8) {
+                const rate = Math.min(window.innerWidth * 0.8 / cropWidth, window.innerHeight * 0.8 / cropHeight)
+                setSize({width: cropWidth * rate, height: cropHeight * rate})
+            } else {
+                setSize({width: cropWidth, height: cropHeight})
+            }
+        }else if(img.width > window.innerWidth * 0.8 || img.height > window.innerHeight * 0.8) {
             const rate = Math.min(window.innerWidth * 0.8 / img.width, window.innerHeight * 0.8 / img.height)
             setSize({width: img.width * rate, height: img.height * rate})
         }else{
@@ -134,16 +164,27 @@ function QuickFindCapture(props: {src: string, onCompleted: (dataURL: string) =>
         }
     }
 
-    function captureImage(dataURL: string, imgWidth: number, imgHeight: number, imgRect: DOMRect): Promise<string> {
+    function captureImage(dataURL: string, imgWidth: number, imgHeight: number, imgRect: DOMRect, cropInfo: ThumbnailInfo | null, imgNaturalSize: {width: number, height: number} | null): Promise<string> {
         const canvas = document.createElement("canvas")
         const ctx = canvas.getContext("2d")!
         const tempImg = new Image()
         return new Promise(resolve => {
             tempImg.onload = () => {
                 const rate = Math.min(tempImg.width / window.innerWidth, tempImg.height / window.innerHeight)
-                canvas.height = imgHeight
-                canvas.width = imgWidth
-                ctx.drawImage(tempImg, imgRect.x * rate, imgRect.y * rate, imgRect.width * rate, imgRect.height * rate, 0, 0, imgWidth, imgHeight)
+                
+                if(cropInfo && imgNaturalSize) {
+                    // 如果有裁剪信息，按照裁剪区域来裁剪
+                    canvas.width = cropInfo.width
+                    canvas.height = cropInfo.height
+                    // imgRect 是裁剪区域在屏幕上的位置，需要转换为截图中的位置
+                    // 裁剪区域正好在屏幕中央，所以直接使用 imgRect
+                    ctx.drawImage(tempImg, imgRect.x * rate, imgRect.y * rate, imgRect.width * rate, imgRect.height * rate, 0, 0, cropInfo.width, cropInfo.height)
+                } else {
+                    // 普通图片，按原逻辑处理
+                    canvas.height = imgHeight
+                    canvas.width = imgWidth
+                    ctx.drawImage(tempImg, imgRect.x * rate, imgRect.y * rate, imgRect.width * rate, imgRect.height * rate, 0, 0, imgWidth, imgHeight)
+                }
                 resolve(canvas.toDataURL("image/jpeg"))
             }
             tempImg.src = dataURL
@@ -152,19 +193,53 @@ function QuickFindCapture(props: {src: string, onCompleted: (dataURL: string) =>
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if(size !== undefined && imgRef.current !== null) {
-                const imgWidth = imgRef.current.width
-                const imgHeight = imgRef.current.height
-                const imgRect = imgRef.current.getBoundingClientRect()
+            const element = containerRef.current
+            const cropInfo = isThumbnailInfo(props.src) ? props.src : null
+            if(size !== undefined && element !== null) {
+                const elementWidth = element.clientWidth || size.width
+                const elementHeight = element.clientHeight || size.height
+                const elementRect = element.getBoundingClientRect()
                 sendMessage("CAPTURE_VISIBLE_TAB", undefined)
-                    .then(capture => captureImage(capture, imgWidth, imgHeight, imgRect))
+                    .then(capture => captureImage(capture, elementWidth, elementHeight, elementRect, cropInfo, imgNaturalSize))
                     .then(dataURL => props.onCompleted(dataURL))
             }
         }, 100)
         return () => clearTimeout(timer)
-    }, [size])
+    }, [size, props.src, imgNaturalSize])
 
-    return <CaptureImg ref={imgRef} $size={size} onLoad={onLoad} src={props.src}/>
+    const imgSrc = isThumbnailInfo(props.src) ? props.src.url : props.src
+
+    const imgSize = useMemo(() => {
+        if(isThumbnailInfo(props.src) && size && imgNaturalSize) {
+            // 使用包装器 div 来实现裁剪
+            // 计算缩放比例（显示尺寸相对于裁剪区域尺寸的比例）
+            const scaleX = size.width / props.src.width
+            const scaleY = size.height / props.src.height
+            
+            // 完整图片的显示尺寸（按相同的缩放比例）
+            const imgDisplayWidth = imgNaturalSize.width * scaleX
+            const imgDisplayHeight = imgNaturalSize.height * scaleY
+            
+            // 计算图片的偏移量，让裁剪区域显示在容器中央
+            // offsetX 是负值（如 -200px），表示背景图片向左移动了 200px
+            // 我们需要让图片向左移动 offsetX * scale，这样裁剪区域就会在容器中
+            const imgOffsetX = props.src.offsetX * scaleX
+            const imgOffsetY = props.src.offsetY * scaleY
+            
+            return {
+                width: imgDisplayWidth,
+                height: imgDisplayHeight,
+                offsetX: imgOffsetX,
+                offsetY: imgOffsetY
+            }
+        }else{
+            return size
+        }
+    }, [size, props.src, imgNaturalSize])
+
+    return <CaptureWrapper ref={containerRef} $size={size}>
+        <CaptureImg $size={imgSize} onLoad={onLoad} src={imgSrc}/>
+    </CaptureWrapper>
 }
 
 function QuickFindLoading(props: {dataURL: string, sourcePath: SourceDataPath, sourceData: SourceDataUpdateForm, tags: ({ metaType: "AUTHOR", metaTag: SimpleAuthor } | { metaType: "TOPIC", metaTag: SimpleTopic })[], onUpdateTags: (tags: ({ metaType: "AUTHOR", metaTag: SimpleAuthor } | { metaType: "TOPIC", metaTag: SimpleTopic })[]) => void, onCompleted: (id: number, images: FindSimilarResultDetailImage[]) => void}) {
@@ -332,7 +407,7 @@ const BackgroundDiv = styled.div`
     background-color: rgba(0, 0, 0, 25%);
 `
 
-const CaptureImg = styled.img<{ $size?: {width: number, height: number} }>`
+const CaptureWrapper = styled.div<{ $size?: { width: number, height: number } }>`
     ${p => p.$size && css`
         width: ${p.$size.width}px;
         height: ${p.$size.height}px;
@@ -342,6 +417,16 @@ const CaptureImg = styled.img<{ $size?: {width: number, height: number} }>`
     top: 50%;
     transform: translate(-50%, -50%);
     z-index: 1000;
+    overflow: hidden;
+    background-color: ${LIGHT_MODE_COLORS["background"]};
+`
+
+const CaptureImg = styled.img<{ $size?: {width: number, height: number, offsetX?: number, offsetY?: number} }>`
+    ${p => p.$size !== undefined && css`
+        width: ${p.$size.width}px; 
+        height: ${p.$size.height}px;
+        ${p.$size.offsetX !== undefined && p.$size.offsetY !== undefined && css`transform: translate(${p.$size.offsetX}px, ${p.$size.offsetY}px);`}
+    `}
 `
 
 const DialogDiv = styled(LayouttedDiv)`
