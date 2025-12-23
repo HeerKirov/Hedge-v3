@@ -153,7 +153,7 @@ const ToolBarPanel = memo(function ToolBarPanel(props: Omit<RegisterItem, "eleme
         <LayouttedDiv display="flex" userSelect="none" size="small" padding={1}><FaviconImg src={favicon} alt="favicon"/>Hedge v3 Helper</LayouttedDiv>
         <Separator spacing={1}/>
         {collectStatus && <CollectStatusNotice {...collectStatus}/>}
-        {enableCollectSourceData && <Button align="left" size="small" onClick={collectSourceData}><Icon icon="cloud-arrow-down" mr={1}/>收集来源数据</Button>}
+        {enableCollectSourceData && <Button align="left" size="small" onClick={collectSourceData}><Icon icon="cloud-arrow-down" mr={1}/>{collectStatus?.collectStatus === "EDITED" ? "重新收集数据" : "收集来源数据"}</Button>}
         {enableQuickFind && <Button align="left" size="small" onClick={quickFind}><Icon icon="magnifying-glass" mr={1}/>相似项查找</Button>}
         {enableDownload && <DownloadButton downloadURL={downloadURL} sourcePath={sourceDataPath}/>}
     </ToolBarPanelDiv>

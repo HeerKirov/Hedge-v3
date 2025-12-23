@@ -1,10 +1,14 @@
 import { receiveMessageForTab } from "@/functions/messages"
 import { PIXIV_CONSTANTS } from "@/functions/sites"
-import { onDOMContentLoaded } from "@/utils/document"
+import { artworksToolbar } from "@/scripts/utils"
+import { onDOMContentLoaded, onObserving } from "@/utils/document"
 import { Result } from "@/utils/primitives"
+import { analyseSourceDataFromPreloadData } from "./utils"
+import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
 
 onDOMContentLoaded(() => {
     console.log("[Hedge v3 Helper] pixiv/illustrations script loaded.")
+    initializeUI()
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
@@ -13,6 +17,63 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
     }
     return false
 })
+
+/**
+ * 进行image-toolbar, find-similar相关的UI初始化。
+ */
+function initializeUI() {
+    artworksToolbar.config({locale: "pixiv"})
+
+    onObserving<HTMLDivElement>({
+        target: document.querySelector("main")!,
+        observe: { childList: true, subtree: true },
+        mutation: mutation => {
+            const returns = []
+            for(const addedNode of mutation.addedNodes) {
+                if(addedNode instanceof HTMLElement) {
+                    const anchors = addedNode.querySelectorAll<HTMLAnchorElement>("a[data-gtm-value]")
+                    for(const anchor of anchors) {
+                        if(anchor.href.includes("/artworks/")) {
+                            const div = anchor.parentElement?.parentElement?.parentElement as HTMLDivElement
+                            returns.push(div)
+                        }
+                    }
+                }
+            }
+            return returns
+        },
+        init: () => [...document.querySelectorAll<HTMLDivElement>("ul > li > div")].filter(n => n.querySelector("a[data-gtm-value]"))
+    }, (item, index) => {
+        const href = item.querySelector<HTMLAnchorElement>("a[data-gtm-value]")!.href
+        const hrefURL = new URL(href)
+        const match = hrefURL.pathname.match(PIXIV_CONSTANTS.REGEXES.ARTWORK_PATHNAME)
+        const sourceDataPath = match && match.groups ? {sourceSite: PIXIV_CONSTANTS.SITE_NAME, sourceId: match.groups["PID"], sourcePart: null, sourcePartName: null} : null
+        artworksToolbar.add([{
+            index,
+            element: item,
+            sourceDataPath,
+            sourceDataProvider: async () => {
+                if(sourceDataPath !== null) {
+                    return await requestSourceDataOfArtwork(sourceDataPath.sourceId)
+                }
+                return {ok: false, err: "Source data path is null."}
+            },
+            thumbnailSrc: () => {
+                const imgSrc = item.querySelector<HTMLImageElement>("img")?.src
+                if (!imgSrc) return null
+                // Match the path containing /img/YYYY/MM/DD/HH/MM/SS/ID_p*_*
+                const match = imgSrc.match(/img\/(\d{4}\/\d{2}\/\d{2}\/\d{2}\/\d{2}\/\d{2})\/(\d+_p\d+)/)
+                if (match) {
+                    const datePart = match[1] // "2025/09/01/00/00/13"
+                    const idPart = match[2]   // "134568849"
+                    return `https://i.pximg.net/img-master/img/${datePart}/${idPart}_master1200.jpg`
+                }
+                return null
+            },
+            downloadURL: null
+        }])
+    })
+}
 
 /**
  * 从当前页面查询最新的POST名称。
@@ -33,4 +94,17 @@ function getArtworksInfo(): Result<{latestPost: string, firstPage: boolean}, str
         }
     }
     return {ok: false, err: "No available post found."}
+}
+
+/**
+ * 使用API直接请求对应artworks的来源数据。
+ */
+async function requestSourceDataOfArtwork(artworksId: string): Promise<Result<SourceDataUpdateForm, string>> {
+    const response = await fetch(`/ajax/illust/${artworksId}?lang=zh`)
+    if(!response.ok) {
+        return {ok: false, err: `Failed to request source data of artwork [artworksId=${artworksId}].`}
+    }
+    const json = await response.json()
+    
+    return analyseSourceDataFromPreloadData(json)
 }
