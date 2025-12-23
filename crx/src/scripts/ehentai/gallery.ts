@@ -1,19 +1,18 @@
-import { tz } from "moment-timezone"
 import { SourceDataPath } from "@/functions/server/api-all"
-import { SourceAdditionalInfoForm, SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
 import { settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { EHENTAI_CONSTANTS } from "@/functions/sites"
 import { artworksToolbar, type ThumbnailInfo } from "@/scripts/utils"
-import { numbers, Result } from "@/utils/primitives"
+import { numbers } from "@/utils/primitives"
 import { documents, onDOMContentLoaded } from "@/utils/document"
+import { analyseSourceDataFromGalleryDOM, analyseDownloadURLFromImageDOM } from "./utils"
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] ehentai/gallery script loaded.")
     const setting = await settings.get()
     const sourceDataPath = getSourceDataPath()
     if(!isContentWarning()) {
-        const sourceData = collectSourceData()
+        const sourceData = analyseSourceDataFromGalleryDOM(document, document.location.pathname)
         sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
         sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
 
@@ -33,7 +32,7 @@ onDOMContentLoaded(async () => {
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
     if(type === "REPORT_SOURCE_DATA") {
-        callback(collectSourceData())
+        callback(analyseSourceDataFromGalleryDOM(document, document.location.pathname))
     }else if(type === "REPORT_PAGE_INFO") {
         callback({path: getSourceDataPath()})
     }
@@ -293,92 +292,6 @@ function isContentWarning() {
 }
 
 /**
- * 收集来源数据。
- */
-function collectSourceData(): Result<SourceDataUpdateForm, string> {
-    const tags: SourceTagForm[] = []
-    const tagListDiv = document.querySelector<HTMLDivElement>("#taglist")
-    if(tagListDiv) {
-        const trList = tagListDiv.querySelectorAll<HTMLTableRowElement>("tr")
-        for(const tr of trList) {
-            if(tr.childElementCount <= 0) continue
-            let type: string
-            const typeTd = tr.querySelector("td.tc")
-            if(typeTd && typeTd.textContent) {
-                type = typeTd.textContent.substring(0, typeTd.textContent.length - 1)
-            }else{
-                return {ok: false, err: `Tag: Cannot analyse tag type from 'td.tc'.`}
-            }
-            const tagAnchorList = tr.querySelectorAll<HTMLAnchorElement>("td.tc + td > div > a")
-            if(tagAnchorList.length <= 0) {
-                return {ok: false, err: `Tag: Cannot find any tag of type '${type}'.`}
-            }
-            for(const tagAnchor of tagAnchorList) {
-                const [name, otherName] = tagAnchor.textContent!.split("|").map(i => i.trim())
-                tags.push({code: name, name, otherName, type})
-            }
-        }
-    }else{
-        return {ok: false, err: `Tag: cannot find '#taglist'.`}
-    }
-
-    //画廊的类型(doujinshi, image set)也会被作为tag写入，类型固定为"category"，code为"{category-}"
-    const categoryDiv = document.querySelector<HTMLDivElement>(".gm .cs")
-    if(categoryDiv) {
-        const category = categoryDiv.textContent!
-        tags.push({code: category.toLowerCase().replaceAll(" ", "-"), name: category, type: "category"})
-    }else{
-        return {ok: false, err: `Category: cannot find '.cs'.`}
-    }
-
-    //发布时间。同样没有确定选择器，选择的是第一个
-    let publishTime: string | undefined
-    const publishTimeDiv = document.querySelector<HTMLTableRowElement>(".gm #gdd tr > td:first-child + td")
-    if(publishTimeDiv) {
-        try {
-            publishTime = tz(publishTimeDiv.textContent, "UTC").toDate().toISOString()
-        }catch(e) {
-            console.error(`Publish time analysis failed.`, e)
-        }
-    }
-
-    //画廊的token将作为附加信息写入
-    const additionalInfo: SourceAdditionalInfoForm[] = []
-    const pathnameMatch = document.location.pathname.match(EHENTAI_CONSTANTS.REGEXES.GALLERY_PATHNAME)
-    if(pathnameMatch && pathnameMatch.groups) {
-        additionalInfo.push({field: "token", value: pathnameMatch.groups["TOKEN"]})
-    }
-    
-    let title: string | undefined
-    let description: string | undefined
-    
-    const primaryTitleHeading = document.querySelector<HTMLHeadingElement>(".gm #gd2 #gn")
-    const secondaryTitleHeading = document.querySelector<HTMLHeadingElement>(".gm #gd2 #gj")
-    const uploaderCommentDiv = document.querySelector<HTMLDivElement>("#cdiv > .c1")
-    const primaryTitle = primaryTitleHeading !== null ? primaryTitleHeading.textContent || undefined : undefined
-    const secondaryTitle = secondaryTitleHeading !== null ? secondaryTitleHeading.textContent || undefined : undefined
-    const uploaderComment = uploaderCommentDiv && uploaderCommentDiv.querySelector("a[name=ulcomment]") ? uploaderCommentDiv.querySelector<HTMLDivElement>("#comment_0")!.innerText || undefined : undefined
-    //secondary title通常是日文标题，因此一般优先选用它
-    if(secondaryTitle !== undefined) {
-        title = secondaryTitle
-        //如果同时存在primary title和uploader comment，则将它们组合成为description
-        if(primaryTitle !== undefined && uploaderComment !== undefined) description = `${primaryTitle}\n\n${uploaderComment}`
-        else if(primaryTitle !== undefined) description = primaryTitle
-        else if(uploaderComment !== undefined) description = uploaderComment
-    }else if(primaryTitle !== undefined) {
-        title = primaryTitle
-        if(uploaderComment !== undefined) description = uploaderComment
-    }else{
-        return {ok: false, err: `Title: jp & en title both not found.`}
-    }
-
-    return {
-        ok: true,
-        value: {tags, title, description, additionalInfo, publishTime}
-    }
-}
-
-/**
  * 获得当前页面的SourceDataPath。需要注意的是，当前页面为gallery页，没有page参数。
  */
 function getSourceDataPath(): SourceDataPath {
@@ -497,24 +410,5 @@ async function requestDownloadURLOfImage(href: string): Promise<string | null> {
     const parser = new DOMParser()
     const doc = parser.parseFromString(html, "text/html")
 
-    // 参考 image.ts 的逻辑：优先使用 “Download original” 的链接，否则退回到图片本身的地址
-    const i6 = doc.querySelector<HTMLDivElement>("#i6")
-    if(!i6) {
-        console.warn("[requestDownloadURLOfImage] Cannot find div#i6.")
-        return null
-    }
-
-    const i6a = doc.querySelector<HTMLAnchorElement>("#i6 div:last-child a")
-    if(i6a?.textContent?.startsWith("Download original")) {
-        // 在 i6 中找到的最后一个元素是 Download original，则表示此图像有 original，使用 anchor 的下载链接
-        return i6a.href
-    }else{
-        // 否则表明此图像没有 original，使用图像地址本身
-        const img = doc.querySelector<HTMLImageElement>("#img")
-        if(!img) {
-            console.warn("[requestDownloadURLOfImage] Cannot find #img.")
-            return null
-        }
-        return img.src
-    }
+    return analyseDownloadURLFromImageDOM(doc)
 }

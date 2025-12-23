@@ -70,12 +70,12 @@ type SubmitPageInfo = MsgTemplate<"SUBMIT_PAGE_INFO", {path: SourceDataPath}>
 /**
  * 向来源数据管理模块提交当前页面所包含的source data & path信息。这些信息会被缓存用作后续其他用处。
  */
-type SubmitSourceData = MsgTemplate<"SUBMIT_SOURCE_DATA", {path: SourceDataPath, data: Result<SourceDataUpdateForm, string>}>
+type SubmitSourceData = MsgTemplateWithCallback<"SUBMIT_SOURCE_DATA", {path: SourceDataPath, data: Result<SourceDataUpdateForm, string>}, void>
 
 /**
  * 向来源数据管理模块请求指定的source data。
  */
-type GetSourceData = MsgTemplateWithCallback<"GET_SOURCE_DATA", {sourceSite: string, sourceId: string}, SourceDataUpdateForm | null>
+type GetSourceData = MsgTemplateWithCallback<"GET_SOURCE_DATA", {sourceSite: string, sourceId: string}, Result<SourceDataUpdateForm, string>>
 
 /**
  * 向来源数据管理模块要求上传指定source data到服务器。

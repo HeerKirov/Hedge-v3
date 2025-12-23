@@ -11,7 +11,7 @@ export const sourceDataManager = {
     /**
      * 向管理器写入一条来源数据。它会被存储在缓存序列中等待使用。写入的data包含Result，因此也包含对错误数据的抛出操作。
      */
-    submit(path: {sourceSite: string, sourceId: string}, data: Result<SourceDataUpdateForm, string>): void {
+    async submit(path: {sourceSite: string, sourceId: string}, data: Result<SourceDataUpdateForm, string>): Promise<void> {
         if(!data.ok) {
             notify({
                 title: "来源数据获取异常",
@@ -21,14 +21,14 @@ export const sourceDataManager = {
             return
         }
         console.log(`[sourceDataManager] submit source data ${path.sourceSite}-${path.sourceId}.`, data.value)
-        sessions.cache.sourceDataStorage.set(path, data.value).finally()
+        await sessions.cache.sourceDataStorage.set(path, data.value)
     },
     /**
      * 从管理器请求一条来源数据。管理器会先尝试从缓存中拉取数据，如果没有缓存，则尝试搜寻页面以直接拉取数据。如果这也失败，将返回null。
      */
-    async get(path: {sourceSite: string, sourceId: string}): Promise<SourceDataUpdateForm | null> {
+    async get(path: {sourceSite: string, sourceId: string}): Promise<Result<SourceDataUpdateForm, string>> {
         const data = await sessions.cache.sourceDataStorage.get(path)
-        if(data !== undefined) return data
+        if(data !== undefined) return {ok: true, value: data}
 
         //tips: 偶尔会有一种情况，get获取来源数据时内容为null。尚不清楚原因，没有任何错误抛出，也无法复现。
         //为了解决这个问题，暂且加回了主动拉取的能力，在这种没有数据的情况下主动去页面请求数据。
@@ -36,25 +36,17 @@ export const sourceDataManager = {
         const website = WEBSITES[path.sourceSite]
         const pageURL = website?.sourceDataPages?.(path.sourceId)
         if(pageURL === undefined) {
-            notify({
-                title: "来源数据收集异常",
-                message: `${path.sourceSite}-${path.sourceId}: 无法正确生成提取页面的URL。`
-            })
             console.error(`[sourceDataManager] ${path.sourceSite}-${path.sourceId} cannot generate pattern URL.`)
-            return null
+            return {ok: false, err: `${path.sourceSite}-${path.sourceId}: 无法正确生成提取页面的URL。`}
         }
         const tabs = await queryTabs({currentWindow: true, url: pageURL})
         if(tabs.length <= 0 || tabs[0].id === undefined) {
-            notify({
-                title: "来源数据收集异常",
-                message: `${path.sourceSite}-${path.sourceId}: 未找到用于提取数据的页面。`
-            })
             console.error(`[sourceDataManager] Page '${pageURL}' not found.`)
-            return null
+            return {ok: false, err: `${path.sourceSite}-${path.sourceId}: 未找到用于提取数据的页面。`}
         }
         const reportResult = await sendMessageToTab(tabs[0].id, "REPORT_SOURCE_DATA", undefined)
-        sourceDataManager.submit(path, reportResult)
-        return reportResult.ok ? reportResult.value : null
+        await sourceDataManager.submit(path, reportResult)
+        return reportResult
     },
     /**
      * 要求管理器将指定source data上传到服务器。这个函数包含对错误数据的抛出操作，最终只返回一个成功与否的布尔值。
@@ -106,17 +98,17 @@ export const sourceDataManager = {
             }
         }
 
-        const sourceData = await sourceDataManager.get({sourceSite, sourceId})
-        if(sourceData === null) {
+        const sourceDataResponse = await sourceDataManager.get({sourceSite, sourceId})
+        if(!sourceDataResponse.ok) {
             notify({
                 title: "来源数据收集异常",
-                message: `${sourceSite}-${sourceId}: 未发现此来源数据的缓存。`
+                message: sourceDataResponse.err
             })
             console.error(`[collectSourceData] Source data ${sourceSite}-${sourceId} upload failed: Cache data not exist.`)
             return false
         }
 
-        const res = await server.sourceData.bulk([{...sourceData, sourceSite, sourceId}])
+        const res = await server.sourceData.bulk([{...sourceDataResponse.value, sourceSite, sourceId}])
         if(!res.ok) {
             if(res.exception !== undefined) {
                 notify({

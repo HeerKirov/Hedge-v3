@@ -24,7 +24,8 @@ function onMessage<T extends ContentScriptMessagesList>(msg: T, sender: chrome.r
     if(msg.type === "SUBMIT_PAGE_INFO") {
         if(sender.tab?.id) setActiveTabBadge(sender.tab.id, msg.msg.path).finally()
     }else if(msg.type === "SUBMIT_SOURCE_DATA") {
-        sourceDataManager.submit(msg.msg.path, msg.msg.data)
+        sourceDataManager.submit(msg.msg.path, msg.msg.data).then(r => callback(r)).catch(e => console.error(e))
+        return true
     }else if(msg.type === "GET_SOURCE_DATA") {
         sourceDataManager.get(msg.msg).then(r => callback(r))
         return true

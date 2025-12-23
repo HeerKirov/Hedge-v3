@@ -4,6 +4,7 @@ import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { EHENTAI_CONSTANTS } from "@/functions/sites"
 import { imageToolbar, similarFinder } from "@/scripts/utils"
 import { onDOMContentLoaded } from "@/utils/document"
+import { analyseDownloadURLFromImageDOM } from "./utils"
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] ehentai/image script loaded.")
@@ -23,7 +24,7 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
         const sourceDataPath = getSourceDataPath()
         sendMessage("GET_SOURCE_DATA", {sourceSite: "ehentai", sourceId: sourceDataPath.sourceId}).then(sourceData => {
             const file = document.querySelector<HTMLImageElement>("div#i3 img#img")
-            similarFinder.quickFind(file?.src, sourceDataPath, sourceData !== null ? {ok: true, value: sourceData} : {ok: false, err: "Source data from manager is null."})
+            similarFinder.quickFind(file?.src, sourceDataPath, sourceData)
         })
     }
     return false
@@ -61,32 +62,12 @@ function enableOptimizeUI() {
  * 进行image-toolbar, find-similar相关的UI初始化。
  */
 function initializeUI(sourcePath: SourceDataPath) {
-    const i3 = document.querySelector<HTMLDivElement>("#i3")
-    if(!i3) {
-        console.warn("[initializeUI] Cannot find div#i3.")
-        return
+    const downloadURL = analyseDownloadURLFromImageDOM(document)
+    if(downloadURL !== null) {
+        const i3 = document.querySelector<HTMLDivElement>("#i3")!
+        imageToolbar.config({locale: "ehentai-image"})
+        imageToolbar.add([{index: sourcePath.sourcePart!, element: i3, sourcePath, downloadURL}])
     }
-    const i6 = document.querySelector<HTMLDivElement>("#i6")
-    if(!i6) {
-        console.warn("[initializeUI] Cannot find div#i6.")
-        return
-    }
-    let downloadURL: string
-    const i6a = document.querySelector<HTMLAnchorElement>("#i6 div:last-child a")
-    if(i6a?.innerText.startsWith("Download original")) {
-        //在i6中找到的最后一个元素是Download original，则表示此图像有original，使用anchor的下载链接
-        downloadURL = i6a.href
-    }else{
-        //否则表明此图像没有original，使用直接使用图像地址
-        const img = document.querySelector<HTMLImageElement>("#img")
-        if(!img) {
-            console.warn("[initializeUI] Cannot find #img.")
-            return
-        }
-        downloadURL = img.src
-    }
-    imageToolbar.config({locale: "ehentai-image"})
-    imageToolbar.add([{index: sourcePath.sourcePart!, element: i3, sourcePath, downloadURL}])
 }
 
 /**
@@ -113,3 +94,4 @@ function getIdentityInfo(): {gid: string, page: number, imageHash: string} {
         throw new Error("Cannot analyse pathname.")
     }
 }
+

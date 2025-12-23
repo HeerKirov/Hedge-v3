@@ -2,14 +2,15 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "
 import ReactDOM from "react-dom/client"
 import { css, styled, StyleSheetManager } from "styled-components"
 import { Button, FormattedText, Icon, LayouttedDiv, Separator } from "@/components/universal"
-import { SourceDataCollectStatus, SourceEditStatus } from "@/functions/server/api-source-data"
+import { SourceDataCollectStatus, SourceDataUpdateForm, SourceEditStatus } from "@/functions/server/api-source-data"
+import { useCollectStatus } from "@/hooks/source-info"
+import { SourceDataPath } from "@/functions/server/api-all"
+import { sendMessage } from "@/functions/messages"
+import { similarFinder, ThumbnailInfo } from "@/scripts/utils/find-similar"
+import { Result } from "@/utils/primitives"
 import { useOutsideClick } from "@/utils/sensors"
 import { fontAwesomeCSS } from "@/styles/fontawesome"
 import { DARK_MODE_COLORS, ELEMENT_HEIGHTS, FONT_SIZES, GlobalStyle, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
-import { useCollectStatus } from "@/hooks/source-info"
-import { SourceDataPath } from "@/functions/server/api-all"
-import { similarFinder, ThumbnailInfo } from "./find-similar"
-import { sendMessage } from "@/functions/messages"
 
 type LocalSite = "pixiv" | "ehentai" | "ehentai-gallery" | "sankaku"
 
@@ -18,6 +19,7 @@ interface RegisterItem {
     sourceDataPath: SourceDataPath | null
     thumbnailSrc: string | ThumbnailInfo | (() => string | ThumbnailInfo | null) | null
     downloadURL: string | (() => Promise<string | null> | string | null) | null
+    sourceDataProvider?: () => Promise<Result<SourceDataUpdateForm, string>>
     element: HTMLElement
 }
 
@@ -105,7 +107,7 @@ function ToolBar(props: Omit<RegisterItem, "element"> & { bodyElement: HTMLEleme
 }
 
 const ToolBarPanel = memo(function ToolBarPanel(props: Omit<RegisterItem, "element"> & { onClose: () => void }) {
-    const { index: _, sourceDataPath, thumbnailSrc, downloadURL, onClose } = props
+    const { index: _, sourceDataPath, thumbnailSrc, downloadURL, sourceDataProvider, onClose } = props
 
     const favicon = useMemo(() => chrome.runtime.getURL("favicon.png"), [])
     
@@ -117,11 +119,31 @@ const ToolBarPanel = memo(function ToolBarPanel(props: Omit<RegisterItem, "eleme
 
     const quickFind = useCallback(async () => {
         if(sourceDataPath) {
-            const sourceData = await sendMessage("GET_SOURCE_DATA", {sourceSite: sourceDataPath.sourceSite, sourceId: sourceDataPath.sourceId})
+            let sourceData = await sendMessage("GET_SOURCE_DATA", {sourceSite: sourceDataPath.sourceSite, sourceId: sourceDataPath.sourceId})
+            if(!sourceData.ok && sourceDataProvider !== undefined) {
+                sourceData = await sourceDataProvider()
+                if(sourceData.ok) {
+                    sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
+                }
+            }
+            
             const src = typeof thumbnailSrc === "function" ? thumbnailSrc() : thumbnailSrc
-            similarFinder.quickFind(src, sourceDataPath, sourceData !== null ? {ok: true, value: sourceData} : {ok: false, err: "Source data from manager is null."})
+            similarFinder.quickFind(src, sourceDataPath, sourceData)
         }
     }, [sourceDataPath, thumbnailSrc])
+
+    const collectSourceData = useCallback(async () => {
+        if(sourceDataPath) {
+            let sourceData = await sendMessage("GET_SOURCE_DATA", {sourceSite: sourceDataPath.sourceSite, sourceId: sourceDataPath.sourceId})
+            if(!sourceData.ok && sourceDataProvider !== undefined) {
+                const sourceData = await sourceDataProvider()
+                if(sourceData.ok) {
+                    await sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
+                }
+            }
+            await manualCollectSourceData()
+        }
+    }, [sourceDataPath, sourceDataProvider])
 
     const enableCollectSourceData = config.locale !== "ehentai-gallery"
     const enableQuickFind = thumbnailSrc !== null
@@ -131,7 +153,7 @@ const ToolBarPanel = memo(function ToolBarPanel(props: Omit<RegisterItem, "eleme
         <LayouttedDiv display="flex" userSelect="none" size="small" padding={1}><FaviconImg src={favicon} alt="favicon"/>Hedge v3 Helper</LayouttedDiv>
         <Separator spacing={1}/>
         {collectStatus && <CollectStatusNotice {...collectStatus}/>}
-        {enableCollectSourceData && <Button align="left" size="small" onClick={manualCollectSourceData}><Icon icon="cloud-arrow-down" mr={1}/>收集来源数据</Button>}
+        {enableCollectSourceData && <Button align="left" size="small" onClick={collectSourceData}><Icon icon="cloud-arrow-down" mr={1}/>收集来源数据</Button>}
         {enableQuickFind && <Button align="left" size="small" onClick={quickFind}><Icon icon="magnifying-glass" mr={1}/>相似项查找</Button>}
         {enableDownload && <DownloadButton downloadURL={downloadURL} sourcePath={sourceDataPath}/>}
     </ToolBarPanelDiv>
