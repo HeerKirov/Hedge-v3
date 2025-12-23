@@ -87,7 +87,8 @@ function initializeUI(sourceDataPath: SourceDataPath | null) {
             index,
             element: node,
             sourcePath: sourceDataPath !== null ? {...sourceDataPath, sourcePart: index} : null,
-            downloadURL: node.querySelector<HTMLAnchorElement>(".fileThumb")!.href
+            downloadURL: node.querySelector<HTMLAnchorElement>(".fileThumb")!.href,
+            thumbnailSrc: () => node.querySelector<HTMLImageElement>(".fileThumb img")?.src ?? null
         })))
     }
 

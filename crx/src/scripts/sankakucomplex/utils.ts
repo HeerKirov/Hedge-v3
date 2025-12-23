@@ -3,39 +3,41 @@ import { SourceDataUpdateForm, SourceTagForm, SourceBookForm } from "@/functions
 import { Result } from "@/utils/primitives"
 
 
-export function analyseDownloadURLFromPostDOM(document: Document): {downloadURL: string, element: HTMLElement} | {downloadURL: null, element: null} {
+export function analyseDownloadURLFromPostDOM(document: Document): {downloadURL: string, element: HTMLElement, thumbnailURL: string} | {downloadURL: null, element: null, thumbnailURL: null} {
     const postContent = document.querySelector<HTMLDivElement>("#post-content")
     if(!postContent) {
         console.warn("[initializeUI] Cannot find #post-content.")
-        return {downloadURL: null, element: null}
+        return {downloadURL: null, element: null, thumbnailURL: null}
     }
     const imageLink = postContent.querySelector<HTMLAnchorElement>("#image-link")
-    let url: string
+    let url: string, thumbnail: string
     if(imageLink) {
         if(imageLink.classList.contains("sample") && imageLink.href) {
             url = imageLink.href
+            thumbnail = imageLink.querySelector("img")?.src ?? ""
         }else if(imageLink.classList.contains("full")) {
             const img = imageLink.querySelector("img")
             if(img) {
-                url = img.src
+                url = thumbnail = img.src
             }else{
                 console.warn("[initializeUI] Cannot find #image-link > img.")
-                return {downloadURL: null, element: null}
+                return {downloadURL: null, element: null, thumbnailURL: null}
             }
         }else{
             console.warn("[initializeUI] Cannot find #image-link with class 'full' or 'sample'.")
-            return {downloadURL: null, element: null}
+            return {downloadURL: null, element: null, thumbnailURL: null}
         }
     }else{
         const video = postContent.querySelector<HTMLVideoElement>("video#image")
         if(video) {
             url = video.src
+            thumbnail = ""
         }else{
             console.warn("[initializeUI] Cannot find #image-link or video#image.")
-            return {downloadURL: null, element: null}
+            return {downloadURL: null, element: null, thumbnailURL: null}
         }
     }
-    return {downloadURL: url, element: postContent}
+    return {downloadURL: url, element: postContent, thumbnailURL: thumbnail}
 }
 
 /**

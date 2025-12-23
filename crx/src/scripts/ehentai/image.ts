@@ -65,7 +65,7 @@ function initializeUI(sourcePath: SourceDataPath) {
     const { downloadURL, element } = analyseDownloadURLFromImageDOM(document)
     if(downloadURL) {
         imageToolbar.config({locale: "ehentai-image"})
-        imageToolbar.add([{index: sourcePath.sourcePart!, element, sourcePath, downloadURL}])
+        imageToolbar.add([{index: sourcePath.sourcePart!, element, sourcePath, downloadURL, thumbnailSrc: () => document.querySelector<HTMLImageElement>("div#i3 img#img")?.src ?? null}])
     }
 }
 

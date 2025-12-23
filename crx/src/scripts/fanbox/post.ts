@@ -86,7 +86,7 @@ function initializeUI(sourcePath: SourceDataPath) {
                         }
                     }
                 }
-                return {index, downloadURL, sourcePath: {...sourcePath, sourcePart: index}, element}
+                return {index, downloadURL, sourcePath: {...sourcePath, sourcePart: index}, element, thumbnailSrc: node.src || null}
             })
             callback(ret)
         }

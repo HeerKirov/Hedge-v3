@@ -65,7 +65,8 @@ function initializeUI(sourcePath: SourceDataPath) {
                 }else{
                     return undefined
                 }
-            }
+            },
+            thumbnailSrc: () => node.querySelector<HTMLImageElement>(`a > img#imgsrc_${index}`)?.src ?? null
         }
     })))
 

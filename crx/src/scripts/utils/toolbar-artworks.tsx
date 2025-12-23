@@ -136,7 +136,7 @@ const ToolBarPanel = memo(function ToolBarPanel(props: Omit<RegisterItem, "eleme
         if(sourceDataPath) {
             let sourceData = await sendMessage("GET_SOURCE_DATA", {sourceSite: sourceDataPath.sourceSite, sourceId: sourceDataPath.sourceId})
             if(!sourceData.ok && sourceDataProvider !== undefined) {
-                const sourceData = await sourceDataProvider()
+                sourceData = await sourceDataProvider()
                 if(sourceData.ok) {
                     await sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
                 }
@@ -221,7 +221,7 @@ const ToolBarDiv = styled.div<{ $style?: LocalSite, $active: boolean }>`
     top: 4px;
     right: 4px;
     ${p => p.$active && css`
-        z-index: 1;
+        z-index: 101;
         transform: translateX(calc(50% - ${ELEMENT_HEIGHTS["tiny"]} / 2));
     `}
     box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);

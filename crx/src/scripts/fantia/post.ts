@@ -7,6 +7,7 @@ import { FANTIA_CONSTANTS } from "@/functions/sites"
 import { imageToolbar, similarFinder } from "@/scripts/utils"
 import { onDOMContentObserved } from "@/utils/document"
 import { Result } from "@/utils/primitives"
+import { downloadURL } from "@/services/downloads"
 
 onDOMContentObserved({
     observe: { subtree: true, childList: true },
@@ -56,11 +57,13 @@ async function initializeUI(sourcePath: SourceDataPath) {
     let index = 1
     const nodes = [...document.querySelectorAll<HTMLPictureElement>(".image-container picture").values()].map(node => {
         const src = node.querySelector("img")!.src
+        const element = node.parentElement!.parentElement! as HTMLDivElement
         const m = src.match(/uploads\/post_content_photo\/file\/(?<FID>\d+)/)
         const fid = (m && m.groups) ? m.groups["FID"] : null
         const i = index++
         const sp: SourceDataPath = {...sourcePath, sourcePart: i, sourcePartName: fid}
-        return {index: i, element: node, sourcePath: sp, downloadURL: `https://fantia.jp/posts/${sourcePath.sourceId}/post_content_photo/${fid}#${i}`}
+        const externalURL = `https://fantia.jp/posts/${sourcePath.sourceId}/post_content_photo/${fid}#${i}`
+        return {index: i, element, sourcePath: sp, downloadURL: null, externalURL, thumbnailSrc: src}
     })
 
     for(const { sourcePath } of nodes) {

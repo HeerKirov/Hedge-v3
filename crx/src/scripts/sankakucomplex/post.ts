@@ -48,11 +48,11 @@ function enableUIOptimize() {
  * 进行image-toolbar, find-similar相关的UI初始化。
  */
 function initializeUI(sourcePath: SourceDataPath) {
-    const { downloadURL, element } = analyseDownloadURLFromPostDOM(document)
+    const { downloadURL, thumbnailURL, element } = analyseDownloadURLFromPostDOM(document)
 
     if(downloadURL) {
         imageToolbar.config({locale: "sankaku"})
-        imageToolbar.add([{index: null, element, sourcePath, downloadURL}])
+        imageToolbar.add([{index: null, element, sourcePath, downloadURL, thumbnailSrc: thumbnailURL}])
     }
 }
 
