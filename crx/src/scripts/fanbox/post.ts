@@ -2,6 +2,7 @@ import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { FANBOX_CONSTANTS } from "@/functions/sites"
+import { settings } from "@/functions/setting"
 import { imageToolbar, similarFinder } from "@/scripts/utils"
 import { onDOMContentLoaded } from "@/utils/document"
 import { Result, sleep } from "@/utils/primitives"
@@ -9,12 +10,13 @@ import { Result, sleep } from "@/utils/primitives"
 onDOMContentLoaded(async () => {
     if(FANBOX_CONSTANTS.REGEXES.POST_PATHNAME.test(document.location.pathname)) {
         console.log("[Hedge v3 Helper] fanbox/post script loaded.")
+        const setting = await settings.get()
         const sourceDataPath = getSourceDataPath()
         const sourceData = await collectSourceData()
         sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
         sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
 
-        initializeUI(sourceDataPath)
+        if(setting.toolkit.downloadToolbar.enabled) initializeUI(sourceDataPath)
     }
 })
 

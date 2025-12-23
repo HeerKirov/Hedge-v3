@@ -49,7 +49,7 @@ onDOMContentObserved({
         sendMessage("NOTIFICATION", {title: "来源数据收集异常", message: `无法从${document.location.pathname}找到来源数据，请检查控制台。`})
     }
 
-    initializeUI(sourcePath)
+    if(setting.toolkit.downloadToolbar.enabled) initializeUI(sourcePath)
     if(setting.website.kemono.enableLinkReplace) enableLinkReplace()
 
     enablePasswordTableEnhance()

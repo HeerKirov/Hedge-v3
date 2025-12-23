@@ -14,7 +14,7 @@ onDOMContentLoaded(async () => {
 
     if(setting.website.ehentai.enableUIOptimize) enableOptimizeUI()
 
-    initializeUI(sourceDataPath)
+    if(setting.toolkit.downloadToolbar.enabled) initializeUI(sourceDataPath)
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
@@ -62,11 +62,10 @@ function enableOptimizeUI() {
  * 进行image-toolbar, find-similar相关的UI初始化。
  */
 function initializeUI(sourcePath: SourceDataPath) {
-    const downloadURL = analyseDownloadURLFromImageDOM(document)
-    if(downloadURL !== null) {
-        const i3 = document.querySelector<HTMLDivElement>("#i3")!
+    const { downloadURL, element } = analyseDownloadURLFromImageDOM(document)
+    if(downloadURL) {
         imageToolbar.config({locale: "ehentai-image"})
-        imageToolbar.add([{index: sourcePath.sourcePart!, element: i3, sourcePath, downloadURL}])
+        imageToolbar.add([{index: sourcePath.sourcePart!, element, sourcePath, downloadURL}])
     }
 }
 

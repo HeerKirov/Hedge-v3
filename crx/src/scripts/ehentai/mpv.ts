@@ -1,15 +1,17 @@
 import { SourceDataPath } from "@/functions/server/api-all"
 import { EHENTAI_CONSTANTS } from "@/functions/sites"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
+import { settings } from "@/functions/setting"
 import { onDOMContentLoaded } from "@/utils/document"
 import { imageToolbar } from "@/scripts/utils"
 
-onDOMContentLoaded(() => {
-    console.log("[Hedge v3 Helper] ehentai/image script loaded.")
+onDOMContentLoaded(async () => {
+    console.log("[Hedge v3 Helper] ehentai/mpv script loaded.")
+    const setting = await settings.get()
     const sourceDataPath = getSourceDataPath()
     sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
 
-    initializeUI(sourceDataPath)
+    if(setting.toolkit.downloadToolbar.enabled) initializeUI(sourceDataPath)
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {

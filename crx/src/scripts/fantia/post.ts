@@ -1,6 +1,7 @@
 import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
+import { settings } from "@/functions/setting"
 import { sessions } from "@/functions/storage"
 import { FANTIA_CONSTANTS } from "@/functions/sites"
 import { imageToolbar, similarFinder } from "@/scripts/utils"
@@ -22,11 +23,12 @@ onDOMContentObserved({
     preCondition: () => FANTIA_CONSTANTS.REGEXES.POST_PATHNAME.test(document.location.pathname)
 }, async () => {
     console.log("[Hedge v3 Helper] fantia/post script loaded.")
+    const setting = await settings.get()
     const sourceDataPath = getSourceDataPath()
     const sourceData = await collectSourceData()
     sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
     sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
-    await initializeUI(sourceDataPath)
+    if(setting.toolkit.downloadToolbar.enabled) await initializeUI(sourceDataPath)
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {

@@ -1,14 +1,19 @@
 import { receiveMessageForTab } from "@/functions/messages"
+import { SourceDataPath } from "@/functions/server/api-all"
+import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
 import { settings } from "@/functions/setting"
 import { SANKAKUCOMPLEX_CONSTANTS } from "@/functions/sites"
+import { artworksToolbar } from "@/scripts/utils"
 import { onDOMContentLoaded } from "@/utils/document"
 import { Result } from "@/utils/primitives"
+import { analyseDownloadURLFromPostDOM, analyseSourceDataFromPostDOM } from "./utils"
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] sankakucomplex/global script loaded.")
     const setting = await settings.get()
     if(setting.website.sankakucomplex.enableBlockAds) enableBlockAds()
     if(setting.website.sankakucomplex.enablePaginationEnhancement) enablePaginationEnhancement()
+    if(setting.toolkit.downloadToolbar.enabled) initializeUI()
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
@@ -17,6 +22,26 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
     }
     return false
 })
+
+function initializeUI() {
+    const items = [...document.querySelectorAll<HTMLDivElement>(".post-gallery-grid .post-preview .post-preview-container")]
+    const nodes = items.map((item, index) => {
+        const href = item.querySelector<HTMLAnchorElement>(":scope > a")?.href
+        const url = href ? new URL(href) : null
+        const match = url && url.pathname.match(SANKAKUCOMPLEX_CONSTANTS.REGEXES.POST_PATHNAME)
+        const sourceDataPath: SourceDataPath | null = match && match.groups ? {sourceSite: SANKAKUCOMPLEX_CONSTANTS.SITE_NAME, sourceId: match.groups["PID"], sourcePart: null, sourcePartName: null} : null
+        return {
+            index,
+            element: item,
+            sourceDataPath,
+            thumbnailSrc: () => item.querySelector<HTMLImageElement>("img")?.src ?? null,
+            downloadURL: href === undefined ? null : () => requestDownloadURLOfImage(href),
+            sourceDataProvider: href === undefined ? undefined : () => requestSourceDataOfPost(href)
+        }
+    })
+    artworksToolbar.config({locale: "sankaku"})
+    artworksToolbar.add(nodes)
+}
 
 /**
  * 功能：屏蔽部分广告和冗余UI。
@@ -125,4 +150,37 @@ function getArtworksInfo(): Result<{latestPost: string, firstPage: boolean}, str
         }
     }
     return {ok: false, err: "No available post found."}
+}
+
+/**
+ * 通过请求image页面HTML的方式，解析获得来源数据。
+ */
+async function requestSourceDataOfPost(href: string): Promise<Result<SourceDataUpdateForm, string>> {
+    const response = await fetch(href)
+    if(!response.ok) {
+        return {ok: false, err: `Failed to request source data of post [href=${href}].`}
+    }
+    const text = await response.text()
+    const doc = new DOMParser().parseFromString(text, "text/html")
+
+    return analyseSourceDataFromPostDOM(doc)
+}
+
+/**
+ * 通过请求image页面HTML的方式，解析获得图像源文件下载链接。
+ */
+async function requestDownloadURLOfImage(href: string): Promise<string | null> {
+    const response = await fetch(href)
+    if(!response.ok) {
+        return null
+    }
+
+    const html = await response.text()
+
+    // 使用 DOMParser 将返回的 HTML 字符串解析为文档
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(html, "text/html")
+
+    const { downloadURL } = analyseDownloadURLFromPostDOM(doc)
+    return downloadURL
 }

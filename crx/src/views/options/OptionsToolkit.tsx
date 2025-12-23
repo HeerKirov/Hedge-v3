@@ -61,17 +61,21 @@ export function OptionsToolkitPanel(props: OptionsToolkitPanelProps) {
         <p>扩展提供了用于增强下载与来源数据收集体验的一些功能。</p>
 
         <Separator spacing={[4, 1]}/>
-        <Header>下载工具栏</Header>
-        <p>在受支持的网站中，为视图页主图像附加下载工具栏，通过此工具栏以以统一的方式下载文件，并自动对其进行重命名。</p>
+        <Header>工具栏</Header>
+        <p>在受支持的网站中，为列表页的每个项目附加扩展菜单。</p>
+        <p>在受支持的网站中，为视图页主图像附加下载按钮。</p>
         <IconDisplayDiv>
             <Label>支持的网站</Label>
             <img src={EHentaiIcon} alt="e-hentai icon"/><span>E-Hentai</span>
+            <img src={PixivIcon} alt="pixiv icon"/><span>Pixiv</span>
             <img src={FanboxIcon} alt="fanbox icon"/><span>FANBOX</span>
+            <img src={FantiaIcon} alt="fantia icon"/><span>Fantia</span>
             <img src={KemonoIcon} alt="kemono icon"/><span>Kemono</span>
             <img src={SankakuIcon} alt="sankaku icon"/><span>Sankaku</span>
         </IconDisplayDiv>
         <LayouttedDiv mt={1}>
-            <CheckBox checked={editor.downloadToolbar.enabled} onUpdateChecked={v => setDownloadToolbar("enabled", v)}>启用下载工具栏</CheckBox>
+            <CheckBox checked={editor.downloadToolbar.enabled} onUpdateChecked={v => setDownloadToolbar("enabled", v)}>启用工具栏</CheckBox>
+            <SecondaryText>因网站特性不同，其支持的工具栏功能也各不相同。</SecondaryText>
         </LayouttedDiv>
 
         <Separator spacing={[4, 1]}/>

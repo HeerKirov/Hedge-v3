@@ -2,15 +2,17 @@ import { receiveMessageForTab } from "@/functions/messages"
 import { EHENTAI_CONSTANTS } from "@/functions/sites"
 import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
 import { SourceDataPath } from "@/functions/server/api-all"
+import { settings } from "@/functions/setting"
 import { artworksToolbar } from "@/scripts/utils"
 import { onDOMContentLoaded } from "@/utils/document"
 import { Result } from "@/utils/primitives"
 import { analyseSourceDataFromGalleryDOM } from "./utils"
 
-onDOMContentLoaded(() => {
+onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] ehentai/global script loaded.")
+    const setting = await settings.get()
 
-    initializeUI()
+    if(setting.toolkit.downloadToolbar.enabled) initializeUI()
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {

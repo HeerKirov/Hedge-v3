@@ -1,14 +1,16 @@
+import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
 import { receiveMessageForTab } from "@/functions/messages"
+import { settings } from "@/functions/setting"
 import { PIXIV_CONSTANTS } from "@/functions/sites"
 import { artworksToolbar } from "@/scripts/utils"
 import { onDOMContentLoaded, onObserving } from "@/utils/document"
 import { Result } from "@/utils/primitives"
 import { analyseSourceDataFromPreloadData } from "./utils"
-import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
 
-onDOMContentLoaded(() => {
+onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] pixiv/illustrations script loaded.")
-    initializeUI()
+    const setting = await settings.get()
+    if(setting.toolkit.downloadToolbar.enabled) initializeUI()
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {

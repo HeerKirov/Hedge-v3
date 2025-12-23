@@ -94,28 +94,28 @@ export function analyseSourceDataFromGalleryDOM(document: Document, pathname: st
 /**
  * 从image页面DOM结构中提取原文件下载链接。
  */
-export function analyseDownloadURLFromImageDOM(document: Document): string | null {
+export function analyseDownloadURLFromImageDOM(document: Document): {downloadURL: string, element: HTMLElement} | {downloadURL: null, element: null} {
     const i3 = document.querySelector<HTMLDivElement>("#i3")
     if(!i3) {
         console.warn("[analyseDownloadURLFromImageDOM] Cannot find div#i3.")
-        return null
+        return {downloadURL: null, element: null}
     }
     const i6 = document.querySelector<HTMLDivElement>("#i6")
     if(!i6) {
         console.warn("[analyseDownloadURLFromImageDOM] Cannot find div#i6.")
-        return null
+        return {downloadURL: null, element: null}
     }
     const i6a = document.querySelector<HTMLAnchorElement>("#i6 div:last-child a")
     if(i6a?.innerText.startsWith("Download original")) {
         //在i6中找到的最后一个元素是Download original，则表示此图像有original，使用anchor的下载链接
-        return i6a.href
+        return {downloadURL: i6a.href, element: i3}
     }else{
         //否则表明此图像没有original，使用直接使用图像地址
         const img = document.querySelector<HTMLImageElement>("#img")
         if(!img) {
             console.warn("[analyseDownloadURLFromImageDOM] Cannot find #img.")
-            return null
+            return {downloadURL: null, element: null}
         }
-        return img.src
+        return {downloadURL: img.src, element: i3}
     }
 }

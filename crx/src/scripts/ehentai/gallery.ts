@@ -26,7 +26,7 @@ onDOMContentLoaded(async () => {
             )
         }
 
-        initializeUI(sourceDataPath)
+        if(setting.toolkit.downloadToolbar.enabled) initializeUI(sourceDataPath)
     }
 })
 
@@ -410,5 +410,6 @@ async function requestDownloadURLOfImage(href: string): Promise<string | null> {
     const parser = new DOMParser()
     const doc = parser.parseFromString(html, "text/html")
 
-    return analyseDownloadURLFromImageDOM(doc)
+    const { downloadURL } = analyseDownloadURLFromImageDOM(doc)
+    return downloadURL
 }
