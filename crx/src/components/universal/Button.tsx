@@ -111,6 +111,12 @@ const StyledButton = styled.button<{
         border: solid 1px ${p.$type ? LIGHT_MODE_COLORS[p.$type] : LIGHT_MODE_COLORS["border"]};
         @media (prefers-color-scheme: dark) {
             border-color: ${p.$type ? DARK_MODE_COLORS[p.$type] : DARK_MODE_COLORS["border"]};
+            &:hover:not([disabled]) {
+                background-color: rgba(255, 255, 255, 20%);
+            }
+            &:active:not([disabled]) {
+                background-color: rgba(255, 255, 255, 30%);
+            }
         }
     ` : css`
         background-color: rgba(255, 255, 255, 0);
@@ -131,6 +137,12 @@ const StyledButton = styled.button<{
             ` : p.$type ? css`
                 color: ${DARK_MODE_COLORS[p.$type]};
             ` : null}
+            &:hover:not([disabled]) {
+                background-color: rgba(255, 255, 255, 20%);
+            }
+            &:active:not([disabled]) {
+                background-color: rgba(255, 255, 255, 30%);
+            }
         }
     `}
 `

@@ -36,6 +36,9 @@ const RootDiv = styled.div`
 
     > div {
         box-shadow: 1px 1px 5px 0 rgba(0, 0, 0, 0.1);
+        @media (prefers-color-scheme: dark) {
+            box-shadow: 1px 1px 5px 0 rgba(255, 255, 255, 0.15);
+        }
     }
 
     > div:last-child {

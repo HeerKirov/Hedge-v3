@@ -1,14 +1,16 @@
 import { createContext, memo, RefObject, useCallback, useContext, useMemo, useRef, useState } from "react"
 import styled, { css } from "styled-components"
-import { Button, FormattedText, Icon, LayouttedDiv } from "@/components/universal"
+import { Button, FormattedText, Icon, IconImg, Label, LayouttedDiv, SecondaryText } from "@/components/universal"
 import { DateInput, DynamicInputList, Input, KeywordList } from "@/components/form"
 import { TabState } from "@/hooks/tabs"
 import { useBookmarkPopupState, useBookmarkRecentFolders } from "@/hooks/data"
 import { Setting } from "@/functions/setting"
-import { AnalysedBookmark, BookmarkParent, BookmarkState, BookmarkTreeNode, BookmarkUpdateInfo, useAnalyticalBookmark, useAutoUpdatePost, useBookmarkCreator, useBookmarkOfTab, useBookmarkTree } from "@/hooks/bookmark"
+import { DANBOORU_CONSTANTS, EHENTAI_CONSTANTS, FANBOX_CONSTANTS, FANTIA_CONSTANTS, GELBOORU_CONSTANTS, KEMONO_CONSTANTS, PIXIV_CONSTANTS, SANKAKUCOMPLEX_CONSTANTS } from "@/functions/sites"
+import { AnalysedBookmark, BookmarkParent, BookmarkState, BookmarkTreeNode, BookmarkUpdateInfo, useAnalyticalBookmark, useAutoUpdatePost, useBookmarkCreator, useBookmarkOfTab, useBookmarkTree, useRelatedBookmarks } from "@/hooks/bookmark"
 import { useOutsideClick } from "@/utils/sensors"
-import { DARK_MODE_COLORS, ELEMENT_HEIGHTS, FONT_SIZES, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
 import { dates } from "@/utils/primitives"
+import { DARK_MODE_COLORS, ELEMENT_HEIGHTS, FONT_SIZES, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
+import { PixivIcon, SankakuIcon, DanbooruIcon, EHentaiIcon, FanboxIcon, FantiaIcon, GelbooruIcon, KemonoIcon } from "@/styles/assets"
 
 export const BookmarkPanel = memo(function BookmarkPanel(props: {tabState: TabState, setting: Setting["extension"]["bookmarkManager"]}) {
     const { bookmarkState, updateBookmarkState } = useBookmarkOfTab(props.tabState)
@@ -113,6 +115,9 @@ const Content = memo(function Content(props: {tabState: TabState, state: Bookmar
         <LayouttedDiv mt={1}>
             <LastUpdatedEditor date={info.lastUpdated?.date ?? null} post={info.lastUpdated?.post ?? null} tabState={tabState} updateBookmarkInfo={updateBookmarkInfo}/>
         </LayouttedDiv>
+        <LayouttedDiv mt={1}>
+            <RelatedBookmarks selfId={state.id} title={info.title}/>
+        </LayouttedDiv>
     </LayouttedDiv>
 })
 
@@ -212,6 +217,69 @@ const FolderSelectorNode = memo(function FolderSelectorNode(props: {node: Bookma
         </FolderSelectorNodeDiv>
         {isOpen && node.children.map(child => <FolderSelectorNode key={child.id} node={child} layer={layer + 1} selectedId={selectedId} onSelect={onSelect}/>)}
     </>
+})
+
+const RelatedBookmarks = memo(function RelatedBookmarks(props: {selfId: string, title: string}) {
+    const { selfId, title } = props
+
+    const [expanded, setExpanded] = useState<boolean>(false)
+    
+    const relatedBookmarks = useRelatedBookmarks(selfId, title)
+
+    const list = relatedBookmarks.length < 5 || expanded ? relatedBookmarks : relatedBookmarks.slice(0, 5)
+
+    const toggleExpanded = useCallback(() => setExpanded(expanded => !expanded), [])
+
+    return relatedBookmarks.length > 0 && <LayouttedDiv backgroundColor="tertiary" radius="std" padding={1}>
+        <Label>相关书签</Label>
+        {list.map(bookmark => <RelatedBookmarkItem key={bookmark.id} analytical={bookmark.analytical} url={bookmark.url} id={bookmark.id}/>)}
+        {relatedBookmarks.length > 5 && <Button size="tiny" width="100%" onClick={toggleExpanded}><Icon icon={expanded ? "caret-up" : "caret-down"} mr={1}/> {expanded ? "收起" : "展开"}</Button>}
+    </LayouttedDiv>
+})
+
+const RelatedBookmarkItem = memo(function RelatedBookmarkItem(props: {analytical: AnalysedBookmark, url: string, id: string}) {
+    const { analytical, url } = props
+
+    const favIcon = useMemo(() => {
+        const u = new URL(url)
+        if(PIXIV_CONSTANTS.HOSTS.includes(u.hostname)) {
+            return <IconImg src={PixivIcon}/>
+        } else if(SANKAKUCOMPLEX_CONSTANTS.HOSTS.includes(u.hostname)) {
+            return <IconImg src={SankakuIcon}/>
+        } else if(DANBOORU_CONSTANTS.HOSTS.includes(u.hostname)) {
+            return <IconImg src={DanbooruIcon}/>
+        } else if(EHENTAI_CONSTANTS.HOSTS.includes(u.hostname)) {
+            return <IconImg src={EHentaiIcon}/>
+        } else if(FANBOX_CONSTANTS.REGEXES.HOST.test(u.hostname)) {
+            return <IconImg src={FanboxIcon}/>
+        } else if(FANTIA_CONSTANTS.HOSTS.includes(u.hostname)) {
+            return <IconImg src={FantiaIcon}/>
+        } else if(GELBOORU_CONSTANTS.HOSTS.includes(u.hostname)) {
+            return <IconImg src={GelbooruIcon}/>
+        } else if(KEMONO_CONSTANTS.HOSTS.includes(u.hostname)) {
+            return <IconImg src={KemonoIcon}/>
+        }
+        return <IconImg src={`${u.origin}/favicon.ico`}/>
+    }, [url])
+
+    const click = useCallback(async (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault()
+        const r = await chrome.tabs.query({url: url, currentWindow: true})
+        if(r.length > 0 && r[0].id !== undefined) {
+            chrome.tabs.update(r[0].id, {active: true})
+        }else{
+            chrome.tabs.create({url: url})
+        }
+    }, [url])
+
+    return <RelatedBookmarkItemDiv>
+        {favIcon}
+        <a className="title" href={url} target="_blank" onClick={click}>
+            {analytical.title}
+            {analytical.otherTitles.length > 0 && <FormattedText color="secondary" size="small" ml={1}>({analytical.otherTitles.join("/")})</FormattedText>}
+        </a>
+        {analytical.lastUpdated?.date && <SecondaryText>{dates.toFormatDate(analytical.lastUpdated.date)}</SecondaryText>}
+    </RelatedBookmarkItemDiv>
 })
 
 function isLegalDomain(url: string | undefined, includeDomains: string[], excludeDomains: string[]): boolean {
@@ -322,6 +390,7 @@ const FolderSelectorButton = styled(Button)`
 
 const FolderSelectorPopupDiv = styled.div`
     position: absolute;
+    z-index: 10;
     top: ${SPACINGS[2]};
     right: ${SPACINGS[2]};
     min-width: 10em;
@@ -376,5 +445,28 @@ const FolderSelectorNodeDiv = styled.div<{ $layer: number, $selected: boolean }>
                 color: ${p => p.$selected ? DARK_MODE_COLORS["text-inverted"] : DARK_MODE_COLORS["primary"]};
             }
         }
+    }
+`
+
+const RelatedBookmarkItemDiv = styled.div`
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: ${SPACINGS[1]};
+    padding: 0 ${SPACINGS[1]};
+    > * {
+        flex: 0 0 auto;
+    }
+    > .title {
+        width: 100%;
+        flex: 1 1 auto;
+        text-decoration: none;
+        color: inherit;
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+    > svg {
+        transform: translateY(2px);
     }
 `

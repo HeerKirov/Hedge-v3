@@ -583,3 +583,66 @@ async function getTodayByServerOffset(): Promise<Date> {
     }
     return new Date(new Date().setHours(0, 0, 0, 0))
 }
+
+export function useRelatedBookmarks(selfId: string, title: string) {
+    const [relatedBookmarks, setRelatedBookmarks] = useState<RelatedBookmark[]>([])
+
+    const refresh = useCallback(async () => {
+        const bookmarks = await chrome.bookmarks.search(title)
+        const analysedBookmarks = bookmarks
+            .filter(bookmark => bookmark.url && bookmark.id !== selfId)
+            .map(bookmark => ({analytical: analyseBookmarkTitle(bookmark.title), url: bookmark.url!, id: bookmark.id}))
+        relatedBookmarksCache.set(selfId, analysedBookmarks)
+        trimRelatedBookmarksCache()
+        setRelatedBookmarks(analysedBookmarks)
+    }, [selfId, title])
+
+    useEffect(() => {
+        const cached = relatedBookmarksCache.get(selfId)
+        if (cached) {
+            // 命中缓存：更新到最新位置（LRU）
+            relatedBookmarksCache.delete(selfId)
+            relatedBookmarksCache.set(selfId, cached)
+            setRelatedBookmarks(cached)
+        }else{
+            // 缓存未命中：从 API 获取
+            refresh()
+        }
+    }, [refresh])
+
+    // 监听 bookmark 事件，清理缓存并刷新当前数据
+    useEffect(() => {
+        const changedEventHandler = () => {
+            relatedBookmarksCache.clear()
+            refresh()
+        }
+
+        chrome.bookmarks.onCreated.addListener(changedEventHandler)
+        chrome.bookmarks.onChanged.addListener(changedEventHandler)
+        chrome.bookmarks.onRemoved.addListener(changedEventHandler)
+
+        return () => {
+            chrome.bookmarks.onCreated.removeListener(changedEventHandler)
+            chrome.bookmarks.onChanged.removeListener(changedEventHandler)
+            chrome.bookmarks.onRemoved.removeListener(changedEventHandler)
+        }
+    }, [refresh])
+
+    return relatedBookmarks
+}
+
+interface RelatedBookmark {analytical: AnalysedBookmark, url: string, id: string}
+
+const RELATED_BOOKMARKS_CACHE_SIZE = 10
+
+const relatedBookmarksCache = new Map<string, RelatedBookmark[]>()
+
+function trimRelatedBookmarksCache() {
+    while (relatedBookmarksCache.size >= RELATED_BOOKMARKS_CACHE_SIZE) {
+        // Map 的 keys() 返回的迭代器按插入顺序，第一个就是最旧的
+        const firstKey = relatedBookmarksCache.keys().next().value
+        if (firstKey) {
+            relatedBookmarksCache.delete(firstKey)
+        }
+    }
+}
