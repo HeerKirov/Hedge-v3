@@ -150,7 +150,7 @@ const ToolBarPanel = memo(function ToolBarPanel(props: Omit<RegisterItem, "eleme
     const enableDownload = downloadURL !== null
 
     return <ToolBarPanelDiv ref={ref}>
-        <LayouttedDiv display="flex" userSelect="none" size="small" padding={1}><FaviconImg src={favicon} alt="favicon"/>Hedge v3 Helper</LayouttedDiv>
+        <ToolBarTitleDiv><img src={favicon} alt="favicon"/>Hedge v3 Helper</ToolBarTitleDiv>
         <Separator spacing={1}/>
         {collectStatus && <CollectStatusNotice {...collectStatus}/>}
         {enableCollectSourceData && <Button align="left" size="small" onClick={collectSourceData}><Icon icon="cloud-arrow-down" mr={1}/>{collectStatus?.collectStatus === "EDITED" ? "重新收集数据" : "收集来源数据"}</Button>}
@@ -240,10 +240,17 @@ const ToolBarPanelDiv = styled.div`
     flex-direction: column;
 `
 
-const FaviconImg = styled.img`
-    width: 12px;
-    height: 12px;
-    margin-right: 4px;
+const ToolBarTitleDiv = styled.div`
+    display: flex;
+    align-items: center;
+    user-select: none;
+    padding: ${SPACINGS[1]};
+    font-size: ${FONT_SIZES["small"]};
+    > img {
+        width: 12px;
+        height: 12px;
+        margin-right: 4px;
+    }
 `
 
 const CollectStatusNoticeDiv = styled.div<{ $collectStatus: SourceEditStatus | null, $imageStatus: boolean }>`

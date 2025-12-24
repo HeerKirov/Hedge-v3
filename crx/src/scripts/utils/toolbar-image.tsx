@@ -93,9 +93,11 @@ function ToolBar(props: Omit<RegisterItem, "element">) {
         }
     }, [status, props.downloadURL, props.sourcePath, config.collectSourceData])
 
-    return <ToolBarDiv $style={config.locale}>
+    const dnButton = !(props.downloadURL || props.externalURL) ? "NONE" : props.index === null ? "NO_INDEX" : "STD"
+
+    return <ToolBarDiv $style={config.locale} $dnButton={dnButton}>
         {(props.downloadURL || props.externalURL) && <DownloadButton index={props.index} status={status} externalURL={props.externalURL} downloadClick={downloadClick}/>}
-        <EllipsisButton onClick={toggleActive}><Icon icon="ellipsis-vertical"/></EllipsisButton>
+        <EllipsisButton className="ellipsis-button" onClick={toggleActive}><Icon icon="ellipsis-vertical"/></EllipsisButton>
         {active && <ToolBarPanel {...props} status={status} downloadClick={downloadClick} onClose={toggleActive}/>}
     </ToolBarDiv>
 }
@@ -121,7 +123,7 @@ const ToolBarPanel = memo(function ToolBarPanel(props: Omit<RegisterItem, "eleme
     }, [sourcePath, thumbnailSrc, sourceDataProvider])
 
     return <ToolBarPanelDiv ref={ref} $style={config.locale}>
-        <LayouttedDiv display="flex" userSelect="none" size="small" padding={1}><FaviconImg src={favicon} alt="favicon"/>Hedge v3 Helper</LayouttedDiv>
+        <ToolBarTitleDiv><img src={favicon} alt="favicon"/>Hedge v3 Helper</ToolBarTitleDiv>
         <Separator spacing={1}/>
         {sourcePath && <CollectStatusNotice sourcePath={sourcePath}/>}
         <Button align="left" size="small" onClick={quickFind}><Icon icon="magnifying-glass" mr={1}/>相似项查找</Button>
@@ -196,11 +198,27 @@ const ROOT_STYLES: Record<LocaleSite, {style: string, relativeItem: boolean}> = 
     "fantia": {style: "position: absolute; right: 0; bottom: 10px", relativeItem: false},
 }
 
-const ToolBarDiv = styled.div<{ $style?: LocaleSite }>`
+const ToolBarDiv = styled.div<{ $style?: LocaleSite, $dnButton: "STD" | "NO_INDEX" | "NONE" }>`
     position: relative;
     display: flex;
-    width: 70px;
     height: 30px;
+
+    ${p => p.$dnButton === "STD" ? css`
+        width: 70px;
+    ` : p.$dnButton === "NO_INDEX" ? css`
+        width: 60px;
+        > .download-button {
+            width: 35px;
+        }
+    ` : p.$dnButton === "NONE" ? css`
+        width: 30px;
+        > .ellipsis-button {
+            width: 30px;
+            border-top-left-radius: 15px;
+            border-bottom-left-radius: 15px;
+        }
+    ` : undefined}
+
     ${p => p.$style === "pixiv" || p.$style === "fanbox" || p.$style === "fantia" ? css`
         //pixiv, fanbox, fantia采用内嵌在图像内紧贴右侧的样式，因此左侧圆角右侧平直
         border-top-left-radius: 15px;
@@ -249,7 +267,7 @@ const ToolBarDiv = styled.div<{ $style?: LocaleSite }>`
             border-bottom-left-radius: 10px;
         }
 
-        ` : p.$style === "kemono" ? css`
+    ` : p.$style === "kemono" ? css`
         //kemono采用在图像外贴近右侧的样式。为配合整体风格采用了无圆角矩形
         text-align: center;
         background: transparent;
@@ -321,9 +339,12 @@ const ToolBarPanelDiv = styled.div<{ $style?: LocaleSite }>`
     ` : p.$style === "ehentai-mpv" ? css`
         bottom: -24px;
         right: 0;
-    ` : (p.$style === "kemono" || p.$style === "fanbox" || p.$style === "fantia" || p.$style === "pixiv") ? css`
+    ` : (p.$style === "kemono" || p.$style === "fanbox" || p.$style === "fantia") ? css`
         top: -4px;
         left: -4px;
+    ` : p.$style === "pixiv" ? css`
+        top: 0px;
+        right: 0px;
     ` : p.$style === "sankaku" ? css`
         top: 34px;
         right: -2px;
@@ -345,10 +366,17 @@ const ToolBarPanelDiv = styled.div<{ $style?: LocaleSite }>`
     }
 `
 
-const FaviconImg = styled.img`
-    width: 12px;
-    height: 12px;
-    margin-right: 4px;
+const ToolBarTitleDiv = styled.div`
+    display: flex;
+    align-items: center;
+    user-select: none;
+    padding: ${SPACINGS[1]};
+    font-size: ${FONT_SIZES["small"]};
+    > img {
+        width: 12px;
+        height: 12px;
+        margin-right: 4px;
+    }
 `
 
 const CollectStatusNoticeDiv = styled.div<{ $imageStatus: boolean }>`

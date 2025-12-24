@@ -2,9 +2,10 @@ import { SourceDataPath } from "@/functions/server/api-all"
 import { SourceDataUpdateForm, SourceTagForm } from "@/functions/server/api-source-data"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { PIXIV_CONSTANTS } from "@/functions/sites"
-import { similarFinder } from "@/scripts/utils"
+import { settings } from "@/functions/setting"
+import { imageToolbar, similarFinder } from "@/scripts/utils"
 import { Result } from "@/utils/primitives"
-import { onDOMContentObserved } from "@/utils/document"
+import { onDOMContentObserved, onObserving } from "@/utils/document"
 
 onDOMContentObserved({
     observe: { subtree: true, childList: true },
@@ -17,10 +18,13 @@ onDOMContentObserved({
     init: () => document.querySelector<HTMLAnchorElement>("aside > section > h2 > div > div > a") !== null
 }, async () => {
     console.log("[Hedge v3 Helper] pixiv/artworks script loaded.")
+    const setting = await settings.get()
     const sourceDataPath = getSourceDataPath()
     const sourceData = collectSourceData()
     sendMessage("SUBMIT_PAGE_INFO", {path: sourceDataPath})
     sendMessage("SUBMIT_SOURCE_DATA", {path: sourceDataPath, data: sourceData})
+
+    if(setting.toolkit.downloadToolbar.enabled) initializeUI(sourceDataPath)
 })
 
 receiveMessageForTab(({ type, msg: _, callback }) => {
@@ -36,6 +40,47 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
     }
     return false
 })
+
+/**
+ * 进行image-toolbar, find-similar相关的UI初始化。
+ */
+function initializeUI(sourceDataPath: SourceDataPath) {
+    imageToolbar.config({locale: "pixiv"})
+
+    onObserving<HTMLImageElement>({
+        target: document.querySelector("main")!,
+        observe: { childList: true, subtree: true },
+        mutation(mutation) {
+            const returns = []
+            for(const addedNode of mutation.addedNodes) {
+                if(addedNode instanceof HTMLImageElement) {
+                    const parent = addedNode.parentElement?.parentElement
+                    if(parent instanceof HTMLDivElement && parent.role === "presentation") {
+                        returns.push(addedNode)
+                    }
+                }else if(addedNode instanceof HTMLElement) {
+                    const images = addedNode.querySelectorAll<HTMLImageElement>("div[role=presentation] > a > img")
+                    returns.push(...images)
+                }
+            }
+            return returns
+        },
+        init() {
+            return document.querySelectorAll<HTMLImageElement>("div[role=presentation] > a > img")
+        },
+    }, (node, index) => {
+        const anchor = node.parentElement! as HTMLAnchorElement
+        const div = anchor.parentElement! as HTMLDivElement
+        imageToolbar.add([{
+            index: null,
+            element: div,
+            sourcePath: {...sourceDataPath, sourcePart: index},
+            downloadURL: null,
+            thumbnailSrc: () => node.src
+        }])
+    })
+
+}
 
 /**
  * 收集来源数据。
