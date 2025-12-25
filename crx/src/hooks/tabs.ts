@@ -5,6 +5,7 @@ export interface TabState {
     status: `${chrome.tabs.TabStatus}`
     tabId: number | undefined
     url: string | undefined
+    urlWithoutHash: string | undefined
     windowId: number | undefined
 }
 
@@ -17,7 +18,7 @@ interface TabStateWithTitle extends TabState {
  */
 export function useTabState() {
     const windowIdRef = useRef<number | undefined>(undefined)
-    const [tabState, setTabState] = useState<TabState>({status: "unloaded", tabId: undefined, url: undefined, windowId: undefined})
+    const [tabState, setTabState] = useState<TabState>({status: "unloaded", tabId: undefined, url: undefined, urlWithoutHash: undefined, windowId: undefined})
 
     useEffect(() => {
         chrome.windows.getCurrent().then(window => windowIdRef.current = window.id)
@@ -26,21 +27,21 @@ export function useTabState() {
     useEffect(() => {
         chrome.tabs.query({currentWindow: true, active: true}).then(tabs => {
             if(tabs.length > 0 && tabs[0].id && tabs[0].id !== chrome.tabs.TAB_ID_NONE) {
-                setTabState({status: tabs[0].status ?? "unloaded", tabId: tabs[0].id, url: tabs[0].url, windowId: tabs[0].windowId})
+                setTabState({status: tabs[0].status ?? "unloaded", tabId: tabs[0].id, url: tabs[0].url, urlWithoutHash: getUrlWithoutHash(tabs[0].url), windowId: tabs[0].windowId})
             }
         }).catch(e => console.error(e))
 
         const activatedEventHandler = (activeInfo: chrome.tabs.OnActivatedInfo) => {
             if(activeInfo.windowId === windowIdRef.current) {
                 chrome.tabs.get(activeInfo.tabId).then((tab) => {
-                    setTabState({status: tab.status ?? "unloaded", tabId: tab.id, url: tab.url, windowId: windowIdRef.current})
+                    setTabState({status: tab.status ?? "unloaded", tabId: tab.id, url: tab.url, urlWithoutHash: getUrlWithoutHash(tab.url), windowId: windowIdRef.current})
                 }).catch(e => console.error(e))
             }
         }
 
         const updatedEventHandler = (tabId: number, changeInfo: chrome.tabs.OnUpdatedInfo, tab: chrome.tabs.Tab) => {
             if((changeInfo.url || changeInfo.status) && tab.windowId === windowIdRef.current && tab.active && tabId !== chrome.tabs.TAB_ID_NONE) {
-                setTabState({status: tab.status ?? "unloaded", tabId, url: tab.url, windowId: windowIdRef.current})
+                setTabState({status: tab.status ?? "unloaded", tabId, url: tab.url, urlWithoutHash: getUrlWithoutHash(tab.url), windowId: windowIdRef.current})
             }
         }
 
@@ -61,7 +62,7 @@ export function useTabState() {
  */
 export function useTabStateOnce() {
     const [tabState] = useAsyncLoading<TabStateWithTitle>({
-        default: {status: "unloaded", tabId: undefined, url: undefined, windowId: undefined, title: undefined},
+        default: {status: "unloaded", tabId: undefined, url: undefined, urlWithoutHash: undefined, windowId: undefined, title: undefined},
         call: getTabStateWithTitle
     })
 
@@ -74,7 +75,20 @@ export function useTabStateOnce() {
 export async function getTabStateWithTitle(): Promise<TabStateWithTitle> {
     const tabs = await chrome.tabs.query({currentWindow: true, active: true})
     if(tabs.length > 0 && tabs[0].id && tabs[0].id !== chrome.tabs.TAB_ID_NONE) {
-        return {status: tabs[0].status ?? "unloaded", tabId: tabs[0].id, url: tabs[0].url, windowId: tabs[0].windowId, title: tabs[0].title} as const
+        return {status: tabs[0].status ?? "unloaded", tabId: tabs[0].id, url: tabs[0].url, urlWithoutHash: getUrlWithoutHash(tabs[0].url), windowId: tabs[0].windowId, title: tabs[0].title} as const
     }
-    return {status: "unloaded", tabId: undefined, url: undefined, windowId: undefined, title: undefined} as const
+    return {status: "unloaded", tabId: undefined, url: undefined, urlWithoutHash: undefined, windowId: undefined, title: undefined} as const
+}
+
+function getUrlWithoutHash(url: string | undefined): string | undefined {
+    if(url === undefined) {
+        return undefined
+    }
+    try {
+        const parsedUrl = new URL(url)
+        parsedUrl.hash = ""
+        return parsedUrl.toString()
+    } catch {
+        return url
+    }
 }

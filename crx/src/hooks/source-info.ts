@@ -7,6 +7,7 @@ import { sendMessage } from "@/functions/messages"
 import { TabState } from "@/hooks/tabs"
 import { setActiveTabBadgeByStatus } from "@/services/active-tab"
 import { sendMessageToTab } from "@/services/messages"
+import { createLocalCache } from "@/utils/local-cache"
 import { sleep } from "@/utils/primitives"
 
 export interface ImageSourceInfo {
@@ -19,25 +20,40 @@ export interface ImageSourceInfo {
  * 对于列表类型页面，根据其agent，查找其来源标签的映射情况。
  */
 export function useAgentSourceInfo(tabState: TabState) {
+    const agentCache = useMemo(() => createLocalCache<string, {agent: SourceTag | null, agentSite: string | null, mappings: SourceMappingTargetDetail[]} | null>("agent-source-info", { maxSize: 20, ttl: 1000 * 60 }), [])
+
     const [agent, setAgent] = useState<SourceTag | null>(null)
     const [agentSite, setAgentSite] = useState<string | null>(null)
     const [mappings, setMappings] = useState<SourceMappingTargetDetail[]>([])
 
     useEffect(() => {
-        if(tabState.status === "complete" && tabState.tabId) {
-            const tabId = tabState.tabId
-            getTabAgentData(tabId).then(async agent => {
-                setAgent(agent?.agent ?? null)
-                setAgentSite(agent?.agentSite ?? null)
-                if(agent && agent.agent) {
-                    const res = await server.sourceTagMapping.get({sourceSite: agent.agentSite, sourceTagType: agent.agent.type, sourceTagCode: agent.agent.code})
-                    if(res.ok) setMappings(res.data)
-                }else{
-                    setMappings([])
-                }
-            }).catch(e => console.error(e))
+        if(tabState.status === "complete" && tabState.tabId && tabState.urlWithoutHash) {
+            const { tabId, urlWithoutHash } = tabState
+            const cached = agentCache.get(urlWithoutHash)
+            if(cached) {
+                setAgent(cached.agent ?? null)
+                setAgentSite(cached.agentSite ?? null)
+                setMappings(cached.mappings)
+            }else{
+                getTabAgentData(tabId).then(async agent => {
+                    setAgent(agent?.agent ?? null)
+                    setAgentSite(agent?.agentSite ?? null)
+                    if(agent && agent.agent) {
+                        const res = await server.sourceTagMapping.get({sourceSite: agent.agentSite, sourceTagType: agent.agent.type, sourceTagCode: agent.agent.code})
+                        if(res.ok) {
+                            setMappings(res.data)
+                            agentCache.set(urlWithoutHash, {agent: agent.agent, agentSite: agent.agentSite, mappings: res.data})
+                        }else{
+                            agentCache.set(urlWithoutHash, {agent: agent.agent, agentSite: agent.agentSite, mappings: []})
+                        }
+                    }else{
+                        setMappings([])
+                        agentCache.set(urlWithoutHash, {agent: null, agentSite: null, mappings: []})
+                    }
+                }).catch(e => console.error(e))
+            }
         }
-    }, [tabState.status, tabState.tabId])
+    }, [tabState.status, tabState.tabId, tabState.urlWithoutHash])
 
     return {agent, agentSite, mappings}
 }
@@ -47,19 +63,6 @@ export function useAgentSourceInfo(tabState: TabState) {
  */
 export function useImageSourceInfo(tabState: TabState, scene?: "popup" | "sidePanel") {
     const [sourceInfo, setSourceInfo] = useState<ImageSourceInfo | null>(null)
-
-    const urlWithoutHash = useMemo(() => {
-        if(tabState.url) {
-            try {
-                const parsedUrl = new URL(tabState.url)
-                parsedUrl.hash = ""
-                return parsedUrl.toString()
-            } catch {
-                return tabState.url
-            }
-        }
-        return undefined
-    }, [tabState.url])
 
     const { collectStatus, refreshCollectStatus, manualCollectSourceData } = useCollectStatusInternal(sourceInfo?.sourceDataPath ?? null, useCallback((_: SourceDataPath | null, collectStatus: SourceDataCollectStatus) => {
         setActiveTabBadgeByStatus(tabState?.tabId ?? -1, collectStatus)
@@ -76,17 +79,17 @@ export function useImageSourceInfo(tabState: TabState, scene?: "popup" | "sidePa
     }, [sourceInfo, scene])
 
     useEffect(() => {
-        if(tabState.status === "complete" && tabState.tabId && urlWithoutHash) {
-            const tabId = tabState.tabId
+        if(tabState.status === "complete" && tabState.tabId && tabState.urlWithoutHash) {
+            const { tabId, urlWithoutHash } = tabState
             const url = new URL(urlWithoutHash)
-            getTabSourceData(tabState.tabId).then(sourceDataPath => {
+            getTabSourceData(tabId).then(sourceDataPath => {
                 refreshCollectStatus(sourceDataPath).catch(e => console.error(e))
                 setSourceInfo(sourceDataPath ? {tabId, host: url.host, sourceDataPath} : null)
             }).catch(e => console.error(e))
         }else{
             setSourceInfo(null)
         }
-    }, [tabState.status, tabState.tabId, urlWithoutHash, refreshCollectStatus])
+    }, [tabState.status, tabState.tabId, tabState.urlWithoutHash, refreshCollectStatus])
 
     return {sourceInfo, collectStatus, manualCollectSourceData, quickFind}
 }
@@ -99,7 +102,6 @@ export function useCollectStatus(sourceDataPath: SourceDataPath | null) {
             refreshCollectStatus(sourceDataPath).finally()
         }
     }, [sourceDataPath, refreshCollectStatus])
-
 
     return {collectStatus, manualCollectSourceData}
 }

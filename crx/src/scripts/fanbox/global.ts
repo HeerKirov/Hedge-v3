@@ -2,24 +2,43 @@ import { FANBOX_CONSTANTS } from "@/functions/sites"
 import { settings } from "@/functions/setting"
 import { documents, onDOMContentLoaded } from "@/utils/document"
 import { Result } from "@/utils/primitives"
+import { receiveMessageForTab } from "@/functions/messages"
+import { SourceTag } from "@/functions/server/api-source-data"
+ 
+const creatorInfo = {
+    creatorId: ifAndGetCreator(),
+    userId: <string | null>null,
+    name: <string | null>null
+}
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] fanbox/global script loaded.")
 
-    const creatorId = ifAndGetCreator()
-    if(creatorId !== null) {
+    if(creatorInfo.creatorId !== null) {
+        const fetchResponse = await fetchCreatorInfo(creatorInfo.creatorId)
+        if(fetchResponse.ok) {
+            creatorInfo.userId = fetchResponse.value["user"]["userId"]
+            creatorInfo.name = fetchResponse.value["user"]["name"]
+        }
         const setting = await settings.get()
-        if(setting.website.fanbox.enableUIOptimize) {
-            enableUIOptimize(creatorId)
+        if(setting.website.fanbox.enableUIOptimize && creatorInfo.userId !== null) {
+            enableUIOptimize(creatorInfo.creatorId, creatorInfo.userId)
         }
     }
+})
+
+receiveMessageForTab(({ type, msg: _, callback }) => {
+    if(type === "REPORT_ARTWORKS_INFO") {
+        callback(getArtworksInfo())
+    }
+    return false
 })
 
 /**
  * 功能：修改UI。
  * - 在creator name后添加creatorId和userId的显示。
  */
-function enableUIOptimize(creatorId: string) {
+function enableUIOptimize(creatorId: string, userId: string) {
     function observeCreatorHeader(callback: (anchors: HTMLAnchorElement[]) => void) {
         const observer = new MutationObserver(mutationsList => {
             for(const mutation of mutationsList) {
@@ -44,11 +63,7 @@ function enableUIOptimize(creatorId: string) {
         }
     }
 
-    const creatorInfoPromise = fetchCreatorInfo(creatorId)
-
     observeCreatorHeader(async anchors => {
-        const creatorInfo = await creatorInfoPromise
-        const userId = creatorInfo.ok ? creatorInfo.value["user"]["userId"] : null
         for(const anchor of anchors) {
             anchor.after(
                 documents.createElement("span", {"style": "font-size: 1rem; margin-left: 8px; -webkit-user-select: none"}, ["(@"]),
@@ -93,4 +108,27 @@ function ifAndGetCreator(): string | null {
         return match2.groups["CREATOR"]
     }
     return null
+}
+
+function getArtworksInfo(): Result<{agent: SourceTag | null, agentSite: string, latestPost: string | null, firstPage: boolean}, string> {
+    let latestPost: string | null = null, firstPage = true
+
+    const hrefs = [...document.querySelectorAll<HTMLAnchorElement>("a > a")].map(a => a.href)
+    for(const href of hrefs) {
+        const url = new URL(href)
+        const match = url.pathname.match(FANBOX_CONSTANTS.REGEXES.POST_PATHNAME)
+        if(match && match.groups) {
+            latestPost = match.groups["PID"]
+            break
+        }
+    }
+
+    if(FANBOX_CONSTANTS.REGEXES.ARTIST_POSTS_PATHNAME.test(document.location.pathname)) {
+        const page = new URLSearchParams(window.location.search).get("page")
+        if(page) firstPage = parseInt(page) === 1
+    }
+    
+    const agent: SourceTag | null = creatorInfo.userId ? {code: creatorInfo.userId, name: creatorInfo.creatorId, otherName: creatorInfo.name, type: "artist"} : null
+
+    return {ok: true, value: {agent, agentSite: FANBOX_CONSTANTS.SITE_NAME, latestPost, firstPage}}
 }

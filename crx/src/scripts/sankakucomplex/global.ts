@@ -6,7 +6,7 @@ import { SANKAKUCOMPLEX_CONSTANTS } from "@/functions/sites"
 import { artworksToolbar } from "@/scripts/utils"
 import { onDOMContentLoaded } from "@/utils/document"
 import { Result } from "@/utils/primitives"
-import { analyseDownloadURLFromPostDOM, analyseSourceDataFromPostDOM } from "./utils"
+import { analyseDownloadURLFromPostDOM, analyseSourceDataFromPostDOM, analyseTagsFromPostDOM } from "./utils"
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] sankakucomplex/global script loaded.")
@@ -147,8 +147,22 @@ function getArtworksInfo(): Result<{agent: SourceTag | null, agentSite: string, 
             break
         }
     }
-    //TODO agent
-    return {ok: true, value: {agent: null, agentSite: SANKAKUCOMPLEX_CONSTANTS.SITE_NAME, latestPost, firstPage}}
+    const tagsResponse = analyseTagsFromPostDOM(document, ["artist", "studio"])
+    let agent: SourceTag | null = null
+    if(tagsResponse.ok) {
+        const artist = tagsResponse.value.find(tag => tag.type === "artist")
+        if(artist) {
+            agent = {code: artist.code, name: artist.name ?? null, otherName: artist.otherName ?? null, type: "artist"}
+        }else{
+            const studio = tagsResponse.value.find(tag => tag.type === "studio")
+            if(studio) {
+                agent = {code: studio.code, name: studio.name ?? null, otherName: studio.otherName ?? null, type: "studio"}
+            }
+        }
+    }
+    console.log(agent, latestPost, firstPage)
+    console.log(analyseTagsFromPostDOM)
+    return {ok: true, value: {agent, agentSite: SANKAKUCOMPLEX_CONSTANTS.SITE_NAME, latestPost, firstPage}}
 }
 
 /**

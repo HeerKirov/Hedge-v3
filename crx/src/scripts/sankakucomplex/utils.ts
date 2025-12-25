@@ -44,26 +44,14 @@ export function analyseDownloadURLFromPostDOM(document: Document): {downloadURL:
  * 从DOM结构中解析来源数据。
  */
 export function analyseSourceDataFromPostDOM(document: Document): Result<SourceDataUpdateForm, string> {
-    const tags: SourceTagForm[] = []
-    const tagLiList = document.querySelectorAll("#tag-sidebar li")
-    for(let i = 0; i < tagLiList.length; ++i) {
-        const tagLi = tagLiList[i]
-        const tag: SourceTagForm = {code: "", name: undefined, otherName: undefined, type: ""}
-        if(tagLi.className.startsWith("tag-type-")) {
-            tag.type = tagLi.className.substring("tag-type-".length)
-        }else{
-            return {ok: false, err: `Tag[${i}]: cannot infer tag type from its class '${tagLi.className}'.`}
-        }
-        const tagAnchor = tagLi.querySelector<HTMLAnchorElement>("a[itemprop=\"keywords\"]")
-        if(tagAnchor !== null && tagAnchor.textContent) {
-            tag.code = tagAnchor.textContent.replaceAll("_", " ")
-        }else{
-            return {ok: false, err: `Tag[${i}]: Cannot find its anchor.`}
-        }
-        //tips: 网站又改了，已经不能直接从DOM结构获取jp name等信息了，因此这里的代码暂时移除。
-        tags.push(tag)
+    const tagsResponse = analyseTagsFromPostDOM(document)
+    let tags: SourceTagForm[]
+    if(tagsResponse.ok) {
+        tags = tagsResponse.value
+    }else{
+        return tagsResponse
     }
-
+    
     const books: SourceBookForm[] = []
     //此处依然使用了legacy模式。好处是节省请求；坏处是book的jp name无法获得。
     const statusNotice = document.querySelectorAll(".content .status-notice")
@@ -113,4 +101,30 @@ export function analyseSourceDataFromPostDOM(document: Document): Result<SourceD
         ok: true,
         value: {tags, books, relations, publishTime}
     }
+}
+
+export function analyseTagsFromPostDOM(document: Document, filterTypes?: string[]): Result<SourceTagForm[], string> {
+    const tags: SourceTagForm[] = []
+    const tagLiList = document.querySelectorAll("#tag-sidebar li")
+    for(let i = 0; i < tagLiList.length; ++i) {
+        const tagLi = tagLiList[i]
+        const tag: SourceTagForm = {code: "", name: undefined, otherName: undefined, type: ""}
+        if(tagLi.className.startsWith("tag-type-")) {
+            tag.type = tagLi.className.substring("tag-type-".length)
+        }else{
+            return {ok: false, err: `Tag[${i}]: cannot infer tag type from its class '${tagLi.className}'.`}
+        }
+        const tagAnchor = tagLi.querySelector<HTMLAnchorElement>("a[itemprop=\"keywords\"]")
+        if(tagAnchor !== null && tagAnchor.textContent) {
+            tag.code = tagAnchor.textContent.replaceAll("_", " ")
+        }else{
+            return {ok: false, err: `Tag[${i}]: Cannot find its anchor.`}
+        }
+        if(filterTypes && !filterTypes.includes(tag.type)) {
+            continue
+        }
+        //tips: 网站又改了，已经不能直接从DOM结构获取jp name等信息了，因此这里的代码暂时移除。
+        tags.push(tag)
+    }
+    return {ok: true, value: tags}
 }

@@ -7,7 +7,7 @@ import { FANTIA_CONSTANTS } from "@/functions/sites"
 import { imageToolbar, similarFinder } from "@/scripts/utils"
 import { onDOMContentObserved } from "@/utils/document"
 import { Result } from "@/utils/primitives"
-import { downloadURL } from "@/services/downloads"
+import { analyseArtistFromDOM } from "./utils"
 
 onDOMContentObserved({
     observe: { subtree: true, childList: true },
@@ -81,24 +81,11 @@ async function initializeUI(sourcePath: SourceDataPath) {
 async function collectSourceData(): Promise<Result<SourceDataUpdateForm, string>> {
     const tags: SourceTagForm[] = []
 
-    //查找作者，作为tag写入。作者的type固定为"artist"，code为"{UID}"
-    const artistAnchor = document.querySelector<HTMLAnchorElement>("h1.fanclub-name a")
-    if(artistAnchor !== null) {
-        const matcher = artistAnchor.textContent!.match(/^(?<CLUB>.*)\((?<NAME>.*)\)$/)
-        if(!matcher || !matcher.groups) {
-            return {ok: false, err: `Artist: Cannot analyse artist anchor title.`}
-        }
-        const name = matcher.groups["NAME"]
-        const club = matcher.groups["CLUB"]
-        const url = new URL(artistAnchor.href)
-        const match = url.pathname.match(FANTIA_CONSTANTS.REGEXES.USER_PATHNAME)
-        if(!match || !match.groups) {
-            return {ok: false, err: `Artist: cannot analyse artist anchor href.`}
-        }
-        const userId = match.groups["UID"]
-        tags.push({code: userId, name: name, otherName: club, type: "artist"})
+    const artistResponse = analyseArtistFromDOM(document)
+    if(artistResponse.ok) {
+        tags.push(artistResponse.value)
     }else{
-        return {ok: false, err: `Artist: cannot find artist section.`}
+        return artistResponse
     }
 
     let description: string | undefined

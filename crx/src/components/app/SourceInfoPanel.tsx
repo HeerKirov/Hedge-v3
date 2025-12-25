@@ -53,7 +53,7 @@ const SourceTagNotice = memo(function SourceTagNotice(props: {agent: SourceTag, 
     const { agent, agentSite } = props
     return <LayouttedDiv mt={1} mb={1}>
         <FormattedText mr={1}>{WEBSITES[agentSite]?.siteTitle ?? agentSite}</FormattedText>
-        <Icon icon="tag" mr={0.5}/><b>{agent.name}</b>
+        <Icon icon="tag" mr={0.5}/><b>{agent.name ?? agent.code}</b>
     </LayouttedDiv>
 })
 

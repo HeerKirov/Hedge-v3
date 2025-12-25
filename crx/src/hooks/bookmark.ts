@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { server } from "@/functions/server"
 import { getTabStateWithTitle, TabState } from "@/hooks/tabs"
 import { ifArtworksPage } from "@/hooks/sites"
+import { sendMessageToTab } from "@/services/messages"
+import { createLocalCache } from "@/utils/local-cache"
 import { dates, objects, strings } from "@/utils/primitives"
 import { useWatch } from "@/utils/reactivity"
-import { sendMessageToTab } from "@/services/messages"
-import { server } from "@/functions/server"
 
 export interface BookmarkState {
     id: string
@@ -570,6 +571,8 @@ async function getTodayByServerOffset(): Promise<Date> {
 }
 
 export function useRelatedBookmarks(selfId: string, title: string) {
+    const relatedBookmarksCache = useMemo(() => createLocalCache<string, RelatedBookmark[]>("related-bookmarks", { maxSize: 10 }), [])
+
     const [relatedBookmarks, setRelatedBookmarks] = useState<RelatedBookmark[]>([])
 
     const refresh = useCallback(async () => {
@@ -578,16 +581,13 @@ export function useRelatedBookmarks(selfId: string, title: string) {
             .filter(bookmark => bookmark.url && bookmark.id !== selfId)
             .map(bookmark => ({analytical: analyseBookmarkTitle(bookmark.title), url: bookmark.url!, id: bookmark.id}))
         relatedBookmarksCache.set(selfId, analysedBookmarks)
-        trimRelatedBookmarksCache()
         setRelatedBookmarks(analysedBookmarks)
     }, [selfId, title])
 
     useEffect(() => {
         const cached = relatedBookmarksCache.get(selfId)
         if (cached) {
-            // 命中缓存：更新到最新位置（LRU）
-            relatedBookmarksCache.delete(selfId)
-            relatedBookmarksCache.set(selfId, cached)
+            // 命中缓存：缓存管理器会自动更新 LRU 位置
             setRelatedBookmarks(cached)
         }else{
             // 缓存未命中：从 API 获取
@@ -617,17 +617,3 @@ export function useRelatedBookmarks(selfId: string, title: string) {
 }
 
 interface RelatedBookmark {analytical: AnalysedBookmark, url: string, id: string}
-
-const RELATED_BOOKMARKS_CACHE_SIZE = 10
-
-const relatedBookmarksCache = new Map<string, RelatedBookmark[]>()
-
-function trimRelatedBookmarksCache() {
-    while (relatedBookmarksCache.size >= RELATED_BOOKMARKS_CACHE_SIZE) {
-        // Map 的 keys() 返回的迭代器按插入顺序，第一个就是最旧的
-        const firstKey = relatedBookmarksCache.keys().next().value
-        if (firstKey) {
-            relatedBookmarksCache.delete(firstKey)
-        }
-    }
-}

@@ -50,7 +50,7 @@ export const SANKAKUCOMPLEX_CONSTANTS = {
         BOOK_PATHNAME: (bookId: number | string) => `/pool/show/${bookId}`
     },
     REGEXES: {
-        HOMEPAGE_PATHNAME: /^\/$/,
+        HOMEPAGE_PATHNAME: /^\/((cn|en|jp)\/)?$/,
         POSTS_PATHNAME: /^\/(\S+\/)?(post|posts)\/?$/,
         POST_PATHNAME: /^\/(\S+\/)?(post\/show|posts|posts\/show)\/(?<PID>[A-Za-z0-9]+)\/?$/
     }
@@ -69,6 +69,7 @@ export const FANBOX_CONSTANTS = {
     REGEXES: {
         HOST: /^(?<CREATOR>[^.]+)\.fanbox\.cc$/,
         POST_PATHNAME: /^(\/@(?<ARTIST>[^/]+))?\/posts\/(?<PID>\d+)\/?$/,
+        ARTIST_POSTS_PATHNAME: /^(\/@(?<ARTIST>[^/]+))?\/posts\/?$/,
         ANY_CREATOR_PATHNAME: /^\/@(?<CREATOR>[^/]+)/
     }
 }
@@ -85,7 +86,9 @@ export const FANTIA_CONSTANTS = {
     REGEXES: {
         POST_PATHNAME: /^\/posts\/(?<PID>\d+)\/?$/,
         PHOTO_PATHNAME: /^\/posts\/(?<PID>\d+)\/post_content_photo\/(?<PNAME>\d+)\/?$/,
-        USER_PATHNAME: /^\/fanclubs\/(?<UID>\d+)\/?/
+        USER_PATHNAME: /^\/fanclubs\/(?<UID>\d+)\/?/,
+        USER_POSTS_PATHNAME: /^\/fanclubs\/(?<UID>\d+)\/posts\/?/,
+        ANY_USER_PATHNAME: /^\/fanclubs\/(?<UID>\d+)\/[A-Za-z]+?\/?/,
     }
 }
 
@@ -170,6 +173,10 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
         activeTabPages: [
             FANBOX_CONSTANTS.REGEXES.POST_PATHNAME
         ],
+        artworksPages: [
+            FANBOX_CONSTANTS.REGEXES.ARTIST_POSTS_PATHNAME,
+            /^\/$/
+        ],
         sourceDataPages: s => [
             ...FANBOX_CONSTANTS.PATTERNS.POST_PATHNAME(s),
             ...KEMONO_CONSTANTS.PATTERNS.POST_PATHNAME("fanbox", s)
@@ -181,6 +188,10 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
         activeTabPages: [
             FANTIA_CONSTANTS.REGEXES.POST_PATHNAME,
             FANTIA_CONSTANTS.REGEXES.PHOTO_PATHNAME
+        ],
+        artworksPages: [
+            FANTIA_CONSTANTS.REGEXES.USER_PATHNAME,
+            FANTIA_CONSTANTS.REGEXES.ANY_USER_PATHNAME
         ],
         sourceDataPages: s => [
             ...FANTIA_CONSTANTS.PATTERNS.POST_PATHNAME(s),

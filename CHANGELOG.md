@@ -1,3 +1,9 @@
+## [Unreleased]
+### Changed
+* **[CRX]** 在FANBOX, Fantia, Sankaku补充了列表页的作者信息的提取。
+### Performance
+* **[CRX]** 在边栏的作者信息模块引入缓存机制以减少解析和网络请求的次数。
+
 ## [0.18.0] - 2025-12-25
 ### Added
 * **[CRX]** 图像列表的扩展工具栏:
