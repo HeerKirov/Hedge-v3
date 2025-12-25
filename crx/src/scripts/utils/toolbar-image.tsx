@@ -189,7 +189,7 @@ const DownloadMenuButton = memo(function DownloadMenuButton(props: { status: "DN
 })
 
 const ROOT_STYLES: Record<LocaleSite, {style: string, relativeItem: boolean}> = {
-    "pixiv": {style: "position: absolute; right: 0; top: 35px", relativeItem: true},
+    "pixiv": {style: "position: absolute; right: 0; top: 40%", relativeItem: true},
     "ehentai-image": {style: "position: absolute; right: 0; bottom: 35px", relativeItem: true},
     "ehentai-mpv": {style: "position: absolute; right: 0; bottom: 50px", relativeItem: true},
     "sankaku": {style: "position: absolute; right: 5px; top: 0", relativeItem: true},

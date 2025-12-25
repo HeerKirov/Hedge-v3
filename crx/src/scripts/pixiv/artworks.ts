@@ -68,15 +68,18 @@ function initializeUI(sourceDataPath: SourceDataPath) {
         init() {
             return document.querySelectorAll<HTMLImageElement>("div[role=presentation] > a > img")
         },
-    }, (node, index) => {
+    }, (node) => {
         const anchor = node.parentElement! as HTMLAnchorElement
         const div = anchor.parentElement! as HTMLDivElement
+        const srcMatch = node.src.match(/img\/\d{4}\/\d{2}\/\d{2}\/\d{2}\/\d{2}\/\d{2}\/\d+_p(?<INDEX>\d+)/)
+        const index = srcMatch?.groups?.["INDEX"]
         imageToolbar.add([{
             index: null,
             element: div,
-            sourcePath: {...sourceDataPath, sourcePart: index},
+            sourcePath: {...sourceDataPath, sourcePart: index ? parseInt(index) : null},
             downloadURL: null,
-            thumbnailSrc: () => node.src
+            thumbnailSrc: () => node.src,
+            sourceDataProvider: async () => collectSourceData()
         }])
     })
 
