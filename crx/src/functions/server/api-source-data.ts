@@ -56,9 +56,9 @@ export interface DetailSourceData extends BasicSourceData {
 
 export interface SourceTag {
     code: string
-    name: string
+    type: string
+    name: string | null
     otherName: string | null
-    type: string | null
 }
 
 export interface SourceBook {
@@ -102,7 +102,7 @@ export interface SourceDataUpdateForm {
 export interface SourceTagForm {
     code: string
     type: string
-    name?: string
+    name?: string | null
     otherName?: string | null
 }
 

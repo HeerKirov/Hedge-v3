@@ -1,4 +1,4 @@
-import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
+import { SourceDataUpdateForm, SourceTag } from "@/functions/server/api-source-data"
 import { receiveMessageForTab } from "@/functions/messages"
 import { settings } from "@/functions/setting"
 import { PIXIV_CONSTANTS } from "@/functions/sites"
@@ -80,22 +80,24 @@ function initializeUI() {
 /**
  * 从当前页面查询最新的POST名称。
  */
-function getArtworksInfo(): Result<{latestPost: string, firstPage: boolean}, string> {
+function getArtworksInfo(): Result<{agent: SourceTag | null, agentSite: string, latestPost: string | null, firstPage: boolean}, string> {
+    const h1 = document.querySelector("h1")
+    const match = document.location.pathname.match(PIXIV_CONSTANTS.REGEXES.ANY_USER_PATHNAME)
+    const agent: SourceTag | null = h1 && match?.groups ? {code: match.groups["UID"], name: h1.textContent, otherName: null, type: "artist"} : null
+
+    let latestPost: string | null = null, page: number = 1
     const hrefs = [...document.querySelectorAll<HTMLAnchorElement>("ul > li[size='1'][offset='0'] a")].filter(a => a.querySelector("img") === null).map(a => a.href)
-    if(hrefs.length <= 0) {
-        return {ok: false, err: "No latest post found."}
-    }
     for(const href of hrefs) {
         const url = new URL(href)
         const match = url.pathname.match(PIXIV_CONSTANTS.REGEXES.ARTWORK_PATHNAME)
-        if(match && match.groups) {``
-            const post = match.groups["PID"]
+        if(match && match.groups) {
             const urlParams = new URLSearchParams(window.location.search)
-            const page = urlParams.has("p") ? parseInt(urlParams.get("p") as string, 10) : 1
-            return {ok: true, value: {latestPost: post, firstPage: page === 1}}
+            latestPost = match.groups["PID"]
+            page = urlParams.has("p") ? parseInt(urlParams.get("p") as string, 10) : 1
+            break
         }
     }
-    return {ok: false, err: "No available post found."}
+    return {ok: true, value: {agent, agentSite: PIXIV_CONSTANTS.SITE_NAME, latestPost, firstPage: page === 1}}
 }
 
 /**

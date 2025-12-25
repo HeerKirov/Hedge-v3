@@ -1,19 +1,41 @@
 import { memo } from "react"
 import { css, styled } from "styled-components"
 import { Button, FormattedText, Icon, LayouttedDiv } from "@/components/universal"
-import { useTabSourceInfo } from "@/hooks/source-info"
+import { useSupportedSite } from "@/hooks/sites"
+import { useAgentSourceInfo, useImageSourceInfo } from "@/hooks/source-info"
 import { TabState } from "@/hooks/tabs"
-import { SourceDataPath } from "@/functions/server/api-all"
-import { SourceDataCollectStatus, SourceEditStatus } from "@/functions/server/api-source-data"
 import { WEBSITES } from "@/functions/sites"
+import { SourceDataPath } from "@/functions/server/api-all"
+import { SourceMappingTargetDetail } from "@/functions/server/api-source-tag-mapping"
+import { SourceDataCollectStatus, SourceEditStatus, SourceTag } from "@/functions/server/api-source-data"
+import { AUTHOR_TYPE_ICONS, META_TYPE_ICONS, TOPIC_TYPE_ICONS } from "@/constants/entity"
 import { dates } from "@/utils/primitives"
-import { DARK_MODE_COLORS, FONT_SIZES, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
-
+import { nativeApp } from "@/utils/document"
+import { DARK_MODE_COLORS, FONT_SIZES, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS, ThemeColors } from "@/styles"
 
 export const SourceInfoPanel = memo(function SourceInfoPanel(props: {tabState: TabState, scene?: "popup" | "sidePanel"}) {
-    const { sourceInfo, collectStatus, manualCollectSourceData, quickFind } = useTabSourceInfo(props.tabState, props.scene)
+    const { supportType } = useSupportedSite(props.tabState.url)
+    return supportType === "artworks" ? <AgentSourceInfo tabState={props.tabState}/> : supportType === "page" ? <ImageSourceInfo tabState={props.tabState} scene={props.scene}/> : null
+})
 
-    return sourceInfo?.sourceDataPath ? <RootDiv>
+export const AgentSourceInfo = memo(function AgentSourceInfo(props: {tabState: TabState}) {
+    const { agent, agentSite, mappings } = useAgentSourceInfo(props.tabState)
+
+    return agent && agentSite ? <RootDiv>
+        <div>
+            <SourceTagNotice agent={agent} agentSite={agentSite}/>
+        </div>
+        <div className="buttons">
+            {mappings.map(mapping => <SourceTagMappingNotice key={`${mapping.metaType}-${mapping.metaTag.id}`} mapping={mapping}/>)}
+            <div className="spacer"/>
+        </div>
+    </RootDiv> : undefined
+})
+
+export const ImageSourceInfo = memo(function ImageSourceInfo(props: {tabState: TabState, scene?: "popup" | "sidePanel"}) {
+    const { sourceInfo, collectStatus, manualCollectSourceData, quickFind } = useImageSourceInfo(props.tabState, props.scene)
+
+    return sourceInfo ? <RootDiv>
         <div>
             <SourceDataPathNotice {...sourceInfo.sourceDataPath}/>
             {collectStatus !== null && <CollectStatusNotice {...collectStatus}/>}
@@ -25,6 +47,34 @@ export const SourceInfoPanel = memo(function SourceInfoPanel(props: {tabState: T
             <Button size="small" onClick={quickFind}><Icon icon="grin-squint" mr={1}/>查找相似项</Button>
         </div>
     </RootDiv> : undefined
+})
+
+const SourceTagNotice = memo(function SourceTagNotice(props: {agent: SourceTag, agentSite: string}) {
+    const { agent, agentSite } = props
+    return <LayouttedDiv mt={1} mb={1}>
+        <FormattedText mr={1}>{WEBSITES[agentSite]?.siteTitle ?? agentSite}</FormattedText>
+        <Icon icon="tag" mr={0.5}/><b>{agent.name}</b>
+    </LayouttedDiv>
+})
+
+const SourceTagMappingNotice = memo(function SourceTagMappingNotice(props: {mapping: SourceMappingTargetDetail}) {
+    const icon = props.mapping.metaType === "AUTHOR" ? AUTHOR_TYPE_ICONS[props.mapping.metaTag.type] 
+        : props.mapping.metaType === "TOPIC" ? TOPIC_TYPE_ICONS[props.mapping.metaTag.type] 
+        : META_TYPE_ICONS["TAG"]
+
+    const click = () => {
+        if(props.mapping.metaType === "AUTHOR") {
+            nativeApp.newTab("AuthorDetail", {path: props.mapping.metaTag.id})
+        }else if(props.mapping.metaType === "TOPIC") {
+            nativeApp.newTab("TopicDetail", {path: props.mapping.metaTag.id})
+        }else {
+            nativeApp.newTab("Tag", {initializer: {tagId: props.mapping.metaTag.id}})
+        }
+    }
+
+    return <LayouttedDiv mt={1} mr={2} color={props.mapping.metaTag.color as ThemeColors} onClick={click}>
+        <Icon icon={icon} mr={1}/><b>{props.mapping.metaTag.name}</b>
+    </LayouttedDiv>
 })
 
 const SourceDataPathNotice = memo(function SourceDataPathNotice(path: SourceDataPath) {

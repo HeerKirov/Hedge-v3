@@ -1,5 +1,5 @@
 import { Result } from "@/utils/primitives"
-import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
+import { SourceDataUpdateForm, SourceTag } from "@/functions/server/api-source-data"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { BasicException, Response } from "@/functions/server"
 
@@ -49,7 +49,7 @@ type ReportSourceData = MsgTemplateWithCallback<"REPORT_SOURCE_DATA", undefined,
 /**
  * 要求页面提交当前列表页的部分信息。
  */
-type ReportArtworksInfo = MsgTemplateWithCallback<"REPORT_ARTWORKS_INFO", undefined, Result<{latestPost: string, firstPage: boolean}, string>>
+type ReportArtworksInfo = MsgTemplateWithCallback<"REPORT_ARTWORKS_INFO", undefined, Result<{agent: SourceTag | null, agentSite: string, latestPost: string | null, firstPage: boolean}, string>>
 
 /**
  * 要求页面提交当前详情页的部分信息。

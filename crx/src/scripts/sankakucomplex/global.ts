@@ -1,6 +1,6 @@
 import { receiveMessageForTab } from "@/functions/messages"
 import { SourceDataPath } from "@/functions/server/api-all"
-import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
+import { SourceDataUpdateForm, SourceTag } from "@/functions/server/api-source-data"
 import { settings } from "@/functions/setting"
 import { SANKAKUCOMPLEX_CONSTANTS } from "@/functions/sites"
 import { artworksToolbar } from "@/scripts/utils"
@@ -134,22 +134,21 @@ function enablePaginationEnhancement() {
     }
 }
 
-function getArtworksInfo(): Result<{latestPost: string, firstPage: boolean}, string> {
+function getArtworksInfo(): Result<{agent: SourceTag | null, agentSite: string, latestPost: string | null, firstPage: boolean}, string> {
+    let latestPost: string | null = null, firstPage = true
     const hrefs = [...document.querySelectorAll<HTMLAnchorElement>(".post-gallery-grid .post-preview a")].map(a => a.href)
-    if(hrefs.length <= 0) {
-        return {ok: false, err: "No latest post found."}
-    }
     for(const href of hrefs) {
         const url = new URL(href)
         const match = url.pathname.match(SANKAKUCOMPLEX_CONSTANTS.REGEXES.POST_PATHNAME)
         if(match && match.groups) {
-            const post = match.groups["PID"]
             const urlParams = new URLSearchParams(window.location.search)
-            const firstPage = !urlParams.has("page") || parseInt(urlParams.get("page")!) === 1
-            return {ok: true, value: {latestPost: post, firstPage}}
+            latestPost = match.groups["PID"]
+            firstPage = !urlParams.has("page") || parseInt(urlParams.get("page")!) === 1
+            break
         }
     }
-    return {ok: false, err: "No available post found."}
+    //TODO agent
+    return {ok: true, value: {agent: null, agentSite: SANKAKUCOMPLEX_CONSTANTS.SITE_NAME, latestPost, firstPage}}
 }
 
 /**

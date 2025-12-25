@@ -17,7 +17,7 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
         const sourceDataPath = getSourceDataPath()
         sendMessage("GET_SOURCE_DATA", {sourceSite: sourceDataPath.sourceSite, sourceId: sourceDataPath.sourceId}).then(sourceData => {
             const file = document.querySelector<HTMLImageElement>("img")
-            similarFinder.quickFind(file?.src, sourceDataPath, sourceData !== null ? {ok: true, value: sourceData} : {ok: false, err: "Source data from manager is null."})
+            similarFinder.quickFind(file?.src, sourceDataPath, sourceData)
         })
     }
     return false

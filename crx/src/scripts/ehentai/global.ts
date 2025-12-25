@@ -1,6 +1,6 @@
 import { receiveMessageForTab } from "@/functions/messages"
 import { EHENTAI_CONSTANTS } from "@/functions/sites"
-import { SourceDataUpdateForm } from "@/functions/server/api-source-data"
+import { SourceDataUpdateForm, SourceTag } from "@/functions/server/api-source-data"
 import { SourceDataPath } from "@/functions/server/api-all"
 import { settings } from "@/functions/setting"
 import { artworksToolbar } from "@/scripts/utils"
@@ -54,22 +54,31 @@ function initializeUI() {
     artworksToolbar.add(nodes)
 }
 
-function getArtworksInfo(): Result<{latestPost: string, firstPage: boolean}, string> {
+function getArtworksInfo(): Result<{agent: SourceTag | null, agentSite: string, latestPost: string | null, firstPage: boolean}, string> {
+    let latestPost: string | null = null, firstPage = true
     const hrefs = [...document.querySelectorAll<HTMLAnchorElement>(".itg > .gl1t > a")].map(a => a.href)
-    if(hrefs.length <= 0) {
-        return {ok: false, err: "No latest post found."}
-    }
     for(const href of hrefs) {
         const url = new URL(href)
         const match = url.pathname.match(EHENTAI_CONSTANTS.REGEXES.GALLERY_PATHNAME)
         if(match && match.groups) {
-            const post = match.groups["GID"]
             const urlParams = new URLSearchParams(window.location.search)
-            const firstPage = !urlParams.has("next") && !urlParams.has("prev")
-            return {ok: true, value: {latestPost: post, firstPage}}
+            latestPost = match.groups["GID"]
+            firstPage = !urlParams.has("next") && !urlParams.has("prev")
+            break
         }
     }
-    return {ok: false, err: "No available post found."}
+    const agent = getAgent()
+    return {ok: true, value: {agent, agentSite: EHENTAI_CONSTANTS.SITE_NAME, latestPost, firstPage}}
+}
+
+function getAgent(): SourceTag | null {
+    const matchTag = document.location.pathname.match(EHENTAI_CONSTANTS.REGEXES.HOMEPAGE_TAG_PATHNAME)
+    if(matchTag && matchTag.groups) {
+        const type = matchTag.groups["TYPE"]
+        const name = matchTag.groups["NAME"]
+        return type === "artist" || type === "group" ? {code: name, name, otherName: null, type} : null
+    }
+    return null
 }
 
 async function requestSourceDataOfGallery(href: string): Promise<Result<SourceDataUpdateForm, string>> {

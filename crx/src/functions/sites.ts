@@ -10,7 +10,7 @@ export const EHENTAI_CONSTANTS = {
     },
     REGEXES: {
         HOMEPAGE_PATHNAME: /^\/$/,
-        HOMEPAGE_TAG_PATHNAME: /^\/tag\//,
+        HOMEPAGE_TAG_PATHNAME: /^\/tag\/(?<TYPE>[^:\/]+):(?<NAME>[^:\/]+)/,
         GALLERY_PATHNAME: /^\/g\/(?<GID>\d+)\/(?<TOKEN>[a-zA-Z0-9]+)\/?$/,
         MPV_PATHNAME: /^\/mpv\/(?<GID>\d+)\/(?<TOKEN>[a-zA-Z0-9]+)\/?$/,
         IMAGE_PATHNAME: /^\/s\/(?<PHASH>[a-zA-Z0-9]+)\/(?<GID>\d+)-(?<PAGE>\d+)\/?$/
@@ -26,6 +26,7 @@ export const PIXIV_CONSTANTS = {
     },
     REGEXES: {
         ARTWORK_PATHNAME: /^\/artworks\/(?<PID>\d+)\/?$/,
+        ANY_USER_PATHNAME: /^\/users\/(?<UID>\d+)(\/\[A-Za-z]+)?\/?/,
         USER_PATHNAME: /^\/users\/(?<UID>\d+)\/?/,
         USER_ARTKWORKS_PATHNAME: /^\/users\/(?<UID>\d+)\/artworks\/?/,
         USER_ILLUSTRATIONS_PATHNAME: /^\/users\/(?<UID>\d+)\/illustrations\/?/,

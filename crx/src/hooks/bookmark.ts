@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { getTabStateWithTitle, TabState } from "@/hooks/tabs"
+import { ifArtworksPage } from "@/hooks/sites"
 import { dates, objects, strings } from "@/utils/primitives"
 import { useWatch } from "@/utils/reactivity"
-import { WEBSITES } from "@/functions/sites"
 import { sendMessageToTab } from "@/services/messages"
 import { server } from "@/functions/server"
 
@@ -523,7 +523,7 @@ export function useAutoUpdatePost(tabState: TabState) {
     const getAutoUpdateValue = useCallback(async (): Promise<{post: string, date: Date, notFirstPage: boolean} | null> => {
         if(tabState.tabId !== undefined) {
             const pageInfo = await sendMessageToTab(tabState.tabId, "REPORT_ARTWORKS_INFO", undefined)
-            if(pageInfo.ok) {
+            if(pageInfo.ok && pageInfo.value.latestPost !== null) {
                 const { latestPost, firstPage } = pageInfo.value
                 const date = await getTodayByServerOffset()
                 return {post: latestPost, date, notFirstPage: !firstPage}
@@ -533,25 +533,10 @@ export function useAutoUpdatePost(tabState: TabState) {
     }, [tabState.tabId])
 
     useWatch(() => {
-        setIsArtworksPage(ifTabArtworksPage(tabState.url))
+        setIsArtworksPage(ifArtworksPage(tabState.url))
     }, [tabState.url], {immediate: true})
 
     return {isArtworksPage, getAutoUpdateValue}
-}
-
-function ifTabArtworksPage(urlString: string | undefined) {
-    if(urlString) {
-        const url = new URL(urlString)
-        for(const siteName in WEBSITES) {
-            const site = WEBSITES[siteName]
-            if(site.host.some(host => typeof host === "string" ? host === url.host : host.test(url.host))) {
-                if(site.artworksPages && site.artworksPages.some(i => i.test(url.pathname))) {
-                    return true
-                }
-            }
-        }
-    }
-    return false
 }
 
 async function getTodayByServerOffset(): Promise<Date> {

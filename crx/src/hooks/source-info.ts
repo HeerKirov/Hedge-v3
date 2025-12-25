@@ -1,7 +1,7 @@
  import { useCallback, useEffect, useMemo, useState } from "react"
 import { SourceDataPath } from "@/functions/server/api-all"
-import { SourceDataCollectStatus } from "@/functions/server/api-source-data"
-import { WEBSITES } from "@/functions/sites"
+import { SourceDataCollectStatus, SourceTag } from "@/functions/server/api-source-data"
+import { SourceMappingTargetDetail } from "@/functions/server/api-source-tag-mapping"
 import { server } from "@/functions/server"
 import { sendMessage } from "@/functions/messages"
 import { TabState } from "@/hooks/tabs"
@@ -9,18 +9,44 @@ import { setActiveTabBadgeByStatus } from "@/services/active-tab"
 import { sendMessageToTab } from "@/services/messages"
 import { sleep } from "@/utils/primitives"
 
-export interface SourceInfo {
+export interface ImageSourceInfo {
     tabId: number
-    siteName: string
     host: string
-    sourceDataPath: SourceDataPath | null
+    sourceDataPath: SourceDataPath
 }
 
 /**
- * 解析当前页面是否属于受支持的网站，提供网站host，以及解析来源数据ID。
+ * 对于列表类型页面，根据其agent，查找其来源标签的映射情况。
  */
-export function useTabSourceInfo(tabState: TabState, scene?: "popup" | "sidePanel") {
-    const [sourceInfo, setSourceInfo] = useState<SourceInfo | null>(null)
+export function useAgentSourceInfo(tabState: TabState) {
+    const [agent, setAgent] = useState<SourceTag | null>(null)
+    const [agentSite, setAgentSite] = useState<string | null>(null)
+    const [mappings, setMappings] = useState<SourceMappingTargetDetail[]>([])
+
+    useEffect(() => {
+        if(tabState.status === "complete" && tabState.tabId) {
+            const tabId = tabState.tabId
+            getTabAgentData(tabId).then(async agent => {
+                setAgent(agent?.agent ?? null)
+                setAgentSite(agent?.agentSite ?? null)
+                if(agent && agent.agent) {
+                    const res = await server.sourceTagMapping.get({sourceSite: agent.agentSite, sourceTagType: agent.agent.type, sourceTagCode: agent.agent.code})
+                    if(res.ok) setMappings(res.data)
+                }else{
+                    setMappings([])
+                }
+            }).catch(e => console.error(e))
+        }
+    }, [tabState.status, tabState.tabId])
+
+    return {agent, agentSite, mappings}
+}
+
+/**
+ * 对于图像类型页面，根据其来源ID，查找其来源和图像的收集情况。
+ */
+export function useImageSourceInfo(tabState: TabState, scene?: "popup" | "sidePanel") {
+    const [sourceInfo, setSourceInfo] = useState<ImageSourceInfo | null>(null)
 
     const urlWithoutHash = useMemo(() => {
         if(tabState.url) {
@@ -51,10 +77,11 @@ export function useTabSourceInfo(tabState: TabState, scene?: "popup" | "sidePane
 
     useEffect(() => {
         if(tabState.status === "complete" && tabState.tabId && urlWithoutHash) {
+            const tabId = tabState.tabId
             const url = new URL(urlWithoutHash)
-            matchTabSourceData(tabState.tabId, url).then(sourceInfo => {
-                refreshCollectStatus(sourceInfo?.sourceDataPath ?? null).catch(e => console.error(e))
-                setSourceInfo(sourceInfo)
+            getTabSourceData(tabState.tabId).then(sourceDataPath => {
+                refreshCollectStatus(sourceDataPath).catch(e => console.error(e))
+                setSourceInfo(sourceDataPath ? {tabId, host: url.host, sourceDataPath} : null)
             }).catch(e => console.error(e))
         }else{
             setSourceInfo(null)
@@ -107,33 +134,52 @@ function useCollectStatusInternal(sourceDataPath: SourceDataPath | null, refresh
 }
 
 /**
- * 解析URL，分析它属于哪个来源网站，并获取其来源数据信息。
+ * 获取当前tab的来源标签信息。
  */
-async function matchTabSourceData(tabId: number, url: URL): Promise<{tabId: number, siteName: string, host: string, sourceDataPath: SourceDataPath | null} | null> {
-    for(const siteName in WEBSITES) {
-        const site = WEBSITES[siteName]
-        if(site.host.some(host => typeof host === "string" ? host === url.host : host.test(url.host))) {
-            if(site.activeTabPages && site.activeTabPages.some(i => i.test(url.pathname))) {
-                try {
-                    const pageInfo = await sendMessageToTab(tabId, "REPORT_PAGE_INFO", undefined)
-                    if(pageInfo?.path) {
-                        return {tabId, siteName, host: url.host, sourceDataPath: pageInfo.path}
-                    }
-                } catch (e) {
-                    if(e instanceof Error && e.message.includes("Could not establish connection. Receiving end does not exist.")) {
-                        console.log("[matchTabSourceData] Tab is not ready. Retry after 500ms.")
-                        await sleep(500)
-                        const pageInfo = await sendMessageToTab(tabId, "REPORT_PAGE_INFO", undefined)
-                        if(pageInfo?.path) {
-                            return {tabId, siteName, host: url.host, sourceDataPath: pageInfo.path}
-                        }
-                    }else{
-                        throw e
-                    }
-                }
-                
+async function getTabAgentData(tabId: number): Promise<{agent: SourceTag | null, agentSite: string} | null> {
+    try {
+        const res = await sendMessageToTab(tabId, "REPORT_ARTWORKS_INFO", undefined)
+        if(res.ok) {
+            return res.value
+        }else{
+            console.warn("[getTabAgentData] Failed to get agent data from tab.", res.err)
+        }
+    } catch (e) {
+        if(e instanceof Error && e.message.includes("Could not establish connection. Receiving end does not exist.")) {
+            console.log("[getTabAgentData] Tab is not ready. Retry after 500ms.")
+            await sleep(500)
+            const res = await sendMessageToTab(tabId, "REPORT_ARTWORKS_INFO", undefined)
+            if(res.ok) {
+                return res.value
+            }else{
+                console.warn("[getTabAgentData] Failed to get agent data from tab.", res.err)
             }
-            return {tabId, siteName, host: url.host, sourceDataPath: null}
+        }else{
+            throw e
+        }
+    }
+    return null
+}
+
+/**
+ * 获取当前tab的来源数据信息。
+ */
+async function getTabSourceData(tabId: number): Promise<SourceDataPath | null> {
+    try {
+        const pageInfo = await sendMessageToTab(tabId, "REPORT_PAGE_INFO", undefined)
+        if(pageInfo?.path) {
+            return pageInfo.path
+        }
+    } catch (e) {
+        if(e instanceof Error && e.message.includes("Could not establish connection. Receiving end does not exist.")) {
+            console.log("[getTabSourceData] Tab is not ready. Retry after 500ms.")
+            await sleep(500)
+            const pageInfo = await sendMessageToTab(tabId, "REPORT_PAGE_INFO", undefined)
+            if(pageInfo?.path) {
+                return pageInfo.path
+            }
+        }else{
+            throw e
         }
     }
     return null

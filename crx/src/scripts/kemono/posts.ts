@@ -1,4 +1,5 @@
 import { receiveMessageForTab } from "@/functions/messages"
+import { SourceTag } from "@/functions/server/api-source-data"
 import { KEMONO_CONSTANTS } from "@/functions/sites"
 import { onDOMContentLoaded } from "@/utils/document"
 import { Result } from "@/utils/primitives"
@@ -14,20 +15,26 @@ receiveMessageForTab(({ type, msg: _, callback }) => {
     return false
 })
 
-function getArtworksInfo(): Result<{latestPost: string, firstPage: boolean}, string> {
+function getArtworksInfo(): Result<{agent: SourceTag | null, agentSite: string, latestPost: string | null, firstPage: boolean}, string> {
+    let latestPost: string | null = null, firstPage = true, agentSite = KEMONO_CONSTANTS.SITE_NAME, userId: string | null = null
     const hrefs = [...document.querySelectorAll<HTMLAnchorElement>(".post-card > a")].map(a => a.href)
-    if(hrefs.length <= 0) {
-        return {ok: false, err: "No latest post found."}
-    }
     for(const href of hrefs) {
         const url = new URL(href)
         const match = url.pathname.match(KEMONO_CONSTANTS.REGEXES.POST_PATHNAME)
         if(match && match.groups) {
-            const post = match.groups["PID"]
             const urlParams = new URLSearchParams(window.location.search)
-            const firstPage = !urlParams.has("o")
-            return {ok: true, value: {latestPost: post, firstPage}}
+            latestPost = match.groups["PID"]
+            firstPage = !urlParams.has("o")
+            break
         }
     }
-    return {ok: false, err: "No available post found."}
+
+    const match = document.location.pathname.match(KEMONO_CONSTANTS.REGEXES.USER_POSTS_PATHNAME)
+    if(match && match.groups) {
+        agentSite = match.groups["SITE"]
+        userId = match.groups["UID"]
+    }
+    
+    const agent: SourceTag | null = userId ? {code: userId, name: userId, otherName: null, type: "artist"} : null
+    return {ok: true, value: {agent, agentSite, latestPost, firstPage}}
 }
