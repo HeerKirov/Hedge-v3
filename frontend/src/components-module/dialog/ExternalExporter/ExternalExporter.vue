@@ -26,11 +26,11 @@ const onDragstart = async (e: DragEvent, item: SimpleIllust) => {
     startDragFile(await assetsLocal(item.filePath.sample), await assetsLocal(item.filePath.original))
 }
 
-const NAME_TYPE_OPTION_ITEMS = [
+const NAME_TYPE_OPTION_ITEMS: {label: string, value: "ORIGINAL_FILENAME" | "SOURCE" | "ID"}[] = [
     {label: "原始文件名", value: "ORIGINAL_FILENAME"},
     {label: "来源数据", value: "SOURCE"},
     {label: "ID", value: "ID"},
-] as const
+]
 
 </script>
 
