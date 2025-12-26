@@ -119,3 +119,46 @@ export function analyseDownloadURLFromImageDOM(document: Document): {downloadURL
         return {downloadURL: img.src, element: i3}
     }
 }
+
+/**
+ * 解析搜索字符串，将其切割成多个关键词。
+ */
+export function analyseSearchKeywords(search: string): string[] {
+    // 规则：分割方式只依赖空格，且空格必须在引号外有效，关键词内的引号去除，不丢弃无冒号的普通词
+    const result: string[] = []
+    let buf = ""
+    let inQuote = false
+
+    for (let i = 0; i < search.length; i++) {
+        const char = search[i]
+
+        if (char === '"') {
+            // 只切换引号状态，不存储引号
+            inQuote = !inQuote
+        } else if (/\s/.test(char) && !inQuote) {
+            // 引号外的空白分割
+            if (buf.length > 0) {
+                result.push(buf)
+                buf = ""
+            }
+        } else {
+            buf += char
+        }
+    }
+
+    if (buf.length > 0) {
+        result.push(buf)
+    }
+    return result
+}
+
+/**
+ * 检测关键词是否符合标签的形式，并返回标签的类型和名称。
+ */
+export function isTagKeyword(keyword: string): {type: string, name: string} | null {
+    const match = keyword.match(/^([^:]+):([^$]+)\$?$/)
+    if(match) {
+        return {type: match[1], name: match[2]}
+    }
+    return null
+}

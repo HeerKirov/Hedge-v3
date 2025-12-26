@@ -353,14 +353,32 @@ export function useBookmarkCreator(recentFolders: BookmarkParent[]) {
     const updateState = useCallback((info: BookmarkUpdateInfo) => setState(prev => ({...prev, ...info})), [])
 
     const save = useCallback(async () => {
-        const newTitle = generateBookmarkTitle(info)
-        chrome.bookmarks.create({title: newTitle, url: url, parentId: state.parent?.id ?? undefined})
+        if(url) {
+            const newTitle = generateBookmarkTitle(info)
+            chrome.bookmarks.create({title: newTitle, url: url, parentId: state.parent?.id ?? undefined})
+        }else{
+            console.warn("[useBookmarkCreator] URL is empty.")
+        }
     }, [info, url, state.parent?.id ?? ""])
 
     useEffect(() => {
-        getTabStateWithTitle().then(tabState => {
-            setInfo(prev => ({...prev, title: tabState.title ?? ""}))
+        getTabStateWithTitle().then(async tabState => {
             setUrl(tabState.url)
+            if(ifArtworksPage(tabState.url) && tabState.tabId !== undefined) {
+                const pageInfo = await sendMessageToTab(tabState.tabId, "REPORT_ARTWORKS_INFO", undefined)
+                if(pageInfo.ok && pageInfo.value.agent !== null) {
+                    const { agent } = pageInfo.value
+                    setInfo(prev => ({
+                        ...prev, 
+                        title: agent.name ?? agent.code,
+                        otherTitles: agent.otherName ? [agent.otherName, ...prev.otherTitles] : prev.otherTitles
+                    }))
+                }else{
+                    setInfo(prev => ({...prev, title: tabState.title ?? ""}))
+                }
+            }else{
+                setInfo(prev => ({...prev, title: tabState.title ?? ""}))
+            }
         })
     }, [])
 

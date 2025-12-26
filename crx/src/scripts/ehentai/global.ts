@@ -6,7 +6,7 @@ import { settings } from "@/functions/setting"
 import { artworksToolbar } from "@/scripts/utils"
 import { onDOMContentLoaded } from "@/utils/document"
 import { Result } from "@/utils/primitives"
-import { analyseSourceDataFromGalleryDOM } from "./utils"
+import { analyseSearchKeywords, analyseSourceDataFromGalleryDOM, isTagKeyword } from "./utils"
 
 onDOMContentLoaded(async () => {
     console.log("[Hedge v3 Helper] ehentai/global script loaded.")
@@ -75,8 +75,21 @@ function getAgent(): SourceTag | null {
     const matchTag = document.location.pathname.match(EHENTAI_CONSTANTS.REGEXES.HOMEPAGE_TAG_PATHNAME)
     if(matchTag && matchTag.groups) {
         const type = matchTag.groups["TYPE"]
-        const name = matchTag.groups["NAME"]
-        return type === "artist" || type === "group" ? {code: name, name, otherName: null, type} : null
+        const name = matchTag.groups["NAME"].replaceAll("+", " ")
+        return type === "artist" || type === "group" ? {code: name, name: null, otherName: null, type} : null
+    }
+    if(EHENTAI_CONSTANTS.REGEXES.HOMEPAGE_PATHNAME.test(document.location.pathname)) {
+        const params = new URLSearchParams(document.location.search)
+        const search = params.get("f_search")
+        if(search) {
+            const keywords = analyseSearchKeywords(search)
+            for(const keyword of keywords) {
+                const tag = isTagKeyword(keyword)
+                if(tag && (tag.type === "artist" || tag.type === "group")) {
+                    return {code: tag.name, name: null, otherName: null, type: tag.type}
+                }
+            }
+        }
     }
     return null
 }
