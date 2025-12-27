@@ -91,6 +91,11 @@ export default defineManifest({
             "run_at": "document_start"
         },
         {
+            "matches": ["https://fantia.jp/fanclubs/*"],
+            "js": ["src/scripts/fantia/fanclub.ts"],
+            "run_at": "document_start"
+        },
+        {
             "matches": ["https://fantia.jp/posts/*"],
             "js": ["src/scripts/fantia/post.ts"],
             "run_at": "document_start"

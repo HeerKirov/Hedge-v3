@@ -205,7 +205,7 @@ function enableRenameFile() {
                     (e.target as HTMLAnchorElement).style.color = "burlywood"
 
                     //获取当前页的所有图像，并提取它们的页码、hash、文件名信息
-                    const anchors = document.querySelectorAll<HTMLAnchorElement>("#gdt > a")
+                    const anchors = document.querySelectorAll<HTMLAnchorElement>("#gdt > a, #gdt > div > a")
                     const hrefs = [...anchors.values()].map(a => {
                         const titleDiv = a.querySelector<HTMLDivElement>("div[title]")
                         if(!titleDiv) {

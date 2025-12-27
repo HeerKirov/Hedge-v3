@@ -1,10 +1,11 @@
-## [Unreleased]
+## [0.18.1] - 2025-12-27
 ### Added
 * **[CRX]** 书签管理器: 新建书签时，会尝试提取列表页的作者信息作为title。无此信息时继续使用网页标题。
 ### Changed
 * **[CRX]** 在FANBOX, Fantia, Sankaku补充了列表页的作者信息的提取。
 ### Fixed
 * **[CRX]** 修复E-Hentai提取的作者信息未进行decode的问题。
+* **[CRX]** 修复E-Hentai Rename Script因ToolBar注入而失效的问题。
 ### Performance
 * **[CRX]** 在边栏的作者信息模块引入缓存机制以减少解析和网络请求的次数。
 
