@@ -47,7 +47,7 @@ $content-margin-size: math.div(size.$title-bar-height - size.$element-height-std
     top: size.$spacing-1
     right: size.$spacing-1
     &.darwin-border-button
-        border-top-right-radius: size.$radius-size-very-large
+        border-top-right-radius: size.$radius-size-darwin
     &.has-win-button
         right: #{size.$spacing-1 + size.$win-buttons-width}
 </style>

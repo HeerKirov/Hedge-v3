@@ -152,5 +152,5 @@ const forwardContextMenu = () => getForwards().map(i => (<MenuItem<undefined>>{t
             display: none
 
 .darwin-border-button
-    border-bottom-left-radius: size.$radius-size-very-large
+    border-bottom-left-radius: size.$radius-size-darwin
 </style>

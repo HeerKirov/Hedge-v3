@@ -42,5 +42,5 @@ const hasDarwinBorder = props.enableDarwinBorder ? useDarwinWindowed() : undefin
 @use "@/styles/base/size"
 
 .darwin-border-button:last-child
-    border-bottom-right-radius: size.$radius-size-very-large
+    border-bottom-right-radius: size.$radius-size-darwin
 </style>

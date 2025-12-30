@@ -145,5 +145,5 @@ const popupMenu = usePopupMenu(computed(() => [
     > *
         -webkit-app-region: none
     &.has-darwin-border > button:last-child
-        border-top-right-radius: size.$radius-size-very-large
+        border-top-right-radius: size.$radius-size-darwin
 </style>

@@ -30,5 +30,5 @@ const hasDarwinBorder = useDarwinWindowed()
         > *
             -webkit-app-region: none
         &.darwin-border-area > button:last-child
-            border-top-right-radius: size.$radius-size-very-large
+            border-top-right-radius: size.$radius-size-darwin
 </style>
