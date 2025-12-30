@@ -588,7 +588,7 @@ async function getTodayByServerOffset(): Promise<Date> {
     return new Date(new Date().setHours(0, 0, 0, 0))
 }
 
-export function useRelatedBookmarks(selfId: string, title: string) {
+export function useRelatedBookmarks(bookmarkId: string, title: string) {
     const relatedBookmarksCache = useMemo(() => createLocalCache<string, RelatedBookmark[]>("related-bookmarks", { maxSize: 10 }), [])
 
     const [relatedBookmarks, setRelatedBookmarks] = useState<RelatedBookmark[]>([])
@@ -596,25 +596,23 @@ export function useRelatedBookmarks(selfId: string, title: string) {
     const refresh = useCallback(async () => {
         const bookmarks = await chrome.bookmarks.search(title)
         const analysedBookmarks = bookmarks
-            .filter(bookmark => bookmark.url && bookmark.id !== selfId)
+            .filter(bookmark => bookmark.url)
             .map(bookmark => ({analytical: analyseBookmarkTitle(bookmark.title), url: bookmark.url!, id: bookmark.id}))
-        relatedBookmarksCache.set(selfId, analysedBookmarks)
-        setRelatedBookmarks(analysedBookmarks)
-    }, [selfId, title])
+        relatedBookmarksCache.set(title, analysedBookmarks)
+        setRelatedBookmarks(analysedBookmarks.filter(bookmark => bookmark.id !== bookmarkId))
+    }, [bookmarkId, title])
 
     useEffect(() => {
-        const cached = relatedBookmarksCache.get(selfId)
+        const cached = relatedBookmarksCache.get(title)
         if (cached) {
             // 命中缓存：缓存管理器会自动更新 LRU 位置
-            setRelatedBookmarks(cached)
+            setRelatedBookmarks(cached.filter(bookmark => bookmark.id !== bookmarkId))
         }else{
             // 缓存未命中：从 API 获取
             refresh()
         }
-    }, [refresh])
 
-    // 监听 bookmark 事件，清理缓存并刷新当前数据
-    useEffect(() => {
+        // 监听 bookmark 事件，清理缓存并刷新当前数据
         const changedEventHandler = () => {
             relatedBookmarksCache.clear()
             refresh()
