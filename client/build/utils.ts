@@ -20,7 +20,7 @@ export function copyDependencies(src: string, dest: string, dependencies: string
         const TARGET_DIR = path.join(dest, dependency)
         if(fs.existsSync(SRC_DIR)) {
             if(!fs.existsSync(TARGET_DIR)) {
-                fs.cpSync(SRC_DIR, TARGET_DIR, { recursive: true, dereference: true, preserveTimestamps: true })
+                fs.cpSync(SRC_DIR, TARGET_DIR, { recursive: true, preserveTimestamps: true, verbatimSymlinks: true })
                 const pkg = JSON.parse(fs.readFileSync(path.join(SRC_DIR, "package.json"), {encoding: "utf8"}))
                 const subDeps = pkg["dependencies"] ? Object.keys(pkg["dependencies"]) : null
                 if(subDeps && subDeps.length > 0) {
