@@ -1,5 +1,5 @@
 import { SourceDataPath } from "@/functions/server/api-all"
-import { settings } from "@/functions/setting"
+import { Setting, settings } from "@/functions/setting"
 import { receiveMessageForTab, sendMessage } from "@/functions/messages"
 import { EHENTAI_CONSTANTS } from "@/functions/sites"
 import { artworksToolbar, type ThumbnailInfo } from "@/scripts/utils"
@@ -18,12 +18,7 @@ onDOMContentLoaded(async () => {
 
         if(setting.website.ehentai.enableRenameScript) enableRenameFile()
         if(setting.website.ehentai.enableCommentCNBlock || setting.website.ehentai.enableCommentVoteBlock || setting.website.ehentai.enableCommentKeywordBlock || setting.website.ehentai.enableCommentUserBlock) {
-            enableCommentFilter(
-                setting.website.ehentai.enableCommentCNBlock,
-                setting.website.ehentai.enableCommentVoteBlock,
-                setting.website.ehentai.enableCommentKeywordBlock ? setting.website.ehentai.commentBlockKeywords : [],
-                setting.website.ehentai.enableCommentUserBlock ? setting.website.ehentai.commentBlockUsers : []
-            )
+            enableCommentFilter(setting)
         }
 
         if(setting.toolkit.downloadToolbar.enabled) initializeUI(sourceDataPath)
@@ -105,7 +100,10 @@ function initializeUI(sourcePath: SourceDataPath) {
  *   - 存在Vote过低的评论，且存在block keyword/user的评论，且同时存在至少2条Vote较高的评论，且这些评论都包含中文时，遮蔽评论区的所有中文评论。
  *   - 处于特别关照的parody下时，条件降低为vote/keyword/user其一 & 至少1条高vote & 包含中文，且遮蔽会进一步增强为直接删除所有中文评论。
  */
-function enableCommentFilter(blockCN: boolean, blockVote: boolean, blockKeywords: string[], blockUsers: string[]) {
+function enableCommentFilter(setting: Setting) {
+    const { enableCommentCNBlock: blockCN, enableCommentVoteBlock: blockVote, enableCommentKeywordBlock, enableCommentUserBlock, commentBlockKeywords, commentBlockUsers } = setting.website.ehentai
+    const blockKeywords = enableCommentKeywordBlock ? commentBlockKeywords : []
+    const blockUsers = enableCommentUserBlock ? commentBlockUsers : []
     const divs = document.querySelectorAll<HTMLDivElement>("div#cdiv > div.c1")
 
     const chinese: boolean[] = []
@@ -187,6 +185,34 @@ function enableCommentFilter(blockCN: boolean, blockVote: boolean, blockKeywords
                 c6.style.backgroundColor = "grey"
             }
         }
+    }
+
+    for(let i = 0; i < divs.length; ++i) {
+        if(!enableCommentUserBlock || userBanned[i]) continue
+        const c3 = divs[i].querySelector<HTMLDivElement>("div.c3")
+        if(!c3) continue
+        const banButton = documents.createElement("button", {
+            style: "margin-left: 8px; cursor: pointer; display: none; border: none; background: none; padding: 0; font-weight: bold; font-size: inherit; color: inherit;",
+            click(e: MouseEvent) {
+                const c3Anchor = c3.querySelector<HTMLAnchorElement>(":scope > a")!
+                const userName = c3Anchor.textContent!
+                if(blockUsers.includes(userName)) return
+                settings.set({...setting, website: {...setting.website, ehentai: {...setting.website.ehentai, commentBlockUsers: [...setting.website.ehentai.commentBlockUsers, userName]}}}, setting)
+                userBanned[i] = true
+                //对于被block的用户，总是遮蔽其用户名
+                c3Anchor.style.color = "black"
+                c3Anchor.style.backgroundColor = "black"
+                //关键字屏蔽、用户屏蔽、处于特别关注的CN遮蔽下，直接移除评论内容
+                divs[i].querySelector<HTMLDivElement>("div.c6")?.remove()
+            }
+        }, ["[Ban this user]"])
+        c3.addEventListener("mouseenter", () => {
+            banButton.style.display = "inline-block"
+        })
+        c3.addEventListener("mouseleave", () => {
+            banButton.style.display = "none"
+        })
+        c3.appendChild(banButton)
     }
 }
 

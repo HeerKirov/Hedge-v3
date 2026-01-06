@@ -78,13 +78,6 @@ export function OptionsWebsitePanel(props: OptionsWebsitePanelProps) {
             <SecondaryText>在创作者的名字后面追加显示userId和creatorId。</SecondaryText>
         </StyledDiv>
 
-        <LayouttedDiv mt={2}>
-            {changed && <>
-                <Separator spacing={2}/>
-                <StyledSaveButton mode="filled" width="10em" type="primary" onClick={save}><Icon icon="save" mr={2}/>保存</StyledSaveButton>
-            </>}
-        </LayouttedDiv>
-
         <Separator spacing={[4, 1]}/>
         <Header><IconImg src={KemonoIcon} alt="kemono icon"/>Kemono</Header>
         <StyledDiv>
@@ -110,6 +103,13 @@ export function OptionsWebsitePanel(props: OptionsWebsitePanelProps) {
             <CheckBox checked={editor.sankakucomplex.enablePaginationEnhancement} onUpdateChecked={v => setSankakucomplex("enablePaginationEnhancement", v)}>增强翻页器</CheckBox>
             <SecondaryText>使翻页可以突破最大页码上限。不过不能突破跳页限制，需要逐页翻页。</SecondaryText>
         </StyledDiv>
+
+        <LayouttedDiv mt={2}>
+            {changed && <>
+                <Separator spacing={2}/>
+                <StyledSaveButton mode="filled" width="10em" type="primary" onClick={save}><Icon icon="save" mr={2}/>保存</StyledSaveButton>
+            </>}
+        </LayouttedDiv>
     </>
 }
 
