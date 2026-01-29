@@ -139,6 +139,9 @@ jlink {
          * 但是，kotlin-reflect内有一些ServiceLoader的uses没有被自动分析进merged module里，因此造成了一个module * does not declare `uses`的异常。
          * tips: 在additive=true时，不必携带全部DSL，jlink命令的:createMergedModule阶段仍会报warn，但不会影响构建。
          */
+        uses("kotlin.reflect.jvm.internal.impl.km.internal.extensions.MetadataExtensions")
+        uses("kotlin.reflect.jvm.internal.impl.descriptors.DescriptorVisibilities")
+        uses("kotlin.reflect.jvm.internal.impl.resolve.OverridingUtil")
         uses("kotlin.reflect.jvm.internal.impl.resolve.ExternalOverridabilityCondition")
         uses("kotlin.reflect.jvm.internal.impl.util.ModuleVisibilityHelper")
         uses("kotlin.reflect.jvm.internal.impl.builtins.BuiltInsLoader")
