@@ -217,7 +217,7 @@ export const DETERMINING_RULES: Readonly<DeterminingRule[]> = [
     {
         siteName: PIXIV_CONSTANTS.SITE_NAME,
         referrer: /^https:\/\/www\.pixiv\.net\//,
-        filename: /(?<ID>\d+)_p(?<PART>\d+)/,
+        filename: /^(?<ID>\d+)(-[A-Za-z0-9]+)?_p(?<PART>\d+)$/,
         collectSourceData: true
     },
     {
