@@ -1,7 +1,7 @@
 import { Ref, computed, ref, onMounted, onBeforeUnmount } from "vue"
 import { remoteIpcClient, FileWatcherStatus } from "@/functions/ipc-client"
 import { flatResponse } from "@/functions/http-client"
-import { ImportRecord, ImportQueryFilter } from "@/functions/http-client/api/import"
+import { ImportRecord, ImportQueryFilter, ImportBatchForm } from "@/functions/http-client/api/import"
 import { OrderTimeType } from "@/functions/http-client/api/setting"
 import { SourceDataPath } from "@/functions/http-client/api/all"
 import {
@@ -229,26 +229,26 @@ export function useImportDetailPane() {
     const preview = usePreviewService()
     const router = useTabRoute()
     const { listview, listviewController, selector } = useImportContext()
-    const batchFetch = usePostFetchHelper(client => client.import.batch)
 
     const path = computed(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
 
-    const { data } = useFetchEndpoint({
+    const { data, setData } = useFetchEndpoint({
         path,
         get: client => client.import.get,
+        update: client => (path, form: Omit<ImportBatchForm, "target">) => client.import.batch({target: [path], ...form}),
         eventFilter: c => event => ((event.eventType === "entity/import/updated" || event.eventType === "entity/import/deleted") && event.importId === c.path) || ((event.eventType === "entity/illust/deleted" || event.eventType === "entity/illust/updated") && event.illustType === "IMAGE" && event.illustId === c.data?.illust?.id)
     })
 
-    const setFileName = (fileName: string) => batchFetch({target: [path.value], rename: fileName})
+    const setFileName = (fileName: string) => setData({rename: fileName})
 
     const analyseTime = async (timeType?: OrderTimeType) => {
-        const res = await batchFetch({target: [path.value], analyseTime: true, analyseTimeBy: timeType})
+        const res = await setData({analyseTime: true, analyseTimeBy: timeType})
         if(res !== undefined) toast.toast("已重新生成", "success", "已从导入记录重新生成项目的时间属性。")
     }
 
-    const retryAllowNoSource = () => batchFetch({target: [path.value], retry: true, retryAndAllowNoSource: true})
+    const retryAllowNoSource = () => setData({retry: true, retryAndAllowNoSource: true})
 
-    const retryWithSource = (sourceData: SourceDataPath) => batchFetch({target: [path.value], retry: true, retryWithManualSource: sourceData})
+    const retryWithSource = (sourceData: SourceDataPath) => setData({retry: true, retryWithManualSource: sourceData})
 
     const showStatusInfoMessage = (type: "thumbnailError" | "fingerprintError" | "sourceAnalyseError" | "sourceAnalyseNone" | "else") => {
         const info = type === "thumbnailError" ? "缩略图生成失败"
