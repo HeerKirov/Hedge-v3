@@ -308,9 +308,13 @@ class ImportProcessorImpl(private val appdata: AppDataManager,
                                 .where { (SourceTagMappings.sourceSite eq site) and (SourceTagMappings.targetMetaType eq MetaType.TOPIC) and (SourceTagMappings.targetMetaId eq nextId!!) }
                                 .map { it[SourceTagMappings.sourceTagId]!! }
                                 .toList()
-                            if(reflectedSourceTagIds.isNotEmpty() && reflectedSourceTagIds.none { it in sourceTagIds }) {
-                                include = false
-                                break
+                            if(reflectedSourceTagIds.isNotEmpty()) {
+                                if(reflectedSourceTagIds.none { it in sourceTagIds }) {
+                                    include = false
+                                }else{
+                                    include = true
+                                    break
+                                }
                             }
                         }
                         nextId = parentId
