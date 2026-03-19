@@ -197,7 +197,8 @@ function enableCommentFilter(setting: Setting) {
                 const c3Anchor = c3.querySelector<HTMLAnchorElement>(":scope > a")!
                 const userName = c3Anchor.textContent!
                 if(blockUsers.includes(userName)) return
-                settings.set({...setting, website: {...setting.website, ehentai: {...setting.website.ehentai, commentBlockUsers: [...setting.website.ehentai.commentBlockUsers, userName]}}}, setting)
+                blockUsers.push(userName)
+                settings.set({...setting, website: {...setting.website, ehentai: {...setting.website.ehentai, commentBlockUsers: blockUsers}}}, setting)
                 userBanned[i] = true
                 //对于被block的用户，总是遮蔽其用户名
                 c3Anchor.style.color = "black"
