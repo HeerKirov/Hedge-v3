@@ -79,7 +79,7 @@ class SourceAnalyzeManager(private val appdata: AppDataManager, bus: EventBus, p
                         ImportOption.SourceAnalyseRuleExtraTarget.TITLE -> title = result
                         ImportOption.SourceAnalyseRuleExtraTarget.DESCRIPTION -> description = result
                         ImportOption.SourceAnalyseRuleExtraTarget.ADDITIONAL_INFO -> additionalInfo[extra.additionalInfoField!!] = result
-                        ImportOption.SourceAnalyseRuleExtraTarget.TAG -> tags.add(SourceTagForm(extra.tagType!!, result, undefined(), undefined()))
+                        ImportOption.SourceAnalyseRuleExtraTarget.TAG -> tags.add(SourceTagForm(result, extra.tagType!!, undefined(), undefined()))
                         ImportOption.SourceAnalyseRuleExtraTarget.BOOK -> books.add(SourceBookForm(result, undefined(), undefined()))
                         ImportOption.SourceAnalyseRuleExtraTarget.RELATION -> relations.add(result)
                     }
