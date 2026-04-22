@@ -23,5 +23,6 @@ class AllServices(
     val metaUtil: MetaEditorService,
     val illustUtil: IllustUtilService,
     val pickerUtil: PickerUtilService,
-    val fileUtil: FileUtilService
+    val fileUtil: FileUtilService,
+    val fileStorage: FileStorageService
 )

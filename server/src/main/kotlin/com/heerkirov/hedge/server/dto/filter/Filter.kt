@@ -7,6 +7,18 @@ import java.time.LocalDate
 
 data class LimitAndOffsetFilter(@Limit val limit: Int, @Offset val offset: Int)
 
+data class BlockStorageListFilter(
+    @Order(options = ["name", "fileCount", "totalSize"])
+    val order: List<OrderItem>? = null,
+)
+
+data class BlockFileListFilter(
+    @Limit val limit: Int,
+    @Offset val offset: Int,
+    @Order(options = ["id", "fileName", "size"])
+    val order: List<OrderItem>? = null,
+)
+
 enum class IllustQueryType {
     IMAGE, COLLECTION, ONLY_IMAGE, ONLY_COLLECTION
 }
