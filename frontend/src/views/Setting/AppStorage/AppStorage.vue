@@ -1,49 +1,31 @@
 <script setup lang="ts">
-import { Button, Separator } from "@/components/universal"
-import { CheckBox, NumberInput } from "@/components/form"
-import { useSettingStorage } from "@/services/setting"
-import { usePropertySot } from "@/utils/forms"
-import { toRefNullable } from "@/utils/reactivity"
-import StorageBox from "./StorageBox.vue"
-import CacheBox from "./CacheBox.vue"
+import { ref, onMounted } from "vue"
+import { Button } from "@/components/universal"
+import AppStorageSetting from "./AppStorageSetting.vue"
+import AppStorageBlockList from "./AppStorageBlockList.vue"
+import AppStorageFileList from "./AppStorageFileList.vue"
 
-const { data: settingStorage } = useSettingStorage()
+const view = ref<"setting" | "block-list" | "block-detail">("setting")
+const blockDetailName = ref<string | null>(null)
 
-const [autoCleanTrashesIntervalDay, autoCleanTrashesIntervalDaySot, saveAutoCleanTrashesIntervalDay] = usePropertySot(toRefNullable(settingStorage, "autoCleanTrashesIntervalDay"))
+const mounted = ref(false)
 
-const [blockMaxSize, blockMaxSizeSot, saveBlockMaxSize] = usePropertySot(toRefNullable(settingStorage, "blockMaxSizeMB"))
+onMounted(() => mounted.value = true)
 
-const [blockMaxCount, blockMaxCountSot, saveBlockMaxCount] = usePropertySot(toRefNullable(settingStorage, "blockMaxCount"))
+const openBlockDetail = (block: string) => {
+    view.value = "block-detail"
+    blockDetailName.value = block
+}
 
 </script>
 
 <template>
-    <template v-if="!!settingStorage">
-        <StorageBox v-model:storage-path="settingStorage.storagePath"/>
-    </template>
-    <CacheBox/>
-    <template v-if="!!settingStorage">
-        <Separator direction="horizontal" :spacing="3"/>
-        <label class="label">归档区块</label>
-        <p class="secondary-text">归档中的文件按顺序打包存储。可以调整新生成的归档包的文件数量和容量上限。</p>
-        <div class="mt-1 is-line-height-small">
-            区块文件数量上限：
-            <NumberInput size="small" width="half" v-model:value="blockMaxCount" :min="5" :max="5000"/>个
-            <Button v-if="blockMaxCountSot" size="small" mode="filled" type="primary" icon="save" square @click="saveBlockMaxCount"/>
-        </div>
-        <div class="mt-1 is-line-height-small">
-            区块文件容量上限：
-            <NumberInput size="small" width="half" v-model:value="blockMaxSize" :min="10" :max="10000"/>MiB
-            <Button v-if="blockMaxSizeSot" size="small" mode="filled" type="primary" icon="save" square @click="saveBlockMaxSize"/>
-        </div>
-        <Separator direction="horizontal" :spacing="3"/>
-        <label class="label mt-2">已删除</label>
-        <CheckBox class="mt-2" v-model:value="settingStorage.autoCleanTrashes">自动清理「已删除」项</CheckBox>
-        <p class="secondary-text">「已删除」超过一定时间的项会被定期自动清理。</p>
-        <div v-if="settingStorage.autoCleanTrashes" class="mt-1 ml-2 is-line-height-small">
-            自动清理期限：
-            <NumberInput size="small" v-model:value="autoCleanTrashesIntervalDay" :min="1" :max="90"/>天
-            <Button v-if="autoCleanTrashesIntervalDaySot" size="small" mode="filled" type="primary" icon="save" square @click="saveAutoCleanTrashesIntervalDay"/>
-        </div>
-    </template>
+    <Teleport v-if="mounted" to="#top-bar">
+        <Button icon="gear" :mode="view === 'setting' ? 'light' : undefined" :type="view === 'setting' ? 'primary' : undefined" @click="view = 'setting'">存储选项</Button>
+        <Button class="ml-1" icon="archive" :mode="view === 'block-list' ? 'light' : undefined" :type="view === 'block-list' ? 'primary' : undefined" @click="view = 'block-list'">文件管理</Button>
+        <Button v-if="blockDetailName !== null" class="ml-1" icon="folder" :mode="view === 'block-detail' ? 'light' : undefined" :type="view === 'block-detail' ? 'primary' : undefined" @click="view = 'block-detail'">区块 {{ blockDetailName }}</Button>
+    </Teleport>
+    <AppStorageSetting v-if="view === 'setting'"/>
+    <AppStorageBlockList v-else-if="view === 'block-list'" @open-block="openBlockDetail"/>
+    <AppStorageFileList v-else-if="view === 'block-detail' && blockDetailName !== null" :block="blockDetailName"/>
 </template>

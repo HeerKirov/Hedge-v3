@@ -21,6 +21,7 @@ import { createUtilQueryEndpoint, UtilQueryEndpoint } from "./api/util-query"
 import { createUtilSearchEndpoint, UtilSearchEndpoint } from "./api/util-picker"
 import { createUtilExportEndpoint, UtilExportEndpoint } from "./api/util-export"
 import { createUtilFileEndpoint, UtilFileEndpoint } from "./api/util-file"
+import { createFileStorageEndpoint, FileStorageEndpoint } from "./api/file-storage"
 import { mapListResult, ListResult } from "./api/all"
 import { createStaticFiles, StaticFiles } from "./api/static-files"
 
@@ -50,6 +51,7 @@ export interface HttpClient {
     searchUtil: UtilSearchEndpoint
     exportUtil: UtilExportEndpoint
     fileUtil: UtilFileEndpoint
+    fileStorage: FileStorageEndpoint
     static: StaticFiles
 }
 
@@ -79,6 +81,7 @@ export function createHttpClient(config: HttpInstanceConfig): HttpClient {
         searchUtil: createUtilSearchEndpoint(http),
         exportUtil: createUtilExportEndpoint(http),
         fileUtil: createUtilFileEndpoint(http),
+        fileStorage: createFileStorageEndpoint(http),
         static: createStaticFiles(http),
     }
 }

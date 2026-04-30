@@ -2,12 +2,16 @@
 import { MenuScope, NavMenuItem, RouterNavMenu } from "@/components/interaction"
 import { Container, SideLayout, SideBar, TopBarLayout } from "@/components/layout"
 
+
 </script>
 
 <template>
     <SideLayout class="is-full-view">
         <template #default>
             <TopBarLayout>
+                <template #top-bar>
+                    <div id="top-bar" :class="[{[$style['darwin-border-area']]: false}, $style['top-bar']]"/>
+                </template>
                 <Container class="pt-4">
                     <RouterView/>
                 </Container>
@@ -38,3 +42,17 @@ import { Container, SideLayout, SideBar, TopBarLayout } from "@/components/layou
         </template>
     </SideLayout>
 </template>
+
+<style module lang="sass">
+@use "@/styles/base/size"
+
+.top-bar
+    position: relative
+    display: flex
+    flex-wrap: nowrap
+    height: 100%
+    > *
+        -webkit-app-region: none
+    &.darwin-border-area > button:last-child
+            border-top-right-radius: size.$radius-size-darwin
+</style>
