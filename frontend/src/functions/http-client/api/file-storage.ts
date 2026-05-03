@@ -1,6 +1,6 @@
 import { datetime, LocalDateTime } from "@/utils/datetime"
 import { HttpInstance, Response } from ".."
-import { LimitAndOffsetFilter, ListResult, mapFromOrderList, OrderList } from "./all"
+import { LimitAndOffsetFilter, ListResult, mapFromOrderList, NullableFilePath, OrderList } from "./all"
 
 export function createFileStorageEndpoint(http: HttpInstance): FileStorageEndpoint {
     return {
@@ -35,6 +35,7 @@ function mapToBlockStorageSummary(data: any): BlockStorageSummary {
         totalSize: <number>data["totalSize"],
         hasZipFile: <boolean>data["hasZipFile"],
         hasDirectory: <boolean>data["hasDirectory"],
+        lastModified: datetime.of(<string>data["lastModified"]),
     }
 }
 
@@ -47,6 +48,9 @@ function mapToBlockFileItem(data: any): BlockFileItem {
         resolutionWidth: <number>data["resolutionWidth"],
         resolutionHeight: <number>data["resolutionHeight"],
         extension: <string>data["extension"],
+        filepath: data["filepath"],
+        hasThumbnail: <boolean>data["hasThumbnail"],
+        hasSample: <boolean>data["hasSample"],
         inBlockDirectory: <boolean>data["inBlockDirectory"],
     }
 }
@@ -79,6 +83,7 @@ export interface BlockStorageSummary {
     totalSize: number
     hasZipFile: boolean
     hasDirectory: boolean
+    lastModified: LocalDateTime
 }
 
 export interface BlockFileItem {
@@ -89,5 +94,8 @@ export interface BlockFileItem {
     resolutionWidth: number
     resolutionHeight: number
     extension: string
+    filepath: NullableFilePath
+    hasThumbnail: boolean
+    hasSample: boolean
     inBlockDirectory: boolean
 }

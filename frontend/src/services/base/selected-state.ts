@@ -25,14 +25,16 @@ export interface SingleSelectedState<T extends string | number> {
 }
 
 interface SelectedStateOptions<T extends string | number, ITEM> {
+    alias?: string
     queryListview?: QueryListview<ITEM, T>
     keyOf(item: ITEM): T
 }
 
 export function useSelectedState<T extends string | number, ITEM = undefined>(options?: SelectedStateOptions<T, ITEM>): SelectedState<T> {
-    const selected = useRouteStorage<T[]>("selector/selected", [])
-    const selectedIndex = useRouteStorage<(number | undefined)[]>("selector/selected-index", [])
-    const lastSelected = useRouteStorage<T | null>("selector/last-selected")
+    const prefix = options?.alias ? `selector/${options.alias}` : "selector"
+    const selected = useRouteStorage<T[]>(`${prefix}/selected`, [])
+    const selectedIndex = useRouteStorage<(number | undefined)[]>(`${prefix}/selected-index`, [])
+    const lastSelected = useRouteStorage<T | null>(`${prefix}/last-selected`)
 
     if(options?.queryListview) {
         useListeningEvent(options.queryListview.modifiedEvent, e => {

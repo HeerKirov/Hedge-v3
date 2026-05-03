@@ -1,4 +1,6 @@
 import ImportDetailPane from "./ImageDatasetPane/ImportDetailPane.vue"
+import StorageBlockDetailPane from "./ImageDatasetPane/StorageBlockDetailPane.vue"
+import StorageFileDetailPane from "./ImageDatasetPane/StorageFileDetailPane.vue"
 import IllustDetailPane from "./ImageDatasetPane/IllustDetailPane.vue"
 import TrashedDetailPane from "./ImageDatasetPane/TrashedDetailPane.vue"
 import BookDetailPane from "./ImageDatasetPane/BookDetailPane.vue"
@@ -11,7 +13,7 @@ import BrowserTabBar from "./BrowserTabBar/BrowserTabBar.vue"
 import LoadingScreen from "./LoadingScreen.vue"
 import ServerStatScreen from "./ServerStatScreen.vue"
 
-export { ImportDetailPane, IllustDetailPane, TrashedDetailPane, BookDetailPane }
+export { ImportDetailPane, StorageBlockDetailPane, StorageFileDetailPane, IllustDetailPane, TrashedDetailPane, BookDetailPane }
 export { IllustDetailTab, IllustTabAction, BookTabDetailInfo }
 export { StagingPostButton, BackgroundTaskButton, LoadingScreen, ServerStatScreen }
 export { BrowserTabBar }

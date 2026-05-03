@@ -100,3 +100,20 @@ export function useBookViewController(): BookViewController {
         columnNum: toRef(storage, "columnNum")
     }
 }
+
+/**
+ * 存储区块内文件列表的视图控制器（与导入列表相同的网格/行选项）。
+ */
+export function useStorageFileViewController(): ImportImageViewController {
+    const storage = useLocalStorage<{
+        fitType: "cover" | "contain", columnNum: number, viewMode: "row" | "grid"
+    }>("storage-block-file/list/view-controller", () => ({
+        fitType: "cover", columnNum: 6, viewMode: "grid"
+    }), true)
+
+    return {
+        fitType: toRef(storage, "fitType"),
+        columnNum: toRef(storage, "columnNum"),
+        viewMode: toRef(storage, "viewMode")
+    }
+}
