@@ -11,6 +11,7 @@ data class BlockStorageSummaryRes(
     val totalSize: Long,
     val hasZipFile: Boolean,
     val hasDirectory: Boolean,
+    val lastModified: Instant,
 )
 
 /**
@@ -24,6 +25,9 @@ data class BlockFileItemRes(
     val resolutionWidth: Int,
     val resolutionHeight: Int,
     val extension: String,
+    val filepath: NullableFilePath,
+    val hasThumbnail: Boolean,
+    val hasSample: Boolean,
     /**
      * 原始文件是否以松散文件形式存在于 block 目录下（而非仅在 zip 内）。
      */

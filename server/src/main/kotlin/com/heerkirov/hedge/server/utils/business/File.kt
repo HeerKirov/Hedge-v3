@@ -67,3 +67,13 @@ fun filePathOrNullFrom(it: QueryRowSet): NullableFilePath {
     }
     return NullableFilePath(file, thumbnailFile, sampleFile, extension)
 }
+
+/**
+ * 是否在存储中存在**专用**缩略图 / 示意图文件（与 [filePathOrNullFrom] 中为展示而降级选用的路径不是同一概念）。
+ * 判定与 [com.heerkirov.hedge.server.components.backend.FileGenerator] 落盘时写入的 `thumbnail_size`、`sample_size` 一致：大于 0 表示对应层级已生成并记录。
+ */
+fun fileDedicatedThumbnailSampleFrom(it: QueryRowSet): Pair<Boolean, Boolean> {
+    val hasThumbnail = it[FileRecords.thumbnailSize]!! > 0L
+    val hasSample = it[FileRecords.sampleSize]!! > 0L
+    return hasThumbnail to hasSample
+}
