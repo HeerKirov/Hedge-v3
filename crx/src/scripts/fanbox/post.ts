@@ -69,21 +69,19 @@ function initializeUI(sourcePath: SourceDataPath) {
 
         const callbackWithProcessor = (nodes: HTMLImageElement[]) => {
             if(imgList === undefined) imgList = [...document.querySelectorAll<HTMLImageElement>("article img")].filter(n => n.src?.startsWith("https://downloads.fanbox.cc"))
+            const dataContents = document.querySelector("div[data-contents=\"true\"]")!
+            const postImages = [...dataContents.childNodes].filter(child => child instanceof HTMLElement && child.className.includes("article__atomic-block") && child.firstChild?.firstChild?.firstChild instanceof HTMLDivElement && child.firstChild.firstChild.firstChild.className.includes("PostImage__Wrapper"))
+
             const ret = nodes.filter(node => node.parentElement?.parentElement instanceof HTMLAnchorElement).map(node => {
                 let index = imgList!.indexOf(node) + 1
                 const downloadURL = (node.parentElement!.parentElement as HTMLAnchorElement).href
                 const element = node.parentElement!.parentElement!.parentElement as HTMLDivElement
-                const wrapper = element.parentElement!.parentElement!.parentElement! as HTMLDivElement
-                const parent = wrapper.parentElement! as HTMLDivElement
+
                 //tips: 由于fanbox懒加载，一次加载的索引不再能视为序号。尝试通过确定wrapper在parent中的顺位，来确定当前序号
-                if(parent.className.includes("styled__FullWidthWrapper")) {
-                    let i = 1
-                    for(let childNode of parent.childNodes) {
-                        if(childNode === wrapper) {
-                            index = i
-                        }else{
-                            i += 1
-                        }
+                for(let i = 0; i < postImages.length; ++i) {
+                    if(postImages[i].contains(node)) {
+                        index = i + 1
+                        break
                     }
                 }
                 return {index, downloadURL, sourcePath: {...sourcePath, sourcePart: index}, element, thumbnailSrc: node.src || null}
