@@ -31,6 +31,7 @@ class FileStorageService(private val appdata: AppDataManager, private val data: 
         "id" to FileRecords.id
         "fileName" to FileRecords.originFilename
         "size" to FileRecords.size
+        "extension" to FileRecords.extension
     }
 
     fun listBlocks(filter: BlockStorageListFilter): List<BlockStorageSummaryRes> {
@@ -75,9 +76,14 @@ class FileStorageService(private val appdata: AppDataManager, private val data: 
         val blockDir = File(originalRoot, blockName)
         val blockDirExists = blockDir.isDirectory
 
+        val extensionEq = normalizedSingleExtension(filter.extension)
+
         val total = data.db.from(FileRecords)
             .select(count(FileRecords.id).aliased("cnt"))
-            .where { (FileRecords.block eq blockName) and (FileRecords.deleted eq false) }
+            .whereWithConditions {
+                it += (FileRecords.block eq blockName) and (FileRecords.deleted eq false)
+                if (extensionEq != null) it += FileRecords.extension eq extensionEq
+            }
             .first()
             .getInt("cnt")
 
@@ -86,7 +92,10 @@ class FileStorageService(private val appdata: AppDataManager, private val data: 
                 FileRecords.id, FileRecords.block, FileRecords.originFilename, FileRecords.extension, FileRecords.size,
                 FileRecords.resolutionWidth, FileRecords.resolutionHeight, FileRecords.createTime, FileRecords.status,
                 FileRecords.thumbnailSize, FileRecords.sampleSize)
-            .where { (FileRecords.block eq blockName) and (FileRecords.deleted eq false) }
+            .whereWithConditions {
+                it += (FileRecords.block eq blockName) and (FileRecords.deleted eq false)
+                if (extensionEq != null) it += FileRecords.extension eq extensionEq
+            }
             .orderBy(blockFileOrderTranslator, filter.order, default = OrderItem("id", false))
             .limit(filter.offset, filter.limit)
             .asSequence()
@@ -179,4 +188,15 @@ class FileStorageService(private val appdata: AppDataManager, private val data: 
     }
 
     private val blockNamePattern = Regex("^[0-9a-f]+$", RegexOption.IGNORE_CASE)
+
+    private val allowedBlockFileExtensions = setOf("jpg", "png", "gif", "mp4", "webm")
+
+    /**
+     * 将查询参数中的扩展名归一为库中可能出现的单一取值；无效或缺省时为 null（不按类型过滤）。
+     */
+    private fun normalizedSingleExtension(raw: String?): String? {
+        if (raw.isNullOrBlank()) return null
+        val n = raw.trim().lowercase().let { if (it == "jpeg" || it == "jpe") "jpg" else it }
+        return n.takeIf { it in allowedBlockFileExtensions }
+    }
 }

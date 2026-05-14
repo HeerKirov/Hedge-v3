@@ -15,8 +15,9 @@ data class BlockStorageListFilter(
 data class BlockFileListFilter(
     @Limit val limit: Int,
     @Offset val offset: Int,
-    @Order(options = ["id", "fileName", "size"])
+    @Order(options = ["id", "fileName", "size", "extension"])
     val order: List<OrderItem>? = null,
+    val extension: String? = null,
 )
 
 enum class IllustQueryType {

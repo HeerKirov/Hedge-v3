@@ -35,7 +35,7 @@ fun <T : Any> parseFilter(kClass: KClass<T>, parameterMap: Map<String, List<Stri
             null -> {
                 val multi = parameter.type.classifier == List::class || parameter.type.classifier == Set::class
                 val parameterValue = takeParameterValue(parameterMap, name, multi)
-                parseGeneralParameter(parameter, parameterValue)
+                parseGeneralParameter(parameter, parameterValue, multi)
             }
             is Limit -> {
                 val parameterValue = takeParameterValue(parameterMap, name, false)
@@ -109,7 +109,7 @@ private fun parseOrderParameter(annotation: Order, parameter: KParameter, parame
     }
 }
 
-private fun parseGeneralParameter(parameter: KParameter, parameterValue: List<String>?): Pair<KParameter, Any?>? {
+private fun parseGeneralParameter(parameter: KParameter, parameterValue: List<String>?, multi: Boolean): Pair<KParameter, Any?>? {
     return when {
         !parameterValue.isNullOrEmpty() -> {
             val value = try {
@@ -125,11 +125,10 @@ private fun parseGeneralParameter(parameter: KParameter, parameterValue: List<St
 }
 
 private fun mapAnyFromString(string: List<String>, kType: KType): Any {
-    @Suppress("UNCHECKED_CAST")
     val kClass = kType.classifier as KClass<*>
     @Suppress("UNCHECKED_CAST")
     return when {
-        kClass == String::class -> string
+        kClass == String::class -> string.first()
         kClass == Int::class -> string.first().toIntOrNull() ?: throw ClassCastException("Expected number type of Int.")
         kClass == Long::class -> string.first().toLongOrNull() ?: throw ClassCastException("Expected number type of Long.")
         kClass == Float::class -> string.first().toFloatOrNull() ?: throw ClassCastException("Expected number type of Float.")
