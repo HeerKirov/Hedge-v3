@@ -2,11 +2,10 @@
 import { Button, Separator } from "@/components/universal"
 import { ElementPopupMenu } from "@/components/interaction"
 import { PaneLayout } from "@/components/layout"
-import { DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
+import { AttachFilter, AttachTemplate, DataRouter, FitTypeButton, ColumnNumButton } from "@/components-business/top-bar"
 import { LoadingScreen, StorageFileDetailPane } from "@/components-module/common"
 import { StorageFileDataset } from "@/components-module/data"
-import { BlockFileItem } from "@/functions/http-client/api/file-storage"
-import { MenuItem, useDynamicPopupMenu } from "@/modules/popup-menu"
+import { MenuItem } from "@/modules/popup-menu"
 import { installFileListContext } from "@/services/main/file-storage"
 
 const props = defineProps<{
@@ -14,12 +13,39 @@ const props = defineProps<{
 }>()
 
 const {
-    block,
-    listview: {listview, paginationData},
+    listview,
+    paginationData,
+    queryFilter,
     listviewController: {viewMode, fitType, columnNum},
     selector: {selected, selectedIndex, lastSelected, update: updateSelect},
     paneState,
 } = installFileListContext(props.block)
+
+const attachFilterTemplates: AttachTemplate[] = [
+    {
+        type: "radio",
+        field: "extension",
+        options: [
+            {label: "JPG", value: "jpg", icon: "file-image"},
+            {label: "PNG", value: "png", icon: "file-image"},
+            {label: "GIF", value: "gif", icon: "file-image"},
+            {label: "MP4", value: "mp4", icon: "video"},
+            {label: "WebM", value: "webm", icon: "video"},
+        ],
+    },
+    {type: "separator"},
+    {
+        type: "order",
+        items: [
+            {label: "按 ID", value: "id"},
+            {label: "按文件名", value: "fileName"},
+            {label: "按大小", value: "size"},
+            {label: "按扩展名", value: "extension"},
+        ],
+        defaultValue: "id",
+        defaultDirection: "descending",
+    },
+]
 
 const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
     {type: "checkbox", label: "在侧边栏预览", checked: paneState.visible.value, click: () => paneState.visible.value = !paneState.visible.value},
@@ -32,7 +58,9 @@ const ellipsisMenuItems = () => <MenuItem<undefined>[]>[
 
 <template>
     <Teleport to="#app-storage-view-toolbar">
+        <AttachFilter class="ml-1" :templates="attachFilterTemplates" v-model:value="queryFilter"/>
         <DataRouter :state="paginationData.state.value" @navigate="paginationData.navigateTo"/>
+        <Separator/>
         <FitTypeButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="fitType"/>
         <ColumnNumButton v-if="viewMode === 'grid'" class="mr-1" v-model:value="columnNum"/>
         <ElementPopupMenu :items="ellipsisMenuItems" position="bottom" v-slot="{ popup, setEl }">

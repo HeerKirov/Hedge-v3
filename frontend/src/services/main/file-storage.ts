@@ -81,12 +81,12 @@ export function useBlockDetailPane() {
 }
 
 export const [installFileListContext, useFileListContext] = installation(function(block: string) {
-    const listview = useBlockFileListView(block)
+    const { listview, paginationData, queryFilter } = useBlockFileListView(block)
     const listviewController = useStorageFileViewController()
-    const selector = useSelectedState({alias: "file", queryListview: listview.listview, keyOf: item => item.id})
+    const selector = useSelectedState({alias: "file", queryListview: listview, keyOf: item => item.id})
     const paneState = useSelectedPaneState("storage-block-file")
 
-    return {block, listview, listviewController, selector, paneState}
+    return {block, listview, paginationData, queryFilter, listviewController, selector, paneState}
 })
 
 function useBlockFileListView(block: string) {
@@ -106,7 +106,7 @@ type FileListviewModifiedEvent =
 
 export function useFileDetailPane() {
     const { listview: listViewCtx, selector } = useFileListContext()
-    const queryListview = listViewCtx.listview
+    const queryListview = listViewCtx
 
     const path = computed(() => selector.lastSelected.value ?? selector.selected.value[selector.selected.value.length - 1] ?? null)
 

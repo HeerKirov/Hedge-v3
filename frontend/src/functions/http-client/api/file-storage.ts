@@ -22,9 +22,12 @@ function mapFromBlockStorageListFilter(filter: BlockStorageListFilter): Record<s
 }
 
 function mapFromBlockFileListFilter(filter: BlockFileListFilter): Record<string, unknown> {
+    const ext = typeof filter.extension === "string" && filter.extension.length > 0 ? filter.extension : undefined
     return {
-        ...filter,
+        limit: filter.limit,
+        offset: filter.offset,
         order: mapFromOrderList(filter.order),
+        ...(ext ? { extension: ext } : {}),
     }
 }
 
@@ -74,7 +77,11 @@ export interface BlockStorageListFilter {
 }
 
 export interface BlockFileListFilter extends LimitAndOffsetFilter {
-    order?: OrderList<"id" | "fileName" | "size">
+    order?: OrderList<"id" | "fileName" | "size" | "extension">
+    /**
+     * 单选扩展名；null 表示不按类型过滤。请求时仅在为具体扩展名字符串时携带 `extension` 查询参数。
+     */
+    extension?: string | null
 }
 
 export interface BlockStorageSummary {
