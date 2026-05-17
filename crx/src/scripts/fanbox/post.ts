@@ -65,23 +65,27 @@ async function downloadAll(sourcePath: SourceDataPath) {
  */
 function initializeUI(sourcePath: SourceDataPath) {
     function observeAllPresentations(callback: (nodes: {index: number, element: HTMLDivElement, sourcePath: SourceDataPath, downloadURL: string}[]) => void) {
-        let imgList: HTMLImageElement[] | undefined
-
         const callbackWithProcessor = (nodes: HTMLImageElement[]) => {
-            if(imgList === undefined) imgList = [...document.querySelectorAll<HTMLImageElement>("article img")].filter(n => n.src?.startsWith("https://downloads.fanbox.cc"))
-            const dataContents = document.querySelector("div[data-contents=\"true\"]")!
-            const postImages = [...dataContents.childNodes].filter(child => child instanceof HTMLElement && child.className.includes("article__atomic-block") && child.firstChild?.firstChild?.firstChild instanceof HTMLDivElement && child.firstChild.firstChild.firstChild.className.includes("PostImage__Wrapper"))
+            const imgList = [...document.querySelectorAll<HTMLImageElement>("article img")].filter(n => n.src?.startsWith("https://downloads.fanbox.cc"))
+            const dataContents = document.querySelector("div[data-contents=\"true\"]")
+            const postImages = dataContents && [...dataContents.childNodes].filter(child => child instanceof HTMLElement && child.className.includes("article__atomic-block") && child.firstChild?.firstChild?.firstChild instanceof HTMLDivElement && child.firstChild.firstChild.firstChild.className.includes("PostImage__Wrapper"))
 
+            console.log("imgList", imgList)
+            console.log("postImages", postImages)
             const ret = nodes.filter(node => node.parentElement?.parentElement instanceof HTMLAnchorElement).map(node => {
                 let index = imgList!.indexOf(node) + 1
                 const downloadURL = (node.parentElement!.parentElement as HTMLAnchorElement).href
                 const element = node.parentElement!.parentElement!.parentElement as HTMLDivElement
 
+                console.log(node, index)
+
                 //tips: 由于fanbox懒加载，一次加载的索引不再能视为序号。尝试通过确定wrapper在parent中的顺位，来确定当前序号
-                for(let i = 0; i < postImages.length; ++i) {
-                    if(postImages[i].contains(node)) {
-                        index = i + 1
-                        break
+                if(postImages !== null) {
+                    for(let i = 0; i < postImages.length; ++i) {
+                        if(postImages[i].contains(node)) {
+                            index = i + 1
+                            break
+                        }
                     }
                 }
                 return {index, downloadURL, sourcePath: {...sourcePath, sourcePart: index}, element, thumbnailSrc: node.src || null}
