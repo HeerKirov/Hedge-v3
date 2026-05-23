@@ -279,7 +279,7 @@ function enableRenameFile() {
                         "groups=(",
                         ...hrefs.map(({ page, pHash, filename }) => {
                             const ext = filename.split(".").pop()
-                            return `    "${filename}" "${page.toString().padStart(galleryImgCountLen, "0")}" "ehentai_${galleryId}_${page}_${pHash}.${ext}"`
+                            return `    "${filename}" "${page.toString().padStart(galleryImgCountLen, "0")}" "[ehentai_${galleryId}_${page}_${pHash}]${filename}.${ext}"`
                         }),
                         ")",
                         "for ((i = 0; i < ${#groups[@]}; i += 3)); do",
