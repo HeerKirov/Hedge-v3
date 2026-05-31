@@ -15,6 +15,7 @@ import { files, Result } from "@/utils/primitives"
 import { nativeApp } from "@/utils/document"
 import { DARK_MODE_COLORS, GlobalStyle, LIGHT_MODE_COLORS, SPACINGS, ThemeColors } from "@/styles"
 import { fontAwesomeCSS } from "@/styles/fontawesome"
+import { MetaTagDisplay } from "@/components/content/Illust.tsx";
 
 export const similarFinder = {
     /**
@@ -393,6 +394,9 @@ function DetailPane(props: {image: FindSimilarResultDetailImage | null, originDa
             </LayouttedDiv>
             <LayouttedDiv mt={1}>
                 <PartitionTimeDisplay partitionTime={detail.partitionTime} orderTime={detail.orderTime}/>
+            </LayouttedDiv>
+            <LayouttedDiv mt={1}>
+                <MetaTagDisplay topics={detail.topics} authors={detail.authors} tags={detail.tags}/>
             </LayouttedDiv>
         </>}
     </DetailPaneDiv>

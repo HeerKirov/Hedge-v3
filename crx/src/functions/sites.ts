@@ -14,6 +14,9 @@ export const EHENTAI_CONSTANTS = {
         GALLERY_PATHNAME: /^\/g\/(?<GID>\d+)\/(?<TOKEN>[a-zA-Z0-9]+)\/?$/,
         MPV_PATHNAME: /^\/mpv\/(?<GID>\d+)\/(?<TOKEN>[a-zA-Z0-9]+)\/?$/,
         IMAGE_PATHNAME: /^\/s\/(?<PHASH>[a-zA-Z0-9]+)\/(?<GID>\d+)-(?<PAGE>\d+)\/?$/
+    },
+    LINKS: {
+        MPV: (sourceId: string, hash: string, page: number | null) => page !== null ? `/mpv/${sourceId}/${hash}/#page${page}` : `/mpv/${sourceId}/${hash}/`,
     }
 }
 

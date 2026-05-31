@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import ReactDOM from "react-dom/client"
 import { css, styled, StyleSheetManager } from "styled-components"
-import { Button, FormattedText, Icon, LayouttedDiv, Separator } from "@/components/universal"
+import { Button, FormattedText, Icon, Separator } from "@/components/universal"
 import { SourceDataCollectStatus, SourceDataUpdateForm, SourceEditStatus } from "@/functions/server/api-source-data"
 import { useCollectStatus } from "@/hooks/source-info"
 import { SourceDataPath } from "@/functions/server/api-all"
@@ -11,6 +11,7 @@ import { Result } from "@/utils/primitives"
 import { useOutsideClick } from "@/utils/sensors"
 import { fontAwesomeCSS } from "@/styles/fontawesome"
 import { DARK_MODE_COLORS, ELEMENT_HEIGHTS, FONT_SIZES, GlobalStyle, LIGHT_MODE_COLORS, RADIUS_SIZES, SPACINGS } from "@/styles"
+import { EHENTAI_CONSTANTS } from "@/functions/sites.ts";
 
 type LocalSite = "pixiv" | "ehentai" | "ehentai-gallery" | "sankaku"
 
@@ -107,7 +108,7 @@ function ToolBar(props: Omit<RegisterItem, "element"> & { bodyElement: HTMLEleme
 }
 
 const ToolBarPanel = memo(function ToolBarPanel(props: Omit<RegisterItem, "element"> & { onClose: () => void }) {
-    const { index: _, sourceDataPath, thumbnailSrc, downloadURL, sourceDataProvider, onClose } = props
+    const { sourceDataPath, thumbnailSrc, downloadURL, sourceDataProvider, onClose } = props
 
     const favicon = useMemo(() => chrome.runtime.getURL("favicon.png"), [])
     
@@ -145,6 +146,16 @@ const ToolBarPanel = memo(function ToolBarPanel(props: Omit<RegisterItem, "eleme
         }
     }, [sourceDataPath, sourceDataProvider])
 
+    const openInMpv = useCallback(() => {
+        const match = location.pathname.match(EHENTAI_CONSTANTS.REGEXES.GALLERY_PATHNAME)
+        if(match && match.groups) {
+            const gid = match.groups["GID"]
+            const token = match.groups["TOKEN"]
+            window.open(EHENTAI_CONSTANTS.LINKS.MPV(gid, token, sourceDataPath?.sourcePart ?? null))
+        }
+    }, [sourceDataPath])
+
+    const enableMpv = config.locale === "ehentai-gallery"
     const enableCollectSourceData = config.locale !== "ehentai-gallery"
     const enableQuickFind = thumbnailSrc !== null
     const enableDownload = downloadURL !== null
@@ -153,9 +164,10 @@ const ToolBarPanel = memo(function ToolBarPanel(props: Omit<RegisterItem, "eleme
         <ToolBarTitleDiv><img src={favicon} alt="favicon"/>Hedge v3 Helper</ToolBarTitleDiv>
         <Separator spacing={1}/>
         {collectStatus && <CollectStatusNotice {...collectStatus}/>}
-        {enableCollectSourceData && <Button align="left" size="small" onClick={collectSourceData}><Icon icon="cloud-arrow-down" mr={1}/>{collectStatus?.collectStatus === "EDITED" ? "重新收集数据" : "收集来源数据"}</Button>}
         {enableQuickFind && <Button align="left" size="small" onClick={quickFind}><Icon icon="magnifying-glass" mr={1}/>相似项查找</Button>}
+        {enableCollectSourceData && <Button align="left" size="small" onClick={collectSourceData}><Icon icon="cloud-arrow-down" mr={1}/>{collectStatus?.collectStatus === "EDITED" ? "重新收集数据" : "收集来源数据"}</Button>}
         {enableDownload && <DownloadButton downloadURL={downloadURL} sourcePath={sourceDataPath}/>}
+        {enableMpv && <Button align="left" size="small" onClick={openInMpv}><Icon icon="book-open-reader" mr={1}/>在MPV视图打开</Button>}
     </ToolBarPanelDiv>
 })
 

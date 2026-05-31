@@ -1,10 +1,12 @@
 import { styled } from "styled-components"
 import { IconProp } from "@fortawesome/fontawesome-svg-core"
 import { FormattedText, LayouttedDiv, Icon } from "@/components/universal"
-import { SourceDataPath } from "@/functions/server/api-all"
+import { RelatedSimpleAuthor, RelatedSimpleTag, RelatedSimpleTopic, SourceDataPath } from "@/functions/server/api-all"
 import { server } from "@/functions/server"
 import { useEndpoint } from "@/hooks/server"
 import { numbers } from "@/utils/primitives"
+import { ThemeColors } from "@/styles";
+import React from "react";
 
 export interface FileInfoDisplayProps {
     extension?: string
@@ -125,3 +127,13 @@ const PartitionTimeDisplayDiv = styled.div`
         vertical-align: middle;
     }
 `
+
+export function MetaTagDisplay(props: {topics: RelatedSimpleTopic[], authors: RelatedSimpleAuthor[], tags: RelatedSimpleTag[]}) {
+    return <>
+        <Icon icon="tags" mr={1}/>
+        {props.authors.map(t => <FormattedText key={t.id} mr={1} bold color={t.color as ThemeColors}>{t.name}</FormattedText>)}
+        {props.topics.map(t => <FormattedText key={t.id} mr={1} bold color={t.color as ThemeColors}>{t.name}</FormattedText>)}
+        {props.tags.map(t => <FormattedText key={t.id} mr={1} bold color={t.color as ThemeColors}>{t.name}</FormattedText>)}
+        {props.tags.length <= 0 && props.topics.length <= 0 && props.authors.length <= 0 && <FormattedText color="secondary">(没有标签)</FormattedText>}
+    </>
+}
