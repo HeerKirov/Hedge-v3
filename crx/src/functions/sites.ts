@@ -178,6 +178,7 @@ export const WEBSITES: Readonly<{[siteName: string]: WebsiteConstant}> = {
         ],
         artworksPages: [
             FANBOX_CONSTANTS.REGEXES.ARTIST_POSTS_PATHNAME,
+            FANBOX_CONSTANTS.REGEXES.ANY_CREATOR_PATHNAME,
             /^\/$/
         ],
         sourceDataPages: s => [
