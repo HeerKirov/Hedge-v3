@@ -143,4 +143,4 @@ export function createFileWatcher(appdata: AppDataDriver, state: StateManager, f
     }
 }
 
-const AVAILABLE_EXTNAME = ["jpeg", "jpg", "png", "gif", "webm", "mp4"]
+const AVAILABLE_EXTNAME = ["jpeg", "jpg", "png", "gif", "webp", "webm", "mp4"]
