@@ -33,7 +33,7 @@ import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
 
 class FileManager(private val appdata: AppDataManager, private val data: DataRepository, private val bus: EventBus): Component {
-    private val extensions = arrayOf("jpeg", "jpe", "jpg", "png", "gif", "mp4", "webm")
+    private val extensions = arrayOf("jpeg", "jpe", "jpg", "png", "gif", "webp", "mp4", "webm")
 
     private val nextBlock = NextBlock()
 

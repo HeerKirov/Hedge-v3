@@ -55,7 +55,7 @@ object Graphics {
                     ThumbnailResult(null, resolutionWidth, resolutionHeight, null)
                 }
             }
-            "png", "gif" -> {
+            "png", "gif", "webp" -> {
                 val (resolutionWidth, resolutionHeight) = getImageDimension(src)
                 val source = Thumbnails.of(src).outputFormat("JPG")
                 val output = Fs.temp("jpg")

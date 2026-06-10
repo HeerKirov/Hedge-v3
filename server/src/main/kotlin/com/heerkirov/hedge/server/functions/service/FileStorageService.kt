@@ -189,7 +189,7 @@ class FileStorageService(private val appdata: AppDataManager, private val data: 
 
     private val blockNamePattern = Regex("^[0-9a-f]+$", RegexOption.IGNORE_CASE)
 
-    private val allowedBlockFileExtensions = setOf("jpg", "png", "gif", "mp4", "webm")
+    private val allowedBlockFileExtensions = setOf("jpg", "png", "gif", "webp", "mp4", "webm")
 
     /**
      * 将查询参数中的扩展名归一为库中可能出现的单一取值；无效或缺省时为 null（不按类型过滤）。

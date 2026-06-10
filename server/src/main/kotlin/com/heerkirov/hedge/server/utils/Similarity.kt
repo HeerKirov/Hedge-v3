@@ -13,7 +13,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 object Similarity {
-    private val SUPPORTED_EXTENSIONS = setOf("jpeg", "jpg", "png")
+    private val SUPPORTED_EXTENSIONS = setOf("jpeg", "jpg", "png", "webp")
     private const val SIMPLE_HASH_PRECISION = 16
     private const val HASH_PRECISION = 32
 

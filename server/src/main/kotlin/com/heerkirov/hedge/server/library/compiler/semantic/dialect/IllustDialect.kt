@@ -44,6 +44,7 @@ object IllustDialect : QueryDialect<IllustDialect.IllustSortItem> {
         item("JPEG", "jpeg", "jpg")
         item("PNG", "png")
         item("GIF", "gif")
+        item("WEBP", "webp")
         item("MP4", "mp4")
         item("WEBM", "webm")
     }

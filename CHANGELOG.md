@@ -1,4 +1,6 @@
 ## [Unreleased]
+### Added
+* 添加WEBP文件类型的基础支持。
 ### Optimized
 * **[CRX]** E-Hentai重命名脚本中的重命名名称已更改为包含索引和原文件名的新格式。
 * **[CRX]** E-Hentai画廊的扩展工具栏新增了“在MPV页面打开”快捷选项。

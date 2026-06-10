@@ -63,6 +63,7 @@ dependencies {
     implementation(group = "io.javalin", name = "javalin", version = javalinVersion)                            //http服务器
     implementation(group = "net.coobird", name = "thumbnailator", version = thumbnailatorVersion)               //图像处理库，用于缩略图生成
     implementation(group = "com.twelvemonkeys.imageio", name = "imageio-jpeg", version = twelvemonkeysVersion)  //ImageIO扩展，增强jpeg格式处理，兼容各种错误情况
+    implementation(group = "com.twelvemonkeys.imageio", name = "imageio-webp", version = twelvemonkeysVersion)    //ImageIO扩展，支持WebP格式读取
     implementation(group = "ws.schild", name = "jave-core", version = javeVersion)                              //视频处理库，用于缩略图生成
     implementation(group = "ws.schild", name = "jave-$javePlatform", version = javeVersion)                     //视频处理库的平台相关驱动包
     implementation(group = "com.belerweb", name = "pinyin4j", version = pinyin4jVersion)                        //拼音转换库

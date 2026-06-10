@@ -220,7 +220,7 @@ class IllustExecutePlanBuilder(private val db: Database) : ExecutePlanBuilder, S
                 val extensions = values.flatMap {
                     when(it as String) {
                         "VIDEO" -> listOf("mp4", "webm")
-                        "IMAGE" -> listOf("jpeg", "jpg", "png", "gif")
+                        "IMAGE" -> listOf("jpeg", "jpg", "png", "gif", "webp")
                         "JPEG" -> listOf("jpeg", "jpg")
                         else -> listOf(it.lowercase())
                     }

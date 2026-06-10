@@ -64,6 +64,7 @@ class StaticFileHandler(private val archive: FileManager, private val options: A
             "jpeg", "jpg" -> "image/jpeg"
             "png" -> "image/png"
             "gif" -> "image/gif"
+            "webp" -> "image/webp"
             "mp4" -> "video/mp4"
             "webm" -> "video/webm"
             else -> "application/octet-stream"
