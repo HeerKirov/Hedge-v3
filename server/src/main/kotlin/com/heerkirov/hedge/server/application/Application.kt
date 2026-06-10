@@ -18,11 +18,13 @@ import com.heerkirov.hedge.server.functions.service.*
 import com.heerkirov.hedge.server.functions.kit.*
 import com.heerkirov.hedge.server.library.framework.define
 import com.heerkirov.hedge.server.library.framework.framework
+import com.heerkirov.hedge.server.utils.ImageIOPlugins
 
 /**
  * 应用程序的入口函数。在这里对整个应用程序进行装配。
  */
 fun runApplication(options: ApplicationOptions) {
+    ImageIOPlugins.register()
     framework {
         val bus = define { EventBusImpl() }
         val health = define { HealthImpl(options.serverDir) }

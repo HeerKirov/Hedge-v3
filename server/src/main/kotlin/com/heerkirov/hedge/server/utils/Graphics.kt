@@ -27,6 +27,7 @@ object Graphics {
     init {
         //在mac上，调用Graphics组件时，会生成一个愚蠢的dock栏进程。为了隐藏掉这个进程，需要设置此属性
         System.setProperty("apple.awt.UIElement", "true")
+        ImageIOPlugins.register()
     }
 
     /**
@@ -147,6 +148,7 @@ object Graphics {
         }
 
         val bufferedImage = ImageIO.read(imgFile)
+            ?: throw IOException("Failed to read image: ${imgFile.absolutePath}")
         return Pair(bufferedImage.width, bufferedImage.height)
     }
 

@@ -12,7 +12,10 @@ module com.heerkirov.hedge.server {
     requires com.fasterxml.jackson.kotlin;
     requires com.fasterxml.jackson.datatype.jsr310;
     requires net.coobird.thumbnailator;
+    requires com.twelvemonkeys.imageio.core;
     requires com.twelvemonkeys.imageio.jpeg;
+    requires com.twelvemonkeys.imageio.webp;
+    uses javax.imageio.spi.ImageReaderSpi;
     requires jave.core;
     requires ch.qos.logback.core;
     requires ch.qos.logback.classic;
