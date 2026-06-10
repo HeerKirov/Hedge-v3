@@ -14,7 +14,7 @@ const emit = defineEmits<{
     (e: "update:zoom-enabled", v: boolean): void
 }>()
 
-const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif"]
+const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"]
 const VIDEO_EXTENSIONS = ["mp4", "webm", "ogv"]
 
 function getDashboardType(src: string): "Image" | "Video" | null {

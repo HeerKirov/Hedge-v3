@@ -16,6 +16,7 @@ const EXTENSIONS: Record<string, {name: string, icon: string}> = {
     "jpeg": {name: "JPEG图像", icon: "image"},
     "png": {name: "PNG图像", icon: "image"},
     "gif": {name: "GIF动态图像", icon: "image"},
+    "webp": {name: "WEBP图像", icon: "image"},
     "mp4": {name: "MP4视频", icon: "video"},
     "webm": {name: "WEBM视频", icon: "video"}
 }
