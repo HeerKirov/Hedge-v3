@@ -18,7 +18,7 @@ dependencies {
     val dbcpVersion = "2.13.0"
     val jacksonVersion = "2.20.0"
     val thumbnailatorVersion = "0.4.20"
-    val twelvemonkeysVersion = "3.12.0"
+    val twelvemonkeysVersion = "3.13.1"
     val javeVersion = "3.5.0"
     val pinyin4jVersion = "2.5.1"
     val logbackVersion = "1.5.19"

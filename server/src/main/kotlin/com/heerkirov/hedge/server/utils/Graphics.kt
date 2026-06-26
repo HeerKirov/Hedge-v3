@@ -7,6 +7,13 @@ import net.coobird.thumbnailator.filters.Canvas
 import net.coobird.thumbnailator.geometry.Positions
 import ws.schild.jave.MultimediaObject
 import ws.schild.jave.ScreenExtractor
+import ws.schild.jave.Encoder
+import ws.schild.jave.encode.EncodingAttributes
+import ws.schild.jave.encode.VideoAttributes
+import ws.schild.jave.filters.PadFilter
+import ws.schild.jave.filters.ScaleFilter
+import ws.schild.jave.filters.helpers.ForceOriginalAspectRatio
+import ws.schild.jave.info.VideoSize
 import java.awt.Color
 import java.io.File
 import java.io.IOException
@@ -56,22 +63,32 @@ object Graphics {
                     ThumbnailResult(null, resolutionWidth, resolutionHeight, null)
                 }
             }
-            "png", "gif", "webp" -> {
+            "png", "gif" -> {
                 val (resolutionWidth, resolutionHeight) = getImageDimension(src)
-                val source = Thumbnails.of(src).outputFormat("JPG")
+                val (targetWidth, targetHeight) = targetThumbnailSize(resolutionWidth, resolutionHeight, resizeArea)
                 val output = Fs.temp("jpg")
                 try {
-                    if(resolutionWidth * resolutionHeight > resizeArea) {
-                        val nh = sqrt(resizeArea.toDouble() * resolutionWidth / resolutionHeight)
-                        val nw = nh * resolutionWidth / resolutionHeight
-                        source.size(nw.toInt(), nh.toInt()).addFilter(Canvas(nw.toInt(), nh.toInt(), Positions.CENTER, BACKGROUND_COLOR))
-                    }else{
-                        source.size(resolutionWidth, resolutionHeight).addFilter(Canvas(resolutionWidth, resolutionHeight, Positions.CENTER, BACKGROUND_COLOR))
-                    }
-                    source.outputQuality(0.9).toFile(output)
+                    generateJpegFromRasterImage(src, output, targetWidth, targetHeight)
                 }catch (e: Throwable) {
                     output.delete()
                     throw e
+                }
+                ThumbnailResult(output, resolutionWidth, resolutionHeight, null)
+            }
+            "webp" -> {
+                val (resolutionWidth, resolutionHeight) = getImageDimension(src)
+                val (targetWidth, targetHeight) = targetThumbnailSize(resolutionWidth, resolutionHeight, resizeArea)
+                val output = Fs.temp("jpg")
+                try {
+                    generateJpegFromRasterImage(src, output, targetWidth, targetHeight)
+                }catch (e: Throwable) {
+                    output.deleteIfExists()
+                    try {
+                        generateJpegFromImageWithFfmpeg(src, output, targetWidth, targetHeight)
+                    }catch (e2: Throwable) {
+                        output.deleteIfExists()
+                        throw e2
+                    }
                 }
                 ThumbnailResult(output, resolutionWidth, resolutionHeight, null)
             }
@@ -125,6 +142,60 @@ object Graphics {
             }
             else -> null
         }
+    }
+
+    /**
+     * 将 WebP 解码为临时 JPG 文件，供指纹计算等后续处理使用。
+     * ImageIO 失败时回退到 ffmpeg。
+     */
+    internal fun decodeWebpToTempJpeg(src: File): File {
+        val (resolutionWidth, resolutionHeight) = getImageDimension(src)
+        val output = Fs.temp("jpg")
+        try {
+            generateJpegFromRasterImage(src, output, resolutionWidth, resolutionHeight)
+        }catch (e: Throwable) {
+            output.deleteIfExists()
+            generateJpegFromImageWithFfmpeg(src, output, resolutionWidth, resolutionHeight)
+        }
+        return output
+    }
+
+    private fun targetThumbnailSize(resolutionWidth: Int, resolutionHeight: Int, resizeArea: Int): Pair<Int, Int> {
+        return if(resolutionWidth * resolutionHeight > resizeArea) {
+            val nh = sqrt(resizeArea.toDouble() * resolutionWidth / resolutionHeight)
+            val nw = nh * resolutionWidth / resolutionHeight
+            Pair(nw.toInt(), nh.toInt())
+        }else{
+            Pair(resolutionWidth, resolutionHeight)
+        }
+    }
+
+    private fun generateJpegFromRasterImage(src: File, output: File, width: Int, height: Int) {
+        Thumbnails.of(src).outputFormat("JPG")
+            .size(width, height)
+            .addFilter(Canvas(width, height, Positions.CENTER, BACKGROUND_COLOR))
+            .outputQuality(0.9)
+            .toFile(output)
+    }
+
+    /**
+     * TwelveMonkeys 对部分 VP8L 无损/带 Alpha 的 WebP 解码存在缺陷，在 ImageIO 失败时回退到 ffmpeg。
+     */
+    private fun generateJpegFromImageWithFfmpeg(src: File, output: File, width: Int, height: Int) {
+        val size = VideoSize(width, height)
+        val video = VideoAttributes().apply {
+            setCodec("mjpeg")
+            setQuality(5)
+            addFilter(ScaleFilter(size, ForceOriginalAspectRatio.DECREASE))
+            addFilter(PadFilter(size))
+        }
+        val attrs = EncodingAttributes().apply {
+            setOutputFormat("image2")
+            setVideoAttributes(video)
+            setOffset(0f)
+            setDuration(0.04f)
+        }
+        Encoder().encode(MultimediaObject(src), output, attrs)
     }
 
     /**

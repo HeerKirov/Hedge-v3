@@ -30,8 +30,8 @@ object Similarity {
     fun process(src: File): ProcessResult {
         if(src.extension.lowercase() !in SUPPORTED_EXTENSIONS) throw be(IllegalFileExtensionError(src.extension))
 
-        val resizedImage = Thumbnails.of(src).forceSize(HASH_PRECISION, HASH_PRECISION).asBufferedImage()
-        val simpleResizedImage = Thumbnails.of(src).forceSize(SIMPLE_HASH_PRECISION, SIMPLE_HASH_PRECISION).asBufferedImage()
+        val resizedImage = resizeToBufferedImage(src, HASH_PRECISION, HASH_PRECISION)
+        val simpleResizedImage = resizeToBufferedImage(src, SIMPLE_HASH_PRECISION, SIMPLE_HASH_PRECISION)
         val grayscale = grayscale(resizedImage)
         val simpleGrayscale = grayscale(simpleResizedImage)
 
@@ -66,8 +66,7 @@ object Similarity {
      * @param precision 精度，相当于缩放后的哈希图的尺寸。指纹长度等于精度^2。
      */
     fun averageHash(src: File, precision: Int): String {
-        val srcImage = Thumbnails.of(src)
-        val resizedImage = resize(srcImage, precision, precision)
+        val resizedImage = resizeToBufferedImage(src, precision, precision)
         val arr = grayscale(resizedImage)
         val avg = arr.average().roundToInt()
         val bits = arr.map { if (it >= avg) 1 else 0 }
@@ -80,8 +79,7 @@ object Similarity {
      * @param precision 精度，相当于缩放后的哈希图的尺寸。指纹长度等于(精度/4)^2。
      */
     fun perceiveHash(src: File, precision: Int): String {
-        val srcImage = Thumbnails.of(src)
-        val resizedImage = resize(srcImage, precision, precision)
+        val resizedImage = resizeToBufferedImage(src, precision, precision)
         val arr = grayscale(resizedImage)
         val dct = dct(arr, precision)
         val matrix = matrix(dct, precision, precision / 4)
@@ -96,8 +94,7 @@ object Similarity {
      * @param precision 精度，相当于缩放后的哈希图尺寸。指纹长度等于精度^2。
      */
     fun differenceHash(src: File, precision: Int): String {
-        val srcImage = Thumbnails.of(src)
-        val resizedImage = resize(srcImage, precision, precision)
+        val resizedImage = resizeToBufferedImage(src, precision, precision)
         val arr = grayscale(resizedImage)
         val diff = difference(arr, precision)
 
@@ -163,11 +160,18 @@ object Similarity {
         }
     }
 
-    /**
-     * 将image缩放至目标大小。
-     */
-    private fun resize(thumb: Thumbnails.Builder<File>, targetWidth: Int, targetHeight: Int): BufferedImage {
-        return thumb.size(targetWidth, targetHeight).asBufferedImage()
+    private fun resizeToBufferedImage(src: File, targetWidth: Int, targetHeight: Int): BufferedImage {
+        return try {
+            Thumbnails.of(src).forceSize(targetWidth, targetHeight).asBufferedImage()
+        }catch (e: Throwable) {
+            if(src.extension.lowercase() != "webp") throw e
+            val decoded = Graphics.decodeWebpToTempJpeg(src)
+            try {
+                Thumbnails.of(decoded).forceSize(targetWidth, targetHeight).asBufferedImage()
+            }finally {
+                decoded.delete()
+            }
+        }
     }
 
     /**
