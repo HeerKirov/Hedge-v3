@@ -1,6 +1,7 @@
 import { BasicException } from "./exceptions"
 import { Response, fetchRequestByMessage } from "./impl"
 import { AppHealth, app } from "./api-app"
+import { author } from "./api-author"
 import { illust } from "./api-illust"
 import { sourceData } from "./api-source-data"
 import { quickFind } from "./api-find-similar"
@@ -10,6 +11,7 @@ import { setting } from "./api-setting"
 export const server = {
     app,
     setting,
+    author,
     illust,
     sourceData,
     quickFind,

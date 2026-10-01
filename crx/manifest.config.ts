@@ -106,12 +106,12 @@ export default defineManifest({
             "run_at": "document_start"
         },
         {
-            "matches": ["https://kemono.su/*/user/*/post/*", "https://kemono.cr/*/user/*/post/*"],
+            "matches": ["https://kemono.su/*/user/*/post/*", "https://kemono.cr/*/user/*/post/*", "https://pawchive.st/*/user/*/post/*", "https://pawchive.pw/*/user/*/post/*"],
             "js": ["src/scripts/kemono/post.ts"],
             "run_at": "document_start"
         },
         {
-            "matches": ["https://kemono.su/*/user/*", "https://kemono.cr/*/user/*"],
+            "matches": ["https://kemono.su/*/user/*", "https://kemono.cr/*/user/*", "https://pawchive.st/*/user/*", "https://pawchive.pw/*/user/*"],
             "js": ["src/scripts/kemono/posts.ts"],
             "run_at": "document_start"
         },
@@ -120,7 +120,7 @@ export default defineManifest({
                 "https://www.pixiv.net/artworks/*",
                 "https://danbooru.donmai.us/posts/*",
                 "https://gelbooru.com/*",
-                "https://kemono.su/*", "https://kemono.cr/*",
+                "https://kemono.su/*", "https://kemono.cr/*", "https://pawchive.st/*", "https://pawchive.pw/*",
                 "https://www.fanbox.cc/*/posts/*", "https://*.fanbox.cc/posts/*",
                 "https://cc.fantia.jp/*", "https://fantia.jp/*"
             ],

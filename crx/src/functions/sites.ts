@@ -98,11 +98,15 @@ export const FANTIA_CONSTANTS = {
 export const KEMONO_CONSTANTS = {
     SITE_NAME: "kemono",
     SITE_TITLE: "Kemono",
-    HOSTS: ["kemono.su", "kemono.cr"],
+    HOSTS: ["kemono.su", "kemono.cr", "pawchive.st", "pawchive.pw"],
     PATTERNS: {
         POST_PATHNAME: (site: string, sourceId: string) => [
             `https://kemono.cr/${site}/user/*/post/${sourceId}`,
             `https://kemono.cr/${site}/user/*/post/${sourceId}/revision/*`,
+            `https://pawchive.st/${site}/user/*/post/${sourceId}`,
+            `https://pawchive.st/${site}/user/*/post/${sourceId}/revision/*`,
+            `https://pawchive.pw/${site}/user/*/post/${sourceId}`,
+            `https://pawchive.pw/${site}/user/*/post/${sourceId}/revision/*`,
         ]
     },
     REGEXES: {
@@ -258,7 +262,7 @@ export const ATTACHMENT_RULES: Readonly<AttachmentRule[]> = [
     },
     {
         siteName: KEMONO_CONSTANTS.SITE_NAME,
-        referrer: /^https:\/\/kemono\.(su|cr)\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<ID>[^/]+)(\/revision\/\d+)?\/?$/,
+        referrer: /^https:\/\/(kemono\.su|kemono\.cr|pawchive\.st|pawchive\.pw)\/(?<SITE>\S+)\/user\/(?<UID>\d+)\/post\/(?<ID>[^/]+)(\/revision\/\d+)?\/?$/,
         sourcePath: args => ({sourceSite: args["SITE"], sourceId: args["SITE"] === "gumroad" ? `${args["UID"]}.${args["ID"]}` : args["ID"], sourcePart: null, sourcePartName: null})
     }
 ]

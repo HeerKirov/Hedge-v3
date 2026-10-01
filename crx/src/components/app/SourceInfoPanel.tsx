@@ -79,7 +79,7 @@ const SourceTagMappingNotice = memo(function SourceTagMappingNotice(props: {mapp
 
 const SourceDataPathNotice = memo(function SourceDataPathNotice(path: SourceDataPath) {
     return <SourceDataPathDiv>
-        {WEBSITES[path.sourceSite]?.siteTitle ?? path.sourceSite}
+        <FormattedText userSelect="none">{WEBSITES[path.sourceSite]?.siteTitle ?? path.sourceSite}</FormattedText>
         <SourceIdBold>{path.sourceId}</SourceIdBold>
         {path.sourcePart !== null && <SourcePartSpan>p{path.sourcePart}</SourcePartSpan>}
         {path.sourcePartName !== null && <FormattedText color="secondary">/{path.sourcePartName}</FormattedText>}

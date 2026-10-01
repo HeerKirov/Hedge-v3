@@ -123,7 +123,7 @@ async function collectSourceData(): Promise<Result<SourceDataUpdateForm, string>
     try {
         const response = await fetch(`https://api.fanbox.cc/post.info?postId=${pid}`, {credentials: "include"})
         if(response.ok) {
-            const body = (await response.json())["body"]
+            const body = (await response.json())["body"]["post"]
 
             const tags: SourceTagForm[] = []
 

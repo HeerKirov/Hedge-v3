@@ -250,6 +250,11 @@ function QuickFindLoading(props: {dataURL: string, sourcePath: SourceDataPath, s
     useEffect(() => {
         Promise.all(props.sourceData.tags?.map(tag => server.sourceTagMapping.get({sourceSite: props.sourcePath.sourceSite, sourceTagType: tag.type, sourceTagCode: tag.code})) ?? [])
             .then(tagResult => tagResult.map(r => r.ok ? r.data : []).flat(1).filter(r => r.metaType === "AUTHOR") as ({ metaType: "AUTHOR", metaTag: SimpleAuthor })[])
+            .then(async conditionTags => {
+                if(conditionTags.length > 0) return conditionTags
+                // 临时回退：映射为空时，从页面 title 提取单词直接搜索 authors
+                return await findAuthorsByPageTitle(document.title)
+            })
             .then(conditionTags => {
                 props.onUpdateTags(conditionTags)
                 setStatus(conditionTags.length <= 0 ? "ERR_NO_CONDITION" : "LOADING_RESULT")
@@ -296,6 +301,45 @@ function QuickFindLoading(props: {dataURL: string, sourcePath: SourceDataPath, s
             <img src={props.dataURL} alt="sample image"/>
         </LayouttedDiv>
     </DialogDiv>
+}
+
+const TITLE_WORD_BLOCKLIST = new Set(["fanbox", "fantia", "patreon", "uncensored", "censored", "decensored", "hentai", "galleries", "gallery"])
+
+/**
+ * 从标题中提取单词：按空格/标点分割后的字母数字词与中日文等文字串。
+ * 剔除纯数字，以及常见平台/标记词。
+ */
+function extractWordsFromTitle(title: string): string[] {
+    return title.match(/[\p{L}\p{N}_]+/gu)?.filter(word => {
+        if(word.length < 2) return false
+        if(/^\d+$/.test(word)) return false
+        if(TITLE_WORD_BLOCKLIST.has(word.toLowerCase())) return false
+        return true
+    }) ?? []
+}
+
+/**
+ * 临时回退：用页面 title 中的单词直接搜索 authors。
+ */
+async function findAuthorsByPageTitle(title: string): Promise<({ metaType: "AUTHOR", metaTag: SimpleAuthor })[]> {
+    const words = extractWordsFromTitle(title)
+    if(words.length <= 0) return []
+
+    console.log("words", words)
+
+    const results = await Promise.all(words.map(word => server.author.list({ query: word, limit: 20 })))
+    const seen = new Set<number>()
+    const authors: ({ metaType: "AUTHOR", metaTag: SimpleAuthor })[] = []
+
+    for(const result of results) {
+        if(!result.ok) continue
+        for(const author of result.data.result) {
+            if(seen.has(author.id)) continue
+            seen.add(author.id)
+            authors.push({ metaType: "AUTHOR", metaTag: { id: author.id, name: author.name, type: author.type, color: author.color } })
+        }
+    }
+    return authors
 }
 
 function QuickFindComplete(props: { dataURL: string, findId: number, images: FindSimilarResultDetailImage[], tags: ({ metaType: "AUTHOR", metaTag: SimpleAuthor } | { metaType: "TOPIC", metaTag: SimpleTopic })[], onClose: () => void }) {

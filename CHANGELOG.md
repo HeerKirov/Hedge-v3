@@ -1,10 +1,15 @@
 ## [Unreleased]
 ### Added
 * 添加WEBP文件类型的基础支持。
+* **[CRX]** 添加Pawchive域名支持。
+* **[CRX]** 针对无ARTIST的post，添加了尝试使用其title搜索ARTIST的功能。
+### Fixed
+* **[CRX]** 修复FANBOX站点中无法加载来源数据的问题。
 ### Optimized
 * **[CRX]** E-Hentai重命名脚本中的重命名名称已更改为包含索引和原文件名的新格式。
 * **[CRX]** E-Hentai画廊的扩展工具栏新增了“在MPV页面打开”快捷选项。
 * **[CRX]** 相似项查找的详情栏添加了标签显示。
+* **[CRX]** 侧边栏的Post ID调整为可选。
 
 
 ## [0.19.0] - 2026-05-14
